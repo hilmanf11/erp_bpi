@@ -30,8 +30,17 @@ class Setting_menus extends CI_Controller
     //GET DATA
     public function getmenu()
     {
-        $menus = $this->crud->read('menus');
-        echo $menus;
+        $post = isset($_POST['q']) ? array("a.name" => $_POST['q']) : $this->input->get();
+        $this->db->select('a.id, a.name, b.name as parent_name');
+        $this->db->from('menus a');
+        $this->db->join('menus b', 'a.menus_id = b.id', 'left');
+        $this->db->like($post);
+        $this->db->where("a.id NOT IN (SELECT DISTINCT menus_id FROM setting_menus)");
+        $this->db->order_by('a.menus_id', 'asc');
+        $this->db->order_by('a.name', 'asc');
+        $menus = $this->db->get()->result_array();
+
+        echo json_encode($menus);
     }
     //GET DATATABLES
     public function datatables()

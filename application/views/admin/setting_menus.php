@@ -179,7 +179,7 @@
         });
         //DATA MENU
         $('#menus_id').combogrid({
-            url: '<?= base_url('admin/menus/getmenu') ?>',
+            url: '<?= base_url('admin/setting_menus/getmenu') ?>',
             panelWidth: 420,
             idField: 'id',
             textField: 'name',
