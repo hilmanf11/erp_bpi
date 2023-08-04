@@ -4,11 +4,11 @@
         <tr>
             <th rowspan="2" field="ck" checkbox="true"></th>
             <th rowspan="2" data-options="field:'number',width:80,align:'center'">ID</th>
-            <th rowspan="2" data-options="field:'name',width:200,halign:'center'">Name</th>
-            <th rowspan="2" data-options="field:'code',width:200,halign:'center'">Product Family Code</th>
-            <th rowspan="2" data-options="field:'account_number',width:200,halign:'center'">Account No</th>
-            <th rowspan="2" data-options="field:'account_name',width:200,halign:'center'">Account Name</th>
+            <th rowspan="2" data-options="field:'code',width:80,halign:'center'">Code</th>
+            <th rowspan="2" data-options="field:'name',width:150,halign:'center'">Name</th>
             <th rowspan="2" data-options="field:'item_category_name',width:200,halign:'center'">Category</th>
+            <th rowspan="2" data-options="field:'account_number',width:100,halign:'center'">Account No</th>
+            <th rowspan="2" data-options="field:'account_name',width:100,halign:'center'">Account Name</th>
             <th rowspan="2" data-options="field:'description',width:150,halign:'center'">Description</th>
             <th colspan="2" data-options="field:'',width:100,halign:'center'"> Created</th>
             <th colspan="2" data-options="field:'',width:100,halign:'center'"> Updated</th>
@@ -32,27 +32,27 @@
             <legend><b>Form Data</b></legend>
             <div class="fitem">
                 <span style="width:35%; display:inline-block;">ID</span>
-                <input style="width:60%;" name="number" id="number" required="" class="easyui-textbox" readonly>
+                <input style="width:30%;" name="number" id="number" required="" class="easyui-textbox" readonly>
+            </div>
+            <div class="fitem">
+                <span style="width:35%; display:inline-block;">Code</span>
+                <input style="width:30%;" name="code" id="code" required="" class="easyui-textbox">
             </div>
             <div class="fitem">
                 <span style="width:35%; display:inline-block;">Name</span>
                 <input style="width:60%;" name="name" id="name" required="" class="easyui-textbox">
             </div>
             <div class="fitem">
-                <span style="width:35%; display:inline-block;">Product Family Code</span>
-                <input style="width:60%;" name="code" id="code" required="" class="easyui-textbox">
+                <span style="width:35%; display:inline-block;">Category</span>
+                <input style="width:60%;" name="item_category_number" id="item_category_number" required="" class="easyui-combobox">
             </div>
             <div class="fitem">
                 <span style="width:35%; display:inline-block;">Account No</span>
-                <input style="width:60%;" name="account_number" id="account_number" required="" class="easyui-textbox">
+                <input style="width:60%;" name="account_number" id="account_number" class="easyui-textbox">
             </div>
             <div class="fitem">
                 <span style="width:35%; display:inline-block;">Account Name</span>
-                <input style="width:60%;" name="account_name" id="account_name" required="" class="easyui-textbox">
-            </div>
-            <div class="fitem">
-                <span style="width:35%; display:inline-block;">Category</span>
-                <input style="width:60%;" name="item_category_id" id="item_category_id" required="" class="easyui-textbox">
+                <input style="width:60%;" name="account_name" id="account_name" class="easyui-textbox">
             </div>
             <div class="fitem">
                 <span style="width:35%; display:inline-block;">Description</span>
@@ -161,7 +161,8 @@
                             } else {
                                 toastr.error(result.message, result.title);
                             }
-                            // $('#dlg_insert').dialog('close');
+                            
+                            $('#dlg_insert').dialog('close');
                             $('#dg').datagrid('reload');
                         }
                     });
@@ -170,9 +171,9 @@
         });
     });
 
-    $('#item_category_id').combobox({
+    $('#item_category_number').combobox({
         url:'<?= base_url('master/item_categories/reads'); ?>',
-        valueField:'id',
+        valueField:'number',
         textField:'name',
         prompt: 'Choose Category',
     });

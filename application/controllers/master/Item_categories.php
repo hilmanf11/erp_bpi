@@ -137,7 +137,7 @@ class Item_categories extends CI_Controller
                         </td>
                         <td style="font-size: 14px; text-align: left; margin:2px;">
                             <b>' . $config->name . '</b><br>
-                            <small>MASTER UNIT OF MEASURE</small>
+                            <small>MASTER CATEGORIES</small>
                         </td>
                     </tr>
                 </table>
@@ -153,8 +153,8 @@ class Item_categories extends CI_Controller
             <tr>
                 <th width="20">No</th>
                 <th>ID</th>
+                <th>Code</th>
                 <th>Name</th>
-                <th>Category code</th>
                 <th>Description</th>
             </tr>';
         $no = 1;
@@ -162,8 +162,8 @@ class Item_categories extends CI_Controller
             $html .= '<tr>
                     <td>' . $no . '</td>
                     <td>' . $data['number'] . '</td>
-                    <td>' . $data['name'] . '</td>
                     <td>' . $data['code'] . '</td>
+                    <td>' . $data['name'] . '</td>
                     <td>' . $data['description'] . '</td>';
             $no++;
         }

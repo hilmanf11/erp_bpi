@@ -33,14 +33,7 @@ class item_familys extends CI_Controller
         $send = $this->crud->reads('item_familys', ["name" => $post]);
         echo json_encode($send);
     }
-    // public function get_category()
-    // {
-    //     $this->db->select('item_familys.*, item_categories.id AS id_category, item_categories.name');
-    //     $this->db->join('item_categories', 'item_familys.id_category = item_categories.id');
-    //     $this->db->from('item_familys');
-    //     $query = $this->db->get();
-    //     echo $query->result();
-    // }
+    
     //GET DATATABLES
     public function datatables()
     {
@@ -56,7 +49,7 @@ class item_familys extends CI_Controller
             //Select Query
             $this->db->select('a.*, b.name as item_category_name');
             $this->db->from('item_familys a');
-            $this->db->join('item_categories b', 'a.item_category_id = b.id');
+            $this->db->join('item_categories b', 'a.item_category_number = b.number');
             $this->db->where('a.deleted', 0);
             if (@count($filters) > 0) {
                 foreach ($filters as $filter) {
@@ -67,7 +60,7 @@ class item_familys extends CI_Controller
                     }
                 }
             }
-            $this->db->order_by('a.name', 'ASC');
+            $this->db->order_by('a.number', 'ASC');
             //Total Data
             $totalRows = $this->db->count_all_results('', false);
             //Limit 1 - 10
@@ -137,9 +130,9 @@ class item_familys extends CI_Controller
 
         $this->db->select('a.*, b.name as item_category_name');
         $this->db->from('item_familys a');
-        $this->db->join('item_categories b', 'a.item_category_id = b.id');
+        $this->db->join('item_categories b', 'a.item_category_number = b.number');
         $this->db->where('a.deleted', 0);
-        $this->db->order_by('a.name', 'ASC');
+        $this->db->order_by('a.number', 'ASC');
         $records = $this->db->get()->result_array();
         $html = '<html><head><title>Print Data</title></head><style>body {font-family: Arial, Helvetica, sans-serif;}#customers {border-collapse: collapse;width: 100%;font-size: 12px;}#customers td, #customers th {border: 1px solid #ddd;padding: 2px;}#customers tr:nth-child(even){background-color: #f2f2f2;}#customers tr:hover {background-color: #ddd;}#customers th {padding-top: 2px;padding-bottom: 2px;text-align: left;color: black;}</style><body>
         <center>
