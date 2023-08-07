@@ -11,7 +11,7 @@ class item_familys extends CI_Controller
         $this->load->library('session');
         $this->load->model('crud');
         //VALIDASI FORM
-        $this->form_validation->set_rules('code', 'Product Family code', 'required|min_length[1]|max_length[20]|is_unique[item_familys.code]');
+        $this->form_validation->set_rules('number', 'Product Family code', 'required|min_length[1]|max_length[20]|is_unique[item_familys.number]');
     }
     //HALAMAN UTAMA
     public function index()
@@ -49,18 +49,18 @@ class item_familys extends CI_Controller
             //Select Query
             $this->db->select('a.*, b.name as item_category_name');
             $this->db->from('item_familys a');
-            $this->db->join('item_categories b', 'a.item_category_number = b.number');
+            $this->db->join('item_categories b', 'a.item_category_id = b.id');
             $this->db->where('a.deleted', 0);
             if (@count($filters) > 0) {
                 foreach ($filters as $filter) {
                     if($filter->field == "item_category_name"){
-                        $this->db->like("b.number", $filter->value);
+                        $this->db->like("b.id", $filter->value);
                     }else{
                         $this->db->like("a.".$filter->field, $filter->value);
                     }
                 }
             }
-            $this->db->order_by('a.number', 'ASC');
+            $this->db->order_by('a.id', 'ASC');
             //Total Data
             $totalRows = $this->db->count_all_results('', false);
             //Limit 1 - 10
@@ -75,7 +75,7 @@ class item_familys extends CI_Controller
     }
     //AUTO ID
     public function autoid(){
-        $sql = $this->db->query("SELECT max(number) as kode FROM item_familys");
+        $sql = $this->db->query("SELECT max(id) as kode FROM item_familys");
         $row = $sql->row();
         $kode = substr($row->kode,1);
         $autoid ="P". sprintf("%02s", $kode + 1);
@@ -130,9 +130,9 @@ class item_familys extends CI_Controller
 
         $this->db->select('a.*, b.name as item_category_name');
         $this->db->from('item_familys a');
-        $this->db->join('item_categories b', 'a.item_category_number = b.number');
+        $this->db->join('item_categories b', 'a.item_category_id = b.id');
         $this->db->where('a.deleted', 0);
-        $this->db->order_by('a.number', 'ASC');
+        $this->db->order_by('a.id', 'ASC');
         $records = $this->db->get()->result_array();
         $html = '<html><head><title>Print Data</title></head><style>body {font-family: Arial, Helvetica, sans-serif;}#customers {border-collapse: collapse;width: 100%;font-size: 12px;}#customers td, #customers th {border: 1px solid #ddd;padding: 2px;}#customers tr:nth-child(even){background-color: #f2f2f2;}#customers tr:hover {background-color: #ddd;}#customers th {padding-top: 2px;padding-bottom: 2px;text-align: left;color: black;}</style><body>
         <center>
@@ -171,9 +171,9 @@ class item_familys extends CI_Controller
         foreach ($records as $data) {
             $html .= '<tr>
                     <td>' . $no . '</td>
-                    <td>' . $data['number'] . '</td>
+                    <td>' . $data['id'] . '</td>
                     <td>' . $data['name'] . '</td>
-                    <td>' . $data['code'] . '</td>
+                    <td>' . $data['number'] . '</td>
                     <td>' . $data['account_number'] . '</td>
                     <td>' . $data['account_name'] . '</td>
                     <td>' . $data['item_category_name'] . '</td>

@@ -3,9 +3,9 @@
     <thead>
         <tr>
             <th rowspan="2" field="ck" checkbox="true"></th>
-            <th rowspan="2" data-options="field:'number',width:80,align:'center'">ID</th>
-            <th rowspan="2" data-options="field:'code',width:80,halign:'center'">Code</th>
+            <th rowspan="2" data-options="field:'id',width:80,align:'center'">ID</th>
             <th rowspan="2" data-options="field:'name',width:150,halign:'center'">Name</th>
+            <th rowspan="2" data-options="field:'number',width:150,halign:'center'">Product Famaily Code</th>
             <th rowspan="2" data-options="field:'item_category_name',width:200,halign:'center'">Category</th>
             <th rowspan="2" data-options="field:'account_number',width:100,halign:'center'">Account No</th>
             <th rowspan="2" data-options="field:'account_name',width:100,halign:'center'">Account Name</th>
@@ -32,19 +32,19 @@
             <legend><b>Form Data</b></legend>
             <div class="fitem">
                 <span style="width:35%; display:inline-block;">ID</span>
-                <input style="width:30%;" name="number" id="number" required="" class="easyui-textbox" readonly>
-            </div>
-            <div class="fitem">
-                <span style="width:35%; display:inline-block;">Code</span>
-                <input style="width:30%;" name="code" id="code" required="" class="easyui-textbox">
+                <input style="width:60%;" name="id" id="id" required="" class="easyui-textbox" readonly>
             </div>
             <div class="fitem">
                 <span style="width:35%; display:inline-block;">Name</span>
                 <input style="width:60%;" name="name" id="name" required="" class="easyui-textbox">
             </div>
             <div class="fitem">
+                <span style="width:35%; display:inline-block;">Product Famaily Code</span>
+                <input style="width:60%;" name="number" id="number" required="" class="easyui-textbox">
+            </div>
+            <div class="fitem">
                 <span style="width:35%; display:inline-block;">Category</span>
-                <input style="width:60%;" name="item_category_number" id="item_category_number" required="" class="easyui-combobox">
+                <input style="width:60%;" name="item_category_id" id="item_category_id" required="" class="easyui-combobox">
             </div>
             <div class="fitem">
                 <span style="width:35%; display:inline-block;">Account No</span>
@@ -75,7 +75,7 @@
             url : "<?= base_url('master/item_familys/autoid')?>",
             dataType : "html",
             success : function(response){
-                $('#number').textbox('setValue', response);
+                $('#id').textbox('setValue', response);
             }
         });
     }
@@ -171,9 +171,9 @@
         });
     });
 
-    $('#item_category_number').combobox({
+    $('#item_category_id').combobox({
         url:'<?= base_url('master/item_categories/reads'); ?>',
-        valueField:'number',
+        valueField:'id',
         textField:'name',
         prompt: 'Choose Category',
     });

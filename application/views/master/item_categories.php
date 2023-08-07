@@ -3,9 +3,9 @@
     <thead>
         <tr>
             <th rowspan="2" field="ck" checkbox="true"></th>
-            <th rowspan="2" data-options="field:'number',width:80,align:'center'">ID</th>
-            <th rowspan="2" data-options="field:'code',width:80,halign:'center'">Code</th>
+            <th rowspan="2" data-options="field:'id',width:80,align:'center'">ID</th>
             <th rowspan="2" data-options="field:'name',width:200,halign:'center'">Name</th>
+            <th rowspan="2" data-options="field:'number',width:150,halign:'center'">Category Code</th>
             <th rowspan="2" data-options="field:'description',width:150,halign:'center'">Description</th>
             <th colspan="2" data-options="field:'',width:100,halign:'center'"> Created</th>
             <th colspan="2" data-options="field:'',width:100,halign:'center'"> Updated</th>
@@ -29,7 +29,7 @@
             <legend><b>Form Data</b></legend>
             <div class="fitem">
                 <span style="width:35%; display:inline-block;">ID</span>
-                <input style="width:60%;" name="number" id="number" required="" class="easyui-textbox" readonly>
+                <input style="width:60%;" name="id" id="id" required="" class="easyui-textbox" readonly>
             </div>
             <div class="fitem">
                 <span style="width:35%; display:inline-block;">Name</span>
@@ -37,7 +37,7 @@
             </div>
             <div class="fitem">
                 <span style="width:35%; display:inline-block;">Category Code</span>
-                <input style="width:60%;" name="code" id="code" required="" class="easyui-textbox">
+                <input style="width:60%;" name="number" id="code" required="" class="easyui-textbox">
             </div>
             <div class="fitem">
                 <span style="width:35%; display:inline-block;">Description</span>
@@ -60,7 +60,7 @@
             url : "<?= base_url('master/item_categories/autoid')?>",
             dataType : "html",
             success : function(response){
-                $('#number').textbox('setValue', response);
+                $('#id').textbox('setValue', response);
             }
         });
     }
