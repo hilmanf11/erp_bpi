@@ -95,11 +95,19 @@ class Crud extends CI_Model
     {
         if ($this->session->username != "") {
             $id = $this->autoid($table);
-            $data = array_merge($values, [
-                "id" => $id,
-                "created_by" => $this->session->username,
-                "created_date" => date('Y-m-d H:i:s')
-            ]);
+
+            if (@$values['id'] == "") {
+                $data = array_merge($values, [
+                    "created_by" => $this->session->username,
+                    "created_date" => date('Y-m-d H:i:s')
+                ]);
+            } else {
+                $data = array_merge($values, [
+                    "id" => $id,
+                    "created_by" => $this->session->username,
+                    "created_date" => date('Y-m-d H:i:s')
+                ]);
+            }
 
             if ($this->db->insert($table, $data)) {
                 $this->logs("Create", json_encode($data), $table);
@@ -127,7 +135,7 @@ class Crud extends CI_Model
             if ($this->db->update($table, $data)) {
                 $this->logs("Update Before", json_encode($dataBefore), $table);
                 $this->logs("Update New", json_encode($data), $table);
-                
+
                 $read = $this->read($table, [], $where);
                 $this->approvals($table, @$read->id);
 
@@ -241,51 +249,6 @@ class Crud extends CI_Model
             }
         }
     }
-
-    // function approvals($table, $table_id)
-    // {
-    //     $id = $this->autoid('notifications');
-
-    //     $user = $this->read('users', [], ["username" => $this->session->username]);
-    //     //Approval
-    //     $approval = $this->read('approvals', [], ["table_name" => $table, "departement_id" => @$user->departement_id]);
-    //     $notifications = $this->read('notifications', [], ["table_name" => $table, "table_id" => $table_id]);
-        
-    //     if (!empty($approval)) {
-    //         if(empty($notifications->table_id)){
-    //             $this->db->insert("notifications", [
-    //                 "id" => $id,
-    //                 "approvals_id" => $approval->id,
-    //                 "users_id_from" => $this->session->username,
-    //                 "users_id_to" => $approval->user_approval_1,
-    //                 "table_id" => $table_id,
-    //                 "table_name" => $table,
-    //                 "name" => "CREATED APPROVAL",
-    //                 "description" => "Sent a request on " . date("d F Y H:i:s") . "  to approve data <b>" . strtoupper(str_replace("_", " ", $table)) . "</b>",
-    //                 "status" => 1,
-    //                 "created_by" => $this->session->username,
-    //                 "created_date" => date('Y-m-d H:i:s'),
-    //                 "deleted" => 0
-    //             ]);
-    //         }else{
-    //             $this->db->delete("notifications", ["table_id" => $table_id, "table_name" => $table]);
-    //             $this->db->insert("notifications", [
-    //                 "id" => $id,
-    //                 "approvals_id" => $approval->id,
-    //                 "users_id_from" => $this->session->username,
-    //                 "users_id_to" => $approval->user_approval_1,
-    //                 "table_id" => $table_id,
-    //                 "table_name" => $table,
-    //                 "name" => "CREATED APPROVAL",
-    //                 "description" => "Sent a request on " . date("d F Y H:i:s") . "  to approve data <b>" . strtoupper(str_replace("_", " ", $table)) . "</b>",
-    //                 "status" => 1,
-    //                 "created_by" => $this->session->username,
-    //                 "created_date" => date('Y-m-d H:i:s'),
-    //                 "deleted" => 0
-    //             ]);
-    //         }
-    //     }
-    // }
 
     function connectionInfo()
     {
