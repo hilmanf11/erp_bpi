@@ -4,11 +4,10 @@
         <tr>
             <th rowspan="2" field="ck" checkbox="true"></th>
             <th rowspan="2" data-options="field:'id',width:80,align:'center'">ID</th>
+            <th rowspan="2" data-options="field:'item_category_name',width:100,halign:'center'">Category</th>
+            <th rowspan="2" data-options="field:'item_family_name',width:100,halign:'center'">Product Family</th>
+            <th rowspan="2" data-options="field:'number',width:100,halign:'center'">Code</th>
             <th rowspan="2" data-options="field:'name',width:150,halign:'center'">Name</th>
-            <th rowspan="2" data-options="field:'number',width:150,halign:'center'">Product Family Code</th>
-            <th rowspan="2" data-options="field:'item_category_name',width:200,halign:'center'">Category</th>
-            <th rowspan="2" data-options="field:'account_number',width:100,halign:'center'">Account No</th>
-            <th rowspan="2" data-options="field:'account_name',width:100,halign:'center'">Account Name</th>
             <th rowspan="2" data-options="field:'description',width:150,halign:'center'">Description</th>
             <th colspan="2" data-options="field:'',width:100,halign:'center'"> Created</th>
             <th colspan="2" data-options="field:'',width:100,halign:'center'"> Updated</th>
@@ -35,24 +34,20 @@
                 <input style="width:60%;" name="id" id="id" required="" class="easyui-textbox" readonly>
             </div>
             <div class="fitem">
-                <span style="width:35%; display:inline-block;">Name</span>
-                <input style="width:60%;" name="name" id="name" required="" class="easyui-textbox">
+                <span style="width:35%; display:inline-block;">Category</span>
+                <input style="width:60%;" name="item_category_id" id="item_category_id" required="" class="easyui-textbox">
             </div>
             <div class="fitem">
-                <span style="width:35%; display:inline-block;">Product Family Code</span>
+                <span style="width:35%; display:inline-block;">Product Family</span>
+                <input style="width:60%;" name="item_family_id" id="item_family_id" required="" class="easyui-textbox">
+            </div>
+            <div class="fitem">
+                <span style="width:35%; display:inline-block;">Code</span>
                 <input style="width:60%;" name="number" id="number" required="" class="easyui-textbox">
             </div>
             <div class="fitem">
-                <span style="width:35%; display:inline-block;">Category</span>
-                <input style="width:60%;" name="item_category_id" id="item_category_id" required="" class="easyui-combobox">
-            </div>
-            <div class="fitem">
-                <span style="width:35%; display:inline-block;">Account No</span>
-                <input style="width:60%;" name="account_number" id="account_number" class="easyui-textbox">
-            </div>
-            <div class="fitem">
-                <span style="width:35%; display:inline-block;">Account Name</span>
-                <input style="width:60%;" name="account_name" id="account_name" class="easyui-textbox">
+                <span style="width:35%; display:inline-block;">Name</span>
+                <input style="width:60%;" name="name" id="name" required="" class="easyui-textbox">
             </div>
             <div class="fitem">
                 <span style="width:35%; display:inline-block;">Description</span>
@@ -62,17 +57,17 @@
     </form>
 </div>
 <!-- PDF -->
-<iframe id="printout" src="<?= base_url('master/item_familys/print') ?>" style="width: 100%;" hidden></iframe>
+<iframe id="printout" src="<?= base_url('master/item_family_subs/print') ?>" style="width: 100%;" hidden></iframe>
 <script>
     //ADD DATA
     function add() {
         $('#dlg_insert').dialog('open');
-        url_save = '<?= base_url('master/item_familys/create') ?>';
+        url_save = '<?= base_url('master/item_family_subs/create') ?>';
         $('#frm_insert').form('clear');
         
         $.ajax({
             type : "post",
-            url : "<?= base_url('master/item_familys/autoid')?>",
+            url : "<?= base_url('master/item_family_subs/autoid')?>",
             dataType : "html",
             success : function(response){
                 $('#id').textbox('setValue', response);
@@ -85,7 +80,7 @@
         if (row) {
             $('#dlg_insert').dialog('open');
             $('#frm_insert').form('load', row);
-            url_save = '<?= base_url('master/item_familys/update') ?>?id=' + btoa(row.id);
+            url_save = '<?= base_url('master/item_family_subs/update') ?>?id=' + btoa(row.id);
         } else {
             toastr.warning("Please select one of the data in the table first!", "Information");
         }
@@ -100,7 +95,7 @@
                         var row = rows[i];
                         $.ajax({
                             method: 'post',
-                            url: '<?= base_url('master/item_familys/delete') ?>',
+                            url: '<?= base_url('master/item_family_subs/delete') ?>',
                             data: {
                                 id: row.id
                             },
@@ -128,7 +123,7 @@
     }
     //PRINT EXCEL
     function excel() {
-        window.location.assign('<?= base_url('master/item_familys/print/excel') ?>');
+        window.location.assign('<?= base_url('master/item_family_subs/print/excel') ?>');
     }
     //RELOAD
     function reload() {
@@ -137,7 +132,7 @@
     $(function() {
         //SETTING DATAGRID EASYUI
         $('#dg').datagrid({
-            url: '<?= base_url('master/item_familys/datatables') ?>',
+            url: '<?= base_url('master/item_family_subs/datatables') ?>',
             pagination: true,
             clientPaging: false,
             remoteFilter: true,
@@ -176,5 +171,12 @@
         valueField:'id',
         textField:'name',
         prompt: 'Choose Category',
+    });
+
+    $('#item_family_id').combobox({
+        url:'<?= base_url('master/item_familys/reads'); ?>',
+        valueField:'id',
+        textField:'name',
+        prompt: 'Choose Product Family',
     });
 </script>
