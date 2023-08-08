@@ -1,4 +1,5 @@
 <?php
+date_default_timezone_set("Asia/Bangkok");
 defined('BASEPATH') or exit('No direct script access allowed');
 class Currencies extends CI_Controller
 {
@@ -11,7 +12,7 @@ class Currencies extends CI_Controller
         $this->load->library('session');
         $this->load->model('crud');
         //VALIDASI FORM
-        $this->form_validation->set_rules('number', 'Code', 'required|min_length[1]|max_length[20]|is_unique[currencies.number]');
+        $this->form_validation->set_rules('name', 'Name', 'required|min_length[1]|max_length[20]|is_unique[currencies.name]');
     }
     //HALAMAN UTAMA
     public function index()
@@ -54,7 +55,7 @@ class Currencies extends CI_Controller
                     $this->db->like($filter->field, $filter->value);
                 }
             }
-            $this->db->order_by('name', 'ASC');
+            $this->db->order_by('id', 'ASC');
             //Total Data
             $totalRows = $this->db->count_all_results('', false);
             //Limit 1 - 10
@@ -66,6 +67,14 @@ class Currencies extends CI_Controller
             $result = array_merge($result, ['rows' => $records]);
             echo json_encode($result);
         }
+    }
+    //AUTO ID
+    public function autoid(){
+        $sql = $this->db->query("SELECT max(id) as kode FROM currencies");
+        $row = $sql->row();
+        $kode = substr($row->kode,2);
+        $autoid ="CR". sprintf("%02s", $kode + 1);
+        echo $autoid;
     }
     //CREATE DATA
     public function create()
@@ -116,7 +125,7 @@ class Currencies extends CI_Controller
         $this->db->select('*');
         $this->db->from('currencies');
         $this->db->where('deleted', 0);
-        $this->db->order_by('name', 'ASC');
+        $this->db->order_by('id', 'ASC');
         $records = $this->db->get()->result_array();
         $html = '<html><head><title>Print Data</title></head><style>body {font-family: Arial, Helvetica, sans-serif;}#customers {border-collapse: collapse;width: 100%;font-size: 12px;}#customers td, #customers th {border: 1px solid #ddd;padding: 2px;}#customers tr:nth-child(even){background-color: #f2f2f2;}#customers tr:hover {background-color: #ddd;}#customers th {padding-top: 2px;padding-bottom: 2px;text-align: left;color: black;}</style><body>
         <center>

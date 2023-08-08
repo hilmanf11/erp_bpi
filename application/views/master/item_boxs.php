@@ -4,9 +4,11 @@
         <tr>
             <th rowspan="2" field="ck" checkbox="true"></th>
             <th rowspan="2" data-options="field:'id',width:80,align:'center'">ID</th>
-            <th rowspan="2" data-options="field:'name',width:100,halign:'center'">Name</th>
-            <th rowspan="2" data-options="field:'description',width:200,halign:'center'">Description</th>
-            <th rowspan="2" data-options="field:'symbol',width:80,align:'center'">Symbol</th>
+            <th rowspan="2" data-options="field:'item_kind_name',width:150,halign:'center'">Kind Of Box</th>
+            <th rowspan="2" data-options="field:'name',width:150,halign:'center'">Name</th>
+            <th rowspan="2" data-options="field:'size',width:150,halign:'center'">Size</th>
+            <th rowspan="2" data-options="field:'color',width:200,halign:'center'">Color</th>
+            <th rowspan="2" data-options="field:'material',width:100,halign:'center'">Material</th>
             <th colspan="2" data-options="field:'',width:100,halign:'center'"> Created</th>
             <th colspan="2" data-options="field:'',width:100,halign:'center'"> Updated</th>
         </tr>
@@ -29,35 +31,43 @@
             <legend><b>Form Data</b></legend>
             <div class="fitem">
                 <span style="width:35%; display:inline-block;">ID</span>
-                <input style="width:30%;" name="id" id="id" required="" class="easyui-textbox" readonly>
+                <input style="width:60%;" name="id" id="id" required="" class="easyui-textbox" readonly>
+            </div>
+            <div class="fitem">
+                <span style="width:35%; display:inline-block;">Kind Of Box</span>
+                <input style="width:60%;" name="item_kind_id" id="item_kind_id" required="" class="easyui-textbox">
             </div>
             <div class="fitem">
                 <span style="width:35%; display:inline-block;">Name</span>
                 <input style="width:60%;" name="name" id="name" required="" class="easyui-textbox">
             </div>
             <div class="fitem">
-                <span style="width:35%; display:inline-block;">Description</span>
-                <input style="width:60%;" name="description" id="description" class="easyui-textbox">
+                <span style="width:35%; display:inline-block;">size</span>
+                <input style="width:60%;" name="size" id="size" required="" class="easyui-textbox">
             </div>
             <div class="fitem">
-                <span style="width:35%; display:inline-block;">Symbol</span>
-                <input style="width:30%;" name="symbol" id="symbol" class="easyui-textbox">
+                <span style="width:35%; display:inline-block;">Color</span>
+                <input style="width:60%;" name="color" id="color" required="" class="easyui-textbox">
+            </div>
+            <div class="fitem">
+                <span style="width:35%; display:inline-block;">Material</span>
+                <input style="width:60%;" name="material" id="material" required="" class="easyui-textbox">
             </div>
         </fieldset>
     </form>
 </div>
 <!-- PDF -->
-<iframe id="printout" src="<?= base_url('master/currencies/print') ?>" style="width: 100%;" hidden></iframe>
+<iframe id="printout" src="<?= base_url('master/item_boxs/print') ?>" style="width: 100%;" hidden></iframe>
 <script>
     //ADD DATA
     function add() {
         $('#dlg_insert').dialog('open');
-        url_save = '<?= base_url('master/currencies/create') ?>';
+        url_save = '<?= base_url('master/item_boxs/create') ?>';
         $('#frm_insert').form('clear');
-
+        
         $.ajax({
             type : "post",
-            url : "<?= base_url('master/currencies/autoid')?>",
+            url : "<?= base_url('master/item_boxs/autoid')?>",
             dataType : "html",
             success : function(response){
                 $('#id').textbox('setValue', response);
@@ -70,7 +80,7 @@
         if (row) {
             $('#dlg_insert').dialog('open');
             $('#frm_insert').form('load', row);
-            url_save = '<?= base_url('master/currencies/update') ?>?id=' + btoa(row.id);
+            url_save = '<?= base_url('master/item_boxs/update') ?>?id=' + btoa(row.id);
         } else {
             toastr.warning("Please select one of the data in the table first!", "Information");
         }
@@ -85,7 +95,7 @@
                         var row = rows[i];
                         $.ajax({
                             method: 'post',
-                            url: '<?= base_url('master/currencies/delete') ?>',
+                            url: '<?= base_url('master/item_boxs/delete') ?>',
                             data: {
                                 id: row.id
                             },
@@ -113,7 +123,7 @@
     }
     //PRINT EXCEL
     function excel() {
-        window.location.assign('<?= base_url('master/currencies/print/excel') ?>');
+        window.location.assign('<?= base_url('master/item_boxs/print/excel') ?>');
     }
     //RELOAD
     function reload() {
@@ -122,7 +132,7 @@
     $(function() {
         //SETTING DATAGRID EASYUI
         $('#dg').datagrid({
-            url: '<?= base_url('master/currencies/datatables') ?>',
+            url: '<?= base_url('master/item_boxs/datatables') ?>',
             pagination: true,
             clientPaging: false,
             remoteFilter: true,
@@ -146,12 +156,20 @@
                             } else {
                                 toastr.error(result.message, result.title);
                             }
-                            // $('#dlg_insert').dialog('close');
+                            
+                            $('#dlg_insert').dialog('close');
                             $('#dg').datagrid('reload');
                         }
                     });
                 }
             }]
         });
+    });
+
+    $('#item_kind_id').combobox({
+        url:'<?= base_url('master/item_kinds/reads'); ?>',
+        valueField:'id',
+        textField:'name',
+        prompt: 'Choose Kind Of Box',
     });
 </script>

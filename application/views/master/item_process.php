@@ -3,10 +3,9 @@
     <thead>
         <tr>
             <th rowspan="2" field="ck" checkbox="true"></th>
-            <th rowspan="2" data-options="field:'id',width:80,align:'center'">ID</th>
-            <th rowspan="2" data-options="field:'name',width:100,halign:'center'">Name</th>
-            <th rowspan="2" data-options="field:'description',width:200,halign:'center'">Description</th>
-            <th rowspan="2" data-options="field:'symbol',width:80,align:'center'">Symbol</th>
+            <th rowspan="2" data-options="field:'id',width:80,align:'center'">ID Process</th>
+            <th rowspan="2" data-options="field:'name',width:200,halign:'center'">Process Name</th>
+            <th rowspan="2" data-options="field:'description',width:150,halign:'center'">Remarks</th>
             <th colspan="2" data-options="field:'',width:100,halign:'center'"> Created</th>
             <th colspan="2" data-options="field:'',width:100,halign:'center'"> Updated</th>
         </tr>
@@ -39,25 +38,21 @@
                 <span style="width:35%; display:inline-block;">Description</span>
                 <input style="width:60%;" name="description" id="description" class="easyui-textbox">
             </div>
-            <div class="fitem">
-                <span style="width:35%; display:inline-block;">Symbol</span>
-                <input style="width:30%;" name="symbol" id="symbol" class="easyui-textbox">
-            </div>
         </fieldset>
     </form>
 </div>
 <!-- PDF -->
-<iframe id="printout" src="<?= base_url('master/currencies/print') ?>" style="width: 100%;" hidden></iframe>
+<iframe id="printout" src="<?= base_url('master/item_process/print') ?>" style="width: 100%;" hidden></iframe>
 <script>
     //ADD DATA
     function add() {
         $('#dlg_insert').dialog('open');
-        url_save = '<?= base_url('master/currencies/create') ?>';
+        url_save = '<?= base_url('master/item_process/create') ?>';
         $('#frm_insert').form('clear');
 
         $.ajax({
             type : "post",
-            url : "<?= base_url('master/currencies/autoid')?>",
+            url : "<?= base_url('master/item_process/autoid')?>",
             dataType : "html",
             success : function(response){
                 $('#id').textbox('setValue', response);
@@ -70,7 +65,7 @@
         if (row) {
             $('#dlg_insert').dialog('open');
             $('#frm_insert').form('load', row);
-            url_save = '<?= base_url('master/currencies/update') ?>?id=' + btoa(row.id);
+            url_save = '<?= base_url('master/item_process/update') ?>?id=' + btoa(row.id);
         } else {
             toastr.warning("Please select one of the data in the table first!", "Information");
         }
@@ -85,7 +80,7 @@
                         var row = rows[i];
                         $.ajax({
                             method: 'post',
-                            url: '<?= base_url('master/currencies/delete') ?>',
+                            url: '<?= base_url('master/item_process/delete') ?>',
                             data: {
                                 id: row.id
                             },
@@ -113,7 +108,7 @@
     }
     //PRINT EXCEL
     function excel() {
-        window.location.assign('<?= base_url('master/currencies/print/excel') ?>');
+        window.location.assign('<?= base_url('master/item_process/print/excel') ?>');
     }
     //RELOAD
     function reload() {
@@ -122,7 +117,7 @@
     $(function() {
         //SETTING DATAGRID EASYUI
         $('#dg').datagrid({
-            url: '<?= base_url('master/currencies/datatables') ?>',
+            url: '<?= base_url('master/item_process/datatables') ?>',
             pagination: true,
             clientPaging: false,
             remoteFilter: true,

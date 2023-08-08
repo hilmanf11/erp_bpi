@@ -4,9 +4,12 @@
         <tr>
             <th rowspan="2" field="ck" checkbox="true"></th>
             <th rowspan="2" data-options="field:'id',width:80,align:'center'">ID</th>
-            <th rowspan="2" data-options="field:'name',width:100,halign:'center'">Name</th>
-            <th rowspan="2" data-options="field:'description',width:200,halign:'center'">Description</th>
-            <th rowspan="2" data-options="field:'symbol',width:80,align:'center'">Symbol</th>
+            <th rowspan="2" data-options="field:'item_process_id',width:150,halign:'center'">Process ID</th>
+            <th rowspan="2" data-options="field:'item_process_name',width:150,halign:'center'">Process Name</th>
+            <th rowspan="2" data-options="field:'type_a',width:100,halign:'center'">Type A</th>
+            <th rowspan="2" data-options="field:'type_b',width:100,halign:'center'">Type B</th>
+            <th rowspan="2" data-options="field:'type_c',width:100,halign:'center'">Type C</th>
+            <th rowspan="2" data-options="field:'type_d',width:100,halign:'center'">Type D</th>
             <th colspan="2" data-options="field:'',width:100,halign:'center'"> Created</th>
             <th colspan="2" data-options="field:'',width:100,halign:'center'"> Updated</th>
         </tr>
@@ -29,35 +32,43 @@
             <legend><b>Form Data</b></legend>
             <div class="fitem">
                 <span style="width:35%; display:inline-block;">ID</span>
-                <input style="width:30%;" name="id" id="id" required="" class="easyui-textbox" readonly>
+                <input style="width:60%;" name="id" id="id" required="" class="easyui-textbox" readonly>
             </div>
             <div class="fitem">
-                <span style="width:35%; display:inline-block;">Name</span>
-                <input style="width:60%;" name="name" id="name" required="" class="easyui-textbox">
+                <span style="width:35%; display:inline-block;">Process Name</span>
+                <input style="width:60%;" name="item_process_id" id="item_process_id" required="" class="easyui-textbox">
             </div>
             <div class="fitem">
-                <span style="width:35%; display:inline-block;">Description</span>
-                <input style="width:60%;" name="description" id="description" class="easyui-textbox">
+                <span style="width:35%; display:inline-block;">Type A</span>
+                <input style="width:60%;" name="type_a" id="type_a" class="easyui-textbox">
             </div>
             <div class="fitem">
-                <span style="width:35%; display:inline-block;">Symbol</span>
-                <input style="width:30%;" name="symbol" id="symbol" class="easyui-textbox">
+                <span style="width:35%; display:inline-block;">Type B</span>
+                <input style="width:60%;" name="type_b" id="type_b" class="easyui-textbox">
+            </div>
+            <div class="fitem">
+                <span style="width:35%; display:inline-block;">Type C</span>
+                <input style="width:60%;" name="type_c" id="type_c" class="easyui-textbox">
+            </div>
+            <div class="fitem">
+                <span style="width:35%; display:inline-block;">Type D</span>
+                <input style="width:60%;" name="type_d" id="type_d" class="easyui-textbox">
             </div>
         </fieldset>
     </form>
 </div>
 <!-- PDF -->
-<iframe id="printout" src="<?= base_url('master/currencies/print') ?>" style="width: 100%;" hidden></iframe>
+<iframe id="printout" src="<?= base_url('master/item_process_flow/print') ?>" style="width: 100%;" hidden></iframe>
 <script>
     //ADD DATA
     function add() {
         $('#dlg_insert').dialog('open');
-        url_save = '<?= base_url('master/currencies/create') ?>';
+        url_save = '<?= base_url('master/item_process_flow/create') ?>';
         $('#frm_insert').form('clear');
-
+        
         $.ajax({
             type : "post",
-            url : "<?= base_url('master/currencies/autoid')?>",
+            url : "<?= base_url('master/item_process_flow/autoid')?>",
             dataType : "html",
             success : function(response){
                 $('#id').textbox('setValue', response);
@@ -70,7 +81,7 @@
         if (row) {
             $('#dlg_insert').dialog('open');
             $('#frm_insert').form('load', row);
-            url_save = '<?= base_url('master/currencies/update') ?>?id=' + btoa(row.id);
+            url_save = '<?= base_url('master/item_process_flow/update') ?>?id=' + btoa(row.id);
         } else {
             toastr.warning("Please select one of the data in the table first!", "Information");
         }
@@ -85,7 +96,7 @@
                         var row = rows[i];
                         $.ajax({
                             method: 'post',
-                            url: '<?= base_url('master/currencies/delete') ?>',
+                            url: '<?= base_url('master/item_process_flow/delete') ?>',
                             data: {
                                 id: row.id
                             },
@@ -113,7 +124,7 @@
     }
     //PRINT EXCEL
     function excel() {
-        window.location.assign('<?= base_url('master/currencies/print/excel') ?>');
+        window.location.assign('<?= base_url('master/item_process_flow/print/excel') ?>');
     }
     //RELOAD
     function reload() {
@@ -122,7 +133,7 @@
     $(function() {
         //SETTING DATAGRID EASYUI
         $('#dg').datagrid({
-            url: '<?= base_url('master/currencies/datatables') ?>',
+            url: '<?= base_url('master/item_process_flow/datatables') ?>',
             pagination: true,
             clientPaging: false,
             remoteFilter: true,
@@ -146,12 +157,20 @@
                             } else {
                                 toastr.error(result.message, result.title);
                             }
-                            // $('#dlg_insert').dialog('close');
+                            
+                            $('#dlg_insert').dialog('close');
                             $('#dg').datagrid('reload');
                         }
                     });
                 }
             }]
         });
+    });
+
+    $('#item_process_id').combobox({
+        url:'<?= base_url('master/item_process/reads'); ?>',
+        valueField:'id',
+        textField:'name',
+        prompt: 'Choose Process',
     });
 </script>

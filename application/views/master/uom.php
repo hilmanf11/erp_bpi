@@ -3,7 +3,7 @@
     <thead>
         <tr>
             <th rowspan="2" field="ck" checkbox="true"></th>
-            <th rowspan="2" data-options="field:'number',width:80,align:'center'">Code</th>
+            <th rowspan="2" data-options="field:'id',width:80,align:'center'">ID</th>
             <th rowspan="2" data-options="field:'name',width:200,halign:'center'">Name</th>
             <th rowspan="2" data-options="field:'description',width:150,halign:'center'">Description</th>
             <th colspan="2" data-options="field:'',width:100,halign:'center'"> Created</th>
@@ -27,16 +27,16 @@
         <fieldset style="width:100%; border:1px solid #d0d0d0; margin-bottom: 10px; border-radius:4px; float: left;">
             <legend><b>Form Data</b></legend>
             <div class="fitem">
-                <span style="width:35%; display:inline-block;">Code</span>
-                <input style="width:30%;" name="number" required="" class="easyui-textbox">
+                <span style="width:35%; display:inline-block;">ID</span>
+                <input style="width:30%;" name="id" id="id" required="" class="easyui-textbox" readonly>
             </div>
             <div class="fitem">
                 <span style="width:35%; display:inline-block;">Name</span>
-                <input style="width:60%;" name="name" required="" class="easyui-textbox">
+                <input style="width:60%;" name="name" id="name" required="" class="easyui-textbox">
             </div>
             <div class="fitem">
                 <span style="width:35%; display:inline-block;">Description</span>
-                <input style="width:60%;" name="description" class="easyui-textbox">
+                <input style="width:60%;" name="description" id="description" class="easyui-textbox">
             </div>
         </fieldset>
     </form>
@@ -49,6 +49,15 @@
         $('#dlg_insert').dialog('open');
         url_save = '<?= base_url('master/uom/create') ?>';
         $('#frm_insert').form('clear');
+
+        $.ajax({
+            type : "post",
+            url : "<?= base_url('master/uom/autoid')?>",
+            dataType : "html",
+            success : function(response){
+                $('#id').textbox('setValue', response);
+            }
+        });
     }
     //EDIT DATA
     function update() {

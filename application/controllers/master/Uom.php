@@ -1,4 +1,5 @@
 <?php
+date_default_timezone_set("Asia/Bangkok");
 defined('BASEPATH') or exit('No direct script access allowed');
 class Uom extends CI_Controller
 {
@@ -11,7 +12,7 @@ class Uom extends CI_Controller
         $this->load->library('session');
         $this->load->model('crud');
         //VALIDASI FORM
-        $this->form_validation->set_rules('number', 'Code', 'required|min_length[1]|max_length[20]|is_unique[uom.number]');
+        $this->form_validation->set_rules('name', 'Name', 'required|min_length[1]|max_length[20]|is_unique[uom.name]');
     }
     //HALAMAN UTAMA
     public function index()
@@ -54,7 +55,7 @@ class Uom extends CI_Controller
                     $this->db->like($filter->field, $filter->value);
                 }
             }
-            $this->db->order_by('number', 'asc');
+            $this->db->order_by('id', 'asc');
             //Total Data
             $totalRows = $this->db->count_all_results('', false);
             //Limit 1 - 10
@@ -66,6 +67,14 @@ class Uom extends CI_Controller
             $result = array_merge($result, ['rows' => $records]);
             echo json_encode($result);
         }
+    }
+    //AUTO ID
+    public function autoid(){
+        $sql = $this->db->query("SELECT max(id) as kode FROM uom");
+        $row = $sql->row();
+        $kode = substr($row->kode,1);
+        $autoid ="U". sprintf("%02s", $kode + 1);
+        echo $autoid;
     }
     //CREATE DATA
     public function create()

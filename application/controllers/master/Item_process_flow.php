@@ -1,7 +1,7 @@
 <?php
 date_default_timezone_set("Asia/Bangkok");
 defined('BASEPATH') or exit('No direct script access allowed');
-class Item_familys extends CI_Controller
+class Item_process_flow extends CI_Controller
 {
     public function __construct()
     {
@@ -12,7 +12,7 @@ class Item_familys extends CI_Controller
         $this->load->library('session');
         $this->load->model('crud');
         //VALIDASI FORM
-        $this->form_validation->set_rules('number', 'Product Family code', 'required|min_length[1]|max_length[20]|is_unique[item_familys.number]');
+        $this->form_validation->set_rules('item_process_id', 'Process', 'required|min_length[1]|max_length[20]|is_unique[item_process_flow.item_process_id]');
     }
     //HALAMAN UTAMA
     public function index()
@@ -22,7 +22,7 @@ class Item_familys extends CI_Controller
         } elseif ($this->checkuserAccess($this->id_menu()) > 0) {
             $data['button'] = $this->getbutton($this->id_menu());
             $this->load->view('template/header', $data);
-            $this->load->view('master/item_familys');
+            $this->load->view('master/item_process_flow');
         } else {
             redirect('error_access');
         }
@@ -31,7 +31,7 @@ class Item_familys extends CI_Controller
     public function reads()
     {
         $post = isset($_POST['q']) ? $_POST['q'] : "";
-        $send = $this->crud->reads('item_familys', ["name" => $post]);
+        $send = $this->crud->reads('item_process_flow', ["name" => $post]);
         echo json_encode($send);
     }
     
@@ -48,13 +48,13 @@ class Item_familys extends CI_Controller
             $offset = ($page - 1) * $rows;
             $result = array();
             //Select Query
-            $this->db->select('a.*, b.name as item_category_name');
-            $this->db->from('item_familys a');
-            $this->db->join('item_categories b', 'a.item_category_id = b.id');
+            $this->db->select('a.*, b.name as item_process_name');
+            $this->db->from('item_process_flow a');
+            $this->db->join('item_process b', 'a.item_process_id = b.id');
             $this->db->where('a.deleted', 0);
             if (@count($filters) > 0) {
                 foreach ($filters as $filter) {
-                    if($filter->field == "item_category_name"){
+                    if($filter->field == "item_process_name"){
                         $this->db->like("b.id", $filter->value);
                     }else{
                         $this->db->like("a.".$filter->field, $filter->value);
@@ -76,10 +76,10 @@ class Item_familys extends CI_Controller
     }
     //AUTO ID
     public function autoid(){
-        $sql = $this->db->query("SELECT max(id) as kode FROM item_familys");
+        $sql = $this->db->query("SELECT max(id) as kode FROM item_process_flow");
         $row = $sql->row();
-        $kode = substr($row->kode,1);
-        $autoid ="P". sprintf("%02s", $kode + 1);
+        $kode = substr($row->kode,2);
+        $autoid ="FP". sprintf("%03s", $kode + 1);
         echo $autoid;
     }
     //CREATE DATA
@@ -88,7 +88,7 @@ class Item_familys extends CI_Controller
         if ($this->input->post()) {
             if ($this->form_validation->run() == TRUE) {
                 $post   = $this->input->post();
-                $send   = $this->crud->create('item_familys', $post);
+                $send   = $this->crud->create('item_process_flow', $post);
                 echo $send;
             } else {
                 show_error(validation_errors());
@@ -103,7 +103,7 @@ class Item_familys extends CI_Controller
         if ($this->input->post()) {
             $id   = base64_decode($this->input->get('id'));
             $post = $this->input->post();
-            $send = $this->crud->update('item_familys', ["id" => $id], $post);
+            $send = $this->crud->update('item_process_flow', ["id" => $id], $post);
             echo $send;
         } else {
             show_error("Cannot Process your request");
@@ -113,7 +113,7 @@ class Item_familys extends CI_Controller
     public function delete()
     {
         $data = $this->input->post();
-        $send = $this->crud->delete('item_familys', $data);
+        $send = $this->crud->delete('item_process_flow', $data);
         echo $send;
     }
     //PRINT & EXCEL DATA
@@ -122,16 +122,16 @@ class Item_familys extends CI_Controller
         if ($option == "excel") {
             $format  = date("Ymd");
             header("Content-type: application/vnd-ms-excel");
-            header("Content-Disposition: attachment; filename=item_familys_$format.xls");
+            header("Content-Disposition: attachment; filename=item_process_flow_$format.xls");
         }
         //Config
         $this->db->select('*');
         $this->db->from('config');
         $config = $this->db->get()->row();
 
-        $this->db->select('a.*, b.name as item_category_name');
-        $this->db->from('item_familys a');
-        $this->db->join('item_categories b', 'a.item_category_id = b.id');
+        $this->db->select('a.*, b.name as item_process_name');
+        $this->db->from('item_process_flow a');
+        $this->db->join('item_process b', 'a.item_process_id = b.id');
         $this->db->where('a.deleted', 0);
         $this->db->order_by('a.id', 'ASC');
         $records = $this->db->get()->result_array();
@@ -161,24 +161,24 @@ class Item_familys extends CI_Controller
             <tr>
                 <th width="20">No</th>
                 <th>ID</th>
-                <th>Name</th>
-                <th>Product Family code</th>
-                <th>Account No.</th>
-                <th>Account Name</th>
-                <th>Category</th>
-                <th>Description</th>
+                <th>Process ID</th>
+                <th>Process Name</th>
+                <th>Type A</th>
+                <th>Type B</th>
+                <th>Type C</th>
+                <th>Type D</th>
             </tr>';
         $no = 1;
         foreach ($records as $data) {
             $html .= '<tr>
                     <td>' . $no . '</td>
                     <td>' . $data['id'] . '</td>
-                    <td>' . $data['name'] . '</td>
-                    <td>' . $data['number'] . '</td>
-                    <td>' . $data['account_number'] . '</td>
-                    <td>' . $data['account_name'] . '</td>
-                    <td>' . $data['item_category_name'] . '</td>
-                    <td>' . $data['description'] . '</td>';
+                    <td>' . $data['item_process_id'] . '</td>
+                    <td>' . $data['item_process_name'] . '</td>
+                    <td>' . $data['type_a'] . '</td>
+                    <td>' . $data['type_b'] . '</td>
+                    <td>' . $data['type_c'] . '</td>
+                    <td>' . $data['type_d'] . '</td>';
             $no++;
         }
         $html .= '</table></body></html>';
