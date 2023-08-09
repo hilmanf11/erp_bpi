@@ -12,7 +12,7 @@ class Item_process_flow extends CI_Controller
         $this->load->library('session');
         $this->load->model('crud');
         //VALIDASI FORM
-        $this->form_validation->set_rules('item_process_id', 'Process', 'required|min_length[1]|max_length[20]|is_unique[item_process_flow.item_process_id]');
+        $this->form_validation->set_rules('name', 'Name', 'required|min_length[1]|max_length[20]|is_unique[item_process_flow.name]');
     }
     //HALAMAN UTAMA
     public function index()
@@ -34,7 +34,6 @@ class Item_process_flow extends CI_Controller
         $send = $this->crud->reads('item_process_flow', ["name" => $post]);
         echo json_encode($send);
     }
-    
     //GET DATATABLES
     public function datatables()
     {
@@ -48,20 +47,15 @@ class Item_process_flow extends CI_Controller
             $offset = ($page - 1) * $rows;
             $result = array();
             //Select Query
-            $this->db->select('a.*, b.name as item_process_name');
-            $this->db->from('item_process_flow a');
-            $this->db->join('item_process b', 'a.item_process_id = b.id');
-            $this->db->where('a.deleted', 0);
+            $this->db->select('*');
+            $this->db->from('item_process_flow');
+            $this->db->where('deleted', 0);
             if (@count($filters) > 0) {
                 foreach ($filters as $filter) {
-                    if($filter->field == "item_process_name"){
-                        $this->db->like("b.id", $filter->value);
-                    }else{
-                        $this->db->like("a.".$filter->field, $filter->value);
-                    }
+                    $this->db->like($filter->field, $filter->value);
                 }
             }
-            $this->db->order_by('a.id', 'ASC');
+            $this->db->order_by('id', 'asc');
             //Total Data
             $totalRows = $this->db->count_all_results('', false);
             //Limit 1 - 10
@@ -79,7 +73,7 @@ class Item_process_flow extends CI_Controller
         $sql = $this->db->query("SELECT max(id) as kode FROM item_process_flow");
         $row = $sql->row();
         $kode = substr($row->kode,2);
-        $autoid ="FP". sprintf("%03s", $kode + 1);
+        $autoid ="TP". sprintf("%02s", $kode + 1);
         echo $autoid;
     }
     //CREATE DATA
@@ -128,12 +122,10 @@ class Item_process_flow extends CI_Controller
         $this->db->select('*');
         $this->db->from('config');
         $config = $this->db->get()->row();
-
-        $this->db->select('a.*, b.name as item_process_name');
-        $this->db->from('item_process_flow a');
-        $this->db->join('item_process b', 'a.item_process_id = b.id');
-        $this->db->where('a.deleted', 0);
-        $this->db->order_by('a.id', 'ASC');
+        $this->db->select('*');
+        $this->db->from('item_process_flow');
+        $this->db->where('deleted', 0);
+        $this->db->order_by('id', 'ASC');
         $records = $this->db->get()->result_array();
         $html = '<html><head><title>Print Data</title></head><style>body {font-family: Arial, Helvetica, sans-serif;}#customers {border-collapse: collapse;width: 100%;font-size: 12px;}#customers td, #customers th {border: 1px solid #ddd;padding: 2px;}#customers tr:nth-child(even){background-color: #f2f2f2;}#customers tr:hover {background-color: #ddd;}#customers th {padding-top: 2px;padding-bottom: 2px;text-align: left;color: black;}</style><body>
         <center>
@@ -160,25 +152,25 @@ class Item_process_flow extends CI_Controller
         <table id="customers" border="1">
             <tr>
                 <th width="20">No</th>
-                <th>ID</th>
-                <th>Process ID</th>
-                <th>Process Name</th>
-                <th>Type A</th>
-                <th>Type B</th>
-                <th>Type C</th>
-                <th>Type D</th>
+                <th>Type ID</th>
+                <th>Type Name</th>
+                <th>INJECTION</th>
+                <th>ASSEMBLY</th>
+                <th>SUBCONT</th>
+                <th>RECEIVING SUBCONT</th>
+                <th>PACKAGING</th>
             </tr>';
         $no = 1;
         foreach ($records as $data) {
             $html .= '<tr>
                     <td>' . $no . '</td>
                     <td>' . $data['id'] . '</td>
-                    <td>' . $data['item_process_id'] . '</td>
-                    <td>' . $data['item_process_name'] . '</td>
-                    <td>' . $data['type_a'] . '</td>
-                    <td>' . $data['type_b'] . '</td>
-                    <td>' . $data['type_c'] . '</td>
-                    <td>' . $data['type_d'] . '</td>';
+                    <td>' . $data['name'] . '</td>
+                    <td>' . $data['process_a'] . '</td>
+                    <td>' . $data['process_b'] . '</td>
+                    <td>' . $data['process_c'] . '</td>
+                    <td>' . $data['process_d'] . '</td>
+                    <td>' . $data['process_e'] . '</td>';
             $no++;
         }
         $html .= '</table></body></html>';

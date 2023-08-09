@@ -3,13 +3,13 @@
     <thead>
         <tr>
             <th rowspan="2" field="ck" checkbox="true"></th>
-            <th rowspan="2" data-options="field:'id',width:80,align:'center'">ID</th>
-            <th rowspan="2" data-options="field:'item_process_id',width:150,halign:'center'">Process ID</th>
-            <th rowspan="2" data-options="field:'item_process_name',width:150,halign:'center'">Process Name</th>
-            <th rowspan="2" data-options="field:'type_a',width:100,halign:'center'">Type A</th>
-            <th rowspan="2" data-options="field:'type_b',width:100,halign:'center'">Type B</th>
-            <th rowspan="2" data-options="field:'type_c',width:100,halign:'center'">Type C</th>
-            <th rowspan="2" data-options="field:'type_d',width:100,halign:'center'">Type D</th>
+            <th rowspan="2" data-options="field:'id',width:80,align:'center'">Type ID</th>
+            <th rowspan="2" data-options="field:'name',width:100,halign:'center'">Type Name</th>
+            <th rowspan="2" data-options="field:'process_a',width:150,halign:'center'">INJECTION</th>
+            <th rowspan="2" data-options="field:'process_b',width:150,halign:'center'">ASSEMBLY</th>
+            <th rowspan="2" data-options="field:'process_c',width:150,halign:'center'">SUBCONT</th>
+            <th rowspan="2" data-options="field:'process_d',width:150,halign:'center'">RECEIVING SUBCONT</th>
+            <th rowspan="2" data-options="field:'process_e',width:150,halign:'center'">PACKAGING</th>
             <th colspan="2" data-options="field:'',width:100,halign:'center'"> Created</th>
             <th colspan="2" data-options="field:'',width:100,halign:'center'"> Updated</th>
         </tr>
@@ -31,28 +31,32 @@
         <fieldset style="width:100%; border:1px solid #d0d0d0; margin-bottom: 10px; border-radius:4px; float: left;">
             <legend><b>Form Data</b></legend>
             <div class="fitem">
-                <span style="width:35%; display:inline-block;">ID</span>
+                <span style="width:35%; display:inline-block;">Type ID</span>
                 <input style="width:60%;" name="id" id="id" required="" class="easyui-textbox" readonly>
             </div>
             <div class="fitem">
-                <span style="width:35%; display:inline-block;">Process Name</span>
-                <input style="width:60%;" name="item_process_id" id="item_process_id" required="" class="easyui-textbox">
+                <span style="width:35%; display:inline-block;">Type Name</span>
+                <input style="width:60%;" name="name" id="item_process_id" required="" class="easyui-textbox">
             </div>
             <div class="fitem">
-                <span style="width:35%; display:inline-block;">Type A</span>
-                <input style="width:60%;" name="type_a" id="type_a" class="easyui-textbox">
+                <span style="width:35%; display:inline-block;">INJECTION</span>
+                <input style="width:60%;" name="process_a" id="process_a" class="easyui-textbox">
             </div>
             <div class="fitem">
-                <span style="width:35%; display:inline-block;">Type B</span>
-                <input style="width:60%;" name="type_b" id="type_b" class="easyui-textbox">
+                <span style="width:35%; display:inline-block;">ASSEMBLY</span>
+                <input style="width:60%;" name="process_b" id="process_b" class="easyui-textbox">
             </div>
             <div class="fitem">
-                <span style="width:35%; display:inline-block;">Type C</span>
-                <input style="width:60%;" name="type_c" id="type_c" class="easyui-textbox">
+                <span style="width:35%; display:inline-block;">SUBCONT</span>
+                <input style="width:60%;" name="process_c" id="process_c" class="easyui-textbox">
             </div>
             <div class="fitem">
-                <span style="width:35%; display:inline-block;">Type D</span>
-                <input style="width:60%;" name="type_d" id="type_d" class="easyui-textbox">
+                <span style="width:35%; display:inline-block;">RECEIVING SUBCONT</span>
+                <input style="width:60%;" name="process_d" id="process_d" class="easyui-textbox">
+            </div>
+            <div class="fitem">
+                <span style="width:35%; display:inline-block;">PACKAGING</span>
+                <input style="width:60%;" name="process_e" id="process_e" class="easyui-textbox">
             </div>
         </fieldset>
     </form>
@@ -165,12 +169,5 @@
                 }
             }]
         });
-    });
-
-    $('#item_process_id').combobox({
-        url:'<?= base_url('master/item_process/reads'); ?>',
-        valueField:'id',
-        textField:'name',
-        prompt: 'Choose Process',
     });
 </script>
