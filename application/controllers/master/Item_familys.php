@@ -28,10 +28,10 @@ class Item_familys extends CI_Controller
         }
     }
     //GET DATA
-    public function reads()
+    public function reads($item_category_id)
     {
         $post = isset($_POST['q']) ? $_POST['q'] : "";
-        $send = $this->crud->reads('item_familys', ["name" => $post]);
+        $send = $this->crud->reads('item_familys', ["name" => $post],["item_category_id" => $item_category_id]);
         echo json_encode($send);
     }
     

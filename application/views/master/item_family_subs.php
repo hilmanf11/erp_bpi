@@ -171,12 +171,13 @@
         valueField:'id',
         textField:'name',
         prompt: 'Choose Category',
-    });
-
-    $('#item_family_id').combobox({
-        url:'<?= base_url('master/item_familys/reads'); ?>',
-        valueField:'id',
-        textField:'name',
-        prompt: 'Choose Product Family',
+        onSelect: function(category){
+            $('#item_family_id').combobox({
+                url:'<?= base_url('master/item_familys/reads/'); ?>' + category.id,
+                valueField:'id',
+                textField:'name',
+                prompt: 'Choose Product Family',
+            });
+        }
     });
 </script>
