@@ -12,7 +12,7 @@ class Item_boxs extends CI_Controller
         $this->load->library('session');
         $this->load->model('crud');
         //VALIDASI FORM
-        $this->form_validation->set_rules('name', 'Name', 'required|min_length[1]|max_length[20]|is_unique[item_boxs.name]');
+        // $this->form_validation->set_rules('name', 'Name', 'required|min_length[1]|max_length[50]|is_unique[item_boxs.name]');
     }
     //HALAMAN UTAMA
     public function index()
@@ -86,12 +86,15 @@ class Item_boxs extends CI_Controller
     public function create()
     {
         if ($this->input->post()) {
-            if ($this->form_validation->run() == TRUE) {
-                $post   = $this->input->post();
-                $send   = $this->crud->create('item_boxs', $post);
-                echo $send;
+            $data = $this->input->post();
+
+            $item_boxs = $this->crud->read('item_boxs', [], ["name" => $data['name'], "size" => $data['size'], "color" => $data['color'], "material" => $data['material']]);
+
+            if (!empty($item_boxs->name)) {
+                echo json_encode(array("title" => "Duplicated", "message" => " is Duplicate Data", "theme" => "error"));
             } else {
-                show_error(validation_errors());
+                $send   = $this->crud->create('item_boxs', $data);
+                echo $send;
             }
         } else {
             show_error("Cannot Process your request");
@@ -144,8 +147,7 @@ class Item_boxs extends CI_Controller
                             <img src="' . $config->favicon . '" width="30">
                         </td>
                         <td style="font-size: 14px; text-align: left; margin:2px;">
-                            <b>' . $config->name . '</b><br>
-                            <small>MASTER UNIT OF MEASURE</small>
+                            <b>' . $config->name . '</b>
                         </td>
                     </tr>
                 </table>
@@ -154,9 +156,11 @@ class Item_boxs extends CI_Controller
                 Print Date ' . date("d M Y H:m:s") . ' <br>
                 Print By ' . $this->session->username . '  
             </div>
+            <br><br>
+            <div style="float: centet; font-size: 16px; text-align: center;">
+                <h3>MASTER BOX</h3>
+            </div>
         </center>
-        <br><br><br>
-        
         <table id="customers" border="1">
             <tr>
                 <th width="20">No</th>

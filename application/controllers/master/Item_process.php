@@ -136,8 +136,7 @@ class Item_process extends CI_Controller
                             <img src="' . $config->favicon . '" width="30">
                         </td>
                         <td style="font-size: 14px; text-align: left; margin:2px;">
-                            <b>' . $config->name . '</b><br>
-                            <small>MASTER UNIT OF MEASURE</small>
+                            <b>' . $config->name . '</b>
                         </td>
                     </tr>
                 </table>
@@ -146,8 +145,11 @@ class Item_process extends CI_Controller
                 Print Date ' . date("d M Y H:m:s") . ' <br>
                 Print By ' . $this->session->username . '  
             </div>
+            <br><br>
+            <div style="float: centet; font-size: 16px; text-align: center;">
+                <h3>MASTER PROCESS</h3>
+            </div>
         </center>
-        <br><br><br>
         
         <table id="customers" border="1">
             <tr>

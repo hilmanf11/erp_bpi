@@ -1,7 +1,7 @@
 <?php
 date_default_timezone_set("Asia/Bangkok");
 defined('BASEPATH') or exit('No direct script access allowed');
-class Item_rm extends CI_Controller
+class item_fg extends CI_Controller
 {
     public function __construct()
     {
@@ -12,7 +12,7 @@ class Item_rm extends CI_Controller
         $this->load->library('session');
         $this->load->model('crud');
         //VALIDASI FORM
-        $this->form_validation->set_rules('number', 'Product No.', 'required|min_length[1]|max_length[20]|is_unique[item_rm.number]');
+        $this->form_validation->set_rules('number', 'Product No.', 'required|min_length[1]|max_length[20]|is_unique[item_fg.number]');
     }
     //HALAMAN UTAMA
     public function index()
@@ -22,7 +22,7 @@ class Item_rm extends CI_Controller
         } elseif ($this->checkuserAccess($this->id_menu()) > 0) {
             $data['button'] = $this->getbutton($this->id_menu());
             $this->load->view('template/header', $data);
-            $this->load->view('master/item_rm');
+            $this->load->view('master/item_fg');
         } else {
             redirect('error_access');
         }
@@ -31,7 +31,7 @@ class Item_rm extends CI_Controller
     public function reads()
     {
         $post = isset($_POST['q']) ? $_POST['q'] : "";
-        $send = $this->crud->reads('item_rm', ["name" => $post]);
+        $send = $this->crud->reads('item_fg', ["name" => $post]);
         echo json_encode($send);
     }
     
@@ -48,17 +48,14 @@ class Item_rm extends CI_Controller
             $offset = ($page - 1) * $rows;
             $result = array();
             //Select Query
-            $this->db->select('a.*, b.name as item_category_name, c.name as item_family_name');
-            $this->db->from('item_rm a');
-            $this->db->join('item_categories b', 'a.item_category_id = b.id');
-            $this->db->join('item_familys c', 'a.item_family_id = c.id');
+            $this->db->select('a.*, b.name as item_family_name');
+            $this->db->from('item_fg a');
+            $this->db->join('item_familys b', 'a.item_family_id = b.id');
             $this->db->where('a.deleted', 0);
             if (@count($filters) > 0) {
                 foreach ($filters as $filter) {
-                    if($filter->field == "item_category_name"){
+                    if($filter->field == "item_family_name"){
                         $this->db->like("b.id", $filter->value);
-                    }elseif($filter->field == "item_family_name"){
-                        $this->db->like("c.id", $filter->value);
                     }else{
                         $this->db->like("a.".$filter->field, $filter->value);
                     }
@@ -78,11 +75,11 @@ class Item_rm extends CI_Controller
         }
     }
     //AUTO ID
-    public function autoid($category,$family){
+    public function autoid($family){
         $month = date('my');
-        $combine = $category."-".$family;
+        $combine = "FG-".$family;
         $format = "BPI".$combine.$month;
-        $sql = $this->db->query("SELECT max(id) as kode FROM item_rm WHERE id LIKE '%$format%'");
+        $sql = $this->db->query("SELECT max(id) as kode FROM item_fg WHERE id LIKE '%$format%'");
         $row = $sql->row();
         if ($row->kode == ""){
             $kode = 0;
@@ -98,7 +95,9 @@ class Item_rm extends CI_Controller
         if ($this->input->post()) {
             if ($this->form_validation->run() == TRUE) {
                 $post   = $this->input->post();
-                $send   = $this->crud->create('item_rm', $post);
+                $attachment = $this->crud->upload('attachment', ["pdf"], 'assets/document/item_fg/', ["id" => $post['id']], "item_fg", "attachment");
+                $postFinal = array_merge($post, ["attachment" => $attachment]);
+                $send   = $this->crud->create('item_fg', $postFinal);
                 echo $send;
             } else {
                 show_error(validation_errors());
@@ -113,7 +112,9 @@ class Item_rm extends CI_Controller
         if ($this->input->post()) {
             $id   = base64_decode($this->input->get('id'));
             $post = $this->input->post();
-            $send = $this->crud->update('item_rm', ["id" => $id], $post);
+            $attachment = $this->crud->upload('attachment', ["pdf"], 'assets/document/item_fg/', ["id" => $post['id']], "item_fg", "attachment");
+            $postFinal = array_merge($post, ["attachment" => $attachment]);
+            $send = $this->crud->update('item_fg', ["id" => $id], $postFinal);
             echo $send;
         } else {
             show_error("Cannot Process your request");
@@ -123,8 +124,17 @@ class Item_rm extends CI_Controller
     public function delete()
     {
         $data = $this->input->post();
-        $send = $this->crud->delete('item_rm', $data);
-        echo $send;
+                                //Table //Like //Field       //Where
+        $file = $this->crud->read('item_fg', [], ["id" => $data['id']]);
+        $send = $this->crud->delete('item_fg', $data);
+        $attachment = @$file->attachment;
+        if (!unlink("$attachment")){
+            echo ("Error deleting $attachment");
+        } else {
+            echo ("Success deleting $attachment");
+        }
+        // @unlink($attachment);
+        // echo $send;
     }
     //UPLOAD DATA
     public function upload()
@@ -142,12 +152,22 @@ class Item_rm extends CI_Controller
                 //excel
                 'number' => $data->val($i, 2),
                 'name' => $data->val($i, 3),
-                'uom' => $data->val($i, 4),
-                'item_category_id' => $data->val($i, 5),
+                'number_customer' => $data->val($i, 4),
+                'process' => $data->val($i, 5),
                 'item_family_id' => $data->val($i, 6),
-                'account_number' => $data->val($i, 7),
-                'account_name' => $data->val($i, 8),
-                'status' => $data->val($i, 9)
+                'boxs' => $data->val($i, 7),
+                'polybag' => $data->val($i, 8),
+                'box_label' => $data->val($i, 9),
+                'ng_ration' => $data->val($i, 10),
+                'is_no' => $data->val($i, 11),
+                'weight' => $data->val($i, 12),
+                'color' => $data->val($i, 13),
+                'leadtime' => $data->val($i, 14),
+                'mpq' => $data->val($i, 15),
+                'moq' => $data->val($i, 16),
+                'qty_box' => $data->val($i, 17),
+                'attachment' => $data->val($i, 18),
+                'status' => $data->val($i, 19)
             );
         }
         $datas['total'] = count($datas);
@@ -156,13 +176,13 @@ class Item_rm extends CI_Controller
     }
     public function uploadclearFailed()
     {
-        @unlink('excel/failed/item_rm.txt');
+        @unlink('excel/failed/item_fg.txt');
     }
     public function uploadcreateFailed()
     {
         if ($this->input->post()) {
             $message = $this->input->post('message');
-            $textFailed = fopen('excel/failed/item_rm.txt', 'a');
+            $textFailed = fopen('excel/failed/item_fg.txt', 'a');
             fwrite($textFailed, $message . "\n");
             fclose($textFailed);
         }
@@ -170,7 +190,7 @@ class Item_rm extends CI_Controller
     //UPLOAD DOWNLOAD FAILED
     public function uploadDownloadFailed()
     {
-        $file = "excel/failed/item_rm.txt";
+        $file = "excel/failed/item_fg.txt";
         header('Content-Description: File Failed');
         header('Content-Disposition: attachment; filename=' . basename($file));
         header('Expires: 0');
@@ -187,15 +207,14 @@ class Item_rm extends CI_Controller
             $data = $this->input->post('data');
 
             //Cek Process Number          //table       //field        //field excel
-            $item_rm = $this->crud->read('item_rm', [], ["number" => $data['number']]);
-            $category = $this->crud->read('item_categories', [], ["id" => $data['item_category_id']]);
+            $item_fg = $this->crud->read('item_fg', [], ["number" => $data['number']]);
             $product_family = $this->crud->read('item_familys', [], ["id" => $data['item_family_id']]);
 
             //AUTOID
             $month = date('my');
-            $combine = @$category->number."-".@$product_family->number;
+            $combine = "FG-".@$product_family->number;
             $format = "BPI".$combine.$month;
-            $sql = $this->db->query("SELECT max(id) as kode FROM item_rm WHERE id LIKE '%$format%'");
+            $sql = $this->db->query("SELECT max(id) as kode FROM item_fg WHERE id LIKE '%$format%'");
             $row = $sql->row();
             if ($row->kode == ""){
                 $kode = 0;
@@ -204,11 +223,9 @@ class Item_rm extends CI_Controller
             }
             $autoid =$format. sprintf("%04s", $kode + 1);
 
-            if (empty($category->number)) {
-                echo json_encode(array("title" => "Not Found", "message" => "Category " . $data['item_category_id'] . " Not Found", "theme" => "error"));
-            } elseif (empty($product_family->number)) {
+            if (empty($product_family->number)) {
                 echo json_encode(array("title" => "Not Found", "message" => "Product Family " . $data['item_family_id'] . " Not Found", "theme" => "error"));
-            } elseif (!empty($item_rm->number)) {
+            } elseif (!empty($item_fg->number)) {
                 echo json_encode(array("title" => "Duplicated", "message" => " Product No. " . $data['number'] . " is Duplicate Data", "theme" => "error"));
             } else {
                 $dataFinal = array(
@@ -216,14 +233,24 @@ class Item_rm extends CI_Controller
                     "id" => $autoid,
                     "number" => $data['number'],
                     "name" => $data['name'],
-                    "uom" => $data['uom'],
-                    "item_category_id" => $data['item_category_id'],
+                    "number_customer" => $data['number_customer'],
+                    "process" => $data['process'],
                     "item_family_id" => $data['item_family_id'],
-                    "account_number" => $data['account_number'],
-                    "account_name" => $data['account_name'],
+                    "boxs" => $data['boxs'],
+                    "polybag" => $data['polybag'],
+                    "box_label" => $data['box_label'],
+                    "ng_ration" => $data['ng_ration'],
+                    "is_no" => $data['is_no'],
+                    "weight" => $data['weight'],
+                    "color" => $data['color'],
+                    "leadtime" => $data['leadtime'],
+                    "mpq" => $data['mpq'],
+                    "moq" => $data['moq'],
+                    "qty_box" => $data['qty_box'],
+                    "attachment" => $data['attachment'],
                     "status" => $data['status'],
                 );
-                $send   = $this->crud->create('item_rm', $dataFinal);
+                $send   = $this->crud->create('item_fg', $dataFinal);
                 echo $send;
             }
         }
@@ -234,21 +261,20 @@ class Item_rm extends CI_Controller
         if ($option == "excel") {
             $format  = date("Ymd");
             header("Content-type: application/vnd-ms-excel");
-            header("Content-Disposition: attachment; filename=item_rm_$format.xls");
+            header("Content-Disposition: attachment; filename=item_fg_$format.xls");
         }
         //Config
         $this->db->select('*');
         $this->db->from('config');
         $config = $this->db->get()->row();
 
-        $this->db->select('a.*, b.name as item_category_name, c.name as item_family_name');
-        $this->db->from('item_rm a');
-        $this->db->join('item_categories b', 'a.item_category_id = b.id');
-        $this->db->join('item_familys c', 'a.item_family_id = c.id');
+        $this->db->select('a.*, b.name as item_family_name');
+        $this->db->from('item_fg a');
+        $this->db->join('item_familys b', 'a.item_family_id = b.id');
         $this->db->where('a.deleted', 0);
         $this->db->order_by('a.id', 'ASC');
         $records = $this->db->get()->result_array();
-        $html = '<html><head><title>Print Data</title></head><style>body {font-family: Arial, Helvetica, sans-serif;}#item_rm {border-collapse: collapse;width: 100%;font-size: 12px;}#item_rm td, #item_rm th {border: 1px solid #ddd;padding: 2px;}#item_rm tr:nth-child(even){background-color: #f2f2f2;}#item_rm tr:hover {background-color: #ddd;}#item_rm th {padding-top: 2px;padding-bottom: 2px;text-align: left;color: black;}</style><body>
+        $html = '<html><head><title>Print Data</title></head><style>body {font-family: Arial, Helvetica, sans-serif;}#item_fg {border-collapse: collapse;width: 100%;font-size: 12px;}#item_fg td, #item_fg th {border: 1px solid #ddd;padding: 2px;}#item_fg tr:nth-child(even){background-color: #f2f2f2;}#item_fg tr:hover {background-color: #ddd;}#item_fg th {padding-top: 2px;padding-bottom: 2px;text-align: left;color: black;}</style><body>
         <center>
             <div style="float: left; font-size: 12px; text-align: left;">
                 <table style="width: 100%;">
@@ -268,21 +294,31 @@ class Item_rm extends CI_Controller
             </div>
             <br><br>
             <div style="float: centet; font-size: 16px; text-align: center;">
-                <h3>MASTER ITEM RAW MATERIAL</h3>
+                <h3>MASTER ITEM FINISH GOOD</h3>
             </div>
         </center>
         
-        <table id="item_rm" border="1">
+        <table id="item_fg" border="1">
             <tr>
                 <th width="20">No</th>
                 <th>Product ID</th>
                 <th>Product No.</th>
-                <th>Part Name</th>
-                <th>UOM</th>
-                <th>Category</th>
-                <th>Product Family</th>
-                <th>Account No.</th>
-                <th>Account Name</th>
+                <th>Product Name</th>
+                <th>Product Customer</th>
+                <th>Process Type</th>
+                <th>product Family</th>
+                <th>Box</th>
+                <th>Polybag Label</th>
+                <th>Box Label</th>
+                <th>NG Ratio (%)</th>
+                <th>IS No.</th>
+                <th>Weight (Gram)</th>
+                <th>Color</th>
+                <th>Leadtime (Day)</th>
+                <th>MPQ</th>
+                <th>MOQ</th>
+                <th>Qty/Box</th>
+                <th>Attachment</th>
                 <th>Status</th>
             </tr>';
         $no = 1;
@@ -292,11 +328,21 @@ class Item_rm extends CI_Controller
                     <td>' . $data['id'] . '</td>
                     <td>' . $data['number'] . '</td>
                     <td>' . $data['name'] . '</td>
-                    <td>' . $data['uom'] . '</td>
-                    <td>' . $data['item_category_name'] . '</td>
+                    <td>' . $data['number_customer'] . '</td>
+                    <td>' . $data['process'] . '</td>
                     <td>' . $data['item_family_name'] . '</td>
-                    <td>' . $data['account_number'] . '</td>
-                    <td>' . $data['account_name'] . '</td>
+                    <td>' . $data['boxs'] . '</td>
+                    <td>' . $data['polybag'] . '</td>
+                    <td>' . $data['box_label'] . '</td>
+                    <td>' . $data['ng_ration'] . '</td>
+                    <td>' . $data['is_no'] . '</td>
+                    <td>' . $data['weight'] . '</td>
+                    <td>' . $data['color'] . '</td>
+                    <td>' . $data['leadtime'] . '</td>
+                    <td>' . $data['mpq'] . '</td>
+                    <td>' . $data['moq'] . '</td>
+                    <td>' . $data['qty_box'] . '</td>
+                    <td>' . $data['attachment'] . '</td>
                     <td>' . $data['status'] . '</td>';
             $no++;
         }

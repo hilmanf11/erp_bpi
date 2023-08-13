@@ -3,15 +3,26 @@
     <thead>
         <tr>
             <th rowspan="2" field="ck" checkbox="true"></th>
-            <th rowspan="2" data-options="field:'id',width:150,align:'center'">Part ID</th>
-            <th rowspan="2" data-options="field:'number',width:150,halign:'center'">Part No.</th>
-            <th rowspan="2" data-options="field:'name',width:100,halign:'center'">Part Name</th>
-            <th rowspan="2" data-options="field:'uom',width:100,halign:'center'">UOM</th>
-            <th rowspan="2" data-options="field:'item_category_name',width:150,halign:'center'">Category</th>
-            <th rowspan="2" data-options="field:'item_family_name',width:150,halign:'center'">Product Family</th>
-            <th rowspan="2" data-options="field:'account_number',width:150,halign:'center'">Account No.</th>
-            <th rowspan="2" data-options="field:'account_name',width:150,halign:'center'">Account Name</th>
-            <th rowspan="2" data-options="field:'status',width:150,halign:'center', styler:cellStyler, formatter:cellFormatter">Status</th>
+            <th rowspan="2" data-options="field:'id',width:150,align:'center'">Product ID</th>
+            <th rowspan="2" data-options="field:'number',width:150,halign:'center'">Product No.</th>
+            <th rowspan="2" data-options="field:'name',width:150,halign:'center'">Product Name</th>
+            <th rowspan="2" data-options="field:'number_customer',width:150,halign:'center'">Product Customer</th>
+            <!-- <th rowspan="2" data-options="field:'name',width:100,halign:'center'">Total Mold</th> -->
+            <th rowspan="2" data-options="field:'process',width:100,halign:'center'">Process Type</th>
+            <th rowspan="2" data-options="field:'item_family_name',width:100,halign:'center'">Product Family</th>
+            <th rowspan="2" data-options="field:'boxs',width:100,halign:'center'">Box</th>
+            <th rowspan="2" data-options="field:'polybag',width:100,halign:'center'">Polybag Label</th>
+            <th rowspan="2" data-options="field:'box_label',width:100,halign:'center'">Box Label</th>
+            <th rowspan="2" data-options="field:'ng_ration',width:90,halign:'center'">NG Ratio (%)</th>
+            <th rowspan="2" data-options="field:'is_no',width:150,halign:'center'">IS No.</th>
+            <th rowspan="2" data-options="field:'weight',width:100,halign:'center'">Weight (gram)</th>
+            <th rowspan="2" data-options="field:'color',width:110,halign:'center'">Color</th>
+            <th rowspan="2" data-options="field:'leadtime',width:110,halign:'center'">Lead Time (Day)</th>
+            <th rowspan="2" data-options="field:'mpq',width:50,halign:'center'">MPQ</th>
+            <th rowspan="2" data-options="field:'moq',width:50,halign:'center'">MOQ</th>
+            <th rowspan="2" data-options="field:'qty_box',width:80,halign:'center'">QTY/Box</th>
+            <th rowspan="2" data-options="field:'attachment',width:100,halign:'center'">Attachment</th>
+            <th rowspan="2" data-options="field:'status',width:100,halign:'center', styler:cellStyler, formatter:cellFormatter">Status</th>
             <th colspan="2" data-options="field:'',width:100,halign:'center'"> Created</th>
             <th colspan="2" data-options="field:'',width:100,halign:'center'"> Updated</th>
         </tr>
@@ -29,40 +40,94 @@
 </div>
 <!-- DIALOG SAVE AND UPDATE -->
 <div id="dlg_insert" class="easyui-dialog" title="Add New" data-options="closed: true,modal:true" style="width: 400px; padding:10px; top: 20px;">
-    <form id="frm_insert" method="post" novalidate>
+    <form id="frm_insert" method="post" novalidate enctype="multipart/form-data">
         <fieldset style="width:100%; border:1px solid #d0d0d0; margin-bottom: 10px; border-radius:4px; float: left;">
             <legend><b>Form Data</b></legend>
             <div class="fitem">
-                <span style="width:35%; display:inline-block;">Part ID</span>
+                <span style="width:35%; display:inline-block;">Product ID</span>
                 <input style="width:60%;" name="id" id="id" required="" class="easyui-textbox" readonly>
             </div>
             <div class="fitem">
-                <span style="width:35%; display:inline-block;">Part No.</span>
+                <span style="width:35%; display:inline-block;">Product No.</span>
                 <input style="width:60%;" name="number" id="number" required="" class="easyui-textbox">
             </div>
             <div class="fitem">
-                <span style="width:35%; display:inline-block;">Part Name</span>
+                <span style="width:35%; display:inline-block;">Product Name</span>
                 <input style="width:60%;" name="name" id="name" required="" class="easyui-textbox">
             </div>
             <div class="fitem">
-                <span style="width:35%; display:inline-block;">UOM</span>
+                <span style="width:35%; display:inline-block;">Product Customer</span>
+                <input style="width:60%;" name="number_customer" id="number_customer" class="easyui-textbox">
+            </div>
+            <!-- <div class="fitem">
+                <span style="width:35%; display:inline-block;">Total Mold</span>
                 <input style="width:60%;" name="uom" id="uom" required="" class="easyui-combobox">
-            </div>
+            </div> -->
             <div class="fitem">
-                <span style="width:35%; display:inline-block;">Category</span>
-                <input style="width:60%;" name="item_category_id" id="item_category_id" required="" class="easyui-combobox">
+                <span style="width:35%; display:inline-block;">Process Type</span>
+                <input style="width:60%;" name="process" id="process" required="" class="easyui-combobox">
             </div>
+            <!-- <div class="fitem">
+                <span style="width:35%; display:inline-block;">Category</span>
+                <input style="width:60%;" id="category" required="" class="easyui-combobox">
+            </div> -->
             <div class="fitem">
                 <span style="width:35%; display:inline-block;">Product Family</span>
                 <input style="width:60%;" name="item_family_id" id="item_family_id" required="" class="easyui-combobox">
             </div>
             <div class="fitem">
-                <span style="width:35%; display:inline-block;">Account No.</span>
-                <input style="width:60%;" name="account_number" id="account_number" class="easyui-textbox">
+                <span style="width:35%; display:inline-block;">Box</span>
+                <input style="width:60%;" name="boxs" id="boxs" required="" class="easyui-combobox">
             </div>
             <div class="fitem">
-                <span style="width:35%; display:inline-block;">Account Name</span>
-                <input style="width:60%;" name="account_name" id="account_name" class="easyui-textbox">
+                <span style="width:35%; display:inline-block;">Polybag</span>
+                <select style="width:60%;" name="polybag" id="polybag" required="" panelHeight="auto" class="easyui-combobox">
+                    <option value="Yes">Yes</option>
+                    <option value="No">No</option>
+                </select>
+            </div>
+            <div class="fitem">
+                <span style="width:35%; display:inline-block;">Box Label</span>
+                <select style="width:60%;" name="box_label" id="box_label" required="" panelHeight="auto" class="easyui-combobox">
+                    <option value="Yes">Yes</option>
+                    <option value="No">No</option>
+                </select>
+            </div>
+            <div class="fitem">
+                <span style="width:35%; display:inline-block;">NG Ratio (%)</span>
+                <input style="width:30%;" name="ng_ration" id="ng_ration" class="easyui-numberbox">
+            </div>
+            <div class="fitem">
+                <span style="width:35%; display:inline-block;">IS No.</span>
+                <input style="width:60%;" name="is_no" id="is_no" class="easyui-textbox">
+            </div>
+            <div class="fitem">
+                <span style="width:35%; display:inline-block;">Weight (Gram)</span>
+                <input style="width:30%;" name="weight" id="weight" class="easyui-numberbox">
+            </div>
+            <div class="fitem">
+                <span style="width:35%; display:inline-block;">Color</span>
+                <input style="width:60%;" name="color" id="color" required="" class="easyui-textbox">
+            </div>
+            <div class="fitem">
+                <span style="width:35%; display:inline-block;">Leadtime (Day)</span>
+                <input style="width:60%;" name="leadtime" id="leadtime" class="easyui-numberbox">
+            </div>
+            <div class="fitem">
+                <span style="width:35%; display:inline-block;">MPQ</span>
+                <input style="width:60%;" name="mpq" id="mpq" class="easyui-numberbox">
+            </div>
+            <div class="fitem">
+                <span style="width:35%; display:inline-block;">MOQ</span>
+                <input style="width:60%;" name="moq" id="moq" class="easyui-numberbox">
+            </div>
+            <div class="fitem">
+                <span style="width:35%; display:inline-block;">Qty/Box</span>
+                <input style="width:60%;" name="qty_box" id="qty_box" class="easyui-numberbox">
+            </div>
+            <div class="fitem">
+                <span style="width:35%; display:inline-block;">Attachment</span>
+                <input style="width:60%;" name="attachment" id="attachment" class="easyui-filebox">
             </div>
             <div class="fitem">
                 <span style="width:35%; display:inline-block;">Status</span>
@@ -96,14 +161,16 @@
 </div>
 
 <!-- PDF -->
-<iframe id="printout" src="<?= base_url('master/item_rm/print') ?>" style="width: 100%;" hidden></iframe>
+<iframe id="printout" src="<?= base_url('master/item_fg/print') ?>" style="width: 100%;" hidden></iframe>
 <script>
     //ADD DATA
     function add() {
         $('#dlg_insert').dialog('open');
-        url_save = '<?= base_url('master/item_rm/create') ?>';
+        url_save = '<?= base_url('master/item_fg/create') ?>';
         $('#frm_insert').form('clear');
         
+        $('#polybag').combobox('setValue', 'yes');
+        $('#box_label').combobox('setValue', 'yes');
         $('#status').combobox('setValue', '0');
     }
     //EDIT DATA
@@ -112,7 +179,7 @@
         if (row) {
             $('#dlg_insert').dialog('open');
             $('#frm_insert').form('load', row);
-            url_save = '<?= base_url('master/item_rm/update') ?>?id=' + btoa(row.id);
+            url_save = '<?= base_url('master/item_fg/update') ?>?id=' + btoa(row.id);
         } else {
             toastr.warning("Please select one of the data in the table first!", "Information");
         }
@@ -127,7 +194,7 @@
                         var row = rows[i];
                         $.ajax({
                             method: 'post',
-                            url: '<?= base_url('master/item_rm/delete') ?>',
+                            url: '<?= base_url('master/item_fg/delete') ?>',
                             data: {
                                 id: row.id
                             },
@@ -155,7 +222,7 @@
     }
     // DOWNLOAD
     function download_excel() {
-        window.location.assign('<?= base_url('template/tmp_item_rm.xls') ?>');
+        window.location.assign('<?= base_url('template/tmp_item_fg.xls') ?>');
     }
     //PRINT PDF
     function pdf() {
@@ -163,7 +230,7 @@
     }
     //PRINT EXCEL
     function excel() {
-        window.location.assign('<?= base_url('master/item_rm/print/excel') ?>');
+        window.location.assign('<?= base_url('master/item_fg/print/excel') ?>');
     }
     //RELOAD
     function reload() {
@@ -172,7 +239,7 @@
     $(function() {
         //SETTING DATAGRID EASYUI
         $('#dg').datagrid({
-            url: '<?= base_url('master/item_rm/datatables') ?>',
+            url: '<?= base_url('master/item_fg/datatables') ?>',
             pagination: true,
             clientPaging: false,
             remoteFilter: true,
@@ -206,33 +273,39 @@
         });
     });
 
-    $('#uom').combobox({
-        url:'<?= base_url('master/uom/reads'); ?>',
+    $('#process').combobox({
+        url:'<?= base_url('master/item_process/reads'); ?>',
         valueField:'name',
         textField:'name',
-        prompt: 'Choose Unit of Measure',
+        prompt: 'Choose Process Type',
     });
 
-    $('#item_category_id').combobox({
-        url:'<?= base_url('master/item_categories/reads_not_fg'); ?>',
+    $('#boxs').combobox({
+        url:'<?= base_url('master/item_boxs/reads'); ?>',
+        valueField:'name',
+        textField:'name',
+        prompt: 'Choose Boxs',
+    });
+
+    $('#color').combobox({
+        url:'<?= base_url('master/item_colors/reads'); ?>',
+        valueField:'name',
+        textField:'name',
+        prompt: 'Choose Colors',
+    });
+
+    $('#item_family_id').combobox({
+        url:'<?= base_url('master/item_familys/reads_fg/'); ?>',
         valueField:'id',
         textField:'name',
-        prompt: 'Choose Category',
-        onSelect: function(category){
-            $('#item_family_id').combobox({
-                url:'<?= base_url('master/item_familys/reads/'); ?>' + category.id,
-                valueField:'id',
-                textField:'name',
-                prompt: 'Choose Product Family',
-                onSelect: function(family) {
-                    $.ajax({
-                        type : "post",
-                        url : "<?= base_url('master/item_rm/autoid/')?>" + category.number + "/" + family.number,
-                        dataType : "html",
-                        success : function(response){
-                            $('#id').textbox('setValue', response);
-                        }
-                    });
+        prompt: 'Choose Product Family',
+        onSelect: function(family) {
+            $.ajax({
+                type : "post",
+                url : "<?= base_url('master/item_fg/autoid/')?>" + "/" + family.number,
+                dataType : "html",
+                success : function(response){
+                    $('#id').textbox('setValue', response);
                 }
             });
         }
@@ -260,14 +333,14 @@
             buttons: [{
                 text: 'List Failed',
                 handler: function() {
-                    window.open('<?= base_url('master/item_rm/uploadDownloadFailed') ?>', '_blank');
+                    window.open('<?= base_url('master/item_fg/uploadDownloadFailed') ?>', '_blank');
                 }
             }, {
                 text: 'Upload',
                 iconCls: 'icon-ok',
                 handler: function() {
                     $('#frm_upload').form('submit', {
-                        url: '<?= base_url('master/item_rm/upload') ?>',
+                        url: '<?= base_url('master/item_fg/upload') ?>',
                         onSubmit: function() {
                             if ($(this).form('validate') == false) {
                                 return $(this).form('validate');
@@ -282,7 +355,7 @@
                             $.messager.progress('close');
                             //Clear File
                             $.ajax({
-                                url: "<?= base_url('master/item_rm/uploadclearFailed') ?>"
+                                url: "<?= base_url('master/item_fg/uploadclearFailed') ?>"
                             });
                             var json = eval('(' + result + ')');
                             requestData(json.total, json);
@@ -297,7 +370,7 @@
                                     $.ajax({
                                         type: "POST",
                                         async: true,
-                                        url: "<?= base_url('master/item_rm/uploadCreate') ?>",
+                                        url: "<?= base_url('master/item_fg/uploadCreate') ?>",
                                         data: {
                                             "data": json[number - 1]
                                         },
@@ -315,7 +388,7 @@
                                                 $.ajax({
                                                     type: "POST",
                                                     async: true,
-                                                    url: "<?= base_url('master/item_rm/uploadcreateFailed') ?>",
+                                                    url: "<?= base_url('master/item_fg/uploadcreateFailed') ?>",
                                                     data: {
                                                         data: json[number - 1],
                                                         message: result.message
