@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: 127.0.0.1
--- Waktu pembuatan: 03 Agu 2023 pada 13.18
+-- Waktu pembuatan: 14 Agu 2023 pada 10.44
 -- Versi server: 10.4.27-MariaDB
 -- Versi PHP: 7.4.33
 
@@ -141,6 +141,309 @@ CREATE TABLE `currencies` (
   `status` tinyint(1) NOT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
+--
+-- Dumping data untuk tabel `currencies`
+--
+
+INSERT INTO `currencies` (`id`, `created_by`, `created_date`, `updated_by`, `updated_date`, `deleted`, `number`, `name`, `description`, `symbol`, `status`) VALUES
+('CR01', 'admin', '2023-08-07 20:11:40', NULL, NULL, 0, '', 'Rupiah', 'indo', 'Rp', 0),
+('CR02', 'admin', '2023-08-07 20:11:55', NULL, NULL, 0, '', 'Dollar', 'US', '$', 0);
+
+-- --------------------------------------------------------
+
+--
+-- Struktur dari tabel `item_boxs`
+--
+
+CREATE TABLE `item_boxs` (
+  `id` varchar(30) NOT NULL,
+  `created_by` varchar(50) DEFAULT NULL,
+  `created_date` datetime DEFAULT NULL,
+  `updated_by` varchar(50) DEFAULT NULL,
+  `updated_date` datetime DEFAULT NULL,
+  `deleted` tinyint(1) NOT NULL,
+  `item_kind_id` varchar(30) NOT NULL,
+  `name` varchar(50) DEFAULT NULL,
+  `size` varchar(50) DEFAULT NULL,
+  `color` varchar(30) DEFAULT NULL,
+  `material` varchar(30) DEFAULT NULL,
+  `status` tinyint(1) NOT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+--
+-- Dumping data untuk tabel `item_boxs`
+--
+
+INSERT INTO `item_boxs` (`id`, `created_by`, `created_date`, `updated_by`, `updated_date`, `deleted`, `item_kind_id`, `name`, `size`, `color`, `material`, `status`) VALUES
+('B001', 'admin', '2023-08-08 21:18:21', 'admin', '2023-08-08 21:18:34', 0, 'CB001', 'Test', '10', 'Merah', 'Plastik', 0),
+('B002', 'admin', '2023-08-11 17:02:53', NULL, NULL, 0, 'CB001', 'Test', '10', 'Biru', 'Besi', 0),
+('B003', 'admin', '2023-08-11 17:03:21', NULL, NULL, 0, 'CB001', 'Test', '10', 'Biru', 'Kayu', 0);
+
+-- --------------------------------------------------------
+
+--
+-- Struktur dari tabel `item_categories`
+--
+
+CREATE TABLE `item_categories` (
+  `id` varchar(30) NOT NULL,
+  `created_by` varchar(50) DEFAULT NULL,
+  `created_date` datetime DEFAULT NULL,
+  `updated_by` varchar(50) DEFAULT NULL,
+  `updated_date` datetime DEFAULT NULL,
+  `deleted` tinyint(1) NOT NULL,
+  `number` varchar(20) NOT NULL,
+  `name` varchar(50) NOT NULL,
+  `description` text DEFAULT NULL,
+  `status` tinyint(1) NOT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+--
+-- Dumping data untuk tabel `item_categories`
+--
+
+INSERT INTO `item_categories` (`id`, `created_by`, `created_date`, `updated_by`, `updated_date`, `deleted`, `number`, `name`, `description`, `status`) VALUES
+('C01', 'admin', '2023-08-10 09:28:20', NULL, NULL, 0, 'RM', 'RAW MATERAIL', '', 0),
+('C02', 'admin', '2023-08-10 09:28:35', NULL, NULL, 0, 'FG', 'FINISH GOOD', '', 0);
+
+-- --------------------------------------------------------
+
+--
+-- Struktur dari tabel `item_colors`
+--
+
+CREATE TABLE `item_colors` (
+  `id` varchar(30) NOT NULL,
+  `created_by` varchar(50) DEFAULT NULL,
+  `created_date` datetime DEFAULT NULL,
+  `updated_by` varchar(50) DEFAULT NULL,
+  `updated_date` datetime DEFAULT NULL,
+  `deleted` tinyint(1) NOT NULL,
+  `name` varchar(50) NOT NULL,
+  `description` text DEFAULT NULL,
+  `status` tinyint(1) NOT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+--
+-- Dumping data untuk tabel `item_colors`
+--
+
+INSERT INTO `item_colors` (`id`, `created_by`, `created_date`, `updated_by`, `updated_date`, `deleted`, `name`, `description`, `status`) VALUES
+('C001', 'admin', '2023-08-08 21:31:48', NULL, NULL, 0, 'Biru', 'Dongker', 0);
+
+-- --------------------------------------------------------
+
+--
+-- Struktur dari tabel `item_familys`
+--
+
+CREATE TABLE `item_familys` (
+  `id` varchar(30) NOT NULL,
+  `created_by` varchar(50) DEFAULT NULL,
+  `created_date` datetime DEFAULT NULL,
+  `updated_by` varchar(50) DEFAULT NULL,
+  `updated_date` datetime DEFAULT NULL,
+  `deleted` tinyint(1) NOT NULL,
+  `item_category_id` varchar(30) DEFAULT NULL,
+  `number` varchar(20) NOT NULL,
+  `account_number` varchar(30) DEFAULT NULL,
+  `account_name` varchar(30) DEFAULT NULL,
+  `name` varchar(50) NOT NULL,
+  `description` text DEFAULT NULL,
+  `status` tinyint(1) NOT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+--
+-- Dumping data untuk tabel `item_familys`
+--
+
+INSERT INTO `item_familys` (`id`, `created_by`, `created_date`, `updated_by`, `updated_date`, `deleted`, `item_category_id`, `number`, `account_number`, `account_name`, `name`, `description`, `status`) VALUES
+('P01', 'admin', '2023-08-10 09:29:33', NULL, NULL, 0, 'C01', 'VG', '', '', 'VIRGIN', '', 0),
+('P02', 'admin', '2023-08-10 09:29:56', NULL, NULL, 0, 'C02', 'FG', '', '', 'TEST FG', '', 0);
+
+-- --------------------------------------------------------
+
+--
+-- Struktur dari tabel `item_family_subs`
+--
+
+CREATE TABLE `item_family_subs` (
+  `id` varchar(30) NOT NULL,
+  `created_by` varchar(50) DEFAULT NULL,
+  `created_date` datetime DEFAULT NULL,
+  `updated_by` varchar(50) DEFAULT NULL,
+  `updated_date` datetime DEFAULT NULL,
+  `deleted` tinyint(1) NOT NULL,
+  `item_category_id` varchar(30) DEFAULT NULL,
+  `item_family_id` varchar(30) DEFAULT NULL,
+  `number` varchar(20) NOT NULL,
+  `name` varchar(50) NOT NULL,
+  `description` text DEFAULT NULL,
+  `status` tinyint(1) NOT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+--
+-- Dumping data untuk tabel `item_family_subs`
+--
+
+INSERT INTO `item_family_subs` (`id`, `created_by`, `created_date`, `updated_by`, `updated_date`, `deleted`, `item_category_id`, `item_family_id`, `number`, `name`, `description`, `status`) VALUES
+('PS001', 'admin', '2023-08-10 09:33:08', NULL, NULL, 0, 'C01', 'P01', 'OK', 'TEST', '', 0),
+('PS002', 'admin', '2023-08-10 09:33:23', NULL, NULL, 0, 'C02', 'P02', 'FG', 'OK', '', 0);
+
+-- --------------------------------------------------------
+
+--
+-- Struktur dari tabel `item_fg`
+--
+
+CREATE TABLE `item_fg` (
+  `id` varchar(30) NOT NULL,
+  `created_by` varchar(50) DEFAULT NULL,
+  `created_date` datetime DEFAULT NULL,
+  `updated_by` varchar(50) DEFAULT NULL,
+  `updated_date` datetime DEFAULT NULL,
+  `deleted` tinyint(1) NOT NULL,
+  `item_family_id` varchar(30) DEFAULT NULL,
+  `number` varchar(30) NOT NULL,
+  `number_customer` varchar(30) NOT NULL,
+  `name` varchar(50) DEFAULT NULL,
+  `process` varchar(30) DEFAULT NULL,
+  `boxs` varchar(30) DEFAULT NULL,
+  `polybag` varchar(10) DEFAULT NULL,
+  `box_label` varchar(10) DEFAULT NULL,
+  `ng_ration` int(11) DEFAULT 0,
+  `is_no` varchar(30) DEFAULT NULL,
+  `weight` decimal(20,4) DEFAULT 0.0000,
+  `color` varchar(30) DEFAULT NULL,
+  `leadtime` int(11) DEFAULT 0,
+  `mpq` int(11) DEFAULT 0,
+  `moq` int(11) DEFAULT 0,
+  `qty_box` int(11) DEFAULT 0,
+  `attachment` text DEFAULT NULL,
+  `status` tinyint(1) NOT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+--
+-- Dumping data untuk tabel `item_fg`
+--
+
+INSERT INTO `item_fg` (`id`, `created_by`, `created_date`, `updated_by`, `updated_date`, `deleted`, `item_family_id`, `number`, `number_customer`, `name`, `process`, `boxs`, `polybag`, `box_label`, `ng_ration`, `is_no`, `weight`, `color`, `leadtime`, `mpq`, `moq`, `qty_box`, `attachment`, `status`) VALUES
+('BPIFG-FG08230001', 'admin', '2023-08-14 11:24:40', NULL, NULL, 0, 'P02', '1', '', '2', 'Press', 'Test', 'yes', 'yes', 0, '', '0.0000', 'Biru', 0, 0, 0, 0, 'http://localhost/erp_bpi/assets/documents/item_fg/1691987081.pdf', 0);
+
+-- --------------------------------------------------------
+
+--
+-- Struktur dari tabel `item_kinds`
+--
+
+CREATE TABLE `item_kinds` (
+  `id` varchar(30) NOT NULL,
+  `created_by` varchar(50) DEFAULT NULL,
+  `created_date` datetime DEFAULT NULL,
+  `updated_by` varchar(50) DEFAULT NULL,
+  `updated_date` datetime DEFAULT NULL,
+  `deleted` tinyint(1) NOT NULL,
+  `name` varchar(50) NOT NULL,
+  `description` text DEFAULT NULL,
+  `status` tinyint(1) NOT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+--
+-- Dumping data untuk tabel `item_kinds`
+--
+
+INSERT INTO `item_kinds` (`id`, `created_by`, `created_date`, `updated_by`, `updated_date`, `deleted`, `name`, `description`, `status`) VALUES
+('CB001', 'admin', '2023-08-08 20:55:15', 'admin', '2023-08-08 20:55:35', 0, 'Test1', 'OK', 0);
+
+-- --------------------------------------------------------
+
+--
+-- Struktur dari tabel `item_process`
+--
+
+CREATE TABLE `item_process` (
+  `id` varchar(30) NOT NULL,
+  `created_by` varchar(50) DEFAULT NULL,
+  `created_date` datetime DEFAULT NULL,
+  `updated_by` varchar(50) DEFAULT NULL,
+  `updated_date` datetime DEFAULT NULL,
+  `deleted` tinyint(1) NOT NULL,
+  `name` varchar(50) NOT NULL,
+  `description` text DEFAULT NULL,
+  `status` tinyint(1) NOT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+--
+-- Dumping data untuk tabel `item_process`
+--
+
+INSERT INTO `item_process` (`id`, `created_by`, `created_date`, `updated_by`, `updated_date`, `deleted`, `name`, `description`, `status`) VALUES
+('PC001', 'admin', '2023-08-08 21:45:30', NULL, NULL, 0, 'Press', 'OK', 0),
+('PC002', 'admin', '2023-08-08 22:12:07', NULL, NULL, 0, 'Weld', 'OK', 0);
+
+-- --------------------------------------------------------
+
+--
+-- Struktur dari tabel `item_process_flow`
+--
+
+CREATE TABLE `item_process_flow` (
+  `id` varchar(30) NOT NULL,
+  `created_by` varchar(50) DEFAULT NULL,
+  `created_date` datetime DEFAULT NULL,
+  `updated_by` varchar(50) DEFAULT NULL,
+  `updated_date` datetime DEFAULT NULL,
+  `deleted` tinyint(1) NOT NULL,
+  `name` varchar(30) DEFAULT NULL,
+  `process_a` int(2) DEFAULT 0,
+  `process_b` int(2) DEFAULT 0,
+  `process_c` int(2) DEFAULT 0,
+  `process_d` int(2) DEFAULT 0,
+  `process_e` int(2) DEFAULT 0,
+  `status` tinyint(1) NOT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+--
+-- Dumping data untuk tabel `item_process_flow`
+--
+
+INSERT INTO `item_process_flow` (`id`, `created_by`, `created_date`, `updated_by`, `updated_date`, `deleted`, `name`, `process_a`, `process_b`, `process_c`, `process_d`, `process_e`, `status`) VALUES
+('TP01', 'admin', '2023-08-09 20:50:21', NULL, NULL, 0, 'A', 1, 2, 0, 0, 3, 0),
+('TP02', 'admin', '2023-08-09 20:58:11', NULL, NULL, 0, 'B', 0, 0, 1, 2, 0, 0),
+('TP03', 'admin', '2023-08-09 21:01:41', 'admin', '2023-08-09 21:02:41', 0, 'C', 0, 0, 0, 0, 0, 0),
+('TP04', 'admin', '2023-08-09 21:01:59', NULL, NULL, 0, 'D', 1, 0, 0, 0, 2, 0);
+
+-- --------------------------------------------------------
+
+--
+-- Struktur dari tabel `item_rm`
+--
+
+CREATE TABLE `item_rm` (
+  `id` varchar(30) NOT NULL,
+  `created_by` varchar(50) DEFAULT NULL,
+  `created_date` datetime DEFAULT NULL,
+  `updated_by` varchar(50) DEFAULT NULL,
+  `updated_date` datetime DEFAULT NULL,
+  `deleted` tinyint(1) NOT NULL,
+  `item_category_id` varchar(30) DEFAULT NULL,
+  `item_family_id` varchar(30) DEFAULT NULL,
+  `number` varchar(30) NOT NULL,
+  `name` varchar(50) NOT NULL,
+  `uom` varchar(30) NOT NULL,
+  `account_number` varchar(30) DEFAULT NULL,
+  `account_name` varchar(50) DEFAULT NULL,
+  `status` tinyint(1) NOT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+--
+-- Dumping data untuk tabel `item_rm`
+--
+
+INSERT INTO `item_rm` (`id`, `created_by`, `created_date`, `updated_by`, `updated_date`, `deleted`, `item_category_id`, `item_family_id`, `number`, `name`, `uom`, `account_number`, `account_name`, `status`) VALUES
+('BPIRM-VG08230001', 'admin', '2023-08-10 12:00:43', 'admin', '2023-08-10 12:01:09', 0, 'C01', 'P01', '1', 'VALVE', 'KG', '', '', 0),
+('BPIRM-VG08230002', 'admin', '2023-08-10 19:29:47', NULL, NULL, 0, 'C01', 'P01', '2', 'PNEUMATIC', 'PCS', '', '', 0);
+
 -- --------------------------------------------------------
 
 --
@@ -164,7 +467,7 @@ CREATE TABLE `logins` (
 --
 
 INSERT INTO `logins` (`id`, `created_by`, `created_date`, `deleted`, `ip_address`, `mac_address`, `username`, `description`, `status`) VALUES
-(1, NULL, '2023-08-02 09:12:16', 0, '::1', 'A8-1E-84-13-37-56', 'admin', '', 0);
+(1, NULL, '2023-08-14 09:08:15', 0, '::1', '84-A9-38-BC-CD-5E', 'admin', '', 0);
 
 -- --------------------------------------------------------
 
@@ -551,7 +854,375 @@ INSERT INTO `logs` (`id`, `created_by`, `created_date`, `deleted`, `ip_address`,
 (359, 'admin', '2023-08-03 18:17:14', 0, '::1', 'Delete', 'menus', '{\"id\":\"20230803000002\",\"created_by\":\"admin\",\"created_date\":\"2023-08-03 17:25:00\",\"updated_by\":\"admin\",\"updated_date\":\"2023-08-03 17:41:47\",\"deleted\":\"0\",\"menus_id\":\"20230803000001\",\"number\":null,\"name\":\"Categories\",\"description\":null,\"link\":\"master\\/item_categories\",\"sort\":\"1\",\"icon\":\"\",\"flag\":null,\"color\":null,\"state\":\"\",\"status\":\"0\"}'),
 (360, 'admin', '2023-08-03 18:17:14', 0, '::1', 'Delete', 'menus', '{\"id\":\"20230803000004\",\"created_by\":\"admin\",\"created_date\":\"2023-08-03 17:25:31\",\"updated_by\":\"admin\",\"updated_date\":\"2023-08-03 17:25:59\",\"deleted\":\"0\",\"menus_id\":\"20230803000001\",\"number\":null,\"name\":\"Customers\",\"description\":null,\"link\":\"master\\/customers\",\"sort\":\"3\",\"icon\":\"\",\"flag\":null,\"color\":null,\"state\":\"\",\"status\":\"0\"}'),
 (361, 'admin', '2023-08-03 18:17:14', 0, '::1', 'Delete', 'menus', '{\"id\":\"20230803000003\",\"created_by\":\"admin\",\"created_date\":\"2023-08-03 17:25:23\",\"updated_by\":\"admin\",\"updated_date\":\"2023-08-03 17:25:54\",\"deleted\":\"0\",\"menus_id\":\"20230803000001\",\"number\":null,\"name\":\"Product Families\",\"description\":null,\"link\":\"master\\/item_familys\",\"sort\":\"2\",\"icon\":\"\",\"flag\":null,\"color\":null,\"state\":\"\",\"status\":\"0\"}'),
-(362, 'admin', '2023-08-03 18:17:14', 0, '::1', 'Delete', 'menus', '{\"id\":\"20230803000005\",\"created_by\":\"admin\",\"created_date\":\"2023-08-03 17:25:38\",\"updated_by\":\"admin\",\"updated_date\":\"2023-08-03 17:26:05\",\"deleted\":\"0\",\"menus_id\":\"20230803000001\",\"number\":null,\"name\":\"Suppliers\",\"description\":null,\"link\":\"master\\/suppliers\",\"sort\":\"4\",\"icon\":\"\",\"flag\":null,\"color\":null,\"state\":\"\",\"status\":\"0\"}');
+(362, 'admin', '2023-08-03 18:17:14', 0, '::1', 'Delete', 'menus', '{\"id\":\"20230803000005\",\"created_by\":\"admin\",\"created_date\":\"2023-08-03 17:25:38\",\"updated_by\":\"admin\",\"updated_date\":\"2023-08-03 17:26:05\",\"deleted\":\"0\",\"menus_id\":\"20230803000001\",\"number\":null,\"name\":\"Suppliers\",\"description\":null,\"link\":\"master\\/suppliers\",\"sort\":\"4\",\"icon\":\"\",\"flag\":null,\"color\":null,\"state\":\"\",\"status\":\"0\"}'),
+(363, NULL, '2023-08-03 21:11:50', 0, '::1', 'Login', 'Login', '{\"id\":\"86f9f296025243ed953fe6014ff765\",\"departement_id\":null,\"number\":\"1\",\"name\":\"Administrator\",\"username\":\"admin\",\"position\":\"Admin System\"}'),
+(364, 'admin', '2023-08-03 21:51:46', 0, '::1', 'Create', 'menus', '{\"menus_id\":\"20230803000001\",\"name\":\"Item Categories\",\"link\":\"master\\/item_categories\",\"sort\":\"3\",\"state\":\"\",\"id\":20230803000008,\"created_by\":\"admin\",\"created_date\":\"2023-08-03 21:51:46\"}'),
+(365, 'admin', '2023-08-03 21:53:02', 0, '::1', 'Create', 'setting_menus', '{\"menus_id\":\"20230803000008\",\"m_view\":\"on\",\"m_add\":\"on\",\"m_edit\":\"on\",\"m_delete\":\"on\",\"m_print\":\"on\",\"m_excel\":\"on\",\"id\":20230803000008,\"created_by\":\"admin\",\"created_date\":\"2023-08-03 21:53:02\"}'),
+(366, 'admin', '2023-08-03 16:53:21', 0, '::1', 'Create', 'setting_users', '{\"users_id\":\"admin\",\"menus_id\":\"20230803000008\",\"id\":20230803000022,\"created_by\":\"admin\",\"created_date\":\"2023-08-03 16:53:21\"}');
+INSERT INTO `logs` (`id`, `created_by`, `created_date`, `deleted`, `ip_address`, `action`, `menu`, `description`) VALUES
+(367, 'admin', '2023-08-03 16:53:25', 0, '::1', 'Update Before', 'setting_users', '{\"id\":\"20230803000022\",\"created_by\":\"admin\",\"created_date\":\"2023-08-03 16:53:21\",\"updated_by\":null,\"updated_date\":null,\"deleted\":\"0\",\"users_id\":\"admin\",\"menus_id\":\"20230803000008\",\"v_view\":\"0\",\"v_add\":\"0\",\"v_edit\":\"0\",\"v_delete\":\"0\",\"v_upload\":\"0\",\"v_download\":\"0\",\"v_print\":\"0\",\"v_excel\":\"0\",\"status\":\"0\"}'),
+(368, 'admin', '2023-08-03 16:53:25', 0, '::1', 'Update New', 'setting_users', '{\"v_view\":\"1\",\"v_add\":\"0\",\"v_edit\":\"0\",\"v_delete\":\"0\",\"v_upload\":\"0\",\"v_download\":\"0\",\"v_print\":\"0\",\"v_excel\":\"0\",\"updated_by\":\"admin\",\"updated_date\":\"2023-08-03 16:53:25\"}'),
+(369, 'admin', '2023-08-03 16:53:27', 0, '::1', 'Update Before', 'setting_users', '{\"id\":\"20230803000022\",\"created_by\":\"admin\",\"created_date\":\"2023-08-03 16:53:21\",\"updated_by\":\"admin\",\"updated_date\":\"2023-08-03 16:53:25\",\"deleted\":\"0\",\"users_id\":\"admin\",\"menus_id\":\"20230803000008\",\"v_view\":\"1\",\"v_add\":\"0\",\"v_edit\":\"0\",\"v_delete\":\"0\",\"v_upload\":\"0\",\"v_download\":\"0\",\"v_print\":\"0\",\"v_excel\":\"0\",\"status\":\"0\"}'),
+(370, 'admin', '2023-08-03 16:53:27', 0, '::1', 'Update New', 'setting_users', '{\"v_view\":\"1\",\"v_add\":\"1\",\"v_edit\":\"0\",\"v_delete\":\"0\",\"v_upload\":\"0\",\"v_download\":\"0\",\"v_print\":\"0\",\"v_excel\":\"0\",\"updated_by\":\"admin\",\"updated_date\":\"2023-08-03 16:53:27\"}'),
+(371, 'admin', '2023-08-03 16:53:28', 0, '::1', 'Update Before', 'setting_users', '{\"id\":\"20230803000022\",\"created_by\":\"admin\",\"created_date\":\"2023-08-03 16:53:21\",\"updated_by\":\"admin\",\"updated_date\":\"2023-08-03 16:53:27\",\"deleted\":\"0\",\"users_id\":\"admin\",\"menus_id\":\"20230803000008\",\"v_view\":\"1\",\"v_add\":\"1\",\"v_edit\":\"0\",\"v_delete\":\"0\",\"v_upload\":\"0\",\"v_download\":\"0\",\"v_print\":\"0\",\"v_excel\":\"0\",\"status\":\"0\"}'),
+(372, 'admin', '2023-08-03 16:53:28', 0, '::1', 'Update New', 'setting_users', '{\"v_view\":\"1\",\"v_add\":\"1\",\"v_edit\":\"1\",\"v_delete\":\"0\",\"v_upload\":\"0\",\"v_download\":\"0\",\"v_print\":\"0\",\"v_excel\":\"0\",\"updated_by\":\"admin\",\"updated_date\":\"2023-08-03 16:53:28\"}'),
+(373, 'admin', '2023-08-03 16:53:29', 0, '::1', 'Update Before', 'setting_users', '{\"id\":\"20230803000022\",\"created_by\":\"admin\",\"created_date\":\"2023-08-03 16:53:21\",\"updated_by\":\"admin\",\"updated_date\":\"2023-08-03 16:53:28\",\"deleted\":\"0\",\"users_id\":\"admin\",\"menus_id\":\"20230803000008\",\"v_view\":\"1\",\"v_add\":\"1\",\"v_edit\":\"1\",\"v_delete\":\"0\",\"v_upload\":\"0\",\"v_download\":\"0\",\"v_print\":\"0\",\"v_excel\":\"0\",\"status\":\"0\"}'),
+(374, 'admin', '2023-08-03 16:53:29', 0, '::1', 'Update New', 'setting_users', '{\"v_view\":\"1\",\"v_add\":\"1\",\"v_edit\":\"1\",\"v_delete\":\"1\",\"v_upload\":\"0\",\"v_download\":\"0\",\"v_print\":\"0\",\"v_excel\":\"0\",\"updated_by\":\"admin\",\"updated_date\":\"2023-08-03 16:53:29\"}'),
+(375, 'admin', '2023-08-03 16:53:31', 0, '::1', 'Update Before', 'setting_users', '{\"id\":\"20230803000022\",\"created_by\":\"admin\",\"created_date\":\"2023-08-03 16:53:21\",\"updated_by\":\"admin\",\"updated_date\":\"2023-08-03 16:53:29\",\"deleted\":\"0\",\"users_id\":\"admin\",\"menus_id\":\"20230803000008\",\"v_view\":\"1\",\"v_add\":\"1\",\"v_edit\":\"1\",\"v_delete\":\"1\",\"v_upload\":\"0\",\"v_download\":\"0\",\"v_print\":\"0\",\"v_excel\":\"0\",\"status\":\"0\"}'),
+(376, 'admin', '2023-08-03 16:53:31', 0, '::1', 'Update New', 'setting_users', '{\"v_view\":\"1\",\"v_add\":\"1\",\"v_edit\":\"1\",\"v_delete\":\"1\",\"v_upload\":\"0\",\"v_download\":\"0\",\"v_print\":\"1\",\"v_excel\":\"0\",\"updated_by\":\"admin\",\"updated_date\":\"2023-08-03 16:53:31\"}'),
+(377, 'admin', '2023-08-03 16:53:31', 0, '::1', 'Update Before', 'setting_users', '{\"id\":\"20230803000022\",\"created_by\":\"admin\",\"created_date\":\"2023-08-03 16:53:21\",\"updated_by\":\"admin\",\"updated_date\":\"2023-08-03 16:53:31\",\"deleted\":\"0\",\"users_id\":\"admin\",\"menus_id\":\"20230803000008\",\"v_view\":\"1\",\"v_add\":\"1\",\"v_edit\":\"1\",\"v_delete\":\"1\",\"v_upload\":\"0\",\"v_download\":\"0\",\"v_print\":\"1\",\"v_excel\":\"0\",\"status\":\"0\"}'),
+(378, 'admin', '2023-08-03 16:53:31', 0, '::1', 'Update New', 'setting_users', '{\"v_view\":\"1\",\"v_add\":\"1\",\"v_edit\":\"1\",\"v_delete\":\"1\",\"v_upload\":\"0\",\"v_download\":\"0\",\"v_print\":\"1\",\"v_excel\":\"1\",\"updated_by\":\"admin\",\"updated_date\":\"2023-08-03 16:53:31\"}'),
+(379, 'admin', '2023-08-03 21:55:07', 0, '::1', 'Update Before', 'menus', '{\"id\":\"20230803000008\",\"created_by\":\"admin\",\"created_date\":\"2023-08-03 21:51:46\",\"updated_by\":null,\"updated_date\":null,\"deleted\":\"0\",\"menus_id\":\"20230803000001\",\"number\":null,\"name\":\"Item Categories\",\"description\":null,\"link\":\"master\\/item_categories\",\"sort\":\"3\",\"icon\":\"\",\"flag\":null,\"color\":null,\"state\":\"\",\"status\":\"0\"}'),
+(380, 'admin', '2023-08-03 21:55:07', 0, '::1', 'Update New', 'menus', '{\"menus_id\":\"20230803000001\",\"name\":\"Item Categories\",\"link\":\"master\\/item_categories\",\"sort\":\"3\",\"state\":\"\",\"updated_by\":\"admin\",\"updated_date\":\"2023-08-03 21:55:07\"}'),
+(381, 'admin', '2023-08-03 21:55:17', 0, '::1', 'Update Before', 'menus', '{\"id\":\"20230803000006\",\"created_by\":\"admin\",\"created_date\":\"2023-08-03 17:50:05\",\"updated_by\":null,\"updated_date\":null,\"deleted\":\"0\",\"menus_id\":\"20230803000001\",\"number\":null,\"name\":\"Currencies\",\"description\":null,\"link\":\"master\\/currencies\",\"sort\":\"5\",\"icon\":\"\",\"flag\":null,\"color\":null,\"state\":\"\",\"status\":\"0\"}'),
+(382, 'admin', '2023-08-03 21:55:17', 0, '::1', 'Update New', 'menus', '{\"menus_id\":\"20230803000001\",\"name\":\"Currencies\",\"link\":\"master\\/currencies\",\"sort\":\"1\",\"state\":\"\",\"updated_by\":\"admin\",\"updated_date\":\"2023-08-03 21:55:17\"}'),
+(383, 'admin', '2023-08-03 21:55:25', 0, '::1', 'Update Before', 'menus', '{\"id\":\"20230803000007\",\"created_by\":\"admin\",\"created_date\":\"2023-08-03 17:52:41\",\"updated_by\":null,\"updated_date\":null,\"deleted\":\"0\",\"menus_id\":\"20230803000001\",\"number\":null,\"name\":\"Unit of Meaasure\",\"description\":null,\"link\":\"master\\/uom\",\"sort\":\"6\",\"icon\":\"\",\"flag\":null,\"color\":null,\"state\":\"\",\"status\":\"0\"}'),
+(384, 'admin', '2023-08-03 21:55:25', 0, '::1', 'Update New', 'menus', '{\"menus_id\":\"20230803000001\",\"name\":\"Unit of Meaasure\",\"link\":\"master\\/uom\",\"sort\":\"2\",\"state\":\"\",\"updated_by\":\"admin\",\"updated_date\":\"2023-08-03 21:55:25\"}'),
+(385, 'admin', '2023-08-03 17:18:23', 0, '::1', 'Create', 'item_categories', '{\"number\":\"C01\",\"name\":\"test\",\"code\":\"test\",\"description\":\"test\",\"id\":\"20230803000001\",\"created_by\":\"admin\",\"created_date\":\"2023-08-03 17:18:23\"}'),
+(386, 'admin', '2023-08-03 17:18:54', 0, '::1', 'Update Before', 'item_categories', '{\"id\":\"20230803000001\",\"created_by\":\"admin\",\"created_date\":\"2023-08-03 17:18:23\",\"updated_by\":null,\"updated_date\":null,\"deleted\":\"0\",\"number\":\"C01\",\"code\":\"test\",\"name\":\"test\",\"description\":\"test\",\"status\":\"0\"}'),
+(387, 'admin', '2023-08-03 17:18:54', 0, '::1', 'Update New', 'item_categories', '{\"number\":\"C01\",\"name\":\"test1\",\"code\":\"test1\",\"description\":\"test1\",\"updated_by\":\"admin\",\"updated_date\":\"2023-08-03 17:18:54\"}'),
+(388, 'admin', '2023-08-03 17:19:02', 0, '::1', 'Delete', 'item_categories', '{\"id\":\"20230803000001\",\"created_by\":\"admin\",\"created_date\":\"2023-08-03 17:18:23\",\"updated_by\":\"admin\",\"updated_date\":\"2023-08-03 17:18:54\",\"deleted\":\"0\",\"number\":\"C01\",\"code\":\"test1\",\"name\":\"test1\",\"description\":\"test1\",\"status\":\"0\"}'),
+(389, 'admin', '2023-08-03 17:19:22', 0, '::1', 'Create', 'item_categories', '{\"number\":\"C01\",\"name\":\"test\",\"code\":\"test\",\"description\":\"test\",\"id\":\"20230803000001\",\"created_by\":\"admin\",\"created_date\":\"2023-08-03 17:19:22\"}'),
+(390, 'admin', '2023-08-03 17:20:00', 0, '::1', 'Update Before', 'item_categories', '{\"id\":\"20230803000001\",\"created_by\":\"admin\",\"created_date\":\"2023-08-03 17:19:22\",\"updated_by\":null,\"updated_date\":null,\"deleted\":\"0\",\"number\":\"C01\",\"code\":\"test\",\"name\":\"test\",\"description\":\"test\",\"status\":\"0\"}'),
+(391, 'admin', '2023-08-03 17:20:00', 0, '::1', 'Update New', 'item_categories', '{\"number\":\"C01\",\"name\":\"test1\",\"code\":\"test1\",\"description\":\"test1\",\"updated_by\":\"admin\",\"updated_date\":\"2023-08-03 17:20:00\"}'),
+(392, 'admin', '2023-08-03 17:33:15', 0, '::1', 'Create', 'item_categories', '{\"number\":\"C02\",\"name\":\"test2\",\"code\":\"test2\",\"description\":\"test2\",\"id\":20230803000002,\"created_by\":\"admin\",\"created_date\":\"2023-08-03 17:33:15\"}'),
+(393, 'admin', '2023-08-03 22:51:49', 0, '::1', 'Create', 'menus', '{\"menus_id\":\"20230803000001\",\"name\":\"Item Familys\",\"link\":\"master\\/item_familys\",\"sort\":\"4\",\"state\":\"\",\"id\":20230803000009,\"created_by\":\"admin\",\"created_date\":\"2023-08-03 22:51:49\"}'),
+(394, 'admin', '2023-08-03 22:52:16', 0, '::1', 'Create', 'setting_menus', '{\"menus_id\":\"20230803000009\",\"m_view\":\"on\",\"m_add\":\"on\",\"m_edit\":\"on\",\"m_delete\":\"on\",\"m_print\":\"on\",\"m_excel\":\"on\",\"id\":20230803000009,\"created_by\":\"admin\",\"created_date\":\"2023-08-03 22:52:16\"}'),
+(395, 'admin', '2023-08-03 17:52:25', 0, '::1', 'Create', 'setting_users', '{\"users_id\":\"admin\",\"menus_id\":\"20230803000009\",\"id\":20230803000023,\"created_by\":\"admin\",\"created_date\":\"2023-08-03 17:52:25\"}'),
+(396, 'admin', '2023-08-03 17:52:29', 0, '::1', 'Update Before', 'setting_users', '{\"id\":\"20230803000023\",\"created_by\":\"admin\",\"created_date\":\"2023-08-03 17:52:25\",\"updated_by\":null,\"updated_date\":null,\"deleted\":\"0\",\"users_id\":\"admin\",\"menus_id\":\"20230803000009\",\"v_view\":\"0\",\"v_add\":\"0\",\"v_edit\":\"0\",\"v_delete\":\"0\",\"v_upload\":\"0\",\"v_download\":\"0\",\"v_print\":\"0\",\"v_excel\":\"0\",\"status\":\"0\"}'),
+(397, 'admin', '2023-08-03 17:52:29', 0, '::1', 'Update New', 'setting_users', '{\"v_view\":\"1\",\"v_add\":\"0\",\"v_edit\":\"0\",\"v_delete\":\"0\",\"v_upload\":\"0\",\"v_download\":\"0\",\"v_print\":\"0\",\"v_excel\":\"0\",\"updated_by\":\"admin\",\"updated_date\":\"2023-08-03 17:52:29\"}'),
+(398, 'admin', '2023-08-03 17:52:30', 0, '::1', 'Update Before', 'setting_users', '{\"id\":\"20230803000023\",\"created_by\":\"admin\",\"created_date\":\"2023-08-03 17:52:25\",\"updated_by\":\"admin\",\"updated_date\":\"2023-08-03 17:52:29\",\"deleted\":\"0\",\"users_id\":\"admin\",\"menus_id\":\"20230803000009\",\"v_view\":\"1\",\"v_add\":\"0\",\"v_edit\":\"0\",\"v_delete\":\"0\",\"v_upload\":\"0\",\"v_download\":\"0\",\"v_print\":\"0\",\"v_excel\":\"0\",\"status\":\"0\"}'),
+(399, 'admin', '2023-08-03 17:52:30', 0, '::1', 'Update New', 'setting_users', '{\"v_view\":\"1\",\"v_add\":\"1\",\"v_edit\":\"0\",\"v_delete\":\"0\",\"v_upload\":\"0\",\"v_download\":\"0\",\"v_print\":\"0\",\"v_excel\":\"0\",\"updated_by\":\"admin\",\"updated_date\":\"2023-08-03 17:52:30\"}'),
+(400, 'admin', '2023-08-03 17:52:31', 0, '::1', 'Update Before', 'setting_users', '{\"id\":\"20230803000023\",\"created_by\":\"admin\",\"created_date\":\"2023-08-03 17:52:25\",\"updated_by\":\"admin\",\"updated_date\":\"2023-08-03 17:52:30\",\"deleted\":\"0\",\"users_id\":\"admin\",\"menus_id\":\"20230803000009\",\"v_view\":\"1\",\"v_add\":\"1\",\"v_edit\":\"0\",\"v_delete\":\"0\",\"v_upload\":\"0\",\"v_download\":\"0\",\"v_print\":\"0\",\"v_excel\":\"0\",\"status\":\"0\"}'),
+(401, 'admin', '2023-08-03 17:52:31', 0, '::1', 'Update New', 'setting_users', '{\"v_view\":\"1\",\"v_add\":\"1\",\"v_edit\":\"1\",\"v_delete\":\"0\",\"v_upload\":\"0\",\"v_download\":\"0\",\"v_print\":\"0\",\"v_excel\":\"0\",\"updated_by\":\"admin\",\"updated_date\":\"2023-08-03 17:52:31\"}'),
+(402, 'admin', '2023-08-03 17:52:32', 0, '::1', 'Update Before', 'setting_users', '{\"id\":\"20230803000023\",\"created_by\":\"admin\",\"created_date\":\"2023-08-03 17:52:25\",\"updated_by\":\"admin\",\"updated_date\":\"2023-08-03 17:52:31\",\"deleted\":\"0\",\"users_id\":\"admin\",\"menus_id\":\"20230803000009\",\"v_view\":\"1\",\"v_add\":\"1\",\"v_edit\":\"1\",\"v_delete\":\"0\",\"v_upload\":\"0\",\"v_download\":\"0\",\"v_print\":\"0\",\"v_excel\":\"0\",\"status\":\"0\"}'),
+(403, 'admin', '2023-08-03 17:52:32', 0, '::1', 'Update New', 'setting_users', '{\"v_view\":\"1\",\"v_add\":\"1\",\"v_edit\":\"1\",\"v_delete\":\"1\",\"v_upload\":\"0\",\"v_download\":\"0\",\"v_print\":\"0\",\"v_excel\":\"0\",\"updated_by\":\"admin\",\"updated_date\":\"2023-08-03 17:52:32\"}'),
+(404, 'admin', '2023-08-03 17:52:33', 0, '::1', 'Update Before', 'setting_users', '{\"id\":\"20230803000023\",\"created_by\":\"admin\",\"created_date\":\"2023-08-03 17:52:25\",\"updated_by\":\"admin\",\"updated_date\":\"2023-08-03 17:52:32\",\"deleted\":\"0\",\"users_id\":\"admin\",\"menus_id\":\"20230803000009\",\"v_view\":\"1\",\"v_add\":\"1\",\"v_edit\":\"1\",\"v_delete\":\"1\",\"v_upload\":\"0\",\"v_download\":\"0\",\"v_print\":\"0\",\"v_excel\":\"0\",\"status\":\"0\"}'),
+(405, 'admin', '2023-08-03 17:52:34', 0, '::1', 'Update New', 'setting_users', '{\"v_view\":\"1\",\"v_add\":\"1\",\"v_edit\":\"1\",\"v_delete\":\"1\",\"v_upload\":\"0\",\"v_download\":\"0\",\"v_print\":\"1\",\"v_excel\":\"0\",\"updated_by\":\"admin\",\"updated_date\":\"2023-08-03 17:52:33\"}'),
+(406, 'admin', '2023-08-03 17:52:35', 0, '::1', 'Update Before', 'setting_users', '{\"id\":\"20230803000023\",\"created_by\":\"admin\",\"created_date\":\"2023-08-03 17:52:25\",\"updated_by\":\"admin\",\"updated_date\":\"2023-08-03 17:52:33\",\"deleted\":\"0\",\"users_id\":\"admin\",\"menus_id\":\"20230803000009\",\"v_view\":\"1\",\"v_add\":\"1\",\"v_edit\":\"1\",\"v_delete\":\"1\",\"v_upload\":\"0\",\"v_download\":\"0\",\"v_print\":\"1\",\"v_excel\":\"0\",\"status\":\"0\"}'),
+(407, 'admin', '2023-08-03 17:52:35', 0, '::1', 'Update New', 'setting_users', '{\"v_view\":\"1\",\"v_add\":\"1\",\"v_edit\":\"1\",\"v_delete\":\"1\",\"v_upload\":\"0\",\"v_download\":\"0\",\"v_print\":\"1\",\"v_excel\":\"1\",\"updated_by\":\"admin\",\"updated_date\":\"2023-08-03 17:52:34\"}'),
+(408, 'admin', '2023-08-03 18:04:49', 0, '::1', 'Create', 'item_familys', '{\"number\":\"P01\",\"name\":\"Virgin\",\"code\":\"VG\",\"account_number\":\"1\",\"item_category_id\":\"20230803000001\",\"description\":\"OK\",\"id\":\"20230803000001\",\"created_by\":\"admin\",\"created_date\":\"2023-08-03 18:04:49\"}'),
+(409, 'admin', '2023-08-03 18:42:24', 0, '::1', 'Create', 'item_familys', '{\"number\":\"P02\",\"name\":\"Master Batch\",\"code\":\"MB\",\"account_number\":\"2\",\"item_category_id\":\"20230803000002\",\"description\":\"OK\",\"id\":20230803000002,\"created_by\":\"admin\",\"created_date\":\"2023-08-03 18:42:24\"}'),
+(410, 'admin', '2023-08-03 18:42:39', 0, '::1', 'Update Before', 'item_familys', '{\"id\":\"20230803000002\",\"created_by\":\"admin\",\"created_date\":\"2023-08-03 18:42:24\",\"updated_by\":null,\"updated_date\":null,\"deleted\":\"0\",\"item_category_id\":\"20230803000002\",\"number\":\"P02\",\"code\":\"MB\",\"account_number\":\"2\",\"name\":\"Master Batch\",\"description\":\"OK\",\"status\":\"0\"}'),
+(411, 'admin', '2023-08-03 18:42:39', 0, '::1', 'Update New', 'item_familys', '{\"number\":\"P02\",\"name\":\"Master Batch\",\"code\":\"MB\",\"account_number\":\"2\",\"item_category_id\":\"20230803000001\",\"description\":\"OK\",\"updated_by\":\"admin\",\"updated_date\":\"2023-08-03 18:42:39\"}'),
+(412, 'admin', '2023-08-03 18:42:59', 0, '::1', 'Delete', 'item_familys', '{\"id\":\"20230803000002\",\"created_by\":\"admin\",\"created_date\":\"2023-08-03 18:42:24\",\"updated_by\":\"admin\",\"updated_date\":\"2023-08-03 18:42:39\",\"deleted\":\"0\",\"item_category_id\":\"20230803000001\",\"number\":\"P02\",\"code\":\"MB\",\"account_number\":\"2\",\"name\":\"Master Batch\",\"description\":\"OK\",\"status\":\"0\"}'),
+(413, 'admin', '2023-08-03 18:51:06', 0, '::1', 'Create', 'item_familys', '{\"number\":\"P02\",\"name\":\"Master Batch\",\"code\":\"MB\",\"account_number\":\"2\",\"account_name\":\"coba\",\"item_category_id\":\"20230803000002\",\"description\":\"OK\",\"id\":20230803000002,\"created_by\":\"admin\",\"created_date\":\"2023-08-03 18:51:06\"}'),
+(414, 'admin', '2023-08-03 18:51:18', 0, '::1', 'Update Before', 'item_familys', '{\"id\":\"20230803000002\",\"created_by\":\"admin\",\"created_date\":\"2023-08-03 18:51:06\",\"updated_by\":null,\"updated_date\":null,\"deleted\":\"0\",\"item_category_id\":\"20230803000002\",\"number\":\"P02\",\"code\":\"MB\",\"account_number\":\"2\",\"account_name\":\"coba\",\"name\":\"Master Batch\",\"description\":\"OK\",\"status\":\"0\"}'),
+(415, 'admin', '2023-08-03 18:51:18', 0, '::1', 'Update New', 'item_familys', '{\"number\":\"P02\",\"name\":\"Master Batch\",\"code\":\"MB\",\"account_number\":\"2\",\"account_name\":\"coba lagi\",\"item_category_id\":\"20230803000002\",\"description\":\"OK\",\"updated_by\":\"admin\",\"updated_date\":\"2023-08-03 18:51:18\"}'),
+(416, 'admin', '2023-08-03 18:52:13', 0, '::1', 'Delete', 'item_familys', '{\"id\":\"20230803000002\",\"created_by\":\"admin\",\"created_date\":\"2023-08-03 18:51:06\",\"updated_by\":\"admin\",\"updated_date\":\"2023-08-03 18:51:18\",\"deleted\":\"0\",\"item_category_id\":\"20230803000002\",\"number\":\"P02\",\"code\":\"MB\",\"account_number\":\"2\",\"account_name\":\"coba lagi\",\"name\":\"Master Batch\",\"description\":\"OK\",\"status\":\"0\"}'),
+(417, NULL, '2023-08-07 10:23:05', 0, '::1', 'Login', 'Login', '{\"id\":\"86f9f296025243ed953fe6014ff765\",\"departement_id\":null,\"number\":\"1\",\"name\":\"Administrator\",\"username\":\"admin\",\"position\":\"Admin System\"}'),
+(418, 'admin', '2023-08-07 05:35:31', 0, '::1', 'Create', 'item_categories', '{\"id\":\"C01\",\"name\":\"test\",\"number\":\"test\",\"description\":\"OK\",\"created_by\":\"admin\",\"created_date\":\"2023-08-07 05:35:31\"}'),
+(419, 'admin', '2023-08-07 05:35:51', 0, '::1', 'Update Before', 'item_categories', '{\"id\":\"C01\",\"created_by\":\"admin\",\"created_date\":\"2023-08-07 05:35:31\",\"updated_by\":null,\"updated_date\":null,\"deleted\":\"0\",\"number\":\"test\",\"name\":\"test\",\"description\":\"OK\",\"status\":\"0\"}'),
+(420, 'admin', '2023-08-07 05:35:51', 0, '::1', 'Update New', 'item_categories', '{\"id\":\"C01\",\"name\":\"test\",\"number\":\"FG\",\"description\":\"OK\",\"updated_by\":\"admin\",\"updated_date\":\"2023-08-07 05:35:51\"}'),
+(421, 'admin', '2023-08-07 05:53:34', 0, '::1', 'Create', 'item_familys', '{\"id\":\"P01\",\"name\":\"test PF\",\"number\":\"PF\",\"item_category_id\":\"FG\",\"account_number\":\"1\",\"account_name\":\"acc\",\"description\":\"OK\",\"created_by\":\"admin\",\"created_date\":\"2023-08-07 05:53:34\"}'),
+(422, 'admin', '2023-08-07 06:03:28', 0, '::1', 'Create', 'item_familys', '{\"id\":\"P01\",\"name\":\"test PF\",\"number\":\"PF\",\"item_category_id\":\"C01\",\"account_number\":\"1\",\"account_name\":\"acc\",\"description\":\"OK\",\"created_by\":\"admin\",\"created_date\":\"2023-08-07 06:03:28\"}'),
+(423, 'admin', '2023-08-07 06:03:46', 0, '::1', 'Update Before', 'item_familys', '{\"id\":\"P01\",\"created_by\":\"admin\",\"created_date\":\"2023-08-07 06:03:28\",\"updated_by\":null,\"updated_date\":null,\"deleted\":\"0\",\"item_category_id\":\"C01\",\"number\":\"PF\",\"account_number\":\"1\",\"account_name\":\"acc\",\"name\":\"test PF\",\"description\":\"OK\",\"status\":\"0\"}'),
+(424, 'admin', '2023-08-07 06:03:46', 0, '::1', 'Update New', 'item_familys', '{\"id\":\"P01\",\"name\":\"test PF\",\"number\":\"PF\",\"item_category_id\":\"C01\",\"account_number\":\"2\",\"account_name\":\"acc\",\"description\":\"OK\",\"updated_by\":\"admin\",\"updated_date\":\"2023-08-07 06:03:46\"}'),
+(425, 'admin', '2023-08-07 11:14:58', 0, '::1', 'Create', 'item_familys', '{\"id\":\"P02\",\"name\":\"test PF 2\",\"number\":\"PF2\",\"item_category_id\":\"C01\",\"account_number\":\"2\",\"account_name\":\"acc\",\"description\":\"OK\",\"created_by\":\"admin\",\"created_date\":\"2023-08-07 11:14:58\"}'),
+(426, 'admin', '2023-08-07 16:34:44', 0, '::1', 'Create', 'menus', '{\"menus_id\":\"20230803000001\",\"name\":\"Item Family Subs\",\"link\":\"master\\/item_family_subs\",\"sort\":\"5\",\"state\":\"\",\"id\":\"20230807000001\",\"created_by\":\"admin\",\"created_date\":\"2023-08-07 16:34:44\"}'),
+(427, 'admin', '2023-08-07 16:35:17', 0, '::1', 'Create', 'setting_menus', '{\"menus_id\":\"20230807000001\",\"m_view\":\"on\",\"m_add\":\"on\",\"m_edit\":\"on\",\"m_delete\":\"on\",\"m_print\":\"on\",\"m_excel\":\"on\",\"id\":\"20230807000001\",\"created_by\":\"admin\",\"created_date\":\"2023-08-07 16:35:17\"}'),
+(428, 'admin', '2023-08-07 11:35:49', 0, '::1', 'Create', 'setting_users', '{\"users_id\":\"admin\",\"menus_id\":\"20230807000001\",\"id\":\"20230807000001\",\"created_by\":\"admin\",\"created_date\":\"2023-08-07 11:35:49\"}'),
+(429, 'admin', '2023-08-07 11:35:53', 0, '::1', 'Update Before', 'setting_users', '{\"id\":\"20230807000001\",\"created_by\":\"admin\",\"created_date\":\"2023-08-07 11:35:49\",\"updated_by\":null,\"updated_date\":null,\"deleted\":\"0\",\"users_id\":\"admin\",\"menus_id\":\"20230807000001\",\"v_view\":\"0\",\"v_add\":\"0\",\"v_edit\":\"0\",\"v_delete\":\"0\",\"v_upload\":\"0\",\"v_download\":\"0\",\"v_print\":\"0\",\"v_excel\":\"0\",\"status\":\"0\"}'),
+(430, 'admin', '2023-08-07 11:35:53', 0, '::1', 'Update New', 'setting_users', '{\"v_view\":\"1\",\"v_add\":\"0\",\"v_edit\":\"0\",\"v_delete\":\"0\",\"v_upload\":\"0\",\"v_download\":\"0\",\"v_print\":\"0\",\"v_excel\":\"0\",\"updated_by\":\"admin\",\"updated_date\":\"2023-08-07 11:35:53\"}'),
+(431, 'admin', '2023-08-07 11:35:56', 0, '::1', 'Update Before', 'setting_users', '{\"id\":\"20230807000001\",\"created_by\":\"admin\",\"created_date\":\"2023-08-07 11:35:49\",\"updated_by\":\"admin\",\"updated_date\":\"2023-08-07 11:35:53\",\"deleted\":\"0\",\"users_id\":\"admin\",\"menus_id\":\"20230807000001\",\"v_view\":\"1\",\"v_add\":\"0\",\"v_edit\":\"0\",\"v_delete\":\"0\",\"v_upload\":\"0\",\"v_download\":\"0\",\"v_print\":\"0\",\"v_excel\":\"0\",\"status\":\"0\"}'),
+(432, 'admin', '2023-08-07 11:35:56', 0, '::1', 'Update New', 'setting_users', '{\"v_view\":\"1\",\"v_add\":\"1\",\"v_edit\":\"0\",\"v_delete\":\"0\",\"v_upload\":\"0\",\"v_download\":\"0\",\"v_print\":\"0\",\"v_excel\":\"0\",\"updated_by\":\"admin\",\"updated_date\":\"2023-08-07 11:35:55\"}'),
+(433, 'admin', '2023-08-07 11:35:57', 0, '::1', 'Update Before', 'setting_users', '{\"id\":\"20230807000001\",\"created_by\":\"admin\",\"created_date\":\"2023-08-07 11:35:49\",\"updated_by\":\"admin\",\"updated_date\":\"2023-08-07 11:35:55\",\"deleted\":\"0\",\"users_id\":\"admin\",\"menus_id\":\"20230807000001\",\"v_view\":\"1\",\"v_add\":\"1\",\"v_edit\":\"0\",\"v_delete\":\"0\",\"v_upload\":\"0\",\"v_download\":\"0\",\"v_print\":\"0\",\"v_excel\":\"0\",\"status\":\"0\"}'),
+(434, 'admin', '2023-08-07 11:35:57', 0, '::1', 'Update New', 'setting_users', '{\"v_view\":\"1\",\"v_add\":\"1\",\"v_edit\":\"1\",\"v_delete\":\"0\",\"v_upload\":\"0\",\"v_download\":\"0\",\"v_print\":\"0\",\"v_excel\":\"0\",\"updated_by\":\"admin\",\"updated_date\":\"2023-08-07 11:35:57\"}'),
+(435, 'admin', '2023-08-07 11:35:57', 0, '::1', 'Update Before', 'setting_users', '{\"id\":\"20230807000001\",\"created_by\":\"admin\",\"created_date\":\"2023-08-07 11:35:49\",\"updated_by\":\"admin\",\"updated_date\":\"2023-08-07 11:35:57\",\"deleted\":\"0\",\"users_id\":\"admin\",\"menus_id\":\"20230807000001\",\"v_view\":\"1\",\"v_add\":\"1\",\"v_edit\":\"1\",\"v_delete\":\"0\",\"v_upload\":\"0\",\"v_download\":\"0\",\"v_print\":\"0\",\"v_excel\":\"0\",\"status\":\"0\"}'),
+(436, 'admin', '2023-08-07 11:35:57', 0, '::1', 'Update New', 'setting_users', '{\"v_view\":\"1\",\"v_add\":\"1\",\"v_edit\":\"1\",\"v_delete\":\"1\",\"v_upload\":\"0\",\"v_download\":\"0\",\"v_print\":\"0\",\"v_excel\":\"0\",\"updated_by\":\"admin\",\"updated_date\":\"2023-08-07 11:35:57\"}'),
+(437, 'admin', '2023-08-07 11:35:59', 0, '::1', 'Update Before', 'setting_users', '{\"id\":\"20230807000001\",\"created_by\":\"admin\",\"created_date\":\"2023-08-07 11:35:49\",\"updated_by\":\"admin\",\"updated_date\":\"2023-08-07 11:35:57\",\"deleted\":\"0\",\"users_id\":\"admin\",\"menus_id\":\"20230807000001\",\"v_view\":\"1\",\"v_add\":\"1\",\"v_edit\":\"1\",\"v_delete\":\"1\",\"v_upload\":\"0\",\"v_download\":\"0\",\"v_print\":\"0\",\"v_excel\":\"0\",\"status\":\"0\"}'),
+(438, 'admin', '2023-08-07 11:35:59', 0, '::1', 'Update New', 'setting_users', '{\"v_view\":\"1\",\"v_add\":\"1\",\"v_edit\":\"1\",\"v_delete\":\"1\",\"v_upload\":\"0\",\"v_download\":\"0\",\"v_print\":\"1\",\"v_excel\":\"0\",\"updated_by\":\"admin\",\"updated_date\":\"2023-08-07 11:35:59\"}'),
+(439, 'admin', '2023-08-07 11:35:59', 0, '::1', 'Update Before', 'setting_users', '{\"id\":\"20230807000001\",\"created_by\":\"admin\",\"created_date\":\"2023-08-07 11:35:49\",\"updated_by\":\"admin\",\"updated_date\":\"2023-08-07 11:35:59\",\"deleted\":\"0\",\"users_id\":\"admin\",\"menus_id\":\"20230807000001\",\"v_view\":\"1\",\"v_add\":\"1\",\"v_edit\":\"1\",\"v_delete\":\"1\",\"v_upload\":\"0\",\"v_download\":\"0\",\"v_print\":\"1\",\"v_excel\":\"0\",\"status\":\"0\"}'),
+(440, 'admin', '2023-08-07 11:35:59', 0, '::1', 'Update New', 'setting_users', '{\"v_view\":\"1\",\"v_add\":\"1\",\"v_edit\":\"1\",\"v_delete\":\"1\",\"v_upload\":\"0\",\"v_download\":\"0\",\"v_print\":\"1\",\"v_excel\":\"1\",\"updated_by\":\"admin\",\"updated_date\":\"2023-08-07 11:35:59\"}'),
+(441, 'admin', '2023-08-07 11:37:31', 0, '::1', 'Create', 'item_family_subs', '{\"id\":\"PS001\",\"item_category_id\":\"C01\",\"item_family_id\":\"P01\",\"number\":\"TS\",\"name\":\"Test Subs\",\"description\":\"OK\",\"created_by\":\"admin\",\"created_date\":\"2023-08-07 11:37:31\"}'),
+(442, 'admin', '2023-08-07 11:37:41', 0, '::1', 'Update Before', 'item_family_subs', '{\"id\":\"PS001\",\"created_by\":\"admin\",\"created_date\":\"2023-08-07 11:37:31\",\"updated_by\":null,\"updated_date\":null,\"deleted\":\"0\",\"item_category_id\":\"C01\",\"item_family_id\":\"P01\",\"number\":\"TS\",\"name\":\"Test Subs\",\"description\":\"OK\",\"status\":\"0\"}'),
+(443, 'admin', '2023-08-07 11:37:41', 0, '::1', 'Update New', 'item_family_subs', '{\"id\":\"PS001\",\"item_category_id\":\"C01\",\"item_family_id\":\"P01\",\"number\":\"TSubs\",\"name\":\"Test Subs\",\"description\":\"OK\",\"updated_by\":\"admin\",\"updated_date\":\"2023-08-07 11:37:41\"}'),
+(444, 'admin', '2023-08-07 11:37:48', 0, '::1', 'Delete', 'item_family_subs', '{\"id\":\"PS001\",\"created_by\":\"admin\",\"created_date\":\"2023-08-07 11:37:31\",\"updated_by\":\"admin\",\"updated_date\":\"2023-08-07 11:37:41\",\"deleted\":\"0\",\"item_category_id\":\"C01\",\"item_family_id\":\"P01\",\"number\":\"TSubs\",\"name\":\"Test Subs\",\"description\":\"OK\",\"status\":\"0\"}'),
+(445, 'admin', '2023-08-07 11:38:05', 0, '::1', 'Create', 'item_family_subs', '{\"id\":\"PS001\",\"item_category_id\":\"C01\",\"item_family_id\":\"P01\",\"number\":\"TS\",\"name\":\"Test Subs\",\"description\":\"OK\",\"created_by\":\"admin\",\"created_date\":\"2023-08-07 11:38:05\"}'),
+(446, 'admin', '2023-08-07 20:11:40', 0, '::1', 'Create', 'currencies', '{\"id\":\"CR01\",\"name\":\"Rupiah\",\"description\":\"indo\",\"symbol\":\"Rp\",\"created_by\":\"admin\",\"created_date\":\"2023-08-07 20:11:40\"}'),
+(447, 'admin', '2023-08-07 20:11:55', 0, '::1', 'Create', 'currencies', '{\"id\":\"CR02\",\"name\":\"Dollar\",\"description\":\"US\",\"symbol\":\"$\",\"created_by\":\"admin\",\"created_date\":\"2023-08-07 20:11:55\"}'),
+(448, NULL, '2023-08-08 20:53:18', 0, '::1', 'Login', 'Login', '{\"id\":\"86f9f296025243ed953fe6014ff765\",\"departement_id\":null,\"number\":\"1\",\"name\":\"Administrator\",\"username\":\"admin\",\"position\":\"Admin System\"}'),
+(449, 'admin', '2023-08-08 20:54:11', 0, '::1', 'Create', 'menus', '{\"menus_id\":\"20230803000001\",\"name\":\"Item Kinds\",\"link\":\"master\\/item_kinds\",\"sort\":\"6\",\"state\":\"\",\"id\":\"20230808000001\",\"created_by\":\"admin\",\"created_date\":\"2023-08-08 20:54:11\"}'),
+(450, 'admin', '2023-08-08 20:54:39', 0, '::1', 'Create', 'setting_menus', '{\"menus_id\":\"20230808000001\",\"m_view\":\"on\",\"m_add\":\"on\",\"m_edit\":\"on\",\"m_delete\":\"on\",\"m_print\":\"on\",\"m_excel\":\"on\",\"id\":\"20230808000001\",\"created_by\":\"admin\",\"created_date\":\"2023-08-08 20:54:39\"}'),
+(451, 'admin', '2023-08-08 15:54:47', 0, '::1', 'Create', 'setting_users', '{\"users_id\":\"admin\",\"menus_id\":\"20230808000001\",\"id\":\"20230808000001\",\"created_by\":\"admin\",\"created_date\":\"2023-08-08 15:54:47\"}'),
+(452, 'admin', '2023-08-08 15:54:51', 0, '::1', 'Update Before', 'setting_users', '{\"id\":\"20230808000001\",\"created_by\":\"admin\",\"created_date\":\"2023-08-08 15:54:47\",\"updated_by\":null,\"updated_date\":null,\"deleted\":\"0\",\"users_id\":\"admin\",\"menus_id\":\"20230808000001\",\"v_view\":\"0\",\"v_add\":\"0\",\"v_edit\":\"0\",\"v_delete\":\"0\",\"v_upload\":\"0\",\"v_download\":\"0\",\"v_print\":\"0\",\"v_excel\":\"0\",\"status\":\"0\"}'),
+(453, 'admin', '2023-08-08 15:54:51', 0, '::1', 'Update New', 'setting_users', '{\"v_view\":\"1\",\"v_add\":\"0\",\"v_edit\":\"0\",\"v_delete\":\"0\",\"v_upload\":\"0\",\"v_download\":\"0\",\"v_print\":\"0\",\"v_excel\":\"0\",\"updated_by\":\"admin\",\"updated_date\":\"2023-08-08 15:54:51\"}'),
+(454, 'admin', '2023-08-08 15:54:52', 0, '::1', 'Update Before', 'setting_users', '{\"id\":\"20230808000001\",\"created_by\":\"admin\",\"created_date\":\"2023-08-08 15:54:47\",\"updated_by\":\"admin\",\"updated_date\":\"2023-08-08 15:54:51\",\"deleted\":\"0\",\"users_id\":\"admin\",\"menus_id\":\"20230808000001\",\"v_view\":\"1\",\"v_add\":\"0\",\"v_edit\":\"0\",\"v_delete\":\"0\",\"v_upload\":\"0\",\"v_download\":\"0\",\"v_print\":\"0\",\"v_excel\":\"0\",\"status\":\"0\"}'),
+(455, 'admin', '2023-08-08 15:54:52', 0, '::1', 'Update New', 'setting_users', '{\"v_view\":\"1\",\"v_add\":\"1\",\"v_edit\":\"0\",\"v_delete\":\"0\",\"v_upload\":\"0\",\"v_download\":\"0\",\"v_print\":\"0\",\"v_excel\":\"0\",\"updated_by\":\"admin\",\"updated_date\":\"2023-08-08 15:54:52\"}'),
+(456, 'admin', '2023-08-08 15:54:53', 0, '::1', 'Update Before', 'setting_users', '{\"id\":\"20230808000001\",\"created_by\":\"admin\",\"created_date\":\"2023-08-08 15:54:47\",\"updated_by\":\"admin\",\"updated_date\":\"2023-08-08 15:54:52\",\"deleted\":\"0\",\"users_id\":\"admin\",\"menus_id\":\"20230808000001\",\"v_view\":\"1\",\"v_add\":\"1\",\"v_edit\":\"0\",\"v_delete\":\"0\",\"v_upload\":\"0\",\"v_download\":\"0\",\"v_print\":\"0\",\"v_excel\":\"0\",\"status\":\"0\"}'),
+(457, 'admin', '2023-08-08 15:54:53', 0, '::1', 'Update New', 'setting_users', '{\"v_view\":\"1\",\"v_add\":\"1\",\"v_edit\":\"1\",\"v_delete\":\"0\",\"v_upload\":\"0\",\"v_download\":\"0\",\"v_print\":\"0\",\"v_excel\":\"0\",\"updated_by\":\"admin\",\"updated_date\":\"2023-08-08 15:54:53\"}'),
+(458, 'admin', '2023-08-08 15:54:53', 0, '::1', 'Update Before', 'setting_users', '{\"id\":\"20230808000001\",\"created_by\":\"admin\",\"created_date\":\"2023-08-08 15:54:47\",\"updated_by\":\"admin\",\"updated_date\":\"2023-08-08 15:54:53\",\"deleted\":\"0\",\"users_id\":\"admin\",\"menus_id\":\"20230808000001\",\"v_view\":\"1\",\"v_add\":\"1\",\"v_edit\":\"1\",\"v_delete\":\"0\",\"v_upload\":\"0\",\"v_download\":\"0\",\"v_print\":\"0\",\"v_excel\":\"0\",\"status\":\"0\"}'),
+(459, 'admin', '2023-08-08 15:54:53', 0, '::1', 'Update New', 'setting_users', '{\"v_view\":\"1\",\"v_add\":\"1\",\"v_edit\":\"1\",\"v_delete\":\"1\",\"v_upload\":\"0\",\"v_download\":\"0\",\"v_print\":\"0\",\"v_excel\":\"0\",\"updated_by\":\"admin\",\"updated_date\":\"2023-08-08 15:54:53\"}'),
+(460, 'admin', '2023-08-08 15:54:54', 0, '::1', 'Update Before', 'setting_users', '{\"id\":\"20230808000001\",\"created_by\":\"admin\",\"created_date\":\"2023-08-08 15:54:47\",\"updated_by\":\"admin\",\"updated_date\":\"2023-08-08 15:54:53\",\"deleted\":\"0\",\"users_id\":\"admin\",\"menus_id\":\"20230808000001\",\"v_view\":\"1\",\"v_add\":\"1\",\"v_edit\":\"1\",\"v_delete\":\"1\",\"v_upload\":\"0\",\"v_download\":\"0\",\"v_print\":\"0\",\"v_excel\":\"0\",\"status\":\"0\"}'),
+(461, 'admin', '2023-08-08 15:54:54', 0, '::1', 'Update New', 'setting_users', '{\"v_view\":\"1\",\"v_add\":\"1\",\"v_edit\":\"1\",\"v_delete\":\"1\",\"v_upload\":\"0\",\"v_download\":\"0\",\"v_print\":\"1\",\"v_excel\":\"0\",\"updated_by\":\"admin\",\"updated_date\":\"2023-08-08 15:54:54\"}'),
+(462, 'admin', '2023-08-08 15:54:55', 0, '::1', 'Update Before', 'setting_users', '{\"id\":\"20230808000001\",\"created_by\":\"admin\",\"created_date\":\"2023-08-08 15:54:47\",\"updated_by\":\"admin\",\"updated_date\":\"2023-08-08 15:54:54\",\"deleted\":\"0\",\"users_id\":\"admin\",\"menus_id\":\"20230808000001\",\"v_view\":\"1\",\"v_add\":\"1\",\"v_edit\":\"1\",\"v_delete\":\"1\",\"v_upload\":\"0\",\"v_download\":\"0\",\"v_print\":\"1\",\"v_excel\":\"0\",\"status\":\"0\"}'),
+(463, 'admin', '2023-08-08 15:54:55', 0, '::1', 'Update New', 'setting_users', '{\"v_view\":\"1\",\"v_add\":\"1\",\"v_edit\":\"1\",\"v_delete\":\"1\",\"v_upload\":\"0\",\"v_download\":\"0\",\"v_print\":\"1\",\"v_excel\":\"1\",\"updated_by\":\"admin\",\"updated_date\":\"2023-08-08 15:54:55\"}'),
+(464, 'admin', '2023-08-08 20:55:15', 0, '::1', 'Create', 'item_kinds', '{\"id\":\"CB001\",\"name\":\"Test\",\"description\":\"OK\",\"created_by\":\"admin\",\"created_date\":\"2023-08-08 20:55:15\"}'),
+(465, 'admin', '2023-08-08 20:55:25', 0, '::1', 'Create', 'item_kinds', '{\"id\":\"CB002\",\"name\":\"Test2\",\"description\":\"OK\",\"created_by\":\"admin\",\"created_date\":\"2023-08-08 20:55:25\"}'),
+(466, 'admin', '2023-08-08 20:55:35', 0, '::1', 'Update Before', 'item_kinds', '{\"id\":\"CB001\",\"created_by\":\"admin\",\"created_date\":\"2023-08-08 20:55:15\",\"updated_by\":null,\"updated_date\":null,\"deleted\":\"0\",\"name\":\"Test\",\"description\":\"OK\",\"status\":\"0\"}'),
+(467, 'admin', '2023-08-08 20:55:35', 0, '::1', 'Update New', 'item_kinds', '{\"id\":\"CB001\",\"name\":\"Test1\",\"description\":\"OK\",\"updated_by\":\"admin\",\"updated_date\":\"2023-08-08 20:55:35\"}'),
+(468, 'admin', '2023-08-08 20:55:43', 0, '::1', 'Delete', 'item_kinds', '{\"id\":\"CB002\",\"created_by\":\"admin\",\"created_date\":\"2023-08-08 20:55:25\",\"updated_by\":null,\"updated_date\":null,\"deleted\":\"0\",\"name\":\"Test2\",\"description\":\"OK\",\"status\":\"0\"}'),
+(469, 'admin', '2023-08-08 20:59:13', 0, '::1', 'Update Before', 'menus', '{\"id\":\"20230808000001\",\"created_by\":\"admin\",\"created_date\":\"2023-08-08 20:54:11\",\"updated_by\":null,\"updated_date\":null,\"deleted\":\"0\",\"menus_id\":\"20230803000001\",\"number\":null,\"name\":\"Item Kinds\",\"description\":null,\"link\":\"master\\/item_kinds\",\"sort\":\"6\",\"icon\":\"\",\"flag\":null,\"color\":null,\"state\":\"\",\"status\":\"0\"}'),
+(470, 'admin', '2023-08-08 20:59:13', 0, '::1', 'Update New', 'menus', '{\"menus_id\":\"20230803000001\",\"name\":\"Kind Of Box\",\"link\":\"master\\/item_kinds\",\"sort\":\"6\",\"state\":\"\",\"updated_by\":\"admin\",\"updated_date\":\"2023-08-08 20:59:13\"}'),
+(471, 'admin', '2023-08-08 21:15:21', 0, '::1', 'Create', 'menus', '{\"menus_id\":\"20230803000001\",\"name\":\"Boxs\",\"link\":\"master\\/item_boxs\",\"sort\":\"7\",\"state\":\"\",\"id\":20230808000002,\"created_by\":\"admin\",\"created_date\":\"2023-08-08 21:15:21\"}'),
+(472, 'admin', '2023-08-08 21:15:45', 0, '::1', 'Create', 'setting_menus', '{\"menus_id\":\"20230808000002\",\"m_view\":\"on\",\"m_add\":\"on\",\"m_edit\":\"on\",\"m_delete\":\"on\",\"m_print\":\"on\",\"m_excel\":\"on\",\"id\":20230808000002,\"created_by\":\"admin\",\"created_date\":\"2023-08-08 21:15:45\"}'),
+(473, 'admin', '2023-08-08 16:15:52', 0, '::1', 'Create', 'setting_users', '{\"users_id\":\"admin\",\"menus_id\":\"20230808000002\",\"id\":20230808000002,\"created_by\":\"admin\",\"created_date\":\"2023-08-08 16:15:52\"}'),
+(474, 'admin', '2023-08-08 16:15:57', 0, '::1', 'Update Before', 'setting_users', '{\"id\":\"20230808000002\",\"created_by\":\"admin\",\"created_date\":\"2023-08-08 16:15:52\",\"updated_by\":null,\"updated_date\":null,\"deleted\":\"0\",\"users_id\":\"admin\",\"menus_id\":\"20230808000002\",\"v_view\":\"0\",\"v_add\":\"0\",\"v_edit\":\"0\",\"v_delete\":\"0\",\"v_upload\":\"0\",\"v_download\":\"0\",\"v_print\":\"0\",\"v_excel\":\"0\",\"status\":\"0\"}'),
+(475, 'admin', '2023-08-08 16:15:57', 0, '::1', 'Update New', 'setting_users', '{\"v_view\":\"1\",\"v_add\":\"0\",\"v_edit\":\"0\",\"v_delete\":\"0\",\"v_upload\":\"0\",\"v_download\":\"0\",\"v_print\":\"0\",\"v_excel\":\"0\",\"updated_by\":\"admin\",\"updated_date\":\"2023-08-08 16:15:57\"}'),
+(476, 'admin', '2023-08-08 16:15:58', 0, '::1', 'Update Before', 'setting_users', '{\"id\":\"20230808000002\",\"created_by\":\"admin\",\"created_date\":\"2023-08-08 16:15:52\",\"updated_by\":\"admin\",\"updated_date\":\"2023-08-08 16:15:57\",\"deleted\":\"0\",\"users_id\":\"admin\",\"menus_id\":\"20230808000002\",\"v_view\":\"1\",\"v_add\":\"0\",\"v_edit\":\"0\",\"v_delete\":\"0\",\"v_upload\":\"0\",\"v_download\":\"0\",\"v_print\":\"0\",\"v_excel\":\"0\",\"status\":\"0\"}'),
+(477, 'admin', '2023-08-08 16:15:58', 0, '::1', 'Update New', 'setting_users', '{\"v_view\":\"1\",\"v_add\":\"1\",\"v_edit\":\"0\",\"v_delete\":\"0\",\"v_upload\":\"0\",\"v_download\":\"0\",\"v_print\":\"0\",\"v_excel\":\"0\",\"updated_by\":\"admin\",\"updated_date\":\"2023-08-08 16:15:58\"}'),
+(478, 'admin', '2023-08-08 16:15:58', 0, '::1', 'Update Before', 'setting_users', '{\"id\":\"20230808000002\",\"created_by\":\"admin\",\"created_date\":\"2023-08-08 16:15:52\",\"updated_by\":\"admin\",\"updated_date\":\"2023-08-08 16:15:58\",\"deleted\":\"0\",\"users_id\":\"admin\",\"menus_id\":\"20230808000002\",\"v_view\":\"1\",\"v_add\":\"1\",\"v_edit\":\"0\",\"v_delete\":\"0\",\"v_upload\":\"0\",\"v_download\":\"0\",\"v_print\":\"0\",\"v_excel\":\"0\",\"status\":\"0\"}'),
+(479, 'admin', '2023-08-08 16:15:58', 0, '::1', 'Update New', 'setting_users', '{\"v_view\":\"1\",\"v_add\":\"1\",\"v_edit\":\"1\",\"v_delete\":\"0\",\"v_upload\":\"0\",\"v_download\":\"0\",\"v_print\":\"0\",\"v_excel\":\"0\",\"updated_by\":\"admin\",\"updated_date\":\"2023-08-08 16:15:58\"}'),
+(480, 'admin', '2023-08-08 16:15:59', 0, '::1', 'Update Before', 'setting_users', '{\"id\":\"20230808000002\",\"created_by\":\"admin\",\"created_date\":\"2023-08-08 16:15:52\",\"updated_by\":\"admin\",\"updated_date\":\"2023-08-08 16:15:58\",\"deleted\":\"0\",\"users_id\":\"admin\",\"menus_id\":\"20230808000002\",\"v_view\":\"1\",\"v_add\":\"1\",\"v_edit\":\"1\",\"v_delete\":\"0\",\"v_upload\":\"0\",\"v_download\":\"0\",\"v_print\":\"0\",\"v_excel\":\"0\",\"status\":\"0\"}'),
+(481, 'admin', '2023-08-08 16:15:59', 0, '::1', 'Update New', 'setting_users', '{\"v_view\":\"1\",\"v_add\":\"1\",\"v_edit\":\"1\",\"v_delete\":\"1\",\"v_upload\":\"0\",\"v_download\":\"0\",\"v_print\":\"0\",\"v_excel\":\"0\",\"updated_by\":\"admin\",\"updated_date\":\"2023-08-08 16:15:59\"}'),
+(482, 'admin', '2023-08-08 16:16:00', 0, '::1', 'Update Before', 'setting_users', '{\"id\":\"20230808000002\",\"created_by\":\"admin\",\"created_date\":\"2023-08-08 16:15:52\",\"updated_by\":\"admin\",\"updated_date\":\"2023-08-08 16:15:59\",\"deleted\":\"0\",\"users_id\":\"admin\",\"menus_id\":\"20230808000002\",\"v_view\":\"1\",\"v_add\":\"1\",\"v_edit\":\"1\",\"v_delete\":\"1\",\"v_upload\":\"0\",\"v_download\":\"0\",\"v_print\":\"0\",\"v_excel\":\"0\",\"status\":\"0\"}'),
+(483, 'admin', '2023-08-08 16:16:00', 0, '::1', 'Update New', 'setting_users', '{\"v_view\":\"1\",\"v_add\":\"1\",\"v_edit\":\"1\",\"v_delete\":\"1\",\"v_upload\":\"0\",\"v_download\":\"0\",\"v_print\":\"1\",\"v_excel\":\"0\",\"updated_by\":\"admin\",\"updated_date\":\"2023-08-08 16:16:00\"}'),
+(484, 'admin', '2023-08-08 16:16:01', 0, '::1', 'Update Before', 'setting_users', '{\"id\":\"20230808000002\",\"created_by\":\"admin\",\"created_date\":\"2023-08-08 16:15:52\",\"updated_by\":\"admin\",\"updated_date\":\"2023-08-08 16:16:00\",\"deleted\":\"0\",\"users_id\":\"admin\",\"menus_id\":\"20230808000002\",\"v_view\":\"1\",\"v_add\":\"1\",\"v_edit\":\"1\",\"v_delete\":\"1\",\"v_upload\":\"0\",\"v_download\":\"0\",\"v_print\":\"1\",\"v_excel\":\"0\",\"status\":\"0\"}'),
+(485, 'admin', '2023-08-08 16:16:01', 0, '::1', 'Update New', 'setting_users', '{\"v_view\":\"1\",\"v_add\":\"1\",\"v_edit\":\"1\",\"v_delete\":\"1\",\"v_upload\":\"0\",\"v_download\":\"0\",\"v_print\":\"1\",\"v_excel\":\"1\",\"updated_by\":\"admin\",\"updated_date\":\"2023-08-08 16:16:01\"}'),
+(486, 'admin', '2023-08-08 21:18:21', 0, '::1', 'Create', 'item_boxs', '{\"id\":\"B001\",\"item_kind_id\":\"CB001\",\"name\":\"Test\",\"size\":\"10\",\"color\":\"Biru\",\"material\":\"Plastik\",\"created_by\":\"admin\",\"created_date\":\"2023-08-08 21:18:21\"}'),
+(487, 'admin', '2023-08-08 21:18:34', 0, '::1', 'Update Before', 'item_boxs', '{\"id\":\"B001\",\"created_by\":\"admin\",\"created_date\":\"2023-08-08 21:18:21\",\"updated_by\":null,\"updated_date\":null,\"deleted\":\"0\",\"item_kind_id\":\"CB001\",\"name\":\"Test\",\"size\":\"10\",\"color\":\"Biru\",\"material\":\"Plastik\",\"status\":\"0\"}'),
+(488, 'admin', '2023-08-08 21:18:34', 0, '::1', 'Update New', 'item_boxs', '{\"id\":\"B001\",\"item_kind_id\":\"CB001\",\"name\":\"Test\",\"size\":\"10\",\"color\":\"Merah\",\"material\":\"Plastik\",\"updated_by\":\"admin\",\"updated_date\":\"2023-08-08 21:18:34\"}'),
+(489, 'admin', '2023-08-08 21:19:00', 0, '::1', 'Create', 'item_boxs', '{\"id\":\"B002\",\"item_kind_id\":\"CB001\",\"name\":\"Test2\",\"size\":\"20\",\"color\":\"Hijau\",\"material\":\"Plastik\",\"created_by\":\"admin\",\"created_date\":\"2023-08-08 21:19:00\"}'),
+(490, 'admin', '2023-08-08 21:19:18', 0, '::1', 'Delete', 'item_boxs', '{\"id\":\"B002\",\"created_by\":\"admin\",\"created_date\":\"2023-08-08 21:19:00\",\"updated_by\":null,\"updated_date\":null,\"deleted\":\"0\",\"item_kind_id\":\"CB001\",\"name\":\"Test2\",\"size\":\"20\",\"color\":\"Hijau\",\"material\":\"Plastik\",\"status\":\"0\"}'),
+(491, 'admin', '2023-08-08 21:20:24', 0, '::1', 'Create', 'item_categories', '{\"id\":\"C02\",\"name\":\"Test2\",\"number\":\"RM\",\"description\":\"Raw Material\",\"created_by\":\"admin\",\"created_date\":\"2023-08-08 21:20:24\"}'),
+(492, 'admin', '2023-08-08 21:29:48', 0, '::1', 'Create', 'menus', '{\"menus_id\":\"20230803000001\",\"name\":\"Color\",\"link\":\"master\\/item_colors\",\"sort\":\"8\",\"state\":\"\",\"id\":20230808000003,\"created_by\":\"admin\",\"created_date\":\"2023-08-08 21:29:48\"}'),
+(493, 'admin', '2023-08-08 21:30:09', 0, '::1', 'Create', 'setting_menus', '{\"menus_id\":\"20230808000003\",\"m_view\":\"on\",\"m_add\":\"on\",\"m_edit\":\"on\",\"m_delete\":\"on\",\"m_print\":\"on\",\"m_excel\":\"on\",\"id\":20230808000003,\"created_by\":\"admin\",\"created_date\":\"2023-08-08 21:30:09\"}'),
+(494, 'admin', '2023-08-08 16:30:30', 0, '::1', 'Create', 'setting_users', '{\"users_id\":\"nanda\",\"menus_id\":\"20230803000006\",\"id\":20230808000003,\"created_by\":\"admin\",\"created_date\":\"2023-08-08 16:30:30\"}'),
+(495, 'admin', '2023-08-08 16:30:30', 0, '::1', 'Create', 'setting_users', '{\"users_id\":\"nanda\",\"menus_id\":\"20230803000007\",\"id\":20230808000004,\"created_by\":\"admin\",\"created_date\":\"2023-08-08 16:30:30\"}'),
+(496, 'admin', '2023-08-08 16:30:30', 0, '::1', 'Create', 'setting_users', '{\"users_id\":\"nanda\",\"menus_id\":\"20230803000008\",\"id\":20230808000005,\"created_by\":\"admin\",\"created_date\":\"2023-08-08 16:30:30\"}'),
+(497, 'admin', '2023-08-08 16:30:30', 0, '::1', 'Create', 'setting_users', '{\"users_id\":\"nanda\",\"menus_id\":\"20230803000009\",\"id\":20230808000006,\"created_by\":\"admin\",\"created_date\":\"2023-08-08 16:30:30\"}'),
+(498, 'admin', '2023-08-08 16:30:30', 0, '::1', 'Create', 'setting_users', '{\"users_id\":\"nanda\",\"menus_id\":\"20230807000001\",\"id\":20230808000007,\"created_by\":\"admin\",\"created_date\":\"2023-08-08 16:30:30\"}'),
+(499, 'admin', '2023-08-08 16:30:30', 0, '::1', 'Create', 'setting_users', '{\"users_id\":\"nanda\",\"menus_id\":\"20230808000001\",\"id\":20230808000008,\"created_by\":\"admin\",\"created_date\":\"2023-08-08 16:30:30\"}'),
+(500, 'admin', '2023-08-08 16:30:30', 0, '::1', 'Create', 'setting_users', '{\"users_id\":\"nanda\",\"menus_id\":\"20230808000002\",\"id\":20230808000009,\"created_by\":\"admin\",\"created_date\":\"2023-08-08 16:30:30\"}'),
+(501, 'admin', '2023-08-08 16:30:30', 0, '::1', 'Create', 'setting_users', '{\"users_id\":\"nanda\",\"menus_id\":\"20230808000003\",\"id\":20230808000010,\"created_by\":\"admin\",\"created_date\":\"2023-08-08 16:30:30\"}'),
+(502, 'admin', '2023-08-08 16:30:30', 0, '::1', 'Create', 'setting_users', '{\"users_id\":\"admin\",\"menus_id\":\"20230808000003\",\"id\":20230808000011,\"created_by\":\"admin\",\"created_date\":\"2023-08-08 16:30:30\"}'),
+(503, 'admin', '2023-08-08 16:30:35', 0, '::1', 'Update Before', 'setting_users', '{\"id\":\"20230808000011\",\"created_by\":\"admin\",\"created_date\":\"2023-08-08 16:30:30\",\"updated_by\":null,\"updated_date\":null,\"deleted\":\"0\",\"users_id\":\"admin\",\"menus_id\":\"20230808000003\",\"v_view\":\"0\",\"v_add\":\"0\",\"v_edit\":\"0\",\"v_delete\":\"0\",\"v_upload\":\"0\",\"v_download\":\"0\",\"v_print\":\"0\",\"v_excel\":\"0\",\"status\":\"0\"}'),
+(504, 'admin', '2023-08-08 16:30:35', 0, '::1', 'Update New', 'setting_users', '{\"v_view\":\"1\",\"v_add\":\"0\",\"v_edit\":\"0\",\"v_delete\":\"0\",\"v_upload\":\"0\",\"v_download\":\"0\",\"v_print\":\"0\",\"v_excel\":\"0\",\"updated_by\":\"admin\",\"updated_date\":\"2023-08-08 16:30:35\"}'),
+(505, 'admin', '2023-08-08 16:30:36', 0, '::1', 'Update Before', 'setting_users', '{\"id\":\"20230808000011\",\"created_by\":\"admin\",\"created_date\":\"2023-08-08 16:30:30\",\"updated_by\":\"admin\",\"updated_date\":\"2023-08-08 16:30:35\",\"deleted\":\"0\",\"users_id\":\"admin\",\"menus_id\":\"20230808000003\",\"v_view\":\"1\",\"v_add\":\"0\",\"v_edit\":\"0\",\"v_delete\":\"0\",\"v_upload\":\"0\",\"v_download\":\"0\",\"v_print\":\"0\",\"v_excel\":\"0\",\"status\":\"0\"}'),
+(506, 'admin', '2023-08-08 16:30:36', 0, '::1', 'Update New', 'setting_users', '{\"v_view\":\"1\",\"v_add\":\"1\",\"v_edit\":\"0\",\"v_delete\":\"0\",\"v_upload\":\"0\",\"v_download\":\"0\",\"v_print\":\"0\",\"v_excel\":\"0\",\"updated_by\":\"admin\",\"updated_date\":\"2023-08-08 16:30:36\"}'),
+(507, 'admin', '2023-08-08 16:30:37', 0, '::1', 'Update Before', 'setting_users', '{\"id\":\"20230808000011\",\"created_by\":\"admin\",\"created_date\":\"2023-08-08 16:30:30\",\"updated_by\":\"admin\",\"updated_date\":\"2023-08-08 16:30:36\",\"deleted\":\"0\",\"users_id\":\"admin\",\"menus_id\":\"20230808000003\",\"v_view\":\"1\",\"v_add\":\"1\",\"v_edit\":\"0\",\"v_delete\":\"0\",\"v_upload\":\"0\",\"v_download\":\"0\",\"v_print\":\"0\",\"v_excel\":\"0\",\"status\":\"0\"}'),
+(508, 'admin', '2023-08-08 16:30:37', 0, '::1', 'Update New', 'setting_users', '{\"v_view\":\"1\",\"v_add\":\"1\",\"v_edit\":\"1\",\"v_delete\":\"0\",\"v_upload\":\"0\",\"v_download\":\"0\",\"v_print\":\"0\",\"v_excel\":\"0\",\"updated_by\":\"admin\",\"updated_date\":\"2023-08-08 16:30:37\"}'),
+(509, 'admin', '2023-08-08 16:30:38', 0, '::1', 'Update Before', 'setting_users', '{\"id\":\"20230808000011\",\"created_by\":\"admin\",\"created_date\":\"2023-08-08 16:30:30\",\"updated_by\":\"admin\",\"updated_date\":\"2023-08-08 16:30:37\",\"deleted\":\"0\",\"users_id\":\"admin\",\"menus_id\":\"20230808000003\",\"v_view\":\"1\",\"v_add\":\"1\",\"v_edit\":\"1\",\"v_delete\":\"0\",\"v_upload\":\"0\",\"v_download\":\"0\",\"v_print\":\"0\",\"v_excel\":\"0\",\"status\":\"0\"}'),
+(510, 'admin', '2023-08-08 16:30:38', 0, '::1', 'Update New', 'setting_users', '{\"v_view\":\"1\",\"v_add\":\"1\",\"v_edit\":\"1\",\"v_delete\":\"1\",\"v_upload\":\"0\",\"v_download\":\"0\",\"v_print\":\"0\",\"v_excel\":\"0\",\"updated_by\":\"admin\",\"updated_date\":\"2023-08-08 16:30:38\"}'),
+(511, 'admin', '2023-08-08 16:30:39', 0, '::1', 'Update Before', 'setting_users', '{\"id\":\"20230808000011\",\"created_by\":\"admin\",\"created_date\":\"2023-08-08 16:30:30\",\"updated_by\":\"admin\",\"updated_date\":\"2023-08-08 16:30:38\",\"deleted\":\"0\",\"users_id\":\"admin\",\"menus_id\":\"20230808000003\",\"v_view\":\"1\",\"v_add\":\"1\",\"v_edit\":\"1\",\"v_delete\":\"1\",\"v_upload\":\"0\",\"v_download\":\"0\",\"v_print\":\"0\",\"v_excel\":\"0\",\"status\":\"0\"}'),
+(512, 'admin', '2023-08-08 16:30:39', 0, '::1', 'Update New', 'setting_users', '{\"v_view\":\"1\",\"v_add\":\"1\",\"v_edit\":\"1\",\"v_delete\":\"1\",\"v_upload\":\"0\",\"v_download\":\"0\",\"v_print\":\"1\",\"v_excel\":\"0\",\"updated_by\":\"admin\",\"updated_date\":\"2023-08-08 16:30:39\"}'),
+(513, 'admin', '2023-08-08 16:30:40', 0, '::1', 'Update Before', 'setting_users', '{\"id\":\"20230808000011\",\"created_by\":\"admin\",\"created_date\":\"2023-08-08 16:30:30\",\"updated_by\":\"admin\",\"updated_date\":\"2023-08-08 16:30:39\",\"deleted\":\"0\",\"users_id\":\"admin\",\"menus_id\":\"20230808000003\",\"v_view\":\"1\",\"v_add\":\"1\",\"v_edit\":\"1\",\"v_delete\":\"1\",\"v_upload\":\"0\",\"v_download\":\"0\",\"v_print\":\"1\",\"v_excel\":\"0\",\"status\":\"0\"}'),
+(514, 'admin', '2023-08-08 16:30:40', 0, '::1', 'Update New', 'setting_users', '{\"v_view\":\"1\",\"v_add\":\"1\",\"v_edit\":\"1\",\"v_delete\":\"1\",\"v_upload\":\"0\",\"v_download\":\"0\",\"v_print\":\"1\",\"v_excel\":\"1\",\"updated_by\":\"admin\",\"updated_date\":\"2023-08-08 16:30:40\"}');
+INSERT INTO `logs` (`id`, `created_by`, `created_date`, `deleted`, `ip_address`, `action`, `menu`, `description`) VALUES
+(515, 'admin', '2023-08-08 21:31:48', 0, '::1', 'Create', 'item_colors', '{\"id\":\"C001\",\"name\":\"Biru\",\"description\":\"Dongker\",\"created_by\":\"admin\",\"created_date\":\"2023-08-08 21:31:48\"}'),
+(516, 'admin', '2023-08-08 21:32:04', 0, '::1', 'Create', 'item_colors', '{\"id\":\"C002\",\"name\":\"Merah\",\"description\":\"Maroon\",\"created_by\":\"admin\",\"created_date\":\"2023-08-08 21:32:04\"}'),
+(517, 'admin', '2023-08-08 21:32:25', 0, '::1', 'Update Before', 'item_colors', '{\"id\":\"C002\",\"created_by\":\"admin\",\"created_date\":\"2023-08-08 21:32:04\",\"updated_by\":null,\"updated_date\":null,\"deleted\":\"0\",\"name\":\"Merah\",\"description\":\"Maroon\",\"status\":\"0\"}'),
+(518, 'admin', '2023-08-08 21:32:25', 0, '::1', 'Update New', 'item_colors', '{\"id\":\"C002\",\"name\":\"Merah\",\"description\":\"Muda\",\"updated_by\":\"admin\",\"updated_date\":\"2023-08-08 21:32:25\"}'),
+(519, 'admin', '2023-08-08 21:32:33', 0, '::1', 'Delete', 'item_colors', '{\"id\":\"C002\",\"created_by\":\"admin\",\"created_date\":\"2023-08-08 21:32:04\",\"updated_by\":\"admin\",\"updated_date\":\"2023-08-08 21:32:25\",\"deleted\":\"0\",\"name\":\"Merah\",\"description\":\"Muda\",\"status\":\"0\"}'),
+(520, 'admin', '2023-08-08 21:44:05', 0, '::1', 'Create', 'menus', '{\"menus_id\":\"20230803000001\",\"name\":\"Item Process\",\"link\":\"master\\/item_process\",\"sort\":\"9\",\"state\":\"\",\"id\":20230808000004,\"created_by\":\"admin\",\"created_date\":\"2023-08-08 21:44:05\"}'),
+(521, 'admin', '2023-08-08 21:44:25', 0, '::1', 'Create', 'setting_menus', '{\"menus_id\":\"20230808000004\",\"m_view\":\"on\",\"m_add\":\"on\",\"m_edit\":\"on\",\"m_delete\":\"on\",\"m_print\":\"on\",\"m_excel\":\"on\",\"id\":20230808000004,\"created_by\":\"admin\",\"created_date\":\"2023-08-08 21:44:25\"}'),
+(522, 'admin', '2023-08-08 16:44:36', 0, '::1', 'Create', 'setting_users', '{\"users_id\":\"admin\",\"menus_id\":\"20230808000004\",\"id\":20230808000012,\"created_by\":\"admin\",\"created_date\":\"2023-08-08 16:44:36\"}'),
+(523, 'admin', '2023-08-08 16:44:43', 0, '::1', 'Update Before', 'setting_users', '{\"id\":\"20230808000012\",\"created_by\":\"admin\",\"created_date\":\"2023-08-08 16:44:36\",\"updated_by\":null,\"updated_date\":null,\"deleted\":\"0\",\"users_id\":\"admin\",\"menus_id\":\"20230808000004\",\"v_view\":\"0\",\"v_add\":\"0\",\"v_edit\":\"0\",\"v_delete\":\"0\",\"v_upload\":\"0\",\"v_download\":\"0\",\"v_print\":\"0\",\"v_excel\":\"0\",\"status\":\"0\"}'),
+(524, 'admin', '2023-08-08 16:44:43', 0, '::1', 'Update New', 'setting_users', '{\"v_view\":\"1\",\"v_add\":\"0\",\"v_edit\":\"0\",\"v_delete\":\"0\",\"v_upload\":\"0\",\"v_download\":\"0\",\"v_print\":\"0\",\"v_excel\":\"0\",\"updated_by\":\"admin\",\"updated_date\":\"2023-08-08 16:44:43\"}'),
+(525, 'admin', '2023-08-08 16:44:43', 0, '::1', 'Update Before', 'setting_users', '{\"id\":\"20230808000012\",\"created_by\":\"admin\",\"created_date\":\"2023-08-08 16:44:36\",\"updated_by\":\"admin\",\"updated_date\":\"2023-08-08 16:44:43\",\"deleted\":\"0\",\"users_id\":\"admin\",\"menus_id\":\"20230808000004\",\"v_view\":\"1\",\"v_add\":\"0\",\"v_edit\":\"0\",\"v_delete\":\"0\",\"v_upload\":\"0\",\"v_download\":\"0\",\"v_print\":\"0\",\"v_excel\":\"0\",\"status\":\"0\"}'),
+(526, 'admin', '2023-08-08 16:44:43', 0, '::1', 'Update New', 'setting_users', '{\"v_view\":\"1\",\"v_add\":\"1\",\"v_edit\":\"0\",\"v_delete\":\"0\",\"v_upload\":\"0\",\"v_download\":\"0\",\"v_print\":\"0\",\"v_excel\":\"0\",\"updated_by\":\"admin\",\"updated_date\":\"2023-08-08 16:44:43\"}'),
+(527, 'admin', '2023-08-08 16:44:44', 0, '::1', 'Update Before', 'setting_users', '{\"id\":\"20230808000012\",\"created_by\":\"admin\",\"created_date\":\"2023-08-08 16:44:36\",\"updated_by\":\"admin\",\"updated_date\":\"2023-08-08 16:44:43\",\"deleted\":\"0\",\"users_id\":\"admin\",\"menus_id\":\"20230808000004\",\"v_view\":\"1\",\"v_add\":\"1\",\"v_edit\":\"0\",\"v_delete\":\"0\",\"v_upload\":\"0\",\"v_download\":\"0\",\"v_print\":\"0\",\"v_excel\":\"0\",\"status\":\"0\"}'),
+(528, 'admin', '2023-08-08 16:44:44', 0, '::1', 'Update New', 'setting_users', '{\"v_view\":\"1\",\"v_add\":\"1\",\"v_edit\":\"1\",\"v_delete\":\"0\",\"v_upload\":\"0\",\"v_download\":\"0\",\"v_print\":\"0\",\"v_excel\":\"0\",\"updated_by\":\"admin\",\"updated_date\":\"2023-08-08 16:44:44\"}'),
+(529, 'admin', '2023-08-08 16:44:46', 0, '::1', 'Update Before', 'setting_users', '{\"id\":\"20230808000012\",\"created_by\":\"admin\",\"created_date\":\"2023-08-08 16:44:36\",\"updated_by\":\"admin\",\"updated_date\":\"2023-08-08 16:44:44\",\"deleted\":\"0\",\"users_id\":\"admin\",\"menus_id\":\"20230808000004\",\"v_view\":\"1\",\"v_add\":\"1\",\"v_edit\":\"1\",\"v_delete\":\"0\",\"v_upload\":\"0\",\"v_download\":\"0\",\"v_print\":\"0\",\"v_excel\":\"0\",\"status\":\"0\"}'),
+(530, 'admin', '2023-08-08 16:44:46', 0, '::1', 'Update New', 'setting_users', '{\"v_view\":\"1\",\"v_add\":\"1\",\"v_edit\":\"1\",\"v_delete\":\"1\",\"v_upload\":\"0\",\"v_download\":\"0\",\"v_print\":\"0\",\"v_excel\":\"0\",\"updated_by\":\"admin\",\"updated_date\":\"2023-08-08 16:44:46\"}'),
+(531, 'admin', '2023-08-08 16:44:47', 0, '::1', 'Update Before', 'setting_users', '{\"id\":\"20230808000012\",\"created_by\":\"admin\",\"created_date\":\"2023-08-08 16:44:36\",\"updated_by\":\"admin\",\"updated_date\":\"2023-08-08 16:44:46\",\"deleted\":\"0\",\"users_id\":\"admin\",\"menus_id\":\"20230808000004\",\"v_view\":\"1\",\"v_add\":\"1\",\"v_edit\":\"1\",\"v_delete\":\"1\",\"v_upload\":\"0\",\"v_download\":\"0\",\"v_print\":\"0\",\"v_excel\":\"0\",\"status\":\"0\"}'),
+(532, 'admin', '2023-08-08 16:44:47', 0, '::1', 'Update New', 'setting_users', '{\"v_view\":\"1\",\"v_add\":\"1\",\"v_edit\":\"1\",\"v_delete\":\"1\",\"v_upload\":\"0\",\"v_download\":\"0\",\"v_print\":\"1\",\"v_excel\":\"0\",\"updated_by\":\"admin\",\"updated_date\":\"2023-08-08 16:44:47\"}'),
+(533, 'admin', '2023-08-08 16:44:48', 0, '::1', 'Update Before', 'setting_users', '{\"id\":\"20230808000012\",\"created_by\":\"admin\",\"created_date\":\"2023-08-08 16:44:36\",\"updated_by\":\"admin\",\"updated_date\":\"2023-08-08 16:44:47\",\"deleted\":\"0\",\"users_id\":\"admin\",\"menus_id\":\"20230808000004\",\"v_view\":\"1\",\"v_add\":\"1\",\"v_edit\":\"1\",\"v_delete\":\"1\",\"v_upload\":\"0\",\"v_download\":\"0\",\"v_print\":\"1\",\"v_excel\":\"0\",\"status\":\"0\"}'),
+(534, 'admin', '2023-08-08 16:44:48', 0, '::1', 'Update New', 'setting_users', '{\"v_view\":\"1\",\"v_add\":\"1\",\"v_edit\":\"1\",\"v_delete\":\"1\",\"v_upload\":\"0\",\"v_download\":\"0\",\"v_print\":\"1\",\"v_excel\":\"1\",\"updated_by\":\"admin\",\"updated_date\":\"2023-08-08 16:44:48\"}'),
+(535, 'admin', '2023-08-08 21:45:30', 0, '::1', 'Create', 'item_process', '{\"id\":\"PC001\",\"name\":\"Press\",\"description\":\"OK\",\"created_by\":\"admin\",\"created_date\":\"2023-08-08 21:45:30\"}'),
+(536, 'admin', '2023-08-08 21:45:39', 0, '::1', 'Create', 'item_process', '{\"id\":\"PC002\",\"name\":\"Welding\",\"description\":\"OK\",\"created_by\":\"admin\",\"created_date\":\"2023-08-08 21:45:39\"}'),
+(537, 'admin', '2023-08-08 21:46:13', 0, '::1', 'Update Before', 'item_process', '{\"id\":\"PC002\",\"created_by\":\"admin\",\"created_date\":\"2023-08-08 21:45:39\",\"updated_by\":null,\"updated_date\":null,\"deleted\":\"0\",\"name\":\"Welding\",\"description\":\"OK\",\"status\":\"0\"}'),
+(538, 'admin', '2023-08-08 21:46:13', 0, '::1', 'Update New', 'item_process', '{\"id\":\"PC002\",\"name\":\"Weld\",\"description\":\"OK\",\"updated_by\":\"admin\",\"updated_date\":\"2023-08-08 21:46:13\"}'),
+(539, 'admin', '2023-08-08 21:46:28', 0, '::1', 'Delete', 'item_process', '{\"id\":\"PC002\",\"created_by\":\"admin\",\"created_date\":\"2023-08-08 21:45:39\",\"updated_by\":\"admin\",\"updated_date\":\"2023-08-08 21:46:13\",\"deleted\":\"0\",\"name\":\"Weld\",\"description\":\"OK\",\"status\":\"0\"}'),
+(540, 'admin', '2023-08-08 22:09:46', 0, '::1', 'Create', 'menus', '{\"menus_id\":\"20230803000001\",\"name\":\"Flow Process\",\"link\":\"master\\/item_process_flow\",\"sort\":\"10\",\"state\":\"\",\"id\":20230808000005,\"created_by\":\"admin\",\"created_date\":\"2023-08-08 22:09:46\"}'),
+(541, 'admin', '2023-08-08 22:10:05', 0, '::1', 'Create', 'setting_menus', '{\"menus_id\":\"20230808000005\",\"m_view\":\"on\",\"m_add\":\"on\",\"m_edit\":\"on\",\"m_delete\":\"on\",\"m_print\":\"on\",\"m_excel\":\"on\",\"id\":20230808000005,\"created_by\":\"admin\",\"created_date\":\"2023-08-08 22:10:05\"}'),
+(542, 'admin', '2023-08-08 17:10:15', 0, '::1', 'Create', 'setting_users', '{\"users_id\":\"admin\",\"menus_id\":\"20230808000005\",\"id\":20230808000013,\"created_by\":\"admin\",\"created_date\":\"2023-08-08 17:10:15\"}'),
+(543, 'admin', '2023-08-08 17:10:18', 0, '::1', 'Update Before', 'setting_users', '{\"id\":\"20230808000013\",\"created_by\":\"admin\",\"created_date\":\"2023-08-08 17:10:15\",\"updated_by\":null,\"updated_date\":null,\"deleted\":\"0\",\"users_id\":\"admin\",\"menus_id\":\"20230808000005\",\"v_view\":\"0\",\"v_add\":\"0\",\"v_edit\":\"0\",\"v_delete\":\"0\",\"v_upload\":\"0\",\"v_download\":\"0\",\"v_print\":\"0\",\"v_excel\":\"0\",\"status\":\"0\"}'),
+(544, 'admin', '2023-08-08 17:10:18', 0, '::1', 'Update New', 'setting_users', '{\"v_view\":\"1\",\"v_add\":\"0\",\"v_edit\":\"0\",\"v_delete\":\"0\",\"v_upload\":\"0\",\"v_download\":\"0\",\"v_print\":\"0\",\"v_excel\":\"0\",\"updated_by\":\"admin\",\"updated_date\":\"2023-08-08 17:10:18\"}'),
+(545, 'admin', '2023-08-08 17:10:18', 0, '::1', 'Update Before', 'setting_users', '{\"id\":\"20230808000013\",\"created_by\":\"admin\",\"created_date\":\"2023-08-08 17:10:15\",\"updated_by\":\"admin\",\"updated_date\":\"2023-08-08 17:10:18\",\"deleted\":\"0\",\"users_id\":\"admin\",\"menus_id\":\"20230808000005\",\"v_view\":\"1\",\"v_add\":\"0\",\"v_edit\":\"0\",\"v_delete\":\"0\",\"v_upload\":\"0\",\"v_download\":\"0\",\"v_print\":\"0\",\"v_excel\":\"0\",\"status\":\"0\"}'),
+(546, 'admin', '2023-08-08 17:10:18', 0, '::1', 'Update New', 'setting_users', '{\"v_view\":\"1\",\"v_add\":\"1\",\"v_edit\":\"0\",\"v_delete\":\"0\",\"v_upload\":\"0\",\"v_download\":\"0\",\"v_print\":\"0\",\"v_excel\":\"0\",\"updated_by\":\"admin\",\"updated_date\":\"2023-08-08 17:10:18\"}'),
+(547, 'admin', '2023-08-08 17:10:20', 0, '::1', 'Update Before', 'setting_users', '{\"id\":\"20230808000013\",\"created_by\":\"admin\",\"created_date\":\"2023-08-08 17:10:15\",\"updated_by\":\"admin\",\"updated_date\":\"2023-08-08 17:10:18\",\"deleted\":\"0\",\"users_id\":\"admin\",\"menus_id\":\"20230808000005\",\"v_view\":\"1\",\"v_add\":\"1\",\"v_edit\":\"0\",\"v_delete\":\"0\",\"v_upload\":\"0\",\"v_download\":\"0\",\"v_print\":\"0\",\"v_excel\":\"0\",\"status\":\"0\"}'),
+(548, 'admin', '2023-08-08 17:10:20', 0, '::1', 'Update New', 'setting_users', '{\"v_view\":\"1\",\"v_add\":\"1\",\"v_edit\":\"1\",\"v_delete\":\"0\",\"v_upload\":\"0\",\"v_download\":\"0\",\"v_print\":\"0\",\"v_excel\":\"0\",\"updated_by\":\"admin\",\"updated_date\":\"2023-08-08 17:10:20\"}'),
+(549, 'admin', '2023-08-08 17:10:21', 0, '::1', 'Update Before', 'setting_users', '{\"id\":\"20230808000013\",\"created_by\":\"admin\",\"created_date\":\"2023-08-08 17:10:15\",\"updated_by\":\"admin\",\"updated_date\":\"2023-08-08 17:10:20\",\"deleted\":\"0\",\"users_id\":\"admin\",\"menus_id\":\"20230808000005\",\"v_view\":\"1\",\"v_add\":\"1\",\"v_edit\":\"1\",\"v_delete\":\"0\",\"v_upload\":\"0\",\"v_download\":\"0\",\"v_print\":\"0\",\"v_excel\":\"0\",\"status\":\"0\"}'),
+(550, 'admin', '2023-08-08 17:10:21', 0, '::1', 'Update New', 'setting_users', '{\"v_view\":\"1\",\"v_add\":\"1\",\"v_edit\":\"1\",\"v_delete\":\"1\",\"v_upload\":\"0\",\"v_download\":\"0\",\"v_print\":\"0\",\"v_excel\":\"0\",\"updated_by\":\"admin\",\"updated_date\":\"2023-08-08 17:10:21\"}'),
+(551, 'admin', '2023-08-08 17:10:22', 0, '::1', 'Update Before', 'setting_users', '{\"id\":\"20230808000013\",\"created_by\":\"admin\",\"created_date\":\"2023-08-08 17:10:15\",\"updated_by\":\"admin\",\"updated_date\":\"2023-08-08 17:10:21\",\"deleted\":\"0\",\"users_id\":\"admin\",\"menus_id\":\"20230808000005\",\"v_view\":\"1\",\"v_add\":\"1\",\"v_edit\":\"1\",\"v_delete\":\"1\",\"v_upload\":\"0\",\"v_download\":\"0\",\"v_print\":\"0\",\"v_excel\":\"0\",\"status\":\"0\"}'),
+(552, 'admin', '2023-08-08 17:10:22', 0, '::1', 'Update New', 'setting_users', '{\"v_view\":\"1\",\"v_add\":\"1\",\"v_edit\":\"1\",\"v_delete\":\"1\",\"v_upload\":\"0\",\"v_download\":\"0\",\"v_print\":\"1\",\"v_excel\":\"0\",\"updated_by\":\"admin\",\"updated_date\":\"2023-08-08 17:10:22\"}'),
+(553, 'admin', '2023-08-08 17:10:23', 0, '::1', 'Update Before', 'setting_users', '{\"id\":\"20230808000013\",\"created_by\":\"admin\",\"created_date\":\"2023-08-08 17:10:15\",\"updated_by\":\"admin\",\"updated_date\":\"2023-08-08 17:10:22\",\"deleted\":\"0\",\"users_id\":\"admin\",\"menus_id\":\"20230808000005\",\"v_view\":\"1\",\"v_add\":\"1\",\"v_edit\":\"1\",\"v_delete\":\"1\",\"v_upload\":\"0\",\"v_download\":\"0\",\"v_print\":\"1\",\"v_excel\":\"0\",\"status\":\"0\"}'),
+(554, 'admin', '2023-08-08 17:10:23', 0, '::1', 'Update New', 'setting_users', '{\"v_view\":\"1\",\"v_add\":\"1\",\"v_edit\":\"1\",\"v_delete\":\"1\",\"v_upload\":\"0\",\"v_download\":\"0\",\"v_print\":\"1\",\"v_excel\":\"1\",\"updated_by\":\"admin\",\"updated_date\":\"2023-08-08 17:10:23\"}'),
+(555, 'admin', '2023-08-08 22:10:56', 0, '::1', 'Create', 'item_process_flow', '{\"id\":\"FP001\",\"item_process_id\":\"PC001\",\"type_a\":\"1\",\"type_b\":\"2\",\"type_c\":\"3\",\"type_d\":\"2\",\"created_by\":\"admin\",\"created_date\":\"2023-08-08 22:10:56\"}'),
+(556, 'admin', '2023-08-08 22:12:07', 0, '::1', 'Create', 'item_process', '{\"id\":\"PC002\",\"name\":\"Weld\",\"description\":\"OK\",\"created_by\":\"admin\",\"created_date\":\"2023-08-08 22:12:07\"}'),
+(557, 'admin', '2023-08-08 22:12:27', 0, '::1', 'Create', 'item_process_flow', '{\"id\":\"FP002\",\"item_process_id\":\"PC002\",\"type_a\":\"3\",\"type_b\":\"2\",\"type_c\":\"1\",\"type_d\":\"2\",\"created_by\":\"admin\",\"created_date\":\"2023-08-08 22:12:27\"}'),
+(558, 'admin', '2023-08-08 22:12:46', 0, '::1', 'Update Before', 'item_process_flow', '{\"id\":\"FP001\",\"created_by\":\"admin\",\"created_date\":\"2023-08-08 22:10:56\",\"updated_by\":null,\"updated_date\":null,\"deleted\":\"0\",\"item_process_id\":\"PC001\",\"type_a\":\"1\",\"type_b\":\"2\",\"type_c\":\"3\",\"type_d\":\"2\",\"status\":\"0\"}'),
+(559, 'admin', '2023-08-08 22:12:46', 0, '::1', 'Update New', 'item_process_flow', '{\"id\":\"FP001\",\"item_process_id\":\"PC001\",\"type_a\":\"1\",\"type_b\":\"2\",\"type_c\":\"3\",\"type_d\":\"1\",\"updated_by\":\"admin\",\"updated_date\":\"2023-08-08 22:12:46\"}'),
+(560, 'admin', '2023-08-08 22:13:08', 0, '::1', 'Delete', 'item_process_flow', '{\"id\":\"FP002\",\"created_by\":\"admin\",\"created_date\":\"2023-08-08 22:12:27\",\"updated_by\":null,\"updated_date\":null,\"deleted\":\"0\",\"item_process_id\":\"PC002\",\"type_a\":\"3\",\"type_b\":\"2\",\"type_c\":\"1\",\"type_d\":\"2\",\"status\":\"0\"}'),
+(561, 'admin', '2023-08-08 22:24:46', 0, '::1', 'Update Before', 'menus', '{\"id\":\"20230808000003\",\"created_by\":\"admin\",\"created_date\":\"2023-08-08 21:29:48\",\"updated_by\":null,\"updated_date\":null,\"deleted\":\"0\",\"menus_id\":\"20230803000001\",\"number\":null,\"name\":\"Color\",\"description\":null,\"link\":\"master\\/item_colors\",\"sort\":\"8\",\"icon\":\"\",\"flag\":null,\"color\":null,\"state\":\"\",\"status\":\"0\"}'),
+(562, 'admin', '2023-08-08 22:24:46', 0, '::1', 'Update New', 'menus', '{\"menus_id\":\"20230803000001\",\"name\":\"Colors\",\"link\":\"master\\/item_colors\",\"sort\":\"8\",\"state\":\"\",\"updated_by\":\"admin\",\"updated_date\":\"2023-08-08 22:24:46\"}'),
+(563, NULL, '2023-08-09 20:49:13', 0, '::1', 'Login', 'Login', '{\"id\":\"86f9f296025243ed953fe6014ff765\",\"departement_id\":null,\"number\":\"1\",\"name\":\"Administrator\",\"username\":\"admin\",\"position\":\"Admin System\"}'),
+(564, 'admin', '2023-08-09 20:50:21', 0, '::1', 'Create', 'item_process_flow', '{\"id\":\"TP01\",\"name\":\"A\",\"process_a\":\"1\",\"process_b\":\"2\",\"process_c\":\"\",\"process_d\":\"\",\"process_e\":\"3\",\"created_by\":\"admin\",\"created_date\":\"2023-08-09 20:50:21\"}'),
+(565, 'admin', '2023-08-09 20:58:11', 0, '::1', 'Create', 'item_process_flow', '{\"id\":\"TP02\",\"name\":\"B\",\"process_a\":\"\",\"process_b\":\"\",\"process_c\":\"1\",\"process_d\":\"2\",\"process_e\":\"\",\"created_by\":\"admin\",\"created_date\":\"2023-08-09 20:58:11\"}'),
+(566, 'admin', '2023-08-09 21:01:41', 0, '::1', 'Create', 'item_process_flow', '{\"id\":\"TP03\",\"name\":\"C\",\"process_a\":\"\",\"process_b\":\"\",\"process_c\":\"\",\"process_d\":\"\",\"process_e\":\"\",\"created_by\":\"admin\",\"created_date\":\"2023-08-09 21:01:41\"}'),
+(567, 'admin', '2023-08-09 21:01:59', 0, '::1', 'Create', 'item_process_flow', '{\"id\":\"TP04\",\"name\":\"D\",\"process_a\":\"1\",\"process_b\":\"\",\"process_c\":\"\",\"process_d\":\"\",\"process_e\":\"2\",\"created_by\":\"admin\",\"created_date\":\"2023-08-09 21:01:59\"}'),
+(568, 'admin', '2023-08-09 21:02:10', 0, '::1', 'Update Before', 'item_process_flow', '{\"id\":\"TP03\",\"created_by\":\"admin\",\"created_date\":\"2023-08-09 21:01:41\",\"updated_by\":null,\"updated_date\":null,\"deleted\":\"0\",\"name\":\"C\",\"process_a\":\"0\",\"process_b\":\"0\",\"process_c\":\"0\",\"process_d\":\"0\",\"process_e\":\"0\",\"status\":\"0\"}'),
+(569, 'admin', '2023-08-09 21:02:10', 0, '::1', 'Update New', 'item_process_flow', '{\"id\":\"TP03\",\"name\":\"C\",\"process_a\":\"0\",\"process_b\":\"0\",\"process_c\":\"1\",\"process_d\":\"0\",\"process_e\":\"0\",\"updated_by\":\"admin\",\"updated_date\":\"2023-08-09 21:02:10\"}'),
+(570, 'admin', '2023-08-09 21:02:41', 0, '::1', 'Update Before', 'item_process_flow', '{\"id\":\"TP03\",\"created_by\":\"admin\",\"created_date\":\"2023-08-09 21:01:41\",\"updated_by\":\"admin\",\"updated_date\":\"2023-08-09 21:02:10\",\"deleted\":\"0\",\"name\":\"C\",\"process_a\":\"0\",\"process_b\":\"0\",\"process_c\":\"1\",\"process_d\":\"0\",\"process_e\":\"0\",\"status\":\"0\"}'),
+(571, 'admin', '2023-08-09 21:02:41', 0, '::1', 'Update New', 'item_process_flow', '{\"id\":\"TP03\",\"name\":\"C\",\"process_a\":\"0\",\"process_b\":\"0\",\"process_c\":\"0\",\"process_d\":\"0\",\"process_e\":\"0\",\"updated_by\":\"admin\",\"updated_date\":\"2023-08-09 21:02:41\"}'),
+(572, 'admin', '2023-08-09 21:03:58', 0, '::1', 'Create', 'item_process_flow', '{\"id\":\"TP05\",\"name\":\"E\",\"process_a\":\"1\",\"process_b\":\"2\",\"process_c\":\"\",\"process_d\":\"3\",\"process_e\":\"\",\"created_by\":\"admin\",\"created_date\":\"2023-08-09 21:03:58\"}'),
+(573, 'admin', '2023-08-09 21:04:06', 0, '::1', 'Delete', 'item_process_flow', '{\"id\":\"TP05\",\"created_by\":\"admin\",\"created_date\":\"2023-08-09 21:03:58\",\"updated_by\":null,\"updated_date\":null,\"deleted\":\"0\",\"name\":\"E\",\"process_a\":\"1\",\"process_b\":\"2\",\"process_c\":\"0\",\"process_d\":\"3\",\"process_e\":\"0\",\"status\":\"0\"}'),
+(574, 'admin', '2023-08-09 23:04:57', 0, '::1', 'Create', 'menus', '{\"menus_id\":\"20230803000001\",\"name\":\"Raw Material\",\"link\":\"master\\/item_rm\",\"sort\":\"13\",\"state\":\"\",\"id\":\"20230809000001\",\"created_by\":\"admin\",\"created_date\":\"2023-08-09 23:04:57\"}'),
+(575, 'admin', '2023-08-09 23:05:12', 0, '::1', 'Create', 'setting_menus', '{\"menus_id\":\"20230809000001\",\"m_view\":\"on\",\"m_add\":\"on\",\"m_edit\":\"on\",\"m_delete\":\"on\",\"m_print\":\"on\",\"m_excel\":\"on\",\"id\":\"20230809000001\",\"created_by\":\"admin\",\"created_date\":\"2023-08-09 23:05:12\"}'),
+(576, 'admin', '2023-08-09 18:05:43', 0, '::1', 'Create', 'setting_users', '{\"users_id\":\"admin\",\"menus_id\":\"20230809000001\",\"id\":\"20230809000001\",\"created_by\":\"admin\",\"created_date\":\"2023-08-09 18:05:43\"}'),
+(577, 'admin', '2023-08-09 18:05:48', 0, '::1', 'Update Before', 'setting_users', '{\"id\":\"20230809000001\",\"created_by\":\"admin\",\"created_date\":\"2023-08-09 18:05:43\",\"updated_by\":null,\"updated_date\":null,\"deleted\":\"0\",\"users_id\":\"admin\",\"menus_id\":\"20230809000001\",\"v_view\":\"0\",\"v_add\":\"0\",\"v_edit\":\"0\",\"v_delete\":\"0\",\"v_upload\":\"0\",\"v_download\":\"0\",\"v_print\":\"0\",\"v_excel\":\"0\",\"status\":\"0\"}'),
+(578, 'admin', '2023-08-09 18:05:48', 0, '::1', 'Update New', 'setting_users', '{\"v_view\":\"1\",\"v_add\":\"0\",\"v_edit\":\"0\",\"v_delete\":\"0\",\"v_upload\":\"0\",\"v_download\":\"0\",\"v_print\":\"0\",\"v_excel\":\"0\",\"updated_by\":\"admin\",\"updated_date\":\"2023-08-09 18:05:48\"}'),
+(579, 'admin', '2023-08-09 18:05:49', 0, '::1', 'Update Before', 'setting_users', '{\"id\":\"20230809000001\",\"created_by\":\"admin\",\"created_date\":\"2023-08-09 18:05:43\",\"updated_by\":\"admin\",\"updated_date\":\"2023-08-09 18:05:48\",\"deleted\":\"0\",\"users_id\":\"admin\",\"menus_id\":\"20230809000001\",\"v_view\":\"1\",\"v_add\":\"0\",\"v_edit\":\"0\",\"v_delete\":\"0\",\"v_upload\":\"0\",\"v_download\":\"0\",\"v_print\":\"0\",\"v_excel\":\"0\",\"status\":\"0\"}'),
+(580, 'admin', '2023-08-09 18:05:49', 0, '::1', 'Update New', 'setting_users', '{\"v_view\":\"1\",\"v_add\":\"1\",\"v_edit\":\"0\",\"v_delete\":\"0\",\"v_upload\":\"0\",\"v_download\":\"0\",\"v_print\":\"0\",\"v_excel\":\"0\",\"updated_by\":\"admin\",\"updated_date\":\"2023-08-09 18:05:49\"}'),
+(581, 'admin', '2023-08-09 18:05:50', 0, '::1', 'Update Before', 'setting_users', '{\"id\":\"20230809000001\",\"created_by\":\"admin\",\"created_date\":\"2023-08-09 18:05:43\",\"updated_by\":\"admin\",\"updated_date\":\"2023-08-09 18:05:49\",\"deleted\":\"0\",\"users_id\":\"admin\",\"menus_id\":\"20230809000001\",\"v_view\":\"1\",\"v_add\":\"1\",\"v_edit\":\"0\",\"v_delete\":\"0\",\"v_upload\":\"0\",\"v_download\":\"0\",\"v_print\":\"0\",\"v_excel\":\"0\",\"status\":\"0\"}'),
+(582, 'admin', '2023-08-09 18:05:50', 0, '::1', 'Update New', 'setting_users', '{\"v_view\":\"1\",\"v_add\":\"1\",\"v_edit\":\"1\",\"v_delete\":\"0\",\"v_upload\":\"0\",\"v_download\":\"0\",\"v_print\":\"0\",\"v_excel\":\"0\",\"updated_by\":\"admin\",\"updated_date\":\"2023-08-09 18:05:50\"}'),
+(583, 'admin', '2023-08-09 18:05:51', 0, '::1', 'Update Before', 'setting_users', '{\"id\":\"20230809000001\",\"created_by\":\"admin\",\"created_date\":\"2023-08-09 18:05:43\",\"updated_by\":\"admin\",\"updated_date\":\"2023-08-09 18:05:50\",\"deleted\":\"0\",\"users_id\":\"admin\",\"menus_id\":\"20230809000001\",\"v_view\":\"1\",\"v_add\":\"1\",\"v_edit\":\"1\",\"v_delete\":\"0\",\"v_upload\":\"0\",\"v_download\":\"0\",\"v_print\":\"0\",\"v_excel\":\"0\",\"status\":\"0\"}'),
+(584, 'admin', '2023-08-09 18:05:51', 0, '::1', 'Update New', 'setting_users', '{\"v_view\":\"1\",\"v_add\":\"1\",\"v_edit\":\"1\",\"v_delete\":\"1\",\"v_upload\":\"0\",\"v_download\":\"0\",\"v_print\":\"0\",\"v_excel\":\"0\",\"updated_by\":\"admin\",\"updated_date\":\"2023-08-09 18:05:51\"}'),
+(585, 'admin', '2023-08-09 18:05:52', 0, '::1', 'Update Before', 'setting_users', '{\"id\":\"20230809000001\",\"created_by\":\"admin\",\"created_date\":\"2023-08-09 18:05:43\",\"updated_by\":\"admin\",\"updated_date\":\"2023-08-09 18:05:51\",\"deleted\":\"0\",\"users_id\":\"admin\",\"menus_id\":\"20230809000001\",\"v_view\":\"1\",\"v_add\":\"1\",\"v_edit\":\"1\",\"v_delete\":\"1\",\"v_upload\":\"0\",\"v_download\":\"0\",\"v_print\":\"0\",\"v_excel\":\"0\",\"status\":\"0\"}'),
+(586, 'admin', '2023-08-09 18:05:52', 0, '::1', 'Update New', 'setting_users', '{\"v_view\":\"1\",\"v_add\":\"1\",\"v_edit\":\"1\",\"v_delete\":\"1\",\"v_upload\":\"0\",\"v_download\":\"0\",\"v_print\":\"1\",\"v_excel\":\"0\",\"updated_by\":\"admin\",\"updated_date\":\"2023-08-09 18:05:52\"}'),
+(587, 'admin', '2023-08-09 18:05:54', 0, '::1', 'Update Before', 'setting_users', '{\"id\":\"20230809000001\",\"created_by\":\"admin\",\"created_date\":\"2023-08-09 18:05:43\",\"updated_by\":\"admin\",\"updated_date\":\"2023-08-09 18:05:52\",\"deleted\":\"0\",\"users_id\":\"admin\",\"menus_id\":\"20230809000001\",\"v_view\":\"1\",\"v_add\":\"1\",\"v_edit\":\"1\",\"v_delete\":\"1\",\"v_upload\":\"0\",\"v_download\":\"0\",\"v_print\":\"1\",\"v_excel\":\"0\",\"status\":\"0\"}'),
+(588, 'admin', '2023-08-09 18:05:54', 0, '::1', 'Update New', 'setting_users', '{\"v_view\":\"1\",\"v_add\":\"1\",\"v_edit\":\"1\",\"v_delete\":\"1\",\"v_upload\":\"0\",\"v_download\":\"0\",\"v_print\":\"1\",\"v_excel\":\"1\",\"updated_by\":\"admin\",\"updated_date\":\"2023-08-09 18:05:54\"}'),
+(589, NULL, '2023-08-10 08:36:08', 0, '::1', 'Login', 'Login', '{\"id\":\"86f9f296025243ed953fe6014ff765\",\"departement_id\":null,\"number\":\"1\",\"name\":\"Administrator\",\"username\":\"admin\",\"position\":\"Admin System\"}'),
+(590, 'admin', '2023-08-10 08:41:49', 0, '::1', 'Create', 'uom', '{\"id\":\"U01\",\"name\":\"PCS\",\"description\":\"PIECES\",\"created_by\":\"admin\",\"created_date\":\"2023-08-10 08:41:49\"}'),
+(591, 'admin', '2023-08-10 08:43:40', 0, '::1', 'Create', 'uom', '{\"id\":\"U02\",\"name\":\"KG\",\"description\":\"KILO GRAM\",\"created_by\":\"admin\",\"created_date\":\"2023-08-10 08:43:40\"}'),
+(592, 'admin', '2023-08-10 09:26:06', 0, '::1', 'Create', 'item_rm', '{\"id\":\"BPIFG-PF208230001\",\"number\":\"1\",\"name\":\"TEST\",\"uom\":\"U01\",\"item_category_id\":\"C01\",\"item_family_id\":\"P02\",\"account_number\":\"\",\"account_name\":\"\",\"status\":\"0\",\"created_by\":\"admin\",\"created_date\":\"2023-08-10 09:26:06\"}'),
+(593, 'admin', '2023-08-10 09:26:17', 0, '::1', 'Delete', 'item_rm', '{\"id\":\"BPIFG-PF208230001\",\"created_by\":\"admin\",\"created_date\":\"2023-08-10 09:26:06\",\"updated_by\":null,\"updated_date\":null,\"deleted\":\"0\",\"item_category_id\":\"C01\",\"item_family_id\":\"P02\",\"number\":\"1\",\"name\":\"TEST\",\"uom\":\"U01\",\"account_number\":\"\",\"account_name\":\"\",\"status\":\"0\"}'),
+(594, 'admin', '2023-08-10 09:27:21', 0, '::1', 'Delete', 'item_categories', '{\"id\":\"C02\",\"created_by\":\"admin\",\"created_date\":\"2023-08-08 21:20:24\",\"updated_by\":null,\"updated_date\":null,\"deleted\":\"0\",\"number\":\"RM\",\"name\":\"Test2\",\"description\":\"Raw Material\",\"status\":\"0\"}'),
+(595, 'admin', '2023-08-10 09:27:52', 0, '::1', 'Delete', 'item_familys', '{\"id\":\"P02\",\"created_by\":\"admin\",\"created_date\":\"2023-08-07 11:14:58\",\"updated_by\":null,\"updated_date\":null,\"deleted\":\"0\",\"item_category_id\":\"C01\",\"number\":\"PF2\",\"account_number\":\"2\",\"account_name\":\"acc\",\"name\":\"test PF 2\",\"description\":\"OK\",\"status\":\"0\"}'),
+(596, 'admin', '2023-08-10 09:27:59', 0, '::1', 'Delete', 'item_family_subs', '{\"id\":\"PS001\",\"created_by\":\"admin\",\"created_date\":\"2023-08-07 11:38:05\",\"updated_by\":null,\"updated_date\":null,\"deleted\":\"0\",\"item_category_id\":\"C01\",\"item_family_id\":\"P01\",\"number\":\"TS\",\"name\":\"Test Subs\",\"description\":\"OK\",\"status\":\"0\"}'),
+(597, 'admin', '2023-08-10 09:28:04', 0, '::1', 'Delete', 'item_familys', '{\"id\":\"P01\",\"created_by\":\"admin\",\"created_date\":\"2023-08-07 06:03:28\",\"updated_by\":\"admin\",\"updated_date\":\"2023-08-07 06:03:46\",\"deleted\":\"0\",\"item_category_id\":\"C01\",\"number\":\"PF\",\"account_number\":\"2\",\"account_name\":\"acc\",\"name\":\"test PF\",\"description\":\"OK\",\"status\":\"0\"}'),
+(598, 'admin', '2023-08-10 09:28:08', 0, '::1', 'Delete', 'item_categories', '{\"id\":\"C01\",\"created_by\":\"admin\",\"created_date\":\"2023-08-07 05:35:31\",\"updated_by\":\"admin\",\"updated_date\":\"2023-08-07 05:35:51\",\"deleted\":\"0\",\"number\":\"FG\",\"name\":\"test\",\"description\":\"OK\",\"status\":\"0\"}'),
+(599, 'admin', '2023-08-10 09:28:21', 0, '::1', 'Create', 'item_categories', '{\"id\":\"C01\",\"name\":\"RAW MATERAIL\",\"number\":\"RM\",\"description\":\"\",\"created_by\":\"admin\",\"created_date\":\"2023-08-10 09:28:20\"}'),
+(600, 'admin', '2023-08-10 09:28:35', 0, '::1', 'Create', 'item_categories', '{\"id\":\"C02\",\"name\":\"FINISH GOOD\",\"number\":\"FG\",\"description\":\"\",\"created_by\":\"admin\",\"created_date\":\"2023-08-10 09:28:35\"}'),
+(601, 'admin', '2023-08-10 09:29:33', 0, '::1', 'Create', 'item_familys', '{\"id\":\"P01\",\"name\":\"VIRGIN\",\"number\":\"VG\",\"item_category_id\":\"C01\",\"account_number\":\"\",\"account_name\":\"\",\"description\":\"\",\"created_by\":\"admin\",\"created_date\":\"2023-08-10 09:29:33\"}'),
+(602, 'admin', '2023-08-10 09:29:56', 0, '::1', 'Create', 'item_familys', '{\"id\":\"P02\",\"name\":\"TEST FG\",\"number\":\"FG\",\"item_category_id\":\"C02\",\"account_number\":\"\",\"account_name\":\"\",\"description\":\"\",\"created_by\":\"admin\",\"created_date\":\"2023-08-10 09:29:56\"}'),
+(603, 'admin', '2023-08-10 09:33:08', 0, '::1', 'Create', 'item_family_subs', '{\"id\":\"PS001\",\"item_category_id\":\"C01\",\"item_family_id\":\"P01\",\"number\":\"OK\",\"name\":\"TEST\",\"description\":\"\",\"created_by\":\"admin\",\"created_date\":\"2023-08-10 09:33:08\"}'),
+(604, 'admin', '2023-08-10 09:33:23', 0, '::1', 'Create', 'item_family_subs', '{\"id\":\"PS002\",\"item_category_id\":\"C02\",\"item_family_id\":\"P02\",\"number\":\"FG\",\"name\":\"OK\",\"description\":\"\",\"created_by\":\"admin\",\"created_date\":\"2023-08-10 09:33:23\"}'),
+(605, 'admin', '2023-08-10 11:54:23', 0, '::1', 'Create', 'item_rm', '{\"id\":\"BPIRM-VG08230001\",\"number\":\"1\",\"name\":\"BEBEK\",\"uom\":\"U02\",\"item_category_id\":\"C01\",\"item_family_id\":\"P01\",\"account_number\":\"\",\"account_name\":\"\",\"status\":\"0\",\"created_by\":\"admin\",\"created_date\":\"2023-08-10 11:54:23\"}'),
+(606, 'admin', '2023-08-10 11:54:52', 0, '::1', 'Delete', 'item_rm', '{\"id\":\"BPIRM-VG08230001\",\"created_by\":\"admin\",\"created_date\":\"2023-08-10 11:54:23\",\"updated_by\":null,\"updated_date\":null,\"deleted\":\"0\",\"item_category_id\":\"C01\",\"item_family_id\":\"P01\",\"number\":\"1\",\"name\":\"BEBEK\",\"uom\":\"U02\",\"account_number\":\"\",\"account_name\":\"\",\"status\":\"0\"}'),
+(607, 'admin', '2023-08-10 11:57:12', 0, '::1', 'Create', 'item_rm', '{\"id\":\"BPIRM-VG08230001\",\"number\":\"1\",\"name\":\"VALVE\",\"uom\":\"U01\",\"item_category_id\":\"C01\",\"item_family_id\":\"P01\",\"account_number\":\"\",\"account_name\":\"\",\"status\":\"0\",\"created_by\":\"admin\",\"created_date\":\"2023-08-10 11:57:12\"}'),
+(608, 'admin', '2023-08-10 11:58:25', 0, '::1', 'Update Before', 'item_rm', '{\"id\":\"BPIRM-VG08230001\",\"created_by\":\"admin\",\"created_date\":\"2023-08-10 11:57:12\",\"updated_by\":null,\"updated_date\":null,\"deleted\":\"0\",\"item_category_id\":\"C01\",\"item_family_id\":\"P01\",\"number\":\"1\",\"name\":\"VALVE\",\"uom\":\"U01\",\"account_number\":\"\",\"account_name\":\"\",\"status\":\"0\"}'),
+(609, 'admin', '2023-08-10 11:58:25', 0, '::1', 'Update New', 'item_rm', '{\"id\":\"BPIRM-VG08230002\",\"number\":\"1\",\"name\":\"VALVE\",\"uom\":\"PCS\",\"item_category_id\":\"C01\",\"item_family_id\":\"P01\",\"account_number\":\"\",\"account_name\":\"\",\"status\":\"0\",\"updated_by\":\"admin\",\"updated_date\":\"2023-08-10 11:58:25\"}'),
+(610, 'admin', '2023-08-10 11:58:35', 0, '::1', 'Update Before', 'item_rm', '{\"id\":\"BPIRM-VG08230002\",\"created_by\":\"admin\",\"created_date\":\"2023-08-10 11:57:12\",\"updated_by\":\"admin\",\"updated_date\":\"2023-08-10 11:58:25\",\"deleted\":\"0\",\"item_category_id\":\"C01\",\"item_family_id\":\"P01\",\"number\":\"1\",\"name\":\"VALVE\",\"uom\":\"PCS\",\"account_number\":\"\",\"account_name\":\"\",\"status\":\"0\"}'),
+(611, 'admin', '2023-08-10 11:58:35', 0, '::1', 'Update New', 'item_rm', '{\"id\":\"BPIRM-VG08230002\",\"number\":\"1\",\"name\":\"VALVE\",\"uom\":\"KG\",\"item_category_id\":\"C01\",\"item_family_id\":\"P01\",\"account_number\":\"\",\"account_name\":\"\",\"status\":\"0\",\"updated_by\":\"admin\",\"updated_date\":\"2023-08-10 11:58:35\"}'),
+(612, 'admin', '2023-08-10 12:00:12', 0, '::1', 'Create', 'item_rm', '{\"id\":\"BPIRM-VG08230003\",\"number\":\"2\",\"name\":\"BEBEK\",\"uom\":\"PCS\",\"item_category_id\":\"C01\",\"item_family_id\":\"P01\",\"account_number\":\"\",\"account_name\":\"\",\"status\":\"0\",\"created_by\":\"admin\",\"created_date\":\"2023-08-10 12:00:12\"}'),
+(613, 'admin', '2023-08-10 12:00:23', 0, '::1', 'Delete', 'item_rm', '{\"id\":\"BPIRM-VG08230003\",\"created_by\":\"admin\",\"created_date\":\"2023-08-10 12:00:12\",\"updated_by\":null,\"updated_date\":null,\"deleted\":\"0\",\"item_category_id\":\"C01\",\"item_family_id\":\"P01\",\"number\":\"2\",\"name\":\"BEBEK\",\"uom\":\"PCS\",\"account_number\":\"\",\"account_name\":\"\",\"status\":\"0\"}'),
+(614, 'admin', '2023-08-10 12:00:23', 0, '::1', 'Delete', 'item_rm', '{\"id\":\"BPIRM-VG08230002\",\"created_by\":\"admin\",\"created_date\":\"2023-08-10 11:57:12\",\"updated_by\":\"admin\",\"updated_date\":\"2023-08-10 11:58:35\",\"deleted\":\"0\",\"item_category_id\":\"C01\",\"item_family_id\":\"P01\",\"number\":\"1\",\"name\":\"VALVE\",\"uom\":\"KG\",\"account_number\":\"\",\"account_name\":\"\",\"status\":\"0\"}'),
+(615, 'admin', '2023-08-10 12:00:43', 0, '::1', 'Create', 'item_rm', '{\"id\":\"BPIRM-VG08230001\",\"number\":\"1\",\"name\":\"VALVE\",\"uom\":\"KG\",\"item_category_id\":\"C01\",\"item_family_id\":\"P01\",\"account_number\":\"\",\"account_name\":\"\",\"status\":\"0\",\"created_by\":\"admin\",\"created_date\":\"2023-08-10 12:00:43\"}'),
+(616, 'admin', '2023-08-10 12:00:55', 0, '::1', 'Update Before', 'item_rm', '{\"id\":\"BPIRM-VG08230001\",\"created_by\":\"admin\",\"created_date\":\"2023-08-10 12:00:43\",\"updated_by\":null,\"updated_date\":null,\"deleted\":\"0\",\"item_category_id\":\"C01\",\"item_family_id\":\"P01\",\"number\":\"1\",\"name\":\"VALVE\",\"uom\":\"KG\",\"account_number\":\"\",\"account_name\":\"\",\"status\":\"0\"}'),
+(617, 'admin', '2023-08-10 12:00:55', 0, '::1', 'Update New', 'item_rm', '{\"id\":\"BPIRM-VG08230001\",\"number\":\"1\",\"name\":\"VALVE\",\"uom\":\"PCS\",\"item_category_id\":\"C01\",\"item_family_id\":\"P01\",\"account_number\":\"\",\"account_name\":\"\",\"status\":\"0\",\"updated_by\":\"admin\",\"updated_date\":\"2023-08-10 12:00:55\"}'),
+(618, 'admin', '2023-08-10 12:01:09', 0, '::1', 'Update Before', 'item_rm', '{\"id\":\"BPIRM-VG08230001\",\"created_by\":\"admin\",\"created_date\":\"2023-08-10 12:00:43\",\"updated_by\":\"admin\",\"updated_date\":\"2023-08-10 12:00:55\",\"deleted\":\"0\",\"item_category_id\":\"C01\",\"item_family_id\":\"P01\",\"number\":\"1\",\"name\":\"VALVE\",\"uom\":\"PCS\",\"account_number\":\"\",\"account_name\":\"\",\"status\":\"0\"}'),
+(619, 'admin', '2023-08-10 12:01:09', 0, '::1', 'Update New', 'item_rm', '{\"id\":\"BPIRM-VG08230001\",\"number\":\"1\",\"name\":\"VALVE\",\"uom\":\"KG\",\"item_category_id\":\"C01\",\"item_family_id\":\"P01\",\"account_number\":\"\",\"account_name\":\"\",\"status\":\"0\",\"updated_by\":\"admin\",\"updated_date\":\"2023-08-10 12:01:09\"}'),
+(620, 'admin', '2023-08-10 12:03:59', 0, '::1', 'Delete', 'setting_menus', '{\"id\":\"20230809000001\",\"created_by\":\"admin\",\"created_date\":\"2023-08-09 23:05:12\",\"updated_by\":null,\"updated_date\":null,\"deleted\":\"0\",\"menus_id\":\"20230809000001\",\"m_view\":\"on\",\"m_add\":\"on\",\"m_edit\":\"on\",\"m_delete\":\"on\",\"m_upload\":null,\"m_download\":null,\"m_print\":\"on\",\"m_excel\":\"on\",\"status\":\"0\"}'),
+(621, 'admin', '2023-08-10 12:03:59', 0, '::1', 'Create', 'setting_menus', '{\"menus_id\":\"20230809000001\",\"m_view\":\"on\",\"m_add\":\"on\",\"m_edit\":\"on\",\"m_delete\":\"on\",\"m_upload\":\"on\",\"m_download\":\"on\",\"m_print\":\"on\",\"m_excel\":\"on\",\"id\":\"20230810000001\",\"created_by\":\"admin\",\"created_date\":\"2023-08-10 12:03:59\"}'),
+(622, 'admin', '2023-08-10 07:04:30', 0, '::1', 'Update Before', 'setting_users', '{\"id\":\"20230809000001\",\"created_by\":\"admin\",\"created_date\":\"2023-08-09 18:05:43\",\"updated_by\":\"admin\",\"updated_date\":\"2023-08-09 18:05:54\",\"deleted\":\"0\",\"users_id\":\"admin\",\"menus_id\":\"20230809000001\",\"v_view\":\"1\",\"v_add\":\"1\",\"v_edit\":\"1\",\"v_delete\":\"1\",\"v_upload\":\"0\",\"v_download\":\"0\",\"v_print\":\"1\",\"v_excel\":\"1\",\"status\":\"0\"}'),
+(623, 'admin', '2023-08-10 07:04:30', 0, '::1', 'Update New', 'setting_users', '{\"v_view\":\"1\",\"v_add\":\"1\",\"v_edit\":\"1\",\"v_delete\":\"1\",\"v_upload\":\"0\",\"v_download\":\"1\",\"v_print\":\"1\",\"v_excel\":\"1\",\"updated_by\":\"admin\",\"updated_date\":\"2023-08-10 07:04:30\"}'),
+(624, 'admin', '2023-08-10 07:04:31', 0, '::1', 'Update Before', 'setting_users', '{\"id\":\"20230809000001\",\"created_by\":\"admin\",\"created_date\":\"2023-08-09 18:05:43\",\"updated_by\":\"admin\",\"updated_date\":\"2023-08-10 07:04:30\",\"deleted\":\"0\",\"users_id\":\"admin\",\"menus_id\":\"20230809000001\",\"v_view\":\"1\",\"v_add\":\"1\",\"v_edit\":\"1\",\"v_delete\":\"1\",\"v_upload\":\"0\",\"v_download\":\"1\",\"v_print\":\"1\",\"v_excel\":\"1\",\"status\":\"0\"}'),
+(625, 'admin', '2023-08-10 07:04:31', 0, '::1', 'Update New', 'setting_users', '{\"v_view\":\"1\",\"v_add\":\"1\",\"v_edit\":\"1\",\"v_delete\":\"1\",\"v_upload\":\"1\",\"v_download\":\"1\",\"v_print\":\"1\",\"v_excel\":\"1\",\"updated_by\":\"admin\",\"updated_date\":\"2023-08-10 07:04:31\"}'),
+(626, 'admin', '2023-08-10 16:03:25', 0, '::1', 'Create', 'item_rm', '{\"id\":\"BPIRM-VG08230002\",\"number\":\"2\",\"name\":\"PNEUMATIC\",\"uom\":\"PCS\",\"item_category_id\":null,\"item_family_id\":null,\"account_number\":\"\",\"account_name\":\"\",\"status\":\"0\",\"created_by\":\"admin\",\"created_date\":\"2023-08-10 16:03:25\"}'),
+(627, 'admin', '2023-08-10 16:09:53', 0, '::1', 'Create', 'item_rm', '{\"id\":\"BPIRM-VG08230002\",\"number\":\"2\",\"name\":\"PNEUMATIC\",\"uom\":\"PCS\",\"item_category_id\":null,\"item_family_id\":null,\"account_number\":\"\",\"account_name\":\"\",\"status\":\"0\",\"created_by\":\"admin\",\"created_date\":\"2023-08-10 16:09:53\"}'),
+(628, 'admin', '2023-08-10 16:28:48', 0, '::1', 'Create', 'item_rm', '{\"id\":\"1\",\"number\":\"BPIRM-VG08230002\",\"name\":\"2\",\"uom\":\"PNEUMATIC\",\"item_category_id\":null,\"item_family_id\":null,\"account_number\":\"VIRGIN\",\"account_name\":\"\",\"status\":\"\",\"created_by\":\"admin\",\"created_date\":\"2023-08-10 16:28:48\"}'),
+(629, 'admin', '2023-08-10 18:32:19', 0, '::1', 'Create', 'item_rm', '{\"id\":\"BPIRM-VG08230002\",\"number\":\"2\",\"name\":\"PNEUMATIC\",\"uom\":\"PCS\",\"item_category_id\":null,\"item_family_id\":null,\"account_number\":\"\",\"account_name\":\"\",\"status\":\"0\",\"created_by\":\"admin\",\"created_date\":\"2023-08-10 18:32:19\"}'),
+(630, 'admin', '2023-08-10 18:36:47', 0, '::1', 'Create', 'item_rm', '{\"id\":\"BPIRM-VG08230002\",\"number\":\"2\",\"name\":\"PNEUMATIC\",\"uom\":\"PCS\",\"item_category_id\":null,\"item_family_id\":null,\"account_number\":\"\",\"account_name\":\"\",\"status\":\"0\",\"created_by\":\"admin\",\"created_date\":\"2023-08-10 18:36:47\"}'),
+(631, 'admin', '2023-08-10 18:48:26', 0, '::1', 'Create', 'item_rm', '{\"id\":\"BPIRM-VG08230002\",\"number\":\"2\",\"name\":\"PNEUMATIC\",\"uom\":\"PCS\",\"item_category_id\":null,\"item_family_id\":null,\"account_number\":\"\",\"account_name\":\"\",\"status\":\"0\",\"created_by\":\"admin\",\"created_date\":\"2023-08-10 18:48:26\"}'),
+(632, 'admin', '2023-08-10 19:06:28', 0, '::1', 'Create', 'item_rm', '{\"id\":\"BPIRM-VG08230002\",\"number\":\"2\",\"name\":\"PNEUMATIC\",\"uom\":\"PCS\",\"item_category_id\":null,\"item_family_id\":null,\"account_number\":\"\",\"account_name\":\"\",\"status\":\"0\",\"created_by\":\"admin\",\"created_date\":\"2023-08-10 19:06:28\"}'),
+(633, 'admin', '2023-08-10 19:29:47', 0, '::1', 'Create', 'item_rm', '{\"id\":\"BPIRM-VG08230002\",\"number\":\"2\",\"name\":\"PNEUMATIC\",\"uom\":\"PCS\",\"item_category_id\":\"C01\",\"item_family_id\":\"P01\",\"account_number\":\"\",\"account_name\":\"\",\"status\":\"0\",\"created_by\":\"admin\",\"created_date\":\"2023-08-10 19:29:47\"}'),
+(634, NULL, '2023-08-11 14:54:46', 0, '::1', 'Login', 'Login', '{\"id\":\"86f9f296025243ed953fe6014ff765\",\"departement_id\":null,\"number\":\"1\",\"name\":\"Administrator\",\"username\":\"admin\",\"position\":\"Admin System\"}'),
+(635, 'admin', '2023-08-11 15:11:42', 0, '::1', 'Create', 'item_rm', '{\"id\":\"BPIRM-VG08230003\",\"number\":\"3\",\"name\":\"TEST3\",\"uom\":\"PCS\",\"item_category_id\":\"C01\",\"item_family_id\":\"P01\",\"account_number\":\"\",\"account_name\":\"\",\"status\":\"0\",\"created_by\":\"admin\",\"created_date\":\"2023-08-11 15:11:42\"}'),
+(636, 'admin', '2023-08-11 15:11:50', 0, '::1', 'Delete', 'item_rm', '{\"id\":\"BPIRM-VG08230003\",\"created_by\":\"admin\",\"created_date\":\"2023-08-11 15:11:42\",\"updated_by\":null,\"updated_date\":null,\"deleted\":\"0\",\"item_category_id\":\"C01\",\"item_family_id\":\"P01\",\"number\":\"3\",\"name\":\"TEST3\",\"uom\":\"PCS\",\"account_number\":\"\",\"account_name\":\"\",\"status\":\"0\"}'),
+(637, 'admin', '2023-08-11 17:02:53', 0, '::1', 'Create', 'item_boxs', '{\"id\":\"B002\",\"item_kind_id\":\"CB001\",\"name\":\"Test\",\"size\":\"10\",\"color\":\"Biru\",\"material\":\"Besi\",\"created_by\":\"admin\",\"created_date\":\"2023-08-11 17:02:53\"}'),
+(638, 'admin', '2023-08-11 17:03:21', 0, '::1', 'Create', 'item_boxs', '{\"id\":\"B003\",\"item_kind_id\":\"CB001\",\"name\":\"Test\",\"size\":\"10\",\"color\":\"Biru\",\"material\":\"Kayu\",\"created_by\":\"admin\",\"created_date\":\"2023-08-11 17:03:21\"}'),
+(639, NULL, '2023-08-12 19:26:41', 0, '::1', 'Login', 'Login', '{\"id\":\"86f9f296025243ed953fe6014ff765\",\"departement_id\":null,\"number\":\"1\",\"name\":\"Administrator\",\"username\":\"admin\",\"position\":\"Admin System\"}'),
+(640, 'admin', '2023-08-12 20:37:05', 0, '::1', 'Create', 'menus', '{\"menus_id\":\"20230803000001\",\"name\":\"Finish Good\",\"link\":\"master\\/item_fg\",\"sort\":\"12\",\"state\":\"\",\"id\":\"20230812000001\",\"created_by\":\"admin\",\"created_date\":\"2023-08-12 20:37:05\"}'),
+(641, 'admin', '2023-08-12 20:37:33', 0, '::1', 'Create', 'setting_menus', '{\"menus_id\":\"20230812000001\",\"m_view\":\"on\",\"m_add\":\"on\",\"m_edit\":\"on\",\"m_delete\":\"on\",\"m_upload\":\"on\",\"m_download\":\"on\",\"m_print\":\"on\",\"m_excel\":\"on\",\"id\":\"20230812000001\",\"created_by\":\"admin\",\"created_date\":\"2023-08-12 20:37:33\"}'),
+(642, 'admin', '2023-08-12 15:38:31', 0, '::1', 'Create', 'setting_users', '{\"users_id\":\"admin\",\"menus_id\":\"20230812000001\",\"id\":\"20230812000001\",\"created_by\":\"admin\",\"created_date\":\"2023-08-12 15:38:31\"}'),
+(643, 'admin', '2023-08-12 15:38:36', 0, '::1', 'Update Before', 'setting_users', '{\"id\":\"20230812000001\",\"created_by\":\"admin\",\"created_date\":\"2023-08-12 15:38:31\",\"updated_by\":null,\"updated_date\":null,\"deleted\":\"0\",\"users_id\":\"admin\",\"menus_id\":\"20230812000001\",\"v_view\":\"0\",\"v_add\":\"0\",\"v_edit\":\"0\",\"v_delete\":\"0\",\"v_upload\":\"0\",\"v_download\":\"0\",\"v_print\":\"0\",\"v_excel\":\"0\",\"status\":\"0\"}'),
+(644, 'admin', '2023-08-12 15:38:36', 0, '::1', 'Update New', 'setting_users', '{\"v_view\":\"1\",\"v_add\":\"0\",\"v_edit\":\"0\",\"v_delete\":\"0\",\"v_upload\":\"0\",\"v_download\":\"0\",\"v_print\":\"0\",\"v_excel\":\"0\",\"updated_by\":\"admin\",\"updated_date\":\"2023-08-12 15:38:36\"}'),
+(645, 'admin', '2023-08-12 15:38:37', 0, '::1', 'Update Before', 'setting_users', '{\"id\":\"20230812000001\",\"created_by\":\"admin\",\"created_date\":\"2023-08-12 15:38:31\",\"updated_by\":\"admin\",\"updated_date\":\"2023-08-12 15:38:36\",\"deleted\":\"0\",\"users_id\":\"admin\",\"menus_id\":\"20230812000001\",\"v_view\":\"1\",\"v_add\":\"0\",\"v_edit\":\"0\",\"v_delete\":\"0\",\"v_upload\":\"0\",\"v_download\":\"0\",\"v_print\":\"0\",\"v_excel\":\"0\",\"status\":\"0\"}'),
+(646, 'admin', '2023-08-12 15:38:37', 0, '::1', 'Update New', 'setting_users', '{\"v_view\":\"1\",\"v_add\":\"1\",\"v_edit\":\"0\",\"v_delete\":\"0\",\"v_upload\":\"0\",\"v_download\":\"0\",\"v_print\":\"0\",\"v_excel\":\"0\",\"updated_by\":\"admin\",\"updated_date\":\"2023-08-12 15:38:37\"}'),
+(647, 'admin', '2023-08-12 15:38:41', 0, '::1', 'Update Before', 'setting_users', '{\"id\":\"20230812000001\",\"created_by\":\"admin\",\"created_date\":\"2023-08-12 15:38:31\",\"updated_by\":\"admin\",\"updated_date\":\"2023-08-12 15:38:37\",\"deleted\":\"0\",\"users_id\":\"admin\",\"menus_id\":\"20230812000001\",\"v_view\":\"1\",\"v_add\":\"1\",\"v_edit\":\"0\",\"v_delete\":\"0\",\"v_upload\":\"0\",\"v_download\":\"0\",\"v_print\":\"0\",\"v_excel\":\"0\",\"status\":\"0\"}'),
+(648, 'admin', '2023-08-12 15:38:41', 0, '::1', 'Update New', 'setting_users', '{\"v_view\":\"1\",\"v_add\":\"1\",\"v_edit\":\"1\",\"v_delete\":\"0\",\"v_upload\":\"0\",\"v_download\":\"0\",\"v_print\":\"0\",\"v_excel\":\"0\",\"updated_by\":\"admin\",\"updated_date\":\"2023-08-12 15:38:41\"}'),
+(649, 'admin', '2023-08-12 15:38:44', 0, '::1', 'Update Before', 'setting_users', '{\"id\":\"20230812000001\",\"created_by\":\"admin\",\"created_date\":\"2023-08-12 15:38:31\",\"updated_by\":\"admin\",\"updated_date\":\"2023-08-12 15:38:41\",\"deleted\":\"0\",\"users_id\":\"admin\",\"menus_id\":\"20230812000001\",\"v_view\":\"1\",\"v_add\":\"1\",\"v_edit\":\"1\",\"v_delete\":\"0\",\"v_upload\":\"0\",\"v_download\":\"0\",\"v_print\":\"0\",\"v_excel\":\"0\",\"status\":\"0\"}'),
+(650, 'admin', '2023-08-12 15:38:44', 0, '::1', 'Update New', 'setting_users', '{\"v_view\":\"1\",\"v_add\":\"1\",\"v_edit\":\"1\",\"v_delete\":\"1\",\"v_upload\":\"0\",\"v_download\":\"0\",\"v_print\":\"0\",\"v_excel\":\"0\",\"updated_by\":\"admin\",\"updated_date\":\"2023-08-12 15:38:44\"}'),
+(651, 'admin', '2023-08-12 15:38:45', 0, '::1', 'Update Before', 'setting_users', '{\"id\":\"20230812000001\",\"created_by\":\"admin\",\"created_date\":\"2023-08-12 15:38:31\",\"updated_by\":\"admin\",\"updated_date\":\"2023-08-12 15:38:44\",\"deleted\":\"0\",\"users_id\":\"admin\",\"menus_id\":\"20230812000001\",\"v_view\":\"1\",\"v_add\":\"1\",\"v_edit\":\"1\",\"v_delete\":\"1\",\"v_upload\":\"0\",\"v_download\":\"0\",\"v_print\":\"0\",\"v_excel\":\"0\",\"status\":\"0\"}'),
+(652, 'admin', '2023-08-12 15:38:45', 0, '::1', 'Update New', 'setting_users', '{\"v_view\":\"1\",\"v_add\":\"1\",\"v_edit\":\"1\",\"v_delete\":\"1\",\"v_upload\":\"1\",\"v_download\":\"0\",\"v_print\":\"0\",\"v_excel\":\"0\",\"updated_by\":\"admin\",\"updated_date\":\"2023-08-12 15:38:45\"}'),
+(653, 'admin', '2023-08-12 15:38:50', 0, '::1', 'Update Before', 'setting_users', '{\"id\":\"20230812000001\",\"created_by\":\"admin\",\"created_date\":\"2023-08-12 15:38:31\",\"updated_by\":\"admin\",\"updated_date\":\"2023-08-12 15:38:45\",\"deleted\":\"0\",\"users_id\":\"admin\",\"menus_id\":\"20230812000001\",\"v_view\":\"1\",\"v_add\":\"1\",\"v_edit\":\"1\",\"v_delete\":\"1\",\"v_upload\":\"1\",\"v_download\":\"0\",\"v_print\":\"0\",\"v_excel\":\"0\",\"status\":\"0\"}'),
+(654, 'admin', '2023-08-12 15:38:50', 0, '::1', 'Update New', 'setting_users', '{\"v_view\":\"1\",\"v_add\":\"1\",\"v_edit\":\"1\",\"v_delete\":\"1\",\"v_upload\":\"1\",\"v_download\":\"1\",\"v_print\":\"0\",\"v_excel\":\"0\",\"updated_by\":\"admin\",\"updated_date\":\"2023-08-12 15:38:50\"}'),
+(655, 'admin', '2023-08-12 15:38:54', 0, '::1', 'Update Before', 'setting_users', '{\"id\":\"20230812000001\",\"created_by\":\"admin\",\"created_date\":\"2023-08-12 15:38:31\",\"updated_by\":\"admin\",\"updated_date\":\"2023-08-12 15:38:50\",\"deleted\":\"0\",\"users_id\":\"admin\",\"menus_id\":\"20230812000001\",\"v_view\":\"1\",\"v_add\":\"1\",\"v_edit\":\"1\",\"v_delete\":\"1\",\"v_upload\":\"1\",\"v_download\":\"1\",\"v_print\":\"0\",\"v_excel\":\"0\",\"status\":\"0\"}'),
+(656, 'admin', '2023-08-12 15:38:54', 0, '::1', 'Update New', 'setting_users', '{\"v_view\":\"1\",\"v_add\":\"1\",\"v_edit\":\"1\",\"v_delete\":\"1\",\"v_upload\":\"1\",\"v_download\":\"1\",\"v_print\":\"1\",\"v_excel\":\"0\",\"updated_by\":\"admin\",\"updated_date\":\"2023-08-12 15:38:54\"}'),
+(657, 'admin', '2023-08-12 15:38:56', 0, '::1', 'Update Before', 'setting_users', '{\"id\":\"20230812000001\",\"created_by\":\"admin\",\"created_date\":\"2023-08-12 15:38:31\",\"updated_by\":\"admin\",\"updated_date\":\"2023-08-12 15:38:54\",\"deleted\":\"0\",\"users_id\":\"admin\",\"menus_id\":\"20230812000001\",\"v_view\":\"1\",\"v_add\":\"1\",\"v_edit\":\"1\",\"v_delete\":\"1\",\"v_upload\":\"1\",\"v_download\":\"1\",\"v_print\":\"1\",\"v_excel\":\"0\",\"status\":\"0\"}'),
+(658, 'admin', '2023-08-12 15:38:56', 0, '::1', 'Update New', 'setting_users', '{\"v_view\":\"1\",\"v_add\":\"1\",\"v_edit\":\"1\",\"v_delete\":\"1\",\"v_upload\":\"1\",\"v_download\":\"1\",\"v_print\":\"1\",\"v_excel\":\"1\",\"updated_by\":\"admin\",\"updated_date\":\"2023-08-12 15:38:56\"}'),
+(659, 'admin', '2023-08-12 20:41:13', 0, '::1', 'Update Before', 'menus', '{\"id\":\"20230809000001\",\"created_by\":\"admin\",\"created_date\":\"2023-08-09 23:04:57\",\"updated_by\":null,\"updated_date\":null,\"deleted\":\"0\",\"menus_id\":\"20230803000001\",\"number\":null,\"name\":\"Raw Material\",\"description\":null,\"link\":\"master\\/item_rm\",\"sort\":\"13\",\"icon\":\"\",\"flag\":null,\"color\":null,\"state\":\"\",\"status\":\"0\"}'),
+(660, 'admin', '2023-08-12 20:41:13', 0, '::1', 'Update New', 'menus', '{\"menus_id\":\"20230803000001\",\"name\":\"Raw Material\",\"link\":\"master\\/item_rm\",\"sort\":\"11\",\"state\":\"\",\"updated_by\":\"admin\",\"updated_date\":\"2023-08-12 20:41:13\"}'),
+(661, NULL, '2023-08-13 20:41:19', 0, '::1', 'Login', 'Login', '{\"id\":\"86f9f296025243ed953fe6014ff765\",\"departement_id\":null,\"number\":\"1\",\"name\":\"Administrator\",\"username\":\"admin\",\"position\":\"Admin System\"}');
+INSERT INTO `logs` (`id`, `created_by`, `created_date`, `deleted`, `ip_address`, `action`, `menu`, `description`) VALUES
+(662, 'admin', '2023-08-13 21:30:30', 0, '::1', 'Create', 'item_fg', '{\"id\":\"BPIFG-FG08230001\",\"number\":\"1\",\"name\":\"2\",\"number_customer\":\"\",\"process\":\"Press\",\"item_family_id\":\"P02\",\"boxs\":\"Test\",\"polybag\":\"yes\",\"box_label\":\"yes\",\"ng_ration\":\"\",\"is_no\":\"\",\"weight\":\"\",\"color\":\"Biru\",\"leadtime\":\"\",\"mpq\":\"\",\"moq\":\"\",\"qty_box\":\"\",\"status\":\"0\",\"attachment\":\"http:\\/\\/localhost\\/erp_bpi\\/assets\\/document\\/item_fg\\/1691937031.pdf\",\"created_by\":\"admin\",\"created_date\":\"2023-08-13 21:30:30\"}'),
+(663, 'admin', '2023-08-13 21:49:43', 0, '::1', 'Delete', 'item_fg', '{\"id\":\"BPIFG-FG08230001\",\"created_by\":\"admin\",\"created_date\":\"2023-08-13 21:30:30\",\"updated_by\":null,\"updated_date\":null,\"deleted\":\"0\",\"item_family_id\":\"P02\",\"number\":\"1\",\"number_customer\":\"\",\"name\":\"2\",\"process\":\"Press\",\"boxs\":\"Test\",\"polybag\":\"yes\",\"box_label\":\"yes\",\"ng_ration\":\"0\",\"is_no\":\"\",\"weight\":\"0.0000\",\"color\":\"Biru\",\"leadtime\":\"0\",\"mpq\":\"0\",\"moq\":\"0\",\"qty_box\":\"0\",\"attachment\":\"http:\\/\\/localhost\\/erp_bpi\\/assets\\/document\\/item_fg\\/1691937031.pdf\",\"status\":\"0\"}'),
+(664, 'admin', '2023-08-13 21:51:08', 0, '::1', 'Create', 'item_fg', '{\"id\":\"BPIFG-FG08230001\",\"number\":\"1\",\"name\":\"3\",\"number_customer\":\"\",\"process\":\"Press\",\"item_family_id\":\"P02\",\"boxs\":\"Test\",\"polybag\":\"yes\",\"box_label\":\"yes\",\"ng_ration\":\"\",\"is_no\":\"\",\"weight\":\"\",\"color\":\"Biru\",\"leadtime\":\"\",\"mpq\":\"\",\"moq\":\"\",\"qty_box\":\"\",\"status\":\"0\",\"attachment\":\"http:\\/\\/localhost\\/erp_bpi\\/assets\\/document\\/item_fg\\/1691938269.pdf\",\"created_by\":\"admin\",\"created_date\":\"2023-08-13 21:51:08\"}'),
+(665, 'admin', '2023-08-13 21:51:28', 0, '::1', 'Delete', 'item_fg', '{\"id\":\"BPIFG-FG08230001\",\"created_by\":\"admin\",\"created_date\":\"2023-08-13 21:51:08\",\"updated_by\":null,\"updated_date\":null,\"deleted\":\"0\",\"item_family_id\":\"P02\",\"number\":\"1\",\"number_customer\":\"\",\"name\":\"3\",\"process\":\"Press\",\"boxs\":\"Test\",\"polybag\":\"yes\",\"box_label\":\"yes\",\"ng_ration\":\"0\",\"is_no\":\"\",\"weight\":\"0.0000\",\"color\":\"Biru\",\"leadtime\":\"0\",\"mpq\":\"0\",\"moq\":\"0\",\"qty_box\":\"0\",\"attachment\":\"http:\\/\\/localhost\\/erp_bpi\\/assets\\/document\\/item_fg\\/1691938269.pdf\",\"status\":\"0\"}'),
+(666, 'admin', '2023-08-13 21:55:21', 0, '::1', 'Create', 'item_fg', '{\"id\":\"BPIFG-FG08230001\",\"number\":\"1\",\"name\":\"2\",\"number_customer\":\"\",\"process\":\"Press\",\"item_family_id\":\"P02\",\"boxs\":\"Test\",\"polybag\":\"yes\",\"box_label\":\"yes\",\"ng_ration\":\"\",\"is_no\":\"\",\"weight\":\"\",\"color\":\"Biru\",\"leadtime\":\"\",\"mpq\":\"\",\"moq\":\"\",\"qty_box\":\"\",\"status\":\"0\",\"attachment\":\"http:\\/\\/localhost\\/erp_bpi\\/assets\\/document\\/item_fg\\/1691938522.pdf\",\"created_by\":\"admin\",\"created_date\":\"2023-08-13 21:55:21\"}'),
+(667, 'admin', '2023-08-13 21:55:40', 0, '::1', 'Delete', 'item_fg', '{\"id\":\"BPIFG-FG08230001\",\"created_by\":\"admin\",\"created_date\":\"2023-08-13 21:55:21\",\"updated_by\":null,\"updated_date\":null,\"deleted\":\"0\",\"item_family_id\":\"P02\",\"number\":\"1\",\"number_customer\":\"\",\"name\":\"2\",\"process\":\"Press\",\"boxs\":\"Test\",\"polybag\":\"yes\",\"box_label\":\"yes\",\"ng_ration\":\"0\",\"is_no\":\"\",\"weight\":\"0.0000\",\"color\":\"Biru\",\"leadtime\":\"0\",\"mpq\":\"0\",\"moq\":\"0\",\"qty_box\":\"0\",\"attachment\":\"http:\\/\\/localhost\\/erp_bpi\\/assets\\/document\\/item_fg\\/1691938522.pdf\",\"status\":\"0\"}'),
+(668, 'admin', '2023-08-13 21:58:03', 0, '::1', 'Create', 'item_fg', '{\"id\":\"BPIFG-FG08230001\",\"number\":\"1\",\"name\":\"3\",\"number_customer\":\"\",\"process\":\"Press\",\"item_family_id\":\"P02\",\"boxs\":\"Test\",\"polybag\":\"yes\",\"box_label\":\"yes\",\"ng_ration\":\"\",\"is_no\":\"\",\"weight\":\"\",\"color\":\"Biru\",\"leadtime\":\"\",\"mpq\":\"\",\"moq\":\"\",\"qty_box\":\"\",\"status\":\"0\",\"attachment\":\"http:\\/\\/localhost\\/erp_bpi\\/assets\\/document\\/item_fg\\/1691938683.pdf\",\"created_by\":\"admin\",\"created_date\":\"2023-08-13 21:58:03\"}'),
+(669, 'admin', '2023-08-13 21:58:29', 0, '::1', 'Delete', 'item_fg', '{\"id\":\"BPIFG-FG08230001\",\"created_by\":\"admin\",\"created_date\":\"2023-08-13 21:58:03\",\"updated_by\":null,\"updated_date\":null,\"deleted\":\"0\",\"item_family_id\":\"P02\",\"number\":\"1\",\"number_customer\":\"\",\"name\":\"3\",\"process\":\"Press\",\"boxs\":\"Test\",\"polybag\":\"yes\",\"box_label\":\"yes\",\"ng_ration\":\"0\",\"is_no\":\"\",\"weight\":\"0.0000\",\"color\":\"Biru\",\"leadtime\":\"0\",\"mpq\":\"0\",\"moq\":\"0\",\"qty_box\":\"0\",\"attachment\":\"http:\\/\\/localhost\\/erp_bpi\\/assets\\/document\\/item_fg\\/1691938683.pdf\",\"status\":\"0\"}'),
+(670, 'admin', '2023-08-13 21:59:19', 0, '::1', 'Create', 'item_fg', '{\"id\":\"BPIFG-FG08230001\",\"number\":\"1\",\"name\":\"2\",\"number_customer\":\"\",\"process\":\"Press\",\"item_family_id\":\"P02\",\"boxs\":\"Test\",\"polybag\":\"yes\",\"box_label\":\"yes\",\"ng_ration\":\"\",\"is_no\":\"\",\"weight\":\"\",\"color\":\"Biru\",\"leadtime\":\"\",\"mpq\":\"\",\"moq\":\"\",\"qty_box\":\"\",\"status\":\"0\",\"attachment\":\"http:\\/\\/localhost\\/erp_bpi\\/assets\\/document\\/item_fg\\/1691938760.pdf\",\"created_by\":\"admin\",\"created_date\":\"2023-08-13 21:59:19\"}'),
+(671, 'admin', '2023-08-13 21:59:25', 0, '::1', 'Delete', 'item_fg', '{\"id\":\"BPIFG-FG08230001\",\"created_by\":\"admin\",\"created_date\":\"2023-08-13 21:59:19\",\"updated_by\":null,\"updated_date\":null,\"deleted\":\"0\",\"item_family_id\":\"P02\",\"number\":\"1\",\"number_customer\":\"\",\"name\":\"2\",\"process\":\"Press\",\"boxs\":\"Test\",\"polybag\":\"yes\",\"box_label\":\"yes\",\"ng_ration\":\"0\",\"is_no\":\"\",\"weight\":\"0.0000\",\"color\":\"Biru\",\"leadtime\":\"0\",\"mpq\":\"0\",\"moq\":\"0\",\"qty_box\":\"0\",\"attachment\":\"http:\\/\\/localhost\\/erp_bpi\\/assets\\/document\\/item_fg\\/1691938760.pdf\",\"status\":\"0\"}'),
+(672, 'admin', '2023-08-13 22:03:21', 0, '::1', 'Create', 'item_fg', '{\"id\":\"BPIFG-FG08230001\",\"number\":\"1\",\"name\":\"2\",\"number_customer\":\"\",\"process\":\"Press\",\"item_family_id\":\"P02\",\"boxs\":\"Test\",\"polybag\":\"yes\",\"box_label\":\"yes\",\"ng_ration\":\"\",\"is_no\":\"\",\"weight\":\"\",\"color\":\"Biru\",\"leadtime\":\"\",\"mpq\":\"\",\"moq\":\"\",\"qty_box\":\"\",\"status\":\"0\",\"attachment\":\"http:\\/\\/localhost\\/erp_bpi\\/assets\\/document\\/item_fg\\/1691939001.pdf\",\"created_by\":\"admin\",\"created_date\":\"2023-08-13 22:03:21\"}'),
+(673, 'admin', '2023-08-13 22:03:29', 0, '::1', 'Delete', 'item_fg', '{\"id\":\"BPIFG-FG08230001\",\"created_by\":\"admin\",\"created_date\":\"2023-08-13 22:03:21\",\"updated_by\":null,\"updated_date\":null,\"deleted\":\"0\",\"item_family_id\":\"P02\",\"number\":\"1\",\"number_customer\":\"\",\"name\":\"2\",\"process\":\"Press\",\"boxs\":\"Test\",\"polybag\":\"yes\",\"box_label\":\"yes\",\"ng_ration\":\"0\",\"is_no\":\"\",\"weight\":\"0.0000\",\"color\":\"Biru\",\"leadtime\":\"0\",\"mpq\":\"0\",\"moq\":\"0\",\"qty_box\":\"0\",\"attachment\":\"http:\\/\\/localhost\\/erp_bpi\\/assets\\/document\\/item_fg\\/1691939001.pdf\",\"status\":\"0\"}'),
+(674, 'admin', '2023-08-13 22:05:28', 0, '::1', 'Create', 'item_fg', '{\"id\":\"BPIFG-FG08230001\",\"number\":\"1\",\"name\":\"3\",\"number_customer\":\"\",\"process\":\"Press\",\"item_family_id\":\"P02\",\"boxs\":\"Test\",\"polybag\":\"yes\",\"box_label\":\"yes\",\"ng_ration\":\"\",\"is_no\":\"\",\"weight\":\"\",\"color\":\"Biru\",\"leadtime\":\"\",\"mpq\":\"\",\"moq\":\"\",\"qty_box\":\"\",\"status\":\"0\",\"attachment\":\"http:\\/\\/localhost\\/erp_bpi\\/assets\\/document\\/item_fg\\/1691939129.pdf\",\"created_by\":\"admin\",\"created_date\":\"2023-08-13 22:05:28\"}'),
+(675, 'admin', '2023-08-13 22:05:36', 0, '::1', 'Delete', 'item_fg', '{\"id\":\"BPIFG-FG08230001\",\"created_by\":\"admin\",\"created_date\":\"2023-08-13 22:05:28\",\"updated_by\":null,\"updated_date\":null,\"deleted\":\"0\",\"item_family_id\":\"P02\",\"number\":\"1\",\"number_customer\":\"\",\"name\":\"3\",\"process\":\"Press\",\"boxs\":\"Test\",\"polybag\":\"yes\",\"box_label\":\"yes\",\"ng_ration\":\"0\",\"is_no\":\"\",\"weight\":\"0.0000\",\"color\":\"Biru\",\"leadtime\":\"0\",\"mpq\":\"0\",\"moq\":\"0\",\"qty_box\":\"0\",\"attachment\":\"http:\\/\\/localhost\\/erp_bpi\\/assets\\/document\\/item_fg\\/1691939129.pdf\",\"status\":\"0\"}'),
+(676, 'admin', '2023-08-13 22:28:35', 0, '::1', 'Create', 'item_fg', '{\"id\":\"BPIFG-FG08230001\",\"number\":\"1\",\"name\":\"2\",\"number_customer\":\"\",\"process\":\"Press\",\"item_family_id\":\"P02\",\"boxs\":\"Test\",\"polybag\":\"yes\",\"box_label\":\"yes\",\"ng_ration\":\"\",\"is_no\":\"\",\"weight\":\"\",\"color\":\"Biru\",\"leadtime\":\"\",\"mpq\":\"\",\"moq\":\"\",\"qty_box\":\"\",\"status\":\"0\",\"attachment\":\"http:\\/\\/localhost\\/erp_bpi\\/assets\\/document\\/item_fg\\/1691940516.pdf\",\"created_by\":\"admin\",\"created_date\":\"2023-08-13 22:28:35\"}'),
+(677, 'admin', '2023-08-13 23:02:53', 0, '::1', 'Delete', 'item_fg', '{\"id\":\"BPIFG-FG08230001\",\"created_by\":\"admin\",\"created_date\":\"2023-08-13 22:28:35\",\"updated_by\":null,\"updated_date\":null,\"deleted\":\"0\",\"item_family_id\":\"P02\",\"number\":\"1\",\"number_customer\":\"\",\"name\":\"2\",\"process\":\"Press\",\"boxs\":\"Test\",\"polybag\":\"yes\",\"box_label\":\"yes\",\"ng_ration\":\"0\",\"is_no\":\"\",\"weight\":\"0.0000\",\"color\":\"Biru\",\"leadtime\":\"0\",\"mpq\":\"0\",\"moq\":\"0\",\"qty_box\":\"0\",\"attachment\":\"http:\\/\\/localhost\\/erp_bpi\\/assets\\/document\\/item_fg\\/1691940516.pdf\",\"status\":\"0\"}'),
+(678, 'admin', '2023-08-13 23:18:27', 0, '::1', 'Create', 'item_fg', '{\"id\":\"BPIFG-FG08230001\",\"number\":\"1\",\"name\":\"2\",\"number_customer\":\"\",\"process\":\"Press\",\"item_family_id\":\"P02\",\"boxs\":\"Test\",\"polybag\":\"yes\",\"box_label\":\"yes\",\"ng_ration\":\"5\",\"is_no\":\"3\",\"weight\":\"4\",\"leadtime\":\"2\",\"mpq\":\"2\",\"moq\":\"3\",\"qty_box\":\"4\",\"attachment\":\"\",\"status\":\"0\",\"created_by\":\"admin\",\"created_date\":\"2023-08-13 23:18:27\"}'),
+(679, 'admin', '2023-08-13 23:20:03', 0, '::1', 'Update Before', 'item_fg', '{\"id\":\"BPIFG-FG08230001\",\"created_by\":\"admin\",\"created_date\":\"2023-08-13 23:18:27\",\"updated_by\":null,\"updated_date\":null,\"deleted\":\"0\",\"item_family_id\":\"P02\",\"number\":\"1\",\"number_customer\":\"\",\"name\":\"2\",\"process\":\"Press\",\"boxs\":\"Test\",\"polybag\":\"yes\",\"box_label\":\"yes\",\"ng_ration\":\"5\",\"is_no\":\"3\",\"weight\":\"4.0000\",\"color\":null,\"leadtime\":\"2\",\"mpq\":\"2\",\"moq\":\"3\",\"qty_box\":\"4\",\"attachment\":\"\",\"status\":\"0\"}'),
+(680, 'admin', '2023-08-13 23:20:03', 0, '::1', 'Update New', 'item_fg', '{\"id\":\"BPIFG-FG08230002\",\"number\":\"1\",\"name\":\"2\",\"number_customer\":\"\",\"process\":\"Press\",\"item_family_id\":\"P02\",\"boxs\":\"Test\",\"polybag\":\"yes\",\"box_label\":\"yes\",\"ng_ration\":\"5\",\"is_no\":\"3\",\"weight\":\"4\",\"color\":\"Biru\",\"leadtime\":\"2\",\"mpq\":\"2\",\"moq\":\"3\",\"qty_box\":\"4\",\"status\":\"0\",\"attachment\":null,\"updated_by\":\"admin\",\"updated_date\":\"2023-08-13 23:20:03\"}'),
+(681, 'admin', '2023-08-13 23:27:23', 0, '::1', 'Delete', 'item_fg', '{\"id\":\"BPIFG-FG08230002\",\"created_by\":\"admin\",\"created_date\":\"2023-08-13 23:18:27\",\"updated_by\":\"admin\",\"updated_date\":\"2023-08-13 23:20:03\",\"deleted\":\"0\",\"item_family_id\":\"P02\",\"number\":\"1\",\"number_customer\":\"\",\"name\":\"2\",\"process\":\"Press\",\"boxs\":\"Test\",\"polybag\":\"yes\",\"box_label\":\"yes\",\"ng_ration\":\"5\",\"is_no\":\"3\",\"weight\":\"4.0000\",\"color\":\"Biru\",\"leadtime\":\"2\",\"mpq\":\"2\",\"moq\":\"3\",\"qty_box\":\"4\",\"attachment\":null,\"status\":\"0\"}'),
+(682, 'admin', '2023-08-13 23:27:57', 0, '::1', 'Create', 'item_fg', '{\"id\":\"BPIFG-FG08230001\",\"number\":\"1\",\"name\":\"2\",\"number_customer\":\"\",\"process\":\"Press\",\"item_family_id\":\"P02\",\"boxs\":\"Test\",\"polybag\":\"yes\",\"box_label\":\"yes\",\"ng_ration\":\"5\",\"is_no\":\"3\",\"weight\":\"4\",\"leadtime\":\"Biru\",\"mpq\":\"2\",\"moq\":\"2\",\"qty_box\":\"3\",\"attachment\":\"4\",\"status\":\"\",\"created_by\":\"admin\",\"created_date\":\"2023-08-13 23:27:57\"}'),
+(683, 'admin', '2023-08-13 23:28:21', 0, '::1', 'Update Before', 'item_fg', '{\"id\":\"BPIFG-FG08230001\",\"created_by\":\"admin\",\"created_date\":\"2023-08-13 23:27:57\",\"updated_by\":null,\"updated_date\":null,\"deleted\":\"0\",\"item_family_id\":\"P02\",\"number\":\"1\",\"number_customer\":\"\",\"name\":\"2\",\"process\":\"Press\",\"boxs\":\"Test\",\"polybag\":\"yes\",\"box_label\":\"yes\",\"ng_ration\":\"5\",\"is_no\":\"3\",\"weight\":\"4.0000\",\"color\":null,\"leadtime\":\"0\",\"mpq\":\"2\",\"moq\":\"2\",\"qty_box\":\"3\",\"attachment\":\"4\",\"status\":\"0\"}'),
+(684, 'admin', '2023-08-13 23:28:21', 0, '::1', 'Update New', 'item_fg', '{\"id\":\"BPIFG-FG08230002\",\"number\":\"1\",\"name\":\"2\",\"number_customer\":\"\",\"process\":\"Press\",\"item_family_id\":\"P02\",\"boxs\":\"Test\",\"polybag\":\"no\",\"box_label\":\"no\",\"ng_ration\":\"5\",\"is_no\":\"3\",\"weight\":\"4\",\"color\":\"Biru\",\"leadtime\":\"0\",\"mpq\":\"2\",\"moq\":\"2\",\"qty_box\":\"3\",\"status\":\"0\",\"attachment\":null,\"updated_by\":\"admin\",\"updated_date\":\"2023-08-13 23:28:20\"}'),
+(685, 'admin', '2023-08-13 23:28:57', 0, '::1', 'Delete', 'item_fg', '{\"id\":\"BPIFG-FG08230002\",\"created_by\":\"admin\",\"created_date\":\"2023-08-13 23:27:57\",\"updated_by\":\"admin\",\"updated_date\":\"2023-08-13 23:28:20\",\"deleted\":\"0\",\"item_family_id\":\"P02\",\"number\":\"1\",\"number_customer\":\"\",\"name\":\"2\",\"process\":\"Press\",\"boxs\":\"Test\",\"polybag\":\"no\",\"box_label\":\"no\",\"ng_ration\":\"5\",\"is_no\":\"3\",\"weight\":\"4.0000\",\"color\":\"Biru\",\"leadtime\":\"0\",\"mpq\":\"2\",\"moq\":\"2\",\"qty_box\":\"3\",\"attachment\":null,\"status\":\"0\"}'),
+(686, 'admin', '2023-08-13 23:30:33', 0, '::1', 'Create', 'item_fg', '{\"id\":\"BPIFG-FG08230001\",\"number\":\"1\",\"name\":\"2\",\"number_customer\":\"\",\"process\":\"Press\",\"item_family_id\":\"P02\",\"boxs\":\"Test\",\"polybag\":\"Yes\",\"box_label\":\"Yes\",\"ng_ration\":\"5\",\"is_no\":\"3\",\"weight\":\"4\",\"color\":\"Biru\",\"leadtime\":\"2\",\"mpq\":\"2\",\"moq\":\"3\",\"qty_box\":\"4\",\"attachment\":\"\",\"status\":\"0\",\"created_by\":\"admin\",\"created_date\":\"2023-08-13 23:30:33\"}'),
+(687, NULL, '2023-08-14 09:08:15', 0, '::1', 'Login', 'Login', '{\"id\":\"86f9f296025243ed953fe6014ff765\",\"departement_id\":null,\"number\":\"1\",\"name\":\"Administrator\",\"username\":\"admin\",\"position\":\"Admin System\"}'),
+(688, 'admin', '2023-08-14 09:08:30', 0, '::1', 'Delete', 'item_fg', '{\"id\":\"BPIFG-FG08230001\",\"created_by\":\"admin\",\"created_date\":\"2023-08-13 23:30:33\",\"updated_by\":null,\"updated_date\":null,\"deleted\":\"0\",\"item_family_id\":\"P02\",\"number\":\"1\",\"number_customer\":\"\",\"name\":\"2\",\"process\":\"Press\",\"boxs\":\"Test\",\"polybag\":\"Yes\",\"box_label\":\"Yes\",\"ng_ration\":\"5\",\"is_no\":\"3\",\"weight\":\"4.0000\",\"color\":\"Biru\",\"leadtime\":\"2\",\"mpq\":\"2\",\"moq\":\"3\",\"qty_box\":\"4\",\"attachment\":\"\",\"status\":\"0\"}'),
+(689, 'admin', '2023-08-14 09:08:55', 0, '::1', 'Create', 'item_fg', '{\"id\":\"BPIFG-FG08230001\",\"number\":\"1\",\"name\":\"2\",\"number_customer\":\"\",\"process\":\"Press\",\"item_family_id\":\"P02\",\"boxs\":\"Test\",\"polybag\":\"yes\",\"box_label\":\"yes\",\"ng_ration\":\"\",\"is_no\":\"\",\"weight\":\"\",\"color\":\"Biru\",\"leadtime\":\"\",\"mpq\":\"\",\"moq\":\"\",\"qty_box\":\"\",\"status\":\"0\",\"attachment\":\"http:\\/\\/localhost\\/erp_bpi\\/assets\\/document\\/item_fg\\/1691978936.pdf\",\"created_by\":\"admin\",\"created_date\":\"2023-08-14 09:08:55\"}'),
+(690, 'admin', '2023-08-14 09:09:25', 0, '::1', 'Delete', 'item_fg', '{\"id\":\"BPIFG-FG08230001\",\"created_by\":\"admin\",\"created_date\":\"2023-08-14 09:08:55\",\"updated_by\":null,\"updated_date\":null,\"deleted\":\"0\",\"item_family_id\":\"P02\",\"number\":\"1\",\"number_customer\":\"\",\"name\":\"2\",\"process\":\"Press\",\"boxs\":\"Test\",\"polybag\":\"yes\",\"box_label\":\"yes\",\"ng_ration\":\"0\",\"is_no\":\"\",\"weight\":\"0.0000\",\"color\":\"Biru\",\"leadtime\":\"0\",\"mpq\":\"0\",\"moq\":\"0\",\"qty_box\":\"0\",\"attachment\":\"http:\\/\\/localhost\\/erp_bpi\\/assets\\/document\\/item_fg\\/1691978936.pdf\",\"status\":\"0\"}'),
+(691, 'admin', '2023-08-14 09:16:41', 0, '::1', 'Create', 'item_fg', '{\"id\":\"BPIFG-FG08230001\",\"number\":\"1\",\"name\":\"2\",\"number_customer\":\"\",\"process\":\"Press\",\"item_family_id\":\"P02\",\"boxs\":\"Test\",\"polybag\":\"yes\",\"box_label\":\"yes\",\"ng_ration\":\"\",\"is_no\":\"\",\"weight\":\"\",\"color\":\"Biru\",\"leadtime\":\"\",\"mpq\":\"\",\"moq\":\"\",\"qty_box\":\"\",\"status\":\"0\",\"attachment\":\"http:\\/\\/localhost\\/erp_bpi\\/assets\\/document\\/item_fg\\/1691979401.pdf\",\"created_by\":\"admin\",\"created_date\":\"2023-08-14 09:16:41\"}'),
+(692, 'admin', '2023-08-14 09:16:51', 0, '::1', 'Delete', 'item_fg', '{\"id\":\"BPIFG-FG08230001\",\"created_by\":\"admin\",\"created_date\":\"2023-08-14 09:16:41\",\"updated_by\":null,\"updated_date\":null,\"deleted\":\"0\",\"item_family_id\":\"P02\",\"number\":\"1\",\"number_customer\":\"\",\"name\":\"2\",\"process\":\"Press\",\"boxs\":\"Test\",\"polybag\":\"yes\",\"box_label\":\"yes\",\"ng_ration\":\"0\",\"is_no\":\"\",\"weight\":\"0.0000\",\"color\":\"Biru\",\"leadtime\":\"0\",\"mpq\":\"0\",\"moq\":\"0\",\"qty_box\":\"0\",\"attachment\":\"http:\\/\\/localhost\\/erp_bpi\\/assets\\/document\\/item_fg\\/1691979401.pdf\",\"status\":\"0\"}'),
+(693, 'admin', '2023-08-14 09:19:26', 0, '::1', 'Create', 'item_fg', '{\"id\":\"BPIFG-FG08230001\",\"number\":\"1\",\"name\":\"3\",\"number_customer\":\"\",\"process\":\"Press\",\"item_family_id\":\"P02\",\"boxs\":\"Test\",\"polybag\":\"yes\",\"box_label\":\"yes\",\"ng_ration\":\"\",\"is_no\":\"\",\"weight\":\"\",\"color\":\"Biru\",\"leadtime\":\"\",\"mpq\":\"\",\"moq\":\"\",\"qty_box\":\"\",\"status\":\"0\",\"attachment\":\"http:\\/\\/localhost\\/erp_bpi\\/assets\\/document\\/item_fg\\/1691979567.pdf\",\"created_by\":\"admin\",\"created_date\":\"2023-08-14 09:19:26\"}'),
+(694, 'admin', '2023-08-14 09:19:50', 0, '::1', 'Delete', 'item_fg', '{\"id\":\"BPIFG-FG08230001\",\"created_by\":\"admin\",\"created_date\":\"2023-08-14 09:19:26\",\"updated_by\":null,\"updated_date\":null,\"deleted\":\"0\",\"item_family_id\":\"P02\",\"number\":\"1\",\"number_customer\":\"\",\"name\":\"3\",\"process\":\"Press\",\"boxs\":\"Test\",\"polybag\":\"yes\",\"box_label\":\"yes\",\"ng_ration\":\"0\",\"is_no\":\"\",\"weight\":\"0.0000\",\"color\":\"Biru\",\"leadtime\":\"0\",\"mpq\":\"0\",\"moq\":\"0\",\"qty_box\":\"0\",\"attachment\":\"http:\\/\\/localhost\\/erp_bpi\\/assets\\/document\\/item_fg\\/1691979567.pdf\",\"status\":\"0\"}'),
+(695, 'admin', '2023-08-14 09:21:24', 0, '::1', 'Create', 'item_fg', '{\"id\":\"BPIFG-FG08230001\",\"number\":\"1\",\"name\":\"2\",\"number_customer\":\"\",\"process\":\"Press\",\"item_family_id\":\"P02\",\"boxs\":\"Test\",\"polybag\":\"yes\",\"box_label\":\"yes\",\"ng_ration\":\"\",\"is_no\":\"\",\"weight\":\"\",\"color\":\"Biru\",\"leadtime\":\"\",\"mpq\":\"\",\"moq\":\"\",\"qty_box\":\"\",\"status\":\"0\",\"attachment\":\"http:\\/\\/localhost\\/erp_bpi\\/assets\\/document\\/item_fg\\/1691979685.pdf\",\"created_by\":\"admin\",\"created_date\":\"2023-08-14 09:21:24\"}'),
+(696, 'admin', '2023-08-14 09:21:37', 0, '::1', 'Delete', 'item_fg', '{\"id\":\"BPIFG-FG08230001\",\"created_by\":\"admin\",\"created_date\":\"2023-08-14 09:21:24\",\"updated_by\":null,\"updated_date\":null,\"deleted\":\"0\",\"item_family_id\":\"P02\",\"number\":\"1\",\"number_customer\":\"\",\"name\":\"2\",\"process\":\"Press\",\"boxs\":\"Test\",\"polybag\":\"yes\",\"box_label\":\"yes\",\"ng_ration\":\"0\",\"is_no\":\"\",\"weight\":\"0.0000\",\"color\":\"Biru\",\"leadtime\":\"0\",\"mpq\":\"0\",\"moq\":\"0\",\"qty_box\":\"0\",\"attachment\":\"http:\\/\\/localhost\\/erp_bpi\\/assets\\/document\\/item_fg\\/1691979685.pdf\",\"status\":\"0\"}'),
+(697, 'admin', '2023-08-14 09:23:45', 0, '::1', 'Create', 'item_fg', '{\"id\":\"BPIFG-FG08230001\",\"number\":\"1\",\"name\":\"2\",\"number_customer\":\"\",\"process\":\"Press\",\"item_family_id\":\"P02\",\"boxs\":\"Test\",\"polybag\":\"yes\",\"box_label\":\"yes\",\"ng_ration\":\"\",\"is_no\":\"\",\"weight\":\"\",\"color\":\"Biru\",\"leadtime\":\"\",\"mpq\":\"\",\"moq\":\"\",\"qty_box\":\"\",\"status\":\"0\",\"attachment\":\"http:\\/\\/localhost\\/erp_bpi\\/assets\\/document\\/item_fg\\/1691979826.pdf\",\"created_by\":\"admin\",\"created_date\":\"2023-08-14 09:23:45\"}'),
+(698, 'admin', '2023-08-14 09:25:06', 0, '::1', 'Delete', 'item_fg', '{\"id\":\"BPIFG-FG08230001\",\"created_by\":\"admin\",\"created_date\":\"2023-08-14 09:23:45\",\"updated_by\":null,\"updated_date\":null,\"deleted\":\"0\",\"item_family_id\":\"P02\",\"number\":\"1\",\"number_customer\":\"\",\"name\":\"2\",\"process\":\"Press\",\"boxs\":\"Test\",\"polybag\":\"yes\",\"box_label\":\"yes\",\"ng_ration\":\"0\",\"is_no\":\"\",\"weight\":\"0.0000\",\"color\":\"Biru\",\"leadtime\":\"0\",\"mpq\":\"0\",\"moq\":\"0\",\"qty_box\":\"0\",\"attachment\":\"http:\\/\\/localhost\\/erp_bpi\\/assets\\/document\\/item_fg\\/1691979826.pdf\",\"status\":\"0\"}'),
+(699, 'admin', '2023-08-14 09:26:46', 0, '::1', 'Create', 'item_fg', '{\"id\":\"BPIFG-FG08230001\",\"number\":\"1\",\"name\":\"2\",\"number_customer\":\"\",\"process\":\"Press\",\"item_family_id\":\"P02\",\"boxs\":\"Test\",\"polybag\":\"yes\",\"box_label\":\"yes\",\"ng_ration\":\"\",\"is_no\":\"\",\"weight\":\"\",\"color\":\"Biru\",\"leadtime\":\"\",\"mpq\":\"\",\"moq\":\"\",\"qty_box\":\"\",\"status\":\"0\",\"attachment\":\"http:\\/\\/localhost\\/erp_bpi\\/assets\\/document\\/item_fg\\/1691980006.pdf\",\"created_by\":\"admin\",\"created_date\":\"2023-08-14 09:26:46\"}'),
+(700, 'admin', '2023-08-14 09:26:54', 0, '::1', 'Delete', 'item_fg', '{\"id\":\"BPIFG-FG08230001\",\"created_by\":\"admin\",\"created_date\":\"2023-08-14 09:26:46\",\"updated_by\":null,\"updated_date\":null,\"deleted\":\"0\",\"item_family_id\":\"P02\",\"number\":\"1\",\"number_customer\":\"\",\"name\":\"2\",\"process\":\"Press\",\"boxs\":\"Test\",\"polybag\":\"yes\",\"box_label\":\"yes\",\"ng_ration\":\"0\",\"is_no\":\"\",\"weight\":\"0.0000\",\"color\":\"Biru\",\"leadtime\":\"0\",\"mpq\":\"0\",\"moq\":\"0\",\"qty_box\":\"0\",\"attachment\":\"http:\\/\\/localhost\\/erp_bpi\\/assets\\/document\\/item_fg\\/1691980006.pdf\",\"status\":\"0\"}'),
+(701, 'admin', '2023-08-14 09:33:16', 0, '::1', 'Create', 'item_fg', '{\"id\":\"BPIFG-FG08230001\",\"number\":\"1\",\"name\":\"2\",\"number_customer\":\"\",\"process\":\"Press\",\"item_family_id\":\"P02\",\"boxs\":\"Test\",\"polybag\":\"yes\",\"box_label\":\"yes\",\"ng_ration\":\"\",\"is_no\":\"\",\"weight\":\"\",\"color\":\"Biru\",\"leadtime\":\"\",\"mpq\":\"\",\"moq\":\"\",\"qty_box\":\"\",\"status\":\"0\",\"attachment\":\"http:\\/\\/localhost\\/erp_bpi\\/assets\\/document\\/item_fg\\/1691980397.pdf\",\"created_by\":\"admin\",\"created_date\":\"2023-08-14 09:33:16\"}'),
+(702, 'admin', '2023-08-14 09:33:27', 0, '::1', 'Delete', 'item_fg', '{\"id\":\"BPIFG-FG08230001\",\"created_by\":\"admin\",\"created_date\":\"2023-08-14 09:33:16\",\"updated_by\":null,\"updated_date\":null,\"deleted\":\"0\",\"item_family_id\":\"P02\",\"number\":\"1\",\"number_customer\":\"\",\"name\":\"2\",\"process\":\"Press\",\"boxs\":\"Test\",\"polybag\":\"yes\",\"box_label\":\"yes\",\"ng_ration\":\"0\",\"is_no\":\"\",\"weight\":\"0.0000\",\"color\":\"Biru\",\"leadtime\":\"0\",\"mpq\":\"0\",\"moq\":\"0\",\"qty_box\":\"0\",\"attachment\":\"http:\\/\\/localhost\\/erp_bpi\\/assets\\/document\\/item_fg\\/1691980397.pdf\",\"status\":\"0\"}'),
+(703, 'admin', '2023-08-14 09:35:01', 0, '::1', 'Create', 'item_fg', '{\"id\":\"BPIFG-FG08230001\",\"number\":\"1\",\"name\":\"2\",\"number_customer\":\"\",\"process\":\"Press\",\"item_family_id\":\"P02\",\"boxs\":\"Test\",\"polybag\":\"yes\",\"box_label\":\"yes\",\"ng_ration\":\"\",\"is_no\":\"\",\"weight\":\"\",\"color\":\"Biru\",\"leadtime\":\"\",\"mpq\":\"\",\"moq\":\"\",\"qty_box\":\"\",\"status\":\"0\",\"attachment\":\"http:\\/\\/localhost\\/erp_bpi\\/assets\\/documents\\/item_fg\\/1691980502.pdf\",\"created_by\":\"admin\",\"created_date\":\"2023-08-14 09:35:01\"}'),
+(704, 'admin', '2023-08-14 09:35:27', 0, '::1', 'Delete', 'item_fg', '{\"id\":\"BPIFG-FG08230001\",\"created_by\":\"admin\",\"created_date\":\"2023-08-14 09:35:01\",\"updated_by\":null,\"updated_date\":null,\"deleted\":\"0\",\"item_family_id\":\"P02\",\"number\":\"1\",\"number_customer\":\"\",\"name\":\"2\",\"process\":\"Press\",\"boxs\":\"Test\",\"polybag\":\"yes\",\"box_label\":\"yes\",\"ng_ration\":\"0\",\"is_no\":\"\",\"weight\":\"0.0000\",\"color\":\"Biru\",\"leadtime\":\"0\",\"mpq\":\"0\",\"moq\":\"0\",\"qty_box\":\"0\",\"attachment\":\"http:\\/\\/localhost\\/erp_bpi\\/assets\\/documents\\/item_fg\\/1691980502.pdf\",\"status\":\"0\"}'),
+(705, 'admin', '2023-08-14 09:42:22', 0, '::1', 'Create', 'item_fg', '{\"id\":\"BPIFG-FG08230001\",\"number\":\"1\",\"name\":\"2\",\"number_customer\":\"\",\"process\":\"Press\",\"item_family_id\":\"P02\",\"boxs\":\"Test\",\"polybag\":\"yes\",\"box_label\":\"yes\",\"ng_ration\":\"\",\"is_no\":\"\",\"weight\":\"\",\"color\":\"Biru\",\"leadtime\":\"\",\"mpq\":\"\",\"moq\":\"\",\"qty_box\":\"\",\"status\":\"0\",\"attachment\":\"http:\\/\\/localhost\\/erp_bpi\\/assets\\/documents\\/item_fg\\/1691980942.pdf\",\"created_by\":\"admin\",\"created_date\":\"2023-08-14 09:42:22\"}'),
+(706, 'admin', '2023-08-14 09:42:31', 0, '::1', 'Delete', 'item_fg', '{\"id\":\"BPIFG-FG08230001\",\"created_by\":\"admin\",\"created_date\":\"2023-08-14 09:42:22\",\"updated_by\":null,\"updated_date\":null,\"deleted\":\"0\",\"item_family_id\":\"P02\",\"number\":\"1\",\"number_customer\":\"\",\"name\":\"2\",\"process\":\"Press\",\"boxs\":\"Test\",\"polybag\":\"yes\",\"box_label\":\"yes\",\"ng_ration\":\"0\",\"is_no\":\"\",\"weight\":\"0.0000\",\"color\":\"Biru\",\"leadtime\":\"0\",\"mpq\":\"0\",\"moq\":\"0\",\"qty_box\":\"0\",\"attachment\":\"http:\\/\\/localhost\\/erp_bpi\\/assets\\/documents\\/item_fg\\/1691980942.pdf\",\"status\":\"0\"}'),
+(707, 'admin', '2023-08-14 09:43:35', 0, '::1', 'Create', 'item_fg', '{\"id\":\"BPIFG-FG08230001\",\"number\":\"2\",\"name\":\"1\",\"number_customer\":\"\",\"process\":\"Press\",\"item_family_id\":\"P02\",\"boxs\":\"Test\",\"polybag\":\"yes\",\"box_label\":\"yes\",\"ng_ration\":\"\",\"is_no\":\"\",\"weight\":\"\",\"color\":\"Biru\",\"leadtime\":\"\",\"mpq\":\"\",\"moq\":\"\",\"qty_box\":\"\",\"status\":\"0\",\"attachment\":\"http:\\/\\/localhost\\/erp_bpi\\/assets\\/documents\\/item_fg\\/1691981016.pdf\",\"created_by\":\"admin\",\"created_date\":\"2023-08-14 09:43:35\"}'),
+(708, 'admin', '2023-08-14 09:43:58', 0, '::1', 'Delete', 'item_fg', '{\"id\":\"BPIFG-FG08230001\",\"created_by\":\"admin\",\"created_date\":\"2023-08-14 09:43:35\",\"updated_by\":null,\"updated_date\":null,\"deleted\":\"0\",\"item_family_id\":\"P02\",\"number\":\"2\",\"number_customer\":\"\",\"name\":\"1\",\"process\":\"Press\",\"boxs\":\"Test\",\"polybag\":\"yes\",\"box_label\":\"yes\",\"ng_ration\":\"0\",\"is_no\":\"\",\"weight\":\"0.0000\",\"color\":\"Biru\",\"leadtime\":\"0\",\"mpq\":\"0\",\"moq\":\"0\",\"qty_box\":\"0\",\"attachment\":\"http:\\/\\/localhost\\/erp_bpi\\/assets\\/documents\\/item_fg\\/1691981016.pdf\",\"status\":\"0\"}'),
+(709, 'admin', '2023-08-14 09:46:54', 0, '::1', 'Create', 'item_fg', '{\"id\":\"BPIFG-FG08230001\",\"number\":\"2\",\"name\":\"2\",\"number_customer\":\"\",\"process\":\"Press\",\"item_family_id\":\"P02\",\"boxs\":\"Test\",\"polybag\":\"yes\",\"box_label\":\"yes\",\"ng_ration\":\"\",\"is_no\":\"\",\"weight\":\"\",\"color\":\"Biru\",\"leadtime\":\"\",\"mpq\":\"\",\"moq\":\"\",\"qty_box\":\"\",\"status\":\"0\",\"attachment\":\"http:\\/\\/localhost\\/erp_bpi\\/assets\\/documents\\/item_fg\\/1691981214.pdf\",\"created_by\":\"admin\",\"created_date\":\"2023-08-14 09:46:54\"}'),
+(710, 'admin', '2023-08-14 09:47:11', 0, '::1', 'Delete', 'item_fg', '{\"id\":\"BPIFG-FG08230001\",\"created_by\":\"admin\",\"created_date\":\"2023-08-14 09:46:54\",\"updated_by\":null,\"updated_date\":null,\"deleted\":\"0\",\"item_family_id\":\"P02\",\"number\":\"2\",\"number_customer\":\"\",\"name\":\"2\",\"process\":\"Press\",\"boxs\":\"Test\",\"polybag\":\"yes\",\"box_label\":\"yes\",\"ng_ration\":\"0\",\"is_no\":\"\",\"weight\":\"0.0000\",\"color\":\"Biru\",\"leadtime\":\"0\",\"mpq\":\"0\",\"moq\":\"0\",\"qty_box\":\"0\",\"attachment\":\"http:\\/\\/localhost\\/erp_bpi\\/assets\\/documents\\/item_fg\\/1691981214.pdf\",\"status\":\"0\"}'),
+(711, 'admin', '2023-08-14 09:52:04', 0, '::1', 'Create', 'item_fg', '{\"id\":\"BPIFG-FG08230001\",\"number\":\"1\",\"name\":\"2\",\"number_customer\":\"\",\"process\":\"Press\",\"item_family_id\":\"P02\",\"boxs\":\"Test\",\"polybag\":\"yes\",\"box_label\":\"yes\",\"ng_ration\":\"\",\"is_no\":\"\",\"weight\":\"\",\"color\":\"Biru\",\"leadtime\":\"\",\"mpq\":\"\",\"moq\":\"\",\"qty_box\":\"\",\"status\":\"0\",\"attachment\":\"http:\\/\\/localhost\\/erp_bpi\\/assets\\/documents\\/item_fg\\/1691981525.pdf\",\"created_by\":\"admin\",\"created_date\":\"2023-08-14 09:52:04\"}'),
+(712, 'admin', '2023-08-14 09:52:22', 0, '::1', 'Delete', 'item_fg', '{\"id\":\"BPIFG-FG08230001\",\"created_by\":\"admin\",\"created_date\":\"2023-08-14 09:52:04\",\"updated_by\":null,\"updated_date\":null,\"deleted\":\"0\",\"item_family_id\":\"P02\",\"number\":\"1\",\"number_customer\":\"\",\"name\":\"2\",\"process\":\"Press\",\"boxs\":\"Test\",\"polybag\":\"yes\",\"box_label\":\"yes\",\"ng_ration\":\"0\",\"is_no\":\"\",\"weight\":\"0.0000\",\"color\":\"Biru\",\"leadtime\":\"0\",\"mpq\":\"0\",\"moq\":\"0\",\"qty_box\":\"0\",\"attachment\":\"http:\\/\\/localhost\\/erp_bpi\\/assets\\/documents\\/item_fg\\/1691981525.pdf\",\"status\":\"0\"}'),
+(713, 'admin', '2023-08-14 10:23:35', 0, '::1', 'Create', 'item_fg', '{\"id\":\"BPIFG-FG08230001\",\"number\":\"1\",\"name\":\"2\",\"number_customer\":\"\",\"process\":\"Press\",\"item_family_id\":\"P02\",\"boxs\":\"Test\",\"polybag\":\"yes\",\"box_label\":\"yes\",\"ng_ration\":\"\",\"is_no\":\"\",\"weight\":\"\",\"color\":\"Biru\",\"leadtime\":\"\",\"mpq\":\"\",\"moq\":\"\",\"qty_box\":\"\",\"status\":\"0\",\"attachment\":\"http:\\/\\/localhost\\/erp_bpi\\/assets\\/documents\\/item_fg\\/1691983415.pdf\",\"created_by\":\"admin\",\"created_date\":\"2023-08-14 10:23:35\"}'),
+(714, 'admin', '2023-08-14 10:23:46', 0, '::1', 'Delete', 'item_fg', '{\"id\":\"BPIFG-FG08230001\",\"created_by\":\"admin\",\"created_date\":\"2023-08-14 10:23:35\",\"updated_by\":null,\"updated_date\":null,\"deleted\":\"0\",\"item_family_id\":\"P02\",\"number\":\"1\",\"number_customer\":\"\",\"name\":\"2\",\"process\":\"Press\",\"boxs\":\"Test\",\"polybag\":\"yes\",\"box_label\":\"yes\",\"ng_ration\":\"0\",\"is_no\":\"\",\"weight\":\"0.0000\",\"color\":\"Biru\",\"leadtime\":\"0\",\"mpq\":\"0\",\"moq\":\"0\",\"qty_box\":\"0\",\"attachment\":\"http:\\/\\/localhost\\/erp_bpi\\/assets\\/documents\\/item_fg\\/1691983415.pdf\",\"status\":\"0\"}'),
+(715, 'admin', '2023-08-14 10:44:20', 0, '::1', 'Create', 'item_fg', '{\"id\":\"BPIFG-FG08230001\",\"number\":\"1\",\"name\":\"2\",\"number_customer\":\"\",\"process\":\"Press\",\"item_family_id\":\"P02\",\"boxs\":\"Test\",\"polybag\":\"yes\",\"box_label\":\"yes\",\"ng_ration\":\"\",\"is_no\":\"\",\"weight\":\"\",\"color\":\"Biru\",\"leadtime\":\"\",\"mpq\":\"\",\"moq\":\"\",\"qty_box\":\"\",\"status\":\"0\",\"attachment\":\"1691984660.pdf\",\"created_by\":\"admin\",\"created_date\":\"2023-08-14 10:44:20\"}'),
+(716, 'admin', '2023-08-14 10:54:02', 0, '::1', 'Delete', 'item_fg', '{\"id\":\"BPIFG-FG08230001\",\"created_by\":\"admin\",\"created_date\":\"2023-08-14 10:44:20\",\"updated_by\":null,\"updated_date\":null,\"deleted\":\"0\",\"item_family_id\":\"P02\",\"number\":\"1\",\"number_customer\":\"\",\"name\":\"2\",\"process\":\"Press\",\"boxs\":\"Test\",\"polybag\":\"yes\",\"box_label\":\"yes\",\"ng_ration\":\"0\",\"is_no\":\"\",\"weight\":\"0.0000\",\"color\":\"Biru\",\"leadtime\":\"0\",\"mpq\":\"0\",\"moq\":\"0\",\"qty_box\":\"0\",\"attachment\":\"1691984660.pdf\",\"status\":\"0\"}'),
+(717, 'admin', '2023-08-14 10:54:47', 0, '::1', 'Create', 'item_fg', '{\"id\":\"BPIFG-FG08230001\",\"number\":\"1\",\"name\":\"2\",\"number_customer\":\"\",\"process\":\"Press\",\"item_family_id\":\"P02\",\"boxs\":\"Test\",\"polybag\":\"yes\",\"box_label\":\"yes\",\"ng_ration\":\"\",\"is_no\":\"\",\"weight\":\"\",\"color\":\"Biru\",\"leadtime\":\"\",\"mpq\":\"\",\"moq\":\"\",\"qty_box\":\"\",\"status\":\"0\",\"attachment\":\"1691985287.pdf\",\"created_by\":\"admin\",\"created_date\":\"2023-08-14 10:54:47\"}'),
+(718, 'admin', '2023-08-14 10:56:40', 0, '::1', 'Delete', 'item_fg', '{\"id\":\"BPIFG-FG08230001\",\"created_by\":\"admin\",\"created_date\":\"2023-08-14 10:54:47\",\"updated_by\":null,\"updated_date\":null,\"deleted\":\"0\",\"item_family_id\":\"P02\",\"number\":\"1\",\"number_customer\":\"\",\"name\":\"2\",\"process\":\"Press\",\"boxs\":\"Test\",\"polybag\":\"yes\",\"box_label\":\"yes\",\"ng_ration\":\"0\",\"is_no\":\"\",\"weight\":\"0.0000\",\"color\":\"Biru\",\"leadtime\":\"0\",\"mpq\":\"0\",\"moq\":\"0\",\"qty_box\":\"0\",\"attachment\":\"1691985287.pdf\",\"status\":\"0\"}'),
+(719, 'admin', '2023-08-14 10:58:06', 0, '::1', 'Create', 'item_fg', '{\"id\":\"BPIFG-FG08230001\",\"number\":\"1\",\"name\":\"2\",\"number_customer\":\"\",\"process\":\"Press\",\"item_family_id\":\"P02\",\"boxs\":\"Test\",\"polybag\":\"yes\",\"box_label\":\"yes\",\"ng_ration\":\"\",\"is_no\":\"\",\"weight\":\"\",\"color\":\"Biru\",\"leadtime\":\"\",\"mpq\":\"\",\"moq\":\"\",\"qty_box\":\"\",\"status\":\"0\",\"attachment\":\"C:\\\\xampp\\\\htdocs\\\\erp_bpi1691985487.pdf\",\"created_by\":\"admin\",\"created_date\":\"2023-08-14 10:58:06\"}'),
+(720, 'admin', '2023-08-14 11:04:24', 0, '::1', 'Delete', 'item_fg', '{\"id\":\"BPIFG-FG08230001\",\"created_by\":\"admin\",\"created_date\":\"2023-08-14 10:58:06\",\"updated_by\":null,\"updated_date\":null,\"deleted\":\"0\",\"item_family_id\":\"P02\",\"number\":\"1\",\"number_customer\":\"\",\"name\":\"2\",\"process\":\"Press\",\"boxs\":\"Test\",\"polybag\":\"yes\",\"box_label\":\"yes\",\"ng_ration\":\"0\",\"is_no\":\"\",\"weight\":\"0.0000\",\"color\":\"Biru\",\"leadtime\":\"0\",\"mpq\":\"0\",\"moq\":\"0\",\"qty_box\":\"0\",\"attachment\":\"C:\\\\xampp\\\\htdocs\\\\erp_bpi1691985487.pdf\",\"status\":\"0\"}'),
+(721, 'admin', '2023-08-14 11:04:54', 0, '::1', 'Create', 'item_fg', '{\"id\":\"BPIFG-FG08230001\",\"number\":\"1\",\"name\":\"2\",\"number_customer\":\"\",\"process\":\"Press\",\"item_family_id\":\"P02\",\"boxs\":\"Test\",\"polybag\":\"yes\",\"box_label\":\"yes\",\"ng_ration\":\"\",\"is_no\":\"\",\"weight\":\"\",\"color\":\"Biru\",\"leadtime\":\"\",\"mpq\":\"\",\"moq\":\"\",\"qty_box\":\"\",\"status\":\"0\",\"attachment\":\"C:\\/xampp\\/htdocs\\/erp_bpi\\/1691985895.pdf\",\"created_by\":\"admin\",\"created_date\":\"2023-08-14 11:04:54\"}'),
+(722, 'admin', '2023-08-14 11:15:11', 0, '::1', 'Delete', 'item_fg', '{\"id\":\"BPIFG-FG08230001\",\"created_by\":\"admin\",\"created_date\":\"2023-08-14 11:04:54\",\"updated_by\":null,\"updated_date\":null,\"deleted\":\"0\",\"item_family_id\":\"P02\",\"number\":\"1\",\"number_customer\":\"\",\"name\":\"2\",\"process\":\"Press\",\"boxs\":\"Test\",\"polybag\":\"yes\",\"box_label\":\"yes\",\"ng_ration\":\"0\",\"is_no\":\"\",\"weight\":\"0.0000\",\"color\":\"Biru\",\"leadtime\":\"0\",\"mpq\":\"0\",\"moq\":\"0\",\"qty_box\":\"0\",\"attachment\":\"C:\\/xampp\\/htdocs\\/erp_bpi\\/1691985895.pdf\",\"status\":\"0\"}'),
+(723, 'admin', '2023-08-14 11:15:54', 0, '::1', 'Create', 'item_fg', '{\"id\":\"BPIFG-FG08230001\",\"number\":\"1\",\"name\":\"2\",\"number_customer\":\"\",\"process\":\"Press\",\"item_family_id\":\"P02\",\"boxs\":\"Test\",\"polybag\":\"yes\",\"box_label\":\"yes\",\"ng_ration\":\"\",\"is_no\":\"\",\"weight\":\"\",\"color\":\"Biru\",\"leadtime\":\"\",\"mpq\":\"\",\"moq\":\"\",\"qty_box\":\"\",\"status\":\"0\",\"attachment\":\"C:\\\\xampp\\\\htdocs\\\\erp_bpi\\\\assets\\\\documents\\\\item_fg1691986555.pdf\",\"created_by\":\"admin\",\"created_date\":\"2023-08-14 11:15:54\"}'),
+(724, 'admin', '2023-08-14 11:21:12', 0, '::1', 'Delete', 'item_fg', '{\"id\":\"BPIFG-FG08230001\",\"created_by\":\"admin\",\"created_date\":\"2023-08-14 11:15:54\",\"updated_by\":null,\"updated_date\":null,\"deleted\":\"0\",\"item_family_id\":\"P02\",\"number\":\"1\",\"number_customer\":\"\",\"name\":\"2\",\"process\":\"Press\",\"boxs\":\"Test\",\"polybag\":\"yes\",\"box_label\":\"yes\",\"ng_ration\":\"0\",\"is_no\":\"\",\"weight\":\"0.0000\",\"color\":\"Biru\",\"leadtime\":\"0\",\"mpq\":\"0\",\"moq\":\"0\",\"qty_box\":\"0\",\"attachment\":\"C:\\\\xampp\\\\htdocs\\\\erp_bpi\\\\assets\\\\documents\\\\item_fg1691986555.pdf\",\"status\":\"0\"}'),
+(725, 'admin', '2023-08-14 11:21:40', 0, '::1', 'Create', 'item_fg', '{\"id\":\"BPIFG-FG08230001\",\"number\":\"1\",\"name\":\"2\",\"number_customer\":\"\",\"process\":\"Press\",\"item_family_id\":\"P02\",\"boxs\":\"Test\",\"polybag\":\"yes\",\"box_label\":\"yes\",\"ng_ration\":\"\",\"is_no\":\"\",\"weight\":\"\",\"color\":\"Biru\",\"leadtime\":\"\",\"mpq\":\"\",\"moq\":\"\",\"qty_box\":\"\",\"status\":\"0\",\"attachment\":\"C:\\\\xampp\\\\htdocs\\\\erp_bpi\\\\assets\\\\documents\\\\item_fg1691986900.pdf\",\"created_by\":\"admin\",\"created_date\":\"2023-08-14 11:21:40\"}'),
+(726, 'admin', '2023-08-14 11:24:14', 0, '::1', 'Delete', 'item_fg', '{\"id\":\"BPIFG-FG08230001\",\"created_by\":\"admin\",\"created_date\":\"2023-08-14 11:21:40\",\"updated_by\":null,\"updated_date\":null,\"deleted\":\"0\",\"item_family_id\":\"P02\",\"number\":\"1\",\"number_customer\":\"\",\"name\":\"2\",\"process\":\"Press\",\"boxs\":\"Test\",\"polybag\":\"yes\",\"box_label\":\"yes\",\"ng_ration\":\"0\",\"is_no\":\"\",\"weight\":\"0.0000\",\"color\":\"Biru\",\"leadtime\":\"0\",\"mpq\":\"0\",\"moq\":\"0\",\"qty_box\":\"0\",\"attachment\":\"C:\\\\xampp\\\\htdocs\\\\erp_bpi\\\\assets\\\\documents\\\\item_fg1691986900.pdf\",\"status\":\"0\"}'),
+(727, 'admin', '2023-08-14 11:24:40', 0, '::1', 'Create', 'item_fg', '{\"id\":\"BPIFG-FG08230001\",\"number\":\"1\",\"name\":\"2\",\"number_customer\":\"\",\"process\":\"Press\",\"item_family_id\":\"P02\",\"boxs\":\"Test\",\"polybag\":\"yes\",\"box_label\":\"yes\",\"ng_ration\":\"\",\"is_no\":\"\",\"weight\":\"\",\"color\":\"Biru\",\"leadtime\":\"\",\"mpq\":\"\",\"moq\":\"\",\"qty_box\":\"\",\"status\":\"0\",\"attachment\":\"http:\\/\\/localhost\\/erp_bpi\\/assets\\/documents\\/item_fg\\/1691987081.pdf\",\"created_by\":\"admin\",\"created_date\":\"2023-08-14 11:24:40\"}');
 
 -- --------------------------------------------------------
 
@@ -586,8 +1257,18 @@ CREATE TABLE `menus` (
 INSERT INTO `menus` (`id`, `created_by`, `created_date`, `updated_by`, `updated_date`, `deleted`, `menus_id`, `number`, `name`, `description`, `link`, `sort`, `icon`, `flag`, `color`, `state`, `status`) VALUES
 ('20230109000001', 'admin', '2023-01-09 00:20:26', NULL, NULL, 0, 'cf98f97766f6405590b26daa586e00', NULL, 'Config ISO', NULL, 'admin/config_iso', 7, '', NULL, NULL, '', 0),
 ('20230803000001', 'admin', '2023-08-03 17:22:49', NULL, NULL, 0, '', NULL, 'Master Data', NULL, '', 2, '', NULL, NULL, 'closed', 0),
-('20230803000006', 'admin', '2023-08-03 17:50:05', NULL, NULL, 0, '20230803000001', NULL, 'Currencies', NULL, 'master/currencies', 5, '', NULL, NULL, '', 0),
-('20230803000007', 'admin', '2023-08-03 17:52:41', NULL, NULL, 0, '20230803000001', NULL, 'Unit of Meaasure', NULL, 'master/uom', 6, '', NULL, NULL, '', 0),
+('20230803000006', 'admin', '2023-08-03 17:50:05', 'admin', '2023-08-03 21:55:17', 0, '20230803000001', NULL, 'Currencies', NULL, 'master/currencies', 1, '', NULL, NULL, '', 0),
+('20230803000007', 'admin', '2023-08-03 17:52:41', 'admin', '2023-08-03 21:55:25', 0, '20230803000001', NULL, 'Unit of Meaasure', NULL, 'master/uom', 2, '', NULL, NULL, '', 0),
+('20230803000008', 'admin', '2023-08-03 21:51:46', 'admin', '2023-08-03 21:55:07', 0, '20230803000001', NULL, 'Item Categories', NULL, 'master/item_categories', 3, '', NULL, NULL, '', 0),
+('20230803000009', 'admin', '2023-08-03 22:51:49', NULL, NULL, 0, '20230803000001', NULL, 'Item Familys', NULL, 'master/item_familys', 4, '', NULL, NULL, '', 0),
+('20230807000001', 'admin', '2023-08-07 16:34:44', NULL, NULL, 0, '20230803000001', NULL, 'Item Family Subs', NULL, 'master/item_family_subs', 5, '', NULL, NULL, '', 0),
+('20230808000001', 'admin', '2023-08-08 20:54:11', 'admin', '2023-08-08 20:59:13', 0, '20230803000001', NULL, 'Kind Of Box', NULL, 'master/item_kinds', 6, '', NULL, NULL, '', 0),
+('20230808000002', 'admin', '2023-08-08 21:15:21', NULL, NULL, 0, '20230803000001', NULL, 'Boxs', NULL, 'master/item_boxs', 7, '', NULL, NULL, '', 0),
+('20230808000003', 'admin', '2023-08-08 21:29:48', 'admin', '2023-08-08 22:24:46', 0, '20230803000001', NULL, 'Colors', NULL, 'master/item_colors', 8, '', NULL, NULL, '', 0),
+('20230808000004', 'admin', '2023-08-08 21:44:05', NULL, NULL, 0, '20230803000001', NULL, 'Item Process', NULL, 'master/item_process', 9, '', NULL, NULL, '', 0),
+('20230808000005', 'admin', '2023-08-08 22:09:46', NULL, NULL, 0, '20230803000001', NULL, 'Flow Process', NULL, 'master/item_process_flow', 10, '', NULL, NULL, '', 0),
+('20230809000001', 'admin', '2023-08-09 23:04:57', 'admin', '2023-08-12 20:41:13', 0, '20230803000001', NULL, 'Raw Material', NULL, 'master/item_rm', 11, '', NULL, NULL, '', 0),
+('20230812000001', 'admin', '2023-08-12 20:37:05', NULL, NULL, 0, '20230803000001', NULL, 'Finish Good', NULL, 'master/item_fg', 12, '', NULL, NULL, '', 0),
 ('44964312f0264429978158ada88843', 'admin', '2022-09-29 16:12:08', NULL, NULL, 0, 'cf98f97766f6405590b26daa586e00', NULL, 'Users', NULL, 'admin/users', 2, '', NULL, NULL, '', 0),
 ('6ccd20c54d1d415189120ec5cc6c81', 'admin', '2022-09-29 16:41:40', NULL, NULL, 0, 'cf98f97766f6405590b26daa586e00', NULL, 'Config', NULL, 'admin/config', 7, '', NULL, NULL, '', 0),
 ('b679033b3256414b8f916c69f17674', 'admin', '2022-09-29 16:22:01', NULL, NULL, 0, 'cf98f97766f6405590b26daa586e00', NULL, 'Approval', NULL, 'admin/approvals', 1, '', NULL, NULL, '', 0),
@@ -657,6 +1338,16 @@ INSERT INTO `setting_menus` (`id`, `created_by`, `created_date`, `updated_by`, `
 ('20230803000001', 'admin', '2023-08-03 17:28:54', NULL, NULL, 0, '20230803000001', 'on', NULL, NULL, NULL, NULL, NULL, NULL, NULL, 0),
 ('20230803000006', 'admin', '2023-08-03 17:50:29', NULL, NULL, 0, '20230803000006', 'on', 'on', 'on', 'on', NULL, NULL, 'on', 'on', 0),
 ('20230803000007', 'admin', '2023-08-03 17:52:55', NULL, NULL, 0, '20230803000007', 'on', 'on', 'on', 'on', NULL, NULL, 'on', 'on', 0),
+('20230803000008', 'admin', '2023-08-03 21:53:02', NULL, NULL, 0, '20230803000008', 'on', 'on', 'on', 'on', NULL, NULL, 'on', 'on', 0),
+('20230803000009', 'admin', '2023-08-03 22:52:16', NULL, NULL, 0, '20230803000009', 'on', 'on', 'on', 'on', NULL, NULL, 'on', 'on', 0),
+('20230807000001', 'admin', '2023-08-07 16:35:17', NULL, NULL, 0, '20230807000001', 'on', 'on', 'on', 'on', NULL, NULL, 'on', 'on', 0),
+('20230808000001', 'admin', '2023-08-08 20:54:39', NULL, NULL, 0, '20230808000001', 'on', 'on', 'on', 'on', NULL, NULL, 'on', 'on', 0),
+('20230808000002', 'admin', '2023-08-08 21:15:45', NULL, NULL, 0, '20230808000002', 'on', 'on', 'on', 'on', NULL, NULL, 'on', 'on', 0),
+('20230808000003', 'admin', '2023-08-08 21:30:09', NULL, NULL, 0, '20230808000003', 'on', 'on', 'on', 'on', NULL, NULL, 'on', 'on', 0),
+('20230808000004', 'admin', '2023-08-08 21:44:25', NULL, NULL, 0, '20230808000004', 'on', 'on', 'on', 'on', NULL, NULL, 'on', 'on', 0),
+('20230808000005', 'admin', '2023-08-08 22:10:05', NULL, NULL, 0, '20230808000005', 'on', 'on', 'on', 'on', NULL, NULL, 'on', 'on', 0),
+('20230810000001', 'admin', '2023-08-10 12:03:59', NULL, NULL, 0, '20230809000001', 'on', 'on', 'on', 'on', 'on', 'on', 'on', 'on', 0),
+('20230812000001', 'admin', '2023-08-12 20:37:33', NULL, NULL, 0, '20230812000001', 'on', 'on', 'on', 'on', 'on', 'on', 'on', 'on', 0),
 ('65bdf777a5564d5c94068feb0edcb9', 'admin', '2022-09-29 17:03:57', NULL, NULL, 0, 'de3f6855009e49deb7fd2fdd0f3b3d', 'on', NULL, NULL, 'on', NULL, NULL, 'on', 'on', 0),
 ('836ff9fa6650482fbf81e4f49bb255', 'admin', '2022-09-29 17:03:46', NULL, NULL, 0, '6ccd20c54d1d415189120ec5cc6c81', 'on', NULL, NULL, NULL, NULL, NULL, NULL, NULL, 0),
 ('962311b4039448699f25c8ef64f470', 'admin', '2022-09-29 17:04:22', NULL, NULL, 0, '44964312f0264429978158ada88843', 'on', 'on', 'on', 'on', NULL, NULL, 'on', 'on', 0),
@@ -708,6 +1399,24 @@ INSERT INTO `setting_users` (`id`, `created_by`, `created_date`, `updated_by`, `
 ('20230803000019', 'admin', '2023-08-03 10:32:35', NULL, NULL, 0, 'nanda', 'e3c31e10b6c64e119b068ae4b73be6', 0, 0, 0, 0, 0, 0, 0, 0, 0),
 ('20230803000020', 'admin', '2023-08-03 10:53:00', 'admin', '2023-08-03 10:53:09', 0, 'admin', '20230803000006', 1, 1, 1, 1, 0, 0, 1, 1, 0),
 ('20230803000021', 'admin', '2023-08-03 10:53:00', 'admin', '2023-08-03 10:53:10', 0, 'admin', '20230803000007', 1, 1, 1, 1, 0, 0, 1, 1, 0),
+('20230803000022', 'admin', '2023-08-03 16:53:21', 'admin', '2023-08-03 16:53:31', 0, 'admin', '20230803000008', 1, 1, 1, 1, 0, 0, 1, 1, 0),
+('20230803000023', 'admin', '2023-08-03 17:52:25', 'admin', '2023-08-03 17:52:34', 0, 'admin', '20230803000009', 1, 1, 1, 1, 0, 0, 1, 1, 0),
+('20230807000001', 'admin', '2023-08-07 11:35:49', 'admin', '2023-08-07 11:35:59', 0, 'admin', '20230807000001', 1, 1, 1, 1, 0, 0, 1, 1, 0),
+('20230808000001', 'admin', '2023-08-08 15:54:47', 'admin', '2023-08-08 15:54:55', 0, 'admin', '20230808000001', 1, 1, 1, 1, 0, 0, 1, 1, 0),
+('20230808000002', 'admin', '2023-08-08 16:15:52', 'admin', '2023-08-08 16:16:01', 0, 'admin', '20230808000002', 1, 1, 1, 1, 0, 0, 1, 1, 0),
+('20230808000003', 'admin', '2023-08-08 16:30:30', NULL, NULL, 0, 'nanda', '20230803000006', 0, 0, 0, 0, 0, 0, 0, 0, 0),
+('20230808000004', 'admin', '2023-08-08 16:30:30', NULL, NULL, 0, 'nanda', '20230803000007', 0, 0, 0, 0, 0, 0, 0, 0, 0),
+('20230808000005', 'admin', '2023-08-08 16:30:30', NULL, NULL, 0, 'nanda', '20230803000008', 0, 0, 0, 0, 0, 0, 0, 0, 0),
+('20230808000006', 'admin', '2023-08-08 16:30:30', NULL, NULL, 0, 'nanda', '20230803000009', 0, 0, 0, 0, 0, 0, 0, 0, 0),
+('20230808000007', 'admin', '2023-08-08 16:30:30', NULL, NULL, 0, 'nanda', '20230807000001', 0, 0, 0, 0, 0, 0, 0, 0, 0),
+('20230808000008', 'admin', '2023-08-08 16:30:30', NULL, NULL, 0, 'nanda', '20230808000001', 0, 0, 0, 0, 0, 0, 0, 0, 0),
+('20230808000009', 'admin', '2023-08-08 16:30:30', NULL, NULL, 0, 'nanda', '20230808000002', 0, 0, 0, 0, 0, 0, 0, 0, 0),
+('20230808000010', 'admin', '2023-08-08 16:30:30', NULL, NULL, 0, 'nanda', '20230808000003', 0, 0, 0, 0, 0, 0, 0, 0, 0),
+('20230808000011', 'admin', '2023-08-08 16:30:30', 'admin', '2023-08-08 16:30:40', 0, 'admin', '20230808000003', 1, 1, 1, 1, 0, 0, 1, 1, 0),
+('20230808000012', 'admin', '2023-08-08 16:44:36', 'admin', '2023-08-08 16:44:48', 0, 'admin', '20230808000004', 1, 1, 1, 1, 0, 0, 1, 1, 0),
+('20230808000013', 'admin', '2023-08-08 17:10:15', 'admin', '2023-08-08 17:10:23', 0, 'admin', '20230808000005', 1, 1, 1, 1, 0, 0, 1, 1, 0),
+('20230809000001', 'admin', '2023-08-09 18:05:43', 'admin', '2023-08-10 07:04:31', 0, 'admin', '20230809000001', 1, 1, 1, 1, 1, 1, 1, 1, 0),
+('20230812000001', 'admin', '2023-08-12 15:38:31', 'admin', '2023-08-12 15:38:56', 0, 'admin', '20230812000001', 1, 1, 1, 1, 1, 1, 1, 1, 0),
 ('2c192616c6374feebbbc2778dd4443', 'admin', '2022-09-29 17:18:39', 'admin', '2022-09-29 17:19:46', 0, 'admin', '44964312f0264429978158ada88843', 1, 1, 1, 1, 0, 0, 1, 1, 0),
 ('56c39e081a4d4d4c8db20e988f14cc', 'admin', '2022-09-29 17:18:39', 'admin', '2022-09-29 17:19:52', 0, 'admin', 'de3f6855009e49deb7fd2fdd0f3b3d', 1, 0, 0, 1, 0, 0, 1, 1, 0),
 ('62aa172fcf7c443aba135013fbcc54', 'admin', '2022-09-29 17:18:39', 'admin', '2022-09-29 17:19:26', 0, 'admin', 'cf98f97766f6405590b26daa586e00', 1, 0, 0, 0, 0, 0, 0, 0, 0),
@@ -735,6 +1444,14 @@ CREATE TABLE `uom` (
   `description` text DEFAULT NULL,
   `status` tinyint(1) NOT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+--
+-- Dumping data untuk tabel `uom`
+--
+
+INSERT INTO `uom` (`id`, `created_by`, `created_date`, `updated_by`, `updated_date`, `deleted`, `number`, `name`, `description`, `status`) VALUES
+('U01', 'admin', '2023-08-10 08:41:49', NULL, NULL, 0, '', 'PCS', 'PIECES', 0),
+('U02', 'admin', '2023-08-10 08:43:40', NULL, NULL, 0, '', 'KG', 'KILO GRAM', 0);
 
 -- --------------------------------------------------------
 
@@ -772,7 +1489,7 @@ CREATE TABLE `users` (
 
 INSERT INTO `users` (`id`, `created_by`, `created_date`, `updated_by`, `updated_date`, `approved`, `approved_to`, `approved_by`, `approved_date`, `deleted`, `number`, `name`, `description`, `username`, `password`, `email`, `phone`, `position`, `avatar`, `actived`, `status`) VALUES
 ('20230803000001', 'admin', '2023-08-03 17:31:56', 'admin', '2023-08-03 17:32:10', 2, '', 'admin', '2023-08-03 10:32:16', 0, '2', 'Nanda Ayu Insani', NULL, 'nanda', 'nanda@123#', 'nana@gmail.com', '2319232', 'Implementator', NULL, 0, 0),
-('86f9f296025243ed953fe6014ff765', 'admin', '2021-12-26 11:24:58', 'admin', '2022-11-15 13:27:53', 0, NULL, NULL, NULL, 0, '1', 'Administrator', '', 'admin', 'Login@190320', 'admin@aeconsys.com', '88888888888', 'Admin System', NULL, 0, 0);
+('86f9f296025243ed953fe6014ff765', 'admin', '2021-12-26 11:24:58', 'admin', '2022-11-15 13:27:53', 0, NULL, NULL, NULL, 0, '1', 'Administrator', '', 'admin', 'admin', 'admin@aeconsys.com', '88888888888', 'Admin System', NULL, 0, 0);
 
 --
 -- Indexes for dumped tables
@@ -799,9 +1516,99 @@ ALTER TABLE `config`
 --
 ALTER TABLE `currencies`
   ADD PRIMARY KEY (`id`),
+  ADD KEY `created_by` (`created_by`),
+  ADD KEY `updated_by` (`updated_by`);
+
+--
+-- Indeks untuk tabel `item_boxs`
+--
+ALTER TABLE `item_boxs`
+  ADD PRIMARY KEY (`id`),
+  ADD KEY `created_by` (`created_by`),
+  ADD KEY `updated_by` (`updated_by`),
+  ADD KEY `item_kind_id` (`item_kind_id`);
+
+--
+-- Indeks untuk tabel `item_categories`
+--
+ALTER TABLE `item_categories`
+  ADD PRIMARY KEY (`id`),
   ADD UNIQUE KEY `number` (`number`),
   ADD KEY `created_by` (`created_by`),
   ADD KEY `updated_by` (`updated_by`);
+
+--
+-- Indeks untuk tabel `item_colors`
+--
+ALTER TABLE `item_colors`
+  ADD PRIMARY KEY (`id`),
+  ADD KEY `created_by` (`created_by`),
+  ADD KEY `updated_by` (`updated_by`);
+
+--
+-- Indeks untuk tabel `item_familys`
+--
+ALTER TABLE `item_familys`
+  ADD PRIMARY KEY (`id`),
+  ADD UNIQUE KEY `number` (`number`),
+  ADD KEY `created_by` (`created_by`),
+  ADD KEY `updated_by` (`updated_by`);
+
+--
+-- Indeks untuk tabel `item_family_subs`
+--
+ALTER TABLE `item_family_subs`
+  ADD PRIMARY KEY (`id`),
+  ADD UNIQUE KEY `number` (`number`),
+  ADD KEY `created_by` (`created_by`),
+  ADD KEY `updated_by` (`updated_by`),
+  ADD KEY `item_category_id` (`item_category_id`),
+  ADD KEY `item_family_id` (`item_family_id`);
+
+--
+-- Indeks untuk tabel `item_fg`
+--
+ALTER TABLE `item_fg`
+  ADD PRIMARY KEY (`id`),
+  ADD UNIQUE KEY `number` (`number`),
+  ADD KEY `created_by` (`created_by`),
+  ADD KEY `updated_by` (`updated_by`),
+  ADD KEY `item_family_id` (`item_family_id`);
+
+--
+-- Indeks untuk tabel `item_kinds`
+--
+ALTER TABLE `item_kinds`
+  ADD PRIMARY KEY (`id`),
+  ADD KEY `created_by` (`created_by`),
+  ADD KEY `updated_by` (`updated_by`);
+
+--
+-- Indeks untuk tabel `item_process`
+--
+ALTER TABLE `item_process`
+  ADD PRIMARY KEY (`id`),
+  ADD KEY `created_by` (`created_by`),
+  ADD KEY `updated_by` (`updated_by`);
+
+--
+-- Indeks untuk tabel `item_process_flow`
+--
+ALTER TABLE `item_process_flow`
+  ADD PRIMARY KEY (`id`),
+  ADD KEY `created_by` (`created_by`),
+  ADD KEY `updated_by` (`updated_by`);
+
+--
+-- Indeks untuk tabel `item_rm`
+--
+ALTER TABLE `item_rm`
+  ADD PRIMARY KEY (`id`),
+  ADD UNIQUE KEY `number` (`number`),
+  ADD KEY `created_by` (`created_by`),
+  ADD KEY `updated_by` (`updated_by`),
+  ADD KEY `item_category_id` (`item_category_id`),
+  ADD KEY `item_family_id` (`item_family_id`);
 
 --
 -- Indeks untuk tabel `logins`
@@ -858,7 +1665,6 @@ ALTER TABLE `setting_users`
 --
 ALTER TABLE `uom`
   ADD PRIMARY KEY (`id`),
-  ADD UNIQUE KEY `number` (`number`),
   ADD KEY `created_by` (`created_by`),
   ADD KEY `updated_by` (`updated_by`);
 
@@ -885,7 +1691,7 @@ ALTER TABLE `logins`
 -- AUTO_INCREMENT untuk tabel `logs`
 --
 ALTER TABLE `logs`
-  MODIFY `id` bigint(20) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=363;
+  MODIFY `id` bigint(20) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=728;
 
 --
 -- Ketidakleluasaan untuk tabel pelimpahan (Dumped Tables)
@@ -911,6 +1717,82 @@ ALTER TABLE `config`
 ALTER TABLE `currencies`
   ADD CONSTRAINT `currencies_ibfk_1` FOREIGN KEY (`created_by`) REFERENCES `users` (`username`) ON DELETE CASCADE ON UPDATE CASCADE,
   ADD CONSTRAINT `currencies_ibfk_2` FOREIGN KEY (`updated_by`) REFERENCES `users` (`username`) ON DELETE CASCADE ON UPDATE CASCADE;
+
+--
+-- Ketidakleluasaan untuk tabel `item_boxs`
+--
+ALTER TABLE `item_boxs`
+  ADD CONSTRAINT `item_boxs_ibfk_1` FOREIGN KEY (`created_by`) REFERENCES `users` (`username`) ON DELETE CASCADE ON UPDATE CASCADE,
+  ADD CONSTRAINT `item_boxs_ibfk_2` FOREIGN KEY (`updated_by`) REFERENCES `users` (`username`) ON DELETE CASCADE ON UPDATE CASCADE,
+  ADD CONSTRAINT `item_boxs_ibfk_3` FOREIGN KEY (`item_kind_id`) REFERENCES `item_kinds` (`id`);
+
+--
+-- Ketidakleluasaan untuk tabel `item_categories`
+--
+ALTER TABLE `item_categories`
+  ADD CONSTRAINT `item_categories_ibfk_1` FOREIGN KEY (`created_by`) REFERENCES `users` (`username`) ON DELETE CASCADE ON UPDATE CASCADE,
+  ADD CONSTRAINT `item_categories_ibfk_2` FOREIGN KEY (`updated_by`) REFERENCES `users` (`username`) ON DELETE CASCADE ON UPDATE CASCADE;
+
+--
+-- Ketidakleluasaan untuk tabel `item_colors`
+--
+ALTER TABLE `item_colors`
+  ADD CONSTRAINT `item_colors_ibfk_1` FOREIGN KEY (`created_by`) REFERENCES `users` (`username`) ON DELETE CASCADE ON UPDATE CASCADE,
+  ADD CONSTRAINT `item_colors_ibfk_2` FOREIGN KEY (`updated_by`) REFERENCES `users` (`username`) ON DELETE CASCADE ON UPDATE CASCADE;
+
+--
+-- Ketidakleluasaan untuk tabel `item_familys`
+--
+ALTER TABLE `item_familys`
+  ADD CONSTRAINT `item_familys_ibfk_1` FOREIGN KEY (`created_by`) REFERENCES `users` (`username`) ON DELETE CASCADE ON UPDATE CASCADE,
+  ADD CONSTRAINT `item_familys_ibfk_2` FOREIGN KEY (`updated_by`) REFERENCES `users` (`username`) ON DELETE CASCADE ON UPDATE CASCADE;
+
+--
+-- Ketidakleluasaan untuk tabel `item_family_subs`
+--
+ALTER TABLE `item_family_subs`
+  ADD CONSTRAINT `item_family_subs_ibfk_1` FOREIGN KEY (`created_by`) REFERENCES `users` (`username`) ON DELETE CASCADE ON UPDATE CASCADE,
+  ADD CONSTRAINT `item_family_subs_ibfk_2` FOREIGN KEY (`updated_by`) REFERENCES `users` (`username`) ON DELETE CASCADE ON UPDATE CASCADE,
+  ADD CONSTRAINT `item_family_subs_ibfk_4` FOREIGN KEY (`item_family_id`) REFERENCES `item_familys` (`id`),
+  ADD CONSTRAINT `item_family_subs_ibfk_5` FOREIGN KEY (`item_category_id`) REFERENCES `item_categories` (`id`);
+
+--
+-- Ketidakleluasaan untuk tabel `item_fg`
+--
+ALTER TABLE `item_fg`
+  ADD CONSTRAINT `item_fg_ibfk_1` FOREIGN KEY (`created_by`) REFERENCES `users` (`username`) ON DELETE CASCADE ON UPDATE CASCADE,
+  ADD CONSTRAINT `item_fg_ibfk_2` FOREIGN KEY (`updated_by`) REFERENCES `users` (`username`) ON DELETE CASCADE ON UPDATE CASCADE,
+  ADD CONSTRAINT `item_fg_ibfk_3` FOREIGN KEY (`item_family_id`) REFERENCES `item_familys` (`id`);
+
+--
+-- Ketidakleluasaan untuk tabel `item_kinds`
+--
+ALTER TABLE `item_kinds`
+  ADD CONSTRAINT `item_kinds_ibfk_1` FOREIGN KEY (`created_by`) REFERENCES `users` (`username`) ON DELETE CASCADE ON UPDATE CASCADE,
+  ADD CONSTRAINT `item_kinds_ibfk_2` FOREIGN KEY (`updated_by`) REFERENCES `users` (`username`) ON DELETE CASCADE ON UPDATE CASCADE;
+
+--
+-- Ketidakleluasaan untuk tabel `item_process`
+--
+ALTER TABLE `item_process`
+  ADD CONSTRAINT `item_process_ibfk_1` FOREIGN KEY (`created_by`) REFERENCES `users` (`username`) ON DELETE CASCADE ON UPDATE CASCADE,
+  ADD CONSTRAINT `item_process_ibfk_2` FOREIGN KEY (`updated_by`) REFERENCES `users` (`username`) ON DELETE CASCADE ON UPDATE CASCADE;
+
+--
+-- Ketidakleluasaan untuk tabel `item_process_flow`
+--
+ALTER TABLE `item_process_flow`
+  ADD CONSTRAINT `item_process_flow_ibfk_1` FOREIGN KEY (`created_by`) REFERENCES `users` (`username`) ON DELETE CASCADE ON UPDATE CASCADE,
+  ADD CONSTRAINT `item_process_flow_ibfk_2` FOREIGN KEY (`updated_by`) REFERENCES `users` (`username`) ON DELETE CASCADE ON UPDATE CASCADE;
+
+--
+-- Ketidakleluasaan untuk tabel `item_rm`
+--
+ALTER TABLE `item_rm`
+  ADD CONSTRAINT `item_rm_ibfk_1` FOREIGN KEY (`created_by`) REFERENCES `users` (`username`) ON DELETE CASCADE ON UPDATE CASCADE,
+  ADD CONSTRAINT `item_rm_ibfk_2` FOREIGN KEY (`updated_by`) REFERENCES `users` (`username`) ON DELETE CASCADE ON UPDATE CASCADE,
+  ADD CONSTRAINT `item_rm_ibfk_3` FOREIGN KEY (`item_category_id`) REFERENCES `item_categories` (`id`),
+  ADD CONSTRAINT `item_rm_ibfk_4` FOREIGN KEY (`item_family_id`) REFERENCES `item_familys` (`id`);
 
 --
 -- Ketidakleluasaan untuk tabel `logins`
