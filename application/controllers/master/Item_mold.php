@@ -1,7 +1,7 @@
 <?php
 date_default_timezone_set("Asia/Bangkok");
 defined('BASEPATH') or exit('No direct script access allowed');
-class item_mold extends CI_Controller
+class Item_mold extends CI_Controller
 {
     public function __construct()
     {

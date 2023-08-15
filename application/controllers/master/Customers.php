@@ -126,8 +126,19 @@ class Customers extends CI_Controller
                 //excel
                 'name' => $data->val($i, 2),
                 'number' => $data->val($i, 3),
-                'description' => $data->val($i, 4),
-                'status' => $data->val($i, 5)
+                'type' => $data->val($i, 4),
+                'address' => $data->val($i, 5),
+                'address_billing' => $data->val($i, 6),
+                'contact_person' => $data->val($i, 7),
+                'telp' => $data->val($i, 8),
+                'telp_billing' => $data->val($i, 9),
+                'email' => $data->val($i, 10),
+                'website' => $data->val($i, 11),
+                'currency' => $data->val($i, 12),
+                'payment_term' => $data->val($i, 13),
+                'bank_account' => $data->val($i, 14),
+                'bank_name' => $data->val($i, 15),
+                'status' => $data->val($i, 16)
             );
         }
         $datas['total'] = count($datas);
@@ -183,7 +194,18 @@ class Customers extends CI_Controller
                     "id" => $autoid,
                     "name" => $data['name'],
                     "number" => $data['number'],
-                    "description" => $data['description'],
+                    "type" => $data['type'],
+                    "address" => $data['address'],
+                    "address_billing" => $data['address_billing'],
+                    "contact_person" => $data['contact_person'],
+                    "telp" => $data['telp'],
+                    "telp_billing" => $data['telp_billing'],
+                    "email" => $data['email'],
+                    "website" => $data['website'],
+                    "currency" => $data['currency'],
+                    "payment_term" => $data['payment_term'],
+                    "bank_account" => $data['bank_account'],
+                    "bank_name" => $data['bank_name'],
                     "status" => $data['status'],
                 );
                 $send   = $this->crud->create('customers', $dataFinal);
@@ -237,8 +259,20 @@ class Customers extends CI_Controller
                 <th width="20">No</th>
                 <th>Customer ID</th>
                 <th>Customer Name</th>
-                <th>CUstomer Code</th>
-                <th>Description</th>
+                <th>Customer Code</th>
+                <th>type</th>
+                <th>Address</th>
+                <th>Billing Address</th>
+                <th>Contct Person</th>
+                <th>Telepon</th>
+                <th>Billing Contact</th>
+                <th>Email</th>
+                <th>Website</th>
+                <th>Currency</th>
+                <th>Payment Term (Day)</th>
+                <th>Bank Account</th>
+                <th>Bank Name</th>
+                <th>Status</th>
             </tr>';
         $no = 1;
         foreach ($records as $data) {
@@ -247,7 +281,19 @@ class Customers extends CI_Controller
                     <td>' . $data['id'] . '</td>
                     <td>' . $data['name'] . '</td>
                     <td>' . $data['number'] . '</td>
-                    <td>' . $data['description'] . '</td>';
+                    <td>' . $data['type'] . '</td>
+                    <td>' . $data['address'] . '</td>
+                    <td>' . $data['address_billing'] . '</td>
+                    <td>' . $data['contact_person'] . '</td>
+                    <td>' . $data['telp'] . '</td>
+                    <td>' . $data['telp_billing'] . '</td>
+                    <td>' . $data['email'] . '</td>
+                    <td>' . $data['website'] . '</td>
+                    <td>' . $data['currency'] . '</td>
+                    <td>' . $data['payment_term'] . '</td>
+                    <td>' . $data['bank_account'] . '</td>
+                    <td>' . $data['bank_name'] . '</td>
+                    <td>' . $data['status'] . '</td>';
             $no++;
         }
         $html .= '</table></body></html>';

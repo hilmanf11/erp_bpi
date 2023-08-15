@@ -33,7 +33,7 @@
     <?= $button ?>
 </div>
 <!-- DIALOG SAVE AND UPDATE -->
-<div id="dlg_insert" class="easyui-dialog" title="Add New" data-options="closed: true,modal:true" style="width: 400px; padding:10px; top: 20px;">
+<div id="dlg_insert" class="easyui-dialog" title="Add New" data-options="closed: true,modal:true" style="width: 600px; padding:10px; top: 20px;">
     <form id="frm_insert" method="post" novalidate>
         <fieldset style="width:100%; border:1px solid #d0d0d0; margin-bottom: 10px; border-radius:4px; float: left;">
             <legend><b>Form Data</b></legend>
@@ -48,8 +48,8 @@
             <div class="fitem">
                 <span style="width:35%; display:inline-block;">Type</span>
                 <select style="width:60%;" name="type" id="type" required="" panelHeight="auto" class="easyui-combobox">
-                    <option value="Internal">Internal</option>
-                    <option value="Customer Property">Customer Property</option>
+                    <option value="INTERNAL">INTERNAL</option>
+                    <option value="CUSTOMER PROPERTY">CUSTOMER PROPERTY</option>
                 </select>
             </div>
             <div class="fitem">
@@ -86,7 +86,7 @@
             </div>
             <div class="fitem">
                 <span style="width:35%; display:inline-block;">Remarks</span>
-                <input style="width:60%;" name="remark" id="remark" class="easyui-numberbox">
+                <input style="width:60%;" name="remark" id="remark" class="easyui-textbox">
             </div>
             <div class="fitem">
                 <span style="width:35%; display:inline-block;">Status</span>
@@ -128,7 +128,7 @@
         url_save = '<?= base_url('master/item_mold/create') ?>';
         $('#frm_insert').form('clear');
         
-        $('#type').combobox('setValue', 'Internal');
+        $('#type').combobox('setValue', 'INTERNAL');
         $('#status').combobox('setValue', '0');
 
         $.ajax({

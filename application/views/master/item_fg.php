@@ -1,13 +1,18 @@
 <!-- TABLE DATAGRID -->
 <table id="dg" class="easyui-datagrid" style="width:99.5%;" toolbar="#toolbar">
+    <thead frozen="true">
+        <tr>
+            <th field="ck" checkbox="true"></th>
+            <th data-options="field:'id',width:150,align:'center'">Product ID</th>
+            <th data-options="field:'number',width:150,halign:'center'">Product No.</th>
+            <th data-options="field:'name',width:150,halign:'center'">Product Name</th>
+        </tr>
+    </thead>
+
     <thead>
         <tr>
-            <th rowspan="2" field="ck" checkbox="true"></th>
-            <th rowspan="2" data-options="field:'id',width:150,align:'center'">Product ID</th>
-            <th rowspan="2" data-options="field:'number',width:150,halign:'center'">Product No.</th>
-            <th rowspan="2" data-options="field:'name',width:150,halign:'center'">Product Name</th>
             <th rowspan="2" data-options="field:'number_customer',width:150,halign:'center'">Product Customer</th>
-            <!-- <th rowspan="2" data-options="field:'name',width:100,halign:'center'">Total Mold</th> -->
+            <th rowspan="2" data-options="field:'total_mold',width:100,halign:'center'">Total Mold</th>
             <th rowspan="2" data-options="field:'process',width:100,halign:'center'">Process Type</th>
             <th rowspan="2" data-options="field:'item_family_name',width:100,halign:'center'">Product Family</th>
             <th rowspan="2" data-options="field:'boxs',width:100,halign:'center'">Box</th>
@@ -21,7 +26,10 @@
             <th rowspan="2" data-options="field:'mpq',width:50,halign:'center'">MPQ</th>
             <th rowspan="2" data-options="field:'moq',width:50,halign:'center'">MOQ</th>
             <th rowspan="2" data-options="field:'qty_box',width:80,halign:'center'">QTY/Box</th>
-            <th rowspan="2" data-options="field:'attachment',width:100,halign:'center'">Attachment</th>
+            <th rowspan="2" data-options="field:'safety_stock',width:100,halign:'center'">Safety Stock</th>
+            <th rowspan="2" data-options="field:'min',width:80,halign:'center'">Min</th>
+            <th rowspan="2" data-options="field:'max',width:80,halign:'center'">Max</th>
+            <th rowspan="2" data-options="field:'attachment',width:100,halign:'center',formatter:cellbutton">Attachment</th>
             <th rowspan="2" data-options="field:'status',width:100,halign:'center', styler:cellStyler, formatter:cellFormatter">Status</th>
             <th colspan="2" data-options="field:'',width:100,halign:'center'"> Created</th>
             <th colspan="2" data-options="field:'',width:100,halign:'center'"> Updated</th>
@@ -39,102 +47,107 @@
     <?= $button ?>
 </div>
 <!-- DIALOG SAVE AND UPDATE -->
-<div id="dlg_insert" class="easyui-dialog" title="Add New" data-options="closed: true,modal:true" style="width: 400px; padding:10px; top: 20px;">
+<div id="dlg_insert" class="easyui-dialog" title="Add New" data-options="closed: true,modal:true" style="width: 800px; padding:10px; top: 20px;">
     <form id="frm_insert" method="post" novalidate enctype="multipart/form-data">
         <fieldset style="width:100%; border:1px solid #d0d0d0; margin-bottom: 10px; border-radius:4px; float: left;">
             <legend><b>Form Data</b></legend>
-            <div class="fitem">
-                <span style="width:35%; display:inline-block;">Product ID</span>
-                <input style="width:60%;" name="id" id="id" required="" class="easyui-textbox" readonly>
+            <div style="float:left; width:50%;">
+                <div class="fitem">
+                    <span style="width:35%; display:inline-block;">Product ID</span>
+                    <input style="width:60%;" name="id" id="id" required="" class="easyui-textbox" readonly>
+                </div>
+                <div class="fitem">
+                    <span style="width:35%; display:inline-block;">Product No.</span>
+                    <input style="width:60%;" name="number" id="number" required="" class="easyui-textbox">
+                </div>
+                <div class="fitem">
+                    <span style="width:35%; display:inline-block;">Product Name</span>
+                    <input style="width:60%;" name="name" id="name" required="" class="easyui-textbox">
+                </div>
+                <div class="fitem">
+                    <span style="width:35%; display:inline-block;">Product Customer</span>
+                    <input style="width:60%;" name="number_customer" id="number_customer" class="easyui-textbox">
+                </div>
+                <!-- <div class="fitem">
+                    <span style="width:35%; display:inline-block;">Total Mold</span>
+                    <input style="width:60%;" name="uom" id="uom" required="" class="easyui-combobox">
+                </div> -->
+                <div class="fitem">
+                    <span style="width:35%; display:inline-block;">Process Type</span>
+                    <input style="width:60%;" name="process" id="process" required="" class="easyui-combobox">
+                </div>
+                <!-- <div class="fitem">
+                    <span style="width:35%; display:inline-block;">Category</span>
+                    <input style="width:60%;" id="category" required="" class="easyui-combobox">
+                </div> -->
+                <div class="fitem">
+                    <span style="width:35%; display:inline-block;">Product Family</span>
+                    <input style="width:60%;" name="item_family_id" id="item_family_id" required="" class="easyui-combobox">
+                </div>
+                <div class="fitem">
+                    <span style="width:35%; display:inline-block;">Box</span>
+                    <input style="width:60%;" name="boxs" id="boxs" required="" class="easyui-combobox">
+                </div>
+                <div class="fitem">
+                    <span style="width:35%; display:inline-block;">Polybag</span>
+                    <select style="width:60%;" name="polybag" id="polybag" required="" panelHeight="auto" class="easyui-combobox">
+                        <option value="Yes">Yes</option>
+                        <option value="No">No</option>
+                    </select>
+                </div>
+                <div class="fitem">
+                    <span style="width:35%; display:inline-block;">Box Label</span>
+                    <select style="width:60%;" name="box_label" id="box_label" required="" panelHeight="auto" class="easyui-combobox">
+                        <option value="Yes">Yes</option>
+                        <option value="No">No</option>
+                    </select>
+                </div>
+                <div class="fitem">
+                    <span style="width:35%; display:inline-block;">NG Ratio (%)</span>
+                    <input style="width:30%;" name="ng_ration" id="ng_ration" precision="5" class="easyui-numberbox">
+                </div>
             </div>
-            <div class="fitem">
-                <span style="width:35%; display:inline-block;">Product No.</span>
-                <input style="width:60%;" name="number" id="number" required="" class="easyui-textbox">
-            </div>
-            <div class="fitem">
-                <span style="width:35%; display:inline-block;">Product Name</span>
-                <input style="width:60%;" name="name" id="name" required="" class="easyui-textbox">
-            </div>
-            <div class="fitem">
-                <span style="width:35%; display:inline-block;">Product Customer</span>
-                <input style="width:60%;" name="number_customer" id="number_customer" class="easyui-textbox">
-            </div>
-            <!-- <div class="fitem">
-                <span style="width:35%; display:inline-block;">Total Mold</span>
-                <input style="width:60%;" name="uom" id="uom" required="" class="easyui-combobox">
-            </div> -->
-            <div class="fitem">
-                <span style="width:35%; display:inline-block;">Process Type</span>
-                <input style="width:60%;" name="process" id="process" required="" class="easyui-combobox">
-            </div>
-            <!-- <div class="fitem">
-                <span style="width:35%; display:inline-block;">Category</span>
-                <input style="width:60%;" id="category" required="" class="easyui-combobox">
-            </div> -->
-            <div class="fitem">
-                <span style="width:35%; display:inline-block;">Product Family</span>
-                <input style="width:60%;" name="item_family_id" id="item_family_id" required="" class="easyui-combobox">
-            </div>
-            <div class="fitem">
-                <span style="width:35%; display:inline-block;">Box</span>
-                <input style="width:60%;" name="boxs" id="boxs" required="" class="easyui-combobox">
-            </div>
-            <div class="fitem">
-                <span style="width:35%; display:inline-block;">Polybag</span>
-                <select style="width:60%;" name="polybag" id="polybag" required="" panelHeight="auto" class="easyui-combobox">
-                    <option value="Yes">Yes</option>
-                    <option value="No">No</option>
-                </select>
-            </div>
-            <div class="fitem">
-                <span style="width:35%; display:inline-block;">Box Label</span>
-                <select style="width:60%;" name="box_label" id="box_label" required="" panelHeight="auto" class="easyui-combobox">
-                    <option value="Yes">Yes</option>
-                    <option value="No">No</option>
-                </select>
-            </div>
-            <div class="fitem">
-                <span style="width:35%; display:inline-block;">NG Ratio (%)</span>
-                <input style="width:30%;" name="ng_ration" id="ng_ration" class="easyui-numberbox">
-            </div>
-            <div class="fitem">
-                <span style="width:35%; display:inline-block;">IS No.</span>
-                <input style="width:60%;" name="is_no" id="is_no" class="easyui-textbox">
-            </div>
-            <div class="fitem">
-                <span style="width:35%; display:inline-block;">Weight (Gram)</span>
-                <input style="width:30%;" name="weight" id="weight" class="easyui-numberbox">
-            </div>
-            <div class="fitem">
-                <span style="width:35%; display:inline-block;">Color</span>
-                <input style="width:60%;" name="color" id="color" required="" class="easyui-textbox">
-            </div>
-            <div class="fitem">
-                <span style="width:35%; display:inline-block;">Leadtime (Day)</span>
-                <input style="width:60%;" name="leadtime" id="leadtime" class="easyui-numberbox">
-            </div>
-            <div class="fitem">
-                <span style="width:35%; display:inline-block;">MPQ</span>
-                <input style="width:60%;" name="mpq" id="mpq" class="easyui-numberbox">
-            </div>
-            <div class="fitem">
-                <span style="width:35%; display:inline-block;">MOQ</span>
-                <input style="width:60%;" name="moq" id="moq" class="easyui-numberbox">
-            </div>
-            <div class="fitem">
-                <span style="width:35%; display:inline-block;">Qty/Box</span>
-                <input style="width:60%;" name="qty_box" id="qty_box" class="easyui-numberbox">
-            </div>
-            <div class="fitem">
-                <span style="width:35%; display:inline-block;">Attachment</span>
-                <input style="width:60%;" name="attachment" id="attachment" class="easyui-filebox">
-            </div>
-            <div class="fitem">
-                <span style="width:35%; display:inline-block;">Status</span>
-                <select style="width:60%;" name="status" id="status" required="" panelHeight="auto" class="easyui-combobox">
-                    <option value="0">Active</option>
-                    <option value="1">Not Active</option>
-                </select>
+            <div style="float:left; width:50%;">
+                
+                <div class="fitem">
+                    <span style="width:35%; display:inline-block;">IS No.</span>
+                    <input style="width:60%;" name="is_no" id="is_no" class="easyui-textbox">
+                </div>
+                <div class="fitem">
+                    <span style="width:35%; display:inline-block;">Weight (Gram)</span>
+                    <input style="width:30%;" name="weight" id="weight" precision="2" class="easyui-numberbox">
+                </div>
+                <div class="fitem">
+                    <span style="width:35%; display:inline-block;">Color</span>
+                    <input style="width:60%;" name="color" id="color" required="" class="easyui-textbox">
+                </div>
+                <div class="fitem">
+                    <span style="width:35%; display:inline-block;">Leadtime (Day)</span>
+                    <input style="width:60%;" name="leadtime" id="leadtime" class="easyui-numberbox">
+                </div>
+                <div class="fitem">
+                    <span style="width:35%; display:inline-block;">MPQ</span>
+                    <input style="width:60%;" name="mpq" id="mpq" class="easyui-numberbox">
+                </div>
+                <div class="fitem">
+                    <span style="width:35%; display:inline-block;">MOQ</span>
+                    <input style="width:60%;" name="moq" id="moq" class="easyui-numberbox">
+                </div>
+                <div class="fitem">
+                    <span style="width:35%; display:inline-block;">Qty/Box</span>
+                    <input style="width:60%;" name="qty_box" id="qty_box" class="easyui-numberbox">
+                </div>
+                <div class="fitem">
+                    <span style="width:35%; display:inline-block;">Attachment</span>
+                    <input style="width:60%;" name="attachment" id="attachment" class="easyui-filebox">
+                </div>
+                <div class="fitem">
+                    <span style="width:35%; display:inline-block;">Status</span>
+                    <select style="width:60%;" name="status" id="status" required="" panelHeight="auto" class="easyui-combobox">
+                        <option value="0">Active</option>
+                        <option value="1">Not Active</option>
+                    </select>
+                </div>
             </div>
         </fieldset>
     </form>
@@ -274,7 +287,7 @@
     });
 
     $('#process').combobox({
-        url:'<?= base_url('master/item_process/reads'); ?>',
+        url:'<?= base_url('master/item_process_flow/reads'); ?>',
         valueField:'name',
         textField:'name',
         prompt: 'Choose Process Type',
@@ -325,6 +338,14 @@
             return 'Active';
         } else {
             return 'Not Active';
+        }
+    };
+
+    //
+    function cellbutton(value) {
+        if(value != null){
+            return '<a target="_blank" href="'+value+'" class="btn btn-primary btn-sm" style="pointer-events: auto; opacity:1; width:100%;"><i class="fa fa-eye"></i> View</a>';
+            // alert(value);
         }
     };
 

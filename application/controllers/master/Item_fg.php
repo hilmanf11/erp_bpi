@@ -48,19 +48,23 @@ class item_fg extends CI_Controller
             $offset = ($page - 1) * $rows;
             $result = array();
             //Select Query
-            $this->db->select('a.*, b.name as item_family_name');
+            $this->db->select('a.*, b.name as item_family_name, count(c.item_fg_id) as total_mold');
             $this->db->from('item_fg a');
             $this->db->join('item_familys b', 'a.item_family_id = b.id');
+            $this->db->join('item_mold c', 'a.id = c.item_fg_id', 'left');
             $this->db->where('a.deleted', 0);
             if (@count($filters) > 0) {
                 foreach ($filters as $filter) {
                     if($filter->field == "item_family_name"){
                         $this->db->like("b.id", $filter->value);
+                    }elseif($filter->field == "total_mold"){
+                        $this->db->like("count(c.item_fg_id)", $filter->value);
                     }else{
                         $this->db->like("a.".$filter->field, $filter->value);
                     }
                 }
             }
+            $this->db->group_by('a.id');
             $this->db->order_by('a.id', 'ASC');
             //Total Data
             $totalRows = $this->db->count_all_results('', false);
@@ -95,7 +99,7 @@ class item_fg extends CI_Controller
         if ($this->input->post()) {
             if ($this->form_validation->run() == TRUE) {
                 $post   = $this->input->post();
-                $attachment = $this->crud->upload('attachment', ["pdf"], 'assets/document/item_fg/', ["id" => $post['id']], "item_fg", "attachment");
+                $attachment = $this->crud->upload('attachment', ["pdf"], 'assets/documents/item_fg/', ["id" => $post['id']], "item_fg", "attachment");
                 $postFinal = array_merge($post, ["attachment" => $attachment]);
                 $send   = $this->crud->create('item_fg', $postFinal);
                 echo $send;
@@ -112,7 +116,7 @@ class item_fg extends CI_Controller
         if ($this->input->post()) {
             $id   = base64_decode($this->input->get('id'));
             $post = $this->input->post();
-            $attachment = $this->crud->upload('attachment', ["pdf"], 'assets/document/item_fg/', ["id" => $post['id']], "item_fg", "attachment");
+            $attachment = $this->crud->upload('attachment', ["pdf"], 'assets/documents/item_fg/', ["id" => $post['id']], "item_fg", "attachment");
             $postFinal = array_merge($post, ["attachment" => $attachment]);
             $send = $this->crud->update('item_fg', ["id" => $id], $postFinal);
             echo $send;
@@ -128,10 +132,17 @@ class item_fg extends CI_Controller
         $file = $this->crud->read('item_fg', [], ["id" => $data['id']]);
         $send = $this->crud->delete('item_fg', $data);
         $attachment = @$file->attachment;
-        if (!unlink("$attachment")){
-            echo ("Error deleting $attachment");
-        } else {
+        // $file_path = @$file->attachment;
+        // $absolute_path = realpath($file_path);
+        // if ($absolute_path !== false) {
+        //     unlink($absolute_path);
+        // } else {
+        //     echo "Path file tidak valid.";
+        // }
+        if (@unlink("$attachment")){
             echo ("Success deleting $attachment");
+        } else {
+            echo ("Error deleting $attachment");
         }
         // @unlink($attachment);
         // echo $send;
@@ -166,8 +177,7 @@ class item_fg extends CI_Controller
                 'mpq' => $data->val($i, 15),
                 'moq' => $data->val($i, 16),
                 'qty_box' => $data->val($i, 17),
-                'attachment' => $data->val($i, 18),
-                'status' => $data->val($i, 19)
+                'status' => $data->val($i, 18)
             );
         }
         $datas['total'] = count($datas);
@@ -247,7 +257,6 @@ class item_fg extends CI_Controller
                     "mpq" => $data['mpq'],
                     "moq" => $data['moq'],
                     "qty_box" => $data['qty_box'],
-                    "attachment" => $data['attachment'],
                     "status" => $data['status'],
                 );
                 $send   = $this->crud->create('item_fg', $dataFinal);
@@ -268,9 +277,10 @@ class item_fg extends CI_Controller
         $this->db->from('config');
         $config = $this->db->get()->row();
 
-        $this->db->select('a.*, b.name as item_family_name');
+        $this->db->select('a.*, b.name as item_family_name, count(c.item_fg_id) as total_mold');
         $this->db->from('item_fg a');
         $this->db->join('item_familys b', 'a.item_family_id = b.id');
+        $this->db->join('item_mold c', 'a.id = c.item_fg_id');
         $this->db->where('a.deleted', 0);
         $this->db->order_by('a.id', 'ASC');
         $records = $this->db->get()->result_array();
@@ -304,6 +314,7 @@ class item_fg extends CI_Controller
                 <th>Product ID</th>
                 <th>Product No.</th>
                 <th>Product Name</th>
+                <th>Total Mold</th>
                 <th>Product Customer</th>
                 <th>Process Type</th>
                 <th>product Family</th>
@@ -318,7 +329,9 @@ class item_fg extends CI_Controller
                 <th>MPQ</th>
                 <th>MOQ</th>
                 <th>Qty/Box</th>
-                <th>Attachment</th>
+                <th>Safety Stock</th>
+                <th>Min</th>
+                <th>Max</th>
                 <th>Status</th>
             </tr>';
         $no = 1;
@@ -328,6 +341,7 @@ class item_fg extends CI_Controller
                     <td>' . $data['id'] . '</td>
                     <td>' . $data['number'] . '</td>
                     <td>' . $data['name'] . '</td>
+                    <td>' . $data['total_mold'] . '</td>
                     <td>' . $data['number_customer'] . '</td>
                     <td>' . $data['process'] . '</td>
                     <td>' . $data['item_family_name'] . '</td>
@@ -342,7 +356,9 @@ class item_fg extends CI_Controller
                     <td>' . $data['mpq'] . '</td>
                     <td>' . $data['moq'] . '</td>
                     <td>' . $data['qty_box'] . '</td>
-                    <td>' . $data['attachment'] . '</td>
+                    <td></td>
+                    <td></td>
+                    <td></td>
                     <td>' . $data['status'] . '</td>';
             $no++;
         }
