@@ -247,7 +247,7 @@ class Bom extends CI_Controller
             </div>
             <br><br>
             <div style="float: centet; font-size: 16px; text-align: center;">
-                <h3>MASTER BUILD OF MATERIAL</h3>
+                <h3>MASTER BILL OF MATERIAL</h3>
             </div>
         </center>
         
