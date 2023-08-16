@@ -3,20 +3,18 @@
     <thead>
         <tr>
             <th rowspan="2" field="ck" checkbox="true"></th>
-            <th rowspan="2" data-options="field:'id',width:150,align:'center'">Mold ID</th>
+            <th rowspan="2" data-options="field:'item_fg_id',width:150,align:'center'">Product ID</th>
             <th rowspan="2" data-options="field:'item_fg_number',width:150,halign:'center'">Product No.</th>
-            <th rowspan="2" data-options="field:'item_fg_name',width:100,halign:'center'">Product Name</th>
-            <th rowspan="2" data-options="field:'type',width:130,halign:'center'">Type</th>
-            <th rowspan="2" data-options="field:'customer_name',width:200,halign:'center'">Customer Name</th>
-            <th rowspan="2" data-options="field:'model',width:150,halign:'center'">Model</th>
-            <th rowspan="2" data-options="field:'mold_size',width:150,halign:'center'">Mold Size</th>
-            <th rowspan="2" data-options="field:'project_year',width:150,halign:'center'">Project Year</th>
-            <th rowspan="2" data-options="field:'cavity_standard',width:150,halign:'center'">Standard Cavity</th>
-            <th rowspan="2" data-options="field:'cavity_actual',width:150,halign:'center'">Actual Cavity</th>
-            <th rowspan="2" data-options="field:'shoot_standard',width:150,halign:'center'">Standard Shoot</th>
-            <th rowspan="2" data-options="field:'shoot_actual',width:150,halign:'center'">Actual Shoot</th>
-            <th rowspan="2" data-options="field:'remark',width:150,halign:'center'">Remarks</th>
-            <th rowspan="2" data-options="field:'status',width:150,halign:'center', styler:cellStyler, formatter:cellFormatter">Status</th>
+            <th rowspan="2" data-options="field:'item_fg_name',width:150,halign:'center'">Product Name</th>
+            <th rowspan="2" data-options="field:'item_rm_id',width:150,halign:'center'">Part ID</th>
+            <th rowspan="2" data-options="field:'item_rm_number',width:150,halign:'center'">Part No.</th>
+            <th rowspan="2" data-options="field:'item_rm_name',width:150,halign:'center'">Part Name</th>
+            <th rowspan="2" data-options="field:'type',width:150,halign:'center'">Type of Product</th>
+            <th rowspan="2" data-options="field:'recyle',width:100,halign:'center'">% Recycle Part</th>
+            <th rowspan="2" data-options="field:'product_family_name',width:100,halign:'center'">Product Family</th>
+            <th rowspan="2" data-options="field:'uom',width:100,halign:'center'">Unit of Measure</th>
+            <th rowspan="2" data-options="field:'composition',width:100,halign:'center'">Composition</th>
+            <th rowspan="2" data-options="field:'remark',width:100,halign:'center'">Remarks</th>
             <th colspan="2" data-options="field:'',width:100,halign:'center'"> Created</th>
             <th colspan="2" data-options="field:'',width:100,halign:'center'"> Updated</th>
         </tr>
@@ -33,73 +31,37 @@
     <?= $button ?>
 </div>
 <!-- DIALOG SAVE AND UPDATE -->
-<div id="dlg_insert" class="easyui-dialog" title="Add New" data-options="closed: true,modal:true" style="width: 600px; padding:10px; top: 20px;">
-    <form id="frm_insert" method="post" novalidate>
+<div id="dlg_insert" class="easyui-dialog" title="Add New" data-options="closed: true,modal:true" style="width: 500px; padding:10px; top: 20px;">
+    <form id="frm_insert" method="post" novalidate enctype="multipart/form-data">
         <fieldset style="width:100%; border:1px solid #d0d0d0; margin-bottom: 10px; border-radius:4px; float: left;">
             <legend><b>Form Data</b></legend>
             <div class="fitem">
-                <span style="width:35%; display:inline-block;">Mold ID</span>
-                <input style="width:60%;" name="id" id="id" required="" class="easyui-textbox" readonly>
-            </div>
-            <div class="fitem">
                 <span style="width:35%; display:inline-block;">Product No.</span>
-                <input style="width:60%;" name="item_fg_id" id="item_fg_id" required="" class="easyui-textbox">
+                <input style="width:60%;" name="item_fg_id" id="item_fg_id" required="" class="easyui-combobox">
             </div>
             <div class="fitem">
-                <span style="width:35%; display:inline-block;">Type</span>
+                <span style="width:35%; display:inline-block;">Part No.</span>
+                <input style="width:60%;" name="item_rm_id" id="item_rm_id" required="" class="easyui-combobox">
+            </div>
+            <div class="fitem">
+                <span style="width:35%; display:inline-block;">Type of Product</span>
                 <select style="width:60%;" name="type" id="type" required="" panelHeight="auto" class="easyui-combobox">
-                    <option value="INTERNAL">INTERNAL</option>
-                    <option value="CUSTOMER PROPERTY">CUSTOMER PROPERTY</option>
+                    <option value="ORIGINAL">ORIGINAL</option>
+                    <option value="RECYCLE">RECYCLE</option>
+                    <option value="BOTH">BOTH</option>
                 </select>
             </div>
             <div class="fitem">
-                <span style="width:35%; display:inline-block;">Customer</span>
-                <input style="width:60%;" name="customer_id" id="customer_id" required="" class="easyui-combobox">
+                <span style="width:35%; display:inline-block;">Recycle Part %</span>
+                <input style="width:30%;" name="recyle" id="recyle" precision="5" class="easyui-numberbox">
             </div>
             <div class="fitem">
-                <span style="width:35%; display:inline-block;">Model</span>
-                <input style="width:60%;" name="model" id="model" class="easyui-textbox">
-            </div>
-            <div class="fitem">
-                <span style="width:35%; display:inline-block;">Mold Size</span>
-                <input style="width:60%;" name="mold_size" id="mold_size" class="easyui-textbox">
-            </div>
-            <div class="fitem">
-                <span style="width:35%; display:inline-block;">Project Year</span>
-                <input style="width:60%;" name="project_year" id="project_year" class="easyui-numberbox">
-            </div>
-            <div class="fitem">
-                <span style="width:35%; display:inline-block;">Standard Cavity</span>
-                <select style="width:60%;" name="cavity_standard" id="cavity_standard" required="" panelHeight="auto" class="easyui-combobox">
-                    <option value="1">MOLD SINGLE</option>
-                    <option value="2">MOLD R/L</option>
-                </select>
-            </div>
-            <div class="fitem">
-                <span style="width:35%; display:inline-block;">Actual Cavity</span>
-                <select style="width:60%;" name="cavity_actual" id="cavity_actual" required="" panelHeight="auto" class="easyui-combobox">
-                    <option value="1">MOLD SINGLE</option>
-                    <option value="2">MOLD R/L</option>
-                </select>
-            </div>
-            <div class="fitem">
-                <span style="width:35%; display:inline-block;">Standard Shoot</span>
-                <input style="width:60%;" name="shoot_standard" id="shoot_standard" class="easyui-numberbox">
-            </div>
-            <div class="fitem">
-                <span style="width:35%; display:inline-block;">Actual Shoot</span>
-                <input style="width:60%;" name="shoot_actual" id="shoot_actual" class="easyui-numberbox">
+                <span style="width:35%; display:inline-block;">Composition</span>
+                <input style="width:60%;" name="composition" id="composition" class="easyui-textbox">
             </div>
             <div class="fitem">
                 <span style="width:35%; display:inline-block;">Remarks</span>
-                <input style="width:60%;" name="remark" id="remark" class="easyui-textbox">
-            </div>
-            <div class="fitem">
-                <span style="width:35%; display:inline-block;">Status</span>
-                <select style="width:60%;" name="status" id="status" required="" panelHeight="auto" class="easyui-combobox">
-                    <option value="0">Active</option>
-                    <option value="1">Not Active</option>
-                </select>
+                <input style="width:30%;" name="remark" id="remark" precision="2" class="easyui-textbox">
             </div>
         </fieldset>
     </form>
@@ -126,27 +88,15 @@
 </div>
 
 <!-- PDF -->
-<iframe id="printout" src="<?= base_url('master/item_mold/print') ?>" style="width: 100%;" hidden></iframe>
+<iframe id="printout" src="<?= base_url('master/bom/print') ?>" style="width: 100%;" hidden></iframe>
 <script>
     //ADD DATA
     function add() {
         $('#dlg_insert').dialog('open');
-        url_save = '<?= base_url('master/item_mold/create') ?>';
+        url_save = '<?= base_url('master/bom/create') ?>';
         $('#frm_insert').form('clear');
         
-        $('#type').combobox('setValue', 'INTERNAL');
-        $('#status').combobox('setValue', '0');
-        $('#cavity_standard').combobox('setValue', '1');
-        $('#cavity_actual').combobox('setValue', '1');
-
-        $.ajax({
-            type : "post",
-            url : "<?= base_url('master/item_mold/autoid')?>",
-            dataType : "html",
-            success : function(response){
-                $('#id').textbox('setValue', response);
-            }
-        });
+        $('#type').combobox('setValue', 'ORIGINAL');
     }
     //EDIT DATA
     function update() {
@@ -154,7 +104,7 @@
         if (row) {
             $('#dlg_insert').dialog('open');
             $('#frm_insert').form('load', row);
-            url_save = '<?= base_url('master/item_mold/update') ?>?id=' + btoa(row.id);
+            url_save = '<?= base_url('master/bom/update') ?>?id=' + btoa(row.id);
         } else {
             toastr.warning("Please select one of the data in the table first!", "Information");
         }
@@ -169,7 +119,7 @@
                         var row = rows[i];
                         $.ajax({
                             method: 'post',
-                            url: '<?= base_url('master/item_mold/delete') ?>',
+                            url: '<?= base_url('master/bom/delete') ?>',
                             data: {
                                 id: row.id
                             },
@@ -197,7 +147,7 @@
     }
     // DOWNLOAD
     function download_excel() {
-        window.location.assign('<?= base_url('template/tmp_item_mold.xls') ?>');
+        window.location.assign('<?= base_url('template/tmp_bom.xls') ?>');
     }
     //PRINT PDF
     function pdf() {
@@ -205,7 +155,7 @@
     }
     //PRINT EXCEL
     function excel() {
-        window.location.assign('<?= base_url('master/item_mold/print/excel') ?>');
+        window.location.assign('<?= base_url('master/bom/print/excel') ?>');
     }
     //RELOAD
     function reload() {
@@ -214,7 +164,7 @@
     $(function() {
         //SETTING DATAGRID EASYUI
         $('#dg').datagrid({
-            url: '<?= base_url('master/item_mold/datatables') ?>',
+            url: '<?= base_url('master/bom/datatables') ?>',
             pagination: true,
             clientPaging: false,
             remoteFilter: true,
@@ -249,49 +199,32 @@
     });
 
     $('#item_fg_id').combobox({
-        url:'<?= base_url('master/item_fg/reads'); ?>',
+        url:'<?= base_url('master/item_fg/reads/'); ?>',
         valueField:'id',
         textField:'number',
         prompt: 'Choose Product No.',
     });
 
-    $('#customer_id').combobox({
-        url:'<?= base_url('master/customers/reads'); ?>',
+    $('#item_rm_id').combobox({
+        url:'<?= base_url('master/item_rm/reads/'); ?>',
         valueField:'id',
-        textField:'name',
-        prompt: 'Choose Customer',
+        textField:'number',
+        prompt: 'Choose Part No.',
     });
-
-    //CELLSTYLE STATUS
-    function cellStyler(value, row, index) {
-        if (value == 0) {
-            return 'background: #53D636; color:white;';
-        } else {
-            return 'background: #FF5F5F; color:white;';
-        }
-    }
-    //FORMATTER STATUS
-    function cellFormatter(value) {
-        if (value == 0) {
-            return 'Active';
-        } else {
-            return 'Not Active';
-        }
-    };
 
     // UPLOAD DATA
     $('#dlg_upload').dialog({
             buttons: [{
                 text: 'List Failed',
                 handler: function() {
-                    window.open('<?= base_url('master/item_mold/uploadDownloadFailed') ?>', '_blank');
+                    window.open('<?= base_url('master/bom/uploadDownloadFailed') ?>', '_blank');
                 }
             }, {
                 text: 'Upload',
                 iconCls: 'icon-ok',
                 handler: function() {
                     $('#frm_upload').form('submit', {
-                        url: '<?= base_url('master/item_mold/upload') ?>',
+                        url: '<?= base_url('master/bom/upload') ?>',
                         onSubmit: function() {
                             if ($(this).form('validate') == false) {
                                 return $(this).form('validate');
@@ -306,7 +239,7 @@
                             $.messager.progress('close');
                             //Clear File
                             $.ajax({
-                                url: "<?= base_url('master/item_mold/uploadclearFailed') ?>"
+                                url: "<?= base_url('master/bom/uploadclearFailed') ?>"
                             });
                             var json = eval('(' + result + ')');
                             requestData(json.total, json);
@@ -321,7 +254,7 @@
                                     $.ajax({
                                         type: "POST",
                                         async: true,
-                                        url: "<?= base_url('master/item_mold/uploadCreate') ?>",
+                                        url: "<?= base_url('master/bom/uploadCreate') ?>",
                                         data: {
                                             "data": json[number - 1]
                                         },
@@ -339,7 +272,7 @@
                                                 $.ajax({
                                                     type: "POST",
                                                     async: true,
-                                                    url: "<?= base_url('master/item_mold/uploadcreateFailed') ?>",
+                                                    url: "<?= base_url('master/bom/uploadcreateFailed') ?>",
                                                     data: {
                                                         data: json[number - 1],
                                                         message: result.message
