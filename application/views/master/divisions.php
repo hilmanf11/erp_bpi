@@ -3,18 +3,10 @@
     <thead>
         <tr>
             <th rowspan="2" field="ck" checkbox="true"></th>
-            <th rowspan="2" data-options="field:'item_fg_id',width:150,align:'center'">Product ID</th>
-            <th rowspan="2" data-options="field:'item_fg_number',width:150,halign:'center'">Product No.</th>
-            <th rowspan="2" data-options="field:'item_fg_name',width:200,halign:'center'">Product Name</th>
-            <th rowspan="2" data-options="field:'item_rm_id',width:150,halign:'center'">Part ID</th>
-            <th rowspan="2" data-options="field:'item_rm_number',width:150,halign:'center'">Part No.</th>
-            <th rowspan="2" data-options="field:'item_rm_name',width:150,halign:'center'">Part Name</th>
-            <th rowspan="2" data-options="field:'type',width:150,halign:'center'">Type of Product</th>
-            <th rowspan="2" data-options="field:'recyle',width:100,halign:'center'">% Recycle Part</th>
-            <th rowspan="2" data-options="field:'product_family_name',width:100,halign:'center'">Product Family</th>
-            <th rowspan="2" data-options="field:'uom',width:100,halign:'center'">Unit of Measure</th>
-            <th rowspan="2" data-options="field:'composition',width:100,halign:'center'">Composition</th>
-            <th rowspan="2" data-options="field:'remark',width:100,halign:'center'">Remarks</th>
+            <th rowspan="2" data-options="field:'id',width:80,align:'center'">Division ID</th>
+            <th rowspan="2" data-options="field:'name',width:200,halign:'center'">Division Name</th>
+            <th rowspan="2" data-options="field:'number',width:150,halign:'center'">Division Code</th>
+            <th rowspan="2" data-options="field:'description',width:150,halign:'center'">Description</th>
             <th colspan="2" data-options="field:'',width:100,halign:'center'"> Created</th>
             <th colspan="2" data-options="field:'',width:100,halign:'center'"> Updated</th>
         </tr>
@@ -31,37 +23,25 @@
     <?= $button ?>
 </div>
 <!-- DIALOG SAVE AND UPDATE -->
-<div id="dlg_insert" class="easyui-dialog" title="Add New" data-options="closed: true,modal:true" style="width: 500px; padding:10px; top: 20px;">
-    <form id="frm_insert" method="post" novalidate enctype="multipart/form-data">
+<div id="dlg_insert" class="easyui-dialog" title="Add New" data-options="closed: true,modal:true" style="width: 400px; padding:10px; top: 20px;">
+    <form id="frm_insert" method="post" novalidate>
         <fieldset style="width:100%; border:1px solid #d0d0d0; margin-bottom: 10px; border-radius:4px; float: left;">
             <legend><b>Form Data</b></legend>
             <div class="fitem">
-                <span style="width:35%; display:inline-block;">Product No.</span>
-                <input style="width:60%;" name="item_fg_id" id="item_fg_id" required="" class="easyui-combobox">
+                <span style="width:35%; display:inline-block;">Division ID</span>
+                <input style="width:30%;" name="id" id="id" required="" class="easyui-textbox" readonly>
             </div>
             <div class="fitem">
-                <span style="width:35%; display:inline-block;">Part No.</span>
-                <input style="width:60%;" name="item_rm_id" id="item_rm_id" required="" class="easyui-combobox">
+                <span style="width:35%; display:inline-block;">Division Name</span>
+                <input style="width:60%;" name="name" id="name" required="" class="easyui-textbox">
             </div>
             <div class="fitem">
-                <span style="width:35%; display:inline-block;">Type of Product</span>
-                <select style="width:60%;" name="type" id="type" required="" panelHeight="auto" class="easyui-combobox">
-                    <option value="ORIGINAL">ORIGINAL</option>
-                    <option value="RECYCLE">RECYCLE</option>
-                    <option value="BOTH">BOTH</option>
-                </select>
+                <span style="width:35%; display:inline-block;">Division Code</span>
+                <input style="width:60%;" name="number" id="number" required="" class="easyui-textbox">
             </div>
             <div class="fitem">
-                <span style="width:35%; display:inline-block;">Recycle Part %</span>
-                <input style="width:30%;" name="recyle" id="recyle" precision="5" class="easyui-numberbox">
-            </div>
-            <div class="fitem">
-                <span style="width:35%; display:inline-block;">Composition</span>
-                <input style="width:60%;" name="composition" id="composition" class="easyui-textbox">
-            </div>
-            <div class="fitem">
-                <span style="width:35%; display:inline-block;">Remarks</span>
-                <input style="width:30%;" name="remark" id="remark" precision="2" class="easyui-textbox">
+                <span style="width:35%; display:inline-block;">Description</span>
+                <input style="width:60%;" name="description" id="description" class="easyui-textbox">
             </div>
         </fieldset>
     </form>
@@ -88,15 +68,22 @@
 </div>
 
 <!-- PDF -->
-<iframe id="printout" src="<?= base_url('master/bom/print') ?>" style="width: 100%;" hidden></iframe>
+<iframe id="printout" src="<?= base_url('master/divisions/print') ?>" style="width: 100%;" hidden></iframe>
 <script>
     //ADD DATA
     function add() {
         $('#dlg_insert').dialog('open');
-        url_save = '<?= base_url('master/bom/create') ?>';
+        url_save = '<?= base_url('master/divisions/create') ?>';
         $('#frm_insert').form('clear');
-        
-        $('#type').combobox('setValue', 'ORIGINAL');
+
+        $.ajax({
+            type : "post",
+            url : "<?= base_url('master/divisions/autoid')?>",
+            dataType : "html",
+            success : function(response){
+                $('#id').textbox('setValue', response);
+            }
+        });
     }
     //EDIT DATA
     function update() {
@@ -104,7 +91,7 @@
         if (row) {
             $('#dlg_insert').dialog('open');
             $('#frm_insert').form('load', row);
-            url_save = '<?= base_url('master/bom/update') ?>?id=' + btoa(row.id);
+            url_save = '<?= base_url('master/divisions/update') ?>?id=' + btoa(row.id);
         } else {
             toastr.warning("Please select one of the data in the table first!", "Information");
         }
@@ -119,7 +106,7 @@
                         var row = rows[i];
                         $.ajax({
                             method: 'post',
-                            url: '<?= base_url('master/bom/delete') ?>',
+                            url: '<?= base_url('master/divisions/delete') ?>',
                             data: {
                                 id: row.id
                             },
@@ -147,7 +134,7 @@
     }
     // DOWNLOAD
     function download_excel() {
-        window.location.assign('<?= base_url('template/tmp_bom.xls') ?>');
+        window.location.assign('<?= base_url('template/tmp_divisions.xls') ?>');
     }
     //PRINT PDF
     function pdf() {
@@ -155,7 +142,7 @@
     }
     //PRINT EXCEL
     function excel() {
-        window.location.assign('<?= base_url('master/bom/print/excel') ?>');
+        window.location.assign('<?= base_url('master/divisions/print/excel') ?>');
     }
     //RELOAD
     function reload() {
@@ -164,7 +151,7 @@
     $(function() {
         //SETTING DATAGRID EASYUI
         $('#dg').datagrid({
-            url: '<?= base_url('master/bom/datatables') ?>',
+            url: '<?= base_url('master/divisions/datatables') ?>',
             pagination: true,
             clientPaging: false,
             remoteFilter: true,
@@ -188,7 +175,6 @@
                             } else {
                                 toastr.error(result.message, result.title);
                             }
-                            
                             $('#dlg_insert').dialog('close');
                             $('#dg').datagrid('reload');
                         }
@@ -198,33 +184,19 @@
         });
     });
 
-    $('#item_fg_id').combobox({
-        url:'<?= base_url('master/item_fg/reads/'); ?>',
-        valueField:'id',
-        textField:'number',
-        prompt: 'Choose Product No.',
-    });
-
-    $('#item_rm_id').combobox({
-        url:'<?= base_url('master/item_rm/reads/'); ?>',
-        valueField:'id',
-        textField:'number',
-        prompt: 'Choose Part No.',
-    });
-
     // UPLOAD DATA
     $('#dlg_upload').dialog({
             buttons: [{
                 text: 'List Failed',
                 handler: function() {
-                    window.open('<?= base_url('master/bom/uploadDownloadFailed') ?>', '_blank');
+                    window.open('<?= base_url('master/divisions/uploadDownloadFailed') ?>', '_blank');
                 }
             }, {
                 text: 'Upload',
                 iconCls: 'icon-ok',
                 handler: function() {
                     $('#frm_upload').form('submit', {
-                        url: '<?= base_url('master/bom/upload') ?>',
+                        url: '<?= base_url('master/divisions/upload') ?>',
                         onSubmit: function() {
                             if ($(this).form('validate') == false) {
                                 return $(this).form('validate');
@@ -239,7 +211,7 @@
                             $.messager.progress('close');
                             //Clear File
                             $.ajax({
-                                url: "<?= base_url('master/bom/uploadclearFailed') ?>"
+                                url: "<?= base_url('master/divisions/uploadclearFailed') ?>"
                             });
                             var json = eval('(' + result + ')');
                             requestData(json.total, json);
@@ -254,7 +226,7 @@
                                     $.ajax({
                                         type: "POST",
                                         async: true,
-                                        url: "<?= base_url('master/bom/uploadCreate') ?>",
+                                        url: "<?= base_url('master/divisions/uploadCreate') ?>",
                                         data: {
                                             "data": json[number - 1]
                                         },
@@ -272,7 +244,7 @@
                                                 $.ajax({
                                                     type: "POST",
                                                     async: true,
-                                                    url: "<?= base_url('master/bom/uploadcreateFailed') ?>",
+                                                    url: "<?= base_url('master/divisions/uploadcreateFailed') ?>",
                                                     data: {
                                                         data: json[number - 1],
                                                         message: result.message

@@ -48,14 +48,14 @@ class item_fg extends CI_Controller
             $offset = ($page - 1) * $rows;
             $result = array();
             //Select Query
-            $this->db->select('a.*, b.name as item_family_name, count(c.item_fg_id) as total_mold');
+            $this->db->select('a.*, b.name as division_name, count(c.item_fg_id) as total_mold');
             $this->db->from('item_fg a');
-            $this->db->join('item_familys b', 'a.item_family_id = b.id');
+            $this->db->join('divisions b', 'a.division_id = b.id');
             $this->db->join('item_mold c', 'a.id = c.item_fg_id', 'left');
             $this->db->where('a.deleted', 0);
             if (@count($filters) > 0) {
                 foreach ($filters as $filter) {
-                    if($filter->field == "item_family_name"){
+                    if($filter->field == "division_name"){
                         $this->db->like("b.id", $filter->value);
                     }elseif($filter->field == "total_mold"){
                         $this->db->like("count(c.item_fg_id)", $filter->value);
@@ -79,9 +79,9 @@ class item_fg extends CI_Controller
         }
     }
     //AUTO ID
-    public function autoid($family){
+    public function autoid($division){
         $month = date('my');
-        $combine = "FG-".$family;
+        $combine = "FG-".$division;
         $format = "BPI".$combine.$month;
         $sql = $this->db->query("SELECT max(id) as kode FROM item_fg WHERE id LIKE '%$format%'");
         $row = $sql->row();
@@ -165,7 +165,7 @@ class item_fg extends CI_Controller
                 'name' => $data->val($i, 3),
                 'number_customer' => $data->val($i, 4),
                 'process' => $data->val($i, 5),
-                'item_family_id' => $data->val($i, 6),
+                'division_id' => $data->val($i, 6),
                 'boxs' => $data->val($i, 7),
                 'polybag' => $data->val($i, 8),
                 'box_label' => $data->val($i, 9),
@@ -218,11 +218,11 @@ class item_fg extends CI_Controller
 
             //Cek Process Number          //table       //field        //field excel
             $item_fg = $this->crud->read('item_fg', [], ["number" => $data['number']]);
-            $product_family = $this->crud->read('item_familys', [], ["id" => $data['item_family_id']]);
+            $division = $this->crud->read('divisions', [], ["id" => $data['division_id']]);
 
             //AUTOID
             $month = date('my');
-            $combine = "FG-".@$product_family->number;
+            $combine = "FG-".@$division->number;
             $format = "BPI".$combine.$month;
             $sql = $this->db->query("SELECT max(id) as kode FROM item_fg WHERE id LIKE '%$format%'");
             $row = $sql->row();
@@ -233,8 +233,8 @@ class item_fg extends CI_Controller
             }
             $autoid =$format. sprintf("%04s", $kode + 1);
 
-            if (empty($product_family->number)) {
-                echo json_encode(array("title" => "Not Found", "message" => "Product Family " . $data['item_family_id'] . " Not Found", "theme" => "error"));
+            if (empty($division->number)) {
+                echo json_encode(array("title" => "Not Found", "message" => " Division " . $data['division_id'] . " Not Found", "theme" => "error"));
             } elseif (!empty($item_fg->number)) {
                 echo json_encode(array("title" => "Duplicated", "message" => " Product No. " . $data['number'] . " is Duplicate Data", "theme" => "error"));
             } else {
@@ -245,7 +245,7 @@ class item_fg extends CI_Controller
                     "name" => $data['name'],
                     "number_customer" => $data['number_customer'],
                     "process" => $data['process'],
-                    "item_family_id" => $data['item_family_id'],
+                    "division_id" => $data['division_id'],
                     "boxs" => $data['boxs'],
                     "polybag" => $data['polybag'],
                     "box_label" => $data['box_label'],
@@ -277,9 +277,9 @@ class item_fg extends CI_Controller
         $this->db->from('config');
         $config = $this->db->get()->row();
 
-        $this->db->select('a.*, b.name as item_family_name, count(c.item_fg_id) as total_mold');
+        $this->db->select('a.*, b.name as division_name, count(c.item_fg_id) as total_mold');
         $this->db->from('item_fg a');
-        $this->db->join('item_familys b', 'a.item_family_id = b.id');
+        $this->db->join('divisions b', 'a.division_id = b.id');
         $this->db->join('item_mold c', 'a.id = c.item_fg_id');
         $this->db->where('a.deleted', 0);
         $this->db->order_by('a.id', 'ASC');
@@ -344,7 +344,7 @@ class item_fg extends CI_Controller
                     <td>' . $data['total_mold'] . '</td>
                     <td>' . $data['number_customer'] . '</td>
                     <td>' . $data['process'] . '</td>
-                    <td>' . $data['item_family_name'] . '</td>
+                    <td>' . $data['division_name'] . '</td>
                     <td>' . $data['boxs'] . '</td>
                     <td>' . $data['polybag'] . '</td>
                     <td>' . $data['box_label'] . '</td>

@@ -14,7 +14,7 @@
             <th rowspan="2" data-options="field:'number_customer',width:150,halign:'center'">Product Customer</th>
             <th rowspan="2" data-options="field:'total_mold',width:100,halign:'center'">Total Mold</th>
             <th rowspan="2" data-options="field:'process',width:100,halign:'center'">Process Type</th>
-            <th rowspan="2" data-options="field:'item_family_name',width:100,halign:'center'">Product Family</th>
+            <th rowspan="2" data-options="field:'division_name',width:100,halign:'center'">Division</th>
             <th rowspan="2" data-options="field:'boxs',width:100,halign:'center'">Box</th>
             <th rowspan="2" data-options="field:'polybag',width:100,halign:'center'">Polybag Label</th>
             <th rowspan="2" data-options="field:'box_label',width:100,halign:'center'">Box Label</th>
@@ -81,8 +81,8 @@
                     <input style="width:60%;" id="category" required="" class="easyui-combobox">
                 </div> -->
                 <div class="fitem">
-                    <span style="width:35%; display:inline-block;">Product Family</span>
-                    <input style="width:60%;" name="item_family_id" id="item_family_id" required="" class="easyui-combobox">
+                    <span style="width:35%; display:inline-block;">Division</span>
+                    <input style="width:60%;" name="division_id" id="division_id" required="" class="easyui-combobox">
                 </div>
                 <div class="fitem">
                     <span style="width:35%; display:inline-block;">Box</span>
@@ -91,15 +91,15 @@
                 <div class="fitem">
                     <span style="width:35%; display:inline-block;">Polybag</span>
                     <select style="width:60%;" name="polybag" id="polybag" required="" panelHeight="auto" class="easyui-combobox">
-                        <option value="Yes">Yes</option>
-                        <option value="No">No</option>
+                        <option value="YES">YES</option>
+                        <option value="NO">NO</option>
                     </select>
                 </div>
                 <div class="fitem">
                     <span style="width:35%; display:inline-block;">Box Label</span>
                     <select style="width:60%;" name="box_label" id="box_label" required="" panelHeight="auto" class="easyui-combobox">
-                        <option value="Yes">Yes</option>
-                        <option value="No">No</option>
+                        <option value="YES">YES</option>
+                        <option value="NO">NO</option>
                     </select>
                 </div>
                 <div class="fitem">
@@ -182,8 +182,8 @@
         url_save = '<?= base_url('master/item_fg/create') ?>';
         $('#frm_insert').form('clear');
         
-        $('#polybag').combobox('setValue', 'yes');
-        $('#box_label').combobox('setValue', 'yes');
+        $('#polybag').combobox('setValue', 'YES');
+        $('#box_label').combobox('setValue', 'YES');
         $('#status').combobox('setValue', '0');
     }
     //EDIT DATA
@@ -307,15 +307,15 @@
         prompt: 'Choose Colors',
     });
 
-    $('#item_family_id').combobox({
-        url:'<?= base_url('master/item_familys/reads_fg/'); ?>',
+    $('#division_id').combobox({
+        url:'<?= base_url('master/divisions/reads/'); ?>',
         valueField:'id',
         textField:'name',
-        prompt: 'Choose Product Family',
-        onSelect: function(family) {
+        prompt: 'Choose Division',
+        onSelect: function(division) {
             $.ajax({
                 type : "post",
-                url : "<?= base_url('master/item_fg/autoid/')?>" + "/" + family.number,
+                url : "<?= base_url('master/item_fg/autoid/')?>" + "/" + division.number,
                 dataType : "html",
                 success : function(response){
                     $('#id').textbox('setValue', response);

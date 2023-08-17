@@ -35,79 +35,83 @@
     <?= $button ?>
 </div>
 <!-- DIALOG SAVE AND UPDATE -->
-<div id="dlg_insert" class="easyui-dialog" title="Add New" data-options="closed: true,modal:true" style="width: 400px; padding:10px; top: 20px;">
+<div id="dlg_insert" class="easyui-dialog" title="Add New" data-options="closed: true,modal:true" style="width: 800px; padding:10px; top: 20px;">
     <form id="frm_insert" method="post" novalidate>
         <fieldset style="width:100%; border:1px solid #d0d0d0; margin-bottom: 10px; border-radius:4px; float: left;">
             <legend><b>Form Data</b></legend>
-            <div class="fitem">
-                <span style="width:35%; display:inline-block;">Customer ID</span>
-                <input style="width:30%;" name="id" id="id" required="" class="easyui-textbox" readonly>
+            <div style="float:left; width:50%;">
+                <div class="fitem">
+                    <span style="width:35%; display:inline-block;">Customer ID</span>
+                    <input style="width:30%;" name="id" id="id" required="" class="easyui-textbox" readonly>
+                </div>
+                <div class="fitem">
+                    <span style="width:35%; display:inline-block;">Customer Name</span>
+                    <input style="width:60%;" name="name" id="name" required="" class="easyui-textbox">
+                </div>
+                <div class="fitem">
+                    <span style="width:35%; display:inline-block;">Customer Code</span>
+                    <input style="width:60%;" name="number" id="number" required="" class="easyui-textbox">
+                </div>
+                <div class="fitem">
+                    <span style="width:35%; display:inline-block;">Type</span>
+                    <select style="width:60%;" name="type" id="type" required="" panelHeight="auto" class="easyui-combobox">
+                        <option value="LOCAL">LOCAL</option>
+                        <option value="EXPORT">EXPORT</option>
+                    </select>
+                </div>
+                <div class="fitem">
+                    <span style="width:35%; display:inline-block;">Address</span>
+                    <input style="width:60%;" name="address" id="address" required="" class="easyui-textbox">
+                </div>
+                <div class="fitem">
+                    <span style="width:35%; display:inline-block;">Billing Address</span>
+                    <input style="width:60%;" name="address_billing" id="address_billing" required="" class="easyui-textbox">
+                </div>
+                <div class="fitem">
+                    <span style="width:35%; display:inline-block;">Contact Person</span>
+                    <input style="width:60%;" name="contact_person" id="contact_person" required="" class="easyui-textbox">
+                </div>
+                <div class="fitem">
+                    <span style="width:35%; display:inline-block;">Telepon</span>
+                    <input style="width:60%;" name="telp" id="telp" class="easyui-textbox">
+                </div>
             </div>
-            <div class="fitem">
-                <span style="width:35%; display:inline-block;">Customer Name</span>
-                <input style="width:60%;" name="name" id="name" required="" class="easyui-textbox">
-            </div>
-            <div class="fitem">
-                <span style="width:35%; display:inline-block;">Customer Code</span>
-                <input style="width:60%;" name="number" id="number" required="" class="easyui-textbox">
-            </div>
-            <div class="fitem">
-                <span style="width:35%; display:inline-block;">Type</span>
-                <select style="width:60%;" name="type" id="type" required="" panelHeight="auto" class="easyui-combobox">
-                    <option value="LOCAL">LOCAL</option>
-                    <option value="EXPORT">EXPORT</option>
-                </select>
-            </div>
-            <div class="fitem">
-                <span style="width:35%; display:inline-block;">Address</span>
-                <input style="width:60%;" name="address" id="address" required="" class="easyui-textbox">
-            </div>
-            <div class="fitem">
-                <span style="width:35%; display:inline-block;">Billing Address</span>
-                <input style="width:60%;" name="address_billing" id="address_billing" required="" class="easyui-textbox">
-            </div>
-            <div class="fitem">
-                <span style="width:35%; display:inline-block;">Contact Person</span>
-                <input style="width:60%;" name="contact_person" id="contact_person" required="" class="easyui-textbox">
-            </div>
-            <div class="fitem">
-                <span style="width:35%; display:inline-block;">Telepon</span>
-                <input style="width:60%;" name="telp" id="telp" class="easyui-textbox">
-            </div>
-            <div class="fitem">
-                <span style="width:35%; display:inline-block;">Billing Contact</span>
-                <input style="width:60%;" name="telp_billing" id="telp_billing" required="" class="easyui-textbox">
-            </div>
-            <div class="fitem">
-                <span style="width:35%; display:inline-block;">Email</span>
-                <input style="width:60%;" name="email" id="email" required="" class="easyui-emailbox">
-            </div>
-            <div class="fitem">
-                <span style="width:35%; display:inline-block;">Website</span>
-                <input style="width:60%;" name="website" id="website" class="easyui-textbox">
-            </div>
-            <div class="fitem">
-                <span style="width:35%; display:inline-block;">Currency</span>
-                <input style="width:60%;" name="currency" id="currency" required="" class="easyui-textbox">
-            </div>
-            <div class="fitem">
-                <span style="width:35%; display:inline-block;">Payment Term (Day)</span>
-                <input style="width:60%;" name="payment_term" id="payment_term" required="" class="easyui-numberbox">
-            </div>
-            <div class="fitem">
-                <span style="width:35%; display:inline-block;">Bank Account</span>
-                <input style="width:60%;" name="bank_account" id="bank_account" class="easyui-numberbox">
-            </div>
-            <div class="fitem">
-                <span style="width:35%; display:inline-block;">Bank Name</span>
-                <input style="width:60%;" name="bank_name" id="bank_name" class="easyui-textbox">
-            </div>
-            <div class="fitem">
-                <span style="width:35%; display:inline-block;">Status</span>
-                <select style="width:60%;" name="status" id="status" required="" panelHeight="auto" class="easyui-combobox">
-                    <option value="0">Active</option>
-                    <option value="1">Not Active</option>
-                </select>
+            <div style="float:left; width:50%;">
+                <div class="fitem">
+                    <span style="width:35%; display:inline-block;">Billing Contact</span>
+                    <input style="width:60%;" name="telp_billing" id="telp_billing" required="" class="easyui-textbox">
+                </div>
+                <div class="fitem">
+                    <span style="width:35%; display:inline-block;">Email</span>
+                    <input style="width:60%;" name="email" id="email" required="" class="easyui-emailbox">
+                </div>
+                <div class="fitem">
+                    <span style="width:35%; display:inline-block;">Website</span>
+                    <input style="width:60%;" name="website" id="website" class="easyui-textbox">
+                </div>
+                <div class="fitem">
+                    <span style="width:35%; display:inline-block;">Currency</span>
+                    <input style="width:60%;" name="currency" id="currency" required="" class="easyui-textbox">
+                </div>
+                <div class="fitem">
+                    <span style="width:35%; display:inline-block;">Payment Term (Day)</span>
+                    <input style="width:60%;" name="payment_term" id="payment_term" required="" class="easyui-numberbox">
+                </div>
+                <div class="fitem">
+                    <span style="width:35%; display:inline-block;">Bank Account</span>
+                    <input style="width:60%;" name="bank_account" id="bank_account" class="easyui-numberbox">
+                </div>
+                <div class="fitem">
+                    <span style="width:35%; display:inline-block;">Bank Name</span>
+                    <input style="width:60%;" name="bank_name" id="bank_name" class="easyui-textbox">
+                </div>
+                <div class="fitem">
+                    <span style="width:35%; display:inline-block;">Status</span>
+                    <select style="width:60%;" name="status" id="status" required="" panelHeight="auto" class="easyui-combobox">
+                        <option value="0">Active</option>
+                        <option value="1">Not Active</option>
+                    </select>
+                </div>
             </div>
         </fieldset>
     </form>
@@ -272,8 +276,8 @@
 
     $('#currency').combobox({
         url:'<?= base_url('master/currencies/reads'); ?>',
-        valueField:'symbol',
-        textField:'symbol',
+        valueField:'name',
+        textField:'name',
         prompt: 'Choose Currencies',
     });
 

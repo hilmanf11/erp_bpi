@@ -71,15 +71,15 @@
             <div class="fitem">
                 <span style="width:35%; display:inline-block;">Standard Cavity</span>
                 <select style="width:60%;" name="cavity_standard" id="cavity_standard" required="" panelHeight="auto" class="easyui-combobox">
-                    <option value="1">MOLD SINGLE</option>
-                    <option value="2">MOLD R/L</option>
+                    <option value="1">1</option>
+                    <option value="2">2</option>
                 </select>
             </div>
             <div class="fitem">
                 <span style="width:35%; display:inline-block;">Actual Cavity</span>
                 <select style="width:60%;" name="cavity_actual" id="cavity_actual" required="" panelHeight="auto" class="easyui-combobox">
-                    <option value="1">MOLD SINGLE</option>
-                    <option value="2">MOLD R/L</option>
+                    <option value="1">1</option>
+                    <option value="2">2</option>
                 </select>
             </div>
             <div class="fitem">
