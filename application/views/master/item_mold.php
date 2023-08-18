@@ -5,7 +5,7 @@
             <th rowspan="2" field="ck" checkbox="true"></th>
             <th rowspan="2" data-options="field:'id',width:150,align:'center'">Mold ID</th>
             <th rowspan="2" data-options="field:'item_fg_number',width:150,halign:'center'">Product No.</th>
-            <th rowspan="2" data-options="field:'item_fg_name',width:100,halign:'center'">Product Name</th>
+            <th rowspan="2" data-options="field:'item_fg_name',width:200,halign:'center'">Product Name</th>
             <th rowspan="2" data-options="field:'type',width:130,halign:'center'">Type</th>
             <th rowspan="2" data-options="field:'customer_name',width:200,halign:'center'">Customer Name</th>
             <th rowspan="2" data-options="field:'model',width:150,halign:'center'">Model</th>

@@ -52,7 +52,7 @@ class menu_loadings extends CI_Controller
             $this->db->from('menu_loadings a');
             $this->db->join('item_fg b', 'a.item_fg_id = b.id');
             $this->db->join('machines c', 'a.machine_id = c.id');
-            $this->db->join('item_mold d', 'a.item_fg_id = d.item_fg_id');
+            $this->db->join('item_mold d', 'a.item_fg_id = d.item_fg_id', 'left');
             $this->db->where('a.deleted', 0);
             if (@count($filters) > 0) {
                 foreach ($filters as $filter) {
@@ -225,7 +225,7 @@ class menu_loadings extends CI_Controller
         $this->db->from('menu_loadings a');
         $this->db->join('item_fg b', 'a.item_fg_id = b.id');
         $this->db->join('machines c', 'a.machine_id = c.id');
-        $this->db->join('item_mold d', 'a.item_fg_id = d.item_fg_id');
+        $this->db->join('item_mold d', 'a.item_fg_id = d.item_fg_id', 'left');
         $this->db->where('a.deleted', 0);
         $this->db->order_by('a.id', 'ASC');
         $records = $this->db->get()->result_array();

@@ -5,13 +5,13 @@
             <th field="ck" checkbox="true"></th>
             <th data-options="field:'item_fg_id',width:150,align:'center'">Product ID</th>
             <th data-options="field:'item_fg_number',width:150,halign:'center'">Product No.</th>
-            <th data-options="field:'item_fg_name',width:150,halign:'center'">Product Name</th>
+            <th data-options="field:'item_fg_name',width:200,halign:'center'">Product Name</th>
         </tr>
     </thead>
     <thead>
         <tr>
             <th rowspan="2" data-options="field:'machine_number',width:150,halign:'center'">Machine No.</th>
-            <th rowspan="2" data-options="field:'mold_model',width:100,halign:'center'">Mold Model</th>
+            <th rowspan="2" data-options="field:'mold_model',width:150,halign:'center'">Mold Model</th>
             <th rowspan="2" data-options="field:'mold_cavity_actual',width:100,halign:'center'">Cavity Actual</th>
             <th rowspan="2" data-options="field:'mold_cavity_standard',width:120,halign:'center'">Cavity Standard</th>
             <th rowspan="2" data-options="field:'shift',width:100,halign:'center'">Shift</th>
@@ -64,7 +64,7 @@
             </div>
             <div class="fitem">
                 <span style="width:35%; display:inline-block;">Cycle Time</span>
-                <input style="width:60%;" name="cycle_time" id="cycle_time" class="easyui-numberbox">
+                <input style="width:60%;" name="cycle_time" id="cycle_time" precision="2" class="easyui-numberbox">
             </div>
             <div class="fitem">
                 <span style="width:35%; display:inline-block;">Cycle Time Process</span>

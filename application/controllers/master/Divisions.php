@@ -72,7 +72,7 @@ class divisions extends CI_Controller
     public function autoid(){
         $sql = $this->db->query("SELECT max(id) as kode FROM divisions");
         $row = $sql->row();
-        $kode = substr($row->kode,-2);
+        $kode = @substr($row->kode,-2);
         $autoid ="DIV". sprintf("%02s", $kode + 1);
         echo $autoid;
     }
