@@ -246,6 +246,7 @@ class Customer_items extends CI_Controller
                 <th>Product No.</th>
                 <th>Product Customer</th>
                 <th>Currency</th>
+                <th>Price</th>
                 <th>Valid Date Until</th>
                 <th>Remarks</th>
             </tr>';
