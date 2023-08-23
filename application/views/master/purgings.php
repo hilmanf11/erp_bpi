@@ -36,7 +36,7 @@
             </div>
             <div class="fitem">
                 <span style="width:35%; display:inline-block;">Qty Maximum</span>
-                <input style="width:60%;" name="qty" id="qty" class="easyui-numberbox">
+                <input style="width:60%;" name="qty" id="qty" precision="2" class="easyui-numberbox">
             </div>
             <div class="fitem">
                 <span style="width:35%; display:inline-block;">Unit of Measure</span>
@@ -48,7 +48,7 @@
             </div> -->
             <div class="fitem">
                 <span style="width:35%; display:inline-block;">Total Purging</span>
-                <input style="width:60%;" name="total" id="total" class="easyui-numberbox" readonly>
+                <input style="width:60%;" name="total" id="total" precision="2" class="easyui-numberbox" readonly>
             </div>
             <div class="fitem">
                 <span style="width:35%; display:inline-block;">Status</span>
@@ -91,7 +91,7 @@
         $('#frm_insert').form('clear');
 
         $('#status').combobox('setValue', '0');
-        $('#uom').combobox('setValue', 'GR');
+        $('#uom').combobox('setValue', 'KG');
 
     }
     //EDIT DATA
@@ -204,7 +204,7 @@
             $('#qty').numberbox({
                 onChange: function(){
                     var qty = $('#qty').numberbox('getValue');
-                    $('#total').numberbox('setValue', machine.volume*qty);
+                    $('#total').numberbox('setValue', (machine.volume*qty)/1000);
                 }
             });
         }

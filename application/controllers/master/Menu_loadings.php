@@ -12,7 +12,7 @@ class Menu_loadings extends CI_Controller
         $this->load->library('session');
         $this->load->model('crud');
         //VALIDASI FORM
-        // $this->form_validation->set_rules('number', 'Product No.', 'required|min_length[1]|max_length[20]|is_unique[menu_loadings.number]');
+        // $this->form_validation->set_rules('item_mold_id', 'Mold Model', 'required|min_length[1]|max_length[20]|is_unique[menu_loadings.number]');
     }
     //HALAMAN UTAMA
     public function index()
@@ -52,7 +52,7 @@ class Menu_loadings extends CI_Controller
             $this->db->from('menu_loadings a');
             $this->db->join('item_fg b', 'a.item_fg_id = b.id');
             $this->db->join('machines c', 'a.machine_id = c.id');
-            $this->db->join('item_mold d', 'a.item_fg_id = d.item_fg_id', 'left');
+            $this->db->join('item_mold d', 'a.item_mold_id = d.id');
             $this->db->where('a.deleted', 0);
             if (@count($filters) > 0) {
                 foreach ($filters as $filter) {
@@ -65,11 +65,11 @@ class Menu_loadings extends CI_Controller
                     }elseif($filter->field == "machine_number"){
                         $this->db->like("c.id", $filter->value);
                     }elseif($filter->field == "mold_model"){
-                        $this->db->like("d.item_fg_id", $filter->value);
+                        $this->db->like("d.id", $filter->value);
                     }elseif($filter->field == "mold_cavity_actual"){
-                        $this->db->like("d.item_fg_id", $filter->value);
+                        $this->db->like("d.id", $filter->value);
                     }elseif($filter->field == "mold_cavity_standard"){
-                        $this->db->like("d.item_fg_id", $filter->value);
+                        $this->db->like("d.id", $filter->value);
                     }else{
                         $this->db->like("a.".$filter->field, $filter->value);
                     }
@@ -134,15 +134,16 @@ class Menu_loadings extends CI_Controller
             $datas[] = array(
                 //excel
                 'item_fg_id' => $data->val($i, 2),
-                'machine_id' => $data->val($i, 3),
-                'shift' => $data->val($i, 4),
-                'shift_hour' => $data->val($i, 5),
-                'productcivity' => $data->val($i, 6),
-                'cycle_time' => $data->val($i, 7),
-                'cycle_time_process' => $data->val($i, 8),
-                'manpower' => $data->val($i, 9),
-                'runner' => $data->val($i, 10),
-                'priority' => $data->val($i, 11)
+                'item_mold_id' => $data->val($i, 3),
+                'machine_id' => $data->val($i, 4),
+                'shift' => $data->val($i, 5),
+                'shift_hour' => $data->val($i, 6),
+                'productcivity' => $data->val($i, 7),
+                'cycle_time' => $data->val($i, 8),
+                'cycle_time_process' => $data->val($i, 9),
+                'manpower' => $data->val($i, 10),
+                'runner' => $data->val($i, 11),
+                'priority' => $data->val($i, 12)
             );
         }
         $datas['total'] = count($datas);
@@ -183,16 +184,20 @@ class Menu_loadings extends CI_Controller
 
             //Cek Process Number          //table       //field        //field excel
             $item_fg = $this->crud->read('item_fg', [], ["id" => $data['item_fg_id']]);
+            $item_mold = $this->crud->read('item_mold', [], ["id" => $data['item_mold_id']]);
             $machine = $this->crud->read('machines', [], ["id" => $data['machine_id']]);
 
             if (empty($item_fg->number)) {
                 echo json_encode(array("title" => "Not Found", "message" => " Product No. " . $data['item_fg_id'] . " Not Found", "theme" => "error"));
+            } elseif (empty($item_mold->item_fg_id)) {
+                echo json_encode(array("title" => "Not Found", "message" => " Mold Model " . $data['item_mold_id'] . " Not Found", "theme" => "error"));
             } elseif (empty($machine->number)) {
                 echo json_encode(array("title" => "Not Found", "message" => " Machine No. " . $data['machine_id'] . " Not Found", "theme" => "error"));
             } else {
                 $dataFinal = array(
                     //field
                     "item_fg_id" => $data['item_fg_id'],
+                    "item_mold_id" => $data['item_mold_id'],
                     "machine_id" => $data['machine_id'],
                     "shift" => $data['shift'],
                     "shift_hour" => $data['shift_hour'],
@@ -225,7 +230,7 @@ class Menu_loadings extends CI_Controller
         $this->db->from('menu_loadings a');
         $this->db->join('item_fg b', 'a.item_fg_id = b.id');
         $this->db->join('machines c', 'a.machine_id = c.id');
-        $this->db->join('item_mold d', 'a.item_fg_id = d.item_fg_id', 'left');
+        $this->db->join('item_mold d', 'a.item_mold_id = d.id');
         $this->db->where('a.deleted', 0);
         $this->db->order_by('a.id', 'ASC');
         $records = $this->db->get()->result_array();

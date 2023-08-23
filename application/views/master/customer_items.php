@@ -1,27 +1,15 @@
 <!-- TABLE DATAGRID -->
 <table id="dg" class="easyui-datagrid" style="width:99.5%;" toolbar="#toolbar">
-    <thead frozen="true">
-        <tr>
-            <th field="ck" checkbox="true"></th>
-            <th data-options="field:'item_fg_id',width:150,align:'center'">Product ID</th>
-            <th data-options="field:'item_fg_number',width:150,halign:'center'">Product No.</th>
-            <th data-options="field:'item_fg_name',width:200,halign:'center'">Product Name</th>
-        </tr>
-    </thead>
     <thead>
         <tr>
-            <th rowspan="2" data-options="field:'machine_number',width:150,halign:'center'">Machine No.</th>
-            <th rowspan="2" data-options="field:'mold_model',width:150,halign:'center'">Mold Model</th>
-            <th rowspan="2" data-options="field:'mold_cavity_actual',width:100,halign:'center'">Cavity Actual</th>
-            <th rowspan="2" data-options="field:'mold_cavity_standard',width:120,halign:'center'">Cavity Standard</th>
-            <th rowspan="2" data-options="field:'shift',width:100,halign:'center'">Shift</th>
-            <th rowspan="2" data-options="field:'shift_hour',width:100,halign:'center'">Hour/Shift</th>
-            <th rowspan="2" data-options="field:'productcivity',width:100,halign:'center'">Productivity <br>Factor (%)</th>
-            <th rowspan="2" data-options="field:'cycle_time',width:90,halign:'center'">Cycle Time <br>(Second)</th>
-            <th rowspan="2" data-options="field:'cycle_time_process',width:150,halign:'center'">Cycle Time Second <br>Process</th>
-            <th rowspan="2" data-options="field:'manpower',width:100,halign:'center'">Man Power</th>
-            <th rowspan="2" data-options="field:'runner',width:110,halign:'center'">Runner/Shoot</th>
-            <th rowspan="2" data-options="field:'priority',width:110,halign:'center'">Priority</th>
+            <th rowspan="2" field="ck" checkbox="true"></th>
+            <th rowspan="2" data-options="field:'customer_name',width:200,align:'center'">Customer Name</th>
+            <th rowspan="2" data-options="field:'item_fg_number',width:150,halign:'center'">Product No.</th>
+            <th rowspan="2" data-options="field:'item_fg_customer',width:150,halign:'center'">Product Customer</th>
+            <th rowspan="2" data-options="field:'customer_currency',width:100,halign:'center'">Currency</th>
+            <th rowspan="2" data-options="field:'price',width:150,halign:'center'">Price</th>
+            <th rowspan="2" data-options="field:'valid_date',width:150,halign:'center'">Valid Date Until</th>
+            <th rowspan="2" data-options="field:'remark',width:150,halign:'center'">Remarks</th>
             <th colspan="2" data-options="field:'',width:100,halign:'center'"> Created</th>
             <th colspan="2" data-options="field:'',width:100,halign:'center'"> Updated</th>
         </tr>
@@ -38,53 +26,29 @@
     <?= $button ?>
 </div>
 <!-- DIALOG SAVE AND UPDATE -->
-<div id="dlg_insert" class="easyui-dialog" title="Add New" data-options="closed: true,modal:true" style="width: 400px; padding:10px; top: 20px;">
-    <form id="frm_insert" method="post" novalidate enctype="multipart/form-data">
+<div id="dlg_insert" class="easyui-dialog" title="Add New" data-options="closed: true,modal:true" style="width: 500px; padding:10px; top: 20px;">
+    <form id="frm_insert" method="post" novalidate>
         <fieldset style="width:100%; border:1px solid #d0d0d0; margin-bottom: 10px; border-radius:4px; float: left;">
             <legend><b>Form Data</b></legend>
+            <div class="fitem">
+                <span style="width:35%; display:inline-block;">Customer Name</span>
+                <input style="width:60%;" name="customer_id" id="customer_id" required="" class="easyui-textbox">
+            </div>
             <div class="fitem">
                 <span style="width:35%; display:inline-block;">Product No.</span>
                 <input style="width:60%;" name="item_fg_id" id="item_fg_id" required="" class="easyui-combobox">
             </div>
             <div class="fitem">
-                <span style="width:35%; display:inline-block;">Mold Model</span>
-                <input style="width:60%;" name="item_mold_id" id="item_mold_id" required="" class="easyui-combobox">
+                <span style="width:35%; display:inline-block;">Price</span>
+                <input style="width:60%;" name="price" id="price" precision="2" class="easyui-numberbox">
             </div>
             <div class="fitem">
-                <span style="width:35%; display:inline-block;">Machine No.</span>
-                <input style="width:60%;" name="machine_id" id="machine_id" required="" class="easyui-combobox">
+                <span style="width:35%; display:inline-block;">Valid Date</span>
+                <input style="width:60%;" name="valid_date" id="valid_date" data-options="formatter:myformatter,parser:myparser" class="easyui-datebox">
             </div>
             <div class="fitem">
-                <span style="width:35%; display:inline-block;">Shift</span>
-                <input style="width:60%;" name="shift" id="shift" class="easyui-numberbox">
-            </div>
-            <div class="fitem">
-                <span style="width:35%; display:inline-block;">Shift/Hour</span>
-                <input style="width:60%;" name="shift_hour" id="shift_hour" class="easyui-numberbox">
-            </div>
-            <div class="fitem">
-                <span style="width:35%; display:inline-block;">Productivity Factor</span>
-                <input style="width:60%;" name="productcivity" id="productcivity" class="easyui-numberbox">
-            </div>
-            <div class="fitem">
-                <span style="width:35%; display:inline-block;">Cycle Time</span>
-                <input style="width:60%;" name="cycle_time" id="cycle_time" precision="2" class="easyui-numberbox">
-            </div>
-            <div class="fitem">
-                <span style="width:35%; display:inline-block;">Cycle Time Process</span>
-                <input style="width:60%;" name="cycle_time_process" id="cycle_time_process" precision="2" class="easyui-numberbox">
-            </div>
-            <div class="fitem">
-                <span style="width:35%; display:inline-block;">Man Power</span>
-                <input style="width:30%;" name="manpower" id="manpower" class="easyui-numberbox">
-            </div>
-            <div class="fitem">
-                <span style="width:35%; display:inline-block;">Runner/Shoot</span>
-                <input style="width:30%;" name="runner" id="runner" precision="5" class="easyui-numberbox">
-            </div>
-            <div class="fitem">
-                <span style="width:35%; display:inline-block;">Priority</span>
-                <input style="width:30%;" name="priority" id="priority" class="easyui-numberbox">
+                <span style="width:35%; display:inline-block;">Remarks</span>
+                <input style="width:60%;" name="remark" id="remark" class="easyui-textbox">
             </div>
         </fieldset>
     </form>
@@ -111,13 +75,16 @@
 </div>
 
 <!-- PDF -->
-<iframe id="printout" src="<?= base_url('master/menu_loadings/print') ?>" style="width: 100%;" hidden></iframe>
+<iframe id="printout" src="<?= base_url('master/customer_items/print') ?>" style="width: 100%;" hidden></iframe>
 <script>
     //ADD DATA
     function add() {
         $('#dlg_insert').dialog('open');
-        url_save = '<?= base_url('master/menu_loadings/create') ?>';
+        url_save = '<?= base_url('master/customer_items/create') ?>';
         $('#frm_insert').form('clear');
+        
+        // $('#currency').combobox('setValue', 'IDR');
+        // $('#currency').combobox('getValue');
     }
     //EDIT DATA
     function update() {
@@ -125,7 +92,7 @@
         if (row) {
             $('#dlg_insert').dialog('open');
             $('#frm_insert').form('load', row);
-            url_save = '<?= base_url('master/menu_loadings/update') ?>?id=' + btoa(row.id);
+            url_save = '<?= base_url('master/customer_items/update') ?>?id=' + btoa(row.id);
         } else {
             toastr.warning("Please select one of the data in the table first!", "Information");
         }
@@ -140,7 +107,7 @@
                         var row = rows[i];
                         $.ajax({
                             method: 'post',
-                            url: '<?= base_url('master/menu_loadings/delete') ?>',
+                            url: '<?= base_url('master/customer_items/delete') ?>',
                             data: {
                                 id: row.id
                             },
@@ -168,7 +135,7 @@
     }
     // DOWNLOAD
     function download_excel() {
-        window.location.assign('<?= base_url('template/tmp_menu_loadings.xls') ?>');
+        window.location.assign('<?= base_url('template/tmp_customer_items.xls') ?>');
     }
     //PRINT PDF
     function pdf() {
@@ -176,7 +143,7 @@
     }
     //PRINT EXCEL
     function excel() {
-        window.location.assign('<?= base_url('master/menu_loadings/print/excel') ?>');
+        window.location.assign('<?= base_url('master/customer_items/print/excel') ?>');
     }
     //RELOAD
     function reload() {
@@ -185,7 +152,7 @@
     $(function() {
         //SETTING DATAGRID EASYUI
         $('#dg').datagrid({
-            url: '<?= base_url('master/menu_loadings/datatables') ?>',
+            url: '<?= base_url('master/customer_items/datatables') ?>',
             pagination: true,
             clientPaging: false,
             remoteFilter: true,
@@ -219,41 +186,53 @@
         });
     });
 
+    $('#customer_id').combobox({
+        url:'<?= base_url('master/customers/reads'); ?>',
+        valueField:'id',
+        textField:'name',
+        prompt: 'Choose Customer',
+    });
+
     $('#item_fg_id').combobox({
-        url:'<?= base_url('master/item_fg/reads/'); ?>',
+        url:'<?= base_url('master/item_fg/reads'); ?>',
         valueField:'id',
         textField:'number',
         prompt: 'Choose Product No.',
-        onSelect: function(item_fg){
-            $('#item_mold_id').combobox({
-                url:'<?= base_url('master/item_mold/reads/'); ?>' + btoa(item_fg.id),
-                valueField:'id',
-                textField:'model',
-                prompt: 'Choose Mold Model',
-            });
-        }
     });
 
-    $('#machine_id').combobox({
-        url:'<?= base_url('master/machines/reads/'); ?>',
-        valueField:'id',
-        textField:'number',
-        prompt: 'Choose Machine No.',
-    });
+    // FORMAT tahun-bulan-tanggal
+    function myformatter(date){
+        var y = date.getFullYear();
+        var m = date.getMonth()+1;
+        var d = date.getDate();
+        return y+'-'+(m<10?('0'+m):m)+'-'+(d<10?('0'+d):d);
+    }
+    function myparser(s){
+        if (!s) return new Date();
+        var ss = (s.split('-'));
+        var y = parseInt(ss[0],10);
+        var m = parseInt(ss[1],10);
+        var d = parseInt(ss[2],10);
+        if (!isNaN(y) && !isNaN(m) && !isNaN(d)){
+            return new Date(y,m-1,d);
+        } else {
+            return new Date();
+        }
+    }
 
     // UPLOAD DATA
     $('#dlg_upload').dialog({
             buttons: [{
                 text: 'List Failed',
                 handler: function() {
-                    window.open('<?= base_url('master/menu_loadings/uploadDownloadFailed') ?>', '_blank');
+                    window.open('<?= base_url('master/customer_items/uploadDownloadFailed') ?>', '_blank');
                 }
             }, {
                 text: 'Upload',
                 iconCls: 'icon-ok',
                 handler: function() {
                     $('#frm_upload').form('submit', {
-                        url: '<?= base_url('master/menu_loadings/upload') ?>',
+                        url: '<?= base_url('master/customer_items/upload') ?>',
                         onSubmit: function() {
                             if ($(this).form('validate') == false) {
                                 return $(this).form('validate');
@@ -268,7 +247,7 @@
                             $.messager.progress('close');
                             //Clear File
                             $.ajax({
-                                url: "<?= base_url('master/menu_loadings/uploadclearFailed') ?>"
+                                url: "<?= base_url('master/customer_items/uploadclearFailed') ?>"
                             });
                             var json = eval('(' + result + ')');
                             requestData(json.total, json);
@@ -283,7 +262,7 @@
                                     $.ajax({
                                         type: "POST",
                                         async: true,
-                                        url: "<?= base_url('master/menu_loadings/uploadCreate') ?>",
+                                        url: "<?= base_url('master/customer_items/uploadCreate') ?>",
                                         data: {
                                             "data": json[number - 1]
                                         },
@@ -301,7 +280,7 @@
                                                 $.ajax({
                                                     type: "POST",
                                                     async: true,
-                                                    url: "<?= base_url('master/menu_loadings/uploadcreateFailed') ?>",
+                                                    url: "<?= base_url('master/customer_items/uploadcreateFailed') ?>",
                                                     data: {
                                                         data: json[number - 1],
                                                         message: result.message

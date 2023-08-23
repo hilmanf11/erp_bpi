@@ -31,7 +31,7 @@ class item_fg extends CI_Controller
     public function reads()
     {
         $post = isset($_POST['q']) ? $_POST['q'] : "";
-        $send = $this->crud->reads('item_fg', ["name" => $post]);
+        $send = $this->crud->reads('item_fg', ["number" => $post]);
         echo json_encode($send);
     }
     
