@@ -174,8 +174,8 @@ class Customer_items extends CI_Controller
             $data = $this->input->post('data');
 
             //Cek Process Number          //table       //field        //field excel
-            $customer = $this->crud->read('customers', [], ["id" => $data['customer_id']]);
-            $item_fg = $this->crud->read('item_fg', [], ["id" => $data['item_fg_id']]);
+            $customer = $this->crud->read('customers', [], ["name" => $data['customer_id']]);
+            $item_fg = $this->crud->read('item_fg', [], ["number" => $data['item_fg_id']]);
 
             if (!empty($customer->name)) {
                 echo json_encode(array("title" => "Duplicated", "message" => " Customer " . $data['customer_id'] . " is Duplicate Data", "theme" => "error"));
