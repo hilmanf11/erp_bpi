@@ -35,12 +35,15 @@ class Bom extends CI_Controller
         $send = $this->crud->reads('bom', ["item_fg_id" => $post]);
         echo json_encode($send);
     }
-    
+
     //GET DATATABLES
     public function datatables()
     {
         if ($this->input->post()) {
-            $filters = json_decode($this->input->post('filterRules'));
+            $get = $this->input->get();
+            $filter_item_fg_id = @base64_decode($get['filter_item_fg_id']);
+            $filter_item_rm_id = @base64_decode($get['filter_item_rm_id']);
+
             $page = $this->input->post('page');
             $rows = $this->input->post('rows');
             //Pagination 1-10
@@ -49,37 +52,13 @@ class Bom extends CI_Controller
             $offset = ($page - 1) * $rows;
             $result = array();
             //Select Query
-            $this->db->select('a.*, b.number as item_fg_number, b.name as item_fg_name, c.number as item_rm_number, c.name as item_rm_name, c.uom as uom, c.item_family_id as product_family, d.name as product_family_name');
+            $this->db->select('b.id as item_fg_id, b.number as item_fg_number, b.name as item_fg_name, a.created_by, a.created_date, a.updated_by, a.updated_date');
             $this->db->from('bom a');
             $this->db->join('item_fg b', 'a.item_fg_id = b.id');
-            $this->db->join('item_rm c', 'a.item_rm_id = c.id');
-            $this->db->join('item_familys d', 'c.item_family_id = d.id');
-            $this->db->where('a.deleted', 0);
-            if (@count($filters) > 0) {
-                foreach ($filters as $filter) {
-                    if($filter->field == "item_fg_id"){
-                        $this->db->like("b.id", $filter->value);
-                    }elseif($filter->field == "item_fg_number"){
-                        $this->db->like("b.id", $filter->value);
-                    }elseif($filter->field == "item_fg_name"){
-                        $this->db->like("b.id", $filter->value);
-                    }elseif($filter->field == "item_rm_id"){
-                        $this->db->like("c.id", $filter->value);
-                    }elseif($filter->field == "item_rm_number"){
-                        $this->db->like("c.id", $filter->value);
-                    }elseif($filter->field == "item_rm_name"){
-                        $this->db->like("c.id", $filter->value);
-                    }elseif($filter->field == "product_family_name"){
-                        $this->db->like("c.id", $filter->value);
-                    }elseif($filter->field == "uom"){
-                        $this->db->like("c.id", $filter->value);
-                    }else{
-                        $this->db->like("a.".$filter->field, $filter->value);
-                    }
-                }
-            }
-            $this->db->group_by('a.id');
-            $this->db->order_by('a.id', 'ASC');
+            $this->db->like('a.item_fg_id', $filter_item_fg_id);
+            $this->db->like('a.item_rm_id', $filter_item_rm_id);
+            $this->db->group_by('b.number');
+            $this->db->order_by('b.number', 'ASC');
             //Total Data
             $totalRows = $this->db->count_all_results('', false);
             //Limit 1 - 10
@@ -92,33 +71,65 @@ class Bom extends CI_Controller
             echo json_encode($result);
         }
     }
+
+    //GET DATATABLES DETAILS
+    public function datatableDetails()
+    {
+        if ($this->input->get()) {
+            $number = base64_decode($this->input->get('number'));
+            $filter_item_rm_id = base64_decode($this->input->get('filter_item_rm_id'));
+
+            $this->db->select('a.*, b.number as item_fg_number, b.name as item_fg_name, c.number as item_rm_number, c.name as item_rm_name, c.uom as uom, c.item_family_id as product_family, d.name as product_family_name');
+            $this->db->from('bom a');
+            $this->db->join('item_fg b', 'a.item_fg_id = b.id');
+            $this->db->join('item_rm c', 'a.item_rm_id = c.id');
+            $this->db->join('item_familys d', 'c.item_family_id = d.id');
+            $this->db->where('b.number', $number);
+            $this->db->like('a.item_rm_id', $filter_item_rm_id);
+            $this->db->group_by('a.id');
+            $this->db->order_by('a.id', 'ASC');
+            $records = $this->db->get()->result_array();
+
+            echo json_encode($records);
+        }
+    }
+
+    public function datatableUpdates()
+    {
+        if ($this->input->get()) {
+            $item_fg_id = base64_decode($this->input->get('item_fg_id'));
+
+            $this->db->select('a.*, c.number as item_rm_number, c.name as item_rm_name, c.uom, d.name as item_family_name');
+            $this->db->from('bom a');
+            $this->db->join('item_fg b', 'a.item_fg_id = b.id');
+            $this->db->join('item_rm c', 'a.item_rm_id = c.id');
+            $this->db->join('item_familys d', 'c.item_family_id = d.id');
+            $this->db->where('a.item_fg_id', $item_fg_id);
+            $this->db->order_by('a.id', 'ASC');
+            $records = $this->db->get()->result_array();
+
+            echo json_encode($records);
+        }
+    }
+
     //CREATE DATA
     public function create()
     {
         if ($this->input->post()) {
-            if ($this->form_validation->run() == TRUE) {
-                $post   = $this->input->post();
-                $send   = $this->crud->create('bom', $post);
-                echo $send;
-            } else {
-                show_error(validation_errors());
-            }
-        } else {
-            show_error("Cannot Process your request");
-        }
-    }
-    //UPDATE DATA
-    public function update()
-    {
-        if ($this->input->post()) {
-            $id   = base64_decode($this->input->get('id'));
             $post = $this->input->post();
-            $send = $this->crud->update('bom', ["id" => $id], $post);
+
+            $bom = $this->crud->read("bom", [], ["item_fg_id" => $post['item_fg_id'], "item_rm_id" => $post['item_rm_id']]);
+            if (@$bom->item_fg_id != "") {
+                $send = $this->crud->update('bom', ["item_fg_id" => $post['item_fg_id'], "item_rm_id" => $post['item_rm_id']], $post);
+            } else {
+                $send = $this->crud->create('bom', $post);
+            }
             echo $send;
         } else {
             show_error("Cannot Process your request");
         }
     }
+
     //DELETE DATA
     public function delete()
     {
@@ -126,6 +137,7 @@ class Bom extends CI_Controller
         $send = $this->crud->delete('bom', $data);
         echo $send;
     }
+
     //UPLOAD DATA
     public function upload()
     {
@@ -152,10 +164,12 @@ class Bom extends CI_Controller
         echo json_encode($datas);
         unlink($_FILES['file_upload']['name']);
     }
+
     public function uploadclearFailed()
     {
         @unlink('excel/failed/bom.txt');
     }
+
     public function uploadcreateFailed()
     {
         if ($this->input->post()) {
@@ -165,6 +179,7 @@ class Bom extends CI_Controller
             fclose($textFailed);
         }
     }
+
     //UPLOAD DOWNLOAD FAILED
     public function uploadDownloadFailed()
     {
@@ -178,6 +193,7 @@ class Bom extends CI_Controller
         header("Content-Type: text/plain");
         @readfile($file);
     }
+
     //UPLOAD CREATE DATA
     public function uploadcreate()
     {
@@ -206,6 +222,7 @@ class Bom extends CI_Controller
             }
         }
     }
+
     //PRINT & EXCEL DATA
     public function print($option = "")
     {
@@ -214,6 +231,11 @@ class Bom extends CI_Controller
             header("Content-type: application/vnd-ms-excel");
             header("Content-Disposition: attachment; filename=bom_$format.xls");
         }
+
+        $get = $this->input->get();
+        $filter_item_fg_id = @base64_decode($get['filter_item_fg_id']);
+        $filter_item_rm_id = @base64_decode($get['filter_item_rm_id']);
+
         //Config
         $this->db->select('*');
         $this->db->from('config');
@@ -224,7 +246,8 @@ class Bom extends CI_Controller
         $this->db->join('item_fg b', 'a.item_fg_id = b.id');
         $this->db->join('item_rm c', 'a.item_rm_id = c.id');
         $this->db->join('item_familys d', 'c.item_family_id = d.id');
-        $this->db->where('a.deleted', 0);
+        $this->db->like('a.item_fg_id', $filter_item_fg_id);
+        $this->db->like('a.item_rm_id', $filter_item_rm_id);
         $this->db->order_by('a.id', 'ASC');
         $records = $this->db->get()->result_array();
         $html = '<html><head><title>Print Data</title></head><style>body {font-family: Arial, Helvetica, sans-serif;}#bom {border-collapse: collapse;width: 100%;font-size: 12px;}#bom td, #bom th {border: 1px solid #ddd;padding: 2px;}#bom tr:nth-child(even){background-color: #f2f2f2;}#bom tr:hover {background-color: #ddd;}#bom th {padding-top: 2px;padding-bottom: 2px;text-align: left;color: black;}</style><body>
@@ -255,10 +278,10 @@ class Bom extends CI_Controller
             <tr>
                 <th width="20">No</th>
                 <th>Product ID</th>
-                <th>Product No.</th>
+                <th>Product No</th>
                 <th>Product Name</th>
                 <th>Part ID</th>
-                <th>Part No.</th>
+                <th>Part No</th>
                 <th>Part Name</th>
                 <th>Type of Product</th>
                 <th>% Recycle Part</th>

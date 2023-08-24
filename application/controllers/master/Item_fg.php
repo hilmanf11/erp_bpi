@@ -31,10 +31,10 @@ class item_fg extends CI_Controller
     public function reads()
     {
         $post = isset($_POST['q']) ? $_POST['q'] : "";
-        $send = $this->crud->reads('item_fg', ["number" => $post]);
+        $send = $this->crud->query("SELECT * FROM item_fg WHERE number like '%$post%' or number_customer like '%$post%' or name like '%$post%'");
         echo json_encode($send);
     }
-    
+
     //GET DATATABLES
     public function datatables()
     {
@@ -55,12 +55,12 @@ class item_fg extends CI_Controller
             $this->db->where('a.deleted', 0);
             if (@count($filters) > 0) {
                 foreach ($filters as $filter) {
-                    if($filter->field == "division_name"){
+                    if ($filter->field == "division_name") {
                         $this->db->like("b.id", $filter->value);
-                    }elseif($filter->field == "total_mold"){
+                    } elseif ($filter->field == "total_mold") {
                         $this->db->like("count(c.item_fg_id)", $filter->value);
-                    }else{
-                        $this->db->like("a.".$filter->field, $filter->value);
+                    } else {
+                        $this->db->like("a." . $filter->field, $filter->value);
                     }
                 }
             }
@@ -79,18 +79,19 @@ class item_fg extends CI_Controller
         }
     }
     //AUTO ID
-    public function autoid($division){
+    public function autoid($division)
+    {
         $month = date('my');
-        $combine = "FG-".$division;
-        $format = "BPI".$combine.$month;
+        $combine = "FG-" . $division;
+        $format = "BPI" . $combine . $month;
         $sql = $this->db->query("SELECT max(id) as kode FROM item_fg WHERE id LIKE '%$format%'");
         $row = $sql->row();
-        if ($row->kode == ""){
+        if ($row->kode == "") {
             $kode = 0;
         } else {
-            $kode = substr($row->kode,-4);
+            $kode = substr($row->kode, -4);
         }
-        $autoid =$format. sprintf("%04s", $kode + 1);
+        $autoid = $format . sprintf("%04s", $kode + 1);
         echo $autoid;
     }
     //CREATE DATA
@@ -128,7 +129,7 @@ class item_fg extends CI_Controller
     public function delete()
     {
         $data = $this->input->post();
-                                //Table //Like //Field       //Where
+        //Table //Like //Field       //Where
         $file = $this->crud->read('item_fg', [], ["id" => $data['id']]);
         $send = $this->crud->delete('item_fg', $data);
         $attachment = @$file->attachment;
@@ -139,7 +140,7 @@ class item_fg extends CI_Controller
         // } else {
         //     echo "Path file tidak valid.";
         // }
-        if (@unlink("$attachment")){
+        if (@unlink("$attachment")) {
             echo ("Success deleting $attachment");
         } else {
             echo ("Error deleting $attachment");
@@ -222,16 +223,16 @@ class item_fg extends CI_Controller
 
             //AUTOID
             $month = date('my');
-            $combine = "FG-".@$division->number;
-            $format = "BPI".$combine.$month;
+            $combine = "FG-" . @$division->number;
+            $format = "BPI" . $combine . $month;
             $sql = $this->db->query("SELECT max(id) as kode FROM item_fg WHERE id LIKE '%$format%'");
             $row = $sql->row();
-            if ($row->kode == ""){
+            if ($row->kode == "") {
                 $kode = 0;
             } else {
-                $kode = substr($row->kode,-4);
+                $kode = substr($row->kode, -4);
             }
-            $autoid =$format. sprintf("%04s", $kode + 1);
+            $autoid = $format . sprintf("%04s", $kode + 1);
 
             if (empty($division->number)) {
                 echo json_encode(array("title" => "Not Found", "message" => " Division " . $data['division_id'] . " Not Found", "theme" => "error"));

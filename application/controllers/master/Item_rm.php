@@ -31,10 +31,10 @@ class Item_rm extends CI_Controller
     public function reads()
     {
         $post = isset($_POST['q']) ? $_POST['q'] : "";
-        $send = $this->crud->reads('item_rm', ["name" => $post]);
+        $send = $this->crud->query("SELECT a.*, b.name as item_family_name FROM item_rm a JOIN item_familys b ON a.item_family_id = b.id WHERE a.number like '%$post%' or a.name like '$post'");
         echo json_encode($send);
     }
-    
+
     //GET DATATABLES
     public function datatables()
     {
@@ -55,12 +55,12 @@ class Item_rm extends CI_Controller
             $this->db->where('a.deleted', 0);
             if (@count($filters) > 0) {
                 foreach ($filters as $filter) {
-                    if($filter->field == "item_category_name"){
+                    if ($filter->field == "item_category_name") {
                         $this->db->like("b.id", $filter->value);
-                    }elseif($filter->field == "item_family_name"){
+                    } elseif ($filter->field == "item_family_name") {
                         $this->db->like("c.id", $filter->value);
-                    }else{
-                        $this->db->like("a.".$filter->field, $filter->value);
+                    } else {
+                        $this->db->like("a." . $filter->field, $filter->value);
                     }
                 }
             }
@@ -78,18 +78,19 @@ class Item_rm extends CI_Controller
         }
     }
     //AUTO ID
-    public function autoid($category,$family){
+    public function autoid($category, $family)
+    {
         $month = date('my');
-        $combine = $category."-".$family;
-        $format = "BPI".$combine.$month;
+        $combine = $category . "-" . $family;
+        $format = "BPI" . $combine . $month;
         $sql = $this->db->query("SELECT max(id) as kode FROM item_rm WHERE id LIKE '%$format%'");
         $row = $sql->row();
-        if ($row->kode == ""){
+        if ($row->kode == "") {
             $kode = 0;
         } else {
-            $kode = substr($row->kode,-4);
+            $kode = substr($row->kode, -4);
         }
-        $autoid =$format. sprintf("%04s", $kode + 1);
+        $autoid = $format . sprintf("%04s", $kode + 1);
         echo $autoid;
     }
     //CREATE DATA
@@ -193,16 +194,16 @@ class Item_rm extends CI_Controller
 
             //AUTOID
             $month = date('my');
-            $combine = @$category->number."-".@$product_family->number;
-            $format = "BPI".$combine.$month;
+            $combine = @$category->number . "-" . @$product_family->number;
+            $format = "BPI" . $combine . $month;
             $sql = $this->db->query("SELECT max(id) as kode FROM item_rm WHERE id LIKE '%$format%'");
             $row = $sql->row();
-            if ($row->kode == ""){
+            if ($row->kode == "") {
                 $kode = 0;
             } else {
-                $kode = substr($row->kode,-4);
+                $kode = substr($row->kode, -4);
             }
-            $autoid =$format. sprintf("%04s", $kode + 1);
+            $autoid = $format . sprintf("%04s", $kode + 1);
 
             if (empty($category->number)) {
                 echo json_encode(array("title" => "Not Found", "message" => "Category " . $data['item_category_id'] . " Not Found", "theme" => "error"));

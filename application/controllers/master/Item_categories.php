@@ -1,6 +1,7 @@
 <?php
 date_default_timezone_set("Asia/Bangkok");
 defined('BASEPATH') or exit('No direct script access allowed');
+
 class Item_categories extends CI_Controller
 {
     public function __construct()
@@ -78,11 +79,12 @@ class Item_categories extends CI_Controller
         }
     }
     //AUTO ID
-    public function autoid(){
+    public function autoid()
+    {
         $sql = $this->db->query("SELECT max(id) as kode FROM item_categories");
         $row = $sql->row();
-        $kode = substr($row->kode,1);
-        $autoid ="C". sprintf("%02s", $kode + 1);
+        $kode = substr($row->kode, 1);
+        $autoid = "C" . sprintf("%02s", $kode + 1);
         echo $autoid;
     }
     //CREATE DATA
