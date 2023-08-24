@@ -30,8 +30,19 @@ class Home extends CI_Controller
             $this->db->order_by('b.name', 'ASC');
             $logins = $this->db->get()->result_object();
 
+            $config = $this->crud->read('config');
+            $profiles = $this->crud->read("users", [], ["username" => $username]);
+
+            if ($profiles->avatar != "") {
+                $profile_img = $profiles->avatar;
+            } else {
+                $profile_img = base_url('assets/image/users/default.png');
+            }
+
             $data['users'] = $logins;
-            $data['config'] = $this->crud->read('config');
+            $data['profile'] = $profiles;
+            $data['profile_img'] = $profile_img;
+            $data['config'] = $config;
 
             $this->load->view('template/header');
             $this->load->view('home', $data);

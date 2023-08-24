@@ -1,7 +1,7 @@
 <body class="easyui-layout">
 
 	<!-- Header -->
-	<div data-options="region:'north', border:false" id="header">
+	<div data-options="region:'north', border:false" id="header" style="background-image: url(<?= base_url('assets/image/header/' . $profile->theme . '.png') ?>);">
 		<div style="float: left;">
 			<img src="<?= base_url('assets/image/application.png') ?>" width="100">
 		</div>
@@ -103,14 +103,66 @@
 	</div>
 
 	<!-- CHANGE PROFILE -->
-	<div id="dlg_profile" class="easyui-dialog" title="Profile" data-options="closed: true" style="width: 400px; padding:10px; top: 20px;">
+	<div id="dlg_profile" class="easyui-dialog" title="Profile" data-options="closed: true" style="width: 500px; padding:10px; top: 20px;">
 		<form id="frm_profile" method="post" enctype="multipart/form-data" novalidate>
 			<fieldset style="width:100%; border:1px solid #d0d0d0; margin-bottom: 10px; border-radius:4px; float: left;">
 				<legend><b>Profile Configuration</b></legend>
+				<center>
+					<img id="imagePreview" src="<?= $profile_img ?>" width="150">
+					<br><br>
+				</center>
+				<div class="fitem">
+					<span style="width:35%; display:inline-block;">Avatar</span>
+					<input style="width:60%;" name="avatar" id="avatar" class="easyui-filebox">
+				</div>
+				<div class="fitem">
+					<span style="width:35%; display:inline-block;">Fullname</span>
+					<input style="width:60%;" name="name" id="name" value="<?= $profile->name ?>" class="easyui-textbox">
+				</div>
 				<div class="fitem">
 					<span style="width:35%; display:inline-block;">Username</span>
-					<input style="width:60%;" name="username" id="username" value="<?= $this->session->username ?>" readonly class="easyui-textbox">
+					<input style="width:60%;" name="username" id="username" value="<?= $profile->username ?>" readonly class="easyui-textbox">
 				</div>
+				<div class="fitem">
+					<span style="width:35%; display:inline-block;">Email</span>
+					<input style="width:60%;" name="email" id="email" value="<?= $profile->email ?>" class="easyui-textbox">
+				</div>
+				<div class="fitem">
+					<span style="width:35%; display:inline-block;">Phone</span>
+					<input style="width:60%;" name="phone" id="phone" value="<?= $profile->phone ?>" class="easyui-textbox">
+				</div>
+				<div class="fitem">
+					<span style="width:35%; display:inline-block;">Position</span>
+					<input style="width:60%;" name="position" id="position" value="<?= $profile->position ?>" class="easyui-textbox">
+				</div>
+			</fieldset>
+			<fieldset style="width:100%; border:1px solid #d0d0d0; margin-bottom: 10px; border-radius:4px; float: left;">
+				<legend><b>Theme Application</b></legend>
+				<div class="fitem">
+					<span style="width:35%; display:inline-block;">Theme App</span>
+					<select style="width:60%;" name="theme" id="theme" class="easyui-combobox">
+						<option value="default">Default</option>
+						<option value="cupertino">Cupertino</option>
+						<option value="black">Black</option>
+						<option value="bootstrap">Bootstrap</option>
+						<option value="gray">Gray</option>
+						<option value="pepper-grinder">Pepper Grinder</option>
+						<option value="material">Material</option>
+						<option value="material-blue">Material Blue</option>
+						<option value="material-teal">Material Teal</option>
+						<option value="metro">Metro</option>
+						<option value="metro-blue">Metro Blue</option>
+						<option value="metro-gray">Metro Gray</option>
+						<option value="metro-green">Metro Green</option>
+						<option value="metro-orange">Metro Orange</option>
+						<option value="metro-red">Metro Red</option>
+						<option value="sunny">Sunny</option>
+					</select>
+				</div>
+			</fieldset>
+			<fieldset style="width:100%; border:1px solid #d0d0d0; margin-bottom: 10px; border-radius:4px; float: left;">
+				<legend><b>Change Password</b></legend>
+				<i style="color:red">If you don't want to change the password, don't fill in anything</i>
 				<div class="fitem">
 					<span style="width:35%; display:inline-block;">New Password</span>
 					<input style="width:60%;" name="password" id="password" class="easyui-passwordbox">
@@ -184,19 +236,27 @@
 
 <script>
 	$(function() {
-		window.addEventListener('load', function(event){
+		var isMobile = /iPhone|iPad|iPod|Android|webOS|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+
+		if (isMobile) {
+			window.location.assign('home/device');
+		}
+
+		//Deteksi Internet
+		window.addEventListener('load', function(event) {
 			detectInternet();
 		});
-		window.addEventListener('online', function(event){
+		window.addEventListener('online', function(event) {
 			detectInternet();
 		});
-		window.addEventListener('offline', function(event){
+		window.addEventListener('offline', function(event) {
 			detectInternet();
 		});
-		function detectInternet(){
-			if(navigator.onLine){
+
+		function detectInternet() {
+			if (navigator.onLine) {
 				Swal.close();
-			}else{
+			} else {
 				Swal.fire({
 					title: 'Connection Time Out, Check Your Connection',
 					showConfirmButton: false,
@@ -208,7 +268,8 @@
 				});
 			}
 		}
-		
+
+		$("#theme").combobox('setValue', '<?= $profile->theme ?>');
 		$('#dlg_profile').dialog({
 			buttons: [{
 				text: 'Save Changes',
@@ -222,17 +283,33 @@
 						success: function(result) {
 							var result = eval('(' + result + ')');
 
-							if (result.theme == "success") {
-								toastr.success(result.message, result.title);
-							} else {
-								toastr.error(result.message, result.title);
-							}
+							Swal.fire({
+								title: result.message,
+								icon: result.theme,
+								confirmButtonText: 'Ok',
+								allowOutsideClick: false,
+							}).then((result) => {
+								if (result.isConfirmed) {
+									window.location.reload();
+								}
+							});
 
 							$('#dlg_profile').dialog('close');
 						}
 					});
 				}
 			}]
+		});
+
+		$('#avatar').filebox({
+			onChange: function(value) {
+				var id = $(this).filebox('options').fileboxId;
+				var files = $('#' + id)[0].files;
+				if (files.length) {
+					var url = window.URL.createObjectURL(files[0]);
+					$('#imagePreview').attr('src', url);
+				}
+			}
 		});
 	});
 
