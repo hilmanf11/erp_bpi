@@ -94,6 +94,7 @@ class Bom extends CI_Controller
         }
     }
 
+    // UPDATE DATA
     public function datatableUpdates()
     {
         if ($this->input->get()) {

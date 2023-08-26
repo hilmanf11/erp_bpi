@@ -75,7 +75,32 @@ class Home extends CI_Controller
     {
         if ($this->input->post()) {
             $post = $this->input->post();
-            $send = $this->crud->update('users', ["username" => $post['username']], $post);
+            $avatar = $this->crud->upload('avatar', ["jpg", "png", "jpeg"], 'assets/image/users/', ["username" => $post['username']], "users", "avatar");
+
+            if ($post['password'] == "") {
+                $postFinal = array(
+                    "name" => $post['name'],
+                    "username" => $post['username'],
+                    "email" => $post['email'],
+                    "phone" => $post['phone'],
+                    "position" => $post['position'],
+                    "theme" => $post['theme'],
+                    "avatar" => $avatar,
+                );
+            } else {
+                $postFinal = array(
+                    "name" => $post['name'],
+                    "username" => $post['username'],
+                    "email" => $post['email'],
+                    "phone" => $post['phone'],
+                    "position" => $post['position'],
+                    "theme" => $post['theme'],
+                    "password" => $post['password'],
+                    "avatar" => $avatar,
+                );
+            }
+
+            $send = $this->crud->update('users', ["username" => $post['username']], $postFinal);
             echo $send;
         } else {
             show_error("Cannot Process your request");
@@ -116,4 +141,7 @@ class Home extends CI_Controller
             echo json_encode($chats);
         }
     }
+
+    
 }
+

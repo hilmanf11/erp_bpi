@@ -427,7 +427,7 @@
         var url = "?filter_item_fg_id=" + window.btoa(filter_item_fg_id) +
             "&filter_item_rm_id=" + window.btoa(filter_item_rm_id);
 
-        window.location.assign('<?= base_url('finance/purchase_invoices/print/excel') ?>' + url);
+        window.location.assign('<?= base_url('master/bom/print/excel') ?>' + url);
     }
 
     //RELOAD
