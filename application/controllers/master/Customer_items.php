@@ -121,7 +121,7 @@ class Customer_items extends CI_Controller
             $customer_item_histories = $this->crud->read("customer_item_histories", [], ["customer_id" => $post['customer_id'], "item_fg_id" => $post['item_fg_id'], "price" => $post['price']]);
             if (@$customer_items->customer_id != "") {
                 $send = $this->crud->update('customer_items', ["customer_id" => $post['customer_id'], "item_fg_id" => $post['item_fg_id']], $post);
-                if (@$customer_item_histories->customer_id != "") {
+                if (@$customer_item_histories->customer_id == "") {
                     $send2 = $this->crud->create('customer_item_histories', $post);
                 }
             } else {
