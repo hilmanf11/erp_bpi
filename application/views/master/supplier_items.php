@@ -4,8 +4,8 @@
         <tr>
             <th rowspan="2" field="ck" checkbox="true"></th>
             <th rowspan="2" data-options="field:'supplier_name',width:300,halign:'center'">Supplier Name</th>
-            <th rowspan="2" data-options="field:'type',width:200,halign:'center'">Type</th>
-            <th rowspan="2" data-options="field:'currency',width:200,halign:'center'">Currency</th>
+            <th rowspan="2" data-options="field:'type',width:100,halign:'center'">Type</th>
+            <th rowspan="2" data-options="field:'currency',width:100,halign:'center'">Currency</th>
             <th rowspan="2" data-options="field:'status',width:100,align:'center', styler:cellStyler, formatter:cellFormatter">Status</th>
             <th colspan="2" data-options="field:'',width:100,halign:'center'"> Created</th>
             <th colspan="2" data-options="field:'',width:100,halign:'center'"> Updated</th>
@@ -59,6 +59,18 @@
         </fieldset>
         <table id="dg2" class="easyui-datagrid" style="width:100%;" title="Supplier Item Lists" toolbar="#toolbar2"></table>
     </form>
+</div>
+
+<!-- Detail Histories -->
+<div id="dlg_history" class="easyui-dialog" title="Price Histories" data-options="closed: true,modal:true" style="width: 400px; height: 300px; top: 20px;">
+    <table id="dg_history" class="easyui-datagrid" style="width:100%;">
+        <thead>
+            <tr>
+                <th data-options="field:'price',width:100,halign:'center',formatter: priceformat">Price</th>
+                <th data-options="field:'valid_date',width:100,halign:'center'">Valid Date</th>
+            </tr>
+        </thead>
+    </table>
 </div>
 
 <!-- Upload -->
@@ -158,7 +170,7 @@
                     editor: {
                         type: 'textbox'
                     }
-                },  {
+                }, {
                     field: 'maker',
                     width: 150,
                     halign: 'center',
@@ -166,7 +178,7 @@
                     editor: {
                         type: 'textbox'
                     }
-                },  {
+                }, {
                     field: 'item_supplier',
                     width: 150,
                     halign: 'center',
@@ -174,7 +186,7 @@
                     editor: {
                         type: 'textbox'
                     }
-                },  {
+                }, {
                     field: 'item_family_name',
                     width: 150,
                     halign: 'center',
@@ -185,7 +197,7 @@
                             readonly: true
                         }
                     }
-                },  {
+                }, {
                     field: 'mpq',
                     width: 100,
                     align: 'center',
@@ -193,7 +205,7 @@
                     editor: {
                         type: 'numberbox'
                     }
-                },  {
+                }, {
                     field: 'moq',
                     width: 100,
                     align: 'center',
@@ -201,7 +213,7 @@
                     editor: {
                         type: 'numberbox'
                     }
-                },  {
+                }, {
                     field: 'share_order',
                     width: 100,
                     align: 'center',
@@ -209,7 +221,7 @@
                     editor: {
                         type: 'numberbox'
                     }
-                },  {
+                }, {
                     field: 'leadtime',
                     width: 100,
                     align: 'center',
@@ -217,7 +229,7 @@
                     editor: {
                         type: 'numberbox'
                     }
-                },  {
+                }, {
                     field: 'price',
                     width: 100,
                     align: 'center',
@@ -241,7 +253,7 @@
                             parse: myparser
                         }
                     }
-                },  {
+                }, {
                     field: 'safety_stock',
                     width: 100,
                     align: 'center',
@@ -249,7 +261,7 @@
                     editor: {
                         type: 'numberbox'
                     }
-                },  {
+                }, {
                     field: 'calculate',
                     width: 120,
                     halign: 'center',
@@ -480,22 +492,22 @@
                             title: 'Part ID',
                             halign: 'center',
                             width: 150
-                        },  {
+                        }, {
                             field: 'item_rm_number',
                             title: 'Part No.',
                             halign: 'center',
                             width: 150
-                        },  {
+                        }, {
                             field: 'item_rm_number',
                             title: 'Part Name',
                             halign: 'center',
-                            width: 150
-                        },  {
+                            width: 200
+                        }, {
                             field: 'maker',
                             title: 'Maker',
                             halign: 'center',
                             width: 150
-                        },  {
+                        }, {
                             field: 'item_supplier',
                             title: 'Supplier Product',
                             halign: 'center',
@@ -505,32 +517,39 @@
                             title: 'Product Family',
                             halign: 'center',
                             width: 150
-                        },  {
+                        }, {
                             field: 'mpq',
                             title: 'MPQ',
                             halign: 'center',
-                            width: 150
+                            width: 80
                         }, {
                             field: 'moq',
                             title: 'MOQ',
                             halign: 'center',
-                            width: 100
+                            width: 80
                         }, {
                             field: 'share_order',
                             title: 'Share Order %',
                             halign: 'center',
                             width: 100
-                        },  {
+                        }, {
                             field: 'leadtime',
-                            title: 'Lead Time (Days)',
+                            title: 'Leadtime',
                             halign: 'center',
                             width: 100
-                        },  {
+                        }, {
                             field: 'price',
                             title: 'Price',
                             halign: 'center',
-                            width: 100
-                        },{
+                            width: 100,
+                            formatter: priceformat
+                        }, {
+                            field: 'btn',
+                            title: 'History',
+                            halign: 'center',
+                            width: 80,
+                            formatter: btnHistories
+                        }, {
                             field: 'valid_date',
                             title: 'Valid Date',
                             halign: 'center',
@@ -540,7 +559,7 @@
                             title: 'Safet Stock %',
                             width: 100,
                             halign: 'center',
-                        },  {
+                        }, {
                             field: 'calculate',
                             title: 'Calculate MPQ',
                             width: 100,
@@ -586,7 +605,6 @@
                                     moq: rows[i].moq,
                                     share_order: rows[i].share_order,
                                     leadtime: rows[i].leadtime,
-                                    currency: rows[i].supplier_currency,
                                     price: rows[i].price,
                                     valid_date: rows[i].valid_date,
                                     safety_stock: rows[i].safety_stock,
@@ -735,23 +753,67 @@
     };
 
     // FORMAT tahun-bulan-tanggal
-    function myformatter(date){
+    function myformatter(date) {
         var y = date.getFullYear();
-        var m = date.getMonth()+1;
+        var m = date.getMonth() + 1;
         var d = date.getDate();
-        return y+'-'+(m<10?('0'+m):m)+'-'+(d<10?('0'+d):d);
+        return y + '-' + (m < 10 ? ('0' + m) : m) + '-' + (d < 10 ? ('0' + d) : d);
     }
-    function myparser(s){
+
+    function myparser(s) {
         if (!s) return new Date();
         var ss = (s.split('-'));
-        var y = parseInt(ss[0],10);
-        var m = parseInt(ss[1],10);
-        var d = parseInt(ss[2],10);
-        if (!isNaN(y) && !isNaN(m) && !isNaN(d)){
-            return new Date(y,m-1,d);
+        var y = parseInt(ss[0], 10);
+        var m = parseInt(ss[1], 10);
+        var d = parseInt(ss[2], 10);
+        if (!isNaN(y) && !isNaN(m) && !isNaN(d)) {
+            return new Date(y, m - 1, d);
         } else {
             return new Date();
         }
+    }
+
+    function priceformat(value, row) {
+        if (row.currency == "USD") {
+            var digits = 4;
+            var currency = 'USD';
+            var format = "en-IN";
+        } else if (row.currency == "JPY") {
+            var digits = 2;
+            var currency = 'JPY';
+            var format = "ja-JP";
+        } else if (row.currency == "EUR") {
+            var digits = 2;
+            var currency = 'EUR';
+            var format = "de-DE";
+        } else {
+            var digits = 0;
+            var currency = 'IDR';
+            var format = "id-ID";
+        }
+
+        if (value != null) {
+            const formatter = new Intl.NumberFormat(format, {
+                style: 'currency',
+                currency: currency,
+                minimumFractionDigits: digits
+            });
+            return "<b>" + formatter.format(value) + "</b>";
+        }
+    }
+
+    function btnHistories(val, row) {
+        var history = "viewHistories('" + row.supplier_id + "','" + row.item_rm_id + "')";
+        return '<a class="btn btn-primary w-100" onClick="' + history + '" style="pointer-events: visible; opacity:1;"><i class="fa fa-eye"></i> View</a>';
+    }
+
+    function viewHistories(supplier_id, item_rm_id) {
+        $("#dlg_history").dialog('open');
+        $('#dg_history').datagrid({
+            url: '<?= base_url('master/supplier_items/datatableHistories?supplier_id=') ?>' + btoa(supplier_id) + "&item_rm_id=" + btoa(item_rm_id),
+            pagination: false,
+            rownumbers: true,
+        });
     }
 
     // UPLOAD DATA

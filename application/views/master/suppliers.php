@@ -4,18 +4,18 @@
         <tr>
             <th rowspan="2" field="ck" checkbox="true"></th>
             <th rowspan="2" data-options="field:'id',width:100,align:'center'">Supplier ID</th>
-            <th rowspan="2" data-options="field:'name',width:200,halign:'center'">Supplier Name</th>
-            <th rowspan="2" data-options="field:'number',width:110,halign:'center'">Supplier Code</th>
-            <th rowspan="2" data-options="field:'type',width:100,halign:'center'">Type</th>
+            <th rowspan="2" data-options="field:'name',width:250,halign:'center'">Supplier Name</th>
+            <th rowspan="2" data-options="field:'number',width:100,halign:'center'">Supplier Code</th>
+            <th rowspan="2" data-options="field:'type',width:80,halign:'center'">Type</th>
             <th rowspan="2" data-options="field:'address',width:250,halign:'center'">Address</th>
-            <th rowspan="2" data-options="field:'contact_person',width:150,halign:'center'">Contact Person</th>
-            <th rowspan="2" data-options="field:'telp',width:150,halign:'center'">Telpepon</th>
-            <th rowspan="2" data-options="field:'fax',width:150,halign:'center'">Fax</th>
-            <th rowspan="2" data-options="field:'email',width:150,halign:'center'">Email</th>
+            <th rowspan="2" data-options="field:'contact_person',width:120,halign:'center'">Contact Person</th>
+            <th rowspan="2" data-options="field:'telp',width:120,halign:'center'">Telp</th>
+            <th rowspan="2" data-options="field:'fax',width:120,halign:'center'">Fax</th>
+            <th rowspan="2" data-options="field:'email',width:200,halign:'center'">Email</th>
             <th rowspan="2" data-options="field:'website',width:150,halign:'center'">Website</th>
-            <th rowspan="2" data-options="field:'currency',width:150,halign:'center'">Currency</th>
-            <th rowspan="2" data-options="field:'payment_term',width:150,halign:'center'">Payment Term <br>(Day)</th>
-            <th rowspan="2" data-options="field:'incoterm',width:150,halign:'center'">Incoterm</th>
+            <th rowspan="2" data-options="field:'currency',width:80,halign:'center'">Currency</th>
+            <th rowspan="2" data-options="field:'payment_term',width:80,halign:'center'">Payment<br>Term (Day)</th>
+            <th rowspan="2" data-options="field:'incoterm',width:80,halign:'center'">Incoterm</th>
             <th rowspan="2" data-options="field:'bank_account',width:150,halign:'center'">Bank Account</th>
             <th rowspan="2" data-options="field:'bank_name',width:150,halign:'center'">Bank Name</th>
             <th rowspan="2" data-options="field:'status',width:100,halign:'center', styler:cellStyler, formatter:cellFormatter">Status</th>
@@ -79,7 +79,7 @@
             <div style="float:left; width:50%;">
                 <div class="fitem">
                     <span style="width:35%; display:inline-block;">Email</span>
-                    <input style="width:60%;" name="email" id="email" class="easyui-emailbox">
+                    <input style="width:60%;" name="email" id="email" class="easyui-textbox">
                 </div>
                 <div class="fitem">
                     <span style="width:35%; display:inline-block;">Website</span>
@@ -150,10 +150,10 @@
         $('#status').combobox('setValue', '0');
 
         $.ajax({
-            type : "post",
-            url : "<?= base_url('master/suppliers/autoid')?>",
-            dataType : "html",
-            success : function(response){
+            type: "post",
+            url: "<?= base_url('master/suppliers/autoid') ?>",
+            dataType: "html",
+            success: function(response) {
                 $('#id').textbox('setValue', response);
             }
         });
@@ -275,89 +275,89 @@
     };
 
     $('#currency').combobox({
-        url:'<?= base_url('master/currencies/reads'); ?>',
-        valueField:'name',
-        textField:'name',
+        url: '<?= base_url('master/currencies/reads'); ?>',
+        valueField: 'name',
+        textField: 'name',
         prompt: 'Choose Currencies',
     });
 
     // UPLOAD
     $('#dlg_upload').dialog({
-            buttons: [{
-                text: 'List Failed',
-                handler: function() {
-                    window.open('<?= base_url('master/suppliers/uploadDownloadFailed') ?>', '_blank');
-                }
-            }, {
-                text: 'Upload',
-                iconCls: 'icon-ok',
-                handler: function() {
-                    $('#frm_upload').form('submit', {
-                        url: '<?= base_url('master/suppliers/upload') ?>',
-                        onSubmit: function() {
-                            if ($(this).form('validate') == false) {
-                                return $(this).form('validate');
-                            } else {
-                                $.messager.progress({
-                                    title: 'Please Wait',
-                                    msg: 'Importing Excel to Database'
+        buttons: [{
+            text: 'List Failed',
+            handler: function() {
+                window.open('<?= base_url('master/suppliers/uploadDownloadFailed') ?>', '_blank');
+            }
+        }, {
+            text: 'Upload',
+            iconCls: 'icon-ok',
+            handler: function() {
+                $('#frm_upload').form('submit', {
+                    url: '<?= base_url('master/suppliers/upload') ?>',
+                    onSubmit: function() {
+                        if ($(this).form('validate') == false) {
+                            return $(this).form('validate');
+                        } else {
+                            $.messager.progress({
+                                title: 'Please Wait',
+                                msg: 'Importing Excel to Database'
+                            });
+                        }
+                    },
+                    success: function(result) {
+                        $.messager.progress('close');
+                        //Clear File
+                        $.ajax({
+                            url: "<?= base_url('master/suppliers/uploadclearFailed') ?>"
+                        });
+                        var json = eval('(' + result + ')');
+                        requestData(json.total, json);
+
+                        function requestData(total, json, number = 1, value = 0, success = 1, failed = 1) {
+                            if (value < 100) {
+                                value = Math.floor((number / total) * 100);
+                                $('#p_upload').progressbar('setValue', value);
+                                $('#p_start').html(number);
+                                $('#p_finish').html(total);
+
+                                $.ajax({
+                                    type: "POST",
+                                    async: true,
+                                    url: "<?= base_url('master/suppliers/uploadCreate') ?>",
+                                    data: {
+                                        "data": json[number - 1]
+                                    },
+                                    cache: false,
+                                    dataType: "json",
+                                    success: function(result) {
+                                        if (result.theme == "success") {
+                                            $('#p_success').html(success);
+                                            var title = "<b style='color: green;'>" + result.title + "</b> | " + result.message;
+                                            requestData(total, json, number + 1, value, success + 1, failed + 0);
+                                        } else {
+                                            $('#p_failed').html(failed);
+                                            var title = "<b style='color: red;'>" + result.title + "</b> | " + result.message;
+                                            //Json Failed
+                                            $.ajax({
+                                                type: "POST",
+                                                async: true,
+                                                url: "<?= base_url('master/suppliers/uploadcreateFailed') ?>",
+                                                data: {
+                                                    data: json[number - 1],
+                                                    message: result.message
+                                                },
+                                                cache: false
+                                            });
+                                            requestData(total, json, number + 1, value, success + 0, failed + 1);
+                                        }
+                                        $("#p_remarks").append(title + "<br>");
+                                    }
                                 });
                             }
-                        },
-                        success: function(result) {
-                            $.messager.progress('close');
-                            //Clear File
-                            $.ajax({
-                                url: "<?= base_url('master/suppliers/uploadclearFailed') ?>"
-                            });
-                            var json = eval('(' + result + ')');
-                            requestData(json.total, json);
-
-                            function requestData(total, json, number = 1, value = 0, success = 1, failed = 1) {
-                                if (value < 100) {
-                                    value = Math.floor((number / total) * 100);
-                                    $('#p_upload').progressbar('setValue', value);
-                                    $('#p_start').html(number);
-                                    $('#p_finish').html(total);
-
-                                    $.ajax({
-                                        type: "POST",
-                                        async: true,
-                                        url: "<?= base_url('master/suppliers/uploadCreate') ?>",
-                                        data: {
-                                            "data": json[number - 1]
-                                        },
-                                        cache: false,
-                                        dataType: "json",
-                                        success: function(result) {
-                                            if (result.theme == "success") {
-                                                $('#p_success').html(success);
-                                                var title = "<b style='color: green;'>" + result.title + "</b> | " + result.message;
-                                                requestData(total, json, number + 1, value, success + 1, failed + 0);
-                                            } else {
-                                                $('#p_failed').html(failed);
-                                                var title = "<b style='color: red;'>" + result.title + "</b> | " + result.message;
-                                                //Json Failed
-                                                $.ajax({
-                                                    type: "POST",
-                                                    async: true,
-                                                    url: "<?= base_url('master/suppliers/uploadcreateFailed') ?>",
-                                                    data: {
-                                                        data: json[number - 1],
-                                                        message: result.message
-                                                    },
-                                                    cache: false
-                                                });
-                                                requestData(total, json, number + 1, value, success + 0, failed + 1);
-                                            }
-                                            $("#p_remarks").append(title + "<br>");
-                                        }
-                                    });
-                                }
-                            }
                         }
-                    });
-                }
-            }]
-        });
+                    }
+                });
+            }
+        }]
+    });
 </script>

@@ -94,7 +94,7 @@ class Supplier_items extends CI_Controller
         }
     }
 
-    // UPDATE DATA
+    // GET DATA TABLES UPDATE
     public function datatableUpdates()
     {
         if ($this->input->get()) {
@@ -107,6 +107,24 @@ class Supplier_items extends CI_Controller
             $this->db->join('item_familys d', 'b.item_family_id = d.id');
             $this->db->where('a.supplier_id', $supplier_id);
             $this->db->order_by('a.id', 'ASC');
+            $records = $this->db->get()->result_array();
+
+            echo json_encode($records);
+        }
+    }
+
+    // UPDATE DATA
+    public function datatableHistories()
+    {
+        if ($this->input->get()) {
+            $supplier_id = base64_decode($this->input->get('supplier_id'));
+            $item_rm_id = base64_decode($this->input->get('item_rm_id'));
+
+            $this->db->select('*');
+            $this->db->from('supplier_item_histories');
+            $this->db->where('supplier_id', $supplier_id);
+            $this->db->where('item_rm_id', $item_rm_id);
+            $this->db->order_by('valid_date', 'DESC');
             $records = $this->db->get()->result_array();
 
             echo json_encode($records);

@@ -93,7 +93,7 @@ class Customer_items extends CI_Controller
         }
     }
 
-    // UPDATE DATA
+    // GET DATATABLES UPDATE
     public function datatableUpdates()
     {
         if ($this->input->get()) {
@@ -105,6 +105,24 @@ class Customer_items extends CI_Controller
             $this->db->join('customers c', 'a.customer_id = c.id');
             $this->db->where('a.customer_id', $customer_id);
             $this->db->order_by('a.id', 'ASC');
+            $records = $this->db->get()->result_array();
+
+            echo json_encode($records);
+        }
+    }
+
+    // GET DATATABLE HISTORY PRICE
+    public function datatableHistories()
+    {
+        if ($this->input->get()) {
+            $customer_id = base64_decode($this->input->get('customer_id'));
+            $item_fg_id = base64_decode($this->input->get('item_fg_id'));
+
+            $this->db->select('*');
+            $this->db->from('customer_item_histories');
+            $this->db->where('customer_id', $customer_id);
+            $this->db->where('item_fg_id', $item_fg_id);
+            $this->db->order_by('valid_date', 'DESC');
             $records = $this->db->get()->result_array();
 
             echo json_encode($records);

@@ -60,6 +60,18 @@
     </form>
 </div>
 
+<!-- Detail Histories -->
+<div id="dlg_history" class="easyui-dialog" title="Price Histories" data-options="closed: true,modal:true" style="width: 400px; height: 300px; top: 20px;">
+    <table id="dg_history" class="easyui-datagrid" style="width:100%;">
+        <thead>
+            <tr>
+                <th data-options="field:'price',width:100,halign:'center',formatter: priceformat">Price</th>
+                <th data-options="field:'valid_date',width:100,halign:'center'">Valid Date</th>
+            </tr>
+        </thead>
+    </table>
+</div>
+
 <!-- Upload -->
 <div id="dlg_upload" class="easyui-dialog" title="Upload Data" data-options="closed: true,modal:true" style="width: 500px; padding:10px; top: 20px;">
     <form id="frm_upload" method="post" enctype="multipart/form-data" novalidate>
@@ -157,7 +169,7 @@
                     editor: {
                         type: 'textbox'
                     }
-                },  {
+                }, {
                     field: 'item_fg_customer',
                     width: 150,
                     halign: 'center',
@@ -424,7 +436,14 @@
                             field: 'price',
                             title: 'Price',
                             halign: 'center',
-                            width: 100
+                            width: 100,
+                            formatter: priceformat
+                        }, {
+                            field: 'btn',
+                            title: 'History',
+                            halign: 'center',
+                            width: 80,
+                            formatter: btnHistories
                         }, {
                             field: 'valid_date',
                             title: 'Valid Date',
@@ -618,23 +637,67 @@
     };
 
     // FORMAT tahun-bulan-tanggal
-    function myformatter(date){
+    function myformatter(date) {
         var y = date.getFullYear();
-        var m = date.getMonth()+1;
+        var m = date.getMonth() + 1;
         var d = date.getDate();
-        return y+'-'+(m<10?('0'+m):m)+'-'+(d<10?('0'+d):d);
+        return y + '-' + (m < 10 ? ('0' + m) : m) + '-' + (d < 10 ? ('0' + d) : d);
     }
-    function myparser(s){
+
+    function myparser(s) {
         if (!s) return new Date();
         var ss = (s.split('-'));
-        var y = parseInt(ss[0],10);
-        var m = parseInt(ss[1],10);
-        var d = parseInt(ss[2],10);
-        if (!isNaN(y) && !isNaN(m) && !isNaN(d)){
-            return new Date(y,m-1,d);
+        var y = parseInt(ss[0], 10);
+        var m = parseInt(ss[1], 10);
+        var d = parseInt(ss[2], 10);
+        if (!isNaN(y) && !isNaN(m) && !isNaN(d)) {
+            return new Date(y, m - 1, d);
         } else {
             return new Date();
         }
+    }
+
+    function priceformat(value, row) {
+        if (row.currency == "USD") {
+            var digits = 4;
+            var currency = 'USD';
+            var format = "en-IN";
+        } else if (row.currency == "JPY") {
+            var digits = 2;
+            var currency = 'JPY';
+            var format = "ja-JP";
+        } else if (row.currency == "EUR") {
+            var digits = 2;
+            var currency = 'EUR';
+            var format = "de-DE";
+        } else {
+            var digits = 0;
+            var currency = 'IDR';
+            var format = "id-ID";
+        }
+
+        if (value != null) {
+            const formatter = new Intl.NumberFormat(format, {
+                style: 'currency',
+                currency: currency,
+                minimumFractionDigits: digits
+            });
+            return "<b>" + formatter.format(value) + "</b>";
+        }
+    }
+
+    function btnHistories(val, row) {
+        var history = "viewHistories('" + row.customer_id + "','" + row.item_fg_id + "')";
+        return '<a class="btn btn-primary w-100" onClick="' + history + '" style="pointer-events: visible; opacity:1;"><i class="fa fa-eye"></i> View</a>';
+    }
+
+    function viewHistories(customer_id, item_fg_id) {
+        $("#dlg_history").dialog('open');
+        $('#dg_history').datagrid({
+            url: '<?= base_url('master/customer_items/datatableHistories?customer_id=') ?>' + btoa(customer_id) + "&item_fg_id=" + btoa(item_fg_id),
+            pagination: false,
+            rownumbers: true,
+        });
     }
 
     // UPLOAD DATA
