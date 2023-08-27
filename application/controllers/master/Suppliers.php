@@ -1,7 +1,7 @@
 <?php
 date_default_timezone_set("Asia/Bangkok");
 defined('BASEPATH') or exit('No direct script access allowed');
-class Customers extends CI_Controller
+class Suppliers extends CI_Controller
 {
     public function __construct()
     {
@@ -12,7 +12,7 @@ class Customers extends CI_Controller
         $this->load->library('session');
         $this->load->model('crud');
         //VALIDASI FORM
-        $this->form_validation->set_rules('number', 'Customer Code', 'required|min_length[1]|max_length[20]|is_unique[customers.number]');
+        $this->form_validation->set_rules('number', 'Supplier Code', 'required|min_length[1]|max_length[20]|is_unique[suppliers.number]');
     }
     //HALAMAN UTAMA
     public function index()
@@ -22,7 +22,7 @@ class Customers extends CI_Controller
         } elseif ($this->checkuserAccess($this->id_menu()) > 0) {
             $data['button'] = $this->getbutton($this->id_menu());
             $this->load->view('template/header', $data);
-            $this->load->view('master/customers');
+            $this->load->view('master/suppliers');
         } else {
             redirect('error_access');
         }
@@ -31,7 +31,7 @@ class Customers extends CI_Controller
     public function reads()
     {
         $post = isset($_POST['q']) ? $_POST['q'] : "";
-        $send = $this->crud->reads('customers', ["name" => $post]);
+        $send = $this->crud->reads('suppliers', ["name" => $post]);
         echo json_encode($send);
     }
     //GET DATATABLES
@@ -48,7 +48,7 @@ class Customers extends CI_Controller
             $result = array();
             //Select Query
             $this->db->select('*');
-            $this->db->from('customers');
+            $this->db->from('suppliers');
             $this->db->where('deleted', 0);
             if (@count($filters) > 0) {
                 foreach ($filters as $filter) {
@@ -70,10 +70,16 @@ class Customers extends CI_Controller
     }
     //AUTO ID
     public function autoid(){
-        $sql = $this->db->query("SELECT max(id) as kode FROM customers");
+        $month = date('my');
+        $format = "SP-".$month;
+        $sql = $this->db->query("SELECT max(id) as kode FROM suppliers WHERE id LIKE '%$format%'");
         $row = $sql->row();
-        $kode = substr($row->kode,2);
-        $autoid ="C". sprintf("%03s", $kode + 1);
+        if ($row->kode == ""){
+            $kode = 0;
+        } else {
+            $kode = substr($row->kode,-3);
+        }
+        $autoid =$format. sprintf("%03s", $kode + 1);
         echo $autoid;
     }
     //CREATE DATA
@@ -82,7 +88,7 @@ class Customers extends CI_Controller
         if ($this->input->post()) {
             if ($this->form_validation->run() == TRUE) {
                 $post   = $this->input->post();
-                $send   = $this->crud->create('customers', $post);
+                $send   = $this->crud->create('suppliers', $post);
                 echo $send;
             } else {
                 show_error(validation_errors());
@@ -97,7 +103,7 @@ class Customers extends CI_Controller
         if ($this->input->post()) {
             $id   = base64_decode($this->input->get('id'));
             $post = $this->input->post();
-            $send = $this->crud->update('customers', ["id" => $id], $post);
+            $send = $this->crud->update('suppliers', ["id" => $id], $post);
             echo $send;
         } else {
             show_error("Cannot Process your request");
@@ -107,7 +113,7 @@ class Customers extends CI_Controller
     public function delete()
     {
         $data = $this->input->post();
-        $send = $this->crud->delete('customers', $data);
+        $send = $this->crud->delete('suppliers', $data);
         echo $send;
     }
     //UPLOAD DATA
@@ -128,14 +134,14 @@ class Customers extends CI_Controller
                 'number' => $data->val($i, 3),
                 'type' => $data->val($i, 4),
                 'address' => $data->val($i, 5),
-                'address_billing' => $data->val($i, 6),
-                'contact_person' => $data->val($i, 7),
-                'telp' => $data->val($i, 8),
-                'telp_billing' => $data->val($i, 9),
-                'email' => $data->val($i, 10),
-                'website' => $data->val($i, 11),
-                'currency' => $data->val($i, 12),
-                'payment_term' => $data->val($i, 13),
+                'contact_person' => $data->val($i, 6),
+                'telp' => $data->val($i, 7),
+                'fax' => $data->val($i, 8),
+                'email' => $data->val($i, 9),
+                'website' => $data->val($i, 10),
+                'currency' => $data->val($i, 11),
+                'payment_term' => $data->val($i, 12),
+                'incoterm' => $data->val($i, 13),
                 'bank_account' => $data->val($i, 14),
                 'bank_name' => $data->val($i, 15),
                 'status' => $data->val($i, 16)
@@ -147,13 +153,13 @@ class Customers extends CI_Controller
     }
     public function uploadclearFailed()
     {
-        @unlink('excel/failed/customers.txt');
+        @unlink('excel/failed/suppliers.txt');
     }
     public function uploadcreateFailed()
     {
         if ($this->input->post()) {
             $message = $this->input->post('message');
-            $textFailed = fopen('excel/failed/customers.txt', 'a');
+            $textFailed = fopen('excel/failed/suppliers.txt', 'a');
             fwrite($textFailed, $message . "\n");
             fclose($textFailed);
         }
@@ -161,7 +167,7 @@ class Customers extends CI_Controller
     //UPLOAD DOWNLOAD FAILED
     public function uploadDownloadFailed()
     {
-        $file = "excel/failed/customers.txt";
+        $file = "excel/failed/suppliers.txt";
         header('Content-Description: File Failed');
         header('Content-Disposition: attachment; filename=' . basename($file));
         header('Expires: 0');
@@ -178,16 +184,22 @@ class Customers extends CI_Controller
             $data = $this->input->post('data');
 
             //Cek Process Number          //table       //field        //field excel
-            $customers = $this->crud->read('customers', [], ["number" => $data['number']]);
+            $suppliers = $this->crud->read('suppliers', [], ["number" => $data['number']]);
 
             //AUTOID
-            $sql = $this->db->query("SELECT max(id) as kode FROM customers");
+            $month = date('my');
+            $format = "SP-".$month;
+            $sql = $this->db->query("SELECT max(id) as kode FROM suppliers WHERE id LIKE '%$format%'");
             $row = $sql->row();
-            $kode = substr($row->kode,2);
-            $autoid ="C". sprintf("%03s", $kode + 1);
+            if ($row->kode == ""){
+                $kode = 0;
+            } else {
+                $kode = substr($row->kode,-3);
+            }
+            $autoid =$format. sprintf("%03s", $kode + 1);
 
-            if (!empty($customers->number)) {
-                echo json_encode(array("title" => "Duplicated", "message" => " Customer Code " . $data['number'] . " is Duplicate Data", "theme" => "error"));
+            if (!empty($suppliers->number)) {
+                echo json_encode(array("title" => "Duplicated", "message" => " Supplier Code " . $data['number'] . " is Duplicate Data", "theme" => "error"));
             } else {
                 $dataFinal = array(
                     //field
@@ -196,19 +208,19 @@ class Customers extends CI_Controller
                     "number" => $data['number'],
                     "type" => $data['type'],
                     "address" => $data['address'],
-                    "address_billing" => $data['address_billing'],
                     "contact_person" => $data['contact_person'],
                     "telp" => $data['telp'],
-                    "telp_billing" => $data['telp_billing'],
+                    "fax" => $data['fax'],
                     "email" => $data['email'],
                     "website" => $data['website'],
                     "currency" => $data['currency'],
                     "payment_term" => $data['payment_term'],
+                    "incoterm" => $data['incoterm'],
                     "bank_account" => $data['bank_account'],
                     "bank_name" => $data['bank_name'],
                     "status" => $data['status'],
                 );
-                $send   = $this->crud->create('customers', $dataFinal);
+                $send   = $this->crud->create('suppliers', $dataFinal);
                 echo $send;
             }
         }
@@ -219,7 +231,7 @@ class Customers extends CI_Controller
         if ($option == "excel") {
             $format  = date("Ymd");
             header("Content-type: application/vnd-ms-excel");
-            header("Content-Disposition: attachment; filename=customers_$format.xls");
+            header("Content-Disposition: attachment; filename=suppliers_$format.xls");
         }
         //Config
         $this->db->select('*');
@@ -227,11 +239,11 @@ class Customers extends CI_Controller
         $config = $this->db->get()->row();
 
         $this->db->select('*');
-        $this->db->from('customers');
+        $this->db->from('suppliers');
         $this->db->where('deleted', 0);
         $this->db->order_by('id', 'ASC');
         $records = $this->db->get()->result_array();
-        $html = '<html><head><title>Print Data</title></head><style>body {font-family: Arial, Helvetica, sans-serif;}#customers {border-collapse: collapse;width: 100%;font-size: 12px;}#customers td, #customers th {border: 1px solid #ddd;padding: 2px;}#customers tr:nth-child(even){background-color: #f2f2f2;}#customers tr:hover {background-color: #ddd;}#customers th {padding-top: 2px;padding-bottom: 2px;text-align: left;color: black;}</style><body>
+        $html = '<html><head><title>Print Data</title></head><style>body {font-family: Arial, Helvetica, sans-serif;}#suppliers {border-collapse: collapse;width: 100%;font-size: 12px;}#suppliers td, #suppliers th {border: 1px solid #ddd;padding: 2px;}#suppliers tr:nth-child(even){background-color: #f2f2f2;}#suppliers tr:hover {background-color: #ddd;}#suppliers th {padding-top: 2px;padding-bottom: 2px;text-align: left;color: black;}</style><body>
         <center>
             <div style="float: left; font-size: 12px; text-align: left;">
                 <table style="width: 100%;">
@@ -251,26 +263,26 @@ class Customers extends CI_Controller
             </div>
             <br><br>
             <div style="float: centet; font-size: 16px; text-align: center;">
-                <h3>MASTER CUSTOMER</h3>
+                <h3>MASTER SUPPLIER</h3>
             </div>
         </center>
         
-        <table id="customers" border="1">
+        <table id="suppliers" border="1">
             <tr>
                 <th width="20">No</th>
-                <th>Customer ID</th>
-                <th>Customer Name</th>
-                <th>Customer Code</th>
+                <th>Supplier ID</th>
+                <th>Supplier Name</th>
+                <th>Supplier Code</th>
                 <th>type</th>
                 <th>Address</th>
-                <th>Billing Address</th>
                 <th>Contact Person</th>
                 <th>Telepon</th>
-                <th>Billing Contact</th>
+                <th>Fax</th>
                 <th>Email</th>
                 <th>Website</th>
                 <th>Currency</th>
                 <th>Payment Term (Day)</th>
+                <th>Incoterm</th>
                 <th>Bank Account</th>
                 <th>Bank Name</th>
                 <th>Status</th>
@@ -284,14 +296,14 @@ class Customers extends CI_Controller
                     <td>' . $data['number'] . '</td>
                     <td>' . $data['type'] . '</td>
                     <td>' . $data['address'] . '</td>
-                    <td>' . $data['address_billing'] . '</td>
                     <td>' . $data['contact_person'] . '</td>
                     <td>' . $data['telp'] . '</td>
-                    <td>' . $data['telp_billing'] . '</td>
+                    <td>' . $data['fax'] . '</td>
                     <td>' . $data['email'] . '</td>
                     <td>' . $data['website'] . '</td>
                     <td>' . $data['currency'] . '</td>
                     <td>' . $data['payment_term'] . '</td>
+                    <td>' . $data['incoterm'] . '</td>
                     <td>' . $data['bank_account'] . '</td>
                     <td>' . $data['bank_name'] . '</td>
                     <td>' . $data['status'] . '</td>';

@@ -13,7 +13,7 @@ class Customer_items extends CI_Controller
         $this->load->model('crud');
         //VALIDASI FORM
         $this->form_validation->set_rules('customer_id', 'Customer', 'required|min_length[1]|max_length[20]|is_unique[customer_items.customer_id]');
-        $this->form_validation->set_rules('item_fg_id', 'Part No.', 'required|min_length[1]|max_length[20]|is_unique[customer_items.item_fg_id]');
+        $this->form_validation->set_rules('item_fg_id', 'Product No.', 'required|min_length[1]|max_length[20]|is_unique[customer_items.item_fg_id]');
     }
     //HALAMAN UTAMA
     public function index()
