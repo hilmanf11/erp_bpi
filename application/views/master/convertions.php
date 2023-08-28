@@ -3,22 +3,11 @@
     <thead>
         <tr>
             <th rowspan="2" field="ck" checkbox="true"></th>
-            <th rowspan="2" data-options="field:'id',width:100,align:'center'">Customer ID</th>
-            <th rowspan="2" data-options="field:'name',width:200,halign:'center'">Customer Name</th>
-            <th rowspan="2" data-options="field:'number',width:110,halign:'center'">Customer Code</th>
-            <th rowspan="2" data-options="field:'type',width:150,halign:'center'">Type</th>
-            <th rowspan="2" data-options="field:'address',width:150,halign:'center'">Address</th>
-            <th rowspan="2" data-options="field:'address_billing',width:150,halign:'center'">Billing Address</th>
-            <th rowspan="2" data-options="field:'contact_person',width:150,halign:'center'">Contact Person</th>
-            <th rowspan="2" data-options="field:'telp',width:150,halign:'center'">Telepon</th>
-            <th rowspan="2" data-options="field:'telp_billing',width:150,halign:'center'">Billing Contact</th>
-            <th rowspan="2" data-options="field:'email',width:150,halign:'center'">Email</th>
-            <th rowspan="2" data-options="field:'website',width:150,halign:'center'">Website</th>
-            <th rowspan="2" data-options="field:'currency',width:150,halign:'center'">Currency</th>
-            <th rowspan="2" data-options="field:'payment_term',width:150,halign:'center'">Payment Term (Day)</th>
-            <th rowspan="2" data-options="field:'bank_account',width:150,halign:'center'">Bank Account</th>
-            <th rowspan="2" data-options="field:'bank_name',width:150,halign:'center'">Bank Name</th>
-            <th rowspan="2" data-options="field:'status',width:100,halign:'center', styler:cellStyler, formatter:cellFormatter">Status</th>
+            <th rowspan="2" data-options="field:'item_rm_number',width:150,align:'center'">Part No</th>
+            <th rowspan="2" data-options="field:'item_rm_name',width:200,halign:'center'">Part Name</th>
+            <th rowspan="2" data-options="field:'uom_po',width:150,halign:'center'">UOM PO</th>
+            <th rowspan="2" data-options="field:'uom_soft',width:150,halign:'center'">UOM Soft</th>
+            <th rowspan="2" data-options="field:'convertion',width:150,halign:'center'">Convertion</th>
             <th colspan="2" data-options="field:'',width:100,halign:'center'"> Created</th>
             <th colspan="2" data-options="field:'',width:100,halign:'center'"> Updated</th>
         </tr>
@@ -35,83 +24,25 @@
     <?= $button ?>
 </div>
 <!-- DIALOG SAVE AND UPDATE -->
-<div id="dlg_insert" class="easyui-dialog" title="Add New" data-options="closed: true,modal:true" style="width: 800px; padding:10px; top: 20px;">
+<div id="dlg_insert" class="easyui-dialog" title="Add New" data-options="closed: true,modal:true" style="width: 500px; padding:10px; top: 20px;">
     <form id="frm_insert" method="post" novalidate>
         <fieldset style="width:100%; border:1px solid #d0d0d0; margin-bottom: 10px; border-radius:4px; float: left;">
             <legend><b>Form Data</b></legend>
-            <div style="float:left; width:50%;">
-                <div class="fitem">
-                    <span style="width:35%; display:inline-block;">Customer ID</span>
-                    <input style="width:30%;" name="id" id="id" required="" class="easyui-textbox" readonly>
-                </div>
-                <div class="fitem">
-                    <span style="width:35%; display:inline-block;">Customer Name</span>
-                    <input style="width:60%;" name="name" id="name" required="" class="easyui-textbox">
-                </div>
-                <div class="fitem">
-                    <span style="width:35%; display:inline-block;">Customer Code</span>
-                    <input style="width:60%;" name="number" id="number" required="" class="easyui-textbox">
-                </div>
-                <div class="fitem">
-                    <span style="width:35%; display:inline-block;">Type</span>
-                    <select style="width:60%;" name="type" id="type" required="" panelHeight="auto" class="easyui-combobox">
-                        <option value="LOCAL">LOCAL</option>
-                        <option value="EXPORT">EXPORT</option>
-                    </select>
-                </div>
-                <div class="fitem">
-                    <span style="width:35%; display:inline-block;">Address</span>
-                    <input style="width:60%;" name="address" id="address" class="easyui-textbox">
-                </div>
-                <div class="fitem">
-                    <span style="width:35%; display:inline-block;">Billing Address</span>
-                    <input style="width:60%;" name="address_billing" id="address_billing" class="easyui-textbox">
-                </div>
-                <div class="fitem">
-                    <span style="width:35%; display:inline-block;">Contact Person</span>
-                    <input style="width:60%;" name="contact_person" id="contact_person" class="easyui-textbox">
-                </div>
-                <div class="fitem">
-                    <span style="width:35%; display:inline-block;">Telepon</span>
-                    <input style="width:60%;" name="telp" id="telp" class="easyui-textbox">
-                </div>
+            <div class="fitem">
+                <span style="width:35%; display:inline-block;">Part No.</span>
+                <input style="width:60%;" name="item_rm_id" id="item_rm_id" required="" class="easyui-combobox">
             </div>
-            <div style="float:left; width:50%;">
-                <div class="fitem">
-                    <span style="width:35%; display:inline-block;">Billing Contact</span>
-                    <input style="width:60%;" name="telp_billing" id="telp_billing" class="easyui-textbox">
-                </div>
-                <div class="fitem">
-                    <span style="width:35%; display:inline-block;">Email</span>
-                    <input style="width:60%;" name="email" id="email" class="easyui-textbox">
-                </div>
-                <div class="fitem">
-                    <span style="width:35%; display:inline-block;">Website</span>
-                    <input style="width:60%;" name="website" id="website" class="easyui-textbox">
-                </div>
-                <div class="fitem">
-                    <span style="width:35%; display:inline-block;">Currency</span>
-                    <input style="width:60%;" name="currency" id="currency" required="" class="easyui-textbox">
-                </div>
-                <div class="fitem">
-                    <span style="width:35%; display:inline-block;">Payment Term (Day)</span>
-                    <input style="width:60%;" name="payment_term" id="payment_term" class="easyui-numberbox">
-                </div>
-                <div class="fitem">
-                    <span style="width:35%; display:inline-block;">Bank Account</span>
-                    <input style="width:60%;" name="bank_account" id="bank_account" class="easyui-numberbox">
-                </div>
-                <div class="fitem">
-                    <span style="width:35%; display:inline-block;">Bank Name</span>
-                    <input style="width:60%;" name="bank_name" id="bank_name" class="easyui-textbox">
-                </div>
-                <div class="fitem">
-                    <span style="width:35%; display:inline-block;">Status</span>
-                    <select style="width:60%;" name="status" id="status" required="" panelHeight="auto" class="easyui-combobox">
-                        <option value="0">Active</option>
-                        <option value="1">Not Active</option>
-                    </select>
-                </div>
+            <div class="fitem">
+                <span style="width:35%; display:inline-block;">UOM PO</span>
+                <input style="width:60%;" name="uom_po" id="uom_po" required="" class="easyui-combobox">
+            </div>
+            <div class="fitem">
+                <span style="width:35%; display:inline-block;">UOM Soft</span>
+                <input style="width:60%;" name="uom_soft" id="uom_soft" required="" class="easyui-combobox">
+            </div>
+            <div class="fitem">
+                <span style="width:35%; display:inline-block;">Convertion</span>
+                <input style="width:60%;" name="convertion" id="convertion" class="easyui-numberbox">
             </div>
         </fieldset>
     </form>
@@ -138,25 +69,13 @@
 </div>
 
 <!-- PDF -->
-<iframe id="printout" src="<?= base_url('master/customers/print') ?>" style="width: 100%;" hidden></iframe>
+<iframe id="printout" src="<?= base_url('master/convertions/print') ?>" style="width: 100%;" hidden></iframe>
 <script>
     //ADD DATA
     function add() {
         $('#dlg_insert').dialog('open');
-        url_save = '<?= base_url('master/customers/create') ?>';
+        url_save = '<?= base_url('master/convertions/create') ?>';
         $('#frm_insert').form('clear');
-
-        $('#type').combobox('setValue', 'LOCAL');
-        $('#status').combobox('setValue', '0');
-
-        $.ajax({
-            type : "post",
-            url : "<?= base_url('master/customers/autoid')?>",
-            dataType : "html",
-            success : function(response){
-                $('#id').textbox('setValue', response);
-            }
-        });
     }
     //EDIT DATA
     function update() {
@@ -164,7 +83,7 @@
         if (row) {
             $('#dlg_insert').dialog('open');
             $('#frm_insert').form('load', row);
-            url_save = '<?= base_url('master/customers/update') ?>?id=' + btoa(row.id);
+            url_save = '<?= base_url('master/convertions/update') ?>?id=' + btoa(row.id);
         } else {
             toastr.warning("Please select one of the data in the table first!", "Information");
         }
@@ -179,7 +98,7 @@
                         var row = rows[i];
                         $.ajax({
                             method: 'post',
-                            url: '<?= base_url('master/customers/delete') ?>',
+                            url: '<?= base_url('master/convertions/delete') ?>',
                             data: {
                                 id: row.id
                             },
@@ -207,7 +126,7 @@
     }
     // DOWNLOAD
     function download_excel() {
-        window.location.assign('<?= base_url('template/tmp_customers.xls') ?>');
+        window.location.assign('<?= base_url('template/tmp_convertions.xls') ?>');
     }
     //PRINT PDF
     function pdf() {
@@ -215,7 +134,7 @@
     }
     //PRINT EXCEL
     function excel() {
-        window.location.assign('<?= base_url('master/customers/print/excel') ?>');
+        window.location.assign('<?= base_url('master/convertions/print/excel') ?>');
     }
     //RELOAD
     function reload() {
@@ -224,7 +143,7 @@
     $(function() {
         //SETTING DATAGRID EASYUI
         $('#dg').datagrid({
-            url: '<?= base_url('master/customers/datatables') ?>',
+            url: '<?= base_url('master/convertions/datatables') ?>',
             pagination: true,
             clientPaging: false,
             remoteFilter: true,
@@ -257,43 +176,40 @@
         });
     });
 
-    //CELLSTYLE STATUS
-    function cellStyler(value, row, index) {
-        if (value == 0) {
-            return 'background: #53D636; color:white;';
-        } else {
-            return 'background: #FF5F5F; color:white;';
-        }
-    }
-    //FORMATTER STATUS
-    function cellFormatter(value) {
-        if (value == 0) {
-            return 'Active';
-        } else {
-            return 'Not Active';
-        }
-    };
-
-    $('#currency').combobox({
-        url:'<?= base_url('master/currencies/reads'); ?>',
-        valueField:'name',
-        textField:'name',
-        prompt: 'Choose Currencies',
+    $('#item_rm_id').combobox({
+        url:'<?= base_url('master/item_rm/reads'); ?>',
+        valueField:'id',
+        textField:'number',
+        prompt: 'Choose Part',
     });
 
-    // UPLOAD
+    $('#uom_po').combobox({
+        url:'<?= base_url('master/uom/reads'); ?>',
+        valueField:'name',
+        textField:'name',
+        prompt: 'Choose Unit of Measure',
+    });
+
+    $('#uom_soft').combobox({
+        url:'<?= base_url('master/uom/reads'); ?>',
+        valueField:'name',
+        textField:'name',
+        prompt: 'Choose Unit of Measure',
+    });
+
+    // UPLOAD DATA
     $('#dlg_upload').dialog({
             buttons: [{
                 text: 'List Failed',
                 handler: function() {
-                    window.open('<?= base_url('master/customers/uploadDownloadFailed') ?>', '_blank');
+                    window.open('<?= base_url('master/convertions/uploadDownloadFailed') ?>', '_blank');
                 }
             }, {
                 text: 'Upload',
                 iconCls: 'icon-ok',
                 handler: function() {
                     $('#frm_upload').form('submit', {
-                        url: '<?= base_url('master/customers/upload') ?>',
+                        url: '<?= base_url('master/convertions/upload') ?>',
                         onSubmit: function() {
                             if ($(this).form('validate') == false) {
                                 return $(this).form('validate');
@@ -308,7 +224,7 @@
                             $.messager.progress('close');
                             //Clear File
                             $.ajax({
-                                url: "<?= base_url('master/customers/uploadclearFailed') ?>"
+                                url: "<?= base_url('master/convertions/uploadclearFailed') ?>"
                             });
                             var json = eval('(' + result + ')');
                             requestData(json.total, json);
@@ -323,7 +239,7 @@
                                     $.ajax({
                                         type: "POST",
                                         async: true,
-                                        url: "<?= base_url('master/customers/uploadCreate') ?>",
+                                        url: "<?= base_url('master/convertions/uploadCreate') ?>",
                                         data: {
                                             "data": json[number - 1]
                                         },
@@ -341,7 +257,7 @@
                                                 $.ajax({
                                                     type: "POST",
                                                     async: true,
-                                                    url: "<?= base_url('master/customers/uploadcreateFailed') ?>",
+                                                    url: "<?= base_url('master/convertions/uploadcreateFailed') ?>",
                                                     data: {
                                                         data: json[number - 1],
                                                         message: result.message

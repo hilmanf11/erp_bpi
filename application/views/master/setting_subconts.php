@@ -3,9 +3,10 @@
     <thead>
         <tr>
             <th rowspan="2" field="ck" checkbox="true"></th>
-            <th rowspan="2" data-options="field:'customer_name',width:440,align:'center'">Customer Name</th>
-            <th rowspan="2" data-options="field:'type',width:400,halign:'center'">Type</th>
-            <th rowspan="2" data-options="field:'status',width:100,halign:'center', styler:cellStyler, formatter:cellFormatter">Status</th>
+            <th rowspan="2" data-options="field:'subcont_id',width:250,halign:'center'">Subcont ID</th>
+            <th rowspan="2" data-options="field:'subcont_name',width:300,halign:'center'">Subcont Name</th>
+            <th rowspan="2" data-options="field:'subcont_number',width:300,halign:'center'">Subcont Code</th>
+            <th rowspan="2" data-options="field:'status',width:100,align:'center', styler:cellStyler, formatter:cellFormatter">Status</th>
             <th colspan="2" data-options="field:'',width:100,halign:'center'"> Created</th>
             <th colspan="2" data-options="field:'',width:100,halign:'center'"> Updated</th>
         </tr>
@@ -25,11 +26,11 @@
         <fieldset style="width: 45%; border:2px solid #d0d0d0; margin-bottom: 5px; margin-top: 5px; border-radius:4px;">
             <legend><b>Form Filter Data</b></legend>
             <div class="fitem">
-                <span style="width:35%; display:inline-block;">Customer</span>
-                <input style="width:60%;" id="filter_customer_id" class="easyui-combogrid">
+                <span style="width:35%; display:inline-block;">Subcont</span>
+                <input style="width:60%;" id="filter_subcont_id" class="easyui-combogrid">
             </div>
             <div class="fitem">
-                <span style="width:35%; display:inline-block;">Product No</span>
+                <span style="width:35%; display:inline-block;">Product No.</span>
                 <input style="width:60%;" id="filter_item_fg_id" class="easyui-combogrid">
             </div>
             <div class="fitem">
@@ -52,16 +53,16 @@
         <fieldset style="width:100%; border:1px solid #d0d0d0; margin-bottom: 10px; border-radius:4px; float: left;">
             <legend><b>Form Data</b></legend>
             <div class="fitem">
-                <span style="width:15%; display:inline-block;">Customer</span>
-                <input style="width:40%;" name="customer_id" id="customer_id" required="" class="easyui-combogrid">
+                <span style="width:15%; display:inline-block;">subcont</span>
+                <input style="width:40%;" name="subcont_id" id="subcont_id" required="" class="easyui-combogrid">
             </div>
         </fieldset>
-        <table id="dg2" class="easyui-datagrid" style="width:100%;" title="Customer Item Lists" toolbar="#toolbar2"></table>
+        <table id="dg2" class="easyui-datagrid" style="width:100%;" title="subcont Item Lists" toolbar="#toolbar2"></table>
     </form>
 </div>
 
 <!-- Detail Histories -->
-<div id="dlg_history" class="easyui-dialog" title="Price Histories" data-options="closed: true,modal:true" style="width: 400px; height: 300px; top: 20px;">
+<!-- <div id="dlg_history" class="easyui-dialog" title="Price Histories" data-options="closed: true,modal:true" style="width: 400px; height: 300px; top: 20px;">
     <table id="dg_history" class="easyui-datagrid" style="width:100%;">
         <thead>
             <tr>
@@ -70,7 +71,7 @@
             </tr>
         </thead>
     </table>
-</div>
+</div> -->
 
 <!-- Upload -->
 <div id="dlg_upload" class="easyui-dialog" title="Upload Data" data-options="closed: true,modal:true" style="width: 500px; padding:10px; top: 20px;">
@@ -93,14 +94,14 @@
 </div>
 
 <!-- PDF -->
-<iframe id="printout" src="<?= base_url('master/customer_items/print') ?>" style="width: 100%;" hidden></iframe>
+<iframe id="printout" src="<?= base_url('master/setting_subconts/print') ?>" style="width: 100%;" hidden></iframe>
 
 <script>
     //ADD DATA
     function add() {
         $('#dlg_insert').dialog('open');
         $('#dg2').datagrid('loadData', []);
-        url_save = '<?= base_url('master/customer_items/create') ?>';
+        url_save = '<?= base_url('master/setting_subconts/create') ?>';
         $('#frm_insert').form('clear');
     }
 
@@ -151,66 +152,58 @@
                                 });
                                 var ed3 = dg.datagrid('getEditor', {
                                     index: rowIndex,
-                                    field: 'item_fg_customer'
+                                    field: 'item_fg_name'
                                 });
 
                                 $(ed.target).textbox('setValue', rows.number);
                                 $(ed2.target).textbox('setValue', rows.id);
-                                $(ed3.target).textbox('setValue', rows.number_customer);
+                                $(ed3.target).textbox('setValue', rows.name);
                             }
                         }
                     }
                 }, {
                     field: 'item_fg_id',
-                    width: 150,
+                    width: 200,
                     hidden: true,
                     halign: 'center',
                     title: "Product ID",
                     editor: {
                         type: 'textbox'
                     }
-                }, {
-                    field: 'item_fg_customer',
-                    width: 150,
+                },  {
+                    field: 'item_fg_name',
+                    width: 200,
                     halign: 'center',
-                    title: "Product Customer",
+                    title: "Product Name",
                     editor: {
                         type: 'textbox',
                         options: {
                             readonly: true
                         }
                     }
-                }, {
-                    field: 'price',
-                    width: 100,
-                    align: 'center',
-                    title: "Price",
-                    editor: {
-                        type: 'numberbox',
-                        options: {
-                            precision: 2
-                        }
-                    }
-                }, {
-                    field: 'valid_date',
-                    width: 180,
-                    halign: 'center',
-                    align: 'right',
-                    title: "Valid Date",
-                    editor: {
-                        type: 'datebox',
-                        options: {
-                            formatter: myformatter,
-                            parse: myparser
-                        }
-                    }
-                }, {
-                    field: 'remark',
+                },  {
+                    field: 'share_order',
                     width: 200,
                     halign: 'center',
-                    title: "Remarks",
+                    title: "Share Job Order %",
                     editor: {
-                        type: 'textbox'
+                        type: 'numberbox'
+                    }
+                }, {
+                    field: 'capacity',
+                    width: 200,
+                    halign: 'center',
+                    title: "Capacity/Day (Pcs)",
+                    editor: {
+                        type: 'numberbox'
+                    }
+                }, {
+                    field: 'leadtime',
+                    width: 200,
+                    halign: 'center',
+                    title: "Lead Time (Days)",
+                    editor: {
+                        type: 'numberbox'
                     }
                 }]
             ],
@@ -247,8 +240,8 @@
     }
 
     function append() {
-        var customer_id = $("#customer_id").combogrid('getValue');
-        if (customer_id != "") {
+        var subcont_id = $("#subcont_id").combogrid('getValue');
+        if (subcont_id != "") {
             if (endEditing()) {
                 $('#dg2').datagrid('appendRow', {
                     qty: '0'
@@ -257,7 +250,7 @@
                 $('#dg2').datagrid('selectRow', editIndex).datagrid('beginEdit', editIndex);
             }
         } else {
-            toastr.error("Please Choose Customer first");
+            toastr.error("Please Choose Subcont first");
         }
     }
 
@@ -275,14 +268,14 @@
             field: 'item_fg_id'
         });
 
-        var customer_id = $("#customer_id").combogrid('getValue');
+        var subcont_id = $("#subcont_id").combogrid('getValue');
         var item_fg_id = $(ed.target).textbox('getValue');
 
         $.ajax({
             method: 'post',
-            url: '<?= base_url('master/customer_items/delete') ?>',
+            url: '<?= base_url('master/setting_subconts/delete') ?>',
             data: {
-                customer_id: row.customer_id,
+                subcont_id: row.subcont_id,
                 item_fg_id: item_fg_id
             },
             success: function(result) {
@@ -310,7 +303,7 @@
             $('#frm_insert').form('load', row);
             $("#item_fg_id").combogrid('disable');
 
-            addTable('<?= base_url('master/customer_items/datatableUpdates?customer_id=') ?>' + window.btoa(row.customer_id));
+            addTable('<?= base_url('master/setting_subconts/datatableUpdates?subcont_id=') ?>' + window.btoa(row.subcont_id));
         } else {
             toastr.warning("Please select one of the data in the table first!", "Information");
         }
@@ -326,7 +319,7 @@
                         var row = rows[i];
                         $.ajax({
                             method: 'post',
-                            url: '<?= base_url('master/customer_items/delete') ?>',
+                            url: '<?= base_url('master/setting_subconts/delete') ?>',
                             data: {
                                 customer_id: row.customer_id
                             },
@@ -354,23 +347,23 @@
     }
     // DOWNLOAD
     function download_excel() {
-        window.location.assign('<?= base_url('template/tmp_customer_items.xls') ?>');
+        window.location.assign('<?= base_url('template/tmp_setting_subconts.xls') ?>');
     }
 
     //FILTER DATA
     function filter() {
-        var filter_customer_id = $("#filter_customer_id").combogrid('getValue');
+        var filter_subcont_id = $("#filter_subcont_id").combogrid('getValue');
         var filter_item_fg_id = $("#filter_item_fg_id").combogrid('getValue');
 
-        var url = "?filter_customer_id=" + window.btoa(filter_customer_id) +
+        var url = "?filter_subcont_id=" + window.btoa(filter_subcont_id) +
             "&filter_item_fg_id=" + window.btoa(filter_item_fg_id);
 
         $('#dg').datagrid({
-            url: '<?= base_url('master/customer_items/datatables') ?>' + url
+            url: '<?= base_url('master/setting_subconts/datatables') ?>' + url
         });
 
         $("#printout").contents().find('html').html("<center><br><br><br><b style='font-size:20px;'>Please Wait...</b></center>");
-        $("#printout").attr('src', '<?= base_url('master/customer_items/print') ?>' + url);
+        $("#printout").attr('src', '<?= base_url('master/setting_subconts/print') ?>' + url);
     }
 
     //PRINT PDF
@@ -380,13 +373,13 @@
 
     //PRINT EXCEL
     function excel() {
-        var filter_customer_id = $("#filter_customer_id").combogrid('getValue');
+        var filter_subcont_id = $("#filter_subcont_id").combogrid('getValue');
         var filter_item_fg_id = $("#filter_item_fg_id").combogrid('getValue');
 
-        var url = "?filter_customer_id=" + window.btoa(filter_customer_id) +
+        var url = "?filter_subcont_id=" + window.btoa(filter_subcont_id) +
             "&filter_item_fg_id=" + window.btoa(filter_item_fg_id);
 
-        window.location.assign('<?= base_url('master/customer_items/print/excel') ?>' + url);
+        window.location.assign('<?= base_url('master/setting_subconts/print/excel') ?>' + url);
     }
 
     //RELOAD
@@ -400,60 +393,53 @@
 
         //SETTING DATAGRID EASYUI
         $('#dg').datagrid({
-            url: '<?= base_url('master/customer_items/datatables') ?>',
+            url: '<?= base_url('master/setting_subconts/datatables') ?>',
             pagination: true,
             rownumbers: true,
             height: '645px',
             view: detailview,
             detailFormatter: function(index, row) {
-                return '<div style="padding:2px;position:relative;"><table class="ddv" title="Detail Of ' + row.customer_name + '"></table></div>';
+                return '<div style="padding:2px;position:relative;"><table class="ddv" title="Detail Of ' + row.subcont_name + '"></table></div>';
             },
             onExpandRow: function(index, row) {
                 var ddv = $(this).datagrid('getRowDetail', index).find('table.ddv');
                 var filter_item_fg_id = $("#filter_item_fg_id").combogrid('getValue');
 
                 ddv.datagrid({
-                    url: '<?= base_url('master/customer_items/datatableDetails?number=') ?>' + window.btoa(row.customer_number) + "&filter_item_fg_id=" + window.btoa(filter_item_fg_id),
+                    url: '<?= base_url('master/setting_subconts/datatableDetails?number=') ?>' + window.btoa(row.subcont_number) + "&filter_item_fg_id=" + window.btoa(filter_item_fg_id),
                     singleSelect: true,
                     rownumbers: true,
                     columns: [
                         [{
-                            field: 'item_fg_number',
-                            title: 'Product No.',
-                            halign: 'center',
-                            width: 250
-                        }, {
-                            field: 'item_fg_customer',
-                            title: 'Product Customer',
-                            halign: 'center',
-                            width: 250
-                        }, {
-                            field: 'customer_currency',
-                            title: 'Currency',
-                            halign: 'center',
-                            width: 220
-                        }, {
-                            field: 'price',
-                            title: 'Price',
-                            halign: 'center',
-                            width: 200,
-                            formatter: priceformat
-                        }, {
-                            field: 'btn',
-                            title: 'History',
-                            halign: 'center',
-                            width: 150,
-                            formatter: btnHistories
-                        }, {
-                            field: 'valid_date',
-                            title: 'Valid Date',
+                            field: 'item_fg_id',
+                            title: 'Product ID',
                             halign: 'center',
                             width: 200
                         }, {
-                            field: 'remark',
-                            title: 'Remarks',
-                            width: 200,
+                            field: 'item_fg_number',
+                            title: 'Product No.',
                             halign: 'center',
+                            width: 200
+                        }, {
+                            field: 'item_fg_name',
+                            title: 'Product Name',
+                            halign: 'center',
+                            width: 200
+                        }, {
+                            field: 'share_order',
+                            title: 'Share Job Order',
+                            halign: 'center',
+                            width: 200
+                        }, {
+                            field: 'capacity',
+                            title: 'Cap/Day (Pcs)',
+                            halign: 'center',
+                            width: 200
+                        }, {
+                            field: 'leadtime',
+                            title: 'Lead Time (Days)',
+                            halign: 'center',
+                            width: 200
                         }]
                     ],
                     onResize: function() {
@@ -475,24 +461,24 @@
                 text: 'Save All',
                 iconCls: 'icon-ok',
                 handler: function() {
-                    var customer_id = $("#customer_id").combogrid('getValue');
+                    var subcont_id = $("#subcont_id").combogrid('getValue');
 
                     var rows = $('#dg2').datagrid('getRows');
                     var totalrows = rows.length;
                     endEditing();
 
                     for (let i = 0; i < totalrows; i++) {
-                        // alert(rows[i].item_fg_id);
                         if (rows[i].item_fg_id) {
                             $.ajax({
                                 type: "post",
-                                url: '<?= base_url('master/customer_items/create') ?>',
+                                url: '<?= base_url('master/setting_subconts/create') ?>',
                                 data: {
-                                    customer_id: customer_id,
+                                    subcont_id: subcont_id,
                                     item_fg_id: rows[i].item_fg_id,
-                                    price: rows[i].price,
-                                    valid_date: rows[i].valid_date,
-                                    remark: rows[i].remark
+                                    share_order: rows[i].share_order,
+                                    capacity: rows[i].capacity,
+                                    leadtime: rows[i].leadtime,
+                                    status: rows[i].status
                                 },
                                 dataType: "json",
                                 success: function(result) {
@@ -520,60 +506,48 @@
         });
     });
 
-    $('#customer_id').combogrid({
-        url: '<?= base_url('master/customers/reads/'); ?>',
+    $('#subcont_id').combogrid({
+        url: '<?= base_url('master/subconts/reads/'); ?>',
         panelWidth: 420,
         idField: 'id',
         textField: 'name',
         mode: 'remote',
         fitColumns: true,
-        prompt: "Choose Customer",
+        prompt: "Choose Subcont",
         columns: [
             [{
                 field: 'number',
-                title: 'Customer Code',
+                title: 'Subcont Code',
                 width: 120
             }, {
                 field: 'name',
-                title: 'Customer Name',
+                title: 'Subcont Name',
                 width: 250
-            }, {
-                field: 'currency',
-                title: 'Currency',
-                width: 100
             }, ]
         ]
     });
 
-    $('#filter_customer_id').combogrid({
-        url: '<?= base_url('master/customers/reads'); ?>',
+    $('#filter_subcont_id').combogrid({
+        url: '<?= base_url('master/subconts/reads'); ?>',
         panelWidth: 750,
         idField: 'id',
         textField: 'name',
         mode: 'remote',
         fitColumns: true,
-        prompt: "Choose Customer",
+        prompt: "Choose subcont",
         columns: [
             [{
                 field: 'id',
-                title: 'Customer ID',
+                title: 'subcont ID',
                 width: 150
             }, {
                 field: 'number',
-                title: 'Customer Code',
+                title: 'subcont Code',
                 width: 150
             }, {
                 field: 'name',
-                title: 'Customer Name',
+                title: 'subcont Name',
                 width: 200
-            }, {
-                field: 'type',
-                title: 'Type',
-                width: 100
-            }, {
-                field: 'currency',
-                title: 'Currency',
-                width: 100
             }, ]
         ],
         icons: [{
@@ -605,10 +579,6 @@
                 field: 'name',
                 title: 'Product Name',
                 width: 150
-            }, {
-                field: 'number_customer',
-                title: 'Product Customer',
-                width: 180
             }, ]
         ],
         icons: [{
@@ -636,83 +606,19 @@
         }
     };
 
-    // FORMAT tahun-bulan-tanggal
-    function myformatter(date) {
-        var y = date.getFullYear();
-        var m = date.getMonth() + 1;
-        var d = date.getDate();
-        return y + '-' + (m < 10 ? ('0' + m) : m) + '-' + (d < 10 ? ('0' + d) : d);
-    }
-
-    function myparser(s) {
-        if (!s) return new Date();
-        var ss = (s.split('-'));
-        var y = parseInt(ss[0], 10);
-        var m = parseInt(ss[1], 10);
-        var d = parseInt(ss[2], 10);
-        if (!isNaN(y) && !isNaN(m) && !isNaN(d)) {
-            return new Date(y, m - 1, d);
-        } else {
-            return new Date();
-        }
-    }
-
-    function priceformat(value, row) {
-        if (row.currency == "USD") {
-            var digits = 4;
-            var currency = 'USD';
-            var format = "en-IN";
-        } else if (row.currency == "JPY") {
-            var digits = 2;
-            var currency = 'JPY';
-            var format = "ja-JP";
-        } else if (row.currency == "EUR") {
-            var digits = 2;
-            var currency = 'EUR';
-            var format = "de-DE";
-        } else {
-            var digits = 0;
-            var currency = 'IDR';
-            var format = "id-ID";
-        }
-
-        if (value != null) {
-            const formatter = new Intl.NumberFormat(format, {
-                style: 'currency',
-                currency: currency,
-                minimumFractionDigits: digits
-            });
-            return "<b>" + formatter.format(value) + "</b>";
-        }
-    }
-
-    function btnHistories(val, row) {
-        var history = "viewHistories('" + row.customer_id + "','" + row.item_fg_id + "')";
-        return '<a class="btn btn-primary w-100" onClick="' + history + '" style="pointer-events: visible; opacity:1;"><i class="fa fa-eye"></i> View</a>';
-    }
-
-    function viewHistories(customer_id, item_fg_id) {
-        $("#dlg_history").dialog('open');
-        $('#dg_history').datagrid({
-            url: '<?= base_url('master/customer_items/datatableHistories?customer_id=') ?>' + btoa(customer_id) + "&item_fg_id=" + btoa(item_fg_id),
-            pagination: false,
-            rownumbers: true,
-        });
-    }
-
     // UPLOAD DATA
     $('#dlg_upload').dialog({
         buttons: [{
             text: 'List Failed',
             handler: function() {
-                window.open('<?= base_url('master/customer_items/uploadDownloadFailed') ?>', '_blank');
+                window.open('<?= base_url('master/setting_subconts/uploadDownloadFailed') ?>', '_blank');
             }
         }, {
             text: 'Upload',
             iconCls: 'icon-ok',
             handler: function() {
                 $('#frm_upload').form('submit', {
-                    url: '<?= base_url('master/customer_items/upload') ?>',
+                    url: '<?= base_url('master/setting_subconts/upload') ?>',
                     onSubmit: function() {
                         if ($(this).form('validate') == false) {
                             return $(this).form('validate');
@@ -727,7 +633,7 @@
                         $.messager.progress('close');
                         //Clear File
                         $.ajax({
-                            url: "<?= base_url('master/customer_items/uploadclearFailed') ?>"
+                            url: "<?= base_url('master/setting_subconts/uploadclearFailed') ?>"
                         });
                         var json = eval('(' + result + ')');
                         requestData(json.total, json);
@@ -742,7 +648,7 @@
                                 $.ajax({
                                     type: "POST",
                                     async: true,
-                                    url: "<?= base_url('master/customer_items/uploadCreate') ?>",
+                                    url: "<?= base_url('master/setting_subconts/uploadCreate') ?>",
                                     data: {
                                         "data": json[number - 1]
                                     },
@@ -760,7 +666,7 @@
                                             $.ajax({
                                                 type: "POST",
                                                 async: true,
-                                                url: "<?= base_url('master/customer_items/uploadcreateFailed') ?>",
+                                                url: "<?= base_url('master/setting_subconts/uploadcreateFailed') ?>",
                                                 data: {
                                                     data: json[number - 1],
                                                     message: result.message

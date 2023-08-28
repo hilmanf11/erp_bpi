@@ -4,8 +4,8 @@
         <tr>
             <th rowspan="2" field="ck" checkbox="true"></th>
             <th rowspan="2" data-options="field:'supplier_name',width:300,halign:'center'">Supplier Name</th>
-            <th rowspan="2" data-options="field:'type',width:100,halign:'center'">Type</th>
-            <th rowspan="2" data-options="field:'currency',width:100,halign:'center'">Currency</th>
+            <th rowspan="2" data-options="field:'type',width:290,halign:'center'">Type</th>
+            <th rowspan="2" data-options="field:'currency',width:250,halign:'center'">Currency</th>
             <th rowspan="2" data-options="field:'status',width:100,align:'center', styler:cellStyler, formatter:cellFormatter">Status</th>
             <th colspan="2" data-options="field:'',width:100,halign:'center'"> Created</th>
             <th colspan="2" data-options="field:'',width:100,halign:'center'"> Updated</th>
@@ -48,7 +48,7 @@
 </div>
 
 <!-- Insert & Update -->
-<div id="dlg_insert" class="easyui-dialog" title="Add New" data-options="closed: true,modal:true" style="width: 1100px; height: 600px; padding:10px; top: 20px;">
+<div id="dlg_insert" class="easyui-dialog" title="Add New" data-options="closed: true,modal:true" style="width: 1500px; height: 600px; padding:10px; top: 20px; left: 15px;">
     <form id="frm_insert" method="post" novalidate>
         <fieldset style="width:100%; border:1px solid #d0d0d0; margin-bottom: 10px; border-radius:4px; float: left;">
             <legend><b>Form Data</b></legend>
@@ -223,7 +223,7 @@
                     }
                 }, {
                     field: 'leadtime',
-                    width: 100,
+                    width: 120,
                     align: 'center',
                     title: "Lead Time (Days)",
                     editor: {
@@ -327,7 +327,7 @@
                 $('#dg2').datagrid('selectRow', editIndex).datagrid('beginEdit', editIndex);
             }
         } else {
-            toastr.error("Please Choose Product No first");
+            toastr.error("Please Choose Supplier first");
         }
     }
 
@@ -498,7 +498,7 @@
                             halign: 'center',
                             width: 150
                         }, {
-                            field: 'item_rm_number',
+                            field: 'item_rm_name',
                             title: 'Part Name',
                             halign: 'center',
                             width: 200
