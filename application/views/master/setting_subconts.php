@@ -3,9 +3,9 @@
     <thead>
         <tr>
             <th rowspan="2" field="ck" checkbox="true"></th>
-            <th rowspan="2" data-options="field:'subcont_id',width:250,halign:'center'">Subcont ID</th>
-            <th rowspan="2" data-options="field:'subcont_name',width:300,halign:'center'">Subcont Name</th>
-            <th rowspan="2" data-options="field:'subcont_number',width:300,halign:'center'">Subcont Code</th>
+            <th rowspan="2" data-options="field:'subcont_id',width:200,halign:'center'">Subcont ID</th>
+            <th rowspan="2" data-options="field:'subcont_name',width:335,halign:'center'">Subcont Name</th>
+            <th rowspan="2" data-options="field:'subcont_number',width:200,halign:'center'">Subcont Code</th>
             <th rowspan="2" data-options="field:'status',width:100,align:'center', styler:cellStyler, formatter:cellFormatter">Status</th>
             <th colspan="2" data-options="field:'',width:100,halign:'center'"> Created</th>
             <th colspan="2" data-options="field:'',width:100,halign:'center'"> Updated</th>
@@ -48,7 +48,7 @@
 </div>
 
 <!-- Insert & Update -->
-<div id="dlg_insert" class="easyui-dialog" title="Add New" data-options="closed: true,modal:true" style="width: 1100px; height: 600px; padding:10px; top: 20px;">
+<div id="dlg_insert" class="easyui-dialog" title="Add New" data-options="closed: true,modal:true" style="width: 1200px; height: 500px; padding:10px; top: 20px;">
     <form id="frm_insert" method="post" novalidate>
         <fieldset style="width:100%; border:1px solid #d0d0d0; margin-bottom: 10px; border-radius:4px; float: left;">
             <legend><b>Form Data</b></legend>
@@ -189,7 +189,82 @@
                     editor: {
                         type: 'numberbox'
                     }
-                }, {
+                },  {
+                    field: 'type',
+                    width: 200,
+                    halign: 'center',
+                    title: "Type",
+                    editor: {
+                        type: 'combobox',
+                        options: {
+                            valueField: 'name',
+                            textField: 'name',
+                            prompt: 'Choose type',
+                            panelHeight: true,
+                            required: true,
+                            data: [{
+                                    name: "SERVICE CHARGE"
+                                },
+                                {
+                                    name: "PRODUCT"
+                                },
+                            ]
+                        }
+                    }
+                },  {
+                    field: 'currency',
+                    width: 150,
+                    halign: 'center',
+                    title: "Currrency",
+                    editor: {
+                        type: 'combobox',
+                        options: {
+                            valueField: 'name',
+                            textField: 'name',
+                            prompt: 'Choose Currrency',
+                            panelHeight: true,
+                            required: true,
+                            data: [{
+                                    name: "IDR"
+                                },
+                                {
+                                    name: "USD"
+                                },
+                                {
+                                    name: "JPY"
+                                },
+                                {
+                                    name: "EUR"
+                                },
+                            ]
+                        }
+                    }
+                },  {
+                    field: 'price',
+                    width: 100,
+                    align: 'center',
+                    title: "Price",
+                    editor: {
+                        type: 'numberbox',
+                        options: {
+                            precision: 2
+                        }
+                    }
+                },  {
+                    field: 'valid_date',
+                    width: 180,
+                    halign: 'center',
+                    title: "Valid Date Until",
+                    editor: {
+                        type: 'datebox',
+                        options: {
+                            formatter: myformatter,
+                            parser: myparser,
+                            editable: false,
+                            required: true
+                        },
+                    }
+                },  {
                     field: 'capacity',
                     width: 200,
                     halign: 'center',
@@ -430,6 +505,27 @@
                             title: 'Share Job Order',
                             halign: 'center',
                             width: 200
+                        },  {
+                            field: 'type',
+                            title: 'Type',
+                            halign: 'center',
+                            width: 200
+                        },  {
+                            field: 'currency',
+                            title: 'Currency',
+                            halign: 'center',
+                            width: 150
+                        },  {
+                            field: 'price',
+                            title: 'Price',
+                            halign: 'center',
+                            width: 200,
+                            formatter: priceformat
+                        },  {
+                            field: 'valid_date',
+                            title: 'Valid Date Until',
+                            halign: 'center',
+                            width: 200
                         }, {
                             field: 'capacity',
                             title: 'Cap/Day (Pcs)',
@@ -476,6 +572,10 @@
                                     subcont_id: subcont_id,
                                     item_fg_id: rows[i].item_fg_id,
                                     share_order: rows[i].share_order,
+                                    type: rows[i].type,
+                                    currency: rows[i].currency,
+                                    price: rows[i].price,
+                                    valid_date: rows[i].valid_date,
                                     capacity: rows[i].capacity,
                                     leadtime: rows[i].leadtime,
                                     status: rows[i].status
@@ -605,6 +705,56 @@
             return 'Not Active';
         }
     };
+
+    // FORMAT tahun-bulan-tanggal
+    function myformatter(date) {
+        var y = date.getFullYear();
+        var m = date.getMonth() + 1;
+        var d = date.getDate();
+        return y + '-' + (m < 10 ? ('0' + m) : m) + '-' + (d < 10 ? ('0' + d) : d);
+    }
+
+    function myparser(s) {
+        if (!s) return new Date();
+        var ss = (s.split('-'));
+        var y = parseInt(ss[0], 10);
+        var m = parseInt(ss[1], 10);
+        var d = parseInt(ss[2], 10);
+        if (!isNaN(y) && !isNaN(m) && !isNaN(d)) {
+            return new Date(y, m - 1, d);
+        } else {
+            return new Date();
+        }
+    }
+
+    function priceformat(value, row) {
+        if (row.currency == "USD") {
+            var digits = 4;
+            var currency = 'USD';
+            var format = "en-IN";
+        } else if (row.currency == "JPY") {
+            var digits = 2;
+            var currency = 'JPY';
+            var format = "ja-JP";
+        } else if (row.currency == "EUR") {
+            var digits = 2;
+            var currency = 'EUR';
+            var format = "de-DE";
+        } else {
+            var digits = 0;
+            var currency = 'IDR';
+            var format = "id-ID";
+        }
+
+        if (value != null) {
+            const formatter = new Intl.NumberFormat(format, {
+                style: 'currency',
+                currency: currency,
+                minimumFractionDigits: digits
+            });
+            return "<b>" + formatter.format(value) + "</b>";
+        }
+    }
 
     // UPLOAD DATA
     $('#dlg_upload').dialog({

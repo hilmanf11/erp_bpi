@@ -3,8 +3,8 @@
     <thead>
         <tr>
             <th rowspan="2" field="ck" checkbox="true"></th>
-            <th rowspan="2" data-options="field:'customer_name',width:440,align:'center'">Customer Name</th>
-            <th rowspan="2" data-options="field:'type',width:400,halign:'center'">Type</th>
+            <th rowspan="2" data-options="field:'customer_name',width:440,halign:'center'">Customer Name</th>
+            <th rowspan="2" data-options="field:'type',width:300,halign:'center'">Type</th>
             <th rowspan="2" data-options="field:'status',width:100,halign:'center', styler:cellStyler, formatter:cellFormatter">Status</th>
             <th colspan="2" data-options="field:'',width:100,halign:'center'"> Created</th>
             <th colspan="2" data-options="field:'',width:100,halign:'center'"> Updated</th>
@@ -201,7 +201,7 @@
                         type: 'datebox',
                         options: {
                             formatter: myformatter,
-                            parse: myparser
+                            parser: myparser
                         }
                     }
                 }, {
@@ -421,7 +421,7 @@
                             field: 'item_fg_number',
                             title: 'Product No.',
                             halign: 'center',
-                            width: 250
+                            width: 170
                         }, {
                             field: 'item_fg_customer',
                             title: 'Product Customer',
@@ -431,7 +431,7 @@
                             field: 'customer_currency',
                             title: 'Currency',
                             halign: 'center',
-                            width: 220
+                            width: 200
                         }, {
                             field: 'price',
                             title: 'Price',

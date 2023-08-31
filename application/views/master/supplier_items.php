@@ -3,9 +3,9 @@
     <thead>
         <tr>
             <th rowspan="2" field="ck" checkbox="true"></th>
-            <th rowspan="2" data-options="field:'supplier_name',width:300,halign:'center'">Supplier Name</th>
-            <th rowspan="2" data-options="field:'type',width:290,halign:'center'">Type</th>
-            <th rowspan="2" data-options="field:'currency',width:250,halign:'center'">Currency</th>
+            <th rowspan="2" data-options="field:'supplier_name',width:340,halign:'center'">Supplier Name</th>
+            <th rowspan="2" data-options="field:'type',width:200,halign:'center'">Type</th>
+            <th rowspan="2" data-options="field:'currency',width:200,halign:'center'">Currency</th>
             <th rowspan="2" data-options="field:'status',width:100,align:'center', styler:cellStyler, formatter:cellFormatter">Status</th>
             <th colspan="2" data-options="field:'',width:100,halign:'center'"> Created</th>
             <th colspan="2" data-options="field:'',width:100,halign:'center'"> Updated</th>
@@ -48,7 +48,7 @@
 </div>
 
 <!-- Insert & Update -->
-<div id="dlg_insert" class="easyui-dialog" title="Add New" data-options="closed: true,modal:true" style="width: 1500px; height: 600px; padding:10px; top: 20px; left: 15px;">
+<div id="dlg_insert" class="easyui-dialog" title="Add New" data-options="closed: true,modal:true" style="width: 1400px; height: 500px; padding:10px; top: 20px; left: 20px;">
     <form id="frm_insert" method="post" novalidate>
         <fieldset style="width:100%; border:1px solid #d0d0d0; margin-bottom: 10px; border-radius:4px; float: left;">
             <legend><b>Form Data</b></legend>
@@ -250,7 +250,7 @@
                         type: 'datebox',
                         options: {
                             formatter: myformatter,
-                            parse: myparser
+                            parser: myparser
                         }
                     }
                 }, {
