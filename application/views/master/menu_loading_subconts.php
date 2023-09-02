@@ -3,10 +3,10 @@
     <thead>
         <tr>
             <th rowspan="2" field="ck" checkbox="true"></th>
-            <th rowspan="2" data-options="field:'supplier_name',width:340,halign:'center'">Supplier Name</th>
-            <th rowspan="2" data-options="field:'type',width:200,halign:'center'">Type</th>
-            <th rowspan="2" data-options="field:'currency',width:200,halign:'center'">Currency</th>
-            <th rowspan="2" data-options="field:'status',width:100,align:'center', styler:cellStyler, formatter:cellFormatter">Status</th>
+            <th rowspan="2" data-options="field:'subcont_id',width:200,halign:'center'">Subcont ID</th>
+            <th rowspan="2" data-options="field:'subcont_number',width:200,halign:'center'">Subcont Code</th>
+            <th rowspan="2" data-options="field:'subcont_name',width:300,halign:'center'">Subcont Name</th>
+            <th rowspan="2" data-options="field:'status',width:150,align:'center', styler:cellStyler, formatter:cellFormatter">Status</th>
             <th colspan="2" data-options="field:'',width:100,halign:'center'"> Created</th>
             <th colspan="2" data-options="field:'',width:100,halign:'center'"> Updated</th>
         </tr>
@@ -26,12 +26,12 @@
         <fieldset style="width: 45%; border:2px solid #d0d0d0; margin-bottom: 5px; margin-top: 5px; border-radius:4px;">
             <legend><b>Form Filter Data</b></legend>
             <div class="fitem">
-                <span style="width:35%; display:inline-block;">Supplier</span>
-                <input style="width:60%;" id="filter_supplier_id" class="easyui-combogrid">
+                <span style="width:35%; display:inline-block;">Subcont</span>
+                <input style="width:60%;" id="filter_subcont_id" class="easyui-combogrid">
             </div>
             <div class="fitem">
-                <span style="width:35%; display:inline-block;">Part No</span>
-                <input style="width:60%;" id="filter_item_rm_id" class="easyui-combogrid">
+                <span style="width:35%; display:inline-block;">Machine No</span>
+                <input style="width:60%;" id="filter_machine_id" class="easyui-combogrid">
             </div>
             <div class="fitem">
                 <span style="width:35%; display:inline-block;"></span>
@@ -53,16 +53,16 @@
         <fieldset style="width:100%; border:1px solid #d0d0d0; margin-bottom: 10px; border-radius:4px; float: left;">
             <legend><b>Form Data</b></legend>
             <div class="fitem">
-                <span style="width:15%; display:inline-block;">Supplier</span>
-                <input style="width:40%;" name="supplier_id" id="supplier_id" required="" class="easyui-combogrid">
+                <span style="width:15%; display:inline-block;">Subcont</span>
+                <input style="width:40%;" name="subcont_id" id="subcont_id" required="" class="easyui-combogrid">
             </div>
         </fieldset>
-        <table id="dg2" class="easyui-datagrid" style="width:100%;" title="Supplier Item Lists" toolbar="#toolbar2"></table>
+        <table id="dg2" class="easyui-datagrid" style="width:100%;" title="Subcont Item Lists" toolbar="#toolbar2"></table>
     </form>
 </div>
 
 <!-- Detail Histories -->
-<div id="dlg_history" class="easyui-dialog" title="Price Histories" data-options="closed: true,modal:true" style="width: 400px; height: 300px; top: 20px;">
+<!-- <div id="dlg_history" class="easyui-dialog" title="Price Histories" data-options="closed: true,modal:true" style="width: 400px; height: 300px; top: 20px;">
     <table id="dg_history" class="easyui-datagrid" style="width:100%;">
         <thead>
             <tr>
@@ -71,7 +71,7 @@
             </tr>
         </thead>
     </table>
-</div>
+</div> -->
 
 <!-- Upload -->
 <div id="dlg_upload" class="easyui-dialog" title="Upload Data" data-options="closed: true,modal:true" style="width: 500px; padding:10px; top: 20px;">
@@ -94,14 +94,14 @@
 </div>
 
 <!-- PDF -->
-<iframe id="printout" src="<?= base_url('master/supplier_items/print') ?>" style="width: 100%;" hidden></iframe>
+<iframe id="printout" src="<?= base_url('master/menu_loading_subconts/print') ?>" style="width: 100%;" hidden></iframe>
 
 <script>
     //ADD DATA
     function add() {
         $('#dlg_insert').dialog('open');
         $('#dg2').datagrid('loadData', []);
-        url_save = '<?= base_url('master/supplier_items/create') ?>';
+        url_save = '<?= base_url('master/menu_loading_subconts/create') ?>';
         $('#frm_insert').form('clear');
     }
 
@@ -111,29 +111,29 @@
             singleSelect: true,
             columns: [
                 [{
-                    field: 'item_rm_number',
+                    field: 'machine_number',
                     width: 200,
                     halign: 'center',
-                    title: "Part No.",
+                    title: "Machine No.",
                     editor: {
                         type: 'combogrid',
                         options: {
-                            url: '<?= base_url('master/item_rm/reads'); ?>',
+                            url: '<?= base_url('master/machines/reads'); ?>',
                             required: true,
                             panelWidth: 400,
                             idField: 'number',
                             textField: 'number',
                             mode: 'remote',
                             fitColumns: true,
-                            prompt: 'Choose Part No.',
+                            prompt: 'Choose Machine No.',
                             columns: [
                                 [{
                                     field: 'number',
-                                    title: 'Part No.',
+                                    title: 'Machine No.',
                                     width: 150
                                 }, {
                                     field: 'name',
-                                    title: 'Part Name',
+                                    title: 'Machine Name',
                                     width: 200
                                 }]
                             ],
@@ -144,25 +144,100 @@
 
                                 var ed = dg.datagrid('getEditor', {
                                     index: rowIndex,
-                                    field: 'item_rm_number'
+                                    field: 'machine_number'
                                 });
                                 var ed2 = dg.datagrid('getEditor', {
                                     index: rowIndex,
-                                    field: 'item_rm_id'
+                                    field: 'machine_id'
                                 });
                                 var ed3 = dg.datagrid('getEditor', {
                                     index: rowIndex,
-                                    field: 'item_family_name'
+                                    field: 'machine_name'
+                                });
+                                var ed4 = dg.datagrid('getEditor', {
+                                    index: rowIndex,
+                                    field: 'machine_spec'
+                                });
+                                var ed5 = dg.datagrid('getEditor', {
+                                    index: rowIndex,
+                                    field: 'machine_maker'
+                                });
+                                var ed6 = dg.datagrid('getEditor', {
+                                    index: rowIndex,
+                                    field: 'machine_toonage'
+                                });
+                                var ed7 = dg.datagrid('getEditor', {
+                                    index: rowIndex,
+                                    field: 'machine_tiebar'
+                                });
+                                var ed8 = dg.datagrid('getEditor', {
+                                    index: rowIndex,
+                                    field: 'machine_uom_tiebar'
+                                });
+                                var ed9 = dg.datagrid('getEditor', {
+                                    index: rowIndex,
+                                    field: 'machine_min_close'
+                                });
+                                var ed10 = dg.datagrid('getEditor', {
+                                    index: rowIndex,
+                                    field: 'machine_uom_min_close'
+                                });
+                                var ed11 = dg.datagrid('getEditor', {
+                                    index: rowIndex,
+                                    field: 'machine_max_open'
+                                });
+                                var ed12 = dg.datagrid('getEditor', {
+                                    index: rowIndex,
+                                    field: 'machine_uom_max_open'
+                                });
+                                var ed13 = dg.datagrid('getEditor', {
+                                    index: rowIndex,
+                                    field: 'machine_volume'
+                                });
+                                var ed14 = dg.datagrid('getEditor', {
+                                    index: rowIndex,
+                                    field: 'machine_uom_volume'
+                                });
+                                var ed15 = dg.datagrid('getEditor', {
+                                    index: rowIndex,
+                                    field: 'machine_diameter'
+                                });
+                                var ed16 = dg.datagrid('getEditor', {
+                                    index: rowIndex,
+                                    field: 'machine_uom_diameter'
+                                });
+                                var ed17 = dg.datagrid('getEditor', {
+                                    index: rowIndex,
+                                    field: 'machine_brand'
+                                });
+                                var ed18 = dg.datagrid('getEditor', {
+                                    index: rowIndex,
+                                    field: 'machine_status'
                                 });
 
                                 $(ed.target).textbox('setValue', rows.number);
                                 $(ed2.target).textbox('setValue', rows.id);
-                                $(ed3.target).textbox('setValue', rows.item_family_name);
+                                $(ed3.target).textbox('setValue', rows.name);
+                                $(ed4.target).textbox('setValue', rows.specification);
+                                $(ed5.target).textbox('setValue', rows.maker);
+                                $(ed6.target).textbox('setValue', rows.toonage);
+                                $(ed7.target).textbox('setValue', rows.tiebar);
+                                $(ed8.target).textbox('setValue', rows.uom_tiebar);
+                                $(ed9.target).textbox('setValue', rows.min_closing);
+                                $(ed10.target).textbox('setValue', rows.uom_min);
+                                $(ed11.target).textbox('setValue', rows.max_open);
+                                $(ed12.target).textbox('setValue', rows.uom_max);
+                                $(ed13.target).textbox('setValue', rows.volume);
+                                $(ed14.target).textbox('setValue', rows.uom_volume);
+                                $(ed15.target).textbox('setValue', rows.diameter);
+                                $(ed16.target).textbox('setValue', rows.uom_diameter);
+                                $(ed17.target).textbox('setValue', rows.brand);
+                                $(ed18.target).textbox('setValue', rows.status);
                             }
                         }
                     }
                 }, {
-                    field: 'item_rm_id',
+                    field: 'machine_id',
                     width: 150,
                     hidden: true,
                     halign: 'center',
@@ -170,27 +245,19 @@
                     editor: {
                         type: 'textbox'
                     }
-                }, {
-                    field: 'maker',
-                    width: 150,
-                    halign: 'center',
-                    title: "Maker",
+                },  {
+                    field: 'capacity',
+                    width: 100,
+                    align: 'center',
+                    title: "Capacity/Day",
                     editor: {
-                        type: 'textbox'
+                        type: 'numberbox'
                     }
-                }, {
-                    field: 'item_supplier',
+                },  {
+                    field: 'machine_name',
                     width: 150,
                     halign: 'center',
-                    title: "Supplier Product",
-                    editor: {
-                        type: 'textbox'
-                    }
-                }, {
-                    field: 'item_family_name',
-                    width: 150,
-                    halign: 'center',
-                    title: "Product Family",
+                    title: "Name of Machine",
                     editor: {
                         type: 'textbox',
                         options: {
@@ -198,88 +265,168 @@
                         }
                     }
                 }, {
-                    field: 'mpq',
-                    width: 100,
-                    align: 'center',
-                    title: "MPQ",
+                    field: 'machine_spec',
+                    width: 150,
+                    halign: 'center',
+                    title: "Specification",
                     editor: {
-                        type: 'numberbox'
+                        type: 'textbox',
+                        options: {
+                            readonly: true
+                        }
                     }
                 }, {
-                    field: 'moq',
-                    width: 100,
-                    align: 'center',
-                    title: "MOQ",
+                    field: 'machine_maker',
+                    width: 150,
+                    halign: 'center',
+                    title: "Maker",
                     editor: {
-                        type: 'numberbox'
+                        type: 'textbox',
+                        options: {
+                            readonly: true
+                        }
                     }
                 }, {
-                    field: 'share_order',
-                    width: 100,
-                    align: 'center',
-                    title: "% Share Order",
-                    editor: {
-                        type: 'numberbox'
-                    }
-                }, {
-                    field: 'leadtime',
+                    field: 'machine_toonage',
                     width: 120,
                     align: 'center',
-                    title: "Lead Time (Days)",
-                    editor: {
-                        type: 'numberbox'
-                    }
-                }, {
-                    field: 'price',
-                    width: 100,
-                    align: 'center',
-                    title: "Price",
+                    title: "Tonage Of Machine",
                     editor: {
                         type: 'numberbox',
                         options: {
-                            precision: 2
+                            readonly: true
                         }
                     }
                 }, {
-                    field: 'valid_date',
-                    width: 180,
-                    halign: 'center',
-                    align: 'right',
-                    title: "Valid Date Until",
-                    editor: {
-                        type: 'datebox',
-                        options: {
-                            formatter: myformatter,
-                            parser: myparser
-                        }
-                    }
-                }, {
-                    field: 'safety_stock',
+                    field: 'machine_tiebar',
                     width: 100,
                     align: 'center',
-                    title: "Safety Stock %",
+                    title: "Tie Bar",
                     editor: {
-                        type: 'numberbox'
+                        type: 'textbox',
+                        options: {
+                            readonly: true
+                        }
                     }
                 }, {
-                    field: 'calculate',
-                    width: 120,
-                    halign: 'center',
-                    title: "Calculate MPQ",
+                    field: 'machine_uom_tiebar',
+                    width: 100,
+                    align: 'center',
+                    title: "UOM",
                     editor: {
-                        type: 'combobox',
+                        type: 'textbox',
                         options: {
-                            valueField: 'name',
-                            textField: 'name',
-                            prompt: 'Choose Calculate MPQ',
-                            panelHeight: true,
-                            data: [{
-                                    name: "YES"
-                                },
-                                {
-                                    name: "NO"
-                                },
-                            ]
+                            readonly: true
+                        }
+                    }
+                }, {
+                    field: 'machine_min_close',
+                    width: 120,
+                    align: 'center',
+                    title: "Minimum Closing",
+                    editor: {
+                        type: 'numberbox',
+                        options: {
+                            readonly: true
+                        }
+                    }
+                },  {
+                    field: 'machine_uom_min_close',
+                    width: 100,
+                    align: 'center',
+                    title: "UOM",
+                    editor: {
+                        type: 'textbox',
+                        options: {
+                            readonly: true
+                        }
+                    }
+                },  {
+                    field: 'machine_max_open',
+                    width: 100,
+                    align: 'center',
+                    title: "Maximum Open",
+                    editor: {
+                        type: 'numberbox',
+                        options: {
+                            readonly: true
+                        }
+                    }
+                },  {
+                    field: 'machine_uom_max_open',
+                    width: 100,
+                    align: 'center',
+                    title: "UOM",
+                    editor: {
+                        type: 'textbox',
+                        options: {
+                            readonly: true
+                        }
+                    }
+                },  {
+                    field: 'machine_volume',
+                    width: 100,
+                    align: 'center',
+                    title: "Barrel Volume",
+                    editor: {
+                        type: 'numberbox',
+                        options: {
+                            readonly: true
+                        }
+                    }
+                },  {
+                    field: 'machine_uom_volume',
+                    width: 100,
+                    align: 'center',
+                    title: "UOM",
+                    editor: {
+                        type: 'textbox',
+                        options: {
+                            readonly: true
+                        }
+                    }
+                },  {
+                    field: 'machine_diameter',
+                    width: 100,
+                    align: 'center',
+                    title: "Screw Diameter",
+                    editor: {
+                        type: 'numberbox',
+                        options: {
+                            readonly: true
+                        }
+                    }
+                },  {
+                    field: 'machine_uom_diameter',
+                    width: 100,
+                    align: 'center',
+                    title: "UOM",
+                    editor: {
+                        type: 'textbox',
+                        options: {
+                            readonly: true
+                        }
+                    }
+                },  {
+                    field: 'machine_brand',
+                    width: 100,
+                    align: 'center',
+                    title: "Brand",
+                    editor: {
+                        type: 'textbox',
+                        options: {
+                            readonly: true
+                        }
+                    }
+                },  {
+                    field: 'machine_status',
+                    width: 100,
+                    align: 'center',
+                    title: "Status",
+                    editor: {
+                        type: 'textbox',
+                        options: {
+                            readonly: true
                         }
                     }
                 }]
@@ -317,8 +464,8 @@
     }
 
     function append() {
-        var supplier_id = $("#supplier_id").combogrid('getValue');
-        if (supplier_id != "") {
+        var subcont_id = $("#subcont_id").combogrid('getValue');
+        if (subcont_id != "") {
             if (endEditing()) {
                 $('#dg2').datagrid('appendRow', {
                     qty: '0'
@@ -327,7 +474,7 @@
                 $('#dg2').datagrid('selectRow', editIndex).datagrid('beginEdit', editIndex);
             }
         } else {
-            toastr.error("Please Choose Supplier first");
+            toastr.error("Please Choose Subcont first");
         }
     }
 
@@ -342,18 +489,18 @@
 
         var ed = dg.datagrid('getEditor', {
             index: editIndex,
-            field: 'item_rm_id'
+            field: 'machine_id'
         });
 
-        var supplier_id = $("#supplier_id").combogrid('getValue');
-        var item_rm_id = $(ed.target).textbox('getValue');
+        var subcont_id = $("#subcont_id").combogrid('getValue');
+        var machine_id = $(ed.target).textbox('getValue');
 
         $.ajax({
             method: 'post',
-            url: '<?= base_url('master/supplier_items/delete') ?>',
+            url: '<?= base_url('master/menu_loading_subconts/delete') ?>',
             data: {
-                supplier_id: row.supplier_id,
-                item_rm_id: item_rm_id
+                subcont_id: row.subcont_id,
+                machine_id: machine_id
             },
             success: function(result) {
                 var result = eval('(' + result + ')');
@@ -378,9 +525,9 @@
         if (row) {
             $('#dlg_insert').dialog('open');
             $('#frm_insert').form('load', row);
-            $("#item_rm_id").combogrid('disable');
+            $("#machine_id").combogrid('disable');
 
-            addTable('<?= base_url('master/supplier_items/datatableUpdates?supplier_id=') ?>' + window.btoa(row.supplier_id));
+            addTable('<?= base_url('master/menu_loading_subconts/datatableUpdates?subcont_id=') ?>' + window.btoa(row.subcont_id));
         } else {
             toastr.warning("Please select one of the data in the table first!", "Information");
         }
@@ -396,9 +543,9 @@
                         var row = rows[i];
                         $.ajax({
                             method: 'post',
-                            url: '<?= base_url('master/supplier_items/delete') ?>',
+                            url: '<?= base_url('master/menu_loading_subconts/delete') ?>',
                             data: {
-                                supplier_id: row.supplier_id
+                                subcont_id: row.subcont_id
                             },
                             success: function(result) {
                                 var result = eval('(' + result + ')');
@@ -424,23 +571,23 @@
     }
     // DOWNLOAD
     function download_excel() {
-        window.location.assign('<?= base_url('template/tmp_supplier_items.xls') ?>');
+        window.location.assign('<?= base_url('template/tmp_menu_loading_subconts.xls') ?>');
     }
 
     //FILTER DATA
     function filter() {
-        var filter_supplier_id = $("#filter_supplier_id").combogrid('getValue');
-        var filter_item_rm_id = $("#filter_item_rm_id").combogrid('getValue');
+        var filter_subcont_id = $("#filter_subcont_id").combogrid('getValue');
+        var filter_machine_id = $("#filter_machine_id").combogrid('getValue');
 
-        var url = "?filter_supplier_id=" + window.btoa(filter_supplier_id) +
-            "&filter_item_rm_id=" + window.btoa(filter_item_rm_id);
+        var url = "?filter_subcont_id=" + window.btoa(filter_subcont_id) +
+            "&filter_machine_id=" + window.btoa(filter_machine_id);
 
         $('#dg').datagrid({
-            url: '<?= base_url('master/supplier_items/datatables') ?>' + url
+            url: '<?= base_url('master/menu_loading_subconts/datatables') ?>' + url
         });
 
         $("#printout").contents().find('html').html("<center><br><br><br><b style='font-size:20px;'>Please Wait...</b></center>");
-        $("#printout").attr('src', '<?= base_url('master/supplier_items/print') ?>' + url);
+        $("#printout").attr('src', '<?= base_url('master/menu_loading_subconts/print') ?>' + url);
     }
 
     //PRINT PDF
@@ -450,13 +597,13 @@
 
     //PRINT EXCEL
     function excel() {
-        var filter_supplier_id = $("#filter_supplier_id").combogrid('getValue');
-        var filter_item_rm_id = $("#filter_item_rm_id").combogrid('getValue');
+        var filter_subcont_id = $("#filter_subcont_id").combogrid('getValue');
+        var filter_machine_id = $("#filter_machine_id").combogrid('getValue');
 
-        var url = "?filter_supplier_id=" + window.btoa(filter_supplier_id) +
-            "&filter_item_rm_id=" + window.btoa(filter_item_rm_id);
+        var url = "?filter_subcont_id=" + window.btoa(filter_subcont_id) +
+            "&filter_machine_id=" + window.btoa(filter_machine_id);
 
-        window.location.assign('<?= base_url('master/supplier_items/print/excel') ?>' + url);
+        window.location.assign('<?= base_url('master/menu_loading_subconts/print/excel') ?>' + url);
     }
 
     //RELOAD
@@ -470,100 +617,120 @@
 
         //SETTING DATAGRID EASYUI
         $('#dg').datagrid({
-            url: '<?= base_url('master/supplier_items/datatables') ?>',
+            url: '<?= base_url('master/menu_loading_subconts/datatables') ?>',
             pagination: true,
             rownumbers: true,
             height: '645px',
             view: detailview,
             detailFormatter: function(index, row) {
-                return '<div style="padding:2px;position:relative;"><table class="ddv" title="Detail Of ' + row.supplier_name + '"></table></div>';
+                return '<div style="padding:2px;position:relative;"><table class="ddv" title="Detail Of ' + row.subcont_name + '"></table></div>';
             },
             onExpandRow: function(index, row) {
                 var ddv = $(this).datagrid('getRowDetail', index).find('table.ddv');
-                var filter_item_rm_id = $("#filter_item_rm_id").combogrid('getValue');
+                var filter_machine_id = $("#filter_machine_id").combogrid('getValue');
 
                 ddv.datagrid({
-                    url: '<?= base_url('master/supplier_items/datatableDetails?number=') ?>' + window.btoa(row.supplier_number) + "&filter_item_rm_id=" + window.btoa(filter_item_rm_id),
+                    url: '<?= base_url('master/menu_loading_subconts/datatableDetails?number=') ?>' + window.btoa(row.subcont_number) + "&filter_machine_id=" + window.btoa(filter_machine_id),
                     singleSelect: true,
                     rownumbers: true,
                     columns: [
                         [{
-                            field: 'item_rm_id',
-                            title: 'Part ID',
+                            field: 'capacity',
+                            title: 'Capacity/Day',
+                            halign: 'center',
+                            width: 100
+                        },  {
+                            field: 'machine_id',
+                            title: 'Machine ID',
                             halign: 'center',
                             width: 150
                         }, {
-                            field: 'item_rm_number',
-                            title: 'Part No.',
+                            field: 'machine_number',
+                            title: 'Machine No.',
                             halign: 'center',
                             width: 150
                         }, {
-                            field: 'item_rm_name',
-                            title: 'Part Name',
+                            field: 'machine_name',
+                            title: 'Machine Name',
                             halign: 'center',
                             width: 200
+                        },  {
+                            field: 'machine_spec',
+                            title: 'Specification',
+                            halign: 'center',
+                            width: 150
                         }, {
-                            field: 'maker',
+                            field: 'machine_maker',
                             title: 'Maker',
                             halign: 'center',
-                            width: 150
+                            width: 100
                         }, {
-                            field: 'item_supplier',
-                            title: 'Supplier Product',
+                            field: 'machine_toonage',
+                            title: 'Toonage of Machine',
                             halign: 'center',
                             width: 150
                         }, {
-                            field: 'item_family_name',
-                            title: 'Product Family',
-                            halign: 'center',
-                            width: 150
-                        }, {
-                            field: 'mpq',
-                            title: 'MPQ',
+                            field: 'machine_tiebar',
+                            title: 'Tie Bar',
                             halign: 'center',
                             width: 80
                         }, {
-                            field: 'moq',
-                            title: 'MOQ',
+                            field: 'machine_uom_tiebar',
+                            title: 'UOM',
                             halign: 'center',
                             width: 80
                         }, {
-                            field: 'share_order',
-                            title: 'Share Order %',
+                            field: 'machine_min_close',
+                            title: 'Minimum Closing',
                             halign: 'center',
-                            width: 100
+                            width: 120
                         }, {
-                            field: 'leadtime',
-                            title: 'Leadtime',
+                            field: 'machine_uom_min_close',
+                            title: 'UOM',
                             halign: 'center',
-                            width: 100
-                        }, {
-                            field: 'price',
-                            title: 'Price',
+                            width: 80
+                        },  {
+                            field: 'machine_max_open',
+                            title: 'Maximum Open',
                             halign: 'center',
-                            width: 100,
-                            formatter: priceformat
-                        }, {
-                            field: 'btn',
-                            title: 'History',
+                            width: 120
+                        },  {
+                            field: 'machine_uom_max_open',
+                            title: 'UOM',
                             halign: 'center',
-                            width: 80,
-                            formatter: btnHistories
-                        }, {
-                            field: 'valid_date',
-                            title: 'Valid Date',
+                            width: 80
+                        },  {
+                            field: 'machine_volume',
+                            title: 'Barrel Volume',
                             halign: 'center',
-                            width: 100
-                        }, {
-                            field: 'safety_stock',
-                            title: 'Safet Stock %',
-                            width: 100,
+                            width: 120
+                        },  {
+                            field: 'machine_uom_volume',
+                            title: 'UOM',
                             halign: 'center',
-                        }, {
-                            field: 'calculate',
-                            title: 'Calculate MPQ',
-                            width: 100,
+                            width: 80
+                        },  {
+                            field: 'machine_diameter',
+                            title: 'Screw Diameter',
                             halign: 'center',
+                            width: 120
+                        },  {
+                            field: 'machine_uom_diameter',
+                            title: 'UOM',
+                            halign: 'center',
+                            width: 80
+                        },  {
+                            field: 'machine_brand',
+                            title: 'Brand',
+                            halign: 'center',
+                            width: 80
+                        },  {
+                            field: 'machine_status',
+                            title: 'Status',
+                            halign: 'center',
+                            styler:cellStyler, 
+                            formatter:cellFormatter,
+                            width: 80
                         }]
                     ],
                     onResize: function() {
@@ -585,30 +752,21 @@
                 text: 'Save All',
                 iconCls: 'icon-ok',
                 handler: function() {
-                    var supplier_id = $("#supplier_id").combogrid('getValue');
+                    var subcont_id = $("#subcont_id").combogrid('getValue');
 
                     var rows = $('#dg2').datagrid('getRows');
                     var totalrows = rows.length;
                     endEditing();
 
                     for (let i = 0; i < totalrows; i++) {
-                        if (rows[i].item_rm_id) {
+                        if (rows[i].machine_id) {
                             $.ajax({
                                 type: "post",
-                                url: '<?= base_url('master/supplier_items/create') ?>',
+                                url: '<?= base_url('master/menu_loading_subconts/create') ?>',
                                 data: {
-                                    supplier_id: supplier_id,
-                                    item_rm_id: rows[i].item_rm_id,
-                                    maker: rows[i].maker,
-                                    item_supplier: rows[i].item_supplier,
-                                    mpq: rows[i].mpq,
-                                    moq: rows[i].moq,
-                                    share_order: rows[i].share_order,
-                                    leadtime: rows[i].leadtime,
-                                    price: rows[i].price,
-                                    valid_date: rows[i].valid_date,
-                                    safety_stock: rows[i].safety_stock,
-                                    calculate: rows[i].calculate
+                                    subcont_id: subcont_id,
+                                    machine_id: rows[i].machine_id,
+                                    capacity: rows[i].capacity
                                 },
                                 dataType: "json",
                                 success: function(result) {
@@ -636,60 +794,48 @@
         });
     });
 
-    $('#supplier_id').combogrid({
-        url: '<?= base_url('master/suppliers/reads/'); ?>',
+    $('#subcont_id').combogrid({
+        url: '<?= base_url('master/subconts/reads/'); ?>',
         panelWidth: 420,
         idField: 'id',
         textField: 'name',
         mode: 'remote',
         fitColumns: true,
-        prompt: "Choose Supplier",
+        prompt: "Choose subcont",
         columns: [
             [{
                 field: 'number',
-                title: 'Supplier Code',
+                title: 'subcont Code',
                 width: 120
             }, {
                 field: 'name',
-                title: 'Supplier Name',
+                title: 'subcont Name',
                 width: 250
-            }, {
-                field: 'currency',
-                title: 'Currency',
-                width: 100
             }, ]
         ]
     });
 
-    $('#filter_supplier_id').combogrid({
-        url: '<?= base_url('master/suppliers/reads'); ?>',
+    $('#filter_subcont_id').combogrid({
+        url: '<?= base_url('master/subconts/reads'); ?>',
         panelWidth: 750,
         idField: 'id',
         textField: 'name',
         mode: 'remote',
         fitColumns: true,
-        prompt: "Choose Supplier",
+        prompt: "Choose Subcont",
         columns: [
             [{
                 field: 'id',
-                title: 'Supplier ID',
+                title: 'subcont ID',
                 width: 150
             }, {
                 field: 'number',
-                title: 'Supplier Code',
+                title: 'subcont Code',
                 width: 150
             }, {
                 field: 'name',
-                title: 'Supplier Name',
+                title: 'subcont Name',
                 width: 200
-            }, {
-                field: 'type',
-                title: 'Type',
-                width: 100
-            }, {
-                field: 'currency',
-                title: 'Currency',
-                width: 100
             }, ]
         ],
         icons: [{
@@ -700,31 +846,27 @@
         }],
     });
 
-    $('#filter_item_rm_id').combogrid({
-        url: '<?= base_url('master/item_rm/reads'); ?>',
+    $('#filter_machine_id').combogrid({
+        url: '<?= base_url('master/machine/reads'); ?>',
         panelWidth: 500,
         idField: 'id',
         textField: 'number',
         mode: 'remote',
         fitColumns: true,
-        prompt: "Choose Part No.",
+        prompt: "Choose Machine No.",
         columns: [
             [{
                 field: 'id',
-                title: 'Part ID',
+                title: 'Machine ID',
                 width: 180
             }, {
                 field: 'number',
-                title: 'Part No.',
+                title: 'Machine No.',
                 width: 150
             }, {
                 field: 'name',
-                title: 'Part Name',
+                title: 'Machine Name',
                 width: 150
-            }, {
-                field: 'item_family_id',
-                title: 'Product Family',
-                width: 180
             }, ]
         ],
         icons: [{
@@ -752,83 +894,19 @@
         }
     };
 
-    // FORMAT tahun-bulan-tanggal
-    function myformatter(date) {
-        var y = date.getFullYear();
-        var m = date.getMonth() + 1;
-        var d = date.getDate();
-        return y + '-' + (m < 10 ? ('0' + m) : m) + '-' + (d < 10 ? ('0' + d) : d);
-    }
-
-    function myparser(s) {
-        if (!s) return new Date();
-        var ss = (s.split('-'));
-        var y = parseInt(ss[0], 10);
-        var m = parseInt(ss[1], 10);
-        var d = parseInt(ss[2], 10);
-        if (!isNaN(y) && !isNaN(m) && !isNaN(d)) {
-            return new Date(y, m - 1, d);
-        } else {
-            return new Date();
-        }
-    }
-
-    function priceformat(value, row) {
-        if (row.currency == "USD") {
-            var digits = 4;
-            var currency = 'USD';
-            var format = "en-IN";
-        } else if (row.currency == "JPY") {
-            var digits = 2;
-            var currency = 'JPY';
-            var format = "ja-JP";
-        } else if (row.currency == "EUR") {
-            var digits = 2;
-            var currency = 'EUR';
-            var format = "de-DE";
-        } else {
-            var digits = 0;
-            var currency = 'IDR';
-            var format = "id-ID";
-        }
-
-        if (value != null) {
-            const formatter = new Intl.NumberFormat(format, {
-                style: 'currency',
-                currency: currency,
-                minimumFractionDigits: digits
-            });
-            return "<b>" + formatter.format(value) + "</b>";
-        }
-    }
-
-    function btnHistories(val, row) {
-        var history = "viewHistories('" + row.supplier_id + "','" + row.item_rm_id + "')";
-        return '<a class="btn btn-primary w-100" onClick="' + history + '" style="pointer-events: visible; opacity:1;"><i class="fa fa-eye"></i> View</a>';
-    }
-
-    function viewHistories(supplier_id, item_rm_id) {
-        $("#dlg_history").dialog('open');
-        $('#dg_history').datagrid({
-            url: '<?= base_url('master/supplier_items/datatableHistories?supplier_id=') ?>' + btoa(supplier_id) + "&item_rm_id=" + btoa(item_rm_id),
-            pagination: false,
-            rownumbers: true,
-        });
-    }
-
     // UPLOAD DATA
     $('#dlg_upload').dialog({
         buttons: [{
             text: 'List Failed',
             handler: function() {
-                window.open('<?= base_url('master/supplier_items/uploadDownloadFailed') ?>', '_blank');
+                window.open('<?= base_url('master/menu_loading_subconts/uploadDownloadFailed') ?>', '_blank');
             }
         }, {
             text: 'Upload',
             iconCls: 'icon-ok',
             handler: function() {
                 $('#frm_upload').form('submit', {
-                    url: '<?= base_url('master/supplier_items/upload') ?>',
+                    url: '<?= base_url('master/menu_loading_subconts/upload') ?>',
                     onSubmit: function() {
                         if ($(this).form('validate') == false) {
                             return $(this).form('validate');
@@ -843,7 +921,7 @@
                         $.messager.progress('close');
                         //Clear File
                         $.ajax({
-                            url: "<?= base_url('master/supplier_items/uploadclearFailed') ?>"
+                            url: "<?= base_url('master/menu_loading_subconts/uploadclearFailed') ?>"
                         });
                         var json = eval('(' + result + ')');
                         requestData(json.total, json);
@@ -858,7 +936,7 @@
                                 $.ajax({
                                     type: "POST",
                                     async: true,
-                                    url: "<?= base_url('master/supplier_items/uploadCreate') ?>",
+                                    url: "<?= base_url('master/menu_loading_subconts/uploadCreate') ?>",
                                     data: {
                                         "data": json[number - 1]
                                     },
@@ -876,7 +954,7 @@
                                             $.ajax({
                                                 type: "POST",
                                                 async: true,
-                                                url: "<?= base_url('master/supplier_items/uploadcreateFailed') ?>",
+                                                url: "<?= base_url('master/menu_loading_subconts/uploadcreateFailed') ?>",
                                                 data: {
                                                     data: json[number - 1],
                                                     message: result.message
