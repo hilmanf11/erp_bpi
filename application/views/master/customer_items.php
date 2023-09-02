@@ -4,7 +4,7 @@
         <tr>
             <th rowspan="2" field="ck" checkbox="true"></th>
             <th rowspan="2" data-options="field:'customer_name',width:440,halign:'center'">Customer Name</th>
-            <th rowspan="2" data-options="field:'type',width:300,halign:'center'">Type</th>
+            <th rowspan="2" data-options="field:'type',width:100,align:'center'">Type</th>
             <th rowspan="2" data-options="field:'status',width:100,halign:'center', styler:cellStyler, formatter:cellFormatter">Status</th>
             <th colspan="2" data-options="field:'',width:100,halign:'center'"> Created</th>
             <th colspan="2" data-options="field:'',width:100,halign:'center'"> Updated</th>
@@ -195,7 +195,6 @@
                     field: 'valid_date',
                     width: 180,
                     halign: 'center',
-                    align: 'right',
                     title: "Valid Date",
                     editor: {
                         type: 'datebox',
@@ -421,38 +420,43 @@
                             field: 'item_fg_number',
                             title: 'Product No.',
                             halign: 'center',
-                            width: 170
+                            width: 200
+                        }, {
+                            field: 'item_fg_name',
+                            title: 'Product Name',
+                            halign: 'center',
+                            width: 200
                         }, {
                             field: 'item_fg_customer',
                             title: 'Product Customer',
                             halign: 'center',
-                            width: 250
+                            width: 150
                         }, {
                             field: 'customer_currency',
                             title: 'Currency',
-                            halign: 'center',
-                            width: 200
+                            align: 'center',
+                            width: 80
                         }, {
                             field: 'price',
                             title: 'Price',
-                            halign: 'center',
-                            width: 200,
+                            halign: 'right',
+                            width: 100,
                             formatter: priceformat
                         }, {
                             field: 'btn',
                             title: 'History',
                             halign: 'center',
-                            width: 150,
+                            width: 80,
                             formatter: btnHistories
                         }, {
                             field: 'valid_date',
                             title: 'Valid Date',
                             halign: 'center',
-                            width: 200
+                            width: 100
                         }, {
                             field: 'remark',
                             title: 'Remarks',
-                            width: 200,
+                            width: 150,
                             halign: 'center',
                         }]
                     ],

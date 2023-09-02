@@ -27,13 +27,15 @@ class Customers extends CI_Controller
             redirect('error_access');
         }
     }
+
     //GET DATA
     public function reads()
     {
         $post = isset($_POST['q']) ? $_POST['q'] : "";
-        $send = $this->crud->reads('customers', ["name" => $post]);
+        $send = $this->crud->query("SELECT * FROM customers WHERE id like '%$post%' or `number` like '%$post%' or `name` like '%$post%'");
         echo json_encode($send);
     }
+
     //GET DATATABLES
     public function datatables()
     {
@@ -69,11 +71,12 @@ class Customers extends CI_Controller
         }
     }
     //AUTO ID
-    public function autoid(){
+    public function autoid()
+    {
         $sql = $this->db->query("SELECT max(id) as kode FROM customers");
         $row = $sql->row();
-        $kode = substr($row->kode,2);
-        $autoid ="C". sprintf("%03s", $kode + 1);
+        $kode = substr($row->kode, 2);
+        $autoid = "C" . sprintf("%03s", $kode + 1);
         echo $autoid;
     }
     //CREATE DATA
@@ -183,8 +186,8 @@ class Customers extends CI_Controller
             //AUTOID
             $sql = $this->db->query("SELECT max(id) as kode FROM customers");
             $row = $sql->row();
-            $kode = substr($row->kode,2);
-            $autoid ="C". sprintf("%03s", $kode + 1);
+            $kode = substr($row->kode, 2);
+            $autoid = "C" . sprintf("%03s", $kode + 1);
 
             if (!empty($customers->number)) {
                 echo json_encode(array("title" => "Duplicated", "message" => " Customer Code " . $data['number'] . " is Duplicate Data", "theme" => "error"));
