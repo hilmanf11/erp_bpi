@@ -29,10 +29,13 @@ class Customer_items extends CI_Controller
         }
     }
     //GET DATA
-    public function reads()
+    public function reads($customer_id)
     {
+        $customer_id = base64_decode($customer_id);
         $post = isset($_POST['q']) ? $_POST['q'] : "";
-        $send = $this->crud->reads('customer_items', ["customer_id" => $post]);
+        $send = $this->crud->query("SELECT b.id, b.number, b.name, b.number_customer, a.price FROM customer_items a 
+            JOIN item_fg b ON a.item_fg_id = b.id 
+            WHERE a.customer_id = '$customer_id' and (b.number LIKE '%$post%' or b.name LIKE '%$post%')");
         echo json_encode($send);
     }
 
@@ -79,7 +82,7 @@ class Customer_items extends CI_Controller
             $number = base64_decode($this->input->get('number'));
             $filter_customer_id = base64_decode($this->input->get('filter_customer_id'));
 
-            $this->db->select('a.*, b.number as customer_number, b.name as customer_name, b.currency as customer_currency, c.number as item_fg_number, c.number_customer as item_fg_customer');
+            $this->db->select('a.*, b.number as customer_number, b.name as customer_name, b.currency as customer_currency, c.number as item_fg_number, c.number_customer as item_fg_customer, c.name as item_fg_name');
             $this->db->from('customer_items a');
             $this->db->join('customers b', 'a.customer_id = b.id');
             $this->db->join('item_fg c', 'a.item_fg_id = c.id');
