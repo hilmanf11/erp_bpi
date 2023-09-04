@@ -54,6 +54,7 @@
                     <span style="width:35%; display:inline-block;">Revision</span>
                     <select style="width:30%;" id="filter_revision" class="easyui-combobox" panelHeight="auto">
                         <option value="" selected disabled>Choose All</option>
+                        <option value="0">0</option>
                         <option value="1">1</option>
                         <option value="2">2</option>
                         <option value="3">3</option>
@@ -89,7 +90,7 @@
                 </div>
                 <div class="fitem">
                     <span style="width:35%; display:inline-block;">Document No</span>
-                    <input style="width:60%;" name="document_no" id="document_no" required="" class="easyui-textbox">
+                    <input style="width:60%;" name="document_no" id="document_no" required="" class="easyui-textbox" readonly>
                 </div>
             </div>
             <div style="float: left; width: 50%;">
@@ -99,7 +100,14 @@
                 </div>
                 <div class="fitem">
                     <span style="width:35%; display:inline-block;">Revision</span>
-                    <input style="width:30%;" name="revision" id="revision" required="" readonly class="easyui-textbox">
+                    <select style="width:30%;" name="revision" id="revision" class="easyui-combobox" panelHeight="auto">
+                        <option value="0">0</option>
+                        <option value="1">1</option>
+                        <option value="2">2</option>
+                        <option value="3">3</option>
+                        <option value="4">4</option>
+                        <option value="5">5</option>
+                    </select>
                 </div>
                 <div class="fitem">
                     <span style="width:35%; display:inline-block;">Remarks</span>
@@ -112,7 +120,7 @@
 </div>
 
 <!-- Detail Histories -->
-<div id="dlg_history" class="easyui-dialog" title="Price Histories" data-options="closed: true,modal:true" style="width: 1300px; height: 500px; top: 20px; left: 20px;">
+<div id="dlg_history" class="easyui-dialog" title="Forecast Histories" data-options="closed: true,modal:true" style="width: 1300px; height: 500px; top: 20px; left: 20px;">
     <table id="dg_history" class="easyui-datagrid" style="width:100%;"></table>
 </div>
 
@@ -150,6 +158,8 @@
         $("#p_month").combobox('enable');
         $("#p_year").combobox('enable');
 
+        $("#revision").combobox('setValue', '0');
+        $("#p_month").combobox('setValue', '<?= date("m") ?>');
         $("#p_month").combobox('setValue', '<?= date("m") ?>');
         $("#p_year").combobox('setValue', '<?= date("Y") ?>');
         $("#issued_date").datebox('setValue', '<?= date("Y-m-d") ?>');
@@ -479,7 +489,6 @@
                                 customer_id: row.customer_id,
                                 p_month: row.p_month,
                                 p_year: row.p_year,
-                                revision: row.revision,
                             },
                             success: function(result) {
                                 var result = eval('(' + result + ')');
@@ -805,16 +814,6 @@
             }]
         ],
         onSelect: function(val, row) {
-            $.ajax({
-                type: "post",
-                url: "<?= base_url('planning/forecasts/readRevisionLast') ?>",
-                data: "customer_id=" + row.id,
-                dataType: "json",
-                success: function(forecast) {
-                    $("#revision").textbox('setValue', forecast.revision);
-                }
-            });
-
             //ADD DATA
             addTable(row.id);
         }
@@ -832,6 +831,20 @@
         valueField: 'id',
         textField: 'name',
         prompt: 'Choose Years',
+    });
+
+    $("#issued_date").datebox({
+        onChange: function(value){
+            $.ajax({
+                type: "post",
+                url: "<?= base_url('planning/forecasts/autoid') ?>",
+                data: "issued_date="+value,
+                dataType: "html",
+                success: function(response) {
+                    $('#document_no').textbox('setValue', response);
+                }
+            });
+        }
     });
 
     $('#filter_customer_id').combogrid({
@@ -924,7 +937,7 @@
         return '<a class="btn btn-primary w-100" onClick="' + history + '" style="pointer-events: visible; opacity:1;"><i class="fa fa-eye"></i></a>';
     }
 
-    function viewHistories(customer_id, item_fg_id, p_month, p_year, revision) {
+    function viewHistories(customer_id, item_fg_id, p_month, p_year) {
         $("#dlg_history").dialog('open');
 
         $.ajax({
@@ -934,7 +947,7 @@
             dataType: "json",
             success: function(result) {
                 $("#dg_history").datagrid({
-                    url: '<?= base_url('planning/forecasts/datatableHistories?customer_id=') ?>' + btoa(customer_id) + "&item_fg_id=" + btoa(item_fg_id) + "&p_month=" + btoa(p_month) + "&p_year=" + btoa(p_year) + "&revision=" + btoa(revision),
+                    url: '<?= base_url('planning/forecasts/datatableHistories?customer_id=') ?>' + btoa(customer_id) + "&item_fg_id=" + btoa(item_fg_id) + "&p_month=" + btoa(p_month) + "&p_year=" + btoa(p_year),
                     singleSelect: true,
                     rownumbers: true,
                     columns: [
