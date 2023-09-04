@@ -3,9 +3,9 @@
     <thead>
         <tr>
             <th rowspan="2" field="ck" checkbox="true"></th>
-            <th rowspan="2" data-options="field:'supplier_name',width:340,halign:'center'">Supplier Name</th>
-            <th rowspan="2" data-options="field:'type',width:200,halign:'center'">Type</th>
-            <th rowspan="2" data-options="field:'currency',width:200,halign:'center'">Currency</th>
+            <th rowspan="2" data-options="field:'supplier_name',width:550,halign:'center'">Supplier Name</th>
+            <th rowspan="2" data-options="field:'type',width:100,halign:'center'">Type</th>
+            <th rowspan="2" data-options="field:'currency',width:100,halign:'center'">Currency</th>
             <th rowspan="2" data-options="field:'status',width:100,align:'center', styler:cellStyler, formatter:cellFormatter">Status</th>
             <th colspan="2" data-options="field:'',width:100,halign:'center'"> Created</th>
             <th colspan="2" data-options="field:'',width:100,halign:'center'"> Updated</th>

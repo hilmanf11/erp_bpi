@@ -416,9 +416,9 @@
         });
 
         var customer_id = $("#customer_id").combogrid('getValue');
-        var p_month = $("#p_month").combobox('getValue');
-        var p_year = $("#p_year").combobox('getValue');
-        var revision = $("#revision").combobox('getValue');
+        // var p_month = $("#p_month").combobox('getValue');
+        // var p_year = $("#p_year").combobox('getValue');
+        // var revision = $("#revision").combobox('getValue');
         var item_fg_id = $(ed.target).textbox('getValue');
 
         $.ajax({
@@ -426,10 +426,10 @@
             url: '<?= base_url('planning/forecasts/delete') ?>',
             data: {
                 customer_id: row.customer_id,
+                // p_month: row.p_month,
+                // p_year: row.p_year,
+                // revision: row.revision,
                 item_fg_id: item_fg_id,
-                p_month: p_month,
-                p_year: p_year,
-                revision: revision,
             },
             success: function(result) {
                 var result = eval('(' + result + ')');
@@ -507,7 +507,7 @@
 
     // DOWNLOAD
     function download_excel() {
-        window.location.assign('<?= base_url('template/tmp_customer_items.xls') ?>');
+        window.location.assign('<?= base_url('template/tmp_forecasts.xls') ?>');
     }
 
     //FILTER DATA
@@ -942,7 +942,7 @@
                             field: 'created_date',
                             title: 'Trans Date',
                             halign: 'center',
-                            width: 120
+                            width: 150
                         }, {
                             field: 'item_fg_number',
                             title: 'Product No',

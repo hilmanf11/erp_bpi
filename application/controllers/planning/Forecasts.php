@@ -208,13 +208,15 @@ class Forecasts extends CI_Controller
             $revision = base64_decode($this->input->get('revision'));
 
             $this->db->select('*');
-            $this->db->from('forecast_histories');
-            $this->db->where('customer_id', $customer_id);
-            $this->db->where('item_fg_id', $item_fg_id);
-            $this->db->where('p_month', $p_month);
-            $this->db->where('p_year', $p_year);
-            $this->db->where('revision', $revision);
-            $this->db->order_by('created_date', 'DESC');
+            $this->db->select('a.*, b.number as item_fg_number, b.name as item_fg_name');
+            $this->db->from('forecast_histories a');
+            $this->db->join('item_fg b', 'a.item_fg_id = b.id');
+            $this->db->where('a.customer_id', $customer_id);
+            $this->db->where('a.item_fg_id', $item_fg_id);
+            $this->db->where('a.p_month', $p_month);
+            $this->db->where('a.p_year', $p_year);
+            $this->db->where('a.revision', $revision);
+            $this->db->order_by('a.created_date', 'DESC');
             $records = $this->db->get()->result_array();
 
             echo json_encode($records);
@@ -228,7 +230,7 @@ class Forecasts extends CI_Controller
             $post = $this->input->post();
 
             $forecasts = $this->crud->read("forecasts", [], ["customer_id" => $post['customer_id'], "item_fg_id" => $post['item_fg_id'], "p_month" => $post['p_month'], "p_year" => $post['p_year'], "revision" => $post['revision']]);
-            $forecast_histories = $this->crud->read("forecast_histories", [], ["customer_id" => $post['customer_id'], "item_fg_id" => $post['item_fg_id'], "p_month" => $post['p_month'], "p_year" => $post['p_year'], "revision" => $post['revision']]);
+            $forecast_histories = $this->crud->read("forecast_histories", [], ["customer_id" => $post['customer_id'], "item_fg_id" => $post['item_fg_id'], "p_month" => $post['p_month'], "p_year" => $post['p_year'], "revision" => $post['revision'], "month_1" => $post['month_1'], "month_2" => $post['month_2'], "month_3" => $post['month_3'], "month_4" => $post['month_4'], "month_5" => $post['month_5'], "month_6" => $post['month_6'], "month_7" => $post['month_7'], "month_8" => $post['month_8'], "month_9" => $post['month_9'], "month_10" => $post['month_10'], "month_11" => $post['month_11'], "month_12" => $post['month_12']]);
 
             if (@$forecasts->customer_id != "") {
                 $send = $this->crud->update('forecasts', ["customer_id" => $post['customer_id'], "item_fg_id" => $post['item_fg_id'], "p_month" => $post['p_month'], "p_year" => $post['p_year'], "revision" => $post['revision']], $post);
@@ -250,7 +252,7 @@ class Forecasts extends CI_Controller
     {
         $data = $this->input->post();
         $send = $this->crud->delete('forecasts', $data);
-        $send = $this->crud->delete('forecast_histories', $data);
+        $send2 = $this->crud->delete('forecast_histories', $data);
         echo $send;
     }
 
@@ -265,14 +267,29 @@ class Forecasts extends CI_Controller
         $file = $_FILES['file_upload']['name'];
         $data = new Spreadsheet_Excel_Reader($file, false);
         $total_row = $data->rowcount($sheet_index = 0);
-        for ($i = 3; $i <= $total_row; $i++) {
+        for ($i = 4; $i <= $total_row; $i++) {
             $datas[] = array(
                 //excel
                 'customer_id' => $data->val($i, 2),
                 'item_fg_id' => $data->val($i, 3),
-                'price' => $data->val($i, 4),
-                'valid_date' => $data->val($i, 5),
-                'remark' => $data->val($i, 6)
+                'document_no' => $data->val($i, 4),
+                'issued_date' => $data->val($i, 5),
+                'p_month' => $data->val($i, 6),
+                'p_year' => $data->val($i, 7),
+                'revision' => $data->val($i, 8),
+                'month_1' => $data->val($i, 9),
+                'month_2' => $data->val($i, 10),
+                'month_3' => $data->val($i, 11),
+                'month_4' => $data->val($i, 12),
+                'month_5' => $data->val($i, 13),
+                'month_6' => $data->val($i, 14),
+                'month_7' => $data->val($i, 15),
+                'month_8' => $data->val($i, 16),
+                'month_9' => $data->val($i, 17),
+                'month_10' => $data->val($i, 18),
+                'month_11' => $data->val($i, 19),
+                'month_12' => $data->val($i, 20),
+                'remark' => $data->val($i, 21)
             );
         }
         $datas['total'] = count($datas);
@@ -327,11 +344,27 @@ class Forecasts extends CI_Controller
                     //field
                     "customer_id" => $data['customer_id'],
                     "item_fg_id" => $data['item_fg_id'],
-                    "price" => $data['price'],
-                    "valid_date" => $data['valid_date'],
+                    "document_no" => $data['document_no'],
+                    "issued_date" => $data['issued_date'],
+                    "p_month" => $data['p_month'],
+                    "p_year" => $data['p_year'],
+                    "revision" => $data['revision'],
+                    "month_1" => $data['month_1'],
+                    "month_2" => $data['month_2'],
+                    "month_3" => $data['month_3'],
+                    "month_4" => $data['month_4'],
+                    "month_5" => $data['month_5'],
+                    "month_6" => $data['month_6'],
+                    "month_7" => $data['month_7'],
+                    "month_8" => $data['month_8'],
+                    "month_9" => $data['month_9'],
+                    "month_10" => $data['month_10'],
+                    "month_11" => $data['month_11'],
+                    "month_12" => $data['month_12'],
                     "remark" => $data['remark'],
                 );
                 $send   = $this->crud->create('forecasts', $dataFinal);
+                $send2  = $this->crud->create('forecast_histories', $dataFinal);
                 echo $send;
             }
         }
