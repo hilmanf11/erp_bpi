@@ -51,40 +51,23 @@ class Summary_forecasts extends CI_Controller
         }
     }
 
-    public function readPurchaseOrder()
+    //GET PERIOD LISTS
+    public function readPeriodLists()
     {
-        $post = isset($_POST['q']) ? $_POST['q'] : "";
-        $filter_from = base64_decode($this->input->get("filter_from"));
-        $filter_to = base64_decode($this->input->get("filter_to"));
-        $supplier_id = $this->input->get("supplier_id");
-        $post = isset($_POST['q']) ? $_POST['q'] : "";
-        $sales_orders = $this->crud->query("SELECT `po_no`
-        FROM purchase_orders
-        WHERE `po_no` like '%$post%'
-        AND po_date between '$filter_from' and '$filter_to'
-        AND supplier_id = '$supplier_id'
-        GROUP BY `po_no` 
-        ORDER BY `po_no` DESC");
-        echo json_encode($sales_orders);
-    }
+        $p_month = $this->input->post('p_month');
+        $p_year = $this->input->post('p_year');
+        $p_date_start = date("Y-m-d", strtotime($p_year . "-" . $p_month . "-01"));
+        $p_date_to = date('Y-m-d', strtotime('+11 month', strtotime($p_date_start)));
 
-    public function readPurchaseOrderItems()
-    {
-        $post = isset($_POST['q']) ? $_POST['q'] : "";
-        $filter_from = base64_decode($this->input->get("filter_from"));
-        $filter_to = base64_decode($this->input->get("filter_to"));
-        $supplier_id = $this->input->get("supplier_id");
-        $po_no = $this->input->get("po_no");
-        $post = isset($_POST['q']) ? $_POST['q'] : "";
-        $sales_orders = $this->crud->query("SELECT b.id, b.number, b.name
-        FROM purchase_orders a
-        JOIN items b on a.item_id = b.id
-        WHERE `po_no` like '%$post%'
-        AND po_date between '$filter_from' and '$filter_to'
-        AND supplier_id = '$supplier_id'
-        AND po_no = '$po_no'
-        GROUP BY a.item_id");
-        echo json_encode($sales_orders);
+        while (strtotime($p_date_start) <= strtotime($p_date_to)) {
+            $dates[] = array(
+                "name" => date("M-y", strtotime($p_date_start))
+            );
+
+            $p_date_start = date("Y-m-d", strtotime("+1 month", strtotime($p_date_start)));
+        }
+
+        echo json_encode($dates);
     }
 
     public function print($option = "")
@@ -92,35 +75,45 @@ class Summary_forecasts extends CI_Controller
         if ($option == "excel") {
             $format  = date("Ymd");
             header("Content-type: application/vnd-ms-excel");
-            header("Content-Disposition: attachment; filename=sales_orders_$format.xls");
+            header("Content-Disposition: attachment; filename=summary_forecasts_$format.xls");
         }
-        $filter_from = base64_decode($this->input->get("filter_from"));
-        $filter_to = base64_decode($this->input->get("filter_to"));
-        $filter_display = $this->input->get("filter_display");
-        $filter_supplier = $this->input->get("filter_supplier");
-        $filter_product_no = $this->input->get("filter_product_no");
-        $filter_status = $this->input->get("filter_status");
-        $filter_purchase_order = base64_decode($this->input->get("filter_purchase_order"));
+
+        $filter_period_year = base64_decode($this->input->get("filter_period_year"));
+        $filter_period_month = base64_decode($this->input->get("filter_period_month"));
+        $filter_item_fg = $this->input->get("filter_item_fg");
+
+        $p_date_start = date("Y-m-d", strtotime($filter_period_year . "-" . $filter_period_month . "-01"));
+        $p_date_to = date('Y-m-d', strtotime('+11 month', strtotime($p_date_start)));
+        while (strtotime($p_date_start) <= strtotime($p_date_to)) {
+            $dates[] = array(
+                "name" => date("M-y", strtotime($p_date_start))
+            );
+
+            $p_date_start = date("Y-m-d", strtotime("+1 month", strtotime($p_date_start)));
+        }
+
         //Config
         $this->db->select('*');
         $this->db->from('config');
         $config = $this->db->get()->row();
-        $this->db->select('a.*, SUM(a.qty) as qty_po, d.qty_receipt, b.number as supplier_number, b.name as supplier_name');
-        $this->db->from('purchase_orders a');
-        $this->db->join('suppliers b', 'a.supplier_id = b.id');
-        $this->db->join('items c', 'a.item_id = c.id');
-        $this->db->join('(SELECT po_no, SUM(qty_receipt) as qty_receipt FROM purchase_order_receipts GROUP BY po_no) d', 'a.po_no = d.po_no', 'left');
+
+        $this->db->select('a.*, b.number as item_fg_number, b.name as item_fg_name');
+        $this->db->from('forecasts a');
+        $this->db->join('item_fg b', 'a.item_fg_id = b.id');
         $this->db->where('a.deleted', 0);
-        $this->db->where("a.po_date between '$filter_from' and '$filter_to'");
-        $this->db->like('a.supplier_id', $filter_supplier);
-        $this->db->like('a.item_id', $filter_product_no);
-        $this->db->like('a.po_no', $filter_purchase_order);
-        $this->db->like('a.status', $filter_status);
-        $this->db->order_by('a.status', 'ASC');
-        $this->db->group_by('a.po_no');
+        $this->db->like('a.p_month', $filter_period_month);
+        $this->db->like('a.p_year', $filter_period_year);
+        $this->db->like('a.item_fg_id', $filter_item_fg);
+        // $this->db->where("a.p_year '$filter_period_year'");
+        // $this->db->where("a.p_month '$filter_period_month'");
+        $this->db->group_by('a.item_fg_id');
+        // $this->db->group_by('a.p_month');
+        // $this->db->group_by('a.p_year');
+        $this->db->order_by('a.item_fg_id', 'ASC');
         $records = $this->db->get()->result_array();
 
-        $html = '<html><head><title>Print Data</title></head><style>body {font-family: Arial, Helvetica, sans-serif;}#customers {border-collapse: collapse;width: 100%;font-size: 12px;}#customers td, #customers th {border: 1px solid #ddd;padding: 2px;}#customers tr:nth-child(even){background-color: #f2f2f2;}#customers tr:hover {background-color: #ddd;}#customers th {padding-top: 2px;padding-bottom: 2px;text-align: center;color: black;}</style><body>
+        if ($filter_item_fg == ""){
+            $html = '<html><head><title>Print Data</title></head><style>body {font-family: Arial, Helvetica, sans-serif;}#summary_forecasts {border-collapse: collapse;width: 100%;font-size: 12px;}#summary_forecasts td, #summary_forecasts th {border: 1px solid #ddd;padding: 2px;}#summary_forecasts tr:nth-child(even){background-color: #f2f2f2;}#summary_forecasts tr:hover {background-color: #ddd;}#summary_forecasts th {padding-top: 2px;padding-bottom: 2px;text-align: left;color: black;}</style><body>
             <center>
                 <div style="float: left; font-size: 12px; text-align: left;">
                     <table style="width: 100%;">
@@ -130,108 +123,223 @@ class Summary_forecasts extends CI_Controller
                             </td>
                             <td style="font-size: 14px; text-align: left; margin:2px;">
                                 <b>' . $config->name . '</b><br>
-                                <small>REPORT OUTSTANDING PURCHASE ORDER</small><br>
-                                <small>PERIOD : <b>' . $filter_from . '</b> To <b>' . $filter_to . '</b></small>
                             </td>
                         </tr>
                     </table>
                 </div>
                 <div style="float: right; font-size: 12px; text-align: right;">
-                    Print Date ' . date("d M Y H:i:s") . ' <br>
+                    Print Date ' . date("d M Y H:m:s") . ' <br>
                     Print By ' . $this->session->username . '  
+                </div>
+                <br><br>
+                <div style="float: centet; font-size: 16px; text-align: center;">
+                    <h3>SUMMARY FORECAST</h3>
+                </div>
+                <div style="float: left; font-size: 12px; text-align: left;">
+                    <table style="width: 100%;">
+                        <tr>
+                            <td style="font-size: 14px; text-align: left; margin:2px;">
+                                <small>PERIOD : <b>' . $filter_period_month . '</b>  <b>' . $filter_period_year . '</b></small><br>
+                                <small>PRODUCT NO. : <b>ALL</b></small>
+                            </td>
+                        </tr>
+                    </table>
                 </div>
             </center>
             <br><br><br><br>
-            
-            <table id="customers" border="1">
+            <table id="summary_forecasts" border="1">
             <tr>
                 <th width="20">No</th>
-                <th colspan="3">Purchase Order No</th>
-                <th>Purchase Order Date</th>
-                <th>Supplier No</th>
-                <th>Supplier Name</th>
-                <th>Quantity</th>
-                <th>Receipt</th>
-                <th>Outstanding</th>
-                <th colspan="2">Status</th>
+                <th>Product No.</th>
+                <th>Product Name</th>
+                <th>' . $dates[0]['name'] . '</th>
+                <th>' . $dates[1]['name'] . '</th>
+                <th>' . $dates[2]['name'] . '</th>
+                <th>' . $dates[3]['name'] . '</th>
+                <th>' . $dates[4]['name'] . '</th>
+                <th>' . $dates[5]['name'] . '</th>
+                <th>' . $dates[6]['name'] . '</th>
+                <th>' . $dates[7]['name'] . '</th>
+                <th>' . $dates[8]['name'] . '</th>
+                <th>' . $dates[9]['name'] . '</th>
+                <th>' . $dates[10]['name'] . '</th>
+                <th>' . $dates[11]['name'] . '</th>
             </tr>';
 
-        $no = 1;
-        foreach ($records as $data) {
-            $po_no = $data['po_no'];
-            $supplier_id = $data['supplier_id'];
-            $this->db->select('a.*, b.number as item_number, b.name as item_name, c.qty');
-            $this->db->from('purchase_orders c');
-            $this->db->join('items b', 'c.item_id = b.id');
-            $this->db->join('purchase_order_receipts a', 'a.po_no = c.po_no and a.item_id = c.item_id and a.supplier_id = c.supplier_id', 'left');
-            $this->db->where('c.deleted', 0);
-            $this->db->where('c.po_no', $po_no);
-            $this->db->where('c.supplier_id', $supplier_id);
-            $this->db->like('c.item_id', $filter_product_no);
-            $this->db->order_by('b.number', 'ASC');
-            $details = $this->db->get()->result_array();
-
-            if (($data['qty_po'] - $data['qty_receipt']) > 0) {
-                $status = "<b style='color:green;'>OPEN</b>";
-            } else {
-                $status = "<b style='color:red;'>CLOSE</b>";
+            $no = 1;
+            $gt_month_1 = 0;
+            $gt_month_2 = 0;
+            $gt_month_3 = 0;
+            $gt_month_4 = 0;
+            $gt_month_5 = 0;
+            $gt_month_6 = 0;
+            $gt_month_7 = 0;
+            $gt_month_8 = 0;
+            $gt_month_9 = 0;
+            $gt_month_10 = 0;
+            $gt_month_11 = 0;
+            $gt_month_12 = 0;
+            foreach ($records as $data) {
+                $gt_1 = $gt_month_1 += $data['month_1'];
+                $gt_2 = $gt_month_2 += $data['month_2'];
+                $gt_3 = $gt_month_3 += $data['month_3'];
+                $gt_4 = $gt_month_4 += $data['month_4'];
+                $gt_5 = $gt_month_5 += $data['month_5'];
+                $gt_6 = $gt_month_6 += $data['month_6'];
+                $gt_7 = $gt_month_7 += $data['month_7'];
+                $gt_8 = $gt_month_8 += $data['month_8'];
+                $gt_9 = $gt_month_9 += $data['month_9'];
+                $gt_10 = $gt_month_10 += $data['month_10'];
+                $gt_11 = $gt_month_11 += $data['month_11'];
+                $gt_12 = $gt_month_12 += $data['month_12'];
+                $html .= '<tr>
+                        <td>' . $no . '</td>
+                        <td>' . $data['item_fg_number'] . '</td>
+                        <td>' . $data['item_fg_name'] . '</td>
+                        <td>' . $data['month_1'] . '</td>
+                        <td>' . $data['month_2'] . '</td>
+                        <td>' . $data['month_3'] . '</td>
+                        <td>' . $data['month_4'] . '</td>
+                        <td>' . $data['month_5'] . '</td>
+                        <td>' . $data['month_6'] . '</td>
+                        <td>' . $data['month_7'] . '</td>
+                        <td>' . $data['month_8'] . '</td>
+                        <td>' . $data['month_9'] . '</td>
+                        <td>' . $data['month_10'] . '</td>
+                        <td>' . $data['month_11'] . '</td>
+                        <td>' . $data['month_12'] . '</td>';
+                $no++;
             }
+            $html .= '<tr>
+                            <th colspan="3">Grand Total</th>
+                            <th>' . $gt_1 . '</th>
+                            <th>' . $gt_2 . '</th>
+                            <th>' . $gt_3 . '</th>
+                            <th>' . $gt_4 . '</th>
+                            <th>' . $gt_5 . '</th>
+                            <th>' . $gt_6 . '</th>
+                            <th>' . $gt_7 . '</th>
+                            <th>' . $gt_8 . '</th>
+                            <th>' . $gt_9 . '</th>
+                            <th>' . $gt_10 . '</th>
+                            <th>' . $gt_11 . '</th>
+                            <th>' . $gt_12 . '</th>';
+            $html .= '</table></body></html>';
+            echo $html;
+        } else {
+            $html = '<html><head><title>Print Data</title></head><style>body {font-family: Arial, Helvetica, sans-serif;}#summary_forecasts {border-collapse: collapse;width: 100%;font-size: 12px;}#summary_forecasts td, #summary_forecasts th {border: 1px solid #ddd;padding: 2px;}#summary_forecasts tr:nth-child(even){background-color: #f2f2f2;}#summary_forecasts tr:hover {background-color: #ddd;}#summary_forecasts th {padding-top: 2px;padding-bottom: 2px;text-align: left;color: black;}</style><body>
+            <center>
+                <div style="float: left; font-size: 12px; text-align: left;">
+                    <table style="width: 100%;">
+                        <tr>
+                            <td width="50" style="font-size: 12px; vertical-align: top; text-align: center; vertical-align:jus margin-right:10px;">
+                                <img src="' . $config->favicon . '" width="30">
+                            </td>
+                            <td style="font-size: 14px; text-align: left; margin:2px;">
+                                <b>' . $config->name . '</b><br>
+                            </td>
+                        </tr>
+                    </table>
+                </div>
+                <div style="float: right; font-size: 12px; text-align: right;">
+                    Print Date ' . date("d M Y H:m:s") . ' <br>
+                    Print By ' . $this->session->username . '  
+                </div>
+                <br><br>
+                <div style="float: centet; font-size: 16px; text-align: center;">
+                    <h3>SUMMARY FORECAST</h3>
+                </div>
+                <div style="float: left; font-size: 12px; text-align: left;">
+                    <table style="width: 100%;">
+                        <tr>
+                            <td style="font-size: 14px; text-align: left; margin:2px;">
+                                <small>PERIOD : <b>' . $filter_period_month . '</b>  <b>' . $filter_period_year . '</b></small><br>
+                                <small>PRODUCT NO. : <b>' . $filter_item_fg . '</b></small>
+                            </td>
+                        </tr>
+                    </table>
+                </div>
+            </center>
+            <br><br><br><br>
+            <table id="summary_forecasts" border="1">
+            <tr>
+                <th width="20">No</th>
+                <th>Product No.</th>
+                <th>Product Name</th>
+                <th>' . $dates[0]['name'] . '</th>
+                <th>' . $dates[1]['name'] . '</th>
+                <th>' . $dates[2]['name'] . '</th>
+                <th>' . $dates[3]['name'] . '</th>
+                <th>' . $dates[4]['name'] . '</th>
+                <th>' . $dates[5]['name'] . '</th>
+                <th>' . $dates[6]['name'] . '</th>
+                <th>' . $dates[7]['name'] . '</th>
+                <th>' . $dates[8]['name'] . '</th>
+                <th>' . $dates[9]['name'] . '</th>
+                <th>' . $dates[10]['name'] . '</th>
+                <th>' . $dates[11]['name'] . '</th>
+            </tr>';
 
-            $html .= '  <tr>
-                            <td style="text-align:center">' . $no . '</td>
-                            <td colspan="3">' . $data['po_no'] . '</td>
-                            <td>' . $data['po_date'] . '</td>
-                            <td>' . $data['supplier_number'] . '</td>
-                            <td>' . $data['supplier_name'] . '</td>
-                            <td style="text-align:right">' . number_format($data['qty_po'], 2) . '</td>
-                            <td style="text-align:right">' . number_format($data['qty_receipt'], 2) . '</td>
-                            <td style="text-align:right">' . number_format($data['qty_po'] - $data['qty_receipt'], 2) . '</td>
-                            <td colspan="2">' . $status . '</td>
-                        </tr>';
-            $no++;
-            if ($filter_display == "DETAIL") {
-                if ($details) {
-                    $html .= '  <tr>
-                                    <td colspan="13" style="background:#D1FFC6;"><b>DETAIL OF ' . $data['po_no'] . '</b></td>
-                                </tr>';
-                    $html .= '  <tr>
-                                    <th width="20"></th>
-                                    <th>Custom No</th>
-                                    <th>Custom Doc No</th>
-                                    <th>Custom Date</th>
-                                    <th>Component No</th>
-                                    <th>Component Name</th>
-                                    <th>Receipt No</th>
-                                    <th>Receipt Date</th>
-                                    <th>PO Qty</th>
-                                    <th>Receipt Qty</th>
-                                    <th>OS Qty</th>
-                                    <th>Receipt By</th>
-                                </tr>';
-                    foreach ($details as $detail) {
-                        $html .= '  <tr>
-                                        <td></td>
-                                        <td>' . $detail['bc_kind'] . '</td>
-                                        <td>' . $detail['bc_document'] . '</td>
-                                        <td>' . $detail['bc_date'] . '</td>
-                                        <td>' . $detail['item_number'] . '</td>
-                                        <td>' . $detail['item_name'] . '</td>
-                                        <td>' . $detail['receipt_no'] . '</td>
-                                        <td>' . $detail['receipt_date'] . '</td>
-                                        <td style="text-align:right">' . number_format($detail['qty'], 2) . '</td>
-                                        <td style="text-align:right">' . number_format($detail['qty_receipt'], 2) . '</td>
-                                        <td style="text-align:right">' . number_format($detail['qty'] - $detail['qty_receipt'], 2)  . '</td>
-                                        <td >' . $detail['created_by'] . '</td>
-                                    </tr>';
-                    }
-                } else {
-                    $html .= '  <tr>
-                                    <td colspan="13" style="background:#FFC6C6;"><b>DETAIL OF ' . $data['po_no'] . '</b></td>
-                                </tr>';
-                }
+            $no = 1;
+            $gt_month_1 = 0;
+            $gt_month_2 = 0;
+            $gt_month_3 = 0;
+            $gt_month_4 = 0;
+            $gt_month_5 = 0;
+            $gt_month_6 = 0;
+            $gt_month_7 = 0;
+            $gt_month_8 = 0;
+            $gt_month_9 = 0;
+            $gt_month_10 = 0;
+            $gt_month_11 = 0;
+            $gt_month_12 = 0;
+            foreach ($records as $data) {
+                $gt_1 = $gt_month_1 += $data['month_1'];
+                $gt_2 = $gt_month_2 += $data['month_2'];
+                $gt_3 = $gt_month_3 += $data['month_3'];
+                $gt_4 = $gt_month_4 += $data['month_4'];
+                $gt_5 = $gt_month_5 += $data['month_5'];
+                $gt_6 = $gt_month_6 += $data['month_6'];
+                $gt_7 = $gt_month_7 += $data['month_7'];
+                $gt_8 = $gt_month_8 += $data['month_8'];
+                $gt_9 = $gt_month_9 += $data['month_9'];
+                $gt_10 = $gt_month_10 += $data['month_10'];
+                $gt_11 = $gt_month_11 += $data['month_11'];
+                $gt_12 = $gt_month_12 += $data['month_12'];
+                $html .= '<tr>
+                        <td>' . $no . '</td>
+                        <td>' . $data['item_fg_number'] . '</td>
+                        <td>' . $data['item_fg_name'] . '</td>
+                        <td>' . $data['month_1'] . '</td>
+                        <td>' . $data['month_2'] . '</td>
+                        <td>' . $data['month_3'] . '</td>
+                        <td>' . $data['month_4'] . '</td>
+                        <td>' . $data['month_5'] . '</td>
+                        <td>' . $data['month_6'] . '</td>
+                        <td>' . $data['month_7'] . '</td>
+                        <td>' . $data['month_8'] . '</td>
+                        <td>' . $data['month_9'] . '</td>
+                        <td>' . $data['month_10'] . '</td>
+                        <td>' . $data['month_11'] . '</td>
+                        <td>' . $data['month_12'] . '</td>';
+                $no++;
             }
+            $html .= '<tr>
+                        <th colspan="3">Grand Total</th>
+                        <th>' . $gt_1 . '</th>
+                        <th>' . $gt_2 . '</th>
+                        <th>' . $gt_3 . '</th>
+                        <th>' . $gt_4 . '</th>
+                        <th>' . $gt_5 . '</th>
+                        <th>' . $gt_6 . '</th>
+                        <th>' . $gt_7 . '</th>
+                        <th>' . $gt_8 . '</th>
+                        <th>' . $gt_9 . '</th>
+                        <th>' . $gt_10 . '</th>
+                        <th>' . $gt_11 . '</th>
+                        <th>' . $gt_12 . '</th>';
+            $html .= '</table></body></html>';
+            echo $html;
         }
-        $html .= '</table></body></html>';
-        echo $html;
     }
 }

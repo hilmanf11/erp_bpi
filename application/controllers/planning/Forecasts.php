@@ -414,6 +414,16 @@ class Forecasts extends CI_Controller
         $filter_customer_id = @base64_decode($get['filter_customer_id']);
         $filter_revision = @base64_decode($get['filter_revision']);
 
+        $p_date_start = date("Y-m-d", strtotime($filter_period_year . "-" . $filter_period_month . "-01"));
+        $p_date_to = date('Y-m-d', strtotime('+11 month', strtotime($p_date_start)));
+        while (strtotime($p_date_start) <= strtotime($p_date_to)) {
+            $dates[] = array(
+                "name" => date("M-y", strtotime($p_date_start))
+            );
+
+            $p_date_start = date("Y-m-d", strtotime("+1 month", strtotime($p_date_start)));
+        }
+
         //Config
         $this->db->select('*');
         $this->db->from('config');
@@ -473,18 +483,18 @@ class Forecasts extends CI_Controller
                 <th>Remark</th>
                 <th>Product No</th>
                 <th>Product Name</th>
-                <th>Month 1</th>
-                <th>Month 2</th>
-                <th>Month 3</th>
-                <th>Month 4</th>
-                <th>Month 5</th>
-                <th>Month 6</th>
-                <th>Month 7</th>
-                <th>Month 8</th>
-                <th>Month 9</th>
-                <th>Month 10</th>
-                <th>Month 11</th>
-                <th>Month 12</th>
+                <th>' . $dates[0]['name'] . '</th>
+                <th>' . $dates[1]['name'] . '</th>
+                <th>' . $dates[2]['name'] . '</th>
+                <th>' . $dates[3]['name'] . '</th>
+                <th>' . $dates[4]['name'] . '</th>
+                <th>' . $dates[5]['name'] . '</th>
+                <th>' . $dates[6]['name'] . '</th>
+                <th>' . $dates[7]['name'] . '</th>
+                <th>' . $dates[8]['name'] . '</th>
+                <th>' . $dates[9]['name'] . '</th>
+                <th>' . $dates[10]['name'] . '</th>
+                <th>' . $dates[11]['name'] . '</th>
             </tr>';
         $no = 1;
         foreach ($records as $data) {

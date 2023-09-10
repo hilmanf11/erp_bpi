@@ -8,6 +8,10 @@
                 <input style="width:30%;" id="filter_period_month" value="<?= date("m") ?>" class="easyui-combobox"> 
             </div>
             <div class="fitem">
+                <span style="width:35%; display:inline-block;">Customer Name</span>
+                <input style="width:60%;" id="filter_customer_name" class="easyui-combobox">
+            </div>
+            <div class="fitem">
                 <span style="width:35%; display:inline-block;">Product No</span>
                 <input style="width:60%;" id="filter_item_fg" class="easyui-combobox">
             </div>
@@ -30,29 +34,33 @@
     function filter() {
         var filter_period_year = $("#filter_period_year").datebox("getValue");
         var filter_period_month = $("#filter_period_month").datebox("getValue");
+        var filter_customer_name = $("#filter_customer_name").combobox("getValue");
         var filter_item_fg = $("#filter_item_fg").combobox("getValue");
         var url = "?filter_period_year=" + window.btoa(filter_period_year) +
             "&filter_period_month=" + window.btoa(filter_period_month) +
+            "&filter_customer_name=" + filter_customer_name +
             "&filter_item_fg=" + filter_item_fg;
         if (filter_period_year == "" && filter_period_month == "") {
-            toastr.warning("Please select Periode & Product No.!");
+            toastr.warning("Please select Periode, Customer, and Product No.!");
         } else {
             $("#printout").contents().find('html').html("<center><br><br><br><b style='font-size:20px;'>Please Wait...</b></center>");
-            $("#printout").attr('src', '<?= base_url('planning/summary_forecasts/print') ?>' + url);
+            $("#printout").attr('src', '<?= base_url('planning/forecast_analysis/print') ?>' + url);
         }
     }
 
     function excel() {
         var filter_period_year = $("#filter_period_year").datebox("getValue");
         var filter_period_month = $("#filter_period_month").datebox("getValue");
+        var filter_customer_name = $("#filter_customer_name").combobox("getValue");
         var filter_item_fg = $("#filter_item_fg").combogrid("getValue");
         var url = "?filter_period_year=" + window.btoa(filter_period_year) +
             "&filter_period_month=" + window.btoa(filter_period_month) +
+            "&filter_customer_name=" + filter_customer_name +
             "&filter_item_fg=" + filter_item_fg;
         if (filter_period_year == "" && filter_period_month == "") {
-            toastr.warning("Please select Periode & Product No.!");
+            toastr.warning("Please select Periode, Customer, and Product No.!");
         } else {
-            window.location.assign('<?= base_url('planning/summary_forecasts/print') ?>' + url);
+            window.location.assign('<?= base_url('planning/forecast_analysis/print') ?>' + url);
         }
     }
 
@@ -90,6 +98,33 @@
         }],
     });
 
+    $('#filter_customer_name').combogrid({
+        url: '<?= base_url("master/customers/reads") ?>',
+        panelWidth: 400,
+        idField: 'id',
+        textField: 'name',
+        mode: 'remote',
+        fitColumns: true,
+        prompt: "Select Customer",
+        icons: [{
+            iconCls: 'icon-clear',
+            handler: function(e) {
+                $(e.data.target).combogrid('clear').combogrid('textbox').focus();
+            }
+        }],
+        columns: [
+            [{
+                field: 'number',
+                title: 'Code',
+                width: 100
+            }, {
+                field: 'name',
+                title: 'Customer Name',
+                width: 300
+            }]
+        ],
+    });
+
     $('#filter_item_fg').combogrid({
         url: '<?= base_url("master/item_fg/reads") ?>',
         panelWidth: 400,
@@ -117,9 +152,9 @@
         ],
     });
 
-    $(function() {
-        var filter_period_year = $("#filter_period_year").combobox('getValue');
-        var filter_period_month = $("#filter_period_month").combobox('getValue');
+    // $(function() {
+    //     var filter_period_year = $("#filter_period_year").combobox('getValue');
+    //     var filter_period_month = $("#filter_period_month").combobox('getValue');
         
-    });
+    // });
 </script>
