@@ -60,7 +60,7 @@
         if (filter_period_year == "" && filter_period_month == "") {
             toastr.warning("Please select Periode, Customer, and Product No.!");
         } else {
-            window.location.assign('<?= base_url('planning/forecast_analysis/print') ?>' + url);
+            window.location.assign('<?= base_url('planning/forecast_analysis/print/excel') ?>' + url);
         }
     }
 

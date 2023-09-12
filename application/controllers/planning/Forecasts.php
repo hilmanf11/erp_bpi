@@ -448,81 +448,199 @@ class Forecasts extends CI_Controller
         $this->db->order_by('a.created_date', 'DESC');
         $records = $this->db->get()->result_array();
 
-        $html = '<html><head><title>Print Data</title></head><style>body {font-family: Arial, Helvetica, sans-serif;}#forecasts {border-collapse: collapse;width: 100%;font-size: 12px;}#forecasts td, #forecasts th {border: 1px solid #ddd;padding: 2px;}#forecasts tr:nth-child(even){background-color: #f2f2f2;}#forecasts tr:hover {background-color: #ddd;}#forecasts th {padding-top: 2px;padding-bottom: 2px;text-align: left;color: black;}</style><body>
-        <center>
-            <div style="float: left; font-size: 12px; text-align: left;">
-                <table style="width: 100%;">
-                    <tr>
-                        <td width="50" style="font-size: 12px; vertical-align: top; text-align: center; vertical-align:jus margin-right:10px;">
-                            <img src="' . $config->favicon . '" width="30">
-                        </td>
-                        <td style="font-size: 14px; text-align: left; margin:2px;">
-                            <b>' . $config->name . '</b>
-                        </td>
-                    </tr>
-                </table>
-            </div>
-            <div style="float: right; font-size: 12px; text-align: right;">
-                Print Date ' . date("d M Y H:m:s") . ' <br>
-                Print By ' . $this->session->username . '  
-            </div>
-            <br><br>
-            <div style="float: centet; font-size: 16px; text-align: center;">
-                <h3>FORECAST CUSTOMER</h3>
-            </div>
-        </center>
-        
-        <table id="forecasts" border="1">
-            <tr>
-                <th width="20">No</th>
-                <th>Customer Name</th>
-                <th>Document No</th>
-                <th>Issued Date</th>
-                <th>Period</th>
-                <th>Revision</th>
-                <th>Remark</th>
-                <th>Product No</th>
-                <th>Product Name</th>
-                <th>' . $dates[0]['name'] . '</th>
-                <th>' . $dates[1]['name'] . '</th>
-                <th>' . $dates[2]['name'] . '</th>
-                <th>' . $dates[3]['name'] . '</th>
-                <th>' . $dates[4]['name'] . '</th>
-                <th>' . $dates[5]['name'] . '</th>
-                <th>' . $dates[6]['name'] . '</th>
-                <th>' . $dates[7]['name'] . '</th>
-                <th>' . $dates[8]['name'] . '</th>
-                <th>' . $dates[9]['name'] . '</th>
-                <th>' . $dates[10]['name'] . '</th>
-                <th>' . $dates[11]['name'] . '</th>
-            </tr>';
-        $no = 1;
-        foreach ($records as $data) {
-            $html .= '<tr>
-                    <td>' . $no . '</td>
-                    <td>' . $data['customer_name'] . '</td>
-                    <td>' . $data['document_no'] . '</td>
-                    <td>' . $data['issued_date'] . '</td>
-                    <td>' . $data['p_month'] . '/' . $data['p_year'] . '</td>
-                    <td>' . $data['revision'] . '</td>
-                    <td>' . $data['remark'] . '</td>
-                    <td>' . $data['item_fg_number'] . '</td>
-                    <td>' . $data['item_fg_name'] . '</td>
-                    <td>' . $data['month_1'] . '</td>
-                    <td>' . $data['month_2'] . '</td>
-                    <td>' . $data['month_3'] . '</td>
-                    <td>' . $data['month_4'] . '</td>
-                    <td>' . $data['month_5'] . '</td>
-                    <td>' . $data['month_6'] . '</td>
-                    <td>' . $data['month_7'] . '</td>
-                    <td>' . $data['month_8'] . '</td>
-                    <td>' . $data['month_9'] . '</td>
-                    <td>' . $data['month_10'] . '</td>
-                    <td>' . $data['month_11'] . '</td>
-                    <td>' . $data['month_12'] . '</td>';
-            $no++;
+        if ($filter_customer_id == ""){
+            $html = '<html><head><title>Print Data</title></head><style>body {font-family: Arial, Helvetica, sans-serif;}#forecasts {border-collapse: collapse;width: 100%;font-size: 12px;}#forecasts td, #forecasts th {border: 1px solid #ddd;padding: 2px;}#forecasts tr:nth-child(even){background-color: #f2f2f2;}#forecasts tr:hover {background-color: #ddd;}#forecasts th {padding-top: 2px;padding-bottom: 2px;text-align: left;color: black;}</style><body>
+            <center>
+                <div style="float: left; font-size: 12px; text-align: left;">
+                    <table style="width: 100%;">
+                        <tr>
+                            <td width="50" style="font-size: 12px; vertical-align: top; text-align: center; vertical-align:jus margin-right:10px;">
+                                <img src="' . $config->favicon . '" width="30">
+                            </td>
+                            <td style="font-size: 14px; text-align: left; margin:2px;">
+                                <b>' . $config->name . '</b>
+                            </td>
+                        </tr>
+                    </table>
+                </div>
+                <div style="float: right; font-size: 12px; text-align: right;">
+                    Print Date ' . date("d M Y H:m:s") . ' <br>
+                    Print By ' . $this->session->username . '  
+                </div>
+                <br><br>
+                <div style="float: centet; font-size: 16px; text-align: center;">
+                    <h3>FORECAST CUSTOMER</h3>
+                </div>
+                <div style="float: left; font-size: 12px; text-align: left;">
+                        <table style="width: 100%;">
+                            <tr>
+                                <td style="font-size: 14px; text-align: left; margin:2px;">
+                                    <small>ISSUED DATE</small><br>
+                                    <small>CUSTOMER NAME</small>
+                                </td>
+                                <td style="font-size: 14px; text-align: left; margin:2px;">
+                                    <small>: </small><br>
+                                    <small>: </small>
+                                </td>
+                                <td style="font-size: 14px; text-align: left; margin:2px;">
+                                    <small><b>' . $filter_issued_date_from . '</b> to <b>' . $filter_issued_date_to . '</b></small><br>
+                                    <small><b>ALL</b></small>
+                                </td>
+                            </tr>
+                        </table>
+                    </div>
+            </center>
+            
+            <table id="forecasts" border="1">
+                <tr>
+                    <th width="20">No</th>
+                    <th>Customer Name</th>
+                    <th>Document No</th>
+                    <th>Issued Date</th>
+                    <th>Period</th>
+                    <th>Revision</th>
+                    <th>Remark</th>
+                    <th>Product No</th>
+                    <th>Product Name</th>
+                    <th>' . $dates[0]['name'] . '</th>
+                    <th>' . $dates[1]['name'] . '</th>
+                    <th>' . $dates[2]['name'] . '</th>
+                    <th>' . $dates[3]['name'] . '</th>
+                    <th>' . $dates[4]['name'] . '</th>
+                    <th>' . $dates[5]['name'] . '</th>
+                    <th>' . $dates[6]['name'] . '</th>
+                    <th>' . $dates[7]['name'] . '</th>
+                    <th>' . $dates[8]['name'] . '</th>
+                    <th>' . $dates[9]['name'] . '</th>
+                    <th>' . $dates[10]['name'] . '</th>
+                    <th>' . $dates[11]['name'] . '</th>
+                </tr>';
+            $no = 1;
+            foreach ($records as $data) {
+                $html .= '<tr>
+                        <td>' . $no . '</td>
+                        <td>' . $data['customer_name'] . '</td>
+                        <td>' . $data['document_no'] . '</td>
+                        <td>' . $data['issued_date'] . '</td>
+                        <td>' . $data['p_month'] . '/' . $data['p_year'] . '</td>
+                        <td>' . $data['revision'] . '</td>
+                        <td>' . $data['remark'] . '</td>
+                        <td>' . $data['item_fg_number'] . '</td>
+                        <td>' . $data['item_fg_name'] . '</td>
+                        <td>' . $data['month_1'] . '</td>
+                        <td>' . $data['month_2'] . '</td>
+                        <td>' . $data['month_3'] . '</td>
+                        <td>' . $data['month_4'] . '</td>
+                        <td>' . $data['month_5'] . '</td>
+                        <td>' . $data['month_6'] . '</td>
+                        <td>' . $data['month_7'] . '</td>
+                        <td>' . $data['month_8'] . '</td>
+                        <td>' . $data['month_9'] . '</td>
+                        <td>' . $data['month_10'] . '</td>
+                        <td>' . $data['month_11'] . '</td>
+                        <td>' . $data['month_12'] . '</td>';
+                $no++;
+            }
+            $html .= '</table></body></html>';
+            echo $html;
+        } elseif ($filter_customer_id != "") {
+            foreach ($records as $data) {
+                $filter_customer_id = $data['customer_name'];
+            }
+            $html = '<html><head><title>Print Data</title></head><style>body {font-family: Arial, Helvetica, sans-serif;}#forecasts {border-collapse: collapse;width: 100%;font-size: 12px;}#forecasts td, #forecasts th {border: 1px solid #ddd;padding: 2px;}#forecasts tr:nth-child(even){background-color: #f2f2f2;}#forecasts tr:hover {background-color: #ddd;}#forecasts th {padding-top: 2px;padding-bottom: 2px;text-align: left;color: black;}</style><body>
+            <center>
+                <div style="float: left; font-size: 12px; text-align: left;">
+                    <table style="width: 100%;">
+                        <tr>
+                            <td width="50" style="font-size: 12px; vertical-align: top; text-align: center; vertical-align:jus margin-right:10px;">
+                                <img src="' . $config->favicon . '" width="30">
+                            </td>
+                            <td style="font-size: 14px; text-align: left; margin:2px;">
+                                <b>' . $config->name . '</b>
+                            </td>
+                        </tr>
+                    </table>
+                </div>
+                <div style="float: right; font-size: 12px; text-align: right;">
+                    Print Date ' . date("d M Y H:m:s") . ' <br>
+                    Print By ' . $this->session->username . '  
+                </div>
+                <br><br>
+                <div style="float: centet; font-size: 16px; text-align: center;">
+                    <h3>FORECAST CUSTOMER</h3>
+                </div>
+                <div style="float: left; font-size: 12px; text-align: left;">
+                        <table style="width: 100%;">
+                            <tr>
+                                <td style="font-size: 14px; text-align: left; margin:2px;">
+                                    <small>ISSUED DATE</small><br>
+                                    <small>CUSTOMER NAME</small>
+                                </td>
+                                <td style="font-size: 14px; text-align: left; margin:2px;">
+                                    <small>: </small><br>
+                                    <small>: </small>
+                                </td>
+                                <td style="font-size: 14px; text-align: left; margin:2px;">
+                                    <small><b>' . $filter_issued_date_from . '</b> to <b>' . $filter_issued_date_to . '</b></small><br>
+                                    <small><b>' . $filter_customer_id . '</b></small>
+                                </td>
+                            </tr>
+                        </table>
+                    </div>
+            </center>
+            
+            <table id="forecasts" border="1">
+                <tr>
+                    <th width="20">No</th>
+                    <th>Customer Name</th>
+                    <th>Document No</th>
+                    <th>Issued Date</th>
+                    <th>Period</th>
+                    <th>Revision</th>
+                    <th>Remark</th>
+                    <th>Product No</th>
+                    <th>Product Name</th>
+                    <th>' . $dates[0]['name'] . '</th>
+                    <th>' . $dates[1]['name'] . '</th>
+                    <th>' . $dates[2]['name'] . '</th>
+                    <th>' . $dates[3]['name'] . '</th>
+                    <th>' . $dates[4]['name'] . '</th>
+                    <th>' . $dates[5]['name'] . '</th>
+                    <th>' . $dates[6]['name'] . '</th>
+                    <th>' . $dates[7]['name'] . '</th>
+                    <th>' . $dates[8]['name'] . '</th>
+                    <th>' . $dates[9]['name'] . '</th>
+                    <th>' . $dates[10]['name'] . '</th>
+                    <th>' . $dates[11]['name'] . '</th>
+                </tr>';
+            $no = 1;
+            foreach ($records as $data) {
+                $html .= '<tr>
+                        <td>' . $no . '</td>
+                        <td>' . $data['customer_name'] . '</td>
+                        <td>' . $data['document_no'] . '</td>
+                        <td>' . $data['issued_date'] . '</td>
+                        <td>' . $data['p_month'] . '/' . $data['p_year'] . '</td>
+                        <td>' . $data['revision'] . '</td>
+                        <td>' . $data['remark'] . '</td>
+                        <td>' . $data['item_fg_number'] . '</td>
+                        <td>' . $data['item_fg_name'] . '</td>
+                        <td>' . $data['month_1'] . '</td>
+                        <td>' . $data['month_2'] . '</td>
+                        <td>' . $data['month_3'] . '</td>
+                        <td>' . $data['month_4'] . '</td>
+                        <td>' . $data['month_5'] . '</td>
+                        <td>' . $data['month_6'] . '</td>
+                        <td>' . $data['month_7'] . '</td>
+                        <td>' . $data['month_8'] . '</td>
+                        <td>' . $data['month_9'] . '</td>
+                        <td>' . $data['month_10'] . '</td>
+                        <td>' . $data['month_11'] . '</td>
+                        <td>' . $data['month_12'] . '</td>';
+                $no++;
+            }
+            $html .= '</table></body></html>';
+            echo $html;
         }
-        $html .= '</table></body></html>';
-        echo $html;
     }
 }

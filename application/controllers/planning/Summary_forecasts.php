@@ -112,6 +112,32 @@ class Summary_forecasts extends CI_Controller
         $this->db->order_by('a.item_fg_id', 'ASC');
         $records = $this->db->get()->result_array();
 
+        if ($filter_period_month == "01") {
+            $month_name = "JANUARY";
+        } elseif ($filter_period_month == "02") {
+            $month_name = "FEBRUARY";
+        } elseif ($filter_period_month == "03") {
+            $month_name = "MARCH";
+        } elseif ($filter_period_month == "04") {
+            $month_name = "APRIL";
+        } elseif ($filter_period_month == "05") {
+            $month_name = "MAY";
+        } elseif ($filter_period_month == "06") {
+            $month_name = "JUNE";
+        } elseif ($filter_period_month == "07") {
+            $month_name = "JULY";
+        } elseif ($filter_period_month == "08") {
+            $month_name = "AUGUST";
+        } elseif ($filter_period_month == "09") {
+            $month_name = "SEPTEMBER";
+        } elseif ($filter_period_month == "10") {
+            $month_name = "OCTOBER";
+        } elseif ($filter_period_month == "11") {
+            $month_name = "NOVEMBER";
+        } elseif ($filter_period_month == "12") {
+            $month_name = "DECEMBER";
+        }
+
         if ($filter_item_fg == ""){
             $html = '<html><head><title>Print Data</title></head><style>body {font-family: Arial, Helvetica, sans-serif;}#summary_forecasts {border-collapse: collapse;width: 100%;font-size: 12px;}#summary_forecasts td, #summary_forecasts th {border: 1px solid #ddd;padding: 2px;}#summary_forecasts tr:nth-child(even){background-color: #f2f2f2;}#summary_forecasts tr:hover {background-color: #ddd;}#summary_forecasts th {padding-top: 2px;padding-bottom: 2px;text-align: left;color: black;}</style><body>
             <center>
@@ -139,31 +165,39 @@ class Summary_forecasts extends CI_Controller
                     <table style="width: 100%;">
                         <tr>
                             <td style="font-size: 14px; text-align: left; margin:2px;">
-                                <small>PERIOD : <b>' . $filter_period_month . '</b>  <b>' . $filter_period_year . '</b></small><br>
-                                <small>PRODUCT NO. : <b>ALL</b></small>
+                                <small>PERIOD</small><br>
+                                <small>PRODUCT NO.</small>
+                            </td>
+                            <td style="font-size: 14px; text-align: left; margin:2px;">
+                                <small>: </small><br>
+                                <small>: </small>
+                            </td>
+                            <td style="font-size: 14px; text-align: left; margin:2px;">
+                                <small><b>' . $month_name . '</b>  <b>' . $filter_period_year . '</b></small><br>
+                                <small><b>ALL</b></small>
                             </td>
                         </tr>
                     </table>
                 </div>
             </center>
-            <br><br><br><br>
+            <br><br>
             <table id="summary_forecasts" border="1">
             <tr>
                 <th width="20">No</th>
                 <th>Product No.</th>
                 <th>Product Name</th>
-                <th>' . $dates[0]['name'] . '</th>
-                <th>' . $dates[1]['name'] . '</th>
-                <th>' . $dates[2]['name'] . '</th>
-                <th>' . $dates[3]['name'] . '</th>
-                <th>' . $dates[4]['name'] . '</th>
-                <th>' . $dates[5]['name'] . '</th>
-                <th>' . $dates[6]['name'] . '</th>
-                <th>' . $dates[7]['name'] . '</th>
-                <th>' . $dates[8]['name'] . '</th>
-                <th>' . $dates[9]['name'] . '</th>
-                <th>' . $dates[10]['name'] . '</th>
-                <th>' . $dates[11]['name'] . '</th>
+                <th style="text-align: center;">' . $dates[0]['name'] . '</th>
+                <th style="text-align: center;">' . $dates[1]['name'] . '</th>
+                <th style="text-align: center;">' . $dates[2]['name'] . '</th>
+                <th style="text-align: center;">' . $dates[3]['name'] . '</th>
+                <th style="text-align: center;">' . $dates[4]['name'] . '</th>
+                <th style="text-align: center;">' . $dates[5]['name'] . '</th>
+                <th style="text-align: center;">' . $dates[6]['name'] . '</th>
+                <th style="text-align: center;">' . $dates[7]['name'] . '</th>
+                <th style="text-align: center;">' . $dates[8]['name'] . '</th>
+                <th style="text-align: center;">' . $dates[9]['name'] . '</th>
+                <th style="text-align: center;">' . $dates[10]['name'] . '</th>
+                <th style="text-align: center;">' . $dates[11]['name'] . '</th>
             </tr>';
 
             $no = 1;
@@ -212,21 +246,24 @@ class Summary_forecasts extends CI_Controller
             }
             $html .= '<tr>
                             <th colspan="3">Grand Total</th>
-                            <th>' . $gt_1 . '</th>
-                            <th>' . $gt_2 . '</th>
-                            <th>' . $gt_3 . '</th>
-                            <th>' . $gt_4 . '</th>
-                            <th>' . $gt_5 . '</th>
-                            <th>' . $gt_6 . '</th>
-                            <th>' . $gt_7 . '</th>
-                            <th>' . $gt_8 . '</th>
-                            <th>' . $gt_9 . '</th>
-                            <th>' . $gt_10 . '</th>
-                            <th>' . $gt_11 . '</th>
-                            <th>' . $gt_12 . '</th>';
+                            <th>' . number_format($gt_1) . '</th>
+                            <th>' . number_format($gt_2) . '</th>
+                            <th>' . number_format($gt_3) . '</th>
+                            <th>' . number_format($gt_4) . '</th>
+                            <th>' . number_format($gt_5) . '</th>
+                            <th>' . number_format($gt_6) . '</th>
+                            <th>' . number_format($gt_7) . '</th>
+                            <th>' . number_format($gt_8) . '</th>
+                            <th>' . number_format($gt_9) . '</th>
+                            <th>' . number_format($gt_10) . '</th>
+                            <th>' . number_format($gt_11) . '</th>
+                            <th>' . number_format($gt_12) . '</th>';
             $html .= '</table></body></html>';
             echo $html;
-        } else {
+        } elseif ($filter_item_fg != "") {
+            foreach ($records as $data) {
+                $filter_item_fg = $data['item_fg_name'];
+            }
             $html = '<html><head><title>Print Data</title></head><style>body {font-family: Arial, Helvetica, sans-serif;}#summary_forecasts {border-collapse: collapse;width: 100%;font-size: 12px;}#summary_forecasts td, #summary_forecasts th {border: 1px solid #ddd;padding: 2px;}#summary_forecasts tr:nth-child(even){background-color: #f2f2f2;}#summary_forecasts tr:hover {background-color: #ddd;}#summary_forecasts th {padding-top: 2px;padding-bottom: 2px;text-align: left;color: black;}</style><body>
             <center>
                 <div style="float: left; font-size: 12px; text-align: left;">
@@ -253,31 +290,39 @@ class Summary_forecasts extends CI_Controller
                     <table style="width: 100%;">
                         <tr>
                             <td style="font-size: 14px; text-align: left; margin:2px;">
-                                <small>PERIOD : <b>' . $filter_period_month . '</b>  <b>' . $filter_period_year . '</b></small><br>
-                                <small>PRODUCT NO. : <b>' . $filter_item_fg . '</b></small>
+                                <small>PERIOD</small><br>
+                                <small>PRODUCT NO.</small>
+                            </td>
+                            <td style="font-size: 14px; text-align: left; margin:2px;">
+                                <small>: </small><br>
+                                <small>: </small>
+                            </td>
+                            <td style="font-size: 14px; text-align: left; margin:2px;">
+                                <small><b>' . $month_name . '</b>  <b>' . $filter_period_year . '</b></small><br>
+                                <small><b>' . $filter_item_fg . '</b></small>
                             </td>
                         </tr>
                     </table>
                 </div>
             </center>
-            <br><br><br><br>
+            <br><br>
             <table id="summary_forecasts" border="1">
             <tr>
                 <th width="20">No</th>
                 <th>Product No.</th>
                 <th>Product Name</th>
-                <th>' . $dates[0]['name'] . '</th>
-                <th>' . $dates[1]['name'] . '</th>
-                <th>' . $dates[2]['name'] . '</th>
-                <th>' . $dates[3]['name'] . '</th>
-                <th>' . $dates[4]['name'] . '</th>
-                <th>' . $dates[5]['name'] . '</th>
-                <th>' . $dates[6]['name'] . '</th>
-                <th>' . $dates[7]['name'] . '</th>
-                <th>' . $dates[8]['name'] . '</th>
-                <th>' . $dates[9]['name'] . '</th>
-                <th>' . $dates[10]['name'] . '</th>
-                <th>' . $dates[11]['name'] . '</th>
+                <th style="text-align: center;">' . $dates[0]['name'] . '</th>
+                <th style="text-align: center;">' . $dates[1]['name'] . '</th>
+                <th style="text-align: center;">' . $dates[2]['name'] . '</th>
+                <th style="text-align: center;">' . $dates[3]['name'] . '</th>
+                <th style="text-align: center;">' . $dates[4]['name'] . '</th>
+                <th style="text-align: center;">' . $dates[5]['name'] . '</th>
+                <th style="text-align: center;">' . $dates[6]['name'] . '</th>
+                <th style="text-align: center;">' . $dates[7]['name'] . '</th>
+                <th style="text-align: center;">' . $dates[8]['name'] . '</th>
+                <th style="text-align: center;">' . $dates[9]['name'] . '</th>
+                <th style="text-align: center;">' . $dates[10]['name'] . '</th>
+                <th style="text-align: center;">' . $dates[11]['name'] . '</th>
             </tr>';
 
             $no = 1;
@@ -326,18 +371,18 @@ class Summary_forecasts extends CI_Controller
             }
             $html .= '<tr>
                         <th colspan="3">Grand Total</th>
-                        <th>' . $gt_1 . '</th>
-                        <th>' . $gt_2 . '</th>
-                        <th>' . $gt_3 . '</th>
-                        <th>' . $gt_4 . '</th>
-                        <th>' . $gt_5 . '</th>
-                        <th>' . $gt_6 . '</th>
-                        <th>' . $gt_7 . '</th>
-                        <th>' . $gt_8 . '</th>
-                        <th>' . $gt_9 . '</th>
-                        <th>' . $gt_10 . '</th>
-                        <th>' . $gt_11 . '</th>
-                        <th>' . $gt_12 . '</th>';
+                        <th>' . number_format($gt_1) . '</th>
+                        <th>' . number_format($gt_2) . '</th>
+                        <th>' . number_format($gt_3) . '</th>
+                        <th>' . number_format($gt_4) . '</th>
+                        <th>' . number_format($gt_5) . '</th>
+                        <th>' . number_format($gt_6) . '</th>
+                        <th>' . number_format($gt_7) . '</th>
+                        <th>' . number_format($gt_8) . '</th>
+                        <th>' . number_format($gt_9) . '</th>
+                        <th>' . number_format($gt_10) . '</th>
+                        <th>' . number_format($gt_11) . '</th>
+                        <th>' . number_format($gt_12) . '</th>';
             $html .= '</table></body></html>';
             echo $html;
         }
