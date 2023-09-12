@@ -230,18 +230,18 @@ class Summary_forecasts extends CI_Controller
                         <td>' . $no . '</td>
                         <td>' . $data['item_fg_number'] . '</td>
                         <td>' . $data['item_fg_name'] . '</td>
-                        <td>' . $data['month_1'] . '</td>
-                        <td>' . $data['month_2'] . '</td>
-                        <td>' . $data['month_3'] . '</td>
-                        <td>' . $data['month_4'] . '</td>
-                        <td>' . $data['month_5'] . '</td>
-                        <td>' . $data['month_6'] . '</td>
-                        <td>' . $data['month_7'] . '</td>
-                        <td>' . $data['month_8'] . '</td>
-                        <td>' . $data['month_9'] . '</td>
-                        <td>' . $data['month_10'] . '</td>
-                        <td>' . $data['month_11'] . '</td>
-                        <td>' . $data['month_12'] . '</td>';
+                        <td>' . number_format($data['month_1']) . '</td>
+                        <td>' . number_format($data['month_2']) . '</td>
+                        <td>' . number_format($data['month_3']) . '</td>
+                        <td>' . number_format($data['month_4']) . '</td>
+                        <td>' . number_format($data['month_5']) . '</td>
+                        <td>' . number_format($data['month_6']) . '</td>
+                        <td>' . number_format($data['month_7']) . '</td>
+                        <td>' . number_format($data['month_8']) . '</td>
+                        <td>' . number_format($data['month_9']) . '</td>
+                        <td>' . number_format($data['month_10']) . '</td>
+                        <td>' . number_format($data['month_11']) . '</td>
+                        <td>' . number_format($data['month_12']) . '</td>';
                 $no++;
             }
             $html .= '<tr>
@@ -355,18 +355,18 @@ class Summary_forecasts extends CI_Controller
                         <td>' . $no . '</td>
                         <td>' . $data['item_fg_number'] . '</td>
                         <td>' . $data['item_fg_name'] . '</td>
-                        <td>' . $data['month_1'] . '</td>
-                        <td>' . $data['month_2'] . '</td>
-                        <td>' . $data['month_3'] . '</td>
-                        <td>' . $data['month_4'] . '</td>
-                        <td>' . $data['month_5'] . '</td>
-                        <td>' . $data['month_6'] . '</td>
-                        <td>' . $data['month_7'] . '</td>
-                        <td>' . $data['month_8'] . '</td>
-                        <td>' . $data['month_9'] . '</td>
-                        <td>' . $data['month_10'] . '</td>
-                        <td>' . $data['month_11'] . '</td>
-                        <td>' . $data['month_12'] . '</td>';
+                        <td>' . number_format($data['month_1']) . '</td>
+                        <td>' . number_format($data['month_2']) . '</td>
+                        <td>' . number_format($data['month_3']) . '</td>
+                        <td>' . number_format($data['month_4']) . '</td>
+                        <td>' . number_format($data['month_5']) . '</td>
+                        <td>' . number_format($data['month_6']) . '</td>
+                        <td>' . number_format($data['month_7']) . '</td>
+                        <td>' . number_format($data['month_8']) . '</td>
+                        <td>' . number_format($data['month_9']) . '</td>
+                        <td>' . number_format($data['month_10']) . '</td>
+                        <td>' . number_format($data['month_11']) . '</td>
+                        <td>' . number_format($data['month_12']) . '</td>';
                 $no++;
             }
             $html .= '<tr>

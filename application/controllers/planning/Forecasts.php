@@ -449,6 +449,8 @@ class Forecasts extends CI_Controller
         $records = $this->db->get()->result_array();
 
         if ($filter_customer_id == ""){
+            $i_d_from = date_create($filter_issued_date_from);
+            $i_d_to = date_create($filter_issued_date_to);
             $html = '<html><head><title>Print Data</title></head><style>body {font-family: Arial, Helvetica, sans-serif;}#forecasts {border-collapse: collapse;width: 100%;font-size: 12px;}#forecasts td, #forecasts th {border: 1px solid #ddd;padding: 2px;}#forecasts tr:nth-child(even){background-color: #f2f2f2;}#forecasts tr:hover {background-color: #ddd;}#forecasts th {padding-top: 2px;padding-bottom: 2px;text-align: left;color: black;}</style><body>
             <center>
                 <div style="float: left; font-size: 12px; text-align: left;">
@@ -483,7 +485,7 @@ class Forecasts extends CI_Controller
                                     <small>: </small>
                                 </td>
                                 <td style="font-size: 14px; text-align: left; margin:2px;">
-                                    <small><b>' . $filter_issued_date_from . '</b> to <b>' . $filter_issued_date_to . '</b></small><br>
+                                    <small><b>' . date_format($i_d_from,"d F Y") . '</b> to <b>' . date_format($i_d_to,"d F Y") . '</b></small><br>
                                     <small><b>ALL</b></small>
                                 </td>
                             </tr>
@@ -527,23 +529,25 @@ class Forecasts extends CI_Controller
                         <td>' . $data['remark'] . '</td>
                         <td>' . $data['item_fg_number'] . '</td>
                         <td>' . $data['item_fg_name'] . '</td>
-                        <td>' . $data['month_1'] . '</td>
-                        <td>' . $data['month_2'] . '</td>
-                        <td>' . $data['month_3'] . '</td>
-                        <td>' . $data['month_4'] . '</td>
-                        <td>' . $data['month_5'] . '</td>
-                        <td>' . $data['month_6'] . '</td>
-                        <td>' . $data['month_7'] . '</td>
-                        <td>' . $data['month_8'] . '</td>
-                        <td>' . $data['month_9'] . '</td>
-                        <td>' . $data['month_10'] . '</td>
-                        <td>' . $data['month_11'] . '</td>
-                        <td>' . $data['month_12'] . '</td>';
+                        <td>' . number_format($data['month_1']) . '</td>
+                        <td>' . number_format($data['month_2']) . '</td>
+                        <td>' . number_format($data['month_3']) . '</td>
+                        <td>' . number_format($data['month_4']) . '</td>
+                        <td>' . number_format($data['month_5']) . '</td>
+                        <td>' . number_format($data['month_6']) . '</td>
+                        <td>' . number_format($data['month_7']) . '</td>
+                        <td>' . number_format($data['month_8']) . '</td>
+                        <td>' . number_format($data['month_9']) . '</td>
+                        <td>' . number_format($data['month_10']) . '</td>
+                        <td>' . number_format($data['month_11']) . '</td>
+                        <td>' . number_format($data['month_12']) . '</td>';
                 $no++;
             }
             $html .= '</table></body></html>';
             echo $html;
         } elseif ($filter_customer_id != "") {
+            $i_d_from = date_create($filter_issued_date_from);
+            $i_d_to = date_create($filter_issued_date_to);
             foreach ($records as $data) {
                 $filter_customer_id = $data['customer_name'];
             }
@@ -581,7 +585,7 @@ class Forecasts extends CI_Controller
                                     <small>: </small>
                                 </td>
                                 <td style="font-size: 14px; text-align: left; margin:2px;">
-                                    <small><b>' . $filter_issued_date_from . '</b> to <b>' . $filter_issued_date_to . '</b></small><br>
+                                    <small><b>' . date_format($i_d_from,"d F Y") . '</b> to <b>' . date_format($i_d_to,"d F Y") . '</b></small><br>
                                     <small><b>' . $filter_customer_id . '</b></small>
                                 </td>
                             </tr>
@@ -625,18 +629,18 @@ class Forecasts extends CI_Controller
                         <td>' . $data['remark'] . '</td>
                         <td>' . $data['item_fg_number'] . '</td>
                         <td>' . $data['item_fg_name'] . '</td>
-                        <td>' . $data['month_1'] . '</td>
-                        <td>' . $data['month_2'] . '</td>
-                        <td>' . $data['month_3'] . '</td>
-                        <td>' . $data['month_4'] . '</td>
-                        <td>' . $data['month_5'] . '</td>
-                        <td>' . $data['month_6'] . '</td>
-                        <td>' . $data['month_7'] . '</td>
-                        <td>' . $data['month_8'] . '</td>
-                        <td>' . $data['month_9'] . '</td>
-                        <td>' . $data['month_10'] . '</td>
-                        <td>' . $data['month_11'] . '</td>
-                        <td>' . $data['month_12'] . '</td>';
+                        <td>' . number_format($data['month_1']) . '</td>
+                        <td>' . number_format($data['month_2']) . '</td>
+                        <td>' . number_format($data['month_3']) . '</td>
+                        <td>' . number_format($data['month_4']) . '</td>
+                        <td>' . number_format($data['month_5']) . '</td>
+                        <td>' . number_format($data['month_6']) . '</td>
+                        <td>' . number_format($data['month_7']) . '</td>
+                        <td>' . number_format($data['month_8']) . '</td>
+                        <td>' . number_format($data['month_9']) . '</td>
+                        <td>' . number_format($data['month_10']) . '</td>
+                        <td>' . number_format($data['month_11']) . '</td>
+                        <td>' . number_format($data['month_12']) . '</td>';
                 $no++;
             }
             $html .= '</table></body></html>';
