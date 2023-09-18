@@ -6,7 +6,7 @@
             <!-- <th rowspan="2" data-options="field:'p_month',width:50,align:'center'">Month</th>
             <th rowspan="2" data-options="field:'p_year',width:50,align:'center'">Year</th>
             <th rowspan="2" data-options="field:'revision',width:50,align:'center'">Rev</th> -->
-            <th rowspan="2" data-options="field:'document_no',width:120,halign:'center'">Sales Order No.</th>
+            <th rowspan="2" data-options="field:'document_no',width:120,halign:'center'">Document No.</th>
             <th rowspan="2" data-options="field:'customer_name',width:250,halign:'center'">Customer Name</th>
             <th rowspan="2" data-options="field:'item_fg_number',width:150,halign:'center'">Product No.</th>
             <th rowspan="2" data-options="field:'item_fg_name',width:200,halign:'center'">Product Name</th>
@@ -90,7 +90,7 @@
                 </select>
             </div>
             <div class="fitem">
-                <span style="width:35%; display:inline-block;">Sales Order No.</span>
+                <span style="width:35%; display:inline-block;">Document No.</span>
                 <input style="width:60%;" name="document_no" id="document_no" class="easyui-textbox">
             </div>
             <div class="fitem">
@@ -130,14 +130,14 @@
 </div>
 
 <!-- PDF -->
-<iframe id="printout" src="<?= base_url('planning/os_so/print') ?>" style="width: 100%;" hidden></iframe>
+<iframe id="printout" src="<?= base_url('planning/os_mpp/print') ?>" style="width: 100%;" hidden></iframe>
 
 <script>
     //ADD DATA
     function add() {
         $('#dlg_insert').dialog('open');
         $('#dg2').datagrid('loadData', []);
-        url_save = '<?= base_url('planning/os_so/create') ?>';
+        url_save = '<?= base_url('planning/os_mpp/create') ?>';
         $('#frm_insert').form('clear');
         $("#customer_id").combogrid('enable');
         $("#item_fg_id").combogrid('enable');
@@ -155,7 +155,7 @@
         if (row) {
             $('#dlg_insert').dialog('open');
             $('#frm_insert').form('load', row);
-            url_save = '<?= base_url('planning/os_so/update') ?>?id=' + btoa(row.id);
+            url_save = '<?= base_url('planning/os_mpp/update') ?>?id=' + btoa(row.id);
         } else {
             toastr.warning("Please select one of the data in the table first!", "Information");
         }
@@ -171,7 +171,7 @@
                         var row = rows[i];
                         $.ajax({
                             method: 'post',
-                            url: '<?= base_url('planning/os_so/delete') ?>',
+                            url: '<?= base_url('planning/os_mpp/delete') ?>',
                             data: {
                                 id: row.id,
                             },
@@ -201,7 +201,7 @@
 
     // DOWNLOAD
     function download_excel() {
-        window.location.assign('<?= base_url('template/tmp_os_so.xls') ?>');
+        window.location.assign('<?= base_url('template/tmp_os_mpp.xls') ?>');
     }
 
     //FILTER DATA
@@ -219,7 +219,7 @@
             "&filter_revision=" + window.btoa(filter_revision);
 
         $('#dg').datagrid({
-            url: '<?= base_url('planning/os_so/datatables') ?>' + url,
+            url: '<?= base_url('planning/os_mpp/datatables') ?>' + url,
             pagination: true,
             clientPaging: false,
             remoteFilter: true,
@@ -228,7 +228,7 @@
         });
 
         $("#printout").contents().find('html').html("<center><br><br><br><b style='font-size:20px;'>Please Wait...</b></center>");
-        $("#printout").attr('src', '<?= base_url('planning/os_so/print') ?>' + url);
+        $("#printout").attr('src', '<?= base_url('planning/os_mpp/print') ?>' + url);
     }
 
     //PRINT PDF
@@ -250,7 +250,7 @@
             "&filter_customer_id=" + window.btoa(filter_customer_id) +
             "&filter_revision=" + window.btoa(filter_revision);
 
-        window.location.assign('<?= base_url('planning/os_so/print/excel') ?>' + url);
+        window.location.assign('<?= base_url('planning/os_mpp/print/excel') ?>' + url);
     }
 
     //RELOAD
@@ -290,14 +290,14 @@
     });
 
     $('#p_month').combobox({
-        url: '<?= base_url('planning/os_so/readPeriod/month'); ?>',
+        url: '<?= base_url('planning/os_mpp/readPeriod/month'); ?>',
         valueField: 'id',
         textField: 'name',
         prompt: 'Choose Months',
     });
 
     $('#p_year').combobox({
-        url: '<?= base_url('planning/os_so/readPeriod/year'); ?>',
+        url: '<?= base_url('planning/os_mpp/readPeriod/year'); ?>',
         valueField: 'id',
         textField: 'name',
         prompt: 'Choose Years',
@@ -374,7 +374,7 @@
     });
 
     $('#filter_period_month').combobox({
-        url: '<?= base_url('planning/os_so/readPeriod/month'); ?>',
+        url: '<?= base_url('planning/os_mpp/readPeriod/month'); ?>',
         valueField: 'id',
         textField: 'name',
         prompt: 'Choose Months',
@@ -387,7 +387,7 @@
     });
 
     $('#filter_period_year').combobox({
-        url: '<?= base_url('planning/os_so/readPeriod/year'); ?>',
+        url: '<?= base_url('planning/os_mpp/readPeriod/year'); ?>',
         valueField: 'id',
         textField: 'name',
         prompt: 'Choose Years',
@@ -411,14 +411,14 @@
         buttons: [{
             text: 'List Failed',
             handler: function() {
-                window.open('<?= base_url('planning/os_so/uploadDownloadFailed') ?>', '_blank');
+                window.open('<?= base_url('planning/os_mpp/uploadDownloadFailed') ?>', '_blank');
             }
         }, {
             text: 'Upload',
             iconCls: 'icon-ok',
             handler: function() {
                 $('#frm_upload').form('submit', {
-                    url: '<?= base_url('planning/os_so/upload') ?>',
+                    url: '<?= base_url('planning/os_mpp/upload') ?>',
                     onSubmit: function() {
                         if ($(this).form('validate') == false) {
                             return $(this).form('validate');
@@ -433,7 +433,7 @@
                         $.messager.progress('close');
                         //Clear File
                         $.ajax({
-                            url: "<?= base_url('planning/os_so/uploadclearFailed') ?>"
+                            url: "<?= base_url('planning/os_mpp/uploadclearFailed') ?>"
                         });
                         var json = eval('(' + result + ')');
                         requestData(json.total, json);
@@ -448,7 +448,7 @@
                                 $.ajax({
                                     type: "POST",
                                     async: true,
-                                    url: "<?= base_url('planning/os_so/uploadCreate') ?>",
+                                    url: "<?= base_url('planning/os_mpp/uploadCreate') ?>",
                                     data: {
                                         "data": json[number - 1]
                                     },
@@ -466,7 +466,7 @@
                                             $.ajax({
                                                 type: "POST",
                                                 async: true,
-                                                url: "<?= base_url('planning/os_so/uploadcreateFailed') ?>",
+                                                url: "<?= base_url('planning/os_mpp/uploadcreateFailed') ?>",
                                                 data: {
                                                     data: json[number - 1],
                                                     message: result.message

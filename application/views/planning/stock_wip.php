@@ -7,7 +7,7 @@
             <th rowspan="2" data-options="field:'p_year',width:50,align:'center'">Year</th>
             <th rowspan="2" data-options="field:'revision',width:50,align:'center'">Rev</th> -->
             <th rowspan="2" data-options="field:'document_no',width:120,halign:'center'">Document No.</th>
-            <th rowspan="2" data-options="field:'customer_name',width:250,halign:'center'">Customer Name</th>
+            <th rowspan="2" data-options="field:'customer_name',width:250,halign:'center'">customer Name</th>
             <th rowspan="2" data-options="field:'item_fg_number',width:150,halign:'center'">Product No.</th>
             <th rowspan="2" data-options="field:'item_fg_name',width:200,halign:'center'">Product Name</th>
             <th colspan="13" data-options="field:'',width:100,halign:'center'"> Stock WIP</th>
@@ -69,7 +69,7 @@
             <div style="float: left; width: 50%;">
                 <div class="fitem">
                     <span style="width:35%; display:inline-block;">Customer</span>
-                    <input style="width:60%;" id="filter_customer" class="easyui-combobox">
+                    <input style="width:60%;" id="filter_customer_id" class="easyui-combobox">
                 </div>
                 <div class="fitem">
                     <span style="width:35%; display:inline-block;">Product No.</span>
@@ -104,12 +104,12 @@
                 </select>
             </div>
             <div class="fitem">
-                <span style="width:35%; display:inline-block;">Document No</span>
-                <input style="width:60%;" name="document_no" id="document_no" required class="easyui-textbox">
+                <span style="width:35%; display:inline-block;">Document No.</span>
+                <input style="width:60%;" name="document_no" id="document_no" class="easyui-textbox">
             </div>
             <div class="fitem">
                 <span style="width:35%; display:inline-block;">Customer</span>
-                <input style="width:60%;" id="customer_id" required class="easyui-combobox">
+                <input style="width:60%;" name="customer_id" id="customer_id" required class="easyui-combobox">
             </div>
             <div class="fitem">
                 <span style="width:35%; display:inline-block;">Product No</span>
@@ -209,10 +209,10 @@
         $('#dg2').datagrid('loadData', []);
         url_save = '<?= base_url('planning/stock_wip/create') ?>';
         $('#frm_insert').form('clear');
+        $("#customer_id").combogrid('enable');
         $("#item_fg_id").combogrid('enable');
         $("#p_month").combobox('enable');
         $("#p_year").combobox('enable');
-        $("#customer_id").combogrid('enable');
         $("#revision").combogrid('enable');
         $("#document_no").combogrid('enable');
 
@@ -290,13 +290,13 @@
         var filter_period_month = $("#filter_period_month").combobox('getValue');
         var filter_period_year = $("#filter_period_year").combobox('getValue');
         var filter_item_fg_id = $("#filter_item_fg_id").combogrid('getValue');
-        var filter_customer = $("#filter_customer").combobox('getValue');
+        var filter_customer_id = $("#filter_customer_id").combobox('getValue');
         var filter_revision = $("#filter_revision").combobox('getValue');
 
         var url = "?filter_period_month=" + window.btoa(filter_period_month) +
             "&filter_period_year=" + window.btoa(filter_period_year) +
             "&filter_item_fg_id=" + window.btoa(filter_item_fg_id) +
-            "&filter_customer=" + window.btoa(filter_customer) +
+            "&filter_customer_id=" + window.btoa(filter_customer_id) +
             "&filter_revision=" + window.btoa(filter_revision);
 
         $('#dg').datagrid({
@@ -322,13 +322,13 @@
         var filter_period_month = $("#filter_period_month").combobox('getValue');
         var filter_period_year = $("#filter_period_year").combobox('getValue');
         var filter_item_fg_id = $("#filter_item_fg_id").combogrid('getValue');
-        var filter_customer = $("#filter_customer").combobox('getValue');
+        var filter_customer_id = $("#filter_customer_id").combobox('getValue');
         var filter_revision = $("#filter_revision").combobox('getValue');
 
         var url = "?filter_period_month=" + window.btoa(filter_period_month) +
             "&filter_period_year=" + window.btoa(filter_period_year) +
             "&filter_item_fg_id=" + window.btoa(filter_item_fg_id) +
-            "&filter_customer=" + window.btoa(filter_customer) +
+            "&filter_customer_id=" + window.btoa(filter_customer_id) +
             "&filter_revision=" + window.btoa(filter_revision);
 
         window.location.assign('<?= base_url('planning/stock_wip/print/excel') ?>' + url);
@@ -388,10 +388,10 @@
         url: '<?= base_url('master/customers/reads'); ?>',
         valueField: 'id',
         textField: 'name',
-        prompt: 'Choose Customers',
-        onSelect: function(customer) {
+        prompt: 'Choose Customer',
+        onSelect: function(customer_id) {
             $('#item_fg_id').combogrid({
-                url: '<?= base_url('master/customer_items/reads/'); ?>' + window.btoa(customer.id),
+                url: '<?= base_url('master/customer_items/reads/'); ?>' + window.btoa(customer_id.id),
                 panelWidth: 400,
                 idField: 'id',
                 textField: 'number',
@@ -413,20 +413,20 @@
         }
     });
 
-    $('#filter_customer').combobox({
+    $('#filter_customer_id').combobox({
         url: '<?= base_url('master/customers/reads'); ?>',
         valueField: 'id',
         textField: 'name',
-        prompt: 'Choose Customers',
+        prompt: 'Choose Customer',
         icons: [{
             iconCls: 'icon-clear',
             handler: function(e) {
                 $(e.data.target).combobox('clear').combobox('textbox').focus();
             }
         }],
-        onSelect: function(customer) {
+        onSelect: function(customer_id) {
             $('#filter_item_fg_id').combogrid({
-                url: '<?= base_url('master/customer_items/reads/'); ?>' + window.btoa(customer.id),
+                url: '<?= base_url('master/customer_id_items/reads/'); ?>' + window.btoa(customer_id.id),
                 panelWidth: 400,
                 idField: 'id',
                 textField: 'number',
