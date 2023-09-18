@@ -1,7 +1,7 @@
 <?php
 date_default_timezone_set("Asia/Bangkok");
 defined('BASEPATH') or exit('No direct script access allowed');
-class Stock_fg extends CI_Controller
+class Os_so extends CI_Controller
 {
     public function __construct()
     {
@@ -13,7 +13,7 @@ class Stock_fg extends CI_Controller
         $this->load->model('crud');
 
         //VALIDASI FORM
-        $this->form_validation->set_rules('item_fg_id', 'Product No.', 'required|min_length[1]|max_length[50]|is_unique[stock_fg.item_fg_id]');
+        $this->form_validation->set_rules('item_fg_id', 'Product No.', 'required|min_length[1]|max_length[50]|is_unique[os_so.item_fg_id]');
     }
 
     //HALAMAN UTAMA
@@ -24,7 +24,7 @@ class Stock_fg extends CI_Controller
         } elseif ($this->checkuserAccess($this->id_menu()) > 0) {
             $data['button'] = $this->getbutton($this->id_menu());
             $this->load->view('template/header', $data);
-            $this->load->view('planning/stock_fg');
+            $this->load->view('planning/os_so');
         } else {
             redirect('error_access');
         }
@@ -34,7 +34,7 @@ class Stock_fg extends CI_Controller
     public function reads()
     {
         $post = isset($_POST['q']) ? $_POST['q'] : "";
-        $send = $this->crud->reads('stock_fg', ["item_fg_id" => $post]);
+        $send = $this->crud->reads('os_so', ["item_fg_id" => $post]);
         echo json_encode($send);
     }
 
@@ -82,7 +82,7 @@ class Stock_fg extends CI_Controller
 
             //Select Query
             $this->db->select('a.*, b.number as item_fg_number, b.name as item_fg_name, c.customer_id, d.name as customer_name');
-            $this->db->from('stock_fg a');
+            $this->db->from('os_so a');
             $this->db->join('item_fg b', 'a.item_fg_id = b.id');
             $this->db->join('customer_items c', 'a.item_fg_id = c.item_fg_id');
             $this->db->join('customers d', 'c.customer_id = d.id');
@@ -116,7 +116,7 @@ class Stock_fg extends CI_Controller
         if ($this->input->post()) {
             if ($this->form_validation->run() == TRUE) {
                 $post   = $this->input->post();
-                $send   = $this->crud->create('stock_fg', $post);
+                $send   = $this->crud->create('os_so', $post);
                 echo $send;
             } else {
                 show_error(validation_errors());
@@ -132,7 +132,7 @@ class Stock_fg extends CI_Controller
         if ($this->input->post()) {
             $id   = base64_decode($this->input->get('id'));
             $post = $this->input->post();
-            $send = $this->crud->update('stock_fg', ["id" => $id], $post);
+            $send = $this->crud->update('os_so', ["id" => $id], $post);
             echo $send;
         } else {
             show_error("Cannot Process your request");
@@ -143,7 +143,7 @@ class Stock_fg extends CI_Controller
     public function delete()
     {
         $data = $this->input->post();
-        $send = $this->crud->delete('stock_fg', $data);
+        $send = $this->crud->delete('os_so', $data);
         echo $send;
     }
 
@@ -181,14 +181,14 @@ class Stock_fg extends CI_Controller
 
     public function uploadclearFailed()
     {
-        @unlink('excel/failed/stock_fg.txt');
+        @unlink('excel/failed/os_so.txt');
     }
 
     public function uploadcreateFailed()
     {
         if ($this->input->post()) {
             $message = $this->input->post('message');
-            $textFailed = fopen('excel/failed/stock_fg.txt', 'a');
+            $textFailed = fopen('excel/failed/os_so.txt', 'a');
             fwrite($textFailed, $message . "\n");
             fclose($textFailed);
         }
@@ -197,7 +197,7 @@ class Stock_fg extends CI_Controller
     //UPLOAD DOWNLOAD FAILED
     public function uploadDownloadFailed()
     {
-        $file = "excel/failed/stock_fg.txt";
+        $file = "excel/failed/os_so.txt";
         header('Content-Description: File Failed');
         header('Content-Disposition: attachment; filename=' . basename($file));
         header('Expires: 0');
@@ -214,17 +214,17 @@ class Stock_fg extends CI_Controller
         if ($this->input->post()) {
             $data = $this->input->post('data');
 
-            $stock_fg = $this->crud->read('stock_fg', [], [
+            $os_so = $this->crud->read('os_so', [], [
                 "item_fg_id" => $data['item_fg_id'],
                 "p_month" => $data['p_month'],
                 "p_year" => $data['p_year'],
                 "revision" => $data['revision'],
             ]);
 
-            if (!empty($stock_fg->item_fg_id)) {
+            if (!empty($os_so->item_fg_id)) {
                 echo json_encode(array("title" => "Duplicated", "message" => " Product No. " . $data['item_fg_id'] . " is Duplicate Data", "theme" => "error"));
             } else {
-                $send   = $this->crud->create('stock_fg', $data);
+                $send   = $this->crud->create('os_so', $data);
                 echo $send;
             }
         }
@@ -236,7 +236,7 @@ class Stock_fg extends CI_Controller
         if ($option == "excel") {
             $format  = date("Ymd");
             header("Content-type: application/vnd-ms-excel");
-            header("Content-Disposition: attachment; filename=stock_fg_$format.xls");
+            header("Content-Disposition: attachment; filename=os_so_$format.xls");
         }
 
         $get = $this->input->get();
@@ -252,7 +252,7 @@ class Stock_fg extends CI_Controller
         $config = $this->db->get()->row();
 
         $this->db->select('a.*, b.number as item_fg_number, b.name as item_fg_name, c.customer_id, d.name as customer_name');
-        $this->db->from('stock_fg a');
+        $this->db->from('os_so a');
         $this->db->join('item_fg b', 'a.item_fg_id = b.id');
         $this->db->join('customer_items c', 'a.item_fg_id = c.item_fg_id');
         $this->db->join('customers d', 'c.customer_id = d.id');
@@ -268,7 +268,7 @@ class Stock_fg extends CI_Controller
         $this->db->order_by('a.created_date', 'DESC');
         $records = $this->db->get()->result_array();
 
-        $html = '<html><head><title>Print Data</title></head><style>body {font-family: Arial, Helvetica, sans-serif;}#stock_fg {border-collapse: collapse;width: 100%;font-size: 12px;}#stock_fg td, #stock_fg th {border: 1px solid #ddd;padding: 2px;}#stock_fg tr:nth-child(even){background-color: #f2f2f2;}#stock_fg tr:hover {background-color: #ddd;}#stock_fg th {padding-top: 2px;padding-bottom: 2px;text-align: left;color: black;}</style><body>
+        $html = '<html><head><title>Print Data</title></head><style>body {font-family: Arial, Helvetica, sans-serif;}#os_so {border-collapse: collapse;width: 100%;font-size: 12px;}#os_so td, #os_so th {border: 1px solid #ddd;padding: 2px;}#os_so tr:nth-child(even){background-color: #f2f2f2;}#os_so tr:hover {background-color: #ddd;}#os_so th {padding-top: 2px;padding-bottom: 2px;text-align: left;color: black;}</style><body>
             <center>
                 <div style="float: left; font-size: 12px; text-align: left;">
                     <table style="width: 100%;">
@@ -288,7 +288,7 @@ class Stock_fg extends CI_Controller
                 </div>
                 <br><br>
                 <div style="float: centet; font-size: 16px; text-align: center;">
-                    <h3>DATA STOCK FG</h3>
+                    <h3>DATA OS PO</h3>
                 </div>
                 <div style="float: left; font-size: 12px; text-align: left; width:30%;">
                     <table style="width: 100%;">
@@ -318,7 +318,7 @@ class Stock_fg extends CI_Controller
                 </div>
             </center>
             
-            <table id="stock_fg" border="1">
+            <table id="os_so" border="1">
                 <tr>
                     <th width="20">No</th>
                     <th>Document No</th>

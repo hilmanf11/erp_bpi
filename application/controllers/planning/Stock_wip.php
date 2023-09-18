@@ -1,7 +1,7 @@
 <?php
 date_default_timezone_set("Asia/Bangkok");
 defined('BASEPATH') or exit('No direct script access allowed');
-class Stock_fg extends CI_Controller
+class Stock_wip extends CI_Controller
 {
     public function __construct()
     {
@@ -13,7 +13,7 @@ class Stock_fg extends CI_Controller
         $this->load->model('crud');
 
         //VALIDASI FORM
-        $this->form_validation->set_rules('item_fg_id', 'Product No.', 'required|min_length[1]|max_length[50]|is_unique[stock_fg.item_fg_id]');
+        $this->form_validation->set_rules('item_fg_id', 'Product No.', 'required|min_length[1]|max_length[50]|is_unique[stock_wip.item_fg_id]');
     }
 
     //HALAMAN UTAMA
@@ -24,7 +24,7 @@ class Stock_fg extends CI_Controller
         } elseif ($this->checkuserAccess($this->id_menu()) > 0) {
             $data['button'] = $this->getbutton($this->id_menu());
             $this->load->view('template/header', $data);
-            $this->load->view('planning/stock_fg');
+            $this->load->view('planning/stock_wip');
         } else {
             redirect('error_access');
         }
@@ -34,7 +34,7 @@ class Stock_fg extends CI_Controller
     public function reads()
     {
         $post = isset($_POST['q']) ? $_POST['q'] : "";
-        $send = $this->crud->reads('stock_fg', ["item_fg_id" => $post]);
+        $send = $this->crud->reads('stock_wip', ["item_fg_id" => $post]);
         echo json_encode($send);
     }
 
@@ -82,7 +82,7 @@ class Stock_fg extends CI_Controller
 
             //Select Query
             $this->db->select('a.*, b.number as item_fg_number, b.name as item_fg_name, c.customer_id, d.name as customer_name');
-            $this->db->from('stock_fg a');
+            $this->db->from('stock_wip a');
             $this->db->join('item_fg b', 'a.item_fg_id = b.id');
             $this->db->join('customer_items c', 'a.item_fg_id = c.item_fg_id');
             $this->db->join('customers d', 'c.customer_id = d.id');
@@ -116,7 +116,7 @@ class Stock_fg extends CI_Controller
         if ($this->input->post()) {
             if ($this->form_validation->run() == TRUE) {
                 $post   = $this->input->post();
-                $send   = $this->crud->create('stock_fg', $post);
+                $send   = $this->crud->create('stock_wip', $post);
                 echo $send;
             } else {
                 show_error(validation_errors());
@@ -132,7 +132,7 @@ class Stock_fg extends CI_Controller
         if ($this->input->post()) {
             $id   = base64_decode($this->input->get('id'));
             $post = $this->input->post();
-            $send = $this->crud->update('stock_fg', ["id" => $id], $post);
+            $send = $this->crud->update('stock_wip', ["id" => $id], $post);
             echo $send;
         } else {
             show_error("Cannot Process your request");
@@ -143,7 +143,7 @@ class Stock_fg extends CI_Controller
     public function delete()
     {
         $data = $this->input->post();
-        $send = $this->crud->delete('stock_fg', $data);
+        $send = $this->crud->delete('stock_wip', $data);
         echo $send;
     }
 
@@ -170,7 +170,19 @@ class Stock_fg extends CI_Controller
                 'revision' => $revision,
                 'document_no' => $data->val($i, 2),
                 'item_fg_id' => $data->val($i, 3),
-                'qty' => $data->val($i, 4)
+                'pp' => $data->val($i, 4),
+                'p1' => $data->val($i, 5),
+                'p2' => $data->val($i, 6),
+                'p3' => $data->val($i, 7),
+                'p4' => $data->val($i, 8),
+                'p5' => $data->val($i, 9),
+                'p6' => $data->val($i, 10),
+                'p7' => $data->val($i, 11),
+                'p8' => $data->val($i, 12),
+                'p9' => $data->val($i, 13),
+                'p10' => $data->val($i, 14),
+                'rqa' => $data->val($i, 15),
+                'hav' => $data->val($i, 16)
             );
         }
 
@@ -181,14 +193,14 @@ class Stock_fg extends CI_Controller
 
     public function uploadclearFailed()
     {
-        @unlink('excel/failed/stock_fg.txt');
+        @unlink('excel/failed/stock_wip.txt');
     }
 
     public function uploadcreateFailed()
     {
         if ($this->input->post()) {
             $message = $this->input->post('message');
-            $textFailed = fopen('excel/failed/stock_fg.txt', 'a');
+            $textFailed = fopen('excel/failed/stock_wip.txt', 'a');
             fwrite($textFailed, $message . "\n");
             fclose($textFailed);
         }
@@ -197,7 +209,7 @@ class Stock_fg extends CI_Controller
     //UPLOAD DOWNLOAD FAILED
     public function uploadDownloadFailed()
     {
-        $file = "excel/failed/stock_fg.txt";
+        $file = "excel/failed/stock_wip.txt";
         header('Content-Description: File Failed');
         header('Content-Disposition: attachment; filename=' . basename($file));
         header('Expires: 0');
@@ -214,17 +226,30 @@ class Stock_fg extends CI_Controller
         if ($this->input->post()) {
             $data = $this->input->post('data');
 
-            $stock_fg = $this->crud->read('stock_fg', [], [
+            $stock_wip = $this->crud->read('stock_wip', [], [
                 "item_fg_id" => $data['item_fg_id'],
                 "p_month" => $data['p_month'],
                 "p_year" => $data['p_year'],
                 "revision" => $data['revision'],
+                'pp' => $data['pp'],
+                'p1' => $data['p1'],
+                'p2' => $data['p2'],
+                'p3' => $data['p3'],
+                'p4' => $data['p4'],
+                'p5' => $data['p5'],
+                'p6' => $data['p6'],
+                'p7' => $data['p7'],
+                'p8' => $data['p8'],
+                'p9' => $data['p9'],
+                'p10' => $data['p10'],
+                'rqa' => $data['rqa'],
+                'hav' => $data['hav'],
             ]);
 
-            if (!empty($stock_fg->item_fg_id)) {
+            if (!empty($stock_wip->item_fg_id)) {
                 echo json_encode(array("title" => "Duplicated", "message" => " Product No. " . $data['item_fg_id'] . " is Duplicate Data", "theme" => "error"));
             } else {
-                $send   = $this->crud->create('stock_fg', $data);
+                $send   = $this->crud->create('stock_wip', $data);
                 echo $send;
             }
         }
@@ -236,7 +261,7 @@ class Stock_fg extends CI_Controller
         if ($option == "excel") {
             $format  = date("Ymd");
             header("Content-type: application/vnd-ms-excel");
-            header("Content-Disposition: attachment; filename=stock_fg_$format.xls");
+            header("Content-Disposition: attachment; filename=stock_wip_$format.xls");
         }
 
         $get = $this->input->get();
@@ -251,8 +276,8 @@ class Stock_fg extends CI_Controller
         $this->db->from('config');
         $config = $this->db->get()->row();
 
-        $this->db->select('a.*, b.number as item_fg_number, b.name as item_fg_name, c.customer_id, d.name as customer_name');
-        $this->db->from('stock_fg a');
+        $this->db->select('a.*, b.number as item_fg_number, b.name as item_fg_name, c.item_fg_id, c.customer_id, d.name as customer_name');
+        $this->db->from('stock_wip a');
         $this->db->join('item_fg b', 'a.item_fg_id = b.id');
         $this->db->join('customer_items c', 'a.item_fg_id = c.item_fg_id');
         $this->db->join('customers d', 'c.customer_id = d.id');
@@ -268,7 +293,7 @@ class Stock_fg extends CI_Controller
         $this->db->order_by('a.created_date', 'DESC');
         $records = $this->db->get()->result_array();
 
-        $html = '<html><head><title>Print Data</title></head><style>body {font-family: Arial, Helvetica, sans-serif;}#stock_fg {border-collapse: collapse;width: 100%;font-size: 12px;}#stock_fg td, #stock_fg th {border: 1px solid #ddd;padding: 2px;}#stock_fg tr:nth-child(even){background-color: #f2f2f2;}#stock_fg tr:hover {background-color: #ddd;}#stock_fg th {padding-top: 2px;padding-bottom: 2px;text-align: left;color: black;}</style><body>
+        $html = '<html><head><title>Print Data</title></head><style>body {font-family: Arial, Helvetica, sans-serif;}#stock_wip {border-collapse: collapse;width: 100%;font-size: 12px;}#stock_wip td, #stock_wip th {border: 1px solid #ddd;padding: 2px;}#stock_wip tr:nth-child(even){background-color: #f2f2f2;}#stock_wip tr:hover {background-color: #ddd;}#stock_wip th {padding-top: 2px;padding-bottom: 2px;text-align: left;color: black;}</style><body>
             <center>
                 <div style="float: left; font-size: 12px; text-align: left;">
                     <table style="width: 100%;">
@@ -288,7 +313,7 @@ class Stock_fg extends CI_Controller
                 </div>
                 <br><br>
                 <div style="float: centet; font-size: 16px; text-align: center;">
-                    <h3>DATA STOCK FG</h3>
+                    <h3>DATA STOCK WIP</h3>
                 </div>
                 <div style="float: left; font-size: 12px; text-align: left; width:30%;">
                     <table style="width: 100%;">
@@ -318,15 +343,31 @@ class Stock_fg extends CI_Controller
                 </div>
             </center>
             
-            <table id="stock_fg" border="1">
+            <table id="stock_wip" border="1">
                 <tr>
-                    <th width="20">No</th>
-                    <th>Document No</th>
-                    <th>Customer Name</th>
-                    <th>Product No</th>
-                    <th>Product Name</th>
-                    <th>Quantity</th>
+                    <th rowspan="2" width="20">No</th>
+                    <th rowspan="2">Document No</th>
+                    <th rowspan="2">Customer Name</th>
+                    <th rowspan="2">Product No</th>
+                    <th rowspan="2">Product Name</th>
+                    <th colspan="13" style="text-align:center;">Stock WIP</th>  
+                </tr>
+                <tr>
+                    <th>PP</th>
+                    <th>P1</th>
+                    <th>P2</th>
+                    <th>P3</th>
+                    <th>P4</th>
+                    <th>P5</th>
+                    <th>P6</th>
+                    <th>P7</th>
+                    <th>P8</th>
+                    <th>P9</th>
+                    <th>P10</th>
+                    <th>RQA</th>
+                    <th>HAV</th>
                 </tr>';
+                
         $no = 1;
         foreach ($records as $data) {
             $html .= '<tr>
@@ -335,8 +376,21 @@ class Stock_fg extends CI_Controller
                         <td>' . $data['customer_name'] . '</td>
                         <td>' . $data['item_fg_number'] . '</td>
                         <td>' . $data['item_fg_name'] . '</td>
-                        <td>' . number_format($data['qty']) . '</td>
+                        <td>' . $data['pp'] . '</td>
+                        <td>' . $data['p1'] . '</td>
+                        <td>' . $data['p2'] . '</td>
+                        <td>' . $data['p3'] . '</td>
+                        <td>' . $data['p4'] . '</td>
+                        <td>' . $data['p5'] . '</td>
+                        <td>' . $data['p6'] . '</td>
+                        <td>' . $data['p7'] . '</td>
+                        <td>' . $data['p8'] . '</td>
+                        <td>' . $data['p9'] . '</td>
+                        <td>' . $data['p10'] . '</td>
+                        <td>' . $data['rqa'] . '</td>
+                        <td>' . $data['hav'] . '</td>
                     </tr>';
+
             $no++;
         }
         $html .= '</table></body></html>';
