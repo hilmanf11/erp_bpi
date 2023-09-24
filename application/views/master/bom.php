@@ -133,10 +133,6 @@
                                     index: rowIndex,
                                     field: 'item_rm_name'
                                 });
-                                var ed2 = dg.datagrid('getEditor', {
-                                    index: rowIndex,
-                                    field: 'type'
-                                });
                                 var ed3 = dg.datagrid('getEditor', {
                                     index: rowIndex,
                                     field: 'item_rm_id'
@@ -151,7 +147,6 @@
                                 });
 
                                 $(ed.target).textbox('setValue', rows.name);
-                                $(ed2.target).combobox('setValue', 'ORGINAL');
                                 $(ed3.target).textbox('setValue', rows.id);
                                 $(ed4.target).textbox('setValue', rows.item_family_name);
                                 $(ed5.target).textbox('setValue', rows.uom);
@@ -214,15 +209,36 @@
                             panelHeight: true,
                             required: true,
                             data: [{
-                                    name: "ORIGINAL"
+                                    name: "ORIGINAL",
+                                    type: "0"
                                 },
                                 {
-                                    name: "RECYCLE"
+                                    name: "RECYCLE",
+                                    type: "100"
                                 },
                                 {
-                                    name: "BOTH"
+                                    name: "BOTH",
+                                    type: ""
                                 },
-                            ]
+                            ],
+                            onSelect: function(rows) {
+                                var dg = $('#dg2');
+                                var row = dg.datagrid('getSelected');
+                                var rowIndex = dg.datagrid('getRowIndex', row);
+
+                                var ed = dg.datagrid('getEditor', {
+                                    index: rowIndex,
+                                    field: 'recyle'
+                                });
+
+                                if (rows.type != "") {
+                                    $(ed.target).numberbox('disable');
+                                } else {
+                                    $(ed.target).numberbox('enable');
+                                }
+
+                                $(ed.target).numberbox('setValue', rows.type);
+                            }
                         }
                     }
                 }, {

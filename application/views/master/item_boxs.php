@@ -35,7 +35,7 @@
             </div>
             <div class="fitem">
                 <span style="width:35%; display:inline-block;">Kind Of Box</span>
-                <input style="width:60%;" name="item_kind_id" id="item_kind_id" required="" class="easyui-textbox">
+                <input style="width:60%;" name="item_kind_id" id="item_kind_id" required="" class="easyui-combobox">
             </div>
             <div class="fitem">
                 <span style="width:35%; display:inline-block;">Name</span>
@@ -47,7 +47,7 @@
             </div>
             <div class="fitem">
                 <span style="width:35%; display:inline-block;">Color</span>
-                <input style="width:60%;" name="color" id="color" required="" class="easyui-textbox">
+                <input style="width:60%;" name="color" id="color" required="" class="easyui-combobox">
             </div>
             <div class="fitem">
                 <span style="width:35%; display:inline-block;">Material</span>
@@ -171,5 +171,12 @@
         valueField:'id',
         textField:'name',
         prompt: 'Choose Kind Of Box',
+    });
+
+    $('#color').combobox({
+        url:'<?= base_url('master/item_colors/reads'); ?>',
+        valueField:'name',
+        textField:'name',
+        prompt: 'Choose Color',
     });
 </script>

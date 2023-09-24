@@ -10,24 +10,13 @@
             <th rowspan="2" data-options="field:'customer_name',width:250,halign:'center'">customer Name</th>
             <th rowspan="2" data-options="field:'item_fg_number',width:150,halign:'center'">Product No.</th>
             <th rowspan="2" data-options="field:'item_fg_name',width:200,halign:'center'">Product Name</th>
-            <th colspan="13" data-options="field:'',width:100,halign:'center'"> Stock WIP</th>
+            <th colspan="2" data-options="field:'',width:100,halign:'center'"> Stock WIP</th>
             <th colspan="2" data-options="field:'',width:100,halign:'center'"> Created</th>
             <th colspan="2" data-options="field:'',width:100,halign:'center'"> Updated</th>
         </tr>
         <tr>
-            <th data-options="field:'pp',width:80,align:'center'"> PP</th>
-            <th data-options="field:'p1',width:80,align:'center'"> Plant 1</th>
-            <th data-options="field:'p2',width:80,align:'center'"> Plant 2</th>
-            <th data-options="field:'p3',width:80,align:'center'"> Plant 3</th>
-            <th data-options="field:'p4',width:80,align:'center'"> Plant 4</th>
-            <th data-options="field:'p5',width:80,align:'center'"> Plant 5</th>
-            <th data-options="field:'p6',width:80,align:'center'"> Plant 6</th>
-            <th data-options="field:'p7',width:80,align:'center'"> Plant 7</th>
-            <th data-options="field:'p8',width:80,align:'center'"> Plant 8</th>
-            <th data-options="field:'p9',width:80,align:'center'"> Plant 9</th>
-            <th data-options="field:'p10',width:80,align:'center'"> Plant 10</th>
-            <th data-options="field:'rqa',width:80,align:'center'"> Repair QA</th>
-            <th data-options="field:'hav',width:80,align:'center'"> HAV</th>
+            <th data-options="field:'pp',width:80,align:'center'"> Injection</th>
+            <th data-options="field:'p1',width:80,align:'center'"> Assembly</th>
 
             <th data-options="field:'created_by',width:100,align:'center'"> By</th>
             <th data-options="field:'created_date',width:150,align:'center'"> Date</th>
@@ -120,59 +109,15 @@
             <legend><b>Quantity Stock</b></legend>
             <div style="width:50%;float:left;">
                 <div class="fitem">
-                    <span style="width:35%; display:inline-block;">PP</span>
+                    <span style="width:35%; display:inline-block;">Injection</span>
                     <input style="width:40%;" name="pp" id="pp" required class="easyui-numberbox">
-                </div>
-                <div class="fitem">
-                    <span style="width:35%; display:inline-block;">Plant 1</span>
-                    <input style="width:40%;" name="p1" id="p1" required class="easyui-numberbox">
-                </div>
-                <div class="fitem">
-                    <span style="width:35%; display:inline-block;">Plant 2</span>
-                    <input style="width:40%;" name="p2" id="p2" required class="easyui-numberbox">
-                </div>
-                <div class="fitem">
-                    <span style="width:35%; display:inline-block;">Plant 3</span>
-                    <input style="width:40%;" name="p3" id="p3" required class="easyui-numberbox">
-                </div>
-                <div class="fitem">
-                    <span style="width:35%; display:inline-block;">Plant 4</span>
-                    <input style="width:40%;" name="p4" id="p4" required class="easyui-numberbox">
-                </div>
-                <div class="fitem">
-                    <span style="width:35%; display:inline-block;">Plant 5</span>
-                    <input style="width:40%;" name="p5" id="p5" required class="easyui-numberbox">
-                </div>
-                <div class="fitem">
-                    <span style="width:35%; display:inline-block;">Plant 6</span>
-                    <input style="width:40%;" name="p6" id="p6" required class="easyui-numberbox">
                 </div>
             </div>
 
             <div style="width:50%;float:left;">
                 <div class="fitem">
-                    <span style="width:35%; display:inline-block;">Plant 7</span>
-                    <input style="width:40%;" name="p7" id="p7" required class="easyui-numberbox">
-                </div>
-                <div class="fitem">
-                    <span style="width:35%; display:inline-block;">Plant 8</span>
-                    <input style="width:40%;" name="p8" id="p8" required class="easyui-numberbox">
-                </div>
-                <div class="fitem">
-                    <span style="width:35%; display:inline-block;">Plant 9</span>
-                    <input style="width:40%;" name="p9" id="p9" required class="easyui-numberbox">
-                </div>
-                <div class="fitem">
-                    <span style="width:35%; display:inline-block;">Plant 10</span>
-                    <input style="width:40%;" name="p10" id="p10" required class="easyui-numberbox">
-                </div>
-                <div class="fitem">
-                    <span style="width:35%; display:inline-block;">Report QA</span>
-                    <input style="width:40%;" name="rqa" id="rqa" required class="easyui-numberbox">
-                </div>
-                <div class="fitem">
-                    <span style="width:35%; display:inline-block;">HAV</span>
-                    <input style="width:40%;" name="hav" id="hav" required class="easyui-numberbox">
+                    <span style="width:35%; display:inline-block;">Assembly</span>
+                    <input style="width:40%;" name="p1" id="p1" required class="easyui-numberbox">
                 </div>
             </div>
         </fieldset>

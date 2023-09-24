@@ -175,18 +175,7 @@ class Stock_wip extends CI_Controller
                 'customer_id' => $data->val($i, 3),
                 'item_fg_id' => $data->val($i, 4),
                 'pp' => $data->val($i, 5),
-                'p1' => $data->val($i, 6),
-                'p2' => $data->val($i, 7),
-                'p3' => $data->val($i, 8),
-                'p4' => $data->val($i, 9),
-                'p5' => $data->val($i, 10),
-                'p6' => $data->val($i, 11),
-                'p7' => $data->val($i, 12),
-                'p8' => $data->val($i, 13),
-                'p9' => $data->val($i, 14),
-                'p10' => $data->val($i, 15),
-                'rqa' => $data->val($i, 16),
-                'hav' => $data->val($i, 17)
+                'p1' => $data->val($i, 6)
             );
         }
 
@@ -229,8 +218,14 @@ class Stock_wip extends CI_Controller
     {
         if ($this->input->post()) {
             $data = $this->input->post('data');
+            
+            $customer_item = $this->crud->read('customer_items', [], [
+                "customer_id" => $data['customer_id'],
+                "item_fg_id" => $data['item_fg_id'],
+            ]);
 
             $stock_wip = $this->crud->read('stock_wip', [], [
+                "document_no" => $data['document_no'],
                 "customer_id" => $data['customer_id'],
                 "item_fg_id" => $data['item_fg_id'],
                 "p_month" => $data['p_month'],
@@ -238,25 +233,17 @@ class Stock_wip extends CI_Controller
                 "revision" => $data['revision'],
                 'pp' => $data['pp'],
                 'p1' => $data['p1'],
-                'p2' => $data['p2'],
-                'p3' => $data['p3'],
-                'p4' => $data['p4'],
-                'p5' => $data['p5'],
-                'p6' => $data['p6'],
-                'p7' => $data['p7'],
-                'p8' => $data['p8'],
-                'p9' => $data['p9'],
-                'p10' => $data['p10'],
-                'rqa' => $data['rqa'],
-                'hav' => $data['hav'],
             ]);
 
-            if (!empty($stock_wip->item_fg_id)) {
+            if (empty($customer_item->item_fg_id)) {
+                echo json_encode(array("title" => "Not Found", "message" => " Product No. " . $data['item_fg_id'] . " Not Found", "theme" => "error"));
+            } elseif (empty($customer_item->customer_id)) {
+                echo json_encode(array("title" => "Not Found", "message" => " Customer " . $data['customer_id'] . " Not Found", "theme" => "error"));
+            } elseif (!empty($stock_wip->item_fg_id)) {
                 echo json_encode(array("title" => "Duplicated", "message" => " Product No. " . $data['item_fg_id'] . " is Duplicate Data", "theme" => "error"));
             } elseif (!empty($stock_wip->customer_id)) {
                 echo json_encode(array("title" => "Duplicated", "message" => " Customer " . $data['customer_id'] . " is Duplicate Data", "theme" => "error"));
-            }
-            else {
+            } else {
                 $send   = $this->crud->create('stock_wip', $data);
                 echo $send;
             }
@@ -409,22 +396,11 @@ class Stock_wip extends CI_Controller
                     <th rowspan="2">Customer Name</th>
                     <th rowspan="2">Product No</th>
                     <th rowspan="2">Product Name</th>
-                    <th colspan="13" style="text-align:center;">Stock WIP</th>  
+                    <th colspan="2" style="text-align:center;">Stock WIP</th>  
                 </tr>
                 <tr>
-                    <th>PP</th>
-                    <th>P1</th>
-                    <th>P2</th>
-                    <th>P3</th>
-                    <th>P4</th>
-                    <th>P5</th>
-                    <th>P6</th>
-                    <th>P7</th>
-                    <th>P8</th>
-                    <th>P9</th>
-                    <th>P10</th>
-                    <th>RQA</th>
-                    <th>HAV</th>
+                    <th>Injection</th>
+                    <th>Assembly</th>
                 </tr>';
             $no = 1;
             foreach ($records as $data) {
@@ -436,17 +412,6 @@ class Stock_wip extends CI_Controller
                         <td>' . $data['item_fg_name'] . '</td>
                         <td>' . $data['pp'] . '</td>
                         <td>' . $data['p1'] . '</td>
-                        <td>' . $data['p2'] . '</td>
-                        <td>' . $data['p3'] . '</td>
-                        <td>' . $data['p4'] . '</td>
-                        <td>' . $data['p5'] . '</td>
-                        <td>' . $data['p6'] . '</td>
-                        <td>' . $data['p7'] . '</td>
-                        <td>' . $data['p8'] . '</td>
-                        <td>' . $data['p9'] . '</td>
-                        <td>' . $data['p10'] . '</td>
-                        <td>' . $data['rqa'] . '</td>
-                        <td>' . $data['hav'] . '</td>
                     </tr>';
                 $no++;
             }
@@ -532,22 +497,11 @@ class Stock_wip extends CI_Controller
                     <th rowspan="2">Customer Name</th>
                     <th rowspan="2">Product No</th>
                     <th rowspan="2">Product Name</th>
-                    <th colspan="13" style="text-align:center;">Stock WIP</th>  
+                    <th colspan="2" style="text-align:center;">Stock WIP</th>  
                 </tr>
                 <tr>
-                    <th>PP</th>
-                    <th>P1</th>
-                    <th>P2</th>
-                    <th>P3</th>
-                    <th>P4</th>
-                    <th>P5</th>
-                    <th>P6</th>
-                    <th>P7</th>
-                    <th>P8</th>
-                    <th>P9</th>
-                    <th>P10</th>
-                    <th>RQA</th>
-                    <th>HAV</th>
+                    <th>Injection</th>
+                    <th>Assembly</th>
                 </tr>';
             $no = 1;
             foreach ($records as $data) {
@@ -559,17 +513,6 @@ class Stock_wip extends CI_Controller
                         <td>' . $data['item_fg_name'] . '</td>
                         <td>' . $data['pp'] . '</td>
                         <td>' . $data['p1'] . '</td>
-                        <td>' . $data['p2'] . '</td>
-                        <td>' . $data['p3'] . '</td>
-                        <td>' . $data['p4'] . '</td>
-                        <td>' . $data['p5'] . '</td>
-                        <td>' . $data['p6'] . '</td>
-                        <td>' . $data['p7'] . '</td>
-                        <td>' . $data['p8'] . '</td>
-                        <td>' . $data['p9'] . '</td>
-                        <td>' . $data['p10'] . '</td>
-                        <td>' . $data['rqa'] . '</td>
-                        <td>' . $data['hav'] . '</td>
                     </tr>';
                 $no++;
             }
@@ -658,22 +601,11 @@ class Stock_wip extends CI_Controller
                     <th rowspan="2">Customer Name</th>
                     <th rowspan="2">Product No</th>
                     <th rowspan="2">Product Name</th>
-                    <th colspan="13" style="text-align:center;">Stock WIP</th>  
+                    <th colspan="2" style="text-align:center;">Stock WIP</th>  
                 </tr>
                 <tr>
-                    <th>PP</th>
-                    <th>P1</th>
-                    <th>P2</th>
-                    <th>P3</th>
-                    <th>P4</th>
-                    <th>P5</th>
-                    <th>P6</th>
-                    <th>P7</th>
-                    <th>P8</th>
-                    <th>P9</th>
-                    <th>P10</th>
-                    <th>RQA</th>
-                    <th>HAV</th>
+                    <th>Injection</th>
+                    <th>Assembly</th>
                 </tr>';
             $no = 1;
             foreach ($records as $data) {
@@ -685,17 +617,6 @@ class Stock_wip extends CI_Controller
                         <td>' . $data['item_fg_name'] . '</td>
                         <td>' . $data['pp'] . '</td>
                         <td>' . $data['p1'] . '</td>
-                        <td>' . $data['p2'] . '</td>
-                        <td>' . $data['p3'] . '</td>
-                        <td>' . $data['p4'] . '</td>
-                        <td>' . $data['p5'] . '</td>
-                        <td>' . $data['p6'] . '</td>
-                        <td>' . $data['p7'] . '</td>
-                        <td>' . $data['p8'] . '</td>
-                        <td>' . $data['p9'] . '</td>
-                        <td>' . $data['p10'] . '</td>
-                        <td>' . $data['rqa'] . '</td>
-                        <td>' . $data['hav'] . '</td>
                     </tr>';
                 $no++;
             }
@@ -784,22 +705,11 @@ class Stock_wip extends CI_Controller
                     <th rowspan="2">Customer Name</th>
                     <th rowspan="2">Product No</th>
                     <th rowspan="2">Product Name</th>
-                    <th colspan="13" style="text-align:center;">Stock WIP</th>  
+                    <th colspan="2" style="text-align:center;">Stock WIP</th>  
                 </tr>
                 <tr>
-                    <th>PP</th>
-                    <th>P1</th>
-                    <th>P2</th>
-                    <th>P3</th>
-                    <th>P4</th>
-                    <th>P5</th>
-                    <th>P6</th>
-                    <th>P7</th>
-                    <th>P8</th>
-                    <th>P9</th>
-                    <th>P10</th>
-                    <th>RQA</th>
-                    <th>HAV</th>
+                    <th>Injection</th>
+                    <th>Assembly</th>
                 </tr>';
             $no = 1;
             foreach ($records as $data) {
@@ -811,17 +721,6 @@ class Stock_wip extends CI_Controller
                         <td>' . $data['item_fg_name'] . '</td>
                         <td>' . $data['pp'] . '</td>
                         <td>' . $data['p1'] . '</td>
-                        <td>' . $data['p2'] . '</td>
-                        <td>' . $data['p3'] . '</td>
-                        <td>' . $data['p4'] . '</td>
-                        <td>' . $data['p5'] . '</td>
-                        <td>' . $data['p6'] . '</td>
-                        <td>' . $data['p7'] . '</td>
-                        <td>' . $data['p8'] . '</td>
-                        <td>' . $data['p9'] . '</td>
-                        <td>' . $data['p10'] . '</td>
-                        <td>' . $data['rqa'] . '</td>
-                        <td>' . $data['hav'] . '</td>
                     </tr>';
                 $no++;
             }
@@ -911,22 +810,11 @@ class Stock_wip extends CI_Controller
                     <th rowspan="2">Customer Name</th>
                     <th rowspan="2">Product No</th>
                     <th rowspan="2">Product Name</th>
-                    <th colspan="13" style="text-align:center;">Stock WIP</th>  
+                    <th colspan="2" style="text-align:center;">Stock WIP</th>  
                 </tr>
                 <tr>
-                    <th>PP</th>
-                    <th>P1</th>
-                    <th>P2</th>
-                    <th>P3</th>
-                    <th>P4</th>
-                    <th>P5</th>
-                    <th>P6</th>
-                    <th>P7</th>
-                    <th>P8</th>
-                    <th>P9</th>
-                    <th>P10</th>
-                    <th>RQA</th>
-                    <th>HAV</th>
+                    <th>Injection</th>
+                    <th>Assembly</th>
                 </tr>';
             $no = 1;
             foreach ($records as $data) {
@@ -938,17 +826,6 @@ class Stock_wip extends CI_Controller
                         <td>' . $data['item_fg_name'] . '</td>
                         <td>' . $data['pp'] . '</td>
                         <td>' . $data['p1'] . '</td>
-                        <td>' . $data['p2'] . '</td>
-                        <td>' . $data['p3'] . '</td>
-                        <td>' . $data['p4'] . '</td>
-                        <td>' . $data['p5'] . '</td>
-                        <td>' . $data['p6'] . '</td>
-                        <td>' . $data['p7'] . '</td>
-                        <td>' . $data['p8'] . '</td>
-                        <td>' . $data['p9'] . '</td>
-                        <td>' . $data['p10'] . '</td>
-                        <td>' . $data['rqa'] . '</td>
-                        <td>' . $data['hav'] . '</td>
                     </tr>';
                 $no++;
             }
@@ -1038,22 +915,11 @@ class Stock_wip extends CI_Controller
                     <th rowspan="2">Customer Name</th>
                     <th rowspan="2">Product No</th>
                     <th rowspan="2">Product Name</th>
-                    <th colspan="13" style="text-align:center;">Stock WIP</th>  
+                    <th colspan="2" style="text-align:center;">Stock WIP</th>  
                 </tr>
                 <tr>
-                    <th>PP</th>
-                    <th>P1</th>
-                    <th>P2</th>
-                    <th>P3</th>
-                    <th>P4</th>
-                    <th>P5</th>
-                    <th>P6</th>
-                    <th>P7</th>
-                    <th>P8</th>
-                    <th>P9</th>
-                    <th>P10</th>
-                    <th>RQA</th>
-                    <th>HAV</th>
+                    <th>Injection</th>
+                    <th>Assembly</th>
                 </tr>';
             $no = 1;
             foreach ($records as $data) {
@@ -1065,17 +931,6 @@ class Stock_wip extends CI_Controller
                         <td>' . $data['item_fg_name'] . '</td>
                         <td>' . $data['pp'] . '</td>
                         <td>' . $data['p1'] . '</td>
-                        <td>' . $data['p2'] . '</td>
-                        <td>' . $data['p3'] . '</td>
-                        <td>' . $data['p4'] . '</td>
-                        <td>' . $data['p5'] . '</td>
-                        <td>' . $data['p6'] . '</td>
-                        <td>' . $data['p7'] . '</td>
-                        <td>' . $data['p8'] . '</td>
-                        <td>' . $data['p9'] . '</td>
-                        <td>' . $data['p10'] . '</td>
-                        <td>' . $data['rqa'] . '</td>
-                        <td>' . $data['hav'] . '</td>
                     </tr>';
                 $no++;
             }

@@ -7,7 +7,7 @@
             <th rowspan="2" data-options="field:'p_year',width:50,align:'center'">Year</th>
             <th rowspan="2" data-options="field:'revision',width:50,align:'center'">Rev</th> -->
             <th rowspan="2" data-options="field:'document_no',width:120,halign:'center'">Document No.</th>
-            <th rowspan="2" data-options="field:'customer_name',width:250,halign:'center'">customer_id Name</th>
+            <th rowspan="2" data-options="field:'customer_name',width:250,halign:'center'">Customer Name</th>
             <th rowspan="2" data-options="field:'item_fg_number',width:150,halign:'center'">Product No.</th>
             <th rowspan="2" data-options="field:'item_fg_name',width:200,halign:'center'">Product Name</th>
             <th rowspan="2" data-options="field:'qty',width:80,halign:'center',formatter:numberFormat">Quantity</th>
