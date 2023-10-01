@@ -185,14 +185,14 @@ class Os_so extends CI_Controller
 
     public function uploadclearFailed()
     {
-        @unlink('excel/failed/os_so.txt');
+        @unlink('failed/os_so.txt');
     }
 
     public function uploadcreateFailed()
     {
         if ($this->input->post()) {
             $message = $this->input->post('message');
-            $textFailed = fopen('excel/failed/os_so.txt', 'a');
+            $textFailed = fopen('failed/os_so.txt', 'a');
             fwrite($textFailed, $message . "\n");
             fclose($textFailed);
         }
@@ -201,7 +201,7 @@ class Os_so extends CI_Controller
     //UPLOAD DOWNLOAD FAILED
     public function uploadDownloadFailed()
     {
-        $file = "excel/failed/os_so.txt";
+        $file = "failed/os_so.txt";
         header('Content-Description: File Failed');
         header('Content-Disposition: attachment; filename=' . basename($file));
         header('Expires: 0');

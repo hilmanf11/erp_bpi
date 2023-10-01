@@ -187,14 +187,14 @@ class Stock_wip extends CI_Controller
 
     public function uploadclearFailed()
     {
-        @unlink('excel/failed/stock_wip.txt');
+        @unlink('failed/stock_wip.txt');
     }
 
     public function uploadcreateFailed()
     {
         if ($this->input->post()) {
             $message = $this->input->post('message');
-            $textFailed = fopen('excel/failed/stock_wip.txt', 'a');
+            $textFailed = fopen('failed/stock_wip.txt', 'a');
             fwrite($textFailed, $message . "\n");
             fclose($textFailed);
         }
@@ -203,7 +203,7 @@ class Stock_wip extends CI_Controller
     //UPLOAD DOWNLOAD FAILED
     public function uploadDownloadFailed()
     {
-        $file = "excel/failed/stock_wip.txt";
+        $file = "failed/stock_wip.txt";
         header('Content-Description: File Failed');
         header('Content-Disposition: attachment; filename=' . basename($file));
         header('Expires: 0');
@@ -220,10 +220,9 @@ class Stock_wip extends CI_Controller
         if ($this->input->post()) {
             $data = $this->input->post('data');
             
-            // $customer_item = $this->crud->read('customer_items', [], [
-            //     "customer_id" => $data['customer_id'],
-            //     "item_fg_id" => $data['item_fg_id'],
-            // ]);
+            $item_fg = $this->crud->read('item_fg', [], [
+                "id" => $data['item_fg_id'],
+            ]);
 
             $stock_wip = $this->crud->read('stock_wip', [], [
                 "document_no" => $data['document_no'],
@@ -238,7 +237,9 @@ class Stock_wip extends CI_Controller
                 'p3' => $data['p3'],
             ]);
 
-            if (!empty($stock_wip->document_no)) {
+            if (empty($item_fg->id)) {
+                echo json_encode(array("title" => "Not found", "message" => " Product No. " . $data['item_fg_id'] . " is Not Found!", "theme" => "error"));
+            } elseif (!empty($stock_wip->document_no)) {
                 echo json_encode(array("title" => "Duplicated", "message" => " Document No. " . $data['document_no'] . " is Duplicate Data", "theme" => "error"));
             } elseif (!empty($stock_wip->item_fg_id)) {
                 echo json_encode(array("title" => "Duplicated", "message" => " Product No. " . $data['item_fg_id'] . " is Duplicate Data", "theme" => "error"));

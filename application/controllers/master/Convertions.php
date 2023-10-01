@@ -132,13 +132,13 @@ class Convertions extends CI_Controller
     }
     public function uploadclearFailed()
     {
-        @unlink('excel/failed/convertions.txt');
+        @unlink('failed/convertions.txt');
     }
     public function uploadcreateFailed()
     {
         if ($this->input->post()) {
             $message = $this->input->post('message');
-            $textFailed = fopen('excel/failed/convertions.txt', 'a');
+            $textFailed = fopen('failed/convertions.txt', 'a');
             fwrite($textFailed, $message . "\n");
             fclose($textFailed);
         }
@@ -146,7 +146,7 @@ class Convertions extends CI_Controller
     //UPLOAD DOWNLOAD FAILED
     public function uploadDownloadFailed()
     {
-        $file = "excel/failed/convertions.txt";
+        $file = "failed/convertions.txt";
         header('Content-Description: File Failed');
         header('Content-Disposition: attachment; filename=' . basename($file));
         header('Expires: 0');

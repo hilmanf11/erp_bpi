@@ -48,10 +48,13 @@ class item_fg extends CI_Controller
             $offset = ($page - 1) * $rows;
             $result = array();
             //Select Query
-            $this->db->select('a.*, b.name as division_name, count(c.item_fg_id) as total_mold');
+            $this->db->select('a.*, b.name as division_name, count(c.item_fg_id) as total_mold, f.min, f.max');
             $this->db->from('item_fg a');
             $this->db->join('divisions b', 'a.division_id = b.id');
             $this->db->join('item_mold c', 'a.id = c.item_fg_id', 'left');
+            $this->db->join('customer_items d', 'd.item_fg_id = a.id', 'left');
+            $this->db->join('customers e', 'd.customer_id = e.id', 'left');
+            $this->db->join('setting_stocks f', "e.type = f.kind AND f.item_category_id = 'C03'", 'left');
             $this->db->where('a.deleted', 0);
             if (@count($filters) > 0) {
                 foreach ($filters as $filter) {
@@ -94,6 +97,12 @@ class item_fg extends CI_Controller
         $autoid = $format . sprintf("%04s", $kode + 1);
         echo $autoid;
     }
+    //MIN STOCK
+    public function min_stock(){
+        $sql = $this->db->query("SELECT min FROM setting_stocks WHERE item_category_id = 'FINISHED GOOD' GROUP BY item_category_id ASC");
+        $row = $sql->row();
+        echo $row;
+    }
     //CREATE DATA
     public function create()
     {
@@ -132,7 +141,7 @@ class item_fg extends CI_Controller
         //Table //Like //Field       //Where
         $file = $this->crud->read('item_fg', [], ["id" => $data['id']]);
         $send = $this->crud->delete('item_fg', $data);
-        $attachment = @$file->attachment;
+        // $attachment = @$file->attachment;
         // $file_path = @$file->attachment;
         // $absolute_path = realpath($file_path);
         // if ($absolute_path !== false) {
@@ -140,13 +149,13 @@ class item_fg extends CI_Controller
         // } else {
         //     echo "Path file tidak valid.";
         // }
-        if (@unlink("$attachment")) {
-            echo ("Success deleting $attachment");
-        } else {
-            echo ("Error deleting $attachment");
-        }
+        // if (@unlink("$attachment")) {
+        //     echo ("Success deleting $attachment");
+        // } else {
+        //     echo ("Error deleting $attachment");
+        // }
         // @unlink($attachment);
-        // echo $send;
+        echo $send;
     }
     //UPLOAD DATA
     public function upload()
@@ -187,13 +196,13 @@ class item_fg extends CI_Controller
     }
     public function uploadclearFailed()
     {
-        @unlink('excel/failed/item_fg.txt');
+        @unlink('failed/item_fg.txt');
     }
     public function uploadcreateFailed()
     {
         if ($this->input->post()) {
             $message = $this->input->post('message');
-            $textFailed = fopen('excel/failed/item_fg.txt', 'a');
+            $textFailed = fopen('failed/item_fg.txt', 'a');
             fwrite($textFailed, $message . "\n");
             fclose($textFailed);
         }
@@ -201,7 +210,7 @@ class item_fg extends CI_Controller
     //UPLOAD DOWNLOAD FAILED
     public function uploadDownloadFailed()
     {
-        $file = "excel/failed/item_fg.txt";
+        $file = "failed/item_fg.txt";
         header('Content-Description: File Failed');
         header('Content-Disposition: attachment; filename=' . basename($file));
         header('Expires: 0');
@@ -278,11 +287,15 @@ class item_fg extends CI_Controller
         $this->db->from('config');
         $config = $this->db->get()->row();
 
-        $this->db->select('a.*, b.name as division_name, count(c.item_fg_id) as total_mold');
+        $this->db->select('a.*, b.name as division_name, count(c.item_fg_id) as total_mold, f.min, f.max');
         $this->db->from('item_fg a');
         $this->db->join('divisions b', 'a.division_id = b.id');
-        $this->db->join('item_mold c', 'a.id = c.item_fg_id');
+        $this->db->join('item_mold c', 'a.id = c.item_fg_id', 'left');
+        $this->db->join('customer_items d', 'd.item_fg_id = a.id', 'left');
+        $this->db->join('customers e', 'd.customer_id = e.id', 'left');
+        $this->db->join('setting_stocks f', "e.type = f.kind AND f.item_category_id = 'C03'", 'left');
         $this->db->where('a.deleted', 0);
+        $this->db->group_by('a.id');
         $this->db->order_by('a.id', 'ASC');
         $records = $this->db->get()->result_array();
         $html = '<html><head><title>Print Data</title></head><style>body {font-family: Arial, Helvetica, sans-serif;}#item_fg {border-collapse: collapse;width: 100%;font-size: 12px;}#item_fg td, #item_fg th {border: 1px solid #ddd;padding: 2px;}#item_fg tr:nth-child(even){background-color: #f2f2f2;}#item_fg tr:hover {background-color: #ddd;}#item_fg th {padding-top: 2px;padding-bottom: 2px;text-align: left;color: black;}</style><body>
@@ -318,7 +331,7 @@ class item_fg extends CI_Controller
                 <th>Total Mold</th>
                 <th>Product Customer</th>
                 <th>Process Type</th>
-                <th>product Family</th>
+                <th>Division</th>
                 <th>Box</th>
                 <th>Polybag Label</th>
                 <th>Box Label</th>
@@ -330,7 +343,6 @@ class item_fg extends CI_Controller
                 <th>MPQ</th>
                 <th>MOQ</th>
                 <th>Qty/Box</th>
-                <th>Safety Stock</th>
                 <th>Min</th>
                 <th>Max</th>
                 <th>Status</th>
@@ -357,9 +369,8 @@ class item_fg extends CI_Controller
                     <td>' . $data['mpq'] . '</td>
                     <td>' . $data['moq'] . '</td>
                     <td>' . $data['qty_box'] . '</td>
-                    <td></td>
-                    <td></td>
-                    <td></td>
+                    <td>' . $data['min'] . '</td>
+                    <td>' . $data['max'] . '</td>
                     <td>' . $data['status'] . '</td>';
             $no++;
         }

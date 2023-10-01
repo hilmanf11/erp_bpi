@@ -152,13 +152,13 @@ class Subconts extends CI_Controller
     }
     public function uploadclearFailed()
     {
-        @unlink('excel/failed/subconts.txt');
+        @unlink('failed/subconts.txt');
     }
     public function uploadcreateFailed()
     {
         if ($this->input->post()) {
             $message = $this->input->post('message');
-            $textFailed = fopen('excel/failed/subconts.txt', 'a');
+            $textFailed = fopen('failed/subconts.txt', 'a');
             fwrite($textFailed, $message . "\n");
             fclose($textFailed);
         }
@@ -166,7 +166,7 @@ class Subconts extends CI_Controller
     //UPLOAD DOWNLOAD FAILED
     public function uploadDownloadFailed()
     {
-        $file = "excel/failed/subconts.txt";
+        $file = "failed/subconts.txt";
         header('Content-Description: File Failed');
         header('Content-Disposition: attachment; filename=' . basename($file));
         header('Expires: 0');

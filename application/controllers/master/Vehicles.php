@@ -138,13 +138,13 @@ class Vehicles extends CI_Controller
     }
     public function uploadclearFailed()
     {
-        @unlink('excel/failed/vehicles.txt');
+        @unlink('failed/vehicles.txt');
     }
     public function uploadcreateFailed()
     {
         if ($this->input->post()) {
             $message = $this->input->post('message');
-            $textFailed = fopen('excel/failed/vehicles.txt', 'a');
+            $textFailed = fopen('failed/vehicles.txt', 'a');
             fwrite($textFailed, $message . "\n");
             fclose($textFailed);
         }
@@ -152,7 +152,7 @@ class Vehicles extends CI_Controller
     //UPLOAD DOWNLOAD FAILED
     public function uploadDownloadFailed()
     {
-        $file = "excel/failed/vehicles.txt";
+        $file = "failed/vehicles.txt";
         header('Content-Description: File Failed');
         header('Content-Disposition: attachment; filename=' . basename($file));
         header('Expires: 0');

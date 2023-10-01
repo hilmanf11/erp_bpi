@@ -157,13 +157,13 @@ class Item_mold extends CI_Controller
     }
     public function uploadclearFailed()
     {
-        @unlink('excel/failed/item_mold.txt');
+        @unlink('failed/item_mold.txt');
     }
     public function uploadcreateFailed()
     {
         if ($this->input->post()) {
             $message = $this->input->post('message');
-            $textFailed = fopen('excel/failed/item_mold.txt', 'a');
+            $textFailed = fopen('failed/item_mold.txt', 'a');
             fwrite($textFailed, $message . "\n");
             fclose($textFailed);
         }
@@ -171,7 +171,7 @@ class Item_mold extends CI_Controller
     //UPLOAD DOWNLOAD FAILED
     public function uploadDownloadFailed()
     {
-        $file = "excel/failed/item_mold.txt";
+        $file = "failed/item_mold.txt";
         header('Content-Description: File Failed');
         header('Content-Disposition: attachment; filename=' . basename($file));
         header('Expires: 0');

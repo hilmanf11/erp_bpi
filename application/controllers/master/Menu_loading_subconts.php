@@ -186,14 +186,14 @@ class Menu_loading_subconts extends CI_Controller
 
     public function uploadclearFailed()
     {
-        @unlink('excel/failed/menu_loading_subconts.txt');
+        @unlink('failed/menu_loading_subconts.txt');
     }
 
     public function uploadcreateFailed()
     {
         if ($this->input->post()) {
             $message = $this->input->post('message');
-            $textFailed = fopen('excel/failed/menu_loading_subconts.txt', 'a');
+            $textFailed = fopen('failed/menu_loading_subconts.txt', 'a');
             fwrite($textFailed, $message . "\n");
             fclose($textFailed);
         }
@@ -202,7 +202,7 @@ class Menu_loading_subconts extends CI_Controller
     //UPLOAD DOWNLOAD FAILED
     public function uploadDownloadFailed()
     {
-        $file = "excel/failed/menu_loading_subconts.txt";
+        $file = "failed/menu_loading_subconts.txt";
         header('Content-Description: File Failed');
         header('Content-Disposition: attachment; filename=' . basename($file));
         header('Expires: 0');

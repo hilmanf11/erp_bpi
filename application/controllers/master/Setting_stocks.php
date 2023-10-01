@@ -144,13 +144,13 @@ class Setting_stocks extends CI_Controller
     }
     public function uploadclearFailed()
     {
-        @unlink('excel/failed/setting_stocks.txt');
+        @unlink('failed/setting_stocks.txt');
     }
     public function uploadcreateFailed()
     {
         if ($this->input->post()) {
             $message = $this->input->post('message');
-            $textFailed = fopen('excel/failed/setting_stocks.txt', 'a');
+            $textFailed = fopen('failed/setting_stocks.txt', 'a');
             fwrite($textFailed, $message . "\n");
             fclose($textFailed);
         }
@@ -158,7 +158,7 @@ class Setting_stocks extends CI_Controller
     //UPLOAD DOWNLOAD FAILED
     public function uploadDownloadFailed()
     {
-        $file = "excel/failed/setting_stocks.txt";
+        $file = "failed/setting_stocks.txt";
         header('Content-Description: File Failed');
         header('Content-Disposition: attachment; filename=' . basename($file));
         header('Expires: 0');
