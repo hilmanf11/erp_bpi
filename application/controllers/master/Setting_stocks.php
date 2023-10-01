@@ -34,6 +34,18 @@ class Setting_stocks extends CI_Controller
         $send = $this->crud->reads('setting_stocks', ["item_category_id" => $post]);
         echo json_encode($send);
     }
+    public function reads_min()
+    {
+        $post = isset($_POST['q']) ? $_POST['q'] : "";
+        $send = $this->crud->query("SELECT min FROM setting_stocks WHERE item_category_id = 'FINISHED GOOD' GROUP BY item_category_id ASC");
+        echo json_encode($send);
+    }
+    public function reads_max()
+    {
+        $post = isset($_POST['q']) ? $_POST['q'] : "";
+        $send = $this->crud->query("SELECT max FROM setting_stocks WHERE item_category_id = 'FINISHED GOOD' GROUP BY item_category_id ASC");
+        echo json_encode($send);
+    }
     
     //GET DATATABLES
     public function datatables()

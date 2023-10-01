@@ -124,9 +124,11 @@ class Purgings extends CI_Controller
             $datas[] = array(
                 //excel
                 'machine_id' => $data->val($i, 2),
-                'qty' => $data->val($i, 3),
-                'uom' => $data->val($i, 4),
-                'status' => $data->val($i, 5)
+                'item_sub_family' => $data->val($i, 3),
+                'kind' => $data->val($i, 4),
+                'qty' => $data->val($i, 5),
+                'uom' => $data->val($i, 6),
+                'status' => $data->val($i, 7)
             );
         }
         $datas['total'] = count($datas);
@@ -174,6 +176,8 @@ class Purgings extends CI_Controller
                 $dataFinal = array(
                     //field
                     "machine_id" => $data['machine_id'],
+                    "item_sub_family" => $data['item_sub_family'],
+                    "kind" => $data['kind'],
                     "qty" => $data['qty'],
                     "uom" => $data['uom'],
                     "total" => $data['qty']*$machine->volume,
@@ -234,8 +238,11 @@ class Purgings extends CI_Controller
                 <th>Machine No.</th>
                 <th>Name Of Machine</th>
                 <th>Qty Maximum Purging</th>
-                <th>UOM</th>
                 <th>Total Purging</th>
+                <th>Sub Product Family</th>
+                <th>Kind of Colors</th>
+                <th>UOM</th>
+                <th>Status</th>
             </tr>';
         $no = 1;
         foreach ($records as $data) {
@@ -245,8 +252,11 @@ class Purgings extends CI_Controller
                     <td>' . $data['machine_number'] . '</td>
                     <td>' . $data['machine_name'] . '</td>
                     <td>' . $data['qty'] . '</td>
+                    <td>' . $data['total'] . '</td>
+                    <td>' . $data['item_sub_family'] . '</td>
+                    <td>' . $data['kind'] . '</td>
                     <td>' . $data['uom'] . '</td>
-                    <td>' . $data['total'] . '</td>';
+                    <td>' . $data['status'] . '</td>';
             $no++;
         }
         $html .= '</table></body></html>';

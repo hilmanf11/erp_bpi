@@ -70,17 +70,11 @@
             </div>
             <div class="fitem">
                 <span style="width:35%; display:inline-block;">Standard Cavity</span>
-                <select style="width:60%;" name="cavity_standard" id="cavity_standard" required="" panelHeight="auto" class="easyui-combobox">
-                    <option value="1">1</option>
-                    <option value="2">2</option>
-                </select>
+                <input style="width:60%;" name="cavity_standard" id="cavity_standard" class="easyui-numberbox">
             </div>
             <div class="fitem">
                 <span style="width:35%; display:inline-block;">Actual Cavity</span>
-                <select style="width:60%;" name="cavity_actual" id="cavity_actual" required="" panelHeight="auto" class="easyui-combobox">
-                    <option value="1">1</option>
-                    <option value="2">2</option>
-                </select>
+                <input style="width:60%;" name="cavity_actual" id="cavity_actual" class="easyui-numberbox">
             </div>
             <div class="fitem">
                 <span style="width:35%; display:inline-block;">Standard Shoot</span>
@@ -197,7 +191,7 @@
     }
     // DOWNLOAD
     function download_excel() {
-        window.location.assign('<?= base_url('template/tmp_item_mold.xls') ?>');
+        window.location.assign('<?= base_url('template/tmp_mold.xls') ?>');
     }
     //PRINT PDF
     function pdf() {

@@ -28,10 +28,16 @@ class Item_family_subs extends CI_Controller
         }
     }
     //GET DATA
-    public function reads()
+    public function reads($item_family_id)
     {
         $post = isset($_POST['q']) ? $_POST['q'] : "";
-        $send = $this->crud->reads('item_family_subs', ["name" => $post]);
+        $send = $this->crud->reads('item_family_subs', ["number" => $post],["item_family_id" => $item_family_id]);
+        echo json_encode($send);
+    }
+    public function reads_number()
+    {
+        $post = isset($_POST['q']) ? $_POST['q'] : "";
+        $send = $this->crud->query("SELECT number FROM item_family_subs GROUP BY number ASC");
         echo json_encode($send);
     }
     

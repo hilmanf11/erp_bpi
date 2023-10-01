@@ -7,16 +7,19 @@
             <th rowspan="2" data-options="field:'p_year',width:50,align:'center'">Year</th>
             <th rowspan="2" data-options="field:'revision',width:50,align:'center'">Rev</th> -->
             <th rowspan="2" data-options="field:'document_no',width:120,halign:'center'">Document No.</th>
-            <th rowspan="2" data-options="field:'customer_name',width:250,halign:'center'">customer Name</th>
+            <!-- <th rowspan="2" data-options="field:'customer_name',width:250,halign:'center'">customer Name</th> -->
+            <th rowspan="2" data-options="field:'item_fg_id',width:150,halign:'center'">Product ID</th>
             <th rowspan="2" data-options="field:'item_fg_number',width:150,halign:'center'">Product No.</th>
-            <th rowspan="2" data-options="field:'item_fg_name',width:200,halign:'center'">Product Name</th>
-            <th colspan="2" data-options="field:'',width:100,halign:'center'"> Stock WIP</th>
+            <th rowspan="2" data-options="field:'item_fg_name',width:150,halign:'center'">Product Name</th>
+            <th colspan="4" data-options="field:'',width:100,halign:'center'"> Stock WIP</th>
             <th colspan="2" data-options="field:'',width:100,halign:'center'"> Created</th>
             <th colspan="2" data-options="field:'',width:100,halign:'center'"> Updated</th>
         </tr>
         <tr>
-            <th data-options="field:'pp',width:80,align:'center'"> Injection</th>
-            <th data-options="field:'p1',width:80,align:'center'"> Assembly</th>
+            <th data-options="field:'pp',width:80,align:'center',formatter:numberFormat"> Injection</th>
+            <th data-options="field:'p1',width:80,align:'center',formatter:numberFormat"> Assembly</th>
+            <th data-options="field:'p2',width:80,align:'center',formatter:numberFormat"> On Hold</th>
+            <th data-options="field:'p3',width:80,align:'center',formatter:numberFormat"> Subcont</th>
 
             <th data-options="field:'created_by',width:100,align:'center'"> By</th>
             <th data-options="field:'created_date',width:150,align:'center'"> Date</th>
@@ -56,10 +59,10 @@
                 </div>
             </div>
             <div style="float: left; width: 50%;">
-                <div class="fitem">
+                <!-- <div class="fitem">
                     <span style="width:35%; display:inline-block;">Customer</span>
                     <input style="width:60%;" id="filter_customer_id" class="easyui-combobox">
-                </div>
+                </div> -->
                 <div class="fitem">
                     <span style="width:35%; display:inline-block;">Product No.</span>
                     <input style="width:60%;" id="filter_item_fg_id" class="easyui-combogrid">
@@ -96,12 +99,12 @@
                 <span style="width:35%; display:inline-block;">Document No.</span>
                 <input style="width:60%;" name="document_no" id="document_no" class="easyui-textbox">
             </div>
-            <div class="fitem">
+            <!-- <div class="fitem">
                 <span style="width:35%; display:inline-block;">Customer</span>
                 <input style="width:60%;" name="customer_id" id="customer_id" required class="easyui-combobox">
-            </div>
+            </div> -->
             <div class="fitem">
-                <span style="width:35%; display:inline-block;">Product No</span>
+                <span style="width:35%; display:inline-block;">Product No.</span>
                 <input style="width:60%;" name="item_fg_id" id="item_fg_id" required class="easyui-combogrid">
             </div>
         </fieldset>
@@ -112,12 +115,19 @@
                     <span style="width:35%; display:inline-block;">Injection</span>
                     <input style="width:40%;" name="pp" id="pp" required class="easyui-numberbox">
                 </div>
+                <div class="fitem">
+                    <span style="width:35%; display:inline-block;">On Hold</span>
+                    <input style="width:40%;" name="p2" id="p2" required class="easyui-numberbox">
+                </div>
             </div>
-
             <div style="width:50%;float:left;">
                 <div class="fitem">
                     <span style="width:35%; display:inline-block;">Assembly</span>
                     <input style="width:40%;" name="p1" id="p1" required class="easyui-numberbox">
+                </div>
+                <div class="fitem">
+                    <span style="width:35%; display:inline-block;">Subcont</span>
+                    <input style="width:40%;" name="p3" id="p3" required class="easyui-numberbox">
                 </div>
             </div>
         </fieldset>
@@ -154,7 +164,7 @@
         $('#dg2').datagrid('loadData', []);
         url_save = '<?= base_url('planning/stock_wip/create') ?>';
         $('#frm_insert').form('clear');
-        $("#customer_id").combogrid('enable');
+        // $("#customer_id").combogrid('enable');
         $("#item_fg_id").combogrid('enable');
         $("#p_month").combobox('enable');
         $("#p_year").combobox('enable');
@@ -169,7 +179,7 @@
     //EDIT DATA
     function update() {
         $("#item_fg_id").combogrid('disable');
-        $("#customer_id").combogrid('disable');
+        // $("#customer_id").combogrid('disable');
         $("#revision").combogrid('disable');
         $("#document_no").combogrid('disable');
         $("#p_month").combobox('disable');
@@ -179,7 +189,7 @@
         if (row) {
             $('#dlg_insert').dialog('open');
             $('#frm_insert').form('load', row);
-            $("#customer_id").combobox('setValue',row.customer_id);
+            // $("#customer_id").combobox('setValue',row.customer_id);
             $("#item_fg_id").combogrid('setValue',row.item_fg_id);
             url_save = '<?= base_url('planning/stock_wip/update') ?>?id=' + btoa(row.id);
         } else {
@@ -235,13 +245,12 @@
         var filter_period_month = $("#filter_period_month").combobox('getValue');
         var filter_period_year = $("#filter_period_year").combobox('getValue');
         var filter_item_fg_id = $("#filter_item_fg_id").combogrid('getValue');
-        var filter_customer_id = $("#filter_customer_id").combobox('getValue');
+        // var filter_customer_id = $("#filter_customer_id").combobox('getValue');
         var filter_revision = $("#filter_revision").combobox('getValue');
 
         var url = "?filter_period_month=" + window.btoa(filter_period_month) +
             "&filter_period_year=" + window.btoa(filter_period_year) +
             "&filter_item_fg_id=" + window.btoa(filter_item_fg_id) +
-            "&filter_customer_id=" + window.btoa(filter_customer_id) +
             "&filter_revision=" + window.btoa(filter_revision);
 
         $('#dg').datagrid({
@@ -267,13 +276,12 @@
         var filter_period_month = $("#filter_period_month").combobox('getValue');
         var filter_period_year = $("#filter_period_year").combobox('getValue');
         var filter_item_fg_id = $("#filter_item_fg_id").combogrid('getValue');
-        var filter_customer_id = $("#filter_customer_id").combobox('getValue');
+        // var filter_customer_id = $("#filter_customer_id").combobox('getValue');
         var filter_revision = $("#filter_revision").combobox('getValue');
 
         var url = "?filter_period_month=" + window.btoa(filter_period_month) +
             "&filter_period_year=" + window.btoa(filter_period_year) +
             "&filter_item_fg_id=" + window.btoa(filter_item_fg_id) +
-            "&filter_customer_id=" + window.btoa(filter_customer_id) +
             "&filter_revision=" + window.btoa(filter_revision);
 
         window.location.assign('<?= base_url('planning/stock_wip/print/excel') ?>' + url);
@@ -329,74 +337,56 @@
         prompt: 'Choose Years',
     });
 
-    $('#customer_id').combobox({
-        url: '<?= base_url('master/customers/reads'); ?>',
-        valueField: 'id',
-        textField: 'name',
-        prompt: 'Choose Customer',
-        onSelect: function(customer_id) {
-            $('#item_fg_id').combogrid({
-                url: '<?= base_url('master/customer_items/reads/'); ?>' + window.btoa(customer_id.id),
-                panelWidth: 400,
-                idField: 'id',
-                textField: 'number',
-                mode: 'remote',
-                fitColumns: true,
-                prompt: "Choose Product No.",
-                columns: [
-                    [{
-                        field: 'number',
-                        title: 'Product No.',
-                        width: 110
-                    }, {
-                        field: 'name',
-                        title: 'Product Name',
-                        width: 190
-                    }]
-                ],
-            });
-        }
+    $('#item_fg_id').combogrid({
+        url: '<?= base_url('master/item_fg/reads/'); ?>',
+        panelWidth: 420,
+        idField: 'id',
+        textField: 'number',
+        mode: 'remote',
+        fitColumns: true,
+        prompt: "Choose Product No",
+        columns: [
+            [{
+                field: 'number',
+                title: 'Product No',
+                width: 120
+            }, {
+                field: 'name',
+                title: 'Product Name',
+                width: 250
+            }, ]
+        ]
     });
 
-    $('#filter_customer_id').combobox({
-        url: '<?= base_url('master/customers/reads'); ?>',
-        valueField: 'id',
-        textField: 'name',
-        prompt: 'Choose Customer',
+    $('#filter_item_fg_id').combogrid({
+        url: '<?= base_url('master/item_fg/reads'); ?>',
+        panelWidth: 750,
+        idField: 'id',
+        textField: 'number',
+        mode: 'remote',
+        fitColumns: true,
+        prompt: "Choose Product No",
+        columns: [
+            [{
+                field: 'id',
+                title: 'Product ID',
+                width: 150
+            }, {
+                field: 'number',
+                title: 'Product No',
+                width: 150
+            }, {
+                field: 'name',
+                title: 'Product Name',
+                width: 250
+            }, ]
+        ],
         icons: [{
             iconCls: 'icon-clear',
             handler: function(e) {
-                $(e.data.target).combobox('clear').combobox('textbox').focus();
+                $(e.data.target).combogrid('clear').combogrid('textbox').focus();
             }
         }],
-        onSelect: function(customer_id) {
-            $('#filter_item_fg_id').combogrid({
-                url: '<?= base_url('master/customer_id_items/reads/'); ?>' + window.btoa(customer_id.id),
-                panelWidth: 400,
-                idField: 'id',
-                textField: 'number',
-                mode: 'remote',
-                fitColumns: true,
-                prompt: "Choose Product No.",
-                columns: [
-                    [{
-                        field: 'number',
-                        title: 'Product No.',
-                        width: 110
-                    }, {
-                        field: 'name',
-                        title: 'Product Name',
-                        width: 190
-                    }]
-                ],
-                icons: [{
-                    iconCls: 'icon-clear',
-                    handler: function(e) {
-                        $(e.data.target).combogrid('clear').combogrid('textbox').focus();
-                    }
-                }],
-            });
-        }
     });
 
     $('#filter_period_month').combobox({

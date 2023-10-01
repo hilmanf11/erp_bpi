@@ -6,6 +6,7 @@
             <th rowspan="2" data-options="field:'id',width:80,align:'center'">ID</th>
             <th rowspan="2" data-options="field:'name',width:200,halign:'center'">Name</th>
             <th rowspan="2" data-options="field:'description',width:150,halign:'center'">Description</th>
+            <th rowspan="2" data-options="field:'kind',width:150,halign:'center'">Kind of Color</th>
             <th colspan="2" data-options="field:'',width:100,halign:'center'"> Created</th>
             <th colspan="2" data-options="field:'',width:100,halign:'center'"> Updated</th>
         </tr>
@@ -37,6 +38,15 @@
             <div class="fitem">
                 <span style="width:35%; display:inline-block;">Description</span>
                 <input style="width:60%;" name="description" id="description" class="easyui-textbox">
+            </div>
+            <div class="fitem">
+                <span style="width:35%; display:inline-block;">Kind of Colors</span>
+                <select style="width:60%;" name="kind" id="kind" required="" class="easyui-combobox" panelHeight="auto">
+                    <option value="" selected disabled>Choose Kind of Colors</option>
+                    <option value="CLEAR">CLEAR</option>
+                    <option value="COLORFULL">COLORFULL</option>
+                    <option value="BLACK">BLACK</option>
+                </select>
             </div>
         </fieldset>
     </form>
