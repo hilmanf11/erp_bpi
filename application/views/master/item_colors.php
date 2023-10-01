@@ -41,7 +41,7 @@
             </div>
             <div class="fitem">
                 <span style="width:35%; display:inline-block;">Kind of Colors</span>
-                <select style="width:60%;" name="kind" id="kind" required class="easyui-combobox" panelHeight="auto">
+                <select style="width:60%;" name="kind" id="kind" required="" class="easyui-combobox" panelHeight="auto">
                     <option value="" selected disabled>Choose Kind of Colors</option>
                     <option value="CLEAR">CLEAR</option>
                     <option value="COLORFULL">COLORFULL</option>
@@ -61,10 +61,10 @@
         $('#frm_insert').form('clear');
 
         $.ajax({
-            type : "post",
-            url : "<?= base_url('master/item_colors/autoid')?>",
-            dataType : "html",
-            success : function(response){
+            type: "post",
+            url: "<?= base_url('master/item_colors/autoid') ?>",
+            dataType: "html",
+            success: function(response) {
                 $('#id').textbox('setValue', response);
             }
         });
