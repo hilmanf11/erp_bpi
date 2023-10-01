@@ -7,10 +7,11 @@
             <th rowspan="2" data-options="field:'p_year',width:50,align:'center'">Year</th>
             <th rowspan="2" data-options="field:'revision',width:50,align:'center'">Rev</th> -->
             <th rowspan="2" data-options="field:'document_no',width:120,halign:'center'">Document No.</th>
-            <th rowspan="2" data-options="field:'customer_name',width:250,halign:'center'">Customer Name</th>
-            <th rowspan="2" data-options="field:'item_fg_number',width:150,halign:'center'">Product No.</th>
-            <th rowspan="2" data-options="field:'item_fg_name',width:200,halign:'center'">Product Name</th>
-            <th rowspan="2" data-options="field:'qty',width:80,halign:'center',formatter:numberFormat">Quantity</th>
+            <!-- <th rowspan="2" data-options="field:'customer_name',width:250,halign:'center'">Customer Name</th> -->
+            <th rowspan="2" data-options="field:'item_fg_id',width:200,halign:'center'">Product ID</th>
+            <th rowspan="2" data-options="field:'item_fg_number',width:250,halign:'center'">Product No.</th>
+            <th rowspan="2" data-options="field:'item_fg_name',width:250,halign:'center'">Product Name</th>
+            <th rowspan="2" data-options="field:'qty',width:80,align:'center',formatter:numberFormat">Quantity</th>
             <th colspan="2" data-options="field:'',width:100,halign:'center'"> Created</th>
             <th colspan="2" data-options="field:'',width:100,halign:'center'"> Updated</th>
         </tr>
@@ -54,10 +55,6 @@
             </div>
             <div style="float: left; width: 50%;">
                 <div class="fitem">
-                    <span style="width:35%; display:inline-block;">Customer</span>
-                    <input style="width:60%;" id="filter_customer_id" class="easyui-combobox">
-                </div>
-                <div class="fitem">
                     <span style="width:35%; display:inline-block;">Product No.</span>
                     <input style="width:60%;" id="filter_item_fg_id" class="easyui-combogrid">
                 </div>
@@ -93,12 +90,12 @@
                 <span style="width:35%; display:inline-block;">Document No.</span>
                 <input style="width:60%;" name="document_no" id="document_no" class="easyui-textbox">
             </div>
-            <div class="fitem">
+            <!-- <div class="fitem">
                 <span style="width:35%; display:inline-block;">customer_id</span>
                 <input style="width:60%;" name="customer_id" id="customer_id" required class="easyui-combobox">
-            </div>
+            </div> -->
             <div class="fitem">
-                <span style="width:35%; display:inline-block;">Product No</span>
+                <span style="width:35%; display:inline-block;">Product No.</span>
                 <input style="width:60%;" name="item_fg_id" id="item_fg_id" required class="easyui-combogrid">
             </div>
             <div class="fitem">
@@ -140,7 +137,7 @@
         url_save = '<?= base_url('planning/stock_fg/create') ?>';
         $('#frm_insert').form('clear');
         $("#item_fg_id").combogrid('enable');
-        $("#customer_id").combogrid('enable');
+        // $("#customer_id").combogrid('enable');
         $("#p_month").combobox('enable');
         $("#p_year").combobox('enable');
 
@@ -209,13 +206,12 @@
         var filter_period_month = $("#filter_period_month").combobox('getValue');
         var filter_period_year = $("#filter_period_year").combobox('getValue');
         var filter_item_fg_id = $("#filter_item_fg_id").combogrid('getValue');
-        var filter_customer_id = $("#filter_customer_id").combobox('getValue');
+        // var filter_customer_id = $("#filter_customer_id").combobox('getValue');
         var filter_revision = $("#filter_revision").combobox('getValue');
 
         var url = "?filter_period_month=" + window.btoa(filter_period_month) +
             "&filter_period_year=" + window.btoa(filter_period_year) +
             "&filter_item_fg_id=" + window.btoa(filter_item_fg_id) +
-            "&filter_customer_id=" + window.btoa(filter_customer_id) +
             "&filter_revision=" + window.btoa(filter_revision);
 
         $('#dg').datagrid({
@@ -241,13 +237,12 @@
         var filter_period_month = $("#filter_period_month").combobox('getValue');
         var filter_period_year = $("#filter_period_year").combobox('getValue');
         var filter_item_fg_id = $("#filter_item_fg_id").combogrid('getValue');
-        var filter_customer_id = $("#filter_customer_id").combobox('getValue');
+        // var filter_customer_id = $("#filter_customer_id").combobox('getValue');
         var filter_revision = $("#filter_revision").combobox('getValue');
 
         var url = "?filter_period_month=" + window.btoa(filter_period_month) +
             "&filter_period_year=" + window.btoa(filter_period_year) +
             "&filter_item_fg_id=" + window.btoa(filter_item_fg_id) +
-            "&filter_customer_id=" + window.btoa(filter_customer_id) +
             "&filter_revision=" + window.btoa(filter_revision);
 
         window.location.assign('<?= base_url('planning/stock_fg/print/excel') ?>' + url);
@@ -303,74 +298,56 @@
         prompt: 'Choose Years',
     });
 
-    $('#customer_id').combobox({
-        url: '<?= base_url('master/customers/reads'); ?>',
-        valueField: 'id',
-        textField: 'name',
-        prompt: 'Choose customers',
-        onSelect: function(customer_id) {
-            $('#item_fg_id').combogrid({
-                url: '<?= base_url('master/customer_items/reads/'); ?>' + window.btoa(customer_id.id),
-                panelWidth: 400,
-                idField: 'id',
-                textField: 'number',
-                mode: 'remote',
-                fitColumns: true,
-                prompt: "Choose Product No.",
-                columns: [
-                    [{
-                        field: 'number',
-                        title: 'Product No.',
-                        width: 110
-                    }, {
-                        field: 'name',
-                        title: 'Product Name',
-                        width: 190
-                    }]
-                ],
-            });
-        }
+    $('#item_fg_id').combogrid({
+        url: '<?= base_url('master/item_fg/reads/'); ?>',
+        panelWidth: 420,
+        idField: 'id',
+        textField: 'number',
+        mode: 'remote',
+        fitColumns: true,
+        prompt: "Choose Product No",
+        columns: [
+            [{
+                field: 'number',
+                title: 'Product No',
+                width: 120
+            }, {
+                field: 'name',
+                title: 'Product Name',
+                width: 250
+            }, ]
+        ]
     });
 
-    $('#filter_customer_id').combobox({
-        url: '<?= base_url('master/customers/reads'); ?>',
-        valueField: 'id',
-        textField: 'name',
-        prompt: 'Choose customers',
+    $('#filter_item_fg_id').combogrid({
+        url: '<?= base_url('master/item_fg/reads'); ?>',
+        panelWidth: 750,
+        idField: 'id',
+        textField: 'number',
+        mode: 'remote',
+        fitColumns: true,
+        prompt: "Choose Product No",
+        columns: [
+            [{
+                field: 'id',
+                title: 'Product ID',
+                width: 150
+            }, {
+                field: 'number',
+                title: 'Product No',
+                width: 150
+            }, {
+                field: 'name',
+                title: 'Product Name',
+                width: 250
+            }, ]
+        ],
         icons: [{
             iconCls: 'icon-clear',
             handler: function(e) {
-                $(e.data.target).combobox('clear').combobox('textbox').focus();
+                $(e.data.target).combogrid('clear').combogrid('textbox').focus();
             }
         }],
-        onSelect: function(customer_id) {
-            $('#filter_item_fg_id').combogrid({
-                url: '<?= base_url('master/customer_items/reads/'); ?>' + window.btoa(customer_id.id),
-                panelWidth: 400,
-                idField: 'id',
-                textField: 'number',
-                mode: 'remote',
-                fitColumns: true,
-                prompt: "Choose Product No.",
-                columns: [
-                    [{
-                        field: 'number',
-                        title: 'Product No.',
-                        width: 110
-                    }, {
-                        field: 'name',
-                        title: 'Product Name',
-                        width: 190
-                    }]
-                ],
-                icons: [{
-                    iconCls: 'icon-clear',
-                    handler: function(e) {
-                        $(e.data.target).combogrid('clear').combogrid('textbox').focus();
-                    }
-                }],
-            });
-        }
     });
 
     $('#filter_period_month').combobox({

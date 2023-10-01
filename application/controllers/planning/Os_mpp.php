@@ -217,14 +217,8 @@ class Os_mpp extends CI_Controller
     {
         if ($this->input->post()) {
             $data = $this->input->post('data');
-            
-            $customer_item = $this->crud->read('customer_items', [], [
-                "customer_id" => $data['customer_id'],
-                "item_fg_id" => $data['item_fg_id'],
-            ]);
 
             $os_mpp = $this->crud->read('os_mpp', [], [
-                "document_no" => $data['document_no'],
                 "customer_id" => $data['customer_id'],
                 "item_fg_id" => $data['item_fg_id'],
                 "p_month" => $data['p_month'],
@@ -232,15 +226,12 @@ class Os_mpp extends CI_Controller
                 "revision" => $data['revision'],
             ]);
 
-            if (empty($customer_item->item_fg_id)) {
-                echo json_encode(array("title" => "Not Found", "message" => " Product No. " . $data['item_fg_id'] . " Not Found", "theme" => "error"));
-            } elseif (empty($customer_item->customer_id)) {
-                echo json_encode(array("title" => "Not Found", "message" => " Customer " . $data['customer_id'] . " Not Found", "theme" => "error"));
-            } elseif (!empty($os_mpp->item_fg_id)) {
+            if (!empty($os_mpp->item_fg_id)) {
                 echo json_encode(array("title" => "Duplicated", "message" => " Product No. " . $data['item_fg_id'] . " is Duplicate Data", "theme" => "error"));
             } elseif (!empty($os_mpp->customer_id)) {
                 echo json_encode(array("title" => "Duplicated", "message" => " Customer " . $data['customer_id'] . " is Duplicate Data", "theme" => "error"));
-            } else {
+            }
+            else {
                 $send   = $this->crud->create('os_mpp', $data);
                 echo $send;
             }

@@ -9,6 +9,7 @@
             <th rowspan="2" data-options="field:'uom',width:100,halign:'center'">UOM</th>
             <th rowspan="2" data-options="field:'item_category_name',width:150,halign:'center'">Category</th>
             <th rowspan="2" data-options="field:'item_family_name',width:150,halign:'center'">Product Family</th>
+            <th rowspan="2" data-options="field:'item_sub_family_number',width:150,halign:'center'">Sub Product Family</th>
             <th rowspan="2" data-options="field:'account_number',width:150,halign:'center'">Account No.</th>
             <th rowspan="2" data-options="field:'account_name',width:150,halign:'center'">Account Name</th>
             <th rowspan="2" data-options="field:'status',width:150,halign:'center', styler:cellStyler, formatter:cellFormatter">Status</th>
@@ -55,6 +56,10 @@
             <div class="fitem">
                 <span style="width:35%; display:inline-block;">Product Family</span>
                 <input style="width:60%;" name="item_family_id" id="item_family_id" required="" class="easyui-combobox">
+            </div>
+            <div class="fitem">
+                <span style="width:35%; display:inline-block;">Product Family</span>
+                <input style="width:60%;" name="item_sub_family_id" id="item_sub_family_id" required="" class="easyui-combobox">
             </div>
             <div class="fitem">
                 <span style="width:35%; display:inline-block;">Account No.</span>
@@ -225,6 +230,12 @@
                 textField:'name',
                 prompt: 'Choose Product Family',
                 onSelect: function(family) {
+                    $('#item_sub_family_id').combobox({
+                        url:'<?= base_url('master/item_family_subs/reads/'); ?>' + family.id,
+                        valueField:'id',
+                        textField:'name',
+                        prompt: 'Choose Sub Product Family',
+                    });
                     $.ajax({
                         type : "post",
                         url : "<?= base_url('master/item_rm/autoid/')?>" + category.number + "/" + family.number,

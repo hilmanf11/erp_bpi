@@ -24,7 +24,6 @@ defined('BASEPATH') or exit('No direct script access allowed');
 |
 */
 $config['base_url'] = "http://" . $_SERVER['HTTP_HOST'] . "/erp_bpi";
-// $config['base_url_c'] = "c:/xampp/htdocs/erp_bpi";
 
 /*
 |--------------------------------------------------------------------------
