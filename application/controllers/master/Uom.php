@@ -69,11 +69,12 @@ class Uom extends CI_Controller
         }
     }
     //AUTO ID
-    public function autoid(){
+    public function autoid()
+    {
         $sql = $this->db->query("SELECT max(id) as kode FROM uom");
         $row = $sql->row();
-        $kode = substr($row->kode,1);
-        $autoid ="U". sprintf("%02s", $kode + 1);
+        $kode = substr($row->kode, 1);
+        $autoid = "U" . sprintf("%02s", $kode + 1);
         echo $autoid;
     }
     //CREATE DATA
@@ -154,7 +155,7 @@ class Uom extends CI_Controller
         <table id="customers" border="1">
             <tr>
                 <th width="20">No</th>
-                <th>Code</th>
+                <th>ID</th>
                 <th>Name</th>
                 <th>Description</th>
             </tr>';
@@ -162,7 +163,7 @@ class Uom extends CI_Controller
         foreach ($records as $data) {
             $html .= '<tr>
                     <td>' . $no . '</td>
-                    <td>' . $data['number'] . '</td>
+                    <td>' . $data['id'] . '</td>
                     <td>' . $data['name'] . '</td>
                     <td>' . $data['description'] . '</td>';
             $no++;

@@ -34,7 +34,7 @@ class Item_boxs extends CI_Controller
         $send = $this->crud->reads('item_boxs', ["name" => $post]);
         echo json_encode($send);
     }
-    
+
     //GET DATATABLES
     public function datatables()
     {
@@ -54,10 +54,10 @@ class Item_boxs extends CI_Controller
             $this->db->where('a.deleted', 0);
             if (@count($filters) > 0) {
                 foreach ($filters as $filter) {
-                    if($filter->field == "item_kind_name"){
-                        $this->db->like("b.id", $filter->value);
-                    }else{
-                        $this->db->like("a.".$filter->field, $filter->value);
+                    if ($filter->field == "item_kind_name") {
+                        $this->db->like("b.name", $filter->value);
+                    } else {
+                        $this->db->like("a." . $filter->field, $filter->value);
                     }
                 }
             }
@@ -75,11 +75,12 @@ class Item_boxs extends CI_Controller
         }
     }
     //AUTO ID
-    public function autoid(){
+    public function autoid()
+    {
         $sql = $this->db->query("SELECT max(id) as kode FROM item_boxs");
         $row = $sql->row();
-        $kode = substr($row->kode,2);
-        $autoid ="B". sprintf("%03s", $kode + 1);
+        $kode = substr($row->kode, 2);
+        $autoid = "B" . sprintf("%03s", $kode + 1);
         echo $autoid;
     }
     //CREATE DATA

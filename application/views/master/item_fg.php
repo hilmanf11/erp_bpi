@@ -108,7 +108,7 @@
                 </div>
             </div>
             <div style="float:left; width:50%;">
-                
+
                 <div class="fitem">
                     <span style="width:35%; display:inline-block;">IS No.</span>
                     <input style="width:60%;" name="is_no" id="is_no" class="easyui-textbox">
@@ -181,11 +181,12 @@
         $('#dlg_insert').dialog('open');
         url_save = '<?= base_url('master/item_fg/create') ?>';
         $('#frm_insert').form('clear');
-        
+
         $('#polybag').combobox('setValue', 'YES');
         $('#box_label').combobox('setValue', 'YES');
         $('#status').combobox('setValue', '0');
     }
+
     //EDIT DATA
     function update() {
         var row = $('#dg').datagrid('getSelected');
@@ -276,7 +277,7 @@
                             } else {
                                 toastr.error(result.message, result.title);
                             }
-                            
+
                             $('#dlg_insert').dialog('close');
                             $('#dg').datagrid('reload');
                         }
@@ -287,37 +288,37 @@
     });
 
     $('#process').combobox({
-        url:'<?= base_url('master/item_process_flow/reads'); ?>',
-        valueField:'name',
-        textField:'name',
+        url: '<?= base_url('master/item_process_flow/reads'); ?>',
+        valueField: 'name',
+        textField: 'name',
         prompt: 'Choose Process Type',
     });
 
     $('#boxs').combobox({
-        url:'<?= base_url('master/item_boxs/reads'); ?>',
-        valueField:'name',
-        textField:'name',
+        url: '<?= base_url('master/item_boxs/reads'); ?>',
+        valueField: 'name',
+        textField: 'name',
         prompt: 'Choose Boxs',
     });
 
     $('#color').combobox({
-        url:'<?= base_url('master/item_colors/reads'); ?>',
-        valueField:'name',
-        textField:'name',
+        url: '<?= base_url('master/item_colors/reads'); ?>',
+        valueField: 'name',
+        textField: 'name',
         prompt: 'Choose Colors',
     });
 
     $('#division_id').combobox({
-        url:'<?= base_url('master/divisions/reads/'); ?>',
-        valueField:'id',
-        textField:'name',
+        url: '<?= base_url('master/divisions/reads/'); ?>',
+        valueField: 'id',
+        textField: 'name',
         prompt: 'Choose Division',
         onSelect: function(division) {
             $.ajax({
-                type : "post",
-                url : "<?= base_url('master/item_fg/autoid/')?>" + "/" + division.number,
-                dataType : "html",
-                success : function(response){
+                type: "post",
+                url: "<?= base_url('master/item_fg/autoid/') ?>" + "/" + division.number,
+                dataType: "html",
+                success: function(response) {
                     $('#id').textbox('setValue', response);
                 }
             });
@@ -343,89 +344,89 @@
 
     //
     function cellbutton(value) {
-        if(value != null){
-            return '<a target="_blank" href="'+value+'" class="btn btn-primary btn-sm" style="pointer-events: auto; opacity:1; width:100%;"><i class="fa fa-eye"></i> View</a>';
+        if (value != null) {
+            return '<a target="_blank" href="' + value + '" class="btn btn-primary btn-sm" style="pointer-events: auto; opacity:1; width:100%;"><i class="fa fa-eye"></i> View</a>';
             // alert(value);
         }
     };
 
     // UPLOAD DATA
     $('#dlg_upload').dialog({
-            buttons: [{
-                text: 'List Failed',
-                handler: function() {
-                    window.open('<?= base_url('master/item_fg/uploadDownloadFailed') ?>', '_blank');
-                }
-            }, {
-                text: 'Upload',
-                iconCls: 'icon-ok',
-                handler: function() {
-                    $('#frm_upload').form('submit', {
-                        url: '<?= base_url('master/item_fg/upload') ?>',
-                        onSubmit: function() {
-                            if ($(this).form('validate') == false) {
-                                return $(this).form('validate');
-                            } else {
-                                $.messager.progress({
-                                    title: 'Please Wait',
-                                    msg: 'Importing Excel to Database'
+        buttons: [{
+            text: 'List Failed',
+            handler: function() {
+                window.open('<?= base_url('master/item_fg/uploadDownloadFailed') ?>', '_blank');
+            }
+        }, {
+            text: 'Upload',
+            iconCls: 'icon-ok',
+            handler: function() {
+                $('#frm_upload').form('submit', {
+                    url: '<?= base_url('master/item_fg/upload') ?>',
+                    onSubmit: function() {
+                        if ($(this).form('validate') == false) {
+                            return $(this).form('validate');
+                        } else {
+                            $.messager.progress({
+                                title: 'Please Wait',
+                                msg: 'Importing Excel to Database'
+                            });
+                        }
+                    },
+                    success: function(result) {
+                        $.messager.progress('close');
+                        //Clear File
+                        $.ajax({
+                            url: "<?= base_url('master/item_fg/uploadclearFailed') ?>"
+                        });
+                        var json = eval('(' + result + ')');
+                        requestData(json.total, json);
+
+                        function requestData(total, json, number = 1, value = 0, success = 1, failed = 1) {
+                            if (value < 100) {
+                                value = Math.floor((number / total) * 100);
+                                $('#p_upload').progressbar('setValue', value);
+                                $('#p_start').html(number);
+                                $('#p_finish').html(total);
+
+                                $.ajax({
+                                    type: "POST",
+                                    async: true,
+                                    url: "<?= base_url('master/item_fg/uploadCreate') ?>",
+                                    data: {
+                                        "data": json[number - 1]
+                                    },
+                                    cache: false,
+                                    dataType: "json",
+                                    success: function(result) {
+                                        if (result.theme == "success") {
+                                            $('#p_success').html(success);
+                                            var title = "<b style='color: green;'>" + result.title + "</b> | " + result.message;
+                                            requestData(total, json, number + 1, value, success + 1, failed + 0);
+                                        } else {
+                                            $('#p_failed').html(failed);
+                                            var title = "<b style='color: red;'>" + result.title + "</b> | " + result.message;
+                                            //Json Failed
+                                            $.ajax({
+                                                type: "POST",
+                                                async: true,
+                                                url: "<?= base_url('master/item_fg/uploadcreateFailed') ?>",
+                                                data: {
+                                                    data: json[number - 1],
+                                                    message: result.message
+                                                },
+                                                cache: false
+                                            });
+                                            requestData(total, json, number + 1, value, success + 0, failed + 1);
+                                        }
+                                        $("#p_remarks").append(title + "<br>");
+                                    }
                                 });
                             }
-                        },
-                        success: function(result) {
-                            $.messager.progress('close');
-                            //Clear File
-                            $.ajax({
-                                url: "<?= base_url('master/item_fg/uploadclearFailed') ?>"
-                            });
-                            var json = eval('(' + result + ')');
-                            requestData(json.total, json);
-
-                            function requestData(total, json, number = 1, value = 0, success = 1, failed = 1) {
-                                if (value < 100) {
-                                    value = Math.floor((number / total) * 100);
-                                    $('#p_upload').progressbar('setValue', value);
-                                    $('#p_start').html(number);
-                                    $('#p_finish').html(total);
-
-                                    $.ajax({
-                                        type: "POST",
-                                        async: true,
-                                        url: "<?= base_url('master/item_fg/uploadCreate') ?>",
-                                        data: {
-                                            "data": json[number - 1]
-                                        },
-                                        cache: false,
-                                        dataType: "json",
-                                        success: function(result) {
-                                            if (result.theme == "success") {
-                                                $('#p_success').html(success);
-                                                var title = "<b style='color: green;'>" + result.title + "</b> | " + result.message;
-                                                requestData(total, json, number + 1, value, success + 1, failed + 0);
-                                            } else {
-                                                $('#p_failed').html(failed);
-                                                var title = "<b style='color: red;'>" + result.title + "</b> | " + result.message;
-                                                //Json Failed
-                                                $.ajax({
-                                                    type: "POST",
-                                                    async: true,
-                                                    url: "<?= base_url('master/item_fg/uploadcreateFailed') ?>",
-                                                    data: {
-                                                        data: json[number - 1],
-                                                        message: result.message
-                                                    },
-                                                    cache: false
-                                                });
-                                                requestData(total, json, number + 1, value, success + 0, failed + 1);
-                                            }
-                                            $("#p_remarks").append(title + "<br>");
-                                        }
-                                    });
-                                }
-                            }
                         }
-                    });
-                }
-            }]
-        });
+                    }
+                });
+            }
+        }]
+    });
 </script>

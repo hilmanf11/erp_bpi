@@ -3,18 +3,18 @@
     <thead>
         <tr>
             <th rowspan="2" field="ck" checkbox="true"></th>
-            <th rowspan="2" data-options="field:'id',width:150,align:'center'">Mold ID</th>
-            <th rowspan="2" data-options="field:'item_fg_number',width:150,halign:'center'">Product No.</th>
+            <th rowspan="2" data-options="field:'id',width:100,align:'center'">Mold ID</th>
+            <th rowspan="2" data-options="field:'item_fg_number',width:150,halign:'center'">Product No</th>
             <th rowspan="2" data-options="field:'item_fg_name',width:200,halign:'center'">Product Name</th>
             <th rowspan="2" data-options="field:'type',width:130,halign:'center'">Type</th>
             <th rowspan="2" data-options="field:'customer_name',width:200,halign:'center'">Customer Name</th>
             <th rowspan="2" data-options="field:'model',width:150,halign:'center'">Model</th>
-            <th rowspan="2" data-options="field:'mold_size',width:150,halign:'center'">Mold Size</th>
-            <th rowspan="2" data-options="field:'project_year',width:150,halign:'center'">Project Year</th>
-            <th rowspan="2" data-options="field:'cavity_standard',width:150,halign:'center'">Standard Cavity</th>
-            <th rowspan="2" data-options="field:'cavity_actual',width:150,halign:'center'">Actual Cavity</th>
-            <th rowspan="2" data-options="field:'shoot_standard',width:150,halign:'center'">Standard Shoot</th>
-            <th rowspan="2" data-options="field:'shoot_actual',width:150,halign:'center'">Actual Shoot</th>
+            <th rowspan="2" data-options="field:'mold_size',width:80,halign:'center'">Mold<br>Size</th>
+            <th rowspan="2" data-options="field:'project_year',width:80,halign:'center'">Project<br>Year</th>
+            <th rowspan="2" data-options="field:'cavity_standard',width:80,halign:'center'">Standard<br>Cavity</th>
+            <th rowspan="2" data-options="field:'cavity_actual',width:80,halign:'center'">Actual<br>Cavity</th>
+            <th rowspan="2" data-options="field:'shoot_standard',width:80,halign:'center'">Standard<br>Shoot</th>
+            <th rowspan="2" data-options="field:'shoot_actual',width:80,halign:'center'">Actual<br>Shoot</th>
             <th rowspan="2" data-options="field:'remark',width:150,halign:'center'">Remarks</th>
             <th rowspan="2" data-options="field:'status',width:150,halign:'center', styler:cellStyler, formatter:cellFormatter">Status</th>
             <th colspan="2" data-options="field:'',width:100,halign:'center'"> Created</th>
@@ -33,7 +33,7 @@
     <?= $button ?>
 </div>
 <!-- DIALOG SAVE AND UPDATE -->
-<div id="dlg_insert" class="easyui-dialog" title="Add New" data-options="closed: true,modal:true" style="width: 600px; padding:10px; top: 20px;">
+<div id="dlg_insert" class="easyui-dialog" title="Add New" data-options="closed: true,modal:true" style="width: 500px; padding:10px; top: 20px;">
     <form id="frm_insert" method="post" novalidate>
         <fieldset style="width:100%; border:1px solid #d0d0d0; margin-bottom: 10px; border-radius:4px; float: left;">
             <legend><b>Form Data</b></legend>
@@ -42,8 +42,8 @@
                 <input style="width:60%;" name="id" id="id" required="" class="easyui-textbox" readonly>
             </div>
             <div class="fitem">
-                <span style="width:35%; display:inline-block;">Product No.</span>
-                <input style="width:60%;" name="item_fg_id" id="item_fg_id" required="" class="easyui-textbox">
+                <span style="width:35%; display:inline-block;">Product No</span>
+                <input style="width:60%;" name="item_fg_id" id="item_fg_id" required="" class="easyui-combogrid">
             </div>
             <div class="fitem">
                 <span style="width:35%; display:inline-block;">Type</span>
@@ -127,17 +127,17 @@
         $('#dlg_insert').dialog('open');
         url_save = '<?= base_url('master/item_mold/create') ?>';
         $('#frm_insert').form('clear');
-        
+
         $('#type').combobox('setValue', 'INTERNAL');
         $('#status').combobox('setValue', '0');
         $('#cavity_standard').combobox('setValue', '1');
         $('#cavity_actual').combobox('setValue', '1');
 
         $.ajax({
-            type : "post",
-            url : "<?= base_url('master/item_mold/autoid')?>",
-            dataType : "html",
-            success : function(response){
+            type: "post",
+            url: "<?= base_url('master/item_mold/autoid') ?>",
+            dataType: "html",
+            success: function(response) {
                 $('#id').textbox('setValue', response);
             }
         });
@@ -232,7 +232,7 @@
                             } else {
                                 toastr.error(result.message, result.title);
                             }
-                            
+
                             $('#dlg_insert').dialog('close');
                             $('#dg').datagrid('reload');
                         }
@@ -242,17 +242,31 @@
         });
     });
 
-    $('#item_fg_id').combobox({
-        url:'<?= base_url('master/item_fg/reads'); ?>',
-        valueField:'id',
-        textField:'number',
-        prompt: 'Choose Product No.',
+    $('#item_fg_id').combogrid({
+        url: '<?= base_url('master/item_fg/reads/'); ?>',
+        panelWidth: 420,
+        idField: 'id',
+        textField: 'number',
+        mode: 'remote',
+        fitColumns: true,
+        prompt: "Choose Product No",
+        columns: [
+            [{
+                field: 'number',
+                title: 'Product No',
+                width: 120
+            }, {
+                field: 'name',
+                title: 'Product Name',
+                width: 250
+            }, ]
+        ]
     });
 
     $('#customer_id').combobox({
-        url:'<?= base_url('master/customers/reads'); ?>',
-        valueField:'id',
-        textField:'name',
+        url: '<?= base_url('master/customers/reads'); ?>',
+        valueField: 'id',
+        textField: 'name',
         prompt: 'Choose Customer',
     });
 
@@ -275,81 +289,81 @@
 
     // UPLOAD DATA
     $('#dlg_upload').dialog({
-            buttons: [{
-                text: 'List Failed',
-                handler: function() {
-                    window.open('<?= base_url('master/item_mold/uploadDownloadFailed') ?>', '_blank');
-                }
-            }, {
-                text: 'Upload',
-                iconCls: 'icon-ok',
-                handler: function() {
-                    $('#frm_upload').form('submit', {
-                        url: '<?= base_url('master/item_mold/upload') ?>',
-                        onSubmit: function() {
-                            if ($(this).form('validate') == false) {
-                                return $(this).form('validate');
-                            } else {
-                                $.messager.progress({
-                                    title: 'Please Wait',
-                                    msg: 'Importing Excel to Database'
+        buttons: [{
+            text: 'List Failed',
+            handler: function() {
+                window.open('<?= base_url('master/item_mold/uploadDownloadFailed') ?>', '_blank');
+            }
+        }, {
+            text: 'Upload',
+            iconCls: 'icon-ok',
+            handler: function() {
+                $('#frm_upload').form('submit', {
+                    url: '<?= base_url('master/item_mold/upload') ?>',
+                    onSubmit: function() {
+                        if ($(this).form('validate') == false) {
+                            return $(this).form('validate');
+                        } else {
+                            $.messager.progress({
+                                title: 'Please Wait',
+                                msg: 'Importing Excel to Database'
+                            });
+                        }
+                    },
+                    success: function(result) {
+                        $.messager.progress('close');
+                        //Clear File
+                        $.ajax({
+                            url: "<?= base_url('master/item_mold/uploadclearFailed') ?>"
+                        });
+                        var json = eval('(' + result + ')');
+                        requestData(json.total, json);
+
+                        function requestData(total, json, number = 1, value = 0, success = 1, failed = 1) {
+                            if (value < 100) {
+                                value = Math.floor((number / total) * 100);
+                                $('#p_upload').progressbar('setValue', value);
+                                $('#p_start').html(number);
+                                $('#p_finish').html(total);
+
+                                $.ajax({
+                                    type: "POST",
+                                    async: true,
+                                    url: "<?= base_url('master/item_mold/uploadCreate') ?>",
+                                    data: {
+                                        "data": json[number - 1]
+                                    },
+                                    cache: false,
+                                    dataType: "json",
+                                    success: function(result) {
+                                        if (result.theme == "success") {
+                                            $('#p_success').html(success);
+                                            var title = "<b style='color: green;'>" + result.title + "</b> | " + result.message;
+                                            requestData(total, json, number + 1, value, success + 1, failed + 0);
+                                        } else {
+                                            $('#p_failed').html(failed);
+                                            var title = "<b style='color: red;'>" + result.title + "</b> | " + result.message;
+                                            //Json Failed
+                                            $.ajax({
+                                                type: "POST",
+                                                async: true,
+                                                url: "<?= base_url('master/item_mold/uploadcreateFailed') ?>",
+                                                data: {
+                                                    data: json[number - 1],
+                                                    message: result.message
+                                                },
+                                                cache: false
+                                            });
+                                            requestData(total, json, number + 1, value, success + 0, failed + 1);
+                                        }
+                                        $("#p_remarks").append(title + "<br>");
+                                    }
                                 });
                             }
-                        },
-                        success: function(result) {
-                            $.messager.progress('close');
-                            //Clear File
-                            $.ajax({
-                                url: "<?= base_url('master/item_mold/uploadclearFailed') ?>"
-                            });
-                            var json = eval('(' + result + ')');
-                            requestData(json.total, json);
-
-                            function requestData(total, json, number = 1, value = 0, success = 1, failed = 1) {
-                                if (value < 100) {
-                                    value = Math.floor((number / total) * 100);
-                                    $('#p_upload').progressbar('setValue', value);
-                                    $('#p_start').html(number);
-                                    $('#p_finish').html(total);
-
-                                    $.ajax({
-                                        type: "POST",
-                                        async: true,
-                                        url: "<?= base_url('master/item_mold/uploadCreate') ?>",
-                                        data: {
-                                            "data": json[number - 1]
-                                        },
-                                        cache: false,
-                                        dataType: "json",
-                                        success: function(result) {
-                                            if (result.theme == "success") {
-                                                $('#p_success').html(success);
-                                                var title = "<b style='color: green;'>" + result.title + "</b> | " + result.message;
-                                                requestData(total, json, number + 1, value, success + 1, failed + 0);
-                                            } else {
-                                                $('#p_failed').html(failed);
-                                                var title = "<b style='color: red;'>" + result.title + "</b> | " + result.message;
-                                                //Json Failed
-                                                $.ajax({
-                                                    type: "POST",
-                                                    async: true,
-                                                    url: "<?= base_url('master/item_mold/uploadcreateFailed') ?>",
-                                                    data: {
-                                                        data: json[number - 1],
-                                                        message: result.message
-                                                    },
-                                                    cache: false
-                                                });
-                                                requestData(total, json, number + 1, value, success + 0, failed + 1);
-                                            }
-                                            $("#p_remarks").append(title + "<br>");
-                                        }
-                                    });
-                                }
-                            }
                         }
-                    });
-                }
-            }]
-        });
+                    }
+                });
+            }
+        }]
+    });
 </script>

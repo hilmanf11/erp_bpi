@@ -14,6 +14,7 @@ class item_fg extends CI_Controller
         //VALIDASI FORM
         $this->form_validation->set_rules('number', 'Product No.', 'required|min_length[1]|max_length[20]|is_unique[item_fg.number]');
     }
+
     //HALAMAN UTAMA
     public function index()
     {
@@ -27,6 +28,7 @@ class item_fg extends CI_Controller
             redirect('error_access');
         }
     }
+
     //GET DATA
     public function reads()
     {
@@ -98,7 +100,8 @@ class item_fg extends CI_Controller
         echo $autoid;
     }
     //MIN STOCK
-    public function min_stock(){
+    public function min_stock()
+    {
         $sql = $this->db->query("SELECT min FROM setting_stocks WHERE item_category_id = 'FINISHED GOOD' GROUP BY item_category_id ASC");
         $row = $sql->row();
         echo $row;

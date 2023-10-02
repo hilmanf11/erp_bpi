@@ -1,5 +1,5 @@
 <!-- TABLE DATAGRID -->
-<table id="dg" class="easyui-datagrid" style="width:99.5%;" toolbar="#toolbar">
+<table id="dg" class="easyui-datagrid" style="width:100%;" toolbar="#toolbar">
     <thead>
         <tr>
             <th rowspan="2" field="ck" checkbox="true"></th>
@@ -56,10 +56,10 @@
         $('#frm_insert').form('clear');
 
         $.ajax({
-            type : "post",
-            url : "<?= base_url('master/currencies/autoid')?>",
-            dataType : "html",
-            success : function(response){
+            type: "post",
+            url: "<?= base_url('master/currencies/autoid') ?>",
+            dataType: "html",
+            success: function(response) {
                 $('#id').textbox('setValue', response);
             }
         });
