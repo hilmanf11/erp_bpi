@@ -36,6 +36,12 @@ class Customers extends CI_Controller
         echo json_encode($send);
     }
 
+    public function readAddress($customer_id)
+    {
+        $send = $this->crud->query("SELECT * FROM customer_address WHERE customer_id = '$customer_id'");
+        echo json_encode($send);
+    }
+
     //GET DATATABLES
     public function datatables()
     {
@@ -52,6 +58,40 @@ class Customers extends CI_Controller
             $this->db->select('*');
             $this->db->from('customers');
             $this->db->where('deleted', 0);
+            if (@count($filters) > 0) {
+                foreach ($filters as $filter) {
+                    $this->db->like($filter->field, $filter->value);
+                }
+            }
+            $this->db->order_by('id', 'asc');
+            //Total Data
+            $totalRows = $this->db->count_all_results('', false);
+            //Limit 1 - 10
+            $this->db->limit($rows, $offset);
+            //Get Data Array
+            $records = $this->db->get()->result_array();
+            //Mapping Data
+            $result['total'] = $totalRows;
+            $result = array_merge($result, ['rows' => $records]);
+            echo json_encode($result);
+        }
+    }
+
+    public function datatables2($customer_id)
+    {
+        if ($this->input->post()) {
+            $filters = json_decode($this->input->post('filterRules'));
+            $page = $this->input->post('page');
+            $rows = $this->input->post('rows');
+            //Pagination 1-10
+            $page   = isset($page) ? intval($page) : 1;
+            $rows   = isset($rows) ? intval($rows) : 10;
+            $offset = ($page - 1) * $rows;
+            $result = array();
+            //Select Query
+            $this->db->select('*');
+            $this->db->from('customer_address');
+            $this->db->where('customer_id', $customer_id);
             if (@count($filters) > 0) {
                 foreach ($filters as $filter) {
                     $this->db->like($filter->field, $filter->value);
@@ -94,6 +134,18 @@ class Customers extends CI_Controller
             show_error("Cannot Process your request");
         }
     }
+
+    public function create2()
+    {
+        if ($this->input->post()) {
+            $post   = $this->input->post();
+            $send   = $this->crud->create('customer_address', $post);
+            echo $send;
+        } else {
+            show_error("Cannot Process your request");
+        }
+    }
+
     //UPDATE DATA
     public function update()
     {
@@ -106,11 +158,30 @@ class Customers extends CI_Controller
             show_error("Cannot Process your request");
         }
     }
+
+    public function update2()
+    {
+        if ($this->input->post()) {
+            $id   = base64_decode($this->input->get('id'));
+            $post = $this->input->post();
+            $send = $this->crud->update('customer_address', ["id" => $id], $post);
+            echo $send;
+        } else {
+            show_error("Cannot Process your request");
+        }
+    }
     //DELETE DATA
     public function delete()
     {
         $data = $this->input->post();
         $send = $this->crud->delete('customers', $data);
+        echo $send;
+    }
+
+    public function delete2()
+    {
+        $data = $this->input->post();
+        $send = $this->crud->delete('customer_address', $data);
         echo $send;
     }
     //UPLOAD DATA
@@ -130,18 +201,12 @@ class Customers extends CI_Controller
                 'name' => $data->val($i, 2),
                 'number' => $data->val($i, 3),
                 'type' => $data->val($i, 4),
-                'address' => $data->val($i, 5),
-                'address_billing' => $data->val($i, 6),
-                'contact_person' => $data->val($i, 7),
-                'telp' => $data->val($i, 8),
-                'telp_billing' => $data->val($i, 9),
-                'email' => $data->val($i, 10),
-                'website' => $data->val($i, 11),
-                'currency' => $data->val($i, 12),
-                'payment_term' => $data->val($i, 13),
-                'bank_account' => $data->val($i, 14),
-                'bank_name' => $data->val($i, 15),
-                'status' => $data->val($i, 16)
+                'currency' => $data->val($i, 5),
+                'taxes' => $data->val($i, 6),
+                'payment_term' => $data->val($i, 7),
+                'bank_account' => $data->val($i, 8),
+                'bank_name' => $data->val($i, 9),
+                'status' => $data->val($i, 10)
             );
         }
         $datas['total'] = count($datas);
@@ -198,13 +263,7 @@ class Customers extends CI_Controller
                     "name" => $data['name'],
                     "number" => $data['number'],
                     "type" => $data['type'],
-                    "address" => $data['address'],
-                    "address_billing" => $data['address_billing'],
-                    "contact_person" => $data['contact_person'],
-                    "telp" => $data['telp'],
-                    "telp_billing" => $data['telp_billing'],
-                    "email" => $data['email'],
-                    "website" => $data['website'],
+                    "taxes" => $data['taxes'],
                     "currency" => $data['currency'],
                     "payment_term" => $data['payment_term'],
                     "bank_account" => $data['bank_account'],
@@ -229,11 +288,12 @@ class Customers extends CI_Controller
         $this->db->from('config');
         $config = $this->db->get()->row();
 
-        $this->db->select('*');
-        $this->db->from('customers');
-        $this->db->where('deleted', 0);
-        $this->db->order_by('id', 'ASC');
+        $this->db->select('a.*, b.*');
+        $this->db->from('customers a');
+        $this->db->join('customer_address b', 'a.id = b.customer_id', 'left');
+        $this->db->order_by('a.id', 'ASC');
         $records = $this->db->get()->result_array();
+
         $html = '<html><head><title>Print Data</title></head><style>body {font-family: Arial, Helvetica, sans-serif;}#customers {border-collapse: collapse;width: 100%;font-size: 12px;}#customers td, #customers th {border: 1px solid #ddd;padding: 2px;}#customers tr:nth-child(even){background-color: #f2f2f2;}#customers tr:hover {background-color: #ddd;}#customers th {padding-top: 2px;padding-bottom: 2px;text-align: left;color: black;}</style><body>
         <center>
             <div style="float: left; font-size: 12px; text-align: left;">

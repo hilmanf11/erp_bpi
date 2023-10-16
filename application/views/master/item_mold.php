@@ -28,10 +28,12 @@
         </tr>
     </thead>
 </table>
+
 <!-- TOOLBAR DATAGRID -->
 <div id="toolbar" style="height: 35px;">
     <?= $button ?>
 </div>
+
 <!-- DIALOG SAVE AND UPDATE -->
 <div id="dlg_insert" class="easyui-dialog" title="Add New" data-options="closed: true,modal:true" style="width: 500px; padding:10px; top: 20px;">
     <form id="frm_insert" method="post" novalidate>
@@ -142,6 +144,7 @@
             }
         });
     }
+
     //EDIT DATA
     function update() {
         var row = $('#dg').datagrid('getSelected');
@@ -153,6 +156,7 @@
             toastr.warning("Please select one of the data in the table first!", "Information");
         }
     }
+
     //DELETE DATA
     function deleted() {
         var rows = $('#dg').datagrid('getSelections');
@@ -185,27 +189,34 @@
             toastr.warning("Please select one of the data in the table first!", "Information");
         }
     }
+
     // UPLOAD DATA
     function upload() {
         $('#dlg_upload').dialog('open');
     }
+
     // DOWNLOAD
     function download_excel() {
         window.location.assign('<?= base_url('template/tmp_mold.xls') ?>');
     }
+
     //PRINT PDF
     function pdf() {
         $("#printout").get(0).contentWindow.print();
     }
+
     //PRINT EXCEL
     function excel() {
         window.location.assign('<?= base_url('master/item_mold/print/excel') ?>');
     }
+
     //RELOAD
     function reload() {
         window.location.reload();
     }
+
     $(function() {
+
         //SETTING DATAGRID EASYUI
         $('#dg').datagrid({
             url: '<?= base_url('master/item_mold/datatables') ?>',
@@ -214,6 +225,7 @@
             remoteFilter: true,
             rownumbers: true
         }).datagrid('enableFilter');
+
         //SAVE DATA
         $('#dlg_insert').dialog({
             buttons: [{

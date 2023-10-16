@@ -25,6 +25,7 @@
             <th rowspan="2" data-options="field:'leadtime',width:80,align:'center'">Lead Time <br>(Day)</th>
             <th rowspan="2" data-options="field:'mpq',width:50,align:'center'">MPQ</th>
             <th rowspan="2" data-options="field:'moq',width:50,align:'center'">MOQ</th>
+            <th rowspan="2" data-options="field:'uom',width:50,align:'center'">UoM</th>
             <th rowspan="2" data-options="field:'qty_box',width:80,align:'center'">QTY/Box</th>
             <!-- <th rowspan="2" data-options="field:'safety_stock',width:100,halign:'center'">Safety Stock</th> -->
             <th rowspan="2" data-options="field:'min',width:50,align:'center'">Min</th>
@@ -132,6 +133,10 @@
                 <div class="fitem">
                     <span style="width:35%; display:inline-block;">MOQ</span>
                     <input style="width:60%;" name="moq" id="moq" class="easyui-numberbox">
+                </div>
+                <div class="fitem">
+                    <span style="width:35%; display:inline-block;">UoM</span>
+                    <input style="width:60%;" name="uom" id="uom" required="" class="easyui-combobox">
                 </div>
                 <div class="fitem">
                     <span style="width:35%; display:inline-block;">Qty/Box</span>
@@ -323,6 +328,13 @@
                 }
             });
         }
+    });
+
+    $('#uom').combobox({
+        url: '<?= base_url('master/uom/reads'); ?>',
+        valueField: 'name',
+        textField: 'name',
+        prompt: 'Choose Unit of Measure',
     });
 
     //CELLSTYLE STATUS

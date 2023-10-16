@@ -3,18 +3,13 @@
     <thead>
         <tr>
             <th rowspan="2" field="ck" checkbox="true"></th>
+            <th rowspan="2" data-options="field:'detail',width:80,align:'center',formatter: btnDetails">Address</th>
             <th rowspan="2" data-options="field:'id',width:100,align:'center'">Customer ID</th>
             <th rowspan="2" data-options="field:'name',width:200,halign:'center'">Customer Name</th>
             <th rowspan="2" data-options="field:'number',width:110,halign:'center'">Customer Code</th>
             <th rowspan="2" data-options="field:'type',width:150,halign:'center'">Type</th>
-            <th rowspan="2" data-options="field:'address',width:150,halign:'center'">Address</th>
-            <th rowspan="2" data-options="field:'address_billing',width:150,halign:'center'">Billing Address</th>
-            <th rowspan="2" data-options="field:'contact_person',width:150,halign:'center'">Contact Person</th>
-            <th rowspan="2" data-options="field:'telp',width:150,halign:'center'">Telepon</th>
-            <th rowspan="2" data-options="field:'telp_billing',width:150,halign:'center'">Billing Contact</th>
-            <th rowspan="2" data-options="field:'email',width:150,halign:'center'">Email</th>
-            <th rowspan="2" data-options="field:'website',width:150,halign:'center'">Website</th>
             <th rowspan="2" data-options="field:'currency',width:150,halign:'center'">Currency</th>
+            <th rowspan="2" data-options="field:'taxes',width:80,halign:'center'">Taxes</th>
             <th rowspan="2" data-options="field:'payment_term',width:150,halign:'center'">Payment Term (Day)</th>
             <th rowspan="2" data-options="field:'bank_account',width:150,halign:'center'">Bank Account</th>
             <th rowspan="2" data-options="field:'bank_name',width:150,halign:'center'">Bank Name</th>
@@ -34,6 +29,12 @@
 <div id="toolbar" style="height: 35px;">
     <?= $button ?>
 </div>
+<div id="toolbar2" style="height: 35px;">
+    <a href="javascript:;" class="easyui-linkbutton" data-options="plain:true" onclick="add2()"><i class="fa fa-plus"></i> Add</a>
+    <a href="javascript:;" class="easyui-linkbutton" data-options="plain:true" onclick="update2()"><i class="fa fa-edit"></i> Update</a>
+    <a href="javascript:;" class="easyui-linkbutton" data-options="plain:true" onclick="deleted2()"><i class="fa fa-trash"></i> Delete</a>
+</div>
+
 <!-- DIALOG SAVE AND UPDATE -->
 <div id="dlg_insert" class="easyui-dialog" title="Add New" data-options="closed: true,modal:true" style="width: 800px; padding:10px; top: 20px;">
     <form id="frm_insert" method="post" novalidate>
@@ -60,38 +61,14 @@
                     </select>
                 </div>
                 <div class="fitem">
-                    <span style="width:35%; display:inline-block;">Address</span>
-                    <input style="width:60%;" name="address" id="address" class="easyui-textbox">
-                </div>
-                <div class="fitem">
-                    <span style="width:35%; display:inline-block;">Billing Address</span>
-                    <input style="width:60%;" name="address_billing" id="address_billing" class="easyui-textbox">
-                </div>
-                <div class="fitem">
-                    <span style="width:35%; display:inline-block;">Contact Person</span>
-                    <input style="width:60%;" name="contact_person" id="contact_person" class="easyui-textbox">
-                </div>
-                <div class="fitem">
-                    <span style="width:35%; display:inline-block;">Telepon</span>
-                    <input style="width:60%;" name="telp" id="telp" class="easyui-textbox">
+                    <span style="width:35%; display:inline-block;">Currency</span>
+                    <input style="width:60%;" name="currency" id="currency" required="" class="easyui-textbox">
                 </div>
             </div>
             <div style="float:left; width:50%;">
                 <div class="fitem">
-                    <span style="width:35%; display:inline-block;">Billing Contact</span>
-                    <input style="width:60%;" name="telp_billing" id="telp_billing" class="easyui-textbox">
-                </div>
-                <div class="fitem">
-                    <span style="width:35%; display:inline-block;">Email</span>
-                    <input style="width:60%;" name="email" id="email" class="easyui-textbox">
-                </div>
-                <div class="fitem">
-                    <span style="width:35%; display:inline-block;">Website</span>
-                    <input style="width:60%;" name="website" id="website" class="easyui-textbox">
-                </div>
-                <div class="fitem">
-                    <span style="width:35%; display:inline-block;">Currency</span>
-                    <input style="width:60%;" name="currency" id="currency" required="" class="easyui-textbox">
+                    <span style="width:35%; display:inline-block;">Taxes</span>
+                    <input style="width:60%;" name="taxes" id="taxes" class="easyui-numberbox">
                 </div>
                 <div class="fitem">
                     <span style="width:35%; display:inline-block;">Payment Term (Day)</span>
@@ -112,6 +89,71 @@
                         <option value="1">Not Active</option>
                     </select>
                 </div>
+            </div>
+        </fieldset>
+    </form>
+</div>
+
+<div id="dlg_details" class="easyui-dialog" title="Customer Address" data-options="closed: true,modal:true" style="width: 1200px; height: 500px; top: 20px; left: 10px;">
+    <table id="dg2" class="easyui-datagrid" style="width:100%;" toolbar="#toolbar2">
+        <thead>
+            <tr>
+                <th rowspan="2" field="ck" checkbox="true"></th>
+                <th rowspan="2" data-options="field:'address',width:150,halign:'center'">Address</th>
+                <th rowspan="2" data-options="field:'address_billing',width:150,halign:'center'">Billing Address</th>
+                <th rowspan="2" data-options="field:'contact_person',width:150,halign:'center'">Contact Person</th>
+                <th rowspan="2" data-options="field:'telp',width:150,halign:'center'">Telepon</th>
+                <th rowspan="2" data-options="field:'telp_billing',width:150,halign:'center'">Billing Contact</th>
+                <th rowspan="2" data-options="field:'email',width:150,halign:'center'">Email</th>
+                <th rowspan="2" data-options="field:'website',width:150,halign:'center'">Website</th>
+                <th colspan="2" data-options="field:'',width:100,halign:'center'"> Created</th>
+                <th colspan="2" data-options="field:'',width:100,halign:'center'"> Updated</th>
+            </tr>
+            <tr>
+                <th data-options="field:'created_by',width:100,align:'center'"> By</th>
+                <th data-options="field:'created_date',width:150,align:'center'"> Date</th>
+                <th data-options="field:'updated_by',width:100,align:'center'"> By</th>
+                <th data-options="field:'updated_date',width:150,align:'center'"> Date</th>
+            </tr>
+        </thead>
+    </table>
+</div>
+
+<!-- DIALOG SAVE AND UPDATE -->
+<div id="dlg_insert2" class="easyui-dialog" title="Add New" data-options="closed: true,modal:true" style="width: 500px; padding:10px; top: 20px;">
+    <form id="frm_insert2" method="post" novalidate>
+        <fieldset style="width:100%; border:1px solid #d0d0d0; margin-bottom: 10px; border-radius:4px; float: left;">
+            <div class="fitem" hidden>
+                <span style="width:35%; display:inline-block;">Customer ID</span>
+                <input style="width:60%;" name="customer_id" id="customer_id" class="easyui-textbox">
+            </div>
+            <div class="fitem">
+                <span style="width:35%; display:inline-block;">Address</span>
+                <input style="width:60%;" name="address" id="address" class="easyui-textbox">
+            </div>
+            <div class="fitem">
+                <span style="width:35%; display:inline-block;">Billing Address</span>
+                <input style="width:60%;" name="address_billing" id="address_billing" class="easyui-textbox">
+            </div>
+            <div class="fitem">
+                <span style="width:35%; display:inline-block;">Contact Person</span>
+                <input style="width:60%;" name="contact_person" id="contact_person" class="easyui-textbox">
+            </div>
+            <div class="fitem">
+                <span style="width:35%; display:inline-block;">Telepon</span>
+                <input style="width:60%;" name="telp" id="telp" class="easyui-textbox">
+            </div>
+            <div class="fitem">
+                <span style="width:35%; display:inline-block;">Billing Contact</span>
+                <input style="width:60%;" name="telp_billing" id="telp_billing" class="easyui-textbox">
+            </div>
+            <div class="fitem">
+                <span style="width:35%; display:inline-block;">Email</span>
+                <input style="width:60%;" name="email" id="email" class="easyui-textbox">
+            </div>
+            <div class="fitem">
+                <span style="width:35%; display:inline-block;">Website</span>
+                <input style="width:60%;" name="website" id="website" class="easyui-textbox">
             </div>
         </fieldset>
     </form>
@@ -148,16 +190,27 @@
 
         $('#type').combobox('setValue', 'LOCAL');
         $('#status').combobox('setValue', '0');
+        $('#taxes').numberbox('setValue', '11');
 
         $.ajax({
-            type : "post",
-            url : "<?= base_url('master/customers/autoid')?>",
-            dataType : "html",
-            success : function(response){
+            type: "post",
+            url: "<?= base_url('master/customers/autoid') ?>",
+            dataType: "html",
+            success: function(response) {
                 $('#id').textbox('setValue', response);
             }
         });
     }
+
+    //ADD DATA
+    function add2() {
+        $('#dlg_insert2').dialog('open');
+        var customer_id = $("#customer_id").textbox('getValue');
+        url_save2 = '<?= base_url('master/customers/create2') ?>';
+        $('#frm_insert2').form('clear');
+        $("#customer_id").textbox('setValue', customer_id);
+    }
+
     //EDIT DATA
     function update() {
         var row = $('#dg').datagrid('getSelected');
@@ -169,6 +222,18 @@
             toastr.warning("Please select one of the data in the table first!", "Information");
         }
     }
+
+    function update2() {
+        var row = $('#dg2').datagrid('getSelected');
+        if (row) {
+            $('#dlg_insert2').dialog('open');
+            $('#frm_insert2').form('load', row);
+            url_save2 = '<?= base_url('master/customers/update2') ?>?id=' + btoa(row.id);
+        } else {
+            toastr.warning("Please select one of the data in the table first!", "Information");
+        }
+    }
+
     //DELETE DATA
     function deleted() {
         var rows = $('#dg').datagrid('getSelections');
@@ -201,6 +266,52 @@
             toastr.warning("Please select one of the data in the table first!", "Information");
         }
     }
+
+    function deleted2() {
+        var rows = $('#dg2').datagrid('getSelections');
+        if (rows.length > 0) {
+            $.messager.confirm('Warning', 'Are you sure you want to delete this data?', function(r) {
+                if (r) {
+                    for (var i = 0; i < rows.length; i++) {
+                        var row = rows[i];
+                        $.ajax({
+                            method: 'post',
+                            url: '<?= base_url('master/customers/delete2') ?>',
+                            data: {
+                                id: row.id
+                            },
+                            success: function(result) {
+                                var result = eval('(' + result + ')');
+                            },
+                            error: function(jqXHR, textStatus, errorThrown) {
+                                toastr.error(jqXHR.statusText);
+                                $.messager.alert("Error", jqXHR.statusText, 'error');
+                            },
+                            complete: function(data) {
+                                $('#dg2').datagrid('reload');
+                            }
+                        });
+                    }
+                }
+            });
+        } else {
+            toastr.warning("Please select one of the data in the table first!", "Information");
+        }
+    }
+
+    function details(customer_id) {
+        $("#dlg_details").dialog('open');
+        $("#customer_id").textbox('setValue', customer_id);
+
+        $('#dg2').datagrid({
+            url: '<?= base_url('master/customers/datatables2/') ?>' + customer_id,
+            pagination: true,
+            clientPaging: false,
+            remoteFilter: true,
+            rownumbers: true
+        }).datagrid('enableFilter');
+    }
+
     // UPLOAD DATA
     function upload() {
         $('#dlg_upload').dialog('open');
@@ -230,6 +341,7 @@
             remoteFilter: true,
             rownumbers: true
         }).datagrid('enableFilter');
+
         //SAVE DATA
         $('#dlg_insert').dialog({
             buttons: [{
@@ -255,6 +367,31 @@
                 }
             }]
         });
+
+        $('#dlg_insert2').dialog({
+            buttons: [{
+                text: 'Save',
+                iconCls: 'icon-ok',
+                handler: function() {
+                    $('#frm_insert2').form('submit', {
+                        url: url_save2,
+                        onSubmit: function() {
+                            return $(this).form('validate');
+                        },
+                        success: function(result) {
+                            var result = eval('(' + result + ')');
+                            if (result.theme == "success") {
+                                toastr.success(result.message, result.title);
+                            } else {
+                                toastr.error(result.message, result.title);
+                            }
+                            $('#dlg_insert2').dialog('close');
+                            $('#dg2').datagrid('reload');
+                        }
+                    });
+                }
+            }]
+        });
     });
 
     //CELLSTYLE STATUS
@@ -274,90 +411,95 @@
         }
     };
 
+    function btnDetails(val, row) {
+        var details = "details('" + row.id + "')";
+        return '<a class="btn btn-primary w-100" onClick="' + details + '" style="pointer-events: visible; opacity:1;"><i class="fa fa-list"></i> Detail</a>';
+    }
+
     $('#currency').combobox({
-        url:'<?= base_url('master/currencies/reads'); ?>',
-        valueField:'name',
-        textField:'name',
+        url: '<?= base_url('master/currencies/reads'); ?>',
+        valueField: 'name',
+        textField: 'name',
         prompt: 'Choose Currencies',
     });
 
     // UPLOAD
     $('#dlg_upload').dialog({
-            buttons: [{
-                text: 'List Failed',
-                handler: function() {
-                    window.open('<?= base_url('master/customers/uploadDownloadFailed') ?>', '_blank');
-                }
-            }, {
-                text: 'Upload',
-                iconCls: 'icon-ok',
-                handler: function() {
-                    $('#frm_upload').form('submit', {
-                        url: '<?= base_url('master/customers/upload') ?>',
-                        onSubmit: function() {
-                            if ($(this).form('validate') == false) {
-                                return $(this).form('validate');
-                            } else {
-                                $.messager.progress({
-                                    title: 'Please Wait',
-                                    msg: 'Importing Excel to Database'
+        buttons: [{
+            text: 'List Failed',
+            handler: function() {
+                window.open('<?= base_url('master/customers/uploadDownloadFailed') ?>', '_blank');
+            }
+        }, {
+            text: 'Upload',
+            iconCls: 'icon-ok',
+            handler: function() {
+                $('#frm_upload').form('submit', {
+                    url: '<?= base_url('master/customers/upload') ?>',
+                    onSubmit: function() {
+                        if ($(this).form('validate') == false) {
+                            return $(this).form('validate');
+                        } else {
+                            $.messager.progress({
+                                title: 'Please Wait',
+                                msg: 'Importing Excel to Database'
+                            });
+                        }
+                    },
+                    success: function(result) {
+                        $.messager.progress('close');
+                        //Clear File
+                        $.ajax({
+                            url: "<?= base_url('master/customers/uploadclearFailed') ?>"
+                        });
+                        var json = eval('(' + result + ')');
+                        requestData(json.total, json);
+
+                        function requestData(total, json, number = 1, value = 0, success = 1, failed = 1) {
+                            if (value < 100) {
+                                value = Math.floor((number / total) * 100);
+                                $('#p_upload').progressbar('setValue', value);
+                                $('#p_start').html(number);
+                                $('#p_finish').html(total);
+
+                                $.ajax({
+                                    type: "POST",
+                                    async: true,
+                                    url: "<?= base_url('master/customers/uploadCreate') ?>",
+                                    data: {
+                                        "data": json[number - 1]
+                                    },
+                                    cache: false,
+                                    dataType: "json",
+                                    success: function(result) {
+                                        if (result.theme == "success") {
+                                            $('#p_success').html(success);
+                                            var title = "<b style='color: green;'>" + result.title + "</b> | " + result.message;
+                                            requestData(total, json, number + 1, value, success + 1, failed + 0);
+                                        } else {
+                                            $('#p_failed').html(failed);
+                                            var title = "<b style='color: red;'>" + result.title + "</b> | " + result.message;
+                                            //Json Failed
+                                            $.ajax({
+                                                type: "POST",
+                                                async: true,
+                                                url: "<?= base_url('master/customers/uploadcreateFailed') ?>",
+                                                data: {
+                                                    data: json[number - 1],
+                                                    message: result.message
+                                                },
+                                                cache: false
+                                            });
+                                            requestData(total, json, number + 1, value, success + 0, failed + 1);
+                                        }
+                                        $("#p_remarks").append(title + "<br>");
+                                    }
                                 });
                             }
-                        },
-                        success: function(result) {
-                            $.messager.progress('close');
-                            //Clear File
-                            $.ajax({
-                                url: "<?= base_url('master/customers/uploadclearFailed') ?>"
-                            });
-                            var json = eval('(' + result + ')');
-                            requestData(json.total, json);
-
-                            function requestData(total, json, number = 1, value = 0, success = 1, failed = 1) {
-                                if (value < 100) {
-                                    value = Math.floor((number / total) * 100);
-                                    $('#p_upload').progressbar('setValue', value);
-                                    $('#p_start').html(number);
-                                    $('#p_finish').html(total);
-
-                                    $.ajax({
-                                        type: "POST",
-                                        async: true,
-                                        url: "<?= base_url('master/customers/uploadCreate') ?>",
-                                        data: {
-                                            "data": json[number - 1]
-                                        },
-                                        cache: false,
-                                        dataType: "json",
-                                        success: function(result) {
-                                            if (result.theme == "success") {
-                                                $('#p_success').html(success);
-                                                var title = "<b style='color: green;'>" + result.title + "</b> | " + result.message;
-                                                requestData(total, json, number + 1, value, success + 1, failed + 0);
-                                            } else {
-                                                $('#p_failed').html(failed);
-                                                var title = "<b style='color: red;'>" + result.title + "</b> | " + result.message;
-                                                //Json Failed
-                                                $.ajax({
-                                                    type: "POST",
-                                                    async: true,
-                                                    url: "<?= base_url('master/customers/uploadcreateFailed') ?>",
-                                                    data: {
-                                                        data: json[number - 1],
-                                                        message: result.message
-                                                    },
-                                                    cache: false
-                                                });
-                                                requestData(total, json, number + 1, value, success + 0, failed + 1);
-                                            }
-                                            $("#p_remarks").append(title + "<br>");
-                                        }
-                                    });
-                                }
-                            }
                         }
-                    });
-                }
-            }]
-        });
+                    }
+                });
+            }
+        }]
+    });
 </script>
