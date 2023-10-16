@@ -11,7 +11,8 @@
     <thead>
         <tr>
             <th rowspan="2" data-options="field:'machine_number',width:150,halign:'center'">Machine No.</th>
-            <th rowspan="2" data-options="field:'mold_model',width:150,halign:'center'">Mold Model</th>
+            <th rowspan="2" data-options="field:'machine_toonage',width:150,halign:'center'">Toonage of Machine </th>
+            <th rowspan="2" data-options="field:'item_mold_id',width:150,halign:'center'">Mold ID</th>
             <th rowspan="2" data-options="field:'mold_cavity_actual',width:100,halign:'center'">Cavity Actual</th>
             <th rowspan="2" data-options="field:'mold_cavity_standard',width:120,halign:'center'">Cavity Standard</th>
             <th rowspan="2" data-options="field:'shift',width:100,halign:'center'">Shift</th>
@@ -47,7 +48,7 @@
                 <input style="width:60%;" name="item_fg_id" id="item_fg_id" required="" class="easyui-combobox">
             </div>
             <div class="fitem">
-                <span style="width:35%; display:inline-block;">Mold Model</span>
+                <span style="width:35%; display:inline-block;">Mold ID</span>
                 <input style="width:60%;" name="item_mold_id" id="item_mold_id" required="" class="easyui-combobox">
             </div>
             <div class="fitem">
@@ -228,8 +229,8 @@
             $('#item_mold_id').combobox({
                 url:'<?= base_url('master/item_mold/reads/'); ?>' + btoa(item_fg.id),
                 valueField:'id',
-                textField:'model',
-                prompt: 'Choose Mold Model',
+                textField:'id',
+                prompt: 'Choose Mold ID',
             });
         }
     });

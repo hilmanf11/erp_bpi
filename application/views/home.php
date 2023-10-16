@@ -3,7 +3,7 @@
 	<!-- Header -->
 	<div data-options="region:'north', border:false" id="header" style="background-image: url(<?= base_url('assets/image/header/' . $profile->theme . '.png') ?>);">
 		<div style="float: left;">
-			<img src="<?= base_url('assets/image/application.png') ?>" width="100">
+			<img src="<?= base_url('assets/image/logo/' . $profile->theme . '.png') ?>" width="150">
 		</div>
 
 		<div class="logo-company">

@@ -1,12 +1,12 @@
 <!-- TABLE DATAGRID -->
-<table id="dg" class="easyui-datagrid" style="width:99.5%;" toolbar="#toolbar">
+<table id="dg" class="easyui-datagrid" style="width:100%;" toolbar="#toolbar">
     <thead>
         <tr>
             <th rowspan="2" field="ck" checkbox="true"></th>
             <th rowspan="2" data-options="field:'id',width:80,align:'center'">ID</th>
             <th rowspan="2" data-options="field:'name',width:150,halign:'center'">Name</th>
-            <th rowspan="2" data-options="field:'number',width:150,halign:'center'">Product Family Code</th>
-            <th rowspan="2" data-options="field:'item_category_name',width:200,halign:'center'">Category</th>
+            <th rowspan="2" data-options="field:'number',width:100,align:'center'">Product Family<br>Code</th>
+            <th rowspan="2" data-options="field:'item_category_name',width:150,halign:'center'">Category</th>
             <th rowspan="2" data-options="field:'account_number',width:100,halign:'center'">Account No</th>
             <th rowspan="2" data-options="field:'account_name',width:100,halign:'center'">Account Name</th>
             <th rowspan="2" data-options="field:'description',width:150,halign:'center'">Description</th>
@@ -69,12 +69,12 @@
         $('#dlg_insert').dialog('open');
         url_save = '<?= base_url('master/item_familys/create') ?>';
         $('#frm_insert').form('clear');
-        
+
         $.ajax({
-            type : "post",
-            url : "<?= base_url('master/item_familys/autoid')?>",
-            dataType : "html",
-            success : function(response){
+            type: "post",
+            url: "<?= base_url('master/item_familys/autoid') ?>",
+            dataType: "html",
+            success: function(response) {
                 $('#id').textbox('setValue', response);
             }
         });
@@ -161,7 +161,7 @@
                             } else {
                                 toastr.error(result.message, result.title);
                             }
-                            
+
                             $('#dlg_insert').dialog('close');
                             $('#dg').datagrid('reload');
                         }
@@ -172,9 +172,9 @@
     });
 
     $('#item_category_id').combobox({
-        url:'<?= base_url('master/item_categories/reads'); ?>',
-        valueField:'id',
-        textField:'name',
+        url: '<?= base_url('master/item_categories/reads'); ?>',
+        valueField: 'id',
+        textField: 'name',
         prompt: 'Choose Category',
     });
 </script>

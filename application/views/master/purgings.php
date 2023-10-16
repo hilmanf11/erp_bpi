@@ -3,13 +3,15 @@
     <thead>
         <tr>
             <th rowspan="2" field="ck" checkbox="true"></th>
-            <th rowspan="2" data-options="field:'machine_id',width:150,align:'center'">Machine ID</th>
-            <th rowspan="2" data-options="field:'machine_number',width:150,halign:'center'">Machine No.</th>
-            <th rowspan="2" data-options="field:'machine_name',width:200,halign:'center'">Name Of Machine</th>
-            <th rowspan="2" data-options="field:'qty',width:150,halign:'center'">Qty Maximum <br>Purging</th>
-            <th rowspan="2" data-options="field:'uom',width:150,halign:'center'">UOM</th>
-            <th rowspan="2" data-options="field:'total',width:150,halign:'center'">Total Purging</th>
-            <th rowspan="2" data-options="field:'status',width:150,halign:'center', styler:cellStyler, formatter:cellFormatter">Status</th>
+            <th rowspan="2" data-options="field:'machine_id',width:100,align:'center'">Machine ID</th>
+            <th rowspan="2" data-options="field:'machine_number',width:100,halign:'center'">Machine No.</th>
+            <th rowspan="2" data-options="field:'machine_name',width:150,halign:'center'">Name Of Machine</th>
+            <th rowspan="2" data-options="field:'qty',width:100,align:'center'">Qty Maximum <br>Purging</th>
+            <th rowspan="2" data-options="field:'total',width:80,align:'center'">Total <br>Purging</th>
+            <th rowspan="2" data-options="field:'item_sub_family',width:100,halign:'center'">Sub Product <br>Family</th>
+            <th rowspan="2" data-options="field:'kind',width:100,halign:'center'">Kind of Color</th>
+            <th rowspan="2" data-options="field:'uom',width:80,halign:'center'">UOM</th>
+            <th rowspan="2" data-options="field:'status',width:100,align:'center', styler:cellStyler, formatter:cellFormatter">Status</th>
             <th colspan="2" data-options="field:'',width:100,halign:'center'"> Created</th>
             <th colspan="2" data-options="field:'',width:100,halign:'center'"> Updated</th>
         </tr>
@@ -38,10 +40,6 @@
                 <span style="width:35%; display:inline-block;">Qty Maximum</span>
                 <input style="width:60%;" name="qty" id="qty" precision="2" class="easyui-numberbox">
             </div>
-            <div class="fitem">
-                <span style="width:35%; display:inline-block;">Unit of Measure</span>
-                <input style="width:60%;" name="uom" id="uom" required="" class="easyui-combobox">
-            </div>
             <!-- <div class="fitem">
                 <span style="width:35%; display:inline-block;">Volume</span>
                 <input style="width:60%;" id="volume" class="easyui-numberbox" readonly>
@@ -49,6 +47,18 @@
             <div class="fitem">
                 <span style="width:35%; display:inline-block;">Total Purging</span>
                 <input style="width:60%;" name="total" id="total" precision="2" class="easyui-numberbox" readonly>
+            </div>
+            <div class="fitem">
+                <span style="width:35%; display:inline-block;">Sub Product Family</span>
+                <input style="width:60%;" name="item_sub_family" id="item_sub_family" required="" class="easyui-combobox">
+            </div>
+            <div class="fitem">
+                <span style="width:35%; display:inline-block;">Kind of Colors</span>
+                <input style="width:60%;" name="kind" id="kind" required="" class="easyui-combobox">
+            </div>
+            <div class="fitem">
+                <span style="width:35%; display:inline-block;">Unit of Measure</span>
+                <input style="width:60%;" name="uom" id="uom" required="" class="easyui-combobox">
             </div>
             <div class="fitem">
                 <span style="width:35%; display:inline-block;">Status</span>
@@ -208,6 +218,20 @@
                 }
             });
         }
+    });
+
+    $('#item_sub_family').combobox({
+        url:'<?= base_url('master/item_family_subs/reads_number'); ?>',
+        valueField:'number',
+        textField:'number',
+        prompt: 'Choose Sub Product Family',
+    });
+
+    $('#kind').combobox({
+        url:'<?= base_url('master/item_colors/reads_kind'); ?>',
+        valueField:'kind',
+        textField:'kind',
+        prompt: 'Choose Kind of Colors',
     });
 
     $('#uom').combobox({

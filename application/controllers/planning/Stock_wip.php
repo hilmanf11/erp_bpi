@@ -14,6 +14,7 @@ class Stock_wip extends CI_Controller
 
         //VALIDASI FORM
         $this->form_validation->set_rules('item_fg_id', 'Product No.', 'required|min_length[1]|max_length[50]|is_unique[stock_wip.item_fg_id]');
+        // $this->form_validation->set_rules('customer_id', 'Customer', 'required|min_length[1]|max_length[50]|is_unique[stock_wip.customer_id]');
     }
 
     //HALAMAN UTAMA
@@ -69,7 +70,7 @@ class Stock_wip extends CI_Controller
             $filter_period_month = @base64_decode($get['filter_period_month']);
             $filter_period_year = @base64_decode($get['filter_period_year']);
             $filter_item_fg_id = @base64_decode($get['filter_item_fg_id']);
-            $filter_customer = @base64_decode($get['filter_customer']);
+            // $filter_customer_id = @base64_decode($get['filter_customer_id']);
             $filter_revision = @base64_decode($get['filter_revision']);
 
             $page = $this->input->post('page');
@@ -81,20 +82,22 @@ class Stock_wip extends CI_Controller
             $result = array();
 
             //Select Query
-            $this->db->select('a.*, b.number as item_fg_number, b.name as item_fg_name, c.customer_id, d.name as customer_name');
+            $this->db->select('a.*, b.number as item_fg_number, b.name as item_fg_name');
             $this->db->from('stock_wip a');
             $this->db->join('item_fg b', 'a.item_fg_id = b.id');
-            $this->db->join('customer_items c', 'a.item_fg_id = c.item_fg_id');
-            $this->db->join('customers d', 'c.customer_id = d.id');
+            // $this->db->join('customer_items c', 'a.item_fg_id = c.item_fg_id AND a.customer_id = c.customer_id');
+            // $this->db->join('customers d', 'c.customer_id = d.id');
             $this->db->like('a.p_month', $filter_period_month);
             $this->db->like('a.p_year', $filter_period_year);
+            // $this->db->like('a.customer_id', $filter_customer_id);
             $this->db->like('a.item_fg_id', $filter_item_fg_id);
-            $this->db->like('d.id', $filter_customer);
+            // $this->db->like('d.id', $filter_customer_id);
             $this->db->like('a.revision', $filter_revision);
             $this->db->group_by('a.p_month');
             $this->db->group_by('a.p_year');
             $this->db->group_by('a.revision');
             $this->db->group_by('a.item_fg_id');
+            // $this->db->group_by('a.customer_id');
             $this->db->order_by('a.created_date', 'DESC');
 
             //Total Data
@@ -173,16 +176,7 @@ class Stock_wip extends CI_Controller
                 'pp' => $data->val($i, 4),
                 'p1' => $data->val($i, 5),
                 'p2' => $data->val($i, 6),
-                'p3' => $data->val($i, 7),
-                'p4' => $data->val($i, 8),
-                'p5' => $data->val($i, 9),
-                'p6' => $data->val($i, 10),
-                'p7' => $data->val($i, 11),
-                'p8' => $data->val($i, 12),
-                'p9' => $data->val($i, 13),
-                'p10' => $data->val($i, 14),
-                'rqa' => $data->val($i, 15),
-                'hav' => $data->val($i, 16)
+                'p3' => $data->val($i, 7)
             );
         }
 
@@ -193,14 +187,14 @@ class Stock_wip extends CI_Controller
 
     public function uploadclearFailed()
     {
-        @unlink('excel/failed/stock_wip.txt');
+        @unlink('failed/stock_wip.txt');
     }
 
     public function uploadcreateFailed()
     {
         if ($this->input->post()) {
             $message = $this->input->post('message');
-            $textFailed = fopen('excel/failed/stock_wip.txt', 'a');
+            $textFailed = fopen('failed/stock_wip.txt', 'a');
             fwrite($textFailed, $message . "\n");
             fclose($textFailed);
         }
@@ -209,7 +203,7 @@ class Stock_wip extends CI_Controller
     //UPLOAD DOWNLOAD FAILED
     public function uploadDownloadFailed()
     {
-        $file = "excel/failed/stock_wip.txt";
+        $file = "failed/stock_wip.txt";
         header('Content-Description: File Failed');
         header('Content-Disposition: attachment; filename=' . basename($file));
         header('Expires: 0');
@@ -225,8 +219,14 @@ class Stock_wip extends CI_Controller
     {
         if ($this->input->post()) {
             $data = $this->input->post('data');
+            
+            $item_fg = $this->crud->read('item_fg', [], [
+                "id" => $data['item_fg_id'],
+            ]);
 
             $stock_wip = $this->crud->read('stock_wip', [], [
+                "document_no" => $data['document_no'],
+                // "customer_id" => $data['customer_id'],
                 "item_fg_id" => $data['item_fg_id'],
                 "p_month" => $data['p_month'],
                 "p_year" => $data['p_year'],
@@ -235,18 +235,13 @@ class Stock_wip extends CI_Controller
                 'p1' => $data['p1'],
                 'p2' => $data['p2'],
                 'p3' => $data['p3'],
-                'p4' => $data['p4'],
-                'p5' => $data['p5'],
-                'p6' => $data['p6'],
-                'p7' => $data['p7'],
-                'p8' => $data['p8'],
-                'p9' => $data['p9'],
-                'p10' => $data['p10'],
-                'rqa' => $data['rqa'],
-                'hav' => $data['hav'],
             ]);
 
-            if (!empty($stock_wip->item_fg_id)) {
+            if (empty($item_fg->id)) {
+                echo json_encode(array("title" => "Not found", "message" => " Product No. " . $data['item_fg_id'] . " is Not Found!", "theme" => "error"));
+            } elseif (!empty($stock_wip->document_no)) {
+                echo json_encode(array("title" => "Duplicated", "message" => " Document No. " . $data['document_no'] . " is Duplicate Data", "theme" => "error"));
+            } elseif (!empty($stock_wip->item_fg_id)) {
                 echo json_encode(array("title" => "Duplicated", "message" => " Product No. " . $data['item_fg_id'] . " is Duplicate Data", "theme" => "error"));
             } else {
                 $send   = $this->crud->create('stock_wip', $data);
@@ -268,7 +263,7 @@ class Stock_wip extends CI_Controller
         $filter_period_month = @base64_decode($get['filter_period_month']);
         $filter_period_year = @base64_decode($get['filter_period_year']);
         $filter_item_fg_id = @base64_decode($get['filter_item_fg_id']);
-        $filter_customer = @base64_decode($get['filter_customer']);
+        // $filter_customer_id = @base64_decode($get['filter_customer_id']);
         $filter_revision = @base64_decode($get['filter_revision']);
 
         //Config
@@ -276,24 +271,53 @@ class Stock_wip extends CI_Controller
         $this->db->from('config');
         $config = $this->db->get()->row();
 
-        $this->db->select('a.*, b.number as item_fg_number, b.name as item_fg_name, c.item_fg_id, c.customer_id, d.name as customer_name');
+        $this->db->select('a.*, b.number as item_fg_number, b.name as item_fg_name');
         $this->db->from('stock_wip a');
         $this->db->join('item_fg b', 'a.item_fg_id = b.id');
-        $this->db->join('customer_items c', 'a.item_fg_id = c.item_fg_id');
-        $this->db->join('customers d', 'c.customer_id = d.id');
+        // $this->db->join('customer_items c', 'a.item_fg_id = c.item_fg_id AND a.customer_id = c.customer_id');
+        // $this->db->join('customers d', 'c.customer_id = d.id');
         $this->db->like('a.p_month', $filter_period_month);
         $this->db->like('a.p_year', $filter_period_year);
+        // $this->db->like('a.customer_id', $filter_customer_id);
         $this->db->like('a.item_fg_id', $filter_item_fg_id);
-        $this->db->like('d.id', $filter_customer);
+        // $this->db->like('d.id', $filter_customer_id);
         $this->db->like('a.revision', $filter_revision);
         $this->db->group_by('a.p_month');
         $this->db->group_by('a.p_year');
         $this->db->group_by('a.revision');
         $this->db->group_by('a.item_fg_id');
+        // $this->db->group_by('a.customer_id');
         $this->db->order_by('a.created_date', 'DESC');
         $records = $this->db->get()->result_array();
 
-        $html = '<html><head><title>Print Data</title></head><style>body {font-family: Arial, Helvetica, sans-serif;}#stock_wip {border-collapse: collapse;width: 100%;font-size: 12px;}#stock_wip td, #stock_wip th {border: 1px solid #ddd;padding: 2px;}#stock_wip tr:nth-child(even){background-color: #f2f2f2;}#stock_wip tr:hover {background-color: #ddd;}#stock_wip th {padding-top: 2px;padding-bottom: 2px;text-align: left;color: black;}</style><body>
+        if ($filter_period_month == "01") {
+            $month_name = "JANUARY";
+        } elseif ($filter_period_month == "02") {
+            $month_name = "FEBRUARY";
+        } elseif ($filter_period_month == "03") {
+            $month_name = "MARCH";
+        } elseif ($filter_period_month == "04") {
+            $month_name = "APRIL";
+        } elseif ($filter_period_month == "05") {
+            $month_name = "MAY";
+        } elseif ($filter_period_month == "06") {
+            $month_name = "JUNE";
+        } elseif ($filter_period_month == "07") {
+            $month_name = "JULY";
+        } elseif ($filter_period_month == "08") {
+            $month_name = "AUGUST";
+        } elseif ($filter_period_month == "09") {
+            $month_name = "SEPTEMBER";
+        } elseif ($filter_period_month == "10") {
+            $month_name = "OCTOBER";
+        } elseif ($filter_period_month == "11") {
+            $month_name = "NOVEMBER";
+        } elseif ($filter_period_month == "12") {
+            $month_name = "DECEMBER";
+        }
+
+        if ($filter_revision == "" && $filter_item_fg_id == "") {
+            $html = '<html><head><title>Print Data</title></head><style>body {font-family: Arial, Helvetica, sans-serif;}#stock_wip {border-collapse: collapse;width: 100%;font-size: 12px;}#stock_wip td, #stock_wip th {border: 1px solid #ddd;padding: 2px;}#stock_wip tr:nth-child(even){background-color: #f2f2f2;}#stock_wip tr:hover {background-color: #ddd;}#stock_wip th {padding-top: 2px;padding-bottom: 2px;text-align: left;color: black;}</style><body>
             <center>
                 <div style="float: left; font-size: 12px; text-align: left;">
                     <table style="width: 100%;">
@@ -325,7 +349,99 @@ class Stock_wip extends CI_Controller
                                 <small>: </small>
                             </td>
                             <td style="font-size: 14px; text-align: left; margin:2px;">
-                                <small><b>' . $filter_period_month . '/' . $filter_period_year . '</b></small>
+                                <small><b>' . $month_name . ' ' . $filter_period_year . '</b></small>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td style="font-size: 14px; text-align: left; margin:2px;">
+                                <small>REVISION</small>
+                            </td>
+                            <td style="font-size: 14px; text-align: left; margin:2px;">
+                                <small>: </small>
+                            </td>
+                            <td style="font-size: 14px; text-align: left; margin:2px;">
+                                <small><b>0</b></small>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td style="font-size: 14px; text-align: left; margin:2px;">
+                                <small>PRODUCT NO.</small>
+                            </td>
+                            <td style="font-size: 14px; text-align: left; margin:2px;">
+                                <small>: </small>
+                            </td>
+                            <td style="font-size: 14px; text-align: left; margin:2px;">
+                                <small><b>ALL</b></small>
+                            </td>
+                        </tr>
+                    </table>
+                </div>
+            </center>
+            
+            <table id="stock_wip" border="1">
+                <tr>
+                    <th rowspan="2" width="20">No</th>
+                    <th rowspan="2">Document No</th>
+                    <th rowspan="2">Product No</th>
+                    <th rowspan="2">Product Name</th>
+                    <th colspan="4" style="text-align:center;">Stock WIP</th>  
+                </tr>
+                <tr>
+                    <th>Injection</th>
+                    <th>Assembly</th>
+                    <th>On Hold</th>
+                    <th>Subcont</th>
+                </tr>';
+            $no = 1;
+            foreach ($records as $data) {
+                $html .= '<tr>
+                        <td>' . $no . '</td>
+                        <td>' . $data['document_no'] . '</td>
+                        <td>' . $data['item_fg_number'] . '</td>
+                        <td>' . $data['item_fg_name'] . '</td>
+                        <td>' . $data['pp'] . '</td>
+                        <td>' . $data['p1'] . '</td>
+                        <td>' . $data['p2'] . '</td>
+                        <td>' . $data['p3'] . '</td>
+                    </tr>';
+                $no++;
+            }
+            $html .= '</table></body></html>';
+            echo $html;
+        } elseif ($filter_revision != "" && $filter_item_fg_id == "") {
+            $html = '<html><head><title>Print Data</title></head><style>body {font-family: Arial, Helvetica, sans-serif;}#stock_wip {border-collapse: collapse;width: 100%;font-size: 12px;}#stock_wip td, #stock_wip th {border: 1px solid #ddd;padding: 2px;}#stock_wip tr:nth-child(even){background-color: #f2f2f2;}#stock_wip tr:hover {background-color: #ddd;}#stock_wip th {padding-top: 2px;padding-bottom: 2px;text-align: left;color: black;}</style><body>
+            <center>
+                <div style="float: left; font-size: 12px; text-align: left;">
+                    <table style="width: 100%;">
+                        <tr>
+                            <td width="50" style="font-size: 12px; vertical-align: top; text-align: center; vertical-align:jus margin-right:10px;">
+                                <img src="' . $config->favicon . '" width="30">
+                            </td>
+                            <td style="font-size: 14px; text-align: left; margin:2px;">
+                                <b>' . $config->name . '</b>
+                            </td>
+                        </tr>
+                    </table>
+                </div>
+                <div style="float: right; font-size: 12px; text-align: right;">
+                    Print Date ' . date("d M Y H:m:s") . ' <br>
+                    Print By ' . $this->session->username . '  
+                </div>
+                <br><br>
+                <div style="float: centet; font-size: 16px; text-align: center;">
+                    <h3>DATA STOCK WIP</h3>
+                </div>
+                <div style="float: left; font-size: 12px; text-align: left; width:60%;">
+                    <table style="width: 100%;">
+                        <tr>
+                            <td style="font-size: 14px; text-align: left; margin:2px;">
+                                <small>PERIOD</small>
+                            </td>
+                            <td style="font-size: 14px; text-align: left; margin:2px;">
+                                <small>: </small>
+                            </td>
+                            <td style="font-size: 14px; text-align: left; margin:2px;">
+                                <small><b>' . $month_name . ' ' . $filter_period_year . '</b></small>
                             </td>
                         </tr>
                         <tr>
@@ -339,6 +455,17 @@ class Stock_wip extends CI_Controller
                                 <small><b>' . $filter_revision . '</b></small>
                             </td>
                         </tr>
+                        <tr>
+                            <td style="font-size: 14px; text-align: left; margin:2px;">
+                                <small>PRODUCT NO.</small>
+                            </td>
+                            <td style="font-size: 14px; text-align: left; margin:2px;">
+                                <small>: </small>
+                            </td>
+                            <td style="font-size: 14px; text-align: left; margin:2px;">
+                                <small><b>ALL</b></small>
+                            </td>
+                        </tr>
                     </table>
                 </div>
             </center>
@@ -347,53 +474,220 @@ class Stock_wip extends CI_Controller
                 <tr>
                     <th rowspan="2" width="20">No</th>
                     <th rowspan="2">Document No</th>
-                    <th rowspan="2">Customer Name</th>
                     <th rowspan="2">Product No</th>
                     <th rowspan="2">Product Name</th>
-                    <th colspan="13" style="text-align:center;">Stock WIP</th>  
+                    <th colspan="4" style="text-align:center;">Stock WIP</th>  
                 </tr>
                 <tr>
-                    <th>PP</th>
-                    <th>P1</th>
-                    <th>P2</th>
-                    <th>P3</th>
-                    <th>P4</th>
-                    <th>P5</th>
-                    <th>P6</th>
-                    <th>P7</th>
-                    <th>P8</th>
-                    <th>P9</th>
-                    <th>P10</th>
-                    <th>RQA</th>
-                    <th>HAV</th>
+                    <th>Injection</th>
+                    <th>Assembly</th>
+                    <th>On Hold</th>
+                    <th>Subcont</th>
                 </tr>';
-                
-        $no = 1;
-        foreach ($records as $data) {
-            $html .= '<tr>
+            $no = 1;
+            foreach ($records as $data) {
+                $html .= '<tr>
                         <td>' . $no . '</td>
                         <td>' . $data['document_no'] . '</td>
-                        <td>' . $data['customer_name'] . '</td>
                         <td>' . $data['item_fg_number'] . '</td>
                         <td>' . $data['item_fg_name'] . '</td>
                         <td>' . $data['pp'] . '</td>
                         <td>' . $data['p1'] . '</td>
                         <td>' . $data['p2'] . '</td>
                         <td>' . $data['p3'] . '</td>
-                        <td>' . $data['p4'] . '</td>
-                        <td>' . $data['p5'] . '</td>
-                        <td>' . $data['p6'] . '</td>
-                        <td>' . $data['p7'] . '</td>
-                        <td>' . $data['p8'] . '</td>
-                        <td>' . $data['p9'] . '</td>
-                        <td>' . $data['p10'] . '</td>
-                        <td>' . $data['rqa'] . '</td>
-                        <td>' . $data['hav'] . '</td>
                     </tr>';
-
-            $no++;
+                $no++;
+            }
+            $html .= '</table></body></html>';
+            echo $html;
+        } elseif ($filter_revision == "" && $filter_item_fg_id != "") {
+            foreach ($records as $data) {
+                $filter_item_fg_id = $data['item_fg_number'];
+            }
+            $html = '<html><head><title>Print Data</title></head><style>body {font-family: Arial, Helvetica, sans-serif;}#stock_wip {border-collapse: collapse;width: 100%;font-size: 12px;}#stock_wip td, #stock_wip th {border: 1px solid #ddd;padding: 2px;}#stock_wip tr:nth-child(even){background-color: #f2f2f2;}#stock_wip tr:hover {background-color: #ddd;}#stock_wip th {padding-top: 2px;padding-bottom: 2px;text-align: left;color: black;}</style><body>
+            <center>
+                <div style="float: left; font-size: 12px; text-align: left;">
+                    <table style="width: 100%;">
+                        <tr>
+                            <td width="50" style="font-size: 12px; vertical-align: top; text-align: center; vertical-align:jus margin-right:10px;">
+                                <img src="' . $config->favicon . '" width="30">
+                            </td>
+                            <td style="font-size: 14px; text-align: left; margin:2px;">
+                                <b>' . $config->name . '</b>
+                            </td>
+                        </tr>
+                    </table>
+                </div>
+                <div style="float: right; font-size: 12px; text-align: right;">
+                    Print Date ' . date("d M Y H:m:s") . ' <br>
+                    Print By ' . $this->session->username . '  
+                </div>
+                <br><br>
+                <div style="float: centet; font-size: 16px; text-align: center;">
+                    <h3>DATA STOCK WIP</h3>
+                </div>
+                <div style="float: left; font-size: 12px; text-align: left; width:60%;">
+                    <table style="width: 100%;">
+                        <tr>
+                            <td style="font-size: 14px; text-align: left; margin:2px;">
+                                <small>PERIOD</small>
+                            </td>
+                            <td style="font-size: 14px; text-align: left; margin:2px;">
+                                <small>: </small>
+                            </td>
+                            <td style="font-size: 14px; text-align: left; margin:2px;">
+                                <small><b>' . $month_name . ' ' . $filter_period_year . '</b></small>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td style="font-size: 14px; text-align: left; margin:2px;">
+                                <small>REVISION</small>
+                            </td>
+                            <td style="font-size: 14px; text-align: left; margin:2px;">
+                                <small>: </small>
+                            </td>
+                            <td style="font-size: 14px; text-align: left; margin:2px;">
+                                <small><b>ALL</b></small>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td style="font-size: 14px; text-align: left; margin:2px;">
+                                <small>PRODUCT NO.</small>
+                            </td>
+                            <td style="font-size: 14px; text-align: left; margin:2px;">
+                                <small>: </small>
+                            </td>
+                            <td style="font-size: 14px; text-align: left; margin:2px;">
+                                <small><b>' . $filter_item_fg_id . '</b></small>
+                            </td>
+                        </tr>
+                    </table>
+                </div>
+            </center>
+            
+            <table id="stock_wip" border="1">
+                <tr>
+                    <th rowspan="2" width="20">No</th>
+                    <th rowspan="2">Document No</th>
+                    <th rowspan="2">Product No</th>
+                    <th rowspan="2">Product Name</th>
+                    <th colspan="4" style="text-align:center;">Stock WIP</th>  
+                </tr>
+                <tr>
+                    <th>Injection</th>
+                    <th>Assembly</th>
+                </tr>';
+            $no = 1;
+            foreach ($records as $data) {
+                $html .= '<tr>
+                        <td>' . $no . '</td>
+                        <td>' . $data['document_no'] . '</td>
+                        <td>' . $data['item_fg_number'] . '</td>
+                        <td>' . $data['item_fg_name'] . '</td>
+                        <td>' . $data['pp'] . '</td>
+                        <td>' . $data['p1'] . '</td>
+                        <td>' . $data['p2'] . '</td>
+                        <td>' . $data['p3'] . '</td>
+                    </tr>';
+                $no++;
+            }
+            $html .= '</table></body></html>';
+            echo $html;
+        } elseif ($filter_revision != "" && $filter_item_fg_id != "") {
+            foreach ($records as $data) {
+                $filter_item_fg_id = $data['item_fg_number'];
+            }
+            $html = '<html><head><title>Print Data</title></head><style>body {font-family: Arial, Helvetica, sans-serif;}#stock_wip {border-collapse: collapse;width: 100%;font-size: 12px;}#stock_wip td, #stock_wip th {border: 1px solid #ddd;padding: 2px;}#stock_wip tr:nth-child(even){background-color: #f2f2f2;}#stock_wip tr:hover {background-color: #ddd;}#stock_wip th {padding-top: 2px;padding-bottom: 2px;text-align: left;color: black;}</style><body>
+            <center>
+                <div style="float: left; font-size: 12px; text-align: left;">
+                    <table style="width: 100%;">
+                        <tr>
+                            <td width="50" style="font-size: 12px; vertical-align: top; text-align: center; vertical-align:jus margin-right:10px;">
+                                <img src="' . $config->favicon . '" width="30">
+                            </td>
+                            <td style="font-size: 14px; text-align: left; margin:2px;">
+                                <b>' . $config->name . '</b>
+                            </td>
+                        </tr>
+                    </table>
+                </div>
+                <div style="float: right; font-size: 12px; text-align: right;">
+                    Print Date ' . date("d M Y H:m:s") . ' <br>
+                    Print By ' . $this->session->username . '  
+                </div>
+                <br><br>
+                <div style="float: centet; font-size: 16px; text-align: center;">
+                    <h3>DATA STOCK WIP</h3>
+                </div>
+                <div style="float: left; font-size: 12px; text-align: left; width:60%;">
+                    <table style="width: 100%;">
+                        <tr>
+                            <td style="font-size: 14px; text-align: left; margin:2px;">
+                                <small>PERIOD</small>
+                            </td>
+                            <td style="font-size: 14px; text-align: left; margin:2px;">
+                                <small>: </small>
+                            </td>
+                            <td style="font-size: 14px; text-align: left; margin:2px;">
+                                <small><b>' . $month_name . ' ' . $filter_period_year . '</b></small>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td style="font-size: 14px; text-align: left; margin:2px;">
+                                <small>REVISION</small>
+                            </td>
+                            <td style="font-size: 14px; text-align: left; margin:2px;">
+                                <small>: </small>
+                            </td>
+                            <td style="font-size: 14px; text-align: left; margin:2px;">
+                                <small><b>' . $filter_revision . '</b></small>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td style="font-size: 14px; text-align: left; margin:2px;">
+                                <small>PRODUCT NO.</small>
+                            </td>
+                            <td style="font-size: 14px; text-align: left; margin:2px;">
+                                <small>: </small>
+                            </td>
+                            <td style="font-size: 14px; text-align: left; margin:2px;">
+                                <small><b>' . $filter_item_fg_id . '</b></small>
+                            </td>
+                        </tr>
+                    </table>
+                </div>
+            </center>
+            
+            <table id="stock_wip" border="1">
+                <tr>
+                    <th rowspan="2" width="20">No</th>
+                    <th rowspan="2">Document No</th>
+                    <th rowspan="2">Product No</th>
+                    <th rowspan="2">Product Name</th>
+                    <th colspan="4" style="text-align:center;">Stock WIP</th>  
+                </tr>
+                <tr>
+                    <th>Injection</th>
+                    <th>Assembly</th>
+                    <th>On Hold</th>
+                    <th>Subcont</th>
+                </tr>';
+            $no = 1;
+            foreach ($records as $data) {
+                $html .= '<tr>
+                        <td>' . $no . '</td>
+                        <td>' . $data['document_no'] . '</td>
+                        <td>' . $data['item_fg_number'] . '</td>
+                        <td>' . $data['item_fg_name'] . '</td>
+                        <td>' . $data['pp'] . '</td>
+                        <td>' . $data['p1'] . '</td>
+                        <td>' . $data['p2'] . '</td>
+                        <td>' . $data['p3'] . '</td>
+                    </tr>';
+                $no++;
+            }
+            $html .= '</table></body></html>';
+            echo $html;
         }
-        $html .= '</table></body></html>';
-        echo $html;
     }
 }

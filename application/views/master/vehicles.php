@@ -8,6 +8,8 @@
             <th rowspan="2" data-options="field:'police_no',width:100,halign:'center'">Police No.</th>
             <th colspan="3" data-options="field:'',width:100,halign:'center'">Dimension (cm)</th>
             <th rowspan="2" data-options="field:'volume',width:100,halign:'center',formatter:volumeformat">Volume Box <br>(cm3)</th>
+            <th rowspan="2" data-options="field:'remark',width:150,halign:'center'">Remarks</th>
+            <th rowspan="2" data-options="field:'status',width:100,halign:'center', styler:cellStyler, formatter:cellFormatter">Status</th>
             <th colspan="2" data-options="field:'',width:100,halign:'center'"> Created</th>
             <th colspan="2" data-options="field:'',width:100,halign:'center'"> Updated</th>
         </tr>
@@ -59,6 +61,17 @@
                 <span style="width:35%; display:inline-block;">Volume Box</span>
                 <input style="width:60%;" name="volume" id="volume" precision="2" class="easyui-numberbox" readonly>
             </div>
+            <div class="fitem">
+                <span style="width:35%; display:inline-block;">Remarks</span>
+                <input style="width:60%;" name="remark" id="remark" class="easyui-textbox">
+            </div>
+            <div class="fitem">
+                <span style="width:35%; display:inline-block;">Status</span>
+                <select style="width:60%;" name="status" id="status" required="" panelHeight="auto" class="easyui-combobox">
+                    <option value="0">Active</option>
+                    <option value="1">Not Active</option>
+                </select>
+            </div>
         </fieldset>
     </form>
 </div>
@@ -91,6 +104,8 @@
         $('#dlg_insert').dialog('open');
         url_save = '<?= base_url('master/vehicles/create') ?>';
         $('#frm_insert').form('clear');
+
+        $('#status').combobox('setValue', '0');
 
         $.ajax({
             type : "post",
@@ -233,6 +248,23 @@
             });
         return "<b>" + formatter.format(value) + "</b>";
     }
+
+    //CELLSTYLE STATUS
+    function cellStyler(value, row, index) {
+        if (value == 0) {
+            return 'background: #53D636; color:white;';
+        } else {
+            return 'background: #FF5F5F; color:white;';
+        }
+    }
+    //FORMATTER STATUS
+    function cellFormatter(value) {
+        if (value == 0) {
+            return 'Active';
+        } else {
+            return 'Not Active';
+        }
+    };
 
     // UPLOAD DATA
     $('#dlg_upload').dialog({

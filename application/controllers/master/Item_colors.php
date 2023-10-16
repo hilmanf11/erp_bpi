@@ -34,6 +34,12 @@ class Item_colors extends CI_Controller
         $send = $this->crud->reads('item_colors', ["name" => $post]);
         echo json_encode($send);
     }
+    public function reads_kind()
+    {
+        $post = isset($_POST['q']) ? $_POST['q'] : "";
+        $send = $this->crud->query("SELECT kind FROM item_colors GROUP BY kind ASC");
+        echo json_encode($send);
+    }
     //GET DATATABLES
     public function datatables()
     {
@@ -157,6 +163,7 @@ class Item_colors extends CI_Controller
                 <th>ID</th>
                 <th>Name</th>
                 <th>Description</th>
+                <th>Kind of Colors</th>
             </tr>';
         $no = 1;
         foreach ($records as $data) {
@@ -164,7 +171,8 @@ class Item_colors extends CI_Controller
                     <td>' . $no . '</td>
                     <td>' . $data['id'] . '</td>
                     <td>' . $data['name'] . '</td>
-                    <td>' . $data['description'] . '</td>';
+                    <td>' . $data['description'] . '</td>
+                    <td>' . $data['kind'] . '</td>';
             $no++;
         }
         $html .= '</table></body></html>';

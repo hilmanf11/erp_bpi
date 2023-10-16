@@ -12,25 +12,25 @@
     <thead>
         <tr>
             <th rowspan="2" data-options="field:'number_customer',width:150,halign:'center'">Product Customer</th>
-            <th rowspan="2" data-options="field:'total_mold',width:100,halign:'center'">Total Mold</th>
-            <th rowspan="2" data-options="field:'process',width:100,halign:'center'">Process Type</th>
+            <th rowspan="2" data-options="field:'total_mold',width:50,align:'center'">Total <br>Mold</th>
+            <th rowspan="2" data-options="field:'process',width:80,align:'center'">Process <br>Type</th>
             <th rowspan="2" data-options="field:'division_name',width:100,halign:'center'">Division</th>
-            <th rowspan="2" data-options="field:'boxs',width:100,halign:'center'">Box</th>
-            <th rowspan="2" data-options="field:'polybag',width:100,halign:'center'">Polybag Label</th>
-            <th rowspan="2" data-options="field:'box_label',width:100,halign:'center'">Box Label</th>
-            <th rowspan="2" data-options="field:'ng_ration',width:90,halign:'center'">NG Ratio (%)</th>
-            <th rowspan="2" data-options="field:'is_no',width:150,halign:'center'">IS No.</th>
-            <th rowspan="2" data-options="field:'weight',width:100,halign:'center'">Weight (gram)</th>
-            <th rowspan="2" data-options="field:'color',width:110,halign:'center'">Color</th>
-            <th rowspan="2" data-options="field:'leadtime',width:110,halign:'center'">Lead Time (Day)</th>
-            <th rowspan="2" data-options="field:'mpq',width:50,halign:'center'">MPQ</th>
-            <th rowspan="2" data-options="field:'moq',width:50,halign:'center'">MOQ</th>
-            <th rowspan="2" data-options="field:'qty_box',width:80,halign:'center'">QTY/Box</th>
-            <th rowspan="2" data-options="field:'safety_stock',width:100,halign:'center'">Safety Stock</th>
-            <th rowspan="2" data-options="field:'min',width:80,halign:'center'">Min</th>
-            <th rowspan="2" data-options="field:'max',width:80,halign:'center'">Max</th>
+            <th rowspan="2" data-options="field:'boxs',width:200,halign:'center'">Box</th>
+            <th rowspan="2" data-options="field:'polybag',width:70,align:'center'">Polybag <br>Label</th>
+            <th rowspan="2" data-options="field:'box_label',width:70,align:'center'">Box <br>Label</th>
+            <th rowspan="2" data-options="field:'ng_ration',width:90,align:'center'">NG Ratio (%)</th>
+            <th rowspan="2" data-options="field:'is_no',width:100,halign:'center'">IS No.</th>
+            <th rowspan="2" data-options="field:'weight',width:100,align:'center'">Weight (gram)</th>
+            <th rowspan="2" data-options="field:'color',width:100,halign:'center'">Color</th>
+            <th rowspan="2" data-options="field:'leadtime',width:80,align:'center'">Lead Time <br>(Day)</th>
+            <th rowspan="2" data-options="field:'mpq',width:50,align:'center'">MPQ</th>
+            <th rowspan="2" data-options="field:'moq',width:50,align:'center'">MOQ</th>
+            <th rowspan="2" data-options="field:'qty_box',width:80,align:'center'">QTY/Box</th>
+            <!-- <th rowspan="2" data-options="field:'safety_stock',width:100,halign:'center'">Safety Stock</th> -->
+            <th rowspan="2" data-options="field:'min',width:50,align:'center'">Min</th>
+            <th rowspan="2" data-options="field:'max',width:50,align:'center'">Max</th>
             <th rowspan="2" data-options="field:'attachment',width:100,halign:'center',formatter:cellbutton">Attachment</th>
-            <th rowspan="2" data-options="field:'status',width:100,halign:'center', styler:cellStyler, formatter:cellFormatter">Status</th>
+            <th rowspan="2" data-options="field:'status',width:100,align:'center', styler:cellStyler, formatter:cellFormatter">Status</th>
             <th colspan="2" data-options="field:'',width:100,halign:'center'"> Created</th>
             <th colspan="2" data-options="field:'',width:100,halign:'center'"> Updated</th>
         </tr>
@@ -108,7 +108,7 @@
                 </div>
             </div>
             <div style="float:left; width:50%;">
-                
+
                 <div class="fitem">
                     <span style="width:35%; display:inline-block;">IS No.</span>
                     <input style="width:60%;" name="is_no" id="is_no" class="easyui-textbox">
@@ -181,11 +181,12 @@
         $('#dlg_insert').dialog('open');
         url_save = '<?= base_url('master/item_fg/create') ?>';
         $('#frm_insert').form('clear');
-        
+
         $('#polybag').combobox('setValue', 'YES');
         $('#box_label').combobox('setValue', 'YES');
         $('#status').combobox('setValue', '0');
     }
+
     //EDIT DATA
     function update() {
         var row = $('#dg').datagrid('getSelected');
@@ -276,7 +277,7 @@
                             } else {
                                 toastr.error(result.message, result.title);
                             }
-                            
+
                             $('#dlg_insert').dialog('close');
                             $('#dg').datagrid('reload');
                         }
@@ -287,37 +288,37 @@
     });
 
     $('#process').combobox({
-        url:'<?= base_url('master/item_process_flow/reads'); ?>',
-        valueField:'name',
-        textField:'name',
+        url: '<?= base_url('master/item_process_flow/reads'); ?>',
+        valueField: 'name',
+        textField: 'name',
         prompt: 'Choose Process Type',
     });
 
     $('#boxs').combobox({
-        url:'<?= base_url('master/item_boxs/reads'); ?>',
-        valueField:'name',
-        textField:'name',
+        url: '<?= base_url('master/item_boxs/reads'); ?>',
+        valueField: 'name',
+        textField: 'name',
         prompt: 'Choose Boxs',
     });
 
     $('#color').combobox({
-        url:'<?= base_url('master/item_colors/reads'); ?>',
-        valueField:'name',
-        textField:'name',
+        url: '<?= base_url('master/item_colors/reads'); ?>',
+        valueField: 'name',
+        textField: 'name',
         prompt: 'Choose Colors',
     });
 
     $('#division_id').combobox({
-        url:'<?= base_url('master/divisions/reads/'); ?>',
-        valueField:'id',
-        textField:'name',
+        url: '<?= base_url('master/divisions/reads/'); ?>',
+        valueField: 'id',
+        textField: 'name',
         prompt: 'Choose Division',
         onSelect: function(division) {
             $.ajax({
-                type : "post",
-                url : "<?= base_url('master/item_fg/autoid/')?>" + "/" + division.number,
-                dataType : "html",
-                success : function(response){
+                type: "post",
+                url: "<?= base_url('master/item_fg/autoid/') ?>" + "/" + division.number,
+                dataType: "html",
+                success: function(response) {
                     $('#id').textbox('setValue', response);
                 }
             });
@@ -343,89 +344,89 @@
 
     //
     function cellbutton(value) {
-        if(value != null){
-            return '<a target="_blank" href="'+value+'" class="btn btn-primary btn-sm" style="pointer-events: auto; opacity:1; width:100%;"><i class="fa fa-eye"></i> View</a>';
+        if (value != null) {
+            return '<a target="_blank" href="' + value + '" class="btn btn-primary btn-sm" style="pointer-events: auto; opacity:1; width:100%;"><i class="fa fa-eye"></i> View</a>';
             // alert(value);
         }
     };
 
     // UPLOAD DATA
     $('#dlg_upload').dialog({
-            buttons: [{
-                text: 'List Failed',
-                handler: function() {
-                    window.open('<?= base_url('master/item_fg/uploadDownloadFailed') ?>', '_blank');
-                }
-            }, {
-                text: 'Upload',
-                iconCls: 'icon-ok',
-                handler: function() {
-                    $('#frm_upload').form('submit', {
-                        url: '<?= base_url('master/item_fg/upload') ?>',
-                        onSubmit: function() {
-                            if ($(this).form('validate') == false) {
-                                return $(this).form('validate');
-                            } else {
-                                $.messager.progress({
-                                    title: 'Please Wait',
-                                    msg: 'Importing Excel to Database'
+        buttons: [{
+            text: 'List Failed',
+            handler: function() {
+                window.open('<?= base_url('master/item_fg/uploadDownloadFailed') ?>', '_blank');
+            }
+        }, {
+            text: 'Upload',
+            iconCls: 'icon-ok',
+            handler: function() {
+                $('#frm_upload').form('submit', {
+                    url: '<?= base_url('master/item_fg/upload') ?>',
+                    onSubmit: function() {
+                        if ($(this).form('validate') == false) {
+                            return $(this).form('validate');
+                        } else {
+                            $.messager.progress({
+                                title: 'Please Wait',
+                                msg: 'Importing Excel to Database'
+                            });
+                        }
+                    },
+                    success: function(result) {
+                        $.messager.progress('close');
+                        //Clear File
+                        $.ajax({
+                            url: "<?= base_url('master/item_fg/uploadclearFailed') ?>"
+                        });
+                        var json = eval('(' + result + ')');
+                        requestData(json.total, json);
+
+                        function requestData(total, json, number = 1, value = 0, success = 1, failed = 1) {
+                            if (value < 100) {
+                                value = Math.floor((number / total) * 100);
+                                $('#p_upload').progressbar('setValue', value);
+                                $('#p_start').html(number);
+                                $('#p_finish').html(total);
+
+                                $.ajax({
+                                    type: "POST",
+                                    async: true,
+                                    url: "<?= base_url('master/item_fg/uploadCreate') ?>",
+                                    data: {
+                                        "data": json[number - 1]
+                                    },
+                                    cache: false,
+                                    dataType: "json",
+                                    success: function(result) {
+                                        if (result.theme == "success") {
+                                            $('#p_success').html(success);
+                                            var title = "<b style='color: green;'>" + result.title + "</b> | " + result.message;
+                                            requestData(total, json, number + 1, value, success + 1, failed + 0);
+                                        } else {
+                                            $('#p_failed').html(failed);
+                                            var title = "<b style='color: red;'>" + result.title + "</b> | " + result.message;
+                                            //Json Failed
+                                            $.ajax({
+                                                type: "POST",
+                                                async: true,
+                                                url: "<?= base_url('master/item_fg/uploadcreateFailed') ?>",
+                                                data: {
+                                                    data: json[number - 1],
+                                                    message: result.message
+                                                },
+                                                cache: false
+                                            });
+                                            requestData(total, json, number + 1, value, success + 0, failed + 1);
+                                        }
+                                        $("#p_remarks").append(title + "<br>");
+                                    }
                                 });
                             }
-                        },
-                        success: function(result) {
-                            $.messager.progress('close');
-                            //Clear File
-                            $.ajax({
-                                url: "<?= base_url('master/item_fg/uploadclearFailed') ?>"
-                            });
-                            var json = eval('(' + result + ')');
-                            requestData(json.total, json);
-
-                            function requestData(total, json, number = 1, value = 0, success = 1, failed = 1) {
-                                if (value < 100) {
-                                    value = Math.floor((number / total) * 100);
-                                    $('#p_upload').progressbar('setValue', value);
-                                    $('#p_start').html(number);
-                                    $('#p_finish').html(total);
-
-                                    $.ajax({
-                                        type: "POST",
-                                        async: true,
-                                        url: "<?= base_url('master/item_fg/uploadCreate') ?>",
-                                        data: {
-                                            "data": json[number - 1]
-                                        },
-                                        cache: false,
-                                        dataType: "json",
-                                        success: function(result) {
-                                            if (result.theme == "success") {
-                                                $('#p_success').html(success);
-                                                var title = "<b style='color: green;'>" + result.title + "</b> | " + result.message;
-                                                requestData(total, json, number + 1, value, success + 1, failed + 0);
-                                            } else {
-                                                $('#p_failed').html(failed);
-                                                var title = "<b style='color: red;'>" + result.title + "</b> | " + result.message;
-                                                //Json Failed
-                                                $.ajax({
-                                                    type: "POST",
-                                                    async: true,
-                                                    url: "<?= base_url('master/item_fg/uploadcreateFailed') ?>",
-                                                    data: {
-                                                        data: json[number - 1],
-                                                        message: result.message
-                                                    },
-                                                    cache: false
-                                                });
-                                                requestData(total, json, number + 1, value, success + 0, failed + 1);
-                                            }
-                                            $("#p_remarks").append(title + "<br>");
-                                        }
-                                    });
-                                }
-                            }
                         }
-                    });
-                }
-            }]
-        });
+                    }
+                });
+            }
+        }]
+    });
 </script>

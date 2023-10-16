@@ -13,7 +13,8 @@ class Os_so extends CI_Controller
         $this->load->model('crud');
 
         //VALIDASI FORM
-        $this->form_validation->set_rules('item_fg_id', 'Product No.', 'required|min_length[1]|max_length[50]|is_unique[os_so.item_fg_id]');
+        // $this->form_validation->set_rules('item_fg_id', 'Product No.', 'required|min_length[1]|max_length[50]|is_unique[os_so.item_fg_id]');
+        $this->form_validation->set_rules('customer_id', 'Customer', 'required|min_length[1]|max_length[50]|is_unique[os_so.customer_id]');
     }
 
     //HALAMAN UTAMA
@@ -69,7 +70,7 @@ class Os_so extends CI_Controller
             $filter_period_month = @base64_decode($get['filter_period_month']);
             $filter_period_year = @base64_decode($get['filter_period_year']);
             $filter_item_fg_id = @base64_decode($get['filter_item_fg_id']);
-            $filter_customer = @base64_decode($get['filter_customer']);
+            $filter_customer_id = @base64_decode($get['filter_customer_id']);
             $filter_revision = @base64_decode($get['filter_revision']);
 
             $page = $this->input->post('page');
@@ -81,19 +82,21 @@ class Os_so extends CI_Controller
             $result = array();
 
             //Select Query
-            $this->db->select('a.*, b.number as item_fg_number, b.name as item_fg_name, c.customer_id, d.name as customer_name');
+            $this->db->select('a.*, b.number as item_fg_number, b.name as item_fg_name, c.customer_id as customer_id_cus_item, d.name as customer_name');
             $this->db->from('os_so a');
             $this->db->join('item_fg b', 'a.item_fg_id = b.id');
-            $this->db->join('customer_items c', 'a.item_fg_id = c.item_fg_id');
+            $this->db->join('customer_items c', 'a.item_fg_id = c.item_fg_id AND a.customer_id = c.customer_id');
             $this->db->join('customers d', 'c.customer_id = d.id');
             $this->db->like('a.p_month', $filter_period_month);
             $this->db->like('a.p_year', $filter_period_year);
+            $this->db->like('a.customer_id', $filter_customer_id);
             $this->db->like('a.item_fg_id', $filter_item_fg_id);
-            $this->db->like('d.id', $filter_customer);
+            // $this->db->like('d.id', $filter_customer_id);
             $this->db->like('a.revision', $filter_revision);
             $this->db->group_by('a.p_month');
             $this->db->group_by('a.p_year');
             $this->db->group_by('a.revision');
+            $this->db->group_by('a.customer_id');
             $this->db->group_by('a.item_fg_id');
             $this->db->order_by('a.created_date', 'DESC');
 
@@ -169,8 +172,9 @@ class Os_so extends CI_Controller
                 'p_year' => $p_year,
                 'revision' => $revision,
                 'document_no' => $data->val($i, 2),
-                'item_fg_id' => $data->val($i, 3),
-                'qty' => $data->val($i, 4)
+                'customer_id' => $data->val($i, 3),
+                'item_fg_id' => $data->val($i, 4),
+                'qty' => $data->val($i, 5)
             );
         }
 
@@ -181,14 +185,14 @@ class Os_so extends CI_Controller
 
     public function uploadclearFailed()
     {
-        @unlink('excel/failed/os_so.txt');
+        @unlink('failed/os_so.txt');
     }
 
     public function uploadcreateFailed()
     {
         if ($this->input->post()) {
             $message = $this->input->post('message');
-            $textFailed = fopen('excel/failed/os_so.txt', 'a');
+            $textFailed = fopen('failed/os_so.txt', 'a');
             fwrite($textFailed, $message . "\n");
             fclose($textFailed);
         }
@@ -197,7 +201,7 @@ class Os_so extends CI_Controller
     //UPLOAD DOWNLOAD FAILED
     public function uploadDownloadFailed()
     {
-        $file = "excel/failed/os_so.txt";
+        $file = "failed/os_so.txt";
         header('Content-Description: File Failed');
         header('Content-Disposition: attachment; filename=' . basename($file));
         header('Expires: 0');
@@ -215,6 +219,7 @@ class Os_so extends CI_Controller
             $data = $this->input->post('data');
 
             $os_so = $this->crud->read('os_so', [], [
+                "customer_id" => $data['customer_id'],
                 "item_fg_id" => $data['item_fg_id'],
                 "p_month" => $data['p_month'],
                 "p_year" => $data['p_year'],
@@ -223,7 +228,10 @@ class Os_so extends CI_Controller
 
             if (!empty($os_so->item_fg_id)) {
                 echo json_encode(array("title" => "Duplicated", "message" => " Product No. " . $data['item_fg_id'] . " is Duplicate Data", "theme" => "error"));
-            } else {
+            } elseif (!empty($os_so->customer_id)) {
+                echo json_encode(array("title" => "Duplicated", "message" => " Customer " . $data['customer_id'] . " is Duplicate Data", "theme" => "error"));
+            }
+            else {
                 $send   = $this->crud->create('os_so', $data);
                 echo $send;
             }
@@ -243,7 +251,7 @@ class Os_so extends CI_Controller
         $filter_period_month = @base64_decode($get['filter_period_month']);
         $filter_period_year = @base64_decode($get['filter_period_year']);
         $filter_item_fg_id = @base64_decode($get['filter_item_fg_id']);
-        $filter_customer = @base64_decode($get['filter_customer']);
+        $filter_customer_id = @base64_decode($get['filter_customer_id']);
         $filter_revision = @base64_decode($get['filter_revision']);
 
         //Config
@@ -251,24 +259,53 @@ class Os_so extends CI_Controller
         $this->db->from('config');
         $config = $this->db->get()->row();
 
-        $this->db->select('a.*, b.number as item_fg_number, b.name as item_fg_name, c.customer_id, d.name as customer_name');
+        $this->db->select('a.*, b.number as item_fg_number, b.name as item_fg_name, c.customer_id as customer_id_cus_item, d.name as customer_name');
         $this->db->from('os_so a');
         $this->db->join('item_fg b', 'a.item_fg_id = b.id');
-        $this->db->join('customer_items c', 'a.item_fg_id = c.item_fg_id');
+        $this->db->join('customer_items c', 'a.item_fg_id = c.item_fg_id AND a.customer_id = c.customer_id');
         $this->db->join('customers d', 'c.customer_id = d.id');
         $this->db->like('a.p_month', $filter_period_month);
         $this->db->like('a.p_year', $filter_period_year);
+        $this->db->like('a.customer_id', $filter_customer_id);
         $this->db->like('a.item_fg_id', $filter_item_fg_id);
-        $this->db->like('d.id', $filter_customer);
+        // $this->db->like('d.id', $filter_customer_id);
         $this->db->like('a.revision', $filter_revision);
         $this->db->group_by('a.p_month');
         $this->db->group_by('a.p_year');
         $this->db->group_by('a.revision');
+        $this->db->group_by('a.customer_id');
         $this->db->group_by('a.item_fg_id');
         $this->db->order_by('a.created_date', 'DESC');
         $records = $this->db->get()->result_array();
 
-        $html = '<html><head><title>Print Data</title></head><style>body {font-family: Arial, Helvetica, sans-serif;}#os_so {border-collapse: collapse;width: 100%;font-size: 12px;}#os_so td, #os_so th {border: 1px solid #ddd;padding: 2px;}#os_so tr:nth-child(even){background-color: #f2f2f2;}#os_so tr:hover {background-color: #ddd;}#os_so th {padding-top: 2px;padding-bottom: 2px;text-align: left;color: black;}</style><body>
+        if ($filter_period_month == "01") {
+            $month_name = "JANUARY";
+        } elseif ($filter_period_month == "02") {
+            $month_name = "FEBRUARY";
+        } elseif ($filter_period_month == "03") {
+            $month_name = "MARCH";
+        } elseif ($filter_period_month == "04") {
+            $month_name = "APRIL";
+        } elseif ($filter_period_month == "05") {
+            $month_name = "MAY";
+        } elseif ($filter_period_month == "06") {
+            $month_name = "JUNE";
+        } elseif ($filter_period_month == "07") {
+            $month_name = "JULY";
+        } elseif ($filter_period_month == "08") {
+            $month_name = "AUGUST";
+        } elseif ($filter_period_month == "09") {
+            $month_name = "SEPTEMBER";
+        } elseif ($filter_period_month == "10") {
+            $month_name = "OCTOBER";
+        } elseif ($filter_period_month == "11") {
+            $month_name = "NOVEMBER";
+        } elseif ($filter_period_month == "12") {
+            $month_name = "DECEMBER";
+        }
+
+        if ($filter_revision == "" && $filter_customer_id == "" && $filter_item_fg_id == "") {
+            $html = '<html><head><title>Print Data</title></head><style>body {font-family: Arial, Helvetica, sans-serif;}#os_so {border-collapse: collapse;width: 100%;font-size: 12px;}#os_so td, #os_so th {border: 1px solid #ddd;padding: 2px;}#os_so tr:nth-child(even){background-color: #f2f2f2;}#os_so tr:hover {background-color: #ddd;}#os_so th {padding-top: 2px;padding-bottom: 2px;text-align: left;color: black;}</style><body>
             <center>
                 <div style="float: left; font-size: 12px; text-align: left;">
                     <table style="width: 100%;">
@@ -288,7 +325,7 @@ class Os_so extends CI_Controller
                 </div>
                 <br><br>
                 <div style="float: centet; font-size: 16px; text-align: center;">
-                    <h3>DATA OS PO</h3>
+                    <h3>DATA OUTSTANDING SALES ORDER</h3>
                 </div>
                 <div style="float: left; font-size: 12px; text-align: left; width:30%;">
                     <table style="width: 100%;">
@@ -300,7 +337,7 @@ class Os_so extends CI_Controller
                                 <small>: </small>
                             </td>
                             <td style="font-size: 14px; text-align: left; margin:2px;">
-                                <small><b>' . $filter_period_month . '/' . $filter_period_year . '</b></small>
+                                <small><b>' . $month_name . ' ' . $filter_period_year . '</b></small>
                             </td>
                         </tr>
                         <tr>
@@ -311,7 +348,29 @@ class Os_so extends CI_Controller
                                 <small>: </small>
                             </td>
                             <td style="font-size: 14px; text-align: left; margin:2px;">
-                                <small><b>' . $filter_revision . '</b></small>
+                                <small><b>0</b></small>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td style="font-size: 14px; text-align: left; margin:2px;">
+                                <small>CUSTOMER</small>
+                            </td>
+                            <td style="font-size: 14px; text-align: left; margin:2px;">
+                                <small>: </small>
+                            </td>
+                            <td style="font-size: 14px; text-align: left; margin:2px;">
+                                <small><b>ALL</b></small>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td style="font-size: 14px; text-align: left; margin:2px;">
+                                <small>PRODUCT NO.</small>
+                            </td>
+                            <td style="font-size: 14px; text-align: left; margin:2px;">
+                                <small>: </small>
+                            </td>
+                            <td style="font-size: 14px; text-align: left; margin:2px;">
+                                <small><b>ALL</b></small>
                             </td>
                         </tr>
                     </table>
@@ -327,19 +386,514 @@ class Os_so extends CI_Controller
                     <th>Product Name</th>
                     <th>Quantity</th>
                 </tr>';
-        $no = 1;
-        foreach ($records as $data) {
-            $html .= '<tr>
-                        <td>' . $no . '</td>
-                        <td>' . $data['document_no'] . '</td>
-                        <td>' . $data['customer_name'] . '</td>
-                        <td>' . $data['item_fg_number'] . '</td>
-                        <td>' . $data['item_fg_name'] . '</td>
-                        <td>' . number_format($data['qty']) . '</td>
-                    </tr>';
-            $no++;
+            $no = 1;
+            foreach ($records as $data) {
+                $html .= '<tr>
+                            <td>' . $no . '</td>
+                            <td>' . $data['document_no'] . '</td>
+                            <td>' . $data['customer_name'] . '</td>
+                            <td>' . $data['item_fg_number'] . '</td>
+                            <td>' . $data['item_fg_name'] . '</td>
+                            <td>' . number_format($data['qty']) . '</td>
+                        </tr>';
+                $no++;
+            }
+            $html .= '</table></body></html>';
+            echo $html;
+        } elseif ($filter_revision != "" && $filter_customer_id == "" && $filter_item_fg_id == "") {
+            $html = '<html><head><title>Print Data</title></head><style>body {font-family: Arial, Helvetica, sans-serif;}#os_so {border-collapse: collapse;width: 100%;font-size: 12px;}#os_so td, #os_so th {border: 1px solid #ddd;padding: 2px;}#os_so tr:nth-child(even){background-color: #f2f2f2;}#os_so tr:hover {background-color: #ddd;}#os_so th {padding-top: 2px;padding-bottom: 2px;text-align: left;color: black;}</style><body>
+            <center>
+                <div style="float: left; font-size: 12px; text-align: left;">
+                    <table style="width: 100%;">
+                        <tr>
+                            <td width="50" style="font-size: 12px; vertical-align: top; text-align: center; vertical-align:jus margin-right:10px;">
+                                <img src="' . $config->favicon . '" width="30">
+                            </td>
+                            <td style="font-size: 14px; text-align: left; margin:2px;">
+                                <b>' . $config->name . '</b>
+                            </td>
+                        </tr>
+                    </table>
+                </div>
+                <div style="float: right; font-size: 12px; text-align: right;">
+                    Print Date ' . date("d M Y H:m:s") . ' <br>
+                    Print By ' . $this->session->username . '  
+                </div>
+                <br><br>
+                <div style="float: centet; font-size: 16px; text-align: center;">
+                    <h3>DATA OUTSTANDING SALES ORDER</h3>
+                </div>
+                <div style="float: left; font-size: 12px; text-align: left; width:60%;">
+                    <table style="width: 100%;">
+                        <tr>
+                            <td style="font-size: 14px; text-align: left; margin:2px;">
+                                <small>PERIOD</small>
+                            </td>
+                            <td style="font-size: 14px; text-align: left; margin:2px;">
+                                <small>: </small>
+                            </td>
+                            <td style="font-size: 14px; text-align: left; margin:2px;">
+                                <small><b>' . $month_name . ' ' . $filter_period_year . '</b></small>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td style="font-size: 14px; text-align: left; margin:2px;">
+                                <small>REVISION</small>
+                            </td>
+                            <td style="font-size: 14px; text-align: left; margin:2px;">
+                                <small>: </small>
+                            </td>
+                            <td style="font-size: 14px; text-align: left; margin:2px;">
+                                <small><b>' . $filter_revision . '</b></small>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td style="font-size: 14px; text-align: left; margin:2px;">
+                                <small>CUSTOMER</small>
+                            </td>
+                            <td style="font-size: 14px; text-align: left; margin:2px;">
+                                <small>: </small>
+                            </td>
+                            <td style="font-size: 14px; text-align: left; margin:2px;">
+                                <small><b>ALL</b></small>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td style="font-size: 14px; text-align: left; margin:2px;">
+                                <small>PRODUCT NO.</small>
+                            </td>
+                            <td style="font-size: 14px; text-align: left; margin:2px;">
+                                <small>: </small>
+                            </td>
+                            <td style="font-size: 14px; text-align: left; margin:2px;">
+                                <small><b>ALL</b></small>
+                            </td>
+                        </tr>
+                    </table>
+                </div>
+            </center>
+            
+            <table id="os_so" border="1">
+                <tr>
+                    <th width="20">No</th>
+                    <th>Document No</th>
+                    <th>Customer Name</th>
+                    <th>Product No</th>
+                    <th>Product Name</th>
+                    <th>Quantity</th>
+                </tr>';
+            $no = 1;
+            foreach ($records as $data) {
+                $html .= '<tr>
+                            <td>' . $no . '</td>
+                            <td>' . $data['document_no'] . '</td>
+                            <td>' . $data['customer_name'] . '</td>
+                            <td>' . $data['item_fg_number'] . '</td>
+                            <td>' . $data['item_fg_name'] . '</td>
+                            <td>' . number_format($data['qty']) . '</td>
+                        </tr>';
+                $no++;
+            }
+            $html .= '</table></body></html>';
+            echo $html;
+        } elseif ($filter_revision == "" && $filter_customer_id != "" && $filter_item_fg_id == "") {
+            foreach ($records as $data) {
+                $filter_customer_id = $data['customer_name'];
+            }
+            $html = '<html><head><title>Print Data</title></head><style>body {font-family: Arial, Helvetica, sans-serif;}#os_so {border-collapse: collapse;width: 100%;font-size: 12px;}#os_so td, #os_so th {border: 1px solid #ddd;padding: 2px;}#os_so tr:nth-child(even){background-color: #f2f2f2;}#os_so tr:hover {background-color: #ddd;}#os_so th {padding-top: 2px;padding-bottom: 2px;text-align: left;color: black;}</style><body>
+            <center>
+                <div style="float: left; font-size: 12px; text-align: left;">
+                    <table style="width: 100%;">
+                        <tr>
+                            <td width="50" style="font-size: 12px; vertical-align: top; text-align: center; vertical-align:jus margin-right:10px;">
+                                <img src="' . $config->favicon . '" width="30">
+                            </td>
+                            <td style="font-size: 14px; text-align: left; margin:2px;">
+                                <b>' . $config->name . '</b>
+                            </td>
+                        </tr>
+                    </table>
+                </div>
+                <div style="float: right; font-size: 12px; text-align: right;">
+                    Print Date ' . date("d M Y H:m:s") . ' <br>
+                    Print By ' . $this->session->username . '  
+                </div>
+                <br><br>
+                <div style="float: centet; font-size: 16px; text-align: center;">
+                    <h3>DATA OUTSTANDING SALES ORDER</h3>
+                </div>
+                <div style="float: left; font-size: 12px; text-align: left; width:60%;">
+                    <table>
+                        <tr>
+                            <td style="font-size: 14px; text-align: left; margin:2px;">
+                                <small>PERIOD</small>
+                            </td>
+                            <td style="font-size: 14px; text-align: left; margin:2px;">
+                                <small>: </small>
+                            </td>
+                            <td style="font-size: 14px; text-align: left; margin:2px;">
+                                <small><b>' . $month_name . ' ' . $filter_period_year . '</b></small>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td style="font-size: 14px; text-align: left; margin:2px;">
+                                <small>REVISION</small>
+                            </td>
+                            <td style="font-size: 14px; text-align: left; margin:2px;">
+                                <small>: </small>
+                            </td>
+                            <td style="font-size: 14px; text-align: left; margin:2px;">
+                                <small><b>ALL</b></small>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td style="font-size: 14px; text-align: left; margin:2px;">
+                                <small>CUSTOMER</small>
+                            </td>
+                            <td style="font-size: 14px; text-align: left; margin:2px;">
+                                <small>: </small>
+                            </td>
+                            <td style="font-size: 14px; text-align: left; margin:2px;">
+                                <small><b>' . $filter_customer_id . '</b></small>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td style="font-size: 14px; text-align: left; margin:2px;">
+                                <small>PRODUCT NO.</small>
+                            </td>
+                            <td style="font-size: 14px; text-align: left; margin:2px;">
+                                <small>: </small>
+                            </td>
+                            <td style="font-size: 14px; text-align: left; margin:2px;">
+                                <small><b>ALL</b></small>
+                            </td>
+                        </tr>
+                    </table>
+                </div>
+            </center>
+            
+            <table id="os_so" border="1">
+                <tr>
+                    <th width="20">No</th>
+                    <th>Document No</th>
+                    <th>Customer Name</th>
+                    <th>Product No</th>
+                    <th>Product Name</th>
+                    <th>Quantity</th>
+                </tr>';
+            $no = 1;
+            foreach ($records as $data) {
+                $html .= '<tr>
+                            <td>' . $no . '</td>
+                            <td>' . $data['document_no'] . '</td>
+                            <td>' . $data['customer_name'] . '</td>
+                            <td>' . $data['item_fg_number'] . '</td>
+                            <td>' . $data['item_fg_name'] . '</td>
+                            <td>' . number_format($data['qty']) . '</td>
+                        </tr>';
+                $no++;
+            }
+            $html .= '</table></body></html>';
+            echo $html;
+        } elseif ($filter_revision != "" && $filter_customer_id != "" && $filter_item_fg_id == "") {
+            foreach ($records as $data) {
+                $filter_customer_id = $data['customer_name'];
+            }
+            $html = '<html><head><title>Print Data</title></head><style>body {font-family: Arial, Helvetica, sans-serif;}#os_so {border-collapse: collapse;width: 100%;font-size: 12px;}#os_so td, #os_so th {border: 1px solid #ddd;padding: 2px;}#os_so tr:nth-child(even){background-color: #f2f2f2;}#os_so tr:hover {background-color: #ddd;}#os_so th {padding-top: 2px;padding-bottom: 2px;text-align: left;color: black;}</style><body>
+            <center>
+                <div style="float: left; font-size: 12px; text-align: left;">
+                    <table style="width: 100%;">
+                        <tr>
+                            <td width="50" style="font-size: 12px; vertical-align: top; text-align: center; vertical-align:jus margin-right:10px;">
+                                <img src="' . $config->favicon . '" width="30">
+                            </td>
+                            <td style="font-size: 14px; text-align: left; margin:2px;">
+                                <b>' . $config->name . '</b>
+                            </td>
+                        </tr>
+                    </table>
+                </div>
+                <div style="float: right; font-size: 12px; text-align: right;">
+                    Print Date ' . date("d M Y H:m:s") . ' <br>
+                    Print By ' . $this->session->username . '  
+                </div>
+                <br><br>
+                <div style="float: centet; font-size: 16px; text-align: center;">
+                    <h3>DATA OUTSTANDING SALES ORDER</h3>
+                </div>
+                <div style="float: left; font-size: 12px; text-align: left; width:60%;">
+                    <table>
+                        <tr>
+                            <td style="font-size: 14px; text-align: left; margin:2px;">
+                                <small>PERIOD</small>
+                            </td>
+                            <td style="font-size: 14px; text-align: left; margin:2px;">
+                                <small>: </small>
+                            </td>
+                            <td style="font-size: 14px; text-align: left; margin:2px;">
+                                <small><b>' . $month_name . ' ' . $filter_period_year . '</b></small>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td style="font-size: 14px; text-align: left; margin:2px;">
+                                <small>REVISION</small>
+                            </td>
+                            <td style="font-size: 14px; text-align: left; margin:2px;">
+                                <small>: </small>
+                            </td>
+                            <td style="font-size: 14px; text-align: left; margin:2px;">
+                                <small><b>' . $filter_revision . '</b></small>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td style="font-size: 14px; text-align: left; margin:2px;">
+                                <small>CUSTOMER</small>
+                            </td>
+                            <td style="font-size: 14px; text-align: left; margin:2px;">
+                                <small>: </small>
+                            </td>
+                            <td style="font-size: 14px; text-align: left; margin:2px;">
+                                <small><b>' . $filter_customer_id . '</b></small>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td style="font-size: 14px; text-align: left; margin:2px;">
+                                <small>PRODUCT NO.</small>
+                            </td>
+                            <td style="font-size: 14px; text-align: left; margin:2px;">
+                                <small>: </small>
+                            </td>
+                            <td style="font-size: 14px; text-align: left; margin:2px;">
+                                <small><b>ALL</b></small>
+                            </td>
+                        </tr>
+                    </table>
+                </div>
+            </center>
+            
+            <table id="os_so" border="1">
+                <tr>
+                    <th width="20">No</th>
+                    <th>Document No</th>
+                    <th>Customer Name</th>
+                    <th>Product No</th>
+                    <th>Product Name</th>
+                    <th>Quantity</th>
+                </tr>';
+            $no = 1;
+            foreach ($records as $data) {
+                $html .= '<tr>
+                            <td>' . $no . '</td>
+                            <td>' . $data['document_no'] . '</td>
+                            <td>' . $data['customer_name'] . '</td>
+                            <td>' . $data['item_fg_number'] . '</td>
+                            <td>' . $data['item_fg_name'] . '</td>
+                            <td>' . number_format($data['qty']) . '</td>
+                        </tr>';
+                $no++;
+            }
+            $html .= '</table></body></html>';
+            echo $html;
+        } elseif ($filter_revision == "" && $filter_customer_id != "" && $filter_item_fg_id != "") {
+            foreach ($records as $data) {
+                $filter_customer_id = $data['customer_name'];
+                $filter_item_fg_id = $data['item_fg_number'];
+            }
+            $html = '<html><head><title>Print Data</title></head><style>body {font-family: Arial, Helvetica, sans-serif;}#os_so {border-collapse: collapse;width: 100%;font-size: 12px;}#os_so td, #os_so th {border: 1px solid #ddd;padding: 2px;}#os_so tr:nth-child(even){background-color: #f2f2f2;}#os_so tr:hover {background-color: #ddd;}#os_so th {padding-top: 2px;padding-bottom: 2px;text-align: left;color: black;}</style><body>
+            <center>
+                <div style="float: left; font-size: 12px; text-align: left;">
+                    <table style="width: 100%;">
+                        <tr>
+                            <td width="50" style="font-size: 12px; vertical-align: top; text-align: center; vertical-align:jus margin-right:10px;">
+                                <img src="' . $config->favicon . '" width="30">
+                            </td>
+                            <td style="font-size: 14px; text-align: left; margin:2px;">
+                                <b>' . $config->name . '</b>
+                            </td>
+                        </tr>
+                    </table>
+                </div>
+                <div style="float: right; font-size: 12px; text-align: right;">
+                    Print Date ' . date("d M Y H:m:s") . ' <br>
+                    Print By ' . $this->session->username . '  
+                </div>
+                <br><br>
+                <div style="float: centet; font-size: 16px; text-align: center;">
+                    <h3>DATA OUTSTANDING SALES ORDER</h3>
+                </div>
+                <div style="float: left; font-size: 12px; text-align: left; width:60%;">
+                    <table style="width: 100%;">
+                        <tr>
+                            <td style="font-size: 14px; text-align: left; margin:2px;">
+                                <small>PERIOD</small>
+                            </td>
+                            <td style="font-size: 14px; text-align: left; margin:2px;">
+                                <small>: </small>
+                            </td>
+                            <td style="font-size: 14px; text-align: left; margin:2px;">
+                                <small><b>' . $month_name . ' ' . $filter_period_year . '</b></small>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td style="font-size: 14px; text-align: left; margin:2px;">
+                                <small>REVISION</small>
+                            </td>
+                            <td style="font-size: 14px; text-align: left; margin:2px;">
+                                <small>: </small>
+                            </td>
+                            <td style="font-size: 14px; text-align: left; margin:2px;">
+                                <small><b>ALL</b></small>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td style="font-size: 14px; text-align: left; margin:2px;">
+                                <small>CUSTOMER</small>
+                            </td>
+                            <td style="font-size: 14px; text-align: left; margin:2px;">
+                                <small>: </small>
+                            </td>
+                            <td style="font-size: 14px; text-align: left; margin:2px;">
+                                <small><b>' . $filter_customer_id . '</b></small>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td style="font-size: 14px; text-align: left; margin:2px;">
+                                <small>PRODUCT NO.</small>
+                            </td>
+                            <td style="font-size: 14px; text-align: left; margin:2px;">
+                                <small>: </small>
+                            </td>
+                            <td style="font-size: 14px; text-align: left; margin:2px;">
+                                <small><b>' . $filter_item_fg_id . '</b></small>
+                            </td>
+                        </tr>
+                    </table>
+                </div>
+            </center>
+            
+            <table id="os_so" border="1">
+                <tr>
+                    <th width="20">No</th>
+                    <th>Document No</th>
+                    <th>Customer Name</th>
+                    <th>Product No</th>
+                    <th>Product Name</th>
+                    <th>Quantity</th>
+                </tr>';
+            $no = 1;
+            foreach ($records as $data) {
+                $html .= '<tr>
+                            <td>' . $no . '</td>
+                            <td>' . $data['document_no'] . '</td>
+                            <td>' . $data['customer_name'] . '</td>
+                            <td>' . $data['item_fg_number'] . '</td>
+                            <td>' . $data['item_fg_name'] . '</td>
+                            <td>' . number_format($data['qty']) . '</td>
+                        </tr>';
+                $no++;
+            }
+            $html .= '</table></body></html>';
+            echo $html;
+        } elseif ($filter_revision != "" && $filter_customer_id != "" && $filter_item_fg_id != "") {
+            foreach ($records as $data) {
+                $filter_customer_id = $data['customer_name'];
+                $filter_item_fg_id = $data['item_fg_number'];
+            }
+            $html = '<html><head><title>Print Data</title></head><style>body {font-family: Arial, Helvetica, sans-serif;}#os_so {border-collapse: collapse;width: 100%;font-size: 12px;}#os_so td, #os_so th {border: 1px solid #ddd;padding: 2px;}#os_so tr:nth-child(even){background-color: #f2f2f2;}#os_so tr:hover {background-color: #ddd;}#os_so th {padding-top: 2px;padding-bottom: 2px;text-align: left;color: black;}</style><body>
+            <center>
+                <div style="float: left; font-size: 12px; text-align: left;">
+                    <table style="width: 100%;">
+                        <tr>
+                            <td width="50" style="font-size: 12px; vertical-align: top; text-align: center; vertical-align:jus margin-right:10px;">
+                                <img src="' . $config->favicon . '" width="30">
+                            </td>
+                            <td style="font-size: 14px; text-align: left; margin:2px;">
+                                <b>' . $config->name . '</b>
+                            </td>
+                        </tr>
+                    </table>
+                </div>
+                <div style="float: right; font-size: 12px; text-align: right;">
+                    Print Date ' . date("d M Y H:m:s") . ' <br>
+                    Print By ' . $this->session->username . '  
+                </div>
+                <br><br>
+                <div style="float: centet; font-size: 16px; text-align: center;">
+                    <h3>DATA OUTSTANDING SALES ORDER</h3>
+                </div>
+                <div style="float: left; font-size: 12px; text-align: left; width:60%;">
+                    <table style="width: 100%;">
+                        <tr>
+                            <td style="font-size: 14px; text-align: left; margin:2px;">
+                                <small>PERIOD</small>
+                            </td>
+                            <td style="font-size: 14px; text-align: left; margin:2px;">
+                                <small>: </small>
+                            </td>
+                            <td style="font-size: 14px; text-align: left; margin:2px;">
+                                <small><b>' . $month_name . ' ' . $filter_period_year . '</b></small>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td style="font-size: 14px; text-align: left; margin:2px;">
+                                <small>REVISION</small>
+                            </td>
+                            <td style="font-size: 14px; text-align: left; margin:2px;">
+                                <small>: </small>
+                            </td>
+                            <td style="font-size: 14px; text-align: left; margin:2px;">
+                                <small><b>' . $filter_revision . '</b></small>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td style="font-size: 14px; text-align: left; margin:2px;">
+                                <small>CUSTOMER</small>
+                            </td>
+                            <td style="font-size: 14px; text-align: left; margin:2px;">
+                                <small>: </small>
+                            </td>
+                            <td style="font-size: 14px; text-align: left; margin:2px;">
+                                <small><b>' . $filter_customer_id . '</b></small>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td style="font-size: 14px; text-align: left; margin:2px;">
+                                <small>PRODUCT NO.</small>
+                            </td>
+                            <td style="font-size: 14px; text-align: left; margin:2px;">
+                                <small>: </small>
+                            </td>
+                            <td style="font-size: 14px; text-align: left; margin:2px;">
+                                <small><b>' . $filter_item_fg_id . '</b></small>
+                            </td>
+                        </tr>
+                    </table>
+                </div>
+            </center>
+            
+            <table id="os_so" border="1">
+                <tr>
+                    <th width="20">No</th>
+                    <th>Document No</th>
+                    <th>Customer Name</th>
+                    <th>Product No</th>
+                    <th>Product Name</th>
+                    <th>Quantity</th>
+                </tr>';
+            $no = 1;
+            foreach ($records as $data) {
+                $html .= '<tr>
+                            <td>' . $no . '</td>
+                            <td>' . $data['document_no'] . '</td>
+                            <td>' . $data['customer_name'] . '</td>
+                            <td>' . $data['item_fg_number'] . '</td>
+                            <td>' . $data['item_fg_name'] . '</td>
+                            <td>' . number_format($data['qty']) . '</td>
+                        </tr>';
+                $no++;
+            }
+            $html .= '</table></body></html>';
+            echo $html;
         }
-        $html .= '</table></body></html>';
-        echo $html;
     }
 }

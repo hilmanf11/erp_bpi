@@ -3,7 +3,7 @@
     <thead>
         <tr>
             <th rowspan="2" field="ck" checkbox="true"></th>
-            <th rowspan="2" data-options="field:'customer_name',width:440,halign:'center'">Customer Name</th>
+            <th rowspan="2" data-options="field:'customer_name',width:550,halign:'center'">Customer Name</th>
             <th rowspan="2" data-options="field:'type',width:100,align:'center'">Type</th>
             <th rowspan="2" data-options="field:'status',width:100,halign:'center', styler:cellStyler, formatter:cellFormatter">Status</th>
             <th colspan="2" data-options="field:'',width:100,halign:'center'"> Created</th>
@@ -127,9 +127,13 @@
                             prompt: 'Choose Product No.',
                             columns: [
                                 [{
+                                    field: 'id',
+                                    title: 'Product ID',
+                                    width: 200
+                                },{
                                     field: 'number',
                                     title: 'Product No.',
-                                    width: 150
+                                    width: 200
                                 }, {
                                     field: 'name',
                                     title: 'Product Name',
@@ -417,6 +421,11 @@
                     rownumbers: true,
                     columns: [
                         [{
+                            field: 'item_fg_id',
+                            title: 'Product ID',
+                            halign: 'center',
+                            width: 200
+                        },{
                             field: 'item_fg_number',
                             title: 'Product No.',
                             halign: 'center',

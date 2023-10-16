@@ -48,10 +48,11 @@ class Item_rm extends CI_Controller
             $offset = ($page - 1) * $rows;
             $result = array();
             //Select Query
-            $this->db->select('a.*, b.name as item_category_name, c.name as item_family_name');
+            $this->db->select('a.*, b.name as item_category_name, c.name as item_family_name, d.number as item_sub_family_number');
             $this->db->from('item_rm a');
             $this->db->join('item_categories b', 'a.item_category_id = b.id');
             $this->db->join('item_familys c', 'a.item_family_id = c.id');
+            $this->db->join('item_family_subs d', 'a.item_sub_family_id = d.id');
             $this->db->where('a.deleted', 0);
             if (@count($filters) > 0) {
                 foreach ($filters as $filter) {
@@ -59,6 +60,8 @@ class Item_rm extends CI_Controller
                         $this->db->like("b.id", $filter->value);
                     } elseif ($filter->field == "item_family_name") {
                         $this->db->like("c.id", $filter->value);
+                    } elseif ($filter->field == "item_sub_family_name") {
+                        $this->db->like("d.id", $filter->value);
                     } else {
                         $this->db->like("a." . $filter->field, $filter->value);
                     }
@@ -146,9 +149,10 @@ class Item_rm extends CI_Controller
                 'uom' => $data->val($i, 4),
                 'item_category_id' => $data->val($i, 5),
                 'item_family_id' => $data->val($i, 6),
-                'account_number' => $data->val($i, 7),
-                'account_name' => $data->val($i, 8),
-                'status' => $data->val($i, 9)
+                'item_sub_family_id' => $data->val($i, 7),
+                'account_number' => $data->val($i, 8),
+                'account_name' => $data->val($i, 9),
+                'status' => $data->val($i, 10)
             );
         }
         $datas['total'] = count($datas);
@@ -157,13 +161,13 @@ class Item_rm extends CI_Controller
     }
     public function uploadclearFailed()
     {
-        @unlink('excel/failed/item_rm.txt');
+        @unlink('failed/item_rm.txt');
     }
     public function uploadcreateFailed()
     {
         if ($this->input->post()) {
             $message = $this->input->post('message');
-            $textFailed = fopen('excel/failed/item_rm.txt', 'a');
+            $textFailed = fopen('failed/item_rm.txt', 'a');
             fwrite($textFailed, $message . "\n");
             fclose($textFailed);
         }
@@ -171,7 +175,7 @@ class Item_rm extends CI_Controller
     //UPLOAD DOWNLOAD FAILED
     public function uploadDownloadFailed()
     {
-        $file = "excel/failed/item_rm.txt";
+        $file = "failed/item_rm.txt";
         header('Content-Description: File Failed');
         header('Content-Disposition: attachment; filename=' . basename($file));
         header('Expires: 0');
@@ -191,6 +195,7 @@ class Item_rm extends CI_Controller
             $item_rm = $this->crud->read('item_rm', [], ["number" => $data['number']]);
             $category = $this->crud->read('item_categories', [], ["id" => $data['item_category_id']]);
             $product_family = $this->crud->read('item_familys', [], ["id" => $data['item_family_id']]);
+            $product_family_sub = $this->crud->read('item_family_subs', [], ["id" => $data['item_sub_family_id']]);
 
             //AUTOID
             $month = date('my');
@@ -209,6 +214,8 @@ class Item_rm extends CI_Controller
                 echo json_encode(array("title" => "Not Found", "message" => "Category " . $data['item_category_id'] . " Not Found", "theme" => "error"));
             } elseif (empty($product_family->number)) {
                 echo json_encode(array("title" => "Not Found", "message" => "Product Family " . $data['item_family_id'] . " Not Found", "theme" => "error"));
+            } elseif (empty($product_family_sub->name)) {
+                echo json_encode(array("title" => "Not Found", "message" => "Product Family Sub " . $data['item_sub_family_id'] . " Not Found", "theme" => "error"));
             } elseif (!empty($item_rm->number)) {
                 echo json_encode(array("title" => "Duplicated", "message" => " Product No. " . $data['number'] . " is Duplicate Data", "theme" => "error"));
             } else {
@@ -220,6 +227,7 @@ class Item_rm extends CI_Controller
                     "uom" => $data['uom'],
                     "item_category_id" => $data['item_category_id'],
                     "item_family_id" => $data['item_family_id'],
+                    "item_sub_family_id" => $data['item_sub_family_id'],
                     "account_number" => $data['account_number'],
                     "account_name" => $data['account_name'],
                     "status" => $data['status'],
@@ -242,10 +250,11 @@ class Item_rm extends CI_Controller
         $this->db->from('config');
         $config = $this->db->get()->row();
 
-        $this->db->select('a.*, b.name as item_category_name, c.name as item_family_name');
+        $this->db->select('a.*, b.name as item_category_name, c.name as item_family_name, d.number as item_sub_family_number');
         $this->db->from('item_rm a');
         $this->db->join('item_categories b', 'a.item_category_id = b.id');
         $this->db->join('item_familys c', 'a.item_family_id = c.id');
+        $this->db->join('item_family_subs d', 'a.item_sub_family_id = d.id');
         $this->db->where('a.deleted', 0);
         $this->db->order_by('a.id', 'ASC');
         $records = $this->db->get()->result_array();
@@ -282,6 +291,7 @@ class Item_rm extends CI_Controller
                 <th>UOM</th>
                 <th>Category</th>
                 <th>Product Family</th>
+                <th>Product Family Sub</th>
                 <th>Account No.</th>
                 <th>Account Name</th>
                 <th>Status</th>
@@ -296,6 +306,7 @@ class Item_rm extends CI_Controller
                     <td>' . $data['uom'] . '</td>
                     <td>' . $data['item_category_name'] . '</td>
                     <td>' . $data['item_family_name'] . '</td>
+                    <td>' . $data['item_sub_family_number'] . '</td>
                     <td>' . $data['account_number'] . '</td>
                     <td>' . $data['account_name'] . '</td>
                     <td>' . $data['status'] . '</td>';

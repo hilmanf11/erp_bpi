@@ -150,13 +150,13 @@ class Customers extends CI_Controller
     }
     public function uploadclearFailed()
     {
-        @unlink('excel/failed/customers.txt');
+        @unlink('failed/customers.txt');
     }
     public function uploadcreateFailed()
     {
         if ($this->input->post()) {
             $message = $this->input->post('message');
-            $textFailed = fopen('excel/failed/customers.txt', 'a');
+            $textFailed = fopen('failed/customers.txt', 'a');
             fwrite($textFailed, $message . "\n");
             fclose($textFailed);
         }
@@ -164,7 +164,7 @@ class Customers extends CI_Controller
     //UPLOAD DOWNLOAD FAILED
     public function uploadDownloadFailed()
     {
-        $file = "excel/failed/customers.txt";
+        $file = "failed/customers.txt";
         header('Content-Description: File Failed');
         header('Content-Disposition: attachment; filename=' . basename($file));
         header('Expires: 0');

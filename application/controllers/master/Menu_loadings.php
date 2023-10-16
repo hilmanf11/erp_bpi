@@ -48,7 +48,7 @@ class Menu_loadings extends CI_Controller
             $offset = ($page - 1) * $rows;
             $result = array();
             //Select Query
-            $this->db->select('a.*, b.number as item_fg_number, b.name as item_fg_name, c.number as machine_number, d.model as mold_model, d.cavity_actual as mold_cavity_actual, d.cavity_standard as mold_cavity_standard');
+            $this->db->select('a.*, b.number as item_fg_number, b.name as item_fg_name, c.number as machine_number, c.toonage as machine_toonage, d.model as mold_model, d.cavity_actual as mold_cavity_actual, d.cavity_standard as mold_cavity_standard');
             $this->db->from('menu_loadings a');
             $this->db->join('item_fg b', 'a.item_fg_id = b.id');
             $this->db->join('machines c', 'a.machine_id = c.id');
@@ -63,6 +63,8 @@ class Menu_loadings extends CI_Controller
                     }elseif($filter->field == "item_fg_name"){
                         $this->db->like("b.id", $filter->value);
                     }elseif($filter->field == "machine_number"){
+                        $this->db->like("c.id", $filter->value);
+                    }elseif($filter->field == "machine_toonage"){
                         $this->db->like("c.id", $filter->value);
                     }elseif($filter->field == "mold_model"){
                         $this->db->like("d.id", $filter->value);
@@ -152,13 +154,13 @@ class Menu_loadings extends CI_Controller
     }
     public function uploadclearFailed()
     {
-        @unlink('excel/failed/menu_loadings.txt');
+        @unlink('failed/menu_loadings.txt');
     }
     public function uploadcreateFailed()
     {
         if ($this->input->post()) {
             $message = $this->input->post('message');
-            $textFailed = fopen('excel/failed/menu_loadings.txt', 'a');
+            $textFailed = fopen('failed/menu_loadings.txt', 'a');
             fwrite($textFailed, $message . "\n");
             fclose($textFailed);
         }
@@ -166,7 +168,7 @@ class Menu_loadings extends CI_Controller
     //UPLOAD DOWNLOAD FAILED
     public function uploadDownloadFailed()
     {
-        $file = "excel/failed/menu_loadings.txt";
+        $file = "failed/menu_loadings.txt";
         header('Content-Description: File Failed');
         header('Content-Disposition: attachment; filename=' . basename($file));
         header('Expires: 0');
@@ -226,7 +228,7 @@ class Menu_loadings extends CI_Controller
         $this->db->from('config');
         $config = $this->db->get()->row();
 
-        $this->db->select('a.*, b.number as item_fg_number, b.name as item_fg_name, c.number as machine_number, d.model as mold_model, d.cavity_actual as mold_cavity_actual, d.cavity_standard as mold_cavity_standard');
+        $this->db->select('a.*, b.number as item_fg_number, b.name as item_fg_name, c.number as machine_number, c.toonage as machine_toonage, d.model as mold_model, d.cavity_actual as mold_cavity_actual, d.cavity_standard as mold_cavity_standard');
         $this->db->from('menu_loadings a');
         $this->db->join('item_fg b', 'a.item_fg_id = b.id');
         $this->db->join('machines c', 'a.machine_id = c.id');
@@ -265,7 +267,8 @@ class Menu_loadings extends CI_Controller
                 <th>Product No.</th>
                 <th>Product Name</th>
                 <th>Machine No.</th>
-                <th>Mold Model</th>
+                <th>Toonage of Machine</th>
+                <th>Mold ID</th>
                 <th>Cavity Actual</th>
                 <th>Cavity Standard</th>
                 <th>Shift</th>
@@ -285,7 +288,8 @@ class Menu_loadings extends CI_Controller
                     <td>' . $data['item_fg_number'] . '</td>
                     <td>' . $data['item_fg_name'] . '</td>
                     <td>' . $data['machine_number'] . '</td>
-                    <td>' . $data['mold_model'] . '</td>
+                    <td>' . $data['machine_toonage'] . '</td>
+                    <td>' . $data['item_mold_id'] . '</td>
                     <td>' . $data['mold_cavity_actual'] . '</td>
                     <td>' . $data['mold_cavity_standard'] . '</td>
                     <td>' . $data['shift'] . '</td>
