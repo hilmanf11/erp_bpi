@@ -13,11 +13,11 @@
                     <input style="width:60%;" id="filter_customer_name" class="easyui-combobox">
                 </div>
                 <div class="fitem">
-                    <span style="width:35%; display:inline-block;">Customer Order No.</span>
+                    <span style="width:35%; display:inline-block;">Customer Order No</span>
                     <input style="width:60%;" id="filter_customer_order_no" class="easyui-combobox">
                 </div>
                 <div class="fitem">
-                    <span style="width:35%; display:inline-block;">Sales Order No.</span>
+                    <span style="width:35%; display:inline-block;">Sales Order No</span>
                     <input style="width:60%;" id="filter_sales_order_no" class="easyui-combobox">
                 </div>
                 <div class="fitem">
@@ -27,7 +27,7 @@
             </div>
             <div style="width: 50%; float: left;">
                 <div class="fitem">
-                    <span style="width:35%; display:inline-block;">Product No.</span>
+                    <span style="width:35%; display:inline-block;">Product No</span>
                     <input style="width:60%;" id="filter_item_fg" class="easyui-combobox">
                 </div>
                 <div class="fitem">
@@ -38,7 +38,7 @@
                     <span style="width:35%; display:inline-block;">Report Display</span>
                     <select style="width:60%;" id="filter_display" class="easyui-combobox" panelHeight="auto">
                         <option value="RECAP">RECAP</option>
-                        <option value="DETAIL DETAIL BY PRODUCT NO.">DETAIL BY PRODUCT NO.</option>
+                        <option value="DETAIL">DETAIL</option>
                     </select>
                 </div>
             </div>
@@ -63,16 +63,18 @@
         var filter_item_fg = $("#filter_item_fg").combobox("getValue");
         var filter_division = $("#filter_division").combobox("getValue");
         var filter_display = $("#filter_display").combobox("getValue");
+
         var url = "?filter_so_date_from=" + window.btoa(filter_so_date_from) +
             "&filter_so_date_to=" + window.btoa(filter_so_date_to) +
-            "&filter_customer_name=" + filter_customer_name +
-            "&filter_customer_order_no=" + filter_customer_order_no +
-            "&filter_sales_order_no=" + filter_sales_order_no +
-            "&filter_item_fg=" + filter_item_fg +
-            "&filter_division=" + filter_division +
-            "&filter_display=" + filter_display;
+            "&filter_customer_name=" + window.btoa(filter_customer_name) +
+            "&filter_customer_order_no=" + window.btoa(filter_customer_order_no) +
+            "&filter_sales_order_no=" + window.btoa(filter_sales_order_no) +
+            "&filter_item_fg=" + window.btoa(filter_item_fg) +
+            "&filter_division=" + window.btoa(filter_division) +
+            "&filter_display=" + window.btoa(filter_display);
+
         if (filter_so_date_from == "" && filter_so_date_to == "") {
-            toastr.warning("Please select SO Date, Customer, and Product No.!");
+            toastr.warning("Please Select Trans Date");
         } else {
             $("#printout").contents().find('html').html("<center><br><br><br><b style='font-size:20px;'>Please Wait...</b></center>");
             $("#printout").attr('src', '<?= base_url('planning/report_outstanding_so/print') ?>' + url);
@@ -88,16 +90,18 @@
         var filter_item_fg = $("#filter_item_fg").combobox("getValue");
         var filter_division = $("#filter_division").combobox("getValue");
         var filter_display = $("#filter_display").combobox("getValue");
+
         var url = "?filter_so_date_from=" + window.btoa(filter_so_date_from) +
             "&filter_so_date_to=" + window.btoa(filter_so_date_to) +
-            "&filter_customer_name=" + filter_customer_name +
-            "&filter_customer_order_no=" + filter_customer_order_no +
-            "&filter_sales_order_no=" + filter_sales_order_no +
-            "&filter_item_fg=" + filter_item_fg +
-            "&filter_division=" + filter_division +
-            "&filter_display=" + filter_display;
+            "&filter_customer_name=" + window.btoa(filter_customer_name) +
+            "&filter_customer_order_no=" + window.btoa(filter_customer_order_no) +
+            "&filter_sales_order_no=" + window.btoa(filter_sales_order_no) +
+            "&filter_item_fg=" + window.btoa(filter_item_fg) +
+            "&filter_division=" + window.btoa(filter_division) +
+            "&filter_display=" + window.btoa(filter_display);
+
         if (filter_so_date_from == "" && filter_so_date_to == "") {
-            toastr.warning("Please select SO Date, Customer, and Product No.!");
+            toastr.warning("Please Select Trans Date");
         } else {
             window.location.assign('<?= base_url('planning/report_outstanding_so/print/excel') ?>' + url);
         }
@@ -126,6 +130,7 @@
             onSelect: function(cus) {
                 var filter_so_date_from = $("#filter_so_date_from").datebox("getValue");
                 var filter_so_date_to = $("#filter_so_date_to").datebox("getValue");
+
                 $('#filter_customer_order_no').combobox({
                     url: '<?php echo base_url('planning/report_outstanding_so/readCustomerOrder?customer_id='); ?>' + cus.id + "&filter_so_date_from=" + window.btoa(filter_so_date_from) + "&filter_so_date_to=" + window.btoa(filter_so_date_to),
                     valueField: 'customer_order_no',
@@ -137,20 +142,50 @@
                             $(e.data.target).combobox('clear').combobox('textbox').focus();
                         }
                     }],
-                    onSelect: function(co) {
-                        $('#filter_sales_order_no').combobox({
-                            url: '<?= base_url('planning/report_outstanding_so/readSalesOrder?customer_id=') ?>' + cus.id + "&customer_order_no=" + co.customer_order_no + "&filter_so_date_from=" + window.btoa(filter_so_date_from) + "&filter_so_date_to=" + window.btoa(filter_so_date_to),
-                            valueField: 'sales_order_no',
-                            textField: 'sales_order_no',
-                            prompt: "Select Sales Order No",
+                });
+
+                $('#filter_sales_order_no').combobox({
+                    url: '<?php echo base_url('planning/report_outstanding_so/readCustomerOrder?customer_id='); ?>' + cus.id + "&filter_so_date_from=" + window.btoa(filter_so_date_from) + "&filter_so_date_to=" + window.btoa(filter_so_date_to),
+                    valueField: 'sales_order_no',
+                    textField: 'sales_order_no',
+                    prompt: "Select Sales Order No",
+                    icons: [{
+                        iconCls: 'icon-clear',
+                        handler: function(e) {
+                            $(e.data.target).combobox('clear').combobox('textbox').focus();
+                        }
+                    }],
+                    onSelect: function(so) {
+                        $('#filter_item_fg').combogrid({
+                            url: '<?php echo base_url('planning/report_outstanding_so/readItems?customer_id='); ?>' + cus.id +
+                                "&filter_so_date_from=" + window.btoa(filter_so_date_from) +
+                                "&filter_so_date_to=" + window.btoa(filter_so_date_to) +
+                                "&filter_sales_order_no=" + window.btoa(so.sales_order_no),
+                            panelWidth: 400,
+                            idField: 'id',
+                            textField: 'number',
+                            mode: 'remote',
+                            fitColumns: true,
+                            prompt: "Select Product No",
                             icons: [{
                                 iconCls: 'icon-clear',
                                 handler: function(e) {
-                                    $(e.data.target).combobox('clear').combobox('textbox').focus();
+                                    $(e.data.target).combogrid('clear').combogrid('textbox').focus();
                                 }
                             }],
+                            columns: [
+                                [{
+                                    field: 'number',
+                                    title: 'Product No',
+                                    width: 200
+                                }, {
+                                    field: 'name',
+                                    title: 'Product Name',
+                                    width: 200
+                                }]
+                            ],
                         });
-                    },
+                    }
                 });
             }
         });
@@ -162,7 +197,7 @@
             textField: 'number',
             mode: 'remote',
             fitColumns: true,
-            prompt: "Select Product No.",
+            prompt: "Select Product No",
             icons: [{
                 iconCls: 'icon-clear',
                 handler: function(e) {
