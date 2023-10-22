@@ -28,7 +28,7 @@
             <div style="width: 50%; float: left;">
                 <div class="fitem">
                     <span style="width:35%; display:inline-block;">Product No</span>
-                    <input style="width:60%;" id="filter_item_fg" class="easyui-combobox">
+                    <input style="width:60%;" id="filter_item_fg" class="easyui-combogrid">
                 </div>
                 <div class="fitem">
                     <span style="width:35%; display:inline-block;">Division</span>
