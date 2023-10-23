@@ -31,80 +31,34 @@ class Report_outstanding_so extends CI_Controller
 
     public function readCustomerOrder()
     {
-        $post = isset($_POST['q']) ? $_POST['q'] : "";
         $filter_so_date_from = base64_decode($this->input->get("filter_so_date_from"));
         $filter_so_date_to = base64_decode($this->input->get("filter_so_date_to"));
         $customer_id = $this->input->get("customer_id");
-        $post = isset($_POST['q']) ? $_POST['q'] : "";
-        $customer_orders = $this->crud->query("SELECT `customer_order_no`
-        FROM sales_orders
-        WHERE `customer_order_no` like '%$post%'
-        AND sales_order_date between '$filter_so_date_from' and '$filter_so_date_to'
-        AND customer_id = '$customer_id'
-        GROUP BY `customer_order_no` 
-        ORDER BY `customer_order_no` DESC");
+
+        $customer_orders = $this->crud->query("SELECT customer_order_no, sales_order_no
+            FROM sales_orders
+            WHERE sales_order_date between '$filter_so_date_from' and '$filter_so_date_to'
+            AND customer_id = '$customer_id'
+            GROUP BY sales_order_no
+            ORDER BY sales_order_no ASC");
         echo json_encode($customer_orders);
     }
 
-    public function readSalesOrder()
+    public function readItems()
     {
-        $post = isset($_POST['q']) ? $_POST['q'] : "";
         $filter_so_date_from = base64_decode($this->input->get("filter_so_date_from"));
         $filter_so_date_to = base64_decode($this->input->get("filter_so_date_to"));
+        $filter_sales_order_no = base64_decode($this->input->get("filter_sales_order_no"));
         $customer_id = $this->input->get("customer_id");
-        $customer_order_no = $this->input->get("customer_order_no");
-        $post = isset($_POST['q']) ? $_POST['q'] : "";
-        $sales_orders = $this->crud->query("SELECT sales_order_no
-        FROM sales_orders
-        WHERE `customer_order_no` like '%$post%'
-        AND sales_order_date between '$filter_so_date_from' and '$filter_so_date_to'
-        AND customer_id = '$customer_id'
-        AND customer_order_no = '$customer_order_no'
-        GROUP BY sales_order_no");
-        echo json_encode($sales_orders);
+
+        $customer_orders = $this->crud->query("SELECT b.id, b.number, b.name
+            FROM sales_orders a
+            JOIN item_fg b ON a.item_fg_id = b.id
+            WHERE a.sales_order_date between '$filter_so_date_from' and '$filter_so_date_to'
+            AND a.customer_id = '$customer_id' AND a.sales_order_no = '$filter_sales_order_no'
+            GROUP BY a.item_fg_id");
+        echo json_encode($customer_orders);
     }
-
-    //GET PERIOD
-    public function readPeriod($select)
-    {
-        if ($select == "month") {
-            $month = array('01' => 'January', '02' => 'February', '03' => 'March', '04' => 'April', '05' => 'May', '06' => 'June', '07' => 'July', '08' => 'August', '09' => 'September', '10' => 'October', '11' => 'November', '12' => 'December');
-            foreach ($month as $key => $value) {
-                $months[] = array("id" => $key, "name" => $value);
-            }
-
-            echo json_encode($months);
-        } else if ($select == "year") {
-            $year_before = date('Y', strtotime('-7 year', strtotime(date('Y'))));
-            $year_now = date('Y', strtotime('+1 year', strtotime(date('Y'))));
-            for ($i = $year_now; $i >= $year_before; $i--) {
-                $years[] = array("id" => $i, "name" => $i);
-            }
-
-            echo json_encode($years);
-        } else {
-            show_error("Cannot Process your request");
-        }
-    }
-
-    //GET PERIOD LISTS
-    // public function readPeriodLists()
-    // {
-    //     $p_month = $this->input->post('p_month');
-    //     $p_year = $this->input->post('p_year');
-    //     $p_date_start = date("Y-m-d", strtotime($p_year . "-" . $p_month . "-01"));
-    //     $p_date_to = date('Y-m-d', strtotime('+11 month', strtotime($p_date_start)));
-
-    //     while (strtotime($p_date_start) <= strtotime($p_date_to)) {
-    //         $dates[] = array(
-    //             "name" => date("M-y", strtotime($p_date_start))
-    //         );
-
-    //         $p_date_start = date("Y-m-d", strtotime("+1 month", strtotime($p_date_start)));
-    //     }
-
-    //     echo json_encode($dates);
-    // }
 
     public function print($option = "")
     {
@@ -116,12 +70,14 @@ class Report_outstanding_so extends CI_Controller
 
         $filter_so_date_from = base64_decode($this->input->get("filter_so_date_from"));
         $filter_so_date_to = base64_decode($this->input->get("filter_so_date_to"));
-        $filter_customer_name = $this->input->get("filter_customer_name");
-        $filter_customer_order_no = $this->input->get("filter_customer_order_no");
-        $filter_sales_order_no = $this->input->get("filter_sales_order_no");
-        $filter_item_fg = $this->input->get("filter_item_fg");
-        $filter_division = $this->input->get("filter_division");
-        $filter_display = $this->input->get("filter_display");
+        $filter_customer_name = base64_decode($this->input->get("filter_customer_name"));
+        $filter_customer_order_no = base64_decode($this->input->get("filter_customer_order_no"));
+        $filter_sales_order_no = base64_decode($this->input->get("filter_sales_order_no"));
+        $filter_item_fg = base64_decode($this->input->get("filter_item_fg"));
+        $filter_division = base64_decode($this->input->get("filter_division"));
+        $filter_display = base64_decode($this->input->get("filter_display"));
+
+        $customer = $this->crud->read("customers", [], ["id" => $filter_customer_name]);
 
         //Config
         $this->db->select('*');
@@ -240,6 +196,7 @@ class Report_outstanding_so extends CI_Controller
                                 </td>
                                 <td style="font-size: 14px; text-align: left; margin:2px;">
                                     <b>' . $config->name . '</b><br>
+                                    <small>' . $config->description . '</small>
                                 </td>
                             </tr>
                         </table>
@@ -299,7 +256,6 @@ class Report_outstanding_so extends CI_Controller
                 foreach ($records as $detail) {
                     $so_no = $detail['sales_order_no'];
                     $customer_id = $detail['customer_id'];
-                    $item_fg_id = $detail['item_fg_id'];
                     $this->db->select('a.*, b.number as item_fg_number, b.name as item_fg_name, c.name as customer_name');
                     $this->db->from('sales_orders a');
                     $this->db->join('item_fg b', 'a.item_fg_id = b.id');
