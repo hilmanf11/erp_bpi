@@ -128,9 +128,10 @@ class Report_outstanding_so extends CI_Controller
         $this->db->from('config');
         $config = $this->db->get()->row();
 
-        $this->db->select('a.*, SUM(a.qty) as qty_order, SUM(a.delivery) as qty_delivery, SUM(a.outstanding) as qty_outstanding, b.number as customer_number, b.name as customer_name');
+        $this->db->select('a.*, SUM(a.qty) as qty_order, SUM(a.delivery) as qty_delivery, SUM(a.outstanding) as qty_outstanding, b.number as customer_number, b.name as customer_name, c.number as item_fg_number, c.name as item_fg_name');
         $this->db->from('sales_orders a');
         $this->db->join('customers b', 'a.customer_id = b.id');
+        $this->db->join('item_fg c', 'a.item_fg_id = c.id');
         $this->db->where('a.deleted', 0);
         $this->db->where("a.sales_order_date between '$filter_so_date_from' and '$filter_so_date_to'");
         $this->db->like('a.customer_id', $filter_customer_name);
@@ -142,7 +143,93 @@ class Report_outstanding_so extends CI_Controller
         $this->db->group_by('a.customer_order_no');
         $records = $this->db->get()->result_array();
 
-        if ($filter_customer_name == "" && $filter_item_fg == ""){
+        if ($filter_customer_name == "" && $filter_item_fg == "" && $filter_display == "RECAP"){
+            $html = '<html><head><title>Print Data</title></head><style>body {font-family: Arial, Helvetica, sans-serif;}#forecast_analysis {border-collapse: collapse;width: 100%;font-size: 12px;}#forecast_analysis td, #forecast_analysis th {border: 1px solid #ddd;padding: 2px;}#forecast_analysis tr:nth-child(even){background-color: #f2f2f2;}#forecast_analysis tr:hover {background-color: #ddd;}#forecast_analysis th {padding-top: 2px;padding-bottom: 2px;text-align: left;color: black;}</style><body>
+            <center>
+                <div style="float: left; font-size: 12px; text-align: left;">
+                    <table style="width: 100%;">
+                        <tr>
+                            <td width="50" style="font-size: 12px; vertical-align: top; text-align: center; vertical-align:jus margin-right:10px;">
+                                <img src="' . $config->favicon . '" width="30">
+                            </td>
+                            <td style="font-size: 14px; text-align: left; margin:2px;">
+                                <b>' . $config->name . '</b><br>
+                            </td>
+                        </tr>
+                    </table>
+                </div>
+                <div style="float: right; font-size: 12px; text-align: right;">
+                    Print Date ' . date("d M Y H:m:s") . ' <br>
+                    Print By ' . $this->session->username . '  
+                </div>
+                <br><br>
+                <div style="float: centet; font-size: 16px; text-align: center;">
+                    <h3>REPORT OUTSTANDING SALES ORDER</h3>
+                </div>
+                <div style="float: left; font-size: 12px; text-align: left;">
+                    <table style="width: 100%;">
+                        <tr>
+                            <td style="font-size: 14px; text-align: left; margin:2px;">
+                                <small>PERIOD</small><br>
+                                <small>CUSTOMER NAME</small><br>
+                                <small>SALES ORDER NO.</small><br>
+                                <small>CUSTOMER ORDER NO.</small>
+                            </td>
+                            <td style="font-size: 14px; text-align: left; margin:2px;">
+                                <small>: </small><br>
+                                <small>: </small><br>
+                                <small>: </small><br>
+                                <small>: </small>
+                            </td>
+                            <td style="font-size: 14px; text-align: left; margin:2px;">
+                                <small><b>' . $filter_so_date_from . '</b> To <b>' . $filter_so_date_to . '</b></small><br>
+                                <small><b>ALL</b></small><br>
+                                <small><b>ALL</b></small><br>
+                                <small><b>ALL</b></small>
+                            </td>
+                        </tr>
+                    </table>
+                </div>
+            </center>
+            <br><br>
+            <table id="forecast_analysis" border="1">
+            <tr>
+                <th width="20">No</th>
+                <th>Sales Order No.</th>
+                <th>Customer Order No.</th>
+                <th>SO Date</th>
+                <th>Customer Name</th>
+                <th>Qty Order</th>
+                <th>Qty Delivery</th>
+                <th>Outstanding</th>
+                <th>Status</th>
+            </tr>';
+
+            $no = 1;
+            foreach ($records as $data) {
+
+                if (($data['qty_order'] - $data['qty_delivery']) > 0) {
+                    $status = "<b style='color:green;'>OPEN</b>";
+                } else {
+                    $status = "<b style='color:red;'>CLOSE</b>";
+                }
+
+                $html .= '<tr>
+                        <td>' . $no . '</td>
+                        <td>' . $data['sales_order_no'] . '</td>
+                        <td>' . $data['customer_order_no'] . '</td>
+                        <td>' . $data['sales_order_date'] . '</td>
+                        <td>' . $data['customer_name'] . '</td>
+                        <td style="text-align:right">' . number_format($data['qty_order'], 2) . '</td>
+                        <td style="text-align:right">' . number_format($data['qty_delivery'], 2) . '</td>
+                        <td style="text-align:right">' . number_format($data['qty_order'] - $data['qty_delivery'], 2) . '</td>
+                        <td>' . $status . '</td>';
+                $no++;
+            }
+            $html .= '</table></body></html>';
+            echo $html;      
+        }
+        if ($filter_customer_name == "" && $filter_item_fg == "" && $filter_display == "DETAIL BY PRODUCT NO.") {
             $html = '<html><head><title>Print Data</title></head><style>body {font-family: Arial, Helvetica, sans-serif;}#forecast_analysis {border-collapse: collapse;width: 100%;font-size: 12px;}#forecast_analysis td, #forecast_analysis th {border: 1px solid #ddd;padding: 2px;}#forecast_analysis tr:nth-child(even){background-color: #f2f2f2;}#forecast_analysis tr:hover {background-color: #ddd;}#forecast_analysis th {padding-top: 2px;padding-bottom: 2px;text-align: left;color: black;}</style><body>
                 <center>
                     <div style="float: left; font-size: 12px; text-align: left;">
@@ -163,13 +250,14 @@ class Report_outstanding_so extends CI_Controller
                     </div>
                     <br><br>
                     <div style="float: centet; font-size: 16px; text-align: center;">
-                        <h3>REPORT OUTSTANDING SALES ORDER</h3>
+                        <h3>REPORT OUTSTANDING BY PRODUCT</h3>
                     </div>
                     <div style="float: left; font-size: 12px; text-align: left;">
                         <table style="width: 100%;">
                             <tr>
                                 <td style="font-size: 14px; text-align: left; margin:2px;">
                                     <small>PERIOD</small><br>
+                                    <small>PRODUCT NO.</small><br>
                                     <small>CUSTOMER NAME</small><br>
                                     <small>SALES ORDER NO.</small><br>
                                     <small>CUSTOMER ORDER NO.</small>
@@ -178,10 +266,12 @@ class Report_outstanding_so extends CI_Controller
                                     <small>: </small><br>
                                     <small>: </small><br>
                                     <small>: </small><br>
+                                    <small>: </small><br>
                                     <small>: </small>
                                 </td>
                                 <td style="font-size: 14px; text-align: left; margin:2px;">
                                     <small><b>' . $filter_so_date_from . '</b> To <b>' . $filter_so_date_to . '</b></small><br>
+                                    <small><b>ALL</b></small><br>
                                     <small><b>ALL</b></small><br>
                                     <small><b>ALL</b></small><br>
                                     <small><b>ALL</b></small>
@@ -194,84 +284,48 @@ class Report_outstanding_so extends CI_Controller
                 <table id="forecast_analysis" border="1">
                 <tr>
                     <th width="20">No</th>
-                    <th>Sales Order No.</th>
+                    <th>Product No.</th>
+                    <th>Product Name</th>
                     <th>Customer Order No.</th>
+                    <th>Sales Order No.</th>
                     <th>SO Date</th>
                     <th>Customer Name</th>
                     <th>Qty Order</th>
                     <th>Qty Delivery</th>
                     <th>Outstanding</th>
-                    <th>Status</th>
                 </tr>';
 
                 $no = 1;
-                foreach ($records as $data) {
-
-                    if (($data['qty_order'] - $data['qty_delivery']) > 0) {
-                        $status = "<b style='color:green;'>OPEN</b>";
-                    } else {
-                        $status = "<b style='color:red;'>CLOSE</b>";
-                    }
+                foreach ($records as $detail) {
+                    $so_no = $detail['sales_order_no'];
+                    $customer_id = $detail['customer_id'];
+                    $item_fg_id = $detail['item_fg_id'];
+                    $this->db->select('a.*, b.number as item_fg_number, b.name as item_fg_name, c.name as customer_name');
+                    $this->db->from('sales_orders a');
+                    $this->db->join('item_fg b', 'a.item_fg_id = b.id');
+                    $this->db->join('customers c', 'a.customer_id = c.id');
+                    $this->db->where('a.deleted', 0);
+                    $this->db->where('a.sales_order_no', $so_no);
+                    $this->db->where('a.customer_id', $customer_id);
+                    $this->db->like('a.item_fg_id', $filter_item_fg);
+                    $this->db->order_by('b.number', 'ASC');
+                    $this->db->group_by('a.sales_order_no');
+                    $details = $this->db->get()->result_array();
 
                     $html .= '<tr>
-                            <td>' . $no . '</td>
-                            <td>' . $data['sales_order_no'] . '</td>
-                            <td>' . $data['customer_order_no'] . '</td>
-                            <td>' . $data['sales_order_date'] . '</td>
-                            <td>' . $data['customer_name'] . '</td>
-                            <td>' . $data['qty'] . '</td>
-                            <td>' . $data['delivery'] . '</td>
-                            <td>' . $data['outstanding'] . '</td>
-                            <td>' . $status . '</td>';
-                    $no++;
-                    if ($filter_display == "DETAIL DETAIL BY PRODUCT NO.") {
-                        if ($records) {
-                            $html .= '  <tr>
-                                            <td colspan="13" style="background:#D1FFC6;"><b>DETAIL OF ' . $data['po_no'] . '</b></td>
-                                        </tr>';
-                            $html .= '  <tr>
-                                            <th width="20"></th>
-                                            <th>Custom No</th>
-                                            <th>Custom Doc No</th>
-                                            <th>Custom Date</th>
-                                            <th>Component No</th>
-                                            <th>Component Name</th>
-                                            <th>Receipt No</th>
-                                            <th>Receipt Date</th>
-                                            <th>PO Qty</th>
-                                            <th>Receipt Qty</th>
-                                            <th>OS Qty</th>
-                                            <th>Receipt By</th>
-                                        </tr>';
-                            foreach ($details as $detail) {
-                                $html .= '  <tr>
-                                                <td></td>
-                                                <td>' . $detail['bc_kind'] . '</td>
-                                                <td>' . $detail['bc_document'] . '</td>
-                                                <td>' . $detail['bc_date'] . '</td>
-                                                <td>' . $detail['item_number'] . '</td>
-                                                <td>' . $detail['item_name'] . '</td>
-                                                <td>' . $detail['receipt_no'] . '</td>
-                                                <td>' . $detail['receipt_date'] . '</td>
-                                                <td style="text-align:right">' . number_format($detail['qty'], 2) . '</td>
-                                                <td style="text-align:right">' . number_format($detail['qty_receipt'], 2) . '</td>
-                                                <td style="text-align:right">' . number_format($detail['qty'] - $detail['qty_receipt'], 2)  . '</td>
-                                                <td >' . $detail['created_by'] . '</td>
-                                            </tr>';
-                            }
-                        } else {
-                            $html .= '  <tr>
-                                            <td colspan="13" style="background:#FFC6C6;"><b>DETAIL OF ' . $data['po_no'] . '</b></td>
-                                        </tr>';
-                        }
-                    }
+                                <td rowspan="2">' . $no . '</td>
+                                <td rowspan="2">' . $detail['item_fg_number'] . '</td>
+                                <td rowspan="2">' . $detail['item_fg_name'] . '</td>';
+                            $no++;
+                    $html .= '<tr>
+                            <td>' . $detail['customer_order_no'] . '</td>
+                            <td>' . $detail['sales_order_no'] . '</td>
+                            <td>' . $detail['sales_order_date'] . '</td>
+                            <td>' . $detail['customer_name'] . '</td>
+                            <td style="text-align:right">' . number_format($detail['qty'], 2) . '</td>
+                            <td style="text-align:right">' . number_format($detail['delivery'], 2) . '</td>
+                            <td style="text-align:right">' . number_format($detail['qty'] - $detail['delivery'], 2) . '</td>';     
                 }
-                $html .= '<tr>
-                                <th colspan="5">Total</th>
-                                <th>' . number_format($data['qty_order']) . '</th>
-                                <th>' . number_format($data['qty_delivery']) . '</th>
-                                <th>' . number_format($data['qty_outstanding']) . '</th>
-                                <th>' . $status . '</th>';
                 $html .= '</table></body></html>';
             echo $html;
         }
