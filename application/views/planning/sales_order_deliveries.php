@@ -3,7 +3,6 @@
     <thead>
         <tr>
             <th rowspan="2" field="ck" checkbox="true"></th>
-            <th rowspan="2" data-options="field:'status',width:80,align:'center', styler:cellStyler, formatter:cellFormatter">Status</th>
             <th rowspan="2" data-options="field:'sales_order_no',width:150,halign:'center'">Sales Order No</th>
             <th rowspan="2" data-options="field:'customer_order_no',width:150,halign:'center'">Customer Order No</th>
             <th rowspan="2" data-options="field:'customer_name',width:200,halign:'center'">Customer Name</th>
@@ -38,6 +37,7 @@
                 <th rowspan="2" data-options="field:'so_qty',width:100,align:'center'">Order Qty</th>
                 <th rowspan="2" data-options="field:'qty',width:100,align:'center'">Delivery Qty</th>
                 <th rowspan="2" data-options="field:'remain_qty',width:100,align:'center'">Remain Qty</th>
+                <th rowspan="2" data-options="field:'status',width:80,align:'center', styler:cellStyler, formatter:cellFormatter">Status</th>
                 <th colspan="2" data-options="field:'',width:100,align:'center'"> Created</th>
             </tr>
             <tr>

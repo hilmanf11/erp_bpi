@@ -130,6 +130,7 @@ class Sales_order_deliveries extends CI_Controller
 
         $balance = 0;
         $qty = 0;
+        $data = array();
         foreach ($records as $record) {
             $qty += $record['qty'];
             $balance = $record['so_qty'] - $qty;
@@ -142,6 +143,7 @@ class Sales_order_deliveries extends CI_Controller
                 "so_qty" => $record['so_qty'],
                 "qty" => $record['qty'],
                 "remain_qty" => $balance,
+                "status" => $record['status'],
                 "created_by" => $record['created_by'],
                 "created_date" => $record['created_date'],
             );
