@@ -235,6 +235,8 @@
         endEditing();
         var totalrows = rows.length;
 
+        alert(totalrows);
+
         if (totalrows > 0) {
             var total_sub = 0;
             for (let i = 0; i < totalrows; i++) {
@@ -756,6 +758,7 @@
 
                     if (customer_address_id != "" && total_grand != "") {
                         for (let i = 0; i < totalrows; i++) {
+                            // alert(rows[i].item_fg_id);
                             if (rows[i].item_fg_id) {
                                 $.ajax({
                                     type: "post",
