@@ -38,7 +38,7 @@
                     <span style="width:35%; display:inline-block;">Report Display</span>
                     <select style="width:60%;" id="filter_display" class="easyui-combobox" panelHeight="auto">
                         <option value="RECAP">RECAP</option>
-                        <option value="DETAIL BY PRODUCT NO.">DETAIL BY PRODUCT NO.</option>
+                        <option value="DETAIL">DETAIL</option>
                     </select>
                 </div>
             </div>

@@ -3,6 +3,7 @@
     <thead>
         <tr>
             <th rowspan="2" field="ck" checkbox="true"></th>
+            <th rowspan="2" data-options="field:'print',width:59,align:'center', formatter:btnPrint">Print</th>
             <th rowspan="2" data-options="field:'status',width:80,align:'center', styler:cellStyler, formatter:cellFormatter">Status</th>
             <th rowspan="2" data-options="field:'delivery_order_no',width:150,halign:'center'">Delivery Order No</th>
             <th rowspan="2" data-options="field:'delivery_order_date',width:100,halign:'center'">Delivery Order<br>Date</th>
@@ -901,5 +902,14 @@
             minimumFractionDigits: 0
         });
         return "<b>" + formatter.format(value) + "</b>";
+    }
+
+    function btnPrint(val, row) {
+        var print = "print_do('" + row.delivery_order_no + "')"; //mengambil id dari customers kemudian di simpan di function details
+        return '<a class="btn btn-primary w-100" onClick="' + print + '" style="pointer-events: visible; opacity:1;"><i class="fa fa-print"></i></a>';
+    }
+
+    function print_do(delivery_order_no) {
+        window.open("<?= base_url('planning/delivery_orders/print_do/') ?>" + window.btoa(delivery_order_no), "_blank", "width=1200,height=600");
     }
 </script>

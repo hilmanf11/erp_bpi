@@ -10,6 +10,7 @@ class Delivery_orders extends CI_Controller
         $this->load->helper(array('form', 'url'));
         $this->load->library('form_validation');
         $this->load->library('session');
+        $this->load->library('Ciqrcode');
         $this->load->model('crud');
     }
 
@@ -201,12 +202,163 @@ class Delivery_orders extends CI_Controller
                 "sales_order_no" => $delivery_order->sales_order_no,
                 "trans_date" => $delivery_order->delivery_date
             ], [
-                "status" => 1
+                "status" => 0
             ]);
         }
 
         $send = $this->crud->delete('delivery_orders', $data);
         echo $send;
+    }
+
+    public function print_do($delivery_order_no)
+    {
+        $delivery_order_no = base64_decode($delivery_order_no);
+
+        $delivery_orders = $this->crud->reads('delivery_orders', [], ["delivery_order_no" => $delivery_order_no]);
+        $delivery_order = $this->crud->read('delivery_orders', [], ["delivery_order_no" => $delivery_order_no]);
+
+        $config = $this->db->get('config')->row();
+        $config_iso = $this->db->get('config_iso')->row();
+        //Config Page
+        $rows = 10;
+        $page = ceil(count($delivery_orders) / $rows);
+        //Generate QRcode
+        $this->createQrcode($delivery_order_no, "assets/image/qrcode/");
+        //Header Print
+        $html = '<html><head><title>' . $delivery_order->delivery_order_no . '</title><link rel="icon" href="' . $config->favicon . '" type="image/png" sizes="16x16"></head>';
+        $html .= '<style>body {font-family: Arial, Helvetica, sans-serif;}';
+        $html .= '#customers {border-collapse: collapse;width: 100%;font-size: 12px;}#customers {border-collapse: collapse;width: 100%;font-size: 12px;}#customers td, #customers th {border: 1px solid black;padding: 2px;}#customers th {padding-top: 2px;padding-bottom: 2px;text-align: center;color: black;}';
+        $html .= '@media screen {.print {display: none !important;}}@media print {.noprint {display: none !important;}}</style>';
+        $html .= '<body><div style="margin:20%;" class="noprint"><center>
+                    <h1>Press CTRL + P for Print</h1>
+                    <p>Display pages for 10 rows</p>
+                    <p>Paper Size A4, Layout Landscape</p>
+                    <p>Margin Default, Scale 98</p>
+                </center></div><div class="print">';
+        //Loop Page
+        $no = 1;
+        for ($i = 0; $i < $page; $i++) {
+            $this->db->select('a.*, b.number as item_fg_number, b.name as item_fg_name, c.name as customer_name, d.customer_order_no');
+            $this->db->from('delivery_orders a');
+            $this->db->join('item_fg b', 'a.item_fg_id = b.id');
+            $this->db->join('customers c', 'a.customer_id = c.id');
+            $this->db->join('sales_orders d', 'a.sales_order_no = d.sales_order_no and a.item_fg_id = d.item_fg_id and a.customer_id = d.customer_id');
+            $this->db->where('a.delivery_order_no', $delivery_order_no);
+            $this->db->order_by('b.number', 'asc');
+            $this->db->limit(10, ($i * 10));
+            $records = $this->db->get()->result_array();
+
+            $html .= '  <table style="width:100%;">
+                            <tr>
+                                <th width="10"><img src="' . $config->favicon . '" width="60" /></th>
+                                <td width="300" style="padding:10px;">
+                                    <b style="font-size:14px;">' . $config->name . '</b><br>
+                                    <span style="font-size:10px;">' . $config->description . '</span><br>
+                                </td>
+                                <th width="100" style="text-align:right;">
+                                    <table style="width:100%; font-size:10px;">
+                                        <tr>
+                                            <td>Print Date</td>
+                                            <td>:</td>
+                                            <td>' . date("Y-m-d H:i") . '</td>
+                                        </tr>
+                                        <tr>
+                                            <td>Print By</td>
+                                            <td>:</td>
+                                            <td>' . $this->session->name . '</td>
+                                        </tr>
+                                    </table>
+                                </th>
+                            </tr>
+                        </table>
+                        <div style="border: 1px solid black; width:100%; height:73%;">
+                            <div style="padding:10px;">
+                                <center>
+                                    <h3>DELIVERY ORDER</h3>
+                                </center>
+                                <div style="float:left; width:60%;">
+                                    <table style="width:100%; font-size:12px; margin-bottom:10px;">
+                                        <tr>
+                                            <td width="150">Delivery Order No</td>
+                                            <td width="10">:</td>
+                                            <td><b>' . @$delivery_order->delivery_order_no . '</b></td>
+                                        </tr>
+                                        <tr>
+                                            <td width="100">Delivery Order Date</td>
+                                            <td width="10">:</td>
+                                            <td><b>' . date("d F Y", strtotime(@$delivery_order->delivery_order_date)) . '</b></td>
+                                        </tr>
+                                        <tr>
+                                            <td width="100">Delivery Date</td>
+                                            <td width="10">:</td>
+                                            <td><b>' . date("d F Y", strtotime(@$delivery_order->delivery_date)) . '</b></td>
+                                        </tr>
+                                        <tr>
+                                            <td width="100">Customer Name</td>
+                                            <td width="10">:</td>
+                                            <td><b>' . @$records[0]['customer_name'] . '</b></td>
+                                        </tr>
+                                    </table>
+                                </div>
+                                <div style="float:left; width:40%; text-align:right;">
+                                    <img style="margin-right:10px;" src="' . base_url('assets/image/qrcode/' . $delivery_order->delivery_order_no . '.png') . '" width="80"/><br>
+                                    <small style="font-size:10px; margin-right:16px;">' . $delivery_order->delivery_order_no . '</small><br><br>
+                                </div>
+                                <table id="customers">
+                                    <tr>
+                                        <th width="20">No</th>
+                                        <th>Product ID</th>
+                                        <th>Product No</th>
+                                        <th>Product Name</th>
+                                        <th>UoM</th>
+                                        <th width="60">Qty</th>
+                                        <th width="120">Sales Order No</th>
+                                        <th width="120">Customer Order No</th>
+                                    </tr>';
+            foreach ($records as $record) {
+                $html .= '  <tr>
+                                <td style="text-align:center">' . $no . '</td>
+                                <td>' . $record['item_fg_id'] . '</td>
+                                <td>' . $record['item_fg_number'] . '</td>
+                                <td>' . $record['item_fg_name'] . '</td>
+                                <td>' . $record['uom'] . '</td>
+                                <td style="text-align:right">' . number_format($record['qty_del'], 2, ",", ".") . '</td>
+                                <td>' . $record['sales_order_no'] . '</td>
+                                <td>' . $record['customer_order_no'] . '</td>
+                            </tr>';
+                $no++;
+            }
+            $html .= '</table>';
+            if ($i + 1 != $page) {
+                $html .= '<div style="page-break-after:always;"></div>';
+            }
+
+            $html .= '</div></div>';
+
+            if (($i + 1) == $page) {
+                $html .= '  <div style="position:fixed; bottom:0; width:98.7%;">
+                                <table id="customers" style="margin-top:10px;">
+                                    <tr>
+                                        <th width="400" style="text-align:left; vertical-align:top;" rowspan="4">Note.</th>
+                                    </tr>
+                                    <tr>
+                                        <th width="200" style="text-align:center;">AUTHORISED SIGNATURE</th>
+                                        <th width="200" style="text-align:center;">DELIVER CONTROL</th>
+                                    </tr>
+                                    <tr>
+                                        <th style="height:80px;"></th>
+                                        <th style="height:80px;"></th>
+                                    </tr>
+                                    <tr>
+                                        <th style="height:20px; text-align:center;"></th>
+                                        <th style="height:20px; text-align:center;"></th>
+                                    </tr>
+                                </table>
+                            </div>';
+            }
+        }
+        $html .= '</div><script>window.print()</script>';
+        die($html);
     }
 
     //PRINT & EXCEL DATA
