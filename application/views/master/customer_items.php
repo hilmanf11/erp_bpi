@@ -130,7 +130,7 @@
                                     field: 'id',
                                     title: 'Product ID',
                                     width: 200
-                                },{
+                                }, {
                                     field: 'number',
                                     title: 'Product No.',
                                     width: 200
@@ -425,7 +425,7 @@
                             title: 'Product ID',
                             halign: 'center',
                             width: 200
-                        },{
+                        }, {
                             field: 'item_fg_number',
                             title: 'Product No.',
                             halign: 'center',
