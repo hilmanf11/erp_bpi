@@ -78,6 +78,7 @@ class Report_outstanding_so extends CI_Controller
         $filter_display = base64_decode($this->input->get("filter_display"));
 
         $customer = $this->crud->read("customers", [], ["id" => $filter_customer_name]);
+        $item_fg = $this->crud->read("item_fg", [], ["id" => $filter_item_fg]);
 
         //Config
         $this->db->select('*');
@@ -113,6 +114,11 @@ class Report_outstanding_so extends CI_Controller
                         <th style="width:100px; text-align:left;">Period</th>
                         <td style="width:10px;">:</td>
                         <td style="width:200px;">' . $filter_so_date_from . ' To ' . $filter_so_date_to . '</td>
+                    </tr>
+                    <tr>
+                        <th style="width:100px; text-align:left;">Product No.</th>
+                        <td style="width:10px;">:</td>
+                        <td style="width:200px;">' . @$item_fg->number . '</td>
                     </tr>
                     <tr>
                         <th style="width:100px; text-align:left;">Customer Name</th>
