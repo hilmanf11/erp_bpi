@@ -116,7 +116,7 @@ class Report_outstanding_so extends CI_Controller
                         <td style="width:200px;">' . $filter_so_date_from . ' To ' . $filter_so_date_to . '</td>
                     </tr>
                     <tr>
-                        <th style="width:100px; text-align:left;">Product No.</th>
+                        <th style="width:100px; text-align:left;">Product No</th>
                         <td style="width:10px;">:</td>
                         <td style="width:200px;">' . @$item_fg->number . '</td>
                     </tr>
