@@ -31,7 +31,7 @@ class Item_familys extends CI_Controller
     public function reads($item_category_id)
     {
         $post = isset($_POST['q']) ? $_POST['q'] : "";
-        $send = $this->crud->reads('item_familys', ["name" => $post], ["item_category_id" => $item_category_id]);
+        $send = $this->crud->reads('item_familys', ["name" => $post],["item_category_id" => $item_category_id]);
         echo json_encode($send);
     }
 
@@ -42,7 +42,7 @@ class Item_familys extends CI_Controller
         // $send = $this->crud->reads('item_categories', ["name" => $post]);
         echo json_encode($send);
     }
-
+    
     //GET DATATABLES
     public function datatables()
     {
@@ -62,10 +62,10 @@ class Item_familys extends CI_Controller
             $this->db->where('a.deleted', 0);
             if (@count($filters) > 0) {
                 foreach ($filters as $filter) {
-                    if ($filter->field == "item_category_name") {
+                    if($filter->field == "item_category_name"){
                         $this->db->like("b.id", $filter->value);
-                    } else {
-                        $this->db->like("a." . $filter->field, $filter->value);
+                    }else{
+                        $this->db->like("a.".$filter->field, $filter->value);
                     }
                 }
             }
@@ -83,12 +83,11 @@ class Item_familys extends CI_Controller
         }
     }
     //AUTO ID
-    public function autoid()
-    {
+    public function autoid(){
         $sql = $this->db->query("SELECT max(id) as kode FROM item_familys");
         $row = $sql->row();
-        $kode = substr($row->kode, 1);
-        $autoid = "P" . sprintf("%02s", $kode + 1);
+        $kode = substr($row->kode,1);
+        $autoid ="P". sprintf("%02s", $kode + 1);
         echo $autoid;
     }
     //CREATE DATA
@@ -164,7 +163,7 @@ class Item_familys extends CI_Controller
             </div>
             <br><br>
             <div style="float: centet; font-size: 16px; text-align: center;">
-                <h3>MASTER PRODUCT FAMILY</h3>
+                <h3>MASTER ITEM FAMILY</h3>
             </div>
         </center>
         
@@ -174,9 +173,9 @@ class Item_familys extends CI_Controller
                 <th>ID</th>
                 <th>Name</th>
                 <th>Product Family code</th>
-                <th>Category</th>
                 <th>Account No.</th>
                 <th>Account Name</th>
+                <th>Category</th>
                 <th>Description</th>
             </tr>';
         $no = 1;
@@ -186,9 +185,9 @@ class Item_familys extends CI_Controller
                     <td>' . $data['id'] . '</td>
                     <td>' . $data['name'] . '</td>
                     <td>' . $data['number'] . '</td>
-                    <td>' . $data['item_category_name'] . '</td>
                     <td>' . $data['account_number'] . '</td>
                     <td>' . $data['account_name'] . '</td>
+                    <td>' . $data['item_category_name'] . '</td>
                     <td>' . $data['description'] . '</td>';
             $no++;
         }

@@ -29,10 +29,13 @@
 <div id="toolbar" style="height: 35px;">
     <?= $button ?>
 </div>
+<!-- TOOLBAR CUSTOMERS ADDRESS DATAGRID -->
 <div id="toolbar2" style="height: 35px;">
     <a href="javascript:;" class="easyui-linkbutton" data-options="plain:true" onclick="add2()"><i class="fa fa-plus"></i> Add</a>
     <a href="javascript:;" class="easyui-linkbutton" data-options="plain:true" onclick="update2()"><i class="fa fa-edit"></i> Update</a>
     <a href="javascript:;" class="easyui-linkbutton" data-options="plain:true" onclick="deleted2()"><i class="fa fa-trash"></i> Delete</a>
+    <a href="javascript:;" class="easyui-linkbutton" data-options="plain:true" onclick="upload2()"><i class="fa fa-upload"></i> Upload</a>
+    <a href="javascript:;" class="easyui-linkbutton" data-options="plain:true" onclick="download_excel2()"><i class="fa fa-download"></i> Download Template</a>
 </div>
 
 <!-- DIALOG SAVE AND UPDATE -->
@@ -94,6 +97,7 @@
     </form>
 </div>
 
+<!-- DIALOG CUSTOMER ADDRESS -->
 <div id="dlg_details" class="easyui-dialog" title="Customer Address" data-options="closed: true,modal:true" style="width: 1200px; height: 500px; top: 20px; left: 10px;">
     <table id="dg2" class="easyui-datagrid" style="width:100%;" toolbar="#toolbar2">
         <thead>
@@ -119,7 +123,7 @@
     </table>
 </div>
 
-<!-- DIALOG SAVE AND UPDATE -->
+<!-- DIALOG SAVE AND UPDATE CUSTOMER ADDRESS -->
 <div id="dlg_insert2" class="easyui-dialog" title="Add New" data-options="closed: true,modal:true" style="width: 500px; padding:10px; top: 20px;">
     <form id="frm_insert2" method="post" novalidate>
         <fieldset style="width:100%; border:1px solid #d0d0d0; margin-bottom: 10px; border-radius:4px; float: left;">
@@ -175,6 +179,26 @@
     <center><b id="p_start">0</b> Of <b id="p_finish">0</b></center>
     <div id="p_remarks" title="History Upload" class="easyui-panel" style="width:100%; height:200px; padding:10px; margin-top: 10px;">
         <ul id="remarks">
+        </ul>
+    </div>
+</div>
+
+<!-- Upload -->
+<div id="dlg_upload2" class="easyui-dialog" title="Upload Data" data-options="closed: true,modal:true" style="width: 500px; padding:10px; top: 20px;">
+    <form id="frm_upload2" method="post" enctype="multipart/form-data" novalidate>
+        <fieldset style="width:100%; border:1px solid #d0d0d0; margin-bottom: 10px; border-radius:4px; float: left;">
+            <legend><b>Form Data</b></legend>
+            <div class="fitem">
+                <span style="width:35%; display:inline-block;">File Upload</span>
+                <input name="file_upload2" style="width: 60%;" required="" accept=".xls" id="file_excel" class="easyui-filebox">
+            </div>
+        </fieldset>
+    </form>
+    <span style="float: left; color:green;">SUCCESS : <b id="p_success2">0</b></span><span style="float: right; color:red;"> FAILED : <b id="p_failed2">0</b></span>
+    <div id="p_upload2" class="easyui-progressbar" style="width:100%; margin-top: 10px;"></div>
+    <center><b id="p_start2">0</b> Of <b id="p_finish2">0</b></center>
+    <div id="p_remarks2" title="History Upload" class="easyui-panel" style="width:100%; height:200px; padding:10px; margin-top: 10px;">
+        <ul id="remarks2">
         </ul>
     </div>
 </div>
@@ -299,26 +323,24 @@
         }
     }
 
-    function details(customer_id) {
-        $("#dlg_details").dialog('open');
-        $("#customer_id").textbox('setValue', customer_id);
-
-        $('#dg2').datagrid({
-            url: '<?= base_url('master/customers/datatables2/') ?>' + customer_id,
-            pagination: true,
-            clientPaging: false,
-            remoteFilter: true,
-            rownumbers: true
-        }).datagrid('enableFilter');
-    }
-
     // UPLOAD DATA
     function upload() {
         $('#dlg_upload').dialog('open');
     }
+
+    // UPLOAD DATA
+    function upload2() {
+        $('#dlg_upload2').dialog('open');
+    }
+
     // DOWNLOAD
     function download_excel() {
         window.location.assign('<?= base_url('template/tmp_customers.xls') ?>');
+    }
+
+     // DOWNLOAD
+     function download_excel2() {
+        window.location.assign('<?= base_url('template/tmp_customer_address.xls') ?>');
     }
     //PRINT PDF
     function pdf() {
@@ -412,8 +434,21 @@
     };
 
     function btnDetails(val, row) {
-        var details = "details('" + row.id + "')";
+        var details = "details('" + row.id + "')"; //mengambil id dari customers kemudian di simpan di function details
         return '<a class="btn btn-primary w-100" onClick="' + details + '" style="pointer-events: visible; opacity:1;"><i class="fa fa-list"></i> Detail</a>';
+    }
+
+    function details(customer_id) {
+        $("#dlg_details").dialog('open');
+        $("#customer_id").textbox('setValue', customer_id); // id customer di simpan di textbox customer_id sekaligus saat add id tersimpan
+
+        $('#dg2').datagrid({
+            url: '<?= base_url('master/customers/datatables2/') ?>' + customer_id,
+            pagination: true,
+            clientPaging: false,
+            remoteFilter: true,
+            rownumbers: true
+        }).datagrid('enableFilter');
     }
 
     $('#currency').combobox({
@@ -493,6 +528,86 @@
                                             requestData(total, json, number + 1, value, success + 0, failed + 1);
                                         }
                                         $("#p_remarks").append(title + "<br>");
+                                    }
+                                });
+                            }
+                        }
+                    }
+                });
+            }
+        }]
+    });
+
+    // UPLOAD
+    $('#dlg_upload2').dialog({
+        buttons: [{
+            text: 'List Failed',
+            handler: function() {
+                window.open('<?= base_url('master/customers/uploadDownloadFailed2') ?>', '_blank');
+            }
+        }, {
+            text: 'Upload',
+            iconCls: 'icon-ok',
+            handler: function() {
+                $('#frm_upload2').form('submit', {
+                    url: '<?= base_url('master/customers/upload2') ?>',
+                    onSubmit: function() {
+                        if ($(this).form('validate') == false) {
+                            return $(this).form('validate');
+                        } else {
+                            $.messager.progress({
+                                title: 'Please Wait',
+                                msg: 'Importing Excel to Database'
+                            });
+                        }
+                    },
+                    success: function(result) {
+                        $.messager.progress('close');
+                        //Clear File
+                        $.ajax({
+                            url: "<?= base_url('master/customers/uploadclearFailed2') ?>"
+                        });
+                        var json = eval('(' + result + ')');
+                        requestData(json.total, json);
+
+                        function requestData(total, json, number = 1, value = 0, success = 1, failed = 1) {
+                            if (value < 100) {
+                                value = Math.floor((number / total) * 100);
+                                $('#p_upload2').progressbar('setValue', value);
+                                $('#p_start2').html(number);
+                                $('#p_finish2').html(total);
+
+                                $.ajax({
+                                    type: "POST",
+                                    async: true,
+                                    url: "<?= base_url('master/customers/uploadCreate2') ?>",
+                                    data: {
+                                        "data": json[number - 1]
+                                    },
+                                    cache: false,
+                                    dataType: "json",
+                                    success: function(result) {
+                                        if (result.theme == "success") {
+                                            $('#p_success2').html(success);
+                                            var title = "<b style='color: green;'>" + result.title + "</b> | " + result.message;
+                                            requestData(total, json, number + 1, value, success + 1, failed + 0);
+                                        } else {
+                                            $('#p_failed2').html(failed);
+                                            var title = "<b style='color: red;'>" + result.title + "</b> | " + result.message;
+                                            //Json Failed
+                                            $.ajax({
+                                                type: "POST",
+                                                async: true,
+                                                url: "<?= base_url('master/customers/uploadcreateFailed2') ?>",
+                                                data: {
+                                                    data: json[number - 1],
+                                                    message: result.message
+                                                },
+                                                cache: false
+                                            });
+                                            requestData(total, json, number + 1, value, success + 0, failed + 1);
+                                        }
+                                        $("#p_remarks2").append(title + "<br>");
                                     }
                                 });
                             }

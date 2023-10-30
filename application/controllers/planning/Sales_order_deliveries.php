@@ -167,7 +167,7 @@ class Sales_order_deliveries extends CI_Controller
             $sales_order_deliveries_total = $this->crud->query("SELECT SUM(qty) as total FROM sales_order_deliveries WHERE sales_order_no='$sales_order_no' and item_fg_id = '$item_fg_id' GROUP BY sales_order_no, item_fg_id");
 
             $qty_so = $sales_orders->qty;
-            if ($qty_so >= ($sales_order_deliveries_total[0]->total + $post['qty'])) {
+            if ($qty_so >= (@$sales_order_deliveries_total[0]->total + $post['qty'])) {
                 if (empty($sales_order_deliveries->trans_date)) {
                     $send = $this->crud->create('sales_order_deliveries', $post);
                     echo $send;

@@ -69,12 +69,11 @@ class divisions extends CI_Controller
         }
     }
     //AUTO ID
-    public function autoid()
-    {
+    public function autoid(){
         $sql = $this->db->query("SELECT max(id) as kode FROM divisions");
         $row = $sql->row();
-        $kode = @substr($row->kode, -2);
-        $autoid = "DIV" . sprintf("%02s", $kode + 1);
+        $kode = @substr($row->kode,-2);
+        $autoid ="DIV". sprintf("%02s", $kode + 1);
         echo $autoid;
     }
     //CREATE DATA
@@ -172,8 +171,8 @@ class divisions extends CI_Controller
             //AUTOID
             $sql = $this->db->query("SELECT max(id) as kode FROM divisions");
             $row = $sql->row();
-            $kode = substr($row->kode, -2);
-            $autoid = "DIV" . sprintf("%02s", $kode + 1);
+            $kode = substr($row->kode,-2);
+            $autoid ="DIV". sprintf("%02s", $kode + 1);
 
             if (!empty($divisions->number)) {
                 echo json_encode(array("title" => "Duplicated", "message" => " Division Code " . $data['number'] . " is Duplicate Data", "theme" => "error"));
@@ -227,16 +226,16 @@ class divisions extends CI_Controller
             </div>
             <br><br>
             <div style="float: centet; font-size: 16px; text-align: center;">
-                <h3>MASTER DIVISION</h3>
+                <h3>MASTER DIVISIONS</h3>
             </div>
         </center>
         
         <table id="customers" border="1">
             <tr>
                 <th width="20">No</th>
-                <th>ID</th>
-                <th>Name</th>
-                <th>Code</th>
+                <th>Division ID</th>
+                <th>Division Name</th>
+                <th>Division Code</th>
                 <th>Description</th>
             </tr>';
         $no = 1;

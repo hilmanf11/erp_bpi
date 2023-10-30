@@ -69,12 +69,11 @@ class Currencies extends CI_Controller
         }
     }
     //AUTO ID
-    public function autoid()
-    {
+    public function autoid(){
         $sql = $this->db->query("SELECT max(id) as kode FROM currencies");
         $row = $sql->row();
-        $kode = substr($row->kode, 2);
-        $autoid = "CR" . sprintf("%02s", $kode + 1);
+        $kode = substr($row->kode,2);
+        $autoid ="CR". sprintf("%02s", $kode + 1);
         echo $autoid;
     }
     //CREATE DATA
@@ -155,7 +154,7 @@ class Currencies extends CI_Controller
         <table id="customers" border="1">
             <tr>
                 <th width="20">No</th>
-                <th>ID</th>
+                <th>Code</th>
                 <th>Name</th>
                 <th>Description</th>
                 <th>Symbol</th>
@@ -164,7 +163,7 @@ class Currencies extends CI_Controller
         foreach ($records as $data) {
             $html .= '<tr>
                     <td>' . $no . '</td>
-                    <td>' . $data['id'] . '</td>
+                    <td>' . $data['number'] . '</td>
                     <td>' . $data['name'] . '</td>
                     <td>' . $data['description'] . '</td>
                     <td>' . $data['symbol'] . '</td>';

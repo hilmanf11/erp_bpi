@@ -110,6 +110,7 @@ class Customers extends CI_Controller
             echo json_encode($result);
         }
     }
+
     //AUTO ID
     public function autoid()
     {
@@ -275,6 +276,92 @@ class Customers extends CI_Controller
             }
         }
     }
+
+    //UPLOAD DATA
+    public function upload2()
+    {
+        error_reporting(0);
+        require_once 'assets/vendors/excel_reader2.php';
+        $target = basename($_FILES['file_upload2']['name']);
+        move_uploaded_file($_FILES['file_upload2']['tmp_name'], $target);
+        chmod($_FILES['file_upload2']['name'], 0777);
+        $file = $_FILES['file_upload2']['name'];
+        $data = new Spreadsheet_Excel_Reader($file, false);
+        $total_row = $data->rowcount($sheet_index = 0);
+        for ($i = 3; $i <= $total_row; $i++) {
+            $datas[] = array(
+                //excel
+                'customer_id' => $data->val($i, 2),
+                'address' => $data->val($i, 3),
+                'address_billing' => $data->val($i, 4),
+                'contact_person' => $data->val($i, 5),
+                'telp' => $data->val($i, 6),
+                'telp_billing' => $data->val($i, 7),
+                'email' => $data->val($i, 8),
+                'website' => $data->val($i, 9),
+            );
+        }
+        $datas['total'] = count($datas);
+        echo json_encode($datas);
+        unlink($_FILES['file_upload2']['name']);
+    }
+    public function uploadclearFailed2()
+    {
+        @unlink('failed/customer_address.txt');
+    }
+    public function uploadcreateFailed2()
+    {
+        if ($this->input->post()) {
+            $message = $this->input->post('message');
+            $textFailed = fopen('failed/customer_address.txt', 'a');
+            fwrite($textFailed, $message . "\n");
+            fclose($textFailed);
+        }
+    }
+    //UPLOAD DOWNLOAD FAILED
+    public function uploadDownloadFailed2()
+    {
+        $file = "failed/customer_address.txt";
+        header('Content-Description: File Failed');
+        header('Content-Disposition: attachment; filename=' . basename($file));
+        header('Expires: 0');
+        header('Cache-Control: must-revalidate');
+        header('Pragma: public');
+        header('Content-Length: ' . @filesize($file));
+        header("Content-Type: text/plain");
+        @readfile($file);
+    }
+
+    public function uploadcreate2()
+    {
+        if ($this->input->post()) {
+            $data = $this->input->post('data');
+
+            //Cek Process Number          //table       //field        //field excel
+            $customers = $this->crud->read('customers', [], ["id" => $data['customer_id']]);
+
+            if (empty($customers->number)) {
+                echo json_encode(array("title" => "Not Found", "message" => " Customer Id " . $data['customer_id'] . " is Not Found", "theme" => "error"));
+            } else {
+                $dataFinal = array(
+                    //field
+                    "customer_id" => $data['customer_id'],
+                    "address" => $data['address'],
+                    "address_billing" => $data['address_billing'],
+                    "contact_person" => $data['contact_person'],
+                    "telp" => $data['telp'],
+                    "telp_billing" => $data['telp_billing'],
+                    "email" => $data['email'],
+                    "website" => $data['website'],
+                );
+
+                $send   = $this->crud->create('customer_address', $dataFinal);
+                echo $send;
+            }
+        }
+    }
+
+    
     //PRINT & EXCEL DATA
     public function print($option = "")
     {
@@ -321,7 +408,6 @@ class Customers extends CI_Controller
         <table id="customers" border="1">
             <tr>
                 <th width="20">No</th>
-                <th>Customer ID</th>
                 <th>Customer Name</th>
                 <th>Customer Code</th>
                 <th>type</th>
@@ -340,9 +426,15 @@ class Customers extends CI_Controller
             </tr>';
         $no = 1;
         foreach ($records as $data) {
+            
+            if ($data['status'] == 0) {
+                $status = 'Active';
+            } else {
+                $status = 'Not Active';
+            }
+
             $html .= '<tr>
                     <td>' . $no . '</td>
-                    <td>' . $data['id'] . '</td>
                     <td>' . $data['name'] . '</td>
                     <td>' . $data['number'] . '</td>
                     <td>' . $data['type'] . '</td>
@@ -357,7 +449,7 @@ class Customers extends CI_Controller
                     <td>' . $data['payment_term'] . '</td>
                     <td>' . $data['bank_account'] . '</td>
                     <td>' . $data['bank_name'] . '</td>
-                    <td>' . $data['status'] . '</td>';
+                    <td>' . $status . '</td>';
             $no++;
         }
         $html .= '</table></body></html>';

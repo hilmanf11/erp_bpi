@@ -31,7 +31,7 @@ class Item_family_subs extends CI_Controller
     public function reads($item_family_id)
     {
         $post = isset($_POST['q']) ? $_POST['q'] : "";
-        $send = $this->crud->reads('item_family_subs', ["number" => $post], ["item_family_id" => $item_family_id]);
+        $send = $this->crud->reads('item_family_subs', ["number" => $post],["item_family_id" => $item_family_id]);
         echo json_encode($send);
     }
     public function reads_number()
@@ -40,7 +40,7 @@ class Item_family_subs extends CI_Controller
         $send = $this->crud->query("SELECT number FROM item_family_subs GROUP BY number ASC");
         echo json_encode($send);
     }
-
+    
     //GET DATATABLES
     public function datatables()
     {
@@ -61,12 +61,12 @@ class Item_family_subs extends CI_Controller
             $this->db->where('a.deleted', 0);
             if (@count($filters) > 0) {
                 foreach ($filters as $filter) {
-                    if ($filter->field == "item_category_name") {
+                    if($filter->field == "item_category_name"){
                         $this->db->like("b.id", $filter->value);
-                    } elseif ($filter->field == "item_family_name") {
+                    }elseif($filter->field == "item_family_name"){
                         $this->db->like("c.id", $filter->value);
-                    } else {
-                        $this->db->like("a." . $filter->field, $filter->value);
+                    }else{
+                        $this->db->like("a.".$filter->field, $filter->value);
                     }
                 }
             }
@@ -84,12 +84,11 @@ class Item_family_subs extends CI_Controller
         }
     }
     //AUTO ID
-    public function autoid()
-    {
+    public function autoid(){
         $sql = $this->db->query("SELECT max(id) as kode FROM item_family_subs");
         $row = $sql->row();
-        $kode = substr($row->kode, 2);
-        $autoid = "PS" . sprintf("%03s", $kode + 1);
+        $kode = substr($row->kode,2);
+        $autoid ="PS". sprintf("%03s", $kode + 1);
         echo $autoid;
     }
     //CREATE DATA
@@ -166,7 +165,7 @@ class Item_family_subs extends CI_Controller
             </div>
             <br><br>
             <div style="float: centet; font-size: 16px; text-align: center;">
-                <h3>MASTER SUB PRODUCT FAMILY</h3>
+                <h3>MASTER ITEM FAMILY SUB</h3>
             </div>
         </center>
         

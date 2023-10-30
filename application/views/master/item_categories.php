@@ -1,12 +1,12 @@
 <!-- TABLE DATAGRID -->
-<table id="dg" class="easyui-datagrid" style="width:100%;" toolbar="#toolbar">
+<table id="dg" class="easyui-datagrid" style="width:99.5%;" toolbar="#toolbar">
     <thead>
         <tr>
             <th rowspan="2" field="ck" checkbox="true"></th>
             <th rowspan="2" data-options="field:'id',width:80,align:'center'">ID</th>
-            <th rowspan="2" data-options="field:'name',width:150,halign:'center'">Name</th>
-            <th rowspan="2" data-options="field:'number',width:100,align:'center'">Category<br>Code</th>
-            <th rowspan="2" data-options="field:'description',width:200,halign:'center'">Description</th>
+            <th rowspan="2" data-options="field:'name',width:200,halign:'center'">Name</th>
+            <th rowspan="2" data-options="field:'number',width:150,halign:'center'">Category Code</th>
+            <th rowspan="2" data-options="field:'description',width:150,halign:'center'">Description</th>
             <th colspan="2" data-options="field:'',width:100,halign:'center'"> Created</th>
             <th colspan="2" data-options="field:'',width:100,halign:'center'"> Updated</th>
         </tr>
@@ -54,12 +54,12 @@
         $('#dlg_insert').dialog('open');
         url_save = '<?= base_url('master/item_categories/create') ?>';
         $('#frm_insert').form('clear');
-
+        
         $.ajax({
-            type: "post",
-            url: "<?= base_url('master/item_categories/autoid') ?>",
-            dataType: "html",
-            success: function(response) {
+            type : "post",
+            url : "<?= base_url('master/item_categories/autoid')?>",
+            dataType : "html",
+            success : function(response){
                 $('#id').textbox('setValue', response);
             }
         });
@@ -146,7 +146,7 @@
                             } else {
                                 toastr.error(result.message, result.title);
                             }
-
+                            
                             $('#dlg_insert').dialog('close');
                             $('#dg').datagrid('reload');
                         }

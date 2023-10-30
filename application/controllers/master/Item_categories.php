@@ -159,7 +159,7 @@ class Item_categories extends CI_Controller
             </div>
             <br><br>
             <div style="float: centet; font-size: 16px; text-align: center;">
-                <h3>MASTER CATEGORY</h3>
+                <h3>MASTER CATEGORIES</h3>
             </div>
         </center>
         
