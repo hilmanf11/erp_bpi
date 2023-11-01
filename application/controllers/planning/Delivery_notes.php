@@ -28,10 +28,16 @@ class Delivery_notes extends CI_Controller
         }
     }
 
+    public function readDo($customer_id)
+    {
+        $send = $this->crud->query("SELECT delivery_order_no, trans_type FROM delivery_orders WHERE customer_id = '$customer_id'");
+        echo json_encode($send);
+    }
+
     public function readDeliveryOrder($customer_id)
     {
         $post = isset($_POST['q']) ? $_POST['q'] : "";
-        $send = $this->crud->query("SELECT b.id, b.number, b.name, b.number_customer, a.delivery_order_no, a.sales_order_no, c.customer_order_no, b.uom
+        $send = $this->crud->query("SELECT b.id, b.number, b.name, a.delivery_order_no, a.sales_order_no, c.customer_order_no, a.uom, a.qty_do
             FROM delivery_orders a 
             JOIN item_fg b ON a.item_fg_id = b.id
             JOIN sales_orders c ON a.customer_id = c.id
@@ -69,7 +75,7 @@ class Delivery_notes extends CI_Controller
     public function number($delivery_note_date)
     {
         $datenow    = "DN" . date("ymd", strtotime(base64_decode($delivery_note_date)));
-        $sqlGetID   = $this->db->query("SELECT max(`delivery_order_no`) as kode FROM delivery_orders WHERE `delivery_order_no` like '%$datenow%'");
+        $sqlGetID   = $this->db->query("SELECT max(`delivery_note_no`) as kode FROM delivery_notes WHERE `delivery_note_no` like '%$datenow%'");
         $rowID      = $sqlGetID->row();
         $kode       = $rowID->kode;
         if ($kode == NULL) {
@@ -90,10 +96,12 @@ class Delivery_notes extends CI_Controller
             $filter_from = @base64_decode($get['filter_from']);
             $filter_to = @base64_decode($get['filter_to']);
             $filter_customer_id = @base64_decode($get['filter_customer_id']);
+            $filter_delivery_note_no = @base64_decode($get['filter_delivery_note_no']);
             $filter_delivery_order_no = @base64_decode($get['filter_delivery_order_no']);
             $filter_sales_order_no = @base64_decode($get['filter_sales_order_no']);
             $filter_customer_order_no = @base64_decode($get['filter_customer_order_no']);
             $filter_item_fg = @base64_decode($get['filter_item_fg']);
+            $filter_status_delivery = @base64_decode($get['filter_status_delivery']);
             $filter_status = @base64_decode($get['filter_status']);
 
             $page = $this->input->post('page');
@@ -105,20 +113,22 @@ class Delivery_notes extends CI_Controller
             $result = array();
             //Select Query
             $this->db->select("a.*, b.name as customer_name");
-            $this->db->from('delivery_orders a');
+            $this->db->from('delivery_notes a');
             $this->db->join('customers b', 'a.customer_id = b.id');
             $this->db->join('sales_orders c', 'a.sales_order_no = c.sales_order_no and a.item_fg_id = c.item_fg_id and a.customer_id = c.customer_id');
             if ($filter_from != "" && $filter_to != "") {
-                $this->db->where('a.delivery_order_date >=', $filter_from);
-                $this->db->where('a.delivery_order_date <=', $filter_to);
+                $this->db->where('a.delivery_note_date >=', $filter_from);
+                $this->db->where('a.delivery_note_date <=', $filter_to);
             }
             $this->db->like('a.customer_id', $filter_customer_id);
+            $this->db->like('a.delivery_note_no', $filter_delivery_note_no);
             $this->db->like('a.delivery_order_no', $filter_delivery_order_no);
             $this->db->like('a.sales_order_no', $filter_sales_order_no);
-            $this->db->like('a.item_fg_id', $filter_item_fg);
             $this->db->like('c.customer_order_no', $filter_customer_order_no);
+            $this->db->like('a.item_fg_id', $filter_item_fg);
+            $this->db->like('a.status_delivery', $status_delivery);
             $this->db->like('a.status', $filter_status);
-            $this->db->group_by('a.delivery_order_no');
+            $this->db->group_by('a.delivery_note_no');
             $this->db->order_by('a.status', 'ASC');
             //Total Data
             $totalRows = $this->db->count_all_results('', false);
@@ -174,15 +184,15 @@ class Delivery_notes extends CI_Controller
         if ($this->input->post()) {
             $post = $this->input->post();
 
-            $delivery_orders = $this->crud->read("delivery_orders", [], ["delivery_order_no" => $post['delivery_order_no'], "item_fg_id" => $post['item_fg_id'], "sales_order_no" => $post['sales_order_no']]);
+            $delivery_notes = $this->crud->read("delivery_notes", [], ["delivery_order_no" => $post['delivery_order_no'], "item_fg_id" => $post['item_fg_id'], "sales_order_no" => $post['sales_order_no']]);
 
-            if (@$delivery_orders->delivery_order_no != "") {
-                $send = $this->crud->update('delivery_orders', ["delivery_order_no" => $post['delivery_order_no'], "item_fg_id" => $post['item_fg_id'], "sales_order_no" => $post['sales_order_no']], $post);
+            if (@$delivery_notes->delivery_order_no != "") {
+                $send = $this->crud->update('delivery_notes', ["delivery_order_no" => $post['delivery_order_no'], "item_fg_id" => $post['item_fg_id'], "sales_order_no" => $post['sales_order_no']], $post);
             } else {
-                $send = $this->crud->create('delivery_orders', $post);
+                $send = $this->crud->create('delivery_notes', $post);
 
                 //Ubah Status Sales Order Delivery
-                $this->crud->update("sales_order_deliveries", ["item_fg_id" => $post['item_fg_id'], "sales_order_no" => $post['sales_order_no'], "trans_date" => $post['delivery_date']], ["status" => 1]);
+                // $this->crud->update("sales_order_deliveries", ["item_fg_id" => $post['item_fg_id'], "sales_order_no" => $post['sales_order_no'], "trans_date" => $post['delivery_date']], ["status" => 1]);
             }
 
             echo $send;
