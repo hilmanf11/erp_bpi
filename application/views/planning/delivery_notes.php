@@ -112,7 +112,7 @@
                 </div>
                 <div class="fitem">
                     <span style="width:35%; display:inline-block;">Delivery Note No.</span>
-                    <input style="width:60%;" name="delivery_note_no" id="delivery_note_no" readonly class="easyui-textbox">
+                    <input style="width:60%;" name="delivery_note_no" id="delivery_note_no" readonly class="easyui-combobox">
                 </div>
                 <div class="fitem">
                     <span style="width:35%; display:inline-block;">Shipping Address</span>
@@ -128,7 +128,7 @@
                 </div>
                 <div class="fitem">
                     <span style="width:35%; display:inline-block;">Transaction Type</span>
-                    <input style="width:60%;" name="trans_type" id="trans_type" readonly class="easyui-textbox">
+                    <input style="width:60%;" name="trans_type" id="trans_type" class="easyui-textbox">
                 </div>
             </div>
             <div style="width: 50%; float: left;">
@@ -163,10 +163,7 @@
                 </div>
                 <div class="fitem">
                     <span style="width:35%; display:inline-block;">Delivery Status</span>
-                    <select style="width:60%;" name="status_delivery" id="status_delivery" readonly class="easyui-combobox" panelHeight="auto">
-                        <option value="0">ON SCHEDULE</option>
-                        <option value="1">DELAY</option>
-                    </select>
+                    <input style="width:60%;" name="status_delivery" id="status_delivery"  class="easyui-textbox">
                 </div>
                 <div class="fitem">
                     <span style="width:35%; display:inline-block;">Status</span>
@@ -202,33 +199,6 @@
                 if (delivery_note_date != "") {
                     number(delivery_note_date);
                 }
-            }
-        });
-
-        $('#delivery_order_no').combobox({
-            formatter:function(row){
-                var opts = $(this).combobox('options');
-                return '<input type="checkbox" class="combobox-checkbox">' + row[opts.textField]
-            },
-            onLoadSuccess:function(){
-                var opts = $(this).combobox('options');
-                var target = this;
-                var values = $(target).combobox('getValues');
-                $.map(values, function(value){
-                var el = opts.finder.getEl(target, value);
-                el.find('input.combobox-checkbox')._propAttr('checked', true);
-                })
-            },
-            onSelect:function(row){
-                console.log(row)
-                var opts = $(this).combobox('options');
-                var el = opts.finder.getEl(this, row[opts.valueField]);
-                el.find('input.combobox-checkbox')._propAttr('checked', true);
-            },
-            onUnselect:function(row){
-                var opts = $(this).combobox('options');
-                var el = opts.finder.getEl(this, row[opts.valueField]);
-                el.find('input.combobox-checkbox')._propAttr('checked', false);
             }
         });
     }
@@ -890,20 +860,39 @@
         prompt: 'Choose Customer Name',
         onSelect: function(customer) {
             addTable(customer.id);
+
+            if(customer.type=="LOCAL"){
+                var origin = "INDONESIA";
+            }else{
+                var origin ="";
+            }
+
+            $("#origin").textbox('setValue', origin);
+
             $('#delivery_order_no').combobox({
                 url: '<?= base_url('planning/delivery_notes/readDo/'); ?>' + customer.id,
                 valueField: 'delivery_order_no',
                 textField: 'delivery_order_no',
-                prompt: 'Choose DO No.'
-            });
-            $('#trans_type').textbox({
-                url: '<?= base_url('planning/delivery_notes/readDo/'); ?>' + customer.id,
-                valueField: 'trans_type',
-                textField: 'trans_type',
-                onSelect: function(result) {
-                    $("#trans_type").textbox('setValue', result.trans_type);
+                multiple:true,
+                prompt: 'Choose DO No.',
+                onSelect: function(delivery_order_no) {
+                    
+                    $("#trans_type").textbox('setValue', delivery_order_no.trans_type);
+
+                    $('#delivery_note_date').datebox({
+                        onChange: function(delivery_note_date) {
+                            number(delivery_note_date);
+                            if (delivery_order_no.delivery_date >= delivery_note_date) {
+                                $('#status_delivery').combobox('setText', 'ON SCHEDULE');
+                            } else {
+                                $('#status_delivery').combobox('setText', 'DELAY');
+                            }
+                        }
+                        
+                    });
                 }
             });
+
             $('#customer_address_id').combobox({
                 url: '<?= base_url('master/customers/readAddress/'); ?>' + customer.id,
                 valueField: 'id',
@@ -921,7 +910,7 @@
         valueField: 'police_no',
         textField: 'police_no',
         prompt: 'Choose Vehicles',
-    });
+    });    
     
 
     //CELLSTYLE STATUS

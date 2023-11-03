@@ -437,15 +437,15 @@
 
     //CELLSTYLE STATUS
     function cellStyler(value, row, index) {
-        if (value == 0) {
+        if (row.remain_qty > 0) {
             return 'background: #53D636; color:white;';
         } else {
             return 'background: #FF5F5F; color:white;';
         }
     }
     //FORMATTER STATUS
-    function cellFormatter(value) {
-        if (value == 0) {
+    function cellFormatter(value, row) {
+        if (row.remain_qty > 0) {
             return 'OPEN';
         } else {
             return 'CLOSE';

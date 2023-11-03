@@ -30,7 +30,13 @@ class Delivery_notes extends CI_Controller
 
     public function readDo($customer_id)
     {
-        $send = $this->crud->query("SELECT delivery_order_no, trans_type FROM delivery_orders WHERE customer_id = '$customer_id'");
+        $send = $this->crud->query("SELECT delivery_order_no, trans_type, delivery_date FROM delivery_orders WHERE customer_id = '$customer_id'");
+        echo json_encode($send);
+    }
+
+    public function readDate()
+    {
+        $send = $this->crud->query("SELECT delivery_date FROM delivery_orders");
         echo json_encode($send);
     }
 
