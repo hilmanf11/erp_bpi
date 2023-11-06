@@ -30,15 +30,14 @@ class Delivery_notes extends CI_Controller
 
     public function readDo($customer_id)
     {
-        $send = $this->crud->query("SELECT delivery_order_no, trans_type, delivery_date FROM delivery_orders WHERE customer_id = '$customer_id'");
+        $send = $this->crud->query("SELECT b.id, b.number, b.name, a.delivery_order_no, a.sales_order_no, a.trans_type, a.delivery_date, c.customer_order_no, a.uom, a.qty_do 
+        FROM delivery_orders a 
+        JOIN item_fg b ON a.item_fg_id = b.id 
+        JOIN sales_orders c ON a.item_fg_id = c.item_fg_id 
+        WHERE a.customer_id = '$customer_id'");
         echo json_encode($send);
     }
-
-    public function readDate()
-    {
-        $send = $this->crud->query("SELECT delivery_date FROM delivery_orders");
-        echo json_encode($send);
-    }
+ 
 
     public function readDeliveryOrder($customer_id)
     {
@@ -411,7 +410,7 @@ class Delivery_notes extends CI_Controller
             $this->db->where('a.delivery_order_date <=', $filter_to);
         }
         $this->db->like('a.customer_id', $filter_customer_id);
-        $this->db->like('a.filter_delivery_order_no', $filter_delivery_order_no);
+        $this->db->like('a.delivery_order_no', $filter_delivery_order_no);
         $this->db->like('a.sales_order_no', $filter_sales_order_no);
         $this->db->like('a.item_fg_id', $filter_item_fg);
         $this->db->like('d.customer_order_no', $filter_customer_order_no);

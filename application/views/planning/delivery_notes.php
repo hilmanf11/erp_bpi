@@ -163,7 +163,7 @@
                 </div>
                 <div class="fitem">
                     <span style="width:35%; display:inline-block;">Delivery Status</span>
-                    <input style="width:60%;" name="status_delivery" id="status_delivery"  class="easyui-textbox">
+                    <input style="width:60%;" name="status_delivery" id="status_delivery"  class="easyui-combobox">
                 </div>
                 <div class="fitem">
                     <span style="width:35%; display:inline-block;">Status</span>
@@ -194,13 +194,13 @@
         $("#delivery_note_date").datebox('enable');
         $("#customer_id").combobox('enable');
 
-        $('#delivery_note_date').datebox({
-            onChange: function(delivery_note_date) {
-                if (delivery_note_date != "") {
-                    number(delivery_note_date);
-                }
-            }
-        });
+        // $('#delivery_note_date').datebox({
+        //     onChange: function(delivery_note_date) {
+        //         if (delivery_note_date != "") {
+        //             number(delivery_note_date);
+        //         }
+        //     }
+        // });
     }
 
     function number(delivery_note_date) {
@@ -243,8 +243,7 @@
                                 }]
                             ],
                             onSelect: function(value, rows) {
-                                var delivery_note_date = $("#delivery_note_date").datebox('getValue');
-
+                               
                                 var dg = $('#dg2');
                                 var row = dg.datagrid('getSelected');
                                 var rowIndex = dg.datagrid('getRowIndex', row);
@@ -286,36 +285,11 @@
                                 $(ed2.target).textbox('setValue', rows.id);
                                 $(ed3.target).textbox('setValue', rows.number);
                                 $(ed4.target).textbox('setValue', rows.name);
-                                $(ed5.target).combogrid({
-                                    url: '<?= base_url('planning/delivery_notes/readSalesOrders/'); ?>' + btoa(customer_id) + "/" + window.btoa(rows.id) + "/" + btoa(delivery_note_date),
-                                    required: true,
-                                    panelWidth: 400,
-                                    idField: 'sales_order_no',
-                                    textField: 'sales_order_no',
-                                    mode: 'remote',
-                                    fitColumns: true,
-                                    prompt: 'Choose Sales Order No',
-                                    columns: [
-                                        [{
-                                            field: 'sales_order_no',
-                                            title: 'Sales Order No',
-                                            width: 150
-                                        }, {
-                                            field: 'customer_order_no',
-                                            title: 'Customer Order No',
-                                            width: 150
-                                        }, {
-                                            field: 'qty_del',
-                                            title: 'Qty',
-                                            width: 80
-                                        }]
-                                    ],
-                                    onSelect: function(val, sales_order) {
-                                        $(ed6.target).textbox('setValue', sales_order.customer_order_no);
-                                        $(ed8.target).numberbox('setValue', sales_order.qty_do);
-                                    }                                
-                                });
+                                $(ed5.target).textbox('setValue', rows.sales_order_no);
+                                $(ed6.target).textbox('setValue', rows.customer_order_no);
                                 $(ed7.target).textbox('setValue', rows.uom);
+                                $(ed8.target).textbox('setValue', rows.qty_do);
+
                             }
                         }
                     }
@@ -323,7 +297,7 @@
                     field: 'item_fg_id',
                     width: 150,
                     halign: 'center',
-                    title: "Product No",
+                    title: "Product ID",
                     editor: {
                         type: 'textbox',
                         options: {
@@ -358,9 +332,9 @@
                     halign: 'center',
                     title: "Sales Order No",
                     editor: {
-                        type: 'combogrid',
+                        type: 'textbox',
                         options: {
-                            required: true
+                            readonly: true
                         }
                     }
                 }, {
@@ -869,6 +843,7 @@
 
             $("#origin").textbox('setValue', origin);
 
+            
             $('#delivery_order_no').combobox({
                 url: '<?= base_url('planning/delivery_notes/readDo/'); ?>' + customer.id,
                 valueField: 'delivery_order_no',
@@ -876,11 +851,11 @@
                 multiple:true,
                 prompt: 'Choose DO No.',
                 onSelect: function(delivery_order_no) {
-                    
                     $("#trans_type").textbox('setValue', delivery_order_no.trans_type);
 
                     $('#delivery_note_date').datebox({
-                        onChange: function(delivery_note_date) {
+                    onChange: function (delivery_note_date) {
+                        if (delivery_note_date !== "") {
                             number(delivery_note_date);
                             if (delivery_order_no.delivery_date >= delivery_note_date) {
                                 $('#status_delivery').combobox('setText', 'ON SCHEDULE');
@@ -888,7 +863,7 @@
                                 $('#status_delivery').combobox('setText', 'DELAY');
                             }
                         }
-                        
+                    }
                     });
                 }
             });
@@ -898,9 +873,7 @@
                 valueField: 'id',
                 textField: 'address',
                 prompt: 'Choose Address',
-                onSelect: function(address) {
-                    addTable(address.id);
-                }
+                
             });
         }
     });
@@ -967,7 +940,7 @@
     }
 
     function btnPrint(val, row) {
-        var print = "print_do('" + row.delivery_order_no + "')"; //mengambil id dari customers kemudian di simpan di function details
+        var print = "print_do('" + row.delivery_order_no + "')"; 
         return '<a class="btn btn-primary w-100" onClick="' + print + '" style="pointer-events: visible; opacity:1;"><i class="fa fa-print"></i></a>';
     }
 
