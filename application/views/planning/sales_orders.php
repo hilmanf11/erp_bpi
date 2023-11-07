@@ -314,6 +314,7 @@
                                     index: rowIndex,
                                     field: 'currency'
                                 });
+                                
 
                                 $(ed.target).textbox('setValue', rows.number);
                                 $(ed2.target).textbox('setValue', rows.name);

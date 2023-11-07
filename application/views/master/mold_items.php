@@ -1,28 +1,21 @@
 <!-- TABLE DATAGRID -->
 <table id="dg" class="easyui-datagrid" style="width:99.5%;" toolbar="#toolbar">
-    <thead frozen="true">
-        <tr>
-            <th field="ck" checkbox="true"></th>
-            <th data-options="field:'item_fg_id',width:150,align:'center'">Product ID</th>
-            <th data-options="field:'item_fg_number',width:150,halign:'center'">Product No.</th>
-            <th data-options="field:'item_fg_name',width:200,halign:'center'">Product Name</th>
-        </tr>
-    </thead>
     <thead>
         <tr>
-            <th rowspan="2" data-options="field:'machine_number',width:150,halign:'center'">Machine No.</th>
-            <th rowspan="2" data-options="field:'machine_toonage',width:150,halign:'center'">Toonage of Machine </th>
-            <th rowspan="2" data-options="field:'mold_id',width:150,halign:'center'">Mold ID</th>
-            <th rowspan="2" data-options="field:'mold_cavity_actual',width:100,halign:'center'">Cavity Actual</th>
-            <th rowspan="2" data-options="field:'mold_cavity_standard',width:120,halign:'center'">Cavity Standard</th>
-            <th rowspan="2" data-options="field:'shift',width:100,halign:'center'">Shift</th>
-            <th rowspan="2" data-options="field:'shift_hour',width:100,halign:'center'">Hour/Shift</th>
-            <th rowspan="2" data-options="field:'productcivity',width:100,halign:'center'">Productivity <br>Factor (%)</th>
-            <th rowspan="2" data-options="field:'cycle_time',width:90,halign:'center'">Cycle Time <br>(Second)</th>
-            <th rowspan="2" data-options="field:'cycle_time_process',width:150,halign:'center'">Cycle Time Second <br>Process</th>
-            <th rowspan="2" data-options="field:'manpower',width:100,halign:'center'">Man Power</th>
-            <th rowspan="2" data-options="field:'runner',width:110,halign:'center'">Runner/Shoot</th>
-            <th rowspan="2" data-options="field:'priority',width:110,halign:'center'">Priority</th>
+            <th rowspan="2" field="ck" checkbox="true"></th>
+            <th rowspan="2" data-options="field:'id',width:150,align:'center'">Mold ID</th>
+            <th rowspan="2" data-options="field:'type',width:130,halign:'center'">Mold Name</th>
+            <th rowspan="2" data-options="field:'customer_name',width:200,halign:'center'">Product No.</th>
+            <th rowspan="2" data-options="field:'model',width:150,halign:'center'">Product Name</th>
+            <th rowspan="2" data-options="field:'project_year',width:150,halign:'center'">Project Year</th>
+            <th rowspan="2" data-options="field:'cavity_standard',width:150,halign:'center'">Standard Cavity</th>
+            <th rowspan="2" data-options="field:'cavity_actual',width:150,halign:'center'">Actual Cavity</th>
+            <th rowspan="2" data-options="field:'shoot_standard',width:150,halign:'center'">Standard Shoot</th>
+            <th rowspan="2" data-options="field:'shoot_actual',width:150,halign:'center'">Actual Shoot</th>
+            <th rowspan="2" data-options="field:'mold_type',width:80,halign:'center'">Mold Type</th>
+            <th rowspan="2" data-options="field:'mold_type',width:80,halign:'center'">Mold Type Product</th>
+            <th rowspan="2" data-options="field:'remark',width:150,halign:'center'">Remarks</th>
+            <th rowspan="2" data-options="field:'status',width:150,halign:'center', styler:cellStyler, formatter:cellFormatter">Status</th>
             <th colspan="2" data-options="field:'',width:100,halign:'center'"> Created</th>
             <th colspan="2" data-options="field:'',width:100,halign:'center'"> Updated</th>
         </tr>
@@ -39,53 +32,63 @@
     <?= $button ?>
 </div>
 <!-- DIALOG SAVE AND UPDATE -->
-<div id="dlg_insert" class="easyui-dialog" title="Add New" data-options="closed: true,modal:true" style="width: 400px; padding:10px; top: 20px;">
-    <form id="frm_insert" method="post" novalidate enctype="multipart/form-data">
+<div id="dlg_insert" class="easyui-dialog" title="Add New" data-options="closed: true,modal:true" style="width: 600px; padding:10px; top: 20px;">
+    <form id="frm_insert" method="post" novalidate>
         <fieldset style="width:100%; border:1px solid #d0d0d0; margin-bottom: 10px; border-radius:4px; float: left;">
             <legend><b>Form Data</b></legend>
             <div class="fitem">
+                <span style="width:35%; display:inline-block;">Mold Name</span>
+                <input style="width:60%;" name="mold_name" id="mold_name" required="" class="easyui-textbox" readonly>
+            </div>
+            <div class="fitem">
                 <span style="width:35%; display:inline-block;">Product No.</span>
-                <input style="width:60%;" name="item_fg_id" id="item_fg_id" required="" class="easyui-combobox">
+                <input style="width:60%;" name="item_fg_id" id="item_fg_id" required="" class="easyui-textbox">
+            </div>
+            <!-- auto ambil dari molds -->
+            <div class="fitem">
+                <span style="width:35%; display:inline-block;">Project Year</span>
+                <input style="width:60%;" name="project_year" id="project_year" class="easyui-numberbox">
+            </div>
+            <!-- auto ambil dari molds -->
+            <div class="fitem">
+                <span style="width:35%; display:inline-block;">Standard Cavity</span>
+                <input style="width:60%;" name="cavity_standard" id="cavity_standard" class="easyui-numberbox">
+            </div>
+            <!-- auto ambil dari molds -->
+            <div class="fitem">
+                <span style="width:35%; display:inline-block;">Actual Cavity</span>
+                <input style="width:60%;" name="cavity_actual" id="cavity_actual" class="easyui-numberbox">
+            </div>
+            <!-- auto ambil dari molds -->
+            <div class="fitem">
+                <span style="width:35%; display:inline-block;">Standard Shoot</span>
+                <input style="width:60%;" name="shoot_standard" id="shoot_standard" class="easyui-numberbox">
+            </div>
+            <!-- auto ambil dari molds -->
+            <div class="fitem">
+                <span style="width:35%; display:inline-block;">Actual Shoot</span>
+                <input style="width:60%;" name="shoot_actual" id="shoot_actual" class="easyui-numberbox">
+            </div>
+            <!-- auto ambil dari molds -->
+            <div class="fitem">
+                <span style="width:35%; display:inline-block;">Mold Type</span>
+                <input style="width:60%;" name="mold_type" id="mold_type" class="easyui-textbox">
+            </div>
+            <!-- ambil dari item_fg -->
+            <div class="fitem">
+                <span style="width:35%; display:inline-block;">Mold Type Product</span>
+                <input style="width:60%;" name="mold_type" id="mold_type" class="easyui-textbox">
             </div>
             <div class="fitem">
-                <span style="width:35%; display:inline-block;">Mold ID</span>
-                <input style="width:60%;" name="mold_id" id="mold_id" required="" class="easyui-combobox">
+                <span style="width:35%; display:inline-block;">Remarks</span>
+                <input style="width:60%;" name="remark" id="remark" class="easyui-textbox">
             </div>
             <div class="fitem">
-                <span style="width:35%; display:inline-block;">Machine No.</span>
-                <input style="width:60%;" name="machine_id" id="machine_id" required="" class="easyui-combobox">
-            </div>
-            <div class="fitem">
-                <span style="width:35%; display:inline-block;">Shift</span>
-                <input style="width:60%;" name="shift" id="shift" class="easyui-numberbox">
-            </div>
-            <div class="fitem">
-                <span style="width:35%; display:inline-block;">Shift/Hour</span>
-                <input style="width:60%;" name="shift_hour" id="shift_hour" class="easyui-numberbox">
-            </div>
-            <div class="fitem">
-                <span style="width:35%; display:inline-block;">Productivity Factor</span>
-                <input style="width:60%;" name="productcivity" id="productcivity" class="easyui-numberbox">
-            </div>
-            <div class="fitem">
-                <span style="width:35%; display:inline-block;">Cycle Time</span>
-                <input style="width:60%;" name="cycle_time" id="cycle_time" precision="2" class="easyui-numberbox">
-            </div>
-            <div class="fitem">
-                <span style="width:35%; display:inline-block;">Cycle Time Process</span>
-                <input style="width:60%;" name="cycle_time_process" id="cycle_time_process" precision="2" class="easyui-numberbox">
-            </div>
-            <div class="fitem">
-                <span style="width:35%; display:inline-block;">Man Power</span>
-                <input style="width:30%;" name="manpower" id="manpower" class="easyui-numberbox">
-            </div>
-            <div class="fitem">
-                <span style="width:35%; display:inline-block;">Runner/Shoot</span>
-                <input style="width:30%;" name="runner" id="runner" precision="5" class="easyui-numberbox">
-            </div>
-            <div class="fitem">
-                <span style="width:35%; display:inline-block;">Priority</span>
-                <input style="width:30%;" name="priority" id="priority" class="easyui-numberbox">
+                <span style="width:35%; display:inline-block;">Status</span>
+                <select style="width:60%;" name="status" id="status" required="" panelHeight="auto" class="easyui-combobox">
+                    <option value="0">Active</option>
+                    <option value="1">Not Active</option>
+                </select>
             </div>
         </fieldset>
     </form>
@@ -112,21 +115,31 @@
 </div>
 
 <!-- PDF -->
-<iframe id="printout" src="<?= base_url('master/menu_loadings/print') ?>" style="width: 100%;" hidden></iframe>
+<iframe id="printout" src="<?= base_url('master/molds/print') ?>" style="width: 100%;" hidden></iframe>
 <script>
     //ADD DATA
     function add() {
         $('#dlg_insert').dialog('open');
-        url_save = '<?= base_url('master/menu_loadings/create') ?>';
+        url_save = '<?= base_url('master/molds/create') ?>';
         $('#frm_insert').form('clear');
+       
+        $.ajax({
+            type : "post",
+            url : "<?= base_url('master/molds/autoid')?>",
+            dataType : "html",
+            success : function(response){
+                $('#id').textbox('setValue', response);
+            }
+        });
     }
+    
     //EDIT DATA
     function update() {
         var row = $('#dg').datagrid('getSelected');
         if (row) {
             $('#dlg_insert').dialog('open');
             $('#frm_insert').form('load', row);
-            url_save = '<?= base_url('master/menu_loadings/update') ?>?id=' + btoa(row.id);
+            url_save = '<?= base_url('master/molds/update') ?>?id=' + btoa(row.id);
         } else {
             toastr.warning("Please select one of the data in the table first!", "Information");
         }
@@ -141,7 +154,7 @@
                         var row = rows[i];
                         $.ajax({
                             method: 'post',
-                            url: '<?= base_url('master/menu_loadings/delete') ?>',
+                            url: '<?= base_url('master/molds/delete') ?>',
                             data: {
                                 id: row.id
                             },
@@ -169,7 +182,7 @@
     }
     // DOWNLOAD
     function download_excel() {
-        window.location.assign('<?= base_url('template/tmp_menu_loadings.xls') ?>');
+        window.location.assign('<?= base_url('template/tmp_mold.xls') ?>');
     }
     //PRINT PDF
     function pdf() {
@@ -177,7 +190,7 @@
     }
     //PRINT EXCEL
     function excel() {
-        window.location.assign('<?= base_url('master/menu_loadings/print/excel') ?>');
+        window.location.assign('<?= base_url('master/molds/print/excel') ?>');
     }
     //RELOAD
     function reload() {
@@ -186,7 +199,7 @@
     $(function() {
         //SETTING DATAGRID EASYUI
         $('#dg').datagrid({
-            url: '<?= base_url('master/menu_loadings/datatables') ?>',
+            url: '<?= base_url('master/molds/datatables') ?>',
             pagination: true,
             clientPaging: false,
             remoteFilter: true,
@@ -220,41 +233,50 @@
         });
     });
 
-    $('#item_fg_id').combobox({
-        url:'<?= base_url('master/item_fg/reads/'); ?>',
+    // $('#item_fg_id').combobox({
+    //     url:'<?= base_url('master/item_fg/reads'); ?>',
+    //     valueField:'id',
+    //     textField:'number',
+    //     prompt: 'Choose Product No.',
+    // });
+
+    $('#customer_id').combobox({
+        url:'<?= base_url('master/customers/reads'); ?>',
         valueField:'id',
-        textField:'number',
-        prompt: 'Choose Product No.',
-        onSelect: function(item_fg){
-            $('#mold_id').combobox({
-                url:'<?= base_url('master/molds/reads/'); ?>' + btoa(item_fg.id),
-                valueField:'id',
-                textField:'id',
-                prompt: 'Choose Mold ID',
-            });
-        }
+        textField:'name',
+        prompt: 'Choose Customer',
     });
 
-    $('#machine_id').combobox({
-        url:'<?= base_url('master/machines/reads/'); ?>',
-        valueField:'id',
-        textField:'number',
-        prompt: 'Choose Machine No.',
-    });
+    //CELLSTYLE STATUS
+    function cellStyler(value, row, index) {
+        if (value == 0) {
+            return 'background: #53D636; color:white;';
+        } else {
+            return 'background: #FF5F5F; color:white;';
+        }
+    }
+    //FORMATTER STATUS
+    function cellFormatter(value) {
+        if (value == 0) {
+            return 'Active';
+        } else {
+            return 'Not Active';
+        }
+    };
 
     // UPLOAD DATA
     $('#dlg_upload').dialog({
             buttons: [{
                 text: 'List Failed',
                 handler: function() {
-                    window.open('<?= base_url('master/menu_loadings/uploadDownloadFailed') ?>', '_blank');
+                    window.open('<?= base_url('master/molds/uploadDownloadFailed') ?>', '_blank');
                 }
             }, {
                 text: 'Upload',
                 iconCls: 'icon-ok',
                 handler: function() {
                     $('#frm_upload').form('submit', {
-                        url: '<?= base_url('master/menu_loadings/upload') ?>',
+                        url: '<?= base_url('master/molds/upload') ?>',
                         onSubmit: function() {
                             if ($(this).form('validate') == false) {
                                 return $(this).form('validate');
@@ -269,7 +291,7 @@
                             $.messager.progress('close');
                             //Clear File
                             $.ajax({
-                                url: "<?= base_url('master/menu_loadings/uploadclearFailed') ?>"
+                                url: "<?= base_url('master/molds/uploadclearFailed') ?>"
                             });
                             var json = eval('(' + result + ')');
                             requestData(json.total, json);
@@ -284,7 +306,7 @@
                                     $.ajax({
                                         type: "POST",
                                         async: true,
-                                        url: "<?= base_url('master/menu_loadings/uploadCreate') ?>",
+                                        url: "<?= base_url('master/molds/uploadCreate') ?>",
                                         data: {
                                             "data": json[number - 1]
                                         },
@@ -302,7 +324,7 @@
                                                 $.ajax({
                                                     type: "POST",
                                                     async: true,
-                                                    url: "<?= base_url('master/menu_loadings/uploadcreateFailed') ?>",
+                                                    url: "<?= base_url('master/molds/uploadcreateFailed') ?>",
                                                     data: {
                                                         data: json[number - 1],
                                                         message: result.message

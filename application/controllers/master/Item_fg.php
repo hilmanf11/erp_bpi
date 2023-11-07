@@ -51,7 +51,7 @@ class item_fg extends CI_Controller
             $this->db->select('a.*, b.name as division_name, count(c.item_fg_id) as total_mold, f.min, f.max');
             $this->db->from('item_fg a');
             $this->db->join('divisions b', 'a.division_id = b.id');
-            $this->db->join('item_mold c', 'a.id = c.item_fg_id', 'left');
+            $this->db->join('mold_items c', 'a.id = c.item_fg_id', 'left');
             $this->db->join('customer_items d', 'd.item_fg_id = a.id', 'left');
             $this->db->join('customers e', 'd.customer_id = e.id', 'left');
             $this->db->join('setting_stocks f', "e.type = f.kind AND f.item_category_id = 'C03'", 'left');
@@ -290,7 +290,7 @@ class item_fg extends CI_Controller
         $this->db->select('a.*, b.name as division_name, count(c.item_fg_id) as total_mold, f.min, f.max');
         $this->db->from('item_fg a');
         $this->db->join('divisions b', 'a.division_id = b.id');
-        $this->db->join('item_mold c', 'a.id = c.item_fg_id', 'left');
+        $this->db->join('mold_items c', 'a.id = c.item_fg_id', 'left');
         $this->db->join('customer_items d', 'd.item_fg_id = a.id', 'left');
         $this->db->join('customers e', 'd.customer_id = e.id', 'left');
         $this->db->join('setting_stocks f', "e.type = f.kind AND f.item_category_id = 'C03'", 'left');

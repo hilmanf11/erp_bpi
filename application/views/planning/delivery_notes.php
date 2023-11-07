@@ -282,24 +282,43 @@
                                 });
 
                                 $(ed.target).textbox('setValue', rows.delivery_order_no);
-                                $(ed2.target).textbox('setValue', rows.id);
-                                $(ed3.target).textbox('setValue', rows.number);
-                                $(ed4.target).textbox('setValue', rows.name);
-                                $(ed5.target).textbox('setValue', rows.sales_order_no);
-                                $(ed6.target).textbox('setValue', rows.customer_order_no);
-                                $(ed7.target).textbox('setValue', rows.uom);
-                                $(ed8.target).textbox('setValue', rows.qty_do);
+                                // $(ed2.target).textbox('setValue', rows.id);
+                                $(ed2.target).combogrid({
+                                    url: '<?= base_url('planning/delivery_notes/readDo/'); ?>' + customer_id,
+                                    required: true,
+                                    panelWidth: 200,
+                                    idField: 'id',
+                                    textField: 'id',
+                                    mode: 'remote',
+                                    fitColumns: true,
+                                    prompt: 'Choose Product ID',
+                                    columns: [
+                                        [{
+                                            field: 'id',
+                                            title: 'Product ID',
+                                            width: 150
+                                        }]
+                                    ],
+                                    onSelect: function(val, id) {
+                                        $(ed3.target).textbox('setValue', rows.number);
+                                        $(ed4.target).textbox('setValue', rows.name);
+                                        $(ed5.target).textbox('setValue', rows.sales_order_no);
+                                        $(ed6.target).textbox('setValue', rows.customer_order_no);
+                                        $(ed7.target).textbox('setValue', rows.uom);
+                                        $(ed8.target).textbox('setValue', rows.qty_do);
+                                    }
+                                });
 
                             }
                         }
                     }
                 }, {
                     field: 'item_fg_id',
-                    width: 150,
+                    width: 170,
                     halign: 'center',
                     title: "Product ID",
                     editor: {
-                        type: 'textbox',
+                        type: 'combobox',
                         options: {
                             readonly: true
                         }

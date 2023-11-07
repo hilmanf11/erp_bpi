@@ -1,6 +1,6 @@
 <!-- TABLE DATAGRID -->
-<table id="dg" class="easyui-datagrid" style="width:99.5%;" toolbar="#toolbar">
-    <thead frozen="true">
+<table id="dg" class="easyui-datagrid" style="width:99.5%;" toolbar="#toolbar" >
+    <thead data-options="frozen:true">
         <tr>
             <th field="ck" checkbox="true"></th>
             <th data-options="field:'id',width:150,align:'center'">Product ID</th>

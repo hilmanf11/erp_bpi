@@ -1,7 +1,7 @@
 <?php
 date_default_timezone_set("Asia/Bangkok");
 defined('BASEPATH') or exit('No direct script access allowed');
-class Item_mold extends CI_Controller
+class Mold_items extends CI_Controller
 {
     public function __construct()
     {
@@ -12,7 +12,7 @@ class Item_mold extends CI_Controller
         $this->load->library('session');
         $this->load->model('crud');
         //VALIDASI FORM
-        // $this->form_validation->set_rules('number', 'Product No.', 'required|min_length[1]|max_length[20]|is_unique[item_mold.number]');
+        // $this->form_validation->set_rules('number', 'Product No.', 'required|min_length[1]|max_length[20]|is_unique[molds.number]');
     }
     //HALAMAN UTAMA
     public function index()
@@ -22,16 +22,16 @@ class Item_mold extends CI_Controller
         } elseif ($this->checkuserAccess($this->id_menu()) > 0) {
             $data['button'] = $this->getbutton($this->id_menu());
             $this->load->view('template/header', $data);
-            $this->load->view('master/item_mold');
+            $this->load->view('master/mold_items');
         } else {
             redirect('error_access');
         }
     }
     //GET DATA
-    public function reads($item_fg_id)
+    public function reads()
     {
         $post = isset($_POST['q']) ? $_POST['q'] : "";
-        $send = $this->crud->reads('item_mold', ["id" => $post], ["item_fg_id" => base64_decode($item_fg_id)]);
+        $send = $this->crud->reads('molds', ["id" => $post]);
         echo json_encode($send);
     }
     
@@ -48,9 +48,8 @@ class Item_mold extends CI_Controller
             $offset = ($page - 1) * $rows;
             $result = array();
             //Select Query
-            $this->db->select('a.*, b.number as item_fg_number, c.name as customer_name, b.name as item_fg_name');
-            $this->db->from('item_mold a');
-            $this->db->join('item_fg b', 'a.item_fg_id = b.id');
+            $this->db->select('a.*,c.name as customer_name');
+            $this->db->from('molds a');
             $this->db->join('customers c', 'a.customer_id = c.id');
             $this->db->where('a.deleted', 0);
             if (@count($filters) > 0) {
@@ -83,7 +82,7 @@ class Item_mold extends CI_Controller
     public function autoid(){
         $month = date('my');
         $format = "M-".$month;
-        $sql = $this->db->query("SELECT max(id) as kode FROM item_mold WHERE id LIKE '%$format%'");
+        $sql = $this->db->query("SELECT max(id) as kode FROM molds WHERE id LIKE '%$format%'");
         $row = $sql->row();
         if ($row->kode == ""){
             $kode = 0;
@@ -98,7 +97,7 @@ class Item_mold extends CI_Controller
     {
         if ($this->input->post()) {
             $data = $this->input->post();
-            $send   = $this->crud->create('item_mold', $data);
+            $send   = $this->crud->create('molds', $data);
             echo $send;
         } else {
             show_error("Cannot Process your request");
@@ -110,7 +109,7 @@ class Item_mold extends CI_Controller
         if ($this->input->post()) {
             $id   = base64_decode($this->input->get('id'));
             $post = $this->input->post();
-            $send = $this->crud->update('item_mold', ["id" => $id], $post);
+            $send = $this->crud->update('molds', ["id" => $id], $post);
             echo $send;
         } else {
             show_error("Cannot Process your request");
@@ -120,7 +119,7 @@ class Item_mold extends CI_Controller
     public function delete()
     {
         $data = $this->input->post();
-        $send = $this->crud->delete('item_mold', $data);
+        $send = $this->crud->delete('molds', $data);
         echo $send;
     }
     //UPLOAD DATA
@@ -137,16 +136,16 @@ class Item_mold extends CI_Controller
         for ($i = 3; $i <= $total_row; $i++) {
             $datas[] = array(
                 //excel
-                'item_fg_id' => $data->val($i, 2),
-                'type' => $data->val($i, 3),
-                'customer_id' => $data->val($i, 4),
-                'model' => $data->val($i, 5),
-                'mold_size' => $data->val($i, 6),
-                'project_year' => $data->val($i, 7),
-                'cavity_standard' => $data->val($i, 8),
-                'cavity_actual' => $data->val($i, 9),
-                'shoot_standard' => $data->val($i, 10),
-                'shoot_actual' => $data->val($i, 11),
+                'type' => $data->val($i, 2),
+                'customer_id' => $data->val($i, 3),
+                'model' => $data->val($i, 4),
+                'mold_size' => $data->val($i, 5),
+                'project_year' => $data->val($i, 6),
+                'cavity_standard' => $data->val($i, 7),
+                'cavity_actual' => $data->val($i, 8),
+                'shoot_standard' => $data->val($i, 9),
+                'shoot_actual' => $data->val($i, 10),
+                'mold_type' => $data->val($i, 11),
                 'remark' => $data->val($i, 12),
                 'status' => $data->val($i, 13)
             );
@@ -157,13 +156,13 @@ class Item_mold extends CI_Controller
     }
     public function uploadclearFailed()
     {
-        @unlink('failed/item_mold.txt');
+        @unlink('failed/molds.txt');
     }
     public function uploadcreateFailed()
     {
         if ($this->input->post()) {
             $message = $this->input->post('message');
-            $textFailed = fopen('failed/item_mold.txt', 'a');
+            $textFailed = fopen('failed/molds.txt', 'a');
             fwrite($textFailed, $message . "\n");
             fclose($textFailed);
         }
@@ -171,7 +170,7 @@ class Item_mold extends CI_Controller
     //UPLOAD DOWNLOAD FAILED
     public function uploadDownloadFailed()
     {
-        $file = "failed/item_mold.txt";
+        $file = "failed/molds.txt";
         header('Content-Description: File Failed');
         header('Content-Disposition: attachment; filename=' . basename($file));
         header('Expires: 0');
@@ -188,14 +187,14 @@ class Item_mold extends CI_Controller
             $data = $this->input->post('data');
 
             //Cek Process Number          //table       //field        //field excel
-            // $item_mold = $this->crud->read('item_mold', [], ["number" => $data['number']]);
-            $item_fg = $this->crud->read('item_fg', [], ["id" => $data['item_fg_id']]);
+            // $molds = $this->crud->read('molds', [], ["number" => $data['number']]);
+            // $item_fg = $this->crud->read('item_fg', [], ["id" => $data['item_fg_id']]);
             $customer = $this->crud->read('customers', [], ["id" => $data['customer_id']]);
 
             //AUTOID
             $month = date('my');
             $format = "M-".$month;
-            $sql = $this->db->query("SELECT max(id) as kode FROM item_mold WHERE id LIKE '%$format%'");
+            $sql = $this->db->query("SELECT max(id) as kode FROM molds WHERE id LIKE '%$format%'");
             $row = $sql->row();
             if ($row->kode == ""){
                 $kode = 0;
@@ -204,15 +203,13 @@ class Item_mold extends CI_Controller
             }
             $autoid =$format. sprintf("%03s", $kode + 1);
 
-            if (empty($item_fg->number)) {
-                echo json_encode(array("title" => "Not Found", "message" => "Item Finish Good " . $data['item_fg_id'] . " Not Found", "theme" => "error"));
-            } elseif (empty($customer->number)) {
+            
+            if (empty($customer->number)) {
                 echo json_encode(array("title" => "Not Found", "message" => "Customer " . $data['customer_id'] . " Not Found", "theme" => "error"));
             } else {
                 $dataFinal = array(
                     //field
                     "id" => $autoid,
-                    "item_fg_id" => $data['item_fg_id'],
                     "type" => $data['type'],
                     "customer_id" => $data['customer_id'],
                     "model" => $data['model'],
@@ -222,10 +219,11 @@ class Item_mold extends CI_Controller
                     "cavity_actual" => $data['cavity_actual'],
                     "shoot_standard" => $data['shoot_standard'],
                     "shoot_actual" => $data['shoot_actual'],
+                    "mold_type" => $data['mold_type'],
                     "remark" => $data['remark'],
                     "status" => $data['status'],
                 );
-                $send   = $this->crud->create('item_mold', $dataFinal);
+                $send   = $this->crud->create('molds', $dataFinal);
                 echo $send;
             }
         }
@@ -236,21 +234,20 @@ class Item_mold extends CI_Controller
         if ($option == "excel") {
             $format  = date("Ymd");
             header("Content-type: application/vnd-ms-excel");
-            header("Content-Disposition: attachment; filename=item_mold_$format.xls");
+            header("Content-Disposition: attachment; filename=molds_$format.xls");
         }
         //Config
         $this->db->select('*');
         $this->db->from('config');
         $config = $this->db->get()->row();
 
-        $this->db->select('a.*, b.number as item_fg_number, b.name as item_fg_name, c.name as customer_name');
-        $this->db->from('item_mold a');
-        $this->db->join('item_fg b', 'a.item_fg_id = b.id');
+        $this->db->select('a.*,c.name as customer_name');
+        $this->db->from('molds a');
         $this->db->join('customers c', 'a.customer_id = c.id');
         $this->db->where('a.deleted', 0);
         $this->db->order_by('a.id', 'ASC');
         $records = $this->db->get()->result_array();
-        $html = '<html><head><title>Print Data</title></head><style>body {font-family: Arial, Helvetica, sans-serif;}#item_mold {border-collapse: collapse;width: 100%;font-size: 12px;}#item_mold td, #item_mold th {border: 1px solid #ddd;padding: 2px;}#item_mold tr:nth-child(even){background-color: #f2f2f2;}#item_mold tr:hover {background-color: #ddd;}#item_mold th {padding-top: 2px;padding-bottom: 2px;text-align: left;color: black;}</style><body>
+        $html = '<html><head><title>Print Data</title></head><style>body {font-family: Arial, Helvetica, sans-serif;}#molds {border-collapse: collapse;width: 100%;font-size: 12px;}#molds td, #molds th {border: 1px solid #ddd;padding: 2px;}#molds tr:nth-child(even){background-color: #f2f2f2;}#molds tr:hover {background-color: #ddd;}#molds th {padding-top: 2px;padding-bottom: 2px;text-align: left;color: black;}</style><body>
         <center>
             <div style="float: left; font-size: 12px; text-align: left;">
                 <table style="width: 100%;">
@@ -274,12 +271,10 @@ class Item_mold extends CI_Controller
             </div>
         </center>
         
-        <table id="item_mold" border="1">
+        <table id="molds" border="1">
             <tr>
                 <th width="20">No</th>
                 <th>Mold ID</th>
-                <th>Product No.</th>
-                <th>Product Name</th>
                 <th>Type</th>
                 <th>Customer Name</th>
                 <th>Model</th>
@@ -289,6 +284,7 @@ class Item_mold extends CI_Controller
                 <th>Actual Cavity</th>
                 <th>Standard Shoot</th>
                 <th>Actual Shoot</th>
+                <th>Mold Type</th>
                 <th>Remarks</th>
                 <th>Status</th>
             </tr>';
@@ -297,8 +293,6 @@ class Item_mold extends CI_Controller
             $html .= '<tr>
                     <td>' . $no . '</td>
                     <td>' . $data['id'] . '</td>
-                    <td>' . $data['item_fg_number'] . '</td>
-                    <td>' . $data['item_fg_name'] . '</td>
                     <td>' . $data['type'] . '</td>
                     <td>' . $data['customer_name'] . '</td>
                     <td>' . $data['model'] . '</td>
@@ -308,6 +302,7 @@ class Item_mold extends CI_Controller
                     <td>' . $data['cavity_actual'] . '</td>
                     <td>' . $data['shoot_standard'] . '</td>
                     <td>' . $data['shoot_standard'] . '</td>
+                    <td>' . $data['mold_type']. '</td>
                     <td>' . $data['remark'] . '</td>
                     <td>' . $data['status'] . '</td>';
             $no++;

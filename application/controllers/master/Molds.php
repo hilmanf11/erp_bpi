@@ -1,7 +1,7 @@
 <?php
 date_default_timezone_set("Asia/Bangkok");
 defined('BASEPATH') or exit('No direct script access allowed');
-class Menu_loadings extends CI_Controller
+class Molds extends CI_Controller
 {
     public function __construct()
     {
@@ -11,6 +11,8 @@ class Menu_loadings extends CI_Controller
         $this->load->library('form_validation');
         $this->load->library('session');
         $this->load->model('crud');
+        //VALIDASI FORM
+        // $this->form_validation->set_rules('number', 'Product No.', 'required|min_length[1]|max_length[20]|is_unique[molds.number]');
     }
     //HALAMAN UTAMA
     public function index()
@@ -20,7 +22,7 @@ class Menu_loadings extends CI_Controller
         } elseif ($this->checkuserAccess($this->id_menu()) > 0) {
             $data['button'] = $this->getbutton($this->id_menu());
             $this->load->view('template/header', $data);
-            $this->load->view('master/menu_loadings');
+            $this->load->view('master/molds');
         } else {
             redirect('error_access');
         }
@@ -29,7 +31,7 @@ class Menu_loadings extends CI_Controller
     public function reads()
     {
         $post = isset($_POST['q']) ? $_POST['q'] : "";
-        $send = $this->crud->reads('menu_loadings', ["name" => $post]);
+        $send = $this->crud->reads('molds', ["id" => $post]);
         echo json_encode($send);
     }
     
@@ -46,36 +48,23 @@ class Menu_loadings extends CI_Controller
             $offset = ($page - 1) * $rows;
             $result = array();
             //Select Query
-            $this->db->select('a.*, b.number as item_fg_number, b.name as item_fg_name, c.number as machine_number, c.toonage as machine_toonage, d.model as mold_model, d.cavity_actual as mold_cavity_actual, d.cavity_standard as mold_cavity_standard');
-            $this->db->from('menu_loadings a');
-            $this->db->join('item_fg b', 'a.item_fg_id = b.id');
-            $this->db->join('machines c', 'a.machine_id = c.id');
-            $this->db->join('molds d', 'a.mold_id = d.id');
+            $this->db->select('a.*,c.name as customer_name');
+            $this->db->from('molds a');
+            $this->db->join('customers c', 'a.customer_id = c.id');
             $this->db->where('a.deleted', 0);
             if (@count($filters) > 0) {
                 foreach ($filters as $filter) {
-                    if($filter->field == "item_fg_id"){
+                    if($filter->field == "item_fg_number"){
                         $this->db->like("b.id", $filter->value);
-                    }elseif($filter->field == "item_fg_number"){
-                        $this->db->like("b.id", $filter->value);
+                    }elseif($filter->field == "customer_name"){
+                        $this->db->like("c.id", $filter->value);
                     }elseif($filter->field == "item_fg_name"){
                         $this->db->like("b.id", $filter->value);
-                    }elseif($filter->field == "machine_number"){
-                        $this->db->like("c.id", $filter->value);
-                    }elseif($filter->field == "machine_toonage"){
-                        $this->db->like("c.id", $filter->value);
-                    }elseif($filter->field == "mold_model"){
-                        $this->db->like("d.id", $filter->value);
-                    }elseif($filter->field == "mold_cavity_actual"){
-                        $this->db->like("d.id", $filter->value);
-                    }elseif($filter->field == "mold_cavity_standard"){
-                        $this->db->like("d.id", $filter->value);
                     }else{
                         $this->db->like("a.".$filter->field, $filter->value);
                     }
                 }
             }
-            $this->db->group_by('a.id');
             $this->db->order_by('a.id', 'ASC');
             //Total Data
             $totalRows = $this->db->count_all_results('', false);
@@ -89,12 +78,26 @@ class Menu_loadings extends CI_Controller
             echo json_encode($result);
         }
     }
+    //AUTO ID
+    public function autoid(){
+        $month = date('my');
+        $format = "M-".$month;
+        $sql = $this->db->query("SELECT max(id) as kode FROM molds WHERE id LIKE '%$format%'");
+        $row = $sql->row();
+        if ($row->kode == ""){
+            $kode = 0;
+        } else {
+            $kode = substr($row->kode,-3);
+        }
+        $autoid =$format. sprintf("%03s", $kode + 1);
+        echo $autoid;
+    }
     //CREATE DATA
     public function create()
     {
         if ($this->input->post()) {
-            $post   = $this->input->post();
-            $send   = $this->crud->create('menu_loadings', $post);
+            $data = $this->input->post();
+            $send   = $this->crud->create('molds', $data);
             echo $send;
         } else {
             show_error("Cannot Process your request");
@@ -106,7 +109,7 @@ class Menu_loadings extends CI_Controller
         if ($this->input->post()) {
             $id   = base64_decode($this->input->get('id'));
             $post = $this->input->post();
-            $send = $this->crud->update('menu_loadings', ["id" => $id], $post);
+            $send = $this->crud->update('molds', ["id" => $id], $post);
             echo $send;
         } else {
             show_error("Cannot Process your request");
@@ -116,7 +119,7 @@ class Menu_loadings extends CI_Controller
     public function delete()
     {
         $data = $this->input->post();
-        $send = $this->crud->delete('menu_loadings', $data);
+        $send = $this->crud->delete('molds', $data);
         echo $send;
     }
     //UPLOAD DATA
@@ -133,17 +136,18 @@ class Menu_loadings extends CI_Controller
         for ($i = 3; $i <= $total_row; $i++) {
             $datas[] = array(
                 //excel
-                'item_fg_id' => $data->val($i, 2),
-                'mold_id' => $data->val($i, 3),
-                'machine_id' => $data->val($i, 4),
-                'shift' => $data->val($i, 5),
-                'shift_hour' => $data->val($i, 6),
-                'productcivity' => $data->val($i, 7),
-                'cycle_time' => $data->val($i, 8),
-                'cycle_time_process' => $data->val($i, 9),
-                'manpower' => $data->val($i, 10),
-                'runner' => $data->val($i, 11),
-                'priority' => $data->val($i, 12)
+                'type' => $data->val($i, 2),
+                'customer_id' => $data->val($i, 3),
+                'model' => $data->val($i, 4),
+                'mold_size' => $data->val($i, 5),
+                'project_year' => $data->val($i, 6),
+                'cavity_standard' => $data->val($i, 7),
+                'cavity_actual' => $data->val($i, 8),
+                'shoot_standard' => $data->val($i, 9),
+                'shoot_actual' => $data->val($i, 10),
+                'mold_type' => $data->val($i, 11),
+                'remark' => $data->val($i, 12),
+                'status' => $data->val($i, 13)
             );
         }
         $datas['total'] = count($datas);
@@ -152,13 +156,13 @@ class Menu_loadings extends CI_Controller
     }
     public function uploadclearFailed()
     {
-        @unlink('failed/menu_loadings.txt');
+        @unlink('failed/molds.txt');
     }
     public function uploadcreateFailed()
     {
         if ($this->input->post()) {
             $message = $this->input->post('message');
-            $textFailed = fopen('failed/menu_loadings.txt', 'a');
+            $textFailed = fopen('failed/molds.txt', 'a');
             fwrite($textFailed, $message . "\n");
             fclose($textFailed);
         }
@@ -166,7 +170,7 @@ class Menu_loadings extends CI_Controller
     //UPLOAD DOWNLOAD FAILED
     public function uploadDownloadFailed()
     {
-        $file = "failed/menu_loadings.txt";
+        $file = "failed/molds.txt";
         header('Content-Description: File Failed');
         header('Content-Disposition: attachment; filename=' . basename($file));
         header('Expires: 0');
@@ -183,32 +187,43 @@ class Menu_loadings extends CI_Controller
             $data = $this->input->post('data');
 
             //Cek Process Number          //table       //field        //field excel
-            $item_fg = $this->crud->read('item_fg', [], ["id" => $data['item_fg_id']]);
-            $molds = $this->crud->read('molds', [], ["id" => $data['mold_id']]);
-            $machine = $this->crud->read('machines', [], ["id" => $data['machine_id']]);
+            // $molds = $this->crud->read('molds', [], ["number" => $data['number']]);
+            // $item_fg = $this->crud->read('item_fg', [], ["id" => $data['item_fg_id']]);
+            $customer = $this->crud->read('customers', [], ["id" => $data['customer_id']]);
 
-            if (empty($item_fg->number)) {
-                echo json_encode(array("title" => "Not Found", "message" => " Product No. " . $data['item_fg_id'] . " Not Found", "theme" => "error"));
-            } elseif (empty($molds->item_fg_id)) {
-                echo json_encode(array("title" => "Not Found", "message" => " Mold Model " . $data['mold_id'] . " Not Found", "theme" => "error"));
-            } elseif (empty($machine->number)) {
-                echo json_encode(array("title" => "Not Found", "message" => " Machine No. " . $data['machine_id'] . " Not Found", "theme" => "error"));
+            //AUTOID
+            $month = date('my');
+            $format = "M-".$month;
+            $sql = $this->db->query("SELECT max(id) as kode FROM molds WHERE id LIKE '%$format%'");
+            $row = $sql->row();
+            if ($row->kode == ""){
+                $kode = 0;
+            } else {
+                $kode = substr($row->kode,-3);
+            }
+            $autoid =$format. sprintf("%03s", $kode + 1);
+
+            
+            if (empty($customer->number)) {
+                echo json_encode(array("title" => "Not Found", "message" => "Customer " . $data['customer_id'] . " Not Found", "theme" => "error"));
             } else {
                 $dataFinal = array(
                     //field
-                    "item_fg_id" => $data['item_fg_id'],
-                    "mold_id" => $data['mold_id'],
-                    "machine_id" => $data['machine_id'],
-                    "shift" => $data['shift'],
-                    "shift_hour" => $data['shift_hour'],
-                    "productcivity" => $data['productcivity'],
-                    "cycle_time" => $data['cycle_time'],
-                    "cycle_time_process" => $data['cycle_time_process'],
-                    "manpower" => $data['manpower'],
-                    "runner" => $data['runner'],
-                    "priority" => $data['priority'],
+                    "id" => $autoid,
+                    "type" => $data['type'],
+                    "customer_id" => $data['customer_id'],
+                    "model" => $data['model'],
+                    "mold_size" => $data['mold_size'],
+                    "project_year" => $data['project_year'],
+                    "cavity_standard" => $data['cavity_standard'],
+                    "cavity_actual" => $data['cavity_actual'],
+                    "shoot_standard" => $data['shoot_standard'],
+                    "shoot_actual" => $data['shoot_actual'],
+                    "mold_type" => $data['mold_type'],
+                    "remark" => $data['remark'],
+                    "status" => $data['status'],
                 );
-                $send   = $this->crud->create('menu_loadings', $dataFinal);
+                $send   = $this->crud->create('molds', $dataFinal);
                 echo $send;
             }
         }
@@ -219,22 +234,20 @@ class Menu_loadings extends CI_Controller
         if ($option == "excel") {
             $format  = date("Ymd");
             header("Content-type: application/vnd-ms-excel");
-            header("Content-Disposition: attachment; filename=menu_loadings_$format.xls");
+            header("Content-Disposition: attachment; filename=molds_$format.xls");
         }
         //Config
         $this->db->select('*');
         $this->db->from('config');
         $config = $this->db->get()->row();
 
-        $this->db->select('a.*, b.number as item_fg_number, b.name as item_fg_name, c.number as machine_number, c.toonage as machine_toonage, d.model as mold_model, d.cavity_actual as mold_cavity_actual, d.cavity_standard as mold_cavity_standard');
-        $this->db->from('menu_loadings a');
-        $this->db->join('item_fg b', 'a.item_fg_id = b.id');
-        $this->db->join('machines c', 'a.machine_id = c.id');
-        $this->db->join('molds d', 'a.mold_id = d.id');
+        $this->db->select('a.*,c.name as customer_name');
+        $this->db->from('molds a');
+        $this->db->join('customers c', 'a.customer_id = c.id');
         $this->db->where('a.deleted', 0);
         $this->db->order_by('a.id', 'ASC');
         $records = $this->db->get()->result_array();
-        $html = '<html><head><title>Print Data</title></head><style>body {font-family: Arial, Helvetica, sans-serif;}#menu_loadings {border-collapse: collapse;width: 100%;font-size: 12px;}#menu_loadings td, #menu_loadings th {border: 1px solid #ddd;padding: 2px;}#menu_loadings tr:nth-child(even){background-color: #f2f2f2;}#menu_loadings tr:hover {background-color: #ddd;}#menu_loadings th {padding-top: 2px;padding-bottom: 2px;text-align: left;color: black;}</style><body>
+        $html = '<html><head><title>Print Data</title></head><style>body {font-family: Arial, Helvetica, sans-serif;}#molds {border-collapse: collapse;width: 100%;font-size: 12px;}#molds td, #molds th {border: 1px solid #ddd;padding: 2px;}#molds tr:nth-child(even){background-color: #f2f2f2;}#molds tr:hover {background-color: #ddd;}#molds th {padding-top: 2px;padding-bottom: 2px;text-align: left;color: black;}</style><body>
         <center>
             <div style="float: left; font-size: 12px; text-align: left;">
                 <table style="width: 100%;">
@@ -254,50 +267,44 @@ class Menu_loadings extends CI_Controller
             </div>
             <br><br>
             <div style="float: centet; font-size: 16px; text-align: center;">
-                <h3>MASTER MENU LOADING</h3>
+                <h3>MASTER ITEM MOLD</h3>
             </div>
         </center>
         
-        <table id="menu_loadings" border="1">
+        <table id="molds" border="1">
             <tr>
                 <th width="20">No</th>
-                <th>Product ID</th>
-                <th>Product No.</th>
-                <th>Product Name</th>
-                <th>Machine No.</th>
-                <th>Toonage of Machine</th>
                 <th>Mold ID</th>
-                <th>Cavity Actual</th>
-                <th>Cavity Standard</th>
-                <th>Shift</th>
-                <th>Hour/Shift</th>
-                <th>Productivity Factor</th>
-                <th>Cycle Time (Second)</th>
-                <th>Cycle Time Second Process</th>
-                <th>Man Power</th>
-                <th>Runner/Shoot</th>
-                <th>Priority</th>
+                <th>Type</th>
+                <th>Customer Name</th>
+                <th>Model</th>
+                <th>Mold Size</th>
+                <th>Project Year</th>
+                <th>Standard Cavity</th>
+                <th>Actual Cavity</th>
+                <th>Standard Shoot</th>
+                <th>Actual Shoot</th>
+                <th>Mold Type</th>
+                <th>Remarks</th>
+                <th>Status</th>
             </tr>';
         $no = 1;
         foreach ($records as $data) {
             $html .= '<tr>
                     <td>' . $no . '</td>
-                    <td>' . $data['item_fg_id'] . '</td>
-                    <td>' . $data['item_fg_number'] . '</td>
-                    <td>' . $data['item_fg_name'] . '</td>
-                    <td>' . $data['machine_number'] . '</td>
-                    <td>' . $data['machine_toonage'] . '</td>
-                    <td>' . $data['mold_id'] . '</td>
-                    <td>' . $data['mold_cavity_actual'] . '</td>
-                    <td>' . $data['mold_cavity_standard'] . '</td>
-                    <td>' . $data['shift'] . '</td>
-                    <td>' . $data['shift_hour'] . '</td>
-                    <td>' . $data['productcivity'] . '</td>
-                    <td>' . $data['cycle_time'] . '</td>
-                    <td>' . $data['cycle_time_process'] . '</td>
-                    <td>' . $data['manpower'] . '</td>
-                    <td>' . $data['runner'] . '</td>
-                    <td>' . $data['priority'] . '</td>';
+                    <td>' . $data['id'] . '</td>
+                    <td>' . $data['type'] . '</td>
+                    <td>' . $data['customer_name'] . '</td>
+                    <td>' . $data['model'] . '</td>
+                    <td>' . $data['mold_size'] . '</td>
+                    <td>' . $data['project_year'] . '</td>
+                    <td>' . $data['cavity_standard'] . '</td>
+                    <td>' . $data['cavity_actual'] . '</td>
+                    <td>' . $data['shoot_standard'] . '</td>
+                    <td>' . $data['shoot_standard'] . '</td>
+                    <td>' . $data['mold_type']. '</td>
+                    <td>' . $data['remark'] . '</td>
+                    <td>' . $data['status'] . '</td>';
             $no++;
         }
         $html .= '</table></body></html>';
