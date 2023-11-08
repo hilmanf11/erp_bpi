@@ -136,18 +136,19 @@ class Molds extends CI_Controller
         for ($i = 3; $i <= $total_row; $i++) {
             $datas[] = array(
                 //excel
-                'type' => $data->val($i, 2),
-                'customer_id' => $data->val($i, 3),
-                'model' => $data->val($i, 4),
-                'mold_size' => $data->val($i, 5),
-                'project_year' => $data->val($i, 6),
-                'cavity_standard' => $data->val($i, 7),
-                'cavity_actual' => $data->val($i, 8),
-                'shoot_standard' => $data->val($i, 9),
-                'shoot_actual' => $data->val($i, 10),
-                'mold_type' => $data->val($i, 11),
-                'remark' => $data->val($i, 12),
-                'status' => $data->val($i, 13)
+                'mold_name' => $data->val($i, 2),
+                'type' => $data->val($i, 3),
+                'customer_id' => $data->val($i, 4),
+                'model' => $data->val($i, 5),
+                'mold_size' => $data->val($i, 6),
+                'project_year' => $data->val($i, 7),
+                'cavity_standard' => $data->val($i, 8),
+                'cavity_actual' => $data->val($i, 9),
+                'shoot_standard' => $data->val($i, 10),
+                'shoot_actual' => $data->val($i, 11),
+                'mold_type' => $data->val($i, 12),
+                'remark' => $data->val($i, 13),
+                'status' => $data->val($i, 14)
             );
         }
         $datas['total'] = count($datas);
@@ -210,6 +211,7 @@ class Molds extends CI_Controller
                 $dataFinal = array(
                     //field
                     "id" => $autoid,
+                    "mold_name" => $data['mold_name'],
                     "type" => $data['type'],
                     "customer_id" => $data['customer_id'],
                     "model" => $data['model'],
@@ -275,6 +277,7 @@ class Molds extends CI_Controller
             <tr>
                 <th width="20">No</th>
                 <th>Mold ID</th>
+                <th>Mold Name</th>
                 <th>Type</th>
                 <th>Customer Name</th>
                 <th>Model</th>
@@ -293,6 +296,7 @@ class Molds extends CI_Controller
             $html .= '<tr>
                     <td>' . $no . '</td>
                     <td>' . $data['id'] . '</td>
+                    <td>' . $data['mold_name'] . '</td>
                     <td>' . $data['type'] . '</td>
                     <td>' . $data['customer_name'] . '</td>
                     <td>' . $data['model'] . '</td>

@@ -4,8 +4,7 @@
         <tr>
             <th rowspan="2" field="ck" checkbox="true"></th>
             <th rowspan="2" data-options="field:'id',width:150,align:'center'">Mold ID</th>
-            <!-- <th rowspan="2" data-options="field:'item_fg_number',width:150,halign:'center'">Product No.</th>
-            <th rowspan="2" data-options="field:'item_fg_name',width:200,halign:'center'">Product Name</th> -->
+            <th rowspan="2" data-options="field:'mold_name',width:100,halign:'center'">Mold Name</th>
             <th rowspan="2" data-options="field:'type',width:130,halign:'center'">Type</th>
             <th rowspan="2" data-options="field:'customer_name',width:200,halign:'center'">Customer Name</th>
             <th rowspan="2" data-options="field:'model',width:150,halign:'center'">Model</th>
@@ -42,10 +41,10 @@
                 <span style="width:35%; display:inline-block;">Mold ID</span>
                 <input style="width:60%;" name="id" id="id" required="" class="easyui-textbox" readonly>
             </div>
-            <!-- <div class="fitem">
-                <span style="width:35%; display:inline-block;">Product No.</span>
-                <input style="width:60%;" name="item_fg_id" id="item_fg_id" required="" class="easyui-textbox">
-            </div> -->
+            <div class="fitem">
+                <span style="width:35%; display:inline-block;">Mold Name</span>
+                <input style="width:60%;" name="mold_name" id="mold_name" required="" class="easyui-textbox">
+            </div>
             <div class="fitem">
                 <span style="width:35%; display:inline-block;">Type</span>
                 <select style="width:60%;" name="type" id="type" required="" panelHeight="auto" class="easyui-combobox">
@@ -252,12 +251,7 @@
         });
     });
 
-    // $('#item_fg_id').combobox({
-    //     url:'<?= base_url('master/item_fg/reads'); ?>',
-    //     valueField:'id',
-    //     textField:'number',
-    //     prompt: 'Choose Product No.',
-    // });
+   
 
     $('#customer_id').combobox({
         url:'<?= base_url('master/customers/reads'); ?>',
