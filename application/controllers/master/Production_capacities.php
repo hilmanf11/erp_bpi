@@ -139,6 +139,102 @@ class Production_capacities extends CI_Controller
         $send = $this->crud->delete('production_capacities', $data);
         echo $send;
     }
+    //UPLOAD DATA
+    public function upload()
+    {
+        error_reporting(0);
+        require_once 'assets/vendors/excel_reader2.php';
+        $target = basename($_FILES['file_upload']['name']);
+        move_uploaded_file($_FILES['file_upload']['tmp_name'], $target);
+        chmod($_FILES['file_upload']['name'], 0777);
+        $file = $_FILES['file_upload']['name'];
+        $data = new Spreadsheet_Excel_Reader($file, false);
+        $total_row = $data->rowcount($sheet_index = 0);
+        for ($i = 3; $i <= $total_row; $i++) {
+            $datas[] = array(
+                //excel
+                'number' => $data->val($i, 2),
+                'name' => $data->val($i, 3),
+                'uom' => $data->val($i, 4),
+                'item_category_id' => $data->val($i, 5),
+                'item_family_id' => $data->val($i, 6),
+                'item_sub_family_id' => $data->val($i, 7),
+                'account_number' => $data->val($i, 8),
+                'account_name' => $data->val($i, 9),
+                'status' => $data->val($i, 10)
+            );
+        }
+        $datas['total'] = count($datas);
+        echo json_encode($datas);
+        unlink($_FILES['file_upload']['name']);
+    }
+    public function uploadclearFailed()
+    {
+        @unlink('failed/item_rm.txt');
+    }
+    public function uploadcreateFailed()
+    {
+        if ($this->input->post()) {
+            $message = $this->input->post('message');
+            $textFailed = fopen('failed/item_rm.txt', 'a');
+            fwrite($textFailed, $message . "\n");
+            fclose($textFailed);
+        }
+    }
+    //UPLOAD DOWNLOAD FAILED
+    public function uploadDownloadFailed()
+    {
+        $file = "failed/item_rm.txt";
+        header('Content-Description: File Failed');
+        header('Content-Disposition: attachment; filename=' . basename($file));
+        header('Expires: 0');
+        header('Cache-Control: must-revalidate');
+        header('Pragma: public');
+        header('Content-Length: ' . @filesize($file));
+        header("Content-Type: text/plain");
+        @readfile($file);
+    }
+        //UPLOAD CREATE DATA
+        public function uploadcreate()
+        {
+            if ($this->input->post()) {
+                $data = $this->input->post('data');
+
+                //Cek Process Number          //table       //field        //field excel
+                $item_rm = $this->crud->read('item_rm', [], ["number" => $data['number']]);
+                $category = $this->crud->read('item_categories', [], ["id" => $data['item_category_id']]);
+                $product_family = $this->crud->read('item_familys', [], ["id" => $data['item_family_id']]);
+                $product_family_sub = $this->crud->read('item_family_subs', [], ["id" => $data['item_sub_family_id']]);
+
+
+                if (empty($category->number)) {
+                    echo json_encode(array("title" => "Not Found", "message" => "Category " . $data['item_category_id'] . " Not Found", "theme" => "error"));
+                } elseif (empty($product_family->number)) {
+                    echo json_encode(array("title" => "Not Found", "message" => "Product Family " . $data['item_family_id'] . " Not Found", "theme" => "error"));
+                } elseif (empty($product_family_sub->name)) {
+                    echo json_encode(array("title" => "Not Found", "message" => "Product Family Sub " . $data['item_sub_family_id'] . " Not Found", "theme" => "error"));
+                } elseif (!empty($item_rm->number)) {
+                    echo json_encode(array("title" => "Duplicated", "message" => " Product No. " . $data['number'] . " is Duplicate Data", "theme" => "error"));
+                } else {
+                    $dataFinal = array(
+                        //field
+                        "id" => $autoid,
+                        "number" => $data['number'],
+                        "name" => $data['name'],
+                        "uom" => $data['uom'],
+                        "item_category_id" => $data['item_category_id'],
+                        "item_family_id" => $data['item_family_id'],
+                        "item_sub_family_id" => $data['item_sub_family_id'],
+                        "account_number" => $data['account_number'],
+                        "account_name" => $data['account_name'],
+                        "status" => $data['status'],
+                    );
+                    $send   = $this->crud->create('item_rm', $dataFinal);
+                    echo $send;
+                }
+            }
+        }
+
     //PRINT & EXCEL DATA
     public function print($option = "")
     {
