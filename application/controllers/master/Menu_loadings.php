@@ -32,7 +32,7 @@ class Menu_loadings extends CI_Controller
         $send = $this->crud->reads('menu_loadings', ["name" => $post]);
         echo json_encode($send);
     }
-    
+
     //GET DATATABLES
     public function datatables()
     {
