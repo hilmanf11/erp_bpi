@@ -64,8 +64,12 @@
         <fieldset style="width:100%; border:1px solid #d0d0d0; margin-bottom: 10px; border-radius:4px; float: left;">
             <legend><b>Form Data</b></legend>
             <div class="fitem">
-                <span style="width:35%; display:inline-block;">Mold Name</span>
+                <span style="width:35%; display:inline-block;">Mold ID</span>
                 <input style="width:60%;" name="mold_id" id="mold_id" required="" class="easyui-combobox">
+            </div>
+            <div class="fitem">
+                <span style="width:35%; display:inline-block;">Mold Name</span>
+                <input style="width:60%;" name="mold_name" id="mold_name" required="" class="easyui-combobox">
             </div>
             <div class="fitem">
                 <span style="width:35%; display:inline-block;">Product No.</span>

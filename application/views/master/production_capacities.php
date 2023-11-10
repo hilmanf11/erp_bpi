@@ -3,7 +3,7 @@
     <thead>
         <tr>
             <th rowspan="2" field="ck" checkbox="true"></th>
-            <th rowspan="2" data-options="field:'item_fg_id',width:150,align:'center'">Product No.</th>
+            <th rowspan="2" data-options="field:'item_fg_number',width:150,align:'center'">Product No.</th>
             <th rowspan="2" data-options="field:'machine_number',width:150,align:'center'">Machine No.</th>
             <th rowspan="2" data-options="field:'item_fg_name',width:150,halign:'center'">Product Name</th>
             <th rowspan="2" data-options="field:'cycle_time',width:100,halign:'center'">Cycle Time <br>(Second)</th>
@@ -205,10 +205,10 @@
             required: true,
             panelWidth: 500,
             idField: 'item_fg_id',
-            textField: 'item_fg_id',
+            textField: 'item_fg_number',
             mode: 'remote',
             fitColumns: true,
-            prompt: 'Choose Product ID',
+            prompt: 'Choose Product No',
             columns: [
                 [{
                     field: 'item_fg_id',
@@ -237,7 +237,7 @@
 
                         var capacity_hour = (3600 / menu_loadings.cycle_time) * menu_loadings.cavity_actual * (menu_loadings.productcivity / 100);
                         var capacity_shift = (capacity_hour * capacity_hour);
-                        var capacity_day = (capacity_hour *  capacity_hour * capacity_shift * menu_loadings.shift);
+                        var capacity_day = (capacity_hour *  capacity_hour * menu_loadings.shift_hour * menu_loadings.shift);
 
                         $("#capacity_hour").textbox('setValue', capacity_hour);
                         $("#capacity_shift").textbox('setValue', capacity_shift);
@@ -252,14 +252,14 @@
             buttons: [{
                 text: 'List Failed',
                 handler: function() {
-                    window.open('<?= base_url('master/item_rm/uploadDownloadFailed') ?>', '_blank');
+                    window.open('<?= base_url('master/production_capacities/uploadDownloadFailed') ?>', '_blank');
                 }
             }, {
                 text: 'Upload',
                 iconCls: 'icon-ok',
                 handler: function() {
                     $('#frm_upload').form('submit', {
-                        url: '<?= base_url('master/item_rm/upload') ?>',
+                        url: '<?= base_url('master/production_capacities/upload') ?>',
                         onSubmit: function() {
                             if ($(this).form('validate') == false) {
                                 return $(this).form('validate');
@@ -274,7 +274,7 @@
                             $.messager.progress('close');
                             //Clear File
                             $.ajax({
-                                url: "<?= base_url('master/item_rm/uploadclearFailed') ?>"
+                                url: "<?= base_url('master/production_capacities/uploadclearFailed') ?>"
                             });
                             var json = eval('(' + result + ')');
                             requestData(json.total, json);
@@ -289,7 +289,7 @@
                                     $.ajax({
                                         type: "POST",
                                         async: true,
-                                        url: "<?= base_url('master/item_rm/uploadCreate') ?>",
+                                        url: "<?= base_url('master/production_capacities/uploadCreate') ?>",
                                         data: {
                                             "data": json[number - 1]
                                         },
@@ -307,7 +307,7 @@
                                                 $.ajax({
                                                     type: "POST",
                                                     async: true,
-                                                    url: "<?= base_url('master/item_rm/uploadcreateFailed') ?>",
+                                                    url: "<?= base_url('master/production_capacities/uploadcreateFailed') ?>",
                                                     data: {
                                                         data: json[number - 1],
                                                         message: result.message

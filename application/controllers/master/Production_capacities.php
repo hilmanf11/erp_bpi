@@ -47,7 +47,7 @@ class Production_capacities extends CI_Controller
 
     public function readMachines($item_fg_id)
     {
-        $send = $this->crud->query("SELECT a.machine_id, b.number as machine_number, a.cycle_time, a.productcivity, c.cavity_actual, a.shift
+        $send = $this->crud->query("SELECT a.machine_id, b.number as machine_number, a.cycle_time, a.productcivity, c.cavity_actual, a.shift, a.shift_hour
             FROM menu_loadings a 
             JOIN machines b ON a.machine_id = b.id
             JOIN molds c ON a.mold_id = c.id
@@ -113,21 +113,51 @@ class Production_capacities extends CI_Controller
     public function create()
     {
         if ($this->input->post()) {
-                $post   = $this->input->post();
-                $send   = $this->crud->create('production_capacities', $post);
-                echo $send;
-        } else {
-            show_error("Cannot Process your request");
-        }
+            $post   = $this->input->post();
+            $production_capacities = $this->crud->read('production_capacities', [], ["item_fg_id" => $post['item_fg_id'],"machine_id" => $post['machine_id']]);
+            $machines = $this->crud->read('machines', [], ["id" => $post['machine_id']]);
+            $item_fg = $this->crud->read('item_fg', [], ["id" => $post['item_fg_id']]);
+
+           if (!empty($production_capacities->item_fg_id)) {
+               echo json_encode(array("title" => "Duplicated", "message" => "Product Id " . $item_fg->number ." & Machine Id " . $machines->number . " Duplicate Data", "theme" => "error"));
+           } else {
+               $send   = $this->crud->create('production_capacities', $post);
+               echo $send;
+           }
+       } else {
+           show_error("Cannot Process your request");
+   }
     }
     //UPDATE DATA
     public function update()
     {
         if ($this->input->post()) {
-            $id   = base64_decode($this->input->get('id'));
+            
+            $id = base64_decode($this->input->get('id'));
             $post = $this->input->post();
-            $send = $this->crud->update('production_capacities', ["id" => $id], $post);
-            echo $send;
+            $existing_data = $this->crud->read('production_capacities', [], ["id" => $id]); // Membaca data yang ada
+
+            // Periksa apakah item_fg_id dan machine_id tetap sama
+            if (
+                ($existing_data->item_fg_id == $post['item_fg_id']) &&
+                ($existing_data->machine_id == $post['machine_id'])
+            ) {
+                // Item_fg_id dan machine_id tetap sama, lanjutkan dengan pembaruan
+                $send = $this->crud->update('production_capacities', ["id" => $id], $post);
+                echo $send;
+            } else {
+                // Item_fg_id atau machine_id telah berubah, lakukan validasi duplikasi
+                $production_capacities = $this->crud->read('production_capacities', [], ["item_fg_id" => $post['item_fg_id'], "machine_id" => $post['machine_id']]);
+                $machines = $this->crud->read('machines', [], ["id" => $post['machine_id']]);
+                $item_fg = $this->crud->read('item_fg', [], ["id" => $post['item_fg_id']]);
+                if (!empty($production_capacities->item_fg_id)) {
+                    echo json_encode(array("title" => "Duplicated", "message" => "Product No " . $item_fg->number ." & Machine No " . $machines->number . " Duplicate Data", "theme" => "error"));
+                } else {
+                    // Tidak ada duplikasi, lanjutkan dengan pembaruan
+                    $send = $this->crud->update('production_capacities', ["id" => $id], $post);
+                    echo $send;
+                }
+            }
         } else {
             show_error("Cannot Process your request");
         }
@@ -153,15 +183,10 @@ class Production_capacities extends CI_Controller
         for ($i = 3; $i <= $total_row; $i++) {
             $datas[] = array(
                 //excel
-                'number' => $data->val($i, 2),
-                'name' => $data->val($i, 3),
-                'uom' => $data->val($i, 4),
-                'item_category_id' => $data->val($i, 5),
-                'item_family_id' => $data->val($i, 6),
-                'item_sub_family_id' => $data->val($i, 7),
-                'account_number' => $data->val($i, 8),
-                'account_name' => $data->val($i, 9),
-                'status' => $data->val($i, 10)
+                'item_fg_id' => $data->val($i, 2),
+                'machine_id' => $data->val($i, 3),
+                'remarks' => $data->val($i, 4)
+                
             );
         }
         $datas['total'] = count($datas);
@@ -170,13 +195,13 @@ class Production_capacities extends CI_Controller
     }
     public function uploadclearFailed()
     {
-        @unlink('failed/item_rm.txt');
+        @unlink('failed/production_capacities.txt');
     }
     public function uploadcreateFailed()
     {
         if ($this->input->post()) {
             $message = $this->input->post('message');
-            $textFailed = fopen('failed/item_rm.txt', 'a');
+            $textFailed = fopen('failed/production_capacities.txt', 'a');
             fwrite($textFailed, $message . "\n");
             fclose($textFailed);
         }
@@ -184,7 +209,7 @@ class Production_capacities extends CI_Controller
     //UPLOAD DOWNLOAD FAILED
     public function uploadDownloadFailed()
     {
-        $file = "failed/item_rm.txt";
+        $file = "failed/production_capacities.txt";
         header('Content-Description: File Failed');
         header('Content-Disposition: attachment; filename=' . basename($file));
         header('Expires: 0');
@@ -199,37 +224,39 @@ class Production_capacities extends CI_Controller
         {
             if ($this->input->post()) {
                 $data = $this->input->post('data');
+                $menu_loading = $this->crud->read('menu_loadings', [], ["item_fg_id" => $data['item_fg_id'], 'machine_id' => $data['machine_id']]);
+                $production_capacities = $this->crud->read('production_capacities', [], ["item_fg_id" => $data['item_fg_id'],"machine_id" => $data['machine_id']]);
 
-                //Cek Process Number          //table       //field        //field excel
-                $item_rm = $this->crud->read('item_rm', [], ["number" => $data['number']]);
-                $category = $this->crud->read('item_categories', [], ["id" => $data['item_category_id']]);
-                $product_family = $this->crud->read('item_familys', [], ["id" => $data['item_family_id']]);
-                $product_family_sub = $this->crud->read('item_family_subs', [], ["id" => $data['item_sub_family_id']]);
-
-
-                if (empty($category->number)) {
-                    echo json_encode(array("title" => "Not Found", "message" => "Category " . $data['item_category_id'] . " Not Found", "theme" => "error"));
-                } elseif (empty($product_family->number)) {
-                    echo json_encode(array("title" => "Not Found", "message" => "Product Family " . $data['item_family_id'] . " Not Found", "theme" => "error"));
-                } elseif (empty($product_family_sub->name)) {
-                    echo json_encode(array("title" => "Not Found", "message" => "Product Family Sub " . $data['item_sub_family_id'] . " Not Found", "theme" => "error"));
-                } elseif (!empty($item_rm->number)) {
-                    echo json_encode(array("title" => "Duplicated", "message" => " Product No. " . $data['number'] . " is Duplicate Data", "theme" => "error"));
+                if (empty($menu_loading->id)) {
+                    echo json_encode(array("title" => "Not Found", "message" => "Product Id" . $data['item_fg_id'] . " & Machine Id " . $data['machine_id'] . " Not Found in Menu Loading", "theme" => "error"));
+                } elseif (!empty($production_capacities->item_fg_id)) {
+                    echo json_encode(array("title" => "Duplicated", "message" => "Product Id " . $data['item_fg_id'] ." & Machine Id " . $data['machine_id'] . " Duplicate Data", "theme" => "error"));
                 } else {
+
+                    $mold = $this->crud->read('molds', [], ["id" => $menu_loading->mold_id]);
+
+
+                    // Hitung nilai untuk field capacity
+                    $cycle_time = $menu_loading->cycle_time;
+                    $productcivity = $menu_loading->productcivity;
+                    $actual_cavity = $mold->cavity_actual;
+                    $shift = $menu_loading->shift;
+                    $shift_hour = $menu_loading->shift_hour;
+                    
+                    $capacity_hour = (3600 / $cycle_time) * $actual_cavity * ($productcivity / 100);
+                    $capacity_shift = ($capacity_hour * $capacity_hour);
+                    $capacity_day = (($capacity_shift * $capacity_hour) * $shift_hour * $shift );
+
                     $dataFinal = array(
                         //field
-                        "id" => $autoid,
-                        "number" => $data['number'],
-                        "name" => $data['name'],
-                        "uom" => $data['uom'],
-                        "item_category_id" => $data['item_category_id'],
-                        "item_family_id" => $data['item_family_id'],
-                        "item_sub_family_id" => $data['item_sub_family_id'],
-                        "account_number" => $data['account_number'],
-                        "account_name" => $data['account_name'],
-                        "status" => $data['status'],
+                        "item_fg_id" => $data['item_fg_id'],
+                        "machine_id" => $data['machine_id'],
+                        "capacity_hour" => $capacity_hour,
+                        "capacity_shift" => $capacity_shift,
+                        "capacity_day" => $capacity_day,
+                        "remarks" => $data['remarks'],
                     );
-                    $send   = $this->crud->create('item_rm', $dataFinal);
+                    $send   = $this->crud->create('production_capacities', $dataFinal);
                     echo $send;
                 }
             }
