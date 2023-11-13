@@ -6,7 +6,7 @@
             <th rowspan="2" data-options="field:'delivery_note_no',width:150,halign:'center'">Delivery Note No.</th>
             <th rowspan="2" data-options="field:'delivery_note_date',width:100,halign:'center'">Delivery Date</th>
             <th rowspan="2" data-options="field:'customer_name',width:200,halign:'center'">Customer Name</th>
-            <th rowspan="2" data-options="field:'address',width:200,halign:'center'">Shipping Address</th>
+            <th rowspan="2" data-options="field:'shipping_address',width:500,halign:'center'">Shipping Address</th>
             <th rowspan="2" data-options="field:'trans_type',width:100,halign:'center'">Transaction<br>Type</th>
             <th rowspan="2" data-options="field:'note',width:150,halign:'center'">Note</th>
             <th rowspan="2" data-options="field:'status_delivery',width:100,align:'center', styler:cellStyler, formatter:cellFormatterDeliveryStatus">Delivery Status</th>
@@ -209,7 +209,7 @@
             url: "<?= base_url('planning/delivery_notes/number/') ?>" + window.btoa(delivery_note_date),
             dataType: "html",
             success: function(result) {
-                $("#delivery_note_no").textbox('setValue', result);
+                $("#delivery_note_no").combobox('setValue', result);
             }
         });
     }
@@ -276,10 +276,10 @@
                                     index: rowIndex,
                                     field: 'uom'
                                 });
-                                var ed8 = dg.datagrid('getEditor', {
-                                    index: rowIndex,
-                                    field: 'qty_do'
-                                });
+                                // var ed8 = dg.datagrid('getEditor', {
+                                //     index: rowIndex,
+                                //     field: 'qty_do'
+                                // });
 
                                 $(ed.target).textbox('setValue', rows.delivery_order_no);
                                 // $(ed2.target).textbox('setValue', rows.id);
@@ -305,7 +305,7 @@
                                         $(ed5.target).textbox('setValue', rows.sales_order_no);
                                         $(ed6.target).textbox('setValue', rows.customer_order_no);
                                         $(ed7.target).textbox('setValue', rows.uom);
-                                        $(ed8.target).textbox('setValue', rows.qty_do);
+                                        // $(ed8.target).textbox('setValue', rows.qty_do);
                                     }
                                 });
 
@@ -379,10 +379,10 @@
                         }
                     }
                 }, {
-                    field: 'qty_do',
+                    field: 'qty',
                     width: 80,
                     halign: 'center',
-                    title: "Total DO",
+                    title: "QTY",
                     editor: {
                         type: 'numberbox',
                         options: {
@@ -607,9 +607,10 @@
                 var ddv = $(this).datagrid('getRowDetail', index).find('table.ddv');
 
                 ddv.datagrid({
-                    url: '<?= base_url('planning/delivery_notes/datatableDetails?delivery_note_no=') ?>' + window.btoa(row.delivery_note_no),
+                    url: '<?= base_url('planning/delivery_notes/datatableDetails?delivery_order_no=') ?>' + window.btoa(row.delivery_order_no),
                     singleSelect: true,
                     rownumbers: true,
+                    height: 100,
                     columns: [
                         [{
                             field: 'delivery_order_no',
@@ -647,8 +648,8 @@
                             align: 'center',
                             width: 80
                         }, {
-                            field: 'qty_do',
-                            title: 'Total DO',
+                            field: 'qty',
+                            title: 'Total',
                             halign: 'center',
                             align: 'right',
                             width: 80,
@@ -677,7 +678,7 @@
                     var customer_id = $("#customer_id").combobox('getValue');
                     var delivery_order_no = $("#delivery_order_no").combobox('getValue');
                     var delivery_note_date = $("#delivery_note_date").datebox('getValue');
-                    var delivery_note_no = $("#delivery_note_no").textbox('getValue');
+                    var delivery_note_no = $("#delivery_note_no").combobox('getValue');
                     var customer_address_id = $("#customer_address_id").combobox('getValue');
                     var police_no = $("#police_no").combobox('getValue');
                     var driver_name = $("#driver_name").textbox('getValue');
@@ -694,7 +695,8 @@
                     var totalrows = rows.length;
                     endEditing();
 
-                    if (customer_id != "" && delivery_order_no != "" && customer_address_id != "" && police_no != "" && origin != "" && sailing != "" && ship_by != "" && incoterm != "" && delivery_note_date != "" && status_delivery != "") {
+                    if (customer_id != "" && delivery_order_no !="" && delivery_note_date !="" && delivery_note_no !="" && customer_address_id !="" && 
+                    police_no !="" && origin !="" && sailing !="" && incoterm !="") {
                         for (let i = 0; i < totalrows; i++) {
                             if (rows[i].item_fg_id) {
                                 $.ajax({
@@ -704,7 +706,7 @@
                                         customer_id: customer_id,
                                         delivery_order_no: delivery_order_no,
                                         delivery_note_date: delivery_note_date,
-                                        delivery_note_no: delivery_order_no,
+                                        delivery_note_no: delivery_note_no,
                                         customer_address_id: customer_address_id,
                                         police_no: police_no,
                                         driver_name: driver_name,
@@ -716,11 +718,12 @@
                                         note: note,
                                         status_delivery: status_delivery,
                                         status: status,
+                                        delivery_order_no: rows[i].delivery_order_no,
                                         item_fg_id: rows[i].item_fg_id,
                                         sales_order_no: rows[i].sales_order_no,
                                         customer_order_no: rows[i].customer_order_no,
                                         uom: rows[i].uom,
-                                        qty_do: rows[i].qty_do,
+                                        qty: rows[i].qty,
                                     },
                                     dataType: "json",
                                     success: function(result) {
@@ -764,7 +767,7 @@
         }],
         onSelect: function(customer) {
             $('#filter_delivery_note_no').combobox({
-                url: '<?= base_url('planning/delivery_notes/readDeliveryOrders/'); ?>' + customer.id,
+                url: '<?= base_url('planning/delivery_notes/readDelivery_note_no/'); ?>' + customer.id,
                 valueField: 'delivery_note_no',
                 textField: 'delivery_note_no',
                 prompt: 'Choose All',
@@ -776,7 +779,7 @@
                 }],
                 onSelect: function(deliver_note) {
                     $('#filter_delivery_order_no').combobox({
-                        url: '<?= base_url('planning/delivery_notes/readDeliveryOrders/'); ?>' + customer.id,
+                        url: '<?= base_url('planning/delivery_notes/readDelivery_order_no/'); ?>' + customer.id,
                         valueField: 'delivery_order_no',
                         textField: 'delivery_order_no',
                         prompt: 'Choose All',
@@ -788,7 +791,7 @@
                         }],
                         onSelect: function(deliver_order) {
                             $('#filter_sales_order_no').combobox({
-                                url: '<?= base_url('planning/delivery_notes/readSalesOrder/'); ?>' + deliver_order.deliver_order_no,
+                                url: '<?= base_url('planning/delivery_notes/readSalesOrder/'); ?>' + customer.id,
                                 valueField: 'sales_order_no',
                                 textField: 'sales_order_no',
                                 prompt: 'Choose All',
@@ -801,7 +804,7 @@
                             });
 
                             $('#filter_customer_order_no').combobox({
-                                url: '<?= base_url('planning/delivery_notes/readCustomerOrder/'); ?>' + deliver_order.deliver_order_no,
+                                url: '<?= base_url('planning/delivery_notes/readCustomerOrder/'); ?>' + customer.id,
                                 valueField: 'customer_order_no',
                                 textField: 'customer_order_no',
                                 prompt: 'Choose All',
@@ -856,11 +859,20 @@
 
             if(customer.type=="LOCAL"){
                 var origin = "INDONESIA";
+                var sailing = "-";
+                var ship_by = "TRUCK";
+                var incoterm = "NONE";
             }else{
                 var origin ="";
+                var sailing = "";
+                var ship_by = "";
+                var incoterm = "";
             }
 
             $("#origin").textbox('setValue', origin);
+            $("#sailing").textbox('setValue', sailing);
+            $("#ship_by").textbox('setValue', ship_by);
+            $("#incoterm").textbox('setValue', incoterm);
 
             
             $('#delivery_order_no').combobox({
@@ -880,6 +892,7 @@
                                 $('#status_delivery').combobox('setText', 'ON SCHEDULE');
                             } else {
                                 $('#status_delivery').combobox('setText', 'DELAY');
+                                $('#status_delivery').combobox('setValue', '1');
                             }
                         }
                     }
