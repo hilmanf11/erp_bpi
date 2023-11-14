@@ -163,7 +163,7 @@
                 </div>
                 <div class="fitem">
                     <span style="width:35%; display:inline-block;">Delivery Status</span>
-                    <input style="width:60%;" name="status_delivery" id="status_delivery"  class="easyui-combobox">
+                    <input style="width:60%;" name="status_delivery" id="status_delivery"  class="easyui-textbox">
                 </div>
                 <div class="fitem">
                     <span style="width:35%; display:inline-block;">Status</span>
@@ -193,6 +193,15 @@
 
         $("#delivery_note_date").datebox('enable');
         $("#customer_id").combobox('enable');
+        $("#delivery_order_no").combobox('enable');
+        $("#delivery_note_date").datebox('enable');
+        $("#delivery_note_no").combobox('enable');
+        $("#origin").combobox('enable');
+        $("#sailing").textbox('enable');
+        $("#ship_by").textbox('enable');
+        $("#incoterm").textbox('enable');
+        $("#status_delivery").textbox('enable');
+
 
         // $('#delivery_note_date').datebox({
         //     onChange: function(delivery_note_date) {
@@ -453,8 +462,8 @@
             field: 'item_fg_id'
         });
 
-        var delivery_note_no = $("#delivery_note_no").textbox('getValue');
-        var item_fg_id = $(ed.target).textbox('getValue');
+        var delivery_note_no = $("#delivery_note_no").combobox('getValue');
+        var item_fg_id = $(ed.target).combobox('getValue');
 
         $.ajax({
             method: 'post',
@@ -482,9 +491,17 @@
         if (row) {
             $('#dlg_insert').dialog('open');
             $('#frm_insert').form('load', row);
-            $("#delivery_order_date").datebox('disable');
-            $("#delivery_date").datebox('disable');
+            
+            $("#delivery_order_no").combobox('disable');
+            $("#delivery_note_date").datebox('disable');
+            $("#delivery_note_no").combobox('disable');
             $("#customer_id").combobox('disable');
+            $("#origin").combobox('disable');
+            $("#sailing").textbox('disable');
+            $("#ship_by").textbox('disable');
+            $("#incoterm").textbox('disable');
+            $("#status_delivery").textbox('disable');
+
 
             addTable(row.customer_id, '<?= base_url('planning/delivery_notes/datatableUpdates?delivery_note_no=') ?>' + window.btoa(row.delivery_note_no));
         } else {
@@ -688,7 +705,7 @@
                     var ship_by = $("#ship_by").combobox('getValue');
                     var incoterm = $("#incoterm").combobox('getValue');
                     var note = $("#note").textbox('getValue');
-                    var status_delivery = $("#status_delivery").combobox('getValue');
+                    var status_delivery = $("#status_delivery").textbox('getValue');
                     var status = $("#status").combobox('getValue');
 
                     var rows = $('#dg2').datagrid('getRows');
@@ -889,10 +906,11 @@
                         if (delivery_note_date !== "") {
                             number(delivery_note_date);
                             if (delivery_order_no.delivery_date >= delivery_note_date) {
-                                $('#status_delivery').combobox('setText', 'ON SCHEDULE');
+                                $('#status_delivery').textbox('setText', 'ON SCHEDULE');
                             } else {
-                                $('#status_delivery').combobox('setText', 'DELAY');
-                                $('#status_delivery').combobox('setValue', '1');
+                                $('#status_delivery').textbox('setValue', '1');
+                                $('#status_delivery').textbox('setText', 'DELAY');
+                               
                             }
                         }
                     }

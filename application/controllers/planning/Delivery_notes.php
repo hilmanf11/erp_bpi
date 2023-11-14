@@ -174,15 +174,14 @@ class Delivery_notes extends CI_Controller
     public function datatableUpdates()
     {
         if ($this->input->get()) {
-            $delivery_order_no = base64_decode($this->input->get('delivery_order_no'));
+            $delivery_note_no = base64_decode($this->input->get('delivery_note_no'));
 
             $this->db->select('a.*, b.number as item_fg_number, b.name as item_fg_name');
-            $this->db->from('delivery_orders a');
+            $this->db->from('delivery_notes a');
             $this->db->join('item_fg b', 'a.item_fg_id = b.id');
-            $this->db->where('a.delivery_order_no', $delivery_order_no);
+            $this->db->where('a.delivery_note_no', $delivery_note_no);
             $this->db->order_by('b.number', 'ASC');
             $records = $this->db->get()->result_array();
-
             echo json_encode($records);
         }
     }
