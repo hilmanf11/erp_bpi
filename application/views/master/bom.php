@@ -124,32 +124,74 @@
                                     width: 200
                                 }]
                             ],
-                            onSelect: function(value, rows) {
+                            onSelect: function (value, rows) {
                                 var dg = $('#dg2');
                                 var row = dg.datagrid('getSelected');
                                 var rowIndex = dg.datagrid('getRowIndex', row);
 
-                                var ed = dg.datagrid('getEditor', {
-                                    index: rowIndex,
-                                    field: 'item_rm_name'
-                                });
-                                var ed3 = dg.datagrid('getEditor', {
-                                    index: rowIndex,
-                                    field: 'item_rm_id'
-                                });
-                                var ed4 = dg.datagrid('getEditor', {
-                                    index: rowIndex,
-                                    field: 'item_family_name'
-                                });
-                                var ed5 = dg.datagrid('getEditor', {
-                                    index: rowIndex,
-                                    field: 'uom'
-                                });
+                                var item_fg_id = $("#item_fg_id").combogrid('getValue');
 
-                                $(ed.target).textbox('setValue', rows.name);
-                                $(ed3.target).textbox('setValue', rows.id);
-                                $(ed4.target).textbox('setValue', rows.item_family_name);
-                                $(ed5.target).textbox('setValue', rows.uom);
+                                var weight, runner, cavity_standard;
+
+                                // Use $.when to wait for both AJAX requests to complete
+                                $.when(
+                                    $.ajax({
+                                        type: "post",
+                                        url: "<?= base_url('master/bom/readWeight'); ?>",
+                                        data: "item_fg_id=" + item_fg_id,
+                                        dataType: "json",
+                                        success: function (item_fg) {
+                                            weight = item_fg.weight;
+                                        }
+                                    }),
+                                    $.ajax({
+                                        type: "post",
+                                        url: "<?= base_url('master/bom/readRunner'); ?>",
+                                        data: "item_fg_id=" + item_fg_id,
+                                        dataType: "json",
+                                        success: function (menu_loading) {
+                                            runner = menu_loading[0].runner;
+                                            cavity_standard = menu_loading[0].cavity_standard;
+                                        }
+                                    })
+                                ).then(function () {
+                                    // Both AJAX requests are complete, perform the calculation
+                                    var item_family_name = rows.item_family_name;
+                                    var calculatedComposition;
+
+                                    if (item_family_name == 'VIRGIN') {
+                                        calculatedComposition = (parseFloat(weight) + parseFloat(runner / cavity_standard));
+                                    } else {
+                                        calculatedComposition = "";
+                                    }
+
+                                    var ed = dg.datagrid('getEditor', {
+                                        index: rowIndex,
+                                        field: 'item_rm_name'
+                                    });
+                                    var ed3 = dg.datagrid('getEditor', {
+                                        index: rowIndex,
+                                        field: 'item_rm_id'
+                                    });
+                                    var ed4 = dg.datagrid('getEditor', {
+                                        index: rowIndex,
+                                        field: 'item_family_name'
+                                    });
+                                    var ed5 = dg.datagrid('getEditor', {
+                                        index: rowIndex,
+                                        field: 'uom'
+                                    });
+                                    var ed6 = dg.datagrid('getEditor', {
+                                        index: rowIndex,
+                                        field: 'composition'
+                                    });
+
+                                    $(ed.target).textbox('setValue', rows.name);
+                                    $(ed3.target).textbox('setValue', rows.id);
+                                    $(ed4.target).textbox('setValue', rows.item_family_name);
+                                    $(ed5.target).textbox('setValue', rows.uom);
+                                    $(ed6.target).numberbox('setValue', calculatedComposition);
+                                });
                             }
                         }
                     }
@@ -257,9 +299,6 @@
                     title: "Composition",
                     editor: {
                         type: 'numberbox',
-                        options: {
-                            precision: 5
-                        }
                     }
                 }, {
                     field: 'remark',

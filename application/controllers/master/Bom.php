@@ -36,6 +36,25 @@ class Bom extends CI_Controller
         echo json_encode($send);
     }
 
+     //GET DATA
+     public function readWeight()
+     {
+        $post = $this->input->post();
+        $item_fg = $this->crud->read("item_fg", [] ,["id" => $post['item_fg_id']]);
+        echo json_encode($item_fg);
+    }
+
+    //GET DATA
+    public function readRunner()
+    {
+       $post = $this->input->post();
+       $item_fg_id = $post['item_fg_id'];
+       $menu_loading = $this->crud->query("SELECT SUM(a.runner) as runner, b.cavity_standard
+       FROM menu_loadings a JOIN molds b on a.mold_id = b.id
+       WHERE a.item_fg_id = '$item_fg_id' group by a.item_fg_id");
+       echo json_encode($menu_loading);
+   }
+
     //GET DATATABLES
     public function datatables()
     {
