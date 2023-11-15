@@ -215,28 +215,58 @@ class Bom extends CI_Controller
     }
 
     //UPLOAD CREATE DATA
-    public function uploadcreate()
+    public function uploadCreate()
     {
         if ($this->input->post()) {
             $data = $this->input->post('data');
+            $item_fg = $this->crud->read('item_fg', [], ["id" => $data['item_fg_id']]);
+            $item_rm = $this->crud->read('item_rm', [], ["id" => $data['item_rm_id']]);
 
-            //Cek Process Number          //table       //field        //field excel
+            $item_fg_id = $data['item_fg_id'];
+            $menu_loading = $this->crud->query("SELECT SUM(a.runner) as runner, b.cavity_standard
+            FROM menu_loadings a JOIN molds b on a.mold_id = b.id
+            WHERE a.item_fg_id = '$item_fg_id' group by a.item_fg_id");
+
+            
             $bom = $this->crud->read('bom', [], ["item_fg_id" => $data['item_fg_id'], "item_rm_id" => $data['item_rm_id']]);
 
-            if (!empty($bom->item_fg_id)) {
-                echo json_encode(array("title" => "Duplicated", "message" => " Product No. " . $data['item_fg_id'] . " is Duplicate Data", "theme" => "error"));
+            if (empty($item_fg->id)) {
+                echo json_encode(array("title" => "Not Found", "message" => "Product Id" . $data['item_fg_id'] ." Not Found", "theme" => "error"));
+            } elseif (empty($item_rm->id)) {
+                echo json_encode(array("title" => "Not Found", "message" => "Part No." . $data['item_rm_id'] ." Not Found", "theme" => "error"));
+            } elseif ($item_rm->item_family_id == 'P06' && $data['composition'] != "") {
+                echo json_encode(array("title" => "Alert", "message" => "Part No." . $data['item_rm_id'] ." Product Family is VIRGIN ", "theme" => "error"));
             } elseif (!empty($bom->item_rm_id)) {
                 echo json_encode(array("title" => "Duplicated", "message" => " Part No. " . $data['item_rm_id'] . " is Duplicate Data", "theme" => "error"));
             } else {
+
+
+                 // Hitung nilai untuk field composition
+                $weight = $item_fg->weight;
+                $runner = $menu_loading[0]->runner;
+                $cavity_standard = $menu_loading[0]->cavity_standard;
+
+                // if ($item_rm->item_family_id == 'P06') {
+                //     $dataFinal['composition'] = (floatval($weight) + floatval($runner / $cavity_standard));
+                // } elseif ($item_rm->item_family_id != 'P06') {
+                //     $dataFinal['composition'] = $data['composition'];
+                // }
+
                 $dataFinal = array(
                     //field
                     "item_fg_id" => $data['item_fg_id'],
                     "item_rm_id" => $data['item_rm_id'],
                     "type" => $data['type'],
                     "recyle" => $data['recyle'],
-                    "composition" => $data['composition'],
                     "remark" => $data['remark'],
                 );
+
+                if ($item_rm->item_family_id == 'P06') {
+                    $dataFinal['composition'] = (floatval($weight) + floatval($runner / $cavity_standard));
+                } elseif ($item_rm->item_family_id != 'P06') {
+                    $dataFinal['composition'] = $data['composition'];
+                }
+
                 $send   = $this->crud->create('bom', $dataFinal);
                 echo $send;
             }
