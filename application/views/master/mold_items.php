@@ -69,7 +69,7 @@
             </div>
             <div class="fitem">
                 <span style="width:35%; display:inline-block;">Mold Name</span>
-                <input style="width:60%;" name="mold_name" id="mold_name" required="" class="easyui-combobox">
+                <input style="width:60%;" id="mold_name" required="" class="easyui-textbox">
             </div>
             <div class="fitem">
                 <span style="width:35%; display:inline-block;">Product No.</span>
@@ -298,6 +298,7 @@
         textField:'id',
         prompt: 'Choose Mold Name.',
         onSelect: function(molds) {
+            $("#mold_name").textbox('setValue', molds.mold_name);
             $("#project_year").textbox('setValue', molds.project_year);
             $("#cavity_standard").textbox('setValue', molds.cavity_standard);
             $("#cavity_actual").textbox('setValue', molds.cavity_actual);
@@ -316,7 +317,7 @@
     $('#filter_mold_name').combobox({
         url: '<?= base_url('master/molds/reads'); ?>',
         valueField: 'id',
-        textField: 'id',
+        textField: 'mold_name',
         prompt: 'Choose All',
         icons: [{
             iconCls: 'icon-clear',
