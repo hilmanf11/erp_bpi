@@ -64,13 +64,13 @@
         <fieldset style="width:100%; border:1px solid #d0d0d0; margin-bottom: 10px; border-radius:4px; float: left;">
             <legend><b>Form Data</b></legend>
             <div class="fitem">
-                <span style="width:35%; display:inline-block;">Mold ID</span>
-                <input style="width:60%;" name="mold_id" id="mold_id" required="" class="easyui-combobox">
-            </div>
-            <div class="fitem">
                 <span style="width:35%; display:inline-block;">Mold Name</span>
-                <input style="width:60%;" id="mold_name" required="" class="easyui-textbox">
+                <input style="width:60%;" name="mold_id" id="mold_id" required="" class="easyui-combogrid">
             </div>
+            <!-- <div class="fitem">
+                <span style="width:35%; display:inline-block;">Mold Name</span>
+                <input style="width:60%;" id="mold_name" required="" class="easyui-combogrid">
+            </div> -->
             <div class="fitem">
                 <span style="width:35%; display:inline-block;">Product No.</span>
                 <input style="width:60%;" name="item_fg_id" id="item_fg_id" required="" class="easyui-combobox">
@@ -155,8 +155,8 @@
         $('#frm_insert').form('clear');
 
         $('#status').combobox('setValue', '0');
-       
-       
+        $('#item_fg_id').combogrid('enable');
+        $('#mold_id').combogrid('enable');
     }
     
     //EDIT DATA
@@ -166,6 +166,22 @@
             $('#dlg_insert').dialog('open');
             $('#frm_insert').form('load', row);
             url_save = '<?= base_url('master/mold_items/update') ?>?id=' + btoa(row.id);
+
+            $('#item_fg_id').combogrid('disable');
+            $('#mold_id').combogrid('disable');
+
+            $("#project_year").textbox('setValue', row.project_year);
+            $("#cavity_standard").textbox('setValue', row.cavity_standard);
+            $("#cavity_actual").textbox('setValue', row.cavity_actual);
+            $("#shoot_standard").textbox('setValue', row.shoot_standard);
+            $("#shoot_actual").textbox('setValue', row.shoot_actual);
+            $("#mold_type").textbox('setValue', row.mold_type);
+
+            if(row.mold_type=="SINGLE"){
+                $("#item_fg_id_mold").combobox('disable')
+            }else{
+                $("#item_fg_id_mold").combobox('enable')
+            }
         } else {
             toastr.warning("Please select one of the data in the table first!", "Information");
         }
@@ -292,13 +308,26 @@
         prompt: 'Choose Product No.',
     });
 
-    $('#mold_id').combobox({
-        url:'<?= base_url('master/molds/reads'); ?>',
-        valueField:'id',
-        textField:'id',
-        prompt: 'Choose Mold Name.',
-        onSelect: function(molds) {
-            $("#mold_name").textbox('setValue', molds.mold_name);
+    $('#mold_id').combogrid({
+        url: '<?= base_url("master/molds/reads") ?>',
+        panelWidth: 400,
+        idField: 'id',
+        textField: 'mold_name',
+        mode: 'remote',
+        fitColumns: true,
+        prompt: "Choose Mold Name",
+        columns: [
+            [{
+                field: 'id',
+                title: 'Mold Id',
+                width: 200
+            }, {
+                field: 'mold_name',
+                title: 'Mold Name',
+                width: 200
+            }]
+        ],
+        onSelect: function(val, molds) {
             $("#project_year").textbox('setValue', molds.project_year);
             $("#cavity_standard").textbox('setValue', molds.cavity_standard);
             $("#cavity_actual").textbox('setValue', molds.cavity_actual);

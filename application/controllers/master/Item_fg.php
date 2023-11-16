@@ -186,8 +186,9 @@ class item_fg extends CI_Controller
                 'leadtime' => $data->val($i, 14),
                 'mpq' => $data->val($i, 15),
                 'moq' => $data->val($i, 16),
-                'qty_box' => $data->val($i, 17),
-                'status' => $data->val($i, 18)
+                'uom' => $data->val($i, 17),
+                'qty_box' => $data->val($i, 18),
+                'status' => $data->val($i, 19)
             );
         }
         $datas['total'] = count($datas);
@@ -266,6 +267,7 @@ class item_fg extends CI_Controller
                     "leadtime" => $data['leadtime'],
                     "mpq" => $data['mpq'],
                     "moq" => $data['moq'],
+                    "uom" => $data['uom'],
                     "qty_box" => $data['qty_box'],
                     "status" => $data['status'],
                 );
@@ -343,6 +345,7 @@ class item_fg extends CI_Controller
                 <th>MPQ</th>
                 <th>MOQ</th>
                 <th>Qty/Box</th>
+                <th>Uom</th>
                 <th>Min</th>
                 <th>Max</th>
                 <th>Status</th>
@@ -368,6 +371,7 @@ class item_fg extends CI_Controller
                     <td>' . $data['leadtime'] . '</td>
                     <td>' . $data['mpq'] . '</td>
                     <td>' . $data['moq'] . '</td>
+                    <td>' . $data['uom'] . '</td>
                     <td>' . $data['qty_box'] . '</td>
                     <td>' . $data['min'] . '</td>
                     <td>' . $data['max'] . '</td>

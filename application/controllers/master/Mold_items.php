@@ -34,7 +34,7 @@ class Mold_items extends CI_Controller
         $send = $this->crud->reads('mold_items', ["id" => $post]);
         echo json_encode($send);
     }
-    
+
     //GET DATATABLES
     public function datatables()
     {
@@ -80,9 +80,18 @@ class Mold_items extends CI_Controller
     public function create()
     {
         if ($this->input->post()) {
-            $data = $this->input->post();
-            $send   = $this->crud->create('mold_items', $data);
-            echo $send;
+            $post   = $this->input->post();
+            $mold_items = $this->crud->read('mold_items', [], ["item_fg_id" => $post['item_fg_id'],"mold_id" => $post['mold_id']]);
+            $molds = $this->crud->read('molds', [], ["id" => $post['mold_id']]);
+            $item_fg = $this->crud->read('item_fg', [], ["id" => $post['item_fg_id']]);
+
+           if (!empty($mold_items->item_fg_id)) {
+               echo json_encode(array("title" => "Duplicated", "message" => "Product No " . $item_fg->number ." & Mold Name " . $molds->mold_name . " Duplicate Data", "theme" => "error"));
+           } else {
+               $send   = $this->crud->create('mold_items', $post);
+               echo $send;
+           }
+
         } else {
             show_error("Cannot Process your request");
         }
@@ -91,8 +100,9 @@ class Mold_items extends CI_Controller
     public function update()
     {
         if ($this->input->post()) {
-            $id   = base64_decode($this->input->get('id'));
+            $id = base64_decode($this->input->get('id'));
             $post = $this->input->post();
+            
             $send = $this->crud->update('mold_items', ["id" => $id], $post);
             echo $send;
         } else {

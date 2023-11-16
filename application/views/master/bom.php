@@ -299,6 +299,9 @@
                     title: "Composition",
                     editor: {
                         type: 'numberbox',
+                        options: {
+                            precision: 5,
+                        }
                     }
                 }, {
                     field: 'remark',

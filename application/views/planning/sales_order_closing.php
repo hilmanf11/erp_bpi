@@ -16,6 +16,7 @@
             <th rowspan="2" data-options="field:'total_grand',width:100,halign:'center',align:'right',formatter: numberFormat">Grand Total</th>
             <th rowspan="2" data-options="field:'remarks',width:150,halign:'center'">Remarks</th>
             <th rowspan="2" data-options="field:'attachment',width:150,halign:'center'">Attachment</th>
+            <th rowspan="2" data-options="field:'closing_reason',width:150,halign:'center'">Reason</th>
             <th colspan="2" data-options="field:'',width:100,halign:'center'"> Created</th>
             <th colspan="2" data-options="field:'',width:100,halign:'center'"> Updated</th>
         </tr>
@@ -84,10 +85,13 @@
             <div class="fitem">
                 <span style="width:35%; display:inline-block;">Status</span>
                 <select style="width:60%;" id="status" name="status" panelHeight="auto" class="easyui-combobox">
-                    <option value="">Choose All</option>
                     <option value="0">OPEN</option>
                     <option value="1">CLOSE</option>
                 </select>
+            </div>
+            <div class="fitem">
+                <span style="width:35%; display:inline-block;">Reason</span>
+                <input style="width:60%; height: 80px;" name="closing_reason" id="closing_reason" class="easyui-textbox" multiline="true">
             </div>
         </fieldset>
     </form>
@@ -147,6 +151,7 @@
                 handler: function() {
                     var sales_order_no = $("#sales_order_no").textbox('getValue');
                     var status = $("#status").combobox('getValue');
+                    var closing_reason = $("#closing_reason").textbox('getValue');
 
                     $.ajax({
                         type: "post",
@@ -154,6 +159,7 @@
                         data: {
                             sales_order_no: sales_order_no,
                             status: status,
+                            closing_reason: closing_reason,
                         },
                         dataType: "json",
                         success: function(result) {

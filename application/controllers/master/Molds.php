@@ -34,7 +34,7 @@ class Molds extends CI_Controller
         $send = $this->crud->reads('molds', ["id" => $post]);
         echo json_encode($send);
     }
-    
+
     //GET DATATABLES
     public function datatables()
     {
