@@ -21,12 +21,12 @@ class Approvals extends CI_Controller
         $table_name = $this->input->post('table_name');
 
         $datas = $this->crud->reads($table_name, [], ["approved_to" => $approved_to, "created_by" => $created_by]);
-        
+
         foreach ($datas as $data) {
             $id = $data->id;
             $user = $this->crud->read('users', [], ["username" => $data->created_by]);
             $approval = $this->crud->read('approvals', [], ["table_name" => $table_name]);
-            
+
             if ($data->approved == 1) {
                 $users_id = @$approval->user_approval_2;
                 $approved = 2;
@@ -90,7 +90,7 @@ class Approvals extends CI_Controller
         );
 
         $send = $this->db->update($tablename, $values, ["id" => $id]);
-        if($send){
+        if ($send) {
             echo json_encode(array("title" => "Approved", "message" => "Data Approved Successfully", "theme" => "success"));
         } else {
             echo log_message('error', 'There is an error in your system or data');
@@ -137,30 +137,46 @@ class Approvals extends CI_Controller
     public function approvalList()
     {
         //Users
-        $this->db->select('b.name as fullname, a.approved_to, a.created_by, b.avatar');
-        $this->db->from('users a');
-        $this->db->join('users b', 'a.approved_by = b.username');
-        $this->db->join('users c', 'a.approved_to = c.username');
-        $this->db->where('a.approved_to', $this->session->username);
-        $this->db->group_by('a.created_by');
-        $users = $this->db->get()->result_object();
+        $users = $this->crud->reads('users', [], ["approved_to" => $this->session->username], "", "", "", ["approved_to", "approved_by"]);
+        $forecasts = $this->crud->reads('forecasts', [], ["approved_to" => $this->session->username], "", "", "", ["approved_to", "approved_by"]);
+        $stock_fg = $this->crud->reads('stock_fg', [], ["approved_to" => $this->session->username], "", "", "", ["approved_to", "approved_by"]);
+        $stock_wip = $this->crud->reads('stock_wip', [], ["approved_to" => $this->session->username], "", "", "", ["approved_to", "approved_by"]);
+        $os_so = $this->crud->reads('os_so', [], ["approved_to" => $this->session->username], "", "", "", ["approved_to", "approved_by"]);
+        $os_mpp = $this->crud->reads('os_mpp', [], ["approved_to" => $this->session->username], "", "", "", ["approved_to", "approved_by"]);
 
-        if (count($users) > 0) {
-            foreach ($users as $user) {
-                $this->approvalMessage($user->avatar, $user->fullname, $user->approved_to, $user->created_by, "users");
-            }
-        }else{
-            echo '  <div class="alert alert-info" role="alert">
-                        Approval Not Found
-                    </div>';
+        foreach ($users as $user) {
+            $this->approvalMessage($user->approved_by, $user->approved_to, $user->created_by, "users");
+        }
+
+        foreach ($forecasts as $forecast) {
+            $this->approvalMessage($forecast->approved_by, $forecast->approved_to, $forecast->created_by, "forecasts");
+        }
+
+        foreach ($stock_fg as $fg) {
+            $this->approvalMessage($fg->approved_by, $fg->approved_to, $fg->created_by, "stock_fg");
+        }
+
+        foreach ($stock_wip as $wip) {
+            $this->approvalMessage($wip->approved_by, $wip->approved_to, $wip->created_by, "stock_wip");
+        }
+
+        foreach ($os_so as $so) {
+            $this->approvalMessage($so->approved_by, $so->approved_to, $so->created_by, "os_so");
+        }
+
+        foreach ($os_mpp as $mpp) {
+            $this->approvalMessage($mpp->approved_by, $mpp->approved_to, $mpp->created_by, "os_mpp");
         }
     }
 
-    public function approvalMessage($foto, $fullname, $approved_to, $created_by, $table){
-        if ($foto == "") {
+    public function approvalMessage($approved_by, $approved_to, $created_by, $table)
+    {
+        $user = $this->crud->read('users', [], ["username" => $approved_by]);
+
+        if (empty($user->avatar)) {
             $avatar = base_url('assets/image/users/default.png');
         } else {
-            $avatar = $foto;
+            $avatar = $user->avatar;
         }
 
         $link = "approvalDetail('$table', '$approved_to', '$created_by')";
@@ -175,7 +191,7 @@ class Approvals extends CI_Controller
                                     </div>
                                 </td>
                                 <td style="padding-left: 10px;">
-                                    <b>' . $fullname . '</b><br>
+                                    <b>' . $user->name . '</b><br>
                                     <small>Sent a request to approve data <b>' . strtoupper(str_replace("_", " ", $table)) . '</b></small>
                                 </td>
                             </tr>
@@ -191,6 +207,74 @@ class Approvals extends CI_Controller
         $this->db->where('approved_to', $approved_to);
         $this->db->where('created_by', $created_by);
         $this->db->order_by('created_date', 'DESC');
+        $records = $this->db->get()->result_array();
+
+        die(json_encode($records));
+    }
+
+    public function approvalStockFg($approved_to, $created_by)
+    {
+        $this->db->select('a.*, b.number as item_fg_number, b.name as item_fg_name');
+        $this->db->from('stock_fg a');
+        $this->db->join('item_fg b', 'a.item_fg_id = b.id');
+        $this->db->where('a.approved_to', $approved_to);
+        $this->db->where('a.created_by', $created_by);
+        $this->db->order_by('a.created_date', 'DESC');
+        $records = $this->db->get()->result_array();
+
+        die(json_encode($records));
+    }
+
+    public function approvalStockWip($approved_to, $created_by)
+    {
+        $this->db->select('a.*, b.number as item_fg_number, b.name as item_fg_name');
+        $this->db->from('stock_wip a');
+        $this->db->join('item_fg b', 'a.item_fg_id = b.id');
+        $this->db->where('a.approved_to', $approved_to);
+        $this->db->where('a.created_by', $created_by);
+        $this->db->order_by('a.created_date', 'DESC');
+        $records = $this->db->get()->result_array();
+
+        die(json_encode($records));
+    }
+
+    public function approvalOsSo($approved_to, $created_by)
+    {
+        $this->db->select('a.*, b.number as item_fg_number, b.name as item_fg_name, c.name as customer_name');
+        $this->db->from('os_so a');
+        $this->db->join('item_fg b', 'a.item_fg_id = b.id');
+        $this->db->join('customers c', 'a.customer_id = c.id');
+        $this->db->where('a.approved_to', $approved_to);
+        $this->db->where('a.created_by', $created_by);
+        $this->db->order_by('a.created_date', 'DESC');
+        $records = $this->db->get()->result_array();
+
+        die(json_encode($records));
+    }
+
+    public function approvalOsMpp($approved_to, $created_by)
+    {
+        $this->db->select('a.*, b.number as item_fg_number, b.name as item_fg_name, c.name as customer_name');
+        $this->db->from('os_mpp a');
+        $this->db->join('item_fg b', 'a.item_fg_id = b.id');
+        $this->db->join('customers c', 'a.customer_id = c.id');
+        $this->db->where('a.approved_to', $approved_to);
+        $this->db->where('a.created_by', $created_by);
+        $this->db->order_by('a.created_date', 'DESC');
+        $records = $this->db->get()->result_array();
+
+        die(json_encode($records));
+    }
+
+    public function approvalForecasts($approved_to, $created_by)
+    {
+        $this->db->select('a.*, b.number as item_fg_number, b.name as item_fg_name, c.name as customer_name');
+        $this->db->from('forecasts a');
+        $this->db->join('item_fg b', 'a.item_fg_id = b.id');
+        $this->db->join('customers c', 'a.customer_id = c.id');
+        $this->db->where('a.approved_to', $approved_to);
+        $this->db->where('a.created_by', $created_by);
+        $this->db->order_by('a.created_date', 'DESC');
         $records = $this->db->get()->result_array();
 
         die(json_encode($records));

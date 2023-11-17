@@ -33,6 +33,10 @@
                 <span style="width:35%; display:inline-block;">Module</span>
                 <select style="width:60%;" name="table_name" id="table_name" required="true" data-options="prompt:'Select Module'" class="easyui-combobox">
                     <option value="users">Users</option>
+                    <option value="stock_fg">Upload FG</option>
+                    <option value="stock_wip">Upload WIP</option>
+                    <option value="os_os">Upload OS SO</option>
+                    <option value="os_mpp">Upload OS MPP</option>
                 </select>
             </div>
             <div class="fitem">

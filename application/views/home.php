@@ -2,12 +2,12 @@
 
 	<!-- Header -->
 	<div data-options="region:'north', border:false" id="header" style="background-image: url(<?= base_url('assets/image/header/' . $profile->theme . '.png') ?>);">
-		<div style="float: left;">
-			<img src="<?= base_url('assets/image/logo/' . $profile->theme . '.png') ?>" width="150">
+		<div style="float: left;" class="animate__animated animate__bounce animate__slower">
+			<img src="<?= base_url('assets/image/logo/' . $profile->theme . '.gif') ?>" width="140">
 		</div>
 
 		<div class="logo-company">
-			<img src="<?= $config->favicon ?>" width="60"><br>
+			<img src="<?= $config->favicon ?>" width="50"><br>
 		</div>
 		<div class="name-company">
 			<b style="font-size: 16px !important;"><?= $config->name ?></b><br>
@@ -15,6 +15,7 @@
 				<b><?= $config->description ?></b><br>
 			</div>
 		</div>
+
 		<div class="logo">
 			<a onclick="approval()" href="#" title="Approval" class="notification approval">
 				<i class="fa fa-check-square" style="font-size: 25px !important;"></i>
@@ -566,6 +567,431 @@
 							width: 100,
 							halign: 'center',
 							title: "Created Date",
+						}, {
+							field: 'action',
+							width: 80,
+							align: 'center',
+							title: "Action",
+							formatter: function(val, row) {
+								if (val != "-") {
+									var approve = "approve('" + row.id + "','" + table + "')";
+									var disapprove = "disapprove('" + row.id + "','" + table + "')";
+									var a = '<a class="btn btn-success w-50" style="pointer-events: visible; opacity:1;" onclick="' + approve + '"><i class="fa fa-check"></i></a>';
+									var b = '<a class="btn btn-danger w-50" style="pointer-events: visible; opacity:1;" onclick="' + disapprove + '"><i class="fa fa-times"></i></a>';
+									return a + " " + b;
+								}
+							}
+						}]
+					],
+				}).datagrid('enableFilter');
+
+			} else if (table == "stock_fg") {
+				$('#dg_approval').datagrid({
+					singleSelect: true,
+					rownumbers: true,
+					url: '<?= base_url('approvals/approvalStockFg/') ?>' + approved_to + "/" + created_by,
+					columns: [
+						[{
+							field: 'p_month',
+							width: 80,
+							align: 'center',
+							title: "Month",
+						}, {
+							field: 'p_year',
+							width: 80,
+							align: 'center',
+							title: "Year",
+						}, {
+							field: 'revision',
+							width: 80,
+							align: 'center',
+							title: "Revision",
+						}, {
+							field: 'item_fg_number',
+							width: 150,
+							halign: 'center',
+							title: "Product No",
+						}, {
+							field: 'item_fg_name',
+							width: 150,
+							halign: 'center',
+							title: "Product Name"
+						}, {
+							field: 'document_no',
+							width: 100,
+							halign: 'center',
+							title: "Document No",
+						}, {
+							field: 'qty',
+							width: 80,
+							halign: 'center',
+							align: 'right',
+							formatter: numberformat,
+							title: "Qty",
+						}, {
+							field: 'action',
+							width: 80,
+							align: 'center',
+							title: "Action",
+							formatter: function(val, row) {
+								if (val != "-") {
+									var approve = "approve('" + row.id + "','" + table + "')";
+									var disapprove = "disapprove('" + row.id + "','" + table + "')";
+									var a = '<a class="btn btn-success w-50" style="pointer-events: visible; opacity:1;" onclick="' + approve + '"><i class="fa fa-check"></i></a>';
+									var b = '<a class="btn btn-danger w-50" style="pointer-events: visible; opacity:1;" onclick="' + disapprove + '"><i class="fa fa-times"></i></a>';
+									return a + " " + b;
+								}
+							}
+						}]
+					],
+				}).datagrid('enableFilter');
+
+
+			} else if (table == "stock_wip") {
+				$('#dg_approval').datagrid({
+					singleSelect: true,
+					rownumbers: true,
+					url: '<?= base_url('approvals/approvalStockWip/') ?>' + approved_to + "/" + created_by,
+					columns: [
+						[{
+							field: 'p_month',
+							width: 80,
+							align: 'center',
+							title: "Month",
+						}, {
+							field: 'p_year',
+							width: 80,
+							align: 'center',
+							title: "Year",
+						}, {
+							field: 'revision',
+							width: 80,
+							align: 'center',
+							title: "Revision",
+						}, {
+							field: 'item_fg_number',
+							width: 150,
+							halign: 'center',
+							title: "Product No",
+						}, {
+							field: 'item_fg_name',
+							width: 150,
+							halign: 'center',
+							title: "Product Name"
+						}, {
+							field: 'document_no',
+							width: 100,
+							halign: 'center',
+							title: "Document No",
+						}, {
+							field: 'pp',
+							width: 80,
+							halign: 'center',
+							align: 'right',
+							formatter: numberformat,
+							title: "PP",
+						}, {
+							field: 'p1',
+							width: 80,
+							halign: 'center',
+							align: 'right',
+							formatter: numberformat,
+							title: "P1",
+						}, {
+							field: 'p2',
+							width: 80,
+							halign: 'center',
+							align: 'right',
+							formatter: numberformat,
+							title: "P2",
+						}, {
+							field: 'p3',
+							width: 80,
+							halign: 'center',
+							align: 'right',
+							formatter: numberformat,
+							title: "P3",
+						}, {
+							field: 'action',
+							width: 80,
+							align: 'center',
+							title: "Action",
+							formatter: function(val, row) {
+								if (val != "-") {
+									var approve = "approve('" + row.id + "','" + table + "')";
+									var disapprove = "disapprove('" + row.id + "','" + table + "')";
+									var a = '<a class="btn btn-success w-50" style="pointer-events: visible; opacity:1;" onclick="' + approve + '"><i class="fa fa-check"></i></a>';
+									var b = '<a class="btn btn-danger w-50" style="pointer-events: visible; opacity:1;" onclick="' + disapprove + '"><i class="fa fa-times"></i></a>';
+									return a + " " + b;
+								}
+							}
+						}]
+					],
+				}).datagrid('enableFilter');
+
+			} else if (table == "os_so") {
+				$('#dg_approval').datagrid({
+					singleSelect: true,
+					rownumbers: true,
+					url: '<?= base_url('approvals/approvalOsSo/') ?>' + approved_to + "/" + created_by,
+					columns: [
+						[{
+							field: 'p_month',
+							width: 80,
+							align: 'center',
+							title: "Month",
+						}, {
+							field: 'p_year',
+							width: 80,
+							align: 'center',
+							title: "Year",
+						}, {
+							field: 'revision',
+							width: 80,
+							align: 'center',
+							title: "Revision",
+						}, {
+							field: 'customer_name',
+							width: 200,
+							halign: 'center',
+							title: "Customer",
+						}, {
+							field: 'item_fg_number',
+							width: 150,
+							halign: 'center',
+							title: "Product No",
+						}, {
+							field: 'item_fg_name',
+							width: 150,
+							halign: 'center',
+							title: "Product Name"
+						}, {
+							field: 'document_no',
+							width: 100,
+							halign: 'center',
+							title: "Document No",
+						}, {
+							field: 'qty',
+							width: 80,
+							halign: 'center',
+							align: 'right',
+							formatter: numberformat,
+							title: "Qty",
+						}, {
+							field: 'action',
+							width: 80,
+							align: 'center',
+							title: "Action",
+							formatter: function(val, row) {
+								if (val != "-") {
+									var approve = "approve('" + row.id + "','" + table + "')";
+									var disapprove = "disapprove('" + row.id + "','" + table + "')";
+									var a = '<a class="btn btn-success w-50" style="pointer-events: visible; opacity:1;" onclick="' + approve + '"><i class="fa fa-check"></i></a>';
+									var b = '<a class="btn btn-danger w-50" style="pointer-events: visible; opacity:1;" onclick="' + disapprove + '"><i class="fa fa-times"></i></a>';
+									return a + " " + b;
+								}
+							}
+						}]
+					],
+				}).datagrid('enableFilter');
+
+			} else if (table == "os_mpp") {
+				$('#dg_approval').datagrid({
+					singleSelect: true,
+					rownumbers: true,
+					url: '<?= base_url('approvals/approvalOsMpp/') ?>' + approved_to + "/" + created_by,
+					columns: [
+						[{
+							field: 'p_month',
+							width: 80,
+							align: 'center',
+							title: "Month",
+						}, {
+							field: 'p_year',
+							width: 80,
+							align: 'center',
+							title: "Year",
+						}, {
+							field: 'revision',
+							width: 80,
+							align: 'center',
+							title: "Revision",
+						}, {
+							field: 'customer_name',
+							width: 200,
+							halign: 'center',
+							title: "Customer",
+						}, {
+							field: 'item_fg_number',
+							width: 150,
+							halign: 'center',
+							title: "Product No",
+						}, {
+							field: 'item_fg_name',
+							width: 150,
+							halign: 'center',
+							title: "Product Name"
+						}, {
+							field: 'document_no',
+							width: 100,
+							halign: 'center',
+							title: "Document No",
+						}, {
+							field: 'qty',
+							width: 80,
+							halign: 'center',
+							align: 'right',
+							formatter: numberformat,
+							title: "Qty",
+						}, {
+							field: 'action',
+							width: 80,
+							align: 'center',
+							title: "Action",
+							formatter: function(val, row) {
+								if (val != "-") {
+									var approve = "approve('" + row.id + "','" + table + "')";
+									var disapprove = "disapprove('" + row.id + "','" + table + "')";
+									var a = '<a class="btn btn-success w-50" style="pointer-events: visible; opacity:1;" onclick="' + approve + '"><i class="fa fa-check"></i></a>';
+									var b = '<a class="btn btn-danger w-50" style="pointer-events: visible; opacity:1;" onclick="' + disapprove + '"><i class="fa fa-times"></i></a>';
+									return a + " " + b;
+								}
+							}
+						}]
+					],
+				}).datagrid('enableFilter');
+
+
+			} else if (table == "forecasts") {
+				$('#dg_approval').datagrid({
+					singleSelect: true,
+					rownumbers: true,
+					url: '<?= base_url('approvals/approvalForecasts/') ?>' + approved_to + "/" + created_by,
+					columns: [
+						[{
+							field: 'p_month',
+							width: 80,
+							align: 'center',
+							title: "Month",
+						}, {
+							field: 'p_year',
+							width: 80,
+							align: 'center',
+							title: "Year",
+						}, {
+							field: 'revision',
+							width: 80,
+							align: 'center',
+							title: "Revision",
+						}, {
+							field: 'issued_date',
+							width: 100,
+							align: 'center',
+							title: "Issued Date",
+						}, {
+							field: 'customer_name',
+							width: 200,
+							halign: 'center',
+							title: "Customer",
+						}, {
+							field: 'item_fg_number',
+							width: 150,
+							halign: 'center',
+							title: "Product No",
+						}, {
+							field: 'item_fg_name',
+							width: 150,
+							halign: 'center',
+							title: "Product Name"
+						}, {
+							field: 'document_no',
+							width: 100,
+							halign: 'center',
+							title: "Document No",
+						}, {
+							field: 'month_1',
+							width: 80,
+							halign: 'center',
+							align: 'right',
+							formatter: numberformat,
+							title: "M1",
+						}, {
+							field: 'month_2',
+							width: 80,
+							halign: 'center',
+							align: 'right',
+							formatter: numberformat,
+							title: "M2",
+						}, {
+							field: 'month_3',
+							width: 80,
+							halign: 'center',
+							align: 'right',
+							formatter: numberformat,
+							title: "M3",
+						}, {
+							field: 'month_4',
+							width: 80,
+							halign: 'center',
+							align: 'right',
+							formatter: numberformat,
+							title: "M4",
+						}, {
+							field: 'month_5',
+							width: 80,
+							halign: 'center',
+							align: 'right',
+							formatter: numberformat,
+							title: "M5",
+						}, {
+							field: 'month_6',
+							width: 80,
+							halign: 'center',
+							align: 'right',
+							formatter: numberformat,
+							title: "M6",
+						}, {
+							field: 'month_7',
+							width: 80,
+							halign: 'center',
+							align: 'right',
+							formatter: numberformat,
+							title: "M7",
+						}, {
+							field: 'month_8',
+							width: 80,
+							halign: 'center',
+							align: 'right',
+							formatter: numberformat,
+							title: "M8",
+						}, {
+							field: 'month_9',
+							width: 80,
+							halign: 'center',
+							align: 'right',
+							formatter: numberformat,
+							title: "M9",
+						}, {
+							field: 'month_10',
+							width: 80,
+							halign: 'center',
+							align: 'right',
+							formatter: numberformat,
+							title: "M10",
+						}, {
+							field: 'month_11',
+							width: 80,
+							halign: 'center',
+							align: 'right',
+							formatter: numberformat,
+							title: "M11",
+						}, {
+							field: 'month_12',
+							width: 80,
+							halign: 'center',
+							align: 'right',
+							formatter: numberformat,
+							title: "M12",
 						}, {
 							field: 'action',
 							width: 80,
