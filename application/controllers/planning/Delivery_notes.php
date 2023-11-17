@@ -62,26 +62,6 @@ class Delivery_notes extends CI_Controller
         echo json_encode($send);
     }
 
-    public function readSalesOrders($customer_id, $item_fg_id, $delivery_date)
-    {
-        $post = isset($_POST['q']) ? $_POST['q'] : "";
-
-        $item_fg_id = base64_decode($item_fg_id);
-        $delivery_date = base64_decode($delivery_date);
-        $customer_id = base64_decode($customer_id);
-
-        $send = $this->crud->query("SELECT a.sales_order_no, b.customer_order_no, 
-                a.qty as qty_del, 
-                b.qty as qty_so, 
-                COALESCE(SUM(c.qty_del), 0) as qty_do, 
-                (b.qty - COALESCE(SUM(c.qty_del), 0)) as qty_remain
-            FROM sales_order_deliveries a
-            JOIN sales_orders b ON a.sales_order_no = b.sales_order_no and a.item_fg_id = b.item_fg_id and a.customer_id = b.customer_id
-            LEFT JOIN delivery_orders c ON a.sales_order_no = c.sales_order_no and a.item_fg_id = c.item_fg_id and a.customer_id = c.customer_id
-            WHERE a.item_fg_id='$item_fg_id' and a.trans_date='$delivery_date' and a.customer_id='$customer_id' and (a.sales_order_no LIKE '%$post%' or b.customer_order_no LIKE '%$post%')");
-        echo json_encode($send);
-    }
-
     public function number($delivery_note_date)
     {
         $datenow    = "DN" . date("ymd", strtotime(base64_decode($delivery_note_date)));
@@ -281,24 +261,24 @@ class Delivery_notes extends CI_Controller
                         <div style="border: 1px solid black; width:100%; height:73%;">
                             <div style="padding:10px;">
                                 <center>
-                                    <h3>DELIVERY ORDER</h3>
+                                    <h3>DELIVERY NOTES</h3>
                                 </center>
                                 <div style="float:left; width:60%;">
                                     <table style="width:100%; font-size:12px; margin-bottom:10px;">
                                         <tr>
                                             <td width="150">Delivery Order No</td>
                                             <td width="10">:</td>
-                                            <td><b>' . @$delivery_order->delivery_order_no . '</b></td>
+                                            <td><b>' . @$delivery_notes->delivery_order_no . '</b></td>
                                         </tr>
                                         <tr>
                                             <td width="100">Delivery Order Date</td>
                                             <td width="10">:</td>
-                                            <td><b>' . date("d F Y", strtotime(@$delivery_order->delivery_order_date)) . '</b></td>
+                                            <td><b>' . date("d F Y", strtotime(@$delivery_notes->delivery_order_date)) . '</b></td>
                                         </tr>
                                         <tr>
                                             <td width="100">Delivery Date</td>
                                             <td width="10">:</td>
-                                            <td><b>' . date("d F Y", strtotime(@$delivery_order->delivery_date)) . '</b></td>
+                                            <td><b>' . date("d F Y", strtotime(@$delivery_notes->delivery_date)) . '</b></td>
                                         </tr>
                                         <tr>
                                             <td width="100">Customer Name</td>
@@ -308,8 +288,8 @@ class Delivery_notes extends CI_Controller
                                     </table>
                                 </div>
                                 <div style="float:left; width:40%; text-align:right;">
-                                    <img style="margin-right:10px;" src="' . base_url('assets/image/qrcode/' . $delivery_order->delivery_order_no . '.png') . '" width="80"/><br>
-                                    <small style="font-size:10px; margin-right:16px;">' . $delivery_order->delivery_order_no . '</small><br><br>
+                                    <img style="margin-right:10px;" src="' . base_url('assets/image/qrcode/' . $delivery_notes->delivery_order_no . '.png') . '" width="80"/><br>
+                                    <small style="font-size:10px; margin-right:16px;">' . $delivery_notes->delivery_order_no . '</small><br><br>
                                 </div>
                                 <table id="customers">
                                     <tr>
@@ -392,22 +372,24 @@ class Delivery_notes extends CI_Controller
         $this->db->from('config');
         $config = $this->db->get()->row();
 
-        $this->db->select("a.*, b.name as customer_name, c.number as item_fg_number, c.name as item_fg_name, d.customer_order_no");
-        $this->db->from('delivery_orders a');
-        $this->db->join('customers b', 'a.customer_id = b.id');
-        $this->db->join('item_fg c', 'a.item_fg_id = c.id');
-        $this->db->join('sales_orders d', 'a.sales_order_no = d.sales_order_no and a.item_fg_id = d.item_fg_id and a.customer_id = d.customer_id');
-        if ($filter_from != "" && $filter_to != "") {
-            $this->db->where('a.delivery_order_date >=', $filter_from);
-            $this->db->where('a.delivery_order_date <=', $filter_to);
-        }
-        $this->db->like('a.customer_id', $filter_customer_id);
-        $this->db->like('a.delivery_order_no', $filter_delivery_order_no);
-        $this->db->like('a.sales_order_no', $filter_sales_order_no);
-        $this->db->like('a.item_fg_id', $filter_item_fg);
-        $this->db->like('d.customer_order_no', $filter_customer_order_no);
-        $this->db->like('a.status', $filter_status);
-        $this->db->order_by('a.delivery_order_no', 'ASC');
+        $this->db->select("a.*, b.name as customer_name, d.address as shipping_address, e.number as item_fg_number, e.name as item_fg_name");
+            $this->db->from('delivery_notes a');
+            $this->db->join('customers b', 'a.customer_id = b.id');
+            $this->db->join('customer_address d', 'a.customer_address_id = d.id');
+            $this->db->join('sales_orders c', 'a.sales_order_no = c.sales_order_no and a.item_fg_id = c.item_fg_id and a.customer_id = c.customer_id');
+            $this->db->join('item_fg e', 'a.item_fg_id = e.id');
+            if ($filter_from != "" && $filter_to != "") {
+                $this->db->where('a.delivery_note_date >=', $filter_from);
+                $this->db->where('a.delivery_note_date <=', $filter_to);
+            }
+            $this->db->like('a.customer_id', $filter_customer_id);
+            $this->db->like('a.delivery_order_no', $filter_delivery_order_no);
+            $this->db->like('a.sales_order_no', $filter_sales_order_no);
+            $this->db->like('c.customer_order_no', $filter_customer_order_no);
+            $this->db->like('a.item_fg_id', $filter_item_fg);
+            $this->db->like('a.status', $filter_status);
+            $this->db->group_by('a.delivery_note_no');
+            $this->db->order_by('a.status', 'ASC');
         $records = $this->db->get()->result_array();
 
         $html = '<html><head><title>Print Data</title></head><style>body {font-family: Arial, Helvetica, sans-serif;}#customer_items {border-collapse: collapse;width: 100%;font-size: 12px;}#customer_items td, #customer_items th {border: 1px solid #ddd;padding: 2px;}#customer_items tr:nth-child(even){background-color: #f2f2f2;}#customer_items tr:hover {background-color: #ddd;}#customer_items th {padding-top: 2px;padding-bottom: 2px;text-align: left;color: black;}</style><body>
@@ -439,46 +421,44 @@ class Delivery_notes extends CI_Controller
             <tr>
                 <th width="20">No</th>
                 <th>Customer Name</th>
+                <th>Delivery Note No</th>
+                <th>Delivery Note Date</th>
                 <th>Delivery Order No</th>
-                <th>Delivery Order Date</th>
-                <th>Delivery Date</th>
-                <th>Trans Type</th>
-                <th>Sales Order No</th>
-                <th>Customer Order No</th>
-                <th>Remarks</th>
                 <th>Product ID</th>
                 <th>Product No</th>
                 <th>Product Name</th>
+                <th>Sales Order No</th>
+                <th>Customer Order No</th>
                 <th>Uom</th>
-                <th>Qty SO</th>
-                <th>Qty Remain</th>
-                <th>Qty DO</th>
-                <th>Qty Delivery</th>
-                <th>Stock</th>
-                <th>Stock Balance</th>
+                <th>Qty</th>
+                <th>Shipping Address</th>
+                <th>Trans Type</th>
+                <th>Note</th>
+                <th>Delivery Status</th>
+                <th>Status</th>
+              
             </tr>';
         $no = 1;
         foreach ($records as $data) {
             $html .= '<tr>
                         <td>' . $no . '</td>
                         <td>' . $data['customer_name'] . '</td>
+                        <td>' . $data['delivery_note_no'] . '</td>
+                        <td>' . $data['delivery_note_date'] . '</td>
                         <td>' . $data['delivery_order_no'] . '</td>
-                        <td>' . $data['delivery_order_date'] . '</td>
-                        <td>' . $data['delivery_date'] . '</td>
-                        <td>' . $data['trans_type'] . '</td>
-                        <td>' . $data['sales_order_no'] . '</td>
-                        <td>' . $data['customer_order_no'] . '</td>
-                        <td>' . $data['remarks'] . '</td>
                         <td>' . $data['item_fg_id'] . '</td>
                         <td>' . $data['item_fg_number'] . '</td>
                         <td>' . $data['item_fg_name'] . '</td>
+                        <td>' . $data['sales_order_no'] . '</td>
+                        <td>' . $data['customer_order_no'] . '</td>
                         <td>' . $data['uom'] . '</td>
-                        <td>' . $data['qty_so'] . '</td>
-                        <td>' . $data['qty_remain'] . '</td>
-                        <td>' . $data['qty_do'] . '</td>
-                        <td>' . $data['qty_del'] . '</td>
-                        <td>' . $data['stock'] . '</td>
-                        <td>' . $data['stock_bal'] . '</td>
+                        <td>' . $data['qty'] . '</td>
+                        <td>' . $data['shipping_address'] . '</td>
+                        <td>' . $data['trans_type'] . '</td>
+                        <td>' . $data['note'] . '</td>
+                        <td>' . $data['status_delivery'] . '</td>
+                        <td>' . $data['status'] . '</td>
+                       
                     </tr>';
             $no++;
         }
