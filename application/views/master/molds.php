@@ -4,7 +4,7 @@
         <tr>
             <th rowspan="2" field="ck" checkbox="true"></th>
             <th rowspan="2" data-options="field:'id',width:150,align:'center'">Mold ID</th>
-            <th rowspan="2" data-options="field:'mold_name',width:100,halign:'center'">Mold Name</th>
+            <th rowspan="2" data-options="field:'mold_name',width:150,halign:'center'">Mold Name</th>
             <th rowspan="2" data-options="field:'type',width:130,halign:'center'">Type</th>
             <th rowspan="2" data-options="field:'customer_name',width:200,halign:'center'">Customer Name</th>
             <th rowspan="2" data-options="field:'model',width:150,halign:'center'">Model</th>
