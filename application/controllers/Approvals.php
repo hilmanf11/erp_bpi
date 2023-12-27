@@ -124,9 +124,14 @@ class Approvals extends CI_Controller
 
     public function approvalCount()
     {
-        $users = $this->crud->reads("users", [], ["approved_to" => $this->session->username], "", "", "", ["approved_by"]);
+        $users = $this->crud->reads('users', [], ["approved_to" => $this->session->username], "", "", "", ["approved_to", "approved_by"]);
+        $forecasts = $this->crud->reads('forecasts', [], ["approved_to" => $this->session->username], "", "", "", ["approved_to", "approved_by"]);
+        $stock_fg = $this->crud->reads('stock_fg', [], ["approved_to" => $this->session->username], "", "", "", ["approved_to", "approved_by"]);
+        $stock_wip = $this->crud->reads('stock_wip', [], ["approved_to" => $this->session->username], "", "", "", ["approved_to", "approved_by"]);
+        $os_so = $this->crud->reads('os_so', [], ["approved_to" => $this->session->username], "", "", "", ["approved_to", "approved_by"]);
+        $os_mpp = $this->crud->reads('os_mpp', [], ["approved_to" => $this->session->username], "", "", "", ["approved_to", "approved_by"]);
 
-        $totalRows = (count($users));
+        $totalRows = (count($users) + count($forecasts) + count($stock_fg) + count($stock_wip) + count($os_so) + count($os_mpp));
         if ($totalRows > 0) {
             echo '<span class="badge">' . $totalRows . '</span>';
         } else {
