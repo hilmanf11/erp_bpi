@@ -180,7 +180,7 @@ class Purgings extends CI_Controller
                     "kind" => $data['kind'],
                     "qty" => $data['qty'],
                     "uom" => $data['uom'],
-                    "total" => $data['qty']*$machine->volume,
+                    "total" => ($data['qty']*($machine->volume / 1000)),
                     "status" => $data['status'],
                 );
                 $send   = $this->crud->create('purgings', $dataFinal);

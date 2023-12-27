@@ -4,7 +4,7 @@
         <tr>
             <th rowspan="2" field="ck" checkbox="true"></th>
             <th rowspan="2" data-options="field:'id',width:150,align:'center'">Part ID</th>
-            <th rowspan="2" data-options="field:'number',width:150,halign:'center'">Part No.</th>
+            <th rowspan="2" data-options="field:'number',width:200,halign:'center'">Part No.</th>
             <th rowspan="2" data-options="field:'name',width:100,halign:'center'">Part Name</th>
             <th rowspan="2" data-options="field:'uom',width:100,halign:'center'">UOM</th>
             <th rowspan="2" data-options="field:'item_category_name',width:150,halign:'center'">Category</th>

@@ -185,11 +185,11 @@ class Menu_loadings extends CI_Controller
             //Cek Process Number          //table       //field        //field excel
             $item_fg = $this->crud->read('item_fg', [], ["id" => $data['item_fg_id']]);
             $molds = $this->crud->read('molds', [], ["id" => $data['mold_id']]);
-            $machine = $this->crud->read('machines', [], ["id" => $data['machine_id']]);
+            $machine = $this->crud->read('machines', [], ["number" => $data['machine_id']]);
 
             if (empty($item_fg->number)) {
                 echo json_encode(array("title" => "Not Found", "message" => " Product No. " . $data['item_fg_id'] . " Not Found", "theme" => "error"));
-            } elseif (empty($molds->item_fg_id)) {
+            } elseif (empty($molds->id)) {
                 echo json_encode(array("title" => "Not Found", "message" => " Mold Model " . $data['mold_id'] . " Not Found", "theme" => "error"));
             } elseif (empty($machine->number)) {
                 echo json_encode(array("title" => "Not Found", "message" => " Machine No. " . $data['machine_id'] . " Not Found", "theme" => "error"));
@@ -198,7 +198,7 @@ class Menu_loadings extends CI_Controller
                     //field
                     "item_fg_id" => $data['item_fg_id'],
                     "mold_id" => $data['mold_id'],
-                    "machine_id" => $data['machine_id'],
+                    "machine_id" => $machine->id,
                     "shift" => $data['shift'],
                     "shift_hour" => $data['shift_hour'],
                     "productcivity" => $data['productcivity'],

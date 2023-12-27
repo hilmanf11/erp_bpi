@@ -42,6 +42,13 @@ class Item_familys extends CI_Controller
         // $send = $this->crud->reads('item_categories', ["name" => $post]);
         echo json_encode($send);
     }
+
+    public function readss($category_number = "")
+    {
+        $post = isset($_POST['q']) ? $_POST['q'] : "";
+        $send = $this->crud->reads('item_familys', ["name" => $post], ["item_category_id" => $category_number]);
+        echo json_encode($send);
+    }
     
     //GET DATATABLES
     public function datatables()

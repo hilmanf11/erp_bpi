@@ -371,8 +371,8 @@ class item_fg extends CI_Controller
                     <td>' . $data['leadtime'] . '</td>
                     <td>' . $data['mpq'] . '</td>
                     <td>' . $data['moq'] . '</td>
-                    <td>' . $data['uom'] . '</td>
                     <td>' . $data['qty_box'] . '</td>
+                    <td>' . $data['uom'] . '</td>
                     <td>' . $data['min'] . '</td>
                     <td>' . $data['max'] . '</td>
                     <td>' . $data['status'] . '</td>';

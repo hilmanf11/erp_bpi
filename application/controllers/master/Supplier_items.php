@@ -36,6 +36,24 @@ class Supplier_items extends CI_Controller
         echo json_encode($send);
     }
 
+    public function readItems()
+    {
+       $post = isset($_POST['q']) ? $_POST['q'] : "";
+       $item_family_id = $this->input->get('item_family_id');
+
+       $this->db->select('a.*, b.currency, c.number as item_number, c.name as item_name');//c.specification
+       $this->db->from('supplier_items a');
+       $this->db->join('suppliers b', 'a.supplier_id = b.id');
+       $this->db->join('item_rm c', 'a.item_rm_id = c.id');
+       $this->db->where('c.item_family_id', $item_family_id);
+       $this->db->like('c.number', $post);
+       $this->db->group_by('a.id');
+       $this->db->order_by('a.id', 'ASC');
+       $records = $this->db->get()->result_array();
+
+        echo json_encode($records);
+    }
+
     //GET DATATABLES
     public function datatables()
     {
@@ -233,11 +251,11 @@ class Supplier_items extends CI_Controller
 
             //Cek Process Number          //table       //field        //field excel
             $supplier_items = $this->crud->read('supplier_items', [], ["supplier_id" => $data['supplier_id'], "item_rm_id" => $data['item_rm_id']]);
+            $supplier = $this->crud->read('suppliers', [], ["id" => $data['supplier_id']]);
+            $item_rm = $this->crud->read('item_rm', [], ["id" => $data['item_rm_id']]);
 
-            if (!empty($supplier_items->supplier_id)) {
-                echo json_encode(array("title" => "Duplicated", "message" => " Supplier " . $data['supplier_id'] . " is Duplicate Data", "theme" => "error"));
-            } elseif (!empty($supplier_items->item_rm_id)) {
-                echo json_encode(array("title" => "Duplicated", "message" => " Part No. " . $data['item_rm_id'] . " is Duplicate Data", "theme" => "error"));
+            if (!empty($supplier_items->item_rm_id)) {
+                echo json_encode(array("title" => "Duplicated", "message" => " Part No. " . $item_rm->name . " in Supplier " . $supplier->name . " is Duplicate Data", "theme" => "error"));
             } else {
                 $dataFinal = array(
                     //field
