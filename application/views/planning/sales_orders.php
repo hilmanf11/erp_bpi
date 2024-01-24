@@ -15,8 +15,7 @@
             <th rowspan="2" data-options="field:'total_pph',width:100,halign:'center',align:'right',formatter: numberFormat">PPh</th>
             <th rowspan="2" data-options="field:'total_grand',width:100,halign:'center',align:'right',formatter: numberFormat">Grand Total</th>
             <th rowspan="2" data-options="field:'remarks',width:150,halign:'center'">Remarks</th>
-            <th rowspan="2" data-options="field:'attachment',width:150,halign:'center'">Attachment</th>
-            <th colspan="2" data-options="field:'',width:100,halign:'center'"> Created</th>
+            <th rowspan="2" data-options="field:'attachment',width:80,align:'center',formatter: btnDetails">Attachment</th>            <th colspan="2" data-options="field:'',width:100,halign:'center'"> Created</th>
             <th colspan="2" data-options="field:'',width:100,halign:'center'"> Updated</th>
         </tr>
         <tr>
@@ -127,7 +126,11 @@
                 </div>
                 <div class="fitem">
                     <span style="width:35%; display:inline-block;">Attachment</span>
-                    <input style="width:60%;" name="attachment" id="attachment" class="easyui-filebox">
+                    <input style="width:60%;" name="attachment_upload" id="attachment_upload" class="easyui-filebox">
+                </div>
+                <div class="fitem" hidden>
+                    <span style="width:35%; display:inline-block;">Attachment</span>
+                    <input style="width:60%;" name="attachment" id="attachment" class="easyui-textbox">
                 </div>
             </div>
         </fieldset>
@@ -314,7 +317,6 @@
                                     index: rowIndex,
                                     field: 'currency'
                                 });
-                                
 
                                 $(ed.target).textbox('setValue', rows.number);
                                 $(ed2.target).textbox('setValue', rows.name);
@@ -741,6 +743,7 @@
                     var sales_order_date = $("#sales_order_date").datebox('getValue');
                     var sales_order_no = $("#sales_order_no").textbox('getValue');
                     var division = $("#division").combobox('getValue');
+                    var attachment = $("#attachment").textbox('getValue');
                     var delivery_date = $("#delivery_date").datebox('getValue');
                     var customer_address_id = $("#customer_address_id").combobox('getValue');
                     var remarks = $("#remarks").textbox('getValue');
@@ -770,6 +773,7 @@
                                         delivery_date: delivery_date,
                                         customer_address_id: customer_address_id,
                                         remarks: remarks,
+                                        attachment: attachment,
                                         total_sub: total_sub,
                                         total_tax: total_tax,
                                         pph: pph,
@@ -906,4 +910,45 @@
         });
         return "<b>" + formatter.format(value) + "</b>";
     }
+
+    function btnDetails(val, row, index) {
+        var attachment = row.attachment;
+        
+        if (attachment != null && attachment != "") {
+            return '<a class="btn btn-primary w-100" target="_blank" href="<?= base_url('assets/image/sales_orders/') ?>'+row.attachment+'" style="pointer-events: visible; opacity:1;"><i class="fa fa-eye"></i> View</a>';
+        } else {
+            return '-';
+        }
+    }
+
+    $('#attachment_upload').filebox({
+    buttonText: 'Browse File',
+    accept: '.jpg, .png, .pdf',
+        onChange: function () {
+            var files = $(this).filebox('files');
+            var formData = new FormData();
+
+            for (var i = 0; i < files.length; i++) {
+                var file = files[i];
+                formData.append('file', file, file.name);
+            }
+
+            $.ajax({
+                url: '<?= base_url('planning/sales_orders/uploadatt') ?>',
+                type: 'post',
+                data: formData,
+                contentType: false,
+                processData: false,
+                dataType: 'json',
+                success: function (data) {
+                    if (data.success == true) {
+                        toastr.success(data.message);
+                        $('#attachment').textbox('setValue', data.filename); // Mengatur nilai pada textbox
+                    } else {
+                        toastr.error(data.message);
+                    }
+                }
+            });
+        }
+    });
 </script>

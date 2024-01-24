@@ -4,8 +4,8 @@
         <tr>
             <th rowspan="2" field="ck" checkbox="true"></th>
             <th rowspan="2" data-options="field:'id',width:80,align:'center'">ID</th>
+            <th rowspan="2" data-options="field:'number',width:80,halign:'center'">Code</th>
             <th rowspan="2" data-options="field:'name',width:200,halign:'center'">Name</th>
-            <th rowspan="2" data-options="field:'number',width:150,halign:'center'">Category Code</th>
             <th rowspan="2" data-options="field:'description',width:150,halign:'center'">Description</th>
             <th colspan="2" data-options="field:'',width:100,halign:'center'"> Created</th>
             <th colspan="2" data-options="field:'',width:100,halign:'center'"> Updated</th>
@@ -126,7 +126,10 @@
             pagination: true,
             clientPaging: false,
             remoteFilter: true,
-            rownumbers: true
+            rownumbers: true,
+            fit: true,
+            pageList: [20, 50, 100, 500, 1000],
+            pageSize: 20,
         }).datagrid('enableFilter');
         //SAVE DATA
         $('#dlg_insert').dialog({

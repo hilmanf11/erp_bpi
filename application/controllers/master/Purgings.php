@@ -57,9 +57,9 @@ class Purgings extends CI_Controller
                     if($filter->field == "machine_id"){
                         $this->db->like("b.id", $filter->value);
                     }elseif($filter->field == "machine_number"){
-                        $this->db->like("b.id", $filter->value);
+                        $this->db->like("b.number", $filter->value);
                     }elseif($filter->field == "machine_name"){
-                        $this->db->like("b.id", $filter->value);
+                        $this->db->like("b.name", $filter->value);
                     }else{
                         $this->db->like("a.".$filter->field, $filter->value);
                     }

@@ -11,6 +11,7 @@ $profile = $this->db->get()->row();
 $this->db->select('*');
 $this->db->from('config');
 $config = $this->db->get()->row();
+
 ?>
 <!DOCTYPE html>
 <html>
@@ -74,7 +75,7 @@ $config = $this->db->get()->row();
 <body style="margin: 0;">
     <div class="preloader">
         <div class="loading">
-            <img src="<?= $config->logo ?>" width="200">
+            <img src="<?= $config->logo ?>" width="100">
         </div>
     </div>
 </body>

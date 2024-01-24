@@ -3,14 +3,14 @@
     <thead>
         <tr>
             <th field="ck" checkbox="true"></th>
-            <th data-options="field:'number',width:150">Number ID</th>
+            <th data-options="field:'number',width:100">Number ID</th>
             <th data-options="field:'name',width:200">Name</th>
             <th data-options="field:'username',width:150">Username</th>
             <th data-options="field:'email',width:200">Email</th>
             <th data-options="field:'phone',width:150">Phone</th>
-            <th data-options="field:'position',width:200">Position</th>
-            <th data-options="field:'avatar',width:200">File Foto</th>
-            <th data-options="field:'actived',width:150, styler:cellStyler, formatter:cellFormatter">Status</th>
+            <th data-options="field:'position',width:150">Position</th>
+            <th data-options="field:'avatar',width:100">File Foto</th>
+            <th data-options="field:'actived',width:80, styler:cellStyler, formatter:cellFormatter">Status</th>
         </tr>
     </thead>
 </table>
@@ -142,7 +142,10 @@
             pagination: true,
             clientPaging: false,
             remoteFilter: true,
-            rownumbers: true
+            rownumbers: true,
+            fit: true,
+            pageList: [20, 50, 100, 500, 1000],
+            pageSize: 20,
         }).datagrid('enableFilter');
         //SAVE DATA
         $('#dlg_insert').dialog({

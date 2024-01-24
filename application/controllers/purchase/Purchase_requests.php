@@ -14,7 +14,7 @@ class Purchase_requests extends CI_Controller
         $this->load->library('Ciqrcode');
         $this->load->model('crud');
         //Validasi Form
-        $this->form_validation->set_rules('item_rm_id', 'Product No', 'required|min_length[1]|max_length[30]');
+        $this->form_validation->set_rules('item_rm_id', 'Part No', 'required|min_length[1]|max_length[30]');
     }
 
     public function index()
@@ -37,12 +37,11 @@ class Purchase_requests extends CI_Controller
         $this->db->select('a.*, 
             b.number as item_number, 
             b.name as item_name, 
-            d.name as uom, 
+            b.uom, 
             c.name as category_name');
         $this->db->from('purchase_requests a');
         $this->db->join('item_rm b', 'a.item_rm_id = b.id');
         $this->db->join('item_familys c', 'b.item_family_id = c.id');
-        $this->db->join('uom d', 'b.uom_id = d.id');
         $this->db->where('a.deleted', 0);
         $this->db->where('a.status', 0);
         $this->db->where('a.request_no', $request_no);
@@ -51,9 +50,9 @@ class Purchase_requests extends CI_Controller
         echo json_encode($records);
     }
 
-    public function readRequestno($status = 0)
+    public function readRequestno()
     {
-        $records = $this->crud->query("SELECT request_no, request_date, request_name FROM purchase_requests WHERE `status` = '$status' GROUP BY request_no ORDER BY created_date desc");
+        $records = $this->crud->query("SELECT request_no, request_date, request_name FROM purchase_requests WHERE `status` = '0' GROUP BY request_no ORDER BY created_date desc");
         echo json_encode($records);
     }
 
@@ -65,7 +64,7 @@ class Purchase_requests extends CI_Controller
             FROM purchase_requests a
             JOIN supplier_items b on a.item_rm_id = b.item_rm_id
             JOIN item_rm c on b.item_rm_id = c.id
-            -- JOIN item_familys d on c.item_family_id = d.id
+            JOIN item_familys d on c.item_family_id = d.id
             WHERE a.status = '0' and a.request_no = '$request_no' and b.supplier_id = '$supplier_id'
             GROUP BY d.number");
         echo json_encode($records);
@@ -92,7 +91,9 @@ class Purchase_requests extends CI_Controller
         $filter_from = $this->input->get('filter_from');
         $filter_to   = $this->input->get('filter_to');
         $filter_request_no = $this->input->get('filter_request_no');
+        $filter_item_category = $this->input->get('filter_item_category');
         $filter_item_familys = $this->input->get('filter_item_familys');
+
         $page = $this->input->post('page');
         $rows = $this->input->post('rows');
         //Pagination 1-10
@@ -114,6 +115,7 @@ class Purchase_requests extends CI_Controller
             }
             $this->db->like('a.request_no', $filter_request_no);
             $this->db->like('c.id', $filter_item_familys);
+            $this->db->like('c.item_category_id', $filter_item_category);
             $this->db->group_by('request_no');
             $this->db->order_by('a.request_date', 'DESC');
             //Total Data
@@ -145,12 +147,12 @@ class Purchase_requests extends CI_Controller
                 b.number as item_number, 
                 b.name as item_name, 
                 b.uom, 
+                d.po_no, 
                 c.name as category_name');
-                // d.po_no
             $this->db->from('purchase_requests a');
             $this->db->join('item_rm b', 'a.item_rm_id = b.id');
             $this->db->join('item_familys c', 'b.item_family_id = c.id');
-            // $this->db->join('purchase_orders d', 'a.request_no = d.request_no and a.item_rm_id = d.item_rm_id', 'left');
+            $this->db->join('purchase_orders d', 'a.request_no = d.request_no and a.item_rm_id = d.item_rm_id', 'left');
             $this->db->where('a.deleted', 0);
             if ($filter_from != "" or $filter_to != "") {
                 $this->db->where('a.request_date >=', $filter_from);
@@ -177,7 +179,6 @@ class Purchase_requests extends CI_Controller
     public function create()
     {
         if ($this->input->post()) {
-            if ($this->form_validation->run() == TRUE) {
                 $post   = $this->input->post();
                 $purchase_request_item = $this->crud->read('purchase_requests', [], ["request_no" => $post['request_no'], "item_rm_id" => $post['item_rm_id']]);
                 if (@$purchase_request_item->id != "") {
@@ -187,9 +188,7 @@ class Purchase_requests extends CI_Controller
                 }
 
                 echo $send;
-            } else {
-                show_error(validation_errors());
-            }
+        
         } else {
             show_error("Cannot Process your request");
         }
@@ -331,10 +330,9 @@ class Purchase_requests extends CI_Controller
         //Loop Page
         $no = 1;
         for ($i = 0; $i < $page; $i++) {
-            $this->db->select('a.*, b.number as item_rm_id, b.description as item_name, c.name as uom');
+            $this->db->select('a.*, b.number as item_rm_id, b.name as item_name, b.uom');
             $this->db->from('purchase_requests a');
             $this->db->join('item_rm b', 'a.item_rm_id = b.id');
-            $this->db->join('uom c', 'b.uom_id = c.id');
             $this->db->where('a.deleted', 0);
             $this->db->where('a.request_no', $request_no);
             $this->db->order_by('b.number', 'asc');
@@ -395,7 +393,7 @@ class Purchase_requests extends CI_Controller
                                     <tr>
                                         <th width="20">No</th>
                                         <th width="120">Product No</th>
-                                        <th>Specification</th>
+                                        <th>Product Name</th>
                                         <th width="60">Qty</th>
                                         <th width="50">Uom</th>
                                         <th>Remarks</th>
@@ -455,11 +453,11 @@ class Purchase_requests extends CI_Controller
         $this->db->select('*');
         $this->db->from('config');
         $config = $this->db->get()->row();
-        $this->db->select('a.*, b.number as item_rm_id, b.name as item_name, c.name as item_family_name, b.uom');// e.po_no,
+        $this->db->select('a.*, b.number as item_rm_id, b.name as item_name, c.name as item_family_name, e.po_no, b.uom');
         $this->db->from('purchase_requests a');
         $this->db->join('item_rm b', 'a.item_rm_id = b.id');
         $this->db->join('item_familys c', 'b.item_family_id = c.id');
-        // $this->db->join('purchase_orders e', 'a.request_no = e.request_no and a.item_rm_id = e.item_rm_id', 'left');
+        $this->db->join('purchase_orders e', 'a.request_no = e.request_no and a.item_rm_id = e.item_rm_id', 'left');
         $this->db->where('a.deleted', 0);
         if ($filter_from != "" or $filter_to != "") {
             $this->db->where('a.request_date >=', $filter_from);
@@ -502,6 +500,7 @@ class Purchase_requests extends CI_Controller
                 <th>Product Name</th>
                 <th>Qty</th>
                 <th>Uom</th>
+                <th>PO No</th>
                 <th>Status</th>
                 <th>Remarks</th>
             </tr>';
@@ -522,6 +521,7 @@ class Purchase_requests extends CI_Controller
                         <td>' . $data['item_name'] . '</td>
                         <td>' . number_format($data['qty'], 2) . '</td>
                         <td>' . $data['uom'] . '</td>
+                        <td>' . $data['po_no'] . '</td>
                         <td>' . $status . '</td>
                         <td>' . $data['remarks'] . '</td>
                     </tr>';
@@ -530,5 +530,5 @@ class Purchase_requests extends CI_Controller
         $html .= '</table></body></html>';
         echo $html;
     }
-    //<td>' . $data['po_no'] . '</td>
+    //
 }

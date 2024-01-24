@@ -578,7 +578,9 @@
             url: '<?= base_url('planning/forecasts/datatables') ?>',
             pagination: true,
             rownumbers: true,
-            height: '645px',
+            fit: true,
+            pageList: [20, 50, 100, 500, 1000],
+            pageSize: 20,
             view: detailview,
             detailFormatter: function(index, row) {
                 return '<div style="padding:2px;position:relative;"><table class="ddv" title="Detail Of ' + row.customer_name + '"></table></div>';

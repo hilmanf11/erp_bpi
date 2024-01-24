@@ -231,16 +231,16 @@ class Bom extends CI_Controller
             $bom = $this->crud->read('bom', [], ["item_fg_id" => $data['item_fg_id'], "item_rm_id" => $data['item_rm_id']]);
 
             if (empty($item_fg->id)) {
-                echo json_encode(array("title" => "Not Found", "message" => "Product Id" . $data['item_fg_id'] ." Not Found", "theme" => "error"));
+                echo json_encode(array("title" => "Not Found", "message" => "Part ID" . $data['item_fg_id'] ." Not Found", "theme" => "error"));
             } elseif (empty($item_rm->id)) {
-                echo json_encode(array("title" => "Not Found", "message" => "Part No." . $data['item_rm_id'] ." Not Found", "theme" => "error"));
+                echo json_encode(array("title" => "Not Found", "message" => "Part ID" . $data['item_rm_id'] ." Not Found", "theme" => "error"));
+            } elseif (empty($menu_loading[0]->item_fg_id)) {
+                echo json_encode(array("title" => "Not Found", "message" => "Part ID" . $data['item_rm_id'] . " in Menu Loading Not Found", "theme" => "error"));
             } elseif ($item_rm->item_family_id == 'P06' && $data['composition'] != "") {
-                echo json_encode(array("title" => "Alert", "message" => "Part No." . $data['item_rm_id'] ." Product Family is VIRGIN ", "theme" => "error"));
+                echo json_encode(array("title" => "Alert", "message" => "Part ID" . $data['item_rm_id'] ." Product Family is VIRGIN ", "theme" => "error"));
             } elseif (!empty($bom->item_rm_id)) {
-                echo json_encode(array("title" => "Duplicated", "message" => " Part No. " . $data['item_rm_id'] . " is Duplicate Data", "theme" => "error"));
+                echo json_encode(array("title" => "Duplicated", "message" => "Part ID" . $data['item_rm_id'] . " is Duplicate Data", "theme" => "error"));
             } else {
-
-
                  // Hitung nilai untuk field composition
                 $weight = $item_fg->weight;
                 $runner = $menu_loading[0]->runner;

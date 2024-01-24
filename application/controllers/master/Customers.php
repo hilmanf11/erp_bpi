@@ -42,7 +42,6 @@ class Customers extends CI_Controller
         echo json_encode($send);
     }
 
-
     //GET DATATABLES
     public function datatables()
     {

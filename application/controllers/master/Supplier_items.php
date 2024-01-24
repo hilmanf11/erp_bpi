@@ -54,6 +54,30 @@ class Supplier_items extends CI_Controller
         echo json_encode($records);
     }
 
+    public function readSuppliers()
+    {
+        $post = isset($_POST['q']) ? $_POST['q'] : "";
+        $item_number = $this->input->get('item_number');
+        $item_id = $this->input->get('item_rm_id');
+        $item_family_id = $this->input->get('item_family_id');
+
+        $this->db->select('b.*, c.number as item_number, a.mpq, a.moq');
+        $this->db->from('supplier_items a');
+        $this->db->join('suppliers b', 'a.supplier_id = b.id');
+        $this->db->join('item_rm c', 'a.item_rm_id = c.id');
+        $this->db->join('item_familys d', 'c.item_family_id = d.id');
+        $this->db->where('a.deleted', 0);
+        // $this->db->where('a.status', 0);
+        $this->db->like("c.number", $item_number);
+        $this->db->like("c.id", $item_id);
+        $this->db->like("d.id", $item_family_id);
+        $this->db->like("b.name", $post);
+        $this->db->group_by('b.number');
+        $this->db->order_by('b.name', 'ASC');
+        $records = $this->db->get()->result_array();
+        echo json_encode($records);
+    }
+
     //GET DATATABLES
     public function datatables()
     {
@@ -157,6 +181,7 @@ class Supplier_items extends CI_Controller
 
             $supplier_items = $this->crud->read("supplier_items", [], ["supplier_id" => $post['supplier_id'], "item_rm_id" => $post['item_rm_id']]);
             $supplier_item_histories = $this->crud->read("supplier_item_histories", [], ["supplier_id" => $post['supplier_id'], "item_rm_id" => $post['item_rm_id'], "price" => $post['price']]);
+            
             if (@$supplier_items->supplier_id != "") {
                 $send = $this->crud->update('supplier_items', ["supplier_id" => $post['supplier_id'], "item_rm_id" => $post['item_rm_id']], $post);
                 if (@$supplier_item_histories->supplier_id == "") {
@@ -249,33 +274,42 @@ class Supplier_items extends CI_Controller
         if ($this->input->post()) {
             $data = $this->input->post('data');
 
+            $dataFinal = array(
+                //field
+                "supplier_id" => $data['supplier_id'],
+                "item_rm_id" => $data['item_rm_id'],
+                "maker" => $data['maker'],
+                "item_supplier" => $data['item_supplier'],
+                "mpq" => $data['mpq'],
+                "moq" => $data['moq'],
+                "share_order" => $data['share_order'],
+                "leadtime" => $data['leadtime'],
+                "currency" => $data['currency'],
+                "price" => $data['price'],
+                "valid_date" => $data['valid_date'],
+                "safety_stock" => $data['safety_stock'],
+                "calculate" => $data['calculate'],
+            );
+
             //Cek Process Number          //table       //field        //field excel
             $supplier_items = $this->crud->read('supplier_items', [], ["supplier_id" => $data['supplier_id'], "item_rm_id" => $data['item_rm_id']]);
             $supplier = $this->crud->read('suppliers', [], ["id" => $data['supplier_id']]);
             $item_rm = $this->crud->read('item_rm', [], ["id" => $data['item_rm_id']]);
+            $supplier_item_histories = $this->crud->read("supplier_item_histories", [], ["supplier_id" => $data['supplier_id'], "item_rm_id" => $data['item_rm_id'], "price" => $data['price']]);
 
-            if (!empty($supplier_items->item_rm_id)) {
-                echo json_encode(array("title" => "Duplicated", "message" => " Part No. " . $item_rm->name . " in Supplier " . $supplier->name . " is Duplicate Data", "theme" => "error"));
+
+            if (@$supplier_items->supplier_id != "") {
+                $send = $this->crud->update('supplier_items', ["supplier_id" => $dataFinal['supplier_id'], "item_rm_id" => $dataFinal['item_rm_id']], $dataFinal);
+                if (@$supplier_item_histories->supplier_id == "") {
+                    $send2 = $this->crud->create('supplier_item_histories', $dataFinal);
+                }
             } else {
-                $dataFinal = array(
-                    //field
-                    "supplier_id" => $data['supplier_id'],
-                    "item_rm_id" => $data['item_rm_id'],
-                    "maker" => $data['maker'],
-                    "item_supplier" => $data['item_supplier'],
-                    "mpq" => $data['mpq'],
-                    "moq" => $data['moq'],
-                    "share_order" => $data['share_order'],
-                    "leadtime" => $data['leadtime'],
-                    "currency" => $data['currency'],
-                    "price" => $data['price'],
-                    "valid_date" => $data['valid_date'],
-                    "safety_stock" => $data['safety_stock'],
-                    "calculate" => $data['calculate'],
-                );
-                $send   = $this->crud->create('supplier_items', $dataFinal);
-                echo $send;
+                $send = $this->crud->create('supplier_items', $dataFinal);
+                $send2 = $this->crud->create('supplier_item_histories', $dataFinal);
             }
+            echo $send;
+        } else {
+            show_error("Cannot Process your request");
         }
     }
 

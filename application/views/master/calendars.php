@@ -1,4 +1,4 @@
-<div id="p" class="easyui-panel" title="Working Calendar" style="width:100%; background: #F4F4F4; padding: 10px;">
+<div id="p" class="easyui-panel" title="Working Calendar" data-options="fit:true" style="width:100%; background: #F4F4F4; padding: 10px;">
     <form id="frm_insert" method="post">
         <fieldset style="width: 50%; border:2px solid #d0d0d0; margin-bottom: 5px; margin-top: 5px; border-radius:4px; float: left;">
             <legend><b>Form Filter Data</b></legend>

@@ -57,19 +57,19 @@ class Menu_loadings extends CI_Controller
                     if($filter->field == "item_fg_id"){
                         $this->db->like("b.id", $filter->value);
                     }elseif($filter->field == "item_fg_number"){
-                        $this->db->like("b.id", $filter->value);
+                        $this->db->like("b.number", $filter->value);
                     }elseif($filter->field == "item_fg_name"){
-                        $this->db->like("b.id", $filter->value);
+                        $this->db->like("b.name", $filter->value);
                     }elseif($filter->field == "machine_number"){
-                        $this->db->like("c.id", $filter->value);
+                        $this->db->like("c.number", $filter->value);
                     }elseif($filter->field == "machine_toonage"){
-                        $this->db->like("c.id", $filter->value);
+                        $this->db->like("c.toonage", $filter->value);
                     }elseif($filter->field == "mold_model"){
-                        $this->db->like("d.id", $filter->value);
+                        $this->db->like("d.model", $filter->value);
                     }elseif($filter->field == "mold_cavity_actual"){
-                        $this->db->like("d.id", $filter->value);
+                        $this->db->like("d.cavity_actual", $filter->value);
                     }elseif($filter->field == "mold_cavity_standard"){
-                        $this->db->like("d.id", $filter->value);
+                        $this->db->like("d.cavity_standard", $filter->value);
                     }else{
                         $this->db->like("a.".$filter->field, $filter->value);
                     }

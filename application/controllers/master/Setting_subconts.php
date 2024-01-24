@@ -177,9 +177,13 @@ class Setting_subconts extends CI_Controller
                 'subcont_id' => $data->val($i, 2),
                 'item_fg_id' => $data->val($i, 3),
                 'share_order' => $data->val($i, 4),
-                'capacity' => $data->val($i, 5),
-                'leadtime' => $data->val($i, 6),
-                'status' => $data->val($i, 7)
+                'type' => $data->val($i, 5),
+                'currency' => $data->val($i, 6),
+                'price' => $data->val($i, 7),
+                'valid_date' => $data->val($i, 8),
+                'capacity' => $data->val($i, 9),
+                'leadtime' => $data->val($i, 10),
+                'status' => $data->val($i, 11)
             );
         }
         $datas['total'] = count($datas);
@@ -235,6 +239,10 @@ class Setting_subconts extends CI_Controller
                     "subcont_id" => $data['subcont_id'],
                     "item_fg_id" => $data['item_fg_id'],
                     "share_order" => $data['share_order'],
+                    "type" => $data['type'],
+                    "currency" => $data['currency'],
+                    "price" => $data['price'],
+                    "valid_date" => $data['valid_date'],
                     "capacity" => $data['capacity'],
                     "leadtime" => $data['leadtime'],
                     "status" => $data['status'],
@@ -305,6 +313,10 @@ class Setting_subconts extends CI_Controller
                 <th>Product No.</th>
                 <th>Product Name</th>
                 <th>Share Job Order %</th>
+                <th>Type</th>
+                <th>Currency</th>
+                <th>Price</th>
+                <th>Valid Date Until</th>
                 <th>Capacity/Day (Pcs)</th>
                 <th>Lead Time (Days)</th>
                 <th>Status</th>
@@ -320,6 +332,10 @@ class Setting_subconts extends CI_Controller
                     <td>' . $data['item_fg_number'] . '</td>
                     <td>' . $data['item_fg_name'] . '</td>
                     <td>' . $data['share_order'] . '</td>
+                    <td>' . $data['type'] . '</td>
+                    <td>' . $data['currency'] . '</td>
+                    <td>' . $data['price'] . '</td>
+                    <td>' . $data['valid_date'] . '</td>
                     <td>' . $data['capacity'] . '</td>
                     <td>' . $data['leadtime'] . '</td>
                     <td>' . $data['status'] . '</td>';

@@ -3,12 +3,12 @@
     <thead>
         <tr>
             <th rowspan="2" field="ck" checkbox="true"></th>
-            <th rowspan="2" data-options="field:'table_name',width:200,halign:'center'">Module</th>
-            <th rowspan="2" data-options="field:'user_approval_name_1',width:200,align:'center'">Approval 1</th>
-            <th rowspan="2" data-options="field:'user_approval_name_2',width:200,align:'center'">Approval 2</th>
-            <th rowspan="2" data-options="field:'user_approval_name_3',width:200,align:'center'">Approval 3</th>
-            <th rowspan="2" data-options="field:'user_approval_name_4',width:200,align:'center'">Approval 4</th>
-            <th rowspan="2" data-options="field:'user_approval_name_5',width:200,align:'center'">Approval 5</th>
+            <th rowspan="2" data-options="field:'table_name',width:150,halign:'center'">Module</th>
+            <th rowspan="2" data-options="field:'user_approval_name_1',width:100,align:'center'">Approval 1</th>
+            <th rowspan="2" data-options="field:'user_approval_name_2',width:100,align:'center'">Approval 2</th>
+            <th rowspan="2" data-options="field:'user_approval_name_3',width:100,align:'center'">Approval 3</th>
+            <th rowspan="2" data-options="field:'user_approval_name_4',width:100,align:'center'">Approval 4</th>
+            <th rowspan="2" data-options="field:'user_approval_name_5',width:100,align:'center'">Approval 5</th>
             <th colspan="2" data-options="field:'',width:100,halign:'center'"> Created</th>
             <th colspan="2" data-options="field:'',width:100,halign:'center'"> Updated</th>
         </tr>
@@ -133,7 +133,10 @@
             pagination: true,
             clientPaging: false,
             remoteFilter: true,
-            rownumbers: true
+            rownumbers: true,
+            fit: true,
+            pageList: [20, 50, 100, 500, 1000],
+            pageSize: 20,
         }).datagrid('enableFilter');
         //SAVE DATA
         $('#dlg_insert').dialog({
@@ -153,7 +156,8 @@
                             } else {
                                 toastr.error(result.message, result.title);
                             }
-                            //$('#dlg_insert').dialog('close');
+
+                            $('#dlg_insert').dialog('close');
                             $('#dg').datagrid('reload');
                         }
                     });

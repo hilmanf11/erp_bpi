@@ -42,9 +42,20 @@ class Sales_orders extends CI_Controller
         echo json_encode($send);
     }
 
+    public function readItems($customer_id, $sales_order_no)
+    {
+        $post = isset($_POST['q']) ? $_POST['q'] : "";
+        $send = $this->crud->query("SELECT b.id, b.number, b.name, a.qty
+            FROM sales_orders a 
+            JOIN item_fg b ON a.item_fg_id = b.id
+            JOIN customers c ON a.customer_id = c.id
+            WHERE a.customer_id = '$customer_id' and a.sales_order_no = '$sales_order_no' and a.status = 0 and (b.number LIKE '%$post%' or b.name LIKE '%$post%') ");
+        echo json_encode($send);
+    }
+
     public function readSalesOrder($customer_id)
     {
-        $send = $this->crud->query("SELECT DISTINCT sales_order_no FROM sales_orders WHERE customer_id = '$customer_id'");
+        $send = $this->crud->query("SELECT DISTINCT sales_order_no, sales_order_date FROM sales_orders WHERE customer_id = '$customer_id' and status = 0");
         echo json_encode($send);
     }
 
@@ -164,6 +175,60 @@ class Sales_orders extends CI_Controller
             echo $send;
         } else {
             show_error("Cannot Process your request");
+        }
+    }
+
+    public function uploadatt()
+    {
+        // Pastikan file disimpan dalam direktori yang diinginkan
+        $uploadDir = 'assets/image/sales_orders/';
+
+        if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+            // Pastikan ada file yang diunggah dari permintaan
+            if (isset($_FILES['file'])) {
+                $file = $_FILES['file'];
+
+                // Validasi ekstensi file yang diunggah
+                $allowedExtensions = ['pdf', 'jpg', 'jpeg', 'png'];
+                $fileExtension = strtolower(pathinfo($file['name'], PATHINFO_EXTENSION));
+
+                if (!in_array($fileExtension, $allowedExtensions)) {
+                    echo json_encode(['success' => false, 'message' => 'Only files with the extension .pdf, .jpg, or .png are allowed.']);
+                    exit; // Menghentikan proses lebih lanjut jika ekstensi tidak valid
+                }
+
+                // Validasi ukuran file yang diunggah (maksimal 5MB)
+                $maxFileSize = 2 * 1024 * 1024; // 5MB dalam bytes
+                if ($file['size'] > $maxFileSize) {
+                    echo json_encode(['success' => false, 'message' => 'Ukuran file terlalu besar. Maksimal 2MB yang diperbolehkan.']);
+                    exit; // Menghentikan proses lebih lanjut jika ukuran terlalu besar
+                }
+
+                // Pastikan tidak ada error dalam proses upload
+                if ($file['error'] === UPLOAD_ERR_OK) {
+                    // Buat nama unik untuk file yang diunggah
+                    $fileName = uniqid() . '_' . $file['name'];
+                    $uploadPath = $uploadDir . $fileName;
+
+                    // Pindahkan file dari temporary directory ke lokasi yang diinginkan
+                    if (move_uploaded_file($file['tmp_name'], $uploadPath)) {
+                        // File berhasil diunggah
+                        echo json_encode(['success' => true, 'message' => 'File Upload Success.', 'filename' => $fileName]);
+                    } else {
+                        // Gagal menyimpan file
+                        echo json_encode(['success' => false, 'message' => 'File Upload Failed.']);
+                    }
+                } else {
+                    // Ada error dalam proses upload
+                    echo json_encode(['success' => false, 'message' => 'Error while Upload.']);
+                }
+            } else {
+                // File tidak ditemukan dalam permintaan
+                echo json_encode(['success' => false, 'message' => 'File Not Found.']);
+            }
+        } else {
+            // Metode request yang diperlukan adalah POST
+            echo json_encode(['success' => false, 'message' => 'Metode request yang diperlukan adalah POST.']);
         }
     }
 

@@ -396,7 +396,7 @@
                             method: 'post',
                             url: '<?= base_url('master/setting_subconts/delete') ?>',
                             data: {
-                                customer_id: row.customer_id
+                                subcont_id: row.subcont_id
                             },
                             success: function(result) {
                                 var result = eval('(' + result + ')');
@@ -471,7 +471,9 @@
             url: '<?= base_url('master/setting_subconts/datatables') ?>',
             pagination: true,
             rownumbers: true,
-            height: '645px',
+            heifit: true,
+            pageList: [20, 50, 100, 500, 1000],
+            pageSize: 20,
             view: detailview,
             detailFormatter: function(index, row) {
                 return '<div style="padding:2px;position:relative;"><table class="ddv" title="Detail Of ' + row.subcont_name + '"></table></div>';

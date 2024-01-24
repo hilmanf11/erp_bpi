@@ -1,5 +1,5 @@
 <!-- TABLE DATAGRID -->
-<table id="dg" class="easyui-datagrid" style="width:99.5%; height: 600px;" data-options="rownumbers:true,singleSelect:true,url:'<?= base_url('admin/user_setting/datatables') ?>'" toolbar="#toolbar"></table>
+<table id="dg" class="easyui-datagrid" style="width:99.5%;" data-options="rownumbers:true,singleSelect:true,url:'<?= base_url('admin/user_setting/datatables') ?>'" toolbar="#toolbar"></table>
 <!-- TOOLBAR DATAGRID -->
 <div id="toolbar" style="height: 75px;">
     <fieldset style="margin-bottom: 10px;">
@@ -33,6 +33,7 @@
                             singleSelect: true,
                             idField: 'id',
                             treeField: 'name',
+                            fit: true,
                             onBeforeLoad: function(row, param) {
                                 if (!row) {
                                     param.id = 0;

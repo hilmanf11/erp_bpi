@@ -1,5 +1,5 @@
 <!-- UPDATE DATA -->
-<div class="easyui-panel" title="Configuration" style="width:100%; height:640px; padding:10px; background:#fafafa;" data-options="collapsible:true, maximizable:false">
+<div class="easyui-panel" title="Configuration" style="width:100%; padding:10px; background:#fafafa;" data-options="collapsible:true, maximizable:false, fit:true">
     <form id="frm_insert" method="post" enctype="multipart/form-data" novalidate>
         <fieldset style="width:39%; height: 330px; border:1px solid #d0d0d0; margin-bottom: 10px; border-radius:4px; float: left;">
             <legend><b>Setting Application</b></legend>

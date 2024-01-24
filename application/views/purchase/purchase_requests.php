@@ -11,7 +11,7 @@
             <th rowspan="2" data-options="field:'item_name',width:150,halign:'center'">Product Name</th>
             <th rowspan="2" data-options="field:'specification',width:400,halign:'center'">Product Specification</th>
             <th rowspan="2" data-options="field:'uom',width:80,align:'center'">UoM</th>
-            <th rowspan="2" data-options="field:'qty',width:80,halign:'center',align:'right',formatter:numberformat">Total Qty</th>
+            <th rowspan="2" data-options="field:'qty',width:80,halign:'center',align:'right'">Total Qty</th>
             <th rowspan="2" data-options="field:'remarks',width:100,halign:'center'">Remarks</th>
             <th rowspan="2" data-options="field:'po_no',width:120,align:'center'">Po No</th>
             <th colspan="2" data-options="field:'',width:100,halign:'center'"> Created</th>
@@ -129,7 +129,7 @@
         $('#item_family_id').combobox('clear');
     }
 
-    function addTable(item_family_id, link = "") {
+    function addTable(item_family_number, link = "") {
         var lastIndex;
         var dg = $('#dg2').datagrid({
             url: link,
@@ -143,9 +143,9 @@
                     editor: {
                         type: 'combogrid',
                         options: {
-                            url: '<?= base_url('master/supplier_items/readItems?item_family_id=') ?>' + item_family_id,
+                            url: '<?= base_url('master/supplier_items/readItems?item_family_number=') ?>' + item_family_number,
                             required: true,
-                            panelWidth: 600,
+                            panelWidth: 800,
                             idField: 'item_number',
                             textField: 'item_number',
                             mode: 'remote',
@@ -160,6 +160,10 @@
                                     field: 'item_name',
                                     title: 'Product Name',
                                     width: 150
+                                }, {
+                                    field: 'specification',
+                                    title: 'Specification',
+                                    width: 300
                                 }]
                             ],
                             onSelect: function(value, rows) {
@@ -186,9 +190,8 @@
                                     field: 'po'
                                 });
 
-                                $(ed.target).textbox('setValue', rows.item_rm_id);
+                                $(ed.target).textbox('setValue', rows.item_id);
                                 $(ed2.target).textbox('setValue', rows.item_name);
-
 
                                 // $.ajax({
                                 //     type: "post",
@@ -204,19 +207,19 @@
                                 //     }
                                 // });
 
-                                // $.ajax({
-                                //     type: "post",
-                                //     url: "<?= base_url('purchase/purchase_orders/readTotalPo') ?>",
-                                //     data: "item_rm_id=" + rows.id,
-                                //     dataType: "json",
-                                //     success: function(jsonpo) {
-                                //         if (jsonpo != null) {
-                                //             $(ed4.target).numberbox('setValue', jsonpo.qty);
-                                //         } else {
-                                //             $(ed4.target).numberbox('setValue', 0);
-                                //         }
-                                //     }
-                                // });
+                                $.ajax({
+                                    type: "post",
+                                    url: "<?= base_url('purchase/purchase_orders/readTotalPo') ?>",
+                                    data: "item_rm_id=" + rows.id,
+                                    dataType: "json",
+                                    success: function(jsonpo) {
+                                        if (jsonpo != null) {
+                                            $(ed4.target).numberbox('setValue', jsonpo.qty);
+                                        } else {
+                                            $(ed4.target).numberbox('setValue', 0);
+                                        }
+                                    }
+                                });
                             }
                         }
                     }
@@ -231,7 +234,7 @@
                     }
                 }, {
                     field: 'item_rm_id',
-                    hidden: true,
+                    // hidden: true,
                     width: 100,
                     halign: 'center',
                     title: "ID",
@@ -247,7 +250,7 @@
                         type: 'numberbox',
                         options: {
                             required: true,
-                            precision: 2
+                            // precision: 2
                         }
                     }
                 }, {
@@ -317,7 +320,7 @@
         if (item_family_id != "") {
             if (endEditing()) {
                 $('#dg2').datagrid('appendRow', {
-                    qty: '0'
+                    qty: ''
                 });
                 editIndex = $('#dg2').datagrid('getRows').length - 1;
                 $('#dg2').datagrid('selectRow', editIndex).datagrid('beginEdit', editIndex);
@@ -345,6 +348,7 @@
                     $('#frm_insert').form('load', row);
                     $("#item_family_id").combobox('disable');
                     $("#item_category_id").combobox('disable');
+
 
                     setTimeout(function() {
                         $('#request_no').textbox('setValue', row.request_no);
@@ -523,10 +527,10 @@
                                 type: "post",
                                 url: '<?= base_url('purchase/purchase_requests/create') ?>',
                                 data: {
+                                    item_rm_id: rows[i].item_rm_id,
                                     request_no: request_no,
                                     request_date: request_date,
                                     request_name: request_name,
-                                    item_rm_id: rows[i].item_rm_id,
                                     qty: rows[i].qty,
                                     expected_date: expected_date,
                                     remarks: rows[i].remarks
@@ -634,23 +638,23 @@
         });
 
         $("#item_category_id").combobox({
-            url: '<?= base_url('master/item_categories/reads_not_fg') ?>',
+            url: '<?= base_url('master/item_categories/readsnotfg') ?>',
             valueField: 'id',
             textField: 'name',
             prompt: "Select Categories",
             onSelect: function(category) {
                 $("#item_family_id").combobox({
-                    url: '<?= base_url('master/item_familys/readss/') ?>' + category.id,
+                    url: '<?= base_url('master/item_familys/reads/') ?>' + category.number,
                     valueField: 'id',
                     textField: 'name',
                     prompt: "Select Product Family",
                     onSelect: function(row) {
                         $.ajax({
                             type: "post",
-                            url: "<?= base_url('purchase/purchase_requests/request_no/') ?>" + row.id,
+                            url: "<?= base_url('purchase/purchase_requests/request_no/') ?>" + row.number,
                             dataType: "html",
                             success: function(result) {
-                                addTable(row.id);
+                                addTable(row.number);
                                 $("#request_no").textbox('setValue', result);
                             }
                         });
@@ -661,7 +665,7 @@
 
         //Get Customer
         $('#filter_item_familys').combogrid({
-            url: '<?= base_url('master/item_familys/readss') ?>',
+            url: '<?= base_url('master/item_familys/reads') ?>',
             panelWidth: 420,
             idField: 'id',
             textField: 'name',

@@ -39,17 +39,6 @@ class Delivery_orders extends CI_Controller
         echo json_encode($send);
     }
 
-    public function readDeliveryOrders($customer_id)
-    {
-        $post = isset($_POST['q']) ? $_POST['q'] : "";
-        $send = $this->crud->query("SELECT b.id, b.number, b.name, a.delivery_order_no, a.sales_order_no, c.customer_order_no, a.uom, a.qty_do
-            FROM delivery_orders a 
-            JOIN item_fg b ON a.item_fg_id = b.id
-            JOIN sales_orders c ON a.customer_id = c.id
-            WHERE a.customer_id = '$customer_id' and (b.number LIKE '%$post%' or b.name LIKE '%$post%')");
-        echo json_encode($send);
-    }
-
     public function readSalesOrderDeliveries()
     {
         $delivery_date = $this->input->post('delivery_date');

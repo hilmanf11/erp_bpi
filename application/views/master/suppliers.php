@@ -16,6 +16,9 @@
             <th rowspan="2" data-options="field:'currency',width:80,halign:'center'">Currency</th>
             <th rowspan="2" data-options="field:'payment_term',width:80,halign:'center'">Payment<br>Term (Day)</th>
             <th rowspan="2" data-options="field:'incoterm',width:80,halign:'center'">Incoterm</th>
+            <th rowspan="2" data-options="field:'vat_status',align:'center',width:80">Vat Status</th>
+            <th rowspan="2" data-options="field:'vat',align:'center',width:80">Vat</th>
+            <th rowspan="2" data-options="field:'tax',halign:'center',width:120">Tax No</th>
             <th rowspan="2" data-options="field:'bank_account',width:150,halign:'center'">Bank Account</th>
             <th rowspan="2" data-options="field:'bank_name',width:150,halign:'center'">Bank Name</th>
             <th rowspan="2" data-options="field:'status',width:100,halign:'center', styler:cellStyler, formatter:cellFormatter">Status</th>
@@ -35,7 +38,7 @@
     <?= $button ?>
 </div>
 <!-- DIALOG SAVE AND UPDATE -->
-<div id="dlg_insert" class="easyui-dialog" title="Add New" data-options="closed: true,modal:true" style="width: 800px; padding:10px; top: 20px;">
+<div id="dlg_insert" class="easyui-dialog" title="Add New" data-options="closed: true,modal:true" style="width: 70%; padding:10px; top: 10px;">
     <form id="frm_insert" method="post" novalidate>
         <fieldset style="width:100%; border:1px solid #d0d0d0; margin-bottom: 10px; border-radius:4px; float: left;">
             <legend><b>Form Data</b></legend>
@@ -75,8 +78,6 @@
                     <span style="width:35%; display:inline-block;">Fax</span>
                     <input style="width:60%;" name="fax" id="fax" class="easyui-textbox">
                 </div>
-            </div>
-            <div style="float:left; width:50%;">
                 <div class="fitem">
                     <span style="width:35%; display:inline-block;">Email</span>
                     <input style="width:60%;" name="email" id="email" class="easyui-textbox">
@@ -85,6 +86,8 @@
                     <span style="width:35%; display:inline-block;">Website</span>
                     <input style="width:60%;" name="website" id="website" class="easyui-textbox">
                 </div>
+            </div>
+            <div style="float:left; width:50%;">
                 <div class="fitem">
                     <span style="width:35%; display:inline-block;">Currency</span>
                     <input style="width:60%;" name="currency" id="currency" required="" class="easyui-combobox">
@@ -96,6 +99,21 @@
                 <div class="fitem">
                     <span style="width:35%; display:inline-block;">Incoterm</span>
                     <input style="width:60%;" name="incoterm" id="incoterm" class="easyui-textbox">
+                </div>
+                <div class="fitem">
+                    <span style="width:35%; display:inline-block;">Vat Status</span>
+                    <select style="width:30%;" name="vat_status" class="easyui-combobox" panelHeight="auto">
+                        <option value="VAT">VAT</option>
+                        <option value="NON VAT">NON VAT</option>
+                    </select>
+                </div>
+                <div class="fitem">
+                    <span style="width:35%; display:inline-block;">VAT (%)</span>
+                    <input style="width:30%;" name="vat" class="easyui-numberbox">
+                </div>
+                <div class="fitem">
+                    <span style="width:35%; display:inline-block;">Tax No</span>
+                    <input style="width:60%;" name="tax" class="easyui-textbox">
                 </div>
                 <div class="fitem">
                     <span style="width:35%; display:inline-block;">Bank Account</span>
@@ -228,7 +246,10 @@
             pagination: true,
             clientPaging: false,
             remoteFilter: true,
-            rownumbers: true
+            rownumbers: true,
+            fit: true,
+            pageList: [20, 50, 100, 500, 1000],
+            pageSize: 20,
         }).datagrid('enableFilter');
         //SAVE DATA
         $('#dlg_insert').dialog({

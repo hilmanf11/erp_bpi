@@ -1,6 +1,6 @@
 <!-- TABLE DATAGRID -->
-<table id="dg" class="easyui-datagrid" style="width:99.5%;" toolbar="#toolbar" >
-    <thead data-options="frozen:true">
+<table id="dg" class="easyui-datagrid" style="width:99.5%;" toolbar="#toolbar">
+    <thead frozen="true">
         <tr>
             <th field="ck" checkbox="true"></th>
             <th data-options="field:'id',width:150,align:'center'">Product ID</th>
@@ -262,7 +262,10 @@
             pagination: true,
             clientPaging: false,
             remoteFilter: true,
-            rownumbers: true
+            rownumbers: true,
+            fit: true,
+            pageList: [20, 50, 100, 500, 1000],
+            pageSize: 20,
         }).datagrid('enableFilter');
         //SAVE DATA
         $('#dlg_insert').dialog({

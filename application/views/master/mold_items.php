@@ -29,7 +29,7 @@
 </table>
 
 <!-- TOOLBAR DATAGRID -->
-<div id="toolbar" style="height: 250px; padding: 10px;">
+<div id="toolbar" style="height: 230px; padding: 10px;">
     <!-- <div style="width: 100%; display: grid; grid-template-columns: auto auto auto; grid-gap: 5px; display: flex;"> -->
     <div style="width: 50%;">
         <fieldset style="width: 100%; border:2px solid #d0d0d0; margin-bottom: 5px; margin-top: 5px; border-radius:4px;">
@@ -270,7 +270,10 @@
         $('#dg').datagrid({
             url: '<?= base_url('master/mold_items/datatables') ?>',
             pagination: true,
-            rownumbers: true
+            rownumbers: true,
+            fit: true,
+            pageList: [20, 50, 100, 500, 1000],
+            pageSize: 20,
         });
 
         //SAVE DATA

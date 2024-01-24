@@ -34,7 +34,7 @@ class Molds extends CI_Controller
         $send = $this->crud->reads('molds', ["id" => $post]);
         echo json_encode($send);
     }
-
+    
     //GET DATATABLES
     public function datatables()
     {
@@ -54,12 +54,8 @@ class Molds extends CI_Controller
             $this->db->where('a.deleted', 0);
             if (@count($filters) > 0) {
                 foreach ($filters as $filter) {
-                    if($filter->field == "item_fg_number"){
-                        $this->db->like("b.id", $filter->value);
-                    }elseif($filter->field == "customer_name"){
-                        $this->db->like("c.id", $filter->value);
-                    }elseif($filter->field == "item_fg_name"){
-                        $this->db->like("b.id", $filter->value);
+                    if($filter->field == "customer_name"){
+                        $this->db->like("c.name", $filter->value);
                     }else{
                         $this->db->like("a.".$filter->field, $filter->value);
                     }

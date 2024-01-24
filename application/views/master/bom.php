@@ -144,6 +144,7 @@
                                             weight = item_fg.weight;
                                         }
                                     }),
+                                    
                                     $.ajax({
                                         type: "post",
                                         url: "<?= base_url('master/bom/readRunner'); ?>",
@@ -160,7 +161,7 @@
                                     var calculatedComposition;
 
                                     if (item_family_name == 'VIRGIN') {
-                                        calculatedComposition = (parseFloat(weight) + parseFloat(runner / cavity_standard));
+                                        calculatedComposition = ((parseFloat(weight) + parseFloat(runner / cavity_standard)) / 1000);
                                     } else {
                                         calculatedComposition = "";
                                     }
@@ -502,7 +503,9 @@
             url: '<?= base_url('master/bom/datatables') ?>',
             pagination: true,
             rownumbers: true,
-            height: '645px',
+            fit: true,
+            pageList: [20, 50, 100, 500, 1000],
+            pageSize: 20,
             view: detailview,
             detailFormatter: function(index, row) {
                 return '<div style="padding:2px;position:relative;"><table class="ddv" title="Detail Of ' + row.item_fg_number + '"></table></div>';
