@@ -102,15 +102,24 @@
                     <span style="width:35%; display:inline-block;">Division</span>
                     <input style="width:60%;" name="division" id="division" required="" class="easyui-combobox">
                 </div>
-            </div>
-            <div style="width: 50%; float: left;">
                 <div class="fitem">
                     <span style="width:35%; display:inline-block;">Delivery Date</span>
                     <input style="width:40%;" name="delivery_date" id="delivery_date" required data-options="formatter:myformatter,parser:myparser,editable:false" class="easyui-datebox">
                 </div>
+            </div>
+            
+            <div style="width: 50%; float: left;">
+                <div class="fitem">
+                    <span style="width:35%; display:inline-block;">Plant</span>
+                    <input style="width:60%;" name="plant" id="plant" required="" class="easyui-combogrid">
+                </div>
+                <div class="fitem">
+                    <span style="width:35%; display:inline-block;">Department</span>
+                    <input style="width:60%;" name="department" id="department" disabled class="easyui-textbox">
+                </div>
                 <div class="fitem">
                     <span style="width:35%; display:inline-block;">Shipping Address</span>
-                    <input style="width:60%;" name="customer_address_id" id="customer_address_id" required="" class="easyui-combobox">
+                    <input style="width:60%;" name="customer_address_id" id="customer_address_id" disabled class="easyui-textbox">
                 </div>
                 <div class="fitem">
                     <span style="width:35%; display:inline-block;">Attention To</span>
@@ -176,7 +185,7 @@
         $("#customer_id").combobox('enable');
         $("#sales_order_no").textbox('enable');
         $("#sales_order_date").datebox('enable');
-        $("#customer_address_id").datebox('enable');
+        $("#customer_address_id").textbox('enable');
         $("#pph").numberbox('setValue', 0);
 
         $("#sales_order_date").datebox({
@@ -205,14 +214,35 @@
                     number(customer.id, sales_order_date);
                 }
 
-                $('#customer_address_id').combobox({
+                $('#plant').combogrid({
                     url: '<?= base_url('master/customers/readAddress/'); ?>' + customer.id,
-                    valueField: 'id',
-                    textField: 'address',
-                    panelHeight: 'panelHeight',
-                    prompt: 'Choose Shipping Address',
-                    onSelect: function(address) {
-                        $("#attention_to").textbox('setValue', address.contact_person);
+                    panelWidth: 400,
+                    idField: 'plant',
+                    textField: 'plant',
+                    mode: 'remote',
+                    fitColumns: true,
+                    prompt: "Choose Plant Name ",
+                    icons: [{
+                        iconCls: 'icon-clear',
+                        handler: function(e) {
+                            $(e.data.target).combogrid('clear').combogrid('textbox').focus();
+                        }
+                    }],
+                    columns: [
+                        [{
+                            field: 'plant',
+                            title: 'Plant Name',
+                            width: 200
+                        }, {
+                            field: 'department',
+                            title: 'Department Name',
+                            width: 200
+                        }]
+                    ],
+                    onSelect: function(val, row) {
+                        $("#attention_to").textbox('setValue', row.contact_person);
+                        $("#customer_address_id").textbox('setValue', row.address);
+                        $("#department").textbox('setValue', row.department);
                     }
                 });
             }
@@ -557,7 +587,7 @@
             $("#customer_id").combobox('disable');
             $("#sales_order_no").textbox('disable');
             $("#sales_order_date").datebox('disable');
-            $("#customer_address_id").datebox('disable');
+            $("#customer_address_id").textbox('disable');
 
             addTable(row.customer_id, '<?= base_url('planning/sales_orders/datatableUpdates?sales_order_no=') ?>' + window.btoa(row.sales_order_no));
         } else {
@@ -745,7 +775,7 @@
                     var division = $("#division").combobox('getValue');
                     var attachment = $("#attachment").textbox('getValue');
                     var delivery_date = $("#delivery_date").datebox('getValue');
-                    var customer_address_id = $("#customer_address_id").combobox('getValue');
+                    var customer_address_id = $("#customer_address_id").textbox('getValue');
                     var remarks = $("#remarks").textbox('getValue');
                     var pph = $("#pph").numberbox('getValue');
                     var taxes = $("#taxes").numberbox('getValue');

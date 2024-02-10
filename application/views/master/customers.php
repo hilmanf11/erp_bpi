@@ -103,13 +103,15 @@
         <thead>
             <tr>
                 <th rowspan="2" field="ck" checkbox="true"></th>
-                <th rowspan="2" data-options="field:'address',width:150,halign:'center'">Address</th>
+                <th rowspan="2" data-options="field:'plant',width:100,halign:'center'">Plant</th>
+                <th rowspan="2" data-options="field:'department',width:100,halign:'center'">Department</th>
+                <th rowspan="2" data-options="field:'address',width:250,halign:'center'">Address</th>
                 <th rowspan="2" data-options="field:'address_billing',width:150,halign:'center'">Billing Address</th>
-                <th rowspan="2" data-options="field:'contact_person',width:150,halign:'center'">Contact Person</th>
-                <th rowspan="2" data-options="field:'telp',width:150,halign:'center'">Telepon</th>
-                <th rowspan="2" data-options="field:'telp_billing',width:150,halign:'center'">Billing Contact</th>
-                <th rowspan="2" data-options="field:'email',width:150,halign:'center'">Email</th>
-                <th rowspan="2" data-options="field:'website',width:150,halign:'center'">Website</th>
+                <th rowspan="2" data-options="field:'contact_person',width:100,halign:'center'">Contact Person</th>
+                <th rowspan="2" data-options="field:'telp',width:100,halign:'center'">Telepon</th>
+                <th rowspan="2" data-options="field:'telp_billing',width:100,halign:'center'">Billing Contact</th>
+                <th rowspan="2" data-options="field:'email',width:100,halign:'center'">Email</th>
+                <th rowspan="2" data-options="field:'website',width:100,halign:'center'">Website</th>
                 <th colspan="2" data-options="field:'',width:100,halign:'center'"> Created</th>
                 <th colspan="2" data-options="field:'',width:100,halign:'center'"> Updated</th>
             </tr>
@@ -130,6 +132,14 @@
             <div class="fitem" hidden>
                 <span style="width:35%; display:inline-block;">Customer ID</span>
                 <input style="width:60%;" name="customer_id" id="customer_id" class="easyui-textbox">
+            </div>
+            <div class="fitem">
+                <span style="width:35%; display:inline-block;">Plant</span>
+                <input style="width:60%;" name="plant" id="plant" class="easyui-textbox">
+            </div>
+            <div class="fitem">
+                <span style="width:35%; display:inline-block;">Department</span>
+                <input style="width:60%;" name="department" id="department" class="easyui-textbox">
             </div>
             <div class="fitem">
                 <span style="width:35%; display:inline-block;">Address</span>

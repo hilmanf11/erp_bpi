@@ -59,10 +59,10 @@
                     <span style="width:35%; display:inline-block;">Supply No</span>
                     <input style="width:60%;" id="filter_request_no" class="easyui-combobox">
                 </div>
-                <div class="fitem">
+                <!-- <div class="fitem">
                     <span style="width:35%; display:inline-block;">Operation</span>
                     <input style="width:60%;" id="filter_operation" class="easyui-combobox">
-                </div>
+                </div> -->
             </div>
         </fieldset>
         <?= $button ?>
@@ -473,11 +473,11 @@
 
     function print_kanban() {
         var request_no = $("#filter_request_no").combobox('getValue');
-        var operation = $("#filter_operation").combobox('getValue');
-        if (request_no == "" || operation == "") {
+        // var operation = $("#filter_operation").combobox('getValue');
+        if (request_no == "") {// || operation == ""
             toastr.warning("Please select Supply No and Operation!", "Information");
         } else {
-            window.open("<?= base_url('planning/supply_sheets/print_kanban/') ?>" + window.btoa(request_no) + "/" + window.btoa(operation), "_blank");
+            window.open("<?= base_url('planning/supply_sheets/print_kanban/') ?>" + window.btoa(request_no));// + "/" + window.btoa(operation), "_blank"
         }
     }
 

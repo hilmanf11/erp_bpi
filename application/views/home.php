@@ -35,7 +35,7 @@
 	</div>
 
 	<!-- MAIN MENU -->
-	<div data-options="region:'west',split:false, collapsed:true, hideCollapsedContent:false, title:'Main Menu'" style="width:250px; padding:10px; background: url('assets/image/industries.png'); background-repeat: no-repeat; background-size: cover;">
+	<div data-options="region:'west',split:false, collapsed:true, hideCollapsedContent:false, title:'Main Menu'" style="width:250px; padding:10px;">
 		<ul class="easyui-tree" id="menu" data-options="url:'<?= base_url('home/menus') ?>', method:'get',animate:true, lines:true"></ul>
 	</div>
 
@@ -137,7 +137,6 @@
 					<input style="width:60%;" name="position" id="position" value="<?= $profile->position ?>" class="easyui-textbox">
 				</div>
 			</fieldset>
-
 			<fieldset style="width:100%; border:1px solid #d0d0d0; margin-bottom: 10px; border-radius:4px; float: left;">
 				<legend><b>Theme Application</b></legend>
 				<div class="fitem">
@@ -162,7 +161,6 @@
 					</select>
 				</div>
 			</fieldset>
-			
 			<fieldset style="width:100%; border:1px solid #d0d0d0; margin-bottom: 10px; border-radius:4px; float: left;">
 				<legend><b>Change Password</b></legend>
 				<i style="color:red">If you don't want to change the password, don't fill in anything</i>
@@ -485,10 +483,10 @@
 		$('#dlg_approval').dialog('open');
 	}
 
-	approvalList();
-	approvalCount();
-	setInterval(approvalList, 10000);
-	setInterval(approvalCount, 10000);
+	// approvalList();
+	// approvalCount();
+	// setInterval(approvalList, 10000);
+	// setInterval(approvalCount, 10000);
 
 	function approvalList() {
 		$.ajax({

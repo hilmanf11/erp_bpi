@@ -7,9 +7,10 @@
             <th rowspan="2" data-options="field:'request_date',width:100,halign:'center'">Request Date</th>
             <th rowspan="2" data-options="field:'expected_date',width:100,halign:'center'">Expected Date</th>
             <th rowspan="2" data-options="field:'request_name',width:150,halign:'center'">Request Name</th>
+            <th rowspan="2" data-options="field:'division',width:150,halign:'center'">Division</th>
             <th rowspan="2" data-options="field:'item_number',width:150,halign:'center'">Product No</th>
             <th rowspan="2" data-options="field:'item_name',width:150,halign:'center'">Product Name</th>
-            <th rowspan="2" data-options="field:'specification',width:400,halign:'center'">Product Specification</th>
+            <th rowspan="2" data-options="field:'category_name',width:150,halign:'center'">Product Family</th>
             <th rowspan="2" data-options="field:'uom',width:80,align:'center'">UoM</th>
             <th rowspan="2" data-options="field:'qty',width:80,halign:'center',align:'right'">Total Qty</th>
             <th rowspan="2" data-options="field:'remarks',width:100,halign:'center'">Remarks</th>
@@ -26,7 +27,7 @@
     </thead>
 </table>
 
-<div id="toolbar" style="height: 230px; padding:10px;">
+<div id="toolbar" style="height: 270px; padding:10px;">
     <!-- <div style="width: 100%; display: grid; grid-template-columns: auto auto auto; grid-gap: 5px; display: flex;"> -->
     <div style="width: 100%;">
         <fieldset style="width: 45%; border:2px solid #d0d0d0; margin-bottom: 5px; margin-top: 5px; border-radius:4px;">
@@ -39,6 +40,10 @@
             <div class="fitem">
                 <span style="width:35%; display:inline-block;">Request No</span>
                 <input style="width:60%;" id="filter_request_no" class="easyui-combobox">
+            </div>
+            <div class="fitem">
+                <span style="width:35%; display:inline-block;">Category</span>
+                <input style="width:60%;" id="filter_category_id" class="easyui-combobox">
             </div>
             <div class="fitem">
                 <span style="width:35%; display:inline-block;">Product Family</span>
@@ -76,6 +81,10 @@
                 <div class="fitem">
                     <span style="width:35%; display:inline-block;">Request Name</span>
                     <input style="width:60%;" name="request_name" id="request_name" value="<?= $this->session->name ?>" readonly class="easyui-textbox">
+                </div>
+                <div class="fitem">
+                    <span style="width:35%; display:inline-block;">Division</span>
+                    <input style="width:60%;" name="division" id="division" class="easyui-combobox">
                 </div>
             </div>
             <div style="width: 50%; float: left;">
@@ -127,15 +136,26 @@
         $("#item_family_id").combobox('enable');
         $('#request_no').textbox('clear');
         $('#item_family_id').combobox('clear');
+        url_save= '<?= base_url('purchase/purchase_requests/create') ?>';
     }
 
-    function addTable(item_family_number, link = "") {
+    function addTable(item_family_id, link = "") {
         var lastIndex;
         var dg = $('#dg2').datagrid({
             url: link,
             singleSelect: true,
             columns: [
                 [{
+                    field: 'id',
+                    width: 150,
+                    readonly: true,
+                    hidden: true,
+                    halign: 'center',
+                    title: "ID",
+                    editor: {
+                        type: 'textbox'
+                    }
+                },{
                     field: 'item_number',
                     width: 250,
                     halign: 'center',
@@ -143,9 +163,9 @@
                     editor: {
                         type: 'combogrid',
                         options: {
-                            url: '<?= base_url('master/supplier_items/readItems?item_family_number=') ?>' + item_family_number,
+                            url: '<?= base_url('master/supplier_items/readItems?item_family_id=') ?>' + item_family_id,
                             required: true,
-                            panelWidth: 800,
+                            panelWidth: 320,
                             idField: 'item_number',
                             textField: 'item_number',
                             mode: 'remote',
@@ -160,10 +180,6 @@
                                     field: 'item_name',
                                     title: 'Product Name',
                                     width: 150
-                                }, {
-                                    field: 'specification',
-                                    title: 'Specification',
-                                    width: 300
                                 }]
                             ],
                             onSelect: function(value, rows) {
@@ -190,7 +206,7 @@
                                     field: 'po'
                                 });
 
-                                $(ed.target).textbox('setValue', rows.item_id);
+                                $(ed.target).textbox('setValue', rows.item_rm_id);
                                 $(ed2.target).textbox('setValue', rows.item_name);
 
                                 // $.ajax({
@@ -234,7 +250,7 @@
                     }
                 }, {
                     field: 'item_rm_id',
-                    // hidden: true,
+                    hidden: true,
                     width: 100,
                     halign: 'center',
                     title: "ID",
@@ -348,7 +364,11 @@
                     $('#frm_insert').form('load', row);
                     $("#item_family_id").combobox('disable');
                     $("#item_category_id").combobox('disable');
+                    $("#request_date").combobox('disable');
+                    $("#expected_date").combobox('disable');
 
+
+                    url_save= '<?= base_url('purchase/purchase_requests/update') ?>';
 
                     setTimeout(function() {
                         $('#request_no').textbox('setValue', row.request_no);
@@ -517,6 +537,7 @@
                     var request_date = $("#request_date").datebox('getValue');
                     var request_name = $("#request_name").textbox('getValue');
                     var expected_date = $("#expected_date").datebox('getValue');
+                    var division = $("#division").combobox('getValue');
 
                     var rows = $('#dg2').datagrid('getRows');
                     var totalrows = rows.length;
@@ -525,12 +546,14 @@
                         if (rows[i].item_rm_id) {
                             $.ajax({
                                 type: "post",
-                                url: '<?= base_url('purchase/purchase_requests/create') ?>',
+                                url: url_save,
                                 data: {
+                                    id: rows[i].id,
                                     item_rm_id: rows[i].item_rm_id,
                                     request_no: request_no,
                                     request_date: request_date,
                                     request_name: request_name,
+                                    division: division,
                                     qty: rows[i].qty,
                                     expected_date: expected_date,
                                     remarks: rows[i].remarks
@@ -637,58 +660,78 @@
             }]
         });
 
+        $('#division').combobox({
+            url: '<?= base_url('master/divisions/reads'); ?>',
+            valueField: 'name',
+            textField: 'name',
+            panelHeight: 'panelHeight',
+            prompt: 'Choose Division',
+        }); 
+
         $("#item_category_id").combobox({
             url: '<?= base_url('master/item_categories/readsnotfg') ?>',
             valueField: 'id',
             textField: 'name',
             prompt: "Select Categories",
             onSelect: function(category) {
+                $.ajax({
+                    type: "post",
+                    url: "<?= base_url('purchase/purchase_requests/request_no/') ?>" + category.number,
+                    dataType: "html",
+                    success: function(result) {
+                        $("#request_no").textbox('setValue', result);
+                    }
+                });
+
                 $("#item_family_id").combobox({
-                    url: '<?= base_url('master/item_familys/reads/') ?>' + category.number,
+                    url: '<?= base_url('master/item_familys/reads/') ?>' + category.id,
                     valueField: 'id',
                     textField: 'name',
+                    multiple:true,
                     prompt: "Select Product Family",
-                    onSelect: function(row) {
-                        $.ajax({
-                            type: "post",
-                            url: "<?= base_url('purchase/purchase_requests/request_no/') ?>" + row.number,
-                            dataType: "html",
-                            success: function(result) {
-                                addTable(row.number);
-                                $("#request_no").textbox('setValue', result);
-                            }
-                        });
+                    onChange: function(row) {
+                        var selectedRows = $("#item_family_id").combobox('getValues');
+
+                        addTable(selectedRows); 
                     }
                 });
             }
         });
 
         //Get Customer
-        $('#filter_item_familys').combogrid({
-            url: '<?= base_url('master/item_familys/reads') ?>',
-            panelWidth: 420,
-            idField: 'id',
+        $("#filter_category_id").combobox({
+            url: '<?= base_url('master/item_categories/readsnotfg') ?>',
+            valueField: 'id',
             textField: 'name',
-            mode: 'remote',
-            fitColumns: true,
-            prompt: "Select Product Family",
-            icons: [{
-                iconCls: 'icon-clear',
-                handler: function(e) {
-                    $(e.data.target).combogrid('clear').combogrid('textbox').focus();
-                }
-            }],
-            columns: [
-                [{
-                    field: 'number',
-                    title: 'Product Family ID',
-                    width: 120
-                }, {
-                    field: 'name',
-                    title: 'Product Family Name',
-                    width: 250
-                }, ]
-            ]
+            prompt: "Select Categories",
+            onSelect: function(category) {
+                $('#filter_item_familys').combogrid({
+                    url: '<?= base_url('master/item_familys/reads/') ?>' + category.id,
+                    panelWidth: 420,
+                    idField: 'id',
+                    textField: 'name',
+                    mode: 'remote',
+                    fitColumns: true,
+                    prompt: "Select Product Family",
+                    icons: [{
+                        iconCls: 'icon-clear',
+                        handler: function(e) {
+                            $(e.data.target).combogrid('clear').combogrid('textbox').focus();
+                        }
+                    }],
+                    columns: [
+                        [{
+                            field: 'number',
+                            title: 'Product Family ID',
+                            width: 120
+                        }, {
+                            field: 'name',
+                            title: 'Product Family Name',
+                            width: 250
+                        }, ]
+                    ]
+                });
+            }
         });
         readRequestno();
     });

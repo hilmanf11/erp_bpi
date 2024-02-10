@@ -13,7 +13,7 @@ class Supply_sheets extends CI_Controller
         $this->load->library('Ciqrcode');
         $this->load->model('crud');
         //Validasi Form
-        $this->form_validation->set_rules('item_id', 'Product No', 'required|min_length[1]|max_length[30]');
+        $this->form_validation->set_rules('item_fg_id', 'Product No', 'required|min_length[1]|max_length[30]');
     }
     public function index()
     {
@@ -113,17 +113,17 @@ class Supply_sheets extends CI_Controller
         //Select Query
         $id = $_POST['id'];
         if ($id === "0") {
-            $this->db->select('a.*, e.period, e.wp, SUM(a.qty_req) as qty_req2, SUM(a.qty_act) as qty_act2, SUM(a.qty_bal) as qty_bal2, b.number as item_number, b.name as item_name, d.name as uom, g.qty_issued2');
+            $this->db->select('a.*, e.period, e.wp, SUM(a.qty_req) as qty_req2, SUM(a.qty_act) as qty_act2, SUM(a.qty_bal) as qty_bal2, b.number as item_number, b.name as item_name, b.uom, g.qty_issued2');
             $this->db->from('supply_sheets a');
             $this->db->join('item_fg b', 'a.item_fg_id = b.id');
             $this->db->join('item_rm c', 'a.item_rm_id = c.id');
-            $this->db->join('uom d', 'b.uom_id = d.id');
+            // $this->db->join('uom d', 'b.uom_id = d.id');
             $this->db->join('production_schedules e', 'a.item_fg_id = e.item_fg_id and a.workorder = e.workorder');
             $this->db->join('bom f', 'a.item_fg_id = f.item_fg_id and a.item_rm_id = f.item_rm_id');
-            $this->db->join("(SELECT a.request_no, a.item_fg_id, SUM(a.qty) as qty, b.qty_req, (SUM(a.qty) - b.qty_req) as qty_issued2 
+            $this->db->join("(SELECT a.request_no, a.item_rm_id, SUM(a.qty) as qty, b.qty_req, (SUM(a.qty) - b.qty_req) as qty_issued2 
             FROM issued_material_details a 
-            JOIN supply_sheets b ON a.request_no = b.request_no and a.item_fg_id = b.id
-            GROUP BY a.request_no, a.item_fg_id
+            JOIN supply_sheets b ON a.request_no = b.request_no and a.item_rm_id = b.item_rm_id
+            GROUP BY a.request_no, a.item_rm_id
             HAVING (SUM(a.qty) - b.qty_req) < 0) g", "a.request_no = g.request_no", "LEFT");
             $this->db->where('a.deleted', 0);
             $this->db->where('a.status', 0);
@@ -185,21 +185,21 @@ class Supply_sheets extends CI_Controller
                 c.id as item_rm_id,
                 c.number as item_rm_no, 
                 c.name as item_rm_name, 
-                (CASE WHEN g.uom_id is null THEN d.name ELSE h.name END) as uom,
-                (CASE WHEN g.uom_id is null THEN f.qpa ELSE (f.qpa * g.qty) END) as qpa,
+                (CASE WHEN g.uom_soft is null THEN d.name ELSE h.name END) as uom,
+                (CASE WHEN g.uom_soft is null THEN f.composition ELSE (f.composition * g.convertion) END) as composition,
                 i.qty_issued as qty_issued,
                 (i.qty_issued - a.qty_req) as qty_issued_bal,
-                f.qpa, 
+                f.composition, 
                 e.qty');
             $this->db->from('supply_sheets a');
             $this->db->join('item_fg b', 'a.item_fg_id = b.id');
             $this->db->join('item_rm c', 'a.item_rm_id = c.id');
-            $this->db->join('uom d', 'c.uom_id = d.id');
+            $this->db->join('uom d', 'c.uom = d.name');
             $this->db->join('production_schedules e', 'a.item_fg_id = e.item_fg_id and a.workorder = e.workorder');
             $this->db->join('bom f', 'a.item_fg_id = f.item_fg_id and a.item_rm_id = f.item_rm_id');
             $this->db->join('convertions g', 'a.item_rm_id = g.item_rm_id', 'left');
-            $this->db->join('uom h', 'g.uom_id = h.id', 'left');
-            $this->db->join("(SELECT request_no, item_id, SUM(qty) as qty_issued FROM issued_material_details GROUP BY request_no, item_id) i", "i.request_no = a.request_no and i.item_id = c.id", "LEFT");
+            $this->db->join('uom h', 'g.uom_soft = h.name', 'left');
+            $this->db->join("(SELECT request_no, item_rm_id, SUM(qty) as qty_issued FROM issued_material_details GROUP BY request_no, item_rm_id) i", "i.request_no = a.request_no and i.item_rm_id = c.id", "LEFT");
             $this->db->where('a.deleted', 0);
             $this->db->where('a.status', 0);
             $this->db->where('a.workorder', $id);
@@ -235,7 +235,7 @@ class Supply_sheets extends CI_Controller
                     "period" => $record['period'],
                     "wp" => $record['wp'],
                     "workorder" => $record['workorder'],
-                    "item_id" => $record['item_id'],
+                    "item_fg_id" => $record['item_fg_id'],
                     "item_rm_id" => $record['item_rm_id'],
                     "item_number" => $record['item_rm_no'],
                     "item_name" => $record['item_rm_name'],
@@ -244,7 +244,7 @@ class Supply_sheets extends CI_Controller
                     "qty_bal" => $record['qty_bal'],
                     "qty_issued" => $record['qty_issued'],
                     "qty_issued_bal" => $record['qty_issued_bal'],
-                    "qpa" => $record['qpa'],
+                    "composition" => $record['composition'],
                     "qty" => $record['qty'],
                     "uom" => $record['uom'],
                     "supply_type" => $supply_type,
@@ -295,27 +295,27 @@ class Supply_sheets extends CI_Controller
             if ($this->form_validation->run() == TRUE) {
                 $post = $this->input->post();
                 $item_rm_id = $post['item_rm_id'];
-                $wip_balances = $this->crud->read("wip_balances", [], ["item_id" => $item_rm_id], "", "id", "desc");
+                $wip_balances = $this->crud->read("wip_balances", [], ["item_rm_id" => $item_rm_id], "", "id", "desc");
                 $supplier_items = $this->crud->read("supplier_items", [], ["item_rm_id" => $item_rm_id]);
-                $supply_sheets = $this->crud->reads("supply_sheets", [], ["request_no" => $post['request_no'], "item_id" => $post['item_id'], "item_rm_id" => $post['item_rm_id']]);
+                $supply_sheets = $this->crud->reads("supply_sheets", [], ["request_no" => $post['request_no'], "item_fg_id" => $post['item_fg_id'], "item_rm_id" => $post['item_rm_id']]);
                 $dateNow = date("Y-m-d");
 
                 //Stock kWarehouse RM
                 $stockWarehouse = $this->crud->query("SELECT
                     a.id,
                     (COALESCE(SUM(e.qty),0) + COALESCE(g.return_qty,0) - COALESCE(f.qty, 0)) as end_stock
-                FROM item_fg a 
+                FROM item_rm a 
                 JOIN item_familys b ON a.item_family_id = b.id
-                JOIN uom c ON a.uom_id = c.id
-                LEFT JOIN purchase_order_receipts d ON a.id = d.item_fg_id and d.receipt_date <= '$dateNow'
+                JOIN uom c ON a.uom = c.name
+                LEFT JOIN purchase_order_receipts d ON a.id = d.item_rm_id and d.receipt_date <= '$dateNow'
                 LEFT JOIN scan_item_receipts e ON d.receipt_id = e.receipt_id
-                LEFT JOIN (SELECT item_id, COALESCE(SUM(qty), 0) as qty FROM issued_material_details WHERE DATE_FORMAT(created_date, '%Y-%m-%d') <= '$dateNow' GROUP BY item_id) f ON a.id = f.item_id
-                LEFT JOIN (SELECT a.item_fg_id, SUM(c.qty) as return_qty
+                LEFT JOIN (SELECT item_rm_id, COALESCE(SUM(qty), 0) as qty FROM issued_material_details WHERE DATE_FORMAT(created_date, '%Y-%m-%d') <= '$dateNow' GROUP BY item_rm_id) f ON a.id = f.item_rm_id
+                LEFT JOIN (SELECT a.id, SUM(c.qty) as return_qty
                     FROM return_materials a 
                     JOIN return_material_labels b ON a.return_id = b.return_id
                     JOIN scan_item_receipts c ON a.return_id = c.receipt_id and b.label_no = c.label_no
                     WHERE a.return_date <= '$dateNow'
-                    GROUP BY a.item_fg_id) g ON a.id = g.item_id
+                    GROUP BY a.id) g ON a.id = g.id
                 WHERE a.id like '$item_rm_id'
                 GROUP BY a.id
                 ORDER BY a.number");
@@ -423,24 +423,24 @@ class Supply_sheets extends CI_Controller
         echo $send;
     }
 
-    public function print_kanban($request_no, $operation)
+    public function print_kanban($request_no)//, $operation
     {
         $this->db->select('a.*');
         $this->db->from('supply_sheets a');
         $this->db->join('item_rm c', 'a.item_rm_id = c.id');
-        $this->db->join('uom d', 'c.uom_id = d.id');
+        $this->db->join('uom d', 'c.uom = d.name');
         $this->db->join('bom e', 'a.item_fg_id = e.item_fg_id and a.item_rm_id = e.item_rm_id');
-        $this->db->join('warehouse_location_items f', "a.item_rm_id = f.item_rm_id and type = 'RM'", 'left');
+        $this->db->join('warehouse_location_items f', "a.item_rm_id = f.item_rm_id", 'left');
         $this->db->join('supplier_items g', 'a.item_rm_id = g.item_rm_id');
         $this->db->where('a.deleted', 0);
         $this->db->where('a.status', 0);
-        $this->db->where('e.operation', base64_decode($operation));
+        // $this->db->where('e.operation', base64_decode($operation));
         $this->db->like('a.request_no', base64_decode($request_no));
         $this->db->group_by('c.number');
         $supply_sheet_total = $this->db->get()->result_array();
         $kanban = $this->crud->read('supply_sheets', [], ["request_no" => base64_decode($request_no)]);
         $production_schedule = $this->crud->read('production_schedules', [], ["workorder" => $kanban->workorder]);
-        $product = $this->crud->read('items', [], ["id" => $kanban->item_id]);
+        $product = $this->crud->read('item_rm', [], ["id" => $kanban->item_rm_id]);
         $config = $this->db->get('config')->row();
         $config_iso = $this->db->get('config_iso')->row();
         //Config Page
@@ -495,16 +495,16 @@ class Supply_sheets extends CI_Controller
         $hal = 1;
         $subtotal = 0;
         for ($i = 0; $i < $page; $i++) {
-            $this->db->select('a.*, (CASE WHEN a.mpq > 0 THEN a.mpq ELSE g.mpq END) as mpq, c.number as item_rm_no, c.name as item_rm_name, e.qpa, f.location, d.name as uom');
+            $this->db->select('a.*, (CASE WHEN a.mpq > 0 THEN a.mpq ELSE g.mpq END) as mpq, c.number as item_rm_no, c.name as item_rm_name, e.composition, f.location, c.uom');
             $this->db->from('supply_sheets a');
             $this->db->join('item_rm c', 'a.item_rm_id = c.id');
-            $this->db->join('uom d', 'c.uom_id = d.id');
+            $this->db->join('uom d', 'c.uom = d.name');
             $this->db->join('bom e', 'a.item_fg_id = e.item_fg_id and a.item_rm_id = e.item_rm_id');
-            $this->db->join('warehouse_location_items f', "a.item_rm_id = f.item_rm_id and type = 'RM'", 'left');
+            $this->db->join('warehouse_location_items f', "a.item_rm_id = f.item_rm_id", 'left');
             $this->db->join('supplier_items g', 'a.item_rm_id = g.item_rm_id');
             $this->db->where('a.deleted', 0);
             $this->db->where('a.status', 0);
-            $this->db->where('e.operation', base64_decode($operation));
+            // $this->db->where('e.operation', base64_decode($operation));
             $this->db->like('a.request_no', base64_decode($request_no));
             $this->db->group_by('c.number');
             $this->db->order_by('c.number', 'ASC');
@@ -627,7 +627,7 @@ class Supply_sheets extends CI_Controller
                                 <td style="text-align:center">' . $no . '</td>
                                 <td>' . $record['item_rm_no'] . '</td>
                                 <td>' . $record['item_rm_name'] . '</td>
-                                <td style="text-align:right;">' . $record['qpa'] . '</td>
+                                <td style="text-align:right;">' . $record['composition'] . '</td>
                                 <td>' . $record['uom'] . '</td>
                                 <td style="text-align:right;">' . @number_format(($wip_balances->need), 2) . '</td>
                                 <td style="text-align:right;">' . @number_format($record['mpq'], 2) . '</td>
@@ -690,21 +690,21 @@ class Supply_sheets extends CI_Controller
             c.id as item_rm_id,
             c.number as item_rm_no, 
             c.name as item_rm_name, 
-            (CASE WHEN g.uom_id is null THEN d.name ELSE h.name END) as uom,
-            (CASE WHEN g.uom_id is null THEN f.qpa ELSE (f.qpa * g.qty) END) as qpa,
+            (CASE WHEN g.uom_soft is null THEN d.name ELSE h.name END) as uom,
+            (CASE WHEN g.uom_soft is null THEN f.composition ELSE (f.composition * g.convertion) END) as composition,
             i.qty_issued as qty_issued,
             (i.qty_issued - a.qty_req) as qty_issued_bal,
-            f.qpa, 
+            f.composition, 
             e.qty');
         $this->db->from('supply_sheets a');
         $this->db->join('item_fg b', 'a.item_fg_id = b.id');
         $this->db->join('item_rm c', 'a.item_rm_id = c.id');
-        $this->db->join('uom d', 'c.uom_id = d.id');
+        $this->db->join('uom d', 'c.uom = d.name');
         $this->db->join('production_schedules e', 'a.item_fg_id = e.item_fg_id and a.workorder = e.workorder');
         $this->db->join('bom f', 'a.item_fg_id = f.item_fg_id and a.item_rm_id = f.item_rm_id');
         $this->db->join('convertions g', 'a.item_rm_id = g.item_rm_id', 'left');
-        $this->db->join('uom h', 'g.uom_id = h.id', 'left');
-        $this->db->join("(SELECT request_no, item_fg_id, SUM(qty) as qty_issued FROM issued_material_details GROUP BY request_no, item_fg_id) i", "i.request_no = a.request_no and i.item_fg_id = c.id", "LEFT");
+        $this->db->join('uom h', 'g.uom_soft = h.name', 'left');
+        $this->db->join("(SELECT request_no, item_rm_id, SUM(qty) as qty_issued FROM issued_material_details GROUP BY request_no, item_rm_id) i", "i.request_no = a.request_no and i.item_rm_id = c.id", "LEFT");
         // $this->db->where('a.deleted', 0);
         if ($filter_supply_type == "OPEN") {
             $this->db->where('(i.qty_issued - a.qty_req) <', 0);
@@ -790,7 +790,7 @@ class Supply_sheets extends CI_Controller
                         <td>' . $data['item_rm_no'] . '</td>
                         <td>' . $data['item_rm_name'] . '</td>
                         <td>' . $data['uom'] . '</td>
-                        <td>' . $data['qpa'] . '</td>
+                        <td>' . $data['composition'] . '</td>
                         <td>' . $data['qty'] . '</td>
                         <td>' . $data['qty_act'] . '</td>
                         <td>' . $data['qty_issued'] . '</td>

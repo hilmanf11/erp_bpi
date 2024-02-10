@@ -97,7 +97,7 @@ class Customers extends CI_Controller
                     $this->db->like($filter->field, $filter->value);
                 }
             }
-            $this->db->order_by('id', 'asc');
+            $this->db->order_by('plant', 'asc');
             //Total Data
             $totalRows = $this->db->count_all_results('', false);
             //Limit 1 - 10
@@ -292,13 +292,15 @@ class Customers extends CI_Controller
             $datas[] = array(
                 //excel
                 'customer_id' => $data->val($i, 2),
-                'address' => $data->val($i, 3),
-                'address_billing' => $data->val($i, 4),
-                'contact_person' => $data->val($i, 5),
-                'telp' => $data->val($i, 6),
-                'telp_billing' => $data->val($i, 7),
-                'email' => $data->val($i, 8),
-                'website' => $data->val($i, 9),
+                'plant' => $data->val($i, 3),
+                'department' => $data->val($i, 4),
+                'address' => $data->val($i, 5),
+                'address_billing' => $data->val($i, 6),
+                'contact_person' => $data->val($i, 7),
+                'telp' => $data->val($i, 8),
+                'telp_billing' => $data->val($i, 9),
+                'email' => $data->val($i, 10),
+                'website' => $data->val($i, 11),
             );
         }
         $datas['total'] = count($datas);
@@ -346,6 +348,8 @@ class Customers extends CI_Controller
                 $dataFinal = array(
                     //field
                     "customer_id" => $data['customer_id'],
+                    "plant" => $data['plant'],
+                    "department" => $data['department'],
                     "address" => $data['address'],
                     "address_billing" => $data['address_billing'],
                     "contact_person" => $data['contact_person'],
@@ -410,7 +414,9 @@ class Customers extends CI_Controller
                 <th width="20">No</th>
                 <th>Customer Name</th>
                 <th>Customer Code</th>
-                <th>type</th>
+                <th>Type</th>
+                <th>Plant</th>
+                <th>Department</th>
                 <th>Address</th>
                 <th>Billing Address</th>
                 <th>Contact Person</th>
@@ -438,6 +444,8 @@ class Customers extends CI_Controller
                     <td>' . $data['name'] . '</td>
                     <td>' . $data['number'] . '</td>
                     <td>' . $data['type'] . '</td>
+                    <td>' . $data['plant'] . '</td>
+                    <td>' . $data['department'] . '</td>
                     <td>' . $data['address'] . '</td>
                     <td>' . $data['address_billing'] . '</td>
                     <td>' . $data['contact_person'] . '</td>

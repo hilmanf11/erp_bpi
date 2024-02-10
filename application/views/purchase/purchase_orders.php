@@ -15,14 +15,19 @@
             <th rowspan="2" data-options="field:'qty',width:80,halign:'center',align:'right',formatter:numberformatDefault">Qty</th>
             <th rowspan="2" data-options="field:'uom',width:80,align:'center'">UoM</th>
             <th rowspan="2" data-options="field:'price',width:100,halign:'center',align:'right',formatter:numberformat">Price</th>
-            <th rowspan="2" data-options="field:'total_price',width:120,halign:'center',align:'right',formatter:numberformat">Total Price</th>
+            <th rowspan="2" data-options="field:'discount',width:80,halign:'center',align:'right',formatter:numberformatDefault">Disc %</th>
+            <th rowspan="2" data-options="field:'total',width:120,halign:'center',align:'right',formatter:numberformat">Total Price</th>
             <th rowspan="2" data-options="field:'currency',width:80,align:'center'">Currency</th>
             <th rowspan="2" data-options="field:'revision',width:80,align:'center'">Revision</th>
             <th rowspan="2" data-options="field:'remarks',width:100,halign:'center'">Remarks</th>
+            <th colspan="3" data-options="field:'',width:100,halign:'center'"> Forecast</th>
             <th colspan="2" data-options="field:'',width:100,halign:'center'"> Created</th>
             <th colspan="2" data-options="field:'',width:100,halign:'center'"> Updated</th>
         </tr>
         <tr>
+            <th data-options="field:'month_1',width:100,halign:'center'">Month 1</th>
+            <th data-options="field:'month_2',width:100,halign:'center'">Month 2</th>
+            <th data-options="field:'month_3',width:100,halign:'center'">Month 3</th>
             <th data-options="field:'created_by',width:100,align:'center'"> By</th>
             <th data-options="field:'created_date',width:150,align:'center'"> Date</th>
             <th data-options="field:'updated_by',width:100,align:'center'"> By</th>
@@ -60,7 +65,7 @@
 </div>
 
 <!-- Insert -->
-<div id="dlg_insert" class="easyui-dialog" title="Convert Purchase Request to Purchase Order" data-options="closed: true,modal:true" style="width: 80%; height: 100%; padding:10px; top: 0;">
+<div id="dlg_insert" class="easyui-dialog" title="Convert Purchase Request to Purchase Order" data-options="closed: true,modal:true" style="width: 100%; height: 100%; padding:10px; top: 0; left: 0;">
     <form id="frm_insert" method="post" novalidate>
         <fieldset style="width:60%; border:1px solid #d0d0d0; margin-bottom: 10px; border-radius:4px; float: left;">
             <legend><b>Form Data</b></legend>
@@ -74,35 +79,11 @@
             </div>
             <div class="fitem">
                 <span style="width:35%; display:inline-block;"></span>
-                <a href="javascript:;" class="easyui-linkbutton" onclick="preview()"><i class="fa fa-search"></i> Preview Data</a>
+                <a href="javascript:;" class="easyui-linkbutton" id="btnPreview" onclick="preview()"><i class="fa fa-search"></i> Preview Data</a>
             </div>
         </fieldset>
 
-        <table id="dg_request" class="easyui-datagrid" style="width:100%;" title="Purchase Request Data" data-options="fitColumns: true, rownumbers: true">
-        </table>
-    </form>
-</div>
-
-<!-- Update -->
-<div id="dlg_update" class="easyui-dialog" title="Convert Purchase Request to Purchase Order" data-options="closed: true,modal:true" style="width: 100%; height: 100%; padding:10px; top: 0; left: 0;">
-    <form id="frm_update" method="post" novalidate>
-        <fieldset style="width:60%; border:1px solid #d0d0d0; margin-bottom: 10px; border-radius:4px; float: left;">
-            <legend><b>Form Data</b></legend>
-            <div class="fitem">
-                <span style="width:35%; display:inline-block;">PO Period</span>
-                <input style="width:28%;" name="po_date" id="po_date_update" class="easyui-datebox" data-options="formatter:myformatter,parser:myparser, editable:false">
-            </div>
-            <div class="fitem">
-                <span style="width:35%; display:inline-block;">PR No</span>
-                <input style="width:60%;" name="request_no" id="request_no_update" readonly class="easyui-textbox">
-            </div>
-        </fieldset>
-        <div style="width: 36%; float: left;">
-            <div class="alert alert-info" role="alert">
-                If you change the qty then the qty in the <b>PURCHASE REQUESTS</b> will change
-            </div>
-        </div>
-        <table id="dg_request_update" class="easyui-datagrid" style="width:100%;" title="Purchase Request Data" data-options="fitColumns: true, rownumbers: true">
+        <table id="dg_request" class="easyui-datagrid" style="width:100%;" title="Purchase Request Data" data-options="fitColumns: true, rownumbers: true" idField="item_number">
         </table>
 
         <div style="width: 30%; display: grid; grid-template-columns: auto auto auto; grid-gap: 5px; display: flex; float: right; margin-top:20px;">
@@ -113,12 +94,22 @@
                         <input style="width:60%;" id="total_sub" name="total_sub" readonly class="easyui-numberbox" data-options="precision:2,groupSeparator:','">
                     </div>
                     <div class="fitem">
+                        <b style="width:35%; display:inline-block;">DISC %</b>
+                        <input style="width:10%;" id="disc_input" name="disc_input" class="easyui-numberbox">
+                        <input style="width:50%;" id="discount_total" name="discount_total" readonly class="easyui-numberbox" data-options="precision:2,groupSeparator:','">
+                    </div>
+                    <div class="fitem">
                         <b style="width:35%; display:inline-block;">VAT</b>
                         <input style="width:60%;" id="total_vat" name="total_vat" readonly class="easyui-numberbox" data-options="precision:2,groupSeparator:','">
                     </div>
                     <div class="fitem">
                         <b style="width:35%; display:inline-block;">TOTAL AMOUNT</b>
                         <input style="width:60%;" id="total_amount" name="total_amount" readonly class="easyui-numberbox" data-options="precision:2,groupSeparator:','">
+                    </div>
+                    <div class="fitem">
+                        <b style="width:35%; display:inline-block;">INCOME TAX</b>
+                        <input style="width:10%;" id="income_input" name="income_input" class="easyui-numberbox">
+                        <input style="width:50%;" id="income_total" name="income_total" readonly class="easyui-numberbox" data-options="precision:2,groupSeparator:','">
                     </div>
                     <div class="fitem">
                         <b style="width:35%; display:inline-block;">DOWN PAYMENT</b>
@@ -161,6 +152,7 @@
     //Add Data
     function add() {
         $('#dlg_insert').dialog('open');
+        $("#btnPreview").linkbutton('enable');
         $('#dg_request').datagrid('loadData', []);
         $("#request_no").combobox({
             url: '<?= base_url('purchase/purchase_requests/readRequestno') ?>',
@@ -182,13 +174,46 @@
         if (row) {
             if (row.datatable == "1") {
                 if (row.status == "0") {
-                    $('#dlg_update').dialog('open');
-                    $('#frm_update').form('load', row);
+                    $('#dlg_insert').dialog('open');
+                    $('#frm_insert').form('load', row);
+                    $("#disc_input").numberbox('disable');
+                    $("#btnPreview").linkbutton('disable');
 
-                    var lastIndex;
-                    $('#dg_request_update').datagrid({
+                    preview('<?= base_url('purchase/purchase_orders/datatable_updates') ?>?po_no=' + btoa(row.po_no));
+                } else {
+                    toastr.error("You cannot update this data, because status PO is closed");
+                }
+            } else {
+                toastr.error("Please Select Header of PO <br>" + row.po_no);
+            }
+        } else {
+            toastr.warning("Please select one of the data in the table first!", "Information");
+        }
+    }
+
+    function preview(url = "") {
+        var request_no = $("#request_no").combobox('getValue');
+        var po_date = $("#po_date").datebox('getValue');
+
+        if(url == ""){
+            var url = '<?= base_url('purchase/purchase_requests/reads') ?>?request_no=' + request_no;
+        }
+
+        if (request_no == "") {
+            toastr.warning('Please select Purchase Request No', 'Required');
+        } else {
+            var lastIndex;
+
+            $.ajax({
+                type: "post",
+                url: "<?= base_url('purchase/purchase_orders/readPeriodLists/') ?>",
+                data: "po_date=" + po_date,
+                dataType: "json",
+                success: function(result) {
+
+                    $('#dg_request').datagrid({
                         singleSelect: true,
-                        url: '<?= base_url('purchase/purchase_orders/datatable_updates') ?>?po_no=' + btoa(row.po_no),
+                        url: url,
                         columns: [
                             [{
                                 field: 'action',
@@ -201,50 +226,171 @@
                                 width: 150,
                                 readonly: true,
                                 halign: 'center',
-                                title: "Product No"
+                                title: "Product No",
+                                editor: {
+                                    type: 'textbox',
+                                    options: {
+                                        readonly: true
+                                    }
+                                }
+                            }, {
+                                field: 'po_no',
+                                width: 150,
+                                // hidden: true,
+                                halign: 'center',
+                                title: "PO No",
+                                editor: {
+                                    type: 'textbox',
+                                    options: {
+                                        readonly: true
+                                    }
+                                }
                             }, {
                                 field: 'item_name',
-                                width: 150,
+                                width: 200,
                                 readonly: true,
                                 halign: 'center',
                                 title: "Product Name"
                             }, {
-                                field: 'supplier_name',
+                                field: 'category_name',
+                                width: 150,
+                                readonly: true,
+                                halign: 'center',
+                                title: "Product <br>Family"
+                            }, {
+                                field: 'uom',
+                                width: 80,
+                                readonly: true,
+                                halign: 'center',
+                                title: "UOM"
+                            }, {
+                                field: 'supplier_number',
                                 width: 250,
                                 halign: 'center',
-                                title: "Supplier"
+                                title: "Supplier",
+                                editor: {
+                                    type: 'combogrid'
+                                }
                             }, {
                                 field: 'supplier_id',
                                 hidden: true,
                                 width: 250,
                                 halign: 'center',
-                                title: "Supplier ID"
+                                title: "Supplier",
+                                editor: {
+                                    type: 'textbox',
+                                }
                             }, {
                                 field: 'mpq',
                                 width: 80,
                                 halign: 'center',
-                                title: "MPQ"
-                            }, {
-                                field: 'moq',
-                                width: 80,
-                                halign: 'center',
-                                title: "MOQ"
-                            }, {
-                                field: 'currency',
-                                width: 80,
-                                align: 'center',
-                                title: "Currency"
-                            }, {
-                                field: 'qty',
-                                width: 100,
-                                halign: 'center',
-                                title: "Qty",
+                                title: "MPQ",
                                 editor: {
                                     type: 'numberbox',
                                     options: {
                                         required: true,
+                                        readonly: true,
                                         precision: 2
                                     }
+                                }
+                            }, {
+                                field: 'moq',
+                                width: 80,
+                                halign: 'center',
+                                title: "MOQ",
+                                editor: {
+                                    type: 'numberbox',
+                                    options: {
+                                        required: true,
+                                        readonly: true,
+                                        precision: 2
+                                    }
+                                }
+                            }, {
+                                field: 'qty',
+                                width: 80,
+                                halign: 'center',
+                                title: "Qty",
+                                editor: {
+                                    type: 'numberbox',
+                                    // options: {
+                                    //     required: true,
+                                    //     onChange: function(qty) {
+                                    //         var dg = $('#dg_request');
+                                    //         var row = dg.datagrid('getSelected');
+                                    //         var rowIndex = dg.datagrid('getRowIndex', row);
+
+                                    //         var ed = dg.datagrid('getEditor', {
+                                    //             index: rowIndex,
+                                    //             field: 'total'
+                                    //         });
+
+                                    //         var ed2 = dg.datagrid('getEditor', {
+                                    //             index: rowIndex,
+                                    //             field: 'price'
+                                    //         });
+
+                                    //         var ed3 = dg.datagrid('getEditor', {
+                                    //             index: rowIndex,
+                                    //             field: 'discount'
+                                    //         });
+
+                                    //         var price = $(ed2.target).textbox('getValue');
+                                    //         var discount = $(ed3.target).numberbox('getValue');
+
+                                    //         var amount = (parseInt(qty * price)-(parseInt(qty * price) * (discount/100)));
+
+                                    //         $(ed.target).textbox('setValue', amount);
+                                    //     }
+                                    // }
+                                }
+                            }, {
+                                field: 'currency',
+                                width: 80,
+                                halign: 'center',
+                                title: "Currency",
+                                editor: {
+                                    type: 'textbox',
+                                    options: {
+                                        readonly: true,
+                                    }
+                                }
+                            }, {
+                                field: 'discount',
+                                width: 80,
+                                halign: 'center',
+                                title: "Disc %",
+                                editor: {
+                                    type: 'numberbox',
+                                    // options: {
+                                    //     onChange: function(discount) {
+                                    //         var dg = $('#dg_request');
+                                    //         var row = dg.datagrid('getSelected');
+                                    //         var rowIndex = dg.datagrid('getRowIndex', row);
+
+                                    //         var ed = dg.datagrid('getEditor', {
+                                    //             index: rowIndex,
+                                    //             field: 'total'
+                                    //         });
+
+                                    //         var ed2 = dg.datagrid('getEditor', {
+                                    //             index: rowIndex,
+                                    //             field: 'price'
+                                    //         });
+
+                                    //         var ed3 = dg.datagrid('getEditor', {
+                                    //             index: rowIndex,
+                                    //             field: 'qty'
+                                    //         });
+
+                                    //         var price = $(ed2.target).textbox('getValue');
+                                    //         var qty = $(ed3.target).numberbox('getValue');
+
+                                    //         var amount = (parseInt(qty * price)-(parseInt(qty * price) * (discount/100)));
+
+                                    //         $(ed.target).textbox('setValue', amount);
+                                    //     }
+                                    // }
                                 }
                             }, {
                                 field: 'price',
@@ -252,42 +398,28 @@
                                 halign: 'center',
                                 title: "Price",
                                 editor: {
-                                    type: 'numberbox',
+                                    type: 'textbox',
                                     options: {
-                                        required: true,
                                         readonly: true,
-                                        precision: 4
                                     }
                                 }
                             }, {
-                                field: 'amount',
+                                field: 'total',
                                 width: 100,
                                 halign: 'center',
                                 title: "Amount",
                                 editor: {
                                     type: 'numberbox',
                                     options: {
-                                        required: true,
                                         readonly: true,
                                         precision: 2
-                                    }
-                                }
-                            }, {
-                                field: 'action2',
-                                title: 'Change',
-                                width: 80,
-                                align: 'center',
-                                formatter: function(value, row, index) {
-                                    if (row.editing) {
-                                        var s = '<a href="javascript:void(0)" class="btn btn-warning btn-sm" style="pointer-events:auto; opacity:1; width:100%;" onclick="changePrice(this)"><i class="fa fa-edit"></i></a> ';
-                                        return s;
                                     }
                                 }
                             }, {
                                 field: 'delivery_date',
                                 width: 120,
                                 halign: 'center',
-                                title: "Delivery Date",
+                                title: "Delivery <br>Date",
                                 editor: {
                                     type: 'datebox',
                                     options: {
@@ -305,6 +437,33 @@
                                 editor: {
                                     type: 'textbox'
                                 }
+                            }, {
+                                field: 'month_1',
+                                width: 80,
+                                align: 'center',
+                                title: result[0].name,
+                                editor: {
+                                    type: 'numberbox',
+                                    options: {
+                                        required: true,
+                                    }
+                                }
+                            }, {
+                                field: 'month_2',
+                                width: 80,
+                                align: 'center',
+                                title: result[1].name,
+                                editor: {
+                                    type: 'numberbox',
+                                }
+                            }, {
+                                field: 'month_3',
+                                width: 80,
+                                align: 'center',
+                                title: result[2].name,
+                                editor: {
+                                    type: 'numberbox',
+                                }
                             }]
                         ],
                         onBeforeEdit: function(index, row) {
@@ -319,62 +478,159 @@
                             row.editing = false;
                             $(this).datagrid('refreshRow', index);
                         },
-                        onLoadSuccess: function(row) {
-                            $.ajax({
-                                type: "post",
-                                url: "<?= base_url('admin/config/read') ?>",
-                                dataType: "json",
-                                success: function(config) {
-                                    if (row['rows'][0].vat_status == "VAT") {
-                                        var taxes = config.tax;
-                                    } else {
-                                        var taxes = 0;
-                                    }
-
-                                    var total_vat = parseFloat(row.total_sub * (taxes / 100));
-                                    var total_amount = parseFloat(row.total_sub + total_vat);
-
-                                    $("#total_sub").numberbox('setValue', row.total_sub);
-                                    $("#total_vat").numberbox('setValue', total_vat);
-                                    $("#total_amount").numberbox('setValue', total_amount);
-                                    // $("#total_grand").numberbox('setValue', total_amount);
-                                }
-                            });
-                        },
+                        
                         onBeginEdit: function(rowIndex, row) {
-                            var editors = $('#dg_request_update').datagrid('getEditors', rowIndex);
+                            var editors = $('#dg_request').datagrid('getEditors', rowIndex);
+                            var item_id = $(editors[0].target).textbox('getValue');
+                            var supplier_id = $(editors[2].target);
+                            var po_date = $("#po_date").datebox('getValue');
+
+                            var qty = $(editors[6].target).numberbox('getValue');
+                            var discount = $(editors[8].target).numberbox('getValue');
+                            var price = $(editors[9].target);
                             var total_sub = $("#total_sub").numberbox('getValue');
+                            var delivery_date = $(editors[11].target);
 
-                            var po_date = $("#po_date_update").datebox('getValue');
-                            var qty = $(editors[0].target).numberbox('getValue');
-                            var price = $(editors[1].target);
-                            var delivery_date = $(editors[3].target);
-
-                            $(editors[0].target).numberbox({
+                            $(editors[6].target).numberbox({
                                 onChange: function() {
-                                    var qty_after = $(editors[0].target).numberbox('getValue');
-                                    var price = $(editors[1].target).numberbox('getValue');
+                                    var qty_after = $(editors[6].target).numberbox('getValue');
+                                    var discount = $(editors[8].target).numberbox('getValue');
+                                    var price = $(editors[9].target).numberbox('getValue');
                                     var total_dp = $("#total_dp").numberbox('getValue');
                                     var total_vat = $("#total_vat").numberbox('getValue');
 
-                                    $(editors[2].target).numberbox('setValue', (qty_after * price));
-                                    var total_subs = (total_sub - (qty * price)) + (qty_after * price);
+                                    $(editors[10].target).numberbox('setValue', (qty_after * price)-((qty_after * price)*(discount/100)));
+
+                                    var total_subs = (qty_after * price)-((qty_after * price)*(discount/100));
 
                                     $("#total_sub").numberbox('setValue', total_subs);
-                                    $("#total_amount").numberbox('setValue', (total_subs + total_vat));
-                                    $("#total_grand").numberbox('setValue', ((total_subs + total_vat) - total_dp));
                                 }
                             });
-                        },
+
+                            $(editors[8].target).numberbox({
+                                onChange: function() {
+                                    var qty_after = $(editors[6].target).numberbox('getValue');
+                                    var discount = $(editors[8].target).numberbox('getValue');
+                                    var price = $(editors[9].target).numberbox('getValue');
+                                    var total_dp = $("#total_dp").numberbox('getValue');
+                                    var total_vat = $("#total_vat").numberbox('getValue');
+
+                                    $(editors[10].target).numberbox('setValue', (qty_after * price)-((qty_after * price)*(discount/100)));
+
+                                    var total_subs = (qty_after * price)-((qty_after * price)*(discount/100));
+
+                                    $("#total_sub").numberbox('setValue', total_subs);
+                                       
+                                }
+                            });
+
+                            $("#disc_input").numberbox({
+                                onChange: function() {
+                                    var qty_after = $(editors[6].target).numberbox('getValue');
+                                    var discount = $(editors[8].target).numberbox('getValue');
+                                    var price = $(editors[9].target).numberbox('getValue');
+                                    var total_dp = $("#total_dp").numberbox('getValue');
+                                    var disc_input = $("#disc_input").numberbox('getValue');
+
+                                    $.ajax({
+                                        type: "post",
+                                        url: "<?= base_url('admin/config/read') ?>",
+                                        dataType: "json",
+                                        success: function(config) {
+                                            var taxes = config.tax;
+
+                                            var total_subs = (qty_after * price) - ((qty_after * price) * (discount / 100));
+                                            var discount_total = (total_subs * (disc_input / 100));
+                                            var total_vat = ((total_subs - discount_total) * (taxes / 100));
+                                            var total_amount = total_subs + total_vat;
+                                            
+
+                                            // Tetapkan nilai pada elemen-elemen yang sesuai
+                                            $("#discount_total").numberbox('setValue', discount_total);
+                                            $("#total_vat").numberbox('setValue', total_vat);
+                                            $("#total_amount").numberbox('setValue', total_amount);
+                                           
+                                        }
+                                    });
+                                }
+                            });
+
+                            $("#income_input").numberbox({
+                                onChange: function() {
+                                    var qty_after = $(editors[6].target).numberbox('getValue');
+                                    var discount = $(editors[8].target).numberbox('getValue');
+                                    var price = $(editors[9].target).numberbox('getValue');
+                                    var total_dp = $("#total_dp").numberbox('getValue');
+                                    var disc_input = $("#disc_input").numberbox('getValue');
+                                    var discount_total = $("#discount_total").numberbox('getValue');
+                                    var total_subs = $("#total_sub").numberbox('getValue');
+                                    var income_input = $("#income_input").numberbox('getValue');
+
+                                    $.ajax({
+                                        type: "post",
+                                        url: "<?= base_url('admin/config/read') ?>",
+                                        dataType: "json",
+                                        success: function(config) {
+                                            var taxes = config.tax;
+
+                                            var total_subs = (qty_after * price) - ((qty_after * price) * (discount / 100));
+                                            var discount_total = (total_subs * (disc_input / 100));
+                                            var total_vat = ((total_subs - discount_total) * (taxes / 100));
+                                            var total_amount = total_subs + total_vat;
+                                            var income_total = ((total_subs - discount_total) * (income_input / 100));
+                                            var total_grand = (total_subs - discount_total)+total_vat-income_total-total_dp;
+
+
+                                            $("#income_total").numberbox('setValue', income_total);
+                                            $("#total_grand").numberbox('setValue', total_grand);
+                                        }
+                                    });
+                                }
+                            });
+
+                            supplier_id.combogrid({
+                                url: '<?= base_url('master/supplier_items/readSuppliers?item_number=') ?>' + item_id,
+                                required: true,
+                                panelWidth: 400,
+                                idField: 'name',
+                                textField: 'name',
+                                mode: 'remote',
+                                fitColumns: true,
+                                prompt: 'Choose Supplier',
+                                columns: [
+                                    [{
+                                        field: 'number',
+                                        title: 'Supplier No',
+                                        width: 100
+                                    }, {
+                                        field: 'name',
+                                        title: 'Supplier Name',
+                                        width: 250
+                                    }]
+                                ],
+                                onSelect: function(value, rows) {
+                                    $(editors[3].target).textbox('setValue', rows.id);
+                                    $(editors[4].target).textbox('setValue', rows.mpq);
+                                    $(editors[5].target).textbox('setValue', rows.moq);
+                                    $(editors[7].target).textbox('setValue', rows.currency);
+                                    $(editors[9].target).textbox('setValue', rows.price);
+                                    $(editors[11].target).textbox('setValue', "<?= date("Y-m-d") ?>");
+                                }
+                            });
+
+                            delivery_date.add(delivery_date).datebox({
+                                onChange: function() {
+                                    var f_delivery_date = delivery_date.datebox('getValue');
+                                    if (f_delivery_date < po_date) {
+                                        delivery_date.datebox('clear');
+                                        toastr.warning("Po Date > Expected Date");
+                                    }
+                                }
+                            });
+                        }
                     });
-                } else {
-                    toastr.error("You cannot update this data, because status PO is closed");
-                }
-            } else {
-                toastr.error("Please Select Header of PO <br>" + row.po_no);
-            }
-        } else {
-            toastr.warning("Please select one of the data in the table first!", "Information");
+                }            
+            });
         }
     }
 
@@ -382,10 +638,20 @@
         var tr = $(target).closest('tr.datagrid-row');
         return parseInt(tr.attr('datagrid-row-index'));
     }
+    
+    function editrow(target) {
+        $('#dg_request').datagrid('selectRow', getRowIndex(target));
+        $('#dg_request').datagrid('beginEdit', getRowIndex(target));
+        // $("#disc_input").numberbox('enable');
+    }
+
+    function saverow(target) {
+        $('#dg_request').datagrid('endEdit', getRowIndex(target));
+    }
 
     function changePrice(target) {
-        var editors = $('#dg_request_update').datagrid('getEditors', getRowIndex(target));
-        var rows = $('#dg_request_update').datagrid('getRows');
+        var editors = $('#dg_request').datagrid('getEditors', getRowIndex(target));
+        var rows = $('#dg_request').datagrid('getRows');
 
         var item_number = rows[getRowIndex(target)].item_number;
         var supplier_id = rows[getRowIndex(target)].supplier_id;
@@ -434,162 +700,6 @@
                 });
             }
         });
-    }
-
-    function preview() {
-        var request_no = $("#request_no").combobox('getValue');
-        if (request_no == "") {
-            toastr.warning('Please select Purchase Request No', 'Required');
-        } else {
-            var lastIndex;
-            $('#dg_request').datagrid({
-                singleSelect: true,
-                url: '<?= base_url('purchase/purchase_requests/reads') ?>?request_no=' + request_no,
-                columns: [
-                    [{
-                        field: 'item_number',
-                        width: 150,
-                        readonly: true,
-                        halign: 'center',
-                        title: "Product No",
-                        editor: {
-                            type: 'textbox',
-                            options: {
-                                readonly: true
-                            }
-                        }
-                    }, {
-                        field: 'item_name',
-                        width: 150,
-                        readonly: true,
-                        halign: 'center',
-                        title: "Product Name"
-                    }, {
-                        field: 'supplier_number',
-                        width: 250,
-                        halign: 'center',
-                        title: "Supplier",
-                        editor: {
-                            type: 'combogrid'
-                        }
-                    }, {
-                        field: 'supplier_id',
-                        hidden: true,
-                        width: 250,
-                        halign: 'center',
-                        title: "Supplier",
-                        editor: {
-                            type: 'textbox',
-                        }
-                    }, {
-                        field: 'mpq',
-                        width: 80,
-                        halign: 'center',
-                        title: "MPQ",
-                        editor: {
-                            type: 'numberbox',
-                            options: {
-                                required: true,
-                                readonly: true,
-                                precision: 2
-                            }
-                        }
-                    }, {
-                        field: 'moq',
-                        width: 80,
-                        halign: 'center',
-                        title: "MOQ",
-                        editor: {
-                            type: 'numberbox',
-                            options: {
-                                required: true,
-                                readonly: true,
-                                precision: 2
-                            }
-                        }
-                    }, {
-                        field: 'qty',
-                        width: 80,
-                        halign: 'center',
-                        title: "Qty",
-                        editor: {
-                            type: 'numberbox',
-                            options: {
-                                required: true,
-                                precision: 2
-                            }
-                        }
-                    }, {
-                        field: 'delivery_date',
-                        width: 120,
-                        halign: 'center',
-                        title: "Delivery Date",
-                        editor: {
-                            type: 'datebox',
-                            options: {
-                                formatter: myformatter,
-                                parser: myparser,
-                                editable: false,
-                                required: true
-                            }
-                        }
-                    }, {
-                        field: 'remarks',
-                        width: 200,
-                        halign: 'center',
-                        title: "Remarks",
-                        editor: {
-                            type: 'textbox'
-                        }
-                    }]
-                ],
-                onClickRow: function(rowIndex) {
-                    $(this).datagrid('beginEdit', rowIndex);
-                },
-                onBeginEdit: function(rowIndex, row) {
-                    var editors = $('#dg_request').datagrid('getEditors', rowIndex);
-                    var item_id = $(editors[0].target).textbox('getValue');
-                    var supplier_id = $(editors[1].target);
-                    var po_date = $("#po_date").datebox('getValue');
-                    supplier_id.combogrid({
-                        url: '<?= base_url('master/supplier_items/readSuppliers?item_number=') ?>' + item_id,
-                        required: true,
-                        panelWidth: 400,
-                        idField: 'name',
-                        textField: 'name',
-                        mode: 'remote',
-                        fitColumns: true,
-                        prompt: 'Choose Supplier',
-                        columns: [
-                            [{
-                                field: 'number',
-                                title: 'Supplier No',
-                                width: 100
-                            }, {
-                                field: 'name',
-                                title: 'Supplier Name',
-                                width: 250
-                            }]
-                        ],
-                        onSelect: function(value, rows) {
-                            $(editors[2].target).textbox('setValue', rows.id);
-                            $(editors[3].target).textbox('setValue', rows.mpq);
-                            $(editors[4].target).textbox('setValue', rows.moq);
-                            $(editors[6].target).textbox('setValue', "<?= date("Y-m-d") ?>");
-                        }
-                    });
-                    delivery_date.add(delivery_date).datebox({
-                        onChange: function() {
-                            var f_delivery_date = delivery_date.datebox('getValue');
-                            if (f_delivery_date < po_date) {
-                                delivery_date.datebox('clear');
-                                toastr.warning("Po Date > Expected Date");
-                            }
-                        }
-                    });
-                }
-            });
-        }
     }
 
     //Delete Data
@@ -677,9 +787,10 @@
     $(function() {
         readPo();
         $("#add").html("Convert PR to PO");
+
         $("#delivery_date").datebox({
             onChange: function() {
-                var po_date = $("#po_date_update").datebox('getValue');
+                var po_date = $("#po_date").datebox('getValue');
                 var delivery_date = $("#delivery_date").datebox('getValue');
                 if (delivery_date < po_date) {
                     $("#delivery_date").datebox('clear');
@@ -687,6 +798,7 @@
                 }
             }
         });
+
         $('#dg').treegrid({
             url: '<?= base_url('purchase/purchase_orders/datatables') ?>',
             pagination: true,
@@ -727,23 +839,47 @@
                                         var row = rows[i];
                                         var editors = $('#dg_request').datagrid('getEditors', i);
                                         var item_number = $(editors[0].target).textbox('getValue');
-                                        var supplier_id = $(editors[2].target).textbox('getValue');
-                                        var qty = $(editors[5].target).numberbox('getValue');
-                                        var delivery_date = $(editors[6].target).datebox('getValue');
-                                        var remarks = $(editors[7].target).textbox('getValue');
+                                        var po_no = $(editors[1].target).textbox('getValue');
+                                        var supplier_id = $(editors[3].target).textbox('getValue');
+                                        var qty = $(editors[6].target).numberbox('getValue');
+                                        var discount = $(editors[8].target).numberbox('getValue');
+                                        var price = $(editors[9].target).textbox('getValue');
+                                        var total = $(editors[10].target).textbox('getValue');
+                                        var delivery_date = $(editors[11].target).datebox('getValue');
+                                        var remarks = $(editors[12].target).textbox('getValue');
+                                        var month_1 = $(editors[13].target).numberbox('getValue');
+                                        var month_2 = $(editors[14].target).numberbox('getValue');
+                                        var month_3 = $(editors[15].target).numberbox('getValue');
+
+                                        var total_sub = $("#total_sub").numberbox('getValue');
+
+
+                                        if(po_no == ""){
+                                            var url_save = "<?= base_url('purchase/purchase_orders/create') ?>";
+                                        }else{
+                                            var url_save = "<?= base_url('purchase/purchase_orders/update') ?>";
+                                        }
 
                                         $.ajax({
                                             type: "post",
-                                            url: '<?= base_url('purchase/purchase_orders/create') ?>',
+                                            url: url_save,
                                             data: 'item_number=' + window.btoa(item_number) +
+                                                '&po_no=' + po_no +
                                                 '&supplier_id=' + supplier_id +
                                                 '&request_no=' + row.request_no +
                                                 '&request_date=' + row.request_date +
                                                 '&request_name=' + row.request_name +
                                                 '&po_date=' + po_date +
                                                 '&qty=' + qty +
+                                                '&discount=' + discount +
+                                                '&price=' + price +
+                                                '&total=' + total +
                                                 '&delivery_date=' + delivery_date +
-                                                '&remarks=' + remarks,
+                                                '&remarks=' + remarks +
+                                                '&month_1=' + month_1 +
+                                                '&month_2=' + month_2 +
+                                                '&month_3=' + month_3 +
+                                                '&total_sub=' + total_sub,
                                             dataType: "json",
                                             success: function(result) {
                                                 Swal.fire({
@@ -763,74 +899,6 @@
                                     readPo();
                                     $('#dg').treegrid('reload');
                                     $('#dlg_insert').dialog('close');
-                                }
-                            });
-                        } else {
-                            toastr.warning("Please select one of the data in the table first!", "Information");
-                        }
-                    }
-                }
-            }]
-        });
-
-        //Update Data
-        $('#dlg_update').dialog({
-            buttons: [{
-                text: 'Update Data',
-                iconCls: 'icon-ok',
-                handler: function() {
-                    var po_date = $("#po_date_update").datebox('getValue');
-                    var request_no = $("#request_no_update").textbox('getValue');
-
-                    if (po_date == "") {
-                        toastr.warning('Please select Po Date', 'Required');
-                    } else {
-                        var rows = $('#dg_request_update').datagrid('getRows');
-                        var totalrows = rows.length;
-                        endEditing();
-
-                        if (totalrows > 0) {
-                            $.messager.confirm('Warning', 'Are you sure you want to Update PO?', function(r) {
-                                if (r) {
-                                    for (var i = 0; i < totalrows; i++) {
-                                        var row = rows[i];
-
-                                        var total_dp = $("#total_dp").numberbox('getValue');
-
-                                        $.ajax({
-                                            type: "post",
-                                            url: '<?= base_url('purchase/purchase_orders/update') ?>',
-                                            data: 'item_number=' + row.item_number +
-                                                '&supplier_id=' + row.supplier_id +
-                                                '&request_no=' + request_no +
-                                                '&po_date=' + po_date +
-                                                '&qty=' + row.qty +
-                                                '&price=' + row.price +
-                                                '&total=' + row.amount +
-                                                '&delivery_date=' + row.delivery_date +
-                                                '&remarks=' + row.remarks +
-                                                '&total_dp=' + total_dp,
-                                            dataType: "json",
-                                            success: function(result) {
-                                                $('#dlg_update').dialog('close');
-
-                                                Swal.fire({
-                                                    title: result.message,
-                                                    icon: result.theme,
-                                                    confirmButtonText: 'Ok',
-                                                    allowOutsideClick: false,
-                                                }).then((result) => {
-                                                    if (result.isConfirmed) {
-                                                        window.location.reload();
-                                                    }
-                                                });
-                                            }
-                                        });
-                                    }
-                                    // setTimeout(window.open("<?= base_url('purchase/purchase_orders/print_po/') ?>" + window.btoa(po_no), "_blank"), 3000);
-                                    readPo();
-                                    $('#dg').treegrid('reload');
-                                    $('#dlg_update').dialog('close');
                                 }
                             });
                         } else {
@@ -874,25 +942,12 @@
         })
     });
 
-    function getRowIndex(target) {
-        var tr = $(target).closest('tr.datagrid-row');
-        return parseInt(tr.attr('datagrid-row-index'));
-    }
-
-    function editrow(target) {
-        $('#dg_request_update').datagrid('beginEdit', getRowIndex(target));
-    }
-
-    function saverow(target) {
-        $('#dg_request_update').datagrid('endEdit', getRowIndex(target));
-    }
-
     function buttonEdit(value, row, index) {
         if (row.editing) {
-            var s = '<a href="javascript:void(0)" class="btn btn-success btn-sm" style="pointer-events:auto; opacity:1;" onclick="saverow(this)">Save</a>';
+            var s = '<a href="javascript:void(0)" class="btn btn-success btn-sm w-100" style="pointer-events:auto; opacity:1;" onclick="saverow(this)">Save</a>';
             return s;
         } else {
-            var e = '<a href="javascript:void(0)" class="btn btn-primary btn-sm" style="pointer-events:auto; opacity:1;" onclick="editrow(this)">Edit</a>';
+            var e = '<a href="javascript:void(0)" class="btn btn-primary btn-sm w-100" style="pointer-events:auto; opacity:1;" onclick="editrow(this)">Edit</a>';
             return e;
         }
     }

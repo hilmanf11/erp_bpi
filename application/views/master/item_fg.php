@@ -1,6 +1,6 @@
 <!-- TABLE DATAGRID -->
 <table id="dg" class="easyui-datagrid" style="width:99.5%;" toolbar="#toolbar">
-    <thead frozen="true">
+    <thead data-options="frozen:true">
         <tr>
             <th field="ck" checkbox="true"></th>
             <th data-options="field:'id',width:150,align:'center'">Product ID</th>
@@ -12,12 +12,15 @@
     <thead>
         <tr>
             <th rowspan="2" data-options="field:'number_customer',width:150,halign:'center'">Product Customer</th>
+            <th rowspan="2" data-options="field:'alias',width:150,halign:'center'">Product Alias</th>
             <th rowspan="2" data-options="field:'total_mold',width:50,align:'center'">Total <br>Mold</th>
             <th rowspan="2" data-options="field:'process',width:80,align:'center'">Process <br>Type</th>
             <th rowspan="2" data-options="field:'division_name',width:100,halign:'center'">Division</th>
+            <th rowspan="2" data-options="field:'control_id',width:100,halign:'center'">Control</th>
             <th rowspan="2" data-options="field:'boxs',width:200,halign:'center'">Box</th>
             <th rowspan="2" data-options="field:'polybag',width:70,align:'center'">Polybag <br>Label</th>
             <th rowspan="2" data-options="field:'box_label',width:70,align:'center'">Box <br>Label</th>
+            <th rowspan="2" data-options="field:'lot',width:100,align:'center'">Lot</th>
             <th rowspan="2" data-options="field:'ng_ration',width:90,align:'center'">NG Ratio (%)</th>
             <th rowspan="2" data-options="field:'is_no',width:100,halign:'center'">IS No.</th>
             <th rowspan="2" data-options="field:'weight',width:100,align:'center'">Weight (gram)</th>
@@ -27,10 +30,12 @@
             <th rowspan="2" data-options="field:'moq',width:50,align:'center'">MOQ</th>
             <th rowspan="2" data-options="field:'uom',width:50,align:'center'">UoM</th>
             <th rowspan="2" data-options="field:'qty_box',width:80,align:'center'">QTY/Box</th>
+            <th rowspan="2" data-options="field:'box_sub',width:80,align:'center'">QTY/Sub Box</th>
             <!-- <th rowspan="2" data-options="field:'safety_stock',width:100,halign:'center'">Safety Stock</th> -->
             <th rowspan="2" data-options="field:'min',width:50,align:'center'">Min</th>
             <th rowspan="2" data-options="field:'max',width:50,align:'center'">Max</th>
             <th rowspan="2" data-options="field:'attachment',width:100,halign:'center',formatter:cellbutton">Attachment</th>
+            <th rowspan="2" data-options="field:'logo',width:100,align:'center', styler:cellStyler, formatter:cellFormatterLogo">Logo</th>
             <th rowspan="2" data-options="field:'status',width:100,align:'center', styler:cellStyler, formatter:cellFormatter">Status</th>
             <th colspan="2" data-options="field:'',width:100,halign:'center'"> Created</th>
             <th colspan="2" data-options="field:'',width:100,halign:'center'"> Updated</th>
@@ -48,11 +53,12 @@
     <?= $button ?>
 </div>
 <!-- DIALOG SAVE AND UPDATE -->
-<div id="dlg_insert" class="easyui-dialog" title="Add New" data-options="closed: true,modal:true" style="width: 800px; padding:10px; top: 20px;">
+<div id="dlg_insert" class="easyui-dialog" title="Add New" data-options="closed: true,modal:true" style="width: 1100px; padding:10px; top: 20px;">
     <form id="frm_insert" method="post" novalidate enctype="multipart/form-data">
         <fieldset style="width:100%; border:1px solid #d0d0d0; margin-bottom: 10px; border-radius:4px; float: left;">
             <legend><b>Form Data</b></legend>
-            <div style="float:left; width:50%;">
+
+            <div style="float:left; width:30%;">
                 <div class="fitem">
                     <span style="width:35%; display:inline-block;">Product ID</span>
                     <input style="width:60%;" name="id" id="id" required="" class="easyui-textbox" readonly>
@@ -69,25 +75,32 @@
                     <span style="width:35%; display:inline-block;">Product Customer</span>
                     <input style="width:60%;" name="number_customer" id="number_customer" class="easyui-textbox">
                 </div>
-                <!-- <div class="fitem">
-                    <span style="width:35%; display:inline-block;">Total Mold</span>
-                    <input style="width:60%;" name="uom" id="uom" required="" class="easyui-combobox">
-                </div> -->
+                <div class="fitem">
+                    <span style="width:35%; display:inline-block;">Product Alias</span>
+                    <input style="width:60%;" name="alias" id="alias" class="easyui-textbox">
+                </div>
                 <div class="fitem">
                     <span style="width:35%; display:inline-block;">Process Type</span>
                     <input style="width:60%;" name="process" id="process" required="" class="easyui-combobox">
                 </div>
-                <!-- <div class="fitem">
-                    <span style="width:35%; display:inline-block;">Category</span>
-                    <input style="width:60%;" id="category" required="" class="easyui-combobox">
-                </div> -->
                 <div class="fitem">
                     <span style="width:35%; display:inline-block;">Division</span>
                     <input style="width:60%;" name="division_id" id="division_id" required="" class="easyui-combobox">
                 </div>
                 <div class="fitem">
+                    <span style="width:35%; display:inline-block;">Control</span>
+                    <input style="width:60%;" name="control_id" id="control_id" class="easyui-textbox">
+                </div>
+            </div>
+
+            <div style="float:left; width:30%;">
+                <div class="fitem">
                     <span style="width:35%; display:inline-block;">Box</span>
                     <input style="width:60%;" name="boxs" id="boxs" required="" class="easyui-combobox">
+                </div>
+                <div class="fitem">
+                    <span style="width:35%; display:inline-block;">Lot</span>
+                    <input style="width:60%;" name="lot" id="lot" class="easyui-numberbox">
                 </div>
                 <div class="fitem">
                     <span style="width:35%; display:inline-block;">Polybag</span>
@@ -104,12 +117,9 @@
                     </select>
                 </div>
                 <div class="fitem">
-                    <span style="width:35%; display:inline-block;">NG Ratio (%)</span>
-                    <input style="width:30%;" name="ng_ration" id="ng_ration" precision="5" class="easyui-numberbox">
+                        <span style="width:35%; display:inline-block;">NG Ratio (%)</span>
+                        <input style="width:30%;" name="ng_ration" id="ng_ration" precision="5" class="easyui-numberbox">
                 </div>
-            </div>
-            <div style="float:left; width:50%;">
-
                 <div class="fitem">
                     <span style="width:35%; display:inline-block;">IS No.</span>
                     <input style="width:60%;" name="is_no" id="is_no" class="easyui-textbox">
@@ -122,6 +132,8 @@
                     <span style="width:35%; display:inline-block;">Color</span>
                     <input style="width:60%;" name="color" id="color" required="" class="easyui-textbox">
                 </div>
+            </div>
+            <div style="float:left; width:30%;">
                 <div class="fitem">
                     <span style="width:35%; display:inline-block;">Leadtime (Day)</span>
                     <input style="width:60%;" name="leadtime" id="leadtime" class="easyui-numberbox">
@@ -143,8 +155,19 @@
                     <input style="width:60%;" name="qty_box" id="qty_box" class="easyui-numberbox">
                 </div>
                 <div class="fitem">
+                    <span style="width:35%; display:inline-block;">Qty/Sub Box</span>
+                    <input style="width:60%;" name="box_sub" id="box_sub" class="easyui-numberbox">
+                </div>
+                <div class="fitem">
                     <span style="width:35%; display:inline-block;">Attachment</span>
                     <input style="width:60%;" name="attachment" id="attachment" class="easyui-filebox">
+                </div>
+                <div class="fitem">
+                    <span style="width:35%; display:inline-block;">Logo</span>
+                    <select style="width:60%;" name="status" id="status" required="" panelHeight="auto" class="easyui-combobox">
+                        <option value="0">YES</option>
+                        <option value="1">NO</option>
+                    </select>
                 </div>
                 <div class="fitem">
                     <span style="width:35%; display:inline-block;">Status</span>
@@ -195,9 +218,16 @@
     //EDIT DATA
     function update() {
         var row = $('#dg').datagrid('getSelected');
+
+        setTimeout(function() { 
+            $('#id').textbox('setValue', row.id);
+        }, 500);
+
         if (row) {
             $('#dlg_insert').dialog('open');
             $('#frm_insert').form('load', row);
+            // $('#id').textbox('disable');
+
             url_save = '<?= base_url('master/item_fg/update') ?>?id=' + btoa(row.id);
         } else {
             toastr.warning("Please select one of the data in the table first!", "Information");
@@ -267,6 +297,7 @@
             pageList: [20, 50, 100, 500, 1000],
             pageSize: 20,
         }).datagrid('enableFilter');
+
         //SAVE DATA
         $('#dlg_insert').dialog({
             buttons: [{
@@ -354,6 +385,15 @@
             return 'Active';
         } else {
             return 'Not Active';
+        }
+    };
+
+     //FORMATTER LOGO
+     function cellFormatterLogo(value) {
+        if (value == 0) {
+            return 'YES';
+        } else {
+            return 'NO';
         }
     };
 

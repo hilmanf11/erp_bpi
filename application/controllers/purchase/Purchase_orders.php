@@ -95,11 +95,16 @@ class Purchase_orders extends CI_Controller
                     a.po_date,
                     d.name as supplier_name,
                     b.uom,
+                    a.month_1,
+                    a.month_2,
+                    a.month_3,
+                    a.discount,
                     d.currency, 
                     SUM(a.qty) as qty, 
                     SUM(a.price) as price, 
                     SUM(a.total) as total_price,
                     COUNT(a.status) as total_status,
+                    a.total_sub,
                     g.total_status_close');
                 $this->db->from('purchase_orders a');
                 $this->db->join('item_rm b', 'a.item_rm_id = b.id');
@@ -143,6 +148,7 @@ class Purchase_orders extends CI_Controller
                         "status1" => $record['total_status'],
                         "status2" => $record['total_status_close'],
                         "total_dp" => $record['total_dp'],
+                        "total_sub" => $record['total_sub'],
                         "total_grand" => ($record['total_price'] - $record['total_dp']),
                         "state" => "closed",
                         "datatable" => 1
@@ -197,7 +203,7 @@ class Purchase_orders extends CI_Controller
             e.mpq, 
             e.moq,
             d.vat_status,
-            (a.qty * a.price) as amount,
+            ((a.qty * a.price)-(a.qty * a.price * (a.discount/100))) as amount,
             d.currency');
         $this->db->from('purchase_orders a');
         $this->db->join('item_rm b', 'a.item_rm_id = b.id');
@@ -232,16 +238,18 @@ class Purchase_orders extends CI_Controller
                 $items = $this->crud->read('item_rm', [], ['number' => base64_decode($post['item_number'])]);
                 $suppliers = $this->crud->read('suppliers', [], ["id" => $post['supplier_id']]);
                 $supplier_items = $this->crud->read('supplier_items', [], ["item_rm_id" => $items->id, "supplier_id" => $post['supplier_id']]);
-                $purchaseOrder = $this->crud->read('purchase_orders', [], ["request_no" => $post['request_no'], "supplier_id" => $post['supplier_id']]);
+                $purchaseOrder = $this->crud->read('purchase_orders', [], ["request_no" => $post['request_no'], "supplier_id" => $post['supplier_id'], "month_1" => $post['month_1'], "month_2" => $post['month_2'], "month_3" => $post['month_3'], "discount" => $post['discount'], "total" => $post['total']]);
+                $purchaseRequests = $this->crud->read('purchase_requests', [], ["request_no" => $post['request_no']]);
                 $config = $this->crud->read("config");
 
                 $datenow    = date("ymd");
                 $sqlGetID   = $this->db->query("SELECT max(po_no) as kode FROM purchase_orders WHERE po_no like '%$datenow%'");
                 $rowID      = $sqlGetID->row();
+                $divisions = $purchaseRequests->division;
                 $kode       = $rowID->kode;
                 if ($kode == NULL) {
                     $autoID = sprintf("%04s", $kode + 1);
-                    $po_no = "PO-" . $datenow . "-" . $autoID;
+                    $po_no = "PO" . $divisions . $datenow . "-" . $autoID;
                 } else {
                     if ($purchaseOrder) {
                         $po_no = $purchaseOrder->po_no;
@@ -249,7 +257,7 @@ class Purchase_orders extends CI_Controller
                         $urutan = (int)substr($kode, -4);
                         $urutan++;
                         $autoID = sprintf("%04s", $urutan);
-                        $po_no = "PO-" . $datenow . "-" . $autoID;
+                        $po_no = "PO" . $divisions . $datenow . "-" . $autoID;
                     }
                 }
 
@@ -270,11 +278,15 @@ class Purchase_orders extends CI_Controller
                     "po_name" => $this->session->name,
                     "delivery_date" => $post['delivery_date'],
                     "qty" => $post['qty'],
-                    "price" => $supplier_items->price,
-                    "total" => ($supplier_items->price * $post['qty']),
+                    "discount" => $post['discount'],
+                    "price" => $post['price'],
+                    "total" => $post['total'],
                     "taxes" => $taxes,
-                    "total_vat" => (($supplier_items->price * $post['qty']) * ($taxes / 100)),
                     "remarks" => $post['remarks'],
+                    "month_1" => $post['month_1'],
+                    "month_2" => $post['month_2'],
+                    "month_3" => $post['month_3'],
+                    "total_sub" => $post['total_sub'],
                 );
 
                 $send = $this->crud->create('purchase_orders', $data);
@@ -293,26 +305,22 @@ class Purchase_orders extends CI_Controller
     public function update()
     {
         if ($this->input->post()) {
-            $id   = $this->input->post('id');
             $post = $this->input->post();
 
             $items = $this->crud->read('item_rm', [], ['number' => $post['item_number']]);
-            $supplier_items = $this->crud->read('supplier_items', [], ["item_rm_id" => $items->id, "supplier_id" => $post['supplier_id']]);
             $purchaseOrder = $this->crud->read('purchase_orders', [], ["request_no" => $post['request_no'], "supplier_id" => $post['supplier_id'], "item_rm_id" => $items->id]);
-            if (@$post['price'] != "") {
-                $price = $post['price'];
-            } else {
-                $price = @$supplier_items->price;
-            }
 
             $purchase_orders = $this->crud->update('purchase_orders', ["request_no" => $post['request_no'], "supplier_id" => $post['supplier_id'], "item_rm_id" => $items->id], [
                 "qty" => $post['qty'],
                 "po_date" => $post['po_date'],
-                "price" => $price,
-                "total" => ($price * $post['qty']),
+                "price" => $post['price'],
+                "total" => $post['total'],
                 "delivery_date" => $post['delivery_date'],
                 "remarks" => $post['remarks'],
-                "total_dp" => $post['total_dp'],
+                "month_1" => $post['month_1'],
+                "month_2" => $post['month_2'],
+                "month_3" => $post['month_3'],
+                "total_sub" => $post['total_sub'],
                 "revision" => (@$purchaseOrder->revision + 1)
             ]);
 
@@ -345,6 +353,25 @@ class Purchase_orders extends CI_Controller
         $update = $this->crud->update('purchase_requests', ["request_no" => $data['request_no'], "item_rm_id" => $data['item_rm_id']], ["status" => 0]);
         echo $send;
     }
+
+    //GET PERIOD LISTS
+    public function readPeriodLists()
+    {
+        $po_date = $this->input->post('po_date');
+        $p_date_start = date("Y-m-d", strtotime($po_date . "-01"));
+        $p_date_to = date('Y-m-d', strtotime('+3 month', strtotime($p_date_start)));
+
+        while (strtotime($p_date_start) <= strtotime($p_date_to)) {
+            $dates[] = array(
+                "name" => date("M-y", strtotime($p_date_start))
+            );
+
+            $p_date_start = date("Y-m-d", strtotime("+1 month", strtotime($p_date_start)));
+        }
+
+        echo json_encode($dates);
+    }
+
     public function print_po($po_no)
     {
         $purchase_orders_total = $this->crud->reads('purchase_orders', [], ["po_no" => base64_decode($po_no)]);
@@ -403,7 +430,7 @@ class Purchase_orders extends CI_Controller
         $hal = 1;
         $subtotal = 0;
         for ($i = 0; $i < $page; $i++) {
-            $this->db->select('a.*, b.number as item_id, b.name as item_name, b.uom, c.currency, a.price');
+            $this->db->select('a.*, b.number as item_id, b.name as item_name, b.uom, c.currency, a.price, b.description, a.month_1, a.month_2, a.month_3');
             $this->db->from('purchase_orders a');
             $this->db->join('item_rm b', 'a.item_rm_id = b.id');
             $this->db->join('suppliers c', 'a.supplier_id = c.id');
@@ -508,15 +535,19 @@ class Purchase_orders extends CI_Controller
                                 </table>
                                 <table id="customers">
                                     <tr>
-                                        <th width="30" style="text-align:center;">No</th>
-                                        <th style="text-align:center;">Product No</th>
-                                        <th style="text-align:center;">Specification</th>
-                                        <th width="50" style="text-align:center;">Qty</th>
-                                        <th width="50" style="text-align:center;">Uom</th>
-                                        <th width="80" style="text-align:center;">Delivery<br>Date</th>
-                                        <th width="50" style="text-align:center;">Unit<br>Price</th>
-                                        <th width="50" style="text-align:center;">Currency</th>
-                                        <th width="50" style="text-align:center;">Amount</th>
+                                        <th rowspan="2" width="30" style="text-align:center;">No</th>
+                                        <th rowspan="2" width="150" style="text-align:center;">Product No</th>
+                                        <th rowspan="2" width="150" style="text-align:center;">Product Name</th>
+                                        <th rowspan="2" width="50" style="text-align:center;">Specification</th>
+                                        <th rowspan="2" width="50" style="text-align:center;">Qty</th>
+                                        <th rowspan="2" width="50" style="text-align:center;">Uom</th>
+                                        
+                                        <th rowspan="2" width="50" style="text-align:center;">Unit<br>Price</th>
+                                        <th rowspan="2" width="50" style="text-align:center;">Currency</th>
+                                        <th rowspan="2" width="50" style="text-align:center;">Amount</th>
+                                        <th rowspan="2" width="80" style="text-align:center;">Delivery<br>Date</th>
+                                        <th colspan="3" width="80" style="text-align:center;">Forecast</th>
+                                        
                                     </tr>';
             $row = 0;
             foreach ($records as $record) {
@@ -528,15 +559,25 @@ class Purchase_orders extends CI_Controller
                 }
                 
                 $html .= '  <tr>
-                                <td  style="text-align:center;">' . $no . '</td>
+                                <th width="80" style="text-align:center;">Month 1</th>
+                                <th width="80" style="text-align:center;">Month 2</th>
+                                <th width="80" style="text-align:center;">Month 3</th>
+                            </tr>
+                            <tr>    
+                                <td style="text-align:center;">' . $no . '</td>
                                 <td>' . $record['item_id'] . '</td>
                                 <td><span style="font-size:10px;">' . $record['item_name'] . '</span></td>
+                                <td style="text-align:center;">' . $record['description'] . '</td>
                                 <td style="text-align:right;">' . number_format($record['qty'], 2) . '</td>
                                 <td style="text-align:center;">' . $record['uom'] . '</td>
-                                <td style="text-align:center;">' . $record['delivery_date'] . '</td>
+                                
                                 <td style="text-align:right;">' . number_format($record['price'], $digits) . '</td>
                                 <td style="text-align:center;">' . $record['currency'] . '</td>
                                 <td style="text-align:right;">' . number_format(($record['qty'] * $record['price']), 2) . '</td>
+                                <td style="text-align:center;">' . $record['delivery_date'] . '</td>
+                                <td style="text-align:center;">' . $record['month_1'] . '</td>
+                                <td style="text-align:center;">' . $record['month_2'] . '</td>
+                                <td style="text-align:center;">' . $record['month_3'] . '</td>
                             </tr>';
                 $row++;
                 $no++;
@@ -552,7 +593,7 @@ class Purchase_orders extends CI_Controller
                 $remarks = $this->db->get()->result_array();
 
                 $html .= '  <tr>
-                                <td style="vertical-align: top; text-align:left;" colspan="6" rowspan="5">
+                                <td style="vertical-align: top; text-align:left;" colspan="6" rowspan="7">
                                     <b>Note :</b> <br>';
                 foreach ($remarks as $remark) {
                     if ($remark['remarks'] != "") {
@@ -572,8 +613,16 @@ class Purchase_orders extends CI_Controller
                                 <th style="text-align:left" colspan="2">Sub Total</th>
                                 <th style="text-align:right;">' . number_format($subtotal, 2) . '</th>
                             </tr>
+                             <tr>
+                                <th style="text-align:left" colspan="2">Disc % (' . $disc . '%)</th>
+                                <th style="text-align:right;">' . number_format(((@$subtotal * ($disc / 100))), 2) . '</th>
+                            </tr>
                             <tr>
                                 <th style="text-align:left" colspan="2">VAT (' . $tax . '%)</th>
+                                <th style="text-align:right;">' . number_format(((@$subtotal * $tax) / 100), 2) . '</th>
+                            </tr>
+                            <tr>
+                                <th style="text-align:left" colspan="2">Income Tax % (' . $tax . '%)</th>
                                 <th style="text-align:right;">' . number_format(((@$subtotal * $tax) / 100), 2) . '</th>
                             </tr>
                             <tr>
@@ -585,6 +634,7 @@ class Purchase_orders extends CI_Controller
                                 <th style="text-align:right;">' . number_format($subtotal + ((@$subtotal * $tax) / 100) - @$purchase_orders->total_dp, 2) . '</th>
                             </tr>
                         </table>';
+                        
             } else {
                 $html .= '</table>';
             }

@@ -178,21 +178,26 @@ class item_fg extends CI_Controller
                 'number' => $data->val($i, 2),
                 'name' => $data->val($i, 3),
                 'number_customer' => $data->val($i, 4),
-                'process' => $data->val($i, 5),
-                'division_id' => $data->val($i, 6),
-                'boxs' => $data->val($i, 7),
-                'polybag' => $data->val($i, 8),
-                'box_label' => $data->val($i, 9),
-                'ng_ration' => $data->val($i, 10),
-                'is_no' => $data->val($i, 11),
-                'weight' => $data->val($i, 12),
-                'color' => $data->val($i, 13),
-                'leadtime' => $data->val($i, 14),
-                'mpq' => $data->val($i, 15),
-                'moq' => $data->val($i, 16),
-                'uom' => $data->val($i, 17),
-                'qty_box' => $data->val($i, 18),
-                'status' => $data->val($i, 19)
+                'alias' => $data->val($i, 5),
+                'process' => $data->val($i, 6),
+                'division_id' => $data->val($i, 7),
+                'control_id' => $data->val($i, 8),
+                'boxs' => $data->val($i, 9),
+                'lot' => $data->val($i, 10),
+                'polybag' => $data->val($i, 11),
+                'box_label' => $data->val($i, 12),
+                'ng_ration' => $data->val($i, 13),
+                'is_no' => $data->val($i, 14),
+                'weight' => $data->val($i, 15),
+                'color' => $data->val($i, 16),
+                'leadtime' => $data->val($i, 17),
+                'mpq' => $data->val($i, 18),
+                'moq' => $data->val($i, 19),
+                'uom' => $data->val($i, 20),
+                'qty_box' => $data->val($i, 21),
+                'box_sub' => $data->val($i, 22),
+                'logo' => $data->val($i, 23),
+                'status' => $data->val($i, 24)
             );
         }
         $datas['total'] = count($datas);
@@ -259,9 +264,12 @@ class item_fg extends CI_Controller
                     "number" => $data['number'],
                     "name" => $data['name'],
                     "number_customer" => $data['number_customer'],
+                    "alias"=> $data['alias'],
                     "process" => $data['process'],
                     "division_id" => $data['division_id'],
+                    "control_id" => $data['control_id'],
                     "boxs" => $data['boxs'],
+                    "lot" => $data['lot'],
                     "polybag" => $data['polybag'],
                     "box_label" => $data['box_label'],
                     "ng_ration" => $data['ng_ration'],
@@ -273,6 +281,8 @@ class item_fg extends CI_Controller
                     "moq" => $data['moq'],
                     "uom" => $data['uom'],
                     "qty_box" => $data['qty_box'],
+                    "box_sub" => $data['box_sub'],
+                    "logo" => $data['logo'],
                     "status" => $data['status'],
                 );
                 $send   = $this->crud->create('item_fg', $dataFinal);
@@ -336,9 +346,12 @@ class item_fg extends CI_Controller
                 <th>Product Name</th>
                 <th>Total Mold</th>
                 <th>Product Customer</th>
+                <th>Product Alias</th>
                 <th>Process Type</th>
                 <th>Division</th>
+                <th>Control</th>
                 <th>Box</th>
+                <th>Lot</th>
                 <th>Polybag Label</th>
                 <th>Box Label</th>
                 <th>NG Ratio (%)</th>
@@ -349,9 +362,11 @@ class item_fg extends CI_Controller
                 <th>MPQ</th>
                 <th>MOQ</th>
                 <th>Qty/Box</th>
+                <th>Qty/Sub Box</th>
                 <th>Uom</th>
                 <th>Min</th>
                 <th>Max</th>
+                <th>Logo</th>
                 <th>Status</th>
             </tr>';
         $no = 1;
@@ -363,9 +378,12 @@ class item_fg extends CI_Controller
                     <td>' . $data['name'] . '</td>
                     <td>' . $data['total_mold'] . '</td>
                     <td>' . $data['number_customer'] . '</td>
+                    <td>' . $data['alias'] . '</td>
                     <td>' . $data['process'] . '</td>
                     <td>' . $data['division_name'] . '</td>
+                    <td>' . $data['control_id'] . '</td>
                     <td>' . $data['boxs'] . '</td>
+                    <td>' . $data['lot'] . '</td>
                     <td>' . $data['polybag'] . '</td>
                     <td>' . $data['box_label'] . '</td>
                     <td>' . $data['ng_ration'] . '</td>
@@ -376,9 +394,11 @@ class item_fg extends CI_Controller
                     <td>' . $data['mpq'] . '</td>
                     <td>' . $data['moq'] . '</td>
                     <td>' . $data['qty_box'] . '</td>
+                    <td>' . $data['box_sub'] . '</td>
                     <td>' . $data['uom'] . '</td>
                     <td>' . $data['min'] . '</td>
                     <td>' . $data['max'] . '</td>
+                    <td>' . $data['logo'] . '</td>
                     <td>' . $data['status'] . '</td>';
             $no++;
         }

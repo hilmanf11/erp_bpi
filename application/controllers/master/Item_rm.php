@@ -152,7 +152,9 @@ class Item_rm extends CI_Controller
                 'item_sub_family_id' => $data->val($i, 7),
                 'account_number' => $data->val($i, 8),
                 'account_name' => $data->val($i, 9),
-                'status' => $data->val($i, 10)
+                'description' => $data->val($i, 10),
+                'supply' => $data->val($i, 11),
+                'status' => $data->val($i, 12)
             );
         }
         $datas['total'] = count($datas);
@@ -230,6 +232,8 @@ class Item_rm extends CI_Controller
                     "item_sub_family_id" => $data['item_sub_family_id'],
                     "account_number" => $data['account_number'],
                     "account_name" => $data['account_name'],
+                    "description" => $data['description'],
+                    "supply" => $data['supply'],
                     "status" => $data['status'],
                 );
                 $send   = $this->crud->create('item_rm', $dataFinal);
@@ -294,6 +298,8 @@ class Item_rm extends CI_Controller
                 <th>Product Family Sub</th>
                 <th>Account No.</th>
                 <th>Account Name</th>
+                <th>Description</th>
+                <th>Supply</th>
                 <th>Status</th>
             </tr>';
         $no = 1;
@@ -309,6 +315,8 @@ class Item_rm extends CI_Controller
                     <td>' . $data['item_sub_family_number'] . '</td>
                     <td>' . $data['account_number'] . '</td>
                     <td>' . $data['account_name'] . '</td>
+                    <td>' . $data['description'] . '</td>
+                    <td>' . $data['supply'] . '</td>
                     <td>' . $data['status'] . '</td>';
             $no++;
         }

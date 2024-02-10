@@ -12,6 +12,8 @@
             <th rowspan="2" data-options="field:'item_sub_family_name',width:150,halign:'center'">Sub Product Family</th>
             <th rowspan="2" data-options="field:'account_number',width:150,halign:'center'">Account No</th>
             <th rowspan="2" data-options="field:'account_name',width:150,halign:'center'">Account Name</th>
+            <th rowspan="2" data-options="field:'description',width:150,halign:'center'">Description</th>
+            <th rowspan="2" data-options="field:'supply',width:80,halign:'center', styler:cellStyler, formatter:cellFormatterSup">Supply</th>
             <th rowspan="2" data-options="field:'status',width:80,halign:'center', styler:cellStyler, formatter:cellFormatter">Status</th>
             <th colspan="2" data-options="field:'',width:100,halign:'center'"> Created</th>
             <th colspan="2" data-options="field:'',width:100,halign:'center'"> Updated</th>
@@ -70,6 +72,17 @@
                 <input style="width:60%;" name="account_name" id="account_name" class="easyui-textbox">
             </div>
             <div class="fitem">
+                <span style="width:35%; display:inline-block;">Description</span>
+                <input style="width:60%;" name="description" id="description" class="easyui-textbox">
+            </div>
+            <div class="fitem">
+                <span style="width:35%; display:inline-block;">Supply</span>
+                <select style="width:60%;" name="supply" id="supply" required="" panelHeight="auto" class="easyui-combobox">
+                    <option value="0">YES</option>
+                    <option value="1">NO</option>
+                </select>
+            </div>
+            <div class="fitem">
                 <span style="width:35%; display:inline-block;">Status</span>
                 <select style="width:60%;" name="status" id="status" required="" panelHeight="auto" class="easyui-combobox">
                     <option value="0">Active</option>
@@ -114,6 +127,11 @@
     //EDIT DATA
     function update() {
         var row = $('#dg').datagrid('getSelected');
+
+        setTimeout(function() { 
+            $('#id').textbox('setValue', row.id);
+        }, 500);
+
         if (row) {
             $('#dlg_insert').dialog('open');
             $('#frm_insert').form('load', row);
@@ -267,6 +285,14 @@
             return 'Active';
         } else {
             return 'Not Active';
+        }
+    };
+     //FORMATTER STATUS
+     function cellFormatterSup(value) {
+        if (value == 0) {
+            return 'YES';
+        } else {
+            return 'NO';
         }
     };
 

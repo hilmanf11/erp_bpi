@@ -62,9 +62,9 @@ class Item_family_subs extends CI_Controller
             if (@count($filters) > 0) {
                 foreach ($filters as $filter) {
                     if($filter->field == "item_category_name"){
-                        $this->db->like("b.id", $filter->value);
+                        $this->db->like("b.name", $filter->value);
                     }elseif($filter->field == "item_family_name"){
-                        $this->db->like("c.id", $filter->value);
+                        $this->db->like("c.name", $filter->value);
                     }else{
                         $this->db->like("a.".$filter->field, $filter->value);
                     }

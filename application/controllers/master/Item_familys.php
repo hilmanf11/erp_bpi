@@ -43,6 +43,13 @@ class Item_familys extends CI_Controller
         echo json_encode($send);
     }
 
+    public function readNotFg()
+    {
+        $post = isset($_POST['q']) ? $_POST['q'] : "";
+        $send = $this->crud->query("SELECT * FROM item_familys WHERE number != 'FG'");
+        echo json_encode($send);
+    }
+
     public function readss($category_number = "")
     {
         $post = isset($_POST['q']) ? $_POST['q'] : "";
@@ -70,7 +77,7 @@ class Item_familys extends CI_Controller
             if (@count($filters) > 0) {
                 foreach ($filters as $filter) {
                     if($filter->field == "item_category_name"){
-                        $this->db->like("b.id", $filter->value);
+                        $this->db->like("b.name", $filter->value);
                     }else{
                         $this->db->like("a.".$filter->field, $filter->value);
                     }
