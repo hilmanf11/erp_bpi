@@ -26,15 +26,15 @@
         </tr>
     </thead>
 </table>
-<div id="toolbar" style="height: 190px;">
+<div id="toolbar" style="height: 200px; padding:10px;">
     <!-- <div style="width: 100%; display: grid; grid-template-columns: auto auto auto; grid-gap: 5px; display: flex;"> -->
     <div style="width: 100%;">
         <fieldset style="width: 35%; border:2px solid #d0d0d0; margin-bottom: 5px; margin-top: 5px; border-radius:4px;">
             <legend><b>Form Filter Data</b></legend>
             <div class="fitem">
                 <span style="width:35%; display:inline-block;">Period</span>
-                <input style="width:30%;" id="filter_from" class="easyui-datebox" data-options="formatter:myformatter,parser:myparser, editable:false">
-                <input style="width:30%;" id="filter_to" class="easyui-datebox" data-options="formatter:myformatter,parser:myparser, editable:false">
+                <input style="width:30%;" id="filter_from" value="<?= date("Y-m-01") ?>" class="easyui-datebox" data-options="formatter:myformatter,parser:myparser, editable:false">
+                <input style="width:30%;" id="filter_to" value="<?= date("Y-m-t") ?>" class="easyui-datebox" data-options="formatter:myformatter,parser:myparser, editable:false">
             </div>
             <div class="fitem">
                 <span style="width:35%; display:inline-block;">Workorder</span>
@@ -196,10 +196,16 @@
         var filter_to = $("#filter_to").datebox('getValue');
         var filter_workorder = $("#filter_workorder").combogrid('getValue');
 
-        url = "?filter_from=" + filter_from + "&filter_to=" + filter_to + "&filter_workorder=" + filter_workorder;
+        var url = "?filter_from=" + filter_from + "&filter_to=" + filter_to + "&filter_workorder=" + filter_workorder;
         $('#dg').datagrid({
-            url: '<?= base_url('planning/checksheets/datatables') ?>' + url
+            url: '<?= base_url('planning/checksheets/datatables') ?>' + url,
+            pagination: true,
+            rownumbers: true,
+            fit: true,
+            pageList: [10, 50, 100, 500, 1000],
+            pageSize: 10,
         });
+
         $("#printout").contents().find('html').html("<center><br><br><br><b style='font-size:20px;'>Please Wait...</b></center>");
         $("#printout").attr('src', '<?= base_url('planning/checksheets/print') ?>' + url);
     }
@@ -223,11 +229,8 @@
     }
 
     $(function() {
-        $('#dg').datagrid({
-            url: '<?= base_url('planning/checksheets/datatables') ?>',
-            pagination: true,
-            rownumbers: true
-        });
+        filter();
+
         //Save Data
         $('#dlg_insert').dialog({
             buttons: [{

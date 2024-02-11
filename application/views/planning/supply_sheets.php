@@ -30,7 +30,7 @@
         </tr>
     </thead>
 </table>
-<div id="toolbar" style="height: 190px;">
+<div id="toolbar" style="height: 200px; padding: 10px;">
     <!-- <div style="width: 100%; display: grid; grid-template-columns: auto auto auto; grid-gap: 5px; display: flex;"> -->
     <div style="width: 100%;">
         <fieldset style="width: 60%; border:2px solid #d0d0d0; margin-bottom: 5px; margin-top: 5px; border-radius:4px;">
@@ -47,7 +47,6 @@
                 <div class="fitem">
                     <span style="width:35%; display:inline-block;"></span>
                     <a href="javascript:;" class="easyui-linkbutton" onclick="filter()"><i class="fa fa-search"></i> Filter Data</a>
-                    <a href="javascript:;" class="easyui-linkbutton" onclick="print_kanban()"><i class="fa fa-print"></i> Print Supply Sheet</a>
                 </div>
             </div>
             <div style="width: 50%; float:left;">
@@ -66,8 +65,10 @@
             </div>
         </fieldset>
         <?= $button ?>
+        <a href="javascript:;" class="easyui-linkbutton" plain="true" onclick="print_kanban()"><i class="fa fa-print"></i> Print Supply Sheet</a>
     </div>
 </div>
+
 <!-- Insert & Update -->
 <div id="dlg_insert" class="easyui-dialog" title="Add New" data-options="closed: true,modal:true" style="width: 1150px; height: auto; padding:10px; top: 20px;">
     <form id="frm_insert" method="post" novalidate>
@@ -472,12 +473,11 @@
     }
 
     function print_kanban() {
-        var request_no = $("#filter_request_no").combobox('getValue');
-        // var operation = $("#filter_operation").combobox('getValue');
-        if (request_no == "") {// || operation == ""
-            toastr.warning("Please select Supply No and Operation!", "Information");
-        } else {
-            window.open("<?= base_url('planning/supply_sheets/print_kanban/') ?>" + window.btoa(request_no));// + "/" + window.btoa(operation), "_blank"
+        var row = $('#dg').treegrid('getSelected');
+        if (row) {
+            window.open("<?= base_url('planning/supply_sheets/print_kanban/') ?>" + window.btoa(row.request_no));// + "/" + window.btoa(operation), "_blank"
+        }else{
+            toastr.warning("Please select one of the data in the table first!", "Information");
         }
     }
 
@@ -505,6 +505,9 @@
             rownumbers: true,
             idField: 'id',
             treeField: 'request_no',
+            fit: true,
+            pageList: [10, 50, 100, 500, 1000],
+            pageSize: 10,
             singleSelect: false,
             onBeforeLoad: function(row, param) {
                 if (!row) {
@@ -522,6 +525,7 @@
             //     }
             // },
         });
+
         //Save Data
         $('#dlg_insert').dialog({
             buttons: [{

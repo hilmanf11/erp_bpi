@@ -22,7 +22,7 @@ class Shipping_orders extends CI_Controller
         } elseif ($this->checkuserAccess($this->id_menu()) > 0) {
             $data['button'] = $this->getbutton($this->id_menu());
             $this->load->view('template/header', $data);
-            $this->load->view('planning/shipping_orders');
+            $this->load->view('sales/shipping_orders');
         } else {
             redirect('error_access');
         }

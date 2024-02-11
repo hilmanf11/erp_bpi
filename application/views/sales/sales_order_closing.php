@@ -125,9 +125,14 @@
             "&filter_sales_order_no=" + window.btoa(filter_sales_order_no) +
             "&filter_status=" + window.btoa(filter_status);
 
-        $('#dg').datagrid({
-            url: '<?= base_url('planning/sales_order_closing/datatables') ?>' + url
-        });
+            $('#dg').datagrid({
+                url: '<?= base_url('sales/sales_order_closing/datatables') ?>' + url,
+                pagination: true,
+                rownumbers: true,
+                fit: true,
+                pageList: [10, 50, 100, 500, 1000],
+                pageSize: 10,
+            });
     }
 
     //RELOAD
@@ -137,11 +142,7 @@
 
     $(function() {
         //SETTING DATAGRID EASYUI
-        $('#dg').datagrid({
-            url: '<?= base_url('planning/sales_order_closing/datatables') ?>',
-            pagination: true,
-            rownumbers: true,
-        });
+        filter();
 
         //SAVE DATA
         $('#dlg_insert').dialog({
@@ -155,7 +156,7 @@
 
                     $.ajax({
                         type: "post",
-                        url: '<?= base_url('planning/sales_order_closing/create') ?>',
+                        url: '<?= base_url('sales/sales_order_closing/create') ?>',
                         data: {
                             sales_order_no: sales_order_no,
                             status: status,
@@ -196,7 +197,7 @@
         }],
         onSelect: function(customer) {
             $('#filter_sales_order_no').combobox({
-                url: '<?= base_url('planning/sales_order_closing/readSalesOrder/'); ?>' + customer.id,
+                url: '<?= base_url('sales/sales_order_closing/readSalesOrder/'); ?>' + customer.id,
                 valueField: 'sales_order_no',
                 textField: 'sales_order_no',
                 prompt: 'Choose All',
@@ -209,7 +210,7 @@
             });
 
             $('#filter_customer_order_no').combobox({
-                url: '<?= base_url('planning/sales_order_closing/readCustomerOrder/'); ?>' + customer.id,
+                url: '<?= base_url('sales/sales_order_closing/readCustomerOrder/'); ?>' + customer.id,
                 valueField: 'customer_order_no',
                 textField: 'customer_order_no',
                 prompt: 'Choose All',

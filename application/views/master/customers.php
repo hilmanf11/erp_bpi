@@ -4,16 +4,16 @@
         <tr>
             <th rowspan="2" field="ck" checkbox="true"></th>
             <th rowspan="2" data-options="field:'detail',width:80,align:'center',formatter: btnDetails">Address</th>
-            <th rowspan="2" data-options="field:'id',width:100,align:'center'">Customer ID</th>
-            <th rowspan="2" data-options="field:'name',width:200,halign:'center'">Customer Name</th>
-            <th rowspan="2" data-options="field:'number',width:110,halign:'center'">Customer Code</th>
-            <th rowspan="2" data-options="field:'type',width:150,halign:'center'">Type</th>
-            <th rowspan="2" data-options="field:'currency',width:150,halign:'center'">Currency</th>
-            <th rowspan="2" data-options="field:'taxes',width:80,halign:'center'">Taxes</th>
-            <th rowspan="2" data-options="field:'payment_term',width:150,halign:'center'">Payment Term (Day)</th>
+            <th rowspan="2" data-options="field:'id',width:80,align:'center'">Customer<br>ID</th>
+            <th rowspan="2" data-options="field:'name',width:250,halign:'center'">Customer Name</th>
+            <th rowspan="2" data-options="field:'number',width:80,align:'center'">Customer<br>Code</th>
+            <th rowspan="2" data-options="field:'type',width:80,align:'center'">Type</th>
+            <th rowspan="2" data-options="field:'currency',width:80,align:'center'">Currency</th>
+            <th rowspan="2" data-options="field:'taxes',width:80,halign:'center',align:'right'">Taxes</th>
+            <th rowspan="2" data-options="field:'payment_term',width:100,halign:'center',align:'right'">Payment Term<br>(Day)</th>
             <th rowspan="2" data-options="field:'bank_account',width:150,halign:'center'">Bank Account</th>
             <th rowspan="2" data-options="field:'bank_name',width:150,halign:'center'">Bank Name</th>
-            <th rowspan="2" data-options="field:'status',width:100,halign:'center', styler:cellStyler, formatter:cellFormatter">Status</th>
+            <th rowspan="2" data-options="field:'status',width:80,align:'center', styler:cellStyler, formatter:cellFormatter">Status</th>
             <th colspan="2" data-options="field:'',width:100,halign:'center'"> Created</th>
             <th colspan="2" data-options="field:'',width:100,halign:'center'"> Updated</th>
         </tr>

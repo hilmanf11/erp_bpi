@@ -23,10 +23,11 @@
         </tr>
     </thead>
 </table>
-<div id="toolbar" style="height: 185px;">
+
+<div id="toolbar" style="height: 200px; padding:10px;">
     <!-- <div style="width: 100%; display: grid; grid-template-columns: auto auto auto; grid-gap: 5px; display: flex;"> -->
     <div style="width: 100%;">
-        <fieldset style="width: 55%; border:2px solid #d0d0d0; margin-bottom: 5px; margin-top: 5px; border-radius:4px;">
+        <fieldset style="width: 60%; border:2px solid #d0d0d0; margin-bottom: 5px; margin-top: 5px; border-radius:4px;">
             <legend><b>Form Filter Data</b></legend>
             <div style="width: 50%; float: left;">
                 <div class="fitem">
@@ -40,7 +41,6 @@
                 <div class="fitem">
                     <span style="width:35%; display:inline-block;"></span>
                     <a href="javascript:;" class="easyui-linkbutton" onclick="filter()"><i class="fa fa-search"></i> Filter Data</a>
-                    <a href="javascript:;" class="easyui-linkbutton" onclick="print_kanban()"><i class="fa fa-print"></i> Print Kanban</a>
                 </div>
             </div>
             <div style="width: 50%; float: left;">
@@ -59,6 +59,8 @@
             </div>
         </fieldset>
         <?= $button ?>
+
+        <a href="javascript:;" class="easyui-linkbutton" plain="true" onclick="print_kanban()"><i class="fa fa-print"></i> Print Kanban</a>
     </div>
 </div>
 <!-- TOOLBAR DATAGRID -->
@@ -433,11 +435,11 @@
     }
 
     function print_kanban() {
-        var request_no = $("#filter_request_no").combobox('getValue');
-        if (request_no == "") {
-            toastr.warning("Please select Kanban No!", "Information");
-        } else {
-            window.open("<?= base_url('planning/supply_materials/print_kanban/') ?>" + window.btoa(request_no), "_blank");
+        var row = $('#dg').treegrid('getSelected');
+        if (row) {
+            window.open("<?= base_url('planning/supply_materials/print_kanban/') ?>" + window.btoa(row.request_no));// + "/" + window.btoa(operation), "_blank"
+        }else{
+            toastr.warning("Please select one of the data in the table first!", "Information");
         }
     }
 
@@ -453,6 +455,9 @@
             idField: 'id',
             treeField: 'request_no',
             singleSelect: false,
+            fit: true,
+            pageList: [10, 50, 100, 500, 1000],
+            pageSize: 10,
             onBeforeLoad: function(row, param) {
                 if (!row) {
                     param.id = 0;

@@ -3,14 +3,13 @@
     <thead>
         <tr>
             <th rowspan="2" field="ck" checkbox="true"></th>
-            <!-- <th rowspan="2" data-options="field:'p_month',width:50,align:'center'">Month</th>
-            <th rowspan="2" data-options="field:'p_year',width:50,align:'center'">Year</th>
-            <th rowspan="2" data-options="field:'revision',width:50,align:'center'">Rev</th> -->
-            <th rowspan="2" data-options="field:'document_no',width:120,halign:'center'">Document No.</th>
-            <th rowspan="2" data-options="field:'customer_name',width:250,halign:'center'">Customer Name</th>
-            <th rowspan="2" data-options="field:'item_fg_number',width:150,halign:'center'">Product No.</th>
-            <th rowspan="2" data-options="field:'item_fg_name',width:200,halign:'center'">Product Name</th>
-            <th rowspan="2" data-options="field:'qty',width:80,halign:'center',formatter:numberFormat">Quantity</th>
+            <th rowspan="2" data-options="field:'item_fg_id',width:150,halign:'center'">Product ID</th>
+            <th rowspan="2" data-options="field:'item_fg_number',width:150,halign:'center'">Product No</th>
+            <th rowspan="2" data-options="field:'item_fg_name',width:100,halign:'center'">Product Name</th>
+            <th rowspan="2" data-options="field:'trans_date',width:80,halign:'center'">Cut Off</th>
+            <th rowspan="2" data-options="field:'uom',width:80,align:'center'">Uom</th>
+            <th rowspan="2" data-options="field:'qty',width:80,halign:'center',align:'right',formatter:numberFormat">Quantity</th>
+            <th rowspan="2" data-options="field:'location',width:100,halign:'center'">Location</th>
             <th colspan="2" data-options="field:'',width:100,halign:'center'"> Created</th>
             <th colspan="2" data-options="field:'',width:100,halign:'center'"> Updated</th>
         </tr>
@@ -31,35 +30,17 @@
             <legend><b>Form Filter Data</b></legend>
             <div style="float: left; width: 50%;">
                 <div class="fitem">
-                    <span style="width:35%; display:inline-block;">Period</span>
-                    <input style="width:30%;" id="filter_period_month" value="<?= date("m") ?>" class="easyui-combobox">
-                    <input style="width:30%;" id="filter_period_year" value="<?= date("Y") ?>" class="easyui-combobox">
+                    <span style="width:35%; display:inline-block;">Cut Off</span>
+                    <input style="width:30%;" id="filter_from" value="<?= date("Y-m-01") ?>" class="easyui-datebox" data-options="prompt:'Start Date',formatter:myformatter,parser:myparser, editable:false">
+                    <input style="width:30%;" id="filter_to" value="<?= date("Y-m-t") ?>" class="easyui-datebox" data-options="prompt:'Finish Date',formatter:myformatter,parser:myparser, editable:false">
                 </div>
                 <div class="fitem">
-                    <span style="width:35%; display:inline-block;">Revision</span>
-                    <select style="width:60%;" id="filter_revision" class="easyui-combobox" panelHeight="auto">
-                        <option value="" selected disabled>Choose All</option>
-                        <option value="0">0</option>
-                        <option value="1">1</option>
-                        <option value="2">2</option>
-                        <option value="3">3</option>
-                        <option value="4">4</option>
-                        <option value="5">5</option>
-                    </select>
+                    <span style="width:35%; display:inline-block;">Product No</span>
+                    <input style="width:60%;" id="filter_item_fg" class="easyui-combogrid">
                 </div>
                 <div class="fitem">
                     <span style="width:35%; display:inline-block;"></span>
                     <a href="javascript:;" class="easyui-linkbutton" onclick="filter()"><i class="fa fa-search"></i> Filter Data</a>
-                </div>
-            </div>
-            <div style="float: left; width: 50%;">
-                <div class="fitem">
-                    <span style="width:35%; display:inline-block;">Customer</span>
-                    <input style="width:60%;" id="filter_customer_id" class="easyui-combobox">
-                </div>
-                <div class="fitem">
-                    <span style="width:35%; display:inline-block;">Product No.</span>
-                    <input style="width:60%;" id="filter_item_fg_id" class="easyui-combogrid">
                 </div>
             </div>
         </fieldset>
@@ -73,37 +54,20 @@
         <fieldset style="width:100%; border:1px solid #d0d0d0; margin-bottom: 10px; border-radius:4px; float: left;">
             <legend><b>Form Data</b></legend>
             <div class="fitem">
-                <span style="width:35%; display:inline-block;">Period</span>
-                <input style="width:30%;" name="p_month" id="p_month" required="" class="easyui-combobox">
-                <input style="width:30%;" name="p_year" id="p_year" required="" class="easyui-combobox">
-            </div>
-            <div class="fitem">
-                <span style="width:35%; display:inline-block;">Revision</span>
-                <select style="width:60%;" name="revision" id="revision" required class="easyui-combobox" panelHeight="auto">
-                    <option value="" selected disabled>Choose Revision</option>
-                    <option value="0">0</option>
-                    <option value="1">1</option>
-                    <option value="2">2</option>
-                    <option value="3">3</option>
-                    <option value="4">4</option>
-                    <option value="5">5</option>
-                </select>
-            </div>
-            <div class="fitem">
-                <span style="width:35%; display:inline-block;">Document No.</span>
-                <input style="width:60%;" name="document_no" id="document_no" class="easyui-textbox">
-            </div>
-            <div class="fitem">
-                <span style="width:35%; display:inline-block;">Customer</span>
-                <input style="width:60%;" name="customer_id" id="customer_id" required class="easyui-combobox">
+                <span style="width:35%; display:inline-block;">Cut Off</span>
+                <input style="width:60%;" name="trans_date"  id="trans_date" value="<?= date("Y-m-d") ?>" class="easyui-datebox" data-options="formatter:myformatter,parser:myparser, editable:false">
             </div>
             <div class="fitem">
                 <span style="width:35%; display:inline-block;">Product No</span>
-                <input style="width:60%;" name="item_fg_id" id="item_fg_id" required class="easyui-combogrid">
+                <input style="width:60%;" name="item_fg_id"  id="item_fg_id" class="easyui-combogrid">
+            </div>
+            <div class="fitem">
+                <span style="width:35%; display:inline-block;">Location</span>
+                <input style="width:60%;" name="location" id="location" required class="easyui-combobox">
             </div>
             <div class="fitem">
                 <span style="width:35%; display:inline-block;">Qty</span>
-                <input style="width:30%;" name="qty" id="qty" required class="easyui-numberbox">
+                <input style="width:30%;" name="qty" id="qty" data-options="precision:2" required class="easyui-numberbox">
             </div>
         </fieldset>
     </form>
@@ -130,23 +94,18 @@
 </div>
 
 <!-- PDF -->
-<iframe id="printout" src="<?= base_url('planning/os_mpp/print') ?>" style="width: 100%;" hidden></iframe>
+<iframe id="printout" src="<?= base_url('planning/os_fg/print') ?>" style="width: 100%;" hidden></iframe>
 
 <script>
     //ADD DATA
     function add() {
         $('#dlg_insert').dialog('open');
         $('#dg2').datagrid('loadData', []);
-        url_save = '<?= base_url('planning/os_mpp/create') ?>';
+        url_save = '<?= base_url('planning/os_fg/create') ?>';
         $('#frm_insert').form('clear');
-        $("#customer_id").combogrid('enable');
         $("#item_fg_id").combogrid('enable');
-        $("#p_month").combobox('enable');
-        $("#p_year").combobox('enable');
-
-        $("#revision").combobox('setValue', '0');
-        $("#p_month").combobox('setValue', '<?= date("m") ?>');
-        $("#p_year").combobox('setValue', '<?= date("Y") ?>');
+        $("#trans_date").datebox('enable');
+        $("#trans_date").datebox('setValue', '<?= date("Y-m-d") ?>');
     }
 
     //EDIT DATA
@@ -155,7 +114,10 @@
         if (row) {
             $('#dlg_insert').dialog('open');
             $('#frm_insert').form('load', row);
-            url_save = '<?= base_url('planning/os_mpp/update') ?>?id=' + btoa(row.id);
+            $("#item_fg_id").combogrid('disable');
+            $("#trans_date").datebox('disable');
+
+            url_save = '<?= base_url('planning/os_fg/update') ?>?id=' + btoa(row.id);
         } else {
             toastr.warning("Please select one of the data in the table first!", "Information");
         }
@@ -171,7 +133,7 @@
                         var row = rows[i];
                         $.ajax({
                             method: 'post',
-                            url: '<?= base_url('planning/os_mpp/delete') ?>',
+                            url: '<?= base_url('planning/os_fg/delete') ?>',
                             data: {
                                 id: row.id,
                             },
@@ -201,36 +163,30 @@
 
     // DOWNLOAD
     function download_excel() {
-        window.location.assign('<?= base_url('template/tmp_os_mpp.xls') ?>');
+        window.location.assign('<?= base_url('template/tmp_os_fg.xls') ?>');
     }
 
     //FILTER DATA
     function filter() {
-        var filter_period_month = $("#filter_period_month").combobox('getValue');
-        var filter_period_year = $("#filter_period_year").combobox('getValue');
-        var filter_item_fg_id = $("#filter_item_fg_id").combogrid('getValue');
-        var filter_customer_id = $("#filter_customer_id").combobox('getValue');
-        var filter_revision = $("#filter_revision").combobox('getValue');
+        var filter_from = $("#filter_from").datebox('getValue');
+        var filter_to = $("#filter_to").datebox('getValue');
+        var filter_item_fg = $("#filter_item_fg").combogrid('getValue');
 
-        var url = "?filter_period_month=" + window.btoa(filter_period_month) +
-            "&filter_period_year=" + window.btoa(filter_period_year) +
-            "&filter_item_fg_id=" + window.btoa(filter_item_fg_id) +
-            "&filter_customer_id=" + window.btoa(filter_customer_id) +
-            "&filter_revision=" + window.btoa(filter_revision);
+        var url = "?filter_from=" + window.btoa(filter_from) +
+            "&filter_to=" + window.btoa(filter_to) +
+            "&filter_item_fg=" + window.btoa(filter_item_fg);
 
         $('#dg').datagrid({
-            url: '<?= base_url('planning/os_mpp/datatables') ?>' + url,
+            url: '<?= base_url('planning/os_fg/datatables') ?>' + url,
             pagination: true,
             clientPaging: false,
             remoteFilter: true,
             rownumbers: true,
-            fit: true,
-            pageList: [10, 50, 100, 500, 1000],
-            pageSize: 10,
+            fit:true
         });
 
         $("#printout").contents().find('html').html("<center><br><br><br><b style='font-size:20px;'>Please Wait...</b></center>");
-        $("#printout").attr('src', '<?= base_url('planning/os_mpp/print') ?>' + url);
+        $("#printout").attr('src', '<?= base_url('planning/os_fg/print') ?>' + url);
     }
 
     //PRINT PDF
@@ -240,19 +196,21 @@
 
     //PRINT EXCEL
     function excel() {
-        var filter_period_month = $("#filter_period_month").combobox('getValue');
-        var filter_period_year = $("#filter_period_year").combobox('getValue');
-        var filter_item_fg_id = $("#filter_item_fg_id").combogrid('getValue');
-        var filter_customer_id = $("#filter_customer_id").combobox('getValue');
-        var filter_revision = $("#filter_revision").combobox('getValue');
+        var filter_from = $("#filter_from").datebox('getValue');
+        var filter_to = $("#filter_to").datebox('getValue');
+        var filter_category = $("#filter_category").combobox('getValue');
+        var filter_product_family = $("#filter_product_family").combobox('getValue');
+        var filter_product_family_sub = $("#filter_product_family_sub").combobox('getValue');
+        var filter_item_fg = $("#filter_item_fg").combogrid('getValue');
 
-        var url = "?filter_period_month=" + window.btoa(filter_period_month) +
-            "&filter_period_year=" + window.btoa(filter_period_year) +
-            "&filter_item_fg_id=" + window.btoa(filter_item_fg_id) +
-            "&filter_customer_id=" + window.btoa(filter_customer_id) +
-            "&filter_revision=" + window.btoa(filter_revision);
+        var url = "?filter_from=" + window.btoa(filter_from) +
+            "&filter_to=" + window.btoa(filter_to) +
+            "&filter_category=" + window.btoa(filter_category) +
+            "&filter_product_family=" + window.btoa(filter_product_family) +
+            "&filter_product_family_sub=" + window.btoa(filter_product_family_sub) + 
+            "&filter_item_fg=" + window.btoa(filter_item_fg);
 
-        window.location.assign('<?= base_url('planning/os_mpp/print/excel') ?>' + url);
+        window.location.assign('<?= base_url('planning/os_fg/print/excel') ?>' + url);
     }
 
     //RELOAD
@@ -291,114 +249,67 @@
         });
     });
 
-    $('#p_month').combobox({
-        url: '<?= base_url('planning/os_mpp/readPeriod/month'); ?>',
-        valueField: 'id',
-        textField: 'name',
-        prompt: 'Choose Months',
-    });
-
-    $('#p_year').combobox({
-        url: '<?= base_url('planning/os_mpp/readPeriod/year'); ?>',
-        valueField: 'id',
-        textField: 'name',
-        prompt: 'Choose Years',
-    });
-
-    $('#customer_id').combobox({
-        url: '<?= base_url('master/customers/reads'); ?>',
-        valueField: 'id',
-        textField: 'name',
-        prompt: 'Choose Customer',
-        onSelect: function(customer_id) {
-            $('#item_fg_id').combogrid({
-                url: '<?= base_url('master/customer_items/reads/'); ?>' + window.btoa(customer_id.id),
-                panelWidth: 400,
-                idField: 'id',
-                textField: 'number',
-                mode: 'remote',
-                fitColumns: true,
-                prompt: "Choose Product No.",
-                columns: [
-                    [{
-                        field: 'number',
-                        title: 'Product No.',
-                        width: 110
-                    }, {
-                        field: 'name',
-                        title: 'Product Name',
-                        width: 190
-                    }]
-                ],
-            });
-        }
-    });
-
-    $('#filter_customer_id').combobox({
-        url: '<?= base_url('master/customers/reads'); ?>',
-        valueField: 'id',
-        textField: 'name',
-        prompt: 'Choose Customer',
+    $('#filter_item_fg').combogrid({
+        url: '<?= base_url('master/item_fg/reads'); ?>',
+        panelWidth: 450,
+        idField: 'id',
+        textField: 'number',
+        mode: 'remote',
+        fitColumns: true,
+        prompt: "Choose Product No",
         icons: [{
             iconCls: 'icon-clear',
             handler: function(e) {
-                $(e.data.target).combobox('clear').combobox('textbox').focus();
+                $(e.data.target).combogrid('clear').combogrid('textbox').focus();
             }
         }],
-        onSelect: function(customer_id) {
-            $('#filter_item_fg_id').combogrid({
-                url: '<?= base_url('master/customer_items/reads/'); ?>' + window.btoa(customer_id.id),
-                panelWidth: 400,
-                idField: 'id',
-                textField: 'number',
-                mode: 'remote',
-                fitColumns: true,
-                prompt: "Choose Product No.",
-                columns: [
-                    [{
-                        field: 'number',
-                        title: 'Product No.',
-                        width: 110
-                    }, {
-                        field: 'name',
-                        title: 'Product Name',
-                        width: 190
-                    }]
-                ],
-                icons: [{
-                    iconCls: 'icon-clear',
-                    handler: function(e) {
-                        $(e.data.target).combogrid('clear').combogrid('textbox').focus();
-                    }
-                }],
-            });
-        }
+        columns: [
+            [{
+                field: 'id',
+                title: 'Product ID',
+                width: 150
+            }, {
+                field: 'number',
+                title: 'Product No',
+                width: 150
+            }, {
+                field: 'name',
+                title: 'Product Name',
+                width: 100
+            }]
+        ],
     });
 
-    $('#filter_period_month').combobox({
-        url: '<?= base_url('planning/os_mpp/readPeriod/month'); ?>',
-        valueField: 'id',
-        textField: 'name',
-        prompt: 'Choose Months',
-        icons: [{
-            iconCls: 'icon-clear',
-            handler: function(e) {
-                $(e.data.target).combobox('clear').combobox('textbox').focus();
-            }
-        }],
+    $('#item_fg_id').combogrid({
+        url: '<?= base_url('master/item_fg/reads'); ?>',
+        panelWidth: 450,
+        idField: 'id',
+        textField: 'number',
+        mode: 'remote',
+        fitColumns: true,
+        prompt: "Choose Product No",
+        columns: [
+            [{
+                field: 'id',
+                title: 'Product ID',
+                width: 150
+            }, {
+                field: 'number',
+                title: 'Product No',
+                width: 150
+            }, {
+                field: 'name',
+                title: 'Product Name',
+                width: 100
+            }]
+        ],
     });
 
-    $('#filter_period_year').combobox({
-        url: '<?= base_url('planning/os_mpp/readPeriod/year'); ?>',
-        valueField: 'id',
-        textField: 'name',
-        prompt: 'Choose Years',
-        icons: [{
-            iconCls: 'icon-clear',
-            handler: function(e) {
-                $(e.data.target).combobox('clear').combobox('textbox').focus();
-            }
-        }],
+    $('#location').combobox({
+        url: '<?= base_url('master/locations/reads/FG'); ?>',
+        valueField: 'location',
+        textField: 'location',
+        prompt: 'Choose Locations',
     });
 
     function numberFormat(value, row) {
@@ -408,19 +319,41 @@
         return "<b>" + formatter.format(value) + "</b>";
     }
 
+    //Format Datepicker
+    function myformatter(date) {
+        var y = date.getFullYear();
+        var m = date.getMonth() + 1;
+        var d = date.getDate();
+        return y + '-' + (m < 10 ? ('0' + m) : m) + '-' + (d < 10 ? ('0' + d) : d);
+    }
+
+    //Format Datepicker
+    function myparser(s) {
+        if (!s) return new Date();
+        var ss = (s.split('-'));
+        var y = parseInt(ss[0], 10);
+        var m = parseInt(ss[1], 10);
+        var d = parseInt(ss[2], 10);
+        if (!isNaN(y) && !isNaN(m) && !isNaN(d)) {
+            return new Date(y, m - 1, d);
+        } else {
+            return new Date();
+        }
+    }
+
     // UPLOAD DATA
     $('#dlg_upload').dialog({
         buttons: [{
             text: 'List Failed',
             handler: function() {
-                window.open('<?= base_url('planning/os_mpp/uploadDownloadFailed') ?>', '_blank');
+                window.open('<?= base_url('planning/os_fg/uploadDownloadFailed') ?>', '_blank');
             }
         }, {
             text: 'Upload',
             iconCls: 'icon-ok',
             handler: function() {
                 $('#frm_upload').form('submit', {
-                    url: '<?= base_url('planning/os_mpp/upload') ?>',
+                    url: '<?= base_url('planning/os_fg/upload') ?>',
                     onSubmit: function() {
                         if ($(this).form('validate') == false) {
                             return $(this).form('validate');
@@ -435,7 +368,7 @@
                         $.messager.progress('close');
                         //Clear File
                         $.ajax({
-                            url: "<?= base_url('planning/os_mpp/uploadclearFailed') ?>"
+                            url: "<?= base_url('planning/os_fg/uploadclearFailed') ?>"
                         });
                         var json = eval('(' + result + ')');
                         requestData(json.total, json);
@@ -450,7 +383,7 @@
                                 $.ajax({
                                     type: "POST",
                                     async: true,
-                                    url: "<?= base_url('planning/os_mpp/uploadCreate') ?>",
+                                    url: "<?= base_url('planning/os_fg/uploadCreate') ?>",
                                     data: {
                                         "data": json[number - 1]
                                     },
@@ -468,7 +401,7 @@
                                             $.ajax({
                                                 type: "POST",
                                                 async: true,
-                                                url: "<?= base_url('planning/os_mpp/uploadcreateFailed') ?>",
+                                                url: "<?= base_url('planning/os_fg/uploadcreateFailed') ?>",
                                                 data: {
                                                     data: json[number - 1],
                                                     message: result.message

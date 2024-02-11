@@ -77,7 +77,7 @@
             toastr.warning("Please Select Trans Date");
         } else {
             $("#printout").contents().find('html').html("<center><br><br><br><b style='font-size:20px;'>Please Wait...</b></center>");
-            $("#printout").attr('src', '<?= base_url('planning/report_delivery_schedules/print') ?>' + url);
+            $("#printout").attr('src', '<?= base_url('sales/report_delivery_schedules/print') ?>' + url);
         }
     }
 
@@ -103,7 +103,7 @@
         if (filter_so_date_from == "" && filter_so_date_to == "") {
             toastr.warning("Please Select Trans Date");
         } else {
-            window.location.assign('<?= base_url('planning/report_delivery_schedules/print/excel') ?>' + url);
+            window.location.assign('<?= base_url('sales/report_delivery_schedules/print/excel') ?>' + url);
         }
     }
 
@@ -132,7 +132,7 @@
                 var filter_so_date_to = $("#filter_so_date_to").datebox("getValue");
 
                 $('#filter_customer_order_no').combobox({
-                    url: '<?php echo base_url('planning/report_delivery_schedules/readCustomerOrder?customer_id='); ?>' + cus.id + "&filter_so_date_from=" + window.btoa(filter_so_date_from) + "&filter_so_date_to=" + window.btoa(filter_so_date_to),
+                    url: '<?php echo base_url('sales/report_delivery_schedules/readCustomerOrder?customer_id='); ?>' + cus.id + "&filter_so_date_from=" + window.btoa(filter_so_date_from) + "&filter_so_date_to=" + window.btoa(filter_so_date_to),
                     valueField: 'customer_order_no',
                     textField: 'customer_order_no',
                     prompt: 'Select Customer Order No.',
@@ -145,7 +145,7 @@
                 });
 
                 $('#filter_sales_order_no').combobox({
-                    url: '<?php echo base_url('planning/report_delivery_schedules/readCustomerOrder?customer_id='); ?>' + cus.id + "&filter_so_date_from=" + window.btoa(filter_so_date_from) + "&filter_so_date_to=" + window.btoa(filter_so_date_to),
+                    url: '<?php echo base_url('sales/report_delivery_schedules/readCustomerOrder?customer_id='); ?>' + cus.id + "&filter_so_date_from=" + window.btoa(filter_so_date_from) + "&filter_so_date_to=" + window.btoa(filter_so_date_to),
                     valueField: 'sales_order_no',
                     textField: 'sales_order_no',
                     prompt: "Select Sales Order No",
@@ -157,7 +157,7 @@
                     }],
                     onSelect: function(so) {
                         $('#filter_item_fg').combogrid({
-                            url: '<?php echo base_url('planning/report_delivery_schedules/readItems?customer_id='); ?>' + cus.id +
+                            url: '<?php echo base_url('sales/report_delivery_schedules/readItems?customer_id='); ?>' + cus.id +
                                 "&filter_so_date_from=" + window.btoa(filter_so_date_from) +
                                 "&filter_so_date_to=" + window.btoa(filter_so_date_to) +
                                 "&filter_sales_order_no=" + window.btoa(so.sales_order_no),

@@ -471,7 +471,7 @@
             url: '<?= base_url('master/setting_subconts/datatables') ?>',
             pagination: true,
             rownumbers: true,
-            heifit: true,
+            fit: true,
             pageList: [20, 50, 100, 500, 1000],
             pageSize: 20,
             view: detailview,

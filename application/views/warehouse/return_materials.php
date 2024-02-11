@@ -25,15 +25,15 @@
         </tr>
     </thead>
 </table>
-<div id="toolbar" style="height: 190px;">
+<div id="toolbar" style="height: 200px; padding:10px;">
     <!-- <div style="width: 100%; display: grid; grid-template-columns: auto auto auto; grid-gap: 5px; display: flex;"> -->
     <div style="width: 100%;">
         <fieldset style="width: 35%; border:2px solid #d0d0d0; margin-bottom: 5px; margin-top: 5px; border-radius:4px;">
             <legend><b>Form Filter Data</b></legend>
             <div class="fitem">
                 <span style="width:35%; display:inline-block;">Period</span>
-                <input style="width:28%;" id="filter_from" class="easyui-datebox" data-options="formatter:myformatter,parser:myparser, editable:false"> To
-                <input style="width:28%;" id="filter_to" class="easyui-datebox" data-options="formatter:myformatter,parser:myparser, editable:false">
+                <input style="width:28%;" id="filter_from" value="<?= date("Y-m-01") ?>" class="easyui-datebox" data-options="formatter:myformatter,parser:myparser, editable:false"> To
+                <input style="width:28%;" id="filter_to" value="<?= date("Y-m-t") ?>" class="easyui-datebox" data-options="formatter:myformatter,parser:myparser, editable:false">
             </div>
             <div class="fitem">
                 <span style="width:35%; display:inline-block;">Return No</span>
@@ -42,10 +42,10 @@
             <div class="fitem">
                 <span style="width:35%; display:inline-block;"></span>
                 <a href="javascript:;" class="easyui-linkbutton" onclick="filter()"><i class="fa fa-search"></i> Filter Data</a>
-                <a href="javascript:;" class="easyui-linkbutton" onclick="print_return()"><i class="fa fa-print"></i> Return No</a>
             </div>
         </fieldset>
         <?= $button ?>
+        <a href="javascript:;" class="easyui-linkbutton" plain="true" onclick="print_return()"><i class="fa fa-print"></i> Return No</a>
     </div>
 </div>
 <div id="toolbar2">
@@ -337,10 +337,25 @@
         var filter_from = $("#filter_from").datebox('getValue');
         var filter_to = $("#filter_to").datebox('getValue');
         var filter_return_no = $("#filter_return_no").combobox('getValue');
+
         url = "?filter_from=" + filter_from + "&filter_to=" + filter_to + "&filter_return_no=" + filter_return_no;
         $('#dg').treegrid({
-            url: '<?= base_url('warehouse/return_materials/datatables') ?>' + url
+            url: '<?= base_url('warehouse/return_materials/datatables') ?>' + url,
+            pagination: true,
+            rownumbers: true,
+            idField: 'id',
+            treeField: 'return_no',
+            singleSelect: false,
+            fit: true,
+            pageList: [20, 50, 100, 500, 1000],
+            pageSize: 20,
+            onBeforeLoad: function(row, param) {
+                if (!row) {
+                    param.id = 0;
+                }
+            },
         });
+
         $("#printout").contents().find('html').html("<center><br><br><br><b style='font-size:20px;'>Please Wait...</b></center>");
         $("#printout").attr('src', '<?= base_url('warehouse/return_materials/print') ?>' + url);
     }
@@ -358,11 +373,11 @@
     }
 
     function print_return() {
-        var return_no = $("#filter_return_no").combobox('getValue');
-        if (return_no == "") {
-            toastr.warning("Please select Request No!", "Information");
-        } else {
-            window.open("<?= base_url('warehouse/return_materials/print_return/') ?>" + window.btoa(return_no), "_blank");
+        var row = $('#dg').treegrid('getSelected');
+        if (row) {
+            window.open("<?= base_url('warehouse/return_materials/print_return/') ?>" + window.btoa(row.return_no));// + "/" + window.btoa(operation), "_blank"
+        }else{
+            toastr.warning("Please select one of the data in the table first!", "Information");
         }
     }
 
@@ -386,24 +401,7 @@
     }
 
     $(function() {
-        $('#dg').treegrid({
-            url: '<?= base_url('warehouse/return_materials/datatables') ?>',
-            pagination: true,
-            rownumbers: true,
-            idField: 'id',
-            treeField: 'return_no',
-            singleSelect: false,
-            onBeforeLoad: function(row, param) {
-                if (!row) {
-                    param.id = 0;
-                }
-            },
-            // rowStyler: function(row) {
-            //     if (row.state != "closed") {
-            //         return 'background-color:#CFE6FF;font-weight:bold;';
-            //     }
-            // },
-        });
+        filter();
 
         //Save Data
         $('#dlg_insert').dialog({

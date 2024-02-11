@@ -86,14 +86,14 @@
 
                 $.ajax({
                     type: "GET",
-                    url: "<?= base_url('planning/shipping_orders/getDeliveryOrders') ?>",
+                    url: "<?= base_url('sales/shipping_orders/getDeliveryOrders') ?>",
                     data: "delivery_order_no=" + delivery_order_no,
                     dataType: "json",
                     success: function(json) {
                         Swal.close();
                         if (json.total > 0) {
                             $('#dg').datagrid({
-                                url: '<?= base_url('planning/shipping_orders/getDeliveryOrders?delivery_order_no=') ?>' + delivery_order_no,
+                                url: '<?= base_url('sales/shipping_orders/getDeliveryOrders?delivery_order_no=') ?>' + delivery_order_no,
                                 rownumbers: true
                             });
 
@@ -116,7 +116,7 @@
                 toastr.info("Still Maintenance");
                 // $.ajax({
                 //     type: "POST",
-                //     url: "<?= base_url('planning/shipping_orders/getChecksheetLabel') ?>",
+                //     url: "<?= base_url('sales/shipping_orders/getChecksheetLabel') ?>",
                 //     data: "checksheet_label=" + checksheet_label + "&delivery_order_no=" + delivery_order_no,
                 //     dataType: "json",
                 //     success: function(json) {
@@ -125,7 +125,7 @@
                 //             for (let i = 0; i < json.total; i++) {
                 //                 $.ajax({
                 //                     type: "POST",
-                //                     url: "<?= base_url('planning/shipping_orders/create') ?>",
+                //                     url: "<?= base_url('sales/shipping_orders/create') ?>",
                 //                     data: "checksheet_label=" + checksheet_label +
                 //                         "&delivery_order_no=" + delivery_order_no +
                 //                         "&sales_order_no=" + row[i].sales_order_no +
@@ -154,7 +154,7 @@
                 //             }
 
                 //             $('#dg').datagrid({
-                //                 url: '<?= base_url('planning/shipping_orders/getDeliveryOrders?delivery_order_no=') ?>' + delivery_order_no,
+                //                 url: '<?= base_url('sales/shipping_orders/getDeliveryOrders?delivery_order_no=') ?>' + delivery_order_no,
                 //                 rownumbers: true
                 //             });
                 //         } else {

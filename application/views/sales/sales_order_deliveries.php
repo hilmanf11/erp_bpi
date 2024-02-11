@@ -125,7 +125,7 @@
 
 
 <!-- PDF -->
-<iframe id="printout" src="<?= base_url('planning/sales_order_deliveries/print') ?>" style="width: 100%;" hidden></iframe>
+<iframe id="printout" src="<?= base_url('sales/sales_order_deliveries/print') ?>" style="width: 100%;" hidden></iframe>
 
 <script>
     //ADD DATA
@@ -135,7 +135,7 @@
         var sales_order_no = $("#sales_order_no").textbox('getValue');
         var item_fg_id = $("#item_fg_id").textbox('getValue');
 
-        url_save = '<?= base_url('planning/sales_order_deliveries/create') ?>';
+        url_save = '<?= base_url('sales/sales_order_deliveries/create') ?>';
         $('#frm_insert').form('clear');
 
         $("#customer_id").textbox('setValue', customer_id);
@@ -157,7 +157,7 @@
         $("#item_fg_id").textbox('setValue', item_fg_id);
 
         $('#dg2').datagrid({
-            url: '<?= base_url("planning/sales_order_deliveries/datatables2/") ?>' + btoa(customer_id) + '/' + btoa(sales_order_no) + '/' + btoa(item_fg_id)
+            url: '<?= base_url("sales/sales_order_deliveries/datatables2/") ?>' + btoa(customer_id) + '/' + btoa(sales_order_no) + '/' + btoa(item_fg_id)
         });
     }
 
@@ -172,7 +172,7 @@
 
                         $.ajax({
                             method: 'post',
-                            url: '<?= base_url('planning/sales_order_deliveries/delete') ?>',
+                            url: '<?= base_url('sales/sales_order_deliveries/delete') ?>',
                             data: {
                                 id: row.id
                             },
@@ -211,48 +211,12 @@
             "&filter_item_fg=" + window.btoa(filter_item_fg);
 
         $('#dg').datagrid({
-            url: '<?= base_url('planning/sales_order_deliveries/datatables') ?>' + url
-        });
-
-        $("#printout").contents().find('html').html("<center><br><br><br><b style='font-size:20px;'>Please Wait...</b></center>");
-        $("#printout").attr('src', '<?= base_url('planning/sales_order_deliveries/print') ?>' + url);
-    }
-
-    //PRINT PDF
-    function pdf() {
-        $("#printout").get(0).contentWindow.print();
-    }
-
-    //PRINT EXCEL
-    function excel() {
-        var filter_from = $("#filter_from").datebox('getValue');
-        var filter_to = $("#filter_to").datebox('getValue');
-        var filter_customer_id = $("#filter_customer_id").combobox('getValue');
-        var filter_customer_order_no = $("#filter_customer_order_no").combobox('getValue');
-        var filter_sales_order_no = $("#filter_sales_order_no").combobox('getValue');
-        var filter_item_fg = $("#filter_item_fg").combobox('getValue');
-
-        var url = "?filter_from=" + window.btoa(filter_from) +
-            "&filter_to=" + window.btoa(filter_to) +
-            "&filter_customer_id=" + window.btoa(filter_customer_id) +
-            "&filter_customer_order_no=" + window.btoa(filter_customer_order_no) +
-            "&filter_sales_order_no=" + window.btoa(filter_sales_order_no) +
-            "&filter_item_fg=" + window.btoa(filter_item_fg);
-
-        window.location.assign('<?= base_url('planning/sales_order_deliveries/print/excel') ?>' + url);
-    }
-
-    //RELOAD
-    function reload() {
-        window.location.reload();
-    }
-
-    $(function() {
-        //SETTING DATAGRID EASYUI
-        $('#dg').datagrid({
-            url: '<?= base_url('planning/sales_order_deliveries/datatables') ?>',
+            url: '<?= base_url('sales/sales_order_deliveries/datatables') ?>' + url,
             pagination: true,
             rownumbers: true,
+            fit: true,
+            pageList: [10, 50, 100, 500, 1000],
+            pageSize: 10,
             view: detailview,
             detailFormatter: function(index, row) {
                 return '<div style="padding:2px;position:relative;"><table class="ddv" title="Detail Of ' + row.sales_order_no + '"></table></div>';
@@ -261,7 +225,7 @@
                 var ddv = $(this).datagrid('getRowDetail', index).find('table.ddv');
 
                 ddv.datagrid({
-                    url: '<?= base_url('planning/sales_order_deliveries/datatableDetails?sales_order_no=') ?>' + window.btoa(row.sales_order_no),
+                    url: '<?= base_url('sales/sales_order_deliveries/datatableDetails?sales_order_no=') ?>' + window.btoa(row.sales_order_no),
                     singleSelect: true,
                     rownumbers: true,
                     columns: [
@@ -332,6 +296,43 @@
             }
         });
 
+        $("#printout").contents().find('html').html("<center><br><br><br><b style='font-size:20px;'>Please Wait...</b></center>");
+        $("#printout").attr('src', '<?= base_url('sales/sales_order_deliveries/print') ?>' + url);
+    }
+
+    //PRINT PDF
+    function pdf() {
+        $("#printout").get(0).contentWindow.print();
+    }
+
+    //PRINT EXCEL
+    function excel() {
+        var filter_from = $("#filter_from").datebox('getValue');
+        var filter_to = $("#filter_to").datebox('getValue');
+        var filter_customer_id = $("#filter_customer_id").combobox('getValue');
+        var filter_customer_order_no = $("#filter_customer_order_no").combobox('getValue');
+        var filter_sales_order_no = $("#filter_sales_order_no").combobox('getValue');
+        var filter_item_fg = $("#filter_item_fg").combobox('getValue');
+
+        var url = "?filter_from=" + window.btoa(filter_from) +
+            "&filter_to=" + window.btoa(filter_to) +
+            "&filter_customer_id=" + window.btoa(filter_customer_id) +
+            "&filter_customer_order_no=" + window.btoa(filter_customer_order_no) +
+            "&filter_sales_order_no=" + window.btoa(filter_sales_order_no) +
+            "&filter_item_fg=" + window.btoa(filter_item_fg);
+
+        window.location.assign('<?= base_url('sales/sales_order_deliveries/print/excel') ?>' + url);
+    }
+
+    //RELOAD
+    function reload() {
+        window.location.reload();
+    }
+
+    $(function() {
+        //SETTING DATAGRID EASYUI
+        filter();
+
         //SAVE DATA
         $('#dlg_insert').dialog({
             buttons: [{
@@ -372,7 +373,7 @@
         }],
         onSelect: function(customer) {
             $('#filter_sales_order_no').combobox({
-                url: '<?= base_url('planning/sales_order_deliveries/readSalesOrder/'); ?>' + customer.id,
+                url: '<?= base_url('sales/sales_order_deliveries/readSalesOrder/'); ?>' + customer.id,
                 valueField: 'sales_order_no',
                 textField: 'sales_order_no',
                 prompt: 'Choose All',
@@ -385,7 +386,7 @@
             });
 
             $('#filter_customer_order_no').combobox({
-                url: '<?= base_url('planning/sales_order_deliveries/readCustomerOrder/'); ?>' + customer.id,
+                url: '<?= base_url('sales/sales_order_deliveries/readCustomerOrder/'); ?>' + customer.id,
                 valueField: 'customer_order_no',
                 textField: 'customer_order_no',
                 prompt: 'Choose All',
@@ -398,7 +399,7 @@
             });
 
             $('#filter_item_fg').combogrid({
-                url: '<?= base_url('planning/sales_order_deliveries/readProductNo/'); ?>' + customer.id,
+                url: '<?= base_url('sales/sales_order_deliveries/readProductNo/'); ?>' + customer.id,
                 panelWidth: 400,
                 idField: 'id',
                 textField: 'number',

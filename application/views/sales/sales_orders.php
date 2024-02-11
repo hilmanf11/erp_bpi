@@ -172,14 +172,14 @@
 </div>
 
 <!-- PDF -->
-<iframe id="printout" src="<?= base_url('planning/sales_orders/print') ?>" style="width: 100%;" hidden></iframe>
+<iframe id="printout" src="<?= base_url('sales/sales_orders/print') ?>" style="width: 100%;" hidden></iframe>
 
 <script>
     //ADD DATA
     function add() {
         $('#dlg_insert').dialog('open');
         $('#dg2').datagrid('loadData', []);
-        url_save = '<?= base_url('planning/sales_orders/create') ?>';
+        url_save = '<?= base_url('sales/sales_orders/create') ?>';
         $('#frm_insert').form('clear');
 
         $("#customer_id").combobox('enable');
@@ -252,7 +252,7 @@
     function number(customer_id, sales_order_date) {
         $.ajax({
             type: "post",
-            url: "<?= base_url('planning/sales_orders/number/') ?>" + customer_id + '/' + window.btoa(sales_order_date),
+            url: "<?= base_url('sales/sales_orders/number/') ?>" + customer_id + '/' + window.btoa(sales_order_date),
             dataType: "html",
             success: function(result) {
                 $("#sales_order_no").textbox('setValue', result);
@@ -299,7 +299,7 @@
                     editor: {
                         type: 'combogrid',
                         options: {
-                            url: '<?= base_url('planning/sales_orders/readItemFg/'); ?>' + customer_id,
+                            url: '<?= base_url('sales/sales_orders/readItemFg/'); ?>' + customer_id,
                             required: true,
                             panelWidth: 650,
                             idField: 'id',
@@ -557,7 +557,7 @@
 
         $.ajax({
             method: 'post',
-            url: '<?= base_url('planning/sales_orders/delete') ?>',
+            url: '<?= base_url('sales/sales_orders/delete') ?>',
             data: {
                 sales_order_no: sales_order_no,
                 item_fg_id: item_fg_id
@@ -589,7 +589,7 @@
             $("#sales_order_date").datebox('disable');
             $("#customer_address_id").textbox('disable');
 
-            addTable(row.customer_id, '<?= base_url('planning/sales_orders/datatableUpdates?sales_order_no=') ?>' + window.btoa(row.sales_order_no));
+            addTable(row.customer_id, '<?= base_url('sales/sales_orders/datatableUpdates?sales_order_no=') ?>' + window.btoa(row.sales_order_no));
         } else {
             toastr.warning("Please select one of the data in the table first!", "Information");
         }
@@ -605,7 +605,7 @@
                         var row = rows[i];
                         $.ajax({
                             method: 'post',
-                            url: '<?= base_url('planning/sales_orders/delete') ?>',
+                            url: '<?= base_url('sales/sales_orders/delete') ?>',
                             data: {
                                 sales_order_no: row.sales_order_no
                             },
@@ -642,46 +642,12 @@
             "&filter_status=" + window.btoa(filter_status);
 
         $('#dg').datagrid({
-            url: '<?= base_url('planning/sales_orders/datatables') ?>' + url
-        });
-
-        $("#printout").contents().find('html').html("<center><br><br><br><b style='font-size:20px;'>Please Wait...</b></center>");
-        $("#printout").attr('src', '<?= base_url('planning/sales_orders/print') ?>' + url);
-    }
-
-    //PRINT PDF
-    function pdf() {
-        $("#printout").get(0).contentWindow.print();
-    }
-
-    //PRINT EXCEL
-    function excel() {
-        var filter_from = $("#filter_from").datebox('getValue');
-        var filter_to = $("#filter_to").datebox('getValue');
-        var filter_customer_id = $("#filter_customer_id").combobox('getValue');
-        var filter_sales_order_no = $("#filter_sales_order_no").combobox('getValue');
-        var filter_status = $("#filter_status").combobox('getValue');
-
-        var url = "?filter_from=" + window.btoa(filter_from) +
-            "&filter_to=" + window.btoa(filter_to) +
-            "&filter_customer_id=" + window.btoa(filter_customer_id) +
-            "&filter_sales_order_no=" + window.btoa(filter_sales_order_no) +
-            "&filter_status=" + window.btoa(filter_status);
-
-        window.location.assign('<?= base_url('planning/sales_orders/print/excel') ?>' + url);
-    }
-
-    //RELOAD
-    function reload() {
-        window.location.reload();
-    }
-
-    $(function() {
-        //SETTING DATAGRID EASYUI
-        $('#dg').datagrid({
-            url: '<?= base_url('planning/sales_orders/datatables') ?>',
+            url: '<?= base_url('sales/sales_orders/datatables') ?>' + url,
             pagination: true,
             rownumbers: true,
+            fit: true,
+            pageList: [10, 50, 100, 500, 1000],
+            pageSize: 10,
             view: detailview,
             detailFormatter: function(index, row) {
                 return '<div style="padding:2px;position:relative;"><table class="ddv" title="Detail Of ' + row.sales_order_no + '"></table></div>';
@@ -690,7 +656,7 @@
                 var ddv = $(this).datagrid('getRowDetail', index).find('table.ddv');
 
                 ddv.datagrid({
-                    url: '<?= base_url('planning/sales_orders/datatableDetails?sales_order_no=') ?>' + window.btoa(row.sales_order_no),
+                    url: '<?= base_url('sales/sales_orders/datatableDetails?sales_order_no=') ?>' + window.btoa(row.sales_order_no),
                     singleSelect: true,
                     rownumbers: true,
                     columns: [
@@ -762,6 +728,40 @@
             }
         });
 
+        $("#printout").contents().find('html').html("<center><br><br><br><b style='font-size:20px;'>Please Wait...</b></center>");
+        $("#printout").attr('src', '<?= base_url('sales/sales_orders/print') ?>' + url);
+    }
+
+    //PRINT PDF
+    function pdf() {
+        $("#printout").get(0).contentWindow.print();
+    }
+
+    //PRINT EXCEL
+    function excel() {
+        var filter_from = $("#filter_from").datebox('getValue');
+        var filter_to = $("#filter_to").datebox('getValue');
+        var filter_customer_id = $("#filter_customer_id").combobox('getValue');
+        var filter_sales_order_no = $("#filter_sales_order_no").combobox('getValue');
+        var filter_status = $("#filter_status").combobox('getValue');
+
+        var url = "?filter_from=" + window.btoa(filter_from) +
+            "&filter_to=" + window.btoa(filter_to) +
+            "&filter_customer_id=" + window.btoa(filter_customer_id) +
+            "&filter_sales_order_no=" + window.btoa(filter_sales_order_no) +
+            "&filter_status=" + window.btoa(filter_status);
+
+        window.location.assign('<?= base_url('sales/sales_orders/print/excel') ?>' + url);
+    }
+
+    //RELOAD
+    function reload() {
+        window.location.reload();
+    }
+
+    $(function() {
+        filter();
+
         //SAVE DATA
         $('#dlg_insert').dialog({
             buttons: [{
@@ -793,7 +793,7 @@
                             if (rows[i].item_fg_id) {
                                 $.ajax({
                                     type: "post",
-                                    url: '<?= base_url('planning/sales_orders/create') ?>',
+                                    url: '<?= base_url('sales/sales_orders/create') ?>',
                                     data: {
                                         customer_id: customer_id,
                                         customer_order_no: customer_order_no,
@@ -861,7 +861,7 @@
         }],
         onSelect: function(customer) {
             $('#filter_sales_order_no').combobox({
-                url: '<?= base_url('planning/sales_orders/readSalesOrder/'); ?>' + customer.id,
+                url: '<?= base_url('sales/sales_orders/readSalesOrder/'); ?>' + customer.id,
                 valueField: 'sales_order_no',
                 textField: 'sales_order_no',
                 prompt: 'Choose All',
@@ -874,7 +874,7 @@
             });
 
             $('#filter_customer_order_no').combobox({
-                url: '<?= base_url('planning/sales_orders/readCustomerOrder/'); ?>' + customer.id,
+                url: '<?= base_url('sales/sales_orders/readCustomerOrder/'); ?>' + customer.id,
                 valueField: 'customer_order_no',
                 textField: 'customer_order_no',
                 prompt: 'Choose All',
@@ -952,8 +952,8 @@
     }
 
     $('#attachment_upload').filebox({
-    buttonText: 'Browse File',
-    accept: '.jpg, .png, .pdf',
+        buttonText: 'Browse File',
+        accept: '.jpg, .png, .pdf',
         onChange: function () {
             var files = $(this).filebox('files');
             var formData = new FormData();
@@ -964,7 +964,7 @@
             }
 
             $.ajax({
-                url: '<?= base_url('planning/sales_orders/uploadatt') ?>',
+                url: '<?= base_url('sales/sales_orders/uploadatt') ?>',
                 type: 'post',
                 data: formData,
                 contentType: false,

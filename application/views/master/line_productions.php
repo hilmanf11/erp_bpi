@@ -127,13 +127,17 @@
         window.location.reload();
     }
     $(function() {
+        
         //SETTING DATAGRID EASYUI
         $('#dg').datagrid({
             url: '<?= base_url('master/line_productions/datatables') ?>',
             pagination: true,
             clientPaging: false,
             remoteFilter: true,
-            rownumbers: true
+            rownumbers: true,
+            fit:true,
+            pageList: [20, 50, 100, 500, 1000],
+            pageSize: 20,
         }).datagrid('enableFilter');
 
         //SAVE DATA
@@ -166,30 +170,10 @@
 
     // Fungsi formatter untuk mengganti karakter '<' dengan '&lt;'
     function formatFormula(value, row, index) {
-            // Ganti karakter '<' dengan '&lt;'
-            value = value.replace(/</g, '&lt;');
-            return value;
-        }
-
-        $(function () {
-            // Data sumber untuk datagrid
-            var data = [
-                {
-                    formula: "2<X<5"
-                },
-                {
-                    formula: "1<X<2"
-                },
-                {
-                    formula: "X<1"
-                },
-            ];
-
-            // Inisialisasi datagrid
-            $('#dg').datagrid({
-                data: data
-            });
-        });
+        // Ganti karakter '<' dengan '&lt;'
+        value = value.replace(/</g, '&lt;');
+        return value;
+    }
 
         //CELLSTYLE STATUS
     function cellStyler(value, row, index) {

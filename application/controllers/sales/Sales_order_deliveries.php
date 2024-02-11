@@ -1,7 +1,7 @@
 <?php
 date_default_timezone_set("Asia/Bangkok");
 defined('BASEPATH') or exit('No direct script access allowed');
-class Sales_orders extends CI_Controller
+class Sales_order_deliveries extends CI_Controller
 {
     public function __construct()
     {
@@ -11,10 +11,6 @@ class Sales_orders extends CI_Controller
         $this->load->library('form_validation');
         $this->load->library('session');
         $this->load->model('crud');
-
-        //VALIDASI FORM
-        $this->form_validation->set_rules('customer_id', 'Customer', 'required|min_length[1]|max_length[20]|is_unique[customer_items.customer_id]');
-        $this->form_validation->set_rules('item_fg_id', 'Product No.', 'required|min_length[1]|max_length[20]|is_unique[customer_items.item_fg_id]');
     }
 
     //HALAMAN UTAMA
@@ -25,37 +21,15 @@ class Sales_orders extends CI_Controller
         } elseif ($this->checkuserAccess($this->id_menu()) > 0) {
             $data['button'] = $this->getbutton($this->id_menu());
             $this->load->view('template/header', $data);
-            $this->load->view('planning/sales_orders');
+            $this->load->view('sales/sales_order_deliveries');
         } else {
             redirect('error_access');
         }
     }
 
-    public function readItemFg($customer_id)
-    {
-        $post = isset($_POST['q']) ? $_POST['q'] : "";
-        $send = $this->crud->query("SELECT b.id, b.number, b.name, b.number_customer, a.price, c.currency, b.uom
-            FROM customer_items a 
-            JOIN item_fg b ON a.item_fg_id = b.id
-            JOIN customers c ON a.customer_id = c.id
-            WHERE a.customer_id = '$customer_id' and (b.number LIKE '%$post%' or b.name LIKE '%$post%')");
-        echo json_encode($send);
-    }
-
-    public function readItems($customer_id, $sales_order_no)
-    {
-        $post = isset($_POST['q']) ? $_POST['q'] : "";
-        $send = $this->crud->query("SELECT b.id, b.number, b.name, a.qty
-            FROM sales_orders a 
-            JOIN item_fg b ON a.item_fg_id = b.id
-            JOIN customers c ON a.customer_id = c.id
-            WHERE a.customer_id = '$customer_id' and a.sales_order_no = '$sales_order_no' and a.status = 0 and (b.number LIKE '%$post%' or b.name LIKE '%$post%') ");
-        echo json_encode($send);
-    }
-
     public function readSalesOrder($customer_id)
     {
-        $send = $this->crud->query("SELECT DISTINCT sales_order_no, sales_order_date FROM sales_orders WHERE customer_id = '$customer_id' and status = 0");
+        $send = $this->crud->query("SELECT DISTINCT sales_order_no FROM sales_orders WHERE customer_id = '$customer_id'");
         echo json_encode($send);
     }
 
@@ -65,20 +39,11 @@ class Sales_orders extends CI_Controller
         echo json_encode($send);
     }
 
-    public function number($customer_id, $sales_order_date)
+    public function readProductNo($customer_id)
     {
-        $datenow    = "SO" . $customer_id . date("ymd", strtotime(base64_decode($sales_order_date)));
-        $sqlGetID   = $this->db->query("SELECT max(`sales_order_no`) as kode FROM sales_orders WHERE `sales_order_no` like '%$datenow%'");
-        $rowID      = $sqlGetID->row();
-        $kode       = $rowID->kode;
-        if ($kode == NULL) {
-            $autoID = sprintf("%03s", $kode + 1);
-        } else {
-            $urutan = (int) substr($kode, -3);
-            $urutan++;
-            $autoID = sprintf("%03s", $urutan);
-        }
-        echo $datenow . $autoID;
+        $send = $this->crud->query("SELECT b.* FROM sales_orders a JOIN item_fg b ON a.item_fg_id = b.id WHERE a.customer_id = '$customer_id' GROUP BY a.item_fg_id");
+
+        echo json_encode($send);
     }
 
     //GET DATATABLES
@@ -90,7 +55,8 @@ class Sales_orders extends CI_Controller
             $filter_to = @base64_decode($get['filter_to']);
             $filter_customer_id = @base64_decode($get['filter_customer_id']);
             $filter_sales_order_no = @base64_decode($get['filter_sales_order_no']);
-            $filter_status = @base64_decode($get['filter_status']);
+            $filter_customer_order_no = @base64_decode($get['filter_customer_order_no']);
+            $filter_item_fg = @base64_decode($get['filter_item_fg']);
 
             $page = $this->input->post('page');
             $rows = $this->input->post('rows');
@@ -109,7 +75,8 @@ class Sales_orders extends CI_Controller
             }
             $this->db->like('a.customer_id', $filter_customer_id);
             $this->db->like('a.sales_order_no', $filter_sales_order_no);
-            $this->db->like('a.status', $filter_status);
+            $this->db->like('a.customer_order_no', $filter_customer_order_no);
+            $this->db->like('a.item_fg_id', $filter_item_fg);
             $this->db->group_by('a.sales_order_no');
             $this->db->order_by('a.status', 'ASC');
             //Total Data
@@ -131,9 +98,11 @@ class Sales_orders extends CI_Controller
         if ($this->input->get()) {
             $sales_order_no = base64_decode($this->input->get('sales_order_no'));
 
-            $this->db->select('a.*, b.number as item_fg_number, b.name as item_fg_name');
+            $this->db->select('a.*, b.number as item_fg_number, b.name as item_fg_name, COALESCE(c.qty_del, 0) as qty_del, (a.qty - COALESCE(c.qty_del, 0)) as qty_os');
             $this->db->from('sales_orders a');
             $this->db->join('item_fg b', 'a.item_fg_id = b.id');
+            $this->db->join("(SELECT sales_order_no, item_fg_id, customer_id, SUM(qty) as qty_del 
+            FROM sales_order_deliveries GROUP BY sales_order_no, item_fg_id, customer_id) c", "a.sales_order_no = c.sales_order_no and a.item_fg_id = c.item_fg_id and a.customer_id = c.customer_id", "left");
             $this->db->where('a.sales_order_no', $sales_order_no);
             $this->db->order_by('b.number', 'ASC');
             $records = $this->db->get()->result_array();
@@ -142,93 +111,74 @@ class Sales_orders extends CI_Controller
         }
     }
 
-    // GET DATATABLES UPDATE
-    public function datatableUpdates()
+    //sales_order_deliveries
+    public function datatables2($customer_id, $sales_order_no, $item_fg_id)
     {
-        if ($this->input->get()) {
-            $sales_order_no = base64_decode($this->input->get('sales_order_no'));
+        $customer_id = base64_decode($customer_id);
+        $sales_order_no = base64_decode($sales_order_no);
+        $item_fg_id = base64_decode($item_fg_id);
 
-            $this->db->select('a.*, b.number as item_fg_number, b.name as item_fg_name');
-            $this->db->from('sales_orders a');
-            $this->db->join('item_fg b', 'a.item_fg_id = b.id');
-            $this->db->where('a.sales_order_no', $sales_order_no);
-            $this->db->order_by('b.number', 'ASC');
-            $records = $this->db->get()->result_array();
+        //Select Query
+        $this->db->select('a.*, b.qty as so_qty');
+        $this->db->from('sales_order_deliveries a');
+        $this->db->join('sales_orders b', 'a.sales_order_no = b.sales_order_no and a.item_fg_id = b.item_fg_id');
+        $this->db->where('a.customer_id', $customer_id);
+        $this->db->where('a.sales_order_no', $sales_order_no);
+        $this->db->where('a.item_fg_id', $item_fg_id);
+        $this->db->order_by('trans_date', 'asc');
+        $records = $this->db->get()->result_array();
 
-            echo json_encode($records);
+        $balance = 0;
+        $qty = 0;
+        $data = array();
+        foreach ($records as $record) {
+            $qty += $record['qty'];
+            $balance = $record['so_qty'] - $qty;
+            $data[] = array(
+                "id" => $record['id'],
+                "customer_id" => $customer_id,
+                "sales_order_no" => $sales_order_no,
+                "item_fg_id" => $item_fg_id,
+                "trans_date" => $record['trans_date'],
+                "so_qty" => $record['so_qty'],
+                "qty" => $record['qty'],
+                "remain_qty" => $balance,
+                "status" => $record['status'],
+                "created_by" => $record['created_by'],
+                "created_date" => $record['created_date'],
+            );
         }
+
+        //Mapping Data
+        $result['total'] = count(@$data);
+        $result = array_merge($result, ['rows' => $data]);
+        echo json_encode($result);
     }
 
     //CREATE DATA
     public function create()
     {
         if ($this->input->post()) {
-            $post = $this->input->post();
+            $post   = $this->input->post();
+            $sales_order_no =  $post['sales_order_no'];
+            $item_fg_id =  $post['item_fg_id'];
+            $sales_orders = $this->crud->read("sales_orders", [], ["sales_order_no" => $sales_order_no, "item_fg_id" => $item_fg_id]);
+            $sales_order_deliveries = $this->crud->read("sales_order_deliveries", [], ["sales_order_no" => $sales_order_no, "item_fg_id" => $item_fg_id, "trans_date" => $post['trans_date']]);
+            $sales_order_deliveries_total = $this->crud->query("SELECT SUM(qty) as total FROM sales_order_deliveries WHERE sales_order_no='$sales_order_no' and item_fg_id = '$item_fg_id' GROUP BY sales_order_no, item_fg_id");
 
-            $sales_orders = $this->crud->read("sales_orders", [], ["sales_order_no" => $post['sales_order_no'], "item_fg_id" => $post['item_fg_id']]);
-            if (@$sales_orders->sales_order_no != "") {
-                $send = $this->crud->update('sales_orders', ["sales_order_no" => $post['sales_order_no'], "item_fg_id" => $post['item_fg_id']], $post);
+            $qty_so = $sales_orders->qty;
+            if ($qty_so >= (@$sales_order_deliveries_total[0]->total + $post['qty'])) {
+                if (empty($sales_order_deliveries->trans_date)) {
+                    $send = $this->crud->create('sales_order_deliveries', $post);
+                    echo $send;
+                } else {
+                    show_error("Delivery Date Has Been Created Please Choose Another Date");
+                }
             } else {
-                $send = $this->crud->create('sales_orders', $post);
+                show_error("Qty is greater than the Sales Order");
             }
-
-            echo $send;
         } else {
             show_error("Cannot Process your request");
-        }
-    }
-
-    public function uploadatt()
-    {
-        // Pastikan file disimpan dalam direktori yang diinginkan
-        $uploadDir = 'assets/image/sales_orders/';
-
-        if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-            // Pastikan ada file yang diunggah dari permintaan
-            if (isset($_FILES['file'])) {
-                $file = $_FILES['file'];
-
-                // Validasi ekstensi file yang diunggah
-                $allowedExtensions = ['pdf', 'jpg', 'jpeg', 'png'];
-                $fileExtension = strtolower(pathinfo($file['name'], PATHINFO_EXTENSION));
-
-                if (!in_array($fileExtension, $allowedExtensions)) {
-                    echo json_encode(['success' => false, 'message' => 'Only files with the extension .pdf, .jpg, or .png are allowed.']);
-                    exit; // Menghentikan proses lebih lanjut jika ekstensi tidak valid
-                }
-
-                // Validasi ukuran file yang diunggah (maksimal 5MB)
-                $maxFileSize = 2 * 1024 * 1024; // 5MB dalam bytes
-                if ($file['size'] > $maxFileSize) {
-                    echo json_encode(['success' => false, 'message' => 'Ukuran file terlalu besar. Maksimal 2MB yang diperbolehkan.']);
-                    exit; // Menghentikan proses lebih lanjut jika ukuran terlalu besar
-                }
-
-                // Pastikan tidak ada error dalam proses upload
-                if ($file['error'] === UPLOAD_ERR_OK) {
-                    // Buat nama unik untuk file yang diunggah
-                    $fileName = uniqid() . '_' . $file['name'];
-                    $uploadPath = $uploadDir . $fileName;
-
-                    // Pindahkan file dari temporary directory ke lokasi yang diinginkan
-                    if (move_uploaded_file($file['tmp_name'], $uploadPath)) {
-                        // File berhasil diunggah
-                        echo json_encode(['success' => true, 'message' => 'File Upload Success.', 'filename' => $fileName]);
-                    } else {
-                        // Gagal menyimpan file
-                        echo json_encode(['success' => false, 'message' => 'File Upload Failed.']);
-                    }
-                } else {
-                    // Ada error dalam proses upload
-                    echo json_encode(['success' => false, 'message' => 'Error while Upload.']);
-                }
-            } else {
-                // File tidak ditemukan dalam permintaan
-                echo json_encode(['success' => false, 'message' => 'File Not Found.']);
-            }
-        } else {
-            // Metode request yang diperlukan adalah POST
-            echo json_encode(['success' => false, 'message' => 'Metode request yang diperlukan adalah POST.']);
         }
     }
 
@@ -236,7 +186,7 @@ class Sales_orders extends CI_Controller
     public function delete()
     {
         $data = $this->input->post();
-        $send = $this->crud->delete('sales_orders', $data);
+        $send = $this->crud->delete('sales_order_deliveries', $data);
         echo $send;
     }
 
@@ -254,24 +204,28 @@ class Sales_orders extends CI_Controller
         $filter_to = @base64_decode($get['filter_to']);
         $filter_customer_id = @base64_decode($get['filter_customer_id']);
         $filter_sales_order_no = @base64_decode($get['filter_sales_order_no']);
-        $filter_status = @base64_decode($get['filter_status']);
+        $filter_customer_order_no = @base64_decode($get['filter_customer_order_no']);
+        $filter_item_fg = @base64_decode($get['filter_item_fg']);
 
         //Config
         $this->db->select('*');
         $this->db->from('config');
         $config = $this->db->get()->row();
 
-        $this->db->select("a.*, b.name as customer_name, c.number as item_fg_number, c.name as item_fg_name");
+        $this->db->select("a.*, b.name as customer_name, c.number as item_fg_number, c.name as item_fg_name, COALESCE(d.qty_del, 0) as qty_del, (a.qty - COALESCE(d.qty_del, 0)) as qty_os");
         $this->db->from('sales_orders a');
         $this->db->join('customers b', 'a.customer_id = b.id');
         $this->db->join('item_fg c', 'a.item_fg_id = c.id');
+        $this->db->join("(SELECT sales_order_no, item_fg_id, customer_id, SUM(qty) as qty_del 
+            FROM sales_order_deliveries GROUP BY sales_order_no, item_fg_id, customer_id) d", "a.sales_order_no = d.sales_order_no and a.item_fg_id = d.item_fg_id and a.customer_id = d.customer_id", "left");
         if ($filter_from != "" && $filter_to != "") {
             $this->db->where('a.sales_order_date >=', $filter_from);
             $this->db->where('a.sales_order_date <=', $filter_to);
         }
         $this->db->like('a.customer_id', $filter_customer_id);
         $this->db->like('a.sales_order_no', $filter_sales_order_no);
-        $this->db->like('a.status', $filter_status);
+        $this->db->like('a.customer_order_no', $filter_customer_order_no);
+        $this->db->like('a.item_fg_id', $filter_item_fg);
         $this->db->order_by('a.sales_order_no', 'ASC');
         $records = $this->db->get()->result_array();
 
@@ -296,10 +250,10 @@ class Sales_orders extends CI_Controller
             </div>
             <br><br>
             <div style="float: centet; font-size: 16px; text-align: center;">
-                <h3>SALES ORDER</h3>
+                <h3>SALES ORDER SCHEDULE DELIVERY</h3>
             </div>
         </center>
-        
+
         <table id="customer_items" border="1">
             <tr>
                 <th width="20">No</th>
@@ -317,9 +271,6 @@ class Sales_orders extends CI_Controller
                 <th>Qty</th>
                 <th>Delivery</th>
                 <th>Outstanding</th>
-                <th>Currency</th>
-                <th>Price</th>
-                <th>Total</th>
             </tr>';
         $no = 1;
         foreach ($records as $data) {
@@ -337,11 +288,8 @@ class Sales_orders extends CI_Controller
                         <td>' . $data['item_fg_name'] . '</td>
                         <td>' . $data['uom'] . '</td>
                         <td>' . $data['qty'] . '</td>
-                        <td>' . $data['delivery'] . '</td>
-                        <td>' . $data['outstanding'] . '</td>
-                        <td>' . $data['currency'] . '</td>
-                        <td>' . $data['price'] . '</td>
-                        <td>' . $data['total'] . '</td>
+                        <td>' . $data['qty_del'] . '</td>
+                        <td>' . $data['qty_os'] . '</td>
                     </tr>';
             $no++;
         }

@@ -3,12 +3,7 @@
     <thead>
         <tr>
             <th rowspan="2" field="ck" checkbox="true"></th>
-            <!-- <th rowspan="2" data-options="field:'p_month',width:50,align:'center'">Month</th>
-            <th rowspan="2" data-options="field:'p_year',width:50,align:'center'">Year</th>
-            <th rowspan="2" data-options="field:'revision',width:50,align:'center'">Rev</th> -->
             <th rowspan="2" data-options="field:'document_no',width:120,halign:'center'">Document No.</th>
-            <!-- <th rowspan="2" data-options="field:'customer_name',width:250,halign:'center'">customer Name</th> -->
-            <th rowspan="2" data-options="field:'item_fg_id',width:150,halign:'center'">Product ID</th>
             <th rowspan="2" data-options="field:'item_fg_number',width:150,halign:'center'">Product No.</th>
             <th rowspan="2" data-options="field:'item_fg_name',width:150,halign:'center'">Product Name</th>
             <th colspan="4" data-options="field:'',width:100,halign:'center'"> Stock WIP</th>
@@ -259,7 +254,9 @@
             clientPaging: false,
             remoteFilter: true,
             rownumbers: true,
-            height: '640px',
+            fit: true,
+            pageList: [10, 50, 100, 500, 1000],
+            pageSize: 10,
         });
 
         $("#printout").contents().find('html').html("<center><br><br><br><b style='font-size:20px;'>Please Wait...</b></center>");

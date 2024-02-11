@@ -1,7 +1,7 @@
 <?php
 date_default_timezone_set("Asia/Bangkok");
 defined('BASEPATH') or exit('No direct script access allowed');
-class Rm_locations extends CI_Controller
+class Location_items extends CI_Controller
 {
     public function __construct()
     {
@@ -12,7 +12,7 @@ class Rm_locations extends CI_Controller
         $this->load->library('session');
         $this->load->model('crud');
         //VALIDASI FORM
-        $this->form_validation->set_rules('number', 'Code', 'required|min_length[1]|max_length[30]');
+        $this->form_validation->set_rules('item_rm_id', 'Product No', 'required|min_length[1]|max_length[30]');
     }
     //HALAMAN UTAMA
     public function index()
@@ -22,50 +22,16 @@ class Rm_locations extends CI_Controller
         } elseif ($this->checkuserAccess($this->id_menu()) > 0) {
             $data['button'] = $this->getbutton($this->id_menu());
             $this->load->view('template/header', $data);
-            $this->load->view('master/rm_locations');
+            $this->load->view('master/location_items');
         } else {
             redirect('error_access');
         }
     }
     //GET DATA
-    public function readLocations()
+    public function reads()
     {
         $post = isset($_POST['q']) ? $_POST['q'] : "";
-        $send = $this->crud->reads('warehouse_locations', ["location" => $post], ["type" => "RM"], "", "location", "asc", ["location"]);
-        echo json_encode($send);
-    }
-    public function readAreas()
-    {
-        $post = isset($_POST['q']) ? $_POST['q'] : "";
-        $location = $this->input->get('location');
-        $send = $this->crud->reads('warehouse_locations', ["area" => $post], ["type" => "RM", "location" => $location], "", "area", "asc", ["area"]);
-        echo json_encode($send);
-    }
-    public function readRacks()
-    {
-        $post = isset($_POST['q']) ? $_POST['q'] : "";
-        $location = $this->input->get('location');
-        $area = $this->input->get('area');
-        $send = $this->crud->reads('warehouse_locations', ["rack" => $post], ["type" => "RM", "location" => $location, "area" => $area], "", "rack", "asc", ["rack"]);
-        echo json_encode($send);
-    }
-    public function readLevels()
-    {
-        $post = isset($_POST['q']) ? $_POST['q'] : "";
-        $location = $this->input->get('location');
-        $area = $this->input->get('area');
-        $rack = $this->input->get('rack');
-        $send = $this->crud->reads('warehouse_locations', ["level" => $post], ["type" => "RM", "location" => $location, "area" => $area, "rack" => $rack], "", "level", "asc", ["level"]);
-        echo json_encode($send);
-    }
-    public function readLevelSubs()
-    {
-        $post = isset($_POST['q']) ? $_POST['q'] : "";
-        $location = $this->input->get('location');
-        $area = $this->input->get('area');
-        $rack = $this->input->get('rack');
-        $level = $this->input->get('level');
-        $send = $this->crud->reads('warehouse_locations', ["level_sub" => $post], ["type" => "RM", "location" => $location, "area" => $area, "rack" => $rack, "level" => $level], "", "level_sub", "asc", ["level_sub"]);
+        $send = $this->crud->reads('warehouse_location_items', ["name" => $post]);
         echo json_encode($send);
     }
     //GET DATATABLES
@@ -81,21 +47,28 @@ class Rm_locations extends CI_Controller
             $offset = ($page - 1) * $rows;
             $result = array();
             //Select Query
-            $this->db->select('*');
-            $this->db->from('warehouse_locations');
-            $this->db->where('deleted', 0);
+            $this->db->select('a.*, (CASE WHEN a.item_rm_id is null THEN c.number ELSE b.number END) as item_number, (CASE WHEN a.item_rm_id is null THEN c.name ELSE b.name END) as item_name');
+            $this->db->from('warehouse_location_items a');
+            $this->db->join('item_rm b', 'a.item_rm_id = b.id', 'left');
+            $this->db->join('item_fg c', 'a.item_fg_id = c.id', 'left');
             if (@count($filters) > 0) {
                 foreach ($filters as $filter) {
-                    $this->db->like($filter->field, $filter->value);
+                    if($filter->field == "item_number"){
+                        $this->db->group_start();
+                        $this->db->like("b.number", $filter->value);
+                        $this->db->or_like("c.number", $filter->value);
+                        $this->db->group_end();
+                    }elseif($filter->field == "item_name"){
+                        $this->db->group_start();
+                        $this->db->like("b.name", $filter->value);
+                        $this->db->or_like("c.name", $filter->value);
+                        $this->db->group_end();
+                    }else{
+                        $this->db->like("a.". $filter->field, $filter->value);
+                    }
                 }
             }
-            $this->db->where('type', 'RM');
-            $this->db->order_by('number', 'ASC');
-            $this->db->order_by('location', 'ASC');
-            $this->db->order_by('area', 'ASC');
-            $this->db->order_by('rack', 'ASC');
-            $this->db->order_by('level', 'ASC');
-            $this->db->order_by('level_sub', 'ASC');
+            $this->db->where('a.deleted', 0);
             //Total Data
             $totalRows = $this->db->count_all_results('', false);
             //Limit 1 - 10
@@ -114,7 +87,7 @@ class Rm_locations extends CI_Controller
         if ($this->input->post()) {
             if ($this->form_validation->run() == TRUE) {
                 $post   = $this->input->post();
-                $send   = $this->crud->create('warehouse_locations', $post);
+                $send   = $this->crud->create('warehouse_location_items', $post);
                 echo $send;
             } else {
                 show_error(validation_errors());
@@ -129,7 +102,7 @@ class Rm_locations extends CI_Controller
         if ($this->input->post()) {
             $id   = base64_decode($this->input->get('id'));
             $post = $this->input->post();
-            $send = $this->crud->update('warehouse_locations', ["id" => $id], $post);
+            $send = $this->crud->update('warehouse_location_items', ["id" => $id], $post);
             echo $send;
         } else {
             show_error("Cannot Process your request");
@@ -139,7 +112,7 @@ class Rm_locations extends CI_Controller
     public function delete()
     {
         $data = $this->input->post();
-        $send = $this->crud->delete('warehouse_locations', $data);
+        $send = $this->crud->delete('warehouse_location_items', $data);
         echo $send;
     }
     //UPLOAD DATA
@@ -155,13 +128,9 @@ class Rm_locations extends CI_Controller
         $total_row = $data->rowcount($sheet_index = 0);
         for ($i = 3; $i <= $total_row; $i++) {
             $datas[] = array(
-                'type' => "RM",
-                'number' => $data->val($i, 2),
-                'location' => $data->val($i, 3),
-                'area' => $data->val($i, 4),
-                'rack' => $data->val($i, 5),
-                'level' => $data->val($i, 6),
-                'level_sub' => $data->val($i, 7)
+                'type' => $data->val($i, 2),
+                'item_number' => $data->val($i, 3),
+                'location_number' => $data->val($i, 4)
             );
         }
         $datas['total'] = count($datas);
@@ -170,20 +139,20 @@ class Rm_locations extends CI_Controller
     }
     public function uploadclearFailed()
     {
-        @unlink('excel/failed/warehouse_locations.txt');
+        @unlink('excel/failed/warehouse_location_items.txt');
     }
     public function uploadcreateFailed()
     {
         if ($this->input->post()) {
             $message = $this->input->post('message');
-            $textFailed = fopen('excel/failed/warehouse_locations.txt', 'a');
+            $textFailed = fopen('excel/failed/warehouse_location_items.txt', 'a');
             fwrite($textFailed, $message . "\n");
             fclose($textFailed);
         }
     }
     public function uploadDownloadFailed()
     {
-        $file = "excel/failed/warehouse_locations.txt";
+        $file = "excel/failed/warehouse_location_items.txt";
         header('Content-Description: File Failed');
         header('Content-Disposition: attachment; filename=' . basename($file));
         header('Expires: 0');
@@ -197,11 +166,36 @@ class Rm_locations extends CI_Controller
     {
         if ($this->input->post()) {
             $data = $this->input->post('data');
-            $warehouse_locations = $this->crud->read('warehouse_locations', [], ["number" => $data['number'], "type" => "RM"]);
-            if (!empty($warehouse_locations)) {
+            $warehouse_location_items = $this->crud->read('warehouse_location_items', [], ["item_rm_id" => $data['item_number'], "type" => "RM"]);
+            $warehouse_locations = $this->crud->read('warehouse_locations', [], ["number" => $data['location_number'], "type" => "RM"]);
+            
+            $item_rm_id = null;
+            $item_fg_id = null;
+            if($data['type'] == "RM"){
+                $items = $this->crud->read('item_rm', [], ["number" => $data['item_number']]);
+                $item_rm_id = $items->id;
+            }else{
+                $items = $this->crud->read('item_fg', [], ["number" => $data['item_number']]);
+                $item_fg_id = $items->id;
+            }
+        
+            if (empty($warehouse_locations)) {
+                echo json_encode(array("title" => "Not Found", "message" => "Location Number " . $data['location_number'] . " Not Found", "theme" => "error"));
+            } elseif (empty($items)) {
+                echo json_encode(array("title" => "Not Found", "message" => "Product No " . $data['item_number'] . " Not Found", "theme" => "error"));
+            } elseif (!empty($warehouse_location_items)) {
                 echo json_encode(array("title" => "Duplicate", "message" => "Code " . $data['number'] . " Duplicate", "theme" => "error"));
             } else {
-                $send   = $this->crud->create('warehouse_locations', $data);
+                $send   = $this->crud->create('warehouse_location_items', [
+                    "type" => $data['type'],
+                    "item_rm_id" => $item_rm_id,
+                    "item_fg_id" => $item_fg_id,
+                    "location" => $warehouse_locations->location,
+                    "area" => $warehouse_locations->area,
+                    "rack" => $warehouse_locations->rack,
+                    "level" => $warehouse_locations->level,
+                    "level_sub" => $warehouse_locations->level_sub,
+                ]);
                 echo $send;
             }
         }
@@ -212,23 +206,20 @@ class Rm_locations extends CI_Controller
         if ($option == "excel") {
             $format  = date("Ymd");
             header("Content-type: application/vnd-ms-excel");
-            header("Content-Disposition: attachment; filename=warehouse_locations_$format.xls");
+            header("Content-Disposition: attachment; filename=warehouse_location_items_$format.xls");
         }
         //Config
         $this->db->select('*');
         $this->db->from('config');
         $config = $this->db->get()->row();
-        $this->db->select('*');
-        $this->db->from('warehouse_locations');
-        $this->db->where('deleted', 0);
-        $this->db->where('type', 'RM');
-        $this->db->order_by('number', 'ASC');
-        $this->db->order_by('location', 'ASC');
-        $this->db->order_by('area', 'ASC');
-        $this->db->order_by('rack', 'ASC');
-        $this->db->order_by('level', 'ASC');
-        $this->db->order_by('level_sub', 'ASC');
+
+        $this->db->select('a.*, (CASE WHEN a.item_rm_id is null THEN c.number ELSE b.number END) as item_number, (CASE WHEN a.item_rm_id is null THEN c.name ELSE b.name END) as item_name');
+        $this->db->from('warehouse_location_items a');
+        $this->db->join('item_rm b', 'a.item_rm_id = b.id', 'left');
+        $this->db->join('item_fg c', 'a.item_fg_id = c.id', 'left');
+        $this->db->where('a.deleted', 0);
         $records = $this->db->get()->result_array();
+
         $html = '<html><head><title>Print Data</title></head><style>body {font-family: Arial, Helvetica, sans-serif;}#customers {border-collapse: collapse;width: 100%;font-size: 12px;}#customers td, #customers th {border: 1px solid #ddd;padding: 2px;}#customers tr:nth-child(even){background-color: #f2f2f2;}#customers tr:hover {background-color: #ddd;}#customers th {padding-top: 2px;padding-bottom: 2px;text-align: left;color: black;}</style><body>
         <center>
             <div style="float: left; font-size: 12px; text-align: left;">
@@ -239,7 +230,7 @@ class Rm_locations extends CI_Controller
                         </td>
                         <td style="font-size: 14px; text-align: left; margin:2px;">
                             <b>' . $config->name . '</b><br>
-                            <small>WAREHOUSE RM LOCATION</small>
+                            <small>WAREHOUSE RM LOCATION ITEM</small>
                         </td>
                     </tr>
                 </table>
@@ -254,7 +245,9 @@ class Rm_locations extends CI_Controller
         <table id="customers" border="1">
             <tr>
                 <th width="20">No</th>
-                <th>Code</th>
+                <th>Type</th>
+                <th>Product No</th>
+                <th>Product Name</th>
                 <th>Location</th>
                 <th>Area</th>
                 <th>Rack</th>
@@ -265,7 +258,9 @@ class Rm_locations extends CI_Controller
         foreach ($records as $data) {
             $html .= '<tr>
                     <td>' . $no . '</td>
-                    <td>' . $data['number'] . '</td>
+                    <td>' . $data['type'] . '</td>
+                    <td>' . $data['item_number'] . '</td>
+                    <td>' . $data['item_name'] . '</td>
                     <td>' . $data['location'] . '</td>
                     <td>' . $data['area'] . '</td>
                     <td>' . $data['rack'] . '</td>

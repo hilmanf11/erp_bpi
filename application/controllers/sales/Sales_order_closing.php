@@ -25,7 +25,7 @@ class Sales_order_closing extends CI_Controller
         } elseif ($this->checkuserAccess($this->id_menu()) > 0) {
             $data['button'] = $this->getbutton($this->id_menu());
             $this->load->view('template/header', $data);
-            $this->load->view('planning/sales_order_closing');
+            $this->load->view('sales/sales_order_closing');
         } else {
             redirect('error_access');
         }

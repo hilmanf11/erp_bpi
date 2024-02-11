@@ -402,7 +402,7 @@
     });
 
     $('#location').combobox({
-        url: '<?= base_url('master/rm_locations/readLocations/'); ?>',
+        url: '<?= base_url('master/locations/reads/RM'); ?>',
         valueField: 'location',
         textField: 'location',
         prompt: 'Choose Locations',

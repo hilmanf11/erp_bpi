@@ -23,7 +23,7 @@ class Report_delivery_schedules extends CI_Controller
         } elseif ($this->checkuserAccess($this->id_menu()) > 0) {
             $data['button'] = $this->getbutton($this->id_menu());
             $this->load->view('template/header', $data);
-            $this->load->view('planning/report_delivery_schedules');
+            $this->load->view('sales/report_delivery_schedules');
         } else {
             redirect('error_access');
         }

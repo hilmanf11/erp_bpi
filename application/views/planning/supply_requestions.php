@@ -25,152 +25,93 @@
     </thead>
 </table>
 
-<div id="toolbar" style="height: 225px;">
-
+<div id="toolbar" style="height: 235px; padding:10px;">
     <!-- <div style="width: 100%; display: grid; grid-template-columns: auto auto auto; grid-gap: 5px; display: flex;"> -->
-
     <div style="width: 100%;">
-
         <fieldset style="width: 35%; border:2px solid #d0d0d0; margin-bottom: 5px; margin-top: 5px; border-radius:4px;">
-
             <legend><b>Form Filter Data</b></legend>
-
             <div class="fitem">
-
                 <span style="width:35%; display:inline-block;">Period</span>
-
                 <input style="width:60%;" id="filter_period" class="easyui-combobox">
-
             </div>
 
             <div class="fitem">
-
                 <span style="width:35%; display:inline-block;">Work Period</span>
-
                 <input style="width:60%;" id="filter_wp" class="easyui-combobox">
-
             </div>
 
             <div class="fitem">
-
                 <span style="width:35%; display:inline-block;">Request ID</span>
-
                 <input style="width:60%;" id="filter_request_no" class="easyui-combobox">
-
             </div>
 
             <div class="fitem">
-
                 <span style="width:35%; display:inline-block;"></span>
-
                 <a href="javascript:;" class="easyui-linkbutton" onclick="filter()"><i class="fa fa-search"></i> Filter Data</a>
-
-                <a href="javascript:;" class="easyui-linkbutton" onclick="print_kanban()"><i class="fa fa-print"></i> Print Kanban</a>
-
             </div>
-
         </fieldset>
-
         <?= $button ?>
-
+        <a href="javascript:;" class="easyui-linkbutton" plain="true" onclick="print_kanban()"><i class="fa fa-print"></i> Print Kanban</a>
     </div>
-
 </div>
 
 <!-- TOOLBAR DATAGRID -->
-
 <div id="toolbar2">
-
     <a href="javascript:void(0)" class="easyui-linkbutton" data-options="plain:true" onclick="append()"><i class="fa fa-plus"></i> Add</a>
-
     <a href="javascript:void(0)" class="easyui-linkbutton" data-options="plain:true" onclick="removeit()"><i class="fa fa-times"></i> Remove</a>
-
 </div>
 
 <!-- Insert & Update -->
-
 <div id="dlg_insert" class="easyui-dialog" title="Add New" data-options="closed: true,modal:true" style="width: 800px; height: 600px; padding:10px; top: 20px;">
-
     <form id="frm_insert" method="post" novalidate>
-
         <fieldset style="width:100%; border:1px solid #d0d0d0; margin-bottom: 10px; border-radius:4px; float: left;">
-
             <legend><b>Form Data</b></legend>
-
             <div style="width: 50%; float: left;">
-
                 <div class="fitem">
-
                     <span style="width:35%; display:inline-block;">Request Date</span>
-
                     <input style="width:60%;" name="request_date" id="request_date" value="<?= date("Y-m-d") ?>" required="" class="easyui-datebox" data-options="formatter:myformatter,parser:myparser, editable:false">
-
                 </div>
 
                 <div class="fitem">
-
                     <span style="width:35%; display:inline-block;">Request No</span>
-
                     <input style="width:60%;" name="request_no" id="request_no" readonly class="easyui-textbox">
-
                 </div>
 
                 <div class="fitem">
-
                     <span style="width:35%; display:inline-block;">Request Name</span>
-
                     <input style="width:60%;" name="request_name" id="request_name" value="<?= $this->session->name ?>" readonly class="easyui-textbox">
-
                 </div>
-
             </div>
 
             <div style="width: 50%; float: left;">
-
                 <div class="fitem">
-
                     <span style="width:35%; display:inline-block;">Period</span>
-
                     <input style="width:60%;" id="period" required="" class="easyui-combobox">
-
                 </div>
 
                 <div class="fitem">
-
                     <span style="width:35%; display:inline-block;">WP</span>
-
                     <input style="width:60%;" id="wp" required="" class="easyui-combobox">
-
                 </div>
 
                 <div class="fitem">
-
                     <span style="width:35%; display:inline-block;">Work Order</span>
-
                     <input style="width:60%;" id="workorder" readonly="" class="easyui-textbox">
-
                 </div>
-
             </div>
-
         </fieldset>
 
         <table id="dg2" class="easyui-datagrid" style="width:100%;" title="Add Material Requestion" toolbar="#toolbar2" data-options="singleSelect: true">
 
         </table>
-
     </form>
-
 </div>
 
 <!-- PDF -->
-
 <iframe id="printout" src="<?= base_url('planning/supply_requestions/print') ?>" style="width: 100%;" hidden></iframe>
 
 <script>
-
     //Add Data
-
     function add() {
 
         $('#dlg_insert').dialog('open');
@@ -588,30 +529,17 @@
 
     }
 
-
-
     function print_kanban() {
-
-        var request_no = $("#filter_request_no").combobox('getValue');
-
-        if (request_no == "") {
-
-            toastr.warning("Please select Kanban No!", "Information");
-
-        } else {
-
-            window.open("<?= base_url('planning/supply_requestions/print_kanban/') ?>" + window.btoa(request_no), "_blank");
-
+        var row = $('#dg').treegrid('getSelected');
+        if (row) {
+            window.open("<?= base_url('planning/supply_requestions/print_kanban/') ?>" + window.btoa(row.request_no));// + "/" + window.btoa(operation), "_blank"
+        }else{
+            toastr.warning("Please select one of the data in the table first!", "Information");
         }
-
     }
 
-
-
     function reload() {
-
         window.location.reload();
-
     }
 
     $(function() {
@@ -619,27 +547,19 @@
         addTable();
 
         $('#dg').treegrid({
-
             url: '<?= base_url('planning/supply_requestions/datatables') ?>',
-
             pagination: true,
-
             rownumbers: true,
-
             idField: 'id',
-
             treeField: 'request_no',
-
             singleSelect: false,
-
+            fit: true,
+            pageList: [10, 50, 100, 500, 1000],
+            pageSize: 10,
             onBeforeLoad: function(row, param) {
-
                 if (!row) {
-
                     param.id = 0;
-
                 }
-
             },
 
             // onClickRow: function(index) {

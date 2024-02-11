@@ -12,7 +12,7 @@
             <th rowspan="2" data-options="field:'so_number',width:150,align:'center'">SO No</th>
             <th rowspan="2" data-options="field:'so_date',width:80,align:'center'">SO Date</th>
             <th rowspan="2" data-options="field:'item_number',width:150">Product No</th>
-            <th rowspan="2" data-options="field:'item_name',width:300">Product Name</th>
+            <th rowspan="2" data-options="field:'item_name',width:200">Product Name</th>
             <th rowspan="2" data-options="field:'uom',width:80,align:'center'">Uom</th>
             <th rowspan="2" data-options="field:'qty',width:80,halign:'center',align:'right',formatter:numberformat">Qty</th>
             <th colspan="2" data-options="field:'',width:100,halign:'center'"> Created</th>
@@ -36,8 +36,8 @@
         <div style="width: 30%; float: left;">
             <div class="fitem">
                 <span style="width:35%; display:inline-block;">Period</span>
-                <input style="width:30%;" id="filter_month" class="easyui-combobox" data-options="prompt:'Select Month'">
-                <input style="width:30%;" id="filter_year" class="easyui-combobox" data-options="prompt:'Select Year'" panelHeight="auto">
+                <input style="width:30%;" id="filter_month" value="<?= date("m") ?>" class="easyui-combobox" data-options="prompt:'Select Month'">
+                <input style="width:30%;" id="filter_year" value="<?= date("Y") ?>" class="easyui-combobox" data-options="prompt:'Select Year'" panelHeight="auto">
             </div>
             <div class="fitem">
                 <span style="width:35%; display:inline-block;">Line Production</span>
@@ -255,7 +255,12 @@
             "&filter_customers=" + filter_customers + "&filter_sales_order=" + filter_sales_order + "&filter_item_fg_id=" + filter_item_fg_id + "&filter_status=" + filter_status;
 
         $('#dg').datagrid({
-            url: '<?= base_url('planning/production_schedules/datatables') ?>' + url
+            url: '<?= base_url('planning/production_schedules/datatables') ?>' + url,
+            fit: true,
+            pagination: true,
+            rownumbers: true,
+            pageList: [10, 50, 100, 500, 1000],
+            pageSize: 10,
         });
         $("#printout").contents().find('html').html("<center><br><br><br><b style='font-size:20px;'>Please Wait...</b></center>");
         $("#printout").attr('src', '<?= base_url('planning/production_schedules/print') ?>' + url);
@@ -293,11 +298,8 @@
         window.location.reload();
     }
     $(function() {
-        $('#dg').datagrid({
-            url: '<?= base_url('planning/production_schedules/datatables') ?>',
-            pagination: true,
-            rownumbers: true
-        });
+        filter();
+
         //Save Data
         $('#dlg_insert').dialog({
             buttons: [{
