@@ -199,7 +199,8 @@ class Purchase_orders extends CI_Controller
             b.uom,
             d.id as supplier_id, 
             d.number as supplier_number, 
-            d.name as supplier_name, 
+            d.name as supplier_name,
+            c.name as category_name,
             e.mpq, 
             e.moq,
             d.vat_status,
@@ -238,18 +239,18 @@ class Purchase_orders extends CI_Controller
                 $items = $this->crud->read('item_rm', [], ['number' => base64_decode($post['item_number'])]);
                 $suppliers = $this->crud->read('suppliers', [], ["id" => $post['supplier_id']]);
                 $supplier_items = $this->crud->read('supplier_items', [], ["item_rm_id" => $items->id, "supplier_id" => $post['supplier_id']]);
-                $purchaseOrder = $this->crud->read('purchase_orders', [], ["request_no" => $post['request_no'], "supplier_id" => $post['supplier_id'], "month_1" => $post['month_1'], "month_2" => $post['month_2'], "month_3" => $post['month_3'], "discount" => $post['discount'], "total" => $post['total']]);
+                $purchaseOrder = $this->crud->read('purchase_orders', [], ["request_no" => $post['request_no'], "supplier_id" => $post['supplier_id']]);
                 $purchaseRequests = $this->crud->read('purchase_requests', [], ["request_no" => $post['request_no']]);
                 $config = $this->crud->read("config");
 
-                $datenow    = date("ymd");
+                $divisions = $purchaseRequests->division;
+                $datenow    = $divisions . date("ymd");
                 $sqlGetID   = $this->db->query("SELECT max(po_no) as kode FROM purchase_orders WHERE po_no like '%$datenow%'");
                 $rowID      = $sqlGetID->row();
-                $divisions = $purchaseRequests->division;
                 $kode       = $rowID->kode;
                 if ($kode == NULL) {
                     $autoID = sprintf("%04s", $kode + 1);
-                    $po_no = "PO" . $divisions . $datenow . "-" . $autoID;
+                    $po_no = "PO" . $datenow . "-" . $autoID;
                 } else {
                     if ($purchaseOrder) {
                         $po_no = $purchaseOrder->po_no;
@@ -257,7 +258,7 @@ class Purchase_orders extends CI_Controller
                         $urutan = (int)substr($kode, -4);
                         $urutan++;
                         $autoID = sprintf("%04s", $urutan);
-                        $po_no = "PO" . $divisions . $datenow . "-" . $autoID;
+                        $po_no = "PO" . $datenow . "-" . $autoID;
                     }
                 }
 
@@ -307,7 +308,7 @@ class Purchase_orders extends CI_Controller
         if ($this->input->post()) {
             $post = $this->input->post();
 
-            $items = $this->crud->read('item_rm', [], ['number' => $post['item_number']]);
+            $items = $this->crud->read('item_rm', [], ['number' => base64_decode($post['item_number'])]);
             $purchaseOrder = $this->crud->read('purchase_orders', [], ["request_no" => $post['request_no'], "supplier_id" => $post['supplier_id'], "item_rm_id" => $items->id]);
 
             $purchase_orders = $this->crud->update('purchase_orders', ["request_no" => $post['request_no'], "supplier_id" => $post['supplier_id'], "item_rm_id" => $items->id], [
@@ -321,6 +322,13 @@ class Purchase_orders extends CI_Controller
                 "month_2" => $post['month_2'],
                 "month_3" => $post['month_3'],
                 "total_sub" => $post['total_sub'],
+                "disc_pr" => $post['disc_pr'],
+                "discount_total" => $post['discount_total'],
+                "income_tax" => $post['income_tax'],
+                "income_total" => $post['income_total'],
+                "total_dp" => $post['total_dp'],
+                "total_grand" => $post['total_grand'],
+                "total_vat" => $post['total_vat'],
                 "revision" => (@$purchaseOrder->revision + 1)
             ]);
 
@@ -611,27 +619,27 @@ class Purchase_orders extends CI_Controller
                             </tr>
                             <tr>
                                 <th style="text-align:left" colspan="2">Sub Total</th>
-                                <th style="text-align:right;">' . number_format($subtotal, 2) . '</th>
+                                <th style="text-align:right;">' . number_format($record['total_sub'], 2) . '</th>
                             </tr>
                              <tr>
-                                <th style="text-align:left" colspan="2">Disc % (' . $disc . '%)</th>
-                                <th style="text-align:right;">' . number_format(((@$subtotal * ($disc / 100))), 2) . '</th>
+                                <th style="text-align:left" colspan="2">Disc % (' . $record['disc_pr'] . '%)</th>
+                                <th style="text-align:right;">' . number_format($record['discount_total'], 2) . '</th>
                             </tr>
                             <tr>
                                 <th style="text-align:left" colspan="2">VAT (' . $tax . '%)</th>
-                                <th style="text-align:right;">' . number_format(((@$subtotal * $tax) / 100), 2) . '</th>
+                                <th style="text-align:right;">' . number_format($record['total_vat'], 2) . '</th>
                             </tr>
                             <tr>
-                                <th style="text-align:left" colspan="2">Income Tax % (' . $tax . '%)</th>
-                                <th style="text-align:right;">' . number_format(((@$subtotal * $tax) / 100), 2) . '</th>
+                                <th style="text-align:left" colspan="2">Income Tax % (' . $record['income_tax'] . '%)</th>
+                                <th style="text-align:right;">' . number_format($record['income_total'], 2) . '</th>
                             </tr>
                             <tr>
                                 <th style="text-align:left" colspan="2">Down Payment</th>
-                                <th style="text-align:right;">' . number_format(@$purchase_orders->total_dp, 2) . '</th>
+                                <th style="text-align:right;">' . number_format($record['total_dp'], 2) . '</th>
                             </tr>
                             <tr>
                                 <th style="text-align:left" colspan="2">Total Amount</th>
-                                <th style="text-align:right;">' . number_format($subtotal + ((@$subtotal * $tax) / 100) - @$purchase_orders->total_dp, 2) . '</th>
+                                <th style="text-align:right;">' . number_format($record['total_grand'], 2) . '</th>
                             </tr>
                         </table>';
                         

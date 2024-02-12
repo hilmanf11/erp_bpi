@@ -83,41 +83,38 @@
             </div>
         </fieldset>
 
-        <table id="dg_request" class="easyui-datagrid" style="width:100%;" title="Purchase Request Data" data-options="fitColumns: true, rownumbers: true" idField="item_number">
+        <table id="dg_request" class="easyui-datagrid" style="width:100%;" title="Purchase Request Data" data-options="fitColumns: false, rownumbers: true" idField="item_number">
         </table>
 
-        <div style="width: 30%; display: grid; grid-template-columns: auto auto auto; grid-gap: 5px; display: flex; float: right; margin-top:20px;">
+        <div id="frm_calculate" style="width: 30%; display: grid; grid-template-columns: auto auto auto; grid-gap: 5px; display: flex; float: right; margin-top:20px;">
             <fieldset style="width:100%; border:1px solid #d0d0d0; margin-bottom: 10px; border-radius:4px;">
-                <div style="width: 100%; float: left;">
+                <div style="width: 100%; float: right; margin-top: 10px;">
+                <!-- <a style="width: 100%;" class="easyui-linkbutton c2" onclick="calculate()">Calculate</a> -->
                     <div class="fitem">
                         <b style="width:35%; display:inline-block;">SUB TOTAL</b>
-                        <input style="width:60%;" id="total_sub" name="total_sub" readonly class="easyui-numberbox" data-options="precision:2,groupSeparator:','">
+                        <input style="width:60%; text-align:right;" id="total_sub" name="total_sub" readonly class="easyui-numberbox" value="0" readonly data-options="precision:2,groupSeparator:','">
                     </div>
                     <div class="fitem">
                         <b style="width:35%; display:inline-block;">DISC %</b>
-                        <input style="width:10%;" id="disc_input" name="disc_input" class="easyui-numberbox">
-                        <input style="width:50%;" id="discount_total" name="discount_total" readonly class="easyui-numberbox" data-options="precision:2,groupSeparator:','">
+                        <input style="width:10%;" id="disc_pr" name="disc_pr" value="0" class="easyui-numberbox">
+                        <input style="width:50%; text-align:right;" id="discount_total" name="discount_total" readonly class="easyui-numberbox" readonly value="0" data-options="precision:2,groupSeparator:','">
                     </div>
                     <div class="fitem">
                         <b style="width:35%; display:inline-block;">VAT</b>
-                        <input style="width:60%;" id="total_vat" name="total_vat" readonly class="easyui-numberbox" data-options="precision:2,groupSeparator:','">
-                    </div>
-                    <div class="fitem">
-                        <b style="width:35%; display:inline-block;">TOTAL AMOUNT</b>
-                        <input style="width:60%;" id="total_amount" name="total_amount" readonly class="easyui-numberbox" data-options="precision:2,groupSeparator:','">
+                        <input style="width:60%; text-align:right;" id="total_vat" name="total_vat" readonly class="easyui-numberbox" value="0" readonly data-options="precision:2,groupSeparator:','">
                     </div>
                     <div class="fitem">
                         <b style="width:35%; display:inline-block;">INCOME TAX</b>
-                        <input style="width:10%;" id="income_input" name="income_input" class="easyui-numberbox">
-                        <input style="width:50%;" id="income_total" name="income_total" readonly class="easyui-numberbox" data-options="precision:2,groupSeparator:','">
+                        <input style="width:10%;" id="income_tax" name="income_tax" value="0" class="easyui-numberbox">
+                        <input style="width:50%; text-align:right;" id="income_total" name="income_total" readonly class="easyui-numberbox" value="0" readonly data-options="precision:2,groupSeparator:','">
                     </div>
                     <div class="fitem">
                         <b style="width:35%; display:inline-block;">DOWN PAYMENT</b>
-                        <input style="width:60%;" id="total_dp" name="total_dp" required class="easyui-numberbox" value="0" data-options="precision:2,groupSeparator:','">
+                        <input style="width:60%; text-align:right;" id="total_dp" name="total_dp" required class="easyui-numberbox" value="0" data-options="precision:2,groupSeparator:','">
                     </div>
                     <div class="fitem">
-                        <b style="width:35%; display:inline-block;">BALANCE</b>
-                        <input style="width:60%;" id="total_grand" name="total_grand" class="easyui-numberbox" data-options="precision:2,groupSeparator:','">
+                        <b style="width:35%; display:inline-block;">GRAND TOTAL</b>
+                        <input style="width:60%; text-align:right;" id="total_grand" name="total_grand" class="easyui-numberbox" value="0" readonly data-options="precision:2,groupSeparator:','">
                     </div>
                 </div>
             </fieldset>
@@ -152,6 +149,7 @@
     //Add Data
     function add() {
         $('#dlg_insert').dialog('open');
+        $('#frm_calculate').hide();
         $("#btnPreview").linkbutton('enable');
         $('#dg_request').datagrid('loadData', []);
         $("#request_no").combobox({
@@ -176,7 +174,7 @@
                 if (row.status == "0") {
                     $('#dlg_insert').dialog('open');
                     $('#frm_insert').form('load', row);
-                    $("#disc_input").numberbox('disable');
+                    $('#frm_calculate').show();
                     $("#btnPreview").linkbutton('disable');
 
                     preview('<?= base_url('purchase/purchase_orders/datatable_updates') ?>?po_no=' + btoa(row.po_no));
@@ -190,6 +188,7 @@
             toastr.warning("Please select one of the data in the table first!", "Information");
         }
     }
+    
 
     function preview(url = "") {
         var request_no = $("#request_no").combobox('getValue');
@@ -210,7 +209,6 @@
                 data: "po_date=" + po_date,
                 dataType: "json",
                 success: function(result) {
-
                     $('#dg_request').datagrid({
                         singleSelect: true,
                         url: url,
@@ -236,7 +234,7 @@
                             }, {
                                 field: 'po_no',
                                 width: 150,
-                                // hidden: true,
+                                hidden: true,
                                 halign: 'center',
                                 title: "PO No",
                                 editor: {
@@ -313,36 +311,6 @@
                                 title: "Qty",
                                 editor: {
                                     type: 'numberbox',
-                                    // options: {
-                                    //     required: true,
-                                    //     onChange: function(qty) {
-                                    //         var dg = $('#dg_request');
-                                    //         var row = dg.datagrid('getSelected');
-                                    //         var rowIndex = dg.datagrid('getRowIndex', row);
-
-                                    //         var ed = dg.datagrid('getEditor', {
-                                    //             index: rowIndex,
-                                    //             field: 'total'
-                                    //         });
-
-                                    //         var ed2 = dg.datagrid('getEditor', {
-                                    //             index: rowIndex,
-                                    //             field: 'price'
-                                    //         });
-
-                                    //         var ed3 = dg.datagrid('getEditor', {
-                                    //             index: rowIndex,
-                                    //             field: 'discount'
-                                    //         });
-
-                                    //         var price = $(ed2.target).textbox('getValue');
-                                    //         var discount = $(ed3.target).numberbox('getValue');
-
-                                    //         var amount = (parseInt(qty * price)-(parseInt(qty * price) * (discount/100)));
-
-                                    //         $(ed.target).textbox('setValue', amount);
-                                    //     }
-                                    // }
                                 }
                             }, {
                                 field: 'currency',
@@ -362,40 +330,12 @@
                                 title: "Disc %",
                                 editor: {
                                     type: 'numberbox',
-                                    // options: {
-                                    //     onChange: function(discount) {
-                                    //         var dg = $('#dg_request');
-                                    //         var row = dg.datagrid('getSelected');
-                                    //         var rowIndex = dg.datagrid('getRowIndex', row);
-
-                                    //         var ed = dg.datagrid('getEditor', {
-                                    //             index: rowIndex,
-                                    //             field: 'total'
-                                    //         });
-
-                                    //         var ed2 = dg.datagrid('getEditor', {
-                                    //             index: rowIndex,
-                                    //             field: 'price'
-                                    //         });
-
-                                    //         var ed3 = dg.datagrid('getEditor', {
-                                    //             index: rowIndex,
-                                    //             field: 'qty'
-                                    //         });
-
-                                    //         var price = $(ed2.target).textbox('getValue');
-                                    //         var qty = $(ed3.target).numberbox('getValue');
-
-                                    //         var amount = (parseInt(qty * price)-(parseInt(qty * price) * (discount/100)));
-
-                                    //         $(ed.target).textbox('setValue', amount);
-                                    //     }
-                                    // }
                                 }
                             }, {
                                 field: 'price',
                                 width: 100,
                                 halign: 'center',
+                                align: 'right',
                                 title: "Price",
                                 editor: {
                                     type: 'textbox',
@@ -407,6 +347,7 @@
                                 field: 'total',
                                 width: 100,
                                 halign: 'center',
+                                align: 'right',
                                 title: "Amount",
                                 editor: {
                                     type: 'numberbox',
@@ -478,113 +419,31 @@
                             row.editing = false;
                             $(this).datagrid('refreshRow', index);
                         },
-                        
                         onBeginEdit: function(rowIndex, row) {
                             var editors = $('#dg_request').datagrid('getEditors', rowIndex);
                             var item_id = $(editors[0].target).textbox('getValue');
                             var supplier_id = $(editors[2].target);
                             var po_date = $("#po_date").datebox('getValue');
-
-                            var qty = $(editors[6].target).numberbox('getValue');
-                            var discount = $(editors[8].target).numberbox('getValue');
-                            var price = $(editors[9].target);
                             var total_sub = $("#total_sub").numberbox('getValue');
                             var delivery_date = $(editors[11].target);
 
                             $(editors[6].target).numberbox({
                                 onChange: function() {
-                                    var qty_after = $(editors[6].target).numberbox('getValue');
+                                    var qty = $(editors[6].target).numberbox('getValue');
                                     var discount = $(editors[8].target).numberbox('getValue');
                                     var price = $(editors[9].target).numberbox('getValue');
-                                    var total_dp = $("#total_dp").numberbox('getValue');
-                                    var total_vat = $("#total_vat").numberbox('getValue');
-
-                                    $(editors[10].target).numberbox('setValue', (qty_after * price)-((qty_after * price)*(discount/100)));
-
-                                    var total_subs = (qty_after * price)-((qty_after * price)*(discount/100));
-
-                                    $("#total_sub").numberbox('setValue', total_subs);
+                                    var total = ((qty * price)-((qty * price)*(discount/100)));
+                                    editors[10].target.numberbox('setValue', total);
                                 }
                             });
 
                             $(editors[8].target).numberbox({
                                 onChange: function() {
-                                    var qty_after = $(editors[6].target).numberbox('getValue');
+                                    var qty = $(editors[6].target).numberbox('getValue');
                                     var discount = $(editors[8].target).numberbox('getValue');
                                     var price = $(editors[9].target).numberbox('getValue');
-                                    var total_dp = $("#total_dp").numberbox('getValue');
-                                    var total_vat = $("#total_vat").numberbox('getValue');
-
-                                    $(editors[10].target).numberbox('setValue', (qty_after * price)-((qty_after * price)*(discount/100)));
-
-                                    var total_subs = (qty_after * price)-((qty_after * price)*(discount/100));
-
-                                    $("#total_sub").numberbox('setValue', total_subs);
-                                       
-                                }
-                            });
-
-                            $("#disc_input").numberbox({
-                                onChange: function() {
-                                    var qty_after = $(editors[6].target).numberbox('getValue');
-                                    var discount = $(editors[8].target).numberbox('getValue');
-                                    var price = $(editors[9].target).numberbox('getValue');
-                                    var total_dp = $("#total_dp").numberbox('getValue');
-                                    var disc_input = $("#disc_input").numberbox('getValue');
-
-                                    $.ajax({
-                                        type: "post",
-                                        url: "<?= base_url('admin/config/read') ?>",
-                                        dataType: "json",
-                                        success: function(config) {
-                                            var taxes = config.tax;
-
-                                            var total_subs = (qty_after * price) - ((qty_after * price) * (discount / 100));
-                                            var discount_total = (total_subs * (disc_input / 100));
-                                            var total_vat = ((total_subs - discount_total) * (taxes / 100));
-                                            var total_amount = total_subs + total_vat;
-                                            
-
-                                            // Tetapkan nilai pada elemen-elemen yang sesuai
-                                            $("#discount_total").numberbox('setValue', discount_total);
-                                            $("#total_vat").numberbox('setValue', total_vat);
-                                            $("#total_amount").numberbox('setValue', total_amount);
-                                           
-                                        }
-                                    });
-                                }
-                            });
-
-                            $("#income_input").numberbox({
-                                onChange: function() {
-                                    var qty_after = $(editors[6].target).numberbox('getValue');
-                                    var discount = $(editors[8].target).numberbox('getValue');
-                                    var price = $(editors[9].target).numberbox('getValue');
-                                    var total_dp = $("#total_dp").numberbox('getValue');
-                                    var disc_input = $("#disc_input").numberbox('getValue');
-                                    var discount_total = $("#discount_total").numberbox('getValue');
-                                    var total_subs = $("#total_sub").numberbox('getValue');
-                                    var income_input = $("#income_input").numberbox('getValue');
-
-                                    $.ajax({
-                                        type: "post",
-                                        url: "<?= base_url('admin/config/read') ?>",
-                                        dataType: "json",
-                                        success: function(config) {
-                                            var taxes = config.tax;
-
-                                            var total_subs = (qty_after * price) - ((qty_after * price) * (discount / 100));
-                                            var discount_total = (total_subs * (disc_input / 100));
-                                            var total_vat = ((total_subs - discount_total) * (taxes / 100));
-                                            var total_amount = total_subs + total_vat;
-                                            var income_total = ((total_subs - discount_total) * (income_input / 100));
-                                            var total_grand = (total_subs - discount_total)+total_vat-income_total-total_dp;
-
-
-                                            $("#income_total").numberbox('setValue', income_total);
-                                            $("#total_grand").numberbox('setValue', total_grand);
-                                        }
-                                    });
+                                    var total = ((qty * price)-((qty * price)*(discount/100)));
+                                    editors[10].target.numberbox('setValue', total);
                                 }
                             });
 
@@ -608,12 +467,22 @@
                                         width: 250
                                     }]
                                 ],
+                                onLoadSuccess: function(value, rows){
+                                    supplier_id.combogrid('setValue', row.supplier_number);
+                                },
                                 onSelect: function(value, rows) {
                                     $(editors[3].target).textbox('setValue', rows.id);
                                     $(editors[4].target).textbox('setValue', rows.mpq);
                                     $(editors[5].target).textbox('setValue', rows.moq);
                                     $(editors[7].target).textbox('setValue', rows.currency);
+                                    $(editors[8].target).textbox('setValue', 0);
                                     $(editors[9].target).textbox('setValue', rows.price);
+                                    var qty = parseFloat($(editors[6].target).textbox('getValue'));
+                                    var price = parseFloat($(editors[9].target).textbox('getValue'));
+                                    var discount = parseFloat($(editors[8].target).textbox('getValue') || 0);
+
+                                    var totalDiscountedPrice = (qty * price) - ((qty * price) * (discount / 100));
+                                    $(editors[10].target).numberbox('setValue', totalDiscountedPrice);
                                     $(editors[11].target).textbox('setValue', "<?= date("Y-m-d") ?>");
                                 }
                             });
@@ -627,11 +496,83 @@
                                     }
                                 }
                             });
+
+                            delivery_date.datebox('setValue', row.delivery_date);
+                        },
+                        onLoadSuccess: function(){
+                            var rows = $('#dg_request').datagrid('getRows');
+                            endEditing();
+                            var totalrows = rows.length;
+
+                            if (totalrows > 0) {
+                                var total_subs = 0;
+                                for (let i = 0; i < totalrows; i++) {
+                                    total_subs += parseFloat(rows[i].total);
+                                }
+
+                                $("#total_sub").numberbox('setValue', total_subs);
+                                calculateTotal(total_subs);
+
+                                $("#disc_pr").numberbox({
+                                    onChange: function() {
+                                        var disc_pr = $("#disc_pr").numberbox('getValue');
+                                        var income_tax = $("#income_tax").numberbox('getValue');
+                                        var total_dp = $("#total_dp").numberbox('getValue');
+                                        
+                                        calculateTotal(total_subs, disc_pr, income_tax, total_dp);
+                                    }
+                                });
+
+                                $("#income_tax").numberbox({
+                                    onChange: function() {
+                                        var disc_pr = $("#disc_pr").numberbox('getValue');
+                                        var income_tax = $("#income_tax").numberbox('getValue');
+                                        var total_dp = $("#total_dp").numberbox('getValue');
+                                        
+                                        calculateTotal(total_subs, disc_pr, income_tax, total_dp);
+                                    }
+                                });
+
+                                $("#total_dp").numberbox({
+                                    onChange: function() {
+                                        var disc_pr = $("#disc_pr").numberbox('getValue');
+                                        var income_tax = $("#income_tax").numberbox('getValue');
+                                        var total_dp = $("#total_dp").numberbox('getValue');
+                                        
+                                        calculateTotal(total_subs, disc_pr, income_tax, total_dp);
+                                    }
+                                });
+                                
+                            } else {
+                                toastr.error("Data in Sales order List Empty");
+                            }
                         }
                     });
                 }            
             });
         }
+    }
+
+    function calculateTotal(total_subs, disc_pr = 0, income_tax = 0, total_dp = 0){
+        var discount_total = (total_subs * (disc_pr / 100));
+        $("#discount_total").numberbox('setValue', discount_total);
+
+        $.ajax({
+            type: "post",
+            url: "<?= base_url('admin/config/read') ?>",
+            dataType: "json",
+            success: function(config) {
+                var taxes = config.tax;
+                var total_vat = ((total_subs - discount_total) * (taxes / 100));
+                $("#total_vat").numberbox('setValue', total_vat);
+
+                var income_total = ((total_subs - discount_total) * (income_tax / 100));
+                $("#income_total").numberbox('setValue', income_total);
+
+                var total_grand = ((total_subs - discount_total) + total_vat - income_total - total_dp);
+                $("#total_grand").numberbox('setValue', total_grand);
+            }
+        });
     }
 
     function getRowIndex(target) {
@@ -642,7 +583,7 @@
     function editrow(target) {
         $('#dg_request').datagrid('selectRow', getRowIndex(target));
         $('#dg_request').datagrid('beginEdit', getRowIndex(target));
-        // $("#disc_input").numberbox('enable');
+        // $("#disc_pr").numberbox('enable');
     }
 
     function saverow(target) {
@@ -784,6 +725,7 @@
     function reload() {
         window.location.reload();
     }
+
     $(function() {
         readPo();
         $("#add").html("Convert PR to PO");
@@ -837,21 +779,28 @@
                                 if (r) {
                                     for (var i = 0; i < totalrows; i++) {
                                         var row = rows[i];
-                                        var editors = $('#dg_request').datagrid('getEditors', i);
-                                        var item_number = $(editors[0].target).textbox('getValue');
-                                        var po_no = $(editors[1].target).textbox('getValue');
-                                        var supplier_id = $(editors[3].target).textbox('getValue');
-                                        var qty = $(editors[6].target).numberbox('getValue');
-                                        var discount = $(editors[8].target).numberbox('getValue');
-                                        var price = $(editors[9].target).textbox('getValue');
-                                        var total = $(editors[10].target).textbox('getValue');
-                                        var delivery_date = $(editors[11].target).datebox('getValue');
-                                        var remarks = $(editors[12].target).textbox('getValue');
-                                        var month_1 = $(editors[13].target).numberbox('getValue');
-                                        var month_2 = $(editors[14].target).numberbox('getValue');
-                                        var month_3 = $(editors[15].target).numberbox('getValue');
+
+                                        var item_number = row.item_number;
+                                        var po_no = row.po_no;
+                                        var supplier_id = row.supplier_id;
+                                        var qty = row.qty;
+                                        var discount = row.discount;
+                                        var price = row.price;
+                                        var total = row.total;
+                                        var delivery_date = row.delivery_date;
+                                        var remarks = row.remarks;
+                                        var month_1 = row.month_1;
+                                        var month_2 = row.month_2;
+                                        var month_3 = row.month_3;
 
                                         var total_sub = $("#total_sub").numberbox('getValue');
+                                        var disc_pr = $("#disc_pr").numberbox('getValue');
+                                        var discount_total = $("#discount_total").numberbox('getValue');
+                                        var total_vat = $("#total_vat").numberbox('getValue');
+                                        var income_tax = $("#income_tax").numberbox('getValue');
+                                        var income_total = $("#income_total").numberbox('getValue');
+                                        var total_dp = $("#total_dp").numberbox('getValue');
+                                        var total_grand = $("#total_grand").numberbox('getValue');
 
 
                                         if(po_no == ""){
@@ -879,7 +828,14 @@
                                                 '&month_1=' + month_1 +
                                                 '&month_2=' + month_2 +
                                                 '&month_3=' + month_3 +
-                                                '&total_sub=' + total_sub,
+                                                '&total_sub=' + total_sub +
+                                                '&disc_pr=' + disc_pr +
+                                                '&total_vat=' + total_vat +
+                                                '&income_tax=' + income_tax +
+                                                '&income_total=' + income_total +
+                                                '&total_grand=' + total_grand +
+                                                '&total_dp=' + total_dp +
+                                                '&discount_total=' + discount_total,
                                             dataType: "json",
                                             success: function(result) {
                                                 Swal.fire({
@@ -933,13 +889,6 @@
                 }
             }]
         });
-
-        $("#total_dp").numberbox({
-            onChange: function(val) {
-                var total_amount = $("#total_amount").numberbox('getValue');
-                $("#total_grand").numberbox('setValue', (total_amount - val));
-            }
-        })
     });
 
     function buttonEdit(value, row, index) {

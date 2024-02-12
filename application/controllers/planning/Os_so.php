@@ -13,8 +13,8 @@ class Os_so extends CI_Controller
         $this->load->model('crud');
 
         //VALIDASI FORM
-        // $this->form_validation->set_rules('item_fg_id', 'Product No.', 'required|min_length[1]|max_length[50]|is_unique[os_so.item_fg_id]');
-        $this->form_validation->set_rules('customer_id', 'Customer', 'required|min_length[1]|max_length[50]|is_unique[os_so.customer_id]');
+        $this->form_validation->set_rules('item_fg_id', 'Product No.', 'required|min_length[1]|max_length[50]|is_unique[os_so.item_fg_id]');
+        // $this->form_validation->set_rules('customer_id , item_fg_id', 'Customer', 'required|min_length[1]|max_length[50]|is_unique[os_so.customer_id,item_fg_id]');
     }
 
     //HALAMAN UTAMA

@@ -79,7 +79,7 @@ class Supplier_items extends CI_Controller
         $item_id = $this->input->get('item_rm_id');
         $item_family_id = $this->input->get('item_family_id');
 
-        $this->db->select('b.*, c.number as item_number, a.mpq, a.moq');
+        $this->db->select('b.*, c.number as item_number, a.mpq, a.moq, a.price');
         $this->db->from('supplier_items a');
         $this->db->join('suppliers b', 'a.supplier_id = b.id');
         $this->db->join('item_rm c', 'a.item_rm_id = c.id');

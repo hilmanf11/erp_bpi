@@ -662,8 +662,8 @@
 
         $('#division').combobox({
             url: '<?= base_url('master/divisions/reads'); ?>',
-            valueField: 'name',
-            textField: 'name',
+            valueField: 'number',
+            textField: 'number',
             panelHeight: 'panelHeight',
             prompt: 'Choose Division',
         }); 

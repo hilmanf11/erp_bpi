@@ -143,6 +143,7 @@
                 </div>
             </div>
         </fieldset>
+        
         <table id="dg2" class="easyui-datagrid" style="width:100%;" title="Sales Order Lists" toolbar="#toolbar2"></table>
         <div style="width: 30%; float: right; margin-top: 10px;">
             <a style="width: 100%;" class="easyui-linkbutton c2" onclick="calculate()">Calculate</a>
@@ -275,10 +276,13 @@
             }
 
             $("#total_sub").numberbox('setValue', total_sub);
+
             var total_tax = parseFloat(total_sub * (taxes / 100));
             $("#total_tax").numberbox('setValue', total_tax);
+
             var total_pph = (((parseFloat(total_sub) + parseInt(total_tax)) * parseInt(pph)) / 100);
             $("#total_pph").numberbox('setValue', total_pph);
+            
             var total_grand = (parseFloat(total_sub) + parseFloat(total_tax) - parseFloat(total_pph));
             $("#total_grand").numberbox('setValue', (total_grand));
         } else {

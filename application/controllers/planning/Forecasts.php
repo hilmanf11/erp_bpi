@@ -350,7 +350,7 @@ class Forecasts extends CI_Controller
             $forecasts = $this->crud->read('forecasts', [], ["customer_id" => $data['customer_id'], "item_fg_id" => $data['item_fg_id']]);
 
             $post = $this->input->post();
-            $issued_date = $post["issued_date"];
+            $issued_date = $data["issued_date"];
             $month = date('ym',strtotime($issued_date));
             $format = "FC".$month;
             $sql = $this->db->query("SELECT max(document_no) as kode FROM forecasts WHERE document_no LIKE '%$format%'");
