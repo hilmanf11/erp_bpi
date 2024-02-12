@@ -30,10 +30,10 @@
     </thead>
 </table>
 
-<div id="toolbar" style="height: 220px;">
+<div id="toolbar" style="height: 230px; padding:10px;">
     <!-- <div style="width: 100%; display: grid; grid-template-columns: auto auto auto; grid-gap: 5px; display: flex;"> -->
     <div style="width: 100%;">
-        <fieldset style="width: 35%; border:2px solid #d0d0d0; margin-bottom: 5px; margin-top: 5px; border-radius:4px;">
+        <fieldset style="width: 45%; border:2px solid #d0d0d0; margin-bottom: 5px; margin-top: 5px; border-radius:4px;">
             <legend><b>Form Filter Data</b></legend>
             <div class="fitem">
                 <span style="width:35%; display:inline-block;">Period</span>
@@ -589,6 +589,7 @@
             rownumbers: true,
             idField: 'id',
             treeField: 'po_no',
+            fit: true,
             singleSelect: false,
             onBeforeLoad: function(row, param) {
                 if (!row) {
