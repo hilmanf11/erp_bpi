@@ -357,7 +357,18 @@
         if (receipt_no == "") {
             toastr.warning("Please select Receipt No!", "Information");
         } else {
-            window.open("<?= base_url('purchase/purchase_order_receipts/print_receiving/') ?>" + window.btoa(receipt_no), "_blank");
+            $.ajax({
+                type: "post",
+                url: "<?= base_url('purchase/purchase_order_receipts/checkLabel/') ?>" + window.btoa(receipt_no),
+                dataType: "json",
+                success: function (response) {
+                    if(response.qty_label == response.label_no){
+                        window.open("<?= base_url('purchase/purchase_order_receipts/print_receiving/') ?>" + window.btoa(receipt_no), "_blank");
+                    }else{
+                        toastr.error("The labels haven't been scanned yet");
+                    }
+                }
+            });            
         }
     }
 

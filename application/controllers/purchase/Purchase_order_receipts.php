@@ -107,6 +107,24 @@ class Purchase_order_receipts extends CI_Controller
         }
         return $receipt_no . "-" . $autoID;
     }
+
+    public function checkLabel($receipt_no){
+        $receipt_no = base64_decode($receipt_no);
+        $sqlReceipt = $this->db->query("SELECT sum(qty_label) as qty_label FROM purchase_order_receipts WHERE receipt_no ='$receipt_no'");
+        $rowReceipt = $sqlReceipt->row();
+
+        $sqlLabel = $this->db->query("SELECT count(label_no) as label_no FROM scan_item_receipts WHERE receipt_no ='$receipt_no'");
+        $rowLabel = $sqlLabel->row();
+
+        if(empty(@$rowLabel->label_no)){
+            $label_no = 0;
+        }else{
+            $label_no = $rowLabel->label_no;
+        }
+
+        echo json_encode(["qty_label" => $rowReceipt->qty_label, "label_no" => $label_no]);
+    }
+
     public function datatables()
     {
         if ($this->input->post()) {
@@ -298,11 +316,29 @@ class Purchase_order_receipts extends CI_Controller
                 } else {
                     $qty = $qty_receipt;
                 }
+                $date = new DateTime($po_receipt->receipt_date);
+                $p_month = $date->format('m'); 
+                $p_year = $date->format('y'); 
+
+                $sqlGetLot = $this->db->query("SELECT max(lot_no) as kode FROM purchase_order_labels WHERE receipt_id = '$receipt_id'");
+                $rowLot = $sqlGetLot->row();
+                $lot_no = $rowLot->kode;
+                
+                if ($lot_no === NULL) {
+                    $autoLot = sprintf("%03s", 1).$p_month.$p_year; // Jika lot_no NULL, mulai dari 1
+                } else {
+                    $urutan = (int) substr($lot_no, 0, 3); // Ambil angka urutan dari lot_no yang ada
+                    $autoLot = sprintf("%03s", $urutan + 1).$p_month.$p_year; // Format urutan yang baru
+                }                
+
                 //Simpan Label
                 $arrLabel = [
                     "receipt_id" => $po_receipt->receipt_id,
                     "label_no" => $autoID,
-                    "qty" => $qty
+                    "qty" => $qty,
+                    "lot_no" => $autoLot,
+                    "p_month" => $p_month,
+                    "p_year" => $p_year 
                 ];
                 $send = $this->crud->create('purchase_order_labels', $arrLabel);
                 $qty_receipt = ($qty_receipt - $po_receipt->qty_mpq);
@@ -350,6 +386,10 @@ class Purchase_order_receipts extends CI_Controller
                                                 <br>
                                                 <b style="font-size:9px;">' . $record->name . '</b>
                                             </div>
+                                            
+                                            <div style="float:right;">
+                                                <small style="font-size:20px;"><b>' . $record->p_year . '</b></small><small style="font-size:13px;"><b>' ." - ". $record->p_month . '</b></small>
+                                            </div>
                                         </td>
                                     </tr>
                                     <tr>
@@ -357,7 +397,8 @@ class Purchase_order_receipts extends CI_Controller
                                             <small>Quantity</small><br><b style="font-size:24px;">' . number_format($record->qty, 2) . '</b>
                                         </th>
                                         <th style="text-align:left">
-                                            <small>Location</small><br><b style="font-size:24px;">' . $record->location . '</b>
+                                            <small>Location</small><br><b style="font-size:24px;"></b><br>
+                                            <small>Lot No. </small><b style="font-size:9px;">' . $record->lot_no . '</b>
                                         </th>
                                     </tr>
                                     <tr>
@@ -470,6 +511,7 @@ class Purchase_order_receipts extends CI_Controller
                 $this->db->group_by('a.item_rm_id');
                 $this->db->limit(8, ($i * 8));
                 $records = $this->db->get()->result_array();
+
                 $html .= '  <table style="width:100%;">
                                     <tr>
                                         <th width="10"><img src="' . $config->favicon . '" width="60" /></th>
