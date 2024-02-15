@@ -371,10 +371,17 @@ class item_fg extends CI_Controller
             </tr>';
         $no = 1;
         foreach ($records as $data) {
+            $number = $data['number'];
+            if (strpos($data['number'], '0') === 0 || strpos($data['number'], '+') === 0) {
+                $number = "'" . $data['number'];
+            } else {
+                // Leave the data unchanged
+                $number = $data['number'];
+            }
             $html .= '<tr>
                     <td>' . $no . '</td>
                     <td>' . $data['id'] . '</td>
-                    <td>' . $data['number'] . '</td>
+                    <td>' . $number . '</td>
                     <td>' . $data['name'] . '</td>
                     <td>' . $data['total_mold'] . '</td>
                     <td>' . $data['number_customer'] . '</td>

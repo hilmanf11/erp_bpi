@@ -15,7 +15,8 @@
             <th rowspan="2" data-options="field:'total_pph',width:100,halign:'center',align:'right',formatter: numberFormat">PPh</th>
             <th rowspan="2" data-options="field:'total_grand',width:100,halign:'center',align:'right',formatter: numberFormat">Grand Total</th>
             <th rowspan="2" data-options="field:'remarks',width:150,halign:'center'">Remarks</th>
-            <th rowspan="2" data-options="field:'attachment',width:80,align:'center',formatter: btnDetails">Attachment</th>            <th colspan="2" data-options="field:'',width:100,halign:'center'"> Created</th>
+            <th rowspan="2" data-options="field:'attachment',width:80,align:'center',formatter: btnDetails">Attachment</th>
+            <th colspan="2" data-options="field:'',width:100,halign:'center'"> Created</th>
             <th colspan="2" data-options="field:'',width:100,halign:'center'"> Updated</th>
         </tr>
         <tr>
@@ -77,7 +78,7 @@
 </div>
 
 <!-- Insert & Update -->
-<div id="dlg_insert" class="easyui-dialog" title="Add New" data-options="closed: true,modal:true" style="width: 1100px; height: 700px; padding:10px; top: 20px;">
+<div id="dlg_insert" class="easyui-dialog" title="Add New" data-options="closed: true,modal:true" style="width: 1100px; height: 100%; padding:10px; top: 20px;">
     <form id="frm_insert" method="post" novalidate>
         <fieldset style="width:100%; border:1px solid #d0d0d0; margin-bottom: 10px; border-radius:4px; float: left;">
             <legend><b>Form Data</b></legend>
@@ -115,15 +116,15 @@
                 </div>
                 <div class="fitem">
                     <span style="width:35%; display:inline-block;">Department</span>
-                    <input style="width:60%;" name="department" id="department" disabled class="easyui-textbox">
+                    <input style="width:60%;" name="department" id="department" readonly class="easyui-textbox">
                 </div>
                 <div class="fitem">
                     <span style="width:35%; display:inline-block;">Shipping Address</span>
-                    <input style="width:60%;" name="customer_address_id" id="customer_address_id" disabled class="easyui-textbox">
+                    <input style="width:60%;" name="customer_address_id" id="customer_address_id" readonly class="easyui-textbox">
                 </div>
                 <div class="fitem">
                     <span style="width:35%; display:inline-block;">Attention To</span>
-                    <input style="width:60%;" name="attention_to" id="attention_to" disabled class="easyui-textbox">
+                    <input style="width:60%;" name="attention_to" id="attention_to" readonly class="easyui-textbox">
                 </div>
                 <div class="fitem" hidden>
                     <span style="width:35%; display:inline-block;">Taxes</span>
@@ -151,25 +152,45 @@
                 <div style="width: 100%; float: left;">
                     <div class="fitem">
                         <b style="width:35%; display:inline-block;">SUB TOTAL</b>
-                        <input style="width:60%;" id="total_sub" name="total_sub" readonly class="easyui-numberbox" data-options="groupSeparator:','">
+                        <input style="width:60%; text-align:right;" id="total_sub" name="total_sub" readonly class="easyui-numberbox" data-options="groupSeparator:','">
                     </div>
                     <div class="fitem">
                         <b style="width:35%; display:inline-block;">TAX (11%)</b>
-                        <input style="width:60%;" id="total_tax" name="total_tax" readonly class="easyui-numberbox" data-options="groupSeparator:','">
+                        <input style="width:60%; text-align:right;" id="total_tax" name="total_tax" readonly class="easyui-numberbox" data-options="groupSeparator:','">
                     </div>
                     <div class="fitem">
                         <b style="width:20%; display:inline-block;">PPH</b>
                         <input style="width:15%;" id="pph" name="pph" class="easyui-numberbox">
-                        <input style="width:60%;" id="total_pph" name="total_pph" readonly class="easyui-numberbox" data-options="groupSeparator:','">
+                        <input style="width:60%; text-align:right;" id="total_pph" name="total_pph" readonly class="easyui-numberbox" data-options="groupSeparator:','">
                     </div>
                     <div class="fitem">
                         <b style="width:35%; display:inline-block;">GRAND TOTAL</b>
-                        <input style="width:60%;" id="total_grand" name="total_grand" readonly required class="easyui-numberbox" data-options="groupSeparator:','">
+                        <input style="width:60%; text-align:right;" id="total_grand" name="total_grand" readonly required class="easyui-numberbox" data-options="groupSeparator:','">
                     </div>
                 </div>
             </fieldset>
         </div>
     </form>
+</div>
+
+<!-- Upload -->
+<div id="dlg_upload" class="easyui-dialog" title="Upload Data" data-options="closed: true,modal:true" style="width: 500px; padding:10px; top: 20px;">
+    <form id="frm_upload" method="post" enctype="multipart/form-data" novalidate>
+        <fieldset style="width:100%; border:1px solid #d0d0d0; margin-bottom: 10px; border-radius:4px; float: left;">
+            <legend><b>Form Data</b></legend>
+            <div class="fitem">
+                <span style="width:35%; display:inline-block;">File Upload</span>
+                <input name="file_upload" style="width: 60%;" required="" accept=".xls" id="file_excel" class="easyui-filebox">
+            </div>
+        </fieldset>
+    </form>
+    <span style="float: left; color:green;">SUCCESS : <b id="p_success">0</b></span><span style="float: right; color:red;"> FAILED : <b id="p_failed">0</b></span>
+    <div id="p_upload" class="easyui-progressbar" style="width:100%; margin-top: 10px;"></div>
+    <center><b id="p_start">0</b> Of <b id="p_finish">0</b></center>
+    <div id="p_remarks" title="History Upload" class="easyui-panel" style="width:100%; height:200px; padding:10px; margin-top: 10px;">
+        <ul id="remarks">
+        </ul>
+    </div>
 </div>
 
 <!-- PDF -->
@@ -473,23 +494,27 @@
                 }, {
                     field: 'price',
                     width: 100,
-                    align: 'center',
+                    halign: 'center',
+                    align: 'right',
                     title: "Price",
                     editor: {
                         type: 'numberbox',
                         options: {
-                            readonly: true
+                            readonly: true,
+                            precision: 2
                         }
                     }
                 }, {
                     field: 'total',
                     width: 100,
                     halign: 'center',
+                    align: 'right',
                     title: "Total Price",
                     editor: {
                         type: 'numberbox',
                         options: {
-                            readonly: true
+                            readonly: true,
+                            precision: 2
                         }
                     }
                 }, ]
@@ -591,7 +616,7 @@
             $("#customer_id").combobox('disable');
             $("#sales_order_no").textbox('disable');
             $("#sales_order_date").datebox('disable');
-            $("#customer_address_id").textbox('disable');
+            $("#plant").textbox('disable');
 
             addTable(row.customer_id, '<?= base_url('sales/sales_orders/datatableUpdates?sales_order_no=') ?>' + window.btoa(row.sales_order_no));
         } else {
@@ -736,6 +761,15 @@
         $("#printout").attr('src', '<?= base_url('sales/sales_orders/print') ?>' + url);
     }
 
+     //Upload Data
+     function upload() {
+        $('#dlg_upload').dialog('open');
+    }
+
+    function download_excel() {
+        window.location.assign('<?= base_url('template/tmp_sales_orders.xls') ?>');
+    }
+
     //PRINT PDF
     function pdf() {
         $("#printout").get(0).contentWindow.print();
@@ -766,6 +800,87 @@
     $(function() {
         filter();
 
+         //Upload Data
+         $('#dlg_upload').dialog({
+            buttons: [{
+                text: 'List Failed',
+                handler: function() {
+                    window.open('<?= base_url('sales/sales_orders/uploadDownloadFailed') ?>', '_blank');
+                }
+            }, {
+                text: 'Upload',
+                iconCls: 'icon-ok',
+                handler: function() {
+                    $('#frm_upload').form('submit', {
+                        url: '<?= base_url('sales/sales_orders/upload') ?>',
+                        onSubmit: function() {
+                            if ($(this).form('validate') == false) {
+                                return $(this).form('validate');
+                            } else {
+                                $.messager.progress({
+                                    title: 'Please Wait',
+                                    msg: 'Importing Excel to Database'
+                                });
+                            }
+                        },
+                        success: function(result) {
+                            $.messager.progress('close');
+                            //Clear File
+                            $.ajax({
+                                url: "<?= base_url('sales/sales_orders/uploadclearFailed') ?>"
+                            });
+                            var json = eval('(' + result + ')');
+                            requestData(json.total, json);
+
+                            function requestData(total, json, number = 1, value = 0, success = 1, failed = 1) {
+                                if (value < 100) {
+                                    value = Math.floor((number / total) * 100);
+                                    $('#p_upload').progressbar('setValue', value);
+                                    $('#p_start').html(number);
+                                    $('#p_finish').html(total);
+
+                                    $.ajax({
+                                        type: "POST",
+                                        async: true,
+                                        url: "<?= base_url('sales/sales_orders/uploadCreate') ?>",
+                                        data: {
+                                            "data": json[number - 1],
+                                            "total_sub": json.total_sub,
+                                        },
+                                        cache: false,
+                                        dataType: "json",
+                                        success: function(result) {
+                                            if (result.theme == "success") {
+                                                $('#p_success').html(success);
+                                                var title = "<b style='color: green;'>" + result.title + "</b> | " + result.message;
+                                                requestData(total, json, number + 1, value, success + 1, failed + 0);
+                                            } else {
+                                                $('#p_failed').html(failed);
+                                                var title = "<b style='color: red;'>" + result.title + "</b> | " + result.message;
+                                                //Json Failed
+                                                $.ajax({
+                                                    type: "POST",
+                                                    async: true,
+                                                    url: "<?= base_url('sales/sales_orders/uploadcreateFailed') ?>",
+                                                    data: {
+                                                        data: json[number - 1],
+                                                        message: result.message
+                                                    },
+                                                    cache: false
+                                                });
+                                                requestData(total, json, number + 1, value, success + 0, failed + 1);
+                                            }
+                                            $("#p_remarks").append(title + "<br>");
+                                        }
+                                    });
+                                }
+                            }
+                        }
+                    });
+                }
+            }]
+        });
+
         //SAVE DATA
         $('#dlg_insert').dialog({
             buttons: [{
@@ -780,6 +895,9 @@
                     var attachment = $("#attachment").textbox('getValue');
                     var delivery_date = $("#delivery_date").datebox('getValue');
                     var customer_address_id = $("#customer_address_id").textbox('getValue');
+                    var plant = $("#plant").textbox('getValue');
+                    var department = $("#department").textbox('getValue');
+                    var attention_to = $("#attention_to").textbox('getValue');
                     var remarks = $("#remarks").textbox('getValue');
                     var pph = $("#pph").numberbox('getValue');
                     var taxes = $("#taxes").numberbox('getValue');
@@ -806,6 +924,9 @@
                                         division: division,
                                         delivery_date: delivery_date,
                                         customer_address_id: customer_address_id,
+                                        plant: plant,
+                                        department: department,
+                                        attention_to: attention_to,
                                         remarks: remarks,
                                         attachment: attachment,
                                         total_sub: total_sub,

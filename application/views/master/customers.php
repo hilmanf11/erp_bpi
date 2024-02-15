@@ -103,6 +103,7 @@
         <thead>
             <tr>
                 <th rowspan="2" field="ck" checkbox="true"></th>
+                <th rowspan="2" data-options="field:'id',width:120,halign:'center'">ID</th>
                 <th rowspan="2" data-options="field:'plant',width:100,halign:'center'">Plant</th>
                 <th rowspan="2" data-options="field:'department',width:100,halign:'center'">Department</th>
                 <th rowspan="2" data-options="field:'address',width:250,halign:'center'">Address</th>
