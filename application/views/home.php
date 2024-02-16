@@ -1009,6 +1009,149 @@
 						}]
 					],
 				}).datagrid('enableFilter');
+			} else if (table == "item_fg") {
+				$('#dg_approval').datagrid({
+					singleSelect: true,
+					rownumbers: true,
+					url: '<?= base_url('approvals/approvalItemFg/') ?>' + approved_to + "/" + created_by,
+					columns: [
+						[{
+							field: 'id',
+							width: 100,
+							align: 'center',
+							title: "ID",
+						}, {
+							field: 'number',
+							width: 150,
+							align: 'center',
+							title: "Product No",
+						}, {
+							field: 'name',
+							width: 150,
+							align: 'center',
+							title: "Product Name",
+						}, {
+							field: 'number_customer',
+							width: 100,
+							align: 'center',
+							title: "Product Customer",
+						}, {
+							field: 'alias',
+							width: 100,
+							halign: 'center',
+							title: "Product Alias",
+						}, {
+							field: 'process',
+							width: 80,
+							halign: 'center',
+							title: "Process Type",
+						}, {
+							field: 'division_id',
+							width: 80,
+							halign: 'center',
+							title: "Division"
+						}, {
+							field: 'control_id',
+							width: 100,
+							halign: 'center',
+							title: "Control",
+						}, {
+							field: 'boxs',
+							width: 80,
+							halign: 'center',
+							title: "Box",
+						}, {
+							field: 'lot',
+							width: 80,
+							halign: 'center',
+							title: "Lot",
+						}, {
+							field: 'polybag',
+							width: 150,
+							halign: 'center',
+							title: "Polybag",
+						}, {
+							field: 'box_label',
+							width: 80,
+							halign: 'center',
+							title: "Box Label",
+						}, {
+							field: 'ng_ration',
+							width: 80,
+							halign: 'center',
+							title: "NG Ratio (%)",
+						}, {
+							field: 'is_no',
+							width: 80,
+							halign: 'center',
+							title: "IS No",
+						}, {
+							field: 'weight',
+							width: 80,
+							halign: 'center',
+							title: "Weight",
+						}, {
+							field: 'color',
+							width: 80,
+							halign: 'center',
+							title: "Color",
+						}, {
+							field: 'leadtime',
+							width: 80,
+							halign: 'center',
+							title: "Leadtime",
+						}, {
+							field: 'mpq',
+							width: 80,
+							halign: 'center',
+							title: "MPQ",
+						}, {
+							field: 'moq',
+							width: 80,
+							halign: 'center',
+							title: "MOQ",
+						}, {
+							field: 'uom',
+							width: 80,
+							halign: 'center',
+							title: "UOM",
+						}, {
+							field: 'qty_box',
+							width: 80,
+							halign: 'center',
+							title: "QTY/Box",
+						}, {
+							field: 'box_sub',
+							width: 80,
+							halign: 'center',
+							title: "QTY/Sub Box",
+						}, {
+							field: 'logo',
+							width: 80,
+							halign: 'center',
+							title: "Logo",
+						}, {
+							field: 'status',
+							width: 80,
+							halign: 'center',
+							title: "Status",
+						}, {
+							field: 'action',
+							width: 80,
+							align: 'center',
+							title: "Action",
+							formatter: function(val, row) {
+								if (val != "-") {
+									var approve = "approve('" + row.id + "','" + table + "')";
+									var disapprove = "disapprove('" + row.id + "','" + table + "')";
+									var a = '<a class="btn btn-success w-50" style="pointer-events: visible; opacity:1;" onclick="' + approve + '"><i class="fa fa-check"></i></a>';
+									var b = '<a class="btn btn-danger w-50" style="pointer-events: visible; opacity:1;" onclick="' + disapprove + '"><i class="fa fa-times"></i></a>';
+									return a + " " + b;
+								}
+							}
+						}]
+					],
+				}).datagrid('enableFilter');
 			}
 		}
 	}

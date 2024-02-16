@@ -18,7 +18,7 @@
             <th rowspan="2" data-options="field:'division_name',width:100,halign:'center'">Division</th>
             <th rowspan="2" data-options="field:'control_id',width:100,halign:'center'">Control</th>
             <th rowspan="2" data-options="field:'boxs',width:200,halign:'center'">Box</th>
-            <th rowspan="2" data-options="field:'polybag',width:70,align:'center'">Polybag <br>Label</th>
+            <th rowspan="2" data-options="field:'polybag',width:150,align:'center'">Polybag <br>Label</th>
             <th rowspan="2" data-options="field:'box_label',width:70,align:'center'">Box <br>Label</th>
             <th rowspan="2" data-options="field:'lot',width:100,align:'center'">Lot</th>
             <th rowspan="2" data-options="field:'ng_ration',width:90,align:'center'">NG Ratio (%)</th>
@@ -37,6 +37,9 @@
             <th rowspan="2" data-options="field:'attachment',width:100,halign:'center',formatter:cellbutton">Attachment</th>
             <th rowspan="2" data-options="field:'logo',width:100,align:'center', styler:cellStyler, formatter:cellFormatterLogo">Logo</th>
             <th rowspan="2" data-options="field:'status',width:100,align:'center', styler:cellStyler, formatter:cellFormatter">Status</th>
+            <th rowspan="2" data-options="field:'approved_to',width:100,halign:'center', styler:styleApproved, formatter:formatApproved">Approved To</th>
+            <th rowspan="2" data-options="field:'approved_by',width:100,halign:'center'">Approved by</th>
+            <th rowspan="2" data-options="field:'approved_date',width:100,halign:'center'">Approved date</th>
             <th colspan="2" data-options="field:'',width:100,halign:'center'"> Created</th>
             <th colspan="2" data-options="field:'',width:100,halign:'center'"> Updated</th>
         </tr>
@@ -105,8 +108,9 @@
                 <div class="fitem">
                     <span style="width:35%; display:inline-block;">Polybag</span>
                     <select style="width:60%;" name="polybag" id="polybag" required="" panelHeight="auto" class="easyui-combobox">
-                        <option value="YES">YES</option>
-                        <option value="NO">NO</option>
+                        <option value="Label Manual Logo BPI">Label Manual Logo BPI</option>
+                        <option value="Label Manual Logo Askara">Label Manual Logo Askara</option>
+                        <option value="Tidak Pakai Label Manual">Tidak Pakai Label Manual</option>
                     </select>
                 </div>
                 <div class="fitem">
@@ -210,7 +214,7 @@
         url_save = '<?= base_url('master/item_fg/create') ?>';
         $('#frm_insert').form('clear');
 
-        $('#polybag').combobox('setValue', 'YES');
+        $('#polybag').combobox('setValue', 'Label Manual Logo BPI');
         $('#box_label').combobox('setValue', 'YES');
         $('#status').combobox('setValue', '0');
     }
@@ -394,6 +398,23 @@
             return 'YES';
         } else {
             return 'NO';
+        }
+    };
+
+    //CELLSTYLE APPROVE
+    function styleApproved(value, row, index) {
+        if (value == "" || value === null ) {
+            return 'background: #53D636; color:white;';
+        } else {
+            return 'background: #FF5F5F; color:white;';
+        }
+    }
+    //FORMATTER APPROVE
+    function formatApproved(value) {
+        if (value == "" || value === null ) {
+            return 'Approved';
+        } else {
+            return 'Checking';
         }
     };
 

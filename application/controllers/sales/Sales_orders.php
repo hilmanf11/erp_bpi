@@ -31,6 +31,13 @@ class Sales_orders extends CI_Controller
         }
     }
 
+    public function reads($customer_id)
+    {
+        $post = isset($_POST['q']) ? $_POST['q'] : "";
+        $send = $this->crud->reads('sales_orders', ["customer_order_no" => $post]);
+        echo json_encode($send);
+    }
+
     public function readItemFg($customer_id)
     {
         $post = isset($_POST['q']) ? $_POST['q'] : "";

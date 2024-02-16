@@ -111,8 +111,16 @@
                     <input style="width:60%;" name="delivery_note_no" id="delivery_note_no" readonly class="easyui-textbox">
                 </div>
                 <div class="fitem">
+                    <span style="width:35%; display:inline-block;">Plant</span>
+                    <input style="width:60%;" name="plant" id="plant" required="" class="easyui-combobox">
+                </div>
+                <div class="fitem">
+                    <span style="width:35%; display:inline-block;">Dept</span>
+                    <input style="width:60%;" name="department" id="department" readonly class="easyui-textbox">
+                </div>
+                <div class="fitem">
                     <span style="width:35%; display:inline-block;">Shipping Address</span>
-                    <input style="width:60%;" name="customer_address_id" id="customer_address_id" required="" class="easyui-combobox">
+                    <input style="width:60%;" name="customer_address_id" id="customer_address_id" readonly class="easyui-textbox">
                 </div>
                 <div class="fitem">
                     <span style="width:35%; display:inline-block;">Police No.</span>
@@ -690,7 +698,9 @@
                     
                     var delivery_note_date = $("#delivery_note_date").datebox('getValue');
                     var delivery_note_no = $("#delivery_note_no").textbox('getValue');
-                    var customer_address_id = $("#customer_address_id").combobox('getValue');
+                    var customer_address_id = $("#customer_address_id").textbox('getValue');
+                    var department = $("#department").textbox('getValue');
+                    var plant = $("#plant").combobox('getValue');
                     var police_no = $("#police_no").combobox('getValue');
                     var driver_name = $("#driver_name").textbox('getValue');
                     var origin = $("#origin").textbox('getValue');
@@ -717,6 +727,8 @@
                                         delivery_note_date: delivery_note_date,
                                         delivery_note_no: delivery_note_no,
                                         customer_address_id: customer_address_id,
+                                        plant: plant,
+                                        department: department,
                                         police_no: police_no,
                                         driver_name: driver_name,
                                         origin: origin,
@@ -885,26 +897,49 @@
 
             
             $('#delivery_note_date').datebox({
-                    onChange: function (delivery_note_date) {
-                        if (delivery_note_date !== "") {
-                            number(delivery_note_date);
-                            if (delivery_order_no.delivery_date >= delivery_note_date) {
-                                $('#status_delivery').textbox('setText', 'ON SCHEDULE');
-                            } else {
-                                $('#status_delivery').textbox('setValue', '1');
-                                $('#status_delivery').textbox('setText', 'DELAY');
-                               
-                            }
+                onChange: function (delivery_note_date) {
+                    if (delivery_note_date !== "") {
+                        number(delivery_note_date);
+                        if (delivery_order_no.delivery_date >= delivery_note_date) {
+                            $('#status_delivery').textbox('setText', 'ON SCHEDULE');
+                        } else {
+                            $('#status_delivery').textbox('setValue', '1');
+                            $('#status_delivery').textbox('setText', 'DELAY');
+                            
                         }
                     }
-                    });
+                }
+            });
 
-            $('#customer_address_id').combobox({
+                $('#plant').combogrid({
                 url: '<?= base_url('master/customers/readAddress/'); ?>' + customer.id,
-                valueField: 'id',
-                textField: 'address',
-                prompt: 'Choose Address',
-                
+                panelWidth: 400,
+                idField: 'plant',
+                textField: 'plant',
+                mode: 'remote',
+                fitColumns: true,
+                prompt: "Choose Plant Name ",
+                icons: [{
+                    iconCls: 'icon-clear',
+                    handler: function(e) {
+                        $(e.data.target).combogrid('clear').combogrid('textbox').focus();
+                    }
+                }],
+                columns: [
+                    [{
+                        field: 'plant',
+                        title: 'Plant Name',
+                        width: 200
+                    }, {
+                        field: 'department',
+                        title: 'Department Name',
+                        width: 200
+                    }]
+                ],
+                onSelect: function(val, row) {
+                    $("#customer_address_id").textbox('setValue', row.address);
+                    $("#department").textbox('setValue', row.department);
+                }
             });
         }
     });
