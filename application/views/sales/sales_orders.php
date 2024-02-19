@@ -263,7 +263,7 @@
                     ],
                     onSelect: function(val, row) {
                         $("#attention_to").textbox('setValue', row.contact_person);
-                        $("#customer_address_id").textbox('setValue', row.address);
+                        $("#customer_address_id").textbox('setValue', row.id);
                         $("#department").textbox('setValue', row.department);
                     }
                 });

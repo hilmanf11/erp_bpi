@@ -130,7 +130,10 @@
                     <span style="width:35%; display:inline-block;">Driver Name</span>
                     <input style="width:60%;" name="driver_name" id="driver_name" class="easyui-textbox">
                 </div>
-                <div class="fitem">
+               
+            </div>
+            <div style="width: 50%; float: left;">
+            <div class="fitem">
                     <span style="width:35%; display:inline-block;">Country of Origin</span>
                     <input style="width:60%;" name="origin" id="origin" required="" class="easyui-textbox">
                 </div>
@@ -138,8 +141,6 @@
                     <span style="width:35%; display:inline-block;">Sailing on or about</span>
                     <input style="width:60%;" name="sailing" id="sailing" required="" class="easyui-textbox">
                 </div>
-            </div>
-            <div style="width: 50%; float: left;">
             <div class="fitem">
                     <span style="width:35%; display:inline-block;">Ship By</span>
                     <select style="width:60%;" name="ship_by" id="ship_by" required class="easyui-combobox" panelHeight="auto">
@@ -937,7 +938,7 @@
                     }]
                 ],
                 onSelect: function(val, row) {
-                    $("#customer_address_id").textbox('setValue', row.address);
+                    $("#customer_address_id").textbox('setValue', row.id);
                     $("#department").textbox('setValue', row.department);
                 }
             });
