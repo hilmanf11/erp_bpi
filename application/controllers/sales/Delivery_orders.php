@@ -28,17 +28,6 @@ class Delivery_orders extends CI_Controller
         }
     }
 
-    public function readItemFg($customer_id)
-    {
-        $post = isset($_POST['q']) ? $_POST['q'] : "";
-        $send = $this->crud->query("SELECT b.id, b.number, b.name, b.number_customer, a.price, c.currency, b.uom
-            FROM customer_items a 
-            JOIN item_fg b ON a.item_fg_id = b.id
-            JOIN customers c ON a.customer_id = c.id
-            WHERE a.customer_id = '$customer_id' and (b.number LIKE '%$post%' or b.name LIKE '%$post%')");
-        echo json_encode($send);
-    }
-
     public function readSalesOrderDeliveries()
     {
         $delivery_date = $this->input->post('delivery_date');
@@ -49,44 +38,25 @@ class Delivery_orders extends CI_Controller
     public function readsC($delivery_date)
     {
         $delivery_date = base64_decode($delivery_date);
-
         $send = $this->crud->query("SELECT c.id, c.name
-            FROM sales_order_deliveries a 
+            FROM sales_orders a
+            LEFT JOIN sales_order_deliveries b ON a.sales_order_no = b.sales_order_no and b.trans_date = '$delivery_date'
             JOIN customers c ON a.customer_id = c.id
-            WHERE a.trans_date='$delivery_date'");
+            JOIN production_schedules d ON a.sales_order_no = d.so_number
+            WHERE a.status = 0 GROUP BY c.id");
         echo json_encode($send);
     }
 
-    public function readsCustOrderNo($customer_id,$delivery_date)
+    public function readsCustOrderNo($customer_id, $delivery_date)
     {
         $delivery_date = base64_decode($delivery_date);
         $customer_id = base64_decode($customer_id);
 
        $send = $this->crud->query("SELECT a.customer_order_no 
             FROM sales_orders a 
-            JOIN sales_order_deliveries b ON a.sales_order_no = b.sales_order_no
-            JOIN customers c ON b.customer_id = c.id
-            WHERE b.trans_date='$delivery_date' and b.customer_id= '$customer_id'");
-        echo json_encode($send);
-    }
-
-    public function readSalesOrders($customer_id, $item_fg_id, $delivery_date)
-    {
-        $post = isset($_POST['q']) ? $_POST['q'] : "";
-
-        $item_fg_id = base64_decode($item_fg_id);
-        $delivery_date = base64_decode($delivery_date);
-        $customer_id = base64_decode($customer_id);
-
-        $send = $this->crud->query("SELECT a.sales_order_no, b.customer_order_no, 
-                a.qty as qty_del, 
-                b.qty as qty_so, 
-                COALESCE(SUM(c.qty_del), 0) as qty_do, 
-                (b.qty - COALESCE(SUM(c.qty_del), 0)) as qty_remain
-            FROM sales_order_deliveries a
-            JOIN sales_orders b ON a.sales_order_no = b.sales_order_no and a.item_fg_id = b.item_fg_id and a.customer_id = b.customer_id
-            LEFT JOIN delivery_orders c ON a.sales_order_no = c.sales_order_no and a.item_fg_id = c.item_fg_id and a.customer_id = c.customer_id
-            WHERE a.item_fg_id='$item_fg_id' and a.trans_date='$delivery_date' and a.customer_id='$customer_id' and (a.sales_order_no LIKE '%$post%' or b.customer_order_no LIKE '%$post%')");
+            JOIN customers c ON a.customer_id = c.id
+            LEFT JOIN sales_order_deliveries b ON a.sales_order_no = b.sales_order_no and b.trans_date = '$delivery_date'
+            WHERE a.customer_id= '$customer_id' and a.status = 0 GROUP BY a.customer_order_no");
         echo json_encode($send);
     }
 
@@ -104,6 +74,38 @@ class Delivery_orders extends CI_Controller
             $autoID = sprintf("%03s", $urutan);
         }
         echo $datenow . $autoID;
+    }
+
+    public function datatablesTemp($delivery_date, $customer_id, $customer_order_no)
+    {
+        $delivery_date = base64_decode($delivery_date);
+        $customer_id = base64_decode($customer_id);
+        $customer_order_no = explode(",", base64_decode($customer_order_no));
+
+        $this->db->select('b.item_fg_id, d.number as item_fg_number, d.name as item_fg_name, 
+            b.customer_order_no,
+            b.sales_order_no,
+            d.uom, 
+            b.qty as qty_so, 
+            (b.qty - COALESCE(SUM(c.qty_del), 0)) as qty_remain,
+            COALESCE(SUM(c.qty_del), 0) as qty_do,
+            COALESCE(a.qty, 0) as qty_del,
+            COALESCE(SUM(e.qty), 0) as stock,
+            ((b.qty - COALESCE(SUM(c.qty_del), 0)) - a.qty) as stock_bal');
+        $this->db->from('sales_orders b');
+        $this->db->join('sales_order_deliveries a', 'a.sales_order_no = b.sales_order_no and a.item_fg_id = b.item_fg_id and a.customer_id = b.customer_id', 'left');
+        $this->db->join('delivery_orders c', 'b.sales_order_no = c.sales_order_no and b.item_fg_id = c.item_fg_id and b.customer_id = c.customer_id', 'left');
+        $this->db->join('item_fg d', 'b.item_fg_id = d.id');
+        $this->db->join('scan_item_receipts_fg e', 'a.sales_order_no = e.so_number', 'left');
+        $this->db->where('b.customer_id', $customer_id);
+        $this->db->where_in('b.customer_order_no', $customer_order_no);
+        $this->db->group_by('b.item_fg_id');
+        $this->db->group_by('b.sales_order_no');
+        $this->db->order_by('b.item_fg_id', 'asc');
+        
+        $records = $this->db->get()->result_array();
+
+        echo json_encode($records);
     }
 
     //GET DATATABLES
@@ -201,7 +203,11 @@ class Delivery_orders extends CI_Controller
             $delivery_orders = $this->crud->read("delivery_orders", [], ["delivery_order_no" => $post['delivery_order_no'], "item_fg_id" => $post['item_fg_id'], "sales_order_no" => $post['sales_order_no']]);
 
             if (@$delivery_orders->delivery_order_no != "") {
-                $send = $this->crud->update('delivery_orders', ["delivery_order_no" => $post['delivery_order_no'], "item_fg_id" => $post['item_fg_id'], "sales_order_no" => $post['sales_order_no']], $post);
+                $send = $this->crud->update('delivery_orders', [
+                    "delivery_order_no" => $post['delivery_order_no'], 
+                    "item_fg_id" => $post['item_fg_id'], 
+                    "sales_order_no" => $post['sales_order_no']
+                ], ["remarks" => $post['remarks']]);
             } else {
                 $send = $this->crud->create('delivery_orders', $post);
 
@@ -274,7 +280,7 @@ class Delivery_orders extends CI_Controller
 
             $html .= '  <table style="width:100%;">
                             <tr>
-                                <th width="10"><img src="' . $config->favicon . '" width="60" /></th>
+                                <th width="10"><img src="' . $config->favicon . '" width="40" /></th>
                                 <td width="300" style="padding:10px;">
                                     <b style="font-size:14px;">' . $config->name . '</b><br>
                                     <span style="font-size:10px;">' . $config->description . '</span><br>
@@ -419,7 +425,7 @@ class Delivery_orders extends CI_Controller
             $this->db->where('a.delivery_order_date <=', $filter_to);
         }
         $this->db->like('a.customer_id', $filter_customer_id);
-        $this->db->like('a.filter_delivery_order_no', $filter_delivery_order_no);
+        $this->db->like('a.delivery_order_no', $filter_delivery_order_no);
         $this->db->like('a.sales_order_no', $filter_sales_order_no);
         $this->db->like('a.item_fg_id', $filter_item_fg);
         $this->db->like('d.customer_order_no', $filter_customer_order_no);
