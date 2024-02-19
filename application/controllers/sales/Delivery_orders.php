@@ -46,6 +46,30 @@ class Delivery_orders extends CI_Controller
         echo json_encode($send);
     }
 
+    public function readsC($delivery_date)
+    {
+        $delivery_date = base64_decode($delivery_date);
+
+        $send = $this->crud->query("SELECT c.id, c.name
+            FROM sales_order_deliveries a 
+            JOIN customers c ON a.customer_id = c.id
+            WHERE a.trans_date='$delivery_date'");
+        echo json_encode($send);
+    }
+
+    public function readsCustOrderNo($customer_id,$delivery_date)
+    {
+        $delivery_date = base64_decode($delivery_date);
+        $customer_id = base64_decode($customer_id);
+
+       $send = $this->crud->query("SELECT a.customer_order_no 
+            FROM sales_orders a 
+            JOIN sales_order_deliveries b ON a.sales_order_no = b.sales_order_no
+            JOIN customers c ON b.customer_id = c.id
+            WHERE b.trans_date='$delivery_date' and b.customer_id= '$customer_id'");
+        echo json_encode($send);
+    }
+
     public function readSalesOrders($customer_id, $item_fg_id, $delivery_date)
     {
         $post = isset($_POST['q']) ? $_POST['q'] : "";

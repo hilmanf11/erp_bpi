@@ -103,6 +103,10 @@
                     <span style="width:35%; display:inline-block;">Delivery Order No</span>
                     <input style="width:60%;" name="delivery_order_no" id="delivery_order_no" readonly required class="easyui-textbox">
                 </div>
+                <div class="fitem">
+                    <span style="width:35%; display:inline-block;">Customer Order No</span>
+                    <input style="width:60%;" name="customer_order_no" id="customer_order_no" required class="easyui-combobox">
+                </div>
             </div>
             <div style="width: 50%; float: left;">
                 <div class="fitem">
@@ -157,7 +161,27 @@
                         if (response.length == 0) {
                             toastr.error("Sales Order Delivery Data Not Found on Delivery Date");
                             $("#delivery_date").datebox('clear');
+                        }else{
+                            $('#customer_id').combobox({
+                                url: '<?= base_url('sales/delivery_orders/readsC/'); ?>' + btoa(delivery_date),
+                                valueField: 'id',
+                                textField: 'name',
+                                prompt: 'Choose Customer Name',
+                                onSelect: function(customer) {
+                                    $('#customer_order_no').combobox({
+                                        url: '<?= base_url('sales/delivery_orders/readsCustOrderNo/'); ?>' + btoa(customer.id) +"/"+ btoa(delivery_date),
+                                        valueField: 'customer_order_no',
+                                        textField: 'customer_order_no',
+                                        prompt: 'Choose Customer Order No',
+                                        onSelect: function(customer) {
+                                            // addTable(customer.id);
+                                        }
+                                    }); 
+                                }
+                            });
                         }
+
+                        
                     }
                 });
             }
@@ -848,16 +872,6 @@
                 width: 200
             }]
         ],
-    });
-
-    $('#customer_id').combobox({
-        url: '<?= base_url('master/customers/reads'); ?>',
-        valueField: 'id',
-        textField: 'name',
-        prompt: 'Choose Customer Name',
-        onSelect: function(customer) {
-            addTable(customer.id);
-        }
     });
 
     //CELLSTYLE STATUS
