@@ -3,7 +3,7 @@
     <thead>
         <tr>
             <th rowspan="2" field="ck" checkbox="true"></th>
-            <th rowspan="2" data-options="field:'id',width:80,align:'center'">ID</th>
+            <!-- <th rowspan="2" data-options="field:'id',width:80,align:'center'">ID</th> -->
             <th rowspan="2" data-options="field:'number',width:80,halign:'center'">Code</th>
             <th rowspan="2" data-options="field:'name',width:200,halign:'center'">Name</th>
             <th rowspan="2" data-options="field:'description',width:150,halign:'center'">Description</th>
@@ -28,17 +28,17 @@
         <fieldset style="width:100%; border:1px solid #d0d0d0; margin-bottom: 10px; border-radius:4px; float: left;">
             <legend><b>Form Data</b></legend>
             <div class="fitem">
-                <span style="width:35%; display:inline-block;">ID</span>
-                <input style="width:60%;" name="id" id="id" required="" class="easyui-textbox" readonly>
+                <span style="width:35%; display:inline-block;">Code</span>
+                <input style="width:60%;" name="number" id="number" required="" class="easyui-textbox" readonly>
             </div>
             <div class="fitem">
                 <span style="width:35%; display:inline-block;">Name</span>
                 <input style="width:60%;" name="name" id="name" required="" class="easyui-textbox">
             </div>
-            <div class="fitem">
+            <!-- <div class="fitem">
                 <span style="width:35%; display:inline-block;">Category Code</span>
                 <input style="width:60%;" name="number" id="number" required="" class="easyui-textbox">
-            </div>
+            </div> -->
             <div class="fitem">
                 <span style="width:35%; display:inline-block;">Description</span>
                 <input style="width:60%;" name="description" id="description" class="easyui-textbox">
@@ -47,20 +47,20 @@
     </form>
 </div>
 <!-- PDF -->
-<iframe id="printout" src="<?= base_url('master/item_categories/print') ?>" style="width: 100%;" hidden></iframe>
+<iframe id="printout" src="<?= base_url('finance/account_groups/print') ?>" style="width: 100%;" hidden></iframe>
 <script>
     //ADD DATA
     function add() {
         $('#dlg_insert').dialog('open');
-        url_save = '<?= base_url('master/item_categories/create') ?>';
+        url_save = '<?= base_url('finance/account_groups/create') ?>';
         $('#frm_insert').form('clear');
         
         $.ajax({
             type : "post",
-            url : "<?= base_url('master/item_categories/autoid')?>",
+            url : "<?= base_url('finance/account_groups/autoid')?>",
             dataType : "html",
             success : function(response){
-                $('#id').textbox('setValue', response);
+                $('#number').textbox('setValue', response);
             }
         });
     }
@@ -70,7 +70,7 @@
         if (row) {
             $('#dlg_insert').dialog('open');
             $('#frm_insert').form('load', row);
-            url_save = '<?= base_url('master/item_categories/update') ?>?id=' + btoa(row.id);
+            url_save = '<?= base_url('finance/account_groups/update') ?>?id=' + btoa(row.id);
         } else {
             toastr.warning("Please select one of the data in the table first!", "Information");
         }
@@ -85,7 +85,7 @@
                         var row = rows[i];
                         $.ajax({
                             method: 'post',
-                            url: '<?= base_url('master/item_categories/delete') ?>',
+                            url: '<?= base_url('finance/account_groups/delete') ?>',
                             data: {
                                 id: row.id
                             },
@@ -113,7 +113,7 @@
     }
     //PRINT EXCEL
     function excel() {
-        window.location.assign('<?= base_url('master/item_categories/print/excel') ?>');
+        window.location.assign('<?= base_url('finance/account_groups/print/excel') ?>');
     }
     //RELOAD
     function reload() {
@@ -122,7 +122,7 @@
     $(function() {
         //SETTING DATAGRID EASYUI
         $('#dg').datagrid({
-            url: '<?= base_url('master/item_categories/datatables') ?>',
+            url: '<?= base_url('finance/account_groups/datatables') ?>',
             pagination: true,
             clientPaging: false,
             remoteFilter: true,
