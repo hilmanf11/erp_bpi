@@ -106,21 +106,25 @@
                     <span style="width:35%; display:inline-block;">Delivery Date</span>
                     <input style="width:60%;" name="delivery_note_date" id="delivery_note_date" required="" data-options="formatter:myformatter,parser:myparser,editable:false" class="easyui-datebox">
                 </div>
-                <div class="fitem">
+                <div class="fitem" hidden>
                     <span style="width:35%; display:inline-block;">Delivery Note No.</span>
                     <input style="width:60%;" name="delivery_note_no" id="delivery_note_no" readonly class="easyui-textbox">
                 </div>
-                <div class="fitem">
+                <div class="fitem" hidden>
                     <span style="width:35%; display:inline-block;">Plant</span>
-                    <input style="width:60%;" name="plant" id="plant" required="" class="easyui-combobox">
+                    <input style="width:60%;" name="plant" id="plant" class="easyui-combobox">
                 </div>
-                <div class="fitem">
+                <div class="fitem" hidden>
                     <span style="width:35%; display:inline-block;">Dept</span>
                     <input style="width:60%;" name="department" id="department" readonly class="easyui-textbox">
                 </div>
-                <div class="fitem">
+                <div class="fitem" hidden>
                     <span style="width:35%; display:inline-block;">Shipping Address</span>
                     <input style="width:60%;" name="customer_address_id" id="customer_address_id" readonly class="easyui-textbox">
+                </div>
+                <div class="fitem">
+                    <span style="width:35%; display:inline-block;">Delivery Order No</span>
+                    <input style="width:60%;" name="delivery_order_no" id="delivery_order_no" class="easyui-combobox">
                 </div>
                 <div class="fitem">
                     <span style="width:35%; display:inline-block;">Police No.</span>
@@ -130,7 +134,10 @@
                     <span style="width:35%; display:inline-block;">Driver Name</span>
                     <input style="width:60%;" name="driver_name" id="driver_name" class="easyui-textbox">
                 </div>
-               
+                <div class="fitem">
+                    <span style="width:35%; display:inline-block;"></span>
+                    <a href="javascript:;" class="easyui-linkbutton" id="btnPreview" onclick="preview()"><i class="fa fa-search"></i> Preview Data</a>
+                </div>
             </div>
             <div style="width: 50%; float: left;">
             <div class="fitem">
@@ -175,7 +182,23 @@
                 </div>
             </div>
         </fieldset>
-        <table id="dg2" class="easyui-datagrid" style="width:100%;" title="Delivery Order Lists" toolbar="#toolbar2"></table>
+        <!-- <table id="dg2" class="easyui-datagrid" style="width:100%;" title="Delivery Order Lists" toolbar="#toolbar2"></table> -->
+        <table id="dg_request" class="easyui-datagrid" style="width:100%;" title="Purchase Order List" idField="item_number">
+            <thead>
+                <tr>
+                    <th field="ck" checkbox="true"></th>
+                    <th data-options="field:'delivery_order_no',width:150,halign:'center'">Delivery Order No</th>
+                    <th data-options="field:'item_fg_id',width:150,halign:'center'">Product ID</th>
+                    <th data-options="field:'item_fg_number',width:150,halign:'center'">Product No</th>
+                    <th data-options="field:'item_fg_name',width:150,halign:'center'">Product Name</th>
+                    <th data-options="field:'sales_order_no',width:150,halign:'center'">Sales <br>Order No</th>
+                    <th data-options="field:'customer_order_no',width:150,halign:'center'">Customer <br>Order No</th>
+                    <th data-options="field:'transaction',width:100,halign:'center'">Transaction</th>
+                    <th data-options="field:'uom',width:80,halign:'center'">Uom</th>
+                    <th data-options="field:'qty',width:80,editor:{type:'numberbox'},halign:'center'">Qty</th>
+                </tr>
+            </thead>
+        </table>
     </form>
 </div>
 
@@ -200,6 +223,7 @@
         $("#ship_by").textbox('enable');
         $("#incoterm").textbox('enable');
         $("#status_delivery").textbox('enable');
+        $("#btnPreview").linkbutton('enable');
 
     }
 
@@ -503,11 +527,43 @@
             $("#ship_by").textbox('disable');
             $("#incoterm").textbox('disable');
             $("#status_delivery").textbox('disable');
+            $("#btnPreview").linkbutton('disable');
 
 
             addTable(row.customer_id, '<?= base_url('sales/delivery_notes/datatableUpdates?delivery_note_no=') ?>' + window.btoa(row.delivery_note_no));
         } else {
             toastr.warning("Please select one of the data in the table first!", "Information");
+        }
+    }
+
+    function preview(url= "") {
+        var delivery_order_no = $("#delivery_order_no").combobox('getValue');
+
+        if(url == ""){
+            var urlGet = "<?= base_url('sales/delivery_notes/datatablesTemp/') ?>" + btoa(delivery_order_no);
+        }else{
+            var urlGet = url;
+        }
+
+        if (delivery_order_no == "") {
+            toastr.warning('Please select Delivery Order No', 'Required');
+        } else {
+            var lastIndex;
+            var dg = $('#dg_request').datagrid({
+                url: urlGet,
+                fitColumns: true,
+                onClickRow: function(rowIndex) {
+                    if (lastIndex != rowIndex) {
+                        $(this).datagrid('endEdit', lastIndex);
+                        $(this).datagrid('beginEdit', rowIndex);
+                    }
+                    lastIndex = rowIndex;
+                },
+                onBeginEdit: function(rowIndex, row) {
+                    var editors = $('#dg_request').datagrid('getEditors', rowIndex);
+                    var qty = $(editors[0].target);
+                }
+            });
         }
     }
 
@@ -700,8 +756,8 @@
                     var delivery_note_date = $("#delivery_note_date").datebox('getValue');
                     var delivery_note_no = $("#delivery_note_no").textbox('getValue');
                     var customer_address_id = $("#customer_address_id").textbox('getValue');
-                    var department = $("#department").textbox('getValue');
-                    var plant = $("#plant").combobox('getValue');
+                    // var department = $("#department").textbox('getValue');
+                    // var plant = $("#plant").combobox('getValue');
                     var police_no = $("#police_no").combobox('getValue');
                     var driver_name = $("#driver_name").textbox('getValue');
                     var origin = $("#origin").textbox('getValue');
@@ -712,9 +768,9 @@
                     var status_delivery = $("#status_delivery").textbox('getValue');
                     var status = $("#status").combobox('getValue');
 
-                    var rows = $('#dg2').datagrid('getRows');
+                    $('#dg_request').datagrid('acceptChanges');
+                    var rows = $('#dg_request').datagrid('getSelections');
                     var totalrows = rows.length;
-                    endEditing();
 
                     if (customer_id != "" && delivery_note_date !="" && delivery_note_no !="" && customer_address_id !="" && 
                     police_no !="" && origin !="" && sailing !="" && incoterm !="") {
@@ -727,7 +783,7 @@
                                         customer_id: customer_id,
                                         delivery_note_date: delivery_note_date,
                                         delivery_note_no: delivery_note_no,
-                                        customer_address_id: customer_address_id,
+                                        // customer_address_id: customer_address_id,
                                         plant: plant,
                                         department: department,
                                         police_no: police_no,
@@ -895,7 +951,14 @@
             $("#sailing").textbox('setValue', sailing);
             $("#ship_by").textbox('setValue', ship_by);
             $("#incoterm").textbox('setValue', incoterm);
-
+        
+            $('#delivery_order_no').combobox({
+                url: '<?= base_url('sales/delivery_notes/readDo/'); ?>' + customer.id,
+                valueField: 'delivery_order_no',
+                textField: 'delivery_order_no',
+                multiple:true,
+                prompt: 'Choose DO No.'
+            });
             
             $('#delivery_note_date').datebox({
                 onChange: function (delivery_note_date) {
@@ -914,7 +977,7 @@
 
                 $('#plant').combogrid({
                 url: '<?= base_url('master/customers/readAddress/'); ?>' + customer.id,
-                panelWidth: 400,
+                panelWidth: 600,
                 idField: 'plant',
                 textField: 'plant',
                 mode: 'remote',
@@ -933,8 +996,12 @@
                         width: 200
                     }, {
                         field: 'department',
-                        title: 'Department Name',
-                        width: 200
+                        title: 'Department <br>Name',
+                        width: 100
+                    }, {
+                        field: 'address',
+                        title: 'Address',
+                        width: 300
                     }]
                 ],
                 onSelect: function(val, row) {
@@ -944,6 +1011,7 @@
             });
         }
     });
+
 
     $('#police_no').combobox({
         url: '<?= base_url('master/vehicles/reads'); ?>',

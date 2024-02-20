@@ -28,6 +28,27 @@ class Delivery_notes extends CI_Controller
         }
     }
 
+    public function datatablesTemp($delivery_order_no)
+    {
+        $delivery_order_no = base64_decode($delivery_order_no);
+        
+        //Select Query
+        $this->db->select('a.delivery_order_no, 
+            b.id as item_fg_id, 
+            b.number as item_fg_number, 
+            b.name as item_fg_name,
+            c.customer_order_no, 
+            c.sales_order_no,
+            b.uom');
+        $this->db->from('delivery_orders a');
+        $this->db->join('item_fg b', 'a.item_fg_id = b.id');
+        $this->db->join('sales_orders c', 'a.sales_order_no = c.sales_order_no');
+        $this->db->where('a.deleted', 0);
+        $this->db->where('a.delivery_order_no', $delivery_order_no);
+        $records = $this->db->get()->result_array();
+        echo json_encode($records);
+    }
+
     public function readDo($customer_id)
     {
         $send = $this->crud->query("SELECT b.id, b.number, b.name, a.delivery_order_no, a.sales_order_no, a.trans_type, a.delivery_date, c.customer_order_no, a.uom, a.qty_do 

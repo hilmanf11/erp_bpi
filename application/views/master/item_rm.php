@@ -31,63 +31,68 @@
     <?= $button ?>
 </div>
 <!-- DIALOG SAVE AND UPDATE -->
-<div id="dlg_insert" class="easyui-dialog" title="Add New" data-options="closed: true,modal:true" style="width: 400px; padding:10px; top: 20px;">
+<div id="dlg_insert" class="easyui-dialog" title="Add New" data-options="closed: true,modal:true" style="width: 1100px; padding:10px; top: 20px;">
     <form id="frm_insert" method="post" novalidate>
         <fieldset style="width:100%; border:1px solid #d0d0d0; margin-bottom: 10px; border-radius:4px; float: left;">
             <legend><b>Form Data</b></legend>
-            <div class="fitem">
-                <span style="width:35%; display:inline-block;">Part ID</span>
-                <input style="width:60%;" name="id" id="id" required="" class="easyui-textbox" readonly>
+            <div style="width: 50%; float: left;">
+                <div class="fitem">
+                    <span style="width:35%; display:inline-block;">Part ID</span>
+                    <input style="width:60%;" name="id" id="id" required="" class="easyui-textbox" readonly>
+                </div>
+                <div class="fitem">
+                    <span style="width:35%; display:inline-block;">Part No</span>
+                    <input style="width:60%;" name="number" id="number" required="" class="easyui-textbox">
+                </div>
+                <div class="fitem">
+                    <span style="width:35%; display:inline-block;">Part Name</span>
+                    <input style="width:60%;" name="name" id="name" required="" class="easyui-textbox">
+                </div>
+                <div class="fitem">
+                    <span style="width:35%; display:inline-block;">Unit of Measure</span>
+                    <input style="width:60%;" name="uom" id="uom" required="" class="easyui-combobox">
+                </div>
+                <div class="fitem">
+                    <span style="width:35%; display:inline-block;">Category</span>
+                    <input style="width:60%;" name="item_category_id" id="item_category_id" required="" class="easyui-combobox">
+                </div>
+                <div class="fitem">
+                    <span style="width:35%; display:inline-block;">Product Family</span>
+                    <input style="width:60%;" name="item_family_id" id="item_family_id" required="" class="easyui-combobox">
+                </div>
             </div>
-            <div class="fitem">
-                <span style="width:35%; display:inline-block;">Part No</span>
-                <input style="width:60%;" name="number" id="number" required="" class="easyui-textbox">
-            </div>
-            <div class="fitem">
-                <span style="width:35%; display:inline-block;">Part Name</span>
-                <input style="width:60%;" name="name" id="name" required="" class="easyui-textbox">
-            </div>
-            <div class="fitem">
-                <span style="width:35%; display:inline-block;">Unit of Measure</span>
-                <input style="width:60%;" name="uom" id="uom" required="" class="easyui-combobox">
-            </div>
-            <div class="fitem">
-                <span style="width:35%; display:inline-block;">Category</span>
-                <input style="width:60%;" name="item_category_id" id="item_category_id" required="" class="easyui-combobox">
-            </div>
-            <div class="fitem">
-                <span style="width:35%; display:inline-block;">Product Family</span>
-                <input style="width:60%;" name="item_family_id" id="item_family_id" required="" class="easyui-combobox">
-            </div>
-            <div class="fitem">
-                <span style="width:35%; display:inline-block;">Product Family Sub</span>
-                <input style="width:60%;" name="item_sub_family_id" id="item_sub_family_id" required="" class="easyui-combobox">
-            </div>
-            <div class="fitem">
-                <span style="width:35%; display:inline-block;">Account No</span>
-                <input style="width:60%;" name="account_number" id="account_number" class="easyui-textbox">
-            </div>
-            <div class="fitem">
-                <span style="width:35%; display:inline-block;">Account Name</span>
-                <input style="width:60%;" name="account_name" id="account_name" class="easyui-textbox">
-            </div>
-            <div class="fitem">
-                <span style="width:35%; display:inline-block;">Description</span>
-                <input style="width:60%;" name="description" id="description" class="easyui-textbox">
-            </div>
-            <div class="fitem">
-                <span style="width:35%; display:inline-block;">Supply</span>
-                <select style="width:60%;" name="supply" id="supply" required="" panelHeight="auto" class="easyui-combobox">
-                    <option value="0">YES</option>
-                    <option value="1">NO</option>
-                </select>
-            </div>
-            <div class="fitem">
-                <span style="width:35%; display:inline-block;">Status</span>
-                <select style="width:60%;" name="status" id="status" required="" panelHeight="auto" class="easyui-combobox">
-                    <option value="0">Active</option>
-                    <option value="1">Not Active</option>
-                </select>
+
+            <div style="width: 50%; float: left;">
+                <div class="fitem">
+                    <span style="width:35%; display:inline-block;">Product Family Sub</span>
+                    <input style="width:60%;" name="item_sub_family_id" id="item_sub_family_id" required="" class="easyui-combobox">
+                </div>
+                <div class="fitem">
+                    <span style="width:35%; display:inline-block;">Account No</span>
+                    <input style="width:60%;" name="account_number" id="account_number" class="easyui-textbox">
+                </div>
+                <div class="fitem">
+                    <span style="width:35%; display:inline-block;">Account Name</span>
+                    <input style="width:60%;" name="account_name" id="account_name" class="easyui-textbox">
+                </div>
+                <div class="fitem">
+                    <span style="width:35%; display:inline-block;">Description</span>
+                    <input style="width:60%;" name="description" id="description" class="easyui-textbox">
+                </div>
+                <div class="fitem">
+                    <span style="width:35%; display:inline-block;">Supply</span>
+                    <select style="width:60%;" name="supply" id="supply" required="" panelHeight="auto" class="easyui-combobox">
+                        <option value="0">YES</option>
+                        <option value="1">NO</option>
+                    </select>
+                </div>
+                <div class="fitem">
+                    <span style="width:35%; display:inline-block;">Status</span>
+                    <select style="width:60%;" name="status" id="status" required="" panelHeight="auto" class="easyui-combobox">
+                        <option value="0">Active</option>
+                        <option value="1">Not Active</option>
+                    </select>
+                </div>
             </div>
         </fieldset>
     </form>

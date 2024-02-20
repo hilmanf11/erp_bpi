@@ -120,6 +120,10 @@
                 </div>
                 <div class="fitem">
                     <span style="width:35%; display:inline-block;">Shipping Address</span>
+                    <input style="width:60%;" name="customer_address_name" id="customer_address_name" readonly class="easyui-textbox">
+                </div>
+                <div class="fitem" hidden>
+                    <span style="width:35%; display:inline-block;">Shipping Address id</span>
                     <input style="width:60%;" name="customer_address_id" id="customer_address_id" readonly class="easyui-textbox">
                 </div>
                 <div class="fitem">
@@ -264,6 +268,7 @@
                     onSelect: function(val, row) {
                         $("#attention_to").textbox('setValue', row.contact_person);
                         $("#customer_address_id").textbox('setValue', row.id);
+                        $("#customer_address_name").textbox('setValue', row.address);
                         $("#department").textbox('setValue', row.department);
                     }
                 });
@@ -617,6 +622,8 @@
             $("#sales_order_no").textbox('disable');
             $("#sales_order_date").datebox('disable');
             $("#plant").textbox('disable');
+            
+            
 
             addTable(row.customer_id, '<?= base_url('sales/sales_orders/datatableUpdates?sales_order_no=') ?>' + window.btoa(row.sales_order_no));
         } else {

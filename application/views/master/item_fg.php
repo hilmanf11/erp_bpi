@@ -56,12 +56,12 @@
     <?= $button ?>
 </div>
 <!-- DIALOG SAVE AND UPDATE -->
-<div id="dlg_insert" class="easyui-dialog" title="Add New" data-options="closed: true,modal:true" style="width: 1100px; padding:10px; top: 20px;">
+<div id="dlg_insert" class="easyui-dialog" title="Add New" data-options="closed: true,modal:true" style="width: 100%; padding:10px; top: 0; left: 0;">
     <form id="frm_insert" method="post" novalidate enctype="multipart/form-data">
         <fieldset style="width:100%; border:1px solid #d0d0d0; margin-bottom: 10px; border-radius:4px; float: left;">
             <legend><b>Form Data</b></legend>
 
-            <div style="float:left; width:30%;">
+            <div style="float:left; width:33%;">
                 <div class="fitem">
                     <span style="width:35%; display:inline-block;">Product ID</span>
                     <input style="width:60%;" name="id" id="id" required="" class="easyui-textbox" readonly>
@@ -96,7 +96,7 @@
                 </div>
             </div>
 
-            <div style="float:left; width:30%;">
+            <div style="float:left; width:33%;">
                 <div class="fitem">
                     <span style="width:35%; display:inline-block;">Box</span>
                     <input style="width:60%;" name="boxs" id="boxs" required="" class="easyui-combobox">
@@ -137,7 +137,7 @@
                     <input style="width:60%;" name="color" id="color" required="" class="easyui-textbox">
                 </div>
             </div>
-            <div style="float:left; width:30%;">
+            <div style="float:left; width:33%;">
                 <div class="fitem">
                     <span style="width:35%; display:inline-block;">Leadtime (Day)</span>
                     <input style="width:60%;" name="leadtime" id="leadtime" class="easyui-numberbox">

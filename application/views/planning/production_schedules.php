@@ -155,11 +155,11 @@
         </tr>
         <tr>
             <td style="padding: 5px; font-weight: bold;"> Sales Order No</td>
-            <td style="padding: 5px;">The data GET in the <b>planning/sales orders</b> module by customer</td>
+            <td style="padding: 5px;">The data GET in the <b>sales/sales orders</b> module by customer</td>
         </tr>
         <tr>
             <td style="padding: 5px; font-weight: bold;"> Product No</td>
-            <td style="padding: 5px;">The data GET in the <b>planning/sales orders</b> module by sales order no and customer</td>
+            <td style="padding: 5px;">The data GET in the <b>sales/sales orders</b> module by sales order no and customer</td>
         </tr>
         <tr>
             <td colspan="2" style="border: 2px solid black; text-align: center; font-weight: bold;">VALIDATION</td>
@@ -387,7 +387,7 @@
             }],
             onSelect: function(val, row) {
                 $("#filter_sales_order").combobox({
-                    url: '<?= base_url('planning/sales_orders/readSalesOrder/') ?>' + row.id,
+                    url: '<?= base_url('sales/sales_orders/readSalesOrder/') ?>' + row.id,
                     valueField: 'sales_order_no',
                     textField: 'sales_order_no',
                     prompt: "Select Sales Order",
@@ -466,7 +466,7 @@
             ],
             onSelect: function(val, rowCust) {
                 $('#so_number').combogrid({
-                    url: '<?= base_url('planning/sales_orders/readSalesOrder/') ?>' + rowCust.id,
+                    url: '<?= base_url('sales/sales_orders/readSalesOrder/') ?>' + rowCust.id,
                     panelWidth: 420,
                     idField: 'sales_order_no',
                     textField: 'sales_order_no',
@@ -487,7 +487,7 @@
                     onSelect: function(val, rowSo) {
                         $("#so_date").datebox('setValue', rowSo.sales_order_date);
                         $('#item_fg_id').combogrid({
-                            url: '<?= base_url('planning/sales_orders/readItems/') ?>' + rowCust.id + '/' + rowSo.sales_order_no,
+                            url: '<?= base_url('sales/sales_orders/readItems/') ?>' + rowCust.id + '/' + rowSo.sales_order_no,
                             panelWidth: 500,
                             idField: 'id',
                             textField: 'number',
