@@ -22,7 +22,7 @@ class Delivery_notes extends CI_Controller
         } elseif ($this->checkuserAccess($this->id_menu()) > 0) {
             $data['button'] = $this->getbutton($this->id_menu());
             $this->load->view('template/header', $data);
-            $this->load->view('sales/delivery_notes');
+            $this->load->view('planning/delivery_notes');
         } else {
             redirect('error_access');
         }

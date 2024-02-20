@@ -171,14 +171,14 @@
 </div>
 
 <!-- PDF -->
-<iframe id="printout" src="<?= base_url('sales/delivery_notes/print') ?>" style="width: 100%;" hidden></iframe>
+<iframe id="printout" src="<?= base_url('planning/delivery_notes/print') ?>" style="width: 100%;" hidden></iframe>
 
 <script>
     //ADD DATA
     function add() {
         $('#dlg_insert').dialog('open');
         $('#dg2').datagrid('loadData', []);
-        url_save = '<?= base_url('sales/delivery_notes/create') ?>';
+        url_save = '<?= base_url('planning/delivery_notes/create') ?>';
         $('#frm_insert').form('clear');
 
         $('#status').combobox('setValue', '0');
@@ -197,7 +197,7 @@
     function number(delivery_note_date) {
         $.ajax({
             type: "post",
-            url: "<?= base_url('sales/delivery_notes/number/') ?>" + window.btoa(delivery_note_date),
+            url: "<?= base_url('planning/delivery_notes/number/') ?>" + window.btoa(delivery_note_date),
             dataType: "html",
             success: function(result) {
                 $("#delivery_note_no").textbox('setValue', result);
@@ -218,7 +218,7 @@
                     editor: {
                         type: 'combogrid',
                         options: {
-                            url: '<?= base_url('sales/delivery_notes/readDo/'); ?>' + customer_id,
+                            url: '<?= base_url('planning/delivery_notes/readDo/'); ?>' + customer_id,
                             required: true,
                             panelWidth: 200,
                             idField: 'delivery_order_no',
@@ -275,7 +275,7 @@
 
                                 $(ed.target).textbox('setValue', rows.delivery_order_no);
                                 $(ed2.target).combogrid({
-                                    url: '<?= base_url('sales/delivery_notes/readDo/'); ?>' + customer_id,
+                                    url: '<?= base_url('planning/delivery_notes/readDo/'); ?>' + customer_id,
                                     required: true,
                                     panelWidth: 200,
                                     idField: 'id',
@@ -460,7 +460,7 @@
 
         $.ajax({
             method: 'post',
-            url: '<?= base_url('sales/delivery_notes/delete') ?>',
+            url: '<?= base_url('planning/delivery_notes/delete') ?>',
             data: {
                 delivery_note_no: delivery_note_no,
                 item_fg_id: item_fg_id
@@ -496,7 +496,7 @@
             $("#status_delivery").textbox('disable');
 
 
-            addTable(row.customer_id, '<?= base_url('sales/delivery_notes/datatableUpdates?delivery_note_no=') ?>' + window.btoa(row.delivery_note_no));
+            addTable(row.customer_id, '<?= base_url('planning/delivery_notes/datatableUpdates?delivery_note_no=') ?>' + window.btoa(row.delivery_note_no));
         } else {
             toastr.warning("Please select one of the data in the table first!", "Information");
         }
@@ -512,7 +512,7 @@
                         var row = rows[i];
                         $.ajax({
                             method: 'post',
-                            url: '<?= base_url('sales/delivery_notes/delete') ?>',
+                            url: '<?= base_url('planning/delivery_notes/delete') ?>',
                             data: {
                                 delivery_note_no: row.delivery_note_no
                             },
@@ -559,12 +559,56 @@
             "&filter_status=" + window.btoa(filter_status);
 
         $('#dg').datagrid({
-            url: '<?= base_url('sales/delivery_notes/datatables') ?>' + url,
+            url: '<?= base_url('planning/delivery_notes/datatables') ?>' + url
+        });
+
+        $("#printout").contents().find('html').html("<center><br><br><br><b style='font-size:20px;'>Please Wait...</b></center>");
+        $("#printout").attr('src', '<?= base_url('planning/delivery_notes/print') ?>' + url);
+    }
+
+    //PRINT PDF
+    function pdf() {
+        $("#printout").get(0).contentWindow.print();
+    }
+
+    //PRINT EXCEL
+    function excel() {
+        var filter_from = $("#filter_from").datebox('getValue');
+        var filter_to = $("#filter_to").datebox('getValue');
+        var filter_customer_id = $("#filter_customer_id").combobox('getValue');
+        var filter_delivery_note_no = $("#filter_delivery_note_no").combobox('getValue');
+        var filter_delivery_order_no = $("#filter_delivery_order_no").combobox('getValue');
+        var filter_sales_order_no = $("#filter_sales_order_no").combobox('getValue');
+        var filter_customer_order_no = $("#filter_customer_order_no").combobox('getValue');
+        var filter_item_fg = $("#filter_item_fg").combogrid('getValue');
+        var filter_status_delivery = $("#filter_status_delivery").combobox('getValue');
+        var filter_status = $("#filter_status").combobox('getValue');
+
+        var url = "?filter_from=" + window.btoa(filter_from) +
+            "&filter_to=" + window.btoa(filter_to) +
+            "&filter_customer_id=" + window.btoa(filter_customer_id) +
+            "&filter_delivery_note_no=" + window.btoa(filter_delivery_note_no) +
+            "&filter_delivery_order_no=" + window.btoa(filter_delivery_order_no) +
+            "&filter_sales_order_no=" + window.btoa(filter_sales_order_no) +
+            "&filter_customer_order_no=" + window.btoa(filter_customer_order_no) +
+            "&filter_item_fg=" + window.btoa(filter_item_fg) +
+            "&filter_status_delivery=" + window.btoa(filter_status_delivery);
+            "&filter_status=" + window.btoa(filter_status);
+
+        window.location.assign('<?= base_url('planning/delivery_notes/print/excel') ?>' + url);
+    }
+
+    //RELOAD
+    function reload() {
+        window.location.reload();
+    }
+
+    $(function() {
+        //SETTING DATAGRID EASYUI
+        $('#dg').datagrid({
+            url: '<?= base_url('planning/delivery_notes/datatables') ?>',
             pagination: true,
             rownumbers: true,
-            fit: true,
-            pageList: [10, 50, 100, 500, 1000],
-            pageSize: 10,
             view: detailview,
             detailFormatter: function(index, row) {
                 return '<div style="padding:2px;position:relative;"><table class="ddv" title="Detail Of ' + row.delivery_note_no + '"></table></div>';
@@ -573,7 +617,7 @@
                 var ddv = $(this).datagrid('getRowDetail', index).find('table.ddv');
 
                 ddv.datagrid({
-                    url: '<?= base_url('sales/delivery_notes/datatableDetails?delivery_order_no=') ?>' + window.btoa(row.delivery_order_no),
+                    url: '<?= base_url('planning/delivery_notes/datatableDetails?delivery_order_no=') ?>' + window.btoa(row.delivery_order_no),
                     singleSelect: true,
                     rownumbers: true,
                     height: 100,
@@ -635,51 +679,6 @@
             }
         });
 
-        $("#printout").contents().find('html').html("<center><br><br><br><b style='font-size:20px;'>Please Wait...</b></center>");
-        $("#printout").attr('src', '<?= base_url('sales/delivery_notes/print') ?>' + url);
-    }
-
-    //PRINT PDF
-    function pdf() {
-        $("#printout").get(0).contentWindow.print();
-    }
-
-    //PRINT EXCEL
-    function excel() {
-        var filter_from = $("#filter_from").datebox('getValue');
-        var filter_to = $("#filter_to").datebox('getValue');
-        var filter_customer_id = $("#filter_customer_id").combobox('getValue');
-        var filter_delivery_note_no = $("#filter_delivery_note_no").combobox('getValue');
-        var filter_delivery_order_no = $("#filter_delivery_order_no").combobox('getValue');
-        var filter_sales_order_no = $("#filter_sales_order_no").combobox('getValue');
-        var filter_customer_order_no = $("#filter_customer_order_no").combobox('getValue');
-        var filter_item_fg = $("#filter_item_fg").combogrid('getValue');
-        var filter_status_delivery = $("#filter_status_delivery").combobox('getValue');
-        var filter_status = $("#filter_status").combobox('getValue');
-
-        var url = "?filter_from=" + window.btoa(filter_from) +
-            "&filter_to=" + window.btoa(filter_to) +
-            "&filter_customer_id=" + window.btoa(filter_customer_id) +
-            "&filter_delivery_note_no=" + window.btoa(filter_delivery_note_no) +
-            "&filter_delivery_order_no=" + window.btoa(filter_delivery_order_no) +
-            "&filter_sales_order_no=" + window.btoa(filter_sales_order_no) +
-            "&filter_customer_order_no=" + window.btoa(filter_customer_order_no) +
-            "&filter_item_fg=" + window.btoa(filter_item_fg) +
-            "&filter_status_delivery=" + window.btoa(filter_status_delivery);
-            "&filter_status=" + window.btoa(filter_status);
-
-        window.location.assign('<?= base_url('sales/delivery_notes/print/excel') ?>' + url);
-    }
-
-    //RELOAD
-    function reload() {
-        window.location.reload();
-    }
-
-    $(function() {
-        //SETTING DATAGRID EASYUI
-        filter();
-
         //SAVE DATA
         $('#dlg_insert').dialog({
             buttons: [{
@@ -711,7 +710,7 @@
                             if (rows[i].item_fg_id) {
                                 $.ajax({
                                     type: "post",
-                                    url: '<?= base_url('sales/delivery_notes/create') ?>',
+                                    url: '<?= base_url('planning/delivery_notes/create') ?>',
                                     data: {
                                         customer_id: customer_id,
                                         delivery_note_date: delivery_note_date,
@@ -776,7 +775,7 @@
         }],
         onSelect: function(customer) {
             $('#filter_delivery_note_no').combobox({
-                url: '<?= base_url('sales/delivery_notes/readDelivery_note_no/'); ?>' + customer.id,
+                url: '<?= base_url('planning/delivery_notes/readDelivery_note_no/'); ?>' + customer.id,
                 valueField: 'delivery_note_no',
                 textField: 'delivery_note_no',
                 prompt: 'Choose All',
@@ -788,7 +787,7 @@
                 }],
                 onSelect: function(deliver_note) {
                     $('#filter_delivery_order_no').combobox({
-                        url: '<?= base_url('sales/delivery_notes/readDelivery_order_no/'); ?>' + customer.id,
+                        url: '<?= base_url('planning/delivery_notes/readDelivery_order_no/'); ?>' + customer.id,
                         valueField: 'delivery_order_no',
                         textField: 'delivery_order_no',
                         prompt: 'Choose All',
@@ -800,7 +799,7 @@
                         }],
                         onSelect: function(deliver_order) {
                             $('#filter_sales_order_no').combobox({
-                                url: '<?= base_url('sales/delivery_notes/readSalesOrder/'); ?>' + customer.id,
+                                url: '<?= base_url('planning/delivery_notes/readSalesOrder/'); ?>' + customer.id,
                                 valueField: 'sales_order_no',
                                 textField: 'sales_order_no',
                                 prompt: 'Choose All',
@@ -813,7 +812,7 @@
                             });
 
                             $('#filter_customer_order_no').combobox({
-                                url: '<?= base_url('sales/delivery_notes/readCustomerOrder/'); ?>' + customer.id,
+                                url: '<?= base_url('planning/delivery_notes/readCustomerOrder/'); ?>' + customer.id,
                                 valueField: 'customer_order_no',
                                 textField: 'customer_order_no',
                                 prompt: 'Choose All',
@@ -976,6 +975,6 @@
     }
 
     function print_do(delivery_order_no) {
-        window.open("<?= base_url('sales/delivery_notes/print_do/') ?>" + window.btoa(delivery_order_no), "_blank", "width=1200,height=600");
+        window.open("<?= base_url('planning/delivery_notes/print_do/') ?>" + window.btoa(delivery_order_no), "_blank", "width=1200,height=600");
     }
 </script>

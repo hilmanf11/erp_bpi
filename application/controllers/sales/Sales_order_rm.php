@@ -1,7 +1,7 @@
 <?php
 date_default_timezone_set("Asia/Bangkok");
 defined('BASEPATH') or exit('No direct script access allowed');
-class Sales_orders extends CI_Controller
+class Sales_order_rm extends CI_Controller
 {
     public function __construct()
     {
@@ -25,7 +25,7 @@ class Sales_orders extends CI_Controller
         } elseif ($this->checkuserAccess($this->id_menu()) > 0) {
             $data['button'] = $this->getbutton($this->id_menu());
             $this->load->view('template/header', $data);
-            $this->load->view('sales/sales_orders');
+            $this->load->view('sales/sales_order_rm');
         } else {
             redirect('error_access');
         }
@@ -36,7 +36,7 @@ class Sales_orders extends CI_Controller
         $post = isset($_POST['q']) ? $_POST['q'] : "";
         $send = $this->crud->query("SELECT b.id, b.number, b.name, b.number_customer, a.price, c.currency, b.uom
             FROM customer_items a 
-            JOIN item_fg b ON a.item_fg_id = b.id and b.type = 'FG'
+            JOIN item_fg b ON a.item_fg_id = b.id and b.type = 'RM'
             JOIN customers c ON a.customer_id = c.id
             WHERE a.customer_id = '$customer_id' and (b.number LIKE '%$post%' or b.name LIKE '%$post%')");
         echo json_encode($send);
@@ -46,7 +46,7 @@ class Sales_orders extends CI_Controller
     {
         $post = isset($_POST['q']) ? $_POST['q'] : "";
         $send = $this->crud->query("SELECT b.id, b.number, b.name, a.qty
-            FROM sales_orders a 
+            FROM sales_order_rm a 
             JOIN item_fg b ON a.item_fg_id = b.id
             JOIN customers c ON a.customer_id = c.id
             WHERE a.customer_id = '$customer_id' and a.sales_order_no = '$sales_order_no' and a.status = 0 and (b.number LIKE '%$post%' or b.name LIKE '%$post%') ");
@@ -55,20 +55,20 @@ class Sales_orders extends CI_Controller
 
     public function readSalesOrder($customer_id)
     {
-        $send = $this->crud->query("SELECT DISTINCT sales_order_no, sales_order_date FROM sales_orders WHERE customer_id = '$customer_id' and status = 0");
+        $send = $this->crud->query("SELECT DISTINCT sales_order_no, sales_order_date FROM sales_order_rm WHERE customer_id = '$customer_id' and status = 0");
         echo json_encode($send);
     }
 
     public function readCustomerOrder($customer_id)
     {
-        $send = $this->crud->query("SELECT DISTINCT customer_order_no FROM sales_orders WHERE customer_id = '$customer_id'");
+        $send = $this->crud->query("SELECT DISTINCT customer_order_no FROM sales_order_rm WHERE customer_id = '$customer_id'");
         echo json_encode($send);
     }
 
     public function number($customer_id, $sales_order_date)
     {
         $datenow    = "SO" . $customer_id . date("ymd", strtotime(base64_decode($sales_order_date)));
-        $sqlGetID   = $this->db->query("SELECT max(`sales_order_no`) as kode FROM sales_orders WHERE `sales_order_no` like '%$datenow%'");
+        $sqlGetID   = $this->db->query("SELECT max(`sales_order_no`) as kode FROM sales_order_rm WHERE `sales_order_no` like '%$datenow%'");
         $rowID      = $sqlGetID->row();
         $kode       = $rowID->kode;
         if ($kode == NULL) {
@@ -101,7 +101,7 @@ class Sales_orders extends CI_Controller
             $result = array();
             //Select Query
             $this->db->select("a.*, b.name as customer_name");
-            $this->db->from('sales_orders a');
+            $this->db->from('sales_order_rm a');
             $this->db->join('customers b', 'a.customer_id = b.id');
             if ($filter_from != "" && $filter_to != "") {
                 $this->db->where('a.sales_order_date >=', $filter_from);
@@ -132,7 +132,7 @@ class Sales_orders extends CI_Controller
             $sales_order_no = base64_decode($this->input->get('sales_order_no'));
 
             $this->db->select('a.*, b.number as item_fg_number, b.name as item_fg_name');
-            $this->db->from('sales_orders a');
+            $this->db->from('sales_order_rm a');
             $this->db->join('item_fg b', 'a.item_fg_id = b.id');
             $this->db->where('a.sales_order_no', $sales_order_no);
             $this->db->order_by('b.number', 'ASC');
@@ -149,7 +149,7 @@ class Sales_orders extends CI_Controller
             $sales_order_no = base64_decode($this->input->get('sales_order_no'));
 
             $this->db->select('a.*, b.number as item_fg_number, b.name as item_fg_name');
-            $this->db->from('sales_orders a');
+            $this->db->from('sales_order_rm a');
             $this->db->join('item_fg b', 'a.item_fg_id = b.id');
             $this->db->where('a.sales_order_no', $sales_order_no);
             $this->db->order_by('b.number', 'ASC');
@@ -165,11 +165,11 @@ class Sales_orders extends CI_Controller
         if ($this->input->post()) {
             $post = $this->input->post();
 
-            $sales_orders = $this->crud->read("sales_orders", [], ["sales_order_no" => $post['sales_order_no'], "item_fg_id" => $post['item_fg_id']]);
-            if (@$sales_orders->sales_order_no != "") {
-                $send = $this->crud->update('sales_orders', ["sales_order_no" => $post['sales_order_no'], "item_fg_id" => $post['item_fg_id']], $post);
+            $sales_order_rm = $this->crud->read("sales_order_rm", [], ["sales_order_no" => $post['sales_order_no'], "item_fg_id" => $post['item_fg_id']]);
+            if (@$sales_order_rm->sales_order_no != "") {
+                $send = $this->crud->update('sales_order_rm', ["sales_order_no" => $post['sales_order_no'], "item_fg_id" => $post['item_fg_id']], $post);
             } else {
-                $send = $this->crud->create('sales_orders', $post);
+                $send = $this->crud->create('sales_order_rm', $post);
             }
 
             echo $send;
@@ -181,7 +181,7 @@ class Sales_orders extends CI_Controller
     public function uploadatt()
     {
         // Pastikan file disimpan dalam direktori yang diinginkan
-        $uploadDir = 'assets/image/sales_orders/';
+        $uploadDir = 'assets/image/sales_order_rm/';
 
         if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             // Pastikan ada file yang diunggah dari permintaan
@@ -236,7 +236,7 @@ class Sales_orders extends CI_Controller
     public function delete()
     {
         $data = $this->input->post();
-        $send = $this->crud->delete('sales_orders', $data);
+        $send = $this->crud->delete('sales_order_rm', $data);
         echo $send;
     }
 
@@ -256,7 +256,7 @@ class Sales_orders extends CI_Controller
         $sales_order_date = $data->val(3, 3);
 
         $datenow    = "SO" . $customer_id . date("ymd", strtotime($sales_order_date));
-        $sqlGetID   = $this->db->query("SELECT max(`sales_order_no`) as kode FROM sales_orders WHERE `sales_order_no` like '%$datenow%'");
+        $sqlGetID   = $this->db->query("SELECT max(`sales_order_no`) as kode FROM sales_order_rm WHERE `sales_order_no` like '%$datenow%'");
         $rowID      = $sqlGetID->row();
         $kode       = $rowID->kode;
         if ($kode == NULL) {
@@ -310,13 +310,13 @@ class Sales_orders extends CI_Controller
     }
      public function uploadclearFailed()
      {
-         @unlink('failed/sales_orders.txt');
+         @unlink('failed/sales_order_rm.txt');
      }
      public function uploadcreateFailed()
      {
          if ($this->input->post()) {
              $message = $this->input->post('message');
-             $textFailed = fopen('failed/sales_orders.txt', 'a');
+             $textFailed = fopen('failed/sales_order_rm.txt', 'a');
              fwrite($textFailed, $message . "\n");
              fclose($textFailed);
          }
@@ -325,7 +325,7 @@ class Sales_orders extends CI_Controller
      //UPLOAD DOWNLOAD FAILED
      public function uploadDownloadFailed()
      {
-         $file = "failed/sales_orders.txt";
+         $file = "failed/sales_order_rm.txt";
          header('Content-Description: File Failed');
          header('Content-Disposition: attachment; filename=' . basename($file));
          header('Expires: 0');
@@ -353,9 +353,9 @@ class Sales_orders extends CI_Controller
                 echo json_encode(array("title" => "Not Found", "message" => "Customers Address ID " . $data['customer_address_id'] . " Not Found in Customers ID ". $data['customer_id'] . "", "theme" => "error"));
             } else {
                 $customer_items = $this->crud->read('customer_items', [], ["item_fg_id" => $data['item_fg_id'],"customer_id" => $data['customer_id']]);
-                $sales_orders = $this->crud->read('sales_orders', [], ["customer_order_no" => $data['customer_order_no'], "item_fg_id" => $data['item_fg_id']]);
+                $sales_order_rm = $this->crud->read('sales_order_rm', [], ["customer_order_no" => $data['customer_order_no'], "item_fg_id" => $data['item_fg_id']]);
 
-                if (!empty($sales_orders->sales_order_no )) {
+                if (!empty($sales_order_rm->sales_order_no )) {
                     echo json_encode(array("title" => "Duplicated", "message" => "Product ID " . $data['item_fg_id'] . " and Customer Order No " . $data['customer_order_no'] . " Duplicated", "theme" => "error"));
                 } else {
                     $dataFinal = array(
@@ -383,7 +383,7 @@ class Sales_orders extends CI_Controller
                         "total_grand" => ($total_sub + ($total_sub * ($customers->taxes / 100))),
                         
                     );
-                    $send   = $this->crud->create('sales_orders', $dataFinal);
+                    $send   = $this->crud->create('sales_order_rm', $dataFinal);
                     echo $send;
                 }
              }
@@ -396,7 +396,7 @@ class Sales_orders extends CI_Controller
         if ($option == "excel") {
             $format  = date("Ymd");
             header("Content-type: application/vnd-ms-excel");
-            header("Content-Disposition: attachment; filename=sales_orders_$format.xls");
+            header("Content-Disposition: attachment; filename=sales_order_rm_$format.xls");
         }
 
         $get = $this->input->get();
@@ -412,7 +412,7 @@ class Sales_orders extends CI_Controller
         $config = $this->db->get()->row();
 
         $this->db->select("a.*, b.name as customer_name, c.number as item_fg_number, c.name as item_fg_name");
-        $this->db->from('sales_orders a');
+        $this->db->from('sales_order_rm a');
         $this->db->join('customers b', 'a.customer_id = b.id');
         $this->db->join('item_fg c', 'a.item_fg_id = c.id');
         if ($filter_from != "" && $filter_to != "") {
