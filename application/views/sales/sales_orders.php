@@ -1022,7 +1022,7 @@
 
     $('#division').combobox({
         url: '<?= base_url('master/divisions/reads'); ?>',
-        valueField: 'name',
+        valueField: 'number',
         textField: 'name',
         panelHeight: 'panelHeight',
         prompt: 'Choose Division',
