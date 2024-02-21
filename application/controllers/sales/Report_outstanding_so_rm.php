@@ -1,7 +1,7 @@
 <?php
 date_default_timezone_set("Asia/Bangkok");
 defined('BASEPATH') or exit('No direct script access allowed');
-class Report_outstanding_so extends CI_Controller
+class Report_outstanding_so_rm extends CI_Controller
 {
     public function __construct()
     {
@@ -23,7 +23,7 @@ class Report_outstanding_so extends CI_Controller
         } elseif ($this->checkuserAccess($this->id_menu()) > 0) {
             $data['button'] = $this->getbutton($this->id_menu());
             $this->load->view('template/header', $data);
-            $this->load->view('sales/report_outstanding_so');
+            $this->load->view('sales/report_outstanding_so_rm');
         } else {
             redirect('error_access');
         }
@@ -36,7 +36,7 @@ class Report_outstanding_so extends CI_Controller
         $customer_id = $this->input->get("customer_id");
 
         $customer_orders = $this->crud->query("SELECT customer_order_no, sales_order_no
-            FROM sales_orders
+            FROM sales_order_rm
             WHERE sales_order_date between '$filter_so_date_from' and '$filter_so_date_to'
             AND customer_id = '$customer_id'
             GROUP BY sales_order_no
@@ -52,7 +52,7 @@ class Report_outstanding_so extends CI_Controller
         $customer_id = $this->input->get("customer_id");
 
         $customer_orders = $this->crud->query("SELECT b.id, b.number, b.name
-            FROM sales_orders a
+            FROM sales_order_rm a
             JOIN item_fg b ON a.item_fg_id = b.id
             WHERE a.sales_order_date between '$filter_so_date_from' and '$filter_so_date_to'
             AND a.customer_id = '$customer_id' AND a.sales_order_no = '$filter_sales_order_no'
@@ -106,7 +106,7 @@ class Report_outstanding_so extends CI_Controller
                     </div>
                     <br><br>
                     <div style="float: centet; font-size: 16px; text-align: center;">
-                        <h3>' . $filter_display . ' OUTSTANDING SALES ORDER <br>FINISH GOOD</h3>
+                        <h3>' . $filter_display . ' OUTSTANDING SALES ORDER <br>RAW MATERIAL</h3>
                     </div>
                 </center>
                 <table style="width: 40%; font-size:12px;">
@@ -140,7 +140,7 @@ class Report_outstanding_so extends CI_Controller
 
         if ($filter_display == "RECAP") {
             $this->db->select('a.sales_order_no, a.sales_order_date, a.customer_order_no, SUM(a.qty) as qty_order, SUM(a.delivery) as qty_delivery, SUM(a.outstanding) as qty_outstanding, b.number as customer_number, b.name as customer_name');
-            $this->db->from('sales_orders a');
+            $this->db->from('sales_order_rm a');
             $this->db->join('customers b', 'a.customer_id = b.id');
             $this->db->where("a.sales_order_date between '$filter_so_date_from' and '$filter_so_date_to'");
             $this->db->like('a.customer_id', $filter_customer_name);
@@ -211,7 +211,7 @@ class Report_outstanding_so extends CI_Controller
                 b.name as customer_name,
                 c.number as item_fg_number,
                 c.name as item_fg_name');
-            $this->db->from('sales_orders a');
+            $this->db->from('sales_order_rm a');
             $this->db->join('customers b', 'a.customer_id = b.id');
             $this->db->join('item_fg c', 'a.item_fg_id = c.id');
             $this->db->where("a.sales_order_date between '$filter_so_date_from' and '$filter_so_date_to'");

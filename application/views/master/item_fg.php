@@ -35,6 +35,7 @@
             <th rowspan="2" data-options="field:'min',width:50,align:'center'">Min</th>
             <th rowspan="2" data-options="field:'max',width:50,align:'center'">Max</th>
             <th rowspan="2" data-options="field:'attachment',width:100,halign:'center',formatter:cellbutton">Attachment</th>
+            <th rowspan="2" data-options="field:'type',width:50,align:'center'">Type</th>
             <th rowspan="2" data-options="field:'logo',width:100,align:'center', styler:cellStyler, formatter:cellFormatterLogo">Logo</th>
             <th rowspan="2" data-options="field:'status',width:100,align:'center', styler:cellStyler, formatter:cellFormatter">Status</th>
             <th rowspan="2" data-options="field:'approved_to',width:100,halign:'center', styler:styleApproved, formatter:formatApproved">Approved To</th>
@@ -56,7 +57,7 @@
     <?= $button ?>
 </div>
 <!-- DIALOG SAVE AND UPDATE -->
-<div id="dlg_insert" class="easyui-dialog" title="Add New" data-options="closed: true,modal:true" style="width: 100%; padding:10px; top: 0; left: 0;">
+<div id="dlg_insert" class="easyui-dialog" title="Add New" data-options="closed: true,modal:true" style="width: 90%; height: 500px; padding:10px; top: 10px; left: 10px;">
     <form id="frm_insert" method="post" novalidate enctype="multipart/form-data">
         <fieldset style="width:100%; border:1px solid #d0d0d0; margin-bottom: 10px; border-radius:4px; float: left;">
             <legend><b>Form Data</b></legend>
@@ -93,6 +94,13 @@
                 <div class="fitem">
                     <span style="width:35%; display:inline-block;">Control</span>
                     <input style="width:60%;" name="control_id" id="control_id" class="easyui-textbox">
+                </div>
+                <div class="fitem">
+                    <span style="width:35%; display:inline-block;">Type</span>
+                    <select style="width:60%;" name="type" id="type" class="easyui-combobox" panelHeight="auto">
+                        <option value="FG">FG</option>
+                        <option value="RM">RM</option>
+                    </select>
                 </div>
             </div>
 
@@ -217,6 +225,7 @@
         $('#polybag').combobox('setValue', 'Label Manual Logo BPI');
         $('#box_label').combobox('setValue', 'YES');
         $('#status').combobox('setValue', '0');
+        $('#type').combobox('setValue', 'FG');
     }
 
     //EDIT DATA

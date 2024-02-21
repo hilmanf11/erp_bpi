@@ -23,7 +23,7 @@ class Report_outstanding_so extends CI_Controller
         } elseif ($this->checkuserAccess($this->id_menu()) > 0) {
             $data['button'] = $this->getbutton($this->id_menu());
             $this->load->view('template/header', $data);
-            $this->load->view('sales/report_outstanding_so');
+            $this->load->view('planning/report_outstanding_so');
         } else {
             redirect('error_access');
         }
@@ -106,7 +106,7 @@ class Report_outstanding_so extends CI_Controller
                     </div>
                     <br><br>
                     <div style="float: centet; font-size: 16px; text-align: center;">
-                        <h3>' . $filter_display . ' OUTSTANDING SALES ORDER <br>FINISH GOOD</h3>
+                        <h3>' . $filter_display . ' OUTSTANDING SALES ORDER</h3>
                     </div>
                 </center>
                 <table style="width: 40%; font-size:12px;">
@@ -169,7 +169,6 @@ class Report_outstanding_so extends CI_Controller
             $qty_order = 0;
             $qty_delivery = 0;
             $qty_outstanding = 0;
-            $status = "";
             foreach ($records as $data) {
                 $qty_order += $data['qty_order'];
                 $qty_delivery += $data['qty_delivery'];

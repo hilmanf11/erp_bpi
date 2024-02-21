@@ -166,40 +166,19 @@
                 </div>
             </div>
         </fieldset>
-<<<<<<< HEAD
-        <!-- <table id="dg2" class="easyui-datagrid" style="width:100%;" title="Delivery Order Lists" toolbar="#toolbar2"></table> -->
-        <table id="dg_request" class="easyui-datagrid" style="width:100%;" title="Purchase Order List" idField="item_number">
-            <thead>
-                <tr>
-                    <th field="ck" checkbox="true"></th>
-                    <th data-options="field:'delivery_order_no',width:150,halign:'center'">Delivery Order No</th>
-                    <th data-options="field:'delivery_note_no',width:150,halign:'center'">Delivery Note No</th>
-                    <th data-options="field:'item_fg_id',width:150,halign:'center'">Product ID</th>
-                    <th data-options="field:'item_fg_number',width:150,halign:'center'">Product No</th>
-                    <th data-options="field:'item_fg_name',width:150,halign:'center'">Product Name</th>
-                    <th data-options="field:'sales_order_no',width:150,halign:'center'">Sales <br>Order No</th>
-                    <th data-options="field:'customer_order_no',width:150,halign:'center'">Customer <br>Order No</th>
-                    <th data-options="field:'transaction',width:100,halign:'center'">Transaction</th>
-                    <th data-options="field:'uom',width:80,halign:'center'">Uom</th>
-                    <th data-options="field:'qty',width:80,editor:{type:'numberbox'},halign:'center'">Qty</th>
-                </tr>
-            </thead>
-        </table>
-=======
         <table id="dg2" class="easyui-datagrid" style="width:100%;" title="Delivery Order Lists" toolbar="#toolbar2"></table>
->>>>>>> b0853c0f7289dc2ee534beb5aed8b2c224e09c18
     </form>
 </div>
 
 <!-- PDF -->
-<iframe id="printout" src="<?= base_url('sales/delivery_notes/print') ?>" style="width: 100%;" hidden></iframe>
+<iframe id="printout" src="<?= base_url('planning/delivery_notes/print') ?>" style="width: 100%;" hidden></iframe>
 
 <script>
     //ADD DATA
     function add() {
         $('#dlg_insert').dialog('open');
         $('#dg2').datagrid('loadData', []);
-        url_save = '<?= base_url('sales/delivery_notes/create') ?>';
+        url_save = '<?= base_url('planning/delivery_notes/create') ?>';
         $('#frm_insert').form('clear');
 
         $('#status').combobox('setValue', '0');
@@ -218,7 +197,7 @@
     function number(delivery_note_date) {
         $.ajax({
             type: "post",
-            url: "<?= base_url('sales/delivery_notes/number/') ?>" + window.btoa(delivery_note_date),
+            url: "<?= base_url('planning/delivery_notes/number/') ?>" + window.btoa(delivery_note_date),
             dataType: "html",
             success: function(result) {
                 $("#delivery_note_no").textbox('setValue', result);
@@ -226,197 +205,197 @@
         });
     }
 
-    // function addTable(customer_id, link = "") {
-    //     $('#dg2').datagrid({
-    //         url: link,
-    //         singleSelect: true,
-    //         columns: [
-    //             [{
-    //                 field: 'delivery_order_no',
-    //                 width: 150,
-    //                 halign: 'center',
-    //                 title: "Delivery Order No.",
-    //                 editor: {
-    //                     type: 'combogrid',
-    //                     options: {
-    //                         url: '<?= base_url('sales/delivery_notes/readDo/'); ?>' + customer_id,
-    //                         required: true,
-    //                         panelWidth: 200,
-    //                         idField: 'delivery_order_no',
-    //                         textField: 'delivery_order_no',
-    //                         mode: 'remote',
-    //                         fitColumns: true,
-    //                         prompt: 'Choose Delivery Order No.',
-    //                         columns: [
-    //                             [{
-    //                                 field: 'delivery_order_no',
-    //                                 title: 'Delivery Order No.',
-    //                                 width: 200
-    //                             }]
-    //                         ],
-    //                         onSelect: function(value, rows) {
+    function addTable(customer_id, link = "") {
+        $('#dg2').datagrid({
+            url: link,
+            singleSelect: true,
+            columns: [
+                [{
+                    field: 'delivery_order_no',
+                    width: 150,
+                    halign: 'center',
+                    title: "Delivery Order No.",
+                    editor: {
+                        type: 'combogrid',
+                        options: {
+                            url: '<?= base_url('planning/delivery_notes/readDo/'); ?>' + customer_id,
+                            required: true,
+                            panelWidth: 200,
+                            idField: 'delivery_order_no',
+                            textField: 'delivery_order_no',
+                            mode: 'remote',
+                            fitColumns: true,
+                            prompt: 'Choose Delivery Order No.',
+                            columns: [
+                                [{
+                                    field: 'delivery_order_no',
+                                    title: 'Delivery Order No.',
+                                    width: 200
+                                }]
+                            ],
+                            onSelect: function(value, rows) {
                                
-    //                             var dg = $('#dg2');
-    //                             var row = dg.datagrid('getSelected');
-    //                             var rowIndex = dg.datagrid('getRowIndex', row);
+                                var dg = $('#dg2');
+                                var row = dg.datagrid('getSelected');
+                                var rowIndex = dg.datagrid('getRowIndex', row);
 
-    //                             var ed = dg.datagrid('getEditor', {
-    //                                 index: rowIndex,
-    //                                 field: 'delivery_order_no'
-    //                             });
-    //                             var ed2 = dg.datagrid('getEditor', {
-    //                                 index: rowIndex,
-    //                                 field: 'item_fg_id'
-    //                             });
-    //                             var ed3 = dg.datagrid('getEditor', {
-    //                                 index: rowIndex,
-    //                                 field: 'item_fg_number'
-    //                             });
-    //                             var ed4 = dg.datagrid('getEditor', {
-    //                                 index: rowIndex,
-    //                                 field: 'item_fg_name'
-    //                             });
-    //                             var ed5 = dg.datagrid('getEditor', {
-    //                                 index: rowIndex,
-    //                                 field: 'sales_order_no'
-    //                             });
-    //                             var ed6 = dg.datagrid('getEditor', {
-    //                                 index: rowIndex,
-    //                                 field: 'customer_order_no'
-    //                             });
-    //                             var ed7 = dg.datagrid('getEditor', {
-    //                                 index: rowIndex,
-    //                                 field: 'uom'
-    //                             });
-    //                             var ed8 = dg.datagrid('getEditor', {
-    //                                 index: rowIndex,
-    //                                 field: 'trans_type'
-    //                             });
+                                var ed = dg.datagrid('getEditor', {
+                                    index: rowIndex,
+                                    field: 'delivery_order_no'
+                                });
+                                var ed2 = dg.datagrid('getEditor', {
+                                    index: rowIndex,
+                                    field: 'item_fg_id'
+                                });
+                                var ed3 = dg.datagrid('getEditor', {
+                                    index: rowIndex,
+                                    field: 'item_fg_number'
+                                });
+                                var ed4 = dg.datagrid('getEditor', {
+                                    index: rowIndex,
+                                    field: 'item_fg_name'
+                                });
+                                var ed5 = dg.datagrid('getEditor', {
+                                    index: rowIndex,
+                                    field: 'sales_order_no'
+                                });
+                                var ed6 = dg.datagrid('getEditor', {
+                                    index: rowIndex,
+                                    field: 'customer_order_no'
+                                });
+                                var ed7 = dg.datagrid('getEditor', {
+                                    index: rowIndex,
+                                    field: 'uom'
+                                });
+                                var ed8 = dg.datagrid('getEditor', {
+                                    index: rowIndex,
+                                    field: 'trans_type'
+                                });
                                
 
-    //                             $(ed.target).textbox('setValue', rows.delivery_order_no);
-    //                             $(ed2.target).combogrid({
-    //                                 url: '<?= base_url('sales/delivery_notes/readDo/'); ?>' + customer_id,
-    //                                 required: true,
-    //                                 panelWidth: 200,
-    //                                 idField: 'id',
-    //                                 textField: 'id',
-    //                                 mode: 'remote',
-    //                                 fitColumns: true,
-    //                                 prompt: 'Choose Product ID',
-    //                                 columns: [
-    //                                     [{
-    //                                         field: 'id',
-    //                                         title: 'Product ID',
-    //                                         width: 150
-    //                                     }]
-    //                                 ],
-    //                                 onSelect: function(val, id) {
-    //                                     $(ed3.target).textbox('setValue', rows.number);
-    //                                     $(ed4.target).textbox('setValue', rows.name);
-    //                                     $(ed5.target).textbox('setValue', rows.sales_order_no);
-    //                                     $(ed6.target).textbox('setValue', rows.customer_order_no);
-    //                                     $(ed7.target).textbox('setValue', rows.uom);
-    //                                     $(ed8.target).textbox('setValue', rows.trans_type);
-    //                                 }
-    //                             });
+                                $(ed.target).textbox('setValue', rows.delivery_order_no);
+                                $(ed2.target).combogrid({
+                                    url: '<?= base_url('planning/delivery_notes/readDo/'); ?>' + customer_id,
+                                    required: true,
+                                    panelWidth: 200,
+                                    idField: 'id',
+                                    textField: 'id',
+                                    mode: 'remote',
+                                    fitColumns: true,
+                                    prompt: 'Choose Product ID',
+                                    columns: [
+                                        [{
+                                            field: 'id',
+                                            title: 'Product ID',
+                                            width: 150
+                                        }]
+                                    ],
+                                    onSelect: function(val, id) {
+                                        $(ed3.target).textbox('setValue', rows.number);
+                                        $(ed4.target).textbox('setValue', rows.name);
+                                        $(ed5.target).textbox('setValue', rows.sales_order_no);
+                                        $(ed6.target).textbox('setValue', rows.customer_order_no);
+                                        $(ed7.target).textbox('setValue', rows.uom);
+                                        $(ed8.target).textbox('setValue', rows.trans_type);
+                                    }
+                                });
 
-    //                         }
-    //                     }
-    //                 }
-    //             }, {
-    //                 field: 'item_fg_id',
-    //                 width: 170,
-    //                 halign: 'center',
-    //                 title: "Product ID",
-    //                 editor: {
-    //                     type: 'combobox',
-    //                     options: {
-    //                         readonly: true
-    //                     }
-    //                 }
-    //             }, {
-    //                 field: 'item_fg_number',
-    //                 width: 150,
-    //                 halign: 'center',
-    //                 title: "Product No",
-    //                 editor: {
-    //                     type: 'textbox',
-    //                     options: {
-    //                         readonly: true
-    //                     }
-    //                 }
-    //             }, {
-    //                 field: 'item_fg_name',
-    //                 width: 150,
-    //                 halign: 'center',
-    //                 title: "Product Name",
-    //                 editor: {
-    //                     type: 'textbox',
-    //                     options: {
-    //                         readonly: true
-    //                     }
-    //                 }
-    //             }, {
-    //                 field: 'sales_order_no',
-    //                 width: 150,
-    //                 halign: 'center',
-    //                 title: "Sales Order No",
-    //                 editor: {
-    //                     type: 'textbox',
-    //                     options: {
-    //                         readonly: true
-    //                     }
-    //                 }
-    //             }, {
-    //                 field: 'customer_order_no',
-    //                 width: 150,
-    //                 halign: 'center',
-    //                 title: "Customer Order No",
-    //                 editor: {
-    //                     type: 'textbox',
-    //                     options: {
-    //                         readonly: true
-    //                     }
-    //                 }
-    //             }, {
-    //                 field: 'trans_type',
-    //                 width: 80,
-    //                 halign: 'center',
-    //                 title: "Transaction Type",
-    //                 editor: {
-    //                     type: 'textbox',
-    //                     options: {
-    //                         readonly: true
-    //                     }
-    //                 }
-    //             }, {
-    //                 field: 'uom',
-    //                 width: 80,
-    //                 halign: 'center',
-    //                 title: "UoM",
-    //                 editor: {
-    //                     type: 'textbox',
-    //                     options: {
-    //                         readonly: true
-    //                     }
-    //                 }
-    //             }, {
-    //                 field: 'qty',
-    //                 width: 80,
-    //                 halign: 'center',
-    //                 title: "QTY",
-    //                 editor: {
-    //                     type: 'numberbox',
-    //                     options: {
-    //                         readonly: true
-    //                     }
-    //                 }
-    //             }]
-    //         ],
-    //         onClickCell: onClickCell
-    //     });
-    // }
+                            }
+                        }
+                    }
+                }, {
+                    field: 'item_fg_id',
+                    width: 170,
+                    halign: 'center',
+                    title: "Product ID",
+                    editor: {
+                        type: 'combobox',
+                        options: {
+                            readonly: true
+                        }
+                    }
+                }, {
+                    field: 'item_fg_number',
+                    width: 150,
+                    halign: 'center',
+                    title: "Product No",
+                    editor: {
+                        type: 'textbox',
+                        options: {
+                            readonly: true
+                        }
+                    }
+                }, {
+                    field: 'item_fg_name',
+                    width: 150,
+                    halign: 'center',
+                    title: "Product Name",
+                    editor: {
+                        type: 'textbox',
+                        options: {
+                            readonly: true
+                        }
+                    }
+                }, {
+                    field: 'sales_order_no',
+                    width: 150,
+                    halign: 'center',
+                    title: "Sales Order No",
+                    editor: {
+                        type: 'textbox',
+                        options: {
+                            readonly: true
+                        }
+                    }
+                }, {
+                    field: 'customer_order_no',
+                    width: 150,
+                    halign: 'center',
+                    title: "Customer Order No",
+                    editor: {
+                        type: 'textbox',
+                        options: {
+                            readonly: true
+                        }
+                    }
+                }, {
+                    field: 'trans_type',
+                    width: 80,
+                    halign: 'center',
+                    title: "Transaction Type",
+                    editor: {
+                        type: 'textbox',
+                        options: {
+                            readonly: true
+                        }
+                    }
+                }, {
+                    field: 'uom',
+                    width: 80,
+                    halign: 'center',
+                    title: "UoM",
+                    editor: {
+                        type: 'textbox',
+                        options: {
+                            readonly: true
+                        }
+                    }
+                }, {
+                    field: 'qty',
+                    width: 80,
+                    halign: 'center',
+                    title: "QTY",
+                    editor: {
+                        type: 'numberbox',
+                        options: {
+                            readonly: true
+                        }
+                    }
+                }]
+            ],
+            onClickCell: onClickCell
+        });
+    }
 
     var editIndex = undefined;
 
@@ -481,7 +460,7 @@
 
         $.ajax({
             method: 'post',
-            url: '<?= base_url('sales/delivery_notes/delete') ?>',
+            url: '<?= base_url('planning/delivery_notes/delete') ?>',
             data: {
                 delivery_note_no: delivery_note_no,
                 item_fg_id: item_fg_id
@@ -517,7 +496,7 @@
             $("#status_delivery").textbox('disable');
 
 
-            addTable(row.customer_id, '<?= base_url('sales/delivery_notes/datatableUpdates?delivery_note_no=') ?>' + window.btoa(row.delivery_note_no));
+            addTable(row.customer_id, '<?= base_url('planning/delivery_notes/datatableUpdates?delivery_note_no=') ?>' + window.btoa(row.delivery_note_no));
         } else {
             toastr.warning("Please select one of the data in the table first!", "Information");
         }
@@ -533,7 +512,7 @@
                         var row = rows[i];
                         $.ajax({
                             method: 'post',
-                            url: '<?= base_url('sales/delivery_notes/delete') ?>',
+                            url: '<?= base_url('planning/delivery_notes/delete') ?>',
                             data: {
                                 delivery_note_no: row.delivery_note_no
                             },
@@ -580,12 +559,56 @@
             "&filter_status=" + window.btoa(filter_status);
 
         $('#dg').datagrid({
-            url: '<?= base_url('sales/delivery_notes/datatables') ?>' + url,
+            url: '<?= base_url('planning/delivery_notes/datatables') ?>' + url
+        });
+
+        $("#printout").contents().find('html').html("<center><br><br><br><b style='font-size:20px;'>Please Wait...</b></center>");
+        $("#printout").attr('src', '<?= base_url('planning/delivery_notes/print') ?>' + url);
+    }
+
+    //PRINT PDF
+    function pdf() {
+        $("#printout").get(0).contentWindow.print();
+    }
+
+    //PRINT EXCEL
+    function excel() {
+        var filter_from = $("#filter_from").datebox('getValue');
+        var filter_to = $("#filter_to").datebox('getValue');
+        var filter_customer_id = $("#filter_customer_id").combobox('getValue');
+        var filter_delivery_note_no = $("#filter_delivery_note_no").combobox('getValue');
+        var filter_delivery_order_no = $("#filter_delivery_order_no").combobox('getValue');
+        var filter_sales_order_no = $("#filter_sales_order_no").combobox('getValue');
+        var filter_customer_order_no = $("#filter_customer_order_no").combobox('getValue');
+        var filter_item_fg = $("#filter_item_fg").combogrid('getValue');
+        var filter_status_delivery = $("#filter_status_delivery").combobox('getValue');
+        var filter_status = $("#filter_status").combobox('getValue');
+
+        var url = "?filter_from=" + window.btoa(filter_from) +
+            "&filter_to=" + window.btoa(filter_to) +
+            "&filter_customer_id=" + window.btoa(filter_customer_id) +
+            "&filter_delivery_note_no=" + window.btoa(filter_delivery_note_no) +
+            "&filter_delivery_order_no=" + window.btoa(filter_delivery_order_no) +
+            "&filter_sales_order_no=" + window.btoa(filter_sales_order_no) +
+            "&filter_customer_order_no=" + window.btoa(filter_customer_order_no) +
+            "&filter_item_fg=" + window.btoa(filter_item_fg) +
+            "&filter_status_delivery=" + window.btoa(filter_status_delivery);
+            "&filter_status=" + window.btoa(filter_status);
+
+        window.location.assign('<?= base_url('planning/delivery_notes/print/excel') ?>' + url);
+    }
+
+    //RELOAD
+    function reload() {
+        window.location.reload();
+    }
+
+    $(function() {
+        //SETTING DATAGRID EASYUI
+        $('#dg').datagrid({
+            url: '<?= base_url('planning/delivery_notes/datatables') ?>',
             pagination: true,
             rownumbers: true,
-            fit: true,
-            pageList: [10, 50, 100, 500, 1000],
-            pageSize: 10,
             view: detailview,
             detailFormatter: function(index, row) {
                 return '<div style="padding:2px;position:relative;"><table class="ddv" title="Detail Of ' + row.delivery_note_no + '"></table></div>';
@@ -594,7 +617,7 @@
                 var ddv = $(this).datagrid('getRowDetail', index).find('table.ddv');
 
                 ddv.datagrid({
-                    url: '<?= base_url('sales/delivery_notes/datatableDetails?delivery_order_no=') ?>' + window.btoa(row.delivery_order_no),
+                    url: '<?= base_url('planning/delivery_notes/datatableDetails?delivery_order_no=') ?>' + window.btoa(row.delivery_order_no),
                     singleSelect: true,
                     rownumbers: true,
                     height: 100,
@@ -656,51 +679,6 @@
             }
         });
 
-        $("#printout").contents().find('html').html("<center><br><br><br><b style='font-size:20px;'>Please Wait...</b></center>");
-        $("#printout").attr('src', '<?= base_url('sales/delivery_notes/print') ?>' + url);
-    }
-
-    //PRINT PDF
-    function pdf() {
-        $("#printout").get(0).contentWindow.print();
-    }
-
-    //PRINT EXCEL
-    function excel() {
-        var filter_from = $("#filter_from").datebox('getValue');
-        var filter_to = $("#filter_to").datebox('getValue');
-        var filter_customer_id = $("#filter_customer_id").combobox('getValue');
-        var filter_delivery_note_no = $("#filter_delivery_note_no").combobox('getValue');
-        var filter_delivery_order_no = $("#filter_delivery_order_no").combobox('getValue');
-        var filter_sales_order_no = $("#filter_sales_order_no").combobox('getValue');
-        var filter_customer_order_no = $("#filter_customer_order_no").combobox('getValue');
-        var filter_item_fg = $("#filter_item_fg").combogrid('getValue');
-        var filter_status_delivery = $("#filter_status_delivery").combobox('getValue');
-        var filter_status = $("#filter_status").combobox('getValue');
-
-        var url = "?filter_from=" + window.btoa(filter_from) +
-            "&filter_to=" + window.btoa(filter_to) +
-            "&filter_customer_id=" + window.btoa(filter_customer_id) +
-            "&filter_delivery_note_no=" + window.btoa(filter_delivery_note_no) +
-            "&filter_delivery_order_no=" + window.btoa(filter_delivery_order_no) +
-            "&filter_sales_order_no=" + window.btoa(filter_sales_order_no) +
-            "&filter_customer_order_no=" + window.btoa(filter_customer_order_no) +
-            "&filter_item_fg=" + window.btoa(filter_item_fg) +
-            "&filter_status_delivery=" + window.btoa(filter_status_delivery);
-            "&filter_status=" + window.btoa(filter_status);
-
-        window.location.assign('<?= base_url('sales/delivery_notes/print/excel') ?>' + url);
-    }
-
-    //RELOAD
-    function reload() {
-        window.location.reload();
-    }
-
-    $(function() {
-        //SETTING DATAGRID EASYUI
-        filter();
-
         //SAVE DATA
         $('#dlg_insert').dialog({
             buttons: [{
@@ -711,10 +689,7 @@
                     
                     var delivery_note_date = $("#delivery_note_date").datebox('getValue');
                     var delivery_note_no = $("#delivery_note_no").textbox('getValue');
-<<<<<<< HEAD
-=======
                     var customer_address_id = $("#customer_address_id").combobox('getValue');
->>>>>>> b0853c0f7289dc2ee534beb5aed8b2c224e09c18
                     var police_no = $("#police_no").combobox('getValue');
                     var driver_name = $("#driver_name").textbox('getValue');
                     var origin = $("#origin").textbox('getValue');
@@ -729,21 +704,18 @@
                     var totalrows = rows.length;
                     endEditing();
 
-                    if (customer_id != "" && delivery_note_date !="" && delivery_note_no !="" && 
+                    if (customer_id != "" && delivery_note_date !="" && delivery_note_no !="" && customer_address_id !="" && 
                     police_no !="" && origin !="" && sailing !="" && incoterm !="") {
                         for (let i = 0; i < totalrows; i++) {
                             if (rows[i].item_fg_id) {
                                 $.ajax({
                                     type: "post",
-                                    url: '<?= base_url('sales/delivery_notes/create') ?>',
+                                    url: '<?= base_url('planning/delivery_notes/create') ?>',
                                     data: {
                                         customer_id: customer_id,
                                         delivery_note_date: delivery_note_date,
                                         delivery_note_no: delivery_note_no,
-<<<<<<< HEAD
-=======
                                         customer_address_id: customer_address_id,
->>>>>>> b0853c0f7289dc2ee534beb5aed8b2c224e09c18
                                         police_no: police_no,
                                         driver_name: driver_name,
                                         origin: origin,
@@ -803,7 +775,7 @@
         }],
         onSelect: function(customer) {
             $('#filter_delivery_note_no').combobox({
-                url: '<?= base_url('sales/delivery_notes/readDelivery_note_no/'); ?>' + customer.id,
+                url: '<?= base_url('planning/delivery_notes/readDelivery_note_no/'); ?>' + customer.id,
                 valueField: 'delivery_note_no',
                 textField: 'delivery_note_no',
                 prompt: 'Choose All',
@@ -815,7 +787,7 @@
                 }],
                 onSelect: function(deliver_note) {
                     $('#filter_delivery_order_no').combobox({
-                        url: '<?= base_url('sales/delivery_notes/readDelivery_order_no/'); ?>' + customer.id,
+                        url: '<?= base_url('planning/delivery_notes/readDelivery_order_no/'); ?>' + customer.id,
                         valueField: 'delivery_order_no',
                         textField: 'delivery_order_no',
                         prompt: 'Choose All',
@@ -827,7 +799,7 @@
                         }],
                         onSelect: function(deliver_order) {
                             $('#filter_sales_order_no').combobox({
-                                url: '<?= base_url('sales/delivery_notes/readSalesOrder/'); ?>' + customer.id,
+                                url: '<?= base_url('planning/delivery_notes/readSalesOrder/'); ?>' + customer.id,
                                 valueField: 'sales_order_no',
                                 textField: 'sales_order_no',
                                 prompt: 'Choose All',
@@ -840,7 +812,7 @@
                             });
 
                             $('#filter_customer_order_no').combobox({
-                                url: '<?= base_url('sales/delivery_notes/readCustomerOrder/'); ?>' + customer.id,
+                                url: '<?= base_url('planning/delivery_notes/readCustomerOrder/'); ?>' + customer.id,
                                 valueField: 'customer_order_no',
                                 textField: 'customer_order_no',
                                 prompt: 'Choose All',
@@ -891,7 +863,7 @@
         textField: 'name',
         prompt: 'Choose Customer Name',
         onSelect: function(customer) {
-            // addTable(customer.id);
+            addTable(customer.id);
 
             if(customer.type=="LOCAL"){
                 var origin = "INDONESIA";
@@ -909,21 +881,7 @@
             $("#sailing").textbox('setValue', sailing);
             $("#ship_by").textbox('setValue', ship_by);
             $("#incoterm").textbox('setValue', incoterm);
-<<<<<<< HEAD
-        
-            $('#delivery_order_no').combobox({
-                url: '<?= base_url('sales/delivery_notes/readDo/'); ?>' + customer.id,
-                valueField: 'delivery_order_no',
-                textField: 'delivery_order_no',
-                multiple:true,
-                prompt: 'Choose DO No.',
-                onChange: function(row) {
-                    var selectedRows = $("#delivery_order_no").combobox('getValues');
-                }
-            });
-=======
 
->>>>>>> b0853c0f7289dc2ee534beb5aed8b2c224e09c18
             
             $('#delivery_note_date').datebox({
                     onChange: function (delivery_note_date) {
@@ -1017,6 +975,6 @@
     }
 
     function print_do(delivery_order_no) {
-        window.open("<?= base_url('sales/delivery_notes/print_do/') ?>" + window.btoa(delivery_order_no), "_blank", "width=1200,height=600");
+        window.open("<?= base_url('planning/delivery_notes/print_do/') ?>" + window.btoa(delivery_order_no), "_blank", "width=1200,height=600");
     }
 </script>

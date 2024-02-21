@@ -1,22 +1,3 @@
-<!-- <div id="dlg_help" class="easyui-dialog" title="About Menu" data-options="closed: true,modal:true" style="width: 800px; height: 500px; left: 10px; top: 20px;">
-    <div class="easyui-accordion" style="width:100%;">
-        <div title="Add New" style="padding: 20px;">
-            <b>Form Data</b>
-            <ul>
-                <li>The Data Customers is taken from <b>Master Data > Marketing > Customers</b></li>
-                <li>The Data Plants is taken from the results of Customer selection</li>
-                <li>Departement, Shipping Address and Attention to is taken from the results of Plant Selection</li>
-            </ul>
-            <b>Form Sales Order Lists</b>
-            <ul>
-                <li>The Data Products is taken from <b>Master Data > Marketing > Customer Items</b> by Item Finish Good Type is "FG"</li>
-                <li>The Data Plants is taken from the results of Customer selection</li>
-                <li>Departement, Shipping Address and Attention to is taken from the results of Plant Selection</li>
-            </ul>
-        </div>
-    </div>
-</div> -->
-
 <!-- TABLE DATAGRID -->
 <table id="dg" class="easyui-datagrid" style="width:99.5%;" toolbar="#toolbar">
     <thead>
@@ -34,8 +15,7 @@
             <th rowspan="2" data-options="field:'total_pph',width:100,halign:'center',align:'right',formatter: numberFormat">PPh</th>
             <th rowspan="2" data-options="field:'total_grand',width:100,halign:'center',align:'right',formatter: numberFormat">Grand Total</th>
             <th rowspan="2" data-options="field:'remarks',width:150,halign:'center'">Remarks</th>
-            <th rowspan="2" data-options="field:'attachment',width:80,align:'center',formatter: btnDetails">Attachment</th>
-            <th colspan="2" data-options="field:'',width:100,halign:'center'"> Created</th>
+            <th rowspan="2" data-options="field:'attachment',width:80,align:'center',formatter: btnDetails">Attachment</th>            <th colspan="2" data-options="field:'',width:100,halign:'center'"> Created</th>
             <th colspan="2" data-options="field:'',width:100,halign:'center'"> Updated</th>
         </tr>
         <tr>
@@ -88,7 +68,6 @@
             </div>
         </fieldset>
         <?= $button ?>
-        <!-- <a href="javascript:void(0)" class="easyui-linkbutton" data-options="plain:true" onclick="$('#dlg_help').dialog('open');"><i class="fa fa-info"></i> Help</a> -->
     </div>
 </div>
 
@@ -98,7 +77,7 @@
 </div>
 
 <!-- Insert & Update -->
-<div id="dlg_insert" class="easyui-dialog" title="Add New" data-options="closed: true,modal:true" style="width: 1100px; height: 90%; padding:10px; top: 20px;">
+<div id="dlg_insert" class="easyui-dialog" title="Add New" data-options="closed: true,modal:true" style="width: 1100px; height: 700px; padding:10px; top: 20px;">
     <form id="frm_insert" method="post" novalidate>
         <fieldset style="width:100%; border:1px solid #d0d0d0; margin-bottom: 10px; border-radius:4px; float: left;">
             <legend><b>Form Data</b></legend>
@@ -136,19 +115,15 @@
                 </div>
                 <div class="fitem">
                     <span style="width:35%; display:inline-block;">Department</span>
-                    <input style="width:60%;" name="department" id="department" readonly class="easyui-textbox">
+                    <input style="width:60%;" name="department" id="department" disabled class="easyui-textbox">
                 </div>
                 <div class="fitem">
                     <span style="width:35%; display:inline-block;">Shipping Address</span>
-                    <input style="width:60%;" name="customer_address_name" id="customer_address_name" readonly class="easyui-textbox">
-                </div>
-                <div class="fitem" hidden>
-                    <span style="width:35%; display:inline-block;">Shipping Address id</span>
-                    <input style="width:60%;" name="customer_address_id" id="customer_address_id" readonly class="easyui-textbox">
+                    <input style="width:60%;" name="customer_address_id" id="customer_address_id" disabled class="easyui-textbox">
                 </div>
                 <div class="fitem">
                     <span style="width:35%; display:inline-block;">Attention To</span>
-                    <input style="width:60%;" name="attention_to" id="attention_to" readonly class="easyui-textbox">
+                    <input style="width:60%;" name="attention_to" id="attention_to" disabled class="easyui-textbox">
                 </div>
                 <div class="fitem" hidden>
                     <span style="width:35%; display:inline-block;">Taxes</span>
@@ -168,7 +143,6 @@
                 </div>
             </div>
         </fieldset>
-        
         <table id="dg2" class="easyui-datagrid" style="width:100%;" title="Sales Order Lists" toolbar="#toolbar2"></table>
         <div style="width: 30%; float: right; margin-top: 10px;">
             <a style="width: 100%;" class="easyui-linkbutton c2" onclick="calculate()">Calculate</a>
@@ -176,20 +150,20 @@
                 <div style="width: 100%; float: left;">
                     <div class="fitem">
                         <b style="width:35%; display:inline-block;">SUB TOTAL</b>
-                        <input style="width:60%; text-align:right;" id="total_sub" name="total_sub" readonly class="easyui-numberbox" data-options="groupSeparator:','">
+                        <input style="width:60%;" id="total_sub" name="total_sub" readonly class="easyui-numberbox" data-options="groupSeparator:','">
                     </div>
                     <div class="fitem">
                         <b style="width:35%; display:inline-block;">TAX (11%)</b>
-                        <input style="width:60%; text-align:right;" id="total_tax" name="total_tax" readonly class="easyui-numberbox" data-options="groupSeparator:','">
+                        <input style="width:60%;" id="total_tax" name="total_tax" readonly class="easyui-numberbox" data-options="groupSeparator:','">
                     </div>
                     <div class="fitem">
                         <b style="width:20%; display:inline-block;">PPH</b>
                         <input style="width:15%;" id="pph" name="pph" class="easyui-numberbox">
-                        <input style="width:60%; text-align:right;" id="total_pph" name="total_pph" readonly class="easyui-numberbox" data-options="groupSeparator:','">
+                        <input style="width:60%;" id="total_pph" name="total_pph" readonly class="easyui-numberbox" data-options="groupSeparator:','">
                     </div>
                     <div class="fitem">
                         <b style="width:35%; display:inline-block;">GRAND TOTAL</b>
-                        <input style="width:60%; text-align:right;" id="total_grand" name="total_grand" readonly required class="easyui-numberbox" data-options="groupSeparator:','">
+                        <input style="width:60%;" id="total_grand" name="total_grand" readonly required class="easyui-numberbox" data-options="groupSeparator:','">
                     </div>
                 </div>
             </fieldset>
@@ -197,35 +171,15 @@
     </form>
 </div>
 
-<!-- Upload -->
-<div id="dlg_upload" class="easyui-dialog" title="Upload Data" data-options="closed: true,modal:true" style="width: 500px; padding:10px; top: 20px;">
-    <form id="frm_upload" method="post" enctype="multipart/form-data" novalidate>
-        <fieldset style="width:100%; border:1px solid #d0d0d0; margin-bottom: 10px; border-radius:4px; float: left;">
-            <legend><b>Form Data</b></legend>
-            <div class="fitem">
-                <span style="width:35%; display:inline-block;">File Upload</span>
-                <input name="file_upload" style="width: 60%;" required="" accept=".xls" id="file_excel" class="easyui-filebox">
-            </div>
-        </fieldset>
-    </form>
-    <span style="float: left; color:green;">SUCCESS : <b id="p_success">0</b></span><span style="float: right; color:red;"> FAILED : <b id="p_failed">0</b></span>
-    <div id="p_upload" class="easyui-progressbar" style="width:100%; margin-top: 10px;"></div>
-    <center><b id="p_start">0</b> Of <b id="p_finish">0</b></center>
-    <div id="p_remarks" title="History Upload" class="easyui-panel" style="width:100%; height:200px; padding:10px; margin-top: 10px;">
-        <ul id="remarks">
-        </ul>
-    </div>
-</div>
-
 <!-- PDF -->
-<iframe id="printout" src="<?= base_url('sales/sales_orders/print') ?>" style="width: 100%;" hidden></iframe>
+<iframe id="printout" src="<?= base_url('planning/sales_orders/print') ?>" style="width: 100%;" hidden></iframe>
 
 <script>
     //ADD DATA
     function add() {
         $('#dlg_insert').dialog('open');
         $('#dg2').datagrid('loadData', []);
-        url_save = '<?= base_url('sales/sales_orders/create') ?>';
+        url_save = '<?= base_url('planning/sales_orders/create') ?>';
         $('#frm_insert').form('clear');
 
         $("#customer_id").combobox('enable');
@@ -287,8 +241,7 @@
                     ],
                     onSelect: function(val, row) {
                         $("#attention_to").textbox('setValue', row.contact_person);
-                        $("#customer_address_id").textbox('setValue', row.id);
-                        $("#customer_address_name").textbox('setValue', row.address);
+                        $("#customer_address_id").textbox('setValue', row.address);
                         $("#department").textbox('setValue', row.department);
                     }
                 });
@@ -299,7 +252,7 @@
     function number(customer_id, sales_order_date) {
         $.ajax({
             type: "post",
-            url: "<?= base_url('sales/sales_orders/number/') ?>" + customer_id + '/' + window.btoa(sales_order_date),
+            url: "<?= base_url('planning/sales_orders/number/') ?>" + customer_id + '/' + window.btoa(sales_order_date),
             dataType: "html",
             success: function(result) {
                 $("#sales_order_no").textbox('setValue', result);
@@ -322,13 +275,10 @@
             }
 
             $("#total_sub").numberbox('setValue', total_sub);
-
             var total_tax = parseFloat(total_sub * (taxes / 100));
             $("#total_tax").numberbox('setValue', total_tax);
-
             var total_pph = (((parseFloat(total_sub) + parseInt(total_tax)) * parseInt(pph)) / 100);
             $("#total_pph").numberbox('setValue', total_pph);
-            
             var total_grand = (parseFloat(total_sub) + parseFloat(total_tax) - parseFloat(total_pph));
             $("#total_grand").numberbox('setValue', (total_grand));
         } else {
@@ -349,7 +299,7 @@
                     editor: {
                         type: 'combogrid',
                         options: {
-                            url: '<?= base_url('sales/sales_orders/readItemFg/'); ?>' + customer_id,
+                            url: '<?= base_url('planning/sales_orders/readItemFg/'); ?>' + customer_id,
                             required: true,
                             panelWidth: 650,
                             idField: 'id',
@@ -519,27 +469,23 @@
                 }, {
                     field: 'price',
                     width: 100,
-                    halign: 'center',
-                    align: 'right',
+                    align: 'center',
                     title: "Price",
                     editor: {
                         type: 'numberbox',
                         options: {
-                            readonly: true,
-                            precision: 2
+                            readonly: true
                         }
                     }
                 }, {
                     field: 'total',
                     width: 100,
                     halign: 'center',
-                    align: 'right',
                     title: "Total Price",
                     editor: {
                         type: 'numberbox',
                         options: {
-                            readonly: true,
-                            precision: 2
+                            readonly: true
                         }
                     }
                 }, ]
@@ -611,7 +557,7 @@
 
         $.ajax({
             method: 'post',
-            url: '<?= base_url('sales/sales_orders/delete') ?>',
+            url: '<?= base_url('planning/sales_orders/delete') ?>',
             data: {
                 sales_order_no: sales_order_no,
                 item_fg_id: item_fg_id
@@ -641,9 +587,9 @@
             $("#customer_id").combobox('disable');
             $("#sales_order_no").textbox('disable');
             $("#sales_order_date").datebox('disable');
-            $("#plant").textbox('disable');
+            $("#customer_address_id").textbox('disable');
 
-            addTable(row.customer_id, '<?= base_url('sales/sales_orders/datatableUpdates?sales_order_no=') ?>' + window.btoa(row.sales_order_no));
+            addTable(row.customer_id, '<?= base_url('planning/sales_orders/datatableUpdates?sales_order_no=') ?>' + window.btoa(row.sales_order_no));
         } else {
             toastr.warning("Please select one of the data in the table first!", "Information");
         }
@@ -653,59 +599,26 @@
     function deleted() {
         var rows = $('#dg').datagrid('getSelections');
         if (rows.length > 0) {
-            Swal.fire({
-                title: "Are you sure?",
-                text: "You want to delete this data!",
-                icon: "warning",
-                showCancelButton: true,
-                confirmButtonColor: "#3085d6",
-                cancelButtonColor: "#d33",
-                confirmButtonText: "Yes, delete it!"
-            }).then((result) => {
-                if (result.isConfirmed) {
-                    Swal.fire({
-                        title: 'Please Wait for Delete Data',
-                        showConfirmButton: false,
-                        allowOutsideClick: false,
-                        allowEscapeKey: false,
-                        didOpen: () => {
-                            Swal.showLoading();
-                        },
-                    });
-
-                    requestDelete(rows.length, rows);
-                    function requestDelete(total, rows, jml = 1, value = 0) {
-                        if (value < 100) {
-                            value = Math.floor((jml / total) * 100);
-                            var i = (jml - 1);
-
-                            $.ajax({
-                                method: 'post',
-                                url: '<?= base_url('sales/sales_orders/delete') ?>',
-                                data: {
-                                    sales_order_no: rows[i].sales_order_no
-                                },
-                                dataType: 'json',
-                                success: function(result) {
-                                    requestDelete(total, rows, jml + 1, value);
-
-                                    if (jml == total) {
-                                        Swal.close();
-
-                                        Swal.fire({
-                                            title: result.message,
-                                            icon: result.theme,
-                                            confirmButtonText: 'Ok',
-                                            allowOutsideClick: false,
-                                        }).then((result) => {
-                                            if (result.isConfirmed) {
-                                                $('#dg').datagrid('reload');
-                                            }
-                                        });
-                                    }
-                                }
-                            });
-                        }
+            $.messager.confirm('Warning', 'Are you sure you want to delete this data?', function(r) {
+                if (r) {
+                    for (var i = 0; i < rows.length; i++) {
+                        var row = rows[i];
+                        $.ajax({
+                            method: 'post',
+                            url: '<?= base_url('planning/sales_orders/delete') ?>',
+                            data: {
+                                sales_order_no: row.sales_order_no
+                            },
+                            success: function(result) {
+                                var result = eval('(' + result + ')');
+                            },
+                            error: function(jqXHR, textStatus, errorThrown) {
+                                toastr.error(jqXHR.statusText);
+                            },
+                            complete: function(data) {
+                                $('#dg').datagrid('reload');
+                            }
+                        });
                     }
                 }
             });
@@ -729,12 +642,46 @@
             "&filter_status=" + window.btoa(filter_status);
 
         $('#dg').datagrid({
-            url: '<?= base_url('sales/sales_orders/datatables') ?>' + url,
+            url: '<?= base_url('planning/sales_orders/datatables') ?>' + url
+        });
+
+        $("#printout").contents().find('html').html("<center><br><br><br><b style='font-size:20px;'>Please Wait...</b></center>");
+        $("#printout").attr('src', '<?= base_url('planning/sales_orders/print') ?>' + url);
+    }
+
+    //PRINT PDF
+    function pdf() {
+        $("#printout").get(0).contentWindow.print();
+    }
+
+    //PRINT EXCEL
+    function excel() {
+        var filter_from = $("#filter_from").datebox('getValue');
+        var filter_to = $("#filter_to").datebox('getValue');
+        var filter_customer_id = $("#filter_customer_id").combobox('getValue');
+        var filter_sales_order_no = $("#filter_sales_order_no").combobox('getValue');
+        var filter_status = $("#filter_status").combobox('getValue');
+
+        var url = "?filter_from=" + window.btoa(filter_from) +
+            "&filter_to=" + window.btoa(filter_to) +
+            "&filter_customer_id=" + window.btoa(filter_customer_id) +
+            "&filter_sales_order_no=" + window.btoa(filter_sales_order_no) +
+            "&filter_status=" + window.btoa(filter_status);
+
+        window.location.assign('<?= base_url('planning/sales_orders/print/excel') ?>' + url);
+    }
+
+    //RELOAD
+    function reload() {
+        window.location.reload();
+    }
+
+    $(function() {
+        //SETTING DATAGRID EASYUI
+        $('#dg').datagrid({
+            url: '<?= base_url('planning/sales_orders/datatables') ?>',
             pagination: true,
             rownumbers: true,
-            fit: true,
-            pageList: [10, 50, 100, 500, 1000],
-            pageSize: 10,
             view: detailview,
             detailFormatter: function(index, row) {
                 return '<div style="padding:2px;position:relative;"><table class="ddv" title="Detail Of ' + row.sales_order_no + '"></table></div>';
@@ -743,7 +690,7 @@
                 var ddv = $(this).datagrid('getRowDetail', index).find('table.ddv');
 
                 ddv.datagrid({
-                    url: '<?= base_url('sales/sales_orders/datatableDetails?sales_order_no=') ?>' + window.btoa(row.sales_order_no),
+                    url: '<?= base_url('planning/sales_orders/datatableDetails?sales_order_no=') ?>' + window.btoa(row.sales_order_no),
                     singleSelect: true,
                     rownumbers: true,
                     columns: [
@@ -815,130 +762,6 @@
             }
         });
 
-        $("#printout").contents().find('html').html("<center><br><br><br><b style='font-size:20px;'>Please Wait...</b></center>");
-        $("#printout").attr('src', '<?= base_url('sales/sales_orders/print') ?>' + url);
-    }
-
-     //Upload Data
-     function upload() {
-        $('#dlg_upload').dialog('open');
-    }
-
-    function download_excel() {
-        window.location.assign('<?= base_url('template/tmp_sales_orders.xls') ?>');
-    }
-
-    //PRINT PDF
-    function pdf() {
-        $("#printout").get(0).contentWindow.print();
-    }
-
-    //PRINT EXCEL
-    function excel() {
-        var filter_from = $("#filter_from").datebox('getValue');
-        var filter_to = $("#filter_to").datebox('getValue');
-        var filter_customer_id = $("#filter_customer_id").combobox('getValue');
-        var filter_sales_order_no = $("#filter_sales_order_no").combobox('getValue');
-        var filter_status = $("#filter_status").combobox('getValue');
-
-        var url = "?filter_from=" + window.btoa(filter_from) +
-            "&filter_to=" + window.btoa(filter_to) +
-            "&filter_customer_id=" + window.btoa(filter_customer_id) +
-            "&filter_sales_order_no=" + window.btoa(filter_sales_order_no) +
-            "&filter_status=" + window.btoa(filter_status);
-
-        window.location.assign('<?= base_url('sales/sales_orders/print/excel') ?>' + url);
-    }
-
-    //RELOAD
-    function reload() {
-        window.location.reload();
-    }
-
-    $(function() {
-        filter();
-
-         //Upload Data
-         $('#dlg_upload').dialog({
-            buttons: [{
-                text: 'List Failed',
-                handler: function() {
-                    window.open('<?= base_url('sales/sales_orders/uploadDownloadFailed') ?>', '_blank');
-                }
-            }, {
-                text: 'Upload',
-                iconCls: 'icon-ok',
-                handler: function() {
-                    $('#frm_upload').form('submit', {
-                        url: '<?= base_url('sales/sales_orders/upload') ?>',
-                        onSubmit: function() {
-                            if ($(this).form('validate') == false) {
-                                return $(this).form('validate');
-                            } else {
-                                $.messager.progress({
-                                    title: 'Please Wait',
-                                    msg: 'Importing Excel to Database'
-                                });
-                            }
-                        },
-                        success: function(result) {
-                            $.messager.progress('close');
-                            //Clear File
-                            $.ajax({
-                                url: "<?= base_url('sales/sales_orders/uploadclearFailed') ?>"
-                            });
-                            var json = eval('(' + result + ')');
-                            requestData(json.total, json);
-
-                            function requestData(total, json, number = 1, value = 0, success = 1, failed = 1) {
-                                if (value < 100) {
-                                    value = Math.floor((number / total) * 100);
-                                    $('#p_upload').progressbar('setValue', value);
-                                    $('#p_start').html(number);
-                                    $('#p_finish').html(total);
-
-                                    $.ajax({
-                                        type: "POST",
-                                        async: true,
-                                        url: "<?= base_url('sales/sales_orders/uploadCreate') ?>",
-                                        data: {
-                                            "data": json[number - 1],
-                                            "total_sub": json.total_sub,
-                                        },
-                                        cache: false,
-                                        dataType: "json",
-                                        success: function(result) {
-                                            if (result.theme == "success") {
-                                                $('#p_success').html(success);
-                                                var title = "<b style='color: green;'>" + result.title + "</b> | " + result.message;
-                                                requestData(total, json, number + 1, value, success + 1, failed + 0);
-                                            } else {
-                                                $('#p_failed').html(failed);
-                                                var title = "<b style='color: red;'>" + result.title + "</b> | " + result.message;
-                                                //Json Failed
-                                                $.ajax({
-                                                    type: "POST",
-                                                    async: true,
-                                                    url: "<?= base_url('sales/sales_orders/uploadcreateFailed') ?>",
-                                                    data: {
-                                                        data: json[number - 1],
-                                                        message: result.message
-                                                    },
-                                                    cache: false
-                                                });
-                                                requestData(total, json, number + 1, value, success + 0, failed + 1);
-                                            }
-                                            $("#p_remarks").append(title + "<br>");
-                                        }
-                                    });
-                                }
-                            }
-                        }
-                    });
-                }
-            }]
-        });
-
         //SAVE DATA
         $('#dlg_insert').dialog({
             buttons: [{
@@ -953,9 +776,6 @@
                     var attachment = $("#attachment").textbox('getValue');
                     var delivery_date = $("#delivery_date").datebox('getValue');
                     var customer_address_id = $("#customer_address_id").textbox('getValue');
-                    var plant = $("#plant").textbox('getValue');
-                    var department = $("#department").textbox('getValue');
-                    var attention_to = $("#attention_to").textbox('getValue');
                     var remarks = $("#remarks").textbox('getValue');
                     var pph = $("#pph").numberbox('getValue');
                     var taxes = $("#taxes").numberbox('getValue');
@@ -969,81 +789,57 @@
                     endEditing();
 
                     if (customer_address_id != "" && total_grand != "") {
-                        if (totalrows > 0) {
-                            $('#dlg_insert').dialog('close');
-
-                            Swal.fire({
-                                title: 'Please Wait for Saving Data',
-                                showConfirmButton: false,
-                                allowOutsideClick: false,
-                                allowEscapeKey: false,
-                                didOpen: () => {
-                                    Swal.showLoading();
-                                },
-                            });
-
-                            requestData(totalrows, rows);
-
-                            function requestData(total, rows, jml = 1, value = 0) {
-                                if (value < 100) {
-                                    value = Math.floor((jml / total) * 100);
-                                    var i = (jml - 1);
-
-                                    $.ajax({
-                                        type: "post",
-                                        url: '<?= base_url('sales/sales_orders/create') ?>',
-                                        data: {
-                                            customer_id: customer_id,
-                                            customer_order_no: customer_order_no,
-                                            sales_order_date: sales_order_date,
-                                            sales_order_no: sales_order_no,
-                                            division: division,
-                                            delivery_date: delivery_date,
-                                            customer_address_id: customer_address_id,
-                                            plant: plant,
-                                            department: department,
-                                            attention_to: attention_to,
-                                            remarks: remarks,
-                                            attachment: attachment,
-                                            total_sub: total_sub,
-                                            total_tax: total_tax,
-                                            pph: pph,
-                                            taxes: taxes,
-                                            total_pph: total_pph,
-                                            total_grand: total_grand,
-                                            item_fg_id: rows[i].item_fg_id,
-                                            uom: rows[i].uom,
-                                            qty: rows[i].qty,
-                                            delivery: rows[i].delivery,
-                                            outstanding: rows[i].outstanding,
-                                            currency: rows[i].currency,
-                                            price: rows[i].price,
-                                            total: rows[i].total
-                                        },
-                                        dataType: "json",
-                                        success: function(result) {
-                                            requestData(total, rows, jml + 1, value);
-
-                                            if (jml == total) {
-                                                Swal.close();
-                                                Swal.fire({
-                                                    title: result.message,
-                                                    icon: result.theme,
-                                                    confirmButtonText: 'Ok',
-                                                    allowOutsideClick: false,
-                                                }).then((result) => {
-                                                    if (result.isConfirmed) {
-                                                        window.location.reload();
-                                                    }
-                                                });
-
-                                                $('#dg').datagrid('reload');
-                                            }
+                        for (let i = 0; i < totalrows; i++) {
+                            if (rows[i].item_fg_id) {
+                                $.ajax({
+                                    type: "post",
+                                    url: '<?= base_url('planning/sales_orders/create') ?>',
+                                    data: {
+                                        customer_id: customer_id,
+                                        customer_order_no: customer_order_no,
+                                        sales_order_date: sales_order_date,
+                                        sales_order_no: sales_order_no,
+                                        division: division,
+                                        delivery_date: delivery_date,
+                                        customer_address_id: customer_address_id,
+                                        remarks: remarks,
+                                        attachment: attachment,
+                                        total_sub: total_sub,
+                                        total_tax: total_tax,
+                                        pph: pph,
+                                        taxes: taxes,
+                                        total_pph: total_pph,
+                                        total_grand: total_grand,
+                                        item_fg_id: rows[i].item_fg_id,
+                                        uom: rows[i].uom,
+                                        qty: rows[i].qty,
+                                        delivery: rows[i].delivery,
+                                        outstanding: rows[i].outstanding,
+                                        currency: rows[i].currency,
+                                        price: rows[i].price,
+                                        total: rows[i].total
+                                    },
+                                    dataType: "json",
+                                    success: function(result) {
+                                        if (i == (totalrows - 1)) {
+                                            Swal.fire({
+                                                title: result.message,
+                                                icon: result.theme,
+                                                confirmButtonText: 'Ok',
+                                                allowOutsideClick: false,
+                                            }).then((result) => {
+                                                if (result.isConfirmed) {
+                                                    window.location.reload();
+                                                }
+                                            });
                                         }
-                                    });
-                                }
+                                    }
+                                });
                             }
                         }
+
+                        $('#dg').datagrid('reload');
+                        $('#dlg_insert').dialog('close');
                     } else {
                         toastr.error("Please Completed your input");
                     }
@@ -1065,7 +861,7 @@
         }],
         onSelect: function(customer) {
             $('#filter_sales_order_no').combobox({
-                url: '<?= base_url('sales/sales_orders/readSalesOrder/'); ?>' + customer.id,
+                url: '<?= base_url('planning/sales_orders/readSalesOrder/'); ?>' + customer.id,
                 valueField: 'sales_order_no',
                 textField: 'sales_order_no',
                 prompt: 'Choose All',
@@ -1078,7 +874,7 @@
             });
 
             $('#filter_customer_order_no').combobox({
-                url: '<?= base_url('sales/sales_orders/readCustomerOrder/'); ?>' + customer.id,
+                url: '<?= base_url('planning/sales_orders/readCustomerOrder/'); ?>' + customer.id,
                 valueField: 'customer_order_no',
                 textField: 'customer_order_no',
                 prompt: 'Choose All',
@@ -1094,7 +890,7 @@
 
     $('#division').combobox({
         url: '<?= base_url('master/divisions/reads'); ?>',
-        valueField: 'number',
+        valueField: 'name',
         textField: 'name',
         panelHeight: 'panelHeight',
         prompt: 'Choose Division',
@@ -1156,8 +952,8 @@
     }
 
     $('#attachment_upload').filebox({
-        buttonText: 'Browse File',
-        accept: '.jpg, .png, .pdf',
+    buttonText: 'Browse File',
+    accept: '.jpg, .png, .pdf',
         onChange: function () {
             var files = $(this).filebox('files');
             var formData = new FormData();
@@ -1168,7 +964,7 @@
             }
 
             $.ajax({
-                url: '<?= base_url('sales/sales_orders/uploadatt') ?>',
+                url: '<?= base_url('planning/sales_orders/uploadatt') ?>',
                 type: 'post',
                 data: formData,
                 contentType: false,

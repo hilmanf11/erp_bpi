@@ -130,10 +130,8 @@ class Approvals extends CI_Controller
         $stock_wip = $this->crud->reads('stock_wip', [], ["approved_to" => $this->session->username], "", "", "", ["approved_to", "approved_by"]);
         $os_so = $this->crud->reads('os_so', [], ["approved_to" => $this->session->username], "", "", "", ["approved_to", "approved_by"]);
         $os_mpp = $this->crud->reads('os_mpp', [], ["approved_to" => $this->session->username], "", "", "", ["approved_to", "approved_by"]);
-        $item_fg = $this->crud->reads('item_fg', [], ["approved_to" => $this->session->username], "", "", "", ["approved_to", "approved_by"]);
 
-
-        $totalRows = (count($users) + count($forecasts) + count($stock_fg) + count($stock_wip) + count($os_so) + count($os_mpp) + count($item_fg));
+        $totalRows = (count($users) + count($forecasts) + count($stock_fg) + count($stock_wip) + count($os_so) + count($os_mpp));
         if ($totalRows > 0) {
             echo '<span class="badge">' . $totalRows . '</span>';
         } else {
@@ -150,7 +148,6 @@ class Approvals extends CI_Controller
         $stock_wip = $this->crud->reads('stock_wip', [], ["approved_to" => $this->session->username], "", "", "", ["approved_to", "approved_by"]);
         $os_so = $this->crud->reads('os_so', [], ["approved_to" => $this->session->username], "", "", "", ["approved_to", "approved_by"]);
         $os_mpp = $this->crud->reads('os_mpp', [], ["approved_to" => $this->session->username], "", "", "", ["approved_to", "approved_by"]);
-        $item_fg = $this->crud->reads('item_fg', [], ["approved_to" => $this->session->username], "", "", "", ["approved_to", "approved_by"]);
 
         foreach ($users as $user) {
             $this->approvalMessage($user->approved_by, $user->approved_to, $user->created_by, "users");
@@ -174,10 +171,6 @@ class Approvals extends CI_Controller
 
         foreach ($os_mpp as $mpp) {
             $this->approvalMessage($mpp->approved_by, $mpp->approved_to, $mpp->created_by, "os_mpp");
-        }
-
-        foreach ($item_fg as $items_fg) {
-            $this->approvalMessage($items_fg->approved_by, $items_fg->approved_to, $items_fg->created_by, "item_fg");
         }
     }
 
@@ -284,23 +277,6 @@ class Approvals extends CI_Controller
         $this->db->from('forecasts a');
         $this->db->join('item_fg b', 'a.item_fg_id = b.id');
         $this->db->join('customers c', 'a.customer_id = c.id');
-        $this->db->where('a.approved_to', $approved_to);
-        $this->db->where('a.created_by', $created_by);
-        $this->db->order_by('a.created_date', 'DESC');
-        $records = $this->db->get()->result_array();
-
-        die(json_encode($records));
-    }
-
-    public function approvalItemFg($approved_to, $created_by)
-    {
-        $this->db->select('a.*, b.name as division_name, count(c.item_fg_id) as total_mold, f.min, f.max');
-        $this->db->from('item_fg a');
-        $this->db->join('divisions b', 'a.division_id = b.id');
-        $this->db->join('mold_items c', 'a.id = c.item_fg_id', 'left');
-        $this->db->join('customer_items d', 'd.item_fg_id = a.id', 'left');
-        $this->db->join('customers e', 'd.customer_id = e.id', 'left');
-        $this->db->join('setting_stocks f', "e.type = f.kind AND f.item_category_id = 'C03'", 'left');
         $this->db->where('a.approved_to', $approved_to);
         $this->db->where('a.created_by', $created_by);
         $this->db->order_by('a.created_date', 'DESC');

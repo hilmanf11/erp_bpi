@@ -1,7 +1,7 @@
 <?php
 date_default_timezone_set("Asia/Bangkok");
 defined('BASEPATH') or exit('No direct script access allowed');
-class Report_outstanding_so extends CI_Controller
+class Report_delivery_schedules extends CI_Controller
 {
     public function __construct()
     {
@@ -23,7 +23,7 @@ class Report_outstanding_so extends CI_Controller
         } elseif ($this->checkuserAccess($this->id_menu()) > 0) {
             $data['button'] = $this->getbutton($this->id_menu());
             $this->load->view('template/header', $data);
-            $this->load->view('sales/report_outstanding_so');
+            $this->load->view('planning/report_delivery_schedules');
         } else {
             redirect('error_access');
         }
@@ -74,11 +74,10 @@ class Report_outstanding_so extends CI_Controller
         $filter_customer_order_no = base64_decode($this->input->get("filter_customer_order_no"));
         $filter_sales_order_no = base64_decode($this->input->get("filter_sales_order_no"));
         $filter_item_fg = base64_decode($this->input->get("filter_item_fg"));
-        $filter_division = base64_decode($this->input->get("filter_division"));
+        $filter_item_fg_name = base64_decode($this->input->get("filter_item_fg_name"));
         $filter_display = base64_decode($this->input->get("filter_display"));
 
         $customer = $this->crud->read("customers", [], ["id" => $filter_customer_name]);
-        $item_fg = $this->crud->read("item_fg", [], ["id" => $filter_item_fg]);
 
         //Config
         $this->db->select('*');
@@ -106,7 +105,7 @@ class Report_outstanding_so extends CI_Controller
                     </div>
                     <br><br>
                     <div style="float: centet; font-size: 16px; text-align: center;">
-                        <h3>' . $filter_display . ' OUTSTANDING SALES ORDER <br>FINISH GOOD</h3>
+                        <h3>' . $filter_display . ' REPORT DELIVERY SCHEDULES</h3>
                     </div>
                 </center>
                 <table style="width: 40%; font-size:12px;">
@@ -114,11 +113,6 @@ class Report_outstanding_so extends CI_Controller
                         <th style="width:100px; text-align:left;">Period</th>
                         <td style="width:10px;">:</td>
                         <td style="width:200px;">' . $filter_so_date_from . ' To ' . $filter_so_date_to . '</td>
-                    </tr>
-                    <tr>
-                        <th style="width:100px; text-align:left;">Product No</th>
-                        <td style="width:10px;">:</td>
-                        <td style="width:200px;">' . @$item_fg->number . '</td>
                     </tr>
                     <tr>
                         <th style="width:100px; text-align:left;">Customer Name</th>
@@ -135,138 +129,170 @@ class Report_outstanding_so extends CI_Controller
                         <td style="width:10px;">:</td>
                         <td style="width:200px;">' . $filter_sales_order_no . '</td>
                     </tr>
+                    <tr>
+                        <th style="width:100px; text-align:left;">Product No</th>
+                        <td style="width:10px;">:</td>
+                        <td style="width:200px;">' . $filter_item_fg . '</td>
+                    </tr>
                 </table>
                 <br>';
 
         if ($filter_display == "RECAP") {
-            $this->db->select('a.sales_order_no, a.sales_order_date, a.customer_order_no, SUM(a.qty) as qty_order, SUM(a.delivery) as qty_delivery, SUM(a.outstanding) as qty_outstanding, b.number as customer_number, b.name as customer_name');
-            $this->db->from('sales_orders a');
+            $this->db->select('a.sales_order_no, a.trans_date, a.qty, b.number as customer_number, b.name as customer_name, c.customer_order_no, d.id as item_fg_id, d.name as item_fg_name, d.number as item_fg_number, d.uom as item_fg_uom');
+            $this->db->from('sales_order_deliveries a');
             $this->db->join('customers b', 'a.customer_id = b.id');
-            $this->db->where("a.sales_order_date between '$filter_so_date_from' and '$filter_so_date_to'");
+            $this->db->join('sales_orders c', 'a.customer_id = c.customer_id');
+            $this->db->join('item_fg d', 'a.item_fg_id = d.id');
+            $this->db->where("a.trans_date between '$filter_so_date_from' and '$filter_so_date_to'");
             $this->db->like('a.customer_id', $filter_customer_name);
             $this->db->like('a.item_fg_id', $filter_item_fg);
-            $this->db->like('a.customer_order_no', $filter_customer_order_no);
             $this->db->like('a.sales_order_no', $filter_sales_order_no);
-            $this->db->like('a.division', $filter_division);
-            $this->db->order_by('a.status', 'ASC');
+            $this->db->order_by('a.item_fg_id', 'DESC');
+            $this->db->group_by('a.trans_date');
+            $this->db->group_by('a.customer_id');
+            $this->db->group_by('a.item_fg_id');
             $this->db->group_by('a.sales_order_no');
             $records = $this->db->get()->result_array();
 
             $html .= '<table id="customers" border="1">
                         <tr>
                             <th width="20">No</th>
+                            <th>Delivery Date</th>
+                            <th>Customer Name</th>
                             <th>Sales Order No.</th>
                             <th>Customer Order No.</th>
-                            <th>SO Date</th>
-                            <th>Customer Name</th>
-                            <th>Qty Order</th>
-                            <th>Qty Delivery</th>
-                            <th>Outstanding</th>
-                            <th>Status</th>
+                            <th>Product ID</th>
+                            <th>Product No</th>
+                            <th>Product Name</th>
+                            <th>UoM</th>
+                            <th>Delivery Qty</th>
                         </tr>';
 
             $no = 1;
-            $qty_order = 0;
-            $qty_delivery = 0;
-            $qty_outstanding = 0;
-            $status = "";
+            
             foreach ($records as $data) {
-                $qty_order += $data['qty_order'];
-                $qty_delivery += $data['qty_delivery'];
-                $qty_outstanding += $data['qty_outstanding'];
-
-                if (($data['qty_order'] - $data['qty_delivery']) > 0) {
-                    $status = "<b style='color:green;'>OPEN</b>";
-                } else {
-                    $status = "<b style='color:red;'>CLOSE</b>";
-                }
-
+            
                 $html .= '<tr>
                             <td>' . $no . '</td>
-                            <td>' . $data['sales_order_no'] . '</td>
-                            <td>' . $data['customer_order_no'] . '</td>
-                            <td>' . $data['sales_order_date'] . '</td>
+                            <td>' . $data['trans_date'] . '</td>
                             <td>' . $data['customer_name'] . '</td>
-                            <td>' . number_format($data['qty_order']) . '</td>
-                            <td>' . number_format($data['qty_delivery']) . '</td>
-                            <td>' . number_format($data['qty_outstanding']) . '</td>
-                            <td>' . $status . '</td>
+                            <td>' . $data['sales_order_no'] . '</td>
+                            <td align="center">' . $data['customer_order_no'] . '</td>
+                            <td>' . $data['item_fg_id'] . '</td>
+                            <td>' . $data['item_fg_number'] . '</td>
+                            <td>' . $data['item_fg_name'] . '</td>
+                            <td>' . $data['item_fg_uom'] . '</td>
+                            <td align="center">' . $data['qty'] . '</td>
+                            
+                           
                         </tr>';
                 $no++;
             }
-
-            $html .= '<tr>
-                        <th colspan="5" style="text-align:right;">TOTAL</th>
-                        <th>' . number_format($qty_order) . '</th>
-                        <th>' . number_format($qty_delivery) . '</th>
-                        <th>' . number_format($qty_outstanding) . '</th>
-                        <th>' . $status . '</th>
-                    </tr>';
         } else {
-            $this->db->select('a.sales_order_no, a.sales_order_date, a.customer_order_no, 
-                a.qty, 
-                a.delivery, 
-                a.outstanding, 
-                b.number as customer_number, 
-                b.name as customer_name,
-                c.number as item_fg_number,
-                c.name as item_fg_name');
-            $this->db->from('sales_orders a');
+            $this->db->select('a.sales_order_no, a.trans_date, a.qty, b.number as customer_number, b.name as customer_name, c.customer_order_no, d.id as item_fg_id, d.name as item_fg_name, d.number as item_fg_number, d.uom as item_fg_uom');
+            $this->db->from('sales_order_deliveries a');
             $this->db->join('customers b', 'a.customer_id = b.id');
-            $this->db->join('item_fg c', 'a.item_fg_id = c.id');
-            $this->db->where("a.sales_order_date between '$filter_so_date_from' and '$filter_so_date_to'");
+            $this->db->join('sales_orders c', 'a.customer_id = c.customer_id');
+            $this->db->join('item_fg d', 'a.item_fg_id = d.id');
+            $this->db->where("a.trans_date between '$filter_so_date_from' and '$filter_so_date_to'");
             $this->db->like('a.customer_id', $filter_customer_name);
             $this->db->like('a.item_fg_id', $filter_item_fg);
-            $this->db->like('a.customer_order_no', $filter_customer_order_no);
+            $this->db->like('c.customer_order_no', $filter_customer_order_no);
             $this->db->like('a.sales_order_no', $filter_sales_order_no);
-            $this->db->like('a.division', $filter_division);
+           $this->db->group_by('a.item_fg_id');
             $this->db->order_by('a.status', 'ASC');
             $records = $this->db->get()->result_array();
 
-            $html .= '<table id="customers" border="1">
-                        <tr>
-                            <th width="20">No</th>
-                            <th>Product No</th>
-                            <th>Product Name</th>
-                            <th>Sales Order No</th>
-                            <th>Customer Order No</th>
-                            <th>SO Date</th>
-                            <th>Customer Name</th>
-                            <th>Qty Order</th>
-                            <th>Qty Delivery</th>
-                            <th>Outstanding</th>
-                        </tr>';
+            $p_date_start = date("Y-m-d", strtotime($filter_so_date_from));
+            $p_date_to = date('Y-m-d', strtotime($filter_so_date_to));
 
-            $no = 1;
-            $qty_order = 0;
-            $qty_delivery = 0;
-            $qty_outstanding = 0;
-            foreach ($records as $data) {
-                $qty_order += $data['qty'];
-                $qty_delivery += $data['delivery'];
-                $qty_outstanding += $data['outstanding'];
-
-                $html .= '<tr>
-                            <td>' . $no . '</td>
-                            <td>' . $data['item_fg_number'] . '</td>
-                            <td>' . $data['item_fg_name'] . '</td>
-                            <td>' . $data['sales_order_no'] . '</td>
-                            <td>' . $data['customer_order_no'] . '</td>
-                            <td>' . $data['sales_order_date'] . '</td>
-                            <td>' . $data['customer_name'] . '</td>
-                            <td>' . number_format($data['qty']) . '</td>
-                            <td>' . number_format($data['delivery']) . '</td>
-                            <td>' . number_format($data['outstanding']) . '</td>
-                        </tr>';
-                $no++;
+            $colspan = 1;
+            while (strtotime($p_date_start) <= strtotime($p_date_to)) {
+                $colspan += 1;
+                $p_date_start = date("Y-m-d", strtotime("+1 days", strtotime($p_date_start)));
             }
 
+            $p_date_start = date("Y-m-d", strtotime($filter_so_date_from));
+            $p_date_to = date('Y-m-d', strtotime($filter_so_date_to));
+
+    $html .= '<table id="customers" border="1">
+        <tr>
+            <th rowspan="2" width="20">No</th>
+            <th rowspan="2">Product ID</th>
+            <th rowspan="2">Product No</th>
+            <th rowspan="2">Product Name</th>
+            <th rowspan="2">UoM</th>
+            <th rowspan="2">Desc</th>
+            <th align="center" colspan="'.$colspan.'">Delivery Date</th>
+        </tr>
+        <tr>';
+        while (strtotime($p_date_start) <= strtotime($p_date_to)) {
+            $start_date = date("d", strtotime($p_date_start));
+            $html .='<th>'.$start_date.'</th>';
+            $p_date_start = date("Y-m-d", strtotime("+1 days", strtotime($p_date_start)));
+        }
+        $html .= '</tr>';
+
+        $no = 1;
+
+        foreach ($records as $data) {
+            $p_date_start = date("Y-m-d", strtotime($filter_so_date_from));
+            $p_date_to = date('Y-m-d', strtotime($filter_so_date_to));
+
             $html .= '<tr>
-                        <th colspan="7" style="text-align:right;">TOTAL</th>
-                        <th>' . number_format($qty_order) . '</th>
-                        <th>' . number_format($qty_delivery) . '</th>
-                        <th>' . number_format($qty_outstanding) . '</th>
-                    </tr>';
+                        <td rowspan="4">' . $no . '</td>
+                        <td rowspan="4">' . $data['item_fg_id'] . '</td>
+                        <td rowspan="4">' . $data['item_fg_number'] . '</td>
+                        <td rowspan="4">' . $data['item_fg_name'] . '</td>
+                        <td rowspan="4">' . $data['item_fg_uom'] . '</td>
+                    </tr>
+            <tr>
+                <td>Plan</td>';
+                while (strtotime($p_date_start) <= strtotime($p_date_to)) {
+                    $trans_date = date("Y-m-d", strtotime($p_date_start));
+                    $delivery = $this->crud->read('sales_order_deliveries', [], ["trans_date" => $trans_date,"item_fg_id" => $data['item_fg_id']]);
+
+                    if(@$delivery->qty > 0){
+                        $html .='<td>'.@$delivery->qty.'</td>';
+                    }else{
+                        $html.='<td>0</td>';
+                    }
+                    
+                    $p_date_start = date("Y-m-d", strtotime("+1 days", strtotime($p_date_start)));
+                }
+
+            $p_date_start = date("Y-m-d", strtotime($filter_so_date_from));
+            $p_date_to = date('Y-m-d', strtotime($filter_so_date_to));
+            
+            $html .= '</tr>
+
+            <tr>
+                <td>Actual</td>';
+                while (strtotime($p_date_start) <= strtotime($p_date_to)) {
+                    $trans_date = date("Y-m-d", strtotime($p_date_start));
+                        $html.='<td>0</td>';
+                    
+                    $p_date_start = date("Y-m-d", strtotime("+1 days", strtotime($p_date_start)));
+                }
+            $html .= '</tr>
+            
+            <tr>
+                <td>Balance</td>';
+                while (strtotime($p_date_start) <= strtotime($p_date_to)) {
+                    $trans_date = date("Y-m-d", strtotime($p_date_start));
+                        $html.='<td>0</td>';
+                    
+                    $p_date_start = date("Y-m-d", strtotime("+1 days", strtotime($p_date_start)));
+                }
+            $html .= '</tr>
+
+            $no++';
+        }
+
+
+
+    $html .= '</table>';
+     
         }
 
         $html .= '</table></body></html>';

@@ -25,7 +25,7 @@ class Sales_orders extends CI_Controller
         } elseif ($this->checkuserAccess($this->id_menu()) > 0) {
             $data['button'] = $this->getbutton($this->id_menu());
             $this->load->view('template/header', $data);
-            $this->load->view('sales/sales_orders');
+            $this->load->view('planning/sales_orders');
         } else {
             redirect('error_access');
         }
@@ -36,7 +36,7 @@ class Sales_orders extends CI_Controller
         $post = isset($_POST['q']) ? $_POST['q'] : "";
         $send = $this->crud->query("SELECT b.id, b.number, b.name, b.number_customer, a.price, c.currency, b.uom
             FROM customer_items a 
-            JOIN item_fg b ON a.item_fg_id = b.id and b.type = 'FG'
+            JOIN item_fg b ON a.item_fg_id = b.id
             JOIN customers c ON a.customer_id = c.id
             WHERE a.customer_id = '$customer_id' and (b.number LIKE '%$post%' or b.name LIKE '%$post%')");
         echo json_encode($send);
@@ -239,156 +239,6 @@ class Sales_orders extends CI_Controller
         $send = $this->crud->delete('sales_orders', $data);
         echo $send;
     }
-
-    //UPLOAD DATA
-    public function upload()
-    {
-        error_reporting(0);
-        require_once 'assets/vendors/excel_reader2.php';
-        $target = basename($_FILES['file_upload']['name']);
-        move_uploaded_file($_FILES['file_upload']['tmp_name'], $target);
-        chmod($_FILES['file_upload']['name'], 0777);
-        $file = $_FILES['file_upload']['name'];
-        $data = new Spreadsheet_Excel_Reader($file, false);
-        $total_row = $data->rowcount($sheet_index = 0);
-
-        $customer_id = $data->val(2, 3);
-        $sales_order_date = $data->val(3, 3);
-
-        $datenow    = "SO" . $customer_id . date("ymd", strtotime($sales_order_date));
-        $sqlGetID   = $this->db->query("SELECT max(`sales_order_no`) as kode FROM sales_orders WHERE `sales_order_no` like '%$datenow%'");
-        $rowID      = $sqlGetID->row();
-        $kode       = $rowID->kode;
-        if ($kode == NULL) {
-            $autoID = sprintf("%03s", $kode + 1);
-        } else {
-            $urutan = (int) substr($kode, -3);
-            $urutan++;
-            $autoID = sprintf("%03s", $urutan);
-        }        
-
-        $sales_order_no = $datenow . $autoID;
-
-        $total_sub = 0;
-         for ($i = 7; $i <= $total_row; $i++) {
-            $item_fg_number = $data->val($i, 3);
-            $cust_address = $data->val(2, 5);
-            $item_fg = $this->crud->read('item_fg', [], ["number" => $item_fg_number]);
-            $cust_add = $this->crud->read('customer_address', [], ["id" => $cust_address]);
-
-            if (!empty($item_fg->number)) {
-                $customer_items = $this->crud->read('customer_items', [], ["item_fg_id" => $item_fg->id,"customer_id" => $customer_id]);
-                $total = ($data->val($i, 4) * $customer_items->price);
-                $datas[] = array(
-                    //excel
-                    'customer_id' => $customer_id,
-                    'sales_order_date' => $data->val(3, 3),
-                    'delivery_date' => $data->val(4, 3),
-                    'customer_address_id' => $data->val(2, 5),
-                    'division' => $data->val(3, 5),
-                    'remarks' => $data->val(4, 5),
-                    'customer_order_no' => $data->val($i, 2),
-                    'item_fg_id' => $item_fg->id,
-                    'qty' => $data->val($i, 4),
-                    'price' => $customer_items->price,
-                    'sales_order_no' => $sales_order_no,
-                    "total" => $total,
-                    'uom' => $item_fg->uom,
-                    'plant' => $cust_add->plant,
-                    'department' => $cust_add->department,
-                    'attention_to' => $cust_add->contact_person,
-                
-                );
-                $total_sub += $total;
-            }
-         }
-
-         $datas['total_sub'] = $total_sub;
-         $datas['total'] = count($datas);
-         echo json_encode($datas);
-         unlink($_FILES['file_upload']['name']);
-    }
-     public function uploadclearFailed()
-     {
-         @unlink('failed/sales_orders.txt');
-     }
-     public function uploadcreateFailed()
-     {
-         if ($this->input->post()) {
-             $message = $this->input->post('message');
-             $textFailed = fopen('failed/sales_orders.txt', 'a');
-             fwrite($textFailed, $message . "\n");
-             fclose($textFailed);
-         }
-     }
- 
-     //UPLOAD DOWNLOAD FAILED
-     public function uploadDownloadFailed()
-     {
-         $file = "failed/sales_orders.txt";
-         header('Content-Description: File Failed');
-         header('Content-Disposition: attachment; filename=' . basename($file));
-         header('Expires: 0');
-         header('Cache-Control: must-revalidate');
-         header('Pragma: public');
-         header('Content-Length: ' . @filesize($file));
-         header("Content-Type: text/plain");
-         @readfile($file);
-     }
- 
-     //UPLOAD CREATE DATA
-     public function uploadcreate()
-     {
-         if ($this->input->post()) {
-            $data = $this->input->post('data');//field excel
-            $total_sub = $this->input->post('total_sub');
-
-            //Cek Process Number                //table             //field           //field excel
-            $customers = $this->crud->read('customers', [], ["id" => $data['customer_id']]);
-            $customer_address = $this->crud->read('customer_address', [], ["id" => $data['customer_address_id'],"customer_id" => $data['customer_id']]);
-
-            if (empty($customers->id)) {
-                echo json_encode(array("title" => "Not Found", "message" => "Customers ID " . $data['customer_id'] . " Not Found", "theme" => "error"));
-            } elseif (empty($customer_address->id)) {
-                echo json_encode(array("title" => "Not Found", "message" => "Customers Address ID " . $data['customer_address_id'] . " Not Found in Customers ID ". $data['customer_id'] . "", "theme" => "error"));
-            } else {
-                $customer_items = $this->crud->read('customer_items', [], ["item_fg_id" => $data['item_fg_id'],"customer_id" => $data['customer_id']]);
-                $sales_orders = $this->crud->read('sales_orders', [], ["customer_order_no" => $data['customer_order_no'], "item_fg_id" => $data['item_fg_id']]);
-
-                if (!empty($sales_orders->sales_order_no )) {
-                    echo json_encode(array("title" => "Duplicated", "message" => "Product ID " . $data['item_fg_id'] . " and Customer Order No " . $data['customer_order_no'] . " Duplicated", "theme" => "error"));
-                } else {
-                    $dataFinal = array(
-                        //field        //excel
-                        "customer_id" => $data['customer_id'],
-                        "sales_order_date" => $data['sales_order_date'],
-                        "sales_order_no" => $data['sales_order_no'],
-                        "delivery_date" => $data['delivery_date'],
-                        "customer_address_id" => $data['customer_address_id'],
-                        "plant" => $data['plant'],
-                        "attention_to" => $data['attention_to'],
-                        "department" => $data['department'],
-                        "remarks" => $data['remarks'],
-                        "division" => $data['division'],
-                        "customer_order_no" => $data['customer_order_no'],
-                        "item_fg_id" => $data['item_fg_id'],
-                        "qty" => $data['qty'],
-                        "uom" => $data['uom'],
-                        "currency" => $customers->currency,
-                        "price" => $data['price'],
-                        "total" => $data['total'],
-                        "total_sub" => $total_sub,
-                        "total_tax" => ($total_sub * ($customers->taxes / 100)),
-                        "total_pph" => 0,
-                        "total_grand" => ($total_sub + ($total_sub * ($customers->taxes / 100))),
-                        
-                    );
-                    $send   = $this->crud->create('sales_orders', $dataFinal);
-                    echo $send;
-                }
-             }
-         }
-     }
 
     //PRINT & EXCEL DATA
     public function print($option = "")
