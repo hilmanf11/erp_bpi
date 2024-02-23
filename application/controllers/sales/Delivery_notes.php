@@ -28,12 +28,9 @@ class Delivery_notes extends CI_Controller
         }
     }
 
-<<<<<<< HEAD
-    public function datatablesTemp($delivery_order_no)
+    public function datatablesTemp()
     {
-        // $delivery_order_no = base64_decode($delivery_order_no);
-        $delivery_order_no = explode(",", base64_decode($delivery_order_no));
-        
+        $delivery_order_no = $this->input->get('delivery_order_no');
         //Select Query
         $this->db->select('a.delivery_order_no, 
             b.id as item_fg_id, 
@@ -47,17 +44,13 @@ class Delivery_notes extends CI_Controller
         $this->db->join('sales_orders c', 'a.sales_order_no = c.sales_order_no');
         $this->db->where('a.deleted', 0);
         $this->db->where('a.delivery_order_no', $delivery_order_no);
-
         $records = $this->db->get()->result_array();
-        
         echo json_encode($records);
     }
 
-=======
->>>>>>> b0853c0f7289dc2ee534beb5aed8b2c224e09c18
     public function readDo($customer_id)
     {
-        $send = $this->crud->query("SELECT DISTINCT a.delivery_order_no, a.sales_order_no
+        $send = $this->crud->query("SELECT b.id, b.number, b.name, a.delivery_order_no, a.sales_order_no, a.trans_type, a.delivery_date, c.customer_order_no, a.uom, a.qty_do 
         FROM delivery_orders a 
         JOIN item_fg b ON a.item_fg_id = b.id 
         JOIN sales_orders c ON a.item_fg_id = c.item_fg_id 
@@ -132,8 +125,8 @@ class Delivery_notes extends CI_Controller
             $this->db->select("a.*, b.name as customer_name, d.address as shipping_address");
             $this->db->from('delivery_notes a');
             $this->db->join('customers b', 'a.customer_id = b.id');
+            $this->db->join('customer_address d', 'b.id = d.customer_id');
             $this->db->join('sales_orders c', 'a.sales_order_no = c.sales_order_no and a.item_fg_id = c.item_fg_id and a.customer_id = c.customer_id');
-            $this->db->join('customer_address d', 'c.customer_address_id = d.id');
             if ($filter_from != "" && $filter_to != "") {
                 $this->db->where('a.delivery_note_date >=', $filter_from);
                 $this->db->where('a.delivery_note_date <=', $filter_to);
@@ -402,7 +395,7 @@ class Delivery_notes extends CI_Controller
         $this->db->select("a.*, b.name as customer_name, d.address as shipping_address, e.number as item_fg_number, e.name as item_fg_name");
             $this->db->from('delivery_notes a');
             $this->db->join('customers b', 'a.customer_id = b.id');
-            $this->db->join('customer_address d', 'a.customer_address_id = d.id');
+            $this->db->join('customer_address d', 'b.id = d.customer_id');
             $this->db->join('sales_orders c', 'a.sales_order_no = c.sales_order_no and a.item_fg_id = c.item_fg_id and a.customer_id = c.customer_id');
             $this->db->join('item_fg e', 'a.item_fg_id = e.id');
             if ($filter_from != "" && $filter_to != "") {

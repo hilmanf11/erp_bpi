@@ -1,3 +1,16 @@
+<div id="dlg_help" class="easyui-dialog" title="About Menu" data-options="closed: true,modal:true" style="width: 800px; height: 500px; left: 10px; top: 20px;">
+    <div class="easyui-accordion" style="width:100%; height: 100%;">
+        <div title="RELATIONS" style="padding: 20px;">
+            <ul>
+                <li>The Data Process Type is taken from <b>Master Data > Engineering > Flow Process</b></li>
+                <li>The Data Divisions is taken from <b>Master Data > General Master > Divisions</b></li>
+                <li>The Data Box is taken from <b>Master Data > Engineering > Boxs</b></li>
+                <li>The Data Colors is taken from <b>Master Data > Engineering > Colors</b></li>
+                <li>The Data UoM is taken from <b>Master Data > General Master > Unit of Measure</b></li>
+            </ul>
+        </div>
+    </div>
+</div>
 <!-- TABLE DATAGRID -->
 <table id="dg" class="easyui-datagrid" style="width:99.5%;" toolbar="#toolbar">
     <thead data-options="frozen:true">
@@ -55,9 +68,10 @@
 <!-- TOOLBAR DATAGRID -->
 <div id="toolbar" style="height: 35px;">
     <?= $button ?>
+    <a href="javascript:void(0)" class="easyui-linkbutton" data-options="plain:true" onclick="$('#dlg_help').dialog('open');"><i class="fa fa-info"></i> Help</a>
 </div>
 <!-- DIALOG SAVE AND UPDATE -->
-<div id="dlg_insert" class="easyui-dialog" title="Add New" data-options="closed: true,modal:true" style="width: 90%; height: 500px; padding:10px; top: 10px; left: 10px;">
+<div id="dlg_insert" class="easyui-dialog" title="Add New" data-options="closed: true,modal:true" style="width: 95%; height: 500px; padding:10px; top: 10px; left: 10px;">
     <form id="frm_insert" method="post" novalidate enctype="multipart/form-data">
         <fieldset style="width:100%; border:1px solid #d0d0d0; margin-bottom: 10px; border-radius:4px; float: left;">
             <legend><b>Form Data</b></legend>

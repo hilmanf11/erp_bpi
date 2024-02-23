@@ -305,19 +305,20 @@ class Item_rm extends CI_Controller
         $no = 1;
         foreach ($records as $data) {
             $html .= '<tr>
-                    <td>' . $no . '</td>
-                    <td>' . $data['id'] . '</td>
-                    <td>' . $data['number'] . '</td>
-                    <td>' . $data['name'] . '</td>
-                    <td>' . $data['uom'] . '</td>
-                    <td>' . $data['item_category_name'] . '</td>
-                    <td>' . $data['item_family_name'] . '</td>
-                    <td>' . $data['item_sub_family_number'] . '</td>
-                    <td>' . $data['account_number'] . '</td>
-                    <td>' . $data['account_name'] . '</td>
-                    <td>' . $data['description'] . '</td>
-                    <td>' . $data['supply'] . '</td>
-                    <td>' . $data['status'] . '</td>';
+                        <td>' . $no . '</td>
+                        <td>' . $data['id'] . '</td>
+                        <td style="mso-number-format:\@;">' . $data['number'] . '</td>
+                        <td style="mso-number-format:\@;">' . $data['name'] . '</td>
+                        <td>' . $data['uom'] . '</td>
+                        <td>' . $data['item_category_name'] . '</td>
+                        <td>' . $data['item_family_name'] . '</td>
+                        <td>' . $data['item_sub_family_number'] . '</td>
+                        <td>' . $data['account_number'] . '</td>
+                        <td>' . $data['account_name'] . '</td>
+                        <td>' . $data['description'] . '</td>
+                        <td>' . $data['supply'] . '</td>
+                        <td>' . $data['status'] . '</td>
+                    </tr>';
             $no++;
         }
         $html .= '</table></body></html>';

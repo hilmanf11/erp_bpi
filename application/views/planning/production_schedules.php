@@ -1,3 +1,24 @@
+<div id="dlg_help" class="easyui-dialog" title="About Menu" data-options="closed: true,modal:true" style="width: 800px; height: 500px; left: 10px; top: 20px;">
+    <div class="easyui-accordion" style="width:100%; height: 100%;">
+        <div title="RELATION" style="padding: 20px;">
+            <ul>
+                <li>The Data Customers is taken from <b>Master Data > Marketing > Customers</b></li>
+                <li>The Data Line Production is taken from <b>Master Data > General Master > Line Production</b></li>
+                <li>The Data Sales Order No is taken from the results of Customer selection and Get Data <b>Sales Order</b> Module</li>
+                <li>The Data Product No is taken from the results of Sales Order No selection</li>
+            </ul>
+        </div>
+        <div title="CONDITION" style="padding: 20px;">
+            <ul>
+                <li>If Status <b style="color: green">OPEN</b> then data new created in <b>Production Schedules</b></li>
+                <li>If Status <b style="color: orange">SUPPLY</b> then data has been created in <b>Supply Sheet</b> when qty balance = 0</li>
+                <li>If Status <b style="color: red">CLOSED</b> then data has been Scanned in <b>Scan Receipt FG</b></li>
+                <li>If Qty in Production Schedule > Qty in Sales Order then <b style="color: red">ERROR</b></li>
+            </ul>
+        </div>
+    </div>
+</div>
+
 <table id="dg" class="easyui-datagrid" style="width:99.5%;" toolbar="#toolbar">
     <thead>
         <tr>
@@ -75,7 +96,7 @@
         </div>
     </fieldset>
     <?= $button ?>
-    <a href="javascript:;" class="easyui-linkbutton" data-options="plain:true" onclick="helps()"><i class="fa fa-info-circle"></i> Help</a>
+    <a href="javascript:void(0)" class="easyui-linkbutton" data-options="plain:true" onclick="$('#dlg_help').dialog('open');"><i class="fa fa-info"></i> Help</a>
     <!-- <a href="javascript:;" class="easyui-linkbutton" data-options="plain:true" onclick="print_job_order()"><i class="fa fa-print"></i> Print Job Order</a> -->
 </div>
 <!-- Insert & Update -->
@@ -122,57 +143,6 @@
             </div>
         </fieldset>
     </form>
-</div>
-
-<!-- DIALOG HELP -->
-<div id="dlg_help" class="easyui-dialog" title="Help about this Module" data-options="closed: true,modal:true" style="width: 700px; padding:10px; top: 20px;">
-    <table style="width: 100%;">
-        <tr>
-            <td colspan="2" style="border: 2px solid black; text-align: center; font-weight: bold;">STATUS WO</td>
-        </tr>
-        <tr>
-            <td width="120" style="background-color: #C8FFCC; padding: 5px; color: green; text-align: center; font-weight: bold;">OPEN</td>
-            <td style="padding: 5px;">Data just created from <b>production schedules</b></td>
-        </tr>
-        <tr>
-            <td style="background-color: #FFCB93; padding: 5px; color: orange; text-align: center; font-weight: bold;">SUPPLY</td>
-            <td style="padding: 5px;">The data has been created in the <b>supply sheet</b> module, where qty balance = 0</td>
-        </tr>
-        <tr>
-            <td style="background-color: #FFC8C8; padding: 5px; color: red; text-align: center; font-weight: bold;">CLOSED</td>
-            <td style="padding: 5px;">The data has been Scanned in <b>Scan Receipt FG</b> module</td>
-        </tr>
-        <tr>
-            <td colspan="2" style="border: 2px solid black; text-align: center; font-weight: bold;">RELATION</td>
-        </tr>
-        <tr>
-            <td style="padding: 5px; font-weight: bold;"> Line Production</td>
-            <td style="padding: 5px;">The data GET in the <b>master data/line productions</b> module</td>
-        </tr>
-        <tr>
-            <td style="padding: 5px; font-weight: bold;"> Customer</td>
-            <td style="padding: 5px;">The data GET in the <b>master data/customers</b> module</td>
-        </tr>
-        <tr>
-            <td style="padding: 5px; font-weight: bold;"> Sales Order No</td>
-            <td style="padding: 5px;">The data GET in the <b>planning/sales orders</b> module by customer</td>
-        </tr>
-        <tr>
-            <td style="padding: 5px; font-weight: bold;"> Product No</td>
-            <td style="padding: 5px;">The data GET in the <b>planning/sales orders</b> module by sales order no and customer</td>
-        </tr>
-        <tr>
-            <td colspan="2" style="border: 2px solid black; text-align: center; font-weight: bold;">VALIDATION</td>
-        </tr>
-        <tr>
-            <td style="padding: 5px; font-weight: bold;"> Error</td>
-            <td style="padding: 5px;">If the customer, product no, WP and trans date are the same</td>
-        </tr>
-        <tr>
-            <td style="padding: 5px; font-weight: bold;"> Error</td>
-            <td style="padding: 5px;">If qty > sales order qty</td>
-        </tr>
-    </table>
 </div>
 
 <!-- PDF -->
@@ -498,11 +468,11 @@
                                 [{
                                     field: 'number',
                                     title: 'Product No',
-                                    width: 120
+                                    width: 200
                                 }, {
                                     field: 'name',
                                     title: 'Product Name',
-                                    width: 250
+                                    width: 200
                                 }, {
                                     field: 'qty',
                                     title: 'Qty',

@@ -1,3 +1,26 @@
+<div id="dlg_help" class="easyui-dialog" title="About Menu" data-options="closed: true,modal:true" style="width: 800px; height: 500px; left: 10px; top: 20px;">
+    <div class="easyui-accordion" style="width:100%; height: 100%;">
+        <div title="RELATIONS" style="padding: 20px;">
+            <ul>
+                <li>The Data Product No is taken from <b>Master Data > Engineering > Item Finish Good</b></li>
+                <li>The Data Cycle Time is taken from <b>Master Data > Engineering > Menu Loading</b></li>
+                <li>The Data Productivity is taken from <b>Master Data > Engineering > Menu Loading</b></li>
+                <li>The Data Cavity Actual is taken from <b>Master Data > Engineering > Menu Loading</b></li>
+                <li>The Data Capacity/Hour is taken from <b>Calculation, to know any futher Please Check FORMULATION Below</b></li>
+                <li>The Data Capacity/Shift is taken from <b>Calculation, to know any futher Please Check FORMULATION Below</b></li>
+                <li>The Data Capacity/Day is taken from <b>Calculation, to know any futher Please Check FORMULATION Below</b></li>
+            </ul>
+        </div>
+        <div title="FORMULATION" style="padding: 20px;">
+            <ul>
+                <li><b>Capacity/Hour :</b> (3600/Cycle Time) * Cavity Actual * (Productivity/100).</li>
+                <li><b>Capacity/Shift :</b> (3600/Cycle Time) * Cavity Actual * (Productivity/100) * Capacity Hour.</li>
+                <li><b>Capacity/Day :</b> ((3600/Cycle Time) * Cavity Actual * (Productivity/100) * Capacity Hour) * Shift hour * Shift.</li>
+            </ul>
+        </div>
+    </div>
+</div>
+
 <!-- TABLE DATAGRID -->
 <table id="dg" class="easyui-datagrid" style="width:99.5%;" toolbar="#toolbar">
     <thead>
@@ -27,6 +50,7 @@
 <!-- TOOLBAR DATAGRID -->
 <div id="toolbar" style="height: 35px;">
     <?= $button ?>
+    <a href="javascript:void(0)" class="easyui-linkbutton" data-options="plain:true" onclick="$('#dlg_help').dialog('open');"><i class="fa fa-info"></i> Help</a>
 </div>
 <!-- DIALOG SAVE AND UPDATE -->
 <div id="dlg_insert" class="easyui-dialog" title="Add New" data-options="closed: true,modal:true" style="width: 450px; padding:10px; top: 20px;">
@@ -39,7 +63,7 @@
             </div>
             <div class="fitem">
                 <span style="width:35%; display:inline-block;">Machine No.</span>
-                <input style="width:60%;" name="machine_id" id="machine_id" required="" class="easyui-combobox">
+                <input style="width:60%;" name="machine_id" id="machine_id" required="" class="easyui-textbox">
             </div>
             <div class="fitem">
                 <span style="width:35%; display:inline-block;">Cycle Time</span>
@@ -228,25 +252,38 @@
                 }]
             ],
             onSelect: function(val, rows) {
-                $('#machine_id').combobox({
-                    url: '<?php echo base_url('master/production_capacities/readMachines/'); ?>' + btoa(rows.item_fg_id),
-                    valueField: 'machine_id',
-                    textField: 'machine_number',
-                    prompt: "Choose Machine No",
-                    onSelect: function(menu_loadings){
-                        $("#cycle_time").textbox('setValue', menu_loadings.cycle_time);
-                        $("#productcivity").textbox('setValue', menu_loadings.productcivity);
-                        $("#cavity_actual").textbox('setValue', menu_loadings.cavity_actual); // mengambil dari molds
+                    $("#machine_id").textbox('setValue', rows.machine_id);
+                    $("#cycle_time").textbox('setValue', rows.cycle_time);
+                    $("#productcivity").textbox('setValue', rows.productcivity);
+                    $("#cavity_actual").textbox('setValue', rows.cavity_actual); // mengambil dari molds
 
-                        var capacity_hour = (3600 / menu_loadings.cycle_time) * menu_loadings.cavity_actual * (menu_loadings.productcivity / 100);
-                        var capacity_shift = (capacity_hour * capacity_hour);
-                        var capacity_day = (capacity_hour *  capacity_hour * menu_loadings.shift_hour * menu_loadings.shift);
+                    var capacity_hour = (3600 / rows.cycle_time) * rows.cavity_actual * (rows.productcivity / 100);
+                    var capacity_shift = (capacity_hour * capacity_hour);
+                    var capacity_day = (capacity_hour *  capacity_hour * rows.shift_hour * rows.shift);
 
-                        $("#capacity_hour").textbox('setValue', capacity_hour);
-                        $("#capacity_shift").textbox('setValue', capacity_shift);
-                        $("#capacity_day").textbox('setValue', capacity_day);
-                    }
-                });
+                    $("#capacity_hour").textbox('setValue', capacity_hour);
+                    $("#capacity_shift").textbox('setValue', capacity_shift);
+                    $("#capacity_day").textbox('setValue', capacity_day);
+                    
+                // $('#machine_id').combobox({
+                //     url: '<?php echo base_url('master/production_capacities/readMachines/'); ?>' + btoa(rows.item_fg_id),
+                //     valueField: 'machine_id',
+                //     textField: 'machine_number',
+                //     prompt: "Choose Machine No",
+                //     onSelect: function(menu_loadings){
+                //         $("#cycle_time").textbox('setValue', menu_loadings.cycle_time);
+                //         $("#productcivity").textbox('setValue', menu_loadings.productcivity);
+                //         $("#cavity_actual").textbox('setValue', menu_loadings.cavity_actual); // mengambil dari molds
+
+                //         var capacity_hour = (3600 / menu_loadings.cycle_time) * menu_loadings.cavity_actual * (menu_loadings.productcivity / 100);
+                //         var capacity_shift = (capacity_hour * capacity_hour);
+                //         var capacity_day = (capacity_hour *  capacity_hour * menu_loadings.shift_hour * menu_loadings.shift);
+
+                //         $("#capacity_hour").textbox('setValue', capacity_hour);
+                //         $("#capacity_shift").textbox('setValue', capacity_shift);
+                //         $("#capacity_day").textbox('setValue', capacity_day);
+                //     }
+                // });
             }
     });
 

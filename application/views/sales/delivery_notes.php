@@ -111,8 +111,8 @@
                     <input style="width:60%;" name="delivery_note_no" id="delivery_note_no" readonly class="easyui-textbox">
                 </div>
                 <div class="fitem">
-                    <span style="width:35%; display:inline-block;">Shipping Address</span>
-                    <input style="width:60%;" name="customer_address_id" id="customer_address_id" required="" class="easyui-combobox">
+                    <span style="width:35%; display:inline-block;">Delivery Order No</span>
+                    <input style="width:60%;" name="delivery_order_no" id="delivery_order_no" class="easyui-combobox">
                 </div>
                 <div class="fitem">
                     <span style="width:35%; display:inline-block;">Police No.</span>
@@ -123,6 +123,12 @@
                     <input style="width:60%;" name="driver_name" id="driver_name" class="easyui-textbox">
                 </div>
                 <div class="fitem">
+                    <span style="width:35%; display:inline-block;"></span>
+                    <a href="javascript:;" class="easyui-linkbutton" onclick="preview()"><i class="fa fa-search"></i> Preview Data</a>
+                </div>
+            </div>
+            <div style="width: 50%; float: left;">
+            <div class="fitem">
                     <span style="width:35%; display:inline-block;">Country of Origin</span>
                     <input style="width:60%;" name="origin" id="origin" required="" class="easyui-textbox">
                 </div>
@@ -130,8 +136,6 @@
                     <span style="width:35%; display:inline-block;">Sailing on or about</span>
                     <input style="width:60%;" name="sailing" id="sailing" required="" class="easyui-textbox">
                 </div>
-            </div>
-            <div style="width: 50%; float: left;">
             <div class="fitem">
                     <span style="width:35%; display:inline-block;">Ship By</span>
                     <select style="width:60%;" name="ship_by" id="ship_by" required class="easyui-combobox" panelHeight="auto">
@@ -166,14 +170,12 @@
                 </div>
             </div>
         </fieldset>
-<<<<<<< HEAD
         <!-- <table id="dg2" class="easyui-datagrid" style="width:100%;" title="Delivery Order Lists" toolbar="#toolbar2"></table> -->
         <table id="dg_request" class="easyui-datagrid" style="width:100%;" title="Purchase Order List" idField="item_number">
             <thead>
                 <tr>
                     <th field="ck" checkbox="true"></th>
                     <th data-options="field:'delivery_order_no',width:150,halign:'center'">Delivery Order No</th>
-                    <th data-options="field:'delivery_note_no',width:150,halign:'center'">Delivery Note No</th>
                     <th data-options="field:'item_fg_id',width:150,halign:'center'">Product ID</th>
                     <th data-options="field:'item_fg_number',width:150,halign:'center'">Product No</th>
                     <th data-options="field:'item_fg_name',width:150,halign:'center'">Product Name</th>
@@ -185,9 +187,6 @@
                 </tr>
             </thead>
         </table>
-=======
-        <table id="dg2" class="easyui-datagrid" style="width:100%;" title="Delivery Order Lists" toolbar="#toolbar2"></table>
->>>>>>> b0853c0f7289dc2ee534beb5aed8b2c224e09c18
     </form>
 </div>
 
@@ -516,10 +515,33 @@
             $("#incoterm").textbox('disable');
             $("#status_delivery").textbox('disable');
 
-
-            addTable(row.customer_id, '<?= base_url('sales/delivery_notes/datatableUpdates?delivery_note_no=') ?>' + window.btoa(row.delivery_note_no));
+            preview("<?= base_url('sales/delivery_notes/datatableUpdates?delivery_note_no=') ?>" + btoa(row.delivery_note_no));
         } else {
             toastr.warning("Please select one of the data in the table first!", "Information");
+        }
+    }
+
+    function preview() {
+        var delivery_order_no = $("#delivery_order_no").combobox('getValue');
+        if (delivery_order_no == "") {
+            toastr.warning('Please select Delivery Order No', 'Required');
+        } else {
+            var lastIndex;
+            var dg = $('#dg_request').datagrid({
+                url: '<?= base_url('sales/delivery_notes/datatablesTemp') ?>?delivery_order_no=' + delivery_order_no,
+                fitColumns: true,
+                onClickRow: function(rowIndex) {
+                    if (lastIndex != rowIndex) {
+                        $(this).datagrid('endEdit', lastIndex);
+                        $(this).datagrid('beginEdit', rowIndex);
+                    }
+                    lastIndex = rowIndex;
+                },
+                onBeginEdit: function(rowIndex, row) {
+                    var editors = $('#dg_request').datagrid('getEditors', rowIndex);
+                    var qty = $(editors[0].target);
+                }
+            });
         }
     }
 
@@ -708,13 +730,8 @@
                 iconCls: 'icon-ok',
                 handler: function() {
                     var customer_id = $("#customer_id").combobox('getValue');
-                    
                     var delivery_note_date = $("#delivery_note_date").datebox('getValue');
                     var delivery_note_no = $("#delivery_note_no").textbox('getValue');
-<<<<<<< HEAD
-=======
-                    var customer_address_id = $("#customer_address_id").combobox('getValue');
->>>>>>> b0853c0f7289dc2ee534beb5aed8b2c224e09c18
                     var police_no = $("#police_no").combobox('getValue');
                     var driver_name = $("#driver_name").textbox('getValue');
                     var origin = $("#origin").textbox('getValue');
@@ -724,12 +741,13 @@
                     var note = $("#note").textbox('getValue');
                     var status_delivery = $("#status_delivery").textbox('getValue');
                     var status = $("#status").combobox('getValue');
+                    
 
-                    var rows = $('#dg2').datagrid('getRows');
+                    $('#dg_request').datagrid('acceptChanges');
+                    var rows = $('#dg_request').datagrid('getSelections');
                     var totalrows = rows.length;
-                    endEditing();
 
-                    if (customer_id != "" && delivery_note_date !="" && delivery_note_no !="" && 
+                    if (customer_id != "" && delivery_note_date !="" && delivery_note_no !="" &&
                     police_no !="" && origin !="" && sailing !="" && incoterm !="") {
                         for (let i = 0; i < totalrows; i++) {
                             if (rows[i].item_fg_id) {
@@ -740,10 +758,6 @@
                                         customer_id: customer_id,
                                         delivery_note_date: delivery_note_date,
                                         delivery_note_no: delivery_note_no,
-<<<<<<< HEAD
-=======
-                                        customer_address_id: customer_address_id,
->>>>>>> b0853c0f7289dc2ee534beb5aed8b2c224e09c18
                                         police_no: police_no,
                                         driver_name: driver_name,
                                         origin: origin,
@@ -909,46 +923,67 @@
             $("#sailing").textbox('setValue', sailing);
             $("#ship_by").textbox('setValue', ship_by);
             $("#incoterm").textbox('setValue', incoterm);
-<<<<<<< HEAD
         
             $('#delivery_order_no').combobox({
                 url: '<?= base_url('sales/delivery_notes/readDo/'); ?>' + customer.id,
                 valueField: 'delivery_order_no',
                 textField: 'delivery_order_no',
                 multiple:true,
-                prompt: 'Choose DO No.',
-                onChange: function(row) {
-                    var selectedRows = $("#delivery_order_no").combobox('getValues');
-                }
+                prompt: 'Choose DO No.'
             });
-=======
-
->>>>>>> b0853c0f7289dc2ee534beb5aed8b2c224e09c18
             
             $('#delivery_note_date').datebox({
-                    onChange: function (delivery_note_date) {
-                        if (delivery_note_date !== "") {
-                            number(delivery_note_date);
-                            if (delivery_order_no.delivery_date >= delivery_note_date) {
-                                $('#status_delivery').textbox('setText', 'ON SCHEDULE');
-                            } else {
-                                $('#status_delivery').textbox('setValue', '1');
-                                $('#status_delivery').textbox('setText', 'DELAY');
-                               
-                            }
+                onChange: function (delivery_note_date) {
+                    if (delivery_note_date !== "") {
+                        number(delivery_note_date);
+                        if (delivery_order_no.delivery_date >= delivery_note_date) {
+                            $('#status_delivery').textbox('setText', 'ON SCHEDULE');
+                        } else {
+                            $('#status_delivery').textbox('setValue', '1');
+                            $('#status_delivery').textbox('setText', 'DELAY');
+                            
                         }
                     }
-                    });
+                }
+            });
 
-            $('#customer_address_id').combobox({
+                $('#plant').combogrid({
                 url: '<?= base_url('master/customers/readAddress/'); ?>' + customer.id,
-                valueField: 'id',
-                textField: 'address',
-                prompt: 'Choose Address',
-                
+                panelWidth: 600,
+                idField: 'plant',
+                textField: 'plant',
+                mode: 'remote',
+                fitColumns: true,
+                prompt: "Choose Plant Name ",
+                icons: [{
+                    iconCls: 'icon-clear',
+                    handler: function(e) {
+                        $(e.data.target).combogrid('clear').combogrid('textbox').focus();
+                    }
+                }],
+                columns: [
+                    [{
+                        field: 'plant',
+                        title: 'Plant Name',
+                        width: 200
+                    }, {
+                        field: 'department',
+                        title: 'Department <br>Name',
+                        width: 100
+                    }, {
+                        field: 'address',
+                        title: 'Address',
+                        width: 300
+                    }]
+                ],
+                onSelect: function(val, row) {
+                    $("#customer_address_id").textbox('setValue', row.id);
+                    $("#department").textbox('setValue', row.department);
+                }
             });
         }
     });
+
 
     $('#police_no').combobox({
         url: '<?= base_url('master/vehicles/reads'); ?>',

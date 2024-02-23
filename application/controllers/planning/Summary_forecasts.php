@@ -213,6 +213,18 @@ class Summary_forecasts extends CI_Controller
             $gt_month_10 = 0;
             $gt_month_11 = 0;
             $gt_month_12 = 0;
+            $gt_1 = 0;
+            $gt_2 = 0;
+            $gt_3 = 0;
+            $gt_4 = 0;
+            $gt_5 = 0;
+            $gt_6 = 0;
+            $gt_7 = 0;
+            $gt_8 = 0;
+            $gt_9 = 0;
+            $gt_10 = 0;
+            $gt_11 = 0;
+            $gt_12 = 0;
             foreach ($records as $data) {
                 $gt_1 = $gt_month_1 += $data['month_1'];
                 $gt_2 = $gt_month_2 += $data['month_2'];
@@ -338,6 +350,18 @@ class Summary_forecasts extends CI_Controller
             $gt_month_10 = 0;
             $gt_month_11 = 0;
             $gt_month_12 = 0;
+            $gt_1 = 0;
+            $gt_2 = 0;
+            $gt_3 = 0;
+            $gt_4 = 0;
+            $gt_5 = 0;
+            $gt_6 = 0;
+            $gt_7 = 0;
+            $gt_8 = 0;
+            $gt_9 = 0;
+            $gt_10 = 0;
+            $gt_11 = 0;
+            $gt_12 = 0;
             foreach ($records as $data) {
                 $gt_1 = $gt_month_1 += $data['month_1'];
                 $gt_2 = $gt_month_2 += $data['month_2'];

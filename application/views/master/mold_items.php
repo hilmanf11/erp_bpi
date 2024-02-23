@@ -1,3 +1,20 @@
+<div id="dlg_help" class="easyui-dialog" title="About Menu" data-options="closed: true,modal:true" style="width: 800px; height: 500px; left: 10px; top: 20px;">
+    <div class="easyui-accordion" style="width:100%; height: 100%;">
+        <div title="RELATIONS" style="padding: 20px;">
+            <ul>
+                <li>The Data Mold Name is taken from <b>Master Data > Engineering > Master Mold</b></li>
+                <li>The Data Product No is taken from <b>Master Data > Engineering > Item Finish Good</b></li>
+                <li>The Data Mold Type Product is taken from <b>Master Data > Engineering > Item Finish Good</b></li>
+            </ul>
+        </div>
+        <div title="CONDITIONS" style="padding: 20px;">
+            <ul>
+                <li><b>Mold Type Product</b> can be select if Mold Type is <b>Double</b></li>
+            </ul>
+        </div>
+    </div>
+</div>
+
 <!-- TABLE DATAGRID -->
 <table id="dg" class="easyui-datagrid" style="width:99.5%;" toolbar="#toolbar">
     <thead>
@@ -55,6 +72,7 @@
                 </div>
         </fieldset>
         <?= $button ?>
+        <a href="javascript:void(0)" class="easyui-linkbutton" data-options="plain:true" onclick="$('#dlg_help').dialog('open');"><i class="fa fa-info"></i> Help</a>
     </div>
 </div>
 

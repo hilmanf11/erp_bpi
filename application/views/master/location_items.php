@@ -1,3 +1,23 @@
+<div id="dlg_help" class="easyui-dialog" title="About Menu" data-options="closed: true,modal:true" style="width: 800px; height: 500px; left: 10px; top: 20px;">
+    <div class="easyui-accordion" style="width:100%; height: 100%;">
+        <div title="RELATIONS" style="padding: 20px;">
+            <ul>
+                <li>The Data Product No is taken from <b>Master Data > Engineering > Item Finish Good / Item Raw Material</b></li>
+                <li>The Data Location is taken from <b>Master Data > Warehouse > Locations</b></li>
+                <li>The Data Area is taken from <b>Master Data > Warehouse > Locations</b></li>
+                <li>The Data Rack is taken from <b>Master Data > Warehouse > Locations</b></li>
+                <li>The Data Level is taken from <b>Master Data > Warehouse > Locations</b></li>
+                <li>The Data Level Sub is taken from <b>Master Data > Warehouse > Locations</b></li>
+            </ul>
+        </div>
+        <div title="CONDITIONS" style="padding: 20px;">
+            <ul>
+                <li><b>Product No :</b> In Type if <b>Raw Material</b> selected, data from <b>Item Raw Material</b> will appear, likewise if <b>Finish Good</b> selected, data from <b>Item Finish Good</b> will appear.</li>
+            </ul>
+        </div>
+    </div>
+</div>
+
 <!-- TABLE DATAGRID -->
 <table id="dg" class="easyui-datagrid" style="width:99.5%;" toolbar="#toolbar">
     <thead>
@@ -24,6 +44,7 @@
 <!-- TOOLBAR DATAGRID -->
 <div id="toolbar" style="height: 35px;">
     <?= $button ?>
+    <a href="javascript:void(0)" class="easyui-linkbutton" data-options="plain:true" onclick="$('#dlg_help').dialog('open');"><i class="fa fa-info"></i> Help</a>
 </div>
 <!-- DIALOG SAVE AND UPDATE -->
 <div id="dlg_insert" class="easyui-dialog" title="Add New" data-options="closed: true,modal:true" style="width: 400px; padding:10px; top: 20px;">

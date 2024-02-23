@@ -1,3 +1,14 @@
+<div id="dlg_help" class="easyui-dialog" title="About Menu" data-options="closed: true,modal:true" style="width: 800px; height: 500px; left: 10px; top: 20px;">
+    <div class="easyui-accordion" style="width:100%; height: 100%;">
+        <div title="CONDITIONS" style="padding: 20px;">
+            <ul>
+                <li><b>Filter Data</b> is to show Summary Forecast base on <b>Filter Period</b>, The data is based on <b>Order Management > Forecasting > Forecast Customer</b> that were previously input.</li>
+                <li><b>The Grand Total</b> is the sum from each data filtered through the <b>Filter Period</b> or <b>Filter Product No.</b> </li>
+            </ul>
+        </div>
+    </div>
+</div>
+
 <div id="f" class="easyui-panel" style="width:99.5%; background: #F4F4F4;">
     <div style="width: 100%; display: grid; grid-template-columns: auto auto auto; grid-gap: 5px; display: flex;">
         <fieldset style="width: 40%; border:2px solid #d0d0d0; margin-bottom: 5px; margin-top: 5px; margin-left: 10px; border-radius:4px;">
@@ -9,7 +20,7 @@
             </div>
             <div class="fitem">
                 <span style="width:35%; display:inline-block;">Product No</span>
-                <input style="width:60%;" id="filter_item_fg" class="easyui-combobox">
+                <input style="width:60%;" id="filter_item_fg" class="easyui-combogrid">
             </div>
             <div class="fitem">
                 <span style="width:35%; display:inline-block;"></span>
@@ -19,6 +30,7 @@
     </div>
     <div style="margin-left: 10px; margin-bottom:5px;">
         <?= $button ?>
+        <a href="javascript:void(0)" class="easyui-linkbutton" data-options="plain:true" onclick="$('#dlg_help').dialog('open');"><i class="fa fa-info"></i> Help</a>
     </div>
 </div>
 

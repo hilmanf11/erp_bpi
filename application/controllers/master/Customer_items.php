@@ -82,7 +82,7 @@ class Customer_items extends CI_Controller
             $number = base64_decode($this->input->get('number'));
             $filter_customer_id = base64_decode($this->input->get('filter_customer_id'));
 
-            $this->db->select('a.*, b.number as customer_number, b.name as customer_name, b.currency as customer_currency, c.number as item_fg_number, c.number_customer as item_fg_customer, c.name as item_fg_name');
+            $this->db->select('a.*, b.number as customer_number, b.name as customer_name, b.currency, c.number as item_fg_number, c.number_customer as item_fg_customer, c.name as item_fg_name');
             $this->db->from('customer_items a');
             $this->db->join('customers b', 'a.customer_id = b.id');
             $this->db->join('item_fg c', 'a.item_fg_id = c.id');
@@ -102,7 +102,7 @@ class Customer_items extends CI_Controller
         if ($this->input->get()) {
             $customer_id = base64_decode($this->input->get('customer_id'));
 
-            $this->db->select('a.*, b.number as item_fg_number, b.number_customer as item_fg_customer, c.currency as customer_currency');
+            $this->db->select('a.*, b.number as item_fg_number, b.number_customer as item_fg_customer, c.currency');
             $this->db->from('customer_items a');
             $this->db->join('item_fg b', 'a.item_fg_id = b.id');
             $this->db->join('customers c', 'a.customer_id = c.id');
@@ -264,7 +264,7 @@ class Customer_items extends CI_Controller
         $this->db->from('config');
         $config = $this->db->get()->row();
 
-        $this->db->select('a.*, b.number as customer_number, b.name as customer_name, b.currency as customer_currency, c.number as item_fg_number, c.name as item_fg_name, c.number_customer as item_fg_customer');
+        $this->db->select('a.*, b.number as customer_number, b.name as customer_name, b.currency, c.number as item_fg_number, c.name as item_fg_name, c.number_customer as item_fg_customer');
         $this->db->from('customer_items a');
         $this->db->join('customers b', 'a.customer_id = b.id');
         $this->db->join('item_fg c', 'a.item_fg_id = c.id');
@@ -322,7 +322,7 @@ class Customer_items extends CI_Controller
                     <td>' . $data['item_fg_number'] . '</td>
                     <td>' . $data['item_fg_name'] . '</td>
                     <td>' . $data['item_fg_customer'] . '</td>
-                    <td>' . $data['customer_currency'] . '</td>
+                    <td>' . $data['currency'] . '</td>
                     <td>' . $data['price'] . '</td>
                     <td>' . $data['valid_date'] . '</td>
                     <td>' . $data['remark'] . '</td>';

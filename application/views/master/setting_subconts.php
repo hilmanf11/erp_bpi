@@ -1,3 +1,14 @@
+<div id="dlg_help" class="easyui-dialog" title="About Menu" data-options="closed: true,modal:true" style="width: 800px; height: 500px; left: 10px; top: 20px;">
+    <div class="easyui-accordion" style="width:100%; height: 100%;">
+        <div title="RELATIONS" style="padding: 20px;">
+            <ul>
+                <li>The Data Subcont is taken from <b>Master Data > PPIC > Subconts</b></li>
+                <li>The Data Product No is taken from <b>Master Data > Engineering > Item Finish Good</b></li>
+            </ul>
+        </div>
+    </div>
+</div>
+
 <!-- TABLE DATAGRID -->
 <table id="dg" class="easyui-datagrid" style="width:100%;" toolbar="#toolbar">
     <thead>
@@ -39,6 +50,7 @@
             </div>
         </fieldset>
         <?= $button ?>
+        <a href="javascript:void(0)" class="easyui-linkbutton" data-options="plain:true" onclick="$('#dlg_help').dialog('open');"><i class="fa fa-info"></i> Help</a>
     </div>
 </div>
 
@@ -511,17 +523,18 @@
                             field: 'type',
                             title: 'Type',
                             halign: 'center',
-                            width: 200
+                            width: 130
                         },  {
                             field: 'currency',
                             title: 'Currency',
                             halign: 'center',
-                            width: 150
+                            width: 100
                         },  {
                             field: 'price',
                             title: 'Price',
                             halign: 'center',
-                            width: 200,
+                            align: 'right',
+                            width: 100,
                             formatter: priceformat
                         },  {
                             field: 'valid_date',
@@ -729,33 +742,40 @@
         }
     }
 
-    function priceformat(value, row) {
-        if (row.currency == "USD") {
-            var digits = 4;
-            var currency = 'USD';
-            var format = "en-IN";
-        } else if (row.currency == "JPY") {
-            var digits = 2;
-            var currency = 'JPY';
-            var format = "ja-JP";
-        } else if (row.currency == "EUR") {
-            var digits = 2;
-            var currency = 'EUR';
-            var format = "de-DE";
-        } else {
-            var digits = 0;
-            var currency = 'IDR';
-            var format = "id-ID";
-        }
+    // function priceformat(value, row) {
+    //     if (row.currency == "USD") {
+    //         var digits = 4;
+    //         var currency = 'USD';
+    //         var format = "en-IN";
+    //     } else if (row.currency == "JPY") {
+    //         var digits = 2;
+    //         var currency = 'JPY';
+    //         var format = "ja-JP";
+    //     } else if (row.currency == "EUR") {
+    //         var digits = 2;
+    //         var currency = 'EUR';
+    //         var format = "de-DE";
+    //     } else {
+    //         var digits = 0;
+    //         var currency = 'IDR';
+    //         var format = "id-ID";
+    //     }
 
-        if (value != null) {
-            const formatter = new Intl.NumberFormat(format, {
-                style: 'currency',
-                currency: currency,
-                minimumFractionDigits: digits
-            });
-            return "<b>" + formatter.format(value) + "</b>";
-        }
+    //     if (value != null) {
+    //         const formatter = new Intl.NumberFormat(format, {
+    //             style: 'currency',
+    //             currency: currency,
+    //             minimumFractionDigits: digits
+    //         });
+    //         return "<b>" + formatter.format(value) + "</b>";
+    //     }
+    // }
+
+    function priceformat(value, row) {
+        const formatter = new Intl.NumberFormat('id-ID', {
+            minimumFractionDigits: 2
+        });
+        return "<b>" + formatter.format(value) + "</b>";
     }
 
     // UPLOAD DATA

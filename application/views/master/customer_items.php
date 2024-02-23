@@ -1,3 +1,15 @@
+<div id="dlg_help" class="easyui-dialog" title="About Menu" data-options="closed: true,modal:true" style="width: 800px; height: 500px; left: 10px; top: 20px;">
+    <div class="easyui-accordion" style="width:100%; height: 100%;">
+        <div title="RELATIONS" style="padding: 20px;">
+            <ul>
+                <li>The Data Customer is taken from <b>Master Data > Marketing > Customer</b></li>
+                <li>The Data Product No is taken from <b>Master Data > Engineering > Item Finish Good</b></li>
+                <li>The Data Currency is taken from <b>Master Data > Marketing > Customer > Currency</b></li>
+            </ul>
+        </div>
+    </div>
+</div>
+
 <!-- TABLE DATAGRID -->
 <table id="dg" class="easyui-datagrid" style="width:100%;" toolbar="#toolbar">
     <thead>
@@ -38,6 +50,7 @@
             </div>
         </fieldset>
         <?= $button ?>
+        <a href="javascript:void(0)" class="easyui-linkbutton" data-options="plain:true" onclick="$('#dlg_help').dialog('open');"><i class="fa fa-info"></i> Help</a>
     </div>
 </div>
 
@@ -192,7 +205,7 @@
                     editor: {
                         type: 'numberbox',
                         options: {
-                            precision: 2
+                            precision: 4
                         }
                     }
                 }, {
@@ -443,14 +456,15 @@
                             halign: 'center',
                             width: 150
                         }, {
-                            field: 'customer_currency',
+                            field: 'currency',
                             title: 'Currency',
                             align: 'center',
                             width: 80
                         }, {
                             field: 'price',
                             title: 'Price',
-                            halign: 'right',
+                            halign: 'center',
+                            align: 'right',
                             width: 100,
                             formatter: priceformat
                         }, {
@@ -673,33 +687,41 @@
     }
 
     function priceformat(value, row) {
-        if (row.currency == "USD") {
-            var digits = 4;
-            var currency = 'USD';
-            var format = "en-IN";
-        } else if (row.currency == "JPY") {
-            var digits = 2;
-            var currency = 'JPY';
-            var format = "ja-JP";
-        } else if (row.currency == "EUR") {
-            var digits = 2;
-            var currency = 'EUR';
-            var format = "de-DE";
+        var digits, currency, format;
+
+        if (row.currency === "USD") {
+            digits = 4;
+            currency = 'USD';
+            format = "en-US";
+        } else if (row.currency === "JPY") {
+            digits = 2;
+            currency = 'JPY';
+            format = "ja-JP";
+        } else if (row.currency === "EUR") {
+            digits = 2;
+            currency = 'EUR';
+            format = "de-DE";
         } else {
-            var digits = 0;
-            var currency = 'IDR';
-            var format = "id-ID";
+            digits = 2;
+            currency = 'IDR';
+            format = "id-ID";
         }
 
         if (value != null) {
             const formatter = new Intl.NumberFormat(format, {
-                style: 'currency',
-                currency: currency,
+                style: 'decimal',
                 minimumFractionDigits: digits
             });
             return "<b>" + formatter.format(value) + "</b>";
         }
     }
+
+    // function priceformat(value, row) {
+    //     const formatter = new Intl.NumberFormat('id-ID', {
+    //         minimumFractionDigits: 2
+    //     });
+    //     return "<b>" + formatter.format(value) + "</b>";
+    // }
 
     function btnHistories(val, row) {
         var history = "viewHistories('" + row.customer_id + "','" + row.item_fg_id + "')";

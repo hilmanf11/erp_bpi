@@ -38,22 +38,26 @@ class Production_capacities extends CI_Controller
     public function readItems()
     {
         $post = isset($_POST['q']) ? $_POST['q'] : "";
-        $send = $this->crud->query("SELECT distinct a.item_fg_id, b.number as item_fg_number, b.name as item_fg_name
-            FROM menu_loadings a 
-            JOIN item_fg b ON a.item_fg_id = b.id
-            WHERE b.number LIKE '%$post%' or b.name LIKE '%$post%'");
-        echo json_encode($send);
-    }
-
-    public function readMachines($item_fg_id)
-    {
-        $send = $this->crud->query("SELECT a.machine_id, b.number as machine_number, a.cycle_time, a.productcivity, c.cavity_actual, a.shift, a.shift_hour
+        $send = $this->crud->query("SELECT distinct a.item_fg_id, d.number as item_fg_number, d.name as item_fg_name, 
+        a.machine_id, b.number as machine_number, a.cycle_time, a.item_fg_id, a.productcivity, c.cavity_actual, a.shift, a.shift_hour
             FROM menu_loadings a 
             JOIN machines b ON a.machine_id = b.id
             JOIN molds c ON a.mold_id = c.id
-            ORDER BY b.number ASC");
+            JOIN item_fg d ON a.item_fg_id = d.id
+            WHERE d.number LIKE '%$post%' or d.name LIKE '%$post%'");
         echo json_encode($send);
     }
+
+    // public function readMachines($item_fg_id)
+    // {
+    //     $send = $this->crud->query("SELECT a.machine_id, b.number as machine_number, a.cycle_time, a.item_fg_id, a.productcivity, c.cavity_actual, a.shift, a.shift_hour
+    //         FROM menu_loadings a 
+    //         JOIN machines b ON a.machine_id = b.id
+    //         JOIN molds c ON a.mold_id = c.id
+    //         JOIN item_fg d ON a.item_fg_id = d.id
+    //         ORDER BY b.number ASC");
+    //     echo json_encode($send);
+    // }
 
     //GET DATATABLES
     public function datatables()

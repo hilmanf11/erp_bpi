@@ -1,21 +1,34 @@
-<!-- <div id="dlg_help" class="easyui-dialog" title="About Menu" data-options="closed: true,modal:true" style="width: 800px; height: 500px; left: 10px; top: 20px;">
-    <div class="easyui-accordion" style="width:100%;">
-        <div title="Add New" style="padding: 20px;">
-            <b>Form Data</b>
+<div id="dlg_help" class="easyui-dialog" title="About Menu" data-options="closed: true,modal:true" style="width: 800px; height: 500px; left: 10px; top: 20px;">
+    <div class="easyui-accordion" style="width:100%; height: 100%;">
+        <div title="RELATION" style="padding: 20px;">
             <ul>
                 <li>The Data Customers is taken from <b>Master Data > Marketing > Customers</b></li>
+                <li>The Data Division is taken from <b>Master Data > General Master > Division</b></li>
                 <li>The Data Plants is taken from the results of Customer selection</li>
                 <li>Departement, Shipping Address and Attention to is taken from the results of Plant Selection</li>
+                <li>The Data Product No is taken from <b>Master Data > Marketing > Customer Items</b> by Type = 'FG'</li>
+                <li>Qty Delivery is taken from the Result Product No and SUM Qty from <b>Customer Order > Delivery Order</b></li>
+                <li>The Data Taxes is taken from <b>Master Data > Marketing > Customers</b> field taxes</li>
             </ul>
-            <b>Form Sales Order Lists</b>
+        </div>
+        <div title="CONDITION" style="padding: 20px;">
             <ul>
-                <li>The Data Products is taken from <b>Master Data > Marketing > Customer Items</b> by Item Finish Good Type is "FG"</li>
-                <li>The Data Plants is taken from the results of Customer selection</li>
-                <li>Departement, Shipping Address and Attention to is taken from the results of Plant Selection</li>
+                <li>If Status <b style="color: green">OPEN</b> then data not created in <b>Production Schedules</b></li>
+                <li>If Status <b style="color: red">CLOSE</b> then data has been created in <b>Production Schedules</b></li>
+            </ul>
+        </div>
+        <div title="FORMULATION" style="padding: 20px;">
+            <ul>
+                <li>This <b>OS SO</b> value is the result of the (Qty - Delivery)</li>
+                <li>This <b>Total Price</b> value is the result of the (Qty * Price)</li>
+                <li>This <b>Sub Total</b> value is the result of calculating the entire data table</li>
+                <li>This <b>Tax</b> value is the result of the (Sub Total * (taxes / 100))</li>
+                <li>This <b>PPH</b> value is the result of the (Sub Total + Taxes * (pph / 100))</li>
+                <li>This <b>Grand Total</b> value is the result of the (Sub Total + Taxes + PPh)</li>
             </ul>
         </div>
     </div>
-</div> -->
+</div>
 
 <!-- TABLE DATAGRID -->
 <table id="dg" class="easyui-datagrid" style="width:99.5%;" toolbar="#toolbar">
@@ -88,7 +101,7 @@
             </div>
         </fieldset>
         <?= $button ?>
-        <!-- <a href="javascript:void(0)" class="easyui-linkbutton" data-options="plain:true" onclick="$('#dlg_help').dialog('open');"><i class="fa fa-info"></i> Help</a> -->
+        <a href="javascript:void(0)" class="easyui-linkbutton" data-options="plain:true" onclick="$('#dlg_help').dialog('open');"><i class="fa fa-info"></i> Help</a>
     </div>
 </div>
 
@@ -397,12 +410,17 @@
                                     index: rowIndex,
                                     field: 'currency'
                                 });
+                                var ed6 = dg.datagrid('getEditor', {
+                                    index: rowIndex,
+                                    field: 'delivery'
+                                });
 
                                 $(ed.target).textbox('setValue', rows.number);
                                 $(ed2.target).textbox('setValue', rows.name);
                                 $(ed3.target).textbox('setValue', rows.uom);
                                 $(ed4.target).numberbox('setValue', rows.price);
                                 $(ed5.target).textbox('setValue', rows.currency);
+                                $(ed6.target).textbox('setValue', rows.delivery);
                             }
                         }
                     }
@@ -539,6 +557,7 @@
                         type: 'numberbox',
                         options: {
                             readonly: true,
+                            required: true,
                             precision: 2
                         }
                     }
@@ -642,6 +661,8 @@
             $("#sales_order_no").textbox('disable');
             $("#sales_order_date").datebox('disable');
             $("#plant").textbox('disable');
+            
+            
 
             addTable(row.customer_id, '<?= base_url('sales/sales_orders/datatableUpdates?sales_order_no=') ?>' + window.btoa(row.sales_order_no));
         } else {
@@ -653,59 +674,26 @@
     function deleted() {
         var rows = $('#dg').datagrid('getSelections');
         if (rows.length > 0) {
-            Swal.fire({
-                title: "Are you sure?",
-                text: "You want to delete this data!",
-                icon: "warning",
-                showCancelButton: true,
-                confirmButtonColor: "#3085d6",
-                cancelButtonColor: "#d33",
-                confirmButtonText: "Yes, delete it!"
-            }).then((result) => {
-                if (result.isConfirmed) {
-                    Swal.fire({
-                        title: 'Please Wait for Delete Data',
-                        showConfirmButton: false,
-                        allowOutsideClick: false,
-                        allowEscapeKey: false,
-                        didOpen: () => {
-                            Swal.showLoading();
-                        },
-                    });
-
-                    requestDelete(rows.length, rows);
-                    function requestDelete(total, rows, jml = 1, value = 0) {
-                        if (value < 100) {
-                            value = Math.floor((jml / total) * 100);
-                            var i = (jml - 1);
-
-                            $.ajax({
-                                method: 'post',
-                                url: '<?= base_url('sales/sales_orders/delete') ?>',
-                                data: {
-                                    sales_order_no: rows[i].sales_order_no
-                                },
-                                dataType: 'json',
-                                success: function(result) {
-                                    requestDelete(total, rows, jml + 1, value);
-
-                                    if (jml == total) {
-                                        Swal.close();
-
-                                        Swal.fire({
-                                            title: result.message,
-                                            icon: result.theme,
-                                            confirmButtonText: 'Ok',
-                                            allowOutsideClick: false,
-                                        }).then((result) => {
-                                            if (result.isConfirmed) {
-                                                $('#dg').datagrid('reload');
-                                            }
-                                        });
-                                    }
-                                }
-                            });
-                        }
+            $.messager.confirm('Warning', 'Are you sure you want to delete this data?', function(r) {
+                if (r) {
+                    for (var i = 0; i < rows.length; i++) {
+                        var row = rows[i];
+                        $.ajax({
+                            method: 'post',
+                            url: '<?= base_url('sales/sales_orders/delete') ?>',
+                            data: {
+                                sales_order_no: row.sales_order_no
+                            },
+                            success: function(result) {
+                                var result = eval('(' + result + ')');
+                            },
+                            error: function(jqXHR, textStatus, errorThrown) {
+                                toastr.error(jqXHR.statusText);
+                            },
+                            complete: function(data) {
+                                $('#dg').datagrid('reload');
+                            }
+                        });
                     }
                 }
             });
@@ -969,81 +957,60 @@
                     endEditing();
 
                     if (customer_address_id != "" && total_grand != "") {
-                        if (totalrows > 0) {
-                            $('#dlg_insert').dialog('close');
-
-                            Swal.fire({
-                                title: 'Please Wait for Saving Data',
-                                showConfirmButton: false,
-                                allowOutsideClick: false,
-                                allowEscapeKey: false,
-                                didOpen: () => {
-                                    Swal.showLoading();
-                                },
-                            });
-
-                            requestData(totalrows, rows);
-
-                            function requestData(total, rows, jml = 1, value = 0) {
-                                if (value < 100) {
-                                    value = Math.floor((jml / total) * 100);
-                                    var i = (jml - 1);
-
-                                    $.ajax({
-                                        type: "post",
-                                        url: '<?= base_url('sales/sales_orders/create') ?>',
-                                        data: {
-                                            customer_id: customer_id,
-                                            customer_order_no: customer_order_no,
-                                            sales_order_date: sales_order_date,
-                                            sales_order_no: sales_order_no,
-                                            division: division,
-                                            delivery_date: delivery_date,
-                                            customer_address_id: customer_address_id,
-                                            plant: plant,
-                                            department: department,
-                                            attention_to: attention_to,
-                                            remarks: remarks,
-                                            attachment: attachment,
-                                            total_sub: total_sub,
-                                            total_tax: total_tax,
-                                            pph: pph,
-                                            taxes: taxes,
-                                            total_pph: total_pph,
-                                            total_grand: total_grand,
-                                            item_fg_id: rows[i].item_fg_id,
-                                            uom: rows[i].uom,
-                                            qty: rows[i].qty,
-                                            delivery: rows[i].delivery,
-                                            outstanding: rows[i].outstanding,
-                                            currency: rows[i].currency,
-                                            price: rows[i].price,
-                                            total: rows[i].total
-                                        },
-                                        dataType: "json",
-                                        success: function(result) {
-                                            requestData(total, rows, jml + 1, value);
-
-                                            if (jml == total) {
-                                                Swal.close();
-                                                Swal.fire({
-                                                    title: result.message,
-                                                    icon: result.theme,
-                                                    confirmButtonText: 'Ok',
-                                                    allowOutsideClick: false,
-                                                }).then((result) => {
-                                                    if (result.isConfirmed) {
-                                                        window.location.reload();
-                                                    }
-                                                });
-
-                                                $('#dg').datagrid('reload');
-                                            }
+                        for (let i = 0; i < totalrows; i++) {
+                            if (rows[i].item_fg_id) {
+                                $.ajax({
+                                    type: "post",
+                                    url: '<?= base_url('sales/sales_orders/create') ?>',
+                                    data: {
+                                        customer_id: customer_id,
+                                        customer_order_no: customer_order_no,
+                                        sales_order_date: sales_order_date,
+                                        sales_order_no: sales_order_no,
+                                        division: division,
+                                        delivery_date: delivery_date,
+                                        customer_address_id: customer_address_id,
+                                        plant: plant,
+                                        department: department,
+                                        attention_to: attention_to,
+                                        remarks: remarks,
+                                        attachment: attachment,
+                                        total_sub: total_sub,
+                                        total_tax: total_tax,
+                                        pph: pph,
+                                        taxes: taxes,
+                                        total_pph: total_pph,
+                                        total_grand: total_grand,
+                                        item_fg_id: rows[i].item_fg_id,
+                                        uom: rows[i].uom,
+                                        qty: rows[i].qty,
+                                        delivery: rows[i].delivery,
+                                        outstanding: rows[i].outstanding,
+                                        currency: rows[i].currency,
+                                        price: rows[i].price,
+                                        total: rows[i].total
+                                    },
+                                    dataType: "json",
+                                    success: function(result) {
+                                        if (i == (totalrows - 1)) {
+                                            Swal.fire({
+                                                title: result.message,
+                                                icon: result.theme,
+                                                confirmButtonText: 'Ok',
+                                                allowOutsideClick: false,
+                                            }).then((result) => {
+                                                if (result.isConfirmed) {
+                                                    window.location.reload();
+                                                }
+                                            });
                                         }
-                                    });
-                                }
+                                    }
+                                });
                             }
                         }
+
+                        $('#dg').datagrid('reload');
+                        $('#dlg_insert').dialog('close');
                     } else {
                         toastr.error("Please Completed your input");
                     }

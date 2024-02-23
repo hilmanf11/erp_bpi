@@ -223,7 +223,7 @@ class Bom extends CI_Controller
             $item_rm = $this->crud->read('item_rm', [], ["id" => $data['item_rm_id']]);
 
             $item_fg_id = $data['item_fg_id'];
-            $menu_loading = $this->crud->query("SELECT SUM(a.runner) as runner, b.cavity_standard
+            $menu_loading = $this->crud->query("SELECT a.item_fg_id, SUM(a.runner) as runner, b.cavity_standard
             FROM menu_loadings a JOIN molds b on a.mold_id = b.id
             WHERE a.item_fg_id = '$item_fg_id' group by a.item_fg_id");
 
@@ -235,7 +235,7 @@ class Bom extends CI_Controller
             } elseif (empty($item_rm->id)) {
                 echo json_encode(array("title" => "Not Found", "message" => "Part ID" . $data['item_rm_id'] ." Not Found", "theme" => "error"));
             } elseif (empty($menu_loading[0]->item_fg_id)) {
-                echo json_encode(array("title" => "Not Found", "message" => "Part ID" . $data['item_rm_id'] . " in Menu Loading Not Found", "theme" => "error"));
+                echo json_encode(array("title" => "Not Found", "message" => "Part ID" . $data['item_fg_id'] . " in Menu Loading Not Found", "theme" => "error"));
             } elseif ($item_rm->item_family_id == 'P06' && $data['composition'] != "") {
                 echo json_encode(array("title" => "Alert", "message" => "Part ID" . $data['item_rm_id'] ." Product Family is VIRGIN ", "theme" => "error"));
             } elseif (!empty($bom->item_rm_id)) {

@@ -371,42 +371,36 @@ class item_fg extends CI_Controller
             </tr>';
         $no = 1;
         foreach ($records as $data) {
-            $number = $data['number'];
-            if (strpos($data['number'], '0') === 0 || strpos($data['number'], '+') === 0) {
-                $number = "'" . $data['number'];
-            } else {
-                // Leave the data unchanged
-                $number = $data['number'];
-            }
             $html .= '<tr>
-                    <td>' . $no . '</td>
-                    <td>' . $data['id'] . '</td>
-                    <td>' . $number . '</td>
-                    <td>' . $data['name'] . '</td>
-                    <td>' . $data['total_mold'] . '</td>
-                    <td>' . $data['number_customer'] . '</td>
-                    <td>' . $data['alias'] . '</td>
-                    <td>' . $data['process'] . '</td>
-                    <td>' . $data['division_name'] . '</td>
-                    <td>' . $data['control_id'] . '</td>
-                    <td>' . $data['boxs'] . '</td>
-                    <td>' . $data['lot'] . '</td>
-                    <td>' . $data['polybag'] . '</td>
-                    <td>' . $data['box_label'] . '</td>
-                    <td>' . $data['ng_ration'] . '</td>
-                    <td>' . $data['is_no'] . '</td>
-                    <td>' . $data['weight'] . '</td>
-                    <td>' . $data['color'] . '</td>
-                    <td>' . $data['leadtime'] . '</td>
-                    <td>' . $data['mpq'] . '</td>
-                    <td>' . $data['moq'] . '</td>
-                    <td>' . $data['qty_box'] . '</td>
-                    <td>' . $data['box_sub'] . '</td>
-                    <td>' . $data['uom'] . '</td>
-                    <td>' . $data['min'] . '</td>
-                    <td>' . $data['max'] . '</td>
-                    <td>' . $data['logo'] . '</td>
-                    <td>' . $data['status'] . '</td>';
+                        <td>' . $no . '</td>
+                        <td>' . $data['id'] . '</td>
+                        <td style="mso-number-format:\@;">' . $data['number'] . '</td>
+                        <td style="mso-number-format:\@;">' . $data['name'] . '</td>
+                        <td>' . $data['total_mold'] . '</td>
+                        <td style="mso-number-format:\@;">' . $data['number_customer'] . '</td>
+                        <td>' . $data['alias'] . '</td>
+                        <td>' . $data['process'] . '</td>
+                        <td>' . $data['division_name'] . '</td>
+                        <td>' . $data['control_id'] . '</td>
+                        <td>' . $data['boxs'] . '</td>
+                        <td>' . $data['lot'] . '</td>
+                        <td>' . $data['polybag'] . '</td>
+                        <td>' . $data['box_label'] . '</td>
+                        <td>' . $data['ng_ration'] . '</td>
+                        <td>' . $data['is_no'] . '</td>
+                        <td>' . $data['weight'] . '</td>
+                        <td>' . $data['color'] . '</td>
+                        <td>' . $data['leadtime'] . '</td>
+                        <td>' . $data['mpq'] . '</td>
+                        <td>' . $data['moq'] . '</td>
+                        <td>' . $data['qty_box'] . '</td>
+                        <td>' . $data['box_sub'] . '</td>
+                        <td>' . $data['uom'] . '</td>
+                        <td>' . $data['min'] . '</td>
+                        <td>' . $data['max'] . '</td>
+                        <td>' . $data['logo'] . '</td>
+                        <td>' . $data['status'] . '</td>
+                    </tr>';
             $no++;
         }
         $html .= '</table></body></html>';
