@@ -28,33 +28,68 @@ class Delivery_notes extends CI_Controller
         }
     }
 
-    public function datatablesTemp()
+    public function datatablesTemp($delivery_order_no, $delivery_note_date)
     {
-        $delivery_order_no = $this->input->get('delivery_order_no');
-        //Select Query
-        $this->db->select('a.delivery_order_no, 
+        $delivery_order_no = explode(",", base64_decode($delivery_order_no));
+        $delivery_note_date = base64_decode($delivery_note_date);
+
+        $this->db->select("a.delivery_order_no, 
             b.id as item_fg_id, 
             b.number as item_fg_number, 
             b.name as item_fg_name,
             c.customer_order_no, 
             c.sales_order_no,
-            b.uom');
+            a.qty_do as qty,
+            (CASE
+            WHEN a.delivery_date >= '$delivery_note_date' THEN 0
+            ELSE 1
+            END) as status_delivery,
+            b.uom");
         $this->db->from('delivery_orders a');
         $this->db->join('item_fg b', 'a.item_fg_id = b.id');
         $this->db->join('sales_orders c', 'a.sales_order_no = c.sales_order_no');
         $this->db->where('a.deleted', 0);
-        $this->db->where('a.delivery_order_no', $delivery_order_no);
+        $this->db->where_in('a.delivery_order_no', $delivery_order_no);
+        $this->db->group_by('a.delivery_order_no');
+        $this->db->order_by('a.delivery_order_no');
         $records = $this->db->get()->result_array();
         echo json_encode($records);
     }
 
-    public function readDo($customer_id)
+    public function readDivision($customer_id)
     {
-        $send = $this->crud->query("SELECT b.id, b.number, b.name, a.delivery_order_no, a.sales_order_no, a.trans_type, a.delivery_date, c.customer_order_no, a.uom, a.qty_do 
+        $send = $this->crud->query("SELECT a.division
+        FROM sales_orders a
+        JOIN customers b ON a.customer_id = b.id
+        WHERE a.customer_id = '$customer_id'
+        GROUP BY a.division");
+        echo json_encode($send);
+    }
+
+    public function readShipping($customer_id , $division)
+    {
+        $division = base64_decode($division);
+        
+        $send = $this->crud->query("SELECT b.address as address_name, b.id
+        FROM sales_orders a 
+        JOIN customer_address b ON a.customer_address_id = b.id
+        WHERE a.customer_id = '$customer_id' and a.division = '$division' 
+        GROUP BY b.address");
+        echo json_encode($send);
+    }
+
+    public function readDo($customer_id, $division, $customer_address)
+    {
+        $division = base64_decode($division);
+        $customer_address = base64_decode($customer_address);
+
+        $send = $this->crud->query("SELECT DISTINCT a.delivery_order_no, a.delivery_date
         FROM delivery_orders a 
         JOIN item_fg b ON a.item_fg_id = b.id 
-        JOIN sales_orders c ON a.item_fg_id = c.item_fg_id 
-        WHERE a.customer_id = '$customer_id'");
+        JOIN sales_orders c ON a.item_fg_id = c.item_fg_id
+        JOIN customers d ON c.customer_id = d.id
+        JOIN customer_address e ON c.customer_address_id = e.id
+        WHERE a.customer_id = '$customer_id' and c.division = '$division' and e.id = '$customer_address'");
         echo json_encode($send);
     }
  
@@ -82,20 +117,26 @@ class Delivery_notes extends CI_Controller
         echo json_encode($send);
     }
 
-    public function number($delivery_note_date)
+    public function number($delivery_note_date, $divison_number)
     {
-        $datenow    = "DN" . date("ymd", strtotime(base64_decode($delivery_note_date)));
-        $sqlGetID   = $this->db->query("SELECT max(`delivery_note_no`) as kode FROM delivery_notes WHERE `delivery_note_no` like '%$datenow%'");
+        $divison_number = base64_decode($divison_number);
+        $customer_number = base64_decode($this->input->post('customer_number'));
+
+        $numberCust = $customer_number;
+        $divisions  = "DN". $divison_number;
+        $datenow    = date("my", strtotime(base64_decode($delivery_note_date)));
+        $dn_no      = $numberCust . "-" . $datenow;
+        $sqlGetID   = $this->db->query("SELECT SUBSTR(delivery_note_no, 7, 4) as kode FROM delivery_notes WHERE `delivery_note_no` like '%$dn_no%'");
         $rowID      = $sqlGetID->row();
-        $kode       = $rowID->kode;
+        $kode       = @$rowID->kode;
         if ($kode == NULL) {
-            $autoID = sprintf("%02s", $kode + 1);
+            $autoID = sprintf("%04s", $kode + 1);
         } else {
-            $urutan = (int) substr($kode, -2);
+            $urutan = (int) $kode;
             $urutan++;
-            $autoID = sprintf("%02s", $urutan);
+            $autoID = sprintf("%04s", $urutan);
         }
-        echo $datenow . $autoID;
+        echo $divisions. "-" . $autoID . "-" . $numberCust . "-" . $datenow;
     }
 
     //GET DATATABLES
@@ -158,14 +199,16 @@ class Delivery_notes extends CI_Controller
     public function datatableDetails()
     {
         if ($this->input->get()) {
-            $delivery_order_no = base64_decode($this->input->get('delivery_order_no'));
+            $delivery_note_no = base64_decode($this->input->get('delivery_note_no'));
 
             $this->db->select('a.*, b.number as item_fg_number, b.name as item_fg_name');
             $this->db->from('delivery_notes a');
             $this->db->join('item_fg b', 'a.item_fg_id = b.id');
-            $this->db->where('a.delivery_order_no', $delivery_order_no);
-            $this->db->order_by('b.number', 'ASC');
+            $this->db->where('a.delivery_note_no', $delivery_note_no);
+            // $this->db->order_by('b.number', 'ASC');
+            $this->db->order_by('a.delivery_order_no');
             $records = $this->db->get()->result_array();
+
             echo json_encode($records);
         }
     }
@@ -176,9 +219,10 @@ class Delivery_notes extends CI_Controller
         if ($this->input->get()) {
             $delivery_note_no = base64_decode($this->input->get('delivery_note_no'));
 
-            $this->db->select('a.*, b.number as item_fg_number, b.name as item_fg_name');
+            $this->db->select('a.*, b.number as item_fg_number, b.name as item_fg_name, a.address_id');
             $this->db->from('delivery_notes a');
             $this->db->join('item_fg b', 'a.item_fg_id = b.id');
+            $this->db->join('customer_address d', 'a.address_id = d.id');
             $this->db->where('a.delivery_note_no', $delivery_note_no);
             $this->db->order_by('b.number', 'ASC');
             $records = $this->db->get()->result_array();
