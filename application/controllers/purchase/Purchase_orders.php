@@ -236,7 +236,7 @@ class Purchase_orders extends CI_Controller
         if ($this->input->post()) {
             if ($this->form_validation->run() == TRUE) {
                 $post = $this->input->post();
-                $items = $this->crud->read('item_rm', [], ['number' => base64_decode($post['item_number'])]);
+                $items = $this->crud->read('item_rm', [], ['number' => $post['item_number']]);
                 $suppliers = $this->crud->read('suppliers', [], ["id" => $post['supplier_id']]);
                 $supplier_items = $this->crud->read('supplier_items', [], ["item_rm_id" => $items->id, "supplier_id" => $post['supplier_id']]);
                 $purchaseOrder = $this->crud->read('purchase_orders', [], ["request_no" => $post['request_no'], "supplier_id" => $post['supplier_id']]);
@@ -294,7 +294,7 @@ class Purchase_orders extends CI_Controller
                 $this->db->where('request_no', $post['request_no']);
                 $this->db->where('item_rm_id', $items->id);
                 $this->db->update("purchase_requests", ["status" => 1]);
-                echo $send;
+                echo json_encode($send);
             } else {
                 show_error(validation_errors());
             }

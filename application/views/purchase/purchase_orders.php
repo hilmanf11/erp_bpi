@@ -469,7 +469,7 @@
                                 ],
                                 onLoadSuccess: function(supp){
                                     if(supp.rows[0].share_order == "100"){
-                                        supplier_id.combogrid('setValue', supp.rows[0].name);
+                                    supplier_id.combogrid('setValue', supp.rows[0].name);
 
                                     $(editors[3].target).textbox('setValue', supp.rows[0].id);
                                     $(editors[4].target).textbox('setValue', supp.rows[0].mpq);
@@ -790,15 +790,15 @@
                         var rows = $('#dg_request').datagrid('getRows');
                         var totalrows = rows.length;
 
-                        var inEditMode = false;
-                        for (var i = 0; i < totalrows; i++) {
-                            if (rows[i].editing) {
-                                inEditMode = true;
-                                break;
-                            }
-                        }
+                        // var inEditMode = false;
+                        // for (var i = 0; i < totalrows; i++) {
+                        //     if (rows[i].editing) {
+                        //         inEditMode = true;
+                        //         break;
+                        //     }
+                        // }
 
-                        if (inEditMode) {
+                        if (totalrows < 0) {
                             toastr.warning("Please save all edited rows before next Process!", "Information");
                         } else {
                             // endEditing();
@@ -840,7 +840,7 @@
                                             $.ajax({
                                                 type: "post",
                                                 url: url_save,
-                                                data: 'item_number=' + window.btoa(item_number) +
+                                                data: 'item_number=' + item_number +
                                                     '&po_no=' + po_no +
                                                     '&supplier_id=' + supplier_id +
                                                     '&request_no=' + row.request_no +
