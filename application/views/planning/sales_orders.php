@@ -784,6 +784,7 @@
                     var total_pph = $("#total_pph").numberbox('getValue');
                     var total_grand = $("#total_grand").numberbox('getValue');
 
+                    $('#dg2').datagrid('acceptChanges');
                     var rows = $('#dg2').datagrid('getRows');
                     var totalrows = rows.length;
                     endEditing();

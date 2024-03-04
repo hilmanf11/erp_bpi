@@ -79,7 +79,7 @@ class Supplier_items extends CI_Controller
         $item_id = $this->input->get('item_rm_id');
         $item_family_id = $this->input->get('item_family_id');
 
-        $this->db->select('b.*, c.number as item_number, a.mpq, a.moq, a.price');
+        $this->db->select('b.*, c.number as item_number, a.mpq, a.moq, a.price, a.share_order');
         $this->db->from('supplier_items a');
         $this->db->join('suppliers b', 'a.supplier_id = b.id');
         $this->db->join('item_rm c', 'a.item_rm_id = c.id');
@@ -411,8 +411,8 @@ class Supplier_items extends CI_Controller
                     <td>' . $data['supplier_number'] . '</td>
                     <td>' . $data['supplier_name'] . '</td>
                     <td>' . $data['item_rm_id'] . '</td>
-                    <td>' . $data['item_rm_number'] . '</td>
-                    <td>' . $data['item_rm_name'] . '</td>
+                    <td style="mso-number-format:\@;">' . $data['item_rm_number'] . '</td>
+                    <td style="mso-number-format:\@;">' . $data['item_rm_name'] . '</td>
                     <td>' . $data['maker'] . '</td>
                     <td>' . $data['item_family_name'] . '</td>
                     <td>' . $data['mpq'] . '</td>

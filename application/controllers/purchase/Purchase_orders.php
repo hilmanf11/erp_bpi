@@ -394,6 +394,9 @@ class Purchase_orders extends CI_Controller
         $page = ceil(count($purchase_orders_total) / $rows);
         //Generate QRcode
         $this->createQrcode($purchase_orders->po_no, "assets/image/qrcode/");
+        $this->createQrcode($signatures->po_prepared, "assets/image/qrcode/");
+        $this->createQrcode($signatures->po_checked, "assets/image/qrcode/");
+        $this->createQrcode($signatures->po_approved, "assets/image/qrcode/");
         $html = '<html>
                     <head>
                         <title>' . $purchase_orders->po_no . '</title>
@@ -555,6 +558,12 @@ class Purchase_orders extends CI_Controller
                                         <th rowspan="2" width="50" style="text-align:center;">Amount</th>
                                         <th rowspan="2" width="80" style="text-align:center;">Delivery<br>Date</th>
                                         <th colspan="3" width="80" style="text-align:center;">Forecast</th>
+
+                                        <tr>
+                                            <th width="80" style="text-align:center;">Month 1</th>
+                                            <th width="80" style="text-align:center;">Month 2</th>
+                                            <th width="80" style="text-align:center;">Month 3</th>
+                                        </tr>
                                         
                                     </tr>';
             $row = 0;
@@ -566,11 +575,7 @@ class Purchase_orders extends CI_Controller
                     $digits = 2;
                 }
                 
-                $html .= '  <tr>
-                                <th width="80" style="text-align:center;">Month 1</th>
-                                <th width="80" style="text-align:center;">Month 2</th>
-                                <th width="80" style="text-align:center;">Month 3</th>
-                            </tr>
+                $html .= '  
                             <tr>    
                                 <td style="text-align:center;">' . $no . '</td>
                                 <td>' . $record['item_id'] . '</td>
@@ -647,59 +652,74 @@ class Purchase_orders extends CI_Controller
                 $html .= '</table>';
             }
             $html .= '  <div style="width:100%; display: grid; grid-template-columns: auto auto auto;">
-                        <div style="width:50%;">
-                            <table style="margin-top:20px; font-size:12px;">
-                                <tr>
-                                    <th width="200" style="text-align:center;">Supplier Approval</th>
-                                </tr>
-                                <tr>
-                                    <th style="height:80px;"></th>
-                                </tr>
-                                <tr>
-                                    <th style="height:20px; text-align:center;">(...................................)</th>
-                                </tr>
-                            </table>
-                        </div>
-                        <div style="width:50%; position: absolute; right: 50px;">
+                        <div style="width:40%; position: absolute; right: 50px;">
                             <table id="customers" style="margin-top:20px;">
                                 <tr>
-                                    <th width="200" style="text-align:center;">Prepared By</th>
-                                    <th width="200" style="text-align:center;">Checked By</th>
+                                    <th colspan="3" width="200" style="text-align:center;">PT. BANSHU PLASTIC INDONESIA</th>
+                                </tr>
+                                <tr>
                                     <th width="200" style="text-align:center;">Approved By</th>
+                                    <th width="200" style="text-align:center;">Checked By</th>
+                                    <th width="200" style="text-align:center;">Prepared By</th>
                                 </tr>
                                 <tr>
-                                    <th style="height:80px;"></th>
-                                    <th style="height:80px;"></th>
-                                    <th style="height:80px;"></th>
+                                    <th style="height:100px;"><img src="' . base_url('assets/image/qrcode/' . $signatures->po_approved . '.png') . '" width="80"/></th>
+                                    <th style="height:100px;"><img src="' . base_url('assets/image/qrcode/' . $signatures->po_checked . '.png') . '" width="80"/></th>
+                                    <th style="height:100px;"><img src="' . base_url('assets/image/qrcode/' . $signatures->po_prepared . '.png') . '" width="80"/></th>
                                 </tr>
                                 <tr>
-                                    <th style="height:20px; text-align:center;">' . $signatures->po_prepared . '</th>
+                                    <th style="height:20px; text-align:center;">' . $signatures->po_approved . '</th>
                                     <th style="height:20px; text-align:center;">' . $signatures->po_checked . '</th>
-                                    <th style="height:20px; text-align:center;">' . $signatures->po_approved . '</th>  
-                        
+                                    <th style="height:20px; text-align:center;">' . $signatures->po_prepared . '</th>
+                                </tr>
+                                <tr>
+                                    <th width="200" style="text-align:center;">Director</th>
+                                    <th width="200" style="text-align:center;">Plant Head</th>
+                                    <th width="200" style="text-align:center;">Manager</th>
                                 </tr>
                             </table>
                         </div>
+                        
+                    </div>
+
+                    <div style="font-size:12px; margin-top:20px;">
+                        <tr>
+                            <td>Term & Condition</td>
+                        </tr>
                     </div>
     
                     <table style="width:100%; font-size:12px; margin-top:20px;">
                         <tr>
                             <td width="20">1.</td>
-                            <td>Please mention the Purchase Order Number in the shipping & billing document</td>
+                            <td>Please sign, stamp & reply email to : mcl@banshuplastic.com. Maximum one day after PO received.</td>
                         </tr>
                         <tr>
-                            <td>2. </td>
-                            <td>Make sure the delivery of goods must be meet to specifications otherwise penalty will be issued</td>
+                            <td>2.</td>
+                            <td>Please mention the Purchase Order Number in the Shipping & Billing Document.</td>
                         </tr>
                         <tr>
-                            <td>3. </td>
-                            <td>Please pay attention to letter of vendor regulations</td>
-                        </tr>
-                        <tr>
-                            <td>4. </td>
-                            <td>Late delivery must be inform one week before due date</td>
+                            <td>3.</td>
+                            <td>Please make sure delivery date us same with Purchase Order.</td>
                         </tr>
                     </table>
+
+                    <div style="width:50%;">
+                        <table style="margin-top:20px; font-size:12px;">
+                            <tr>
+                                <th width="200" style="text-align:center;">Supplier Name</th>
+                            </tr>
+                            <tr>
+                                <th width="200" style="text-align:center; font-size:10px;">Received</th>
+                            </tr>
+                            <tr>
+                                <th style="height:80px;"></th>
+                            </tr>
+                            <tr>
+                                <th style="height:20px; text-align:center;">_________________________</th>
+                            </tr>
+                        </table>
+                    </div>
+
                 </div>
             </div>';
             if (($i + 1) != $page) {

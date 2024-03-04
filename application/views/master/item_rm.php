@@ -21,6 +21,7 @@
             <th rowspan="2" data-options="field:'uom',width:100,halign:'center'">Uom</th>
             <th rowspan="2" data-options="field:'item_category_name',width:150,halign:'center'">Category</th>
             <th rowspan="2" data-options="field:'item_family_name',width:150,halign:'center'">Product Family</th>
+            <th rowspan="2" data-options="field:'color',width:100,halign:'center'">Color</th>
             <th rowspan="2" data-options="field:'item_sub_family_name',width:150,halign:'center'">Sub Product Family</th>
             <th rowspan="2" data-options="field:'account_number',width:150,halign:'center'">Account No</th>
             <th rowspan="2" data-options="field:'account_name',width:150,halign:'center'">Account Name</th>
@@ -72,6 +73,10 @@
                 <div class="fitem">
                     <span style="width:35%; display:inline-block;">Product Family</span>
                     <input style="width:60%;" name="item_family_id" id="item_family_id" required="" class="easyui-combobox">
+                </div>
+                <div class="fitem">
+                    <span style="width:35%; display:inline-block;">Color</span>
+                    <input style="width:60%;" name="color" id="color" class="easyui-textbox">
                 </div>
             </div>
 
@@ -148,6 +153,7 @@
 
         setTimeout(function() { 
             $('#id').textbox('setValue', row.id);
+            $('#item_sub_family_id').textbox('setValue', row.item_sub_family_id);
         }, 500);
 
         if (row) {

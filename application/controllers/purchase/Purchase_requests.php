@@ -117,6 +117,7 @@ class Purchase_requests extends CI_Controller
             $this->db->like('c.id', $filter_item_familys);
             $this->db->like('c.item_category_id', $filter_item_category);
             $this->db->group_by('request_no');
+            $this->db->order_by('a.updated_date', 'DESC');
             $this->db->order_by('a.request_date', 'DESC');
             //Total Data
             $totalRows = $this->db->count_all_results('', false);
@@ -248,11 +249,12 @@ class Purchase_requests extends CI_Controller
                 $datas[] = array(
                     'request_no' => $request_no,
                     'request_date' => $data->val($i, 2),
-                    'request_name' => $data->val($i, 3),
-                    'division' => $data->val($i, 4),
-                    'product_number' => $data->val($i, 5),
-                    'qty' => $data->val($i, 6),
-                    'remarks' => $data->val($i, 7)
+                    'expected_date' => $data->val($i, 3),
+                    'request_name' => $data->val($i, 4),
+                    'division' => $data->val($i, 5),
+                    'product_number' => $data->val($i, 6),
+                    'qty' => $data->val($i, 7),
+                    'remarks' => $data->val($i, 8)
                 );
             }
             $datas['total'] = count($datas);

@@ -319,9 +319,9 @@ class Customer_items extends CI_Controller
                     <td>' . $data['customer_number'] . '</td>
                     <td>' . $data['customer_name'] . '</td>
                     <td>' . $data['item_fg_id'] . '</td>
-                    <td>' . $data['item_fg_number'] . '</td>
-                    <td>' . $data['item_fg_name'] . '</td>
-                    <td>' . $data['item_fg_customer'] . '</td>
+                    <td style="mso-number-format:\@;">' . $data['item_fg_number'] . '</td>
+                    <td style="mso-number-format:\@;">' . $data['item_fg_name'] . '</td>
+                    <td style="mso-number-format:\@;">' . $data['item_fg_customer'] . '</td>
                     <td>' . $data['currency'] . '</td>
                     <td>' . $data['price'] . '</td>
                     <td>' . $data['valid_date'] . '</td>
