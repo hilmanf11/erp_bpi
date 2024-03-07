@@ -128,16 +128,16 @@
         <fieldset style="width:100%; border:1px solid #d0d0d0; margin-bottom: 10px; border-radius:4px; float: left;">
             <legend><b>Form Data</b></legend>
             <div class="fitem">
-                <span style="width:35%; display:inline-block;">Prepared By</span>
-                <input style="width:60%;" name="po_prepared" id="po_prepared" value="<?= $approval->po_prepared ?>" class="easyui-textbox">
+                <span style="width:35%; display:inline-block;">Approved By</span>
+                <input style="width:60%;" name="po_approved" id="po_approved" value="<?= $approval->po_approved ?>" class="easyui-textbox">
             </div>
             <div class="fitem">
                 <span style="width:35%; display:inline-block;">Checked By</span>
                 <input style="width:60%;" name="po_checked" id="po_checked" value="<?= $approval->po_checked ?>" class="easyui-textbox">
             </div>
             <div class="fitem">
-                <span style="width:35%; display:inline-block;">Approved By</span>
-                <input style="width:60%;" name="po_approved" id="po_approved" value="<?= $approval->po_approved ?>" class="easyui-textbox">
+                <span style="width:35%; display:inline-block;">Prepared By</span>
+                <input style="width:60%;" name="po_prepared" id="po_prepared" value="<?= $approval->po_prepared ?>" class="easyui-textbox">
             </div>
         </fieldset>
     </form>
@@ -274,7 +274,7 @@
                                 hidden: true,
                                 width: 250,
                                 halign: 'center',
-                                title: "Supplier",
+                                title: "Supplier Id",
                                 editor: {
                                     type: 'textbox',
                                 }
@@ -467,8 +467,25 @@
                                         width: 250
                                     }]
                                 ],
-                                onLoadSuccess: function(value, rows){
-                                    supplier_id.combogrid('setValue', row.supplier_number);
+                                onLoadSuccess: function(supp){
+                                    if(supp.rows[0].share_order == "100"){
+                                    supplier_id.combogrid('setValue', supp.rows[0].name);
+
+                                    $(editors[3].target).textbox('setValue', supp.rows[0].id);
+                                    $(editors[4].target).textbox('setValue', supp.rows[0].mpq);
+                                    $(editors[5].target).textbox('setValue', supp.rows[0].moq);
+                                    $(editors[7].target).textbox('setValue', supp.rows[0].currency);
+                                    $(editors[8].target).textbox('setValue', 0);
+                                    $(editors[9].target).textbox('setValue', supp.rows[0].price);
+                                    var qty = parseFloat($(editors[6].target).textbox('getValue'));
+                                    var price = parseFloat($(editors[9].target).textbox('getValue'));
+                                    var discount = parseFloat($(editors[8].target).textbox('getValue') || 0);
+
+                                    var totalDiscountedPrice = (qty * price) - ((qty * price) * (discount / 100));
+                                    $(editors[10].target).numberbox('setValue', totalDiscountedPrice);
+                                    $(editors[11].target).textbox('setValue', "<?= date("Y-m-d") ?>");
+                                    }
+                                    
                                 },
                                 onSelect: function(value, rows) {
                                     $(editors[3].target).textbox('setValue', rows.id);
@@ -583,7 +600,6 @@
     function editrow(target) {
         $('#dg_request').datagrid('selectRow', getRowIndex(target));
         $('#dg_request').datagrid('beginEdit', getRowIndex(target));
-        // $("#disc_pr").numberbox('enable');
     }
 
     function saverow(target) {
@@ -773,92 +789,105 @@
                     } else {
                         var rows = $('#dg_request').datagrid('getRows');
                         var totalrows = rows.length;
-                        endEditing();
-                        if (totalrows > 0) {
-                            $.messager.confirm('Warning', 'Are you sure you want to Convert and Save PR to PO?', function(r) {
-                                if (r) {
-                                    for (var i = 0; i < totalrows; i++) {
-                                        var row = rows[i];
 
-                                        var item_number = row.item_number;
-                                        var po_no = row.po_no;
-                                        var supplier_id = row.supplier_id;
-                                        var qty = row.qty;
-                                        var discount = row.discount;
-                                        var price = row.price;
-                                        var total = row.total;
-                                        var delivery_date = row.delivery_date;
-                                        var remarks = row.remarks;
-                                        var month_1 = row.month_1;
-                                        var month_2 = row.month_2;
-                                        var month_3 = row.month_3;
+                        // var inEditMode = false;
+                        // for (var i = 0; i < totalrows; i++) {
+                        //     if (rows[i].editing) {
+                        //         inEditMode = true;
+                        //         break;
+                        //     }
+                        // }
 
-                                        var total_sub = $("#total_sub").numberbox('getValue');
-                                        var disc_pr = $("#disc_pr").numberbox('getValue');
-                                        var discount_total = $("#discount_total").numberbox('getValue');
-                                        var total_vat = $("#total_vat").numberbox('getValue');
-                                        var income_tax = $("#income_tax").numberbox('getValue');
-                                        var income_total = $("#income_total").numberbox('getValue');
-                                        var total_dp = $("#total_dp").numberbox('getValue');
-                                        var total_grand = $("#total_grand").numberbox('getValue');
-
-
-                                        if(po_no == ""){
-                                            var url_save = "<?= base_url('purchase/purchase_orders/create') ?>";
-                                        }else{
-                                            var url_save = "<?= base_url('purchase/purchase_orders/update') ?>";
-                                        }
-
-                                        $.ajax({
-                                            type: "post",
-                                            url: url_save,
-                                            data: 'item_number=' + window.btoa(item_number) +
-                                                '&po_no=' + po_no +
-                                                '&supplier_id=' + supplier_id +
-                                                '&request_no=' + row.request_no +
-                                                '&request_date=' + row.request_date +
-                                                '&request_name=' + row.request_name +
-                                                '&po_date=' + po_date +
-                                                '&qty=' + qty +
-                                                '&discount=' + discount +
-                                                '&price=' + price +
-                                                '&total=' + total +
-                                                '&delivery_date=' + delivery_date +
-                                                '&remarks=' + remarks +
-                                                '&month_1=' + month_1 +
-                                                '&month_2=' + month_2 +
-                                                '&month_3=' + month_3 +
-                                                '&total_sub=' + total_sub +
-                                                '&disc_pr=' + disc_pr +
-                                                '&total_vat=' + total_vat +
-                                                '&income_tax=' + income_tax +
-                                                '&income_total=' + income_total +
-                                                '&total_grand=' + total_grand +
-                                                '&total_dp=' + total_dp +
-                                                '&discount_total=' + discount_total,
-                                            dataType: "json",
-                                            success: function(result) {
-                                                Swal.fire({
-                                                    title: result.message,
-                                                    icon: result.theme,
-                                                    confirmButtonText: 'Ok',
-                                                    allowOutsideClick: false,
-                                                }).then((result) => {
-                                                    if (result.isConfirmed) {
-                                                        window.location.reload();
-                                                    }
-                                                });
-                                            }
-                                        });
-                                    }
-                                    // setTimeout(window.open("<?= base_url('purchase/purchase_orders/print_po/') ?>" + window.btoa(po_no), "_blank"), 3000);
-                                    readPo();
-                                    $('#dg').treegrid('reload');
-                                    $('#dlg_insert').dialog('close');
-                                }
-                            });
+                        if (totalrows < 0) {
+                            toastr.warning("Please save all edited rows before next Process!", "Information");
                         } else {
-                            toastr.warning("Please select one of the data in the table first!", "Information");
+                            // endEditing();
+                            if (totalrows > 0) {
+                                $.messager.confirm('Warning', 'Are you sure you want to Convert and Save PR to PO?', function(r) {
+                                    if (r) {
+                                        for (var i = 0; i < totalrows; i++) {
+                                            var row = rows[i];
+
+                                            var item_number = row.item_number;
+                                            var po_no = row.po_no;
+                                            var supplier_id = row.supplier_id;
+                                            var qty = row.qty;
+                                            var discount = row.discount;
+                                            var price = row.price;
+                                            var total = row.total;
+                                            var delivery_date = row.delivery_date;
+                                            var remarks = row.remarks;
+                                            var month_1 = row.month_1;
+                                            var month_2 = row.month_2;
+                                            var month_3 = row.month_3;
+
+                                            var total_sub = $("#total_sub").numberbox('getValue');
+                                            var disc_pr = $("#disc_pr").numberbox('getValue');
+                                            var discount_total = $("#discount_total").numberbox('getValue');
+                                            var total_vat = $("#total_vat").numberbox('getValue');
+                                            var income_tax = $("#income_tax").numberbox('getValue');
+                                            var income_total = $("#income_total").numberbox('getValue');
+                                            var total_dp = $("#total_dp").numberbox('getValue');
+                                            var total_grand = $("#total_grand").numberbox('getValue');
+
+
+                                            if(po_no == ""){
+                                                var url_save = "<?= base_url('purchase/purchase_orders/create') ?>";
+                                            }else{
+                                                var url_save = "<?= base_url('purchase/purchase_orders/update') ?>";
+                                            }
+
+                                            $.ajax({
+                                                type: "post",
+                                                url: url_save,
+                                                data: 'item_number=' + item_number +
+                                                    '&po_no=' + po_no +
+                                                    '&supplier_id=' + supplier_id +
+                                                    '&request_no=' + row.request_no +
+                                                    '&request_date=' + row.request_date +
+                                                    '&request_name=' + row.request_name +
+                                                    '&po_date=' + po_date +
+                                                    '&qty=' + qty +
+                                                    '&discount=' + discount +
+                                                    '&price=' + price +
+                                                    '&total=' + total +
+                                                    '&delivery_date=' + delivery_date +
+                                                    '&remarks=' + remarks +
+                                                    '&month_1=' + month_1 +
+                                                    '&month_2=' + month_2 +
+                                                    '&month_3=' + month_3 +
+                                                    '&total_sub=' + total_sub +
+                                                    '&disc_pr=' + disc_pr +
+                                                    '&total_vat=' + total_vat +
+                                                    '&income_tax=' + income_tax +
+                                                    '&income_total=' + income_total +
+                                                    '&total_grand=' + total_grand +
+                                                    '&total_dp=' + total_dp +
+                                                    '&discount_total=' + discount_total,
+                                                dataType: "json",
+                                                success: function(result) {
+                                                    Swal.fire({
+                                                        title: result.message,
+                                                        icon: result.theme,
+                                                        confirmButtonText: 'Ok',
+                                                        allowOutsideClick: false,
+                                                    }).then((result) => {
+                                                        if (result.isConfirmed) {
+                                                            window.location.reload();
+                                                        }
+                                                    });
+                                                }
+                                            });
+                                        }
+                                        // setTimeout(window.open("<?= base_url('purchase/purchase_orders/print_po/') ?>" + window.btoa(po_no), "_blank"), 3000);
+                                        readPo();
+                                        $('#dg').treegrid('reload');
+                                        $('#dlg_insert').dialog('close');
+                                    }
+                                });
+                            } else {
+                                toastr.warning("Please select one of the data in the table first!", "Information");
+                            }
                         }
                     }
                 }
