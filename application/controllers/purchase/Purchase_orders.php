@@ -193,7 +193,7 @@ class Purchase_orders extends CI_Controller
     public function datatable_updates()
     {
         $po_no = base64_decode($this->input->get('po_no'));
-        $this->db->select('a.*, 
+        $this->db->select('a.*,  
             b.number as item_number, 
             b.name as item_name,
             b.uom,
@@ -308,11 +308,12 @@ class Purchase_orders extends CI_Controller
         if ($this->input->post()) {
             $post = $this->input->post();
 
-            $items = $this->crud->read('item_rm', [], ['number' => base64_decode($post['item_number'])]);
+            $items = $this->crud->read('item_rm', [], ['number' => $post['item_number']]);
             $purchaseOrder = $this->crud->read('purchase_orders', [], ["request_no" => $post['request_no'], "supplier_id" => $post['supplier_id'], "item_rm_id" => $items->id]);
 
             $purchase_orders = $this->crud->update('purchase_orders', ["request_no" => $post['request_no'], "supplier_id" => $post['supplier_id'], "item_rm_id" => $items->id], [
                 "qty" => $post['qty'],
+                "discount" => $post['discount'],
                 "po_date" => $post['po_date'],
                 "price" => $post['price'],
                 "total" => $post['total'],
@@ -388,15 +389,49 @@ class Purchase_orders extends CI_Controller
         $config = $this->db->get('config')->row();
         $config_iso = $this->db->get('config_iso')->row();
         $signatures = $this->db->get('signatures')->row();
-
+        $approval = $this->crud->read('approvals', [], ["table_name" => "purchase_orders"]);
+        $user_1 = $this->crud->read('users', [], ["username" => $approval->user_approval_1]);
+       
+        if (!empty($approval->user_approval_2)) {
+            $user_2 = $this->crud->read('users', [], ["username" => $approval->user_approval_2]);
+        } else {
+            $user_2 = (object) ["name" => ""];
+        }
+        
+        if (!empty($approval->user_approval_3)) {
+            $user_3 = $this->crud->read('users', [], ["username" => $approval->user_approval_3]);
+        } else {
+            $user_3 = (object) ["name" => ""];
+        }
+        
+        
+        if($purchase_orders->approved == 1){
+            $users_1 = '';
+            $users_2 = '';
+            $users_3 = '';
+        } elseif ($purchase_orders->approved == 2) {
+            $users_1 = '<img src="' . base_url('assets/image/qrcode/' . $user_1->name . '.png') . '" width="80"/>';
+            $users_2 = '';
+            $users_3 = '';
+        } elseif ($purchase_orders->approved == 3) {
+            $users_1 = '<img src="' . base_url('assets/image/qrcode/' . $user_1->name . '.png') . '" width="80"/>';
+            $users_2 = '<img src="' . base_url('assets/image/qrcode/' . $user_2->name . '.png') . '" width="80"/>';
+            $users_3 = '';
+        } else {
+            $users_1 = '<img src="' . base_url('assets/image/qrcode/' . $user_1->name . '.png') . '" width="80"/>';
+            $users_2 = '<img src="' . base_url('assets/image/qrcode/' . $user_2->name . '.png') . '" width="80"/>';
+            $users_3 = '<img src="' . base_url('assets/image/qrcode/' . $user_3->name . '.png') . '" width="80"/>';
+        }
+        
+        
         //Config Page
         $rows = 8;
         $page = ceil(count($purchase_orders_total) / $rows);
         //Generate QRcode
         $this->createQrcode($purchase_orders->po_no, "assets/image/qrcode/");
-        $this->createQrcode($signatures->po_prepared, "assets/image/qrcode/");
-        $this->createQrcode($signatures->po_checked, "assets/image/qrcode/");
-        $this->createQrcode($signatures->po_approved, "assets/image/qrcode/");
+        $this->createQrcode($user_3->name, "assets/image/qrcode/");
+        $this->createQrcode($user_2->name, "assets/image/qrcode/");
+        $this->createQrcode($user_1->name, "assets/image/qrcode/");
         $html = '<html>
                     <head>
                         <title>' . $purchase_orders->po_no . '</title>
@@ -586,7 +621,7 @@ class Purchase_orders extends CI_Controller
                                 
                                 <td style="text-align:right;">' . number_format($record['price'], $digits) . '</td>
                                 <td style="text-align:center;">' . $record['currency'] . '</td>
-                                <td style="text-align:right;">' . number_format(($record['qty'] * $record['price']), 2) . '</td>
+                                <td style="text-align:right;">' . $record['total'] . '</td>
                                 <td style="text-align:center;">' . $record['delivery_date'] . '</td>
                                 <td style="text-align:center;">' . $record['month_1'] . '</td>
                                 <td style="text-align:center;">' . $record['month_2'] . '</td>
@@ -663,14 +698,14 @@ class Purchase_orders extends CI_Controller
                                     <th width="200" style="text-align:center;">Prepared By</th>
                                 </tr>
                                 <tr>
-                                    <th style="height:100px;"><img src="' . base_url('assets/image/qrcode/' . $signatures->po_approved . '.png') . '" width="80"/></th>
-                                    <th style="height:100px;"><img src="' . base_url('assets/image/qrcode/' . $signatures->po_checked . '.png') . '" width="80"/></th>
-                                    <th style="height:100px;"><img src="' . base_url('assets/image/qrcode/' . $signatures->po_prepared . '.png') . '" width="80"/></th>
+                                    <th style="height:100px;">'. $users_3. '</th>
+                                    <th style="height:100px;">'. $users_2. '</th>
+                                    <th style="height:100px;">'. $users_1. '</th>
                                 </tr>
                                 <tr>
-                                    <th style="height:20px; text-align:center;">' . $signatures->po_approved . '</th>
-                                    <th style="height:20px; text-align:center;">' . $signatures->po_checked . '</th>
-                                    <th style="height:20px; text-align:center;">' . $signatures->po_prepared . '</th>
+                                    <th style="height:20px; text-align:center;">' . $user_3->name . '</th>
+                                    <th style="height:20px; text-align:center;">' . $user_2->name . '</th>
+                                    <th style="height:20px; text-align:center;">' . $user_1->name . '</th>
                                 </tr>
                                 <tr>
                                     <th width="200" style="text-align:center;">Director</th>
@@ -699,7 +734,7 @@ class Purchase_orders extends CI_Controller
                         </tr>
                         <tr>
                             <td>3.</td>
-                            <td>Please make sure delivery date us same with Purchase Order.</td>
+                            <td>Please make sure delivery date is same with Purchase Order.</td>
                         </tr>
                     </table>
 

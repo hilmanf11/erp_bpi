@@ -21,6 +21,9 @@
             <th rowspan="2" data-options="field:'revision',width:80,align:'center'">Revision</th>
             <th rowspan="2" data-options="field:'remarks',width:100,halign:'center'">Remarks</th>
             <th colspan="3" data-options="field:'',width:100,halign:'center'"> Forecast</th>
+            <th rowspan="2" data-options="field:'approved_to',width:100,halign:'center',formatter:formatApproved,styler:styleApproved">Status <br>Approve</th>
+            <th rowspan="2" data-options="field:'approved_by',width:100,halign:'center'">Approve By</th>
+            <th rowspan="2" data-options="field:'approved_date',width:100,halign:'center'">Approve Date</th>
             <th colspan="2" data-options="field:'',width:100,halign:'center'"> Created</th>
             <th colspan="2" data-options="field:'',width:100,halign:'center'"> Updated</th>
         </tr>
@@ -469,7 +472,7 @@
                                 ],
                                 onLoadSuccess: function(supp){
                                     if(supp.rows[0].share_order == "100"){
-                                    supplier_id.combogrid('setValue', supp.rows[0].name);
+                                        supplier_id.combogrid('setValue', supp.rows[0].name);
 
                                     $(editors[3].target).textbox('setValue', supp.rows[0].id);
                                     $(editors[4].target).textbox('setValue', supp.rows[0].mpq);
@@ -790,20 +793,20 @@
                         var rows = $('#dg_request').datagrid('getRows');
                         var totalrows = rows.length;
 
-                        // var inEditMode = false;
-                        // for (var i = 0; i < totalrows; i++) {
-                        //     if (rows[i].editing) {
-                        //         inEditMode = true;
-                        //         break;
-                        //     }
-                        // }
+                        var inEditMode = false;
+                        for (var i = 0; i < totalrows; i++) {
+                            if (rows[i].editing) {
+                                inEditMode = true;
+                                break;
+                            }
+                        }
 
-                        if (totalrows < 0) {
+                        if (inEditMode) {
                             toastr.warning("Please save all edited rows before next Process!", "Information");
                         } else {
                             // endEditing();
                             if (totalrows > 0) {
-                                $.messager.confirm('Warning', 'Are you sure you want to Convert and Save PR to PO?', function(r) {
+                                $.messager.confirm('Warning', 'Are you sure you want Process this Data?', function(r) {
                                     if (r) {
                                         for (var i = 0; i < totalrows; i++) {
                                             var row = rows[i];
@@ -1018,4 +1021,22 @@
             return 'background-color:#FFC8C8;';
         }
     }
+
+     //CELLSTYLE APPROVE
+     function styleApproved(value, row, index) {
+        if (value == "" || value === null ) {
+            return 'background: #53D636; color:white;';
+        } else {
+            return 'background: #FF5F5F; color:white;';
+        }
+    }
+
+    //FORMATTER APPROVE
+    function formatApproved(value) {
+        if (value == "" || value === null ) {
+            return 'Approved';
+        } else {
+            return 'Checking';
+        }
+    };
 </script>

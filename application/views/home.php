@@ -483,10 +483,10 @@
 		$('#dlg_approval').dialog('open');
 	}
 
-	// approvalList();
-	// approvalCount();
-	// setInterval(approvalList, 10000);
-	// setInterval(approvalCount, 10000);
+	approvalList();
+	approvalCount();
+	setInterval(approvalList, 10000);
+	setInterval(approvalCount, 10000);
 
 	function approvalList() {
 		$.ajax({
@@ -992,6 +992,125 @@
 							align: 'right',
 							formatter: numberformat,
 							title: "M12",
+						}, {
+							field: 'action',
+							width: 80,
+							align: 'center',
+							title: "Action",
+							formatter: function(val, row) {
+								if (val != "-") {
+									var approve = "approve('" + row.id + "','" + table + "')";
+									var disapprove = "disapprove('" + row.id + "','" + table + "')";
+									var a = '<a class="btn btn-success w-50" style="pointer-events: visible; opacity:1;" onclick="' + approve + '"><i class="fa fa-check"></i></a>';
+									var b = '<a class="btn btn-danger w-50" style="pointer-events: visible; opacity:1;" onclick="' + disapprove + '"><i class="fa fa-times"></i></a>';
+									return a + " " + b;
+								}
+							}
+						}]
+					],
+				}).datagrid('enableFilter');
+			} else if (table == "purchase_orders") {
+				$('#dg_approval').datagrid({
+					singleSelect: true,
+					rownumbers: true,
+					url: '<?= base_url('approvals/approvalPO/') ?>' + approved_to + "/" + created_by,
+					columns: [
+						[{
+							field: 'id',
+							hideen: true,
+							width: 150,
+							halign: 'center',
+							title: "ID",
+						},{
+							field: 'po_no',
+							width: 150,
+							align: 'center',
+							title: "PO NO",
+						},{
+							field: 'po_date',
+							width: 100,
+							align: 'center',
+							title: "PO Period",
+						}, {
+							field: 'item_number',
+							width: 150,
+							align: 'center',
+							title: "Product No",
+						}, {
+							field: 'item_name',
+							width: 100,
+							align: 'center',
+							title: "Product Name",
+						}, {
+							field: 'item_family_name',
+							width: 150,
+							halign: 'center',
+							title: "Product <br>Family",
+						}, {
+							field: 'uom',
+							width: 80,
+							halign: 'center',
+							title: "UOM",
+						}, {
+							field: 'supplier_name',
+							width: 150,
+							halign: 'center',
+							title: "Supplier"
+						}, {
+							field: 'mpq',
+							width: 80,
+							halign: 'center',
+							title: "MPQ",
+						}, {
+							field: 'moq',
+							width: 80,
+							halign: 'center',
+							title: "MOQ",
+						}, {
+							field: 'qty',
+							width: 80,
+							halign: 'center',
+							title: "QTY",
+						}, {
+							field: 'currency',
+							width: 80,
+							halign: 'center',
+							title: "Currency",
+						}, {
+							field: 'discount',
+							width: 80,
+							halign: 'center',
+							title: "Disc %",
+						}, {
+							field: 'price',
+							width: 80,
+							halign: 'center',
+							title: "Price",
+						}, {
+							field: 'total',
+							width: 80,
+							halign: 'center',
+							title: "Amount",
+						}, {
+							field: 'remarks',
+							width: 80,
+							halign: 'center',
+							title: "Remarks",
+						}, {
+							field: 'month_1',
+							width: 80,
+							halign: 'center',
+							title: "Month 1",
+						}, {
+							field: 'month_2',
+							width: 80,
+							halign: 'center',
+							title: "Month 2",
+						}, {
+							field: 'month_3',
+							width: 80,
+							halign: 'center',
+							title: "Month 3",
 						}, {
 							field: 'action',
 							width: 80,

@@ -104,34 +104,78 @@ class Approvals extends CI_Controller
         $table_name = $this->input->post('table_name');
         $datas = $this->crud->reads($table_name, [], ["approved_to" => $approved_to, "created_by" => $created_by]);
 
-        /* Default */
         foreach ($datas as $data) {
-            $send = $this->crud->delete($table_name, ["id" => $data->id]);
+            $id = $data->id;
+            $read = $this->crud->read($table_name, [], ["id" => $id]);
+            $data = json_decode($read->approved_data, false);
+
+            if (empty($data)) {
+                $send = $this->crud->delete($table_name, ["id" => $id]);
+            } else {
+                $send = $this->db->update($table_name, $data, ["id" => $id]);
+            }
         }
 
-        echo json_encode(array("title" => "Disapproved", "message" => "Data Disapproved Successfully", "theme" => "success"));
+        echo json_encode(array("title" => "Disapproved", "message" => "All Data Disapproved Successfully", "theme" => "success"));
     }
+
+
 
     public function disapprove()
     {
         $id = $this->input->post('id');
         $tablename = $this->input->post('tablename');
+        $read = $this->crud->read($tablename, [], ["id" => $id]);
+        $data = json_decode($read->approved_data, false);
 
         /* Default */
-        $send = $this->crud->delete($tablename, ["id" => $id]);
+        if(empty($data)){
+            $send = $this->crud->delete($tablename, ["id" => $id]);
+        }else{
+            $send = $this->db->update($tablename, $data, ["id" => $id]);
+        }
+        
         echo json_encode(array("title" => "Disapproved", "message" => "Data Disapproved Successfully", "theme" => "success"));
     }
+
+
+    // public function disapproveall()
+    // {
+    //     $created_by = $this->input->post('created_by');
+    //     $approved_to = $this->input->post('approved_to');
+    //     $table_name = $this->input->post('table_name');
+    //     $datas = $this->crud->reads($table_name, [], ["approved_to" => $approved_to, "created_by" => $created_by]);
+
+    //     /* Default */
+    //     foreach ($datas as $data) {
+    //         $send = $this->crud->delete($table_name, ["id" => $data->id]);
+    //     }
+
+    //     echo json_encode(array("title" => "Disapproved", "message" => "Data Disapproved Successfully", "theme" => "success"));
+    // }
+
+    // public function disapprove()
+    // {
+    //     $id = $this->input->post('id');
+    //     $tablename = $this->input->post('tablename');
+
+    //     /* Default */
+    //     $send = $this->crud->delete($tablename, ["id" => $id]);
+    //     echo json_encode(array("title" => "Disapproved", "message" => "Data Disapproved Successfully", "theme" => "success"));
+    // }
 
     public function approvalCount()
     {
         $users = $this->crud->reads('users', [], ["approved_to" => $this->session->username], "", "", "", ["approved_to", "approved_by"]);
-        $forecasts = $this->crud->reads('forecasts', [], ["approved_to" => $this->session->username], "", "", "", ["approved_to", "approved_by"]);
-        $stock_fg = $this->crud->reads('stock_fg', [], ["approved_to" => $this->session->username], "", "", "", ["approved_to", "approved_by"]);
-        $stock_wip = $this->crud->reads('stock_wip', [], ["approved_to" => $this->session->username], "", "", "", ["approved_to", "approved_by"]);
-        $os_so = $this->crud->reads('os_so', [], ["approved_to" => $this->session->username], "", "", "", ["approved_to", "approved_by"]);
-        $os_mpp = $this->crud->reads('os_mpp', [], ["approved_to" => $this->session->username], "", "", "", ["approved_to", "approved_by"]);
+        // $forecasts = $this->crud->reads('forecasts', [], ["approved_to" => $this->session->username], "", "", "", ["approved_to", "approved_by"]);
+        // $stock_fg = $this->crud->reads('stock_fg', [], ["approved_to" => $this->session->username], "", "", "", ["approved_to", "approved_by"]);
+        // $stock_wip = $this->crud->reads('stock_wip', [], ["approved_to" => $this->session->username], "", "", "", ["approved_to", "approved_by"]);
+        // $os_so = $this->crud->reads('os_so', [], ["approved_to" => $this->session->username], "", "", "", ["approved_to", "approved_by"]);
+        // $os_mpp = $this->crud->reads('os_mpp', [], ["approved_to" => $this->session->username], "", "", "", ["approved_to", "approved_by"]);
+        $purchase_orders = $this->crud->reads('purchase_orders', [], ["approved_to" => $this->session->username], "", "", "", ["approved_to", "approved_by"]);
 
-        $totalRows = (count($users) + count($forecasts) + count($stock_fg) + count($stock_wip) + count($os_so) + count($os_mpp));
+
+        $totalRows = (count($users) + count($purchase_orders)); //+ count($forecasts) + count($stock_fg) + count($stock_wip) + count($os_so) + count($os_mpp) 
         if ($totalRows > 0) {
             echo '<span class="badge">' . $totalRows . '</span>';
         } else {
@@ -143,34 +187,40 @@ class Approvals extends CI_Controller
     {
         //Users
         $users = $this->crud->reads('users', [], ["approved_to" => $this->session->username], "", "", "", ["approved_to", "approved_by"]);
-        $forecasts = $this->crud->reads('forecasts', [], ["approved_to" => $this->session->username], "", "", "", ["approved_to", "approved_by"]);
-        $stock_fg = $this->crud->reads('stock_fg', [], ["approved_to" => $this->session->username], "", "", "", ["approved_to", "approved_by"]);
-        $stock_wip = $this->crud->reads('stock_wip', [], ["approved_to" => $this->session->username], "", "", "", ["approved_to", "approved_by"]);
-        $os_so = $this->crud->reads('os_so', [], ["approved_to" => $this->session->username], "", "", "", ["approved_to", "approved_by"]);
-        $os_mpp = $this->crud->reads('os_mpp', [], ["approved_to" => $this->session->username], "", "", "", ["approved_to", "approved_by"]);
+        // $forecasts = $this->crud->reads('forecasts', [], ["approved_to" => $this->session->username], "", "", "", ["approved_to", "approved_by"]);
+        // $stock_fg = $this->crud->reads('stock_fg', [], ["approved_to" => $this->session->username], "", "", "", ["approved_to", "approved_by"]);
+        // $stock_wip = $this->crud->reads('stock_wip', [], ["approved_to" => $this->session->username], "", "", "", ["approved_to", "approved_by"]);
+        // $os_so = $this->crud->reads('os_so', [], ["approved_to" => $this->session->username], "", "", "", ["approved_to", "approved_by"]);
+        // $os_mpp = $this->crud->reads('os_mpp', [], ["approved_to" => $this->session->username], "", "", "", ["approved_to", "approved_by"]);
+        $purchase_orders = $this->crud->reads('purchase_orders', [], ["approved_to" => $this->session->username], "", "", "", ["approved_to", "approved_by"]);
+
 
         foreach ($users as $user) {
             $this->approvalMessage($user->approved_by, $user->approved_to, $user->created_by, "users");
         }
 
-        foreach ($forecasts as $forecast) {
-            $this->approvalMessage($forecast->approved_by, $forecast->approved_to, $forecast->created_by, "forecasts");
-        }
+        // foreach ($forecasts as $forecast) {
+        //     $this->approvalMessage($forecast->approved_by, $forecast->approved_to, $forecast->created_by, "forecasts");
+        // }
 
-        foreach ($stock_fg as $fg) {
-            $this->approvalMessage($fg->approved_by, $fg->approved_to, $fg->created_by, "stock_fg");
-        }
+        // foreach ($stock_fg as $fg) {
+        //     $this->approvalMessage($fg->approved_by, $fg->approved_to, $fg->created_by, "stock_fg");
+        // }
 
-        foreach ($stock_wip as $wip) {
-            $this->approvalMessage($wip->approved_by, $wip->approved_to, $wip->created_by, "stock_wip");
-        }
+        // foreach ($stock_wip as $wip) {
+        //     $this->approvalMessage($wip->approved_by, $wip->approved_to, $wip->created_by, "stock_wip");
+        // }
 
-        foreach ($os_so as $so) {
-            $this->approvalMessage($so->approved_by, $so->approved_to, $so->created_by, "os_so");
-        }
+        // foreach ($os_so as $so) {
+        //     $this->approvalMessage($so->approved_by, $so->approved_to, $so->created_by, "os_so");
+        // }
 
-        foreach ($os_mpp as $mpp) {
-            $this->approvalMessage($mpp->approved_by, $mpp->approved_to, $mpp->created_by, "os_mpp");
+        // foreach ($os_mpp as $mpp) {
+        //     $this->approvalMessage($mpp->approved_by, $mpp->approved_to, $mpp->created_by, "os_mpp");
+        // }
+
+        foreach ($purchase_orders as $po) {
+            $this->approvalMessage($po->approved_by, $po->approved_to, $po->created_by, "purchase_orders");
         }
     }
 
@@ -277,6 +327,41 @@ class Approvals extends CI_Controller
         $this->db->from('forecasts a');
         $this->db->join('item_fg b', 'a.item_fg_id = b.id');
         $this->db->join('customers c', 'a.customer_id = c.id');
+        $this->db->where('a.approved_to', $approved_to);
+        $this->db->where('a.created_by', $created_by);
+        $this->db->order_by('a.created_date', 'DESC');
+        $records = $this->db->get()->result_array();
+
+        die(json_encode($records));
+    }
+
+    public function approvalPO($approved_to, $created_by)
+    {
+        $this->db->select('a.id,a.po_no, a.request_no, a.total_dp,
+                    a.po_date,
+                    a.remarks,
+                    b.number as item_number,
+                    b.name as item_name,
+                    c.name as item_family_name, 
+                    d.name as supplier_name, 
+                    d.currency, e.mpq, 
+                    e.moq,
+                    b.uom,
+                    a.month_1,
+                    a.month_2,
+                    a.month_3,
+                    a.discount,
+                    d.currency, 
+                    SUM(a.qty) as qty, 
+                    SUM(a.price) as price, 
+                    SUM(a.total) as total,
+                    a.total_sub');
+                $this->db->from('purchase_orders a');
+                $this->db->join('item_rm b', 'a.item_rm_id = b.id');
+                $this->db->join('item_familys c', 'b.item_family_id = c.id');
+                $this->db->join('suppliers d', 'a.supplier_id = d.id');
+                $this->db->join('supplier_items e', 'a.item_rm_id = e.item_rm_id and a.supplier_id = e.supplier_id');
+                $this->db->join('(SELECT po_no, COUNT(status) as total_status_close FROM purchase_orders WHERE status = 1 GROUP BY po_no) g', 'a.po_no = g.po_no', 'left');
         $this->db->where('a.approved_to', $approved_to);
         $this->db->where('a.created_by', $created_by);
         $this->db->order_by('a.created_date', 'DESC');
