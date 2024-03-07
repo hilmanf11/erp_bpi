@@ -83,12 +83,20 @@
             <legend><b>Form Data</b></legend>
             <div style="width: 50%; float: left;">
                 <div class="fitem">
+                    <span style="width:35%; display:inline-block;">Sales Order</span>
+                    <select style="width:40%;" name="sales_order" id="sales_order" required="" panelHeight="auto" class="easyui-combobox">
+                        <option value="" disabled selected>Choose Sales Order</option>
+                        <option value="FG">FINISH GOOD</option>
+                        <option value="RM">RAW MATERIAL</option>
+                    </select>
+                </div>
+                <div class="fitem">
                     <span style="width:35%; display:inline-block;">Delivery Order Date</span>
                     <input style="width:40%;" name="delivery_order_date" id="delivery_order_date" required="" data-options="formatter:myformatter,parser:myparser,editable:false" class="easyui-datebox">
                 </div>
                 <div class="fitem">
                     <span style="width:35%; display:inline-block;">Delivery Date</span>
-                    <input style="width:40%;" name="delivery_date" id="delivery_date" required="" data-options="formatter:myformatter,parser:myparser,editable:false" class="easyui-datebox">
+                    <input style="width:40%;" name="delivery_date" id="delivery_date" required="" class="easyui-combobox">
                 </div>
                 <div class="fitem">
                     <span style="width:35%; display:inline-block;">Customer Name</span>
@@ -155,7 +163,7 @@
         $('#frm_insert').form('clear');
 
         $("#delivery_order_date").datebox('enable');
-        $("#delivery_date").datebox('enable');
+        $("#delivery_date").combobox('enable');
         $("#customer_id").combobox('enable');
         $("#customer_order_no").combobox('enable');
         $("#btnPreview").linkbutton('enable');
@@ -163,59 +171,51 @@
         $('#delivery_order_date').datebox({
             onChange: function(delivery_order_date) {
                 if (delivery_order_date != "") {
-                    number(delivery_order_date);
+                    $("#customer_id").combobox('clear');
                 }
             }
         });
 
-        $("#delivery_date").datebox({
-            onChange: function(delivery_date) {
-                $.ajax({
-                    type: "post",
-                    url: "<?= base_url('sales/delivery_orders/readSalesOrderDeliveries') ?>",
-                    data: "delivery_date=" + delivery_date,
-                    dataType: "json",
-                    success: function(response) {
-                        // if (response.length == 0) {
-                        //     toastr.error("Sales Order Delivery Data Not Found on Delivery Date");
-                        //     $("#delivery_date").datebox('clear');
-                        // }else{
-                            
-                        // }
-
+        $("#sales_order").combobox({
+            onChange: function(sales_order){
+                $("#delivery_date").combobox({
+                    url: "<?= base_url('sales/delivery_orders/readSalesOrderDeliveries/') ?>" + sales_order,
+                    valueField: 'trans_date',
+                    textField: 'trans_date',
+                    prompt: 'Choose Delivery Date',
+                    onSelect: function(delivery) {
                         $('#customer_id').combobox({
-                            url: '<?= base_url('sales/delivery_orders/readsC/'); ?>' + btoa(delivery_date),
+                            url: '<?= base_url('sales/delivery_orders/readsC/'); ?>' + sales_order + "/" + btoa(delivery.trans_date),
                             valueField: 'id',
                             textField: 'name',
                             prompt: 'Choose Customer Name',
                             onSelect: function(customer) {
+                                var delivery_order_date = $("#delivery_order_date").datebox('getValue');
+                                number(delivery_order_date, customer.number);
+
                                 $('#customer_order_no').combobox({
-                                    url: '<?= base_url('sales/delivery_orders/readsCustOrderNo/'); ?>' + btoa(customer.id) +"/"+ btoa(delivery_date),
+                                    url: '<?= base_url('sales/delivery_orders/readsCustOrderNo/'); ?>' + sales_order + "/" + btoa(customer.id) +"/"+ btoa(delivery.trans_date),
                                     valueField: 'customer_order_no',
                                     textField: 'customer_order_no',
                                     prompt: 'Choose Customer Order No',
                                     multiple:true,
-                                    onChange: function(row) {
-                                        var selectedRows = $("#customer_order_no").combobox('getValues');
-
-                                        addTable(customer.id, selectedRows);
-                                    }
                                 }); 
                             }
                         });
                     }
                 });
             }
-        })
+        });
     }
 
     function preview(url = "") {
-        var delivery_date = $("#delivery_date").datebox('getValue');
+        var sales_order = $("#sales_order").combobox('getValue');
+        var delivery_date = $("#delivery_date").combobox('getValue');
         var customer_id = $("#customer_id").combobox('getValue');
         var customer_order_no = $("#customer_order_no").combobox('getText');
 
         if(url == ""){
-            var urlGet = "<?= base_url('sales/delivery_orders/datatablesTemp/') ?>" + btoa(delivery_date) + "/" + btoa(customer_id) + "/" + btoa(customer_order_no);
+            var urlGet = "<?= base_url('sales/delivery_orders/datatablesTemp/') ?>" + sales_order + "/" + btoa(delivery_date) + "/" + btoa(customer_id) + "/" + btoa(customer_order_no);
         }else{
             var urlGet = url;
         }
@@ -262,10 +262,10 @@
         }
     }
 
-    function number(delivery_order_date) {
+    function number(delivery_order_date, customer_no) {
         $.ajax({
             type: "post",
-            url: "<?= base_url('sales/delivery_orders/number/') ?>" + window.btoa(delivery_order_date),
+            url: "<?= base_url('sales/delivery_orders/number/') ?>" + window.btoa(delivery_order_date) + "/" + customer_no,
             dataType: "html",
             success: function(result) {
                 $("#delivery_order_no").textbox('setValue', result);
@@ -281,7 +281,7 @@
             $('#frm_insert').form('load', row);
 
             $("#delivery_order_date").datebox('disable');
-            $("#delivery_date").datebox('disable');
+            $("#delivery_date").combobox('disable');
             $("#customer_id").combobox('disable');
             $("#customer_order_no").combobox('disable');
             $("#btnPreview").linkbutton('disable');
@@ -499,7 +499,7 @@
                 handler: function() {
                     var customer_id = $("#customer_id").combobox('getValue');
                     var delivery_order_date = $("#delivery_order_date").datebox('getValue');
-                    var delivery_date = $("#delivery_date").datebox('getValue');
+                    var delivery_date = $("#delivery_date").combobox('getValue');
                     var delivery_order_no = $("#delivery_order_no").textbox('getValue');
                     var trans_type = $("#trans_type").combobox('getValue');
                     var remarks = $("#remarks").textbox('getValue');

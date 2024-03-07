@@ -3,24 +3,19 @@
     <thead>
         <tr>
             <th rowspan="2" field="ck" checkbox="true"></th>
-            <th rowspan="2" data-options="field:'number',width:150,halign:'center'">Purchase Invoice No</th>
-            <th rowspan="2" data-options="field:'status',width:100,align:'center',formatter:statusformat,styler:statusStyle">Payment<br>Status</th>
-            <th rowspan="2" data-options="field:'status_invoice',width:110,align:'center',formatter:statusformatInv,styler:statusStyleInv">Supplier<br>Invoice</th>
-            <th rowspan="2" data-options="field:'gl_no',width:100,align:'center'">GL No</th>
+            <th rowspan="2" data-options="field:'number',width:150,halign:'center'">Sales Invoice No</th>
+            <th rowspan="2" data-options="field:'status',width:100,align:'center',formatter:statusformat,styler:statusStyle">Receipt<br>Status</th>
+            <th rowspan="2" data-options="field:'gl_no',width:100,align:'center'">GL NO</th>
             <th rowspan="2" data-options="field:'trans_date',width:100,align:'center'">Trans Date</th>
-            <th rowspan="2" data-options="field:'item_family_name',width:150,halign:'center'">Sub Category</th>
-            <th rowspan="2" data-options="field:'journal_type_name',width:150,halign:'center'">Journal Name</th>
-            <th rowspan="2" data-options="field:'supplier_name',width:200,halign:'center'">Supplier Name</th>
-            <th rowspan="2" data-options="field:'invoice_no',width:150,halign:'center'">Invoice No</th>
+            <th rowspan="2" data-options="field:'customer_name',width:200,halign:'center'">Customer Name</th>
             <th rowspan="2" data-options="field:'taxes',width:80,halign:'center',align:'right'">Taxes %</th>
             <th rowspan="2" data-options="field:'payment_term',width:100,align:'center'">Payment Term <br>(Days)</th>
             <th rowspan="2" data-options="field:'due_date',width:100,align:'center'">Payment Due</th>
             <th rowspan="2" data-options="field:'currency',width:100,align:'center'">Currency</th>
-            <th rowspan="2" data-options="field:'total_sub',width:120,halign:'center',align:'right',formatter: numberformat">Sub Total</th>
-            <th rowspan="2" data-options="field:'total_vat',width:120,halign:'center',align:'right',formatter: numberformat">VAT</th>
-            <th rowspan="2" data-options="field:'total_pph',width:120,halign:'center',align:'right',formatter: numberformat">PPH</th>
-            <th rowspan="2" data-options="field:'total_grand',width:120,halign:'center',align:'right',formatter: numberformat">Grand Total</th>
-            <th rowspan="2" data-options="field:'total_dp',width:120,halign:'center',align:'right',formatter: numberformat">Down Payment</th>
+            <th rowspan="2" data-options="field:'total_sub',width:120,halign:'center',align:'right',formatter: priceformat">Sub Total</th>
+            <th rowspan="2" data-options="field:'total_vat',width:120,halign:'center',align:'right',formatter: priceformat">VAT</th>
+            <th rowspan="2" data-options="field:'total_pph',width:120,halign:'center',align:'right',formatter: priceformat">PPH</th>
+            <th rowspan="2" data-options="field:'total_grand',width:120,halign:'center',align:'right',formatter: priceformat">Grand Total</th>
             <th rowspan="2" data-options="field:'remarks',width:150,halign:'center'">Remarks</th>
             <th colspan="2" data-options="field:'',width:100,halign:'center'"> Created</th>
             <th colspan="2" data-options="field:'',width:100,halign:'center'"> Updated</th>
@@ -33,22 +28,23 @@
         </tr>
     </thead>
 </table>
-
 <!-- FORM FILTER DATAGRID -->
-<div id="toolbar" style="height: 230px; padding: 10px;">
+<div id="toolbar" style="height: 270px; padding:10px;">
+    <!-- <div style="width: 100%; display: grid; grid-template-columns: auto auto auto; grid-gap: 5px; display: flex;"> -->
+
     <fieldset style="width: 99%; border:2px solid #d0d0d0; margin-bottom: 5px; margin-top: 5px; border-radius:4px;">
         <legend><b>Form Filter Data</b></legend>
-        <div style="width: 32%; float: left;">
+        <div style="width: 50%; float: left;">
             <div class="fitem">
                 <span style="width:35%; display:inline-block;">Type Date</span>
                 <select style="width:60%;" id="filter_type" class="easyui-combobox" panelHeight="auto">
                     <option value="">Select All</option>
-                    <option value="PID">Purchase Invoice Date</option>
+                    <option value="PID">Sales Invoice Date</option>
                     <option value="PAY">Payment Due</option>
                 </select>
             </div>
             <div class="fitem">
-                <span style="width:35%; display:inline-block;">Purchase Invoice Date</span>
+                <span style="width:35%; display:inline-block;">Sales Invoice Date</span>
                 <input style="width:30%;" id="filter_trans_date_from" value="<?= date("Y-m-01") ?>" class="easyui-datebox" data-options="prompt:'Start Date',formatter:myformatter,parser:myparser, editable:false">
                 <input style="width:30%;" id="filter_trans_date_to" value="<?= date("Y-m-t") ?>" class="easyui-datebox" data-options="prompt:'Finish Date',formatter:myformatter,parser:myparser, editable:false">
             </div>
@@ -58,45 +54,24 @@
                 <input style="width:30%;" id="filter_due_date_to" value="<?= date("Y-m-t") ?>" class="easyui-datebox" data-options="prompt:'Finish Date',formatter:myformatter,parser:myparser, editable:false">
             </div>
             <div class="fitem">
+                <span style="width:35%; display:inline-block;">Customer</span>
+                <input style="width:60%;" name="filter_customer" id="filter_customer" class="easyui-combobox">
+            </div>
+            <div class="fitem">
                 <span style="width:35%; display:inline-block;"></span>
                 <a href="javascript:;" class="easyui-linkbutton" onclick="filter()"><i class="fa fa-search"></i> Filter Data</a>
-                <a href="javascript:;" class="easyui-linkbutton" onclick="print_invoicing()"><i class="fa fa-print"></i> Print Invoicing</a>
+                <a href="javascript:;" class="easyui-linkbutton" onclick="print_commercial()"><i class="fa fa-print"></i> Commercial Invoice</a>
+                <a href="javascript:;" class="easyui-linkbutton" onclick="print_invoice()"><i class="fa fa-print"></i> Sales Invoice</a>
             </div>
         </div>
-        <div style="width: 32%; float: left;">
+        <div style="width: 50%; float: left;">
             <div class="fitem">
-                <span style="width:35%; display:inline-block;">Product Family</span>
-                <input style="width:60%;" name="filter_family_id" id="filter_family_id" class="easyui-combobox">
+                <span style="width:35%; display:inline-block;">Delivery Note</span>
+                <input style="width:60%;" id="filter_dn_number" class="easyui-combobox">
             </div>
             <div class="fitem">
-                <span style="width:35%; display:inline-block;">Purhcase Invoice No</span>
-                <input style="width:60%;" name="filter_purchase_invoice" id="filter_purchase_invoice" class="easyui-combobox">
-            </div>
-            <div class="fitem">
-                <span style="width:35%; display:inline-block;">Supplier</span>
-                <input style="width:60%;" name="filter_supplier" id="filter_supplier" class="easyui-combobox">
-            </div>
-            <div class="fitem">
-                <span style="width:35%; display:inline-block;">Invoice No</span>
-                <input style="width:60%;" id="filter_invoice_no" class="easyui-combobox">
-            </div>
-        </div>
-        <div style="width: 35%; float: left;">
-            <div class="fitem">
-                <span style="width:35%; display:inline-block;">Purchase Order</span>
-                <input style="width:60%;" id="filter_purchase_order" class="easyui-combobox">
-            </div>
-            <div class="fitem">
-                <span style="width:35%; display:inline-block;">Purchase Order Receipt</span>
-                <input style="width:60%;" id="filter_purchase_receipt" class="easyui-combobox">
-            </div>
-            <div class="fitem">
-                <span style="width:35%; display:inline-block;">Supplier Status</span>
-                <select style="width:60%;" id="filter_status_supplier" class="easyui-combobox" panelHeight="auto">
-                    <option value="">Select All</option>
-                    <option value="INVWDP">DOWN PAYMENT</option>
-                    <option value="INVTMP">TEMPORARY</option>
-                </select>
+                <span style="width:35%; display:inline-block;">Sales Invoice No</span>
+                <input style="width:60%;" name="filter_sales_invoice" id="filter_sales_invoice" class="easyui-combobox">
             </div>
             <div class="fitem">
                 <span style="width:35%; display:inline-block;">Payment Status</span>
@@ -123,44 +98,31 @@
 </div>
 
 <!-- DIALOG SAVE AND UPDATE -->
-<div id="dlg_insert" class="easyui-dialog" title="Add New" data-options="closed: true,modal:true" style="width: 99%; height: 600px; padding:10px; top: 5px; left:10px;">
+<div id="dlg_insert" class="easyui-dialog" title="Add New" data-options="closed: true,modal:true" style="width: 99%; height: 600px; padding:10px; top: 10px; left:5px;">
     <form id="frm_insert" method="post" novalidate>
         <div style="width: 100%; display: grid; grid-template-columns: auto auto auto; grid-gap: 5px; display: flex;">
             <fieldset style="width:100%; border:1px solid #d0d0d0; margin-bottom: 10px; border-radius:4px;">
                 <legend><b>Form Data</b></legend>
                 <div style="width: 50%; float: left;">
                     <div class="fitem">
-                        <span style="width:35%; display:inline-block;">Purchase Invoice Type</span>
-                        <select style="width:60%;" id="type" name="type" required class="easyui-combobox" panelHeight="auto">
-                            <option value="" selected disabled>Select Purchase Invoice Type</option>
-                            <option value="purchase">Non Down Payment</option>
-                            <option value="dp">Down Payment</option>
-                            <option value="others">Others</option>
-                        </select>
-                    </div>
-                    <div class="fitem">
-                        <span style="width:35%; display:inline-block;">Purchase Invoice Date</span>
+                        <span style="width:35%; display:inline-block;">Sales Invoice Date</span>
                         <input style="width:60%;" id="trans_date" name="trans_date" required="" class="easyui-datebox" data-options="formatter:myformatter,parser:myparser, editable:false">
                     </div>
                     <div class="fitem">
-                        <span style="width:35%; display:inline-block;">Purchase Invoice No</span>
-                        <input style="width:60%;" readonly id="number" name="number" class="easyui-textbox" data-options="prompt:'Automatic From Purchase Invoce Date'">
+                        <span style="width:35%; display:inline-block;">Sales Invoice No</span>
+                        <input style="width:60%;" readonly id="number" name="number" class="easyui-textbox" data-options="prompt:'Automatic From Purchase Invoce Date & Customer'">
                     </div>
                     <div class="fitem">
-                        <span style="width:35%; display:inline-block;">Product Family</span>
-                        <input style="width:60%;" required="" name="family_id" id="family_id" class="easyui-combobox">
+                        <span style="width:35%; display:inline-block;">Journal Type</span>
+                        <input style="width:60%;" required="" name="journal_type_id" id="journal_type" class="easyui-combobox">
                     </div>
                     <div class="fitem">
-                        <span style="width:35%; display:inline-block;">Supplier Name</span>
-                        <input style="width:60%;" required="" id="supplier_id" name="supplier_id" class="easyui-combogrid">
+                        <span style="width:35%; display:inline-block;">Customer Name</span>
+                        <input style="width:60%;" required="" id="customer_id" name="customer_name" class="easyui-combogrid">
                     </div>
-                    <div class="fitem" id="type_selection_purchase">
-                        <span style="width:35%; display:inline-block;">Purchase Order Receipt</span>
-                        <input style="width:60%;" required="" id="por_no" name="por_no" class="easyui-combobox">
-                    </div>
-                    <div class="fitem" id="type_selection_others">
-                        <span style="width:35%; display:inline-block;">Purchase Order Misc</span>
-                        <input style="width:60%;" required="" id="po_no" name="po_no" class="easyui-combobox">
+                    <div class="fitem">
+                        <span style="width:35%; display:inline-block;">Delivery Note</span>
+                        <input style="width:60%;" required="" id="dn_number" name="dn_number" class="easyui-combobox">
                     </div>
                     <div class="fitem">
                         <span style="width:35%; display:inline-block;"></span>
@@ -169,20 +131,12 @@
                 </div>
                 <div style="width: 50%; float: left;">
                     <div class="fitem">
-                        <span style="width:35%; display:inline-block;">Journal Type</span>
-                        <input style="width:60%;" required="" name="journal_type_id" id="journal_type" class="easyui-combobox">
-                    </div>
-                    <div class="fitem">
-                        <span style="width:35%; display:inline-block;">Supplier Invoice</span>
-                        <input style="width:60%;" required="" id="invoice_no" name="invoice_no" class="easyui-textbox">
-                    </div>
-                    <div class="fitem">
                         <span style="width:35%; display:inline-block;">Taxes</span>
-                        <input style="width:60%;" id="taxes" name="taxes" readonly class="easyui-numberbox">
+                        <input style="width:30%;" id="taxes" name="taxes" readonly class="easyui-numberbox">
                     </div>
                     <div class="fitem">
                         <span style="width:35%; display:inline-block;">Payment Term</span>
-                        <input style="width:60%;" required="" readonly="" id="payment_term" name="payment_term" class="easyui-numberbox" data-options="buttonText:'Days',buttonAlign:'right'">
+                        <input style="width:30%;" name="payment_term" readonly="" id="payment_term" class="easyui-numberbox" data-options="buttonText:'Days',buttonAlign:'right'">
                     </div>
                     <div class="fitem">
                         <span style="width:35%; display:inline-block;">Payment Due</span>
@@ -199,27 +153,36 @@
                 </div>
             </fieldset>
         </div>
-
-        <table id="dg2" class="easyui-datagrid" style="width:100%;" title="Purchase Invoice Lists" data-options="singleSelect: true" toolbar="#toolbar2">
+        <table id="dg2" class="easyui-datagrid" style="width:100%;" title="Sales Invoicing Lists" data-options="singleSelect: true" toolbar="#toolbar2" rownumbers="true" , idField="dn_number">
             <thead>
                 <tr>
-                    <th rowspan="2" data-options="field:'action',width:120,formatter:buttonEdit">Action</th>
-                    <th hidden rowspan="2" data-options="field:'id',width:150, editor: {type: 'textbox'}">ID</th>
-                    <th rowspan="2" data-options="field:'por_no',width:150,editor: {type: 'textbox'}">POR. No</th>
-                    <th rowspan="2" data-options="field:'po_no',width:150,editor: {type: 'textbox'}">PO. No</th>
-                    <th rowspan="2" data-options="field:'item_id',width:150,editor: {type: 'textbox'}" hidden>Product Id</th>
-                    <th rowspan="2" data-options="field:'item_number',width:150,editor: {type: 'textbox', options: {required: true}}">Product No</th>
-                    <th rowspan="2" data-options="field:'item_name',width:200,editor: {type: 'textbox', options: {required: true}}">Product Name</th>
-                    <th rowspan="2" data-options="field:'uom',align:'center',width:80, editor: {
-                        type: 'combobox',
-                        options: {
-                            url: '<?= base_url('master/uom/reads') ?>',
-                            editable:false,
-                            valueField: 'name',
-                            textField: 'name',
-                            prompt: 'Choose Uom'
-                        }}">UoM</th>
-                    <th rowspan="2" data-options="field:'qty',width:80, formatter:numberformat,editor: {
+                    <th data-options="field:'delete',width:120,formatter:removebtn">Action</th>
+                    <th hidden data-options="field:'id',width:150,editor: {type: 'textbox'}">ID</th>
+                    <th data-options="field:'dn_number',width:150,editor: {type: 'textbox', options: {required: true}}">Delivery Note</th>
+                    <th data-options="field:'so_number',width:160,editor: {type: 'textbox', options: {required: true}}">SO. No</th>
+                    <th data-options="field:'customer_po',width:120,editor: {type: 'textbox', options: {required: true}}">Customer PO</th>
+                    <th data-options="field:'item_id',width:150" hidden>Product Id</th>
+                    <th data-options="field:'item_no',width:150,editor: {type: 'textbox', options: {required: true}}">Product No</th>
+                    <th data-options="field:'item_name',width:200,editor: {type: 'textbox', options: {required: true}}">Product Name</th>
+                    <th data-options="field:'uom',width:80, editor: {
+                    type: 'combobox',
+                    options: {
+                        url: '<?= base_url('master/uom/reads') ?>',
+                        editable:false,
+                        valueField: 'name',
+                        textField: 'name',
+                        prompt: 'Choose Uom'
+                    }}">UoM</th>
+                    <th data-options="field:'currency',width:80, editor: {
+                    type: 'combobox',
+                    options: {
+                        url: '<?= base_url('master/currencies/reads') ?>',
+                        editable:false,
+                        valueField: 'number',
+                        textField: 'number',
+                        prompt: 'Choose Currencies'
+                    }}">Currency</th>
+                    <th data-options="field:'qty',width:80, formatter:numberformat,editor: {
                         type: 'numberbox', 
                         options: {
                             required: true,
@@ -244,9 +207,32 @@
                             }
                         }
                     }">Qty</th>
-                    <th colspan="3" data-options="field:'',align:'center'">Original Currency</th>
-                    <th colspan="2" data-options="field:'',align:'center'">Local Currency</th>
-                    <th rowspan="2" data-options="field:'account_number',width:100, halign:'center', editor: {
+                    <th data-options="field:'price',width:80, halign:'center',align:'right', formatter:priceformat,editor: {type: 'numberbox', 
+                        options: {
+                            required: true,
+                            precision: 4,
+                            readonly: true,
+                            onChange: function(value) {
+                                var dg = $('#dg2');
+                                var row = dg.datagrid('getSelected');
+                                var rowIndex = dg.datagrid('getRowIndex', row);
+
+                                var ed = dg.datagrid('getEditor', {
+                                    index: rowIndex,
+                                    field: 'total'
+                                });
+
+                                var ed2 = dg.datagrid('getEditor', {
+                                    index: rowIndex,
+                                    field: 'qty'
+                                });
+
+                                var qty = $(ed2.target).numberbox('getValue');
+                                $(ed.target).textbox('setValue', (parseFloat(value) * parseFloat(qty)));
+                            }
+                        }}">Price</th>
+                    <th data-options="field:'total',width:120, formatter:priceformat,halign:'center',align:'right',editor: {type: 'numberbox', options: {required: true, readonly: true, precision: 4}}">Amount</th>
+                    <th data-options="field:'account_number',width:100, halign:'center', editor: {
                         type: 'combogrid',
                         options: {
                             url: '<?= base_url('finance/account_coa/reads') ?>',
@@ -279,58 +265,20 @@
                                 $(ed.target).textbox('setValue', rows.account_name);
                             }
                         }}">Account No</th>
-                    <th rowspan="2" data-options="field:'account_name',width:150, editor: {type: 'textbox', options: {readonly: true}}">Account Name</th>
-                    <th rowspan="2" data-options="field:'account_type',width:100, halign:'center', editor: {
-                    type: 'combobox',
-                    options: {
-                        data: [{
-                            'id':'DEBIT'
-                        },{
-                            'id':'CREDIT'
-                        }],
-                        valueField: 'id',
-                        textField: 'id',
-                        prompt: 'Choose Debit/Credit',
-                        panelHeight: 'auto'
-                    }}">Debit/Credit</th>
-                </tr>
-                <tr>
-                    <th data-options="field:'currency',align:'center',width:80, editor: {
-                    type: 'combobox',
-                    options: {
-                        url: '<?= base_url('master/currencies/reads') ?>',
-                        editable:false,
-                        valueField: 'number',
-                        textField: 'number',
-                        prompt: 'Choose Currencies'
-                    }}">Currency</th>
-                    <th data-options="field:'price', width:80, halign:'center', align:'right', formatter:numberformat,editor: {type: 'numberbox', 
+                    <th data-options="field:'account_name',width:150, editor: {type: 'textbox', options: {readonly: true}}">Account Name</th>
+                    <th data-options="field:'account_type',width:100, halign:'center', editor: {
+                        type: 'combobox',
                         options: {
-                            readonly: true,
-                            required: true,
-                            precision: 4,
-                            onChange: function(value) {
-                                var dg = $('#dg2');
-                                var row = dg.datagrid('getSelected');
-                                var rowIndex = dg.datagrid('getRowIndex', row);
-
-                                var ed = dg.datagrid('getEditor', {
-                                    index: rowIndex,
-                                    field: 'total'
-                                });
-
-                                var ed2 = dg.datagrid('getEditor', {
-                                    index: rowIndex,
-                                    field: 'qty'
-                                });
-
-                                var qty = $(ed2.target).numberbox('getValue');
-                                $(ed.target).textbox('setValue', (parseFloat(value) * parseFloat(qty)));
-                            }
-                        }}">Price</th>
-                    <th data-options="field:'total',width:120, formatter:numberformat, halign:'center', align:'right',editor: {type: 'numberbox', options: {required: true, readonly: true, precision: 4}}">Amount</th>
-                    <th data-options="field:'currency_local',align:'center',width:80">Currency</th>
-                    <th data-options="field:'total_local',width:120, formatter:numberformat, halign:'center', align:'right'">Amount</th>
+                            data: [{
+                                'id':'DEBIT'
+                            },{
+                                'id':'CREDIT'
+                            }],
+                            valueField: 'id',
+                            textField: 'id',
+                            prompt: 'Choose Debit/Credit',
+                            panelHeight: 'auto'
+                        }}">Debit/Credit</th>
                 </tr>
             </thead>
         </table>
@@ -341,7 +289,7 @@
             <table id="dg3" class="easyui-datagrid" title="Journal Lists" style="width: 100%;" data-options="singleSelect: true" toolbar="#toolbar3"></table>
 
             <div class="fitem">
-                <b style="width:50%; display:inline-block; padding-left: 50px;">BALANCE TOTAL</b>
+                <b style="width:45%; display:inline-block; padding-left: 50px;">BALANCE TOTAL</b>
                 <input style="width:18%;" id="balance_debit" name="balance_debit" readonly class="easyui-numberbox" data-options="precision:2,groupSeparator:'.', decimalSeparator:','">
                 <input style="width:18%;" id="balance_credit" name="balance_credit" readonly class="easyui-numberbox" data-options="precision:2,groupSeparator:'.', decimalSeparator:','">
             </div>
@@ -352,31 +300,30 @@
                 <div style="width: 100%; float: left;">
                     <div class="fitem">
                         <b style="width:35%; display:inline-block;">SUB TOTAL</b>
-                        <input style="width:60%;" id="total_sub" name="total_sub" disabled class="easyui-numberbox" data-options="precision:2,groupSeparator:','">
+                        <input style="width:60%;" id="total_sub" name="total_sub" readonly class="easyui-numberbox" data-options="precision:2,groupSeparator:','">
                     </div>
                     <div class="fitem">
                         <b style="width:35%; display:inline-block;">VAT</b>
-                        <input style="width:40%;" id="total_vat" name="total_vat" class="easyui-numberbox" data-options="precision:2,groupSeparator:','">
-                        &nbsp; &nbsp; <input type="checkbox" class="easyui-checkbox" id="check_vat" data-options="onChange: check_vat" value="VAT">
+                        <input style="width:60%;" id="total_vat" name="total_vat" readonly class="easyui-numberbox" data-options="precision:2,groupSeparator:','">
                     </div>
                     <div class="fitem">
                         <b style="width:35%; display:inline-block;">PPH</b>
-                        <input style="width:30%;" id="total_pph" name="total_pph" class="easyui-numberbox" data-options="precision:2,groupSeparator:','">
-                        <select style="width:30%;" id="pph" name="pph" class="easyui-combobox" required data-options="prompt: 'PPH'" panelHeight="auto">
+                        <input style="width:30%;" id="total_pph" name="total_pph" disabled class="easyui-numberbox" data-options="precision:2,groupSeparator:','">
+                        <select style="width:30%;" id="pph" name="pph" class="easyui-combobox" data-options="prompt: 'PPH'" panelHeight="auto">
                             <option value="0">NON PPH</option>
                             <option value="5">PPH 21</option>
                             <option value="2">PPH 23</option>
                             <option value="10">PPH 4(2)</option>
-                            <option value="1">OTHER</option>
+                            <option value="10.0">Other Income</option>
                         </select>
                     </div>
                     <div class="fitem">
                         <b style="width:35%; display:inline-block;">GRAND TOTAL</b>
-                        <input style="width:60%;" id="total_grand" name="total_grand" disabled required class="easyui-numberbox" data-options="precision:2,groupSeparator:','">
+                        <input style="width:60%;" id="total_grand" name="total_grand" readonly required class="easyui-numberbox" data-options="precision:2,groupSeparator:','">
                     </div>
-                    <div class="fitem" id="type_selection_dp">
-                        <b style="width:35%; display:inline-block;">DOWN PAYMENT</b>
-                        <input style="width:60%;" id="total_dp" name="total_dp" disabled class="easyui-numberbox" data-options="precision:2,groupSeparator:','">
+                    <div class="fitem">
+                        <b style="width:35%; display:inline-block;">CONVERT IDR</b>
+                        <input style="width:60%;" id="total_local" name="total_local" disabled class="easyui-numberbox" data-options="precision:2,groupSeparator:','">
                     </div>
                 </div>
             </fieldset>
@@ -387,24 +334,13 @@
 <!-- PDF -->
 <iframe id="printout" src="" style="width: 100%;" hidden></iframe>
 <script>
-
-    function check_vat(){
-        var check_vat = $("#check_vat").checkbox('options');
-
-        if(check_vat.checked == true){
-            $("#total_vat").numberbox('enable');
-        }else{
-            $("#total_vat").numberbox('disable');
-        }
-    }
-
     //ADD DATA
     function add() {
         $('#dlg_insert').dialog('open');
         $('#dg2').datagrid('loadData', []);
-        $("#total_vat").numberbox('disable');
+        $('#frm_insert').form('clear');
 
-        var dg = $('#dg2').datagrid({
+        $('#dg2').datagrid({
             onBeforeEdit: function(index, row) {
                 row.editing = true;
                 $(this).datagrid('refreshRow', index);
@@ -420,241 +356,244 @@
         });
 
         $('#dg3').datagrid('loadData', []);
-        $('#frm_insert').form('clear');
 
-        $("#type_selection_others").hide();
-        $("#type_selection_purchase").hide();
-        $("#type_selection_dp").hide();
-
-        $("#type").combobox({
-            readonly: false
-        });
         $("#trans_date").datebox('enable');
-        //$("#family_id").combobox('enable');
-        $("#supplier_id").combobox('enable');
-        $("#por_no").combobox('enable');
-        $("#po_no").combobox('enable');
-        $("#account_purchase_name").textbox('setValue', "PURCHASE");
-        $("#account_pay_name").textbox('setValue', "PAYABLE");
-        $("#account_bal_name").textbox('setValue', "BALANCE");
+        $("#customer_id").combobox('enable');
+        $("#dn_number").combobox('enable');
         $("#preview").linkbutton('enable');
 
-        $("#trans_date").datebox({
-            onChange: function(val) {
-                var trans_date = val;
-                var payment_term = $("#payment_term").numberbox("getValue");
+        $("#account_sales_name").textbox('setValue', "SALES");
+        $("#account_pay_name").textbox('setValue', "PAYABLE");
+        $("#account_bal_name").textbox('setValue', "BALANCE");
 
-                if (payment_term != "") {
-                    $.ajax({
-                        type: "post",
-                        url: "<?= base_url('finance/purchase_invoices/readDueDate/') ?>" + window.btoa(trans_date) + "/" + payment_term,
-                        dataType: "text",
-                        success: function(due_date) {
-                            $("#due_date").datebox('setValue', due_date);
-                        }
-                    });
-                }
+        // $("#trans_date").datebox({
+        //     onChange: function(val) {
+        //         number(val);
+        //     }
+        // });
 
-                number(val);
-            }
-        });
+        $('#customer_id').combogrid({
+            url: '<?= base_url('master/customers/reads') ?>',
+            panelWidth: 420,
+            idField: 'id',
+            textField: 'name',
+            mode: 'remote',
+            fitColumns: true,
+            prompt: "Choose Customer",
+            columns: [
+                [{
+                    field: 'number',
+                    title: 'Customer No',
+                    width: 120
+                }, {
+                    field: 'name',
+                    title: 'Customer Name',
+                    width: 250
+                }, ]
+            ],
+            onSelect: function(index, row) {
+                var trans_date = $("#trans_date").datebox('getValue');
+                number(trans_date, row.nickname);
 
-        $("#type").combobox({
-            onChange: function(t) {
-                var type = $("#type").combobox('getValue');
+                $("#payment_term").numberbox("setValue", row.payment_term);
 
-                if (type == "purchase") {
-                    $("#type_selection_purchase").show();
-                    $("#type_selection_others").hide();
-                    $("#type_selection_dp").hide();
-                    $("#total_dp").numberbox('clear');
-                } else if (type == "dp") {
-                    $("#type_selection_purchase").show();
-                    $("#type_selection_others").hide();
-                    $("#type_selection_dp").show();
+                if (row.vat_status != "VAT") {
+                    $("#taxes").numberbox('setValue', 0);
                 } else {
-                    $("#type_selection_others").show();
-                    $("#type_selection_purchase").hide();
-                    $("#type_selection_dp").hide();
-                    $("#total_dp").numberbox('clear');
+                    $("#taxes").numberbox('setValue', row.vat);
                 }
 
-                //Supplier Invoice Auto
                 $.ajax({
                     type: "post",
-                    url: "<?= base_url('finance/purchase_invoices/numberInvoice/') ?>" + type,
-                    dataType: "html",
-                    success: function(invoice_no) {
-                        $("#invoice_no").textbox('setValue', invoice_no);
+                    url: "<?= base_url('finance/sales_invoices/readDueDate/') ?>" + window.btoa(trans_date) + "/" + row.payment_term,
+                    dataType: "text",
+                    success: function(due_date) {
+                        $("#due_date").datebox('setValue', due_date);
                     }
+                });
+
+                $("#dn_number").combobox({
+                    url: '<?= base_url('finance/sales_invoices/readDelivery?customer_id=') ?>' + row.id,
+                    valueField: 'number',
+                    textField: 'number',
+                    prompt: "Choose Delivery Note"
                 });
             }
         });
     }
 
     function addJournal() {
+        var customer_id = $("#customer_id").combogrid('getValue');
+
         var rows = $('#dg2').datagrid('getRows');
         var taxes = $("#taxes").numberbox('getValue');
         var pphname = $("#pph").combobox('getValue');
-        var check_vat = $("#check_vat").checkbox('options');
-
         var totalrows = rows.length;
 
         var rows2 = $('#dg3').datagrid('getRows');
         var totalrows2 = rows2.length;
         endEditing2();
 
-        if (totalrows > 0) {
-            var data_array = [];
-            var data_array2 = [];
-            var total_sub = 0;
-            for (let i = 0; i < totalrows; i++) {
-                var data = {
-                    account_number: rows[i].account_number,
-                    account_name: rows[i].account_name,
-                    account_type: rows[i].account_type,
-                    total: rows[i].total
+        if(pphname != ""){
+            if (totalrows > 0) {
+                var data_array = [];
+                var data_array2 = [];
+                var total_sub = 0;
+
+                for (let i = 0; i < totalrows; i++) {
+                    var data = {
+                        account_number: rows[i].account_number,
+                        account_name: rows[i].account_name,
+                        account_type: rows[i].account_type,
+                        total: rows[i].total
+                    }
+
+                    if(rows[i].account_type == "DEBIT"){
+                        total_sub -= Math.abs(parseFloat(rows[i].total));
+                    }else{
+                        total_sub += Math.abs(parseFloat(rows[i].total));
+                    }
+                    
+                    data_array.push(data);
                 }
 
-                if(rows[i].account_type == "DEBIT"){
-                    total_sub += Math.abs(parseFloat(rows[i].total));
-                }else{
-                    total_sub -= Math.abs(parseFloat(rows[i].total));
-                }
-
-                data_array.push(data);
-            }
-
-            $("#total_sub").numberbox('setValue', total_sub);
-            
-            if(check_vat.checked == true){
-                var disc_tax = $("#total_vat").numberbox('getValue');
-            }else{
-                var disc_tax = parseFloat(total_sub * (taxes / 100));
+                $("#total_sub").numberbox('setValue', Math.abs(total_sub));
+                var disc_tax = parseFloat(Math.abs(total_sub) * (taxes / 100));
                 $("#total_vat").numberbox('setValue', disc_tax);
+                var total_pph = $("#total_pph").numberbox('getValue');
+                var total_grand = (parseFloat(Math.abs(total_sub)) + parseFloat(disc_tax) - parseFloat(total_pph));
+                $("#total_grand").numberbox('setValue', (total_grand));
+
+                $.ajax({
+                    type: "post",
+                    url: "<?= base_url('finance/sales_invoices/readExchangeRates?customer_id=') ?>" + customer_id,
+                    dataType: "json",
+                    success: function(exchange) {
+                        if (exchange.length > 0) {
+                            $("#total_local").numberbox('setValue', (parseInt(total_grand) * parseInt(exchange[0].selling)));
+                        } else {
+                            $("#total_local").numberbox('setValue', (parseInt(total_grand) * 1));
+                        }
+                    }
+                });
+
+                var pph_val = 0;
+                var vat_val = 0;
+                var arr_pph = ["1154101", "1154103", "1154106"];
+                var arr_ar = ["1121101", "1121102", "1121103"];
+
+                for (let z = 0; z < totalrows2; z++) {
+                    if (rows2[z].account_number == "1154105" || rows2[z].account_number == "2031108") {
+                        var debit = 0;
+                        var credit = disc_tax;
+                        vat_val = 1;
+                    } else {
+                        var debit = rows2[z].debit;
+                        var credit = rows2[z].credit;
+                    }
+
+                    //Other income
+                    if (jQuery.inArray(rows2[z].account_number, arr_pph) >= 0) {
+                        var debit = 0;
+                        var credit = total_pph;
+                        pph_val = 1;
+                    //Other Income
+                    }else if(rows2[z].account_number == "5311006" && rows2[z].flag == "2"){
+                        var debit = total_pph;
+                        var credit = 0;
+                    }
+
+                    if (jQuery.inArray(rows2[z].account_number, arr_ar) >= 0) {
+                        var debit = total_grand;
+                        var credit = 0;
+                    //Other Income
+                    }else if(rows2[z].account_number == "5311006" && rows2[z].flag == "4"){
+                        var debit = 0;
+                        var credit = total_sub;
+                    }
+
+                    var data2 = {
+                        account_number: rows2[z].account_number,
+                        account_name: rows2[z].account_name,
+                        debit: debit,
+                        credit: credit,
+                        flag: rows2[z].flag,
+                    }
+
+                    data_array2.push(data2);
+                }
+
+                if (taxes > 0 && vat_val == 0) {
+                    var data2 = {
+                        account_number: "2031108",
+                        account_name: "TAX",
+                        debit: 0,
+                        credit: disc_tax,
+                        flag: "3",
+                    }
+
+                    data_array2.push(data2);
+                }
+
+                if (total_pph > 0 && pph_val == 0 && pphname == "5") {
+                    var data2 = {
+                        account_number: "1154101",
+                        account_name: "INCOME TAX ART 21",
+                        debit: 0,
+                        credit: total_pph,
+                        flag: "4",
+                    }
+
+                    data_array2.push(data2);
+                }
+
+                if (total_pph > 0 && pph_val == 0 && pphname == "2") {
+                    var data2 = {
+                        account_number: "1154103",
+                        account_name: "INCOME TAX ART 23",
+                        debit: 0,
+                        credit: total_pph,
+                        flag: "4",
+                    }
+
+                    data_array2.push(data2);
+                }
+
+                if (total_pph > 0 && pph_val == 0 && pphname == "10") {
+                    var data2 = {
+                        account_number: "1154106",
+                        account_name: "INCOME TAX ART 4 (2)",
+                        debit: 0,
+                        credit: total_pph,
+                        flag: "4",
+                    }
+
+                    data_array2.push(data2);
+                }
+
+                var jsonData = JSON.stringify(data_array);
+                var jsonData2 = JSON.stringify(data_array2);
+
+                $.ajax({
+                    type: "POST",
+                    url: "<?= base_url('finance/sales_invoices/createJson') ?>",
+                    data: {
+                        jsonData: jsonData,
+                        jsonData2: jsonData2,
+                    },
+                    success: function(response) {
+                        addTable2('<?= base_url('finance/sales_invoices/calculateJournal') ?>');
+
+                        setTimeout(function() {
+                            balance_journal();
+                        }, 2000);
+                    },
+                });
+            } else {
+                toastr.warning("please selections your data in table first");
             }
-
-            var total_pph = $("#total_pph").numberbox('getValue');
-            var total_grand = (parseFloat(total_sub) + parseFloat(disc_tax) - parseFloat(total_pph));
-            $("#total_grand").numberbox('setValue', (total_grand));
-
-            var pph_val = 0;
-            var vat_val = 0;
-            var arr_pph = ["2031101", "2031103", "2031104"];
-            var arr_ap = ["2022101", "2022102", "2022103"];
-
-            for (let z = 0; z < totalrows2; z++) {
-                if (rows2[z].account_number == "1154105") {
-                    var debit = disc_tax;
-                    var credit = 0;
-                    vat_val = 1;
-                } else {
-                    var debit = rows2[z].debit;
-                    var credit = rows2[z].credit;
-                }
-
-                if (jQuery.inArray(rows2[z].account_number, arr_pph) >= 0) {
-                    var debit = 0;
-                    var credit = total_pph;
-                    pph_val = 1;
-                }
-
-                if (jQuery.inArray(rows2[z].account_number, arr_ap) >= 0) {
-                    var debit = 0;
-                    var credit = total_grand;
-                }
-
-                var data2 = {
-                    account_number: rows2[z].account_number,
-                    account_name: rows2[z].account_name,
-                    debit: debit,
-                    credit: credit,
-                    flag: rows2[z].flag,
-                }
-
-                data_array2.push(data2);
-            }
-
-            if (taxes > 0 && vat_val == 0) {
-                var data2 = {
-                    account_number: "1154105",
-                    account_name: "TAX",
-                    debit: disc_tax,
-                    credit: 0,
-                    flag: "3",
-                }
-
-                data_array2.push(data2);
-            }
-
-            if (total_pph > 0 && pph_val == 0 && pphname == "5") {
-                var data2 = {
-                    account_number: "2031101",
-                    account_name: "INCOME TAX ART 21",
-                    debit: 0,
-                    credit: total_pph,
-                    flag: "4",
-                }
-
-                data_array2.push(data2);
-            }
-
-            if (total_pph > 0 && pph_val == 0 && pphname == "1") {
-                var data2 = {
-                    account_number: "2031103",
-                    account_name: "INCOME TAX ART 23",
-                    debit: 0,
-                    credit: total_pph,
-                    flag: "4",
-                }
-
-                data_array2.push(data2);
-            }
-
-            if (total_pph > 0 && pph_val == 0 && pphname == "2") {
-                var data2 = {
-                    account_number: "2031103",
-                    account_name: "INCOME TAX ART 23",
-                    debit: 0,
-                    credit: total_pph,
-                    flag: "4",
-                }
-
-                data_array2.push(data2);
-            }
-
-            if (total_pph > 0 && pph_val == 0 && pphname == "10") {
-                var data2 = {
-                    account_number: "2031104",
-                    account_name: "INCOME TAX ART 4 (2)",
-                    debit: 0,
-                    credit: total_pph,
-                    flag: "4",
-                }
-
-                data_array2.push(data2);
-            }
-
-            var jsonData = JSON.stringify(data_array);
-            var jsonData2 = JSON.stringify(data_array2);
-
-            $.ajax({
-                type: "POST",
-                url: "<?= base_url('finance/purchase_invoices/createJson') ?>",
-                data: {
-                    jsonData: jsonData,
-                    jsonData2: jsonData2,
-                },
-                success: function(response) {
-                    addTable2('<?= base_url('finance/purchase_invoices/calculateJournal') ?>');
-
-                    setTimeout(function() {
-                        balance_journal();
-                    }, 2000);
-                },
-            });
-        } else {
-            toastr.warning("please selections your data in table first");
+        }else{
+            toastr.warning("please select PPH");
         }
     }
 
@@ -716,26 +655,26 @@
                     }
                 }, {
                     field: 'debit',
-                    width: 100,
+                    width: 110,
                     halign: 'center',
                     title: "Debit",
                     formatter: numberformat,
                     editor: {
                         type: 'numberbox',
                         options: {
-                            precision: 2
+                            precision: 4
                         }
                     }
                 }, {
                     field: 'credit',
-                    width: 100,
+                    width: 110,
                     halign: 'center',
                     title: "Credit",
                     formatter: numberformat,
                     editor: {
                         type: 'numberbox',
                         options: {
-                            precision: 2
+                            precision: 4
                         }
                     }
                 }, {
@@ -796,6 +735,7 @@
             $('#dg2').datagrid('appendRow', {
                 "action": 0
             });
+
             editIndex = $('#dg2').datagrid('getRows').length - 1;
             $('#dg2').datagrid('selectRow', editIndex).datagrid('beginEdit', editIndex);
 
@@ -842,17 +782,16 @@
 
                 $.ajax({
                     method: 'post',
-                    url: '<?= base_url('finance/purchase_invoices/deleteSingle') ?>',
+                    url: '<?= base_url('finance/sales_invoices/deleteSingle') ?>',
                     data: {
-                        id: row.id,
+                        id: row.id
                     },
                     success: function(result) {
                         var result = eval('(' + result + ')');
                         toastr.success(result.message);
                     },
                     error: function(jqXHR, textStatus, errorThrown) {
-                        toastr.error(jqXHR.statusText);
-                        $.messager.alert("Error", jqXHR.statusText, 'error');
+                        //toastr.error(jqXHR.statusText);
                     },
                     complete: function(data) {
                         $('#dg').datagrid('reload');
@@ -925,74 +864,49 @@
     function update() {
         var row = $('#dg').datagrid('getSelected');
         if (row) {
-            if(row.status == 0){
+            if (row.status == 0) {
                 if(row.gl_no == null){
                     $('#dlg_insert').dialog('open');
                     $('#frm_insert').form('load', row);
 
-                    $("#type_selection_others").hide();
-                    $("#type_selection_purchase").hide();
-                    $("#type_selection_dp").hide();
-
-                    $("#taxes").numberbox('setValue', row.taxes);
-
-                    $("#type").combobox({
-                        readonly: true
-                    });
                     $("#trans_date").datebox('disable');
-                    //$("#family_id").combobox('disable');
-                    $("#supplier_id").combobox('disable');
-                    $("#por_no").combobox('disable');
-                    $("#po_no").combobox('disable');
+                    $("#customer_id").combobox('disable');
+                    $("#dn_number").combobox('disable');
                     $("#preview").linkbutton('disable');
 
-                    if (row.type == "purchase") {
-                        $("#type_selection_purchase").show();
-                        $("#type_selection_others").hide();
-                        $("#type_selection_dp").hide();
-                        $("#total_dp").numberbox('clear');
-                    } else if (row.type == "dp") {
-                        $("#type_selection_purchase").show();
-                        $("#type_selection_others").hide();
-                        $("#type_selection_dp").show();
-                    } else {
-                        $("#type_selection_others").show();
-                        $("#type_selection_purchase").hide();
-                        $("#type_selection_dp").hide();
-                        $("#total_dp").numberbox('clear');
-                    }
-
-                    $("#family_id").combobox({
-                        url: '<?= base_url('master/item_familys/readNotFg') ?>',
-                        valueField: 'id',
+                    $('#customer_id').combogrid({
+                        url: '<?= base_url('master/customers/reads') ?>',
+                        panelWidth: 420,
+                        idField: 'id',
                         textField: 'name',
-                        prompt: "Choose Product Family",
-                        onLoadSuccess: function(item_family_load) {
-                            $("#family_id").combobox('setValue', row.family_id);
+                        mode: 'remote',
+                        fitColumns: true,
+                        prompt: "Choose Customer",
+                        columns: [
+                            [{
+                                field: 'number',
+                                title: 'Customer No',
+                                width: 120
+                            }, {
+                                field: 'name',
+                                title: 'Customer Name',
+                                width: 250
+                            }, ]
+                        ],
+                        onLoadSuccess: function(customer_id) {
+                            $("#customer_id").combogrid('setValue', row.customer_id);
                         },
-                        onSelect: function(item_family) {
-                            //GET SUPPLIER
-                            $('#supplier_id').combogrid({
-                                url: '<?= base_url('master/supplier_items/readSuppliers?item_family_id=') ?>' + item_family.id,
-                                panelWidth: 420,
-                                idField: 'id',
-                                textField: 'name',
-                                mode: 'remote',
-                                fitColumns: true,
-                                prompt: "Choose Supplier",
-                                columns: [
-                                    [{
-                                        field: 'number',
-                                        title: 'Supplier No',
-                                        width: 120
-                                    }, {
-                                        field: 'name',
-                                        title: 'Supplier Name',
-                                        width: 250
-                                    }, ]
-                                ],
-                                onLoadSuccess: function(item_family_load) {
-                                    $("#supplier_id").combogrid('setValue', row.supplier_id);
+                        onSelect: function(index, customer) {
+                            var trans_date = $("#trans_date").datebox('getValue');
+                            $("#payment_term").numberbox("setValue", customer.payment_term);
+
+                            $("#dn_number").combobox({
+                                url: '<?= base_url('finance/sales_invoices/readDelivery?customer_id=') ?>' + customer.id,
+                                valueField: 'number',
+                                textField: 'number',
+                                prompt: "Choose Delivery Note",
+                                onLoadSuccess: function(delivery_no) {
+                                    $("#dn_number").combobox('setValue', row.dn_number);
                                 },
                             });
                         }
@@ -1000,7 +914,7 @@
 
                     var lastIndex;
                     var dg = $('#dg2').datagrid({
-                        url: '<?= base_url('finance/purchase_invoices/reads/') ?>' + window.btoa(row.number),
+                        url: '<?= base_url('finance/sales_invoices/reads/') ?>' + window.btoa(row.number),
                         onBeforeEdit: function(index, row) {
                             row.editing = true;
                             $(this).datagrid('refreshRow', index);
@@ -1015,17 +929,17 @@
                         },
                     });
 
-                    addTable2('<?= base_url('finance/purchase_invoices/readJournals/') ?>' + window.btoa(row.number));
+                    addTable2('<?= base_url('finance/sales_invoices/readJournals/') ?>' + window.btoa(row.number));
 
                     setTimeout(function() {
                         balance_journal();
                         $("#number").textbox('setValue', row.number);
                     }, 2000);
-                } else {
-                    toastr.error("Cannot Update because this Purchase Invoice has been created in Posting Journal");
+                }else{
+                    toastr.error("Cannot Update because this Sales Invoice has been created in Posting Journal");
                 }
             } else {
-                toastr.error("AP Payment Status is closed");
+                toastr.error("Cannot Update because AR Receipt status is closed");
             }
         } else {
             toastr.warning("Please select one of the data in the table first!", "Information");
@@ -1033,10 +947,10 @@
     }
 
     //NOMOR AUTOMATIC
-    function number(trans_date) {
+    function number(trans_date, nickname) {
         $.ajax({
             type: "post",
-            url: "<?= base_url('finance/purchase_invoices/number/') ?>" + window.btoa(trans_date),
+            url: "<?= base_url('finance/sales_invoices/number/') ?>" + window.btoa(trans_date) + "/" + nickname,
             dataType: "html",
             success: function(result) {
                 $("#number").textbox('setValue', result);
@@ -1045,46 +959,46 @@
     }
 
     function preview() {
-        var por_no = $("#por_no").combobox('getText');
-        var po_no = $("#po_no").combobox('getValue');
+        var customer_id = $("#customer_id").combogrid('getValue');
+        var dn_number = $("#dn_number").combobox('getValue');
         var trans_date = $("#trans_date").datebox('getValue');
-        var invoice_no = $("#invoice_no").textbox('getValue');
+        var due_date = $("#due_date").datebox('getValue');
         var taxes = $("#taxes").numberbox('getValue');
         var journal_type_id = $("#journal_type").combobox('getValue');
 
-        if (trans_date == "" || invoice_no == "" || taxes == "" || journal_type_id == "") {
+        if (dn_number == "" || trans_date == "" || due_date == "" || taxes == "") {
             toastr.info('Please completed your data');
         } else {
             $("#pph").combobox('setValue', "0");
 
             var lastIndex;
-            if (por_no != "") {
-                var dg = $('#dg2').datagrid({
-                    url: '<?= base_url('finance/purchase_invoices/datatablesTemp') ?>?por_no=' + window.btoa(por_no),
-                    onLoadSuccess: function(row) {
-                        $("#total_sub").numberbox('setValue', row.total_sub);
-                        var disc_tax = parseFloat(row.total_sub * (taxes / 100));
-                        $("#total_vat").numberbox('setValue', disc_tax);
-                        var total_grand = (parseFloat(row.total_sub) + parseFloat(disc_tax));
-                        $("#total_grand").numberbox('setValue', (total_grand));
-                        addTable2('<?= base_url('finance/purchase_invoices/readJournal/') ?>' + window.btoa(journal_type_id));
+            var dg = $('#dg2').datagrid({
+                url: '<?= base_url('finance/sales_invoices/datatablesTemp') ?>?dn_number=' + window.btoa(dn_number),
+                onLoadSuccess: function(row) {
+                    $("#total_sub").numberbox('setValue', row.total_sub);
+                    var disc_tax = parseFloat(row.total_sub * (taxes / 100));
+                    $("#total_vat").numberbox('setValue', disc_tax);
+                    $("#total_grand").numberbox('setValue', row.total_sub);
+
+                    $.ajax({
+                        type: "post",
+                        url: "<?= base_url('finance/sales_invoices/readExchangeRates?customer_id=') ?>" + customer_id,
+                        dataType: "json",
+                        success: function(exchange) {
+                            $("#total_local").numberbox('setValue', (row.total_sub * exchange[0].selling));
+                        }
+                    });
+
+                    addTable2('<?= base_url('finance/sales_invoices/readJournal/') ?>' + window.btoa(journal_type_id));
+                },
+                onClickRow: function(rowIndex) {
+                    if (lastIndex != rowIndex) {
+                        $(this).datagrid('endEdit', lastIndex);
+                        $(this).datagrid('beginEdit', rowIndex);
                     }
-                });
-            } else if (po_no != "") {
-                var dg = $('#dg2').datagrid({
-                    url: '<?= base_url('finance/purchase_invoices/datatablesTemp2') ?>?po_no=' + window.btoa(po_no),
-                    onLoadSuccess: function(row) {
-                        $("#total_sub").numberbox('setValue', row.total_sub);
-                        var disc_tax = parseFloat(row.total_sub * (taxes / 100));
-                        $("#total_vat").numberbox('setValue', disc_tax);
-                        var total_grand = (parseFloat(row.total_sub) + parseFloat(disc_tax));
-                        $("#total_grand").numberbox('setValue', (total_grand));
-                        addTable2('<?= base_url('finance/purchase_invoices/readJournal/') ?>' + window.btoa(journal_type_id));
-                    }
-                });
-            } else {
-                toastr.info('Please completed your data');
-            }
+                    lastIndex = rowIndex;
+                },
+            });
         }
     }
 
@@ -1097,45 +1011,50 @@
                     for (var i = 0; i < rows.length; i++) {
                         var row = rows[i];
 
-                        // $.ajax({
-                        //     type: "post",
-                        //     url: "<?= base_url('closing/locks/checkLock') ?>",
-                        //     data: "period=" + row.trans_date + "&menus_id=<?= $menus_id ?>",
-                        //     dataType: "json",
-                        //     success: function (lock) {
-                        //         if(lock.total > 0){
-                        //             toastr.error("This period is not active by Accounting");
-                        //             return false;
-                        //         }
+                        $.ajax({
+                            type: "post",
+                            url: "<?= base_url('closing/locks/checkLock') ?>",
+                            data: "period=" + row.trans_date + "&menus_id=<?= $menus_id ?>",
+                            dataType: "json",
+                            success: function (lock) {
+                                if(lock.total > 0){
+                                    toastr.error("This period is not active by Accounting");
+                                    return false;
+                                }
 
-                                if(row.status == 0){
+                                if (row.status == 0) {
                                     if(row.gl_no == null){
                                         $.ajax({
                                             method: 'post',
-                                            url: '<?= base_url('finance/purchase_invoices/delete') ?>',
+                                            url: '<?= base_url('finance/sales_invoices/delete') ?>',
                                             data: {
-                                                number: row.number
+                                                number: row.number,
+                                                dn_number: row.dn_number,
                                             },
                                             success: function(result) {
                                                 var result = eval('(' + result + ')');
-                                                toastr.success(result.message);
+
+                                                if (result.theme == "success") {
+                                                    toastr.success(result.message);
+                                                } else {
+                                                    toastr.error(result.message);
+                                                }
                                             },
                                             error: function(jqXHR, textStatus, errorThrown) {
                                                 toastr.error(jqXHR.statusText);
-                                                $.messager.alert("Error", jqXHR.statusText, 'error');
                                             },
                                             complete: function(data) {
                                                 $('#dg').datagrid('reload');
                                             }
                                         });
                                     }else{
-                                        toastr.error("Cannot Delete because this Purchase Invoice has been created in Posting Journal");
+                                        toastr.error("Cannot Delete because this Sales Invoice has been created in Posting Journal");
                                     }
                                 } else {
-                                    toastr.error("AP Payment Status is closed");
+                                    toastr.error("Cannot Update because AR Receipt status is closed");
                                 }
-                        //     }
-                        // });
+                            }
+                        });
                     }
                 }
             });
@@ -1151,13 +1070,9 @@
         var filter_trans_date_to = $("#filter_trans_date_to").datebox('getValue');
         var filter_due_date_from = $("#filter_due_date_from").datebox('getValue');
         var filter_due_date_to = $("#filter_due_date_to").datebox('getValue');
-        var filter_family_id = $("#filter_family_id").combobox('getValue');
-        var filter_purchase_invoice = $("#filter_purchase_invoice").combobox('getValue');
-        var filter_purchase_receipt = $("#filter_purchase_receipt").combobox('getValue');
-        var filter_purchase_order = $("#filter_purchase_order").combobox('getValue');
-        var filter_supplier = $("#filter_supplier").combobox('getValue');
-        var filter_status_supplier = $("#filter_status_supplier").combobox('getValue');
-        var filter_invoice_no = $("#filter_invoice_no").combobox('getValue');
+        var filter_sales_invoice = $("#filter_sales_invoice").combobox('getValue');
+        var filter_dn_number = $("#filter_dn_number").combobox('getValue');
+        var filter_customer = $("#filter_customer").combobox('getValue');
         var filter_status = $("#filter_status").combobox('getValue');
 
         var url = "?filter_type=" + window.btoa(filter_type) +
@@ -1165,21 +1080,17 @@
             "&filter_trans_date_to=" + window.btoa(filter_trans_date_to) +
             "&filter_due_date_from=" + window.btoa(filter_due_date_from) +
             "&filter_due_date_to=" + window.btoa(filter_due_date_to) +
-            "&filter_family_id=" + window.btoa(filter_family_id) +
-            "&filter_purchase_invoice=" + window.btoa(filter_purchase_invoice) +
-            "&filter_purchase_receipt=" + window.btoa(filter_purchase_receipt) +
-            "&filter_purchase_order=" + window.btoa(filter_purchase_order) +
-            "&filter_status_supplier=" + window.btoa(filter_status_supplier) +
-            "&filter_invoice_no=" + window.btoa(filter_invoice_no) +
-            "&filter_supplier=" + window.btoa(filter_supplier) +
+            "&filter_sales_invoice=" + window.btoa(filter_sales_invoice) +
+            "&filter_dn_number=" + window.btoa(filter_dn_number) +
+            "&filter_customer=" + window.btoa(filter_customer) +
             "&filter_status=" + window.btoa(filter_status);
 
         $('#dg').datagrid({
-            url: '<?= base_url('finance/purchase_invoices/datatables') ?>' + url
+            url: '<?= base_url('finance/sales_invoices/datatables') ?>' + url
         });
 
         $("#printout").contents().find('html').html("<center><br><br><br><b style='font-size:20px;'>Please Wait...</b></center>");
-        $("#printout").attr('src', '<?= base_url('finance/purchase_invoices/print') ?>' + url);
+        $("#printout").attr('src', '<?= base_url('finance/sales_invoices/print') ?>' + url);
     }
 
     //PRINT PDF
@@ -1194,13 +1105,9 @@
         var filter_trans_date_to = $("#filter_trans_date_to").datebox('getValue');
         var filter_due_date_from = $("#filter_due_date_from").datebox('getValue');
         var filter_due_date_to = $("#filter_due_date_to").datebox('getValue');
-        var filter_family_id = $("#filter_family_id").combobox('getValue');
-        var filter_purchase_invoice = $("#filter_purchase_invoice").combobox('getValue');
-        var filter_purchase_receipt = $("#filter_purchase_receipt").combobox('getValue');
-        var filter_purchase_order = $("#filter_purchase_order").combobox('getValue');
-        var filter_supplier = $("#filter_supplier").combobox('getValue');
-        var filter_status_supplier = $("#filter_status_supplier").combobox('getValue');
-        var filter_invoice_no = $("#filter_invoice_no").combobox('getValue');
+        var filter_sales_invoice = $("#filter_sales_invoice").combobox('getValue');
+        var filter_dn_number = $("#filter_dn_number").combobox('getValue');
+        var filter_customer = $("#filter_customer").combobox('getValue');
         var filter_status = $("#filter_status").combobox('getValue');
 
         var url = "?filter_type=" + window.btoa(filter_type) +
@@ -1208,32 +1115,23 @@
             "&filter_trans_date_to=" + window.btoa(filter_trans_date_to) +
             "&filter_due_date_from=" + window.btoa(filter_due_date_from) +
             "&filter_due_date_to=" + window.btoa(filter_due_date_to) +
-            "&filter_family_id=" + window.btoa(filter_family_id) +
-            "&filter_purchase_invoice=" + window.btoa(filter_purchase_invoice) +
-            "&filter_purchase_receipt=" + window.btoa(filter_purchase_receipt) +
-            "&filter_purchase_order=" + window.btoa(filter_purchase_order) +
-            "&filter_status_supplier=" + window.btoa(filter_status_supplier) +
-            "&filter_invoice_no=" + window.btoa(filter_invoice_no) +
-            "&filter_supplier=" + window.btoa(filter_supplier) +
+            "&filter_sales_invoice=" + window.btoa(filter_sales_invoice) +
+            "&filter_dn_number=" + window.btoa(filter_dn_number) +
+            "&filter_customer=" + window.btoa(filter_customer) +
             "&filter_status=" + window.btoa(filter_status);
 
-        window.location.assign('<?= base_url('finance/purchase_invoices/print/excel') ?>' + url);
+        window.location.assign('<?= base_url('finance/sales_invoices/print/excel') ?>' + url);
     }
 
     function excelDetail() {
-        //EXPORT TO EXCEL
         var filter_type = $("#filter_type").combobox('getValue');
         var filter_trans_date_from = $("#filter_trans_date_from").datebox('getValue');
         var filter_trans_date_to = $("#filter_trans_date_to").datebox('getValue');
         var filter_due_date_from = $("#filter_due_date_from").datebox('getValue');
         var filter_due_date_to = $("#filter_due_date_to").datebox('getValue');
-        var filter_family_id = $("#filter_family_id").combobox('getValue');
-        var filter_purchase_invoice = $("#filter_purchase_invoice").combobox('getValue');
-        var filter_purchase_receipt = $("#filter_purchase_receipt").combobox('getValue');
-        var filter_purchase_order = $("#filter_purchase_order").combobox('getValue');
-        var filter_supplier = $("#filter_supplier").combobox('getValue');
-        var filter_status_supplier = $("#filter_status_supplier").combobox('getValue');
-        var filter_invoice_no = $("#filter_invoice_no").combobox('getValue');
+        var filter_sales_invoice = $("#filter_sales_invoice").combobox('getValue');
+        var filter_dn_number = $("#filter_dn_number").combobox('getValue');
+        var filter_customer = $("#filter_customer").combobox('getValue');
         var filter_status = $("#filter_status").combobox('getValue');
 
         var url = "?filter_type=" + window.btoa(filter_type) +
@@ -1241,32 +1139,23 @@
             "&filter_trans_date_to=" + window.btoa(filter_trans_date_to) +
             "&filter_due_date_from=" + window.btoa(filter_due_date_from) +
             "&filter_due_date_to=" + window.btoa(filter_due_date_to) +
-            "&filter_family_id=" + window.btoa(filter_family_id) +
-            "&filter_purchase_invoice=" + window.btoa(filter_purchase_invoice) +
-            "&filter_purchase_receipt=" + window.btoa(filter_purchase_receipt) +
-            "&filter_purchase_order=" + window.btoa(filter_purchase_order) +
-            "&filter_status_supplier=" + window.btoa(filter_status_supplier) +
-            "&filter_invoice_no=" + window.btoa(filter_invoice_no) +
-            "&filter_supplier=" + window.btoa(filter_supplier) +
+            "&filter_sales_invoice=" + window.btoa(filter_sales_invoice) +
+            "&filter_dn_number=" + window.btoa(filter_dn_number) +
+            "&filter_customer=" + window.btoa(filter_customer) +
             "&filter_status=" + window.btoa(filter_status);
 
-        window.location.assign('<?= base_url('finance/purchase_invoices/printDetail/excel') ?>' + url);
+        window.location.assign('<?= base_url('finance/sales_invoices/printDetail/excel') ?>' + url);
     }
 
     function excelJournal() {
-        //EXPORT TO EXCEL
         var filter_type = $("#filter_type").combobox('getValue');
         var filter_trans_date_from = $("#filter_trans_date_from").datebox('getValue');
         var filter_trans_date_to = $("#filter_trans_date_to").datebox('getValue');
         var filter_due_date_from = $("#filter_due_date_from").datebox('getValue');
         var filter_due_date_to = $("#filter_due_date_to").datebox('getValue');
-        var filter_family_id = $("#filter_family_id").combobox('getValue');
-        var filter_purchase_invoice = $("#filter_purchase_invoice").combobox('getValue');
-        var filter_purchase_receipt = $("#filter_purchase_receipt").combobox('getValue');
-        var filter_purchase_order = $("#filter_purchase_order").combobox('getValue');
-        var filter_supplier = $("#filter_supplier").combobox('getValue');
-        var filter_status_supplier = $("#filter_status_supplier").combobox('getValue');
-        var filter_invoice_no = $("#filter_invoice_no").combobox('getValue');
+        var filter_sales_invoice = $("#filter_sales_invoice").combobox('getValue');
+        var filter_dn_number = $("#filter_dn_number").combobox('getValue');
+        var filter_customer = $("#filter_customer").combobox('getValue');
         var filter_status = $("#filter_status").combobox('getValue');
 
         var url = "?filter_type=" + window.btoa(filter_type) +
@@ -1274,27 +1163,32 @@
             "&filter_trans_date_to=" + window.btoa(filter_trans_date_to) +
             "&filter_due_date_from=" + window.btoa(filter_due_date_from) +
             "&filter_due_date_to=" + window.btoa(filter_due_date_to) +
-            "&filter_family_id=" + window.btoa(filter_family_id) +
-            "&filter_purchase_invoice=" + window.btoa(filter_purchase_invoice) +
-            "&filter_purchase_receipt=" + window.btoa(filter_purchase_receipt) +
-            "&filter_purchase_order=" + window.btoa(filter_purchase_order) +
-            "&filter_status_supplier=" + window.btoa(filter_status_supplier) +
-            "&filter_invoice_no=" + window.btoa(filter_invoice_no) +
-            "&filter_supplier=" + window.btoa(filter_supplier) +
+            "&filter_sales_invoice=" + window.btoa(filter_sales_invoice) +
+            "&filter_dn_number=" + window.btoa(filter_dn_number) +
+            "&filter_customer=" + window.btoa(filter_customer) +
             "&filter_status=" + window.btoa(filter_status);
 
-        window.location.assign('<?= base_url('finance/purchase_invoices/printJournal/excel') ?>' + url);
+        window.location.assign('<?= base_url('finance/sales_invoices/printJournal/excel') ?>' + url);
     }
 
-    function print_invoicing() {
-        var filter_purchase_invoice = $("#filter_purchase_invoice").combobox('getValue');
-
-        if (filter_purchase_invoice == "") {
-            toastr.warning("Please select Purchase Invoice No!");
+    //PRINT INVOICE
+    function print_invoice() {
+        var invoice_no = $("#filter_sales_invoice").combobox('getValue');
+        if (invoice_no == "") {
+            toastr.warning("Please select Sales Order Invoice!", "Information");
         } else {
-            window.open("<?= base_url('finance/purchase_invoices/print_invoicing/') ?>" + window.btoa(filter_purchase_invoice), "_blank", 'location=yes,height=600,width=1200,scrollbars=yes,status=yes');
+            window.open("<?= base_url('finance/sales_invoices/print_dn/') ?>" + window.btoa(invoice_no), '_blank', 'location=yes,height=570,width=1000,scrollbars=yes,status=yes');
         }
+    }
 
+    //PRINT COMMERCIAL INVOICE
+    function print_commercial() {
+        var invoice_no = $("#filter_sales_invoice").combobox('getValue');
+        if (invoice_no == "") {
+            toastr.warning("Please select Sales Order Invoice!", "Information");
+        } else {
+            window.open("<?= base_url('finance/sales_invoices/print_commercial/') ?>" + window.btoa(invoice_no), '_blank', 'location=yes,height=570,width=1000,scrollbars=yes,status=yes');
+        }
     }
 
     //RELOAD
@@ -1333,7 +1227,7 @@
         }
     }
 
-    function buttonEdit(value, row, index) {
+    function removebtn(value, row, index) {
         if (row.editing) {
             var s = '<a href="javascript:void(0)" class="btn btn-success btn-sm" style="pointer-events:auto; opacity:1;" onclick="saverow(this)">Save</a> ';
             var c = '<a href="javascript:void(0)" class="btn btn-danger btn-sm" style="pointer-events:auto; opacity:1;" onclick="cancelrow(this)">Cancel</a>';
@@ -1346,11 +1240,9 @@
     }
 
     $(function() {
-        $("#total_pph").numberbox('disable');
-
         //SETTING DATAGRID EASYUI
         $('#dg').datagrid({
-            url: '<?= base_url('finance/purchase_invoices/datatables') ?>',
+            url: '<?= base_url('finance/sales_invoices/datatables') ?>',
             pagination: true,
             rownumbers: true,
             fit: true,
@@ -1361,20 +1253,25 @@
             onExpandRow: function(index, row) {
                 var ddv = $(this).datagrid('getRowDetail', index).find('table.ddv');
                 ddv.datagrid({
-                    url: '<?= base_url('finance/purchase_invoices/datatables/details?number=') ?>' + window.btoa(row.number),
+                    url: '<?= base_url('finance/sales_invoices/datatables/details?number=') ?>' + window.btoa(row.number),
                     singleSelect: true,
                     rownumbers: true,
                     columns: [
                         [{
-                            field: 'por_no',
-                            title: 'Purchase Receipt',
+                            field: 'dn_number',
+                            title: 'Delivery Note',
                             halign: 'center',
                             width: 150
                         }, {
-                            field: 'po_no',
-                            title: 'Purchase Order',
+                            field: 'so_number',
+                            title: 'Sales Order',
                             halign: 'center',
                             width: 150
+                        }, {
+                            field: 'customer_po',
+                            title: 'Customer PO',
+                            halign: 'center',
+                            width: 120
                         }, {
                             field: 'item_no',
                             title: 'Product No',
@@ -1408,14 +1305,14 @@
                             width: 150,
                             halign: 'center',
                             align: 'right',
-                            formatter: numberformat
+                            formatter: priceformat
                         }, {
                             field: 'total',
                             title: 'Total',
                             width: 150,
                             halign: 'center',
                             align: 'right',
-                            formatter: numberformat
+                            formatter: priceformat
                         }]
                     ],
                     onResize: function() {
@@ -1437,18 +1334,14 @@
                 text: 'Save All',
                 iconCls: 'icon-ok',
                 handler: function() {
-                    var type = $("#type").combobox('getValue');
                     var trans_date = $("#trans_date").datebox('getValue');
                     var number = $("#number").textbox('getValue');
-                    var family_id = $("#family_id").combogrid('getValue');
-                    var supplier_id = $("#supplier_id").combogrid('getValue');
-                    var journal_type_id = $("#journal_type").combobox('getValue');
-                    var invoice_no = $("#invoice_no").textbox('getValue');
+                    var customer_id = $("#customer_id").combogrid('getValue');
                     var taxes = $("#taxes").numberbox('getValue');
                     var payment_term = $("#payment_term").numberbox('getValue');
                     var due_date = $("#due_date").datebox('getValue');
-                    var voucher = $("#voucher").textbox('getValue');
                     var remarks = $("#remarks").textbox('getValue');
+                    var journal_type_id = $("#journal_type").combobox('getValue');
 
                     var balance_debit = $("#balance_debit").numberbox('getValue');
                     var balance_credit = $("#balance_credit").numberbox('getValue');
@@ -1457,26 +1350,25 @@
                     var total_vat = $("#total_vat").numberbox('getValue');
                     var total_pph = $("#total_pph").numberbox('getValue');
                     var total_grand = $("#total_grand").numberbox('getValue');
-                    var total_dp = $("#total_dp").numberbox('getValue');
+                    var total_local = $("#total_local").numberbox('getValue');
 
-                    // $.ajax({
-                    //     type: "post",
-                    //     url: "<?= base_url('closing/locks/checkLock') ?>",
-                    //     data: "period=" + trans_date + "&menus_id=<?= $menus_id ?>",
-                    //     dataType: "json",
-                    //     success: function (lock) {
-                    //         if(lock.total > 0){
-                    //             toastr.error("This period is not active by Accounting");
-                    //             return false;
-                    //         }
+                    $.ajax({
+                        type: "post",
+                        url: "<?= base_url('closing/locks/checkLock') ?>",
+                        data: "period=" + trans_date + "&menus_id=<?= $menus_id ?>",
+                        dataType: "json",
+                        success: function (lock) {
+                            if(lock.total > 0){
+                                toastr.error("This period is not active by Accounting");
+                                return false;
+                            }
 
                             if (parseFloat(balance_debit) == parseFloat(balance_credit)) {
-                                if (por_no == "" || invoice_no == "" || supplier_id == "" || total_grand == "") {
+                                if (due_date == "" || trans_date == "" || customer_id == "" || journal_type_id == "") {
                                     toastr.error("please complete your input data");
                                 } else {
                                     $('#dg2').datagrid('acceptChanges');
-
-                                    var rows = $('#dg2').datagrid('getRows');;
+                                    var rows = $('#dg2').datagrid('getRows');
                                     var totalrows = rows.length;
 
                                     var rows2 = $('#dg3').datagrid('getRows');
@@ -1485,7 +1377,7 @@
 
                                     $.ajax({
                                         type: "post",
-                                        url: "<?= base_url('finance/purchase_invoices/deleteJournal') ?>",
+                                        url: "<?= base_url('finance/sales_invoices/deleteJournal') ?>",
                                         data: "number=" + number,
                                         dataType: "json",
                                         success: function(response) {
@@ -1507,41 +1399,36 @@
                                                     if (value < 100) {
                                                         value = Math.floor((jml / total) * 100);
                                                         var i = (jml - 1);
-                                                        
+
                                                         $.ajax({
                                                             type: "post",
-                                                            url: '<?= base_url('finance/purchase_invoices/create') ?>',
+                                                            url: '<?= base_url('finance/sales_invoices/create') ?>',
                                                             data: {
-                                                                type: type,
                                                                 trans_date: trans_date,
                                                                 number: number,
-                                                                family_id: family_id,
-                                                                supplier_id: supplier_id,
+                                                                customer_id: customer_id,
                                                                 journal_type_id: journal_type_id,
-                                                                invoice_no: invoice_no,
                                                                 taxes: taxes,
                                                                 payment_term: payment_term,
                                                                 due_date: due_date,
-                                                                voucher: voucher,
                                                                 remarks: remarks,
-                                                                //total_sub: total_sub,
+                                                                total_sub: total_sub,
                                                                 total_vat: total_vat,
                                                                 total_pph: total_pph,
-                                                                //total_grand: total_grand,
-                                                                total_dp: total_dp,
+                                                                total_grand: total_grand,
+                                                                total_local: total_local,
                                                                 id: json[i].id,
-                                                                por_no: json[i].por_no,
-                                                                po_no: json[i].po_no,
+                                                                dn_number: json[i].dn_number,
+                                                                so_number: json[i].so_number,
+                                                                customer_po: json[i].customer_po,
                                                                 item_id: json[i].item_id,
-                                                                item_no: json[i].item_number,
+                                                                item_no: json[i].item_no,
                                                                 item_name: json[i].item_name,
                                                                 uom: json[i].uom,
                                                                 currency: json[i].currency,
                                                                 qty: json[i].qty,
                                                                 price: json[i].price,
-                                                                discount: json[i].discount,
                                                                 total: json[i].total,
-                                                                total_idr: json[i].total_local,
                                                                 account_number: json[i].account_number,
                                                                 account_type: json[i].account_type,
                                                             },
@@ -1572,7 +1459,7 @@
                                                     for (let z = 0; z < totalrows2; z++) {
                                                         $.ajax({
                                                             type: "post",
-                                                            url: '<?= base_url('finance/purchase_invoices/createJournals') ?>',
+                                                            url: '<?= base_url('finance/sales_invoices/createJournals') ?>',
                                                             data: {
                                                                 number: number,
                                                                 account_number: rows2[z].account_number,
@@ -1592,9 +1479,6 @@
                                                         });
                                                     }
                                                 }
-
-                                                $('#dg').datagrid('reload');
-                                                $('#dlg_insert').dialog('close');
                                             } else {
                                                 toastr.warning("please selections your data in table first");
                                             }
@@ -1604,8 +1488,8 @@
                             } else {
                                 toastr.error("Balance Debit Cannot match on Balance Credit");
                             }
-                    //     }
-                    // });
+                        }
+                    });
                 }
             }]
         });
@@ -1631,77 +1515,11 @@
             }
         });
 
-        $("#filter_family_id").combobox({
-            url: '<?= base_url('master/item_familys/readNotFg') ?>',
+        $("#filter_customer").combobox({
+            url: '<?= base_url('master/customers/reads') ?>',
             valueField: 'id',
             textField: 'name',
-            prompt: "Choose Product Family",
-            icons: [{
-                iconCls: 'icon-clear',
-                handler: function(e) {
-                    $(e.data.target).combobox('clear').combobox('textbox').focus();
-                }
-            }],
-            onSelect: function(item_family) {
-                $("#filter_purchase_invoice").combobox({
-                    url: '<?= base_url('finance/purchase_invoices/readPurchaseInvoice/') ?>' + item_family.id,
-                    valueField: 'number',
-                    textField: 'number',
-                    prompt: "Choose Purchase Invoice No",
-                    icons: [{
-                        iconCls: 'icon-clear',
-                        handler: function(e) {
-                            $(e.data.target).combobox('clear').combobox('textbox').focus();
-                        }
-                    }],
-                });
-
-                $("#filter_purchase_receipt").combobox({
-                    url: '<?= base_url('finance/purchase_invoices/readPurchaseReceipt/') ?>' + item_family.id,
-                    valueField: 'por_no',
-                    textField: 'por_no',
-                    prompt: "Choose Purchase Receipt",
-                    icons: [{
-                        iconCls: 'icon-clear',
-                        handler: function(e) {
-                            $(e.data.target).combobox('clear').combobox('textbox').focus();
-                        }
-                    }],
-                });
-
-                $("#filter_purchase_order").combobox({
-                    url: '<?= base_url('finance/purchase_invoices/readPurchaseOrder/') ?>' + item_family.id,
-                    valueField: 'po_no',
-                    textField: 'po_no',
-                    prompt: "Choose Purchase Order",
-                    icons: [{
-                        iconCls: 'icon-clear',
-                        handler: function(e) {
-                            $(e.data.target).combobox('clear').combobox('textbox').focus();
-                        }
-                    }],
-                });
-
-                $("#filter_invoice_no").combobox({
-                    url: '<?= base_url('finance/purchase_invoices/readInvoice/') ?>' + item_family.id,
-                    valueField: 'invoice_no',
-                    textField: 'invoice_no',
-                    prompt: "Choose Invoice No",
-                    icons: [{
-                        iconCls: 'icon-clear',
-                        handler: function(e) {
-                            $(e.data.target).combobox('clear').combobox('textbox').focus();
-                        }
-                    }],
-                });
-            }
-        });
-
-        $("#filter_supplier").combobox({
-            url: '<?= base_url('master/suppliers/reads') ?>',
-            valueField: 'id',
-            textField: 'name',
-            prompt: "Choose Supplier",
+            prompt: "Choose Customers",
             icons: [{
                 iconCls: 'icon-clear',
                 handler: function(e) {
@@ -1710,77 +1528,30 @@
             }],
         });
 
-        $("#family_id").combobox({
-            url: '<?= base_url('master/item_familys/readNotFg') ?>',
-            valueField: 'id',
-            textField: 'name',
-            prompt: "Choose Product Family",
-            onSelect: function(item_family) {
-                //GET SUPPLIER
-                $('#supplier_id').combogrid({
-                    url: '<?= base_url('master/supplier_items/readSuppliers?item_family_id=') ?>' + item_family.id,
-                    panelWidth: 420,
-                    idField: 'id',
-                    textField: 'name',
-                    mode: 'remote',
-                    fitColumns: true,
-                    prompt: "Choose Supplier",
-                    columns: [
-                        [{
-                            field: 'number',
-                            title: 'Supplier No',
-                            width: 120
-                        }, {
-                            field: 'name',
-                            title: 'Supplier Name',
-                            width: 250
-                        }, ]
-                    ],
-                    onSelect: function(index, row) {
-                        var trans_date = $("#trans_date").datebox('getValue');
-                        var type = $("#type").combobox('getValue');
+        $("#filter_sales_invoice").combobox({
+            url: '<?= base_url('finance/sales_invoices/readSalesInvoices') ?>',
+            valueField: 'number',
+            textField: 'number',
+            prompt: "Choose Sales Invoice No",
+            icons: [{
+                iconCls: 'icon-clear',
+                handler: function(e) {
+                    $(e.data.target).combobox('clear').combobox('textbox').focus();
+                }
+            }],
+        });
 
-                        $("#payment_term").numberbox("setValue", row.payment_term);
-                        $("#taxes").numberbox("setValue", row.vat);
-
-                        $.ajax({
-                            type: "post",
-                            url: "<?= base_url('finance/purchase_invoices/readDueDate/') ?>" + window.btoa(trans_date) + "/" + row.payment_term,
-                            dataType: "text",
-                            success: function(due_date) {
-                                $("#due_date").datebox('setValue', due_date);
-                            }
-                        });
-
-                        if (type == "purchase") {
-                            $("#por_no").combobox({
-                                url: '<?= base_url('finance/purchase_invoices/readReceipt?supplier_id=') ?>' + row.id + "&item_family_id=" + item_family.id,
-                                valueField: 'receipt_no',
-                                textField: 'receipt_no',
-                                multiple: true,
-                                prompt: "Choose Purchase Order Receipts",
-                            });
-                        } else if (type == "dp") {
-                            $("#por_no").combobox({
-                                url: '<?= base_url('finance/purchase_invoices/readReceipt/dp?supplier_id=') ?>' + row.id + "&item_family_id=" + item_family.id,
-                                valueField: 'receipt_no',
-                                textField: 'receipt_no',
-                                prompt: "Choose Purchase Order Receipts",
-                                onSelect: function(row) {
-                                    $("#total_dp").numberbox('setValue', row.total_dp);
-                                }
-                            });
-                        } else {
-                            $("#po_no").combobox({
-                                url: '<?= base_url('purchase/purchase_order_others/readPono/') ?>' + row.id,
-                                valueField: 'po_no',
-                                textField: 'po_no',
-                                prompt: "Choose Purchase Order Misc",
-                            });
-                        }
-                    }
-                });
-            }
+        $("#filter_dn_number").combobox({
+            url: '<?= base_url('finance/sales_invoices/readDeliveryNote') ?>',
+            valueField: 'dn_number',
+            textField: 'dn_number',
+            prompt: "Choose Delivery Note",
+            icons: [{
+                iconCls: 'icon-clear',
+                handler: function(e) {
+                    $(e.data.target).combobox('clear').combobox('textbox').focus();
+                }
+            }],
         });
 
         $("#journal_type").combobox({
@@ -1795,27 +1566,34 @@
 
         $("#pph").combobox({
             onChange: function(e) {
+                var customer_id = $("#customer_id").combogrid('getValue');
                 var total_sub = $("#total_sub").numberbox('getValue');
                 var total_vat = $("#total_vat").numberbox('getValue');
                 var pph = $("#pph").combobox('getValue');
-
-                if(pph != "1"){
-                    var total_pph = parseFloat(total_sub * parseFloat(parseInt(pph) / 100));
-                    $("#total_pph").numberbox('setValue', total_pph);
-                }else{
-                    $("#total_pph").numberbox('enable');
-                    $("#total_pph").numberbox('setValue', 0);
-                }
+                var total_pph = parseFloat(total_sub * parseFloat(parseInt(pph) / 100));
+                $("#total_pph").numberbox('setValue', total_pph);
 
                 var grand_total = (parseFloat(total_sub) + parseFloat(total_vat) - parseFloat(total_pph));
                 $("#total_grand").numberbox('setValue', grand_total);
+
+                $.ajax({
+                    type: "post",
+                    url: "<?= base_url('finance/sales_invoices/readExchangeRates?customer_id=') ?>" + customer_id,
+                    dataType: "json",
+                    success: function(exchange) {
+                        if (exchange) {
+                            $("#total_local").numberbox('setValue', (grand_total * exchange[0].selling));
+                        }
+                    }
+                });
             }
-        });
+        })
+
     });
 
     function priceformat(value, row) {
         if (row.currency == "USD") {
-            var digits = 2;
+            var digits = 4;
             var currency = 'USD';
             var format = "en-IN";
         } else if (row.currency == "JPY") {
@@ -1833,24 +1611,7 @@
         }
 
         if (value != null) {
-            const formatter = new Intl.NumberFormat(format, {
-                style: 'currency',
-                currency: currency,
-                minimumFractionDigits: digits
-            });
-            return "<b>" + formatter.format(value) + "</b>";
-        }
-    }
-
-    function priceformatlocal(value, row) {
-        var digits = 0;
-        var currency = 'IDR';
-        var format = "id-ID";
-
-        if (value != null) {
-            const formatter = new Intl.NumberFormat(format, {
-                style: 'currency',
-                currency: currency,
+            const formatter = new Intl.NumberFormat('id-ID', {
                 minimumFractionDigits: digits
             });
             return "<b>" + formatter.format(value) + "</b>";
@@ -1874,28 +1635,6 @@
 
     function statusStyle(value, row, index) {
         if (value == 0) {
-            return 'background-color:#C8FFCC;';
-        } else {
-            return 'background-color:#FFC8C8;';
-        }
-    }
-
-    function statusformatInv(value, row) {
-        var invoice = value.split('-');
-        if (invoice[0] == "INVTMP") {
-            return "<b style='color:green;'>TEMPORARY</b>";
-        } else if (invoice[0] == "INVWDP") {
-            return "<b style='color:green;'>DOWN PAYMENT</b>";
-        } else {
-            return "<b style='color:red;'>CLOSE</b>";
-        }
-    }
-
-    function statusStyleInv(value, row, index) {
-        var invoice = value.split('-');
-        if (invoice[0] == "INVTMP") {
-            return 'background-color:#C8FFCC;';
-        } else if (invoice[0] == "INVWDP") {
             return 'background-color:#C8FFCC;';
         } else {
             return 'background-color:#FFC8C8;';

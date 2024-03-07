@@ -149,12 +149,13 @@ class Item_rm extends CI_Controller
                 'uom' => $data->val($i, 4),
                 'item_category_id' => $data->val($i, 5),
                 'item_family_id' => $data->val($i, 6),
-                'item_sub_family_id' => $data->val($i, 7),
-                'account_number' => $data->val($i, 8),
-                'account_name' => $data->val($i, 9),
-                'description' => $data->val($i, 10),
-                'supply' => $data->val($i, 11),
-                'status' => $data->val($i, 12)
+                'color' => $data->val($i, 7),
+                'item_sub_family_id' => $data->val($i, 8),
+                'account_number' => $data->val($i, 9),
+                'account_name' => $data->val($i, 10),
+                'description' => $data->val($i, 11),
+                'supply' => $data->val($i, 12),
+                'status' => $data->val($i, 13)
             );
         }
         $datas['total'] = count($datas);
@@ -229,6 +230,7 @@ class Item_rm extends CI_Controller
                     "uom" => $data['uom'],
                     "item_category_id" => $data['item_category_id'],
                     "item_family_id" => $data['item_family_id'],
+                    "color" => $data['color'],
                     "item_sub_family_id" => $data['item_sub_family_id'],
                     "account_number" => $data['account_number'],
                     "account_name" => $data['account_name'],
@@ -295,6 +297,7 @@ class Item_rm extends CI_Controller
                 <th>UOM</th>
                 <th>Category</th>
                 <th>Product Family</th>
+                <th>Color</th>
                 <th>Product Family Sub</th>
                 <th>Account No.</th>
                 <th>Account Name</th>
@@ -312,6 +315,7 @@ class Item_rm extends CI_Controller
                         <td>' . $data['uom'] . '</td>
                         <td>' . $data['item_category_name'] . '</td>
                         <td>' . $data['item_family_name'] . '</td>
+                        <td>' . $data['color'] . '</td>
                         <td>' . $data['item_sub_family_number'] . '</td>
                         <td>' . $data['account_number'] . '</td>
                         <td>' . $data['account_name'] . '</td>

@@ -1,21 +1,34 @@
-<!-- <div id="dlg_help" class="easyui-dialog" title="About Menu" data-options="closed: true,modal:true" style="width: 800px; height: 500px; left: 10px; top: 20px;">
-    <div class="easyui-accordion" style="width:100%;">
-        <div title="Add New" style="padding: 20px;">
-            <b>Form Data</b>
+<div id="dlg_help" class="easyui-dialog" title="About Menu" data-options="closed: true,modal:true" style="width: 800px; height: 500px; left: 10px; top: 20px;">
+    <div class="easyui-accordion" style="width:100%; height: 100%;">
+        <div title="RELATION" style="padding: 20px;">
             <ul>
                 <li>The Data Customers is taken from <b>Master Data > Marketing > Customers</b></li>
+                <li>The Data Division is taken from <b>Master Data > General Master > Division</b></li>
                 <li>The Data Plants is taken from the results of Customer selection</li>
                 <li>Departement, Shipping Address and Attention to is taken from the results of Plant Selection</li>
+                <li>The Data Product No is taken from <b>Master Data > Marketing > Customer Items</b> by Type = 'RM'</li>
+                <li>Qty Delivery is taken from the Result Product No and SUM Qty from <b>Customer Order > Delivery Order</b></li>
+                <li>The Data Taxes is taken from <b>Master Data > Marketing > Customers</b> field taxes</li>
             </ul>
-            <b>Form Sales Order Lists</b>
+        </div>
+        <div title="CONDITION" style="padding: 20px;">
             <ul>
-                <li>The Data Products is taken from <b>Master Data > Marketing > Customer Items</b> by Item Finish Good Type is "FG"</li>
-                <li>The Data Plants is taken from the results of Customer selection</li>
-                <li>Departement, Shipping Address and Attention to is taken from the results of Plant Selection</li>
+                <li>If Status <b style="color: green">OPEN</b> then data not created in <b>Delivery Notes</b></li>
+                <li>If Status <b style="color: red">CLOSE</b> then data has been created in <b>Delivery Notes</b></li>
+            </ul>
+        </div>
+        <div title="FORMULATION" style="padding: 20px;">
+            <ul>
+                <li>This <b>OS SO</b> value is the result of the (Qty - Delivery)</li>
+                <li>This <b>Total Price</b> value is the result of the (Qty * Price)</li>
+                <li>This <b>Sub Total</b> value is the result of calculating the entire data table</li>
+                <li>This <b>Tax</b> value is the result of the (Sub Total * (taxes / 100))</li>
+                <li>This <b>PPH</b> value is the result of the (Sub Total + Taxes * (pph / 100))</li>
+                <li>This <b>Grand Total</b> value is the result of the (Sub Total + Taxes + PPh)</li>
             </ul>
         </div>
     </div>
-</div> -->
+</div>
 
 <!-- TABLE DATAGRID -->
 <table id="dg" class="easyui-datagrid" style="width:99.5%;" toolbar="#toolbar">
@@ -88,7 +101,7 @@
             </div>
         </fieldset>
         <?= $button ?>
-        <!-- <a href="javascript:void(0)" class="easyui-linkbutton" data-options="plain:true" onclick="$('#dlg_help').dialog('open');"><i class="fa fa-info"></i> Help</a> -->
+        <a href="javascript:void(0)" class="easyui-linkbutton" data-options="plain:true" onclick="$('#dlg_help').dialog('open');"><i class="fa fa-info"></i> Help</a>
     </div>
 </div>
 
@@ -397,12 +410,17 @@
                                     index: rowIndex,
                                     field: 'currency'
                                 });
+                                var ed6 = dg.datagrid('getEditor', {
+                                    index: rowIndex,
+                                    field: 'delivery'
+                                });
 
                                 $(ed.target).textbox('setValue', rows.number);
                                 $(ed2.target).textbox('setValue', rows.name);
                                 $(ed3.target).textbox('setValue', rows.uom);
                                 $(ed4.target).numberbox('setValue', rows.price);
                                 $(ed5.target).textbox('setValue', rows.currency);
+                                $(ed6.target).textbox('setValue', rows.delivery);
                             }
                         }
                     }
@@ -539,6 +557,7 @@
                         type: 'numberbox',
                         options: {
                             readonly: true,
+                            required: true,
                             precision: 2
                         }
                     }

@@ -411,8 +411,8 @@ class Supplier_items extends CI_Controller
                     <td>' . $data['supplier_number'] . '</td>
                     <td>' . $data['supplier_name'] . '</td>
                     <td>' . $data['item_rm_id'] . '</td>
-                    <td>' . $data['item_rm_number'] . '</td>
-                    <td>' . $data['item_rm_name'] . '</td>
+                    <td style="mso-number-format:\@;">' . $data['item_rm_number'] . '</td>
+                    <td style="mso-number-format:\@;">' . $data['item_rm_name'] . '</td>
                     <td>' . $data['maker'] . '</td>
                     <td>' . $data['item_family_name'] . '</td>
                     <td>' . $data['mpq'] . '</td>

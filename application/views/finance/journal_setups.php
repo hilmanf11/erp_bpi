@@ -1,3 +1,14 @@
+<div id="dlg_help" class="easyui-dialog" title="About Menu" data-options="closed: true,modal:true" style="width: 800px; height: 500px; left: 10px; top: 20px;">
+    <div class="easyui-accordion" style="width:100%; height: 100%;">
+        <div title="RELATIONS" style="padding: 20px;">
+            <ul>
+                <li>The Data Journal Name is taken from <b>Master Data > Accounting & Finance > Journal Type</b></li>
+                <li>The Data Account No is taken from <b>Master Data > Accounting & Finance > Chart of Account</b></li>
+            </ul>
+        </div>
+    </div>
+</div>
+
 <!-- TABLE DATAGRID -->
 <table id="dg" class="easyui-treegrid" style="width:99.5%;" toolbar="#toolbar">
     <thead>
@@ -24,6 +35,7 @@
 <!-- TOOLBAR DATAGRID -->
 <div id="toolbar" style="height: 35px;">
     <?= $button ?>
+    <a href="javascript:void(0)" class="easyui-linkbutton" data-options="plain:true" onclick="$('#dlg_help').dialog('open');"><i class="fa fa-info"></i> Help</a>
 </div>
 
 <div id="toolbar2">
@@ -348,6 +360,7 @@
                 handler: function() {
                     var journal_type_id = $("#journal_type_id").combobox('getValue');
 
+                    $('#dg2').datagrid('acceptChanges');
                     var rows = $('#dg2').datagrid('getRows');
                     var totalrows = rows.length;
                     endEditing();

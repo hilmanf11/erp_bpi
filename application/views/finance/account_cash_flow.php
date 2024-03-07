@@ -1,24 +1,16 @@
-<div id="dlg_help" class="easyui-dialog" title="About Menu" data-options="closed: true,modal:true" style="width: 800px; height: 500px; left: 10px; top: 20px;">
-    <div class="easyui-accordion" style="width:100%; height: 100%;">
-        <div title="RELATIONS" style="padding: 20px;">
-            <ul>
-                <li>The Data Group is taken from <b>Master Data > Accounting & Finance > Account Groups</b></li>
-            </ul>
-        </div>
-    </div>
-</div>
-
 <!-- TABLE DATAGRID -->
 <table id="dg" class="easyui-datagrid" style="width:99.5%;" toolbar="#toolbar">
     <thead>
         <tr>
             <th rowspan="2" field="ck" checkbox="true"></th>
-            <th rowspan="2" data-options="field:'group_name',width:100,align:'left'">
-                <div style="text-align: center;">Group Name</div>
+            <th rowspan="2" data-options="field:'number',width:100,align:'left'">
+                <div style="text-align: center;">Code</div>
             </th>
-            <th rowspan="2" data-options="field:'number',width:80,halign:'center'">Code</th>
-            <th rowspan="2" data-options="field:'name',width:200,halign:'center'">Name</th>
-            <th rowspan="2" data-options="field:'description',width:150,halign:'center'">Description</th>
+            <th rowspan="2" data-options="field:'name_eng',width:100,halign:'center'">English Name</th>
+            <th rowspan="2" data-options="field:'name_idn',width:150,halign:'center'">Indonesia Name</th>
+            <th rowspan="2" data-options="field:'account_number',width:150,halign:'center'"> Account No</th>
+            <th rowspan="2" data-options="field:'account_name',width:150,halign:'center'"> Account Name</th>
+            <th rowspan="2" data-options="field:'status',width:100,halign:'center'"> Index by Code</th>
             <th colspan="2" data-options="field:'',width:100,halign:'center'"> Created</th>
             <th colspan="2" data-options="field:'',width:100,halign:'center'"> Updated</th>
         </tr>
@@ -33,7 +25,6 @@
 <!-- TOOLBAR DATAGRID -->
 <div id="toolbar" style="height: 35px;">
     <?= $button ?>
-    <a href="javascript:void(0)" class="easyui-linkbutton" data-options="plain:true" onclick="$('#dlg_help').dialog('open');"><i class="fa fa-info"></i> Help</a>
 </div>
 <!-- DIALOG SAVE AND UPDATE -->
 <div id="dlg_insert" class="easyui-dialog" title="Add New" data-options="closed: true,modal:true" style="width: 400px; padding:10px; top: 20px;">
@@ -41,20 +32,24 @@
         <fieldset style="width:100%; border:1px solid #d0d0d0; margin-bottom: 10px; border-radius:4px; float: left;">
             <legend><b>Form Data</b></legend>
             <div class="fitem">
-                <span style="width:35%; display:inline-block;">Group</span>
-                <input style="width:200px;" name="account_group_id" id="account_group_id" required="" class="easyui-combobox">
-            </div>
-            <div class="fitem">
                 <span style="width:35%; display:inline-block;">Code</span>
-                <input style="width:30%;" name="number" id="number" required="" class="easyui-textbox" readonly>
+                <input style="width:100px;" name="number" id="number" required="" class="easyui-textbox">
             </div>
             <div class="fitem">
-                <span style="width:35%; display:inline-block;">Name</span>
-                <input style="width:60%;" name="name" id="name" required="" class="easyui-textbox">
+                <span style="width:35%; display:inline-block;">English Name</span>
+                <input style="width:60%;" name="name_eng" id="name_eng" required="" class="easyui-textbox">
             </div>
             <div class="fitem">
-                <span style="width:35%; display:inline-block;">Description</span>
-                <input style="width:60%;" name="description" id="description" class="easyui-textbox">
+                <span style="width:35%; display:inline-block;">Indonesia Name</span>
+                <input style="width:60%;" name="name_idn" id="name_idn" required="" class="easyui-textbox">
+            </div>
+            <div class="fitem">
+                <span style="width:35%; display:inline-block;">Account No</span>
+                <input style="width:60%;" name="account_number" id="account_number" required="" class="easyui-combogrid">
+            </div>
+            <div class="fitem">
+                <span style="width:35%; display:inline-block;">Index By Name</span>
+                <input style="width:30%;" name="status" id="status" required="" class="easyui-textbox">
             </div>
         </fieldset>
     </form>
@@ -79,19 +74,19 @@
     </div>
 </div>
 <!-- PDF -->
-<iframe id="printout" src="<?= base_url('finance/account_group_details/print') ?>" style="width: 100%;" hidden></iframe>
+<iframe id="printout" src="<?= base_url('finance/account_cash_flow/print') ?>" style="width: 100%;" hidden></iframe>
 <script>
     //ADD DATA
     function add() {
         $('#dlg_insert').dialog('open');
-        url_save = '<?= base_url('finance/account_group_details/create') ?>';
+        url_save = '<?= base_url('finance/account_cash_flow/create') ?>';
         $('#frm_insert').form('clear');
-        
+
         $.ajax({
-            type : "post",
-            url : "<?= base_url('finance/account_group_details/autoid')?>",
-            dataType : "html",
-            success : function(response){
+            type: "post",
+            url: "<?= base_url('finance/account_cash_flow/autoid') ?>",
+            dataType: "html",
+            success: function(response) {
                 $('#number').textbox('setValue', response);
             }
         });
@@ -102,7 +97,7 @@
         if (row) {
             $('#dlg_insert').dialog('open');
             $('#frm_insert').form('load', row);
-            url_save = '<?= base_url('finance/account_group_details/update') ?>?id=' + btoa(row.id);
+            url_save = '<?= base_url('finance/account_cash_flow/update') ?>?id=' + btoa(row.id);
         } else {
             toastr.warning("Please select one of the data in the table first!", "Information");
         }
@@ -117,7 +112,7 @@
                         var row = rows[i];
                         $.ajax({
                             method: 'post',
-                            url: '<?= base_url('finance/account_group_details/delete') ?>',
+                            url: '<?= base_url('finance/account_cash_flow/delete') ?>',
                             data: {
                                 id: row.id
                             },
@@ -140,12 +135,12 @@
         }
     }
     // UPLOAD DATA
-        function upload() {
+    function upload() {
         $('#dlg_upload').dialog('open');
     }
     // DOWNLOAD
     function download_excel() {
-        window.location.assign('<?= base_url('template/tmp_account_group_details.xls') ?>');
+        window.location.assign('<?= base_url('template/tmp_account_cash_flow.xls') ?>');
     }
     //PRINT PDF
     function pdf() {
@@ -153,7 +148,7 @@
     }
     //PRINT EXCEL
     function excel() {
-        window.location.assign('<?= base_url('finance/account_group_details/print/excel') ?>');
+        window.location.assign('<?= base_url('finance/account_cash_flow/print/excel') ?>');
     }
     //RELOAD
     function reload() {
@@ -162,7 +157,7 @@
     $(function() {
         //SETTING DATAGRID EASYUI
         $('#dg').datagrid({
-            url: '<?= base_url('finance/account_group_details/datatables') ?>',
+            url: '<?= base_url('finance/account_cash_flow/datatables') ?>',
             pagination: true,
             clientPaging: false,
             remoteFilter: true,
@@ -172,12 +167,31 @@
             pageSize: 20,
         }).datagrid('enableFilter');
 
-        $('#account_group_id').combobox({
-            url: '<?= base_url('finance/account_groups/reads') ?>', // URL to your PHP script
-            valueField: 'id',
-            textField: 'name',
-            prompt: 'Choose Account Group',
+        $('#account_number').combogrid({
+            url: '<?= base_url('finance/account_cash_flow/getCombogridData') ?>',
+            panelWidth: 350,
+            idField: 'account_number',
+            textField: 'account_name',
+            mode: 'remote',
+            fitColumns: true,
+            prompt: "Choose Account No",
+            columns: [
+                [{
+                    field: 'account_number',
+                    title: 'Account No',
+                    width: 100
+                }, {
+                    field: 'account_name',
+                    title: 'Account Name',
+                    width: 200
+                }]
+            ],
+            onSelect: function(record) {
+                console.log('Selected Record:', record);
+            }
         });
+
+
         //SAVE DATA
         $('#dlg_insert').dialog({
             buttons: [{
@@ -196,7 +210,7 @@
                             } else {
                                 toastr.error(result.message, result.title);
                             }
-                            
+
                             $('#dlg_insert').dialog('close');
                             $('#dg').datagrid('reload');
                         }
@@ -209,14 +223,14 @@
             buttons: [{
                 text: 'List Failed',
                 handler: function() {
-                    window.open('<?= base_url('finance/account_group_details/uploadDownloadFailed') ?>', '_blank');
+                    window.open('<?= base_url('finance/account_cash_flow/uploadDownloadFailed') ?>', '_blank');
                 }
             }, {
                 text: 'Upload',
                 iconCls: 'icon-ok',
                 handler: function() {
                     $('#frm_upload').form('submit', {
-                        url: '<?= base_url('finance/account_group_details/upload') ?>',
+                        url: '<?= base_url('finance/account_cash_flow/upload') ?>',
                         onSubmit: function() {
                             if ($(this).form('validate') == false) {
                                 return $(this).form('validate');
@@ -231,7 +245,7 @@
                             $.messager.progress('close');
                             //Clear File
                             $.ajax({
-                                url: "<?= base_url('finance/account_group_details/uploadclearFailed') ?>"
+                                url: "<?= base_url('finance/account_cash_flow/uploadclearFailed') ?>"
                             });
                             var json = eval('(' + result + ')');
                             requestData(json.total, json);
@@ -246,7 +260,7 @@
                                     $.ajax({
                                         type: "POST",
                                         async: true,
-                                        url: "<?= base_url('finance/account_group_details/uploadCreate') ?>",
+                                        url: "<?= base_url('finance/account_cash_flow/uploadCreate') ?>",
                                         data: {
                                             "data": json[number - 1]
                                         },
@@ -264,7 +278,7 @@
                                                 $.ajax({
                                                     type: "POST",
                                                     async: true,
-                                                    url: "<?= base_url('finance/account_group_details/uploadcreateFailed') ?>",
+                                                    url: "<?= base_url('finance/account_cash_flow/uploadcreateFailed') ?>",
                                                     data: {
                                                         data: json[number - 1],
                                                         message: result.message

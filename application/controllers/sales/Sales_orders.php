@@ -34,11 +34,12 @@ class Sales_orders extends CI_Controller
     public function readItemFg($customer_id)
     {
         $post = isset($_POST['q']) ? $_POST['q'] : "";
-        $send = $this->crud->query("SELECT b.id, b.number, b.name, b.number_customer, a.price, c.currency, b.uom
+        $send = $this->crud->query("SELECT b.id, b.number, b.name, b.number_customer, a.price, c.currency, b.uom, COALESCE(SUM(d.qty_del), 0) as delivery
             FROM customer_items a 
             JOIN item_fg b ON a.item_fg_id = b.id and b.type = 'FG'
             JOIN customers c ON a.customer_id = c.id
-            WHERE a.customer_id = '$customer_id' and (b.number LIKE '%$post%' or b.name LIKE '%$post%')");
+            LEFT JOIN delivery_orders d ON b.id = d.item_fg_id and d.status = 0 and c.id = d.customer_id
+            WHERE a.customer_id = '$customer_id' and (b.number LIKE '%$post%' or b.name LIKE '%$post%') GROUP BY b.number");
         echo json_encode($send);
     }
 

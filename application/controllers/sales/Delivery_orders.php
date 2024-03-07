@@ -28,83 +28,128 @@ class Delivery_orders extends CI_Controller
         }
     }
 
-    public function readSalesOrderDeliveries()
+    public function readSalesOrderDeliveries($sales_order)
     {
-        $delivery_date = $this->input->post('delivery_date');
-        $send = $this->crud->query("SELECT * FROM sales_order_deliveries WHERE trans_date = '$delivery_date' and status = '0'");
-        echo json_encode($send);
+        if($sales_order == "FG"){
+            $send = $this->crud->query("SELECT DISTINCT trans_date FROM sales_order_deliveries WHERE `status` = '0'");
+            echo json_encode($send);
+        }else{
+            $send = $this->crud->query("SELECT DISTINCT trans_date FROM sales_order_delivery_rm WHERE `status` = '0'");
+            echo json_encode($send);
+        }
     }
 
-    public function readsC($delivery_date)
+    public function readsC($sales_order, $delivery_date)
     {
         $delivery_date = base64_decode($delivery_date);
-        $send = $this->crud->query("SELECT c.id, c.name
-            FROM sales_orders a
-            LEFT JOIN sales_order_deliveries b ON a.sales_order_no = b.sales_order_no and b.trans_date = '$delivery_date'
-            JOIN customers c ON a.customer_id = c.id
-            JOIN production_schedules d ON a.sales_order_no = d.so_number
-            WHERE a.status = 0 GROUP BY c.id");
-        echo json_encode($send);
+        
+        if($sales_order == "FG"){
+            $send = $this->crud->query("SELECT c.id, c.name, c.number
+                FROM sales_orders a
+                JOIN sales_order_deliveries b ON a.sales_order_no = b.sales_order_no and b.status = 0
+                JOIN customers c ON a.customer_id = c.id
+                JOIN production_schedules d ON a.sales_order_no = d.so_number
+                WHERE a.status = 0 and b.trans_date = '$delivery_date' GROUP BY c.id");
+            echo json_encode($send);
+        }else{
+            $send = $this->crud->query("SELECT c.id, c.name, c.number
+                FROM sales_order_rm a
+                JOIN sales_order_delivery_rm b ON a.sales_order_no = b.sales_order_no and b.status = 0
+                JOIN customers c ON a.customer_id = c.id
+                WHERE a.status = 0 and b.trans_date = '$delivery_date' GROUP BY c.id");
+            echo json_encode($send);
+        }
     }
 
-    public function readsCustOrderNo($customer_id, $delivery_date)
+    public function readsCustOrderNo($sales_order, $customer_id, $delivery_date)
     {
         $delivery_date = base64_decode($delivery_date);
         $customer_id = base64_decode($customer_id);
 
-       $send = $this->crud->query("SELECT a.customer_order_no 
-            FROM sales_orders a 
-            JOIN customers c ON a.customer_id = c.id
-            LEFT JOIN sales_order_deliveries b ON a.sales_order_no = b.sales_order_no and b.trans_date = '$delivery_date'
-            WHERE a.customer_id= '$customer_id' and a.status = 0 GROUP BY a.customer_order_no");
-        echo json_encode($send);
+        if($sales_order == "FG"){
+            $send = $this->crud->query("SELECT a.customer_order_no 
+                    FROM sales_orders a 
+                    JOIN customers c ON a.customer_id = c.id
+                    JOIN sales_order_deliveries b ON a.sales_order_no = b.sales_order_no and b.status = 0
+                    WHERE a.customer_id= '$customer_id' and a.status = 0 and b.trans_date = '$delivery_date' GROUP BY a.customer_order_no");
+                echo json_encode($send);
+        }else{
+            $send = $this->crud->query("SELECT a.customer_order_no 
+                    FROM sales_order_rm a 
+                    JOIN customers c ON a.customer_id = c.id
+                    JOIN sales_order_delivery_rm b ON a.sales_order_no = b.sales_order_no and b.status = 0
+                    WHERE a.customer_id= '$customer_id' and a.status = 0 and b.trans_date = '$delivery_date' GROUP BY a.customer_order_no");
+                echo json_encode($send);
+        }
     }
 
-    public function number($delivery_order_date)
+    public function number($delivery_order_date, $customer_no)
     {
-        $datenow    = "DO" . date("ymd", strtotime(base64_decode($delivery_order_date)));
+        $datenow    = "DO" . $customer_no . date("ym", strtotime(base64_decode($delivery_order_date)));
         $sqlGetID   = $this->db->query("SELECT max(`delivery_order_no`) as kode FROM delivery_orders WHERE `delivery_order_no` like '%$datenow%'");
         $rowID      = $sqlGetID->row();
         $kode       = $rowID->kode;
         if ($kode == NULL) {
-            $autoID = sprintf("%03s", $kode + 1);
+            $autoID = sprintf("%04s", $kode + 1);
         } else {
             $urutan = (int) substr($kode, -3);
             $urutan++;
-            $autoID = sprintf("%03s", $urutan);
+            $autoID = sprintf("%04s", $urutan);
         }
         echo $datenow . $autoID;
     }
 
-    public function datatablesTemp($delivery_date, $customer_id, $customer_order_no)
+    public function datatablesTemp($sales_order, $delivery_date, $customer_id, $customer_order_no)
     {
         $delivery_date = base64_decode($delivery_date);
         $customer_id = base64_decode($customer_id);
         $customer_order_no = explode(",", base64_decode($customer_order_no));
 
-        $this->db->select('b.item_fg_id, d.number as item_fg_number, d.name as item_fg_name, 
-            b.customer_order_no,
-            b.sales_order_no,
-            d.uom, 
-            b.qty as qty_so, 
-            (b.qty - COALESCE(SUM(c.qty_del), 0)) as qty_remain,
-            COALESCE(SUM(c.qty_del), 0) as qty_do,
-            COALESCE(a.qty, 0) as qty_del,
-            COALESCE(SUM(e.qty), 0) as stock,
-            ((b.qty - COALESCE(SUM(c.qty_del), 0)) - a.qty) as stock_bal');
-        $this->db->from('sales_orders b');
-        $this->db->join('sales_order_deliveries a', 'a.sales_order_no = b.sales_order_no and a.item_fg_id = b.item_fg_id and a.customer_id = b.customer_id', 'left');
-        $this->db->join('delivery_orders c', 'b.sales_order_no = c.sales_order_no and b.item_fg_id = c.item_fg_id and b.customer_id = c.customer_id', 'left');
-        $this->db->join('item_fg d', 'b.item_fg_id = d.id');
-        $this->db->join('scan_item_receipts_fg e', 'a.sales_order_no = e.so_number', 'left');
-        $this->db->where('b.customer_id', $customer_id);
-        $this->db->where_in('b.customer_order_no', $customer_order_no);
-        $this->db->group_by('b.item_fg_id');
-        $this->db->group_by('b.sales_order_no');
-        $this->db->order_by('b.item_fg_id', 'asc');
+        if($sales_order == "FG"){
+            $this->db->select('b.item_fg_id, d.number as item_fg_number, d.name as item_fg_name, 
+                b.customer_order_no,
+                b.sales_order_no,
+                d.uom, 
+                b.qty as qty_so, 
+                (b.qty - COALESCE(SUM(c.qty_del), 0)) as qty_remain,
+                COALESCE(SUM(c.qty_del), 0) as qty_do,
+                COALESCE(a.qty, 0) as qty_del,
+                COALESCE(SUM(e.qty), 0) as stock,
+                ((b.qty - COALESCE(SUM(c.qty_del), 0)) - a.qty) as stock_bal');
+            $this->db->from('sales_orders b');
+            $this->db->join('sales_order_deliveries a', 'a.sales_order_no = b.sales_order_no and a.item_fg_id = b.item_fg_id and a.customer_id = b.customer_id');
+            $this->db->join('delivery_orders c', 'b.sales_order_no = c.sales_order_no and b.item_fg_id = c.item_fg_id and b.customer_id = c.customer_id', 'left');
+            $this->db->join('item_fg d', 'b.item_fg_id = d.id');
+            $this->db->join('scan_item_receipts_fg e', 'a.sales_order_no = e.so_number', 'left');
+            $this->db->where('b.customer_id', $customer_id);
+            $this->db->where_in('b.customer_order_no', $customer_order_no);
+            $this->db->group_by('b.item_fg_id');
+            $this->db->group_by('b.sales_order_no');
+            $this->db->order_by('b.item_fg_id', 'asc');
+        }else{
+            $this->db->select('b.item_fg_id, d.number as item_fg_number, d.name as item_fg_name, 
+                b.customer_order_no,
+                b.sales_order_no,
+                d.uom, 
+                b.qty as qty_so, 
+                (b.qty - COALESCE(SUM(c.qty_del), 0)) as qty_remain,
+                COALESCE(SUM(c.qty_del), 0) as qty_do,
+                COALESCE(a.qty, 0) as qty_del,
+                COALESCE(SUM(e.qty), 0) as stock,
+                ((b.qty - COALESCE(SUM(c.qty_del), 0)) - a.qty) as stock_bal');
+            $this->db->from('sales_order_rm b');
+            $this->db->join('sales_order_delivery_rm a', 'a.sales_order_no = b.sales_order_no and a.item_fg_id = b.item_fg_id and a.customer_id = b.customer_id');
+            $this->db->join('delivery_orders c', 'b.sales_order_no = c.sales_order_no and b.item_fg_id = c.item_fg_id and b.customer_id = c.customer_id', 'left');
+            $this->db->join('item_fg d', 'b.item_fg_id = d.id');
+            $this->db->join('scan_item_receipts_fg e', 'a.sales_order_no = e.so_number', 'left');
+            $this->db->where('b.customer_id', $customer_id);
+            $this->db->where_in('b.customer_order_no', $customer_order_no);
+            $this->db->group_by('b.item_fg_id');
+            $this->db->group_by('b.sales_order_no');
+            $this->db->order_by('b.item_fg_id', 'asc');
+        }
         
         $records = $this->db->get()->result_array();
-
         echo json_encode($records);
     }
 
@@ -133,7 +178,6 @@ class Delivery_orders extends CI_Controller
             $this->db->select("a.*, b.name as customer_name");
             $this->db->from('delivery_orders a');
             $this->db->join('customers b', 'a.customer_id = b.id');
-            $this->db->join('sales_orders c', 'a.sales_order_no = c.sales_order_no and a.item_fg_id = c.item_fg_id and a.customer_id = c.customer_id');
             if ($filter_from != "" && $filter_to != "") {
                 $this->db->where('a.delivery_order_date >=', $filter_from);
                 $this->db->where('a.delivery_order_date <=', $filter_to);
@@ -142,7 +186,7 @@ class Delivery_orders extends CI_Controller
             $this->db->like('a.delivery_order_no', $filter_delivery_order_no);
             $this->db->like('a.sales_order_no', $filter_sales_order_no);
             $this->db->like('a.item_fg_id', $filter_item_fg);
-            $this->db->like('c.customer_order_no', $filter_customer_order_no);
+            $this->db->like('a.customer_order_no', $filter_customer_order_no);
             $this->db->like('a.status', $filter_status);
             $this->db->group_by('a.delivery_order_no');
             $this->db->order_by('a.status', 'ASC');
@@ -165,10 +209,9 @@ class Delivery_orders extends CI_Controller
         if ($this->input->get()) {
             $delivery_order_no = base64_decode($this->input->get('delivery_order_no'));
 
-            $this->db->select('a.*, b.number as item_fg_number, b.name as item_fg_name, c.customer_order_no');
+            $this->db->select('a.*, b.number as item_fg_number, b.name as item_fg_name');
             $this->db->from('delivery_orders a');
             $this->db->join('item_fg b', 'a.item_fg_id = b.id');
-            $this->db->join('sales_orders c', 'a.sales_order_no = c.sales_order_no and a.item_fg_id = c.item_fg_id and a.customer_id = c.customer_id');
             $this->db->where('a.delivery_order_no', $delivery_order_no);
             $this->db->order_by('b.number', 'ASC');
             $records = $this->db->get()->result_array();
@@ -268,11 +311,10 @@ class Delivery_orders extends CI_Controller
         //Loop Page
         $no = 1;
         for ($i = 0; $i < $page; $i++) {
-            $this->db->select('a.*, b.number as item_fg_number, b.name as item_fg_name, c.name as customer_name, d.customer_order_no');
+            $this->db->select('a.*, b.number as item_fg_number, b.name as item_fg_name, c.name as customer_name');
             $this->db->from('delivery_orders a');
             $this->db->join('item_fg b', 'a.item_fg_id = b.id');
             $this->db->join('customers c', 'a.customer_id = c.id');
-            $this->db->join('sales_orders d', 'a.sales_order_no = d.sales_order_no and a.item_fg_id = d.item_fg_id and a.customer_id = d.customer_id');
             $this->db->where('a.delivery_order_no', $delivery_order_no);
             $this->db->order_by('b.number', 'asc');
             $this->db->limit(10, ($i * 10));
@@ -415,11 +457,10 @@ class Delivery_orders extends CI_Controller
         $this->db->from('config');
         $config = $this->db->get()->row();
 
-        $this->db->select("a.*, b.name as customer_name, c.number as item_fg_number, c.name as item_fg_name, d.customer_order_no");
+        $this->db->select("a.*, b.name as customer_name, c.number as item_fg_number, c.name as item_fg_name");
         $this->db->from('delivery_orders a');
         $this->db->join('customers b', 'a.customer_id = b.id');
         $this->db->join('item_fg c', 'a.item_fg_id = c.id');
-        $this->db->join('sales_orders d', 'a.sales_order_no = d.sales_order_no and a.item_fg_id = d.item_fg_id and a.customer_id = d.customer_id');
         if ($filter_from != "" && $filter_to != "") {
             $this->db->where('a.delivery_order_date >=', $filter_from);
             $this->db->where('a.delivery_order_date <=', $filter_to);

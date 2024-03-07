@@ -9,18 +9,18 @@
             <th rowspan="2" data-options="field:'account_number',width:100,halign:'center'">Account Code</th>
             <th rowspan="2" data-options="field:'account_name',width:150,halign:'center'">Account Name</th>
             <!-- <th rowspan="2" data-options="field:'closing_jurnal',width:150,halign:'center'">Closing Jurnal</th> -->
-            <th colspan="3" data-options="field:'',width:150,halign:'center'"> ORIGINAL CURRENCY</th>
-            <th colspan="3" data-options="field:'',width:150,halign:'center'"> LOCAL CURRENCY</th>
+            <th colspan="3" data-options="field:'',width:150,halign:'center'"> Original Currency</th>
+            <th colspan="3" data-options="field:'',width:150,halign:'center'"> Local Currency</th>
             <th colspan="2" data-options="field:'',width:100,halign:'center'"> Created</th>
             <th colspan="2" data-options="field:'',width:100,halign:'center'"> Updated</th>
         </tr>
         <tr>
             <th data-options="field:'original_currency',width:100,align:'center'">Currency</th>
-            <th data-options="field:'original_debit',width:100,align:'center'">Debit</th>
-            <th data-options="field:'original_kredit',width:100,align:'center'">Credit</th>
+            <th data-options="field:'original_debit',width:150,halign:'center',align:'right',formatter: priceformat">Debit</th>
+            <th data-options="field:'original_kredit',width:150,halign:'center',align:'right',formatter: priceformat">Credit</th>
             <th data-options="field:'local_currency',width:100,align:'center'">Currency</th>
-            <th data-options="field:'local_debit',width:100,align:'center'">Debit</th>
-            <th data-options="field:'local_kredit',width:100,align:'center'">Credit</th>
+            <th data-options="field:'local_debit',width:150,halign:'center',align:'right',formatter: priceformatlocal">Debit</th>
+            <th data-options="field:'local_kredit',width:150,halign:'center',align:'right',formatter: priceformatlocal">Credit</th>
             <th data-options="field:'created_by',width:100,align:'center'"> By</th>
             <th data-options="field:'created_date',width:150,align:'center'"> Date</th>
             <th data-options="field:'updated_by',width:100,align:'center'"> By</th>
@@ -58,35 +58,35 @@
             <fieldset style="border:1px solid #d0d0d0; border-radius: 4px; margin-bottom: 10px;">
                 <legend><b>Origial Currency</b></legend>
                 <div class="fitem">
-                <span style="width:35%; display:inline-block;">Currency</span>
-                <input style="width:150px;" name="original_currency" id="original_currency" required="" class="easyui-combobox">
-            </div>
-            <div class="fitem">
-                <span style="width:35%; display:inline-block;">Debit</span>
-                <input style="width:60%;" name="original_debit" id="original_debit" class="easyui-textbox">
-            </div>
-            <div class="fitem">
-                <span style="width:35%; display:inline-block;">Credit</span>
-                <input style="width:60%;" name="original_kredit" id="original_kredit" class="easyui-textbox">
-            </div>
-        </fieldset>
+                    <span style="width:35%; display:inline-block;">Currency</span>
+                    <input style="width:150px;" name="original_currency" id="original_currency" required="" class="easyui-combobox">
+                </div>
+                <div class="fitem">
+                    <span style="width:35%; display:inline-block;">Debit</span>
+                    <input style="width:60%;" name="original_debit" id="original_debit" class="easyui-textbox">
+                </div>
+                <div class="fitem">
+                    <span style="width:35%; display:inline-block;">Credit</span>
+                    <input style="width:60%;" name="original_kredit" id="original_kredit" class="easyui-textbox">
+                </div>
+            </fieldset>
         </div>
         <div style="width:50%; float: left; box-sizing: border-box; margin-bottom: 10px;">
             <fieldset style="border:1px solid #d0d0d0; border-radius: 4px; margin-bottom: 10px;">
                 <legend><b>Local Currency</b></legend>
                 <div class="fitem">
-                <span style="width:35%; display:inline-block;">Currency</span>
-                <input style="width:150px;" name="local_currency" id="local_currency" required="" class="easyui-combobox">
-            </div>
-            <div class="fitem">
-                <span style="width:35%; display:inline-block;">Debit</span>
-                <input style="width:60%;" name="local_debit" id="local_debit" class="easyui-textbox">
-            </div>
-            <div class="fitem">
-                <span style="width:35%; display:inline-block;">Credit</span>
-                <input style="width:60%;" name="local_kredit" id="local_kredit" class="easyui-textbox">
-            </div>
-        </fieldset>
+                    <span style="width:35%; display:inline-block;">Currency</span>
+                    <input style="width:150px;" name="local_currency" id="local_currency" required="" class="easyui-combobox">
+                </div>
+                <div class="fitem">
+                    <span style="width:35%; display:inline-block;">Debit</span>
+                    <input style="width:60%;" name="local_debit" id="local_debit" class="easyui-textbox">
+                </div>
+                <div class="fitem">
+                    <span style="width:35%; display:inline-block;">Credit</span>
+                    <input style="width:60%;" name="local_kredit" id="local_kredit" class="easyui-textbox">
+                </div>
+            </fieldset>
         </div>
     </form>
 </div>
@@ -117,12 +117,12 @@
         $('#dlg_insert').dialog('open');
         url_save = '<?= base_url('finance/account_coa/create') ?>';
         $('#frm_insert').form('clear');
-        
+
         $.ajax({
-            type : "post",
-            url : "<?= base_url('finance/account_coa/autoid')?>",
-            dataType : "html",
-            success : function(response){
+            type: "post",
+            url: "<?= base_url('finance/account_coa/autoid') ?>",
+            dataType: "html",
+            success: function(response) {
                 $('#number').textbox('setValue', response);
             }
         });
@@ -170,8 +170,71 @@
             toastr.warning("Please select one of the data in the table first!", "Information");
         }
     }
+
+    // PRICE FORMAT
+    function priceformat(value, row) {
+        var digits = 0;
+        var currency = 'IDR';
+        var format = "id-ID";
+
+        if (row.original_currency == "USD") {
+            digits = 2;
+            currency = 'USD';
+            format = "en-IN";
+        } else if (row.original_currency == "JPY") {
+            digits = 2;
+            currency = 'JPY';
+            format = "ja-JP";
+        } else if (row.original_currency == "EUR") {
+            digits = 2;
+            currency = 'EUR';
+            format = "de-DE";
+        }
+
+        if (value != null) {
+            const formatter = new Intl.NumberFormat(format, {
+                style: 'currency',
+                currency: currency,
+                minimumFractionDigits: digits
+            });
+
+            return "<b>" + formatter.format(value) + "</b>";
+        }
+    }
+
+    function priceformatlocal(value, row) {
+        var digits = 0;
+        var currency = 'IDR';
+        var format = "id-ID";
+
+        if (row.local_currency == "USD") {
+            digits = 2;
+            currency = 'USD';
+            format = "en-IN";
+        } else if (row.local_currency == "JPY") {
+            digits = 2;
+            currency = 'JPY';
+            format = "ja-JP";
+        } else if (row.local_currency == "EUR") {
+            digits = 2;
+            currency = 'EUR';
+            format = "de-DE";
+        }
+
+        if (value != null) {
+            const formatter = new Intl.NumberFormat(format, {
+                style: 'currency',
+                currency: currency,
+                minimumFractionDigits: digits
+            });
+
+            return "<b>" + formatter.format(value) + "</b>";
+        }
+    }
+
+
     // UPLOAD DATA
-        function upload() {
+    function upload() {
         $('#dlg_upload').dialog('open');
     }
     // DOWNLOAD
@@ -229,7 +292,6 @@
             textField: 'name',
             prompt: 'Choose Currencies',
         });
-
         //SAVE DATA
         $('#dlg_insert').dialog({
             buttons: [{
@@ -248,7 +310,7 @@
                             } else {
                                 toastr.error(result.message, result.title);
                             }
-                            
+
                             $('#dlg_insert').dialog('close');
                             $('#dg').datagrid('reload');
                         }
@@ -256,7 +318,6 @@
                 }
             }]
         });
-        
         // UPLOAD DATA
         $('#dlg_upload').dialog({
             buttons: [{
