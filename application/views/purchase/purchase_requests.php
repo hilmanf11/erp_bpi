@@ -15,6 +15,9 @@
             <th rowspan="2" data-options="field:'qty',width:80,halign:'center',align:'right'">Total Qty</th>
             <th rowspan="2" data-options="field:'remarks',width:100,halign:'center'">Remarks</th>
             <th rowspan="2" data-options="field:'po_no',width:120,align:'center'">Po No</th>
+            <th rowspan="2" data-options="field:'approved_to',width:100,halign:'center',formatter:formatApproved,styler:styleApproved">Status <br>Approve</th>
+            <th rowspan="2" data-options="field:'approved_by',width:100,halign:'center'">Approve By</th>
+            <th rowspan="2" data-options="field:'approved_date',width:100,halign:'center'">Approve Date</th>
             <th colspan="2" data-options="field:'',width:100,halign:'center'"> Created</th>
             <th colspan="2" data-options="field:'',width:100,halign:'center'"> Updated</th>
         </tr>
@@ -163,7 +166,7 @@
                     editor: {
                         type: 'combogrid',
                         options: {
-                            url: '<?= base_url('master/supplier_items/readItems?item_family_id=') ?>' + item_family_id,
+                            url: '<?= base_url('master/item_rm/readItems?item_family_id=') ?>' + item_family_id,
                             required: true,
                             panelWidth: 320,
                             idField: 'item_number',
@@ -186,6 +189,7 @@
                                 var dg = $('#dg2');
                                 var row = dg.datagrid('getSelected');
                                 var rowIndex = dg.datagrid('getRowIndex', row);
+
                                 var ed = dg.datagrid('getEditor', {
                                     index: rowIndex,
                                     field: 'item_rm_id'
@@ -206,7 +210,7 @@
                                     field: 'po'
                                 });
 
-                                $(ed.target).textbox('setValue', rows.item_rm_id);
+                                $(ed.target).textbox('setValue', rows.id);
                                 $(ed2.target).textbox('setValue', rows.item_name);
 
                                 // $.ajax({
@@ -472,20 +476,73 @@
         window.location.reload();
     }
 
-    function readRequestno() {
-        $("#filter_request_no").combobox({
-            url: '<?= base_url('purchase/purchase_requests/readRequestno') ?>',
-            valueField: 'request_no',
-            textField: 'request_no',
-            prompt: "Select Request No",
-            icons: [{
-                iconCls: 'icon-clear',
-                handler: function(e) {
-                    $(e.data.target).combobox('clear').combobox('textbox').focus();
-                }
-            }],
+    // $("#filter_request_no").combobox({
+    //     url: '<?= base_url('purchase/purchase_requests/readRequestnumber') ?>',
+    //     valueField: 'request_no',
+    //     textField: 'request_no',
+    //     prompt: "Select Request No",
+    //     icons: [{
+    //         iconCls: 'icon-clear',
+    //         handler: function(e) {
+    //             $(e.data.target).combobox('clear').combobox('textbox').focus();
+    //         }
+    //     }],
+    // });
+
+    function readRequestno() { 
+        // var filter_from = null;
+        // var filter_to = null;
+
+        $("#filter_from").datebox({
+            onSelect: function(date_from) {
+                filter_from = myformatter(date_from);
+                console.log(filter_from);
+                updateComboboxURL();
+            }
         });
+
+        $("#filter_to").datebox({
+            onSelect: function(date_to) {
+                filter_to = myformatter(date_to);
+                console.log(filter_to);
+                updateComboboxURL();
+            }
+        });
+
+        function updateComboboxURL() {   
+            if (filter_from && filter_to) {
+
+                var date = filter_from + "/" + filter_to;
+                var dates = window.btoa(date);
+
+                var url = '<?= base_url('purchase/purchase_requests/readRequestno') ?>' + '/' + dates;
+
+                $.ajax({
+                    url: url,
+                    dataType: 'json',
+                    success: function(data) {
+                        $("#filter_request_no").combobox({
+                            data: data,
+                            valueField: 'request_no',
+                            textField: 'request_no',
+                            prompt: "Select Request No",
+                            icons: [{
+                                iconCls: 'icon-clear',
+                                handler: function(e) {
+                                    $(e.data.target).combobox('clear').combobox('textbox').focus();
+                                }
+                            }],
+                        });
+                    },
+                    error: function(xhr, status, error) {
+                        console.error('Error:', error);
+                    }
+                });
+            }
+        }
     }
+
+
 
     $(function() {
         $('#dg').treegrid({
@@ -698,6 +755,33 @@
             }
         });
 
+        $('#filter_item_familys').combogrid({
+            url: '<?= base_url('master/item_familys/readNotFg/') ?>',
+            panelWidth: 420,
+            idField: 'id',
+            textField: 'name',
+            mode: 'remote',
+            fitColumns: true,
+            prompt: "Select Product Family",
+            icons: [{
+                iconCls: 'icon-clear',
+                handler: function(e) {
+                    $(e.data.target).combogrid('clear').combogrid('textbox').focus();
+                }
+            }],
+            columns: [
+                [{
+                    field: 'number',
+                    title: 'Product Family ID',
+                    width: 120
+                }, {
+                    field: 'name',
+                    title: 'Product Family Name',
+                    width: 250
+                }, ]
+            ]
+        });
+
         //Get Customer
         $("#filter_category_id").combobox({
             url: '<?= base_url('master/item_categories/readsnotfg') ?>',
@@ -781,4 +865,22 @@
             return 'background-color:#C8FFCC;';
         }
     }
+
+    //CELLSTYLE APPROVE
+    function styleApproved(value, row, index) {
+        if (value == "" || value === null ) {
+            return 'background: #53D636; color:white;';
+        } else {
+            return 'background: #FF5F5F; color:white;';
+        }
+    }
+
+    //FORMATTER APPROVE
+    function formatApproved(value) {
+        if (value == "" || value === null ) {
+            return 'Approved';
+        } else {
+            return 'Checking';
+        }
+    };
 </script>

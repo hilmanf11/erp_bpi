@@ -94,7 +94,11 @@ class Crud extends CI_Model
     function create($table, $values)
     {
         if ($this->session->username != "") {
-            $id = $this->autoid($table);
+            if(empty($values['id'])){
+                $id = $this->autoid($table);
+            }else{
+                $id = $values['id'];
+            }
 
             if (@$values['id'] != "") {
                 $data = array_merge($values, [
@@ -111,7 +115,7 @@ class Crud extends CI_Model
 
             if ($this->db->insert($table, $data)) {
                 $this->logs("Create", json_encode($data), $table);
-                $this->approvals($table, $id);
+                $this->approvals($table, $id, []);
                 return json_encode(array("title" => "Good Job", "message" => "Data Saved Successfully", "theme" => "success"));
             } else {
                 return log_message('error', 'There is an error in your system or data');
@@ -137,7 +141,7 @@ class Crud extends CI_Model
                 $this->logs("Update New", json_encode($data), $table);
 
                 $read = $this->read($table, [], $where);
-                $this->approvals($table, @$read->id);
+                $this->approvals($table, @$read->id, $dataBefore);
 
                 return json_encode(array("title" => "Good Job", "message" => "Data Updated Successfully", "theme" => "success"));
             } else {
@@ -220,7 +224,7 @@ class Crud extends CI_Model
         $this->db->insert('logs', $data);
     }
 
-    function approvals($table, $table_id)
+    function approvals($table, $table_id, $data)
     {
         $query = $this->db->query("DESCRIBE $table");
         $fields = $query->result_array();
@@ -242,6 +246,7 @@ class Crud extends CI_Model
                     "approved" => 1,
                     "approved_to" => $approval->user_approval_1,
                     "approved_by" => $this->session->username,
+                    "approved_data" => json_encode($data),
                 ];
 
                 $this->db->where(["id" => $table_id]);

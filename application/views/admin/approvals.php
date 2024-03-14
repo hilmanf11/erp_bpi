@@ -37,6 +37,8 @@
                     <option value="stock_wip">Upload WIP</option>
                     <option value="os_os">Upload OS SO</option>
                     <option value="os_mpp">Upload OS MPP</option>
+                    <option value="purchase_orders">Purchase Orders</option>
+                    <option value="purchase_requests">Purchase Requests</option>
                 </select>
             </div>
             <div class="fitem">

@@ -425,6 +425,7 @@
                     var bc_date = $("#bc_date").datebox('getValue');
                     var awb_no = $("#awb_no").textbox('getValue');
                     var awb_date = $("#awb_date").datebox('getValue');
+
                     if (bc_kind == "" || bc_document == "" || bc_date == "" || bc_aju == "") {
                         toastr.warning("Please input BC Kind, AJU, Doc No and Doc Date!", "Information");
                     } else {
@@ -469,14 +470,29 @@
                                                 });
                                             }
                                         });
+
+                                        $.messager.confirm('Warning', 'Are you Want to Print Barcode?', function(r) {
+                                            if (r) {
+                                                var receipt_no = $("#receipt_no").textbox('getValue');
+                                                var qty_receipt = row ? row.qty_receipt : 0;
+                                                var qty_label = row ? row.qty_label : 0;
+
+                                                var po = {
+                                                    receipt_no: receipt_no,
+                                                    qty_receipt: qty_receipt,
+                                                    qty_label: qty_label
+                                                };
+                                                print_po(po);
+                                            }
+                                        });
                                     }
-                                    //window.open("<?= base_url('purchase/purchase_order_receipts/print_receiving/') ?>" + window.btoa(receipt_no), "_blank");
-                                    //toastr.success(result.message, result.title);
-                                    //readReceiptNo();
-                                    $('#dg').treegrid('reload');
-                                    $('#dlg_insert').dialog('close');
+                                    
+                                        $('#dg').treegrid('reload');
+                                        $('#dlg_insert').dialog('close');
+                                    
                                 }
                             });
+
                         } else {
                             toastr.warning("Please select one of the data in the table first!", "Information");
                         }
@@ -610,7 +626,14 @@
 
     function BtnPrintLabel(val, row) {
         if (val != "closed") {
+            console.log(row);
             return '<a class="btn btn-primary w-100" style="pointer-events: visible; opacity:1;" target="_blank" href="<?= base_url('purchase/purchase_order_receipts/print_label/') ?>' + window.btoa(row.id) + '"><i class="fa fa-print"></i> Print</a>';
         }
+    }
+
+    function print_po(po) {
+        console.log(po);
+        var url = '<?= base_url('purchase/purchase_order_receipts/print_label_po/') ?>' + window.btoa(po.receipt_no);
+        window.open(url, '_blank');
     }
 </script>

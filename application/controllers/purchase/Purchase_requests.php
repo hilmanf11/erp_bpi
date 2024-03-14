@@ -50,11 +50,42 @@ class Purchase_requests extends CI_Controller
         echo json_encode($records);
     }
 
-    public function readRequestno()
+    public function readRequestnumber()
     {
-        $records = $this->crud->query("SELECT request_no, request_date, request_name FROM purchase_requests WHERE `status` = '0' GROUP BY request_no ORDER BY created_date desc");
+        $records = $this->crud->query("SELECT request_no, request_date, request_name FROM purchase_requests GROUP BY request_no ORDER BY created_date desc");// WHERE `status` = '0'
         echo json_encode($records);
     }
+
+    public function readRequestno($dates)
+    {
+        $dates = base64_decode($dates);
+
+        list($filter_from, $filter_to) = explode('/', $dates);
+
+        if(isset($filter_from) && isset($filter_to)) {
+            $records = $this->crud->query("SELECT request_no, request_date, request_name FROM purchase_requests WHERE request_date BETWEEN '$filter_from' AND '$filter_to' GROUP BY request_no ORDER BY created_date DESC");
+            echo json_encode($records);
+        } else {
+            echo json_encode(['error' => 'Parameters are missing']);
+        }
+    }
+
+    public function readItems()
+    {
+       $post = isset($_POST['q']) ? $_POST['q'] : "";
+       $item_family_id = explode(",", $this->input->get('item_family_id'));
+       
+       $this->db->select('a.*,a.id as item_rm_id, a.number as item_number, a.name as item_name');//c.specification
+       $this->db->from('item_rm a');
+       $this->db->where_in('a.item_family_id', $item_family_id);
+       $this->db->like('a.number', $post);
+       $this->db->group_by('a.id');
+       $this->db->order_by('a.id', 'ASC');
+       $records = $this->db->get()->result_array();
+
+        echo json_encode($records);
+    }
+
 
     public function readCategoryno()
     {
@@ -117,6 +148,7 @@ class Purchase_requests extends CI_Controller
             $this->db->like('c.id', $filter_item_familys);
             $this->db->like('c.item_category_id', $filter_item_category);
             $this->db->group_by('request_no');
+            $this->db->order_by('a.created_date','DESC');
             $this->db->order_by('a.updated_date', 'DESC');
             $this->db->order_by('a.request_date', 'DESC');
             //Total Data

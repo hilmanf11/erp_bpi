@@ -35,6 +35,70 @@ class Item_rm extends CI_Controller
         echo json_encode($send);
     }
 
+
+    public function readItems()
+    {
+       $post = isset($_POST['q']) ? $_POST['q'] : "";
+       $item_family_id = explode(",", $this->input->get('item_family_id'));
+       
+       $this->db->select('a.*,a.number as item_number, a.name as item_name');//c.specification
+       $this->db->from('item_rm a');
+       $this->db->where_in('a.item_family_id', $item_family_id);
+       $this->db->like('a.number', $post);
+       $this->db->group_by('a.id');
+       $this->db->order_by('a.id', 'ASC');
+       $records = $this->db->get()->result_array();
+
+        echo json_encode($records);
+    }
+
+
+    public function readss()
+    {
+        $post = isset($_POST['q']) ? $_POST['q'] : "";
+        $send = $this->crud->query("
+            SELECT a.*, b.name AS item_family_name
+            FROM item_rm a 
+            JOIN item_familys b ON a.item_family_id = b.id 
+            WHERE (a.number LIKE '%$post%' OR a.name LIKE '%$post%')
+        ");
+
+        // Mendapatkan nomor dan id dari item_fg dengan type SA
+        $item_fg_data = $this->crud->query("
+            SELECT number, id 
+            FROM item_fg 
+            WHERE type = 'SA'
+        ");
+
+        // Periksa apakah $item_fg_data adalah array sebelum mengakses length
+        if (is_array($item_fg_data) && count($item_fg_data) > 0) {
+            // Simpan nomor dan id dari item_fg dalam variabel untuk digunakan dalam combobox
+            $combobox_options = array();
+            foreach ($item_fg_data as $item_fg) {
+                $combobox_options[] = array(
+                    'id' => $item_fg->id,
+                    'number' => $item_fg->number
+                );
+            }
+
+            // Sisipkan data combobox ke dalam array send untuk dikirim ke antarmuka pengguna
+            $send['combobox_options'] = $combobox_options;
+        } else {
+            // Jika tidak ada data dari item_fg, sisipkan array kosong ke dalam send
+            $send['combobox_options'] = array();
+        }
+
+        echo json_encode($send);
+    }
+
+
+    public function read($id)
+    {
+        $post = isset($_POST['q']) ? $_POST['q'] : "";
+        $send = $this->crud->query("SELECT a.*, b.name as item_family_name FROM item_rm a JOIN item_familys b ON a.item_family_id = b.id WHERE a.item_family_id like '%$id%'");
+        echo json_encode($send);
+    }
+
     //GET DATATABLES
     public function datatables()
     {
