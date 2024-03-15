@@ -708,9 +708,9 @@ class Purchase_orders extends CI_Controller
                                     <th style="height:20px; text-align:center;">' . $user_1->name . '</th>
                                 </tr>
                                 <tr>
-                                    <th width="200" style="text-align:center;">Director</th>
-                                    <th width="200" style="text-align:center;">Plant Head</th>
-                                    <th width="200" style="text-align:center;">Manager</th>
+                                    <th width="200" style="text-align:center;">President Director</th>
+                                    <th width="200" style="text-align:center;">General Manager</th>
+                                    <th width="200" style="text-align:center;">Assistant Manager</th>
                                 </tr>
                             </table>
                         </div>

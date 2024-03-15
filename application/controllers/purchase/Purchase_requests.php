@@ -50,11 +50,27 @@ class Purchase_requests extends CI_Controller
         echo json_encode($records);
     }
 
-    public function readRequestno()
+    public function readRequestnumber()
     {
-        $records = $this->crud->query("SELECT request_no, request_date, request_name FROM purchase_requests WHERE `status` = '0' GROUP BY request_no ORDER BY created_date desc");
+        $records = $this->crud->query("SELECT request_no, request_date, request_name FROM purchase_requests GROUP BY request_no ORDER BY created_date desc");// WHERE `status` = '0'
         echo json_encode($records);
     }
+
+    public function readRequestno($dates)
+    {
+        $dates = base64_decode($dates);
+
+        list($filter_from, $filter_to) = explode('/', $dates);
+
+        if(isset($filter_from) && isset($filter_to)) {
+            $records = $this->crud->query("SELECT request_no, request_date, request_name FROM purchase_requests WHERE request_date BETWEEN '$filter_from' AND '$filter_to' GROUP BY request_no ORDER BY created_date DESC");
+            echo json_encode($records);
+        } else {
+            echo json_encode(['error' => 'Parameters are missing']);
+        }
+    }
+
+
 
     public function readCategoryno()
     {
@@ -117,6 +133,7 @@ class Purchase_requests extends CI_Controller
             $this->db->like('c.id', $filter_item_familys);
             $this->db->like('c.item_category_id', $filter_item_category);
             $this->db->group_by('request_no');
+            $this->db->order_by('a.created_date','DESC');
             $this->db->order_by('a.updated_date', 'DESC');
             $this->db->order_by('a.request_date', 'DESC');
             //Total Data

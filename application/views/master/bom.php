@@ -125,7 +125,7 @@
                     editor: {
                         type: 'combogrid',
                         options: {
-                            url: '<?= base_url('master/item_rm/reads'); ?>',
+                            url: '<?= base_url('master/bom/readItem'); ?>',
                             required: true,
                             panelWidth: 400,
                             idField: 'id',
@@ -142,6 +142,10 @@
                                     field: 'name',
                                     title: 'Part Name',
                                     width: 200
+                                }, {
+                                    field: 'type',
+                                    title: 'Type',
+                                    width: 80
                                 }]
                             ],
                             onSelect: function (value, rows) {
@@ -171,8 +175,13 @@
                                         data: "item_fg_id=" + item_fg_id,
                                         dataType: "json",
                                         success: function (menu_loading) {
-                                            runner = menu_loading[0].runner;
-                                            cavity_standard = menu_loading[0].cavity_standard;
+                                            if (menu_loading.length === 0) {
+                                                runner = 0;
+                                                cavity_standard = 0;
+                                            }else{
+                                                runner = menu_loading[0].runner;
+                                                cavity_standard = menu_loading[0].cavity_standard;
+                                            }
                                         }
                                     })
                                 ).then(function () {
@@ -181,9 +190,13 @@
                                     var calculatedComposition;
 
                                     if (item_family_name == 'VIRGIN') {
-                                        calculatedComposition = ((parseFloat(weight) + parseFloat(runner / cavity_standard)) / 1000);
+                                        if(runner != 0){
+                                            calculatedComposition = ((parseFloat(weight) + parseFloat(runner / cavity_standard)) / 1000);
+                                        }else{
+                                            calculatedComposition = 0;
+                                        }
                                     } else {
-                                        calculatedComposition = "";
+                                        calculatedComposition = 0;
                                     }
 
                                     var ed = dg.datagrid('getEditor', {
@@ -615,6 +628,27 @@
 
                     for (let i = 0; i < totalrows; i++) {
                         if (rows[i].item_rm_id) {
+                            
+                            // if(rows[i].type_item == "SA"){
+                            //     var dataFinal = {
+                            //         item_fg_id: item_fg_id,
+                            //         item_fg_sa_id: rows[i].item_rm_id,
+                            //         type: rows[i].type,
+                            //         recyle: rows[i].recyle,
+                            //         composition: rows[i].composition,
+                            //         remark: rows[i].remark
+                            //     };
+                            // }else{
+                            //     var dataFinal = {
+                            //         item_fg_id: item_fg_id,
+                            //         item_rm_id: rows[i].item_rm_id,
+                            //         type: rows[i].type,
+                            //         recyle: rows[i].recyle,
+                            //         composition: rows[i].composition,
+                            //         remark: rows[i].remark
+                            //     };
+                            // }
+
                             $.ajax({
                                 type: "post",
                                 url: '<?= base_url('master/bom/create') ?>',

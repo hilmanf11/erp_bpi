@@ -33,7 +33,7 @@ class Report_history_transactions_fg extends CI_Controller
         if ($option == "excel") {
             $format  = date("Ymd");
             header("Content-type: application/vnd-ms-excel");
-            header("Content-Disposition: attachment; filename=history_transactions_$format.xls");
+            header("Content-Disposition: attachment; filename=history_transactions_fg_$format.xls");
         }
         $filter_from = $this->input->get('filter_from');
         $filter_to   = $this->input->get('filter_to');
@@ -89,7 +89,7 @@ class Report_history_transactions_fg extends CI_Controller
         </center>
         <br>
             
-            <table id="customers" border="1">
+            <table id="customers" border="1" style="font-size: 11px;">
                 <tr>
                     <th width="20">No</th>
                     <th colspan="3">Product No</th>
@@ -131,7 +131,7 @@ class Report_history_transactions_fg extends CI_Controller
 
             if ($filter_display == "DETAIL") {
                 $html .= '  <tr>
-                                <td colspan="11" style="background:#D1FFC6;"><b>DETAIL OF ' . $record->number . ' - ' . $record->name . '</b></td>
+                                <td colspan="11" style="background:#D1FFC6; font-size: 11px;"><b>DETAIL OF ' . $record->number . ' - ' . $record->name . '</b></td>
                             </tr>';
                 $html .= '  <tr>
                                 <th width="20"></th>

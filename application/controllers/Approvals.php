@@ -173,9 +173,10 @@ class Approvals extends CI_Controller
         // $os_so = $this->crud->reads('os_so', [], ["approved_to" => $this->session->username], "", "", "", ["approved_to", "approved_by"]);
         // $os_mpp = $this->crud->reads('os_mpp', [], ["approved_to" => $this->session->username], "", "", "", ["approved_to", "approved_by"]);
         $purchase_orders = $this->crud->reads('purchase_orders', [], ["approved_to" => $this->session->username], "", "", "", ["approved_to", "approved_by"]);
+        $purchase_requests = $this->crud->reads('purchase_requests', [], ["approved_to" => $this->session->username], "", "", "", ["approved_to", "approved_by"]);
 
 
-        $totalRows = (count($users) + count($purchase_orders)); //+ count($forecasts) + count($stock_fg) + count($stock_wip) + count($os_so) + count($os_mpp) 
+        $totalRows = (count($users) + count($purchase_orders) + count($purchase_requests)); //+ count($forecasts) + count($stock_fg) + count($stock_wip) + count($os_so) + count($os_mpp) 
         if ($totalRows > 0) {
             echo '<span class="badge">' . $totalRows . '</span>';
         } else {
@@ -193,6 +194,7 @@ class Approvals extends CI_Controller
         // $os_so = $this->crud->reads('os_so', [], ["approved_to" => $this->session->username], "", "", "", ["approved_to", "approved_by"]);
         // $os_mpp = $this->crud->reads('os_mpp', [], ["approved_to" => $this->session->username], "", "", "", ["approved_to", "approved_by"]);
         $purchase_orders = $this->crud->reads('purchase_orders', [], ["approved_to" => $this->session->username], "", "", "", ["approved_to", "approved_by"]);
+        $purchase_requests = $this->crud->reads('purchase_requests', [], ["approved_to" => $this->session->username], "", "", "", ["approved_to", "approved_by"]);
 
 
         foreach ($users as $user) {
@@ -221,6 +223,10 @@ class Approvals extends CI_Controller
 
         foreach ($purchase_orders as $po) {
             $this->approvalMessage($po->approved_by, $po->approved_to, $po->created_by, "purchase_orders");
+        }
+
+        foreach ($purchase_requests as $pr) {
+            $this->approvalMessage($pr->approved_by, $pr->approved_to, $pr->created_by, "purchase_requests");
         }
     }
 
@@ -364,6 +370,26 @@ class Approvals extends CI_Controller
                 $this->db->join('(SELECT po_no, COUNT(status) as total_status_close FROM purchase_orders WHERE status = 1 GROUP BY po_no) g', 'a.po_no = g.po_no', 'left');
         $this->db->where('a.approved_to', $approved_to);
         $this->db->where('a.created_by', $created_by);
+        $this->db->order_by('a.created_date', 'DESC');
+        $records = $this->db->get()->result_array();
+
+        die(json_encode($records));
+    }
+
+    public function approvalPR($approved_to, $created_by)
+    {
+        $this->db->select('a.id, a.request_no, a.request_date, a.expected_date, a.request_name, a.division, 
+        sum(a.qty) as qty, 
+        b.number as item_number, 
+        b.name as item_name, 
+        b.uom,  
+        c.name as category_name');
+        $this->db->from('purchase_requests a');
+        $this->db->join('item_rm b', 'a.item_rm_id = b.id');
+        $this->db->join('item_familys c', 'b.item_family_id = c.id');
+        $this->db->where('a.approved_to', $approved_to);
+        $this->db->where('a.created_by', $created_by);
+        $this->db->group_by('request_no');
         $this->db->order_by('a.created_date', 'DESC');
         $records = $this->db->get()->result_array();
 

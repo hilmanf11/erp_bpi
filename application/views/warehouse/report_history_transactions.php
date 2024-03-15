@@ -9,18 +9,22 @@
                 <input style="width:28%;" id="filter_from" class="easyui-datebox" value="<?= date("Y-m-01") ?>" data-options="formatter:myformatter,parser:myparser, editable:false"> To
                 <input style="width:28%;" id="filter_to" class="easyui-datebox" value="<?= date("Y-m-t") ?>" data-options="formatter:myformatter,parser:myparser, editable:false">
             </div>
+
             <div class="fitem">
                 <span style="width:35%; display:inline-block;">Product Family</span>
                 <input style="width:60%;" id="filter_item_family" class="easyui-combobox">
             </div>
+
             <div class="fitem">
                 <span style="width:35%; display:inline-block;">Product No</span>
                 <input style="width:60%;" id="filter_items" class="easyui-combogrid">
             </div>
+
             <div class="fitem">
                 <span style="width:35%; display:inline-block;"></span>
                 <a href="javascript:;" class="easyui-linkbutton" onclick="filter()"><i class="fa fa-search"></i> Filter Data</a>
             </div>
+
         </div>
         <div style="width: 49%; float:left;">
             <div class="fitem">
@@ -30,14 +34,12 @@
                     <option value="DETAIL">DETAIL</option>
                 </select>
             </div>
-            <div class="fitem">
-                <span style="width:35%; display:inline-block;">Trans Type</span>
-                <input style="width:60%;" id="filter_transtype" class="easyui-combobox">
-            </div>
         </div>
+
     </fieldset>
     <?= $button ?>
 </div>
+
 <div class="easyui-panel" title="Print Preview" style="width:100%;padding:10px;">
     <iframe id="printout" src="" style="width: 100%; height:500px; border: 0;"></iframe>
 </div>
@@ -50,17 +52,20 @@
         $("#printout").get(0).contentWindow.print();
     }
 
+
+
     function filter() {
         var filter_from = $("#filter_from").datebox('getValue');
         var filter_to = $("#filter_to").datebox('getValue');
         var filter_item_family = $("#filter_item_family").combobox('getValue');
         var filter_items = $("#filter_items").combogrid('getValue');
         var filter_display = $("#filter_display").combobox('getValue');
-        var filter_transtype = $("#filter_transtype").combobox('getValue');
-        url = "?filter_from=" + filter_from + "&filter_to=" + filter_to + "&filter_item_family=" + filter_item_family + "&filter_items=" + filter_items + "&filter_display=" + filter_display + "&filter_transtype=" + filter_transtype;
+        url = "?filter_from=" + filter_from + "&filter_to=" + filter_to + "&filter_item_family=" + filter_item_family + "&filter_items=" + filter_items + "&filter_display=" + filter_display;
         $("#printout").contents().find('html').html("<center><br><br><br><b style='font-size:20px;'>Please Wait...</b></center>");
         $("#printout").attr('src', '<?= base_url('warehouse/report_history_transactions/print') ?>' + url);
     }
+
+
 
     function excel() {
         var filter_from = $("#filter_from").datebox('getValue');
@@ -68,25 +73,14 @@
         var filter_item_family = $("#filter_item_family").combobox('getValue');
         var filter_items = $("#filter_items").combogrid('getValue');
         var filter_display = $("#filter_display").combobox('getValue');
-        var filter_transtype = $("#filter_transtype").combobox('getValue');
-        url = "?filter_from=" + filter_from + "&filter_to=" + filter_to + "&filter_item_family=" + filter_item_family + "&filter_items=" + filter_items + "&filter_display=" + filter_display + "&filter_transtype=" + filter_transtype;
+        url = "?filter_from=" + filter_from + "&filter_to=" + filter_to + "&filter_item_family=" + filter_item_family + "&filter_items=" + filter_items + "&filter_display=" + filter_display;
         window.location.assign('<?= base_url('warehouse/report_history_transactions/print/excel') ?>' + url);
     }
+
     $(function() {
-        $("#filter_transtype").combobox({
-            url: '<?= base_url('master/transaction_types/reads') ?>',
-            valueField: 'number',
-            textField: 'name',
-            prompt: "Select Transaction Type",
-            icons: [{
-                iconCls: 'icon-clear',
-                handler: function(e) {
-                    $(e.data.target).combobox('clear').combobox('textbox').focus();
-                }
-            }],
-        });
+
         $("#filter_item_family").combobox({
-            url: '<?= base_url('warehouse/report_history_transactions/readItemFamily/001') ?>',
+            url: '<?= base_url('warehouse/report_history_transactions/readItemFamily/P08') ?>',
             valueField: 'number',
             textField: 'name',
             prompt: "Select Product Family",
@@ -96,9 +90,10 @@
                     $(e.data.target).combobox('clear').combobox('textbox').focus();
                 }
             }],
+
             onSelect: function(row) {
                 $('#filter_items').combogrid({
-                    url: '<?= base_url('master/items/reads/') ?>' + row.number,
+                    url: '<?= base_url('master/item_rm/read/') ?>' + row.id,
                     panelWidth: 420,
                     idField: 'id',
                     textField: 'number',
@@ -111,6 +106,7 @@
                             $(e.data.target).combogrid('clear').combogrid('textbox').focus();
                         }
                     }],
+
                     columns: [
                         [{
                             field: 'number',
@@ -133,6 +129,7 @@
         var d = date.getDate();
         return y + '-' + (m < 10 ? ('0' + m) : m) + '-' + (d < 10 ? ('0' + d) : d);
     }
+
     //Format Datepicker
     function myparser(s) {
         if (!s) return new Date();

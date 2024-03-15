@@ -36,6 +36,38 @@ class Bom extends CI_Controller
         echo json_encode($send);
     }
 
+    public function readItem()
+    {
+        $post = isset($_POST['q']) ? $_POST['q'] : "";
+        $item_rm = $this->crud->query("SELECT a.*, b.name as item_family_name FROM item_rm a JOIN item_familys b ON a.item_family_id = b.id WHERE a.number like '%$post%' or a.name like '$post'");
+        $item_fg = $this->crud->query("SELECT * FROM item_fg WHERE `type` = 'SA' and (number like '%$post%' or name like '$post')");
+
+        $datas = array();
+        foreach ($item_rm as $rm) {
+            $datas[] = array(
+                "id" => $rm->id,
+                "number" => $rm->number,
+                "name" => $rm->name,
+                "uom" => $rm->uom,
+                "item_family_name" => $rm->item_family_name,
+                "type" => "RM",
+            );
+        }
+
+        foreach ($item_fg as $fg) {
+            $datas[] = array(
+                "id" => $fg->id,
+                "number" => $fg->number,
+                "name" => $fg->name,
+                "uom" => $fg->uom,
+                "item_family_name" => "SUB ASSY",
+                "type" => $fg->type,
+            );
+        }
+
+        echo json_encode($datas);
+    }
+
      //GET DATA
      public function readWeight()
      {

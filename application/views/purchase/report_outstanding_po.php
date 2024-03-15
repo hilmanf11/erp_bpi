@@ -95,7 +95,7 @@
         if (filter_from == "" || filter_to == "") {
             toastr.warning("Please select Trans Date & Supplier!");
         } else {
-            window.location.assign('<?= base_url('purchase/report_outstanding_po/print') ?>' + url);
+            window.location.assign('<?= base_url('purchase/report_outstanding_po/print/excel') ?>' + url);
         }
     }
 

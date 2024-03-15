@@ -2,6 +2,7 @@
 date_default_timezone_set("Asia/Bangkok");
 defined('BASEPATH') or exit('No direct script access allowed');
 class Report_outstanding_po extends CI_Controller
+
 {
     public function __construct()
     {
@@ -14,6 +15,8 @@ class Report_outstanding_po extends CI_Controller
         //Validasi Form
         $this->form_validation->set_rules('item_rm_id', 'Product No', 'required|min_length[1]|max_length[50]');
     }
+
+
 
     public function index()
     {
@@ -69,7 +72,7 @@ class Report_outstanding_po extends CI_Controller
         if ($option == "excel") {
             $format  = date("Ymd");
             header("Content-type: application/vnd-ms-excel");
-            header("Content-Disposition: attachment; filename=sales_orders_$format.xls");
+            header("Content-Disposition: attachment; filename=report_outstandinf_po_$format.xls");
         }
         $filter_from = base64_decode($this->input->get("filter_from"));
         $filter_to = base64_decode($this->input->get("filter_to"));
@@ -82,7 +85,7 @@ class Report_outstanding_po extends CI_Controller
         $this->db->select('*');
         $this->db->from('config');
         $config = $this->db->get()->row();
-        $this->db->select('a.*, SUM(a.qty) as qty_po, d.qty_receipt, b.number as supplier_number, b.name as supplier_name');
+        $this->db->select('a.*, SUM(a.qty) as qty_po, d.qty_receipt, b.number as supplier_number, b.name as supplier_name, c.uom');
         $this->db->from('purchase_orders a');
         $this->db->join('suppliers b', 'a.supplier_id = b.id');
         $this->db->join('item_rm c', 'a.item_rm_id = c.id');
@@ -121,7 +124,7 @@ class Report_outstanding_po extends CI_Controller
                 <small>PERIOD : <b>' . $filter_from . '</b> To <b>' . $filter_to . '</b></small>
             </center>
             <br>
-            
+
             <table id="customers" border="1">
             <tr>
                 <th width="20">No</th>
@@ -130,16 +133,18 @@ class Report_outstanding_po extends CI_Controller
                 <th>Supplier No</th>
                 <th>Supplier Name</th>
                 <th>Quantity</th>
+                <th>Unit</th>
                 <th>Receipt</th>
                 <th>Outstanding</th>
                 <th colspan="2">Status</th>
             </tr>';
 
         $no = 1;
+
         foreach ($records as $data) {
             $po_no = $data['po_no'];
             $supplier_id = $data['supplier_id'];
-            $this->db->select('a.*, b.number as item_number, b.name as item_name, c.qty');
+            $this->db->select('a.*, b.number as item_number, b.name as item_name, c.qty, b.uom');
             $this->db->from('purchase_orders c');
             $this->db->join('item_rm b', 'c.item_rm_id = b.id');
             $this->db->join('purchase_order_receipts a', 'a.po_no = c.po_no and a.item_rm_id = c.item_rm_id and a.supplier_id = c.supplier_id', 'left');
@@ -157,51 +162,56 @@ class Report_outstanding_po extends CI_Controller
             }
 
             $html .= '  <tr>
-                            <td style="text-align:center">' . $no . '</td>
-                            <td colspan="3">' . $data['po_no'] . '</td>
-                            <td>' . $data['po_date'] . '</td>
-                            <td>' . $data['supplier_number'] . '</td>
-                            <td>' . $data['supplier_name'] . '</td>
-                            <td style="text-align:right">' . number_format($data['qty_po'], 2) . '</td>
-                            <td style="text-align:right">' . number_format($data['qty_receipt'], 2) . '</td>
-                            <td style="text-align:right">' . number_format($data['qty_po'] - $data['qty_receipt'], 2) . '</td>
-                            <td colspan="2">' . $status . '</td>
-                        </tr>';
+
+                <td style="text-align:center">' . $no . '</td>
+                <td colspan="3">' . $data['po_no'] . '</td>
+                <td>' . $data['po_date'] . '</td>
+                <td>' . $data['supplier_number'] . '</td>
+                <td>' . $data['supplier_name'] . '</td>
+                <td style="text-align:right">' . number_format($data['qty_po'], 2) . '</td>
+                <td style="text-align:right">' . $data['uom'] . '</td>
+                <td style="text-align:right">' . number_format($data['qty_receipt'], 2) . '</td>
+                <td style="text-align:right">' . number_format($data['qty_po'] - $data['qty_receipt'], 2) . '</td>
+                <td colspan="2">' . $status . '</td>
+            </tr>';
             $no++;
             if ($filter_display == "DETAIL") {
                 if ($details) {
                     $html .= '  <tr>
-                                    <td colspan="13" style="background:#D1FFC6;"><b>DETAIL OF ' . $data['po_no'] . '</b></td>
-                                </tr>';
+                        <td colspan="13" style="background:#D1FFC6;"><b>DETAIL OF ' . $data['po_no'] . '</b></td>
+                    </tr>';
+
                     $html .= '  <tr>
-                                    <th width="20"></th>
-                                    <th>Custom No</th>
-                                    <th>Custom Doc No</th>
-                                    <th>Custom Date</th>
-                                    <th>Component No</th>
-                                    <th>Component Name</th>
-                                    <th>Receipt No</th>
-                                    <th>Receipt Date</th>
-                                    <th>PO Qty</th>
-                                    <th>Receipt Qty</th>
-                                    <th>OS Qty</th>
-                                    <th>Receipt By</th>
-                                </tr>';
+                            <th width="20"></th>
+                            <th>Custom No</th>
+                            <th>Custom Doc No</th>
+                            <th>Custom Date</th>
+                            <th>Component No</th>
+                            <th>Component Name</th>
+                            <th>Receipt No</th>
+                            <th>Receipt Date</th>
+                            <th>PO Qty</th>
+                            <th>Receipt Qty</th>
+                            <th>OS Qty</th>
+                            <th>Receipt By</th>
+                    </tr>';
+
                     foreach ($details as $detail) {
                         $html .= '  <tr>
-                                        <td></td>
-                                        <td>' . $detail['bc_kind'] . '</td>
-                                        <td>' . $detail['bc_document'] . '</td>
-                                        <td>' . $detail['bc_date'] . '</td>
-                                        <td>' . $detail['item_number'] . '</td>
-                                        <td>' . $detail['item_name'] . '</td>
-                                        <td>' . $detail['receipt_no'] . '</td>
-                                        <td>' . $detail['receipt_date'] . '</td>
-                                        <td style="text-align:right">' . number_format($detail['qty'], 2) . '</td>
-                                        <td style="text-align:right">' . number_format($detail['qty_receipt'], 2) . '</td>
-                                        <td style="text-align:right">' . number_format($detail['qty'] - $detail['qty_receipt'], 2)  . '</td>
-                                        <td >' . $detail['created_by'] . '</td>
-                                    </tr>';
+                            <td></td>
+                            <td>' . $detail['bc_kind'] . '</td>
+                            <td>' . $detail['bc_document'] . '</td>
+                            <td>' . $detail['bc_date'] . '</td>
+                            <td>' . $detail['item_number'] . '</td>
+                            <td>' . $detail['item_name'] . '</td>
+                            <td>' . $detail['receipt_no'] . '</td>
+                            <td>' . $detail['receipt_date'] . '</td>
+                            <td style="text-align:right">' . number_format($detail['qty'], 2) . '</td>
+                            <td style="text-align:right">' . number_format($detail['qty_receipt'], 2) . '</td>
+                            <td style="text-align:right">' . number_format($detail['qty'] - $detail['qty_receipt'], 2)  . '</td>
+                            <td >' . $detail['created_by'] . '</td>
+
+                        </tr>';
                     }
                 } else {
                     $html .= '  <tr>
@@ -214,3 +224,4 @@ class Report_outstanding_po extends CI_Controller
         echo $html;
     }
 }
+

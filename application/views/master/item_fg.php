@@ -114,6 +114,7 @@
                     <select style="width:60%;" name="type" id="type" class="easyui-combobox" panelHeight="auto">
                         <option value="FG">FG</option>
                         <option value="RM">RM</option>
+                        <option value="SA">SUB ASSY</option>
                     </select>
                 </div>
             </div>

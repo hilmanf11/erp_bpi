@@ -1128,6 +1128,90 @@
 						}]
 					],
 				}).datagrid('enableFilter');
+			} else if (table == "purchase_requests") {
+				$('#dg_approval').datagrid({
+					singleSelect: true,
+					rownumbers: true,
+					url: '<?= base_url('approvals/approvalPR/') ?>' + approved_to + "/" + created_by,
+					columns: [
+						[{
+							field: 'id',
+							hidden: true,
+							width: 150,
+							halign: 'center',
+							title: "ID",
+						},{
+							field: 'request_no',
+							width: 150,
+							align: 'center',
+							title: "Request No",
+						},{
+							field: 'request_date',
+							width: 100,
+							align: 'center',
+							title: "Request Date",
+						}, {
+							field: 'expected_date',
+							width: 100,
+							align: 'center',
+							title: "Expected Date",
+						}, {
+							field: 'request_name',
+							width: 150,
+							align: 'center',
+							title: "Request Name",
+						}, {
+							field: 'division',
+							width: 100,
+							align: 'center',
+							title: "Division",
+						}, {
+							field: 'item_number',
+							width: 150,
+							halign: 'center',
+							title: "Product No",
+						}, {
+							field: 'item_name',
+							width: 150,
+							halign: 'center',
+							title: "Product Name",
+						}, {
+							field: 'category_name',
+							width: 150,
+							halign: 'center',
+							title: "Product Family"
+						}, {
+							field: 'uom',
+							width: 80,
+							halign: 'center',
+							title: "UOM",
+						}, {
+							field: 'qty',
+							width: 80,
+							halign: 'center',
+							title: "Total Qty",
+						}, {
+							field: 'remarks',
+							width: 100,
+							halign: 'center',
+							title: "Remarks",
+						}, {
+							field: 'action',
+							width: 80,
+							align: 'center',
+							title: "Action",
+							formatter: function(val, row) {
+								if (val != "-") {
+									var approve = "approve('" + row.id + "','" + table + "')";
+									var disapprove = "disapprove('" + row.id + "','" + table + "')";
+									var a = '<a class="btn btn-success w-50" style="pointer-events: visible; opacity:1;" onclick="' + approve + '"><i class="fa fa-check"></i></a>';
+									var b = '<a class="btn btn-danger w-50" style="pointer-events: visible; opacity:1;" onclick="' + disapprove + '"><i class="fa fa-times"></i></a>';
+									return a + " " + b;
+								}
+							}
+						}]
+					],
+				}).datagrid('enableFilter');
 			}
 		}
 	}

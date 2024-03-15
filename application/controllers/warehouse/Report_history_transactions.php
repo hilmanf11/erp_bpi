@@ -79,15 +79,15 @@ class Report_history_transactions extends CI_Controller
         }
     }
 
-    public function readItemFamily($number = "")
+    public function readItemFamily($id = "")
     {
         $this->db->select('*');
         $this->db->from('item_familys');
         $this->db->where('deleted', 0);
-        if ($number != "001") {
-            $this->db->where("number", $number);
+        if ($id != "P08") {
+            $this->db->where("id", $id);
         } else {
-            $this->db->where("number !=", $number);
+            $this->db->where("id !=", $id);
         }
         $this->db->order_by('name', 'ASC');
         $records = $this->db->get()->result_array();
@@ -99,14 +99,13 @@ class Report_history_transactions extends CI_Controller
         if ($option == "excel") {
             $format  = date("Ymd");
             header("Content-type: application/vnd-ms-excel");
-            header("Content-Disposition: attachment; filename=history_transactions_$format.xls");
+            header("Content-Disposition: attachment; filename=history_transactions_rm_$format.xls");
         }
         $filter_from = $this->input->get('filter_from');
         $filter_to   = $this->input->get('filter_to');
         $filter_item_family = $this->input->get('filter_item_family');
         $filter_items = $this->input->get('filter_items');
         $filter_display = $this->input->get("filter_display");
-        $filter_transtype = $this->input->get('filter_transtype');
 
         $start = strtotime($filter_from);
         $finish = strtotime($filter_to);
@@ -166,7 +165,7 @@ class Report_history_transactions extends CI_Controller
             </center>
             <br>
             
-            <table id="customers" border="1">
+            <table id="customers" border="1" style="font-size: 11px;">
                 <tr>
                     <th width="20">No</th>
                     <th colspan="3">Product No</th>
@@ -215,7 +214,7 @@ class Report_history_transactions extends CI_Controller
 
             if ($filter_display == "DETAIL") {
                 $html .= '  <tr>
-                                <td colspan="13" style="background:#D1FFC6;"><b>DETAIL OF ' . $record->number . ' - ' . $record->name . '</b></td>
+                                <td colspan="13" style="background:#D1FFC6; font-size: 11px;"><b>DETAIL OF ' . $record->number . ' - ' . $record->name . '</b></td>
                             </tr>
                             <tr>
                                 <th width="20"></th>
@@ -345,14 +344,7 @@ class Report_history_transactions extends CI_Controller
             }
             $no++;
         }
-        // if ($filter_transtype == "T001") {
-        //     $html .= $htmlReceipts;
-        // } elseif ($filter_transtype == "T002") {
-        //     $html .= $htmlIssueds;
-        // } else {
-        //     $html .= $htmlReceipts;
-        //     $html .= $htmlIssueds;
-        // }
+      
         $html .= '</table></body></html>';
         echo $html;
     }
