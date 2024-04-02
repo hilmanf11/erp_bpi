@@ -109,7 +109,8 @@ class Bom extends CI_Controller
             $this->db->like('a.item_fg_id', $filter_item_fg_id);
             $this->db->like('a.item_rm_id', $filter_item_rm_id);
             $this->db->group_by('b.number');
-            $this->db->order_by('b.number', 'ASC');
+            $this->db->order_by('a.created_date', 'DESC');
+            // $this->db->order_by('b.number', 'ASC');
             //Total Data
             $totalRows = $this->db->count_all_results('', false);
             //Limit 1 - 10
@@ -130,13 +131,34 @@ class Bom extends CI_Controller
             $number = base64_decode($this->input->get('number'));
             $filter_item_rm_id = base64_decode($this->input->get('filter_item_rm_id'));
 
-            $this->db->select('a.*, b.number as item_fg_number, b.name as item_fg_name, c.number as item_rm_number, c.name as item_rm_name, c.uom as uom, c.item_family_id as product_family, d.name as product_family_name');
+            $this->db->select('a.*, 
+            (CASE 
+                WHEN a.item_fg_sa_id IS NULL THEN a.item_rm_id
+                ELSE a.item_fg_sa_id 
+            END) AS selected_item_id,
+            (CASE 
+                WHEN a.item_fg_sa_id IS NULL THEN c.number
+                ELSE e.number
+            END) AS selected_item_number,
+            (CASE 
+                WHEN a.item_fg_sa_id IS NULL THEN c.name
+                ELSE e.name
+            END) AS selected_item_name,
+            (CASE 
+                WHEN a.item_fg_sa_id IS NULL THEN c.uom
+                ELSE e.uom
+            END) AS selected_item_uom,
+            (CASE 
+                WHEN a.item_fg_sa_id IS NULL THEN d.name
+                ELSE "SUB ASSY"
+            END) AS selected_item_prodfam');
             $this->db->from('bom a');
-            $this->db->join('item_fg b', 'a.item_fg_id = b.id');
-            $this->db->join('item_rm c', 'a.item_rm_id = c.id');
-            $this->db->join('item_familys d', 'c.item_family_id = d.id');
+            $this->db->join('item_fg b', 'a.item_fg_id = b.id','left');
+            $this->db->join('item_rm c', 'a.item_rm_id = c.id', 'left');
+            $this->db->join('item_familys d', 'c.item_family_id = d.id', 'left');
+            $this->db->join('item_fg e', 'a.item_fg_sa_id = e.id','left');
             $this->db->where('b.number', $number);
-            $this->db->like('a.item_rm_id', $filter_item_rm_id);
+            // $this->db->like('a.item_rm_id', $filter_item_rm_id);
             $this->db->group_by('a.id');
             $this->db->order_by('a.id', 'ASC');
             $records = $this->db->get()->result_array();
@@ -151,11 +173,12 @@ class Bom extends CI_Controller
         if ($this->input->get()) {
             $item_fg_id = base64_decode($this->input->get('item_fg_id'));
 
-            $this->db->select('a.*, c.number as item_rm_number, c.name as item_rm_name, c.uom, d.name as item_family_name');
+            $this->db->select('a.*,c.number as item_rm_number, c.name as item_rm_name, c.uom, d.name as item_family_name');
             $this->db->from('bom a');
             $this->db->join('item_fg b', 'a.item_fg_id = b.id');
-            $this->db->join('item_rm c', 'a.item_rm_id = c.id');
-            $this->db->join('item_familys d', 'c.item_family_id = d.id');
+            $this->db->join('item_rm c', 'a.item_rm_id = c.id', 'left');
+            $this->db->join('item_familys d', 'c.item_family_id = d.id', 'left');
+            $this->db->join('item_fg e', 'a.item_fg_sa_id = e.id','left');
             $this->db->where('a.item_fg_id', $item_fg_id);
             $this->db->order_by('a.id', 'ASC');
             $records = $this->db->get()->result_array();
@@ -165,6 +188,23 @@ class Bom extends CI_Controller
     }
 
     //CREATE DATA
+    public function create_SA()
+    {
+        if ($this->input->post()) {
+            $post = $this->input->post();
+
+            $bom = $this->crud->read("bom", [], ["item_fg_id" => $post['item_fg_id'], "item_fg_sa_id" => $post['item_fg_sa_id']]);
+            if (@$bom->item_fg_id != "") {
+                $send = $this->crud->update('bom', ["item_fg_id" => $post['item_fg_id'], "item_rm_id" => $post['item_rm_id']], $post);
+            } else {
+                $send = $this->crud->create('bom', $post);
+            }
+            echo $send;
+        } else {
+            show_error("Cannot Process your request");
+        }
+    }
+
     public function create()
     {
         if ($this->input->post()) {

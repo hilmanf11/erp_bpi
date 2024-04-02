@@ -83,7 +83,7 @@
             <div style="width: 50%; float: left;">
                 <div class="fitem">
                     <span style="width:35%; display:inline-block;">Product Family Sub</span>
-                    <input style="width:60%;" name="item_sub_family_id" id="item_sub_family_id" required="" class="easyui-combobox">
+                    <input style="width:60%;" name="item_sub_family_id" id="item_sub_family_id" class="easyui-combobox">
                 </div>
                 <div class="fitem">
                     <span style="width:35%; display:inline-block;">Account No</span>
@@ -144,8 +144,8 @@
         $('#dlg_insert').dialog('open');
         url_save = '<?= base_url('master/item_rm/create') ?>';
         $('#frm_insert').form('clear');
-        
         $('#status').combobox('setValue', '0');
+        $('#supply').combobox('setValue', 'NO');
     }
     //EDIT DATA
     function update() {
@@ -153,8 +153,17 @@
 
         setTimeout(function() { 
             $('#id').textbox('setValue', row.id);
-            $('#item_sub_family_id').textbox('setValue', row.item_sub_family_id);
         }, 500);
+
+        $('#item_sub_family_id').combobox({
+            url:'<?= base_url('master/item_family_subs/reads_number/'); ?>',
+            valueField:'id',
+            textField:'number',
+            prompt: 'Choose Sub Product Family',
+            onLoadSuccess: function(){
+                $('#item_sub_family_id').combobox('setValue',row.item_sub_family_id);
+            },
+        });
 
         if (row) {
             $('#dlg_insert').dialog('open');
@@ -270,6 +279,11 @@
         textField:'name',
         prompt: 'Choose Category',
         onSelect: function(category){
+            if (category.id !== 'C01') {
+                $('#supply').combobox('setValue', 'NO');
+            } else {
+                $('#supply').combobox('setValue', 'YES');
+            }
             $('#item_family_id').combobox({
                 url:'<?= base_url('master/item_familys/reads/'); ?>' + category.id,
                 valueField:'id',
@@ -280,6 +294,7 @@
                         url:'<?= base_url('master/item_family_subs/reads/'); ?>' + family.id,
                         valueField:'id',
                         textField:'name',
+                        editable: false,
                         prompt: 'Choose Sub Product Family',
                     });
                     $.ajax({

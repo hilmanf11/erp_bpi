@@ -237,6 +237,15 @@
             var dg = $('#dg_request').datagrid({
                 url: '<?= base_url('purchase/purchase_order_receipts/datatablesTemp') ?>?po_no=' + po_no,
                 fitColumns: true,
+                onLoadSuccess: function(data) {
+                    // Set default value for qty_receipt to 0 after loading data
+                    var rows = $(this).datagrid('getRows');
+                    for (var i = 0; i < rows.length; i++) {
+                        rows[i].qty_receipt = 0;
+                    }
+                    $(this).datagrid('loadData', rows);
+                },
+
                 onClickRow: function(rowIndex) {
                     if (lastIndex != rowIndex) {
                         $(this).datagrid('endEdit', lastIndex);
@@ -244,6 +253,7 @@
                     }
                     lastIndex = rowIndex;
                 },
+                
                 onBeginEdit: function(rowIndex, row) {
                     var editors = $('#dg_request').datagrid('getEditors', rowIndex);
                     var qty_po = $(editors[0].target);
@@ -251,6 +261,7 @@
                     var qty_receipt = $(editors[2].target);
                     var qty_mpq = $(editors[3].target);
                     var qty_label = $(editors[4].target);
+                    
                     qty_receipt.add(qty_mpq).numberbox({
                         onChange: function() {
                             var f_qty_po = qty_po.numberbox('getValue');
@@ -280,6 +291,7 @@
             });
         }
     }
+
     //Delete Data
     function deleted() {
         var rows = $('#dg').treegrid('getSelections');
@@ -465,31 +477,39 @@
                                                     allowOutsideClick: false,
                                                 }).then((result) => {
                                                     if (result.isConfirmed) {
-                                                        window.location.reload();
+                                                        Swal.fire({
+                                                            title: "Are you Want to Print Barcode?",
+                                                            showDenyButton: true,
+                                                            confirmButtonText: "Yes",
+                                                            denyButtonText: `No`
+                                                        }).then((result) => {
+
+                                                            if (result.isConfirmed) {
+                                                                var receipt_no = $("#receipt_no").textbox('getValue');
+                                                                var qty_receipt = row ? row.qty_receipt : 0;
+                                                                var qty_label = row ? row.qty_label : 0;
+
+                                                                var po = {
+                                                                    receipt_no: receipt_no,
+                                                                    qty_receipt: qty_receipt,
+                                                                    qty_label: qty_label
+                                                                };
+
+                                                                window.location.reload();
+                                                                
+                                                                print_po(po);
+                                                            } else if (result.isDenied) {
+                                                                Swal.fire("You can print QR Code in Datagrid", "", "info");
+                                                            }
+                                                        });
                                                     }
                                                 });
                                             }
                                         });
-
-                                        $.messager.confirm('Warning', 'Are you Want to Print Barcode?', function(r) {
-                                            if (r) {
-                                                var receipt_no = $("#receipt_no").textbox('getValue');
-                                                var qty_receipt = row ? row.qty_receipt : 0;
-                                                var qty_label = row ? row.qty_label : 0;
-
-                                                var po = {
-                                                    receipt_no: receipt_no,
-                                                    qty_receipt: qty_receipt,
-                                                    qty_label: qty_label
-                                                };
-                                                print_po(po);
-                                            }
-                                        });
                                     }
                                     
-                                        $('#dg').treegrid('reload');
-                                        $('#dlg_insert').dialog('close');
-                                    
+                                    $('#dg').treegrid('reload');
+                                    $('#dlg_insert').dialog('close');
                                 }
                             });
 

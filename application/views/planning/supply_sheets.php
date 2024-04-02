@@ -1,4 +1,4 @@
-<table id="dg" class="easyui-treegrid" style="width:99.5%;" toolbar="#toolbar">
+<table id="dg" class="easyui-datagrid" style="width:99.5%;" toolbar="#toolbar">
     <thead>
         <tr>
             <th rowspan="2" field="ck" checkbox="true"></th>
@@ -8,7 +8,7 @@
             <th rowspan="2" data-options="field:'period',width:100,halign:'center'" sortable="true">Period</th>
             <th rowspan="2" data-options="field:'wp',width:50,halign:'center'" sortable="true">WP</th>
             <th rowspan="2" data-options="field:'workorder',width:150,halign:'center'" sortable="true">Work Order</th>
-            <th rowspan="2" data-options="field:'item_number',width:150,halign:'center'" sortable="true">Product No</th>
+            <!-- <th rowspan="2" data-options="field:'item_number',width:150,halign:'center'" sortable="true">Product No</th>
             <th rowspan="2" data-options="field:'item_name',width:150,halign:'center'" sortable="true">Product Name</th>
             <th rowspan="2" data-options="field:'uom',width:80,align:'center'" sortable="true">UoM</th>
             <th rowspan="2" data-options="field:'qpa',width:80,halign:'center',align:'right',formatter:numberformatQpa" sortable="true">QPA</th>
@@ -18,7 +18,7 @@
             <th rowspan="2" data-options="field:'qty_act',width:80,halign:'center',align:'right',formatter:numberformatQpa" sortable="true">Actual Qty</th>
             <th rowspan="2" data-options="field:'qty_issued',width:80,halign:'center',align:'right',formatter:numberformatQpa" sortable="true">Issued</th>
             <th rowspan="2" data-options="field:'qty_issued_bal',width:80,halign:'center',align:'right',formatter:numberformatQpa" sortable="true">O/S Qty</th>
-            <th rowspan="2" data-options="field:'supply_type',width:80,align:'center',formatter:issuedformat,styler:statusIssued" sortable="true">Supply<br>Type</th>
+            <th rowspan="2" data-options="field:'supply_type',width:80,align:'center',formatter:issuedformat,styler:statusIssued" sortable="true">Supply<br>Type</th> -->
             <th colspan="2" data-options="field:'',width:100,halign:'center'"> Created</th>
             <th colspan="2" data-options="field:'',width:100,halign:'center'"> Updated</th>
         </tr>
@@ -110,12 +110,12 @@
                     <input style="width:60%;" name="so_number" id="so_number" readonly class="easyui-textbox">
                 </div>
                 <div class="fitem">
-                    <span style="width:35%; display:inline-block;">Customer</span>
-                    <input style="width:60%;" name="customer_id" id="customer_id" required="" class="easyui-combogrid">
-                </div>
-                <div class="fitem">
                     <span style="width:35%; display:inline-block;">Product No</span>
-                    <input style="width:60%;" name="item_fg_id" id="item_fg_id" required="" class="easyui-combogrid">
+                    <input style="width:60%;" name="item_fg_id" id="item_fg_id" required="" class="easyui-combobox">
+                </div>
+                <div class="fitem" hidden>
+                    <span style="width:35%; display:inline-block;">Product No</span>
+                    <input style="width:60%;" name="item_fg_number" id="item_fg_number" required="" class="easyui-textbox">
                 </div>
                 <div class="fitem" hidden>
                     <span style="width:35%; display:inline-block;">Operation</span>
@@ -137,66 +137,36 @@
         $('#dg_request').datagrid('loadData', []);
         request_no();
         $("#period").combobox({
-            url: '<?= base_url('planning/production_schedules/readPeriod') ?>',
+            url: '<?= base_url('planning/supply_sheets/bpiPeriod') ?>',
             valueField: 'period',
             textField: 'period',
             prompt: "Select Period",
             onSelect: function(rowPeriod) {
                 $("#wp").combobox({
-                    url: '<?= base_url('planning/production_schedules/readWp?period=') ?>' + window.btoa(rowPeriod.period),
+                    url: '<?= base_url('planning/supply_sheets/bpiWp/') ?>' + rowPeriod.period,
                     valueField: 'wp',
                     textField: 'wp',
                     prompt: "Select WP",
                     onSelect: function(rowWP) {
                         $("#workorder").combobox({
-                            url: '<?= base_url('planning/production_schedules/readWorkorder?period=') ?>' + window.btoa(rowPeriod.period) + '&wp=' + window.btoa(rowWP.wp),
+                            url: '<?= base_url('planning/supply_sheets/bpiWo/') ?>' + rowPeriod.period + '/' + rowWP.wp,
                             valueField: 'workorder',
                             textField: 'workorder',
                             prompt: "Select Workorder",
                             onSelect: function(rowWorkorder) {
-                                $("#so_number").textbox('setValue', rowWorkorder.so_number);
-                                $("#customer_id").combogrid({
-                                    url: '<?= base_url('planning/production_schedules/readCustomer?wp=') ?>' + window.btoa(rowWP.wp) + "&period=" + window.btoa(rowPeriod.period) + "&workorder=" + window.btoa(rowWorkorder.workorder),
+                                // $("#so_number").textbox('setValue', rowWorkorder.so_number);
+                                console.log(rowWorkorder.product_no);
+                                $("#item_fg_id").combobox({
+                                    url: '<?= base_url('planning/supply_sheets/readItems/') ?>' + window.btoa(rowWorkorder.product_no),
                                     panelWidth: 420,
-                                    idField: 'customer_id',
-                                    textField: 'customer_name',
-                                    mode: 'remote',
-                                    fitColumns: true,
-                                    prompt: "Select Customer No",
-                                    columns: [
-                                        [{
-                                            field: 'customer_number',
-                                            title: 'Customer No',
-                                            width: 120
-                                        }, {
-                                            field: 'customer_name',
-                                            title: 'Customer Name',
-                                            width: 250
-                                        }, ]
-                                    ],
-                                    onSelect: function(val, rowCust) {
-                                        $("#item_fg_id").combogrid({
-                                            url: '<?= base_url('planning/production_schedules/readItems?wp=') ?>' + window.btoa(rowWP.wp) + "&period=" + window.btoa(rowPeriod.period) + "&customer_id=" + rowCust.customer_id + "&workorder=" + window.btoa(rowWorkorder.workorder),
-                                            panelWidth: 420,
-                                            idField: 'item_fg_id',
-                                            textField: 'item_number',
-                                            mode: 'remote',
-                                            fitColumns: true,
-                                            prompt: "Select Product No",
-                                            columns: [
-                                                [{
-                                                    field: 'item_number',
-                                                    title: 'Product No',
-                                                    width: 120
-                                                }, {
-                                                    field: 'item_name',
-                                                    title: 'Product Name',
-                                                    width: 250
-                                                }, ]
-                                            ]
-                                        });
+                                    valueField: 'item_fg_id',
+                                    textField: 'item_number',
+                                    prompt: "Select Product No",
+                                    onSelect: function(item_fg) {
+                                        console.log(item_fg.item_fg_id);  
+                                        $("#item_fg_number").textbox('setValue', item_fg.item_number);
                                     }
-                                });
+                                });    
                             }
                         });
                     }
@@ -222,7 +192,8 @@
     }
 
     function preview() {
-        var item_fg_id = $("#item_fg_id").combogrid('getValue');
+        var item_fg_id = $("#item_fg_id").combobox('getValue');
+        var item_fg_number = $("#item_fg_number").textbox('getValue');
         var workorder = $("#workorder").textbox('getValue');
         var operation = $("#operation").combobox('getValue');
         if (workorder == "" || item_fg_id == "") {
@@ -230,7 +201,7 @@
         } else {
             var lastIndex;
             var dg = $('#dg_request').datagrid({
-                url: '<?= base_url('planning/supply_sheets/datatablesTemp') ?>?workorder=' + workorder + '&operation=' + operation,
+                url: '<?= base_url('planning/supply_sheets/datatablesTemp') ?>?workorder=' + workorder + '&operation=' + operation + '&item_id=' + item_fg_id + '&item_fg_number=' + item_fg_number,
                 singleSelect: false,
                 idField: 'item_rm_id',
                 columns: [
@@ -439,20 +410,13 @@
         var filter_period = $("#filter_period").combobox('getValue');
         var filter_wp = $("#filter_wp").combobox('getValue');
         var filter_request_no = $("#filter_request_no").combobox('getValue');
-        var filter_operation = $("#filter_operation").combobox('getValue');
-        url = "?filter_period=" + filter_period + "&filter_wp=" + filter_wp + "&filter_request_no=" + filter_request_no + "&filter_operation=" + filter_operation + "&filter_supply_type=" + filter_supply_type;
-        $('#dg').treegrid({
-            url: '<?= base_url('planning/supply_sheets/datatables') ?>' + url,
-            rownumbers: true,
-            idField: 'id',
-            treeField: 'request_no',
-            singleSelect: false,
-            onBeforeLoad: function(row, param) {
-                if (!row) {
-                    param.id = 0;
-                }
-            },
+        // var filter_operation = $("#filter_operation").combobox('getValue');
+        url = "?filter_period=" + filter_period + "&filter_wp=" + filter_wp + "&filter_request_no=" + filter_request_no + "&filter_supply_type=" + filter_supply_type; //"&filter_operation=" + filter_operation +
+        
+        $('#dg').datagrid({
+            url: '<?= base_url('planning/supply_sheets/datatables') ?>' + url
         });
+
         $("#printout").contents().find('html').html("<center><br><br><br><b style='font-size:20px;'>Please Wait...</b></center>");
         $("#printout").attr('src', '<?= base_url('planning/supply_sheets/print') ?>' + url);
     }
@@ -466,9 +430,9 @@
         var filter_period = $("#filter_period").combobox('getValue');
         var filter_wp = $("#filter_wp").combobox('getValue');
         var filter_request_no = $("#filter_request_no").combobox('getValue');
-        var filter_operation = $("#filter_operation").combobox('getValue');
+        // var filter_operation = $("#filter_operation").combobox('getValue');
 
-        url = "?filter_period=" + filter_period + "&filter_wp=" + filter_wp + "&filter_request_no=" + filter_request_no + "&filter_operation=" + filter_operation + "&filter_supply_type=" + filter_supply_type;
+        url = "?filter_period=" + filter_period + "&filter_wp=" + filter_wp + "&filter_request_no=" + filter_request_no + "&filter_supply_type=" + filter_supply_type;//+ "&filter_operation=" + filter_operation
         window.location.assign('<?= base_url('planning/supply_sheets/print/excel') ?>' + url);
     }
 
@@ -499,31 +463,94 @@
     //     });
     // }
     $(function() {
-        $('#dg').treegrid({
+ 
+        $('#dg').datagrid({
             url: '<?= base_url('planning/supply_sheets/datatables') ?>',
             pagination: true,
             rownumbers: true,
-            idField: 'id',
-            treeField: 'request_no',
             fit: true,
-            pageList: [10, 50, 100, 500, 1000],
-            pageSize: 10,
-            singleSelect: false,
-            onBeforeLoad: function(row, param) {
-                if (!row) {
-                    param.id = 0;
-                }
+            pageList: [20, 50, 100, 500, 1000],
+            pageSize: 20,
+            view: detailview,
+            detailFormatter: function(index, row) {
+                return '<div style="padding:2px;position:relative;"><table class="ddv" title="Detail Of ' + row.request_no + '"></table></div>';
             },
-            // onClickRow: function(index) {
-            //     if (index != 1) {
-            //         $(this).datagrid('unselectRow', index).datagrid('selectRow', 1);
-            //     }
-            // }
-            // rowStyler: function(row) {
-            //     if (row.state != "closed") {
-            //         return 'background-color:#CFE6FF;font-weight:bold;';
-            //     }
-            // },
+            onExpandRow: function(index, row) {
+                var ddv = $(this).datagrid('getRowDetail', index).find('table.ddv');
+
+                ddv.datagrid({
+                    url: '<?= base_url('planning/supply_sheets/datatableDetails/') ?>' + window.btoa(row.request_no),
+                    singleSelect: true,
+                    rownumbers: true,
+                    columns: [
+                        [{
+                            field: 'item_number',
+                            title: 'Product No',
+                            halign: 'center',
+                            width: 200
+                        },{
+                            field: 'item_name',
+                            title: 'Product Name.',
+                            halign: 'center',
+                            width: 200
+                        }, {
+                            field: 'uom',
+                            title: 'UoM',
+                            halign: 'center',
+                            width: 80
+                        }, {
+                            field: 'mpq',
+                            title: 'MPQ',
+                            halign: 'center',
+                            width: 80,
+                            formatter: numberformatQpa
+                        }, {
+                            field: 'qty_req',
+                            title: 'Req Qty',
+                            halign: 'center',
+                            align: 'right',
+                            width: 100,
+                            formatter: numberformatQpa
+                        }, {
+                            field: 'qty_act',
+                            title: 'Actual Qty',
+                            halign: 'center',
+                            align: 'right',
+                            width: 100,
+                            formatter: numberformatQpa
+                        }, {
+                            field: 'qty_issued',
+                            title: 'Issued',
+                            halign: 'center',
+                            align: 'right',
+                            width: 100,
+                            formatter: numberformatQpa
+                        }, {
+                            field: 'qty_issued_bal',
+                            title: 'O/S Qty',
+                            halign: 'center',
+                            width: 100,
+                            formatter: numberformatQpa
+                        }, {
+                            field: 'supply_type',
+                            title: 'Supply <br>Type',
+                            halign: 'center',
+                            width: 100,
+                            formatter: issuedformat,
+                            styler: statusIssued
+                        }]
+                    ],
+                    onResize: function() {
+                        $('#dg').datagrid('fixDetailRowHeight', index);
+                    },
+                    onLoadSuccess: function() {
+                        setTimeout(function() {
+                            $('#dg').datagrid('fixDetailRowHeight', index);
+                        }, 0);
+                    }
+                });
+                $('#dg').datagrid('fixDetailRowHeight', index);
+            }
         });
 
         //Save Data
@@ -644,38 +671,39 @@
             }
         });
 
-        $("#filter_operation").combobox({
-            url: '<?= base_url('master/bom/readOperations') ?>',
-            valueField: 'operation',
-            textField: 'operation',
-            prompt: "Select Operation",
-            panelHeight: 'auto',
-            icons: [{
-                iconCls: 'icon-clear',
-                handler: function(e) {
-                    $(e.data.target).combobox('clear').combobox('textbox').focus();
-                }
-            }],
-        });
-        $("#operation").combobox({
-            url: '<?= base_url('master/bom/readOperations') ?>',
-            valueField: 'operation',
-            textField: 'operation',
-            prompt: "All Operation",
-            panelHeight: 'auto',
-            icons: [{
-                iconCls: 'icon-clear',
-                handler: function(e) {
-                    $(e.data.target).combobox('clear').combobox('textbox').focus();
-                }
-            }],
-        });
-        $("#request_date").datebox({
-            onChange: function(val) {
-                request_no(val);
-            }
-        });
+        // $("#filter_operation").combobox({
+        //     url: '<?= base_url('master/bom/readOperations') ?>',
+        //     valueField: 'operation',
+        //     textField: 'operation',
+        //     prompt: "Select Operation",
+        //     panelHeight: 'auto',
+        //     icons: [{
+        //         iconCls: 'icon-clear',
+        //         handler: function(e) {
+        //             $(e.data.target).combobox('clear').combobox('textbox').focus();
+        //         }
+        //     }],
+        // });
+        // $("#operation").combobox({
+        //     url: '<?= base_url('master/bom/readOperations') ?>',
+        //     valueField: 'operation',
+        //     textField: 'operation',
+        //     prompt: "All Operation",
+        //     panelHeight: 'auto',
+        //     icons: [{
+        //         iconCls: 'icon-clear',
+        //         handler: function(e) {
+        //             $(e.data.target).combobox('clear').combobox('textbox').focus();
+        //         }
+        //     }],
+        // });
+        // $("#request_date").datebox({
+        //     onChange: function(val) {
+        //         request_no(val);
+        //     }
+        // });
     });
+
     //Format Datepicker
     function myformatter(date) {
         var y = date.getFullYear();

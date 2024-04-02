@@ -87,7 +87,7 @@
                 </div>
                 <div class="fitem">
                     <span style="width:35%; display:inline-block;">Division</span>
-                    <input style="width:60%;" name="division" id="division" class="easyui-combobox">
+                    <input style="width:60%;" name="division" id="division" class="easyui-combobox" required>
                 </div>
             </div>
             <div style="width: 50%; float: left;">
@@ -210,8 +210,15 @@
                                     field: 'po'
                                 });
 
+                                
+                                var ed5 = dg.datagrid('getEditor', {
+                                    index: rowIndex,
+                                    field: 'uom'
+                                });
+
                                 $(ed.target).textbox('setValue', rows.id);
                                 $(ed2.target).textbox('setValue', rows.item_name);
+                                $(ed5.target).textbox('setValue', rows.uom);
 
                                 // $.ajax({
                                 //     type: "post",
@@ -272,6 +279,14 @@
                             required: true,
                             // precision: 2
                         }
+                    }
+                }, {
+                    field: 'uom',
+                    width: 80,
+                    halign: 'center',
+                    title: "Uom",
+                    editor: {
+                        type: 'textbox',
                     }
                 }, {
                     field: 'stock',
@@ -369,14 +384,14 @@
                     $("#item_family_id").combobox('disable');
                     $("#item_category_id").combobox('disable');
                     $("#request_date").combobox('disable');
+                    $("#request_no").combobox('disable');
                     $("#expected_date").combobox('disable');
-
-
+               
                     url_save= '<?= base_url('purchase/purchase_requests/update') ?>';
 
                     setTimeout(function() {
                         $('#request_no').textbox('setValue', row.request_no);
-                    }, 3000);
+                    }, 500);
 
                     addTable(row.item_family_number, '<?= base_url('purchase/purchase_requests/datatable_updates?request_no=') ?>' + window.btoa(row.request_no));
                 } else {

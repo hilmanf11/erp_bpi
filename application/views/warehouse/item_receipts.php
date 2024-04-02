@@ -71,6 +71,7 @@
         $('#label_no').keypress(function(e) {
             if (e.which == 13) {
                 var label_no = $("#label_no").val();
+                console.log(label_no);
                 $.ajax({
                     type: "POST",
                     url: "<?= base_url('warehouse/item_receipts/getPoReceipt') ?>",
@@ -124,5 +125,5 @@
             minimumFractionDigits: 2
         });
         return "<b>" + formatter.format(value) + "</b>";
-    }
+    } 
 </script>

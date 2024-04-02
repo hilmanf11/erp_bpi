@@ -86,7 +86,7 @@ class Supplier_items extends CI_Controller
         $this->db->join('item_familys d', 'c.item_family_id = d.id');
         $this->db->where('a.deleted', 0);
         // $this->db->where('a.status', 0);
-        $this->db->like("c.number", $item_number);
+        $this->db->where("c.number", $item_number);
         $this->db->like("c.id", $item_id);
         $this->db->like("d.id", $item_family_id);
         $this->db->like("b.name", $post);

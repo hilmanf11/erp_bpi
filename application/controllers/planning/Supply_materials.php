@@ -360,7 +360,6 @@ class Supply_materials extends CI_Controller
                                         <th>No</th>
                                         <th>Product No</th>
                                         <th>Product Name</th>
-                                        <th>Product Specification</th>
                                         <th>Uom</th>
                                         <th>Qty</th>
                                         <th width="80">WHS Stock</th>
@@ -394,7 +393,6 @@ class Supply_materials extends CI_Controller
                                 <td>' . $no . '</td>
                                 <td>' . $record['item_number'] . '</td>
                                 <td>' . $record['item_name'] . '</td>
-                                <td>' . $record['description'] . '</td>
                                 <td>' . $record['uom'] . '</td>
                                 <td style="text-align:right;">' . $record['qty'] . '</td>
                                 <td style="text-align:right;">' . number_format((@$stockWarehouse[0]->end_stock), 2) . '</td>

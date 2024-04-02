@@ -79,16 +79,13 @@ class Report_history_transactions extends CI_Controller
         }
     }
 
-    public function readItemFamily($id = "")
+    public function readItemFamily($item_category_id)
     {
         $this->db->select('*');
         $this->db->from('item_familys');
+        $this->db->where('id !=', "P08"); 
         $this->db->where('deleted', 0);
-        if ($id != "P08") {
-            $this->db->where("id", $id);
-        } else {
-            $this->db->where("id !=", $id);
-        }
+        $this->db->where("item_category_id", $item_category_id);
         $this->db->order_by('name', 'ASC');
         $records = $this->db->get()->result_array();
         echo json_encode($records);
@@ -103,6 +100,7 @@ class Report_history_transactions extends CI_Controller
         }
         $filter_from = $this->input->get('filter_from');
         $filter_to   = $this->input->get('filter_to');
+        $filter_item_category = $this->input->get('filter_item_category');
         $filter_item_family = $this->input->get('filter_item_family');
         $filter_items = $this->input->get('filter_items');
         $filter_display = $this->input->get("filter_display");
@@ -120,25 +118,35 @@ class Report_history_transactions extends CI_Controller
             a.number, 
             a.name, 
             b.name as prodfam, 
-            a.uom, 
+            a.uom,
+            c.name as category_name, 
             COALESCE(0,0) as begin_stock,
-            (COALESCE(SUM(e.qty),0) + COALESCE(g.return_qty, 0)) as qty_in,
-            f.qty as qty_out,
-            (COALESCE(SUM(e.qty),0) - COALESCE(f.qty, 0) + COALESCE(g.return_qty, 0)) as end_stock
+            (COALESCE(SUM(e.qty),0) + COALESCE(g.return_qty, 0) + COALESCE(h.qty_stock_rm, 0)) as qty_in,
+            f.qty as qty_out
         FROM item_rm a 
         JOIN item_familys b ON a.item_family_id = b.id and b.number != '006'
+        JOIN item_categories c ON a.item_category_id = c.id
         LEFT JOIN purchase_order_receipts d ON a.id = d.item_rm_id and d.receipt_date between '$filter_from' and '$filter_to'
         LEFT JOIN scan_item_receipts e ON d.receipt_id = e.receipt_id
         LEFT JOIN (SELECT item_rm_id, COALESCE(SUM(qty), 0) as qty FROM issued_material_details WHERE DATE_FORMAT(created_date, '%Y-%m-%d') between '$filter_from' and '$filter_to' GROUP BY item_rm_id) f ON a.id = f.item_rm_id
         LEFT JOIN (SELECT a.item_rm_id, SUM(c.qty) as return_qty
+
             FROM return_materials a 
             JOIN return_material_labels b ON a.return_id = b.return_id
             JOIN scan_item_receipts c ON a.return_id = c.receipt_id and b.label_no = c.label_no
             WHERE a.return_date between '$filter_from' and '$filter_to'
             GROUP BY a.item_rm_id) g ON a.id = g.item_rm_id
-        WHERE b.number like '%$filter_item_family%' and a.id like '%$filter_items%'
+        
+        LEFT JOIN (SELECT a.item_rm_id, SUM(a.qty) as qty_stock_rm
+
+            FROM os_rm a
+            JOIN item_rm b ON a.item_rm_id = b.id
+            WHERE a.trans_date between '$filter_from' and '$filter_to'
+            GROUP BY a.item_rm_id) h ON a.id = h.item_rm_id
+        
+        WHERE c.id like '%$filter_item_category%' and b.number like '%$filter_item_family%' and a.id like '%$filter_items%'
         GROUP BY a.id
-        ORDER BY a.number");
+        ORDER BY c.name DESC, b.name DESC, a.number");
 
         $html = '<html><head><title>Print Data</title></head><style>body {font-family: Arial, Helvetica, sans-serif;}#customers {border-collapse: collapse;width: 100%;font-size: 12px;}#customers td, #customers th {border: 1px solid #ddd;padding: 2px;}#customers tr:nth-child(even){background-color: #f2f2f2;}#customers tr:hover {background-color: #ddd;}#customers th {padding-top: 2px;padding-bottom: 2px;text-align: center;color: black;}</style><body>
             <center>
@@ -171,6 +179,7 @@ class Report_history_transactions extends CI_Controller
                     <th colspan="3">Product No</th>
                     <th colspan="2">Product Name</th>
                     <th colspan="2">Uom</th>
+                    <th colspan="2">Category</th>
                     <th>Product Family</th>
                     <th width="100">Begin<br>Stock</th>
                     <th width="100">In</th>
@@ -178,13 +187,24 @@ class Report_history_transactions extends CI_Controller
                     <th width="100">Ending<br>Stock</th>
                 </tr>';
         $no = 1;
+
+        $totalBeginStock = 0;
+        $totalIn = 0;
+        $totalOut = 0;
+        $totalEndingStock = 0;
+
         foreach ($records as $record) {
             $item_rm_id = $record->id;
+
+            $totalBeginStock += @$itemReceipts[0]->begin_stock;
+            $totalIn += $record->qty_in;
+            $totalOut += $record->qty_out;
+            $totalEndingStock += @(@$itemReceipts[0]->begin_stock + $record->qty_in) - $record->qty_out;
 
             //Item Receipts
             $itemReceipts = $this->crud->query("SELECT
                 a.id,
-                (COALESCE(SUM(e.qty),0) + COALESCE(g.return_qty,0) - COALESCE(f.qty, 0)) as begin_stock
+                (COALESCE(SUM(e.qty),0) + COALESCE(g.return_qty,0) + COALESCE(h.qty_stock_rm, 0) - COALESCE(f.qty, 0) ) as begin_stock
             FROM item_rm a 
             JOIN item_familys b ON a.item_family_id = b.id and b.number != '006'
             LEFT JOIN purchase_order_receipts d ON a.id = d.item_rm_id and d.receipt_date < '$filter_from'
@@ -196,6 +216,12 @@ class Report_history_transactions extends CI_Controller
                 JOIN scan_item_receipts c ON a.return_id = c.receipt_id and b.label_no = c.label_no
                 WHERE a.return_date < '$filter_from'
                 GROUP BY a.item_rm_id) g ON a.id = g.item_rm_id
+
+            LEFT JOIN (SELECT a.item_rm_id, SUM(a.qty) as qty_stock_rm
+            FROM os_rm a
+            JOIN item_rm b ON a.item_rm_id = b.id
+            WHERE a.trans_date < '$filter_from'
+            GROUP BY a.item_rm_id) h ON a.id = h.item_rm_id
             WHERE a.id like '$item_rm_id'
             GROUP BY a.id
             ORDER BY a.number");
@@ -205,11 +231,12 @@ class Report_history_transactions extends CI_Controller
                             <td colspan="3">' . $record->number . '</td>
                             <td colspan="2">' . $record->name . '</td>
                             <td colspan="2">' . $record->uom . '</td>
+                            <td colspan="2">' . $record->category_name . '</td>
                             <td>' . $record->prodfam . '</td>
                             <td style="text-align:right;">' . number_format(@$itemReceipts[0]->begin_stock, 2) . '</td>
                             <td style="text-align:right;">' . number_format($record->qty_in, 2) . '</td>
                             <td style="text-align:right;">' . number_format($record->qty_out, 2) . '</td>
-                            <td style="text-align:right;">' . number_format((@$itemReceipts[0]->begin_stock + $record->end_stock), 2) . '</td>
+                            <td style="text-align:right;">' . number_format((@$itemReceipts[0]->begin_stock + $record->qty_in) - $record->qty_out, 2) . '</td>
                         </tr>';
 
             if ($filter_display == "DETAIL") {
@@ -344,6 +371,14 @@ class Report_history_transactions extends CI_Controller
             }
             $no++;
         }
+
+        $html .= '<tr>
+            <td colspan="11" style="text-align:right;"><b>GRAND TOTAL</b></td>
+            <td style="text-align:right;">' . number_format($totalBeginStock, 2) . '</td>
+            <td style="text-align:right;">' . number_format($totalIn, 2) . '</td>
+            <td style="text-align:right;">' . number_format($totalOut, 2) . '</td>
+            <td style="text-align:right;">' . number_format($totalEndingStock, 2) . '</td>
+        </tr>';
       
         $html .= '</table></body></html>';
         echo $html;

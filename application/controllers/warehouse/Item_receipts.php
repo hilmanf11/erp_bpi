@@ -51,6 +51,14 @@ class Item_receipts extends CI_Controller
                     $this->db->where('a.label_no', $label_no);
                     $totalRows = $this->db->count_all_results('', false);
                     $records = $this->db->get()->result_array();
+
+                    if (!$records) {
+                        $this->db->select("a.label_no, a.qty");
+                        $this->db->from('new_barcode a');
+                        $this->db->where('a.label_no', $label_no);
+                        $totalRows = $this->db->count_all_results('', false);
+                        $records = $this->db->get()->result_array();
+                    }
                 }
             }
             //Mapping Data
@@ -87,7 +95,6 @@ class Item_receipts extends CI_Controller
             $this->db->join('return_materials b', 'a.receipt_id = b.return_id and a.receipt_no = b.return_no');
             $this->db->join('return_material_labels c', 'a.label_no = c.label_no');
             $this->db->join('item_rm d', 'b.item_rm_id = d.id');
-            // $this->db->join('uom e', 'd.uom_id = e.id');
             $this->db->where('a.deleted', 0);
             $this->db->where('a.status', 0);
             $this->db->like('a.created_date', $date);
@@ -97,6 +104,22 @@ class Item_receipts extends CI_Controller
             $totalRows = $this->db->count_all_results('', false);
             //Get Data Array
             $records = $this->db->get()->result_array();
+
+            if (!$records) {
+                $new_barcode = $this->crud->read('new_barcode', [], ["label_no" => base64_decode($label_no)]);
+                $this->db->select('a.label_no, d.number as item_number, d.name as item_name, d.uom, a.qty, a.created_by, a.created_date');
+                $this->db->from('new_barcode a');
+                $this->db->join('item_rm d', 'a.item_rm_id = d.id');
+                $this->db->where('a.label_no', @$new_barcode->label_no);
+                $this->db->where('a.deleted', 0);
+                $this->db->where('a.status', 0);
+                // $this->db->like('a.created_date', $date);
+                // $this->db->group_by('a.label_no');
+                //Total Data
+                $totalRows = $this->db->count_all_results('', false);
+                //Get Data Array
+                $records = $this->db->get()->result_array();
+            }
         }
 
         //Mapping Data
@@ -115,6 +138,7 @@ class Item_receipts extends CI_Controller
                     if ($send) {
                         $update   = $this->crud->update('purchase_order_labels', ["label_no" => $post['label_no']], ["status" => 1]);
                         $update   = $this->crud->update('return_material_labels', ["label_no" => $post['label_no']], ["status" => 1]);
+                        $update   = $this->crud->update('new_barcode', ["label_no" => $post['label_no']], ["status" => 1]);
                         echo $send;
                     }
                 } else {

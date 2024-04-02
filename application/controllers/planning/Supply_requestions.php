@@ -442,7 +442,7 @@ class Supply_requestions extends CI_Controller
                     (COALESCE(SUM(e.qty),0) + COALESCE(g.return_qty,0) - COALESCE(f.qty, 0)) as end_stock
                 FROM item_rm a 
                 JOIN item_familys b ON a.item_family_id = b.id
-                JOIN uom c ON a.uom = c.uom
+                -- JOIN uom c ON a.uom = c.uom
                 LEFT JOIN purchase_order_receipts d ON a.id = d.item_rm_id and d.receipt_date <= '$dateNow'
                 LEFT JOIN scan_item_receipts e ON d.receipt_id = e.receipt_id
                 LEFT JOIN (SELECT item_rm_id, COALESCE(SUM(qty), 0) as qty FROM issued_material_details WHERE DATE_FORMAT(created_date, '%Y-%m-%d') <= '$dateNow' GROUP BY item_rm_id) f ON a.id = f.item_rm_id

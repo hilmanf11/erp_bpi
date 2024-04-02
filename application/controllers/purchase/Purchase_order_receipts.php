@@ -74,6 +74,7 @@ class Purchase_order_receipts extends CI_Controller
         $records = $this->crud->query("SELECT b.id, b.number, b.name FROM purchase_order_receipts a JOIN suppliers b ON a.supplier_id = b.id WHERE a.status = '0' GROUP BY a.supplier_id ORDER BY a.created_date desc");
         echo json_encode($records);
     }
+    
     public function receipt_no($date = "")
     {
         if ($date == "") {
@@ -93,6 +94,7 @@ class Purchase_order_receipts extends CI_Controller
         }
         echo "POR-" . $datenow . "-" . $autoID;
     }
+
     public function receipt_id($receipt_no)
     {
         $sqlGetID   = $this->db->query("SELECT max(receipt_id) as kode FROM purchase_order_receipts WHERE receipt_id like '%$receipt_no%'");
@@ -233,6 +235,7 @@ class Purchase_order_receipts extends CI_Controller
             }
         }
     }
+
     public function datatablesTemp()
     {
         $po_no = $this->input->get('po_no');
@@ -246,7 +249,7 @@ class Purchase_order_receipts extends CI_Controller
             a.supplier_id, 
             b.uom,
             (a.qty - (CASE WHEN d.qty_os is null THEN 0 ELSE d.qty_os END)) as qty_os,
-            (a.qty - (CASE WHEN d.qty_os is null THEN 0 ELSE d.qty_os END)) as qty_receipt,
+            
             CEIL((a.qty - (CASE WHEN d.qty_os is null THEN 0 ELSE d.qty_os END)) / c.mpq) as qty_label');
         $this->db->from('purchase_orders a');
         $this->db->join('item_rm b', 'a.item_rm_id = b.id');
@@ -257,7 +260,9 @@ class Purchase_order_receipts extends CI_Controller
         $this->db->where('a.po_no', $po_no);
         $records = $this->db->get()->result_array();
         echo json_encode($records);
+        // (a.qty - (CASE WHEN d.qty_os is null THEN 0 ELSE d.qty_os END)) as qty_receipt,
     }
+
     public function create()
     {
         if ($this->input->post()) {
@@ -296,57 +301,68 @@ class Purchase_order_receipts extends CI_Controller
         $this->db->from('config');
         $config = $this->db->get()->row();
         $receipt_no = base64_decode($receipt_no);
-        $receipt_data = $this->crud->read('purchase_order_receipts', [], ["receipt_no" => $receipt_no]);
-        $receipt_id = $receipt_data->receipt_id;
-        $po_receipt = $this->crud->read('purchase_order_receipts', [], ["receipt_id" => $receipt_id]);
-        $qty_receipt = $po_receipt->qty_receipt;
-        //Cek Label
-        $po_receipt_label = $this->crud->reads('purchase_order_labels', [], ["receipt_id" => $receipt_id]);
-        if (!$po_receipt_label) {
-            for ($i = 0; $i < $po_receipt->qty_label; $i++) {
-                //Read Label ID
-                $sqlGetID = $this->db->query("SELECT max(label_no) as kode FROM purchase_order_labels WHERE receipt_id = '$receipt_id'");
-                $rowID = $sqlGetID->row();
-                $label = $rowID->kode;
-                if ($label == NULL) {
-                    $autoID = $receipt_id . sprintf("%04s", $label + 1);
-                } else {
-                    $urutan = (int) substr($label, -4);
-                    $autoID = $receipt_id . sprintf("%04s", $urutan + 1);
-                }
-                if ($qty_receipt > $po_receipt->qty_mpq) {
-                    $qty = $po_receipt->qty_mpq;
-                } else {
-                    $qty = $qty_receipt;
-                }
-                $date = new DateTime($po_receipt->receipt_date);
-                $p_month = $date->format('m'); 
-                $p_year = $date->format('y'); 
+        $receipt_datas = $this->crud->reads('purchase_order_receipts', [], ["receipt_no" => $receipt_no]);
+        $receipt_ids = array();
 
-                $sqlGetLot = $this->db->query("SELECT max(lot_no) as kode FROM purchase_order_labels WHERE receipt_id = '$receipt_id'");
-                $rowLot = $sqlGetLot->row();
-                $lot_no = $rowLot->kode;
-                
-                if ($lot_no === NULL) {
-                    $autoLot = sprintf("%03s", 1).$p_month.$p_year; // Jika lot_no NULL, mulai dari 1
-                } else {
-                    $urutan = (int) substr($lot_no, 0, 3); // Ambil angka urutan dari lot_no yang ada
-                    $autoLot = sprintf("%03s", $urutan + 1).$p_month.$p_year; // Format urutan yang baru
-                }                
+        foreach($receipt_datas as $receipt_data){
+            $receipt_id = $receipt_data->receipt_id;
+            $po_receipt = $this->crud->read('purchase_order_receipts', [], ["receipt_id" => $receipt_id]);
+            $qty_receipt = $po_receipt->qty_receipt;
+            //Cek Label
+            $po_receipt_label = $this->crud->reads('purchase_order_labels', [], ["receipt_id" => $receipt_id]);
+            if (!$po_receipt_label) {
 
-                //Simpan Label
-                $arrLabel = [
-                    "receipt_id" => $po_receipt->receipt_id,
-                    "label_no" => $autoID,
-                    "qty" => $qty,
-                    "lot_no" => $autoLot,
-                    "p_month" => $p_month,
-                    "p_year" => $p_year 
-                ];
-                $send = $this->crud->create('purchase_order_labels', $arrLabel);
-                $qty_receipt = ($qty_receipt - $po_receipt->qty_mpq);
+                for ($i = 0; $i < $po_receipt->qty_label; $i++) {
+                    //Read Label ID
+                    $sqlGetID = $this->db->query("SELECT max(label_no) as kode FROM purchase_order_labels WHERE receipt_id = '$receipt_id'");
+                    $rowID = $sqlGetID->row();
+                    $label = $rowID->kode;
+                    if ($label == NULL) {
+                        $autoID = $receipt_id . sprintf("%04s", $label + 1);
+                    } else {
+                        $urutan = (int) substr($label, -4);
+                        $autoID = $receipt_id . sprintf("%04s", $urutan + 1);
+                    }
+                    if ($qty_receipt > $po_receipt->qty_mpq) {
+                        $qty = $po_receipt->qty_mpq;
+                    } else {
+                        $qty = $qty_receipt;
+                    }
+                    $date = new DateTime($po_receipt->receipt_date);
+                    $p_month = $date->format('m'); 
+                    $p_year = $date->format('y'); 
+
+                    $sqlGetLot = $this->db->query("SELECT max(lot_no) as kode FROM purchase_order_labels WHERE receipt_id = '$receipt_id'");
+                    $rowLot = $sqlGetLot->row();
+                    $lot_no = $rowLot->kode;
+                    
+                    if ($lot_no === NULL) {
+                        $autoLot = sprintf("%03s", 1).$p_month.$p_year; // Jika lot_no NULL, mulai dari 1
+                    } else {
+                        $urutan = (int) substr($lot_no, 0, 3); // Ambil angka urutan dari lot_no yang ada
+                        $autoLot = sprintf("%03s", $urutan + 1).$p_month.$p_year; // Format urutan yang baru
+                    }                
+
+                    //Simpan Label
+                    $arrLabel = [
+                        "receipt_id" => $po_receipt->receipt_id,
+                        "label_no" => $autoID,
+                        "qty" => $qty,
+                        "lot_no" => $autoLot,
+                        "p_month" => $p_month,
+                        "p_year" => $p_year 
+                    ];
+
+                    $send = $this->crud->create('purchase_order_labels', $arrLabel);
+                    $qty_receipt = ($qty_receipt - $po_receipt->qty_mpq);
+
+                    $receipt_ids[] = $po_receipt->receipt_id;
+                }
+            }else{
+                $receipt_ids[] = $receipt_id;
             }
         }
+        
         $this->db->select('a.*, b.receipt_date, c.number, c.name, d.location, d.area, c.color, c.uom');
         $this->db->from('purchase_order_labels a');
         $this->db->join('purchase_order_receipts b', 'a.receipt_id = b.receipt_id');
@@ -355,12 +371,12 @@ class Purchase_order_receipts extends CI_Controller
         $this->db->join('item_familys e', 'c.item_family_id = e.id');
         $this->db->where('a.deleted', 0);
         //$this->db->where('a.status', 0);
-        $this->db->where('a.receipt_id', $receipt_id);
+        $this->db->where_in('a.receipt_id', $receipt_ids);
         $this->db->order_by('a.label_no', 'asc');
         $records = $this->db->get()->result_object();
         $html = '<html>
                     <head>
-                        <title>' . $receipt_id . '</title>
+                        <title>' . $receipt_no . '</title>
                         <link rel="icon" href="' . $config->favicon . '" type="image/png" sizes="16x16">
                     </head>
                     <style>body {font-family: Arial, Helvetica, sans-serif; margin:5px;}#customers {border-collapse: collapse; width: 100%; font-size: 9px;}#customers td, #customers th {border: 1px solid black;padding: 2px;}#customers tr:nth-child(even){background-color: #f2f2f2;}#customers tr:hover {background-color: #ddd;}#customers th {padding-top: 2px;padding-bottom: 2px;text-align: center;color: black;}</style><body>';
@@ -372,58 +388,63 @@ class Purchase_order_receipts extends CI_Controller
                     $no = 1;
                 }
                 if ($no == 1) {
-                    $padding = "padding:2mm 3mm 3mm 2mm;";
+                    $padding = "padding:5mm 3mm 0mm 2mm;";
                 } else {
-                    $padding = "padding:2mm 0mm 3mm 4mm;";
+                    $padding = "padding:5mm 3mm 0mm 3mm;";
                 }
                 //Generate QRcode
                 $this->createQrcode($record->label_no, "assets/image/qrcode/");
-                $html .= '  <div style="width: 44mm; max-height:40mm; float:left; ' . $padding . '">
+                $html .= '  <div style="max-width: 44mm; max-height:40mm; float:left; ' . $padding . '">
                                 <table id="customers" border="1" style="margin-bottom:20px;">
-                                    <tr>
-                                        <th colspan="3" style="font-size:7px; text-align:center;"><b>' . $config->name . '</b></th>
+                                    <tr>   
+                                        <th colspan="3" style="font-size:8px; text-align:center;">
+                                            <img src="' . base_url('assets/image/bpi_logo.png') . '" width="10" style="float: left; margin-right: 5px;">
+                                            <b>' . $config->name . '</b>
+                                        </th>
                                     </tr>
                                     <tr>
                                         <td colspan="3" style="height:35px;">
                                             <div style="float:left;">
                                                 <small style="font-size:10px;"><b>' . $record->number . '</b></small>
                                                 <br>
-                                                <b style="font-size:7px;">' . $record->name . " - " .$record->color.'</b>
+                                                <b style="font-size:9px;">' . $record->name . " - " .$record->color.'</b>
                                             </div>
                                             
                                             <div style="float:right;">
-                                                <small style="font-size:15px;"><b>' . $record->p_month . '</b></small><small style="font-size:10px;"><b>' ." - ". $record->p_year . '</b></small>
+                                                <small style="font-size:14px;"><b>' . $record->p_month . '</b></small><small style="font-size:10px;"><b>' ." - ". $record->p_year . '</b></small>
                                             </div>
                                         </td>
                                     </tr>
                                     <tr>
                                         <th style="text-align:left">
-                                            <small>Quantity</small><br><b style="font-size:20px;">' . number_format($record->qty, 2) . '</b></small>
-                                            <small style="font-size:15px; float: right;"><b>'. $record->uom . '</b></small>
+                                            <small style="font-size:10px">Quantity<br><b style="font-size:12px;">' . number_format($record->qty, 2) . '</b></small>
+                                            <small style="font-size:13px; float: right;"><b>'. $record->uom . '</b></small>
                                             </th>
                                         <th style="text-align:left">
-                                            <small>Location</small><br><b style="font-size:20px;"></b><br>
-                                            <small>Lot No. </small><b style="font-size:9px;">' . $record->lot_no . '</b>
+                                            <small style="font-size:9px">Location</small><br>
+                                            <small style="font-size:9px">Lot No. </small><b style="font-size:8px;">' . $record->lot_no . '</b>
                                         </th>
                                     </tr>
                                     
                                     <tr>
                                         <th style="text-align:left">
                                             <div style="display: inline-block;">
-                                                <small>Date :</small><br> 
-                                                <b style="font-size:8px;">' . $record->receipt_date . '</b>
+                                                <small style="font-size:9px">Date :</small><br> 
+                                                <b style="font-size:7px;">' . $record->receipt_date . '</b>
+                                             
                                             </div>
                                             <div style="display: inline-block; float:right;">
-                                                <small>QC PASSED</small><br>
-                                                <small style="float:right;"><b style="font-size:7px;">by:' . $this->session->name . '</b></small>
+                                                <img src="' . base_url('assets/image/qc_passed.png') . '" width="30" style="float: right; margin-right: 5px; margin-top: 5px;">
                                             </div>
                                             <div style="display: inline-block;">
-                                                <small>Label No :</small><br>
-                                                <b style="font-size:8px;">' . $record->label_no . '</b>
+                                                <small style="font-size:9px">Label No :</small><br>
+                                                <b style="font-size:7px;">' . $record->label_no . '</b>
                                             </div>
                                         </th>
                                         <th style="text-align:center;">
-                                            <img src="' . base_url('assets/image/qrcode/' . $record->label_no . '.png') . '" width="50"/>
+                                            <img src="' . base_url('assets/image/qrcode/' . $record->label_no . '.png') . '" width="40"/><br>
+                                            <small style="font-size:6px">QC Passed By :</small>
+                                            <b style="font-size:6px;">' . $this->session->username . '</b>
                                         </th>
                                     </tr>
                                 </table>
@@ -511,70 +532,75 @@ class Purchase_order_receipts extends CI_Controller
                     </head>
                     <style>body {font-family: Arial, Helvetica, sans-serif; margin:5px;}#customers {border-collapse: collapse; width: 100%; font-size: 9px;}#customers td, #customers th {border: 1px solid black;padding: 2px;}#customers tr:nth-child(even){background-color: #f2f2f2;}#customers tr:hover {background-color: #ddd;}#customers th {padding-top: 2px;padding-bottom: 2px;text-align: center;color: black;}</style><body>';
         if ($records) {
-            $html .= '<div style="width: 120mm;">';
-            $no = 1;
+            $html .= '<div style="width: 55mm;">';
+            // $no = 1;
             foreach ($records as $record) {
-                if ($no == 3) {
-                    $no = 1;
-                }
-                if ($no == 1) {
-                    $padding = "padding:2mm 3mm 3mm 2mm;";
-                } else {
-                    $padding = "padding:2mm 0mm 3mm 4mm;";
-                }
+                // if ($no == 3) {
+                //     $no = 1;
+                // }
+                // if ($no == 1) {
+                    $padding = "padding:3mm 5mm 3mm 3mm;";
+                // } else {
+                //     $padding = "padding:5mm 3mm 0mm 3mm;";
+                // }
                 //Generate QRcode
                 $this->createQrcode($record->label_no, "assets/image/qrcode/");
-                $html .= '  <div style="width: 44mm; max-height:40mm; float:left; ' . $padding . '">
+                $html .= '  <div style="max-width: 50mm; max-height:40mm; float:left; ' . $padding . '">
                                 <table id="customers" border="1" style="margin-bottom:20px;">
-                                    <tr>
-                                        <th colspan="3" style="font-size:7px; text-align:center;"><b>' . $config->name . '</b></th>
+                                    <tr>   
+                                        <th colspan="3" style="font-size:8px; text-align:center;">
+                                            <img src="' . base_url('assets/image/bpi_logo.png') . '" width="10" style="float: left; margin-right: 5px;">
+                                            <b>' . $config->name . '</b>
+                                        </th>
                                     </tr>
                                     <tr>
                                         <td colspan="3" style="height:35px;">
                                             <div style="float:left;">
                                                 <small style="font-size:10px;"><b>' . $record->number . '</b></small>
                                                 <br>
-                                                <b style="font-size:7px;">' . $record->name . " - " .$record->color.'</b>
+                                                <b style="font-size:9px;">' . $record->name . " - " .$record->color.'</b>
                                             </div>
                                             
                                             <div style="float:right;">
-                                                <small style="font-size:15px;"><b>' . $record->p_month . '</b></small><small style="font-size:10px;"><b>' ." - ". $record->p_year . '</b></small>
+                                                <small style="font-size:14px;"><b>' . $record->p_month . '</b></small><small style="font-size:10px;"><b>' ." - ". $record->p_year . '</b></small>
                                             </div>
                                         </td>
                                     </tr>
                                     <tr>
                                         <th style="text-align:left">
-                                            <small>Quantity</small><br><b style="font-size:20px;">' . number_format($record->qty, 2) . '</b></small>
-                                            <small style="font-size:15px; float: right;"><b>'. $record->uom . '</b></small>
+                                            <small style="font-size:10px">Quantity<br><b style="font-size:12px;">' . number_format($record->qty, 2) . '</b></small>
+                                            <small style="font-size:13px; float: right;"><b>'. $record->uom . '</b></small>
                                             </th>
                                         <th style="text-align:left">
-                                            <small>Location</small><br><b style="font-size:20px;"></b><br>
-                                            <small>Lot No. </small><b style="font-size:9px;">' . $record->lot_no . '</b>
+                                            <small style="font-size:9px">Location</small><br>
+                                            <small style="font-size:9px">Lot No. </small><b style="font-size:8px;">' . $record->lot_no . '</b>
                                         </th>
                                     </tr>
                                     
                                     <tr>
                                         <th style="text-align:left">
                                             <div style="display: inline-block;">
-                                                <small>Date :</small><br> 
-                                                <b style="font-size:8px;">' . $record->receipt_date . '</b>
+                                                <small style="font-size:9px">Date :</small><br> 
+                                                <b style="font-size:7px;">' . $record->receipt_date . '</b>
+                                             
                                             </div>
                                             <div style="display: inline-block; float:right;">
-                                                <small>QC PASSED</small><br>
-                                                <small style="float:right;"><b style="font-size:7px;">by:' . $this->session->name . '</b></small>
+                                                <img src="' . base_url('assets/image/qc_passed.png') . '" width="30" style="float: right; margin-right: 5px; margin-top: 5px;">
                                             </div>
                                             <div style="display: inline-block;">
-                                                <small>Label No :</small><br>
-                                                <b style="font-size:8px;">' . $record->label_no . '</b>
+                                                <small style="font-size:9px">Label No :</small><br>
+                                                <b style="font-size:7px;">' . $record->label_no . '</b>
                                             </div>
                                         </th>
                                         <th style="text-align:center;">
-                                            <img src="' . base_url('assets/image/qrcode/' . $record->label_no . '.png') . '" width="50"/>
+                                            <img src="' . base_url('assets/image/qrcode/' . $record->label_no . '.png') . '" width="40"/><br>
+                                            <small style="font-size:6px">QC Passed By :</small>
+                                            <b style="font-size:6px;">' . $this->session->username . '</b>
                                         </th>
                                     </tr>
                                 </table>
                             </div>';
-                $no++;
+                // $no++;
             }
             $html .= '</div><script>window.print()</script>';
         } else {
@@ -582,8 +608,6 @@ class Purchase_order_receipts extends CI_Controller
         }
         die($html);
     }
-    // <small style="float:right;">QC PASSED</small>
-    // <small style="font-size: 10px; float:right;"><b>'. $this->session->name . '</b></small><br>
 
     public function print_receiving($receipt_no)
     {

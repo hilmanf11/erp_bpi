@@ -59,19 +59,19 @@ class Os_rm extends CI_Controller
             $result = array();
 
             //Select Query
-            $this->db->select('a.*, b.uom, b.number as item_rm_number, b.name as item_rm_name, c.name as category_name, d.name as product_family_name, e.name as product_family_sub_name');
+            $this->db->select('a.*, b.uom, b.number as item_rm_number, b.name as item_rm_name, c.name as category_name, d.name as product_family_name, e.name as product_family_sub_name');//
             $this->db->from('os_rm a');
             $this->db->join('item_rm b', 'a.item_rm_id = b.id');
             $this->db->join('item_categories c', 'b.item_category_id = c.id');
             $this->db->join('item_familys d', 'b.item_family_id = d.id');
-            $this->db->join('item_family_subs e', 'b.item_sub_family_id = e.id');
+            $this->db->join('item_family_subs e', 'b.item_sub_family_id = e.id','left');
             if($filter_from != "" && $filter_to != ""){
                 $this->db->where('a.trans_date >=', $filter_from);
                 $this->db->where('a.trans_date <=', $filter_to);
             }
             $this->db->like('c.id', $filter_category);
             $this->db->like('d.id', $filter_product_family);
-            $this->db->like('e.id', $filter_product_family_sub);
+            // $this->db->like('e.id', $filter_product_family_sub);
             $this->db->like('b.id', $filter_item_rm);
             $this->db->order_by('a.trans_date', 'DESC');
 
@@ -92,12 +92,15 @@ class Os_rm extends CI_Controller
     public function create()
     {
         if ($this->input->post()) {
-            if ($this->form_validation->run() == TRUE) {
-                $post   = $this->input->post();
-                $send   = $this->crud->create('os_rm', $post);
-                echo $send;
+            $post   = $this->input->post();
+            $os_rm = $this->crud->read("os_rm", [], ["trans_date" => $post['trans_date'], "item_rm_id" => $post['item_rm_id']]);
+            $item_rm = $this->crud->read('item_rm', [], ["id" => $post['item_rm_id']]);
+
+            if (!empty($os_rm)) {
+                echo json_encode(array("title" => "Duplicated", "message" => "Part No " . $item_rm->name . " and Cut Off Date: " . $os_rm->trans_date . " has been inputed.", "theme" => "error"));
             } else {
-                show_error(validation_errors());
+                $send = $this->crud->create('os_rm', $post);
+                echo $send;
             }
         } else {
             show_error("Cannot Process your request");

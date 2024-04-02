@@ -41,4 +41,59 @@ class Dashboard extends CI_Controller
             redirect('error_session');
         }
     }
+    
+    public function testBpi()
+    {
+        $this->bpi = $this->load->database('bpi', TRUE);
+        
+        $this->bpi->select("*");
+        $this->bpi->from('worko');
+        $this->bpi->limit(10);
+        $data = $this->bpi->get()->result_array();
+
+        die(json_encode($data));
+    }
+
+    public function bpiPeriod()
+    {
+        $this->bpi = $this->load->database('bpi', TRUE);
+        
+        $this->bpi->select("TO_CHAR(datesupply::date, 'yyyymm') as period");
+        $this->bpi->from('worko');
+        $this->bpi->group_by("TO_CHAR(datesupply::date, 'yyyymm')");
+        // $this->bpi->like("TO_CHAR(datesupply::date, 'yyyymm')", "2024");
+        $this->bpi->order_by("period", "desc");
+        $data = $this->bpi->get()->result_array();
+
+        die(json_encode($data));
+    }
+
+    public function bpiWp($period)
+    {
+        $this->bpi = $this->load->database('bpi', TRUE);
+        
+        $this->bpi->select("lotno");
+        $this->bpi->from('worko');
+        $this->bpi->where("TO_CHAR(datesupply::date, 'yyyymm') = '$period'");
+        $this->bpi->group_by("lotno");
+        $this->bpi->order_by("lotno", "asc");
+        $data = $this->bpi->get()->result_array();
+
+        die(json_encode($data));
+    }
+
+    public function bpiWo($period, $wp)
+    {
+        $this->bpi = $this->load->database('bpi', TRUE);
+        
+        $this->bpi->select("wo_no, partno as product_no");
+        $this->bpi->from('worko');
+        $this->bpi->where("TO_CHAR(datesupply::date, 'yyyymm') = '$period'");
+        $this->bpi->where("lotno = '$wp'");
+        $this->bpi->group_by("wo_no, partno");
+        $this->bpi->order_by("wo_no", "asc");
+        $data = $this->bpi->get()->result_array();
+
+        die(json_encode($data));
+    }
 }

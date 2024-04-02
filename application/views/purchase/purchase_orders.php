@@ -156,7 +156,7 @@
         $("#btnPreview").linkbutton('enable');
         $('#dg_request').datagrid('loadData', []);
         $("#request_no").combobox({
-            url: '<?= base_url('purchase/purchase_requests/readRequestno') ?>',
+            url: '<?= base_url('purchase/purchase_requests/readRequestnumber') ?>',
             valueField: 'request_no',
             textField: 'request_no',
             prompt: "Select Purchase Request No",
@@ -471,6 +471,7 @@
                                     }]
                                 ],
                                 onLoadSuccess: function(supp){
+                                    console.log(supp);
                                     if(supp.rows[0].share_order == "100"){
                                         supplier_id.combogrid('setValue', supp.rows[0].name);
 
@@ -659,6 +660,19 @@
                     }],
                 });
             }
+        });
+
+        $("#filter_po_no").combobox({
+            url: '<?= base_url('purchase/purchase_orders/readPono/') ?>',
+            valueField: 'po_no',
+            textField: 'po_no',
+            prompt: "Select Purchase Order No",
+            icons: [{
+                iconCls: 'icon-clear',
+                handler: function(e) {
+                    $(e.data.target).combobox('clear').combobox('textbox').focus();
+                }
+            }],
         });
     }
 

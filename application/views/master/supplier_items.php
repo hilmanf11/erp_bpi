@@ -61,7 +61,7 @@
 </div>
 
 <!-- Insert & Update -->
-<div id="dlg_insert" class="easyui-dialog" title="Add New" data-options="closed: true,modal:true" style="width: 1400px; height: 500px; padding:10px; top: 20px; left: 20px;">
+<div id="dlg_insert" class="easyui-dialog" title="Add New" data-options="closed: true,modal:true" style="width: 97%; height: 500px; padding:10px; top: 20px; left: 20px;">
     <form id="frm_insert" method="post" novalidate>
         <fieldset style="width:100%; border:1px solid #d0d0d0; margin-bottom: 10px; border-radius:4px; float: left;">
             <legend><b>Form Data</b></legend>
@@ -333,16 +333,23 @@
         var supplier_id = $("#supplier_id").combogrid('getValue');
         if (supplier_id != "") {
             if (endEditing()) {
-                $('#dg2').datagrid('appendRow', {
-                    qty: '0'
+                // Mendapatkan indeks baris pertama
+                var firstRowIndex = $('#dg2').datagrid('getRows').length > 0 ? 0 : undefined;
+                // Menyisipkan baris baru di indeks baris pertama
+                $('#dg2').datagrid('insertRow', {
+                    index: firstRowIndex,
+                    row: {
+                        qty: '0'
+                    }
                 });
-                editIndex = $('#dg2').datagrid('getRows').length - 1;
-                $('#dg2').datagrid('selectRow', editIndex).datagrid('beginEdit', editIndex);
+                // Memulai edit pada baris baru
+                $('#dg2').datagrid('selectRow', firstRowIndex).datagrid('beginEdit', firstRowIndex);
             }
         } else {
             toastr.error("Please Choose Supplier first");
         }
     }
+
 
     function removeit() {
         if (editIndex == undefined) {

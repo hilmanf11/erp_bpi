@@ -52,7 +52,7 @@ class Purchase_requests extends CI_Controller
 
     public function readRequestnumber()
     {
-        $records = $this->crud->query("SELECT request_no, request_date, request_name FROM purchase_requests GROUP BY request_no ORDER BY created_date desc");// WHERE `status` = '0'
+        $records = $this->crud->query("SELECT request_no, request_date, request_name FROM purchase_requests WHERE `status` = '0' GROUP BY request_no ORDER BY created_date desc");// WHERE `status` = '0'
         echo json_encode($records);
     }
 
@@ -70,6 +70,21 @@ class Purchase_requests extends CI_Controller
         }
     }
 
+    public function readItems()
+    {
+       $post = isset($_POST['q']) ? $_POST['q'] : "";
+       $item_family_id = explode(",", $this->input->get('item_family_id'));
+       
+       $this->db->select('a.*,a.id as item_rm_id, a.number as item_number, a.name as item_name');//c.specification
+       $this->db->from('item_rm a');
+       $this->db->where_in('a.item_family_id', $item_family_id);
+       $this->db->like('a.number', $post);
+       $this->db->group_by('a.id');
+       $this->db->order_by('a.id', 'ASC');
+       $records = $this->db->get()->result_array();
+
+        echo json_encode($records);
+    }
 
 
     public function readCategoryno()
@@ -89,7 +104,7 @@ class Purchase_requests extends CI_Controller
     public function request_no($category = "")
     {
         $datenow    = $category . date("ymd");
-        $sqlGetID   = $this->db->query("SELECT max(request_no) as kode FROM purchase_requests WHERE request_no like '%$datenow%'");
+        $sqlGetID   = $this->db->query("SELECT max(request_no) as kode FROM purchase_requests WHERE request_no like '%$datenow%' and upload = 'NO'");
         $rowID      = $sqlGetID->row();
         $kode       = $rowID->kode;
         if ($kode == NULL) {
@@ -247,31 +262,35 @@ class Purchase_requests extends CI_Controller
         $file = $_FILES['file_upload']['name'];
         $data = new Spreadsheet_Excel_Reader($file, false);
         $total_row = $data->rowcount($sheet_index = 0);
-        $category = $data->val(2, 3);
+        $category = $data->val(2, 4);
         $item_categories = $this->crud->read('item_categories', [], ["number" => $category]);
+
         if (!empty($item_categories)) {
-            $datenow    = $item_categories->number . date("ymd");
-            $sqlGetID   = $this->db->query("SELECT max(request_no) as kode FROM purchase_requests WHERE request_no like '%$datenow%'");
-            $rowID      = $sqlGetID->row();
-            $kode       = $rowID->kode;
-            if ($kode == NULL) {
-                $autoID = sprintf("%04s", $kode + 1);
-            } else {
-                $urutan = (int) substr($kode, -4);
-                $urutan++;
-                $autoID = sprintf("%04s", $urutan);
-            }
-            $request_no = "PR-" . $datenow . "-" . $autoID;
+            // $datenow    = $item_categories->number . date("ymd");
+            // $sqlGetID   = $this->db->query("SELECT max(request_no) as kode FROM purchase_requests WHERE request_no like '%$datenow%'");
+            // $rowID      = $sqlGetID->row();
+            // $kode       = $rowID->kode;
+            // if ($kode == NULL) {
+            //     $autoID = sprintf("%04s", $kode + 1);
+            // } else {
+            //     $urutan = (int) substr($kode, -4);
+            //     $urutan++;
+            //     $autoID = sprintf("%04s", $urutan);
+            // }
+            // $request_no = "PR-" . $datenow . "-" . $autoID;
+
+
             for ($i = 4; $i <= $total_row; $i++) {
                 $datas[] = array(
-                    'request_no' => $request_no,
-                    'request_date' => $data->val($i, 2),
-                    'expected_date' => $data->val($i, 3),
-                    'request_name' => $data->val($i, 4),
-                    'division' => $data->val($i, 5),
-                    'product_number' => $data->val($i, 6),
-                    'qty' => $data->val($i, 7),
-                    'remarks' => $data->val($i, 8)
+                    'request_no' => $data->val($i, 2),
+                    'request_date' => $data->val($i, 3),
+                    'expected_date' => $data->val($i, 4),
+                    'request_name' => $data->val($i, 5),
+                    'division' => $data->val($i, 6),
+                    'product_number' => $data->val($i, 7),
+                    'qty' => $data->val($i, 8),
+                    'remarks' => $data->val($i, 9),
+                    'upload' => $data->val($i, 10),
                 );
             }
             $datas['total'] = count($datas);
@@ -281,6 +300,51 @@ class Purchase_requests extends CI_Controller
         }
         unlink($_FILES['file_upload']['name']);
     }
+
+    // public function upload()
+    // {
+    //     error_reporting(0);
+    //     require_once 'assets/vendors/excel_reader2.php';
+    //     $target = basename($_FILES['file_upload']['name']);
+    //     move_uploaded_file($_FILES['file_upload']['tmp_name'], $target);
+    //     chmod($_FILES['file_upload']['name'], 0777);
+    //     $file = $_FILES['file_upload']['name'];
+    //     $data = new Spreadsheet_Excel_Reader($file, false);
+    //     $total_row = $data->rowcount($sheet_index = 0);
+    //     $category = $data->val(2, 3);
+    //     $item_categories = $this->crud->read('item_categories', [], ["number" => $category]);
+    //     if (!empty($item_categories)) {
+    //         $datenow    = $item_categories->number . date("ymd");
+    //         $sqlGetID   = $this->db->query("SELECT max(request_no) as kode FROM purchase_requests WHERE request_no like '%$datenow%'");
+    //         $rowID      = $sqlGetID->row();
+    //         $kode       = $rowID->kode;
+    //         if ($kode == NULL) {
+    //             $autoID = sprintf("%04s", $kode + 1);
+    //         } else {
+    //             $urutan = (int) substr($kode, -4);
+    //             $urutan++;
+    //             $autoID = sprintf("%04s", $urutan);
+    //         }
+    //         $request_no = "PR-" . $datenow . "-" . $autoID;
+    //         for ($i = 4; $i <= $total_row; $i++) {
+    //             $datas[] = array(
+    //                 'request_no' => $request_no,
+    //                 'request_date' => $data->val($i, 2),
+    //                 'expected_date' => $data->val($i, 3),
+    //                 'request_name' => $data->val($i, 4),
+    //                 'division' => $data->val($i, 5),
+    //                 'product_number' => $data->val($i, 6),
+    //                 'qty' => $data->val($i, 7),
+    //                 'remarks' => $data->val($i, 8)
+    //             );
+    //         }
+    //         $datas['total'] = count($datas);
+    //         echo json_encode($datas);
+    //     } else {
+    //         echo json_encode(array("title" => "Not Found", "message" => "Product Family " . $category . " Not Found Data", "theme" => "error"));
+    //     }
+    //     unlink($_FILES['file_upload']['name']);
+    // }
 
     public function uploadclearFailed()
     {
@@ -324,7 +388,7 @@ class Purchase_requests extends CI_Controller
             } elseif (!empty($purchase_requests->id)) {
                 echo json_encode(array("title" => "Duplicated", "message" => "Product No " . $data['product_number'] . " Duplicate Data", "theme" => "error"));
             } else {
-                $send   = $this->crud->create('purchase_requests',(["item_rm_id" => $item->id, "request_no" => $data['request_no'], "request_date" => $data['request_date'],"request_name" => $data['request_name'] ,"qty" => $data['qty'], "remarks" => $data['remarks']]));
+                $send   = $this->crud->create('purchase_requests',(["item_rm_id" => $item->id, "request_no" => $data['request_no'], "request_date" => $data['request_date'],"request_name" => $data['request_name'] ,"division" => $data['division'],"qty" => $data['qty'],"expected_date" => $data['expected_date'], "remarks" => $data['remarks'], "upload" => $data['upload']]));
                 echo $send;
             }
         }

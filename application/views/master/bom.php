@@ -219,12 +219,17 @@
                                         index: rowIndex,
                                         field: 'composition'
                                     });
+                                    var ed7 = dg.datagrid('getEditor', {
+                                        index: rowIndex,
+                                        field: 'type_item'
+                                    });
 
                                     $(ed.target).textbox('setValue', rows.name);
                                     $(ed3.target).textbox('setValue', rows.id);
                                     $(ed4.target).textbox('setValue', rows.item_family_name);
                                     $(ed5.target).textbox('setValue', rows.uom);
                                     $(ed6.target).numberbox('setValue', calculatedComposition);
+                                    $(ed7.target).textbox('setValue', rows.type);
                                 });
                             }
                         }
@@ -235,6 +240,15 @@
                     hidden: true,
                     halign: 'center',
                     title: "Product ID",
+                    editor: {
+                        type: 'textbox'
+                    }
+                }, {
+                    field: 'type_item',
+                    width: 150,
+                    hidden: true,
+                    halign: 'center',
+                    title: "Type",
                     editor: {
                         type: 'textbox'
                     }
@@ -289,7 +303,7 @@
                                     type: "0"
                                 },
                                 {
-                                    name: "RECYCLE",
+                                    name: "CRUSHER",
                                     type: "100"
                                 },
                                 {
@@ -321,7 +335,7 @@
                     field: 'recyle',
                     width: 80,
                     align: 'center',
-                    title: "Recycle",
+                    title: "Crusher",
                     editor: {
                         type: 'numberbox',
                     }
@@ -553,17 +567,17 @@
                     rownumbers: true,
                     columns: [
                         [{
-                            field: 'item_rm_id',
+                            field: 'selected_item_id',
                             title: 'Part ID',
                             halign: 'center',
                             width: 150
                         }, {
-                            field: 'item_rm_number',
+                            field: 'selected_item_number',
                             title: 'Part No',
                             halign: 'center',
                             width: 150
                         }, {
-                            field: 'item_rm_name',
+                            field: 'selected_item_name',
                             title: 'Part Name',
                             halign: 'center',
                             width: 200
@@ -574,17 +588,17 @@
                             width: 100
                         }, {
                             field: 'recyle',
-                            title: 'Recyle',
+                            title: 'Crusher',
                             width: 100,
                             halign: 'center',
                             align: 'right',
                         }, {
-                            field: 'product_family_name',
+                            field: 'selected_item_prodfam',
                             title: 'Product Family',
                             halign: 'center',
                             width: 150
                         }, {
-                            field: 'uom',
+                            field: 'selected_item_uom',
                             title: 'UoM',
                             align: 'center',
                             width: 80
@@ -629,37 +643,36 @@
                     for (let i = 0; i < totalrows; i++) {
                         if (rows[i].item_rm_id) {
                             
-                            // if(rows[i].type_item == "SA"){
-                            //     var dataFinal = {
-                            //         item_fg_id: item_fg_id,
-                            //         item_fg_sa_id: rows[i].item_rm_id,
-                            //         type: rows[i].type,
-                            //         recyle: rows[i].recyle,
-                            //         composition: rows[i].composition,
-                            //         remark: rows[i].remark
-                            //     };
-                            // }else{
-                            //     var dataFinal = {
-                            //         item_fg_id: item_fg_id,
-                            //         item_rm_id: rows[i].item_rm_id,
-                            //         type: rows[i].type,
-                            //         recyle: rows[i].recyle,
-                            //         composition: rows[i].composition,
-                            //         remark: rows[i].remark
-                            //     };
-                            // }
-
-                            $.ajax({
-                                type: "post",
-                                url: '<?= base_url('master/bom/create') ?>',
-                                data: {
+                            if(rows[i].type_item == "SA"){
+                                var dataFinal = {
+                                    item_fg_id: item_fg_id,
+                                    item_fg_sa_id: rows[i].item_rm_id,
+                                    type: rows[i].type,
+                                    recyle: rows[i].recyle,
+                                    composition: rows[i].composition,
+                                    remark: rows[i].remark
+                                };
+                            }else{
+                                var dataFinal = {
                                     item_fg_id: item_fg_id,
                                     item_rm_id: rows[i].item_rm_id,
                                     type: rows[i].type,
                                     recyle: rows[i].recyle,
                                     composition: rows[i].composition,
                                     remark: rows[i].remark
-                                },
+                                };
+                            }
+
+                            if(rows[i].type_item == "SA"){
+                                var url_save = "<?= base_url('master/bom/create_SA') ?>";
+                            }else{
+                                var url_save = "<?= base_url('master/bom/create') ?>";
+                            }
+
+                            $.ajax({
+                                type: "post",
+                                url: url_save,
+                                data: dataFinal,
                                 dataType: "json",
                                 success: function(result) {
                                     if (i == (totalrows - 1)) {

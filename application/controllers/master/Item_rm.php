@@ -52,46 +52,6 @@ class Item_rm extends CI_Controller
         echo json_encode($records);
     }
 
-
-    public function readss()
-    {
-        $post = isset($_POST['q']) ? $_POST['q'] : "";
-        $send = $this->crud->query("
-            SELECT a.*, b.name AS item_family_name
-            FROM item_rm a 
-            JOIN item_familys b ON a.item_family_id = b.id 
-            WHERE (a.number LIKE '%$post%' OR a.name LIKE '%$post%')
-        ");
-
-        // Mendapatkan nomor dan id dari item_fg dengan type SA
-        $item_fg_data = $this->crud->query("
-            SELECT number, id 
-            FROM item_fg 
-            WHERE type = 'SA'
-        ");
-
-        // Periksa apakah $item_fg_data adalah array sebelum mengakses length
-        if (is_array($item_fg_data) && count($item_fg_data) > 0) {
-            // Simpan nomor dan id dari item_fg dalam variabel untuk digunakan dalam combobox
-            $combobox_options = array();
-            foreach ($item_fg_data as $item_fg) {
-                $combobox_options[] = array(
-                    'id' => $item_fg->id,
-                    'number' => $item_fg->number
-                );
-            }
-
-            // Sisipkan data combobox ke dalam array send untuk dikirim ke antarmuka pengguna
-            $send['combobox_options'] = $combobox_options;
-        } else {
-            // Jika tidak ada data dari item_fg, sisipkan array kosong ke dalam send
-            $send['combobox_options'] = array();
-        }
-
-        echo json_encode($send);
-    }
-
-
     public function read($id)
     {
         $post = isset($_POST['q']) ? $_POST['q'] : "";
@@ -116,7 +76,7 @@ class Item_rm extends CI_Controller
             $this->db->from('item_rm a');
             $this->db->join('item_categories b', 'a.item_category_id = b.id');
             $this->db->join('item_familys c', 'a.item_family_id = c.id');
-            $this->db->join('item_family_subs d', 'a.item_sub_family_id = d.id');
+            $this->db->join('item_family_subs d', 'a.item_sub_family_id = d.id','left');
             $this->db->where('a.deleted', 0);
             if (@count($filters) > 0) {
                 foreach ($filters as $filter) {
@@ -131,7 +91,9 @@ class Item_rm extends CI_Controller
                     }
                 }
             }
-            $this->db->order_by('a.id', 'ASC');
+            // $this->db->order_by('a.id', 'ASC');
+            $this->db->order_by('a.created_date', 'DESC');
+            $this->db->order_by('a.updated_date', 'DESC');
             //Total Data
             $totalRows = $this->db->count_all_results('', false);
             //Limit 1 - 10
@@ -324,7 +286,7 @@ class Item_rm extends CI_Controller
         $this->db->from('item_rm a');
         $this->db->join('item_categories b', 'a.item_category_id = b.id');
         $this->db->join('item_familys c', 'a.item_family_id = c.id');
-        $this->db->join('item_family_subs d', 'a.item_sub_family_id = d.id');
+        $this->db->join('item_family_subs d', 'a.item_sub_family_id = d.id','left');
         $this->db->where('a.deleted', 0);
         $this->db->order_by('a.id', 'ASC');
         $records = $this->db->get()->result_array();
