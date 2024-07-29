@@ -48,7 +48,8 @@ class Dashboard extends CI_Controller
         
         $this->bpi->select("*");
         $this->bpi->from('worko');
-        $this->bpi->limit(10);
+        $this->bpi->where("wo_no" , '001/PPC/05/24');
+        // $this->bpi->limit(10);
         $data = $this->bpi->get()->result_array();
 
         die(json_encode($data));

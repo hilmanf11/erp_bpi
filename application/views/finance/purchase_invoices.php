@@ -8,7 +8,7 @@
             <th rowspan="2" data-options="field:'status_invoice',width:110,align:'center',formatter:statusformatInv,styler:statusStyleInv">Supplier<br>Invoice</th>
             <th rowspan="2" data-options="field:'gl_no',width:100,align:'center'">GL No</th>
             <th rowspan="2" data-options="field:'trans_date',width:100,align:'center'">Trans Date</th>
-            <th rowspan="2" data-options="field:'item_family_name',width:150,halign:'center'">Sub Category</th>
+            <th rowspan="2" data-options="field:'item_category_name',width:150,halign:'center'">Category</th>
             <th rowspan="2" data-options="field:'journal_type_name',width:150,halign:'center'">Journal Name</th>
             <th rowspan="2" data-options="field:'supplier_name',width:200,halign:'center'">Supplier Name</th>
             <th rowspan="2" data-options="field:'invoice_no',width:150,halign:'center'">Invoice No</th>
@@ -65,8 +65,8 @@
         </div>
         <div style="width: 32%; float: left;">
             <div class="fitem">
-                <span style="width:35%; display:inline-block;">Product Family</span>
-                <input style="width:60%;" name="filter_family_id" id="filter_family_id" class="easyui-combobox">
+                <span style="width:35%; display:inline-block;">Product Category</span>
+                <input style="width:60%;" name="filter_category_id" id="filter_category_id" class="easyui-combobox">
             </div>
             <div class="fitem">
                 <span style="width:35%; display:inline-block;">Purhcase Invoice No</span>
@@ -147,8 +147,8 @@
                         <input style="width:60%;" readonly id="number" name="number" class="easyui-textbox" data-options="prompt:'Automatic From Purchase Invoce Date'">
                     </div>
                     <div class="fitem">
-                        <span style="width:35%; display:inline-block;">Product Family</span>
-                        <input style="width:60%;" required="" name="family_id" id="family_id" class="easyui-combobox">
+                        <span style="width:35%; display:inline-block;">Product Category</span>
+                        <input style="width:60%;" required="" name="category_id" id="category_id" class="easyui-combobox">
                     </div>
                     <div class="fitem">
                         <span style="width:35%; display:inline-block;">Supplier Name</span>
@@ -207,9 +207,10 @@
                     <th hidden rowspan="2" data-options="field:'id',width:150, editor: {type: 'textbox'}">ID</th>
                     <th rowspan="2" data-options="field:'por_no',width:150,editor: {type: 'textbox'}">POR. No</th>
                     <th rowspan="2" data-options="field:'po_no',width:150,editor: {type: 'textbox'}">PO. No</th>
-                    <th rowspan="2" data-options="field:'item_id',width:150,editor: {type: 'textbox'}" hidden>Product Id</th>
+                    <th rowspan="2" data-options="field:'item_rm_id',width:150,editor: {type: 'textbox'}" hidden>Product Id</th>
                     <th rowspan="2" data-options="field:'item_number',width:150,editor: {type: 'textbox', options: {required: true}}">Product No</th>
                     <th rowspan="2" data-options="field:'item_name',width:200,editor: {type: 'textbox', options: {required: true}}">Product Name</th>
+                    <th rowspan="2" data-options="field:'supplier_product',width:200,editor: {type: 'textbox', options: {required: true}}">Supplier Product</th>
                     <th rowspan="2" data-options="field:'uom',align:'center',width:80, editor: {
                         type: 'combobox',
                         options: {
@@ -335,6 +336,7 @@
             </thead>
         </table>
 
+        <!-- inisiasi Tombol Add Jurnal -->
         <div style="width: 50%; float: left; margin-top:20px;">
             <a style="width: 100%;" class="easyui-linkbutton c2" onclick="addJournal()">Add to Journal</a>
             <br><br>
@@ -430,7 +432,7 @@
             readonly: false
         });
         $("#trans_date").datebox('enable');
-        //$("#family_id").combobox('enable');
+        //$("#category_id").combobox('enable');
         $("#supplier_id").combobox('enable');
         $("#por_no").combobox('enable');
         $("#po_no").combobox('enable');
@@ -658,6 +660,7 @@
         }
     }
 
+// DATA ISISAN JURNAL LIST---------------------------------------------------------------------------------------
     function addTable2(link = "") {
         var lastIndex;
         var dg = $('#dg3').datagrid({
@@ -775,6 +778,8 @@
             $("#balance_credit").numberbox('setValue', credit);
         }
     }
+
+//----------------------------------------------------------------------------------------------------------------
 
     var editIndex = undefined;
 
@@ -940,7 +945,7 @@
                         readonly: true
                     });
                     $("#trans_date").datebox('disable');
-                    //$("#family_id").combobox('disable');
+                    //$("#category_id").combobox('disable');
                     $("#supplier_id").combobox('disable');
                     $("#por_no").combobox('disable');
                     $("#po_no").combobox('disable');
@@ -962,18 +967,19 @@
                         $("#total_dp").numberbox('clear');
                     }
 
-                    $("#family_id").combobox({
-                        url: '<?= base_url('master/item_familys/readNotFg') ?>',
+                    $("#category_id").combobox({
+                        url: '<?= base_url('master/item_categories/readsnotfg') ?>',
                         valueField: 'id',
                         textField: 'name',
                         prompt: "Choose Product Family",
-                        onLoadSuccess: function(item_family_load) {
-                            $("#family_id").combobox('setValue', row.family_id);
+                        onLoadSuccess: function(item_category_load) {
+                            $("#category_id").combobox('setValue', row.category_id);
                         },
-                        onSelect: function(item_family) {
+                        onSelect: function(item_category) {
+                            // conlose.log(item_category);
                             //GET SUPPLIER
                             $('#supplier_id').combogrid({
-                                url: '<?= base_url('master/supplier_items/readSuppliers?item_family_id=') ?>' + item_family.id,
+                                url: '<?= base_url('master/supplier_items/readSupplierss?item_category_id=') ?>' + item_category.id,
                                 panelWidth: 420,
                                 idField: 'id',
                                 textField: 'name',
@@ -991,7 +997,7 @@
                                         width: 250
                                     }, ]
                                 ],
-                                onLoadSuccess: function(item_family_load) {
+                                onLoadSuccess: function(item_category_load) {
                                     $("#supplier_id").combogrid('setValue', row.supplier_id);
                                 },
                             });
@@ -1151,7 +1157,7 @@
         var filter_trans_date_to = $("#filter_trans_date_to").datebox('getValue');
         var filter_due_date_from = $("#filter_due_date_from").datebox('getValue');
         var filter_due_date_to = $("#filter_due_date_to").datebox('getValue');
-        var filter_family_id = $("#filter_family_id").combobox('getValue');
+        var filter_category_id = $("#filter_category_id").combobox('getValue');
         var filter_purchase_invoice = $("#filter_purchase_invoice").combobox('getValue');
         var filter_purchase_receipt = $("#filter_purchase_receipt").combobox('getValue');
         var filter_purchase_order = $("#filter_purchase_order").combobox('getValue');
@@ -1165,7 +1171,7 @@
             "&filter_trans_date_to=" + window.btoa(filter_trans_date_to) +
             "&filter_due_date_from=" + window.btoa(filter_due_date_from) +
             "&filter_due_date_to=" + window.btoa(filter_due_date_to) +
-            "&filter_family_id=" + window.btoa(filter_family_id) +
+            "&filter_category_id=" + window.btoa(filter_category_id) +
             "&filter_purchase_invoice=" + window.btoa(filter_purchase_invoice) +
             "&filter_purchase_receipt=" + window.btoa(filter_purchase_receipt) +
             "&filter_purchase_order=" + window.btoa(filter_purchase_order) +
@@ -1194,7 +1200,7 @@
         var filter_trans_date_to = $("#filter_trans_date_to").datebox('getValue');
         var filter_due_date_from = $("#filter_due_date_from").datebox('getValue');
         var filter_due_date_to = $("#filter_due_date_to").datebox('getValue');
-        var filter_family_id = $("#filter_family_id").combobox('getValue');
+        var filter_category_id = $("#filter_category_id").combobox('getValue');
         var filter_purchase_invoice = $("#filter_purchase_invoice").combobox('getValue');
         var filter_purchase_receipt = $("#filter_purchase_receipt").combobox('getValue');
         var filter_purchase_order = $("#filter_purchase_order").combobox('getValue');
@@ -1208,7 +1214,7 @@
             "&filter_trans_date_to=" + window.btoa(filter_trans_date_to) +
             "&filter_due_date_from=" + window.btoa(filter_due_date_from) +
             "&filter_due_date_to=" + window.btoa(filter_due_date_to) +
-            "&filter_family_id=" + window.btoa(filter_family_id) +
+            "&filter_category_id=" + window.btoa(filter_category_id) +
             "&filter_purchase_invoice=" + window.btoa(filter_purchase_invoice) +
             "&filter_purchase_receipt=" + window.btoa(filter_purchase_receipt) +
             "&filter_purchase_order=" + window.btoa(filter_purchase_order) +
@@ -1227,7 +1233,7 @@
         var filter_trans_date_to = $("#filter_trans_date_to").datebox('getValue');
         var filter_due_date_from = $("#filter_due_date_from").datebox('getValue');
         var filter_due_date_to = $("#filter_due_date_to").datebox('getValue');
-        var filter_family_id = $("#filter_family_id").combobox('getValue');
+        var filter_category_id = $("#filter_category_id").combobox('getValue');
         var filter_purchase_invoice = $("#filter_purchase_invoice").combobox('getValue');
         var filter_purchase_receipt = $("#filter_purchase_receipt").combobox('getValue');
         var filter_purchase_order = $("#filter_purchase_order").combobox('getValue');
@@ -1241,7 +1247,7 @@
             "&filter_trans_date_to=" + window.btoa(filter_trans_date_to) +
             "&filter_due_date_from=" + window.btoa(filter_due_date_from) +
             "&filter_due_date_to=" + window.btoa(filter_due_date_to) +
-            "&filter_family_id=" + window.btoa(filter_family_id) +
+            "&filter_category_id=" + window.btoa(filter_category_id) +
             "&filter_purchase_invoice=" + window.btoa(filter_purchase_invoice) +
             "&filter_purchase_receipt=" + window.btoa(filter_purchase_receipt) +
             "&filter_purchase_order=" + window.btoa(filter_purchase_order) +
@@ -1260,7 +1266,7 @@
         var filter_trans_date_to = $("#filter_trans_date_to").datebox('getValue');
         var filter_due_date_from = $("#filter_due_date_from").datebox('getValue');
         var filter_due_date_to = $("#filter_due_date_to").datebox('getValue');
-        var filter_family_id = $("#filter_family_id").combobox('getValue');
+        var filter_category_id = $("#filter_category_id").combobox('getValue');
         var filter_purchase_invoice = $("#filter_purchase_invoice").combobox('getValue');
         var filter_purchase_receipt = $("#filter_purchase_receipt").combobox('getValue');
         var filter_purchase_order = $("#filter_purchase_order").combobox('getValue');
@@ -1274,7 +1280,7 @@
             "&filter_trans_date_to=" + window.btoa(filter_trans_date_to) +
             "&filter_due_date_from=" + window.btoa(filter_due_date_from) +
             "&filter_due_date_to=" + window.btoa(filter_due_date_to) +
-            "&filter_family_id=" + window.btoa(filter_family_id) +
+            "&filter_category_id=" + window.btoa(filter_category_id) +
             "&filter_purchase_invoice=" + window.btoa(filter_purchase_invoice) +
             "&filter_purchase_receipt=" + window.btoa(filter_purchase_receipt) +
             "&filter_purchase_order=" + window.btoa(filter_purchase_order) +
@@ -1386,6 +1392,11 @@
                             halign: 'center',
                             width: 300
                         }, {
+                            field: 'supplier_product',
+                            title: 'Supplier Product',
+                            halign: 'center',
+                            width: 300
+                        }, {
                             field: 'qty',
                             title: 'Qty',
                             width: 100,
@@ -1440,7 +1451,7 @@
                     var type = $("#type").combobox('getValue');
                     var trans_date = $("#trans_date").datebox('getValue');
                     var number = $("#number").textbox('getValue');
-                    var family_id = $("#family_id").combogrid('getValue');
+                    var category_id = $("#category_id").combobox('getValue');
                     var supplier_id = $("#supplier_id").combogrid('getValue');
                     var journal_type_id = $("#journal_type").combobox('getValue');
                     var invoice_no = $("#invoice_no").textbox('getValue');
@@ -1515,7 +1526,7 @@
                                                                 type: type,
                                                                 trans_date: trans_date,
                                                                 number: number,
-                                                                family_id: family_id,
+                                                                category_id: category_id,
                                                                 supplier_id: supplier_id,
                                                                 journal_type_id: journal_type_id,
                                                                 invoice_no: invoice_no,
@@ -1532,9 +1543,10 @@
                                                                 id: json[i].id,
                                                                 por_no: json[i].por_no,
                                                                 po_no: json[i].po_no,
-                                                                item_id: json[i].item_id,
+                                                                item_rm_id: json[i].item_rm_id,
                                                                 item_no: json[i].item_number,
                                                                 item_name: json[i].item_name,
+                                                                supplier_product: json[i].supplier_product,
                                                                 uom: json[i].uom,
                                                                 currency: json[i].currency,
                                                                 qty: json[i].qty,
@@ -1631,20 +1643,20 @@
             }
         });
 
-        $("#filter_family_id").combobox({
-            url: '<?= base_url('master/item_familys/readNotFg') ?>',
+        $("#filter_category_id").combobox({
+            url: '<?= base_url('master/item_categories/readsnotfg') ?>',
             valueField: 'id',
             textField: 'name',
-            prompt: "Choose Product Family",
+            prompt: "Choose Product Category",
             icons: [{
                 iconCls: 'icon-clear',
                 handler: function(e) {
                     $(e.data.target).combobox('clear').combobox('textbox').focus();
                 }
             }],
-            onSelect: function(item_family) {
+            onSelect: function(item_category) {
                 $("#filter_purchase_invoice").combobox({
-                    url: '<?= base_url('finance/purchase_invoices/readPurchaseInvoice/') ?>' + item_family.id,
+                    url: '<?= base_url('finance/purchase_invoices/readPurchaseInvoice/') ?>' + item_category.id,
                     valueField: 'number',
                     textField: 'number',
                     prompt: "Choose Purchase Invoice No",
@@ -1657,7 +1669,7 @@
                 });
 
                 $("#filter_purchase_receipt").combobox({
-                    url: '<?= base_url('finance/purchase_invoices/readPurchaseReceipt/') ?>' + item_family.id,
+                    url: '<?= base_url('finance/purchase_invoices/readPurchaseReceipt/') ?>' + item_category.id,
                     valueField: 'por_no',
                     textField: 'por_no',
                     prompt: "Choose Purchase Receipt",
@@ -1670,7 +1682,7 @@
                 });
 
                 $("#filter_purchase_order").combobox({
-                    url: '<?= base_url('finance/purchase_invoices/readPurchaseOrder/') ?>' + item_family.id,
+                    url: '<?= base_url('finance/purchase_invoices/readPurchaseOrder/') ?>' + item_category.id,
                     valueField: 'po_no',
                     textField: 'po_no',
                     prompt: "Choose Purchase Order",
@@ -1683,7 +1695,7 @@
                 });
 
                 $("#filter_invoice_no").combobox({
-                    url: '<?= base_url('finance/purchase_invoices/readInvoice/') ?>' + item_family.id,
+                    url: '<?= base_url('finance/purchase_invoices/readInvoice/') ?>' + item_category.id,
                     valueField: 'invoice_no',
                     textField: 'invoice_no',
                     prompt: "Choose Invoice No",
@@ -1710,15 +1722,16 @@
             }],
         });
 
-        $("#family_id").combobox({
-            url: '<?= base_url('master/item_familys/readNotFg') ?>',
+        //form_data_isian
+        $("#category_id").combobox({
+            url: '<?= base_url('master/item_categories/readsnotfg') ?>',
             valueField: 'id',
             textField: 'name',
-            prompt: "Choose Product Family",
-            onSelect: function(item_family) {
+            prompt: "Choose Product Category",
+            onSelect: function(item_category) {
                 //GET SUPPLIER
                 $('#supplier_id').combogrid({
-                    url: '<?= base_url('master/supplier_items/readSuppliers?item_family_id=') ?>' + item_family.id,
+                    url: '<?= base_url('master/supplier_items/readSupplierss?item_category_id=') ?>' + item_category.id,
                     panelWidth: 420,
                     idField: 'id',
                     textField: 'name',
@@ -1737,6 +1750,7 @@
                         }, ]
                     ],
                     onSelect: function(index, row) {
+                        console.log(row);
                         var trans_date = $("#trans_date").datebox('getValue');
                         var type = $("#type").combobox('getValue');
 
@@ -1754,7 +1768,7 @@
 
                         if (type == "purchase") {
                             $("#por_no").combobox({
-                                url: '<?= base_url('finance/purchase_invoices/readReceipt?supplier_id=') ?>' + row.id + "&item_family_id=" + item_family.id,
+                                url: '<?= base_url('finance/purchase_invoices/readReceipt?supplier_id=') ?>' + row.id + "&item_category_id=" + item_category.id,
                                 valueField: 'receipt_no',
                                 textField: 'receipt_no',
                                 multiple: true,
@@ -1762,7 +1776,7 @@
                             });
                         } else if (type == "dp") {
                             $("#por_no").combobox({
-                                url: '<?= base_url('finance/purchase_invoices/readReceipt/dp?supplier_id=') ?>' + row.id + "&item_family_id=" + item_family.id,
+                                url: '<?= base_url('finance/purchase_invoices/readReceipt/dp?supplier_id=') ?>' + row.id + "&item_category_id=" + item_category.id,
                                 valueField: 'receipt_no',
                                 textField: 'receipt_no',
                                 prompt: "Choose Purchase Order Receipts",

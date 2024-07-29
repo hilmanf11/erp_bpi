@@ -64,7 +64,7 @@ class Supplier_items extends CI_Controller
        $this->db->join('suppliers b', 'a.supplier_id = b.id');
        $this->db->join('item_rm c', 'a.item_rm_id = c.id');
        $this->db->where('a.supplier_id', $supplier_id);
-       $this->db->like('c.number', $post);
+       $this->db->like('c.id', $post);//c.number
        $this->db->group_by('a.id');
        $this->db->order_by('a.id', 'ASC');
        $records = $this->db->get()->result_array();
@@ -76,7 +76,7 @@ class Supplier_items extends CI_Controller
     {
         $post = isset($_POST['q']) ? $_POST['q'] : "";
         $item_number = $this->input->get('item_number');
-        $item_id = $this->input->get('item_rm_id');
+        $item_rm_id = $this->input->get('item_rm_id');
         $item_family_id = $this->input->get('item_family_id');
 
         $this->db->select('b.*, c.number as item_number, a.mpq, a.moq, a.price, a.share_order');
@@ -86,13 +86,29 @@ class Supplier_items extends CI_Controller
         $this->db->join('item_familys d', 'c.item_family_id = d.id');
         $this->db->where('a.deleted', 0);
         // $this->db->where('a.status', 0);
-        $this->db->where("c.number", $item_number);
-        $this->db->like("c.id", $item_id);
-        $this->db->like("d.id", $item_family_id);
-        $this->db->like("b.name", $post);
+        // $this->db->where("c.number", $item_number);
+        $this->db->where("c.id", $item_rm_id);
+        // $this->db->like("d.id", $item_family_id);
+        // $this->db->like("b.name", $post);
         $this->db->group_by('b.number');
         $this->db->order_by('b.name', 'ASC');
         $records = $this->db->get()->result_array();
+
+        echo json_encode($records);
+    }
+
+    public function readSupplierss()
+    {
+        $post = isset($_POST['q']) ? $_POST['q'] : "";
+        $item_category_id = $this->input->get('item_category_id');
+
+        $records = $this->crud->query("SELECT DISTINCT b.id, b.name, b.number, b.payment_term, b.vat
+        FROM supplier_items a 
+        JOIN suppliers b ON a.supplier_id = b.id 
+        JOIN item_rm c ON a.item_rm_id = c.id
+        JOIN item_categories d ON c.item_category_id = d.id
+        WHERE a.deleted = 0 and d.id = '$item_category_id' 
+        ORDER BY b.name ASC");
         echo json_encode($records);
     }
 
@@ -220,6 +236,7 @@ class Supplier_items extends CI_Controller
     {
         $data = $this->input->post();
         $send = $this->crud->delete('supplier_items', $data);
+        $send2 = $this->crud->delete('supplier_item_histories', $data);
         echo $send;
     }
 

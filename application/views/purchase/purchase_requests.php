@@ -8,12 +8,15 @@
             <th rowspan="2" data-options="field:'expected_date',width:100,halign:'center'">Expected Date</th>
             <th rowspan="2" data-options="field:'request_name',width:150,halign:'center'">Request Name</th>
             <th rowspan="2" data-options="field:'division',width:150,halign:'center'">Division</th>
+            <th rowspan="2" data-options="field:'department',width:150,halign:'center'">Department</th>
+            <th rowspan="2" data-options="field:'sub_department',width:150,halign:'center'">Sub Department</th>
             <th rowspan="2" data-options="field:'item_number',width:150,halign:'center'">Product No</th>
             <th rowspan="2" data-options="field:'item_name',width:150,halign:'center'">Product Name</th>
             <th rowspan="2" data-options="field:'category_name',width:150,halign:'center'">Product Family</th>
             <th rowspan="2" data-options="field:'uom',width:80,align:'center'">UoM</th>
             <th rowspan="2" data-options="field:'qty',width:80,halign:'center',align:'right'">Total Qty</th>
             <th rowspan="2" data-options="field:'remarks',width:100,halign:'center'">Remarks</th>
+            <th rowspan="2" data-options="field:'attachment',width:80,align:'center',formatter: btnDetails">Attachment</th>
             <th rowspan="2" data-options="field:'po_no',width:120,align:'center'">Po No</th>
             <th rowspan="2" data-options="field:'approved_to',width:100,halign:'center',formatter:formatApproved,styler:styleApproved">Status <br>Approve</th>
             <th rowspan="2" data-options="field:'approved_by',width:100,halign:'center'">Approve By</th>
@@ -30,32 +33,36 @@
     </thead>
 </table>
 
-<div id="toolbar" style="height: 270px; padding:10px;">
+<div id="toolbar" style="height: 200px; padding:10px;">
     <!-- <div style="width: 100%; display: grid; grid-template-columns: auto auto auto; grid-gap: 5px; display: flex;"> -->
     <div style="width: 100%;">
-        <fieldset style="width: 45%; border:2px solid #d0d0d0; margin-bottom: 5px; margin-top: 5px; border-radius:4px;">
+        <fieldset style="width: 80%; border:2px solid #d0d0d0; margin-bottom: 5px; margin-top: 5px; border-radius:4px;">
             <legend><b>Form Filter Data</b></legend>
-            <div class="fitem">
-                <span style="width:35%; display:inline-block;">Period</span>
-                <input style="width:28%;" id="filter_from" class="easyui-datebox" data-options="formatter:myformatter,parser:myparser, editable:false"> To
-                <input style="width:28%;" id="filter_to" class="easyui-datebox" data-options="formatter:myformatter,parser:myparser, editable:false">
+            <div style="width: 50%; float: left;">
+                <div class="fitem">
+                    <span style="width:35%; display:inline-block;">Period</span>
+                    <input style="width:28%;" id="filter_from" value="<?= date("Y-m-01") ?>" class="easyui-datebox" data-options="formatter:myformatter,parser:myparser, editable:false"> To
+                    <input style="width:28%;" id="filter_to" value="<?= date("Y-m-t") ?>" class="easyui-datebox" data-options="formatter:myformatter,parser:myparser, editable:false">
+                </div>
+                <div class="fitem">
+                    <span style="width:35%; display:inline-block;">Request No</span>
+                    <input style="width:60%;" id="filter_request_no" class="easyui-combobox">
+                </div>
+                <div class="fitem">
+                    <span style="width:35%; display:inline-block;"></span>
+                    <a href="javascript:;" class="easyui-linkbutton" onclick="filter()"><i class="fa fa-search"></i> Filter Data</a>
+                    <a href="javascript:;" class="easyui-linkbutton" onclick="print_pr()"><i class="fa fa-print"></i> Purchase Request</a>
+                </div>
             </div>
-            <div class="fitem">
-                <span style="width:35%; display:inline-block;">Request No</span>
-                <input style="width:60%;" id="filter_request_no" class="easyui-combobox">
-            </div>
-            <div class="fitem">
-                <span style="width:35%; display:inline-block;">Category</span>
-                <input style="width:60%;" id="filter_category_id" class="easyui-combobox">
-            </div>
-            <div class="fitem">
-                <span style="width:35%; display:inline-block;">Product Family</span>
-                <input style="width:60%;" id="filter_item_familys" class="easyui-combogrid">
-            </div>
-            <div class="fitem">
-                <span style="width:35%; display:inline-block;"></span>
-                <a href="javascript:;" class="easyui-linkbutton" onclick="filter()"><i class="fa fa-search"></i> Filter Data</a>
-                <a href="javascript:;" class="easyui-linkbutton" onclick="print_pr()"><i class="fa fa-print"></i> Purchase Request</a>
+            <div style="width: 50%; float: left;">
+                <div class="fitem">
+                    <span style="width:35%; display:inline-block;">Category</span>
+                    <input style="width:60%;" id="filter_category_id" class="easyui-combobox">
+                </div>
+                <div class="fitem">
+                    <span style="width:35%; display:inline-block;">Product Family</span>
+                    <input style="width:60%;" id="filter_item_familys" class="easyui-combogrid">
+                </div>
             </div>
         </fieldset>
         <?= $button ?>
@@ -68,7 +75,7 @@
 </div>
 
 <!-- Insert & Update -->
-<div id="dlg_insert" class="easyui-dialog" title="Add New" data-options="closed: true,modal:true" style="width: 900px; height: 100%; padding:10px; top: 0;">
+<div id="dlg_insert" class="easyui-dialog" title="Add New" data-options="closed: true,modal:true" style="width: 1100px; height: 100%; padding:10px; left:5px; top: 0;">
     <form id="frm_insert" method="post" novalidate>
         <fieldset style="width:100%; border:1px solid #d0d0d0; margin-bottom: 10px; border-radius:4px; float: left;">
             <legend><b>Form Data</b></legend>
@@ -79,21 +86,29 @@
                 </div>
                 <div class="fitem">
                     <span style="width:35%; display:inline-block;">Request Date</span>
-                    <input style="width:60%;" name="request_date" id="request_date" value="<?= date("Y-m-d") ?>" required="" class="easyui-datebox" data-options="formatter:myformatter,parser:myparser, editable:false">
+                    <input style="width:60%;" name="request_date" id="request_date" required="" class="easyui-datebox" data-options="formatter:myformatter,parser:myparser, editable:false">
                 </div>
                 <div class="fitem">
                     <span style="width:35%; display:inline-block;">Request Name</span>
-                    <input style="width:60%;" name="request_name" id="request_name" value="<?= $this->session->name ?>" readonly class="easyui-textbox">
+                    <input style="width:60%;" name="request_name" id="request_name" readonly class="easyui-textbox">
                 </div>
                 <div class="fitem">
                     <span style="width:35%; display:inline-block;">Division</span>
-                    <input style="width:60%;" name="division" id="division" class="easyui-combobox" required>
+                    <input style="width:60%;" name="division" id="division" class="easyui-textbox" readonly>
+                </div>
+                <div class="fitem">
+                    <span style="width:35%; display:inline-block;">Department</span>
+                    <input style="width:60%;" name="department" id="department" class="easyui-textbox" readonly>
                 </div>
             </div>
             <div style="width: 50%; float: left;">
                 <div class="fitem">
+                    <span style="width:35%; display:inline-block;">Sub Department</span>
+                    <input style="width:60%;" name="sub_department" id="sub_department" class="easyui-textbox" readonly>
+                </div>
+                <div class="fitem">
                     <span style="width:35%; display:inline-block;">Expected Date</span>
-                    <input style="width:60%;" name="expected_date" id="expected_date" value="<?= date("Y-m-d") ?>" required="" class="easyui-datebox" data-options="formatter:myformatter,parser:myparser, editable:false">
+                    <input style="width:60%;" name="expected_date" id="expected_date" value="" class="easyui-datebox" data-options="formatter:myformatter,parser:myparser, editable:false">
                 </div>
                 <div class="fitem">
                     <span style="width:35%; display:inline-block;">Product Category</span>
@@ -136,9 +151,22 @@
     function add() {
         $('#dlg_insert').dialog('open');
         $('#dg2').datagrid('loadData', []);
+        $("#frm_insert").form('clear');
+
         $("#item_family_id").combobox('enable');
-        $('#request_no').textbox('clear');
-        $('#item_family_id').combobox('clear');
+        $("#item_category_id").combobox('enable');
+        $("#request_date").combobox('enable');
+        $("#request_no").combobox('enable');
+        $("#expected_date").combobox('enable');
+
+        // $("#expected_date").datebox('setValue', "<?= date("Y-m-d") ?>");
+        $("#request_date").datebox('setValue', "<?= date("Y-m-d") ?>");
+        $("#request_name").textbox('setValue', "<?= $this->session->name ?>");
+
+        $("#division").textbox('setValue', "<?= $this->session->division ?>");
+        $("#department").textbox('setValue', "<?= $this->session->department ?>");
+        $("#sub_department").textbox('setValue', "<?= $this->session->sub_department ?>");
+
         url_save= '<?= base_url('purchase/purchase_requests/create') ?>';
     }
 
@@ -168,7 +196,7 @@
                         options: {
                             url: '<?= base_url('master/item_rm/readItems?item_family_id=') ?>' + item_family_id,
                             required: true,
-                            panelWidth: 320,
+                            panelWidth: 650,
                             idField: 'item_number',
                             textField: 'item_number',
                             mode: 'remote',
@@ -178,11 +206,11 @@
                                 [{
                                     field: 'item_number',
                                     title: 'Product No',
-                                    width: 150
+                                    width: 450
                                 }, {
                                     field: 'item_name',
                                     title: 'Product Name',
-                                    width: 150
+                                    width: 200
                                 }]
                             ],
                             onSelect: function(value, rows) {
@@ -277,7 +305,7 @@
                         type: 'numberbox',
                         options: {
                             required: true,
-                            // precision: 2
+                            precision: 2
                         }
                     }
                 }, {
@@ -320,18 +348,64 @@
                     editor: {
                         type: 'textbox'
                     }
+                }, {
+                    field: 'attachment_upload',
+                    width: 200,
+                    halign: 'center',
+                    title: "Attachment",
+                    editor:{
+                        type:'filebox',
+                        options:{
+                            // required: true,
+                            buttonText:'Browse File',
+                            accept:'.jpg, .png, .pdf',
+                            onChange: function(){
+                                var dg = $('#dg2');
+                                var row = dg.datagrid('getSelected');
+                                var rowIndex = dg.datagrid('getRowIndex', row);
+
+                                var ed = dg.datagrid('getEditor', {
+                                    index: rowIndex,
+                                    field: 'attachment'
+                                });
+
+                                var files = $(this).filebox('files')
+                                var formData = new FormData();
+                                for(var i=0; i<files.length; i++){
+                                    var file = files[i];
+                                    formData.append('file',file,file.name);
+                                }
+                                $.ajax({
+                                    url: '<?= base_url('purchase/purchase_requests/uploadatt') ?>',
+                                    type:'post',
+                                    data: formData,
+                                    contentType:false,
+                                    processData:false,
+                                    dataType: 'json',
+                                    success:function(data){
+                                        if(data.success == true){
+                                            toastr.success(data.message);
+                                            $(ed.target).textbox('setValue', data.filename);
+                                        }else{
+                                            toastr.error(data.message);
+                                        }
+                                    }
+                                })
+                            }
+                        }
+                    }
+                }, {
+                    field: 'attachment',
+                    width: 200,
+                    hidden: true,
+                    halign: 'center',
+                    title: "Attachment",
+                    editor: {
+                        type: 'textbox'
+                    }
                 }]
             ],
-            onClickRow: function(rowIndex) {
-                if (lastIndex != rowIndex) {
-                    $(this).datagrid('endEdit', lastIndex);
-                    $(this).datagrid('beginEdit', rowIndex);
-                }
-                lastIndex = rowIndex;
-            },
-            onBeginEdit: function(rowIndex, row) {
-                var editors = $('#dg2').datagrid('getEditors', rowIndex);
-            }
+            onClickCell: onClickCell
         });
     }
 
@@ -347,6 +421,19 @@
             return true;
         } else {
             return false;
+        }
+    }
+
+    function onClickCell(index, field) {
+        if (editIndex != index) {
+            if (endEditing()) {
+                $('#dg2').datagrid('selectRow', index).datagrid('beginEdit', index);
+                editIndex = index;
+            } else {
+                setTimeout(function() {
+                    $('#dg2').datagrid('selectRow', editIndex);
+                }, 0);
+            }
         }
     }
 
@@ -369,6 +456,35 @@
         if (editIndex == undefined) {
             return true;
         }
+        
+        var dg = $('#dg2');
+        var row = dg.datagrid('getSelected');
+        var rowIndex = dg.datagrid('getRowIndex', row);
+
+        var ed = dg.datagrid('getEditor', {
+            index: editIndex,
+            field: 'id'
+        });
+
+        var id = $(ed.target).textbox('getValue');
+
+        if(id != ""){
+            $.ajax({
+                method: 'post',
+                url: '<?= base_url('purchase/purchase_requests/delete') ?>',
+                data: {
+                    id: id
+                },
+                success: function(result) {
+                    var result = eval('(' + result + ')');
+                    toastr.success(result.message);
+                },
+                complete: function(data) {
+                    $('#dg2').datagrid('reload');
+                }
+            });
+        }
+
         $('#dg2').datagrid('cancelEdit', editIndex).datagrid('deleteRow', editIndex);
         editIndex = undefined;
     }
@@ -387,13 +503,13 @@
                     $("#request_no").combobox('disable');
                     $("#expected_date").combobox('disable');
                
-                    url_save= '<?= base_url('purchase/purchase_requests/update') ?>';
+                    url_save= '<?= base_url('purchase/purchase_requests/create') ?>';
 
                     setTimeout(function() {
                         $('#request_no').textbox('setValue', row.request_no);
                     }, 500);
 
-                    addTable(row.item_family_number, '<?= base_url('purchase/purchase_requests/datatable_updates?request_no=') ?>' + window.btoa(row.request_no));
+                    addTable(row.item_family_id, '<?= base_url('purchase/purchase_requests/datatable_updates?request_no=') ?>' + window.btoa(row.request_no));
                 } else {
                     toastr.error("You cannot update this data, because status Purchase Request is CONVERTED");
                 }
@@ -423,7 +539,6 @@
                                     id: row.id
                                 },
                                 success: function(result) {
-                                    readRequestno();
                                     var result = eval('(' + result + ')');
                                 },
                                 error: function(jqXHR, textStatus, errorThrown) {
@@ -458,9 +573,22 @@
         var filter_request_no = $("#filter_request_no").combobox('getValue');
         var filter_item_familys = $("#filter_item_familys").combobox('getValue');
         url = "?filter_from=" + filter_from + "&filter_to=" + filter_to + "&filter_request_no=" + filter_request_no + "&filter_item_familys=" + filter_item_familys;
+
         $('#dg').treegrid({
-            url: '<?= base_url('purchase/purchase_requests/datatables') ?>' + url
+            url: '<?= base_url('purchase/purchase_requests/datatables') ?>' + url,
+            pagination: true,
+            rownumbers: true,
+            idField: 'id',
+            treeField: 'request_no',
+            singleSelect: false,
+            fit: true,
+            onBeforeLoad: function(row, param) {
+                if (!row) {
+                    param.id = 0;
+                }
+            },
         });
+
         $("#printout").contents().find('html').html("<center><br><br><br><b style='font-size:20px;'>Please Wait...</b></center>");
         $("#printout").attr('src', '<?= base_url('purchase/purchase_requests/print') ?>' + url);
     }
@@ -491,114 +619,58 @@
         window.location.reload();
     }
 
-    // $("#filter_request_no").combobox({
-    //     url: '<?= base_url('purchase/purchase_requests/readRequestnumber') ?>',
-    //     valueField: 'request_no',
-    //     textField: 'request_no',
-    //     prompt: "Select Request No",
-    //     icons: [{
-    //         iconCls: 'icon-clear',
-    //         handler: function(e) {
-    //             $(e.data.target).combobox('clear').combobox('textbox').focus();
-    //         }
-    //     }],
-    // });
-
-    function readRequestno() { 
-        // var filter_from = null;
-        // var filter_to = null;
-
-        $("#filter_from").datebox({
-            onSelect: function(date_from) {
-                filter_from = myformatter(date_from);
-                console.log(filter_from);
-                updateComboboxURL();
-            }
-        });
-
-        $("#filter_to").datebox({
-            onSelect: function(date_to) {
-                filter_to = myformatter(date_to);
-                console.log(filter_to);
-                updateComboboxURL();
-            }
-        });
-
-        function updateComboboxURL() {   
-            if (filter_from && filter_to) {
-
-                var date = filter_from + "/" + filter_to;
-                var dates = window.btoa(date);
-
-                var url = '<?= base_url('purchase/purchase_requests/readRequestno') ?>' + '/' + dates;
-
-                $.ajax({
-                    url: url,
-                    dataType: 'json',
-                    success: function(data) {
-                        $("#filter_request_no").combobox({
-                            data: data,
-                            valueField: 'request_no',
-                            textField: 'request_no',
-                            prompt: "Select Request No",
-                            icons: [{
-                                iconCls: 'icon-clear',
-                                handler: function(e) {
-                                    $(e.data.target).combobox('clear').combobox('textbox').focus();
-                                }
-                            }],
-                        });
-                    },
-                    error: function(xhr, status, error) {
-                        console.error('Error:', error);
-                    }
-                });
-            }
+    $("#filter_from").datebox({
+        onChange: function(filter_from) {
+            var filter_to = $("#filter_to").datebox('getValue');
+            updateComboboxURL(filter_from, filter_to);
         }
+    });
+
+    $("#filter_to").datebox({
+        onChange: function(filter_to) {
+            var filter_from = $("#filter_from").datebox('getValue');
+            updateComboboxURL(filter_from, filter_to);
+        }
+    });
+
+    function updateComboboxURL(filter_from, filter_to) {
+        $("#filter_request_no").combobox({
+            url: '<?= base_url('purchase/purchase_requests/readRequestno/') ?>' + btoa(filter_from) + '/' + btoa(filter_to),
+            valueField: 'request_no',
+            textField: 'request_no',
+            prompt: "Select Request No",
+            icons: [{
+                iconCls: 'icon-clear',
+                handler: function(e) {
+                    $(e.data.target).combobox('clear').combobox('textbox').focus();
+                }
+            }],
+        });
     }
 
-
-
     $(function() {
-        $('#dg').treegrid({
-            url: '<?= base_url('purchase/purchase_requests/datatables') ?>',
-            pagination: true,
-            rownumbers: true,
-            idField: 'id',
-            treeField: 'request_no',
-            singleSelect: false,
-            fit: true,
-            onBeforeLoad: function(row, param) {
-                if (!row) {
-                    param.id = 0;
-                }
-            },
-            // rowStyler: function(row) {
-            //     if (row.state != "closed") {
-            //         return 'background-color:#CFE6FF;font-weight:bold;';
-            //     }
-            // },
-        });
-        $("#expected_date").datebox({
-            onChange: function() {
-                var request_date = $("#request_date").datebox('getValue');
-                var expected_date = $("#expected_date").datebox('getValue');
-                if (expected_date < request_date) {
-                    $("#expected_date").datebox('clear');
-                    toastr.warning("Request Date > Expected Date");
-                }
-            }
-        });
-        $("#request_date").datebox({
-            onChange: function() {
-                var request_date = $("#request_date").datebox('getValue');
-                var expected_date = $("#expected_date").datebox('getValue');
-                if (expected_date < request_date) {
-                    $("#request_date").datebox('clear');
-                    toastr.warning("Request Date < Expected Date");
-                }
-            }
-        });
+        filter();
+        // $("#expected_date").datebox({
+        //     onChange: function() {
+        //         var request_date = $("#request_date").datebox('getValue');
+        //         var expected_date = $("#expected_date").datebox('getValue');
+        //         if (expected_date < request_date) {
+        //             $("#expected_date").datebox('clear');
+        //             toastr.warning("Request Date > Expected Date");
+        //         }
+        //     }
+        // });
+        // $("#request_date").datebox({
+        //     onChange: function() {
+        //         var request_date = $("#request_date").datebox('getValue');
+        //         var expected_date = $("#expected_date").datebox('getValue');
+        //         if (expected_date < request_date) {
+        //             $("#request_date").datebox('clear');
+        //             toastr.warning("Request Date < Expected Date");
+        //         }
+        //     }
+        // });
+
         //Save Data
         $('#dlg_insert').dialog({
             buttons: [{
@@ -609,11 +681,15 @@
                     var request_date = $("#request_date").datebox('getValue');
                     var request_name = $("#request_name").textbox('getValue');
                     var expected_date = $("#expected_date").datebox('getValue');
-                    var division = $("#division").combobox('getValue');
+                    var division = $("#division").textbox('getValue');
+                    var department = $("#department").textbox('getValue');
+                    var sub_department = $("#sub_department").textbox('getValue');
 
+                    $("#dg2").datagrid('acceptChanges');
                     var rows = $('#dg2').datagrid('getRows');
                     var totalrows = rows.length;
                     endEditing();
+
                     for (let i = 0; i < totalrows; i++) {
                         if (rows[i].item_rm_id) {
                             $.ajax({
@@ -626,7 +702,10 @@
                                     request_date: request_date,
                                     request_name: request_name,
                                     division: division,
+                                    department: department,
+                                    sub_department: sub_department,
                                     qty: rows[i].qty,
+                                    attachment: rows[i].attachment,
                                     expected_date: expected_date,
                                     remarks: rows[i].remarks
                                 },
@@ -646,7 +725,7 @@
                             });
                         }
                     }
-                    readRequestno();
+
                     $('#dg').treegrid('reload');
                     $('#dlg_insert').dialog('close');
                 }
@@ -832,7 +911,6 @@
                 });
             }
         });
-        readRequestno();
     });
 
     //Format Datepicker
@@ -898,4 +976,15 @@
             return 'Checking';
         }
     };
+
+
+    function btnDetails(val, row, index) {
+        var attachment = row.attachment;
+        
+        if (attachment != null && attachment != "") {
+            return '<a class="btn btn-primary w-100" target="_blank" href="<?= base_url('assets/image/purchase_requests/') ?>'+row.attachment+'" style="pointer-events: visible; opacity:1;"><i class="fa fa-eye"></i> View</a>';
+        } else {
+            return '';
+        }
+    }
 </script>

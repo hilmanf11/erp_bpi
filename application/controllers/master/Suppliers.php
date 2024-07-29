@@ -31,7 +31,7 @@ class Suppliers extends CI_Controller
     public function reads()
     {
         $post = isset($_POST['q']) ? $_POST['q'] : "";
-        $send = $this->crud->reads('suppliers', ["name" => $post]);
+        $send = $this->crud->reads('suppliers', ["name" => $post],[], "", "name", "ASC");
         echo json_encode($send);
     }
     //GET DATATABLES

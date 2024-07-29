@@ -13,7 +13,7 @@ class Purchase_orders extends CI_Controller
         $this->load->library('Ciqrcode');
         $this->load->model('crud');
         //Validasi Form
-        $this->form_validation->set_rules('item_number', 'Product No', 'required|min_length[1]|max_length[100]');
+        $this->form_validation->set_rules('item_rm_id', 'Product No', 'required|min_length[1]|max_length[100]'); //item_number
     }
 
     public function index()
@@ -57,6 +57,23 @@ class Purchase_orders extends CI_Controller
         echo json_encode($records);
     }
 
+    public function readPonos()
+    {
+        $post = isset($_POST['q']) ? $_POST['q'] : "";
+    
+        $this->db->select('a.po_no, a.po_date, a.po_name, b.number as supplier_number, b.name as supplier_name');
+        $this->db->from('purchase_orders a');
+        $this->db->join('suppliers b', 'a.supplier_id = b.id');
+        $this->db->where('a.deleted', 0);
+        // $this->db->where('a.status', 0);
+        $this->db->like('a.po_no', $post);
+        $this->db->group_by('a.po_no');
+        $this->db->order_by('a.created_date', 'desc');
+        
+        $records = $this->db->get()->result_object();
+        echo json_encode($records);
+    }
+
     public function readTotalPo()
     {
         $item_id = $this->input->post('item_rm_id');
@@ -71,6 +88,57 @@ class Purchase_orders extends CI_Controller
         echo json_encode($records);
     }
 
+    public function completePo()
+    {
+        // $po_no = $this->input->post('po_no');
+        $id = $this->input->post('id');
+        $update = $this->db->update('purchase_orders', ["status" => 2], ["id" => $id]);// , "qty" => 0
+        echo $update;
+    }
+
+    public function uncompletePo()
+    {
+        // $po_no = $this->input->post('po_no');
+        $id = $this->input->post('id');
+        $update = $this->db->update('purchase_orders', ["status" => 2], ["id" => $id]);// , "qty" => 0
+        echo $update;
+    }
+
+    public function checkStatus()
+    {
+        $po_no = $this->input->post('po_no');
+        $this->db->select('status');
+        $this->db->from('purchase_orders');
+        $this->db->where('po_no', $po_no);
+        // $this->db->where('status', 1);
+        $record = $this->db->get()->row_array();
+
+        echo json_encode($record);
+    }
+
+    public function checkTotalSub()
+    {
+        $po_no = $this->input->post('po_no');
+        $this->db->select('total_sub');
+        $this->db->from('purchase_orders');
+        $this->db->where('po_no', $po_no);
+        $record = $this->db->get()->row_array();
+
+        echo json_encode($record);
+    }
+
+    public function checkPassword()
+    {
+        $inputPassword = base64_decode($this->input->post('password'));
+        $sessionPassword = $this->session->password;
+
+        if ($inputPassword === $sessionPassword) {
+            echo json_encode(['success' => true]);
+        } else {
+            echo json_encode(['success' => false]);
+        }
+    }
+
     public function datatables()
     {
         if ($this->input->post()) {
@@ -78,6 +146,7 @@ class Purchase_orders extends CI_Controller
             $filter_to   = $this->input->get('filter_to');
             $filter_po_no = $this->input->get('filter_po_no');
             $filter_suppliers = $this->input->get('filter_suppliers');
+            $filter_status = $this->input->get('filter_status');
             $page = $this->input->post('page');
             $rows = $this->input->post('rows');
 
@@ -98,20 +167,32 @@ class Purchase_orders extends CI_Controller
                     a.month_1,
                     a.month_2,
                     a.month_3,
+                    a.month_4,
                     a.discount,
                     d.currency, 
                     SUM(a.qty) as qty, 
                     SUM(a.price) as price, 
                     SUM(a.total) as total_price,
+                    a.status,
                     COUNT(a.status) as total_status,
+                    f.max_status as status_pi,
                     a.total_sub,
+                    a.approved_to, 
+                    a.approved_by, 
+                    a.approved_date, 
+                    a.total_vat, 
+                    a.income_tax, 
+                    a.income_total, 
+                    h.total_status_complete,
                     g.total_status_close');
                 $this->db->from('purchase_orders a');
                 $this->db->join('item_rm b', 'a.item_rm_id = b.id');
                 $this->db->join('item_familys c', 'b.item_family_id = c.id');
                 $this->db->join('suppliers d', 'a.supplier_id = d.id');
                 $this->db->join('supplier_items e', 'a.item_rm_id = e.item_rm_id and a.supplier_id = e.supplier_id');
+                $this->db->join('(SELECT po_no, MIN(status) AS max_status FROM purchase_order_receipts GROUP BY po_no) f', 'a.po_no = f.po_no', 'left');
                 $this->db->join('(SELECT po_no, COUNT(status) as total_status_close FROM purchase_orders WHERE status = 1 GROUP BY po_no) g', 'a.po_no = g.po_no', 'left');
+                $this->db->join('(SELECT po_no, COUNT(status) as total_status_complete FROM purchase_orders WHERE status = 2 GROUP BY po_no) h', 'a.po_no = h.po_no', 'left');
                 $this->db->where('a.deleted', 0);
                 if ($filter_from != "" or $filter_to != "") {
                     $this->db->where('a.po_date >=', $filter_from);
@@ -119,9 +200,15 @@ class Purchase_orders extends CI_Controller
                 }
                 $this->db->like('a.po_no', $filter_po_no);
                 $this->db->like('d.id', $filter_suppliers);
+                $this->db->like('a.status', $filter_status);
                 $this->db->group_by('a.po_no');
-                $this->db->order_by('a.status', 'ASC');
+
+                
+                $this->db->order_by('a.created_date', 'DESC');
+                $this->db->order_by('a.po_no', 'DESC');
                 $this->db->order_by('a.po_date', 'DESC');
+                $this->db->order_by('a.status', 'ASC');
+                
                 //Total Data
                 $totalRows = $this->db->count_all_results('', false);
                 //Limit 1 - 10
@@ -130,11 +217,29 @@ class Purchase_orders extends CI_Controller
                 $records = $this->db->get()->result_array();
                 //Mapping Data
                 foreach ($records as $record) {
-                    if ($record['total_status'] == $record['total_status_close']) {
+                    if($record['status'] == 2){
+                        $status = "2";
+                    }elseif ($record['total_status_complete'] >= 1 ) {
+                        $status = "2";
+                    }elseif ($record['total_status'] == $record['total_status_close']) {
                         $status = "1";
                     } else {
                         $status = "0";
                     }
+
+                    if($record['approved_to'] == "" || $record['approved_to'] == null){
+                        $approved_to = "";
+                    } else {
+                        $approved_to = "Checking";
+                    }
+
+                    // if ($record['status_pi'] == 1) {
+                    //     $status_pi = "1";
+                    // } else {
+                    //     $status_pi = "0";
+                    // }
+
+                   
 
                     $arr[] = array(
                         "id" => $record['po_no'],
@@ -145,12 +250,21 @@ class Purchase_orders extends CI_Controller
                         "currency" => $record['currency'],
                         "supplier_name" => $record['supplier_name'],
                         "status" => $status,
+                        "status_pi" => $record['status_pi'],
                         "status1" => $record['total_status'],
                         "status2" => $record['total_status_close'],
                         "total_dp" => $record['total_dp'],
                         "total_sub" => $record['total_sub'],
-                        "total_grand" => ($record['total_price'] - $record['total_dp']),
+                        "income_tax" => $record['income_tax'],
+                        "income_total" => $record['income_total'],
+                        "total_price" => $record['total_price'],
+                        "total_vat" => $record['total_vat'],
+                        "total_grand" => ($record['total_price'] + $record['total_vat']) - $record['total_dp'] - $record['income_total'],
                         "state" => "closed",
+                        "approved_to" => $approved_to,
+                        "approved_by" => $record['approved_by'],
+                        "approved_date" => $record['approved_date'],
+                        "total_sub" => $record['total_sub'],
                         "datatable" => 1
                     );
                 }
@@ -164,8 +278,10 @@ class Purchase_orders extends CI_Controller
                     b.uom,
                     c.name as item_family_name, 
                     d.name as supplier_name, 
-                    d.currency, e.mpq, 
+                    d.currency, 
+                    e.mpq, 
                     e.moq,
+                    f.max_status as status_pi,
                     a.price,
                     a.status, 
                     (a.qty * a.price) as total_price');
@@ -174,6 +290,7 @@ class Purchase_orders extends CI_Controller
                 $this->db->join('item_familys c', 'b.item_family_id= c.id');
                 $this->db->join('suppliers d', 'a.supplier_id = d.id');
                 $this->db->join('supplier_items e', 'a.item_rm_id = e.item_rm_id and a.supplier_id = e.supplier_id');
+                $this->db->join('(SELECT po_no, item_rm_id, MAX(status) AS max_status FROM purchase_order_receipts GROUP BY po_no, item_rm_id) f', 'a.po_no = f.po_no and a.item_rm_id = f.item_rm_id', 'left');
                 $this->db->where('a.deleted', 0);
                 if ($filter_from != "" or $filter_to != "") {
                     $this->db->where('a.po_date >=', $filter_from);
@@ -181,6 +298,7 @@ class Purchase_orders extends CI_Controller
                 }
                 $this->db->like('a.po_no', $id);
                 $this->db->like('d.id', $filter_suppliers);
+                $this->db->like('a.status', $filter_status);
                 $this->db->order_by('a.status', 'ASC');
                 $this->db->order_by('a.po_no', 'DESC');
                 $records = $this->db->get()->result_array();
@@ -212,7 +330,7 @@ class Purchase_orders extends CI_Controller
         $this->db->join('suppliers d', 'a.supplier_id = d.id');
         $this->db->join('supplier_items e', 'a.item_rm_id = e.item_rm_id and a.supplier_id = e.supplier_id');
         $this->db->where('a.deleted', 0);
-        $this->db->where('a.status', 0);
+        // $this->db->where('a.status', 0);
         $this->db->where('a.po_no', $po_no);
         $this->db->order_by('b.number', 'ASC');
         $records = $this->db->get()->result_array();
@@ -236,7 +354,8 @@ class Purchase_orders extends CI_Controller
         if ($this->input->post()) {
             if ($this->form_validation->run() == TRUE) {
                 $post = $this->input->post();
-                $items = $this->crud->read('item_rm', [], ['number' => $post['item_number']]);
+                $items = $this->crud->read('item_rm', [], ['id' => $post['item_rm_id']]); //item_number
+                $categorys = $this->crud->read('item_categories', [], ['id' => $items->item_category_id]);
                 $suppliers = $this->crud->read('suppliers', [], ["id" => $post['supplier_id']]);
                 $supplier_items = $this->crud->read('supplier_items', [], ["item_rm_id" => $items->id, "supplier_id" => $post['supplier_id']]);
                 $purchaseOrder = $this->crud->read('purchase_orders', [], ["request_no" => $post['request_no'], "supplier_id" => $post['supplier_id']]);
@@ -244,13 +363,17 @@ class Purchase_orders extends CI_Controller
                 $config = $this->crud->read("config");
 
                 $divisions = $purchaseRequests->division;
-                $datenow    = $divisions . date("ymd");
+                $datenow2    = $divisions .$categorys->number. date("ym");
+                $datenow    = $divisions .$categorys->number. date("y");
+                $currentYear = date("Y");
                 $sqlGetID   = $this->db->query("SELECT max(po_no) as kode FROM purchase_orders WHERE po_no like '%$datenow%'");
                 $rowID      = $sqlGetID->row();
                 $kode       = $rowID->kode;
+
                 if ($kode == NULL) {
-                    $autoID = sprintf("%04s", $kode + 1);
-                    $po_no = "PO" . $datenow . "-" . $autoID;
+                    $autoID = "0001";
+
+                    $po_no = "PO" . $datenow2 . "-" . $autoID;
                 } else {
                     if ($purchaseOrder) {
                         $po_no = $purchaseOrder->po_no;
@@ -258,7 +381,9 @@ class Purchase_orders extends CI_Controller
                         $urutan = (int)substr($kode, -4);
                         $urutan++;
                         $autoID = sprintf("%04s", $urutan);
-                        $po_no = "PO" . $datenow . "-" . $autoID;
+
+                        $po_no = "PO" . $datenow2 . "-" . $autoID;
+                       
                     }
                 }
 
@@ -287,6 +412,7 @@ class Purchase_orders extends CI_Controller
                     "month_1" => $post['month_1'],
                     "month_2" => $post['month_2'],
                     "month_3" => $post['month_3'],
+                    "month_4" => $post['month_4'],
                     "total_sub" => $post['total_sub'],
                 );
 
@@ -308,12 +434,9 @@ class Purchase_orders extends CI_Controller
         if ($this->input->post()) {
             $post = $this->input->post();
 
-            $items = $this->crud->read('item_rm', [], ['number' => $post['item_number']]);
+            $items = $this->crud->read('item_rm', [], ['id' => $post['item_rm_id']]);
             $purchaseOrder = $this->crud->read('purchase_orders', [], ["request_no" => $post['request_no'], "supplier_id" => $post['supplier_id'], "item_rm_id" => $items->id]);
-
-            $purchase_orders = $this->crud->update('purchase_orders', ["request_no" => $post['request_no'], "supplier_id" => $post['supplier_id'], "item_rm_id" => $items->id], [
-                "qty" => $post['qty'],
-                "discount" => $post['discount'],
+            $purchase_orders = $this->db->update('purchase_orders',["supplier_id" => $post['supplier_id'],"qty" => $post['qty'],"discount" => $post['discount'],
                 "po_date" => $post['po_date'],
                 "price" => $post['price'],
                 "total" => $post['total'],
@@ -322,6 +445,7 @@ class Purchase_orders extends CI_Controller
                 "month_1" => $post['month_1'],
                 "month_2" => $post['month_2'],
                 "month_3" => $post['month_3'],
+                "month_4" => $post['month_4'],
                 "total_sub" => $post['total_sub'],
                 "disc_pr" => $post['disc_pr'],
                 "discount_total" => $post['discount_total'],
@@ -331,11 +455,9 @@ class Purchase_orders extends CI_Controller
                 "total_grand" => $post['total_grand'],
                 "total_vat" => $post['total_vat'],
                 "revision" => (@$purchaseOrder->revision + 1)
-            ]);
+            ],["request_no" => $post['request_no'], "item_rm_id" => $items->id]);
 
-            $purchase_requests = $this->crud->update('purchase_requests', ["request_no" => $post['request_no'], "item_rm_id" => $items->id], [
-                "qty" => $post['qty']
-            ]);
+            $purchase_requests = $this->db->update('purchase_requests',["qty" => $post['qty']],["request_no" => $post['request_no'], "item_rm_id" => $items->id]);
 
             echo $purchase_orders;
         } else {
@@ -367,8 +489,8 @@ class Purchase_orders extends CI_Controller
     public function readPeriodLists()
     {
         $po_date = $this->input->post('po_date');
-        $p_date_start = date("Y-m-d", strtotime($po_date . "-01"));
-        $p_date_to = date('Y-m-d', strtotime('+3 month', strtotime($p_date_start)));
+        $p_date_start = date("Y-m-d", strtotime($po_date . "+1 month"));
+        $p_date_to = date('Y-m-d', strtotime('+4 month', strtotime($p_date_start)));
 
         while (strtotime($p_date_start) <= strtotime($p_date_to)) {
             $dates[] = array(
@@ -391,6 +513,30 @@ class Purchase_orders extends CI_Controller
         $signatures = $this->db->get('signatures')->row();
         $approval = $this->crud->read('approvals', [], ["table_name" => "purchase_orders"]);
         $user_1 = $this->crud->read('users', [], ["username" => $approval->user_approval_1]);
+
+        $po_period = $purchase_orders->po_date;
+        $month = date('m', strtotime($po_period));
+        $currentYear = date("y");
+       
+        $bulan_array = array(
+            1 => "Jan",
+            2 => "Feb",
+            3 => "Mar",
+            4 => "Apr",
+            5 => "May",
+            6 => "June",
+            7 => "July",
+            8 => "Aug",
+            9 => "Sep",
+            10 => "Oct",
+            11 => "Nov",
+            12 => "Dec"
+        );
+        
+        $month_1 = $bulan_array[($month + 1)] . "-" . $currentYear;
+        $month_2 = $bulan_array[($month + 2)] . "-" . $currentYear;
+        $month_3 = $bulan_array[($month + 3)] . "-" . $currentYear;
+        $month_4 = $bulan_array[($month + 4)] . "-" . $currentYear;
        
         if (!empty($approval->user_approval_2)) {
             $user_2 = $this->crud->read('users', [], ["username" => $approval->user_approval_2]);
@@ -405,7 +551,11 @@ class Purchase_orders extends CI_Controller
         }
         
         
-        if($purchase_orders->approved == 1){
+        if($purchase_orders->approved == 0){
+            $users_1 = '';
+            $users_2 = '';
+            $users_3 = '';
+        } elseif ($purchase_orders->approved == 1) {
             $users_1 = '';
             $users_2 = '';
             $users_3 = '';
@@ -476,7 +626,7 @@ class Purchase_orders extends CI_Controller
         $hal = 1;
         $subtotal = 0;
         for ($i = 0; $i < $page; $i++) {
-            $this->db->select('a.*, b.number as item_id, b.name as item_name, b.uom, c.currency, a.price, b.description, a.month_1, a.month_2, a.month_3');
+            $this->db->select('a.*, b.number as item_id, b.name as item_name, b.uom, c.currency, a.price, b.description, a.month_1, a.month_2, a.month_3, a.month_4');
             $this->db->from('purchase_orders a');
             $this->db->join('item_rm b', 'a.item_rm_id = b.id');
             $this->db->join('suppliers c', 'a.supplier_id = c.id');
@@ -592,12 +742,13 @@ class Purchase_orders extends CI_Controller
                                         <th rowspan="2" width="50" style="text-align:center;">Currency</th>
                                         <th rowspan="2" width="50" style="text-align:center;">Amount</th>
                                         <th rowspan="2" width="80" style="text-align:center;">Delivery<br>Date</th>
-                                        <th colspan="3" width="80" style="text-align:center;">Forecast</th>
+                                        <th colspan="4" width="80" style="text-align:center;">Forecast</th>
 
                                         <tr>
-                                            <th width="80" style="text-align:center;">Month 1</th>
-                                            <th width="80" style="text-align:center;">Month 2</th>
-                                            <th width="80" style="text-align:center;">Month 3</th>
+                                            <th width="80" style="text-align:center;">'.$month_1.'</th>
+                                            <th width="80" style="text-align:center;">'.$month_2.'</th>
+                                            <th width="80" style="text-align:center;">'.$month_3.'</th>
+                                            <th width="80" style="text-align:center;">'.$month_4.'</th>
                                         </tr>
                                         
                                     </tr>';
@@ -621,11 +772,12 @@ class Purchase_orders extends CI_Controller
                                 
                                 <td style="text-align:right;">' . number_format($record['price'], $digits) . '</td>
                                 <td style="text-align:center;">' . $record['currency'] . '</td>
-                                <td style="text-align:right;">' . $record['total'] . '</td>
+                                <td style="text-align:right;">' . number_format($record['total'], 2) . '</td>
                                 <td style="text-align:center;">' . $record['delivery_date'] . '</td>
                                 <td style="text-align:center;">' . $record['month_1'] . '</td>
                                 <td style="text-align:center;">' . $record['month_2'] . '</td>
                                 <td style="text-align:center;">' . $record['month_3'] . '</td>
+                                <td style="text-align:center;">' . $record['month_4'] . '</td>
                             </tr>';
                 $row++;
                 $no++;
@@ -686,79 +838,82 @@ class Purchase_orders extends CI_Controller
             } else {
                 $html .= '</table>';
             }
-            $html .= '  <div style="width:100%; display: grid; grid-template-columns: auto auto auto;">
-                        <div style="width:40%; position: absolute; right: 50px;">
-                            <table id="customers" style="margin-top:20px;">
-                                <tr>
-                                    <th colspan="3" width="200" style="text-align:center;">PT. BANSHU PLASTIC INDONESIA</th>
-                                </tr>
-                                <tr>
-                                    <th width="200" style="text-align:center;">Approved By</th>
-                                    <th width="200" style="text-align:center;">Checked By</th>
-                                    <th width="200" style="text-align:center;">Prepared By</th>
-                                </tr>
-                                <tr>
-                                    <th style="height:100px;">'. $users_3. '</th>
-                                    <th style="height:100px;">'. $users_2. '</th>
-                                    <th style="height:100px;">'. $users_1. '</th>
-                                </tr>
-                                <tr>
-                                    <th style="height:20px; text-align:center;">' . $user_3->name . '</th>
-                                    <th style="height:20px; text-align:center;">' . $user_2->name . '</th>
-                                    <th style="height:20px; text-align:center;">' . $user_1->name . '</th>
-                                </tr>
-                                <tr>
-                                    <th width="200" style="text-align:center;">President Director</th>
-                                    <th width="200" style="text-align:center;">General Manager</th>
-                                    <th width="200" style="text-align:center;">Assistant Manager</th>
-                                </tr>
-                            </table>
-                        </div>
-                        
-                    </div>
-
-                    <div style="font-size:12px; margin-top:20px;">
-                        <tr>
-                            <td>Term & Condition</td>
-                        </tr>
-                    </div>
-    
-                    <table style="width:100%; font-size:12px; margin-top:20px;">
-                        <tr>
-                            <td width="20">1.</td>
-                            <td>Please sign, stamp & reply email to : mcl@banshuplastic.com. Maximum one day after PO received.</td>
-                        </tr>
-                        <tr>
-                            <td>2.</td>
-                            <td>Please mention the Purchase Order Number in the Shipping & Billing Document.</td>
-                        </tr>
-                        <tr>
-                            <td>3.</td>
-                            <td>Please make sure delivery date is same with Purchase Order.</td>
-                        </tr>
-                    </table>
-
-                    <div style="width:50%;">
-                        <table style="margin-top:20px; font-size:12px;">
-                            <tr>
-                                <th width="200" style="text-align:center;">Supplier Name</th>
-                            </tr>
-                            <tr>
-                                <th width="200" style="text-align:center; font-size:10px;">Received</th>
-                            </tr>
-                            <tr>
-                                <th style="height:80px;"></th>
-                            </tr>
-                            <tr>
-                                <th style="height:20px; text-align:center;">_________________________</th>
-                            </tr>
-                        </table>
-                    </div>
-
-                </div>
-            </div>';
             if (($i + 1) != $page) {
                 $html .= '<div style="page-break-after:always;"></div>';
+            } else{
+                // Memindahkan informasi approval ke sini
+    $html .= '<div style="width:100%; display: grid; grid-template-columns: auto auto auto;">
+    <div style="width:40%; position: absolute; right: 50px;">
+        <table id="customers" style="margin-top:20px;">
+            <tr>
+                <th colspan="3" width="200" style="text-align:center;">PT. BANSHU PLASTIC INDONESIA</th>
+            </tr>
+            <tr>
+                <th width="200" style="text-align:center;">Approved By</th>
+                <th width="200" style="text-align:center;">Checked By</th>
+                <th width="200" style="text-align:center;">Prepared By</th>
+            </tr>
+            <tr>
+                <th style="height:100px;">'. $users_3. '</th>
+                <th style="height:100px;">'. $users_2. '</th>
+                <th style="height:100px;">'. $users_1. '</th>
+            </tr>
+            <tr>
+                <th style="height:20px; text-align:center;">' . $user_3->name . '</th>
+                <th style="height:20px; text-align:center;">' . $user_2->name . '</th>
+                <th style="height:20px; text-align:center;">' . $user_1->name . '</th>
+            </tr>
+            <tr>
+                <th width="200" style="text-align:center;">President Director</th>
+                <th width="200" style="text-align:center;">General Manager</th>
+                <th width="200" style="text-align:center;">Assistant Manager</th>
+            </tr>
+        </table>
+            <div style="text-align:left; font-size: 15px; margin-top: 20px; border: none;">
+                <i>Electronic Auto Generating Approval No Need Signature</i>
+            </div>
+    </div>
+</div>
+
+<div style="font-size:12px; margin-top:20px;">
+    <tr>
+        <td>Term & Condition</td>
+    </tr>
+</div>
+
+<table style="width:100%; font-size:12px; margin-top:20px;">
+    <tr>
+        <td width="20">1.</td>
+        <td>Please sign, stamp & reply email to : mcl@banshuplastic.com. Maximum one day after PO received.</td>
+    </tr>
+    <tr>
+        <td>2.</td>
+        <td>Please mention the Purchase Order Number in the Shipping & Billing Document.</td>
+    </tr>
+    <tr>
+        <td>3.</td>
+        <td>Please make sure delivery date is same with Purchase Order.</td>
+    </tr>
+</table>
+
+<div style="width:50%;">
+    <table style="margin-top:20px; font-size:12px;">
+        <tr>
+            <th width="200" style="text-align:center;">Supplier Name</th>
+        </tr>
+        <tr>
+            <th width="200" style="text-align:center; font-size:10px;">Received</th>
+        </tr>
+        <tr>
+            <th style="height:80px;"></th>
+        </tr>
+        <tr>
+            <th style="height:20px; text-align:center;">_________________________</th>
+        </tr>
+    </table>
+</div>
+
+</div>';
             }
             $hal++;
         }
@@ -776,6 +931,7 @@ class Purchase_orders extends CI_Controller
         $filter_to   = $this->input->get('filter_to');
         $filter_po_no = $this->input->get('filter_po_no');
         $filter_suppliers = $this->input->get('filter_suppliers');
+        $filter_status = $this->input->get('filter_status');
         //Config
         $this->db->select('*');
         $this->db->from('config');
@@ -801,6 +957,7 @@ class Purchase_orders extends CI_Controller
         }
         $this->db->like('a.po_no', $filter_po_no);
         $this->db->like('d.number', $filter_suppliers);
+        $this->db->like('a.status', $filter_status);
         $this->db->order_by('a.po_date', 'DESC');
         $records = $this->db->get()->result_array();
         $html = '<html><head><title>Print Data</title></head><style>body {font-family: Arial, Helvetica, sans-serif;}#customers {border-collapse: collapse;width: 100%;font-size: 12px;}#customers td, #customers th {border: 1px solid black;padding: 2px;}#customers tr:nth-child(even){background-color: #f2f2f2;}#customers tr:hover {background-color: black;}#customers th {padding-top: 2px;padding-bottom: 2px;text-align: center;color: black;}</style><body>

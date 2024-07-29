@@ -32,9 +32,9 @@ class Supply_sheets extends CI_Controller
     {
         $this->bpi = $this->load->database('bpi', TRUE);
         
-        $this->bpi->select("TO_CHAR(datesupply::date, 'yyyymm') as period");
+        $this->bpi->select("TO_CHAR(issudate::date, 'yyyymm') as period");
         $this->bpi->from('worko');
-        $this->bpi->group_by("TO_CHAR(datesupply::date, 'yyyymm')");
+        $this->bpi->group_by("TO_CHAR(issudate::date, 'yyyymm')");
         // $this->bpi->like("TO_CHAR(datesupply::date, 'yyyymm')", "2024");
         $this->bpi->order_by("period", "desc");
         $data = $this->bpi->get()->result_array();
@@ -48,7 +48,7 @@ class Supply_sheets extends CI_Controller
         
         $this->bpi->select("lotno as wp");
         $this->bpi->from('worko');
-        $this->bpi->where("TO_CHAR(datesupply::date, 'yyyymm') = '$period'");
+        $this->bpi->where("TO_CHAR(issudate::date, 'yyyymm') = '$period'");
         $this->bpi->group_by("lotno");
         $this->bpi->order_by("lotno", "asc");
         $data = $this->bpi->get()->result_array();
@@ -62,7 +62,7 @@ class Supply_sheets extends CI_Controller
         
         $this->bpi->select("wo_no as workorder, partno as product_no");
         $this->bpi->from('worko');
-        $this->bpi->where("TO_CHAR(datesupply::date, 'yyyymm') = '$period'");
+        $this->bpi->where("TO_CHAR(issudate::date, 'yyyymm') = '$period'");
         $this->bpi->where("lotno = '$wp'");
         $this->bpi->group_by("wo_no, partno");
         $this->bpi->order_by("wo_no", "asc");
@@ -74,7 +74,7 @@ class Supply_sheets extends CI_Controller
     public function readItems($item_fg_no)
     {
         $item_fg_no = base64_decode($item_fg_no);
-        $send = $this->crud->query("SELECT a.id as item_fg_id, a.number as item_number, a.name as item_name, c.name as customer_name  
+        $send = $this->crud->query("SELECT DISTINCT a.id as item_fg_id, a.number as item_number, a.name as item_name, c.name as customer_name  
             FROM item_fg a
             JOIN customer_items b on a.id = b.item_fg_id
             JOIN customers c on b.customer_id = c.id
@@ -82,16 +82,35 @@ class Supply_sheets extends CI_Controller
         echo json_encode($send);
     }
 
-    public function readPeriod()
+    public function checkProduct()
     {
-        $send = $this->crud->query("SELECT a.period
-        FROM production_schedules a 
-        WHERE a.status = 1
-        GROUP BY a.period
-        ORDER BY a.period DESC");
+        $product_no = $this->input->post('product_no');
 
-        echo json_encode($send);
+        $item_fg = $this->crud->read('item_fg', [], ['number' => $product_no]);
+        
+        if ($item_fg) {
+            $this->db->select('item_fg_id');
+            $this->db->from('customer_items');
+            $this->db->where('item_fg_id', $item_fg->id);
+            $result = $this->db->get()->row_array();
+            
+            echo json_encode($result);
+        } else {
+            echo json_encode(['error' => 'Product not found']);
+        }
     }
+
+
+    // public function readPeriod()
+    // {
+    //     $send = $this->crud->query("SELECT a.period
+    //     FROM production_schedules a 
+    //     WHERE a.status = 1
+    //     GROUP BY a.period
+    //     ORDER BY a.period DESC");
+
+    //     echo json_encode($send);
+    // }
 
     public function readMPQ($item)
     {
@@ -100,37 +119,44 @@ class Supply_sheets extends CI_Controller
         echo json_encode($send);
     }
 
-    public function readWp()
-    {
-        $period = base64_decode($this->input->get('period'));
-        $wp = base64_decode($this->input->get('wp'));
+    // public function readWp()
+    // {
+    //     $period = base64_decode($this->input->get('period'));
+    //     $wp = base64_decode($this->input->get('wp'));
 
-        $send = $this->crud->query("SELECT a.wp
-        FROM production_schedules a 
-        WHERE a.status = 1 and a.period = '$period'
-        GROUP BY a.wp
-        ORDER BY a.wp DESC");
+    //     $send = $this->crud->query("SELECT a.wp
+    //     FROM production_schedules a 
+    //     WHERE a.status = 1 and a.period = '$period'
+    //     GROUP BY a.wp
+    //     ORDER BY a.wp DESC");
 
-        echo json_encode($send);
-    }
+    //     echo json_encode($send);
+    // }
 
     public function readRequestNo()
     {
-        $period = base64_decode($this->input->get('period'));
-        $wp = base64_decode($this->input->get('wp'));
-        if ($period != "") {
-            $w_period = "and b.period = '$period'";
-        } else {
-            $w_period = "";
-        }
-        if ($wp != "") {
-            $w_wp = "and b.wp = '$wp'";
-        } else {
-            $w_wp = "";
-        }
-        $records = $this->crud->query("SELECT a.request_no FROM supply_sheets a JOIN production_schedules b ON a.workorder = b.workorder WHERE a.status = '0' $w_period $w_wp GROUP BY a.request_no");
-        echo json_encode($records);
+        $post = isset($_POST['q']) ? $_POST['q'] : "";
+        $send = $this->crud->query("SELECT DISTINCT request_no FROM supply_sheets WHERE request_no LIKE '%$post%'");
+        echo json_encode($send);
     }
+
+    // public function readRequestNo()
+    // {
+    //     $period = base64_decode($this->input->get('period'));
+    //     $wp = base64_decode($this->input->get('wp'));
+    //     if ($period != "") {
+    //         $w_period = "and b.period = '$period'";
+    //     } else {
+    //         $w_period = "";
+    //     }
+    //     if ($wp != "") {
+    //         $w_wp = "and b.wp = '$wp'";
+    //     } else {
+    //         $w_wp = "";
+    //     }
+    //     $records = $this->crud->query("SELECT a.request_no FROM supply_sheets a JOIN production_schedules b ON a.workorder = b.workorder WHERE a.status = '0' $w_period $w_wp GROUP BY a.request_no");
+    //     echo json_encode($records);
+    // }
 
     public function request_no($trans_date)
     {
@@ -156,23 +182,23 @@ class Supply_sheets extends CI_Controller
         $filter_wp   = $this->input->get('filter_wp');
         $filter_request_no = $this->input->get('filter_request_no');
         // $filter_operation = $this->input->get('filter_operation');
+        
         $page = $this->input->post('page');
         $rows = $this->input->post('rows');
         $sort = $this->input->post('sort');
         $order = $this->input->post('order');
+
         //Pagination 1-10
         $page   = isset($page) ? intval($page) : 1;
         $rows   = isset($rows) ? intval($rows) : 10;
         $offset = ($page - 1) * $rows;
         $result = array();
         //Select Query
-        $this->db->select('a.*, SUM(a.qty_req) as qty_req2, SUM(a.qty_act) as qty_act2, SUM(a.qty_bal) as qty_bal2, b.number as item_number, b.name as item_name, b.uom, g.qty_issued2');
+        $this->db->select('a.*, SUM(a.qty_req) as qty_req2, SUM(a.qty_act) as qty_act2, SUM(a.qty_bal) as qty_bal2, b.number as item_fg_number, b.name as item_fg_name, b.uom, g.qty_issued2');
         $this->db->from('supply_sheets a');
         $this->db->join('item_fg b', 'a.item_fg_id = b.id');
-        $this->db->join('item_rm c', 'a.item_rm_id = c.id');
         // $this->db->join('uom d', 'b.uom_id = d.id');
         // $this->db->join('production_schedules e', 'a.item_fg_id = e.item_fg_id and a.workorder = e.workorder');
-        $this->db->join('bom f', 'a.item_fg_id = f.item_fg_id and a.item_rm_id = f.item_rm_id');
         $this->db->join("(SELECT a.request_no, a.item_rm_id, SUM(a.qty) as qty, b.qty_req, (SUM(a.qty) - b.qty_req) as qty_issued2 
         FROM issued_material_details a 
         JOIN supply_sheets b ON a.request_no = b.request_no and a.item_rm_id = b.item_rm_id
@@ -180,6 +206,7 @@ class Supply_sheets extends CI_Controller
         HAVING (SUM(a.qty) - b.qty_req) < 0) g", "a.request_no = g.request_no", "LEFT");
         $this->db->where('a.deleted', 0);
         $this->db->where('a.status', 0);
+    
         if ($filter_supply_type == "OPEN") {
             $this->db->where('g.qty_issued2 <', 0);
         }elseif ($filter_supply_type == "CLOSE") {
@@ -189,7 +216,15 @@ class Supply_sheets extends CI_Controller
         if ($filter_request_no != "") {
             $this->db->where('a.request_no', $filter_request_no);
         }
+
+        if ($filter_period != "") {
+            $this->db->where('a.period', $filter_period);
+        }
        
+        if ($filter_wp != "") {
+            $this->db->where('a.wp', $filter_wp);
+        }
+
         $this->db->group_by('a.request_no');
         $this->db->group_by('a.item_fg_id');
         $this->db->order_by($sort, $order);
@@ -206,18 +241,20 @@ class Supply_sheets extends CI_Controller
             }
 
             $arr[] = array(
-                "id" => base64_encode($record['request_no']),
                 "request_no" => $record['request_no'],
                 "request_date" => $record['request_date'],
                 "request_name" => $record['request_name'],
                 // "period" => $record['period'],
                 // "wp" => $record['wp'],
                 "workorder" => $record['workorder'],
-                "item_number" => $record['item_number'],
-                "item_name" => $record['item_name'],
+                "item_fg_number" => $record['item_fg_number'],
+                "item_fg_name" => $record['item_fg_name'],
                 "uom" => $record['uom'],
                 "supply_type" => $supply_type,
-                "state" => "closed"
+                "created_by" => $record['created_by'],
+                "created_date" => $record['created_date'],
+                "updated_by" => $record['updated_by'],
+                "updated_date" => $record['updated_date'],
             );
         }
         
@@ -230,16 +267,17 @@ class Supply_sheets extends CI_Controller
     public function datatableDetails($request_no)
     {
         $filter_request_no = $this->input->get('filter_request_no');
+        $filter_period = $this->input->get('filter_period');
+        $filter_wp = $this->input->get('filter_wp');
         $request_no = base64_decode($request_no);
 
-        $this->db->select('a.*, b.number as item_number, b.name as item_name, a.mpq, 
+        $this->db->select('a.*, b.number as item_number, b.name as item_name, a.mpq, a.qty_wo,
                 c.id as item_rm_id,
                 c.number as item_rm_no, 
                 c.name as item_rm_name, 
                 (CASE WHEN g.uom_soft is null THEN d.name ELSE h.name END) as uom,
                 (CASE WHEN g.uom_soft is null THEN f.composition ELSE (f.composition * g.convertion) END) as composition,
                 COALESCE(i.qty_issued, 0) as qty_issued,
-                COALESCE((i.qty_issued - a.qty_req),0) as qty_issued_bal,
                 f.composition');
             $this->db->from('supply_sheets a');
             $this->db->join('item_fg b', 'a.item_fg_id = b.id');
@@ -253,15 +291,25 @@ class Supply_sheets extends CI_Controller
             $this->db->where('a.deleted', 0);
             $this->db->where('a.status', 0);
             $this->db->where('a.request_no', $request_no);
+
             if ($filter_request_no != "") {
                 $this->db->where('a.request_no', $filter_request_no);
             }
+
+            if ($filter_period != "") {
+                $this->db->where('a.period', $filter_period);
+            }
+
+            if ($filter_wp != "") {
+                $this->db->where('a.wp', $filter_wp);
+            }
+            
             $this->db->group_by('a.workorder');
             $this->db->group_by('a.item_rm_id');
             $records = $this->db->get()->result_array();
             foreach ($records as $record) {
 
-                if($record['qty_issued_bal'] < 0){
+                if(($record['qty_act'] - $record['qty_issued']) > 0){
                     $supply_type = "OPEN";
                 }else{
                     $supply_type = "CLOSE";
@@ -277,13 +325,14 @@ class Supply_sheets extends CI_Controller
                     "workorder" => $record['workorder'],
                     "item_fg_id" => $record['item_fg_id'],
                     "item_rm_id" => $record['item_rm_id'],
-                    "item_number" => $record['item_rm_no'],
-                    "item_name" => $record['item_rm_name'],
+                    "item_rm_number" => $record['item_rm_no'],
+                    "item_rm_name" => $record['item_rm_name'],
+                    "qty_wo" => $record['qty_wo'],
                     "qty_req" => $record['qty_req'],
                     "qty_act" => $record['qty_act'],
                     "qty_bal" => $record['qty_bal'],
                     "qty_issued" => $record['qty_issued'],
-                    "qty_issued_bal" => $record['qty_issued_bal'],
+                    "qty_issued_bal" => ($record['qty_act'] - $record['qty_issued']),
                     "composition" => $record['composition'],
                     // "qty" => $record['qty'],
                     "mpq" => $record['mpq'],
@@ -322,8 +371,8 @@ class Supply_sheets extends CI_Controller
             (CASE WHEN f.uom_soft is null THEN c.uom ELSE f.uom_soft END) as uom,
             (CASE WHEN f.uom_soft is null THEN b.composition ELSE (b.composition * f.convertion) END) as qpa,
             '$worko->qty' as qty,
-            CASE WHEN d.qty_bal is not null THEN d.qty_bal WHEN f.uom_soft is null THEN round('$worko->qty' * b.composition) ELSE round('$worko->qty' * (b.composition * f.convertion)) END as qty_req,
-            CASE WHEN d.qty_bal is not null THEN d.qty_bal WHEN f.uom_soft is null THEN round('$worko->qty' * b.composition) ELSE round('$worko->qty' * (b.composition * f.convertion)) END as qty_act");
+            CASE WHEN d.qty_bal is not null THEN d.qty_bal WHEN f.uom_soft is null THEN round('$worko->qty' * b.composition,4) ELSE round('$worko->qty' * (b.composition * f.convertion),4) END as qty_req,
+            CASE WHEN d.qty_bal is not null THEN d.qty_bal WHEN f.uom_soft is null THEN round('$worko->qty' * b.composition,4) ELSE round('$worko->qty' * (b.composition * f.convertion),4) END as qty_act");
         $this->db->from('bom b');
         $this->db->join('item_rm c', 'b.item_rm_id = c.id','left');
         $this->db->join('supply_sheets d', "d.workorder = '$workorder' and c.id = d.item_rm_id", 'left');
@@ -354,7 +403,7 @@ class Supply_sheets extends CI_Controller
                 //Stock kWarehouse RM
                 $stockWarehouse = $this->crud->query("SELECT
                     a.id,
-                    (COALESCE(SUM(e.qty),0) + COALESCE(g.return_qty,0) - COALESCE(f.qty, 0)) as end_stock
+                    (COALESCE(SUM(e.qty),0) + COALESCE(g.return_qty,0) + COALESCE(h.qty_stock_rm, 0) - COALESCE(f.qty, 0)) as end_stock
                 FROM item_rm a 
                 JOIN item_familys b ON a.item_family_id = b.id
                 JOIN uom c ON a.uom = c.name
@@ -367,6 +416,11 @@ class Supply_sheets extends CI_Controller
                     JOIN scan_item_receipts c ON a.return_id = c.receipt_id and b.label_no = c.label_no
                     WHERE a.return_date <= '$dateNow'
                     GROUP BY a.id) g ON a.id = g.id
+                LEFT JOIN (SELECT a.item_rm_id, SUM(a.qty) as qty_stock_rm
+                FROM os_rm a
+                JOIN item_rm b ON a.item_rm_id = b.id
+                WHERE a.trans_date < '$dateNow'
+                GROUP BY a.item_rm_id) h ON a.id = h.item_rm_id
                 WHERE a.id like '$item_rm_id'
                 GROUP BY a.id
                 ORDER BY a.number");
@@ -374,9 +428,14 @@ class Supply_sheets extends CI_Controller
                 if (count($supply_sheets) > 0) {
                     show_error("Duplicate");
                 } else {
-                    $qIssued = $this->db->query("SELECT COALESCE(SUM(a.qty), 0) as balance 
+                    $qIssued = $this->db->query("SELECT COALESCE(SUM(a.qty), 0) + COALESCE(h.qty_stock_rm, 0) as balance 
                         FROM scan_item_receipts a 
                         JOIN purchase_order_receipts b ON a.receipt_id = b.receipt_id
+                        LEFT JOIN (SELECT a.item_rm_id, SUM(a.qty) as qty_stock_rm
+                            FROM os_rm a
+                            JOIN item_rm b ON a.item_rm_id = b.id
+                            WHERE a.trans_date < '$dateNow'
+                            GROUP BY a.item_rm_id) h ON b.item_rm_id = h.item_rm_id
                         WHERE b.item_rm_id = '$item_rm_id' 
                         GROUP BY b.item_rm_id");
                     $dIssued = $qIssued->row();
@@ -384,13 +443,13 @@ class Supply_sheets extends CI_Controller
                     if (!empty($wip_balances->balance)) {
                         if ($qty_act >= $wip_balances->balance) {
                             //kalo items di hitung mpq
-                            if (@$supplier_items->calculate == 1) {
+                            if (@$supplier_items->calculate == YES) {
                                 $begin = $wip_balances->balance;
                                 $need = $qty_act;
                                 $issued = (ceil(($qty_act - $wip_balances->balance) / @$post['mpq']) * @$post['mpq']);
                                 $balance = (($wip_balances->balance + $issued) - $qty_act);
                                 $warehouse = (@$stockWarehouse[0]->end_stock - $issued);
-                            } elseif (@$supplier_items->calculate == 0) {
+                            } elseif (@$supplier_items->calculate == NO) {
                                 $begin = $wip_balances->balance;
                                 $need = $qty_act;
                                 $issued = abs(($qty_act - $wip_balances->balance));
@@ -448,13 +507,14 @@ class Supply_sheets extends CI_Controller
                         ]);
 
                         $send   = $this->crud->create('supply_sheets', array_merge($post, array("qty_issued" => $issued)));
-                        if ($post['qty_bal'] == 0) {
-                            $this->db->update("production_schedules", ["status" => 1], ["workorder" => $post['workorder']]);
-                            echo $send;
-                        } else {
-                            $this->db->update("production_schedules", ["status" => 0], ["workorder" => $post['workorder']]);
-                            echo $send;
-                        }
+                        // if ($post['qty_bal'] == 0) {
+                        //     $this->db->update("production_schedules", ["status" => 1], ["workorder" => $post['workorder']]);
+                        //     echo $send;
+                        // } else {
+                        //     $this->db->update("production_schedules", ["status" => 0], ["workorder" => $post['workorder']]);
+                        //     echo $send;
+                        // }
+                        echo $send;
                     }
                 }
             } else {
@@ -468,9 +528,9 @@ class Supply_sheets extends CI_Controller
     public function delete()
     {
         $data = $this->input->post();
-        $send = $this->crud->delete('supply_sheets', ["id" => $data['id']]);
-        $update = $this->crud->update('production_schedules', ["workorder" => $data['workorder'], "item_fg_id" => $data['item_fg_id']], ["status" => 0]);
-        $delete = $this->crud->delete('wip_balances', ["request_no" => $data['request_no'], "item_rm_id" => $data['item_rm_id']]);
+        $send = $this->crud->delete('supply_sheets', ["request_no" => $data['request_no']]);
+        // $update = $this->crud->update('production_schedules', ["workorder" => $data['workorder'], "item_fg_id" => $data['item_fg_id']], ["status" => 0]);
+        $delete = $this->crud->delete('wip_balances', ["request_no" => $data['request_no']]);
         echo $send;
     }
 
@@ -490,7 +550,7 @@ class Supply_sheets extends CI_Controller
         $this->db->group_by('c.number');
         $supply_sheet_total = $this->db->get()->result_array();
         $kanban = $this->crud->read('supply_sheets', [], ["request_no" => base64_decode($request_no)]);
-        $production_schedule = $this->crud->read('production_schedules', [], ["workorder" => $kanban->workorder]);
+        // $production_schedule = $this->crud->read('production_schedules', [], ["workorder" => $kanban->workorder]);
         $product = $this->crud->read('item_rm', [], ["id" => $kanban->item_rm_id]);
         $config = $this->db->get('config')->row();
         $config_iso = $this->db->get('config_iso')->row();
@@ -637,14 +697,14 @@ class Supply_sheets extends CI_Controller
                                             <td><b>' . @$production_schedule->so_number . '</b></td>
                                         </tr>
                                         <tr>
-                                            <td width="100">WP / Operation</td>
+                                            <td width="100">WP</td>
                                             <td width="30">:</td>
-                                            <td><b>' . @$production_schedule->wp . ' / ' . @base64_decode($operation) . '</b></td>
+                                            <td><b>' . @$kanban->wp .  '</b></td>
                                         </tr>
                                         <tr>
                                             <td width="50">WO Qty</td>
                                             <td width="10">:</td>
-                                            <td><b>' . @$production_schedule->qty . '</b></td>
+                                            <td><b>' . @$kanban->qty_wo . '</b></td>
                                         </tr>
                                         <tr>
                                             <td width="50">Print Date</td>
@@ -736,8 +796,6 @@ class Supply_sheets extends CI_Controller
 
         $this->db->select('a.*,
             b.number as item_number,
-            e.period, 
-            e.wp, 
             c.id as item_rm_id,
             c.number as item_rm_no, 
             c.name as item_rm_name, 
@@ -745,13 +803,15 @@ class Supply_sheets extends CI_Controller
             (CASE WHEN g.uom_soft is null THEN f.composition ELSE (f.composition * g.convertion) END) as composition,
             i.qty_issued as qty_issued,
             (i.qty_issued - a.qty_req) as qty_issued_bal,
-            f.composition, 
-            e.qty');
+            f.composition');
+            // e.period, 
+            // e.wp, 
+            // e.qty
         $this->db->from('supply_sheets a');
         $this->db->join('item_fg b', 'a.item_fg_id = b.id');
         $this->db->join('item_rm c', 'a.item_rm_id = c.id');
         $this->db->join('uom d', 'c.uom = d.name');
-        $this->db->join('production_schedules e', 'a.item_fg_id = e.item_fg_id and a.workorder = e.workorder');
+        // $this->db->join('production_schedules e', 'a.item_fg_id = e.item_fg_id and a.workorder = e.workorder');
         $this->db->join('bom f', 'a.item_fg_id = f.item_fg_id and a.item_rm_id = f.item_rm_id');
         $this->db->join('convertions g', 'a.item_rm_id = g.item_rm_id', 'left');
         $this->db->join('uom h', 'g.uom_soft = h.name', 'left');
@@ -763,10 +823,10 @@ class Supply_sheets extends CI_Controller
             $this->db->where('(i.qty_issued - a.qty_req) =', 0);
         }
         if ($filter_period != "") {
-            $this->db->where('e.period', $filter_period);
+            $this->db->where('a.period', $filter_period);
         }
         if ($filter_wp != "") {
-            $this->db->where('e.wp', $filter_wp);
+            $this->db->where('a.wp', $filter_wp);
         }
         if ($filter_request_no != "") {
             $this->db->where('a.request_no', $filter_request_no);
@@ -842,7 +902,7 @@ class Supply_sheets extends CI_Controller
                         <td>' . $data['item_rm_name'] . '</td>
                         <td>' . $data['uom'] . '</td>
                         <td>' . $data['composition'] . '</td>
-                        <td>' . $data['qty'] . '</td>
+                        <td>' . $data['qty_wo'] . '</td>
                         <td>' . $data['qty_act'] . '</td>
                         <td>' . $data['qty_issued'] . '</td>
                         <td>' . $data['qty_issued_bal'] . '</td>

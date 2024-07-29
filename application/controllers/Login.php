@@ -67,10 +67,13 @@ class Login extends CI_Controller
                         //List data yang akan di create session
                         $session = array(
                             "id" => $user->id,
-                            "departement_id" => $user->departement_id,
+                            "division" => $user->division,
+                            "department" => $user->department,
+                            "sub_department" => $user->sub_department,
                             "number" => $user->number,
                             "name" => $user->name,
                             "username" => $user->username,
+                            "password" => $user->password,
                             "position" => $user->position
                         );
                         //List data yang akan di create Logins
@@ -177,10 +180,13 @@ class Login extends CI_Controller
         $this->db->delete("logins", ["username" => $username]);
 
         $this->session->unset_userdata('id');
-        $this->session->unset_userdata('departement_id');
+        $this->session->unset_userdata('division');
+        $this->session->unset_userdata('department');
+        $this->session->unset_userdata('sub_department');
         $this->session->unset_userdata('number');
         $this->session->unset_userdata('name');
         $this->session->unset_userdata('username');
+        $this->session->unset_userdata('password');
         $this->session->unset_userdata('position');
 
         if ($this->session->userdata('id')) {

@@ -29,7 +29,7 @@
             </div>
             <div class="fitem">
                 <span style="width:20%; display:inline-block;">MPQ</span>
-                <input style="width:40%;" id="mpq" name="mpq" class="easyui-numberbox" required>
+                <input style="width:40%;" id="mpq" name="mpq" class="easyui-numberbox" data-options="precision:2" required>
                 <input style="width:30%;" id="qty_label" name="qty_label" label="Qty label" class="easyui-numberbox" readonly >
             </div>
             <div class="fitem">
@@ -77,7 +77,7 @@
                     var historical_stock = $("#historical_stock").textbox('getValue');
                     var mpq = result.mpq; // Gunakan nilai result.mpq dari server, bukan dari textbox
 
-                    $("#qty_label").numberbox('setValue', (historical_stock / mpq));
+                    $("#qty_label").numberbox('setValue', Math.ceil(historical_stock / mpq));
                 }
                 
             }

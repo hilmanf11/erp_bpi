@@ -48,6 +48,17 @@ class Report_outstanding_po extends CI_Controller
         echo json_encode($sales_orders);
     }
 
+    public function readPurchaseOrders()
+    {
+        $post = isset($_POST['q']) ? $_POST['q'] : "";
+        $sales_orders = $this->crud->query("SELECT `po_no`
+        FROM purchase_orders
+        WHERE `po_no` like '%$post%'
+        GROUP BY `po_no` 
+        ORDER BY `po_no` DESC");
+        echo json_encode($sales_orders);
+    }
+
     public function readPurchaseOrderItems()
     {
         $post = isset($_POST['q']) ? $_POST['q'] : "";
@@ -72,7 +83,7 @@ class Report_outstanding_po extends CI_Controller
         if ($option == "excel") {
             $format  = date("Ymd");
             header("Content-type: application/vnd-ms-excel");
-            header("Content-Disposition: attachment; filename=report_outstandinf_po_$format.xls");
+            header("Content-Disposition: attachment; filename=report_outstanding_po_$format.xls");
         }
         $filter_from = base64_decode($this->input->get("filter_from"));
         $filter_to = base64_decode($this->input->get("filter_to"));
@@ -81,15 +92,17 @@ class Report_outstanding_po extends CI_Controller
         $filter_product_no = $this->input->get("filter_product_no");
         $filter_status = $this->input->get("filter_status");
         $filter_purchase_order = base64_decode($this->input->get("filter_purchase_order"));
+
         //Config
         $this->db->select('*');
         $this->db->from('config');
         $config = $this->db->get()->row();
-        $this->db->select('a.*, SUM(a.qty) as qty_po, d.qty_receipt, b.number as supplier_number, b.name as supplier_name, c.uom');
+
+        $this->db->select('a.*, SUM(a.qty) as qty_po, b.number as supplier_number, b.name as supplier_name, c.uom, c.number as item_number, c.name as item_name, a.status, h.total_status_complete,');
         $this->db->from('purchase_orders a');
         $this->db->join('suppliers b', 'a.supplier_id = b.id');
-        $this->db->join('item_rm c', 'a.item_rm_id = c.id');
-        $this->db->join('(SELECT po_no, SUM(qty_receipt) as qty_receipt FROM purchase_order_receipts GROUP BY po_no) d', 'a.po_no = d.po_no', 'left');
+        $this->db->join('item_rm c', 'a.item_rm_id = c.id');       
+        $this->db->join('(SELECT po_no, COUNT(status) as total_status_complete FROM purchase_orders WHERE status = 2 GROUP BY po_no) h', 'a.po_no = h.po_no', 'left');
         $this->db->where('a.deleted', 0);
         $this->db->where("a.po_date between '$filter_from' and '$filter_to'");
         $this->db->like('a.supplier_id', $filter_supplier);
@@ -100,6 +113,7 @@ class Report_outstanding_po extends CI_Controller
         $this->db->group_by('a.po_no');
         $records = $this->db->get()->result_array();
 
+        //RECAP
         $html = '<html><head><title>Print Data</title></head><style>body {font-family: Arial, Helvetica, sans-serif;}#customers {border-collapse: collapse;width: 100%;font-size: 12px;}#customers td, #customers th {border: 1px solid #ddd;padding: 2px;}#customers tr:nth-child(even){background-color: #f2f2f2;}#customers tr:hover {background-color: #ddd;}#customers th {padding-top: 2px;padding-bottom: 2px;text-align: center;color: black;}</style><body>
                 <center>
                 <div style="float: left; font-size: 12px; text-align: left;">
@@ -143,26 +157,33 @@ class Report_outstanding_po extends CI_Controller
 
         foreach ($records as $data) {
             $po_no = $data['po_no'];
-            $supplier_id = $data['supplier_id'];
-            $this->db->select('a.*, b.number as item_number, b.name as item_name, c.qty, b.uom');
-            $this->db->from('purchase_orders c');
-            $this->db->join('item_rm b', 'c.item_rm_id = b.id');
-            $this->db->join('purchase_order_receipts a', 'a.po_no = c.po_no and a.item_rm_id = c.item_rm_id and a.supplier_id = c.supplier_id', 'left');
-            $this->db->where('c.deleted', 0);
-            $this->db->where('c.po_no', $po_no);
-            $this->db->where('c.supplier_id', $supplier_id);
-            $this->db->like('c.item_rm_id', $filter_product_no);
-            $this->db->order_by('b.number', 'ASC');
-            $details = $this->db->get()->result_array();
+            $item_rm_id = $data['item_rm_id'];
+            if($filter_product_no != "" && $filter_purchase_order != ""){
+                $receipt = $this->crud->query("SELECT a.po_no, SUM(b.qty_receipt) as qty_receipt from purchase_orders a JOIN (SELECT SUM(qty_receipt) as qty_receipt, po_no, item_rm_id FROM purchase_order_receipts GROUP BY po_no, item_rm_id) b ON a.po_no = b.po_no and a.item_rm_id = b.item_rm_id WHERE a.po_no = '$po_no' and a.item_rm_id = '$item_rm_id' and a.status like '%$filter_status%'");
+            }elseif($filter_purchase_order != ""){
+                $receipt = $this->crud->query("SELECT a.po_no, SUM(b.qty_receipt) as qty_receipt from purchase_orders a JOIN (SELECT SUM(qty_receipt) as qty_receipt, po_no, item_rm_id FROM purchase_order_receipts GROUP BY po_no, item_rm_id) b ON a.po_no = b.po_no and a.item_rm_id = b.item_rm_id WHERE a.po_no = '$po_no' and a.status like '%$filter_status%'");
+            }else{
+                $receipt = $this->crud->query("SELECT a.po_no, SUM(b.qty_receipt) as qty_receipt from purchase_orders a JOIN (SELECT SUM(qty_receipt) as qty_receipt, po_no, item_rm_id FROM purchase_order_receipts GROUP BY po_no, item_rm_id) b ON a.po_no = b.po_no and a.item_rm_id = b.item_rm_id WHERE a.po_no = '$po_no' and a.item_rm_id = '$item_rm_id' and a.status like '%$filter_status%'");
+            }
+            // $receipt = $this->crud->query("SELECT a.po_no, SUM(b.qty_receipt) as qty_receipt from purchase_orders a JOIN (SELECT SUM(qty_receipt) as qty_receipt, po_no, item_rm_id FROM purchase_order_receipts GROUP BY po_no, item_rm_id) b ON a.po_no = b.po_no and a.item_rm_id = b.item_rm_id WHERE (a.po_no = '$po_no' OR '$po_no' IS NULL OR '$po_no' = '') and (a.item_rm_id = '$item_rm_id' OR '$item_rm_id' IS NULL OR '$item_rm_id' = '') and a.status like '%$filter_status%'");
+            $os_qty = $data['qty_po'] - @$receipt[0]->qty_receipt;
 
-            if (($data['qty_po'] - $data['qty_receipt']) > 0) {
+            if ($data['status'] == 2) {
+                $status = "<b style='color:blue;'>COMPLETE</b>";
+                $data['qty_po'] = 0;
+                $os_qty = 0;
+            }elseif ($data['total_status_complete'] >= 1 ) {
+                $status = "<b style='color:blue;'>COMPLETE</b>";
+                $data['qty_po'] = 0;
+                $os_qty = 0;
+            } elseif (($data['qty_po'] - @$receipt[0]->qty_receipt) > 0) {
                 $status = "<b style='color:green;'>OPEN</b>";
             } else {
                 $status = "<b style='color:red;'>CLOSE</b>";
             }
 
-            $html .= '  <tr>
 
+            $html .= '  <tr>
                 <td style="text-align:center">' . $no . '</td>
                 <td colspan="3">' . $data['po_no'] . '</td>
                 <td>' . $data['po_date'] . '</td>
@@ -170,48 +191,91 @@ class Report_outstanding_po extends CI_Controller
                 <td>' . $data['supplier_name'] . '</td>
                 <td style="text-align:right">' . number_format($data['qty_po'], 2) . '</td>
                 <td style="text-align:right">' . $data['uom'] . '</td>
-                <td style="text-align:right">' . number_format($data['qty_receipt'], 2) . '</td>
-                <td style="text-align:right">' . number_format($data['qty_po'] - $data['qty_receipt'], 2) . '</td>
+                <td style="text-align:right">' . number_format(@$receipt[0]->qty_receipt, 2) . '</td>
+                <td style="text-align:right">' . number_format($os_qty, 2) . '</td>
                 <td colspan="2">' . $status . '</td>
             </tr>';
             $no++;
+
+        
+            // DETAIL
             if ($filter_display == "DETAIL") {
+                $this->db->select('a.*, SUM(a.qty) as qty_po, d.qty_receipt, b.number as supplier_number, b.name as supplier_name, c.uom, c.number as item_number, c.name as item_name, a.status');
+                $this->db->from('purchase_orders a');
+                $this->db->join('suppliers b', 'a.supplier_id = b.id');
+                $this->db->join('item_rm c', 'a.item_rm_id = c.id');
+                $this->db->join('(SELECT po_no, item_rm_id, SUM(qty_receipt) as qty_receipt FROM purchase_order_receipts GROUP BY po_no, item_rm_id) d', 'a.po_no = d.po_no AND a.item_rm_id = d.item_rm_id', 'left');        
+                $this->db->where('a.deleted', 0);
+                $this->db->where("a.po_date between '$filter_from' and '$filter_to'");
+                $this->db->where('a.po_no', $po_no);
+                $this->db->like('a.supplier_id', $filter_supplier);
+                $this->db->like('a.item_rm_id', $filter_product_no);
+                $this->db->like('a.status', $filter_status);
+                $this->db->order_by('a.status', 'ASC');
+                $this->db->group_by('a.item_rm_id');
+                $details = $this->db->get()->result_array();
+
                 if ($details) {
                     $html .= '  <tr>
-                        <td colspan="13" style="background:#D1FFC6;"><b>DETAIL OF ' . $data['po_no'] . '</b></td>
+                        <td colspan="13" style="background:orange;"><b>DETAIL OF ' . $data['po_no'] . '</b></td>
                     </tr>';
 
                     $html .= '  <tr>
-                            <th width="20"></th>
-                            <th>Custom No</th>
-                            <th>Custom Doc No</th>
-                            <th>Custom Date</th>
-                            <th>Component No</th>
-                            <th>Component Name</th>
-                            <th>Receipt No</th>
-                            <th>Receipt Date</th>
-                            <th>PO Qty</th>
-                            <th>Receipt Qty</th>
-                            <th>OS Qty</th>
-                            <th>Receipt By</th>
-                    </tr>';
+                                    <th width="20"></th>
+                                    <th>Part No</th>
+                                    <th>Part Name</th>
+                                    <th>PO Qty</th>
+                                    <th>Receipt Qty</th>
+                                    <th>OS Qty</th>
+                                </tr>';
 
                     foreach ($details as $detail) {
+                        $item_rm_id = $detail['item_rm_id'];
                         $html .= '  <tr>
-                            <td></td>
-                            <td>' . $detail['bc_kind'] . '</td>
-                            <td>' . $detail['bc_document'] . '</td>
-                            <td>' . $detail['bc_date'] . '</td>
-                            <td>' . $detail['item_number'] . '</td>
-                            <td>' . $detail['item_name'] . '</td>
-                            <td>' . $detail['receipt_no'] . '</td>
-                            <td>' . $detail['receipt_date'] . '</td>
-                            <td style="text-align:right">' . number_format($detail['qty'], 2) . '</td>
-                            <td style="text-align:right">' . number_format($detail['qty_receipt'], 2) . '</td>
-                            <td style="text-align:right">' . number_format($detail['qty'] - $detail['qty_receipt'], 2)  . '</td>
-                            <td >' . $detail['created_by'] . '</td>
+                                        <td></td>
+                                        <td>' . $detail['item_number'] . '</td>
+                                        <td>' . $detail['item_name'] . '</td>
+                                        <td style="text-align:right">' . number_format($detail['qty_po'], 2) . '</td>
+                                        <td style="text-align:right">' . number_format($detail['qty_receipt'], 2) . '</td>
+                                        <td style="text-align:right">' . number_format(($detail['qty_po'] - $detail['qty_receipt']), 2) . '</td>
+                                    </tr>';
+                        
+                        $html .= '  <tr>
+                                        <td colspan="13" style="background:#D1FFC6;"><b>DETAIL OF ' . $detail['item_number'] . '</b></td>
+                                    </tr>';
+    
+                        $html .= '  <tr>
+                                        <th width="20"></th>
+                                        <th>Custom No</th>
+                                        <th>Custom Doc No</th>
+                                        <th>Custom Date</th>
+                                        <th>Receipt No</th>
+                                        <th>Receipt Date</th>
+                                        <th>PO Qty</th>
+                                        <th>Receipt Qty</th>
+                                        <th>OS Qty</th>
+                                        <th>Receipt By</th>
+                                    </tr>';
 
-                        </tr>';
+                        $os_qty = $detail['qty_po'];
+                        $details2 = $this->crud->reads("purchase_order_receipts", [], ["item_rm_id" => $item_rm_id, "po_no" => $data['po_no']]);
+                        foreach ($details2 as $detail2) {
+                            $os_qty -= $detail2->qty_receipt;
+
+                            $html .= '  <tr>
+                                            <td></td>
+                                            <td>' . $detail2->bc_kind . '</td>
+                                            <td>' . $detail2->bc_document . '</td>
+                                            <td>' . $detail2->bc_date . '</td>
+                                            <td>' . $detail2->receipt_no . '</td>
+                                            <td>' . $detail2->receipt_date . '</td>
+                                            <td style="text-align:right">' . number_format($detail2->qty_po, 2) . '</td>
+                                            <td style="text-align:right">' . number_format($detail2->qty_receipt, 2) . '</td>
+                                            <td style="text-align:right">' . number_format($os_qty, 2) . '</td>
+                                            <td>' . $detail2->created_by . '</td>
+                                        </tr>';   
+                        }
+
                     }
                 } else {
                     $html .= '  <tr>

@@ -30,11 +30,11 @@ class Issued_materials extends CI_Controller
     {
         if ($this->input->post()) {
             $request_no = $this->input->post('request_no');
-            $this->db->select('a.*, b.number as item_number, c.number as item_rm_no, c.name as item_rm_name, c.uom, d.period, d.wp');
+            $this->db->select('a.*, b.number as item_number, c.number as item_rm_no, c.name as item_rm_name, c.uom');//, d.period, d.wp
             $this->db->from('supply_sheets a');
             $this->db->join('item_fg b', 'a.item_fg_id = b.id');
             $this->db->join('item_rm c', 'a.item_rm_id = c.id');
-            $this->db->join('production_schedules d', 'a.workorder = d.workorder and a.item_fg_id = d.item_fg_id');
+            // $this->db->join('production_schedules d', 'a.workorder = d.workorder and a.item_fg_id = d.item_fg_id');
             // $this->db->join('uom e', 'c.uom_id = e.id');
             $this->db->join('bom f', 'a.item_fg_id = f.item_fg_id and a.item_rm_id = f.item_rm_id');
             $this->db->where('a.request_no', $request_no);
@@ -146,14 +146,14 @@ class Issued_materials extends CI_Controller
         if ($this->input->post()) {
             $post = $this->input->post();
             $request_no = $post['request_no'];
-            $item_fg_id = $post['item_fg_id'];
+            $item_rm_id = $post['item_rm_id'];//item_fg_id
             $totalSupply = $this->crud->query("SELECT SUM(qty) as qty FROM issued_material_details WHERE request_no = '$request_no' and item_rm_id='$item_rm_id'");
             $issued_material_details = $this->crud->read("issued_material_details", [], ["label_no" => $post['label_no']]);
             $purchase_order_labels = $this->crud->read("purchase_order_labels", [], ["label_no" => $post['label_no'], "status" => 1]);
             $barcode_divides = $this->crud->read("barcode_divides", [], ["label_divided" => $post['label_no'], "status" => 0]);
             $issued_materials = $this->crud->read("issued_materials", [], ["request_no" => $post['request_no'], "item_rm_id" => $post['item_rm_id']]);
 
-            if (!$issued_material_details) {
+            if (!$issued_material_details) {//jika tidak ada
                 if ($purchase_order_labels) {
                     if ($issued_materials) {
 

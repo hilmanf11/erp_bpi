@@ -11,7 +11,7 @@ class Ap_payments extends CI_Controller
         $this->load->library('form_validation');
         $this->load->library('session');
         $this->load->library('Ciqrcode');
-        $this->load->library('Convertcurrency');
+        // $this->load->library('Convertcurrency');
         $this->load->model('crud');
         // //Validasi Form
         // $this->form_validation->set_rules('purchase_invoice', 'Purchase Invoice', 'required|min_length[1]|max_length[50]');
@@ -208,6 +208,7 @@ class Ap_payments extends CI_Controller
 
     public function readPayments($supplier_id)
     {
+        $supplier_id = base64_decode($supplier_id);
         $data = $this->crud->query("SELECT DISTINCT payment_no FROM ap_payments WHERE supplier_id = '$supplier_id' ORDER BY `payment_no` ASC");
         echo json_encode($data);
     }
@@ -215,6 +216,7 @@ class Ap_payments extends CI_Controller
     public function readInvoices($supplier_id)
     {
         $date_now = date("Y-m-t");
+        $supplier_id = base64_decode($supplier_id);
         $data = $this->crud->query("SELECT DISTINCT `purchase_invoice` FROM ap_payments WHERE supplier_id = '$supplier_id' and `status` = 0 ORDER BY `purchase_invoice` ASC");
         echo json_encode($data);
     }
@@ -870,11 +872,13 @@ class Ap_payments extends CI_Controller
             $hal++;
         }
 
+        //<td>' . $this->convertcurrency->convertCurrencyToWords($subtotal, $records[0]['currency']) . '</td>
         $html .= '<div style="width:100%; float:left;">
                         <table id="customers" style="margin-top:10px;">
                             <tr>
                                 <th style="text-align:center;">Amount in Words</th>
-                                <td>' . $this->convertcurrency->convertCurrencyToWords($subtotal, $records[0]['currency']) . '</td>
+                                
+                               
                             </tr>
                         </table>
                         <p style="font-size:12px;"><i>Note: ' . @$records[0]['note'] . '</i>

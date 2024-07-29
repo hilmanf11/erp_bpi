@@ -2,8 +2,12 @@
     <thead>
         <tr>
             <th rowspan="2" field="ck" checkbox="true"></th>
-            <th rowspan="2" data-options="field:'po_no',width:180,halign:'center'">PO No</th>
+            <th rowspan="2" data-options="field:'po_no',width:180,halign:'center',resizable:true">PO No</th>
             <th rowspan="2" data-options="field:'status',width:80,align:'center',formatter:statusformat,styler:statusStyle">Status PO</th>
+            <th rowspan="2" data-options="field:'status_pi',width:80,align:'center',formatter:statusformatFinance,styler:statusStyleFinance">Status<br>Invoice</th>
+            <th rowspan="2" data-options="field:'approved_to',width:100,halign:'center',formatter:formatApproved,styler:styleApproved">Status <br>Approve</th>
+            <th rowspan="2" data-options="field:'approved_by',width:100,halign:'center'">Approve By</th>
+            <th rowspan="2" data-options="field:'approved_date',width:150,halign:'center'">Approve Date</th>
             <th rowspan="2" data-options="field:'request_no',width:150,halign:'center'">Request No</th>
             <th rowspan="2" data-options="field:'po_date',width:100,align:'center'">PO Date</th>
             <th rowspan="2" data-options="field:'delivery_date',width:100,align:'center'">Delivery Date</th>
@@ -20,10 +24,7 @@
             <th rowspan="2" data-options="field:'currency',width:80,align:'center'">Currency</th>
             <th rowspan="2" data-options="field:'revision',width:80,align:'center'">Revision</th>
             <th rowspan="2" data-options="field:'remarks',width:100,halign:'center'">Remarks</th>
-            <th colspan="3" data-options="field:'',width:100,halign:'center'"> Forecast</th>
-            <th rowspan="2" data-options="field:'approved_to',width:100,halign:'center',formatter:formatApproved,styler:styleApproved">Status <br>Approve</th>
-            <th rowspan="2" data-options="field:'approved_by',width:100,halign:'center'">Approve By</th>
-            <th rowspan="2" data-options="field:'approved_date',width:100,halign:'center'">Approve Date</th>
+            <th colspan="4" data-options="field:'',width:100,halign:'center'"> Forecast</th>
             <th colspan="2" data-options="field:'',width:100,halign:'center'"> Created</th>
             <th colspan="2" data-options="field:'',width:100,halign:'center'"> Updated</th>
         </tr>
@@ -31,6 +32,7 @@
             <th data-options="field:'month_1',width:100,halign:'center'">Month 1</th>
             <th data-options="field:'month_2',width:100,halign:'center'">Month 2</th>
             <th data-options="field:'month_3',width:100,halign:'center'">Month 3</th>
+            <th data-options="field:'month_4',width:100,halign:'center'">Month 4</th>
             <th data-options="field:'created_by',width:100,align:'center'"> By</th>
             <th data-options="field:'created_date',width:150,align:'center'"> Date</th>
             <th data-options="field:'updated_by',width:100,align:'center'"> By</th>
@@ -38,10 +40,10 @@
         </tr>
     </thead>
 </table>
-<div id="toolbar" style="height: 230px; padding:10px;">
+<div id="toolbar" style="height: 270px; padding:10px;">
     <!-- <div style="width: 100%; display: grid; grid-template-columns: auto auto auto; grid-gap: 5px; display: flex;"> -->
     <div style="width: 100%;">
-        <fieldset style="width: 45%; border:2px solid #d0d0d0; margin-bottom: 5px; margin-top: 5px; border-radius:4px;">
+    <fieldset style="width: 50%; border:2px solid #d0d0d0; margin-bottom: 5px; margin-top: 5px; border-radius:4px;">    
             <legend><b>Form Filter Data</b></legend>
             <div class="fitem">
                 <span style="width:35%; display:inline-block;">Period</span>
@@ -57,13 +59,23 @@
                 <input style="width:60%;" id="filter_po_no" class="easyui-combogrid">
             </div>
             <div class="fitem">
+                <span style="width:35%; display:inline-block;">Status</span>
+                <select style="width:60%;" id="filter_status" panelHeight="auto" class="easyui-combobox">
+                    <option value="">Choose All</option>
+                    <option value="0">OPEN</option>
+                    <option value="1">CLOSED</option>
+                    <option value="2">COMPLETE</option>
+                </select>
+            </div>
+            <div class="fitem">
                 <span style="width:35%; display:inline-block;"></span>
                 <a href="javascript:;" class="easyui-linkbutton" onclick="filter()"><i class="fa fa-search"></i> Filter Data</a>
                 <a href="javascript:;" class="easyui-linkbutton" onclick="print_po()"><i class="fa fa-print"></i> Purchase Order</a>
+                <!-- <a href="javascript:;" class="easyui-linkbutton" onclick="complete_po()"><i class="fa fa-check"></i> Complete</a> -->
             </div>
         </fieldset>
         <?= $button ?>
-        <a href="javascript:;" class="easyui-linkbutton" data-options="plain:true" onclick="signatures()"><i class="fa fa-check"></i> Signature</a>
+        <a href="javascript:;" class="easyui-linkbutton" data-options="plain:true" onclick="complete_po()"><i class="fa fa-check"></i> Complete</a>
     </div>
 </div>
 
@@ -151,38 +163,87 @@
 <script>
     //Add Data
     function add() {
-        $('#dlg_insert').dialog('open');
-        $('#frm_calculate').hide();
-        $("#btnPreview").linkbutton('enable');
-        $('#dg_request').datagrid('loadData', []);
-        $("#request_no").combobox({
-            url: '<?= base_url('purchase/purchase_requests/readRequestnumber') ?>',
-            valueField: 'request_no',
-            textField: 'request_no',
-            prompt: "Select Purchase Request No",
-            icons: [{
-                iconCls: 'icon-clear',
-                handler: function(e) {
-                    $(e.data.target).combobox('clear').combobox('textbox').focus();
-                }
-            }]
+        $.messager.prompt('Convert PR to PO', 'Please input Password to Convert', function(r) {
+            if (r) {
+                var encodedPassword = window.btoa(r);
+                $.ajax({
+                    type: 'POST',
+                    url: '<?= base_url('purchase/purchase_orders/checkPassword') ?>', // Ganti dengan URL endpoint Anda
+                    data: {password: encodedPassword},
+                    dataType: 'json',
+                    success: function(response) {
+                        if (response.success) {
+                            Swal.fire({
+                                showConfirmButton: false,
+                                allowOutsideClick: false,
+                                allowEscapeKey: false,
+                                didOpen: () => {
+                                    Swal.showLoading();
+                                },
+                            });
+
+                            // Buka dialog setelah sedikit penundaan untuk memastikan loading ditampilkan dengan benar
+                            setTimeout(() => {
+                                $('#dlg_insert').dialog('open');
+                                $('#frm_calculate').hide();
+                                $("#btnPreview").linkbutton('enable');
+                                $('#dg_request').datagrid('loadData', []);
+                                $("#request_no").combobox({
+                                    url: '<?= base_url('purchase/purchase_requests/readRequestnumber') ?>',
+                                    valueField: 'request_no',
+                                    textField: 'request_no',
+                                    prompt: "Select Purchase Request No",
+                                    icons: [{
+                                        iconCls: 'icon-clear',
+                                        handler: function(e) {
+                                            $(e.data.target).combobox('clear').combobox('textbox').focus();
+                                        }
+                                    }]
+                                });
+
+                                // Menghilangkan loading setelah dialog terbuka
+                                Swal.close();
+                            }, 500);
+                        } else {
+                            toastr.warning("Please Input Correct Password!", "Information");
+                        }
+                    },
+                    error: function() {
+                        toastr.error("There was an error processing your request.", "Error");
+                    }
+                });
+            }
         });
+
+        // Menggunakan setTimeout untuk menunggu elemen input dibuat oleh $.messager.prompt
+        setTimeout(function() {
+            var inputField = $('.messager-input');
+            inputField.attr('type', 'password');
+        }, 100);
     }
+
+
+
 
     //EDIT DATA
     function update() {
         var row = $('#dg').treegrid('getSelected');
         if (row) {
+            console.log(row);
             if (row.datatable == "1") {
-                if (row.status == "0") {
+                if (row.status_pi == "0" || row.status_pi == null ) {
                     $('#dlg_insert').dialog('open');
                     $('#frm_insert').form('load', row);
                     $('#frm_calculate').show();
                     $("#btnPreview").linkbutton('disable');
 
+                    setTimeout(function() { 
+                        $('#income_total').numberbox('setValue', row.income_total), $('#total_grand').numberbox('setValue', row.total_grand);
+                    }, 1000);
+
                     preview('<?= base_url('purchase/purchase_orders/datatable_updates') ?>?po_no=' + btoa(row.po_no));
                 } else {
-                    toastr.error("You cannot update this data, because status PO is closed");
+                    toastr.error("You cannot update this data, because status PI in POR is closed");
                 }
             } else {
                 toastr.error("Please Select Header of PO <br>" + row.po_no);
@@ -314,6 +375,9 @@
                                 title: "Qty",
                                 editor: {
                                     type: 'numberbox',
+                                    options: {
+                                        precision: 2
+                                    }
                                 }
                             }, {
                                 field: 'currency',
@@ -341,8 +405,9 @@
                                 align: 'right',
                                 title: "Price",
                                 editor: {
-                                    type: 'textbox',
+                                    type: 'numberbox',
                                     options: {
+                                        formatter: numberformats,
                                         readonly: true,
                                     }
                                 }
@@ -355,6 +420,7 @@
                                 editor: {
                                     type: 'numberbox',
                                     options: {
+                                        formatter: numberformats,
                                         readonly: true,
                                         precision: 2
                                     }
@@ -369,8 +435,8 @@
                                     options: {
                                         formatter: myformatter,
                                         parser: myparser,
-                                        editable: false,
-                                        required: true
+                                        editable: true,
+                                        // required: true
                                     }
                                 }
                             }, {
@@ -408,6 +474,23 @@
                                 editor: {
                                     type: 'numberbox',
                                 }
+                            }, {
+                                field: 'month_4',
+                                width: 80,
+                                align: 'center',
+                                title: result[3].name,
+                                editor: {
+                                    type: 'numberbox',
+                                }
+                            },{
+                                field: 'item_rm_id',
+                                width: 150,
+                                hidden: true,
+                                halign: 'center',
+                                title: "Product ID",
+                                editor: {
+                                    type: 'textbox',
+                                }
                             }]
                         ],
                         onBeforeEdit: function(index, row) {
@@ -424,7 +507,7 @@
                         },
                         onBeginEdit: function(rowIndex, row) {
                             var editors = $('#dg_request').datagrid('getEditors', rowIndex);
-                            var item_id = $(editors[0].target).textbox('getValue');
+                            var item_rm_id = $(editors[17].target).textbox('getValue');
                             var supplier_id = $(editors[2].target);
                             var po_date = $("#po_date").datebox('getValue');
                             var total_sub = $("#total_sub").numberbox('getValue');
@@ -451,7 +534,7 @@
                             });
 
                             supplier_id.combogrid({
-                                url: '<?= base_url('master/supplier_items/readSuppliers?item_number=') ?>' + item_id,
+                                url: '<?= base_url('master/supplier_items/readSuppliers?item_rm_id=') ?>' + item_rm_id,
                                 required: true,
                                 panelWidth: 400,
                                 idField: 'name',
@@ -487,7 +570,9 @@
 
                                     var totalDiscountedPrice = (qty * price) - ((qty * price) * (discount / 100));
                                     $(editors[10].target).numberbox('setValue', totalDiscountedPrice);
-                                    $(editors[11].target).textbox('setValue', "<?= date("Y-m-d") ?>");
+                                    // $(editors[11].target).textbox('setValue', " ");
+                                    } else{
+                                        toastr.warning("Please Input Product No in Supplier Items");
                                     }
                                     
                                 },
@@ -504,7 +589,7 @@
 
                                     var totalDiscountedPrice = (qty * price) - ((qty * price) * (discount / 100));
                                     $(editors[10].target).numberbox('setValue', totalDiscountedPrice);
-                                    $(editors[11].target).textbox('setValue', "<?= date("Y-m-d") ?>");
+                                    // $(editors[11].target).textbox('setValue', " ");
                                 }
                             });
 
@@ -584,13 +669,14 @@
             dataType: "json",
             success: function(config) {
                 var taxes = config.tax;
-                var total_vat = ((total_subs - discount_total) * (taxes / 100));
+                var total_vat = Math.floor((total_subs - discount_total) * (taxes / 100));
                 $("#total_vat").numberbox('setValue', total_vat);
 
                 var income_total = ((total_subs - discount_total) * (income_tax / 100));
                 $("#income_total").numberbox('setValue', income_total);
-
+                
                 var total_grand = ((total_subs - discount_total) + total_vat - income_total - total_dp);
+
                 $("#total_grand").numberbox('setValue', total_grand);
             }
         });
@@ -614,13 +700,13 @@
         var editors = $('#dg_request').datagrid('getEditors', getRowIndex(target));
         var rows = $('#dg_request').datagrid('getRows');
 
-        var item_number = rows[getRowIndex(target)].item_number;
+        var item_rm_id = rows[getRowIndex(target)].item_rm_id;//item_number
         var supplier_id = rows[getRowIndex(target)].supplier_id;
 
         $.ajax({
             type: "post",
             url: "<?= base_url('master/supplier_items/readItem') ?>",
-            data: "supplier_id=" + supplier_id + "&item_number=" + item_number,
+            data: "supplier_id=" + supplier_id + "&item_rm_id=" + item_rm_id, //item_number
             dataType: "json",
             success: function(json) {
                 toastr.success("Price Changed!");
@@ -663,7 +749,7 @@
         });
 
         $("#filter_po_no").combobox({
-            url: '<?= base_url('purchase/purchase_orders/readPono/') ?>',
+            url: '<?= base_url('purchase/purchase_orders/readPonos/') ?>',
             valueField: 'po_no',
             textField: 'po_no',
             prompt: "Select Purchase Order No",
@@ -684,7 +770,7 @@
                 if (r) {
                     for (var i = 0; i < rows.length; i++) {
                         var row = rows[i];
-                        if (row.state == "closed") {
+                        if (row.datatable == "1") {
                             toastr.error("Please Select Detail of PO <br>" + row.po_no);
                         } else {
                             if (row.status == "0") {
@@ -725,7 +811,9 @@
         var filter_to = $("#filter_to").datebox('getValue');
         var filter_po_no = $("#filter_po_no").combogrid('getValue');
         var filter_suppliers = $("#filter_suppliers").combobox('getValue');
-        url = "?filter_from=" + filter_from + "&filter_to=" + filter_to + "&filter_po_no=" + filter_po_no + "&filter_suppliers=" + filter_suppliers;
+        var filter_status = $("#filter_status").combobox('getValue');
+
+        url = "?filter_from=" + filter_from + "&filter_to=" + filter_to + "&filter_po_no=" + filter_po_no + "&filter_suppliers=" + filter_suppliers + "&filter_status=" + filter_status;
         $('#dg').treegrid({
             url: '<?= base_url('purchase/purchase_orders/datatables') ?>' + url
         });
@@ -742,16 +830,119 @@
         var filter_to = $("#filter_to").datebox('getValue');
         var filter_po_no = $("#filter_po_no").combogrid('getValue');
         var filter_suppliers = $("#filter_suppliers").combobox('getValue');
-        url = "?filter_from=" + filter_from + "&filter_to=" + filter_to + "&filter_po_no=" + filter_po_no + "&filter_suppliers=" + filter_suppliers;
+        var filter_status = $("#filter_status").combobox('getValue');
+
+        url = "?filter_from=" + filter_from + "&filter_to=" + filter_to + "&filter_po_no=" + filter_po_no + "&filter_suppliers=" + filter_suppliers + "&filter_status=" + filter_status;
         window.location.assign('<?= base_url('purchase/purchase_orders/print/excel') ?>' + url);
+    }
+
+    function complete_po(){
+        var rows = $('#dg').treegrid('getSelections');
+
+        if (rows.length > 0) {
+            // $.messager.confirm('Warning', 'Are you sure you want to completed this data?', function(r) {
+            //     if (r) {
+                    for (var i = 0; i < rows.length; i++) {
+                        var row = rows[i];
+                        if (row.datatable == "1") {
+                            toastr.error("Please Select Detail of PO <br>" + row.po_no);
+                        } else {
+                            if (row.status == "0") {
+                                Swal.fire({
+                                    title: "Are you sure?",
+                                    text: "You want to Complete this data!",
+                                    icon: "warning",
+                                    showCancelButton: true,
+                                    confirmButtonColor: "#3085d6",
+                                    cancelButtonColor: "#d33",
+                                    confirmButtonText: "Yes",
+                                }).then((result) => {
+                                    if (result.isConfirmed) {
+                                        $.ajax({
+                                            method: 'post',
+                                            url: '<?= base_url('purchase/purchase_orders/completePo') ?>',
+                                            data: {
+                                                id: row.id,
+                                            },
+                                            success: function(result) {
+                                                var result = eval('(' + result + ')');
+                                                toastr.success(result.message);
+                                            },
+                                            error: function(jqXHR, textStatus, errorThrown) {
+                                                toastr.error(jqXHR.statusText);
+                                                $.messager.alert("Error", jqXHR.statusText, 'error');
+                                            },
+                                            complete: function(data) {
+                                                $('#dg').treegrid('reload');
+                                            }
+                                        });
+                                    }
+                                });
+                            } else {
+                                toastr.error("this data has been Completed");
+                                // Swal.fire({
+                                //     title: "Are you sure?",
+                                //     text: "You want to Unompleted this data!",
+                                //     icon: "warning",
+                                //     showCancelButton: true,
+                                //     confirmButtonColor: "#3085d6",
+                                //     cancelButtonColor: "#d33",
+                                //     confirmButtonText: "Yes",
+                                // }).then((result) => {
+                                //     if (result.isConfirmed) {
+                                //         $.ajax({
+                                //             method: 'post',
+                                //             url: '<?= base_url('purchase/purchase_orders/uncompletePo') ?>',
+                                //             data: {
+                                //                 id: row.id,
+                                //             },
+                                //             success: function(result) {
+                                //                 var result = eval('(' + result + ')');
+                                //                 toastr.success(result.message);
+                                //             },
+                                //             error: function(jqXHR, textStatus, errorThrown) {
+                                //                 toastr.error(jqXHR.statusText);
+                                //                 $.messager.alert("Error", jqXHR.statusText, 'error');
+                                //             },
+                                //             complete: function(data) {
+                                //                 $('#dg').treegrid('reload');
+                                //             }
+                                //         });
+                                //     }
+                                // });
+                            }
+                        }
+                    }
+            //     }
+            // });
+        }
     }
 
     function print_po() {
         var po_no = $("#filter_po_no").combogrid('getValue');
+        console.log(po_no);
         if (po_no == "") {
             toastr.warning("Please select Purchase Order No!", "Information");
         } else {
-            window.open("<?= base_url('purchase/purchase_orders/print_po/') ?>" + window.btoa(po_no), "_blank");
+            $.ajax({
+                type: "POST",
+                url: "<?= base_url('purchase/purchase_orders/checkTotalSub') ?>",
+                data: {
+                    po_no: po_no
+                },
+                dataType: "json",
+                success: function(response) {
+                    console.log(response);
+                    if (response.total_sub == 0) {
+                        toastr.warning("Total Sub , VAT and Grand Total is 0 for selected PO no, Please Update first for Calculated ", "Information");
+                    } else {
+                        window.open("<?= base_url('purchase/purchase_orders/print_po/') ?>" + window.btoa(po_no), "_blank");
+                    }
+                },
+                error: function() {
+                    toastr.error("An error occurred while checking Total Sub for selected Purchase Order!", "Error");
+                }
+            });
         }
     }
 
@@ -825,7 +1016,7 @@
                                         for (var i = 0; i < totalrows; i++) {
                                             var row = rows[i];
 
-                                            var item_number = row.item_number;
+                                            var item_rm_id = row.item_rm_id;//item_number
                                             var po_no = row.po_no;
                                             var supplier_id = row.supplier_id;
                                             var qty = row.qty;
@@ -837,6 +1028,7 @@
                                             var month_1 = row.month_1;
                                             var month_2 = row.month_2;
                                             var month_3 = row.month_3;
+                                            var month_4 = row.month_4;
 
                                             var total_sub = $("#total_sub").numberbox('getValue');
                                             var disc_pr = $("#disc_pr").numberbox('getValue');
@@ -857,7 +1049,7 @@
                                             $.ajax({
                                                 type: "post",
                                                 url: url_save,
-                                                data: 'item_number=' + item_number +
+                                                data: 'item_rm_id=' + item_rm_id +
                                                     '&po_no=' + po_no +
                                                     '&supplier_id=' + supplier_id +
                                                     '&request_no=' + row.request_no +
@@ -873,6 +1065,7 @@
                                                     '&month_1=' + month_1 +
                                                     '&month_2=' + month_2 +
                                                     '&month_3=' + month_3 +
+                                                    '&month_4=' + month_4 +
                                                     '&total_sub=' + total_sub +
                                                     '&disc_pr=' + disc_pr +
                                                     '&total_vat=' + total_vat +
@@ -992,31 +1185,36 @@
     }
 
     function numberformat(value, row) {
-        if (row.currency == "USD") {
-            var digits = 4;
-            var currency = 'USD';
-            var format = "en-IN";
-        } else if (row.currency == "JPY") {
-            var digits = 2;
-            var currency = 'JPY';
-            var format = "ja-JP";
-        } else if (row.currency == "EUR") {
-            var digits = 2;
-            var currency = 'EUR';
-            var format = "de-DE";
-        } else {
-            var digits = 0;
-            var currency = 'IDR';
-            var format = "id-ID";
-        }
-
         if (value != null) {
-            const formatter = new Intl.NumberFormat(format, {
-                style: 'currency',
-                currency: currency,
-                minimumFractionDigits: digits
+            const formatter = new Intl.NumberFormat('id-ID', {
+                minimumFractionDigits: 2
             });
             return "<b>" + formatter.format(value) + "</b>";
+        }
+    }
+
+    function numberformats(value, row) {
+        if (value != null) {
+            const formatter = new Intl.NumberFormat('id-ID', {
+                minimumFractionDigits: 2
+            });
+            return formatter.format(value);
+        }
+    }
+
+    function statusformatFinance(value, row) {
+        if (value == 1) {
+            return "<b style='color:red;'>CLOSED</b>";
+        } else {
+            return "<b style='color:green;'>OPEN</b>";
+        }
+    }
+
+    function statusStyleFinance(value, row, index) {
+        if (value == 1) {
+            return 'background-color:#FFC8C8;';
+        } else {
+            return 'background-color:#C8FFCC;';
         }
     }
 
@@ -1025,6 +1223,8 @@
             return "<b style='color:green;'>OPEN</b>";
         } else if (value == 1) {
             return "<b style='color:red;'>CLOSED</b>";
+        } else if (value == 2) {
+            return "<b style='color:white;'>COMPLETE</b>";
         }
     }
 
@@ -1033,6 +1233,8 @@
             return 'background-color:#C8FFCC;';
         } else if (value == 1) {
             return 'background-color:#FFC8C8;';
+        } else if (value == 2) {
+            return 'background-color:#4B54E7;';
         }
     }
 

@@ -261,6 +261,13 @@ class Stock_fg extends CI_Controller
         $this->db->from('config');
         $config = $this->db->get()->row();
 
+        $item_fg = $this->crud->read("item_fg", [], ["id" => $filter_item_fg_id]);
+        if(empty($filter_item_fg_id)){
+            $html_item_id = "ALL";
+        }else{
+            $html_item_id = $item_fg->number;
+        }
+
         $this->db->select('a.*, b.number as item_fg_number, b.name as item_fg_name');
         $this->db->from('stock_fg a');
         $this->db->join('item_fg b', 'a.item_fg_id = b.id');
@@ -304,344 +311,87 @@ class Stock_fg extends CI_Controller
             $month_name = "DECEMBER";
         }
 
-        if ($filter_revision == "" && $filter_item_fg_id == "") {
-            $html = '<html><head><title>Print Data</title></head><style>body {font-family: Arial, Helvetica, sans-serif;}#stock_fg {border-collapse: collapse;width: 100%;font-size: 12px;}#stock_fg td, #stock_fg th {border: 1px solid #ddd;padding: 2px;}#stock_fg tr:nth-child(even){background-color: #f2f2f2;}#stock_fg tr:hover {background-color: #ddd;}#stock_fg th {padding-top: 2px;padding-bottom: 2px;text-align: left;color: black;}</style><body>
-            <center>
-                <div style="float: left; font-size: 12px; text-align: left;">
-                    <table style="width: 100%;">
-                        <tr>
-                            <td width="50" style="font-size: 12px; vertical-align: top; text-align: center; vertical-align:jus margin-right:10px;">
-                                <img src="' . $config->favicon . '" width="30">
-                            </td>
-                            <td style="font-size: 14px; text-align: left; margin:2px;">
-                                <b>' . $config->name . '</b>
-                            </td>
-                        </tr>
-                    </table>
-                </div>
-                <div style="float: right; font-size: 12px; text-align: right;">
-                    Print Date ' . date("d M Y H:m:s") . ' <br>
-                    Print By ' . $this->session->username . '  
-                </div>
-                <br><br>
-                <div style="float: centet; font-size: 16px; text-align: center;">
-                    <h3>DATA STOCK FINISH GOOD</h3>
-                </div>
-                <div style="float: left; font-size: 12px; text-align: left; width:30%;">
-                    <table style="width: 100%;">
-                        <tr>
-                            <td style="font-size: 14px; text-align: left; margin:2px;">
-                                <small>PERIOD</small>
-                            </td>
-                            <td style="font-size: 14px; text-align: left; margin:2px;">
-                                <small>: </small>
-                            </td>
-                            <td style="font-size: 14px; text-align: left; margin:2px;">
-                                <small><b>' . $month_name . ' ' . $filter_period_year . '</b></small>
-                            </td>
-                        </tr>
-                        <tr>
-                            <td style="font-size: 14px; text-align: left; margin:2px;">
-                                <small>REVISION</small>
-                            </td>
-                            <td style="font-size: 14px; text-align: left; margin:2px;">
-                                <small>: </small>
-                            </td>
-                            <td style="font-size: 14px; text-align: left; margin:2px;">
-                                <small><b>0</b></small>
-                            </td>
-                        </tr>
-                        <tr>
-                            <td style="font-size: 14px; text-align: left; margin:2px;">
-                                <small>PRODUCT NO.</small>
-                            </td>
-                            <td style="font-size: 14px; text-align: left; margin:2px;">
-                                <small>: </small>
-                            </td>
-                            <td style="font-size: 14px; text-align: left; margin:2px;">
-                                <small><b>ALL</b></small>
-                            </td>
-                        </tr>
-                    </table>
-                </div>
-            </center>
-            
-            <table id="stock_fg" border="1">
-                <tr>
-                    <th width="20">No</th>
-                    <th>Document No</th>
-                    <th>Product No</th>
-                    <th>Product Name</th>
-                    <th>Quantity</th>
-                </tr>';
-            $no = 1;
-            foreach ($records as $data) {
-                $html .= '<tr>
-                            <td>' . $no . '</td>
-                            <td>' . $data['document_no'] . '</td>
-                            <td>' . $data['item_fg_number'] . '</td>
-                            <td>' . $data['item_fg_name'] . '</td>
-                            <td>' . number_format($data['qty']) . '</td>
-                        </tr>';
-                $no++;
-            }
-            $html .= '</table></body></html>';
-            echo $html;
-        } elseif ($filter_revision != "" && $filter_item_fg_id == "") {
-            $html = '<html><head><title>Print Data</title></head><style>body {font-family: Arial, Helvetica, sans-serif;}#stock_fg {border-collapse: collapse;width: 100%;font-size: 12px;}#stock_fg td, #stock_fg th {border: 1px solid #ddd;padding: 2px;}#stock_fg tr:nth-child(even){background-color: #f2f2f2;}#stock_fg tr:hover {background-color: #ddd;}#stock_fg th {padding-top: 2px;padding-bottom: 2px;text-align: left;color: black;}</style><body>
-            <center>
-                <div style="float: left; font-size: 12px; text-align: left;">
-                    <table style="width: 100%;">
-                        <tr>
-                            <td width="50" style="font-size: 12px; vertical-align: top; text-align: center; vertical-align:jus margin-right:10px;">
-                                <img src="' . $config->favicon . '" width="30">
-                            </td>
-                            <td style="font-size: 14px; text-align: left; margin:2px;">
-                                <b>' . $config->name . '</b>
-                            </td>
-                        </tr>
-                    </table>
-                </div>
-                <div style="float: right; font-size: 12px; text-align: right;">
-                    Print Date ' . date("d M Y H:m:s") . ' <br>
-                    Print By ' . $this->session->username . '  
-                </div>
-                <br><br>
-                <div style="float: centet; font-size: 16px; text-align: center;">
-                    <h3>DATA STOCK FINISH GOOD</h3>
-                </div>
-                <div style="float: left; font-size: 12px; text-align: left; width:60%;">
-                    <table style="width: 100%;">
-                        <tr>
-                            <td style="font-size: 14px; text-align: left; margin:2px;">
-                                <small>PERIOD</small>
-                            </td>
-                            <td style="font-size: 14px; text-align: left; margin:2px;">
-                                <small>: </small>
-                            </td>
-                            <td style="font-size: 14px; text-align: left; margin:2px;">
-                                <small><b>' . $month_name . ' ' . $filter_period_year . '</b></small>
-                            </td>
-                        </tr>
-                        <tr>
-                            <td style="font-size: 14px; text-align: left; margin:2px;">
-                                <small>REVISION</small>
-                            </td>
-                            <td style="font-size: 14px; text-align: left; margin:2px;">
-                                <small>: </small>
-                            </td>
-                            <td style="font-size: 14px; text-align: left; margin:2px;">
-                                <small><b>' . $filter_revision . '</b></small>
-                            </td>
-                        </tr>
-                        <tr>
-                            <td style="font-size: 14px; text-align: left; margin:2px;">
-                                <small>PRODUCT NO.</small>
-                            </td>
-                            <td style="font-size: 14px; text-align: left; margin:2px;">
-                                <small>: </small>
-                            </td>
-                            <td style="font-size: 14px; text-align: left; margin:2px;">
-                                <small><b>ALL</b></small>
-                            </td>
-                        </tr>
-                    </table>
-                </div>
-            </center>
-            
-            <table id="stock_fg" border="1">
-                <tr>
-                    <th width="20">No</th>
-                    <th>Document No</th>
-                    <th>Product No</th>
-                    <th>Product Name</th>
-                    <th>Quantity</th>
-                </tr>';
-            $no = 1;
-            foreach ($records as $data) {
-                $html .= '<tr>
-                            <td>' . $no . '</td>
-                            <td>' . $data['document_no'] . '</td>
-                            <td>' . $data['item_fg_number'] . '</td>
-                            <td>' . $data['item_fg_name'] . '</td>
-                            <td>' . number_format($data['qty']) . '</td>
-                        </tr>';
-                $no++;
-            }
-            $html .= '</table></body></html>';
-            echo $html;
-        } elseif ($filter_revision == "" && $filter_item_fg_id != "") {
-            foreach ($records as $data) {
-                $filter_item_fg_id = $data['item_fg_number'];
-            }
-            $html = '<html><head><title>Print Data</title></head><style>body {font-family: Arial, Helvetica, sans-serif;}#stock_fg {border-collapse: collapse;width: 100%;font-size: 12px;}#stock_fg td, #stock_fg th {border: 1px solid #ddd;padding: 2px;}#stock_fg tr:nth-child(even){background-color: #f2f2f2;}#stock_fg tr:hover {background-color: #ddd;}#stock_fg th {padding-top: 2px;padding-bottom: 2px;text-align: left;color: black;}</style><body>
-            <center>
-                <div style="float: left; font-size: 12px; text-align: left;">
-                    <table style="width: 100%;">
-                        <tr>
-                            <td width="50" style="font-size: 12px; vertical-align: top; text-align: center; vertical-align:jus margin-right:10px;">
-                                <img src="' . $config->favicon . '" width="30">
-                            </td>
-                            <td style="font-size: 14px; text-align: left; margin:2px;">
-                                <b>' . $config->name . '</b>
-                            </td>
-                        </tr>
-                    </table>
-                </div>
-                <div style="float: right; font-size: 12px; text-align: right;">
-                    Print Date ' . date("d M Y H:m:s") . ' <br>
-                    Print By ' . $this->session->username . '  
-                </div>
-                <br><br>
-                <div style="float: centet; font-size: 16px; text-align: center;">
-                    <h3>DATA STOCK FINISH GOOD</h3>
-                </div>
-                <div style="float: left; font-size: 12px; text-align: left; width:60%;">
-                    <table style="width: 100%;">
-                        <tr>
-                            <td style="font-size: 14px; text-align: left; margin:2px;">
-                                <small>PERIOD</small>
-                            </td>
-                            <td style="font-size: 14px; text-align: left; margin:2px;">
-                                <small>: </small>
-                            </td>
-                            <td style="font-size: 14px; text-align: left; margin:2px;">
-                                <small><b>' . $month_name . ' ' . $filter_period_year . '</b></small>
-                            </td>
-                        </tr>
-                        <tr>
-                            <td style="font-size: 14px; text-align: left; margin:2px;">
-                                <small>REVISION</small>
-                            </td>
-                            <td style="font-size: 14px; text-align: left; margin:2px;">
-                                <small>: </small>
-                            </td>
-                            <td style="font-size: 14px; text-align: left; margin:2px;">
-                                <small><b>ALL</b></small>
-                            </td>
-                        </tr>
-                        <tr>
-                            <td style="font-size: 14px; text-align: left; margin:2px;">
-                                <small>PRODUCT NO.</small>
-                            </td>
-                            <td style="font-size: 14px; text-align: left; margin:2px;">
-                                <small>: </small>
-                            </td>
-                            <td style="font-size: 14px; text-align: left; margin:2px;">
-                                <small><b>' . $filter_item_fg_id . '</b></small>
-                            </td>
-                        </tr>
-                    </table>
-                </div>
-            </center>
-            
-            <table id="stock_fg" border="1">
-                <tr>
-                    <th width="20">No</th>
-                    <th>Document No</th>
-                    <th>Product No</th>
-                    <th>Product Name</th>
-                    <th>Quantity</th>
-                </tr>';
-            $no = 1;
-            foreach ($records as $data) {
-                $html .= '<tr>
-                            <td>' . $no . '</td>
-                            <td>' . $data['document_no'] . '</td>
-                            <td>' . $data['item_fg_number'] . '</td>
-                            <td>' . $data['item_fg_name'] . '</td>
-                            <td>' . number_format($data['qty']) . '</td>
-                        </tr>';
-                $no++;
-            }
-            $html .= '</table></body></html>';
-            echo $html;
-        } elseif ($filter_revision != "" && $filter_item_fg_id != "") {
-            foreach ($records as $data) {
-                $filter_item_fg_id = $data['item_fg_number'];
-            }
-            $html = '<html><head><title>Print Data</title></head><style>body {font-family: Arial, Helvetica, sans-serif;}#stock_fg {border-collapse: collapse;width: 100%;font-size: 12px;}#stock_fg td, #stock_fg th {border: 1px solid #ddd;padding: 2px;}#stock_fg tr:nth-child(even){background-color: #f2f2f2;}#stock_fg tr:hover {background-color: #ddd;}#stock_fg th {padding-top: 2px;padding-bottom: 2px;text-align: left;color: black;}</style><body>
-            <center>
-                <div style="float: left; font-size: 12px; text-align: left;">
-                    <table style="width: 100%;">
-                        <tr>
-                            <td width="50" style="font-size: 12px; vertical-align: top; text-align: center; vertical-align:jus margin-right:10px;">
-                                <img src="' . $config->favicon . '" width="30">
-                            </td>
-                            <td style="font-size: 14px; text-align: left; margin:2px;">
-                                <b>' . $config->name . '</b>
-                            </td>
-                        </tr>
-                    </table>
-                </div>
-                <div style="float: right; font-size: 12px; text-align: right;">
-                    Print Date ' . date("d M Y H:m:s") . ' <br>
-                    Print By ' . $this->session->username . '  
-                </div>
-                <br><br>
-                <div style="float: centet; font-size: 16px; text-align: center;">
-                    <h3>DATA STOCK FINISH GOOD</h3>
-                </div>
-                <div style="float: left; font-size: 12px; text-align: left; width:60%;">
-                    <table style="width: 100%;">
-                        <tr>
-                            <td style="font-size: 14px; text-align: left; margin:2px;">
-                                <small>PERIOD</small>
-                            </td>
-                            <td style="font-size: 14px; text-align: left; margin:2px;">
-                                <small>: </small>
-                            </td>
-                            <td style="font-size: 14px; text-align: left; margin:2px;">
-                                <small><b>' . $month_name . ' ' . $filter_period_year . '</b></small>
-                            </td>
-                        </tr>
-                        <tr>
-                            <td style="font-size: 14px; text-align: left; margin:2px;">
-                                <small>REVISION</small>
-                            </td>
-                            <td style="font-size: 14px; text-align: left; margin:2px;">
-                                <small>: </small>
-                            </td>
-                            <td style="font-size: 14px; text-align: left; margin:2px;">
-                                <small><b>' . $filter_revision . '</b></small>
-                            </td>
-                        </tr>
-                        <tr>
-                            <td style="font-size: 14px; text-align: left; margin:2px;">
-                                <small>PRODUCT NO.</small>
-                            </td>
-                            <td style="font-size: 14px; text-align: left; margin:2px;">
-                                <small>: </small>
-                            </td>
-                            <td style="font-size: 14px; text-align: left; margin:2px;">
-                                <small><b>' . $filter_item_fg_id . '</b></small>
-                            </td>
-                        </tr>
-                    </table>
-                </div>
-            </center>
-            
-            <table id="stock_fg" border="1">
-                <tr>
-                    <th width="20">No</th>
-                    <th>Document No</th>
-                    <th>Product No</th>
-                    <th>Product Name</th>
-                    <th>Quantity</th>
-                </tr>';
-            $no = 1;
-            foreach ($records as $data) {
-                $html .= '<tr>
-                            <td>' . $no . '</td>
-                            <td>' . $data['document_no'] . '</td>
-                            <td>' . $data['item_fg_number'] . '</td>
-                            <td>' . $data['item_fg_name'] . '</td>
-                            <td>' . number_format($data['qty']) . '</td>
-                        </tr>';
-                $no++;
-            }
-            $html .= '</table></body></html>';
-            echo $html;
+        $html = '<html><head><title>Print Data</title></head><style>body {font-family: Arial, Helvetica, sans-serif;}#stock_fg {border-collapse: collapse;width: 100%;font-size: 12px;}#stock_fg td, #stock_fg th {border: 1px solid #ddd;padding: 2px;}#stock_fg tr:nth-child(even){background-color: #f2f2f2;}#stock_fg tr:hover {background-color: #ddd;}#stock_fg th {padding-top: 2px;padding-bottom: 2px;text-align: left;color: black;}</style><body>
+        <center>
+            <div style="float: left; font-size: 12px; text-align: left;">
+                <table style="width: 100%;">
+                    <tr>
+                        <td width="50" style="font-size: 12px; vertical-align: top; text-align: center; vertical-align:jus margin-right:10px;">
+                            <img src="' . $config->favicon . '" width="30">
+                        </td>
+                        <td style="font-size: 14px; text-align: left; margin:2px;">
+                            <b>' . $config->name . '</b>
+                        </td>
+                    </tr>
+                </table>
+            </div>
+            <div style="float: right; font-size: 12px; text-align: right;">
+                Print Date ' . date("d M Y H:m:s") . ' <br>
+                Print By ' . $this->session->username . '  
+            </div>
+            <br><br>
+            <div style="float: centet; font-size: 16px; text-align: center;">
+                <h3>DATA STOCK FINISH GOOD</h3>
+            </div>
+            <div style="float: left; font-size: 12px; text-align: left; width:30%;">
+                <table style="width: 100%;">
+                    <tr>
+                        <td style="font-size: 14px; text-align: left; margin:2px;">
+                            <small>PERIOD</small>
+                        </td>
+                        <td style="font-size: 14px; text-align: left; margin:2px;">
+                            <small>: </small>
+                        </td>
+                        <td style="font-size: 14px; text-align: left; margin:2px;">
+                            <small><b>' . $month_name . ' ' . $filter_period_year . '</b></small>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td style="font-size: 14px; text-align: left; margin:2px;">
+                            <small>REVISION</small>
+                        </td>
+                        <td style="font-size: 14px; text-align: left; margin:2px;">
+                            <small>: </small>
+                        </td>
+                        <td style="font-size: 14px; text-align: left; margin:2px;">
+                            <small><b>'.$filter_revision.'</b></small>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td style="font-size: 14px; text-align: left; margin:2px;">
+                            <small>PRODUCT NO.</small>
+                        </td>
+                        <td style="font-size: 14px; text-align: left; margin:2px;">
+                            <small>: </small>
+                        </td>
+                        <td style="font-size: 14px; text-align: left; margin:2px;">
+                            <small><b>'.$html_item_id.'</b></small>
+                        </td>
+                    </tr>
+                </table>
+            </div>
+        </center>
+        
+        <table id="stock_fg" border="1">
+            <tr>
+                <th width="20">No</th>
+                <th>Document No</th>
+                <th>Product No</th>
+                <th>Product Name</th>
+                <th>Quantity</th>
+            </tr>';
+        $no = 1;
+        foreach ($records as $data) {
+            $html .= '<tr>
+                        <td>' . $no . '</td>
+                        <td>' . $data['document_no'] . '</td>
+                        <td>' . $data['item_fg_number'] . '</td>
+                        <td>' . $data['item_fg_name'] . '</td>
+                        <td>' . number_format($data['qty']) . '</td>
+                    </tr>';
+            $no++;
         }
+        $html .= '</table></body></html>';
+        echo $html;
     }
 }

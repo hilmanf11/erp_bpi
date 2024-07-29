@@ -91,6 +91,18 @@ class Report_history_transactions extends CI_Controller
         echo json_encode($records);
     }
 
+    public function readItemFamilys()
+    {
+        $this->db->select('*');
+        $this->db->from('item_familys');
+        $this->db->where('id !=', "P08"); 
+        $this->db->where('deleted', 0);
+        // $this->db->where("item_category_id", $item_category_id);
+        $this->db->order_by('name', 'ASC');
+        $records = $this->db->get()->result_array();
+        echo json_encode($records);
+    }
+
     public function print($option = "")
     {
         if ($option == "excel") {
@@ -104,6 +116,7 @@ class Report_history_transactions extends CI_Controller
         $filter_item_family = $this->input->get('filter_item_family');
         $filter_items = $this->input->get('filter_items');
         $filter_display = $this->input->get("filter_display");
+        $filter_division = $this->input->get('filter_division');
 
         $start = strtotime($filter_from);
         $finish = strtotime($filter_to);
@@ -117,6 +130,7 @@ class Report_history_transactions extends CI_Controller
             a.id,
             a.number, 
             a.name, 
+            a.division, 
             b.name as prodfam, 
             a.uom,
             c.name as category_name, 
@@ -144,7 +158,7 @@ class Report_history_transactions extends CI_Controller
             WHERE a.trans_date between '$filter_from' and '$filter_to'
             GROUP BY a.item_rm_id) h ON a.id = h.item_rm_id
         
-        WHERE c.id like '%$filter_item_category%' and b.number like '%$filter_item_family%' and a.id like '%$filter_items%'
+        WHERE c.id like '%$filter_item_category%' and b.number like '%$filter_item_family%' and a.id like '%$filter_items%' and a.division like '%$filter_division%' 
         GROUP BY a.id
         ORDER BY c.name DESC, b.name DESC, a.number");
 
@@ -179,6 +193,7 @@ class Report_history_transactions extends CI_Controller
                     <th colspan="3">Product No</th>
                     <th colspan="2">Product Name</th>
                     <th colspan="2">Uom</th>
+                    <th colspan="2">Division</th>
                     <th colspan="2">Category</th>
                     <th>Product Family</th>
                     <th width="100">Begin<br>Stock</th>
@@ -216,7 +231,6 @@ class Report_history_transactions extends CI_Controller
                 JOIN scan_item_receipts c ON a.return_id = c.receipt_id and b.label_no = c.label_no
                 WHERE a.return_date < '$filter_from'
                 GROUP BY a.item_rm_id) g ON a.id = g.item_rm_id
-
             LEFT JOIN (SELECT a.item_rm_id, SUM(a.qty) as qty_stock_rm
             FROM os_rm a
             JOIN item_rm b ON a.item_rm_id = b.id
@@ -231,6 +245,7 @@ class Report_history_transactions extends CI_Controller
                             <td colspan="3">' . $record->number . '</td>
                             <td colspan="2">' . $record->name . '</td>
                             <td colspan="2">' . $record->uom . '</td>
+                            <td colspan="2">' . $record->division . '</td>
                             <td colspan="2">' . $record->category_name . '</td>
                             <td>' . $record->prodfam . '</td>
                             <td style="text-align:right;">' . number_format(@$itemReceipts[0]->begin_stock, 2) . '</td>
@@ -280,8 +295,8 @@ class Report_history_transactions extends CI_Controller
                     JOIN scan_item_receipts b ON a.receipt_id = b.receipt_id
                     JOIN users c ON a.created_by = c.username
                     WHERE a.item_rm_id = '$item_rm_id' and a.receipt_date between '$working_date' and '$working_date'
-                    GROUP BY a.bc_kind, a.bc_aju, a.bc_document, a.bc_date");
-
+                    GROUP BY a.bc_kind, a.bc_aju, a.bc_document, a.bc_date, a.receipt_id");
+                    
                     //ISSUED
                     $issueds = $this->crud->query("SELECT * FROM issued_material_details WHERE item_rm_id = '$item_rm_id' and DATE_FORMAT(created_date, '%Y-%m-%d') between '$working_date' and '$working_date'");
 
@@ -373,7 +388,7 @@ class Report_history_transactions extends CI_Controller
         }
 
         $html .= '<tr>
-            <td colspan="11" style="text-align:right;"><b>GRAND TOTAL</b></td>
+            <td colspan="13" style="text-align:right;"><b>GRAND TOTAL</b></td>
             <td style="text-align:right;">' . number_format($totalBeginStock, 2) . '</td>
             <td style="text-align:right;">' . number_format($totalIn, 2) . '</td>
             <td style="text-align:right;">' . number_format($totalOut, 2) . '</td>

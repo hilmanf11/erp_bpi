@@ -4,11 +4,14 @@
         <tr>
             <th rowspan="2" field="ck" checkbox="true"></th>
             <th rowspan="2" data-options="field:'table_name',width:150,halign:'center'">Module</th>
-            <th rowspan="2" data-options="field:'user_approval_name_1',width:100,align:'center'">Approval 1</th>
-            <th rowspan="2" data-options="field:'user_approval_name_2',width:100,align:'center'">Approval 2</th>
-            <th rowspan="2" data-options="field:'user_approval_name_3',width:100,align:'center'">Approval 3</th>
-            <th rowspan="2" data-options="field:'user_approval_name_4',width:100,align:'center'">Approval 4</th>
-            <th rowspan="2" data-options="field:'user_approval_name_5',width:100,align:'center'">Approval 5</th>
+            <th rowspan="2" data-options="field:'division',width:80,align:'center'">Divison</th>
+            <th rowspan="2" data-options="field:'department',width:150,halign:'center'">Department</th>
+            <th rowspan="2" data-options="field:'sub_department',width:150,halign:'center'">Sub <br>Department</th>
+            <th rowspan="2" data-options="field:'user_approval_name_1',width:150,halign:'center'">Approval 1</th>
+            <th rowspan="2" data-options="field:'user_approval_name_2',width:150,halign:'center'">Approval 2</th>
+            <th rowspan="2" data-options="field:'user_approval_name_3',width:150,halign:'center'">Approval 3</th>
+            <th rowspan="2" data-options="field:'user_approval_name_4',width:100,halign:'center'">Approval 4</th>
+            <th rowspan="2" data-options="field:'user_approval_name_5',width:100,halign:'center'">Approval 5</th>
             <th colspan="2" data-options="field:'',width:100,halign:'center'"> Created</th>
             <th colspan="2" data-options="field:'',width:100,halign:'center'"> Updated</th>
         </tr>
@@ -40,6 +43,18 @@
                     <option value="purchase_orders">Purchase Orders</option>
                     <option value="purchase_requests">Purchase Requests</option>
                 </select>
+            </div>
+            <div class="fitem">
+                <span style="width:35%; display:inline-block;">Division</span>
+                <input style="width:60%;" name="division" id="division" class="easyui-combobox" required>
+            </div>
+            <div class="fitem">
+                <span style="width:35%; display:inline-block;">Department</span>
+                <input style="width:60%;" name="department" id="department" class="easyui-combobox" required>
+            </div>
+            <div class="fitem">
+                <span style="width:35%; display:inline-block;">Sub Department</span>
+                <input style="width:60%;" name="sub_department" id="sub_department" class="easyui-combobox" required>
             </div>
             <div class="fitem">
                 <span style="width:35%; display:inline-block;">Approval 1</span>
@@ -166,6 +181,29 @@
                 }
             }]
         });
+
+        $('#division').combobox({
+            url: '<?= base_url('master/divisions/reads'); ?>',
+            valueField: 'number',
+            textField: 'number',
+            prompt: 'Choose Division',
+        }); 
+
+        $('#department').combobox({
+            url: '<?= base_url('admin/users/readDepartement'); ?>',
+            valueField: 'name',
+            textField: 'name',
+            prompt: 'Choose Department',
+            onSelect: function(departement){
+                $('#sub_department').combobox({
+                    url: '<?= base_url('admin/users/readDepartementSub/'); ?>' + departement.id,
+                    valueField: 'name',
+                    textField: 'name',
+                    prompt: 'Choose Sub Department',
+                }); 
+            }
+        });
+
         //DATA USERS
         $('#user_approval_1').combogrid({
             url: '<?= base_url('admin/setting_users/getusers') ?>',

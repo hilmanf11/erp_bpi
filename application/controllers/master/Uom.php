@@ -11,6 +11,7 @@ class Uom extends CI_Controller
         $this->load->library('form_validation');
         $this->load->library('session');
         $this->load->model('crud');
+
         //VALIDASI FORM
         $this->form_validation->set_rules('name', 'Name', 'required|min_length[1]|max_length[20]|is_unique[uom.name]');
     }

@@ -77,15 +77,28 @@ class Bom extends CI_Controller
     }
 
     //GET DATA
-    public function readRunner()
+//     public function readRunner()
+//     {
+//        $post = $this->input->post();
+//        $item_fg_id = $post['item_fg_id'];
+//        $menu_loading = $this->crud->query("SELECT SUM(a.runner) as runner, b.cavity_standard
+//        FROM menu_loadings a JOIN molds b on a.mold_id = b.id
+//        WHERE a.item_fg_id = '$item_fg_id' group by a.item_fg_id");
+//        echo json_encode($menu_loading);
+//    }
+
+   public function readRunner()
     {
-       $post = $this->input->post();
-       $item_fg_id = $post['item_fg_id'];
-       $menu_loading = $this->crud->query("SELECT SUM(a.runner) as runner, b.cavity_standard
-       FROM menu_loadings a JOIN molds b on a.mold_id = b.id
-       WHERE a.item_fg_id = '$item_fg_id' group by a.item_fg_id");
-       echo json_encode($menu_loading);
-   }
+        $post = $this->input->post();
+        $item_fg_id = $post['item_fg_id'];
+        $menu_loading = $this->crud->query("SELECT ( a.runner / b.cavity_standard ) as total_runner
+        FROM menu_loadings a 
+        JOIN molds b ON a.mold_id = b.id
+        WHERE a.item_fg_id = '$item_fg_id' 
+        ORDER BY total_runner DESC
+        LIMIT 1");
+        echo json_encode($menu_loading);
+    }
 
     //GET DATATABLES
     public function datatables()

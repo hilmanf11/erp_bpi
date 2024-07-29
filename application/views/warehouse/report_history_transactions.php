@@ -10,6 +10,10 @@
                 <input style="width:29%;" id="filter_to" class="easyui-datebox" value="<?= date("Y-m-t") ?>" data-options="formatter:myformatter,parser:myparser, editable:false">
             </div>
             <div class="fitem">
+                <span style="width:35%; display:inline-block;">Division</span>
+                <input style="width:60%;" id="filter_division" class="easyui-combobox">
+            </div>
+            <div class="fitem">
                 <span style="width:35%; display:inline-block;">Category</span>
                 <input style="width:60%;" id="filter_item_category" class="easyui-combobox">
             </div>
@@ -18,15 +22,15 @@
                 <input style="width:60%;" id="filter_item_family" class="easyui-combobox">
             </div>
             <div class="fitem">
-                <span style="width:35%; display:inline-block;">Product No</span>
-                <input style="width:60%;" id="filter_items" class="easyui-combobox">
-            </div>
-            <div class="fitem">
                 <span style="width:35%; display:inline-block;"></span>
                 <a href="javascript:;" class="easyui-linkbutton" onclick="filter()"><i class="fa fa-search"></i> Filter Data</a>
             </div>
         </div>
         <div style="width: 49%; float:left;">
+            <div class="fitem">
+                    <span style="width:35%; display:inline-block;">Product No</span>
+                    <input style="width:60%;" id="filter_items" class="easyui-combobox">
+                </div>
             <div class="fitem">
                 <span style="width:35%; display:inline-block;">Report Display</span>
                 <select style="width:60%;" id="filter_display" class="easyui-combobox" panelHeight="auto">
@@ -61,7 +65,8 @@
         var filter_item_family = $("#filter_item_family").combobox('getValue');
         var filter_items = $("#filter_items").combobox('getValue');
         var filter_display = $("#filter_display").combobox('getValue');
-        url = "?filter_from=" + filter_from + "&filter_to=" + filter_to + "&filter_item_category=" + filter_item_category + "&filter_item_family=" + filter_item_family + "&filter_items=" + filter_items + "&filter_display=" + filter_display;
+        var filter_division = $("#filter_division").combobox('getValue');
+        url = "?filter_from=" + filter_from + "&filter_to=" + filter_to + "&filter_item_category=" + filter_item_category + "&filter_item_family=" + filter_item_family + "&filter_items=" + filter_items + "&filter_display=" + filter_display + "&filter_division=" + filter_division;
         $("#printout").contents().find('html').html("<center><br><br><br><b style='font-size:20px;'>Please Wait...</b></center>");
         $("#printout").attr('src', '<?= base_url('warehouse/report_history_transactions/print') ?>' + url);
     }
@@ -75,13 +80,12 @@
         var filter_item_family = $("#filter_item_family").combobox('getValue');
         var filter_items = $("#filter_items").combobox('getValue');
         var filter_display = $("#filter_display").combobox('getValue');
-        url = "?filter_from=" + filter_from + "&filter_to=" + filter_to + "&filter_item_category=" + filter_item_category + "&filter_item_family=" + filter_item_family + "&filter_items=" + filter_items + "&filter_display=" + filter_display;
+        var filter_division = $("#filter_division").combobox('getValue');
+        url = "?filter_from=" + filter_from + "&filter_to=" + filter_to + "&filter_item_category=" + filter_item_category + "&filter_item_family=" + filter_item_family + "&filter_items=" + filter_items + "&filter_display=" + filter_display + "&filter_division=" + filter_division;
         window.location.assign('<?= base_url('warehouse/report_history_transactions/print/excel') ?>' + url);
     }
 
     $(function() {
-
-
         $("#filter_item_category").combobox({
             url: '<?= base_url('master/item_categories/readsnotfg') ?>',
             valueField: 'id',
@@ -104,7 +108,7 @@
                             url: '<?= base_url('master/item_rm/read/') ?>' + row.id,
                             valueField: 'id',
                             textField: 'number',
-                            prompt: "Select Product Family",
+                            prompt: "Select Product No",
                             icons: [{
                                 iconCls: 'icon-clear',
                                 handler: function(e) {
@@ -117,6 +121,57 @@
             }
         });
     });
+
+    $("#filter_item_family").combobox({
+        url: '<?= base_url('warehouse/report_history_transactions/readItemFamilys/') ?>',
+        valueField: 'number',
+        textField: 'name',
+        prompt: "Select Product Family",
+        icons: [{
+            iconCls: 'icon-clear',
+            handler: function(e) {
+                $(e.data.target).combobox('clear').combobox('textbox').focus();
+            }
+        }],
+        onSelect: function(row) {
+            $('#filter_items').combobox({
+                url: '<?= base_url('master/item_rm/read/') ?>' + row.id,
+                valueField: 'id',
+                textField: 'number',
+                prompt: "Select Product No",
+                icons: [{
+                    iconCls: 'icon-clear',
+                    handler: function(e) {
+                        $(e.data.target).combobox('clear').combobox('textbox').focus();
+                    }
+                }],
+            });
+        }
+    });
+
+    $('#filter_items').combobox({
+        url: '<?= base_url('master/item_rm/reads/') ?>',
+        valueField: 'id',
+        textField: 'number',
+        prompt: "Select Product No",
+        icons: [{
+            iconCls: 'icon-clear',
+            handler: function(e) {
+                $(e.data.target).combobox('clear').combobox('textbox').focus();
+            }
+        }],
+    });
+
+    $('#filter_division').combobox({
+        url: '<?= base_url('master/divisions/reads'); ?>',
+        valueField: 'number',
+        textField: 'number',
+        panelHeight: 'panelHeight',
+        prompt: 'Choose Division',
+    });
+    
+
+
     //Format Datepicker
     function myformatter(date) {
         var y = date.getFullYear();

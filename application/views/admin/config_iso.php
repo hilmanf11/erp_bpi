@@ -13,6 +13,10 @@
                     <input style="width:60%;" name="doc_purchase_order" value="<?= $config->doc_purchase_order ?>" class="easyui-textbox">
                 </div>
                 <div class="fitem">
+                    <span style="width:35%; display:inline-block;">Purchase Invoice</span>
+                    <input style="width:60%;" name="doc_purchase_invoice" value="<?= $config->doc_purchase_invoice ?>" class="easyui-textbox">
+                </div>
+                <div class="fitem">
                     <span style="width:35%; display:inline-block;">Receiving Note</span>
                     <input style="width:60%;" name="doc_receiving_note" value="<?= $config->doc_receiving_note ?>" class="easyui-textbox">
                 </div>
@@ -58,6 +62,14 @@
                 <div class="fitem">
                     <span style="width:35%; display:inline-block;">Purchase Order</span>
                     <input style="width:60%;" name="form_purchase_order" value="<?= $config->form_purchase_order ?>" class="easyui-textbox">
+                </div>
+                <div class="fitem">
+                    <span style="width:35%; display:inline-block;">Purchase Order</span>
+                    <input style="width:60%;" name="form_purchase_order" value="<?= $config->form_purchase_order ?>" class="easyui-textbox">
+                </div>
+                <div class="fitem">
+                    <span style="width:35%; display:inline-block;">Purchase Invoice</span>
+                    <input style="width:60%;" name="form_purchase_invoice" value="<?= $config->form_purchase_invoice ?>" class="easyui-textbox">
                 </div>
                 <div class="fitem">
                     <span style="width:35%; display:inline-block;">Receiving Note</span>

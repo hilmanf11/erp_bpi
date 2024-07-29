@@ -32,7 +32,7 @@ class Customers extends CI_Controller
     public function reads()
     {
         $post = isset($_POST['q']) ? $_POST['q'] : "";
-        $send = $this->crud->query("SELECT * FROM customers WHERE id like '%$post%' or `number` like '%$post%' or `name` like '%$post%'");
+        $send = $this->crud->query("SELECT DISTINCT * FROM customers WHERE id like '%$post%' or `number` like '%$post%' or `name` like '%$post%'");
         echo json_encode($send);
     }
 

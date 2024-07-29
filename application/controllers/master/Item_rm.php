@@ -52,6 +52,17 @@ class Item_rm extends CI_Controller
         echo json_encode($records);
     }
 
+    public function readFamily($categoryId)
+    {
+        $this->db->select('a.*,a.name, a.account_name, a.account_number');//c.specification
+        $this->db->from('item_familys a');
+        $this->db->join('item_categories b','a.item_category_id = b.id');
+        $this->db->where('a.item_category_id', $categoryId);
+        $records = $this->db->get()->result_array();
+
+        echo json_encode($records);
+    }
+
     public function read($id)
     {
         $post = isset($_POST['q']) ? $_POST['q'] : "";
@@ -72,7 +83,7 @@ class Item_rm extends CI_Controller
             $offset = ($page - 1) * $rows;
             $result = array();
             //Select Query
-            $this->db->select('a.*, b.name as item_category_name, c.name as item_family_name, d.number as item_sub_family_number');
+            $this->db->select('a.*, b.name as item_category_name, c.name as item_family_name, d.name as item_sub_family_name, c.account_number, c.account_name');
             $this->db->from('item_rm a');
             $this->db->join('item_categories b', 'a.item_category_id = b.id');
             $this->db->join('item_familys c', 'a.item_family_id = c.id');
@@ -173,15 +184,16 @@ class Item_rm extends CI_Controller
                 'number' => $data->val($i, 2),
                 'name' => $data->val($i, 3),
                 'uom' => $data->val($i, 4),
-                'item_category_id' => $data->val($i, 5),
-                'item_family_id' => $data->val($i, 6),
-                'color' => $data->val($i, 7),
-                'item_sub_family_id' => $data->val($i, 8),
-                'account_number' => $data->val($i, 9),
-                'account_name' => $data->val($i, 10),
-                'description' => $data->val($i, 11),
-                'supply' => $data->val($i, 12),
-                'status' => $data->val($i, 13)
+                'division' => $data->val($i, 5),
+                'item_category_id' => $data->val($i, 6),
+                'item_family_id' => $data->val($i, 7),
+                'color' => $data->val($i, 8),
+                'item_sub_family_id' => $data->val($i, 9),
+                'account_number' => $data->val($i, 10),
+                'account_name' => $data->val($i, 11),
+                'description' => $data->val($i, 12),
+                'supply' => $data->val($i, 13),
+                'status' => $data->val($i, 14)
             );
         }
         $datas['total'] = count($datas);
@@ -224,7 +236,7 @@ class Item_rm extends CI_Controller
             $item_rm = $this->crud->read('item_rm', [], ["number" => $data['number']]);
             $category = $this->crud->read('item_categories', [], ["id" => $data['item_category_id']]);
             $product_family = $this->crud->read('item_familys', [], ["id" => $data['item_family_id']]);
-            $product_family_sub = $this->crud->read('item_family_subs', [], ["id" => $data['item_sub_family_id']]);
+            // $product_family_sub = $this->crud->read('item_family_subs', [], ["id" => $data['item_sub_family_id']]);
 
             //AUTOID
             $month = date('my');
@@ -243,8 +255,8 @@ class Item_rm extends CI_Controller
                 echo json_encode(array("title" => "Not Found", "message" => "Category " . $data['item_category_id'] . " Not Found", "theme" => "error"));
             } elseif (empty($product_family->number)) {
                 echo json_encode(array("title" => "Not Found", "message" => "Product Family " . $data['item_family_id'] . " Not Found", "theme" => "error"));
-            } elseif (empty($product_family_sub->name)) {
-                echo json_encode(array("title" => "Not Found", "message" => "Product Family Sub " . $data['item_sub_family_id'] . " Not Found", "theme" => "error"));
+            // } elseif (empty($product_family_sub->name)) {
+            //     echo json_encode(array("title" => "Not Found", "message" => "Product Family Sub " . $data['item_sub_family_id'] . " Not Found", "theme" => "error"));
             } elseif (!empty($item_rm->number)) {
                 echo json_encode(array("title" => "Duplicated", "message" => " Product No. " . $data['number'] . " is Duplicate Data", "theme" => "error"));
             } else {
@@ -254,6 +266,7 @@ class Item_rm extends CI_Controller
                     "number" => $data['number'],
                     "name" => $data['name'],
                     "uom" => $data['uom'],
+                    "division" => $data['division'],
                     "item_category_id" => $data['item_category_id'],
                     "item_family_id" => $data['item_family_id'],
                     "color" => $data['color'],
@@ -274,7 +287,7 @@ class Item_rm extends CI_Controller
     {
         if ($option == "excel") {
             $format  = date("Ymd");
-            header("Content-type: application/vnd-ms-excel");
+            header('Content-Type: application/vnd.ms-excel');
             header("Content-Disposition: attachment; filename=item_rm_$format.xls");
         }
         //Config
@@ -310,7 +323,7 @@ class Item_rm extends CI_Controller
             </div>
             <br><br>
             <div style="float: centet; font-size: 16px; text-align: center;">
-                <h3>MASTER ITEM RAW MATERIAL</h3>
+                <h3>MASTER ITEM</h3>
             </div>
         </center>
         
@@ -321,6 +334,7 @@ class Item_rm extends CI_Controller
                 <th>Product No.</th>
                 <th>Part Name</th>
                 <th>UOM</th>
+                <th>Division</th>
                 <th>Category</th>
                 <th>Product Family</th>
                 <th>Color</th>
@@ -339,6 +353,7 @@ class Item_rm extends CI_Controller
                         <td style="mso-number-format:\@;">' . $data['number'] . '</td>
                         <td style="mso-number-format:\@;">' . $data['name'] . '</td>
                         <td>' . $data['uom'] . '</td>
+                        <td>' . $data['division'] . '</td>
                         <td>' . $data['item_category_name'] . '</td>
                         <td>' . $data['item_family_name'] . '</td>
                         <td>' . $data['color'] . '</td>

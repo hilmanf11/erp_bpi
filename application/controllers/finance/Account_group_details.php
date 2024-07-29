@@ -77,14 +77,14 @@ class Account_group_details extends CI_Controller
         }
     }
     //AUTO ID
-    public function autoid()
-    {
-        $sql = $this->db->query("SELECT max(`number`) as kode FROM account_group_details");
-        $row = $sql->row();
-        $kode = substr($row->kode, 3);
-        $autoid = "AGD" . sprintf("%02s", $kode + 1);
-        echo $autoid;
-    }
+    // public function autoid()
+    // {
+    //     $sql = $this->db->query("SELECT max(`number`) as kode FROM account_group_details");
+    //     $row = $sql->row();
+    //     $kode = substr($row->kode, 3);
+    //     $autoid = "AGD" . sprintf("%02s", $kode + 1);
+    //     echo $autoid;
+    // }
     //CREATE DATA
     public function create()
     {
@@ -134,8 +134,9 @@ class Account_group_details extends CI_Controller
             $datas[] = array(
                 //excel
                 'account_group_no' => $data->val($i, 2),
-                'name' => $data->val($i, 3),
-                'description' => $data->val($i, 4),
+                'code' => $data->val($i, 3),
+                'name' => $data->val($i, 4),
+                'description' => $data->val($i, 5),
             );
         }
         $datas['total'] = count($datas);
@@ -176,11 +177,11 @@ class Account_group_details extends CI_Controller
 
             $account_groups = $this->crud->read('account_groups', [], ["number" => $data['account_group_no']]);
 
-            //AUTOID
-            $sql = $this->db->query("SELECT max(`number`) as kode FROM account_group_details");
-            $row = $sql->row();
-            $kode = substr($row->kode, 3);
-            $autoid = "AGD" . sprintf("%02s", $kode + 1);
+            // //AUTOID
+            // $sql = $this->db->query("SELECT max(`number`) as kode FROM account_group_details");
+            // $row = $sql->row();
+            // $kode = substr($row->kode, 3);
+            // $autoid = "AGD" . sprintf("%02s", $kode + 1);
 
             if (empty($account_groups->number)) {
                 echo json_encode(array("title" => "Not Found", "message" => "Account Groups No " . $data['account_group_no'] . " Not Found", "theme" => "error"));
@@ -188,7 +189,7 @@ class Account_group_details extends CI_Controller
                 $dataFinal = array(
                     //field
                     "account_group_id" => $account_groups->id,
-                    "number" => $autoid,
+                    "number" => $data['code'],
                     "name" => $data['name'],
                     "description" => $data['description'],
                 );

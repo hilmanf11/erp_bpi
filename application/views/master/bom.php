@@ -22,7 +22,7 @@
     <thead>
         <tr>
             <th rowspan="2" field="ck" checkbox="true"></th>
-            <th rowspan="2" data-options="field:'item_fg_id',width:150,align:'center'">Product ID</th>
+            <th rowspan="2" data-options="field:'item_fg_id',width:150,align:'left'">Product ID</th>
             <th rowspan="2" data-options="field:'item_fg_number',width:250,halign:'center'">Product No</th>
             <th rowspan="2" data-options="field:'item_fg_name',width:300,halign:'center'">Product Name</th>
             <th colspan="2" data-options="field:'',width:100,halign:'center'"> Created</th>
@@ -155,7 +155,8 @@
 
                                 var item_fg_id = $("#item_fg_id").combogrid('getValue');
 
-                                var weight, runner, cavity_standard;
+                                // var weight, runner, cavity_standard;
+                                var weight, total_runner;
 
                                 // Use $.when to wait for both AJAX requests to complete
                                 $.when(
@@ -176,11 +177,13 @@
                                         dataType: "json",
                                         success: function (menu_loading) {
                                             if (menu_loading.length === 0) {
-                                                runner = 0;
-                                                cavity_standard = 0;
+                                                // runner = 0;
+                                                // cavity_standard = 0;
+                                                total_runner = 0;
                                             }else{
-                                                runner = menu_loading[0].runner;
-                                                cavity_standard = menu_loading[0].cavity_standard;
+                                                // runner = menu_loading[0].runner;
+                                                // cavity_standard = menu_loading[0].cavity_standard;
+                                                total_runner = menu_loading[0].total_runner;
                                             }
                                         }
                                     })
@@ -190,8 +193,8 @@
                                     var calculatedComposition;
 
                                     if (item_family_name == 'VIRGIN') {
-                                        if(runner != 0){
-                                            calculatedComposition = ((parseFloat(weight) + parseFloat(runner / cavity_standard)) / 1000);
+                                        if(total_runner != 0){
+                                            calculatedComposition = ((parseFloat(weight) + parseFloat(total_runner)) / 1000);
                                         }else{
                                             calculatedComposition = 0;
                                         }
@@ -297,7 +300,6 @@
                             textField: 'name',
                             prompt: 'Choose Type',
                             panelHeight: true,
-                            required: true,
                             data: [{
                                     name: "ORIGINAL",
                                     type: "0"

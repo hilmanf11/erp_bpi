@@ -72,14 +72,14 @@ class Account_groups extends CI_Controller
         }
     }
     //AUTO ID
-    public function autoid()
-    {
-        $sql = $this->db->query("SELECT max(`number`) as kode FROM account_groups");
-        $row = $sql->row();
-        $kode = substr($row->kode, 2);
-        $autoid = "AG" . sprintf("%02s", $kode + 1);
-        echo $autoid;
-    }
+    // public function autoid()
+    // {
+    //     $sql = $this->db->query("SELECT max(`number`) as kode FROM account_groups");
+    //     $row = $sql->row();
+    //     $kode = substr($row->kode, 2);
+    //     $autoid = "AG" . sprintf("%02s", $kode + 1);
+    //     echo $autoid;
+    // }
     //CREATE DATA
     public function create()
     {

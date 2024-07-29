@@ -130,15 +130,23 @@ class new_barcode extends CI_Controller
                     $autoID = sprintf("%04s", $urutan);
                 }
 
+                $qty_receipt = $post['stock'];
                 if ($qty_label > 0) {
                     for ($i=0; $i < $qty_label; $i++) { 
                         $label_no = "NBC-" . $datenow . "-" . $autoID;
+                        
+                        if ($qty_receipt > $post['mpq']) {
+                            $qty = $post['mpq'];
+                        } else {
+                            $qty = $qty_receipt;
+                        }
+                        
                         $arrLabel = [
                             "label_no" => $label_no,
                             "item_rm_id" => $post['item_rm_id'],
                             "stock" => $post['stock'],
                             "uom" => $post['uom'],
-                            "qty" => $post['mpq'],
+                            "qty" => $qty,
                             "cut_off_date" => $post['cut_off_date'],
                         ];
 
@@ -147,6 +155,8 @@ class new_barcode extends CI_Controller
                         //Generate QRcode
                         $this->createQrcode($label_no, "assets/image/qrcode/");
                         $autoID = sprintf("%04s", $autoID + 1);
+
+                        $qty_receipt = ($qty_receipt - $post['mpq']);
                     }
 
                     echo $message;

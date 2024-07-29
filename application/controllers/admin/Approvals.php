@@ -13,7 +13,7 @@ class Approvals extends CI_Controller
         $this->load->library('session');
         $this->load->model('crud');
         //VALIDASI FORM
-        $this->form_validation->set_rules('table_name', 'Module', 'required|min_length[2]|max_length[50]|is_unique[approvals.table_name]');
+        $this->form_validation->set_rules('sub_department', 'Sub Department', 'required|min_length[2]|max_length[50]|is_unique[approvals.sub_department]');
     }
     //HALAMAN UTAMA
     public function index()
@@ -46,6 +46,9 @@ class Approvals extends CI_Controller
                 d.name as user_approval_name_3,
                 e.name as user_approval_name_4,
                 f.name as user_approval_name_5,
+                a.division,
+                a.department,
+                a.sub_department,
                 ');
             $this->db->from('approvals a');
             $this->db->join('users b', 'a.user_approval_1 = b.username', 'left');
@@ -59,6 +62,12 @@ class Approvals extends CI_Controller
                 foreach ($filters as $filter) {
                     if ($filter->field == "table_name") {
                         $this->db->like("a.table_name", $filter->value);
+                    } elseif ($filter->field == "division") {
+                        $this->db->like("a.division", $filter->value);
+                    } elseif ($filter->field == "department") {
+                        $this->db->like("a.department", $filter->value);
+                    } elseif ($filter->field == "sub_department") {
+                        $this->db->like("a.sub_department", $filter->value);
                     } elseif ($filter->field == "user_approval_name_1") {
                         $this->db->like("b.name", $filter->value);
                     } elseif ($filter->field == "user_approval_name_2") {
@@ -85,16 +94,34 @@ class Approvals extends CI_Controller
         }
     }
     //CREATE DATA
+    // public function create()
+    // {
+    //     if ($this->input->post()) {
+    //         if ($this->form_validation->run() == TRUE) {
+    //             $post = $this->input->post();
+    //             $send = $this->crud->create('approvals', $post);
+    //             echo $send;
+    //         } else {
+    //             show_error(validation_errors());
+    //         }
+    //     } else {
+    //         show_error("Cannot Process your request");
+    //     }
+    // }
     public function create()
     {
         if ($this->input->post()) {
-            if ($this->form_validation->run() == TRUE) {
-                $post = $this->input->post();
+            $post = $this->input->post();
+
+            $approvals = $this->crud->read("approvals", [], ["table_name" => $post['table_name'], "sub_department" => $post['sub_department'], "division" => $post['division']]);
+
+            if (!empty($approvals)) {
+                echo json_encode(array("title" => "Duplicated", "message" => "Table Name " . $approvals->table_name . " and Sub Department " . $approvals->sub_department . " has been inputed please Update previous Data", "theme" => "error"));
+            } else {
                 $send = $this->crud->create('approvals', $post);
                 echo $send;
-            } else {
-                show_error(validation_errors());
             }
+            
         } else {
             show_error("Cannot Process your request");
         }
@@ -172,6 +199,9 @@ class Approvals extends CI_Controller
         <tr>
         <th width="20">No</th>
         <th>Module</th>
+        <th>Division</th>
+        <th>Department</th>
+        <th>Sub Department</th>
         <th>Approval 1</th>
         <th>Approval 2</th>
         <th>Approval 3</th>
@@ -183,6 +213,9 @@ class Approvals extends CI_Controller
             $html .= '<tr>
             <td>' . $no . '</td>
             <td>' . $data['table_name'] . '</td>
+            <td>' . $data['division'] . '</td>
+            <td>' . $data['department'] . '</td>
+            <td>' . $data['sub_department'] . '</td>
             <td>' . $data['user_approval_1'] . '</td>
             <td>' . $data['user_approval_2'] . '</td>
             <td>' . $data['user_approval_3'] . '</td>

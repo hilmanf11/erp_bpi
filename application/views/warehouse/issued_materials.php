@@ -18,8 +18,8 @@
             <th rowspan="2" data-options="field:'wp',width:80,halign:'center'">WP</th>
             <th rowspan="2" data-options="field:'workorder',width:150,halign:'center'">WO ID</th>
             <th rowspan="2" data-options="field:'item_number',width:150,halign:'center'">Product No</th>
-            <th rowspan="2" data-options="field:'component_number',width:200,halign:'center'">Component No</th>
-            <th rowspan="2" data-options="field:'component_name',width:200,halign:'center'">Component Name</th>
+            <th rowspan="2" data-options="field:'item_rm_no',width:200,halign:'center'">Component No</th>
+            <th rowspan="2" data-options="field:'item_rm_name',width:200,halign:'center'">Component Name</th>
             <th colspan="3" data-options="field:'',width:100,halign:'center',align:'right',formatter:numberformat"> Quantity</th>
             <th rowspan="2" data-options="field:'warehouse',width:80,align:'center',formatter:numberformat">Stock WHS</th>
             <th rowspan="2" data-options="field:'uom',width:80,align:'center'">UoM</th>
@@ -132,6 +132,8 @@
                     data: "receipt_id=" + receipt_id + "&request_no=" + request_no,
                     dataType: "json",
                     success: function(json) {
+                        console.log(receipt_id);
+                        console.log(request_no);
                         if (json.total > 0) {
                             var row = json.rows;
                             for (let i = 0; i < json.total; i++) {
@@ -140,7 +142,7 @@
                                     url: "<?= base_url('warehouse/issued_materials/create_label') ?>",
                                     data: "request_no=" + request_no +
                                         "&label_no=" + receipt_id +
-                                        "&item_fg_id=" + row[i].item_fg_id +
+                                        "&item_rm_id=" + row[i].item_rm_id + //item_fg_id
                                         "&qty=" + row[i].qty,
                                     dataType: "json",
                                     success: function(result) {
@@ -153,7 +155,7 @@
                                             if (result.title == "Not Scanned In" || result.title == "Not Registered") {
                                                 serialNotFound.play();
                                             } else {
-                                                serialDuplicate.play();
+                                                serialNotFound.play();
                                             }
                                             toastr.error(result.message, result.title);
                                             $("#receipt_id").val('');

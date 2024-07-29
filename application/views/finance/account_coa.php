@@ -63,11 +63,11 @@
                 </div>
                 <div class="fitem">
                     <span style="width:35%; display:inline-block;">Debit</span>
-                    <input style="width:60%;" name="original_debit" id="original_debit" class="easyui-textbox">
+                    <input style="width:60%;" name="original_debit" id="original_debit" class="easyui-numberbox">
                 </div>
                 <div class="fitem">
                     <span style="width:35%; display:inline-block;">Credit</span>
-                    <input style="width:60%;" name="original_kredit" id="original_kredit" class="easyui-textbox">
+                    <input style="width:60%;" name="original_kredit" id="original_kredit" class="easyui-numberbox">
                 </div>
             </fieldset>
         </div>
@@ -80,11 +80,11 @@
                 </div>
                 <div class="fitem">
                     <span style="width:35%; display:inline-block;">Debit</span>
-                    <input style="width:60%;" name="local_debit" id="local_debit" class="easyui-textbox">
+                    <input style="width:60%;" name="local_debit" id="local_debit" class="easyui-numberbox">
                 </div>
                 <div class="fitem">
                     <span style="width:35%; display:inline-block;">Credit</span>
-                    <input style="width:60%;" name="local_kredit" id="local_kredit" class="easyui-textbox">
+                    <input style="width:60%;" name="local_kredit" id="local_kredit" class="easyui-numberbox">
                 </div>
             </fieldset>
         </div>

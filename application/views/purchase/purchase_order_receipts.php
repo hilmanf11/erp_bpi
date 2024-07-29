@@ -8,9 +8,11 @@
             <th rowspan="2" data-options="field:'po_no',width:150,halign:'center'">PO No</th>
             <th rowspan="2" data-options="field:'receipt_date',width:100,halign:'center'">Receipt Date</th>
             <th colspan="2" data-options="field:'coslpan',halign:'center'">Supplier</th>
-            <th colspan="4" data-options="field:'coslpan',halign:'center'">Beacukai</th>
-            <th rowspan="2" data-options="field:'awb_no',width:120,halign:'center'">AWB No</th>
-            <th rowspan="2" data-options="field:'awb_date',width:120,halign:'center'">AWB Date</th>
+            <th rowspan="2" data-options="field:'bc_document',width:200,halign:'center'">Document</th>
+            <th rowspan="2" data-options="field:'bc_date',width:80,halign:'center'">Document <br>Date</th>
+            <!-- <th colspan="4" data-options="field:'coslpan',halign:'center'">Beacukai</th> -->
+            <!-- <th rowspan="2" data-options="field:'awb_no',width:120,halign:'center'">AWB No</th>
+            <th rowspan="2" data-options="field:'awb_date',width:120,halign:'center'">AWB Date</th> -->
             <th rowspan="2" data-options="field:'item_number',width:150,halign:'center'">Product No</th>
             <th rowspan="2" data-options="field:'item_name',width:200,halign:'center'">Product Name</th>
             <th rowspan="2" data-options="field:'qty_receipt',width:80,halign:'center',align:'right',formatter:numberformat">Qty</th>
@@ -25,10 +27,10 @@
         <tr>
             <th data-options="field:'supplier_id',width:80,halign:'center'">ID</th>
             <th data-options="field:'supplier_name',width:200,halign:'center'">Name</th>
-            <th data-options="field:'bc_kind',width:80,halign:'center'">Kind</th>
+            <!-- <th data-options="field:'bc_kind',width:80,halign:'center'">Kind</th>
             <th data-options="field:'bc_aju',width:100,halign:'center'">AJU</th>
             <th data-options="field:'bc_document',width:200,halign:'center'">Document</th>
-            <th data-options="field:'bc_date',width:80,halign:'center'">Date</th>
+            <th data-options="field:'bc_date',width:80,halign:'center'">Date</th> -->
             <th data-options="field:'created_by',width:100,align:'center'"> By</th>
             <th data-options="field:'created_date',width:150,align:'center'"> Date</th>
             <th data-options="field:'updated_by',width:100,align:'center'"> By</th>
@@ -100,13 +102,17 @@
                     <input style="width:60%;" name="receipt_no" id="receipt_no" readonly class="easyui-textbox">
                 </div>
                 <div class="fitem">
+                    <span style="width:35%; display:inline-block;">Lot No</span>
+                    <input style="width:60%;" name="lotno" id="lotno" readonly class="easyui-textbox">
+                </div>
+                <!-- <div class="fitem">
                     <span style="width:35%; display:inline-block;">BC Kind</span>
                     <input style="width:60%;" name="bc_kind" id="bc_kind" required="" class="easyui-combobox">
                 </div>
                 <div class="fitem">
                     <span style="width:35%; display:inline-block;">No AJU</span>
                     <input style="width:60%;" name="bc_aju" id="bc_aju" required="" class="easyui-textbox">
-                </div>
+                </div> -->
                 <div class="fitem">
                     <span style="width:35%; display:inline-block;">Doc No</span>
                     <input style="width:60%;" name="bc_document" id="bc_document" required="" class="easyui-textbox">
@@ -129,14 +135,14 @@
                     <span style="width:35%; display:inline-block;">PO No</span>
                     <input style="width:60%;" name="po_no" id="po_no" required="" class="easyui-combogrid">
                 </div>
-                <div class="fitem">
+                <!-- <div class="fitem">
                     <span style="width:35%; display:inline-block;">AWB No</span>
                     <input style="width:60%;" name="awb_no" id="awb_no" class="easyui-textbox">
                 </div>
                 <div class="fitem">
                     <span style="width:35%; display:inline-block;">AWB Date</span>
                     <input style="width:60%;" name="awb_date" id="awb_date" class="easyui-datebox" data-options="formatter:myformatter,parser:myparser, editable:false">
-                </div>
+                </div> -->
             </div>
         </fieldset>
         <table id="dg_request" class="easyui-datagrid" style="width:100%;" title="Purchase Order List" idField="item_number">
@@ -166,13 +172,14 @@
         $('#frm_insert').form('clear');
         $('#receipt_date').datebox('setValue', '<?= date("Y-m-d") ?>');
         receipt_no();
-        $("#bc_kind").combobox({
-            url: '<?= base_url('master/bc_kind/reads') ?>',
-            valueField: 'name',
-            textField: 'name',
-            prompt: "Select BC Kind",
-            panelHeight: "auto"
-        });
+        lotno();
+        // $("#bc_kind").combobox({
+        //     url: '<?= base_url('master/bc_kind/reads') ?>',
+        //     valueField: 'name',
+        //     textField: 'name',
+        //     prompt: "Select BC Kind",
+        //     panelHeight: "auto"
+        // });
         $("#supplier_id").combogrid({
             url: '<?= base_url('master/suppliers/reads') ?>',
             panelWidth: 500,
@@ -228,6 +235,17 @@
         });
     }
 
+    function lotno(date = "") {
+        $.ajax({
+            type: "post",
+            url: "<?= base_url('purchase/purchase_order_receipts/lotno/') ?>" + window.btoa(date),
+            dataType: "html",
+            success: function(result) {
+                $("#lotno").textbox('setValue', result);
+            }
+        });
+    }
+
     function preview() {
         var po_no = $("#po_no").combogrid('getValue');
         if (po_no == "") {
@@ -237,14 +255,14 @@
             var dg = $('#dg_request').datagrid({
                 url: '<?= base_url('purchase/purchase_order_receipts/datatablesTemp') ?>?po_no=' + po_no,
                 fitColumns: true,
-                onLoadSuccess: function(data) {
-                    // Set default value for qty_receipt to 0 after loading data
-                    var rows = $(this).datagrid('getRows');
-                    for (var i = 0; i < rows.length; i++) {
-                        rows[i].qty_receipt = 0;
-                    }
-                    $(this).datagrid('loadData', rows);
-                },
+                // onLoadSuccess: function(data) {
+                //     // Set default value for qty_receipt to 0 after loading data
+                //     var rows = $(this).datagrid('getRows');
+                //     for (var i = 0; i < rows.length; i++) {
+                //         rows[i].qty_receipt = 0;
+                //     }
+                //     $(this).datagrid('loadData', rows);
+                // },
 
                 onClickRow: function(rowIndex) {
                     if (lastIndex != rowIndex) {
@@ -261,6 +279,8 @@
                     var qty_receipt = $(editors[2].target);
                     var qty_mpq = $(editors[3].target);
                     var qty_label = $(editors[4].target);
+
+                    // qty_receipt.numberbox('setValue', 0);
                     
                     qty_receipt.add(qty_mpq).numberbox({
                         onChange: function() {
@@ -431,15 +451,16 @@
                 handler: function() {
                     var receipt_date = $("#receipt_date").datebox('getValue');
                     var receipt_no = $("#receipt_no").textbox('getValue');
-                    var bc_kind = $("#bc_kind").textbox('getValue');
-                    var bc_aju = $("#bc_aju").textbox('getValue');
+                    var lotno = $("#lotno").textbox('getValue');
+                    // var bc_kind = $("#bc_kind").textbox('getValue');
+                    // var bc_aju = $("#bc_aju").textbox('getValue');
                     var bc_document = $("#bc_document").textbox('getValue');
                     var bc_date = $("#bc_date").datebox('getValue');
-                    var awb_no = $("#awb_no").textbox('getValue');
-                    var awb_date = $("#awb_date").datebox('getValue');
+                    //var awb_no = $("#awb_no").textbox('getValue');
+                    //var awb_date = $("#awb_date").datebox('getValue');
 
-                    if (bc_kind == "" || bc_document == "" || bc_date == "" || bc_aju == "") {
-                        toastr.warning("Please input BC Kind, AJU, Doc No and Doc Date!", "Information");
+                    if (bc_document == "" || bc_date == "") {
+                        toastr.warning("Please input Doc No and Doc Date!", "Information");
                     } else {
                         $('#dg_request').datagrid('acceptChanges');
                         var rows = $('#dg_request').datagrid('getSelections');
@@ -455,13 +476,14 @@
                                                 '&supplier_id=' + row.supplier_id +
                                                 '&receipt_date=' + receipt_date +
                                                 '&receipt_no=' + receipt_no +
+                                                '&lotno=' + lotno +
                                                 '&po_no=' + row.po_no +
-                                                '&bc_kind=' + bc_kind +
-                                                '&bc_aju=' + bc_aju +
+                                                // '&bc_kind=' + bc_kind +
+                                                // '&bc_aju=' + bc_aju +
                                                 '&bc_document=' + bc_document +
                                                 '&bc_date=' + bc_date +
-                                                '&awb_no=' + awb_no +
-                                                '&awb_date=' + awb_date +
+                                                // '&awb_no=' + awb_no +
+                                                // '&awb_date=' + awb_date +
                                                 '&qty_po=' + row.qty_po +
                                                 '&qty_os=' + row.qty_os +
                                                 '&qty_receipt=' + row.qty_receipt +
@@ -499,7 +521,11 @@
                                                                 
                                                                 print_po(po);
                                                             } else if (result.isDenied) {
-                                                                Swal.fire("You can print QR Code in Datagrid", "", "info");
+                                                                Swal.fire("You can print QR Code in Datagrid", "", "info").then((result) => {
+                                                                    if (result.isConfirmed) {
+                                                                        window.location.reload();
+                                                                    }
+                                                                });
                                                             }
                                                         });
                                                     }
@@ -524,8 +550,10 @@
         $("#receipt_date").datebox({
             onSelect: function(date) {
                 receipt_no(date.getFullYear() + "-" + (date.getMonth() + 1) + "-" + date.getDate());
+                lotno(date.getFullYear() + "-" + (date.getMonth() + 1) + "-" + date.getDate());
             }
         });
+
         readReceiptNo();
         $("#filter_supplier").combobox({
             url: '<?= base_url('purchase/purchase_order_receipts/readSupplier') ?>',
@@ -577,7 +605,47 @@
                 });
             }
         });
+
+        $("#filter_receipt").combobox({
+            url: '<?= base_url('purchase/purchase_order_receipts/readReceipts') ?>',
+            valueField: 'receipt_no',
+            textField: 'receipt_no',
+            prompt: "Select Receipt No",
+            icons: [{
+                iconCls: 'icon-clear',
+                handler: function(e) {
+                    $(e.data.target).combobox('clear').combobox('textbox').focus();
+                }
+            }],
+        });
+
+        $("#filter_doc_no").combobox({
+            url: '<?= base_url('purchase/purchase_order_receipts/readDocnos/') ?>',
+            valueField: 'bc_document',
+            textField: 'bc_document',
+            prompt: "Select Document No",
+            icons: [{
+                iconCls: 'icon-clear',
+                handler: function(e) {
+                    $(e.data.target).combobox('clear').combobox('textbox').focus();
+                }
+            }],
+        });
+
+        $("#filter_po_no").combobox({
+            url: '<?= base_url('purchase/purchase_order_receipts/readPoNos/') ?>',
+            valueField: 'po_no',
+            textField: 'po_no',
+            prompt: "Select PO No",
+            icons: [{
+                iconCls: 'icon-clear',
+                handler: function(e) {
+                    $(e.data.target).combobox('clear').combobox('textbox').focus();
+                }
+            }],
+        });
     });
+    
     //Format Datepicker
     function myformatter(date) {
         var y = date.getFullYear();
@@ -647,9 +715,29 @@
     function BtnPrintLabel(val, row) {
         if (val != "closed") {
             console.log(row);
-            return '<a class="btn btn-primary w-100" style="pointer-events: visible; opacity:1;" target="_blank" href="<?= base_url('purchase/purchase_order_receipts/print_label/') ?>' + window.btoa(row.id) + '"><i class="fa fa-print"></i> Print</a>';
+            return '<a class="btn btn-primary w-100" style="pointer-events: visible; opacity:1;" onclick="printConfirmation(\'' + row.id + '\')"><i class="fa fa-print"></i> Print</a>';
         }
     }
+
+    function printConfirmation(id) {
+        swal.fire({
+            title: 'Confirmation',
+            text: 'Are you sure want print this Label',
+            icon: 'question',
+            showCancelButton: true,
+            confirmButtonText: 'YES',
+            cancelButtonText: 'CANCEL'
+        }).then((result) => {
+            if (result.isConfirmed) {
+                // Jika pengguna menekan tombol "Ya", lakukan pencetakan
+                window.open('<?= base_url('purchase/purchase_order_receipts/print_label/') ?>' + window.btoa(id), '_blank');
+            } else {
+                window.location.reload();
+            }
+        });
+    }
+
+
 
     function print_po(po) {
         console.log(po);

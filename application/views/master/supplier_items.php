@@ -61,7 +61,7 @@
 </div>
 
 <!-- Insert & Update -->
-<div id="dlg_insert" class="easyui-dialog" title="Add New" data-options="closed: true,modal:true" style="width: 97%; height: 500px; padding:10px; top: 20px; left: 20px;">
+<div id="dlg_insert" class="easyui-dialog" title="Add New" data-options="closed: true,modal:true" style="width: 97%; height: 500px; padding:10px; top: 20px; left: 10px;">
     <form id="frm_insert" method="post" novalidate>
         <fieldset style="width:100%; border:1px solid #d0d0d0; margin-bottom: 10px; border-radius:4px; float: left;">
             <legend><b>Form Data</b></legend>
@@ -70,7 +70,7 @@
                 <input style="width:40%;" name="supplier_id" id="supplier_id" required="" class="easyui-combogrid">
             </div>
         </fieldset>
-        <table id="dg2" class="easyui-datagrid" style="width:100%;" title="Supplier Item Lists" toolbar="#toolbar2"></table>
+        <table id="dg2" class="easyui-datagrid" style="width:100%; height: 310px;" title="Supplier Item Lists" toolbar="#toolbar2"></table>
     </form>
 </div>
 
@@ -216,7 +216,10 @@
                     align: 'center',
                     title: "MPQ",
                     editor: {
-                        type: 'numberbox'
+                        type: 'numberbox',
+                        options: {
+                            precision: 2
+                        }
                     }
                 }, {
                     field: 'moq',
@@ -422,6 +425,7 @@
                             },
                             success: function(result) {
                                 var result = eval('(' + result + ')');
+                                $('#dg').datagrid('reload');
                             },
                             error: function(jqXHR, textStatus, errorThrown) {
                                 toastr.error(jqXHR.statusText);
@@ -508,6 +512,7 @@
                     url: '<?= base_url('master/supplier_items/datatableDetails?number=') ?>' + window.btoa(row.supplier_number) + "&filter_item_rm_id=" + window.btoa(filter_item_rm_id),
                     singleSelect: true,
                     rownumbers: true,
+                    width: '1600px',
                     columns: [
                         [{
                             field: 'item_rm_id',
@@ -610,6 +615,7 @@
                 handler: function() {
                     var supplier_id = $("#supplier_id").combogrid('getValue');
 
+                    $("#dg2").datagrid('acceptChanges');
                     var rows = $('#dg2').datagrid('getRows');
                     var totalrows = rows.length;
                     endEditing();

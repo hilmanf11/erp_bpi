@@ -61,6 +61,7 @@ class Customer_items extends CI_Controller
             $this->db->like('a.customer_id', $filter_customer_id);
             $this->db->like('a.item_fg_id', $filter_item_fg_id);
             $this->db->group_by('b.name');
+            $this->db->order_by('b.name','ASC');
             $this->db->order_by('b.id', 'ASC');
             //Total Data
             $totalRows = $this->db->count_all_results('', false);
@@ -89,6 +90,7 @@ class Customer_items extends CI_Controller
             $this->db->where('b.number', $number);
             $this->db->like('a.customer_id', $filter_customer_id);
             $this->db->group_by('a.id');
+            $this->db->order_by('c.number', 'ASC');
             $this->db->order_by('a.id', 'ASC');
             $records = $this->db->get()->result_array();
 

@@ -29,7 +29,7 @@
             <legend><b>Form Data</b></legend>
             <div class="fitem">
                 <span style="width:35%; display:inline-block;">Code</span>
-                <input style="width:60%;" name="number" id="number" required="" class="easyui-textbox" readonly>
+                <input style="width:60%;" name="number" id="number" required="" class="easyui-textbox">
             </div>
             <div class="fitem">
                 <span style="width:35%; display:inline-block;">Name</span>
@@ -55,14 +55,15 @@
         url_save = '<?= base_url('finance/account_groups/create') ?>';
         $('#frm_insert').form('clear');
         
-        $.ajax({
-            type : "post",
-            url : "<?= base_url('finance/account_groups/autoid')?>",
-            dataType : "html",
-            success : function(response){
-                $('#number').textbox('setValue', response);
-            }
-        });
+        
+        // $.ajax({
+        //     type : "post",
+        //     url : "<?= base_url('finance/account_groups/autoid')?>",
+        //     dataType : "html",
+        //     success : function(response){
+        //         $('#number').textbox('setValue', response);
+        //     }
+        // });
     }
     //EDIT DATA
     function update() {

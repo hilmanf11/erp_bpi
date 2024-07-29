@@ -31,12 +31,38 @@ class Users extends CI_Controller
             redirect('error_access');
         }
     }
+
+    public function generate_api()
+    {
+        $permitted_chars = '0123456789abcdefghijklmnopqrstuvwxyz';
+        return substr(str_shuffle($permitted_chars), 0, 30);
+    }
+
     //GET DATA
     public function reads()
     {
         $users = $this->crud->reads('users');
         echo json_encode($users);
     }
+
+    public function readDepartement(){
+        $ch = curl_init(); 
+        curl_setopt($ch, CURLOPT_URL, "https://hrbpi.hris-server.com/api/master/departements");
+        curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
+        $output = curl_exec($ch);
+        curl_close($ch);
+        echo $output;
+    }
+
+    public function readDepartementSub($departement_id){
+        $ch = curl_init(); 
+        curl_setopt($ch, CURLOPT_URL, "https://hrbpi.hris-server.com/api/master/departementSubs/" . $departement_id);
+        curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
+        $output = curl_exec($ch);
+        curl_close($ch);
+        echo $output;
+    }
+
     //GET DATATABLES
     public function datatables()
     {
@@ -79,7 +105,7 @@ class Users extends CI_Controller
             if ($this->form_validation->run() == TRUE) {
                 $post = $this->input->post();
                 $avatar = $this->crud->upload('avatar', ["jpg", "png", "jpeg"], 'assets/image/users/', ["username" => $post['username']], "users", "avatar");
-                $postFinal = array_merge($post, ["avatar" => $avatar]);
+                $postFinal = array_merge($post, ["api_key" => $this->generate_api(), "avatar" => $avatar]);
                 $users = $this->crud->create('users', $postFinal);
                 //$email = $this->emails->emailRegistration($post['email'], $post['name'], $post['username'], $post['password']);
                 echo $users;
@@ -96,7 +122,7 @@ class Users extends CI_Controller
         if ($this->input->post()) {
             $id = base64_decode($this->input->get('id'));
             $upload = $this->crud->upload('avatar', ["jpg", "png", "jpeg"], 'assets/image/users/', ["id" => $id], "users", "avatar");
-            $postFinal   = array_merge($this->input->post(), ["avatar" => $upload]);
+            $postFinal   = array_merge($this->input->post(), ["api_key" => $this->generate_api(), "avatar" => $upload]);
             $users = $this->crud->update('users', ["id" => $id], $postFinal);
             echo $users;
         } else {
@@ -157,6 +183,9 @@ class Users extends CI_Controller
                 <th>Email</th>
                 <th>Phone</th>
                 <th>Position</th>
+                <th>Division</th>
+                <th>Department</th>
+                <th>Sub Department</th>
                 <th>Status</th>
             </tr>';
         $no = 1;
@@ -174,6 +203,9 @@ class Users extends CI_Controller
                             <td>' . $data['email'] . '</td>
                             <td>' . $data['phone'] . '</td>
                             <td>' . $data['position'] . '</td>
+                            <td>' . $data['division'] . '</td>
+                            <td>' . $data['department'] . '</td>
+                            <td>' . $data['sub_department'] . '</td>
                             <td>' . $status . '</td>
                         </tr>';
             $no++;
