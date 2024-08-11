@@ -113,58 +113,69 @@
                 var checksheet_label = $(this).val();
                 var delivery_order_no = $("#delivery_order_no").val();
 
-                toastr.info("Still Maintenance");
-                // $.ajax({
-                //     type: "POST",
-                //     url: "<?= base_url('planning/shipping_orders/getChecksheetLabel') ?>",
-                //     data: "checksheet_label=" + checksheet_label + "&delivery_order_no=" + delivery_order_no,
-                //     dataType: "json",
-                //     success: function(json) {
-                //         if (json.total > 0) {
-                //             var row = json.rows;
-                //             for (let i = 0; i < json.total; i++) {
-                //                 $.ajax({
-                //                     type: "POST",
-                //                     url: "<?= base_url('planning/shipping_orders/create') ?>",
-                //                     data: "checksheet_label=" + checksheet_label +
-                //                         "&delivery_order_no=" + delivery_order_no +
-                //                         "&sales_order_no=" + row[i].sales_order_no +
-                //                         "&customer_order_no=" + row[i].customer_order_no +
-                //                         "&delivery=" + row[i].delivery +
-                //                         "&qty=" + row[i].qty,
-                //                     dataType: "json",
-                //                     success: function(result) {
-                //                         if (result.theme == "success") {
-                //                             serialSuccess.play();
-                //                             toastr.success(result.message, result.title);
-                //                             $("#checksheet_label").val('');
-                //                             $('#checksheet_label').focus();
-                //                         } else {
-                //                             if (result.title == "Not Scanned In" || result.title == "Not Match") {
-                //                                 serialNotFound.play();
-                //                             } else {
-                //                                 serialDuplicate.play();
-                //                             }
-                //                             toastr.error(result.message, result.title);
-                //                             $("#checksheet_label").val('');
-                //                             $('#checksheet_label').focus();
-                //                         }
-                //                     }
-                //                 });
-                //             }
+                // toastr.info("Still Maintenance");
 
-                //             $('#dg').datagrid({
-                //                 url: '<?= base_url('planning/shipping_orders/getDeliveryOrders?delivery_order_no=') ?>' + delivery_order_no,
-                //                 rownumbers: true
-                //             });
-                //         } else {
-                //             serialNotFound.play();
-                //             toastr.warning("Label not found!");
-                //             $("#checksheet_label").val('');
-                //             $('#checksheet_label').focus();
-                //         }
-                //     }
-                // });
+                Swal.fire({
+                    title: 'Please Wait Checking Label ',
+                    showConfirmButton: false,
+                    allowOutsideClick: false,
+                    allowEscapeKey: false,
+                    didOpen: () => {
+                        Swal.showLoading();
+                    },
+                });
+
+                $.ajax({
+                    type: "POST",
+                    url: "<?= base_url('planning/shipping_orders/getChecksheetLabel') ?>",
+                    data: "checksheet_label=" + checksheet_label + "&delivery_order_no=" + delivery_order_no,
+                    dataType: "json",
+                    success: function(json) {
+                        if (json.total > 0) {
+                            var row = json.rows;
+                            for (let i = 0; i < json.total; i++) {
+                                $.ajax({
+                                    type: "POST",
+                                    url: "<?= base_url('planning/shipping_orders/create') ?>",
+                                    data: "checksheet_label=" + checksheet_label +
+                                        "&delivery_order_no=" + delivery_order_no +
+                                        "&sales_order_no=" + row[i].sales_order_no +
+                                        "&customer_order_no=" + row[i].customer_order_no +
+                                        "&delivery=" + row[i].delivery +
+                                        "&qty=" + row[i].qty,
+                                    dataType: "json",
+                                    success: function(result) {
+                                        if (result.theme == "success") {
+                                            serialSuccess.play();
+                                            toastr.success(result.message, result.title);
+                                            $("#checksheet_label").val('');
+                                            $('#checksheet_label').focus();
+                                        } else {
+                                            if (result.title == "Not Scanned In" || result.title == "Not Match") {
+                                                serialNotFound.play();
+                                            } else {
+                                                serialDuplicate.play();
+                                            }
+                                            toastr.error(result.message, result.title);
+                                            $("#checksheet_label").val('');
+                                            $('#checksheet_label').focus();
+                                        }
+                                    }
+                                });
+                            }
+
+                            $('#dg').datagrid({
+                                url: '<?= base_url('planning/shipping_orders/getDeliveryOrders?delivery_order_no=') ?>' + delivery_order_no,
+                                rownumbers: true
+                            });
+                        } else {
+                            serialNotFound.play();
+                            toastr.warning("Label not found!");
+                            $("#checksheet_label").val('');
+                            $('#checksheet_label').focus();
+                        }
+                    }
+                });
             }
         });
     });

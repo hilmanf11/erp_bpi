@@ -9,10 +9,10 @@
             <th rowspan="2" data-options="field:'sales_order_date',width:150,halign:'center'">Sales Order Date</th>
             <th rowspan="2" data-options="field:'delivery_date',width:150,halign:'center'">Delivery Date</th>
             <th rowspan="2" data-options="field:'currency',width:80,align:'center'">Currency</th>
-            <th rowspan="2" data-options="field:'total_sub',width:100,halign:'center',align:'right',formatter: numberFormat">Sub Total</th>
+            <!-- <th rowspan="2" data-options="field:'total_sub',width:100,halign:'center',align:'right',formatter: numberFormat">Sub Total</th>
             <th rowspan="2" data-options="field:'total_tax',width:100,halign:'center',align:'right',formatter: numberFormat">Taxes</th>
-            <th rowspan="2" data-options="field:'total_pph',width:100,halign:'center',align:'right',formatter: numberFormat">PPh</th>
-            <th rowspan="2" data-options="field:'total_grand',width:100,halign:'center',align:'right',formatter: numberFormat">Grand Total</th>
+            <th rowspan="2" data-options="field:'total_pph',width:100,halign:'center',align:'right',formatter: numberFormat">PPh</th> -->
+            <!-- <th rowspan="2" data-options="field:'total_grand',width:100,halign:'center',align:'right',formatter: numberFormat">Grand Total</th> -->
             <th rowspan="2" data-options="field:'remarks',width:150,halign:'center'">Remarks</th>
             <th rowspan="2" data-options="field:'attachment',width:150,halign:'center'">Attachment</th>
             <th colspan="2" data-options="field:'',width:100,halign:'center'"> Created</th>
@@ -37,6 +37,7 @@
                 <th rowspan="2" data-options="field:'so_qty',width:100,align:'center'">Order Qty</th>
                 <th rowspan="2" data-options="field:'qty',width:100,align:'center'">Delivery Qty</th>
                 <th rowspan="2" data-options="field:'remain_qty',width:100,align:'center'">Remain Qty</th>
+                <th rowspan="2" data-options="field:'qty_do',width:100,align:'center'">Qty DO</th>
                 <th rowspan="2" data-options="field:'status',width:80,align:'center', styler:cellStyler, formatter:cellFormatter">Status</th>
                 <th colspan="2" data-options="field:'',width:100,align:'center'"> Created</th>
             </tr>
@@ -120,6 +121,7 @@
 
 <div id="toolbar3">
     <a href="javascript:;" class="easyui-linkbutton" data-options="plain:true" onclick="add()"><i class="fa fa-plus"></i> Add</a>
+    <a href="javascript:;" class="easyui-linkbutton" data-options="plain:true" onclick="update()"><i class="fa fa-pencil-square-o"></i> Update</a>
     <a href="javascript:;" class="easyui-linkbutton" data-options="plain:true" onclick="deleted()"><i class="fa fa-times"></i> Remove</a>
 </div>
 
@@ -144,6 +146,22 @@
         $("#trans_date").datebox('setValue', '<?= date("Y-m-d") ?>');
     }
 
+    function update() {
+        var row = $('#dg2').datagrid('getSelected');
+        console.log(row);
+        if(row.status != 1){
+            if (row) {
+                $('#dlg_insert').dialog('open');
+                $('#frm_insert').form('load', row);
+
+                url_save = '<?= base_url('sales/sales_order_deliveries/update') ?>?id=' + btoa(row.id);
+            } else {
+                toastr.warning("Please select one of the data in the table first!", "Information");
+            }
+        }else{
+            toastr.error("You cannot update this data, because is closed");
+        }
+    }
 
     function btnDelivery(val, row) {
         var delivery = "delivery('" + row.customer_id + "','" + row.sales_order_no + "','" + row.item_fg_id + "')"; //mengambil id dari customers kemudian di simpan di function details
@@ -427,6 +445,58 @@
         }
     });
 
+    $('#filter_customer_order_no').combobox({
+        url: '<?= base_url('sales/sales_order_deliveries/readCustomerOrders'); ?>',
+        valueField: 'customer_order_no',
+        textField: 'customer_order_no',
+        prompt: 'Choose All',
+        icons: [{
+            iconCls: 'icon-clear',
+            handler: function(e) {
+                $(e.data.target).combobox('clear').combobox('textbox').focus();
+            }
+        }],
+    });
+
+    $('#filter_sales_order_no').combobox({
+        url: '<?= base_url('sales/sales_order_deliveries/readSalesOrders'); ?>',
+        valueField: 'sales_order_no',
+        textField: 'sales_order_no',
+        prompt: 'Choose All',
+        icons: [{
+            iconCls: 'icon-clear',
+            handler: function(e) {
+                $(e.data.target).combobox('clear').combobox('textbox').focus();
+            }
+        }],
+    });
+
+    $('#filter_item_fg').combogrid({
+        url: '<?= base_url('sales/sales_order_deliveries/readProductNos'); ?>',
+        panelWidth: 400,
+        idField: 'id',
+        textField: 'number',
+        mode: 'remote',
+        fitColumns: true,
+        prompt: "Choose All",
+        icons: [{
+            iconCls: 'icon-clear',
+            handler: function(e) {
+                $(e.data.target).combogrid('clear').combogrid('textbox').focus();
+            }
+        }],
+        columns: [
+            [{
+                field: 'number',
+                title: 'Product No',
+                width: 200
+            }, {
+                field: 'name',
+                title: 'Product Name',
+                width: 200
+            }]
+        ],
+    });
 
     $('#division').combobox({
         url: '<?= base_url('master/divisions/reads'); ?>',

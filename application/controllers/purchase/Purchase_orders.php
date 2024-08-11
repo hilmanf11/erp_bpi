@@ -163,6 +163,7 @@ class Purchase_orders extends CI_Controller
                 $this->db->select('a.po_no, a.request_no, a.total_dp,
                     a.po_date,
                     d.name as supplier_name,
+                    d.id as supplier_id,
                     b.uom,
                     a.month_1,
                     a.month_2,
@@ -183,7 +184,11 @@ class Purchase_orders extends CI_Controller
                     a.total_vat, 
                     a.income_tax, 
                     a.income_total, 
+                    a.disc_pr,
+                    a.taxes, 
+                    a.discount_total,
                     h.total_status_complete,
+                    i.total_status_open,
                     g.total_status_close');
                 $this->db->from('purchase_orders a');
                 $this->db->join('item_rm b', 'a.item_rm_id = b.id');
@@ -193,6 +198,7 @@ class Purchase_orders extends CI_Controller
                 $this->db->join('(SELECT po_no, MIN(status) AS max_status FROM purchase_order_receipts GROUP BY po_no) f', 'a.po_no = f.po_no', 'left');
                 $this->db->join('(SELECT po_no, COUNT(status) as total_status_close FROM purchase_orders WHERE status = 1 GROUP BY po_no) g', 'a.po_no = g.po_no', 'left');
                 $this->db->join('(SELECT po_no, COUNT(status) as total_status_complete FROM purchase_orders WHERE status = 2 GROUP BY po_no) h', 'a.po_no = h.po_no', 'left');
+                $this->db->join('(SELECT po_no, COUNT(status) as total_status_open FROM purchase_orders WHERE status = 0 GROUP BY po_no) i', 'a.po_no = i.po_no', 'left');
                 $this->db->where('a.deleted', 0);
                 if ($filter_from != "" or $filter_to != "") {
                     $this->db->where('a.po_date >=', $filter_from);
@@ -217,11 +223,39 @@ class Purchase_orders extends CI_Controller
                 $records = $this->db->get()->result_array();
                 //Mapping Data
                 foreach ($records as $record) {
-                    if($record['status'] == 2){
+                    // if ($record['total_status'] == $record['total_status_close']) {
+                    //     $status = "1";
+                    // } elseif ($record['status'] == 2) {
+                    //     $status = "2";
+                    // } elseif ($record['total_status_complete'] >= 1) {
+                    //     $status = "2";
+                    // } elseif ($record['total_status'] == $record['total_status_complete']) {
+                    //     $status = "2";
+                    // } elseif ($record['status'] == 0) {
+                    //     $status = "0";
+                    // } else {
+                    //     $status = "0";
+                    // }
+
+                    // if ($record['total_status'] == $record['total_status_close']) {
+                    //     $status = "1";
+                    // }elseif ($record['total_status'] == $record['total_status_complete']) {
+                    //     $status = "2";
+                    // } else {
+                    //     $status = "0";
+                    // }
+
+                    if ($record['total_status'] == $record['total_status_open']) {
+                        $status = "0";
+                    } elseif ($record['total_status'] == $record['total_status_close']) {
+                        $status = "1";
+                    } elseif ($record['total_status'] == $record['total_status_complete']) {
                         $status = "2";
-                    }elseif ($record['total_status_complete'] >= 1 ) {
+                    } elseif ($record['total_status_open'] >= 1) {
+                        $status = "0";
+                    } elseif ($record['total_status_complete'] >= 1) {
                         $status = "2";
-                    }elseif ($record['total_status'] == $record['total_status_close']) {
+                    } elseif ($record['total_status_close'] >= 1) {
                         $status = "1";
                     } else {
                         $status = "0";
@@ -239,8 +273,6 @@ class Purchase_orders extends CI_Controller
                     //     $status_pi = "0";
                     // }
 
-                   
-
                     $arr[] = array(
                         "id" => $record['po_no'],
                         "po_no" => $record['po_no'],
@@ -248,18 +280,23 @@ class Purchase_orders extends CI_Controller
                         "po_date" => $record['po_date'],
                         "uom" => $record['uom'],
                         "currency" => $record['currency'],
+                        "supplier_id" => $record['supplier_id'],
                         "supplier_name" => $record['supplier_name'],
                         "status" => $status,
                         "status_pi" => $record['status_pi'],
                         "status1" => $record['total_status'],
                         "status2" => $record['total_status_close'],
+                        "status_complete" => $record['total_status_complete'],
                         "total_dp" => $record['total_dp'],
                         "total_sub" => $record['total_sub'],
                         "income_tax" => $record['income_tax'],
                         "income_total" => $record['income_total'],
                         "total_price" => $record['total_price'],
                         "total_vat" => $record['total_vat'],
-                        "total_grand" => ($record['total_price'] + $record['total_vat']) - $record['total_dp'] - $record['income_total'],
+                        "taxes" => $record['taxes'], 
+                        "disc_pr" => $record['disc_pr'],
+                        "discount_total" => $record['discount_total'],
+                        "total_grand" => ($record['total_price'] + $record['total_vat']) - $record['total_dp'] - $record['income_total'] - $record['discount_total'],
                         "state" => "closed",
                         "approved_to" => $approved_to,
                         "approved_by" => $record['approved_by'],
@@ -956,7 +993,7 @@ class Purchase_orders extends CI_Controller
             $this->db->where('a.po_date <=', $filter_to);
         }
         $this->db->like('a.po_no', $filter_po_no);
-        $this->db->like('d.number', $filter_suppliers);
+        $this->db->like('d.id', $filter_suppliers);
         $this->db->like('a.status', $filter_status);
         $this->db->order_by('a.po_date', 'DESC');
         $records = $this->db->get()->result_array();
@@ -1024,7 +1061,7 @@ class Purchase_orders extends CI_Controller
                         <td>' . $data['item_name'] . '</td>
                         <td>' . number_format($data['mpq'], 2) . '</td>
                         <td>' . number_format($data['moq'], 2) . '</td>
-                        <td>' . number_format($data['qty'], 2) . '</td>
+                        <td>' . number_format($data['qty'], 2, ",", ".") . '</td>
                         <td>' . number_format($data['price'], 4, ",", ".") . '</td>
                         <td>' . number_format(($data['qty'] * $data['price']), 2, ",", ".") . '</td>
                         <td>' . $data['currency'] . '</td>

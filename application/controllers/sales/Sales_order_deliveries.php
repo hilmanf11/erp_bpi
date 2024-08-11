@@ -33,15 +33,34 @@ class Sales_order_deliveries extends CI_Controller
         echo json_encode($send);
     }
 
+    public function readSalesOrders()
+    {
+        $send = $this->crud->query("SELECT DISTINCT sales_order_no FROM sales_orders WHERE `status` = '0'");
+        echo json_encode($send);
+    }
+
     public function readCustomerOrder($customer_id)
     {
         $send = $this->crud->query("SELECT DISTINCT customer_order_no FROM sales_orders WHERE customer_id = '$customer_id'");
         echo json_encode($send);
     }
 
+    public function readCustomerOrders()
+    {
+        $send = $this->crud->query("SELECT DISTINCT customer_order_no FROM sales_orders WHERE `status` = '0'");
+        echo json_encode($send);
+    }
+
     public function readProductNo($customer_id)
     {
         $send = $this->crud->query("SELECT b.* FROM sales_orders a JOIN item_fg b ON a.item_fg_id = b.id WHERE a.customer_id = '$customer_id' GROUP BY a.item_fg_id");
+
+        echo json_encode($send);
+    }
+
+    public function readProductNos()
+    {
+        $send = $this->crud->query("SELECT b.* FROM sales_orders a JOIN item_fg b ON a.item_fg_id = b.id WHERE a.status = '0' GROUP BY a.item_fg_id");
 
         echo json_encode($send);
     }
@@ -119,13 +138,15 @@ class Sales_order_deliveries extends CI_Controller
         $item_fg_id = base64_decode($item_fg_id);
 
         //Select Query
-        $this->db->select('a.*, b.qty as so_qty');
+        $this->db->select('a.*, b.qty as so_qty, COALESCE(c.qty_del,0) as qty_do');
         $this->db->from('sales_order_deliveries a');
         $this->db->join('sales_orders b', 'a.sales_order_no = b.sales_order_no and a.item_fg_id = b.item_fg_id');
+        $this->db->join("(SELECT sales_order_no, item_fg_id, delivery_date, COALESCE(SUM(qty_del),0) as qty_del FROM delivery_orders GROUP BY sales_order_no, item_fg_id, delivery_date) c", 'a.sales_order_no = c.sales_order_no and a.item_fg_id = c.item_fg_id and a.trans_date = c.delivery_date','left');
         $this->db->where('a.customer_id', $customer_id);
         $this->db->where('a.sales_order_no', $sales_order_no);
         $this->db->where('a.item_fg_id', $item_fg_id);
-        $this->db->order_by('trans_date', 'asc');
+        $this->db->group_by('a.id');
+        $this->db->order_by('a.trans_date', 'asc');
         $records = $this->db->get()->result_array();
 
         $balance = 0;
@@ -141,6 +162,7 @@ class Sales_order_deliveries extends CI_Controller
                 "item_fg_id" => $item_fg_id,
                 "trans_date" => $record['trans_date'],
                 "so_qty" => $record['so_qty'],
+                "qty_do" => $record['qty_do'],
                 "qty" => $record['qty'],
                 "remain_qty" => $balance,
                 "status" => $record['status'],
@@ -177,6 +199,19 @@ class Sales_order_deliveries extends CI_Controller
             } else {
                 show_error("Qty is greater than the Sales Order");
             }
+        } else {
+            show_error("Cannot Process your request");
+        }
+    }
+
+    //UPDATE DATA
+    public function update()
+    {
+        if ($this->input->post()) {
+            $id   = base64_decode($this->input->get('id'));
+            $post = $this->input->post();
+            $send = $this->crud->update('sales_order_deliveries', ["id" => $id], $post);
+            echo $send;
         } else {
             show_error("Cannot Process your request");
         }

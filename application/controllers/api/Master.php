@@ -11,7 +11,7 @@ class Master extends CI_Controller
         $this->load->helper(array('form', 'url'));
         $this->load->library('form_validation');
         $this->load->library('session');
-        $this->load->model('api');
+        $this->load->model('crud');
         $this->load->library('Ciqrcode');
     }
 
@@ -34,7 +34,7 @@ class Master extends CI_Controller
 
         //Select Query
         $this->db->select('number, name');
-        $this->db->from('mst_item_family');
+        $this->db->from('item_familys');
         if($get != ""){
             $this->db->like($get);
         }

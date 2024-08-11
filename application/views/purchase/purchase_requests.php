@@ -17,7 +17,8 @@
             <th rowspan="2" data-options="field:'qty',width:80,halign:'center',align:'right'">Total Qty</th>
             <th rowspan="2" data-options="field:'remarks',width:100,halign:'center'">Remarks</th>
             <th rowspan="2" data-options="field:'attachment',width:80,align:'center',formatter: btnDetails">Attachment</th>
-            <th rowspan="2" data-options="field:'po_no',width:120,align:'center'">Po No</th>
+            <th rowspan="2" data-options="field:'po_no',width:150,align:'left',halign:'center'">Po No</th>
+            <th rowspan="2" data-options="field:'status_po',width:150,align:'left',halign:'center',formatter:statusformatpo,styler:statusStylepo">Status PO</th>
             <th rowspan="2" data-options="field:'approved_to',width:100,halign:'center',formatter:formatApproved,styler:styleApproved">Status <br>Approve</th>
             <th rowspan="2" data-options="field:'approved_by',width:100,halign:'center'">Approve By</th>
             <th rowspan="2" data-options="field:'approved_date',width:100,halign:'center'">Approve Date</th>
@@ -114,6 +115,10 @@
                     <span style="width:35%; display:inline-block;">Product Category</span>
                     <input style="width:60%;" name="item_category_id" id="item_category_id" class="easyui-combobox" required>
                 </div>
+                <div class="fitem" hidden>
+                    <span style="width:35%; display:inline-block;">Category Number</span>
+                    <input style="width:60%;" name="category_number" id="category_number" class="easyui-textbox">
+                </div>
                 <div class="fitem">
                     <span style="width:35%; display:inline-block;">Product Family</span>
                     <input style="width:60%;" name="item_family_id" id="item_family_id" class="easyui-combobox" required>
@@ -159,6 +164,42 @@
         $("#request_no").combobox('enable');
         $("#expected_date").combobox('enable');
 
+        $("#item_category_id").combobox({
+            url: '<?= base_url('master/item_categories/readsnotfg') ?>',
+            valueField: 'id',
+            textField: 'name',
+            prompt: "Select Categories",
+            onSelect: function(category) {
+                $.ajax({
+                    type: "post",
+                    url: "<?= base_url('purchase/purchase_requests/request_no/') ?>" + category.number,
+                    dataType: "html",
+                    success: function(result) {
+                        $("#request_no").textbox('setValue', result);
+                        $("#category_number").textbox('setValue', category.number);
+                        setTimeout(function() {
+                            $("#item_family_id").combobox('enable');
+                        }, 500);
+                        $("#item_category_id").combobox('disable');
+                    }
+                });
+
+                $("#item_family_id").combobox({
+                    url: '<?= base_url('master/item_familys/reads/') ?>' + category.id,
+                    valueField: 'id',
+                    textField: 'name',
+                    multiple:true,
+                    prompt: "Select Product Family",
+                    onChange: function(row) {
+                        var selectedRows = $("#item_family_id").combobox('getValues');
+
+                        addTable(selectedRows); 
+                    }
+                });
+            }
+        });
+
+
         // $("#expected_date").datebox('setValue', "<?= date("Y-m-d") ?>");
         $("#request_date").datebox('setValue', "<?= date("Y-m-d") ?>");
         $("#request_name").textbox('setValue', "<?= $this->session->name ?>");
@@ -168,6 +209,7 @@
         $("#sub_department").textbox('setValue', "<?= $this->session->sub_department ?>");
 
         url_save= '<?= base_url('purchase/purchase_requests/create') ?>';
+        methode= "add";
     }
 
     function addTable(item_family_id, link = "") {
@@ -496,18 +538,45 @@
             if (row.datatable == "1") {
                 if (row.status == "0") {
                     $('#dlg_insert').dialog('open');
-                    $('#frm_insert').form('load', row);
+                    
                     $("#item_family_id").combobox('disable');
                     $("#item_category_id").combobox('disable');
                     $("#request_date").combobox('disable');
                     $("#request_no").combobox('disable');
                     $("#expected_date").combobox('disable');
-               
-                    url_save= '<?= base_url('purchase/purchase_requests/create') ?>';
+                    console.log(row);
 
-                    setTimeout(function() {
-                        $('#request_no').textbox('setValue', row.request_no);
-                    }, 500);
+                    $("#item_category_id").combobox({
+                        url: '<?= base_url('master/item_categories/readsnotfg') ?>',
+                        valueField: 'id',
+                        textField: 'name',
+                        prompt: "Select Categories",
+                        onSelect: function(category) {
+                            $("#category_number").textbox('setValue', category.number);
+                            $("#item_family_id").combobox({
+                                url: '<?= base_url('master/item_familys/reads/') ?>' + category.id,
+                                valueField: 'id',
+                                textField: 'name',
+                                multiple:true,
+                                prompt: "Select Product Family",
+                                onLoadSuccess: function(){
+                                    $("#item_family_id").combobox('setValue',row.item_family_id);
+                                    
+                                }
+                            });
+                        }
+                    });
+
+                    $('#frm_insert').form('load', row);
+
+                    url_save= '<?= base_url('purchase/purchase_requests/create') ?>';
+                    methode= "update";
+
+                    var itemFamilyId = $("#item_family_id").combobox('getValue');
+
+                    $('#department').textbox('setValue', row.department);
+                    $('#sub_department').textbox('setValue', row.sub_department);
+
 
                     addTable(row.item_family_id, '<?= base_url('purchase/purchase_requests/datatable_updates?request_no=') ?>' + window.btoa(row.request_no));
                 } else {
@@ -571,8 +640,10 @@
         var filter_from = $("#filter_from").datebox('getValue');
         var filter_to = $("#filter_to").datebox('getValue');
         var filter_request_no = $("#filter_request_no").combobox('getValue');
-        var filter_item_familys = $("#filter_item_familys").combobox('getValue');
-        url = "?filter_from=" + filter_from + "&filter_to=" + filter_to + "&filter_request_no=" + filter_request_no + "&filter_item_familys=" + filter_item_familys;
+        var filter_item_familys = $("#filter_item_familys").combogrid('getValue');
+        var filter_category_id = $("#filter_category_id").combobox('getValue');
+
+        url = "?filter_from=" + filter_from + "&filter_to=" + filter_to + "&filter_request_no=" + filter_request_no + "&filter_item_familys=" + filter_item_familys + "&filter_category_id=" + filter_category_id;
 
         $('#dg').treegrid({
             url: '<?= base_url('purchase/purchase_requests/datatables') ?>' + url,
@@ -602,7 +673,9 @@
         var filter_to = $("#filter_to").datebox('getValue');
         var filter_request_no = $("#filter_request_no").combobox('getValue');
         var filter_item_familys = $("#filter_item_familys").combobox('getValue');
-        url = "?filter_from=" + filter_from + "&filter_to=" + filter_to + "&filter_request_no=" + filter_request_no + "&filter_item_familys=" + filter_item_familys;
+        var filter_category_id = $("#filter_category_id").combobox('getValue');
+
+        url = "?filter_from=" + filter_from + "&filter_to=" + filter_to + "&filter_request_no=" + filter_request_no + "&filter_item_familys=" + filter_item_familys + "&filter_category_id=" + filter_category_id;
         window.location.assign('<?= base_url('purchase/purchase_requests/print/excel') ?>' + url);
     }
 
@@ -632,6 +705,19 @@
             updateComboboxURL(filter_from, filter_to);
         }
     });
+
+    $("#filter_request_no").combobox({
+            url: '<?= base_url('purchase/purchase_requests/readRequestnumbers/') ?>',
+            valueField: 'request_no',
+            textField: 'request_no',
+            prompt: "Select Request No",
+            icons: [{
+                iconCls: 'icon-clear',
+                handler: function(e) {
+                    $(e.data.target).combobox('clear').combobox('textbox').focus();
+                }
+            }],
+        });
 
     function updateComboboxURL(filter_from, filter_to) {
         $("#filter_request_no").combobox({
@@ -677,57 +763,76 @@
                 text: 'Save All',
                 iconCls: 'icon-ok',
                 handler: function() {
-                    var request_no = $("#request_no").textbox('getValue');
-                    var request_date = $("#request_date").datebox('getValue');
-                    var request_name = $("#request_name").textbox('getValue');
-                    var expected_date = $("#expected_date").datebox('getValue');
-                    var division = $("#division").textbox('getValue');
-                    var department = $("#department").textbox('getValue');
-                    var sub_department = $("#sub_department").textbox('getValue');
+                    var categoryid = $("#item_category_id").combobox('getValue');
+                    var prodfam = $("#item_family_id").combobox('getValue');
 
-                    $("#dg2").datagrid('acceptChanges');
-                    var rows = $('#dg2').datagrid('getRows');
-                    var totalrows = rows.length;
-                    endEditing();
+                    if (categoryid == "" || prodfam == "") {
+                        toastr.warning("Please Choose Category and Product Family First!", "Information");
+                    } else {
+                        // // Fetch the latest request number from the server
+                        var category = $("#category_number").textbox('getValue');
+                        var request_no = $("#request_no").textbox('getValue');
 
-                    for (let i = 0; i < totalrows; i++) {
-                        if (rows[i].item_rm_id) {
-                            $.ajax({
-                                type: "post",
-                                url: url_save,
-                                data: {
-                                    id: rows[i].id,
-                                    item_rm_id: rows[i].item_rm_id,
-                                    request_no: request_no,
-                                    request_date: request_date,
-                                    request_name: request_name,
-                                    division: division,
-                                    department: department,
-                                    sub_department: sub_department,
-                                    qty: rows[i].qty,
-                                    attachment: rows[i].attachment,
-                                    expected_date: expected_date,
-                                    remarks: rows[i].remarks
-                                },
-                                dataType: "json",
-                                success: function(result) {
-                                    Swal.fire({
-                                        title: result.message,
-                                        icon: result.theme,
-                                        confirmButtonText: 'Ok',
-                                        allowOutsideClick: false,
-                                    }).then((result) => {
-                                        if (result.isConfirmed) {
-                                            window.location.reload();
-                                        }
-                                    });
+                        $.ajax({
+                            type: "get",
+                            url: '<?= base_url('purchase/purchase_requests/request_no/')?>'+ category + "/" + btoa(request_no) + "/" + methode,
+                            success: function(data) {               
+                                console.log(data);
+                                var request_no = data; // Use the response from the server as the new request number
+
+                                var request_date = $("#request_date").datebox('getValue');
+                                var request_name = $("#request_name").textbox('getValue');
+                                var expected_date = $("#expected_date").datebox('getValue');
+                                var division = $("#division").textbox('getValue');
+                                var department = $("#department").textbox('getValue');
+                                var sub_department = $("#sub_department").textbox('getValue');
+
+                                $("#dg2").datagrid('acceptChanges');
+                                var rows = $('#dg2').datagrid('getRows');
+                                var totalrows = rows.length;
+                                endEditing();
+
+
+                                for (let i = 0; i < totalrows; i++) {
+                                    if (rows[i].item_rm_id) {
+                                        $.ajax({
+                                            type: "post",
+                                            url: url_save,
+                                            data: {
+                                                id: rows[i].id,
+                                                item_rm_id: rows[i].item_rm_id,
+                                                request_no: request_no,
+                                                request_date: request_date,
+                                                request_name: request_name,
+                                                division: division,
+                                                department: department,
+                                                sub_department: sub_department,
+                                                qty: rows[i].qty,
+                                                expected_date: expected_date,
+                                                remarks: rows[i].remarks
+                                            },
+                                            dataType: "json",
+                                            success: function(result) {
+                                                Swal.fire({
+                                                    title: result.message,
+                                                    icon: result.theme,
+                                                    confirmButtonText: 'Ok',
+                                                    allowOutsideClick: false,
+                                                }).then((result) => {
+                                                    if (result.isConfirmed) {
+                                                        window.location.reload();
+                                                    }
+                                                });
+                                            }
+                                        });
+                                    }
                                 }
-                            });
-                        }
-                    }
 
-                    $('#dg').treegrid('reload');
-                    $('#dlg_insert').dialog('close');
+                                $('#dg').treegrid('reload');
+                                $('#dlg_insert').dialog('close');
+                            }
+                        });
+                    }
                 }
             }]
         });
@@ -811,43 +916,13 @@
             }]
         });
 
-        $('#division').combobox({
-            url: '<?= base_url('master/divisions/reads'); ?>',
-            valueField: 'number',
-            textField: 'number',
-            panelHeight: 'panelHeight',
-            prompt: 'Choose Division',
-        }); 
-
-        $("#item_category_id").combobox({
-            url: '<?= base_url('master/item_categories/readsnotfg') ?>',
-            valueField: 'id',
-            textField: 'name',
-            prompt: "Select Categories",
-            onSelect: function(category) {
-                $.ajax({
-                    type: "post",
-                    url: "<?= base_url('purchase/purchase_requests/request_no/') ?>" + category.number,
-                    dataType: "html",
-                    success: function(result) {
-                        $("#request_no").textbox('setValue', result);
-                    }
-                });
-
-                $("#item_family_id").combobox({
-                    url: '<?= base_url('master/item_familys/reads/') ?>' + category.id,
-                    valueField: 'id',
-                    textField: 'name',
-                    multiple:true,
-                    prompt: "Select Product Family",
-                    onChange: function(row) {
-                        var selectedRows = $("#item_family_id").combobox('getValues');
-
-                        addTable(selectedRows); 
-                    }
-                });
-            }
-        });
+        // $('#division').combobox({
+        //     url: '<?= base_url('master/divisions/reads'); ?>',
+        //     valueField: 'number',
+        //     textField: 'number',
+        //     panelHeight: 'panelHeight',
+        //     prompt: 'Choose Division',
+        // }); 
 
         $('#filter_item_familys').combogrid({
             url: '<?= base_url('master/item_familys/readNotFg/') ?>',
@@ -874,6 +949,13 @@
                     width: 250
                 }, ]
             ]
+        });
+
+        $("#filter_category_id").combobox({
+            url: '<?= base_url('master/item_categories/readsnotfg') ?>',
+            valueField: 'id',
+            textField: 'name',
+            prompt: "Select Categories"
         });
 
         //Get Customer
@@ -977,6 +1059,25 @@
         }
     };
 
+    function statusformatpo(value, row) {
+        if (value == 0) {
+            return "<b style='color:green;'>OPEN</b>";
+        } else if (value == 1) {
+            return "<b style='color:red;'>CLOSED</b>";
+        } else if (value == 2) {
+            return "<b style='color:white;'>COMPLETE</b>";
+        }
+    }
+
+    function statusStylepo(value, row, index) {
+        if (value == 0) {
+            return 'background-color:#C8FFCC;';
+        } else if (value == 1) {
+            return 'background-color:#FFC8C8;';
+        } else if (value == 2) {
+            return 'background-color:#4B54E7;';
+        }
+    }
 
     function btnDetails(val, row, index) {
         var attachment = row.attachment;

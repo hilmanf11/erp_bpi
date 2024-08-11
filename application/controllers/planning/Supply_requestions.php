@@ -32,17 +32,49 @@ class Supply_requestions extends CI_Controller
         $records = $this->crud->query("SELECT `period` FROM supply_requestions WHERE `status` = '0' GROUP BY `period`");
         echo json_encode($records);
     }
-    public function readWp($period)
+
+    public function readWo($period)
     {
-        $records = $this->crud->query("SELECT wp FROM supply_requestions WHERE `status` = '0' and `period` = '$period' GROUP BY wp");
+        $records = $this->crud->query("SELECT `workorder` FROM supply_requestions WHERE `period` = '$period' GROUP BY `workorder`");
         echo json_encode($records);
     }
-    public function readRequestNo($period, $wp)
+
+    public function readRequestNo($period, $workorder)
     {
-        $wp = base64_decode($wp);
-        $records = $this->crud->query("SELECT request_no FROM supply_requestions WHERE status = '0' and `period` = '$period' and wp = '$wp' GROUP BY `request_no`");
+        $worko = base64_decode($workorder);
+        $records = $this->crud->query("SELECT request_no FROM supply_requestions WHERE status = '0' and `period` = '$period' and workorder = '$worko' GROUP BY `request_no`");
         echo json_encode($records);
     }
+
+    public function readWorkorders($period, $type)
+    {
+        if($type == "SCP"){
+            $send = $this->crud->query("SELECT DISTINCT wo_no FROM scraps WHERE `status` = '0' ORDER BY wo_no DESC");
+            echo json_encode($send);
+        }else{
+            $send = $this->crud->query("SELECT DISTINCT wo_no, `period` FROM production_schedules WHERE `period` = '$period' and `status` = '0'ORDER BY wo_no DESC");
+            echo json_encode($send);
+        }
+    }
+
+    public function readItems($wo_no="", $type)
+    {   
+        $worko = base64_decode($wo_no);
+        if($type == "SCP"){
+            $send = $this->crud->query("SELECT a.* 
+            FROM item_rm a 
+            JOIN scraps b ON a.id = b.item_rm_id 
+            WHERE b.wo_no = '$worko' ORDER BY b.item_rm_id DESC");
+            echo json_encode($send);
+        }else{
+            $send = $this->crud->query("SELECT a.*, b.name as item_family_name 
+            FROM item_rm a 
+            JOIN item_familys b ON a.item_family_id = b.id 
+            WHERE a.status = '0'");
+            echo json_encode($send);
+        }
+    }
+
     public function request_no($trans_date)
     {
         $trans_date = base64_decode($trans_date);
@@ -59,6 +91,7 @@ class Supply_requestions extends CI_Controller
         }
         echo "PRQ-" . $datenow . "-" . $autoID;
     }
+    
     public function datatables()
     {
         if ($this->input->post()) {
@@ -84,7 +117,7 @@ class Supply_requestions extends CI_Controller
                 $this->db->where('a.deleted', 0);
                 $this->db->where('a.status', 0);
                 $this->db->like("a.period", $filter_period);
-                $this->db->like("a.wp", $filter_wp);
+                $this->db->like("a.workorder", $filter_wp);
                 if ($filter_request_no != "") {
                     $this->db->where('a.request_no', $filter_request_no);
                 }
@@ -102,7 +135,6 @@ class Supply_requestions extends CI_Controller
                         "request_date" => $record['request_date'],
                         "request_name" => $record['request_name'],
                         "period" => $record['period'],
-                        "wp" => $record['wp'],
                         "workorder" => $record['workorder'],
                         "item_number" => $record['item_number'],
                         "item_name" => $record['item_name'],
@@ -130,7 +162,6 @@ class Supply_requestions extends CI_Controller
                         "request_date" => $record['request_date'],
                         "request_name" => $record['request_name'],
                         "period" => $record['period'],
-                        "wp" => $record['wp'],
                         "workorder" => $record['workorder'],
                         "item_rm_id" => $record['item_rm_id'],
                         "item_number" => $record['item_number'],
@@ -326,7 +357,7 @@ class Supply_requestions extends CI_Controller
             $this->db->from('supply_requestions a');
             $this->db->join('item_rm b', 'a.item_rm_id = b.id');
             // $this->db->join('uom d', 'b.uom_id = d.id');
-            $this->db->join('warehouse_location_items f', "a.item_rm_id = f.item_rm_id and type = 'RM'", 'left');
+            $this->db->join('warehouse_location_items f', "a.item_rm_id = f.item_rm_id and f.type = 'RM'", 'left');
             $this->db->where('a.deleted', 0);
             $this->db->like('a.request_no', base64_decode($request_no));
             $this->db->limit(8, ($i * 8));
@@ -392,9 +423,9 @@ class Supply_requestions extends CI_Controller
                                 <div style="float:left; width:30%;">
                                     <table style="width:100%; font-size:12px; margin-bottom:10px;">
                                         <tr>
-                                            <td width="100">Period / WP</td>
+                                            <td width="100">Period</td>
                                             <td width="30">:</td>
-                                            <td><b>' . @$kanban->period . ' / ' . @$kanban->wp . '</b></td>
+                                            <td><b>' . @$kanban->period . '</b></td>
                                         </tr>
                                         <tr>
                                             <td width="100">Work Order ID</td>
@@ -522,7 +553,7 @@ class Supply_requestions extends CI_Controller
         // $this->db->join('uom d', 'b.uom_id = d.id');
         $this->db->where('a.deleted', 0);
         $this->db->like("a.period", $filter_period);
-        $this->db->like("a.wp", $filter_wp);
+        $this->db->like("a.workorder", $filter_wp);
         if ($filter_request_no != "") {
             $this->db->where('a.request_no', $filter_request_no);
         }

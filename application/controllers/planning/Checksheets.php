@@ -13,7 +13,7 @@ class Checksheets extends CI_Controller
         $this->load->library('Ciqrcode');
         $this->load->model('crud');
         //Validasi Form
-        $this->form_validation->set_rules('workorder', 'Workorder No', 'required|min_length[1]|max_length[30]');
+        $this->form_validation->set_rules('wo_no', 'Wo No', 'required|min_length[1]|max_length[30]');
     }
 
     public function index()
@@ -36,27 +36,91 @@ class Checksheets extends CI_Controller
         echo json_encode($send);
     }
 
-    public function readWorkorder($filter = "")
+    public function readWoNo()
     {
-        if ($filter == "") {
-            $join = "LEFT JOIN checksheets b ON a.workorder = b.workorder and a.wp = b.wp";
-            $having = "having (a.qty - SUM(coalesce(b.receipt, 0))) > 0";
-        } else {
-            $join = "JOIN checksheets b ON a.workorder = b.workorder and a.wp = b.wp";
-            $having = "";
-        }
-
-        $post = isset($_POST['q']) ? $_POST['q'] : "";
-        $send = $this->crud->query("SELECT a.*, c.name as customer_name, d.number as product_no, d.name as product_name, coalesce(SUM(b.receipt), 0) as accumulate, (a.qty - SUM(coalesce(b.receipt, 0))) as balance FROM production_schedules a 
-        $join
-        JOIN customers c ON a.customer_id = c.id 
-        JOIN item_fg d ON a.item_fg_id = d.id 
-        WHERE a.status = '1' and a.workorder like '%$post%'
-        GROUP BY a.workorder, a.wp
-        $having
-        order by a.workorder desc");
+        $send = $this->crud->query("SELECT DISTINCT a.wo_no, a.period, a.qty , a.item_fg_id, a.item_fg_name as product_name , b.number as product_no
+        FROM production_schedules a
+        JOIN item_fg b on a.item_fg_id = b.id 
+        WHERE a.status = 0 and wo_no != '' 
+        ORDER BY a.wo_no DESC");
         echo json_encode($send);
     }
+
+    public function readWoNos()
+    {
+        $send = $this->crud->query("SELECT DISTINCT wo_no
+        FROM checksheets
+        WHERE `deleted` = 0
+        ORDER BY wo_no DESC");
+        echo json_encode($send);
+    }
+
+    public function readChecksheet()
+    {
+        $send = $this->crud->query("SELECT DISTINCT `number`
+        FROM checksheets
+        WHERE `deleted` = 0
+        ORDER BY `number` DESC");
+        echo json_encode($send);
+    }
+
+    public function readItems($item_fg_id)
+    {
+        $item_id = base64_decode($item_fg_id);
+        $send = $this->crud->query("SELECT mpq, qty_box
+            FROM item_fg a
+            WHERE `status` = 0 and id = '$item_id' 
+            ORDER BY id DESC");
+        echo json_encode($send);
+    }
+
+    public function checkWo_no($wo_no)
+    {
+        $wono = base64_decode($wo_no);
+        $send = $this->crud->query("SELECT COALESCE(SUM(receipt),0) as qty
+            FROM checksheets
+            WHERE wo_no = '$wono' 
+            ORDER BY id DESC");
+        echo json_encode($send);
+    }
+    public function readEmployesOP(){
+        $ch = curl_init(); 
+        curl_setopt($ch, CURLOPT_URL, "https://hrbpi.hris-server.com/api/master/employees/operator");
+        curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
+        $output = curl_exec($ch);
+        curl_close($ch);
+        echo $output;
+    }
+
+    public function readEmployesQC(){
+        $ch = curl_init(); 
+        curl_setopt($ch, CURLOPT_URL, "https://hrbpi.hris-server.com/api/master/employees/qc");
+        curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
+        $output = curl_exec($ch);
+        curl_close($ch);
+        echo $output;
+    }
+
+    // public function readWorkorder($filter = "")
+    // {
+    //     if ($filter == "") {
+    //         $join = "LEFT JOIN checksheets b ON a.wo_no = b.wo_no";
+    //         $having = "having (a.qty - SUM(coalesce(b.receipt, 0))) > 0";
+    //     } else {
+    //         $join = "JOIN checksheets b ON a.wo_no = b.wo_no";
+    //         $having = "";
+    //     }
+
+    //     $post = isset($_POST['q']) ? $_POST['q'] : "";
+    //     $send = $this->crud->query("SELECT a.*, d.number as product_no, d.name as product_name, coalesce(SUM(b.receipt), 0) as accumulate, (a.qty - SUM(coalesce(b.receipt, 0))) as balance FROM production_schedules a 
+    //     $join
+    //     JOIN item_fg d ON a.item_fg_id = d.id 
+    //     WHERE a.status = '1' and a.workorder like '%$post%'
+    //     GROUP BY a.workorder
+    //     $having
+    //     order by a.workorder desc");
+    //     echo json_encode($send);
+    // }
 
     public function checksheet_id($trans_date)
     {
@@ -82,7 +146,8 @@ class Checksheets extends CI_Controller
         if ($this->input->post()) {
             $filter_from = $this->input->get('filter_from');
             $filter_to = $this->input->get('filter_to');
-            $filter_workorder = $this->input->get('filter_workorder');
+            $filter_wo_no = $this->input->get('filter_wo_no');
+            $filter_checksheet = $this->input->get('filter_checksheet');
 
             $page = $this->input->post('page');
             $rows = $this->input->post('rows');
@@ -95,9 +160,9 @@ class Checksheets extends CI_Controller
             $offset = ($page - 1) * $rows;
             $result = array();
             //Select Query
-            $this->db->select('a.*, c.number as product_no, c.name as product_name, c.uom');
+            $this->db->select('a.*, c.number as product_no, c.name as product_name, c.id as product_id, c.uom');
             $this->db->from('checksheets a');
-            $this->db->join('production_schedules b', 'a.workorder = b.workorder and a.wp = b.wp');
+            $this->db->join('production_schedules b', 'a.wo_no = b.wo_no');
             $this->db->join('item_fg c', 'b.item_fg_id = c.id');
             // $this->db->join('uom e', 'c.uom_id = e.id');
             $this->db->where('a.deleted', 0);
@@ -105,7 +170,8 @@ class Checksheets extends CI_Controller
                 $this->db->where('a.trans_date >=', $filter_from);
                 $this->db->where('a.trans_date <=', $filter_to);
             }
-            $this->db->like('a.workorder', $filter_workorder);
+            $this->db->like('a.wo_no', $filter_wo_no);
+            $this->db->like('a.number', $filter_checksheet);
             $this->db->order_by($sort, $order);
             //Total Data
             $totalRows = $this->db->count_all_results('', false);
@@ -122,22 +188,21 @@ class Checksheets extends CI_Controller
     public function create()
     {
         if ($this->input->post()) {
-            if ($this->form_validation->run() == TRUE) {
-                $post = $this->input->post();
-                if ($post['receipt'] > 0) {
-                    $checksheet_id = $this->checksheet_id($post['trans_date']);
-                    $checksheet = $this->crud->reads("checksheets", [], ["workorder" => $post['workorder'], "accumulate" => $post['accumulate']]);
-                    if (count($checksheet) == 0) {
-                        $send = $this->crud->create('checksheets', array_merge($post, array("number" => $checksheet_id)));
-                        echo $send;
-                    } else {
-                        show_error("Duplicate Data");
+            $post = $this->input->post();
+            if ($post['receipt'] > 0) {
+                $checksheet_id = $this->checksheet_id($post['trans_date']);
+                $checksheet = $this->crud->reads("checksheets", [], ["wo_no" => $post['wo_no'], "trans_date" => $post['trans_date'], "shift" => $post['shift'], "accumulate" => $post['accumulate']]);
+                if (count($checksheet) == 0) {
+                    $send = $this->crud->create('checksheets', array_merge($post, array("number" => $checksheet_id)));
+                    if($post['accumulate'] == $post ['qty']){
+                        $update = $this->crud->update('production_schedules', ["wo_no" => $post['wo_no'], "item_fg_id" => $post['item_fg_id']], ["status" => 1]);
                     }
+                    echo $send;
                 } else {
-                    show_error("Receipt Qty cannot <= 0");
+                    show_error("Duplicate Data");
                 }
             } else {
-                show_error(validation_errors());
+                show_error("Receipt Qty cannot <= 0");
             }
         } else {
             show_error("Cannot Process your request");
@@ -161,11 +226,10 @@ class Checksheets extends CI_Controller
         $config = $this->db->get()->row();
         $config_iso = $this->db->get('config_iso')->row();
 
-        $this->db->select('a.*, d.name as customer_name, c.number as product_no, c.name as product_name, c.uom');
+        $this->db->select('a.*, c.number as product_no, c.name as product_name, c.uom');
         $this->db->from('checksheets a');
-        $this->db->join('production_schedules b', 'a.workorder = b.workorder and a.wp = b.wp');
+        $this->db->join('production_schedules b', 'a.wo_no = b.wo_no');
         $this->db->join('item_fg c', 'b.item_fg_id = c.id');
-        $this->db->join('customers d', 'b.customer_id = d.id');
         // $this->db->join('uom e', 'c.uom_id = e.id');
         $this->db->where('a.deleted', 0);
         $this->db->where('a.id', $id);
@@ -269,11 +333,6 @@ class Checksheets extends CI_Controller
                             <td><b>' . date("d F Y", strtotime($checksheet->trans_date)) . '</b></td>
                         </tr>
                         <tr>
-                            <td style="padding:5px;">Customer</td>
-                            <td>:</td>
-                            <td><b>' . $checksheet->customer_name . '</b></td>
-                        </tr>
-                        <tr>
                             <td style="padding:5px;">Product No</td>
                             <td>:</td>
                             <td><b>' . $checksheet->product_no . '</b></td>
@@ -286,7 +345,7 @@ class Checksheets extends CI_Controller
                         <tr>
                             <td style="padding:5px;">WO. No</td>
                             <td>:</td>
-                            <td><b>' . $checksheet->workorder . '</b></td>
+                            <td><b>' . $checksheet->wo_no . '</b></td>
                         </tr>
                         <tr>
                             <td style="padding:5px;">WO. Qty</td>
@@ -346,7 +405,7 @@ class Checksheets extends CI_Controller
         }
         $filter_from = $this->input->get('filter_from');
         $filter_to = $this->input->get('filter_to');
-        $filter_workorder = $this->input->get('filter_workorder');
+        $filter_wo_no = $this->input->get('filter_wo_no');
 
         //Config
         $this->db->select('*');
@@ -355,7 +414,7 @@ class Checksheets extends CI_Controller
 
         $this->db->select('a.*, c.number as product_no, c.name as product_name, c.uom');
         $this->db->from('checksheets a');
-        $this->db->join('production_schedules b', 'a.workorder = b.workorder and a.wp = b.wp');
+        $this->db->join('production_schedules b', 'a.wo_no = b.wo_no');
         $this->db->join('item_fg c', 'b.item_fg_id = c.id');
         // $this->db->join('uom e', 'c.uom_id = e.id');
         $this->db->where('a.deleted', 0);
@@ -363,9 +422,9 @@ class Checksheets extends CI_Controller
             $this->db->where('a.trans_date >=', $filter_from);
             $this->db->where('a.trans_date <=', $filter_to);
         }
-        $this->db->like('a.workorder', $filter_workorder);
+        $this->db->like('a.wo_no', $filter_wo_no);
         $this->db->order_by('a.number', 'ASC');
-        $this->db->order_by('a.workorder', 'ASC');
+        $this->db->order_by('a.wo_no', 'ASC');
         $records = $this->db->get()->result_array();
 
         $html = '<html><head><title>Print Data</title></head><style>body {font-family: Arial, Helvetica, sans-serif;}#customers {border-collapse: collapse;width: 100%;font-size: 12px;}#customers td, #customers th {border: 1px solid #ddd;padding: 2px;}#customers tr:nth-child(even){background-color: #f2f2f2;}#customers tr:hover {background-color: #ddd;}#customers th {padding-top: 2px;padding-bottom: 2px;text-align: center;color: black;}</style><body>
@@ -394,9 +453,8 @@ class Checksheets extends CI_Controller
                 <tr>
                     <th width="20">No</th>
                     <th>Checksheet ID</th>
-                    <th>Workorder</th>
+                    <th>Wo_No</th>
                     <th>Trans Date</th>
-                    <th>WP</th>
                     <th>Product No</th>
                     <th>Product Name</th>
                     <th>UoM</th>
@@ -404,15 +462,23 @@ class Checksheets extends CI_Controller
                     <th>Receipt</th>
                     <th>Accumulate</th>
                     <th>Balance</th>
+                    <th>Prod Date</th>
+                    <th>Packing Date</th>
+                    <th>QC 1</th>
+                    <th>QC 2</th>
+                    <th>Operator 1</th>
+                    <th>Operator 2</th>
+                    <th>Shift</th>
+                    <th>Packing</th>
+                    <th>Packing Qty</th>
                 </tr>';
         $no = 1;
         foreach ($records as $data) {
             $html .= '<tr>
                             <td style="text-align:center">' . $no . '</td>
                             <td>' . $data['number'] . '</td>
-                            <td>' . $data['workorder'] . '</td>
+                            <td>' . $data['wo_no'] . '</td>
                             <td>' . $data['trans_date'] . '</td>
-                            <td>' . $data['wp'] . '</td>
                             <td>' . $data['product_no'] . '</td>
                             <td>' . $data['product_name'] . '</td>
                             <td>' . $data['uom'] . '</td>
@@ -420,6 +486,15 @@ class Checksheets extends CI_Controller
                             <td>' . number_format($data['receipt']) . '</td>
                             <td>' . number_format($data['accumulate']) . '</td>
                             <td>' . number_format($data['balance']) . '</td>
+                            <td>' . $data['prod_date'] . '</td>
+                            <td>' . $data['packing_date'] . '</td>
+                            <td>' . $data['qc_1'] . '</td>
+                            <td>' . $data['qc_2'] . '</td>
+                            <td>' . $data['op_1'] . '</td>
+                            <td>' . $data['op_2'] . '</td>
+                            <td>' . $data['shift'] . '</td>
+                            <td>' . $data['packing'] . '</td>
+                            <td>' . $data['packing_qty'] . '</td>
                         </tr>';
             $no++;
         }

@@ -64,11 +64,16 @@
         window.location.reload();
     }
     $(function() {
-        //Audio Config
+        // Audio Config
         var serialDuplicate = document.getElementById("serialDuplicate");
         var serialSuccess = document.getElementById("serialSuccess");
         var serialNotFound = document.getElementById("serialNotFound");
-        //Scan Supply Sheet
+
+        // Variabel Global untuk menyimpan sales_order_no dan customer_order_no
+        var globalSalesOrderNo = "";
+        var globalCustomerOrderNo = "";
+        
+        // Scan Supply Sheet
         $('#delivery_order_no').focus();
         $('#delivery_order_no').keypress(function(e) {
             if (e.which == 13) {
@@ -92,6 +97,10 @@
                     success: function(json) {
                         Swal.close();
                         if (json.total > 0) {
+                            // Menyimpan sales_order_no dan customer_order_no ke variabel global
+                            globalSalesOrderNo = json.rows[0].sales_order_no;
+                            globalCustomerOrderNo = json.rows[0].customer_order_no;
+
                             $('#dg').datagrid({
                                 url: '<?= base_url('sales/shipping_orders/getDeliveryOrders?delivery_order_no=') ?>' + delivery_order_no,
                                 rownumbers: true
@@ -107,64 +116,67 @@
                 });
             }
         });
-        //Scan Label
+
+        // Scan Label
         $('#checksheet_label').keypress(function(e) {
             if (e.which == 13) {
                 var checksheet_label = $(this).val();
                 var delivery_order_no = $("#delivery_order_no").val();
 
-                toastr.info("Still Maintenance");
-                // $.ajax({
-                //     type: "POST",
-                //     url: "<?= base_url('sales/shipping_orders/getChecksheetLabel') ?>",
-                //     data: "checksheet_label=" + checksheet_label + "&delivery_order_no=" + delivery_order_no,
-                //     dataType: "json",
-                //     success: function(json) {
-                //         if (json.total > 0) {
-                //             var row = json.rows;
-                //             for (let i = 0; i < json.total; i++) {
-                //                 $.ajax({
-                //                     type: "POST",
-                //                     url: "<?= base_url('sales/shipping_orders/create') ?>",
-                //                     data: "checksheet_label=" + checksheet_label +
-                //                         "&delivery_order_no=" + delivery_order_no +
-                //                         "&sales_order_no=" + row[i].sales_order_no +
-                //                         "&customer_order_no=" + row[i].customer_order_no +
-                //                         "&delivery=" + row[i].delivery +
-                //                         "&qty=" + row[i].qty,
-                //                     dataType: "json",
-                //                     success: function(result) {
-                //                         if (result.theme == "success") {
-                //                             serialSuccess.play();
-                //                             toastr.success(result.message, result.title);
-                //                             $("#checksheet_label").val('');
-                //                             $('#checksheet_label').focus();
-                //                         } else {
-                //                             if (result.title == "Not Scanned In" || result.title == "Not Match") {
-                //                                 serialNotFound.play();
-                //                             } else {
-                //                                 serialDuplicate.play();
-                //                             }
-                //                             toastr.error(result.message, result.title);
-                //                             $("#checksheet_label").val('');
-                //                             $('#checksheet_label').focus();
-                //                         }
-                //                     }
-                //                 });
-                //             }
+                $.ajax({
+                    type: "POST",
+                    url: "<?= base_url('sales/shipping_orders/getChecksheetLabel') ?>",
+                    data: "checksheet_label=" + checksheet_label + "&delivery_order_no=" + delivery_order_no,
+                    dataType: "json",
+                    success: function(json) {
+                        console.log(json);
+                        if (json.total > 0) {
+                            var row = json.rows;
+                            for (let i = 0; i < json.total; i++) {
+                                $.ajax({
+                                    type: "POST",
+                                    url: "<?= base_url('sales/shipping_orders/create') ?>",
+                                    data: {
+                                        checksheet_label: checksheet_label,
+                                        delivery_order_no: delivery_order_no,
+                                        sales_order_no: globalSalesOrderNo, // Menggunakan variabel global
+                                        customer_order_no: globalCustomerOrderNo, // Menggunakan variabel global
+                                        delivery: row[i].delivery,
+                                        qty: row[i].qty
+                                    },
+                                    dataType: "json",
+                                    success: function(result) {
+                                        if (result.theme == "success") {
+                                            serialSuccess.play();
+                                            toastr.success(result.message, result.title);
+                                            $("#checksheet_label").val('');
+                                            $('#checksheet_label').focus();
+                                        } else {
+                                            if (result.title == "Not Scanned In" || result.title == "Not Match") {
+                                                serialNotFound.play();
+                                            } else {
+                                                serialDuplicate.play();
+                                            }
+                                            toastr.error(result.message, result.title);
+                                            $("#checksheet_label").val('');
+                                            $('#checksheet_label').focus();
+                                        }
+                                    }
+                                });
+                            }
 
-                //             $('#dg').datagrid({
-                //                 url: '<?= base_url('sales/shipping_orders/getDeliveryOrders?delivery_order_no=') ?>' + delivery_order_no,
-                //                 rownumbers: true
-                //             });
-                //         } else {
-                //             serialNotFound.play();
-                //             toastr.warning("Label not found!");
-                //             $("#checksheet_label").val('');
-                //             $('#checksheet_label').focus();
-                //         }
-                //     }
-                // });
+                            $('#dg').datagrid({
+                                url: '<?= base_url('sales/shipping_orders/getDeliveryOrders?delivery_order_no=') ?>' + delivery_order_no,
+                                rownumbers: true
+                            });
+                        } else {
+                            serialNotFound.play();
+                            toastr.warning("Label not found!");
+                            $("#checksheet_label").val('');
+                            $('#checksheet_label').focus();
+                        }
+                    }
+                });
             }
         });
     });

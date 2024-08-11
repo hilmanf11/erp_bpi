@@ -5,7 +5,7 @@
             <th rowspan="2" field="ck" checkbox="true"></th>
             <th rowspan="2" data-options="field:'number',width:150,halign:'center'">Sales Invoice No</th>
             <th rowspan="2" data-options="field:'status',width:100,align:'center',formatter:statusformat,styler:statusStyle">Receipt<br>Status</th>
-            <th rowspan="2" data-options="field:'gl_no',width:100,align:'center'">GL NO</th>
+            <!-- <th rowspan="2" data-options="field:'gl_no',width:100,align:'center'">GL NO</th> -->
             <th rowspan="2" data-options="field:'trans_date',width:100,align:'center'">Trans Date</th>
             <th rowspan="2" data-options="field:'customer_name',width:200,halign:'center'">Customer Name</th>
             <th rowspan="2" data-options="field:'taxes',width:80,halign:'center',align:'right'">Taxes %</th>
@@ -67,7 +67,7 @@
         <div style="width: 50%; float: left;">
             <div class="fitem">
                 <span style="width:35%; display:inline-block;">Delivery Note</span>
-                <input style="width:60%;" id="filter_dn_number" class="easyui-combobox">
+                <input style="width:60%;" id="filter_delivery_note_no" class="easyui-combobox">
             </div>
             <div class="fitem">
                 <span style="width:35%; display:inline-block;">Sales Invoice No</span>
@@ -122,7 +122,7 @@
                     </div>
                     <div class="fitem">
                         <span style="width:35%; display:inline-block;">Delivery Note</span>
-                        <input style="width:60%;" required="" id="dn_number" name="dn_number" class="easyui-combobox">
+                        <input style="width:60%;" required="" id="delivery_note_no" name="delivery_note_no" class="easyui-combobox">
                     </div>
                     <div class="fitem">
                         <span style="width:35%; display:inline-block;"></span>
@@ -153,15 +153,15 @@
                 </div>
             </fieldset>
         </div>
-        <table id="dg2" class="easyui-datagrid" style="width:100%;" title="Sales Invoicing Lists" data-options="singleSelect: true" toolbar="#toolbar2" rownumbers="true" , idField="dn_number">
+        <table id="dg2" class="easyui-datagrid" style="width:100%;" title="Sales Invoicing Lists" data-options="singleSelect: true" toolbar="#toolbar2" rownumbers="true" , idField="delivery_note_no">
             <thead>
                 <tr>
                     <th data-options="field:'delete',width:120,formatter:removebtn">Action</th>
                     <th hidden data-options="field:'id',width:150,editor: {type: 'textbox'}">ID</th>
-                    <th data-options="field:'dn_number',width:150,editor: {type: 'textbox', options: {required: true}}">Delivery Note</th>
-                    <th data-options="field:'so_number',width:160,editor: {type: 'textbox', options: {required: true}}">SO. No</th>
-                    <th data-options="field:'customer_po',width:120,editor: {type: 'textbox', options: {required: true}}">Customer PO</th>
-                    <th data-options="field:'item_id',width:150" hidden>Product Id</th>
+                    <th data-options="field:'delivery_note_no',width:150,editor: {type: 'textbox', options: {required: true}}">Delivery Note</th>
+                    <th data-options="field:'sales_order_no',width:160,editor: {type: 'textbox', options: {required: true}}">Sales Order No</th>
+                    <th data-options="field:'customer_order_no',width:120,editor: {type: 'textbox', options: {required: true}}">Customer Order No</th>
+                    <th data-options="field:'item_fg_id',width:150" hidden>Product Id</th>
                     <th data-options="field:'item_no',width:150,editor: {type: 'textbox', options: {required: true}}">Product No</th>
                     <th data-options="field:'item_name',width:200,editor: {type: 'textbox', options: {required: true}}">Product Name</th>
                     <th data-options="field:'uom',width:80, editor: {
@@ -359,7 +359,7 @@
 
         $("#trans_date").datebox('enable');
         $("#customer_id").combobox('enable');
-        $("#dn_number").combobox('enable');
+        $("#delivery_note_no").combobox('enable');
         $("#preview").linkbutton('enable');
 
         $("#account_sales_name").textbox('setValue', "SALES");
@@ -393,15 +393,18 @@
             ],
             onSelect: function(index, row) {
                 var trans_date = $("#trans_date").datebox('getValue');
-                number(trans_date, row.nickname);
+                number(trans_date, row.number);
 
                 $("#payment_term").numberbox("setValue", row.payment_term);
 
-                if (row.vat_status != "VAT") {
-                    $("#taxes").numberbox('setValue', 0);
-                } else {
-                    $("#taxes").numberbox('setValue', row.vat);
-                }
+                $("#taxes").numberbox('setValue', row.taxes);
+
+                // if (row.vat_status != "VAT") {
+                //     $("#taxes").numberbox('setValue', 0);
+                // } else {
+                //     $("#taxes").numberbox('setValue', row.vat);
+                // }
+                
 
                 $.ajax({
                     type: "post",
@@ -412,10 +415,10 @@
                     }
                 });
 
-                $("#dn_number").combobox({
+                $("#delivery_note_no").combobox({
                     url: '<?= base_url('finance/sales_invoices/readDelivery?customer_id=') ?>' + row.id,
-                    valueField: 'number',
-                    textField: 'number',
+                    valueField: 'delivery_note_no',
+                    textField: 'delivery_note_no',
                     prompt: "Choose Delivery Note"
                 });
             }
@@ -871,7 +874,7 @@
 
                     $("#trans_date").datebox('disable');
                     $("#customer_id").combobox('disable');
-                    $("#dn_number").combobox('disable');
+                    $("#delivery_note_no").combobox('disable');
                     $("#preview").linkbutton('disable');
 
                     $('#customer_id').combogrid({
@@ -900,13 +903,13 @@
                             var trans_date = $("#trans_date").datebox('getValue');
                             $("#payment_term").numberbox("setValue", customer.payment_term);
 
-                            $("#dn_number").combobox({
+                            $("#delivery_note_no").combobox({
                                 url: '<?= base_url('finance/sales_invoices/readDelivery?customer_id=') ?>' + customer.id,
-                                valueField: 'number',
-                                textField: 'number',
+                                valueField: 'delivery_note_no',
+                                textField: 'delivery_note_no',
                                 prompt: "Choose Delivery Note",
                                 onLoadSuccess: function(delivery_no) {
-                                    $("#dn_number").combobox('setValue', row.dn_number);
+                                    $("#delivery_note_no").combobox('setValue', row.delivery_note_no);
                                 },
                             });
                         }
@@ -960,20 +963,20 @@
 
     function preview() {
         var customer_id = $("#customer_id").combogrid('getValue');
-        var dn_number = $("#dn_number").combobox('getValue');
+        var delivery_note_no = $("#delivery_note_no").combobox('getValue');
         var trans_date = $("#trans_date").datebox('getValue');
         var due_date = $("#due_date").datebox('getValue');
         var taxes = $("#taxes").numberbox('getValue');
         var journal_type_id = $("#journal_type").combobox('getValue');
 
-        if (dn_number == "" || trans_date == "" || due_date == "" || taxes == "") {
+        if (delivery_note_no == "" || trans_date == "" || due_date == "" || taxes == "") {
             toastr.info('Please completed your data');
         } else {
             $("#pph").combobox('setValue', "0");
 
             var lastIndex;
             var dg = $('#dg2').datagrid({
-                url: '<?= base_url('finance/sales_invoices/datatablesTemp') ?>?dn_number=' + window.btoa(dn_number),
+                url: '<?= base_url('finance/sales_invoices/datatablesTemp') ?>?delivery_note_no=' + window.btoa(delivery_note_no),
                 onLoadSuccess: function(row) {
                     $("#total_sub").numberbox('setValue', row.total_sub);
                     var disc_tax = parseFloat(row.total_sub * (taxes / 100));
@@ -1011,16 +1014,16 @@
                     for (var i = 0; i < rows.length; i++) {
                         var row = rows[i];
 
-                        $.ajax({
-                            type: "post",
-                            url: "<?= base_url('closing/locks/checkLock') ?>",
-                            data: "period=" + row.trans_date + "&menus_id=<?= $menus_id ?>",
-                            dataType: "json",
-                            success: function (lock) {
-                                if(lock.total > 0){
-                                    toastr.error("This period is not active by Accounting");
-                                    return false;
-                                }
+                        // $.ajax({
+                        //     type: "post",
+                        //     url: "<?= base_url('closing/locks/checkLock') ?>",
+                        //     data: "period=" + row.trans_date + "&menus_id=<?= $menus_id ?>",
+                        //     dataType: "json",
+                        //     success: function (lock) {
+                        //         if(lock.total > 0){
+                        //             toastr.error("This period is not active by Accounting");
+                        //             return false;
+                        //         }
 
                                 if (row.status == 0) {
                                     if(row.gl_no == null){
@@ -1029,7 +1032,7 @@
                                             url: '<?= base_url('finance/sales_invoices/delete') ?>',
                                             data: {
                                                 number: row.number,
-                                                dn_number: row.dn_number,
+                                                delivery_note_no: row.delivery_note_no,
                                             },
                                             success: function(result) {
                                                 var result = eval('(' + result + ')');
@@ -1051,10 +1054,10 @@
                                         toastr.error("Cannot Delete because this Sales Invoice has been created in Posting Journal");
                                     }
                                 } else {
-                                    toastr.error("Cannot Update because AR Receipt status is closed");
+                                    toastr.error("Cannot Delete because AR Receipt status is closed");
                                 }
-                            }
-                        });
+                        //     }
+                        // });
                     }
                 }
             });
@@ -1071,7 +1074,7 @@
         var filter_due_date_from = $("#filter_due_date_from").datebox('getValue');
         var filter_due_date_to = $("#filter_due_date_to").datebox('getValue');
         var filter_sales_invoice = $("#filter_sales_invoice").combobox('getValue');
-        var filter_dn_number = $("#filter_dn_number").combobox('getValue');
+        var filter_delivery_note_no = $("#filter_delivery_note_no").combobox('getValue');
         var filter_customer = $("#filter_customer").combobox('getValue');
         var filter_status = $("#filter_status").combobox('getValue');
 
@@ -1081,7 +1084,7 @@
             "&filter_due_date_from=" + window.btoa(filter_due_date_from) +
             "&filter_due_date_to=" + window.btoa(filter_due_date_to) +
             "&filter_sales_invoice=" + window.btoa(filter_sales_invoice) +
-            "&filter_dn_number=" + window.btoa(filter_dn_number) +
+            "&filter_delivery_note_no=" + window.btoa(filter_delivery_note_no) +
             "&filter_customer=" + window.btoa(filter_customer) +
             "&filter_status=" + window.btoa(filter_status);
 
@@ -1106,7 +1109,7 @@
         var filter_due_date_from = $("#filter_due_date_from").datebox('getValue');
         var filter_due_date_to = $("#filter_due_date_to").datebox('getValue');
         var filter_sales_invoice = $("#filter_sales_invoice").combobox('getValue');
-        var filter_dn_number = $("#filter_dn_number").combobox('getValue');
+        var filter_delivery_note_no = $("#filter_delivery_note_no").combobox('getValue');
         var filter_customer = $("#filter_customer").combobox('getValue');
         var filter_status = $("#filter_status").combobox('getValue');
 
@@ -1116,7 +1119,7 @@
             "&filter_due_date_from=" + window.btoa(filter_due_date_from) +
             "&filter_due_date_to=" + window.btoa(filter_due_date_to) +
             "&filter_sales_invoice=" + window.btoa(filter_sales_invoice) +
-            "&filter_dn_number=" + window.btoa(filter_dn_number) +
+            "&filter_delivery_note_no=" + window.btoa(filter_delivery_note_no) +
             "&filter_customer=" + window.btoa(filter_customer) +
             "&filter_status=" + window.btoa(filter_status);
 
@@ -1130,7 +1133,7 @@
         var filter_due_date_from = $("#filter_due_date_from").datebox('getValue');
         var filter_due_date_to = $("#filter_due_date_to").datebox('getValue');
         var filter_sales_invoice = $("#filter_sales_invoice").combobox('getValue');
-        var filter_dn_number = $("#filter_dn_number").combobox('getValue');
+        var filter_delivery_note_no = $("#filter_delivery_note_no").combobox('getValue');
         var filter_customer = $("#filter_customer").combobox('getValue');
         var filter_status = $("#filter_status").combobox('getValue');
 
@@ -1140,7 +1143,7 @@
             "&filter_due_date_from=" + window.btoa(filter_due_date_from) +
             "&filter_due_date_to=" + window.btoa(filter_due_date_to) +
             "&filter_sales_invoice=" + window.btoa(filter_sales_invoice) +
-            "&filter_dn_number=" + window.btoa(filter_dn_number) +
+            "&filter_delivery_note_no=" + window.btoa(filter_delivery_note_no) +
             "&filter_customer=" + window.btoa(filter_customer) +
             "&filter_status=" + window.btoa(filter_status);
 
@@ -1154,7 +1157,7 @@
         var filter_due_date_from = $("#filter_due_date_from").datebox('getValue');
         var filter_due_date_to = $("#filter_due_date_to").datebox('getValue');
         var filter_sales_invoice = $("#filter_sales_invoice").combobox('getValue');
-        var filter_dn_number = $("#filter_dn_number").combobox('getValue');
+        var filter_delivery_note_no = $("#filter_delivery_note_no").combobox('getValue');
         var filter_customer = $("#filter_customer").combobox('getValue');
         var filter_status = $("#filter_status").combobox('getValue');
 
@@ -1164,7 +1167,7 @@
             "&filter_due_date_from=" + window.btoa(filter_due_date_from) +
             "&filter_due_date_to=" + window.btoa(filter_due_date_to) +
             "&filter_sales_invoice=" + window.btoa(filter_sales_invoice) +
-            "&filter_dn_number=" + window.btoa(filter_dn_number) +
+            "&filter_delivery_note_no=" + window.btoa(filter_delivery_note_no) +
             "&filter_customer=" + window.btoa(filter_customer) +
             "&filter_status=" + window.btoa(filter_status);
 
@@ -1258,18 +1261,18 @@
                     rownumbers: true,
                     columns: [
                         [{
-                            field: 'dn_number',
+                            field: 'delivery_note_no',
                             title: 'Delivery Note',
                             halign: 'center',
                             width: 150
                         }, {
-                            field: 'so_number',
-                            title: 'Sales Order',
+                            field: 'sales_order_no',
+                            title: 'Sales Order No',
                             halign: 'center',
                             width: 150
                         }, {
-                            field: 'customer_po',
-                            title: 'Customer PO',
+                            field: 'customer_order_no',
+                            title: 'Customer Order No',
                             halign: 'center',
                             width: 120
                         }, {
@@ -1313,6 +1316,26 @@
                             halign: 'center',
                             align: 'right',
                             formatter: priceformat
+                        }, {
+                            field: 'approved_to',
+                            title: 'Approved To',
+                            halign: 'center',
+                            align: 'center',
+                            width: 100,
+                            formatter: formatApproved,
+                            styler: styleApproved
+                        }, {
+                            field: 'approved_by',
+                            title: 'Approved By',
+                            halign: 'center',
+                            align: 'right',
+                            width: 100
+                        }, {
+                            field: 'approved_date',
+                            title: 'Approved Date',
+                            halign: 'center',
+                            align: 'right',
+                            width: 100
                         }]
                     ],
                     onResize: function() {
@@ -1352,16 +1375,16 @@
                     var total_grand = $("#total_grand").numberbox('getValue');
                     var total_local = $("#total_local").numberbox('getValue');
 
-                    $.ajax({
-                        type: "post",
-                        url: "<?= base_url('closing/locks/checkLock') ?>",
-                        data: "period=" + trans_date + "&menus_id=<?= $menus_id ?>",
-                        dataType: "json",
-                        success: function (lock) {
-                            if(lock.total > 0){
-                                toastr.error("This period is not active by Accounting");
-                                return false;
-                            }
+                    // $.ajax({
+                    //     type: "post",
+                    //     url: "<?= base_url('closing/locks/checkLock') ?>",
+                    //     data: "period=" + trans_date + "&menus_id=<?= $menus_id ?>",
+                    //     dataType: "json",
+                    //     success: function (lock) {
+                    //         if(lock.total > 0){
+                    //             toastr.error("This period is not active by Accounting");
+                    //             return false;
+                    //         }
 
                             if (parseFloat(balance_debit) == parseFloat(balance_credit)) {
                                 if (due_date == "" || trans_date == "" || customer_id == "" || journal_type_id == "") {
@@ -1418,10 +1441,10 @@
                                                                 total_grand: total_grand,
                                                                 total_local: total_local,
                                                                 id: json[i].id,
-                                                                dn_number: json[i].dn_number,
-                                                                so_number: json[i].so_number,
-                                                                customer_po: json[i].customer_po,
-                                                                item_id: json[i].item_id,
+                                                                delivery_note_no: json[i].delivery_note_no,
+                                                                sales_order_no: json[i].sales_order_no,
+                                                                customer_order_no: json[i].customer_order_no,
+                                                                item_fg_id: json[i].item_fg_id,
                                                                 item_no: json[i].item_no,
                                                                 item_name: json[i].item_name,
                                                                 uom: json[i].uom,
@@ -1488,8 +1511,8 @@
                             } else {
                                 toastr.error("Balance Debit Cannot match on Balance Credit");
                             }
-                        }
-                    });
+                    //     }
+                    // });
                 }
             }]
         });
@@ -1541,10 +1564,10 @@
             }],
         });
 
-        $("#filter_dn_number").combobox({
+        $("#filter_delivery_note_no").combobox({
             url: '<?= base_url('finance/sales_invoices/readDeliveryNote') ?>',
-            valueField: 'dn_number',
-            textField: 'dn_number',
+            valueField: 'delivery_note_no',
+            textField: 'delivery_note_no',
             prompt: "Choose Delivery Note",
             icons: [{
                 iconCls: 'icon-clear',
@@ -1640,4 +1663,22 @@
             return 'background-color:#FFC8C8;';
         }
     }
+
+    
+    function styleApproved(value, row, index) {
+        if (value == "" || value === null ) {
+            return 'background: #53D636; color:white;';
+        } else {
+            return 'background: #FF5F5F; color:white;';
+        }
+    }
+
+    //FORMATTER APPROVE
+    function formatApproved(value) {
+        if (value == "" || value === null ) {
+            return 'Approved';
+        } else {
+            return 'Checking';
+        }
+    };
 </script>

@@ -111,7 +111,7 @@
                     </div>
                     <div class="fitem">
                         <b style="width:35%; display:inline-block;">DISC %</b>
-                        <input style="width:10%;" id="disc_pr" name="disc_pr" value="0" class="easyui-numberbox">
+                        <input style="width:10%;" id="disc_pr" name="disc_pr" value="0" class="easyui-numberbox" data-options="precision:2">
                         <input style="width:50%; text-align:right;" id="discount_total" name="discount_total" readonly class="easyui-numberbox" readonly value="0" data-options="precision:2,groupSeparator:','">
                     </div>
                     <div class="fitem">
@@ -237,9 +237,23 @@
                     $('#frm_calculate').show();
                     $("#btnPreview").linkbutton('disable');
 
+                    // var total_subs = row.total_price;
+                    // var discount_total = $('#discount_total').numberbox('getValue');
+                    // var income_total = $('#income_total').numberbox('getValue');
+                    // var total_dp = $('#income_total').numberbox('getValue');
+                    // var taxes = row.taxes;
+                    // console.log(taxes);
+                    // var total_vat = Math.floor((total_subs - discount_total) * (taxes / 100));
+                    
+                    // var total_grand = ((total_subs - discount_total) + total_vat - income_total - total_dp);
+
+                    // $('#total_vat').numberbox('setValue', total_vat);
+                    
+
                     setTimeout(function() { 
-                        $('#income_total').numberbox('setValue', row.income_total), $('#total_grand').numberbox('setValue', row.total_grand);
-                    }, 1000);
+                        $('#total_grand').numberbox('setValue', row.total_grand), $('#income_total').numberbox('setValue', row.income_total),
+                        $('#disc_pr').numberbox('setValue', row.disc_pr), $('#discount_total').numberbox('setValue', row.discount_total);
+                    }, 1500);
 
                     preview('<?= base_url('purchase/purchase_orders/datatable_updates') ?>?po_no=' + btoa(row.po_no));
                 } else {
@@ -659,7 +673,7 @@
         }
     }
 
-    function calculateTotal(total_subs, disc_pr = 0, income_tax = 0, total_dp = 0){
+    function calculateTotal(total_subs, disc_pr = 0, income_tax = 0, total_dp = 0, ){
         var discount_total = (total_subs * (disc_pr / 100));
         $("#discount_total").numberbox('setValue', discount_total);
 
@@ -668,6 +682,7 @@
             url: "<?= base_url('admin/config/read') ?>",
             dataType: "json",
             success: function(config) {
+                console.log(config);
                 var taxes = config.tax;
                 var total_vat = Math.floor((total_subs - discount_total) * (taxes / 100));
                 $("#total_vat").numberbox('setValue', total_vat);

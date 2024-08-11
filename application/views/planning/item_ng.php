@@ -1,9 +1,10 @@
-<table id="dg" class="easyui-datagrid" style="width:99.5%;" toolbar="#toolbar">
+<table id="dg" class="easyui-datagrid" style="width:100%;" toolbar="#toolbar">
     <thead>
         <tr>
             <th rowspan="2" field="ck" checkbox="true"></th>
             <th rowspan="2" data-options="field:'trans_date',width:100,align:'center'">Trans Date</th>
             <th rowspan="2" data-options="field:'document',width:150,halign:'center'">Document No</th>
+            <th rowspan="2" data-options="field:'document_scrap',width:150,halign:'center'">Scrap No</th>
             <th rowspan="2" data-options="field:'departement',width:120,halign:'center'">Departement</th>
             <th rowspan="2" data-options="field:'process',width:120,halign:'center'">Process</th>
             <th rowspan="2" data-options="field:'type',width:100,halign:'center'">NG Type</th>
@@ -28,12 +29,12 @@
     </thead>
 </table>
 
-<div id="toolbar" style="height: 200px; padding:10px;">
+<div id="toolbar" style="height: 260px;">
     <!-- <div style="width: 100%; display: grid; grid-template-columns: auto auto auto; grid-gap: 5px; display: flex;"> -->
     <div style="width: 100%;">
-        <fieldset style="width: 60%; border:2px solid #d0d0d0; margin-bottom: 5px; margin-top: 5px; border-radius:4px;">
+        <fieldset style="width: 40%; border:2px solid #d0d0d0; margin-bottom: 5px; margin-top: 5px; border-radius:4px;">
             <legend><b>Form Filter Data</b></legend>
-            <div style="float: left; width: 50%;">
+            <div style="float: left; width: 100%;">
                 <div class="fitem">
                     <span style="width:35%; display:inline-block;">Trans Date</span>
                     <input style="width:30%;" id="filter_from" class="easyui-datebox" data-options="formatter:myformatter,parser:myparser, editable:false">
@@ -44,18 +45,16 @@
                     <input style="width:60%;" id="filter_document" class="easyui-combobox">
                 </div>
                 <div class="fitem">
-                    <span style="width:35%; display:inline-block;"></span>
-                    <a href="javascript:;" class="easyui-linkbutton" onclick="filter()"><i class="fa fa-search"></i> Filter Data</a>
-                </div>
-            </div>
-            <div style="float: left; width: 50%;">
-                <div class="fitem">
                     <span style="width:35%; display:inline-block;">Product Family</span>
                     <input style="width:60%;" id="filter_family_id" class="easyui-combobox">
                 </div>
                 <div class="fitem">
                     <span style="width:35%; display:inline-block;">Product No</span>
                     <input style="width:60%;" id="filter_item_rm_id" class="easyui-combogrid">
+                </div>
+                <div class="fitem">
+                    <span style="width:35%; display:inline-block;"></span>
+                    <a href="javascript:;" class="easyui-linkbutton" onclick="filter()"><i class="fa fa-search"></i> Filter Data</a>
                 </div>
             </div>
         </fieldset>
@@ -79,8 +78,12 @@
                     <input style="width:60%;" name="trans_date" id="trans_date" class="easyui-datebox" required data-options="formatter:myformatter,parser:myparser, editable:false">
                 </div>
                 <div class="fitem">
-                    <span style="width:35%; display:inline-block;">Document No</span>
+                    <span style="width:35%; display:inline-block;">Document NG</span>
                     <input style="width:60%;" name="document" id="document" class="easyui-textbox" readonly required>
+                </div>
+                <div class="fitem">
+                    <span style="width:35%; display:inline-block;">Document Scrap</span>
+                    <input style="width:60%;" name="document_scrap" id="document_scrap" class="easyui-textbox" readonly >
                 </div>
                 <div class="fitem">
                     <span style="width:35%; display:inline-block;">Departement</span>
@@ -90,15 +93,25 @@
             <div style="width: 50%; float: left;">
                 <div class="fitem">
                     <span style="width:35%; display:inline-block;">Process</span>
-                    <input style="width:60%;" name="process" id="process" class="easyui-textbox" required>
+                    <input style="width:60%;" name="process" id="process" class="easyui-combogrid" required>
                 </div>
+                <!-- <div class="fitem">
+                    <span style="width:35%; display:inline-block;">Type</span>
+                    <select style="width:60%;" id="type" name="type" class="easyui-combobox" panelHeight="auto" required>
+                        <option value="SCP">SCRAP</option>
+                        <option value="PRG">PURGING</option>
+                    </select>
+                </div> -->
                 <div class="fitem">
                     <span style="width:35%; display:inline-block;">NG Type</span>
-                    <input style="width:60%;" name="type" id="type" class="easyui-textbox" required>
+                    <select style="width:60%;" id="type" name="type" class="easyui-combobox" panelHeight="auto" required>
+                        <option value="IN">IN</option>
+                        <option value="OUT">OUT</option>
+                    </select>
                 </div>
                 <div class="fitem">
                     <span style="width:35%; display:inline-block;">Workorder</span>
-                    <input style="width:60%;" name="workorder" id="workorder" class="easyui-combogrid" required>
+                    <input style="width:60%;" name="workorder" id="workorder" class="easyui-combobox" required>
                 </div>
             </div>
         </fieldset>
@@ -113,7 +126,7 @@
             <legend><b>Form Data</b></legend>
             <div class="fitem">
                 <span style="width:35%; display:inline-block;">Qty</span>
-                <input style="width:30%;" name="stock" id="stock" class="easyui-numberbox" data-options="precision:2" required>
+                <input style="width:30%;" name="stock" id="stock" class="easyui-numberbox" data-options="precision:2" readonly>
             </div>
             <div class="fitem">
                 <span style="width:35%; display:inline-block;">NG</span>
@@ -136,18 +149,24 @@
 </div>
 
 <!-- PDF -->
+
 <iframe id="printout" src="<?= base_url('planning/item_ng/print') ?>" style="width: 100%;" hidden></iframe>
+
 <script>
     //Add Data
     function add() {
+
         $('#dlg_insert').dialog('open');
         $('#frm_insert').form('clear');
         $("#trans_date").datebox('setValue', "<?= date("Y-m-d") ?>");
         $("#departement").textbox('setValue', "PRODUCTION");
         $('#dg2').datagrid('loadData', []);
+
+        // addTable();
     }
 
-    function addTable(workorder) {
+    function addTable(wo_no) {
+
         var lastIndex;
         var dg = $('#dg2').datagrid({
             singleSelect: true,
@@ -160,7 +179,7 @@
                     editor: {
                         type: 'combogrid',
                         options: {
-                            url: '<?= base_url('planning/item_ng/readItems/') ?>' + window.btoa(workorder),
+                            url: '<?= base_url('planning/item_ng/readItems/') ?>' + window.btoa(wo_no),
                             required: true,
                             panelWidth: 350,
                             idField: 'number',
@@ -180,6 +199,7 @@
                                 }]
                             ],
                             onSelect: function(value, rows) {
+                                console.log(rows);
                                 var dg = $('#dg2');
                                 var row = dg.datagrid('getSelected');
                                 var rowIndex = dg.datagrid('getRowIndex', row);
@@ -199,11 +219,16 @@
                                     index: rowIndex,
                                     field: 'stock'
                                 });
+                                var ed5 = dg.datagrid('getEditor', {
+                                    index: rowIndex,
+                                    field: 'scrap'
+                                });
 
                                 $(ed.target).textbox('setValue', rows.id);
                                 $(ed2.target).textbox('setValue', rows.name);
                                 $(ed3.target).textbox('setValue', rows.uom);
                                 $(ed4.target).numberbox('setValue', rows.qty);
+                                $(ed5.target).numberbox('setValue', rows.scrap);
                             }
                         }
                     }
@@ -282,7 +307,7 @@
 
                                 var stock = $(ed.target).numberbox('getValue');
                                 var scrap = $(ed2.target).numberbox('getValue');
-                                $(ed3.target).numberbox('setValue', (parseInt(stock) - (parseInt(valQty) + parseInt(scrap))));
+                                $(ed3.target).numberbox('setValue', (parseFloat(stock) - (parseFloat(valQty) + parseFloat(scrap))));
                             }
                         }
                     }
@@ -293,6 +318,10 @@
                     title: "Scrap",
                     editor: {
                         type: 'numberbox',
+                        options: {
+                            required: true,
+                            precision: 2
+                        },
                         options: {
                             required: true,
                             precision: 2,
@@ -317,7 +346,7 @@
 
                                 var stock = $(ed.target).numberbox('getValue');
                                 var qty = $(ed2.target).numberbox('getValue');
-                                $(ed3.target).numberbox('setValue', (parseInt(stock) - (parseInt(valScrap) + parseInt(qty))));
+                                $(ed3.target).numberbox('setValue', (parseFloat(stock) - (parseFloat(valScrap) + parseFloat(qty))));
                             }
                         }
                     }
@@ -372,7 +401,8 @@
     }
 
     function append() {
-        var workorder = $("#workorder").combogrid('getValue');
+        var workorder = $("#workorder").combobox('getValue');
+        console.log(workorder);
         if (workorder != "") {
             if (endEditing()) {
                 $('#dg2').datagrid('appendRow', {
@@ -396,6 +426,7 @@
         editIndex = undefined;
     }
 
+
     //EDIT DATA
     function update() {
         var row = $('#dg').datagrid('getSelected');
@@ -417,23 +448,38 @@
                 if (r) {
                     for (var i = 0; i < rows.length; i++) {
                         var row = rows[i];
-                        $.ajax({
-                            method: 'post',
-                            url: '<?= base_url('planning/item_ng/delete') ?>',
-                            data: {
-                                id: row.id
-                            },
-                            success: function(result) {
-                                var result = eval('(' + result + ')');
-                            },
-                            error: function(jqXHR, textStatus, errorThrown) {
-                                toastr.error(jqXHR.statusText);
-                                $.messager.alert("Error", jqXHR.statusText, 'error');
-                            },
-                            complete: function(data) {
-                                $('#dg').datagrid('reload');
-                            }
-                        });
+                        console.log('Deleting row with id:', row.id);
+
+                        // $.ajax({
+                        //     type: "post",
+                        //     url: "<?= base_url('closing/locks/checkLock') ?>",
+                        //     data: "period=" + row.trans_date + "&menus_id=<?= $menus_id ?>",
+                        //     dataType: "json",
+                        //     success: function (lock) {
+                        //         if(lock.total > 0){
+                        //             toastr.error("This period is not active by Accounting");
+                        //             return false;
+                        //         }
+
+                                $.ajax({
+                                    method: 'post',
+                                    url: '<?= base_url('planning/item_ng/delete') ?>',
+                                    data: {
+                                        id: row.id
+                                    },
+                                    success: function(result) {
+                                        var result = eval('(' + result + ')');
+                                    },
+                                    error: function(jqXHR, textStatus, errorThrown) {
+                                        toastr.error(jqXHR.statusText);
+                                        $.messager.alert("Error", jqXHR.statusText, 'error');
+                                    },
+                                    complete: function(data) {
+                                        $('#dg').datagrid('reload');
+                                    }
+                                });
+                        //     }
+                        // });
                     }
                 }
             });
@@ -443,18 +489,31 @@
     }
 
     function filter() {
+
         var filter_from = $("#filter_from").datebox('getValue');
+
         var filter_to = $("#filter_to").datebox('getValue');
+
         var filter_document = $("#filter_document").combobox('getValue');
+
         var filter_family_id = $("#filter_family_id").combobox('getValue');
+
         var filter_item_rm_id = $("#filter_item_rm_id").combogrid('getValue');
 
+
+
         url = "?filter_from=" + filter_from + "&filter_to=" + filter_to + "&filter_document=" + filter_document + "&filter_family_id" + filter_family_id + "&filter_item_rm_id=" + filter_item_rm_id;
+
         $('#dg').datagrid({
+
             url: '<?= base_url('planning/item_ng/datatables') ?>' + url
+
         });
+
         $("#printout").contents().find('html').html("<center><br><br><br><b style='font-size:20px;'>Please Wait...</b></center>");
+
         $("#printout").attr('src', '<?= base_url('planning/item_ng/print') ?>' + url);
+
     }
 
     function pdf() {
@@ -482,9 +541,7 @@
             url: '<?= base_url('planning/item_ng/datatables') ?>',
             pagination: true,
             rownumbers: true,
-            fit: true,
-            pageList: [10, 50, 100, 500, 1000],
-            pageSize: 10,
+            fit: true
         });
 
         $("#trans_date").datebox({
@@ -495,6 +552,15 @@
                     dataType: "html",
                     success: function(scraps_no) {
                         $("#document").textbox('setValue', scraps_no);
+                    }
+                });
+
+                $.ajax({
+                    type: "post",
+                    url: "<?= base_url('planning/scraps/scraps_no/') ?>" + window.btoa(val),
+                    dataType: "html",
+                    success: function(scraps_no) {
+                        $("#document_scrap").textbox('setValue', scraps_no);
                     }
                 });
             }
@@ -508,50 +574,66 @@
                 handler: function() {
                     var trans_date = $("#trans_date").datebox('getValue');
                     var document = $("#document").textbox('getValue');
+                    var document_scrap = $("#document_scrap").textbox('getValue');
                     var departement = $("#departement").textbox('getValue');
-                    var process = $("#process").textbox('getValue');
-                    var type = $("#type").textbox('getValue');
-                    var workorder = $("#workorder").combogrid('getValue');
+                    var process = $("#process").combogrid('getValue');
+                    var type = $("#type").combobox('getValue');
+                    var workorder = $("#workorder").combobox('getValue');
 
-                    var rows = $('#dg2').datagrid('getRows');
-                    var totalrows = rows.length;
-                    endEditing();
-                    for (let i = 0; i < totalrows; i++) {
-                        if (rows[i].item_rm_id) {
-                            $.ajax({
-                                type: "post",
-                                url: '<?= base_url('planning/item_ng/create') ?>',
-                                data: {
-                                    trans_date: trans_date,
-                                    document: document,
-                                    departement: departement,
-                                    process: process,
-                                    type: type,
-                                    workorder: workorder,
-                                    item_rm_id: rows[i].item_rm_id,
-                                    stock: rows[i].stock,
-                                    qty: rows[i].qty,
-                                    scrap: rows[i].scrap,
-                                    balance: rows[i].balance,
-                                    uom: rows[i].uom,
-                                    remarks: rows[i].remarks
-                                },
-                                dataType: "json",
-                                success: function(result) {
-                                    Swal.fire({
-                                        title: result.message,
-                                        icon: result.theme,
-                                        confirmButtonText: 'Ok',
-                                        allowOutsideClick: false,
-                                    }).then((result) => {
-                                        if (result.isConfirmed) {
-                                            window.location.reload();
+                    // $.ajax({
+                    //     type: "post",
+                    //     url: "<?= base_url('closing/locks/checkLock') ?>",
+                    //     data: "period=" + trans_date + "&menus_id=<?= $menus_id ?>",
+                    //     dataType: "json",
+                    //     success: function (lock) {
+                    //         if(lock.total > 0){
+                    //             toastr.error("This period is not active by Accounting");
+                    //             return false;
+                    //         }
+
+                            var rows = $('#dg2').datagrid('getRows');
+                            var totalrows = rows.length;
+                            endEditing();
+                            for (let i = 0; i < totalrows; i++) {
+                                if (rows[i].item_rm_id) {
+                                    $.ajax({
+                                        type: "post",
+                                        url: '<?= base_url('planning/item_ng/create') ?>',
+                                        data: {
+                                            trans_date: trans_date,
+                                            document: document,
+                                            document_scrap: document_scrap,
+                                            departement: departement,
+                                            process: process,
+                                            type: type,
+                                            workorder: workorder,
+                                            item_rm_id: rows[i].item_rm_id,
+                                            stock: rows[i].stock,
+                                            qty: rows[i].qty,
+                                            scrap: rows[i].scrap,
+                                            balance: rows[i].balance,
+                                            uom: rows[i].uom,
+                                            remarks: rows[i].remarks
+                                        },
+                                        dataType: "json",
+                                        success: function(result) {
+                                            Swal.fire({
+                                                title: result.message,
+                                                icon: result.theme,
+                                                confirmButtonText: 'Ok',
+                                                allowOutsideClick: false,
+                                            }).then((result) => {
+                                                if (result.isConfirmed) {
+                                                    window.location.reload();
+                                                }
+                                            });
                                         }
                                     });
                                 }
-                            });
-                        }
-                    }
+                            }
+                    //     }
+                    // });
+
                     $('#dlg_insert').dialog('close');
                 }
             }]
@@ -565,7 +647,21 @@
                     $('#frm_update').form('submit', {
                         url: url_save,
                         onSubmit: function() {
-                            return $(this).form('validate');
+                            if($(this).form('validate') === true){
+                                $('#dlg_update').dialog('close');
+
+                                Swal.fire({
+                                    title: 'Please Wait...',
+                                    showConfirmButton: false,
+                                    allowOutsideClick: false,
+                                    allowEscapeKey: false,
+                                    didOpen: () => {
+                                        Swal.showLoading();
+                                    },
+                                });
+                            }else{
+                                return $(this).form('validate');
+                            }
                         },
                         success: function(result) {
                             var result = eval('(' + result + ')');
@@ -574,7 +670,8 @@
                             } else {
                                 toastr.error(result.message, result.title);
                             }
-                            $('#dlg_update').dialog('close');
+
+                            Swal.close();
                             $('#dg').datagrid('reload');
                         }
                     });
@@ -595,31 +692,6 @@
                 var stock = $('#stock').numberbox('getValue');
                 var qty = $('#qty').numberbox('getValue');
                 $("#balance").numberbox('setValue', parseInt(stock) - (parseInt(val) + parseInt(qty)));
-            }
-        });
-
-        $('#workorder').combogrid({
-            url: '<?= base_url('planning/item_ng/readWorkorders') ?>',
-            panelWidth: 350,
-            idField: 'workorder',
-            textField: 'workorder',
-            mode: 'remote',
-            fitColumns: true,
-            prompt: "Choose Workorder",
-            columns: [
-                [{
-                    field: 'workorder',
-                    title: 'Workorder',
-                    width: 150
-                }, {
-                    field: 'wp',
-                    title: 'WP',
-                    width: 80,
-                    align: 'center'
-                }]
-            ],
-            onSelect: function(val, row) {
-                addTable(row.workorder);
             }
         });
 
@@ -677,6 +749,37 @@
                 }
             }],
         });
+
+        $("#workorder").combobox({
+            url: "<?= base_url('planning/item_ng/readWorkorders/') ?>",
+            valueField: 'wo_no',
+            textField: 'wo_no',
+            prompt: 'Choose Workorder',
+            onSelect: function(row) {
+                addTable(row.wo_no);
+            }
+        });
+
+        $("#process").combogrid({
+            url: '<?= base_url('master/item_process/reads') ?>',
+            panelWidth: 400,
+            idField: 'name',
+            textField: 'name',
+            mode: 'remote',
+            fitColumns: true,
+            prompt: "Choose Process",
+            columns: [
+                [{
+                    field: 'id',
+                    title: 'Process ID',
+                    width: 100
+                }, {
+                    field: 'name',
+                    title: 'Process Name',
+                    width: 250
+                }]
+            ],
+        });
     });
 
     //Format Datepicker
@@ -686,6 +789,7 @@
         var d = date.getDate();
         return y + '-' + (m < 10 ? ('0' + m) : m) + '-' + (d < 10 ? ('0' + d) : d);
     }
+
     //Format Datepicker
     function myparser(s) {
         if (!s) return new Date();

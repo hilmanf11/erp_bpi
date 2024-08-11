@@ -98,19 +98,29 @@ class Supplier_items extends CI_Controller
     }
 
     public function readSupplierss()
-    {
-        $post = isset($_POST['q']) ? $_POST['q'] : "";
-        $item_category_id = $this->input->get('item_category_id');
+{
+    $q = $this->input->post('q');  // Mengambil parameter pencarian dari POST
+    $item_category_id = $this->input->get('item_category_id');
 
-        $records = $this->crud->query("SELECT DISTINCT b.id, b.name, b.number, b.payment_term, b.vat
-        FROM supplier_items a 
-        JOIN suppliers b ON a.supplier_id = b.id 
-        JOIN item_rm c ON a.item_rm_id = c.id
-        JOIN item_categories d ON c.item_category_id = d.id
-        WHERE a.deleted = 0 and d.id = '$item_category_id' 
-        ORDER BY b.name ASC");
-        echo json_encode($records);
-    }
+    // Mengamankan parameter input untuk mencegah SQL Injection
+    $q = $this->db->escape_like_str($q);
+
+    $sql = "SELECT DISTINCT b.id, b.name, b.number, b.payment_term, b.vat
+            FROM supplier_items a 
+            JOIN suppliers b ON a.supplier_id = b.id 
+            JOIN item_rm c ON a.item_rm_id = c.id
+            JOIN item_categories d ON c.item_category_id = d.id
+            WHERE a.deleted = 0 
+              AND d.id = ? 
+              AND (b.name LIKE ? OR b.number LIKE ?)
+            ORDER BY b.name ASC";
+
+    // Menggunakan query builder untuk parameterized query
+    $records = $this->db->query($sql, array($item_category_id, "%$q%", "%$q%"))->result_array();
+
+    echo json_encode($records);
+}
+
 
     //GET DATATABLES
     public function datatables()
@@ -200,7 +210,7 @@ class Supplier_items extends CI_Controller
             $this->db->from('supplier_item_histories');
             $this->db->where('supplier_id', $supplier_id);
             $this->db->where('item_rm_id', $item_rm_id);
-            $this->db->order_by('valid_date', 'DESC');
+            $this->db->order_by('created_date', 'ASC');
             $records = $this->db->get()->result_array();
 
             echo json_encode($records);

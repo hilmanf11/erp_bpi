@@ -151,8 +151,10 @@ class Approvals extends CI_Controller
         $users = $this->crud->reads('users', [], ["approved_to" => $this->session->username], "", "", "", ["approved_to", "approved_by"]);
         $purchase_orders = $this->crud->reads('purchase_orders', [], ["approved_to" => $this->session->username], "", "", "", ["approved_to", "approved_by"]);
         $purchase_requests = $this->crud->reads('purchase_requests', [], ["approved_to" => $this->session->username], "", "", "", ["approved_to", "approved_by"]);
+        $delivery_notes = $this->crud->reads('delivery_notes', [], ["approved_to" => $this->session->username], "", "", "", ["approved_to", "approved_by"]);
+        $sales_invoices = $this->crud->reads('sales_invoices', [], ["approved_to" => $this->session->username], "", "", "", ["approved_to", "approved_by"]);
 
-        $totalRows = (count($users) + count($purchase_orders) + count($purchase_requests)); //+ count($forecasts) + count($stock_fg) + count($stock_wip) + count($os_so) + count($os_mpp) 
+        $totalRows = (count($users) + count($purchase_orders) + count($purchase_requests) + count($delivery_notes) + count($sales_invoices)); //+ count($forecasts) + count($stock_fg) + count($stock_wip) + count($os_so) + count($os_mpp) 
         if ($totalRows > 0) {
             echo '<span class="badge">' . $totalRows . '</span>';
         } else {
@@ -166,6 +168,8 @@ class Approvals extends CI_Controller
         $users = $this->crud->reads('users', [], ["approved_to" => $this->session->username], "", "", "", ["approved_to", "approved_by"]);
         $purchase_orders = $this->crud->reads('purchase_orders', [], ["approved_to" => $this->session->username], "", "", "", ["approved_to", "approved_by"]);
         $purchase_requests = $this->crud->reads('purchase_requests', [], ["approved_to" => $this->session->username], "", "", "", ["approved_to", "approved_by"]);
+        $delivery_notes = $this->crud->reads('delivery_notes', [], ["approved_to" => $this->session->username], "", "", "", ["approved_to", "approved_by"]);
+        $sales_invoices = $this->crud->reads('sales_invoices', [], ["approved_to" => $this->session->username], "", "", "", ["approved_to", "approved_by"]);
 
         foreach ($users as $user) {
             $this->approvalMessage($user->approved_by, $user->approved_to, "users");
@@ -177,6 +181,14 @@ class Approvals extends CI_Controller
 
         foreach ($purchase_requests as $pr) {
             $this->approvalMessage($pr->approved_by, $pr->approved_to, "purchase_requests");
+        }
+
+        foreach ($delivery_notes as $dn) {
+            $this->approvalMessage($dn->approved_by, $dn->approved_to, "delivery_notes");
+        }
+
+        foreach ($sales_invoices as $si) {
+            $this->approvalMessage($si->approved_by, $si->approved_to, "sales_invoices");
         }
     }
 
@@ -244,6 +256,30 @@ class Approvals extends CI_Controller
             $data['table'] = "purchase_orders";
             $this->load->view('template/header', $data);
             $this->load->view('approval/purchase_orders');
+        }
+    }
+
+    public function delivery_notes($approved_to, $approved_by){
+        if (empty($this->session->username)) {
+            redirect('error_session');
+        } else {
+            $data['approved_to'] = base64_decode($approved_to);
+            $data['approved_by'] = base64_decode($approved_by);
+            $data['table'] = "delivery_notes";
+            $this->load->view('template/header', $data);
+            $this->load->view('approval/delivery_notes');
+        }
+    }
+
+    public function sales_invoices($approved_to, $approved_by){
+        if (empty($this->session->username)) {
+            redirect('error_session');
+        } else {
+            $data['approved_to'] = base64_decode($approved_to);
+            $data['approved_by'] = base64_decode($approved_by);
+            $data['table'] = "sales_invoices";
+            $this->load->view('template/header', $data);
+            $this->load->view('approval/sales_invoices');
         }
     }
 
@@ -318,6 +354,52 @@ class Approvals extends CI_Controller
         $this->db->where('a.approved_to', $approved_to);
         $this->db->where('a.approved_by', $approved_by);
         // $this->db->group_by('request_no');
+        $this->db->order_by('a.created_date', 'DESC');
+        $records = $this->db->get()->result_array();
+
+        die(json_encode($records));
+    }
+
+    public function approvalDeliveryNotes($approved_to, $approved_by)
+    {
+        $approved_to = base64_decode($approved_to);
+        $approved_by = base64_decode($approved_by);
+
+        $this->db->select("a.*, b.name as customer_name,
+            e.delivery_order_no, 
+            f.id as item_fg_id, 
+            f.number as item_fg_number, 
+            f.name as item_fg_name,
+            c.customer_order_no, 
+            c.sales_order_no,
+            e.trans_type, 
+            f.uom");
+        $this->db->from('delivery_notes a');
+        $this->db->join('customers b', 'a.customer_id = b.id');
+        $this->db->join('customer_address d', 'b.id = d.customer_id');
+        $this->db->join('sales_orders c', 'a.sales_order_no = c.sales_order_no and a.item_fg_id = c.item_fg_id and a.customer_id = c.customer_id');
+        $this->db->join('delivery_orders e','a.delivery_order_no = e.delivery_order_no');
+        $this->db->join('item_fg f', 'e.item_fg_id = f.id');
+        $this->db->where('a.approved_to', $approved_to);
+        $this->db->where('a.approved_by', $approved_by);
+        $this->db->order_by('a.created_date', 'DESC');
+        $records = $this->db->get()->result_array();
+
+        die(json_encode($records));
+    }
+
+    public function approvalSalesInvoices($approved_to, $approved_by)
+    {
+        $approved_to = base64_decode($approved_to);
+        $approved_by = base64_decode($approved_by);
+
+        $this->db->select('a.*, c.number as gl_no, b.name as customer_name, a.delivery_note_no, a.sales_order_no, a.customer_order_no');
+        $this->db->from('sales_invoices a');
+        $this->db->join('customers b', 'a.customer_id = b.id');
+        $this->db->join('journal_postings c', 'a.number = c.document_no', 'left');
+        $this->db->join('delivery_notes d', 'a.delivery_note_no = d.delivery_note_no and a.item_fg_id = d.item_fg_id');
+        $this->db->where('a.approved_to', $approved_to);
+        $this->db->where('a.approved_by', $approved_by);
         $this->db->order_by('a.created_date', 'DESC');
         $records = $this->db->get()->result_array();
 

@@ -128,7 +128,7 @@
                             url: '<?= base_url('master/bom/readItem'); ?>',
                             required: true,
                             panelWidth: 400,
-                            idField: 'id',
+                            idField: 'number',
                             textField: 'number',
                             mode: 'remote',
                             fitColumns: true,
@@ -350,7 +350,7 @@
                     editor: {
                         type: 'numberbox',
                         options: {
-                            precision: 5,
+                            precision: 9,
                         }
                     }
                 }, {

@@ -39,7 +39,12 @@ class Bom extends CI_Controller
     public function readItem()
     {
         $post = isset($_POST['q']) ? $_POST['q'] : "";
-        $item_rm = $this->crud->query("SELECT a.*, b.name as item_family_name FROM item_rm a JOIN item_familys b ON a.item_family_id = b.id WHERE a.number like '%$post%' or a.name like '$post'");
+        $item_rm = $this->crud->query("SELECT a.*, b.name as item_family_name 
+        FROM item_rm a 
+        JOIN item_familys b ON a.item_family_id = b.id 
+        JOIN item_categories c ON a.item_category_id = c.id 
+        WHERE (a.item_category_id = 'C01' or (a.item_category_id = 'C09' AND a.item_family_id = 'P23')) and a.number like '%$post%' or a.name like '$post'
+        ORDER BY a.number ASC");
         $item_fg = $this->crud->query("SELECT * FROM item_fg WHERE `type` = 'SA' and (number like '%$post%' or name like '$post')");
 
         $datas = array();

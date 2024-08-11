@@ -6,7 +6,6 @@
             <th rowspan="2" data-options="field:'request_date',width:120,halign:'center'">Kanban Date</th>
             <th rowspan="2" data-options="field:'request_name',width:120,halign:'center'">Requester</th>
             <th rowspan="2" data-options="field:'period',width:100,halign:'center'">Period</th>
-            <th rowspan="2" data-options="field:'wp',width:50,halign:'center'">WP</th>
             <th rowspan="2" data-options="field:'workorder',width:120,halign:'center'">Work Order</th>
             <th rowspan="2" data-options="field:'item_number',width:150,halign:'center'">Product No</th>
             <th rowspan="2" data-options="field:'item_name',width:150,halign:'center'">Product Name</th>
@@ -36,12 +35,12 @@
             </div>
 
             <div class="fitem">
-                <span style="width:35%; display:inline-block;">Work Period</span>
-                <input style="width:60%;" id="filter_wp" class="easyui-combobox">
+                <span style="width:35%; display:inline-block;">Workorder</span>
+                <input style="width:60%;" id="filter_workorder" class="easyui-combobox">
             </div>
 
             <div class="fitem">
-                <span style="width:35%; display:inline-block;">Request ID</span>
+                <span style="width:35%; display:inline-block;">Request No</span>
                 <input style="width:60%;" id="filter_request_no" class="easyui-combobox">
             </div>
 
@@ -89,14 +88,21 @@
                     <input style="width:60%;" id="period" required="" class="easyui-combobox">
                 </div>
 
-                <div class="fitem">
+                <!-- <div class="fitem">
                     <span style="width:35%; display:inline-block;">WP</span>
                     <input style="width:60%;" id="wp" required="" class="easyui-combobox">
-                </div>
-
+                </div> -->
                 <div class="fitem">
-                    <span style="width:35%; display:inline-block;">Work Order</span>
-                    <input style="width:60%;" id="workorder" readonly="" class="easyui-textbox">
+                    <span style="width:35%; display:inline-block;">Type</span>
+                    <select style="width:60%;" id="type" name="type" class="easyui-combobox" panelHeight="auto" required>
+                        <option value="">Choose Type</option>
+                        <option value="SCP">SCRAP</option>
+                        <option value="PRG">PURGING</option>
+                    </select>
+                </div>
+                <div class="fitem">
+                    <span style="width:35%; display:inline-block;">Workorder</span>
+                    <input style="width:60%;" name="workorder" id="workorder" class="easyui-combobox" required>
                 </div>
             </div>
         </fieldset>
@@ -113,84 +119,51 @@
 <script>
     //Add Data
     function add() {
-
         $('#dlg_insert').dialog('open');
-
         $('#dg2').datagrid('loadData', []);
-
         request_no();
-
         $("#period").combobox({
-
             url: '<?= base_url('planning/production_schedules/readPeriodAll') ?>',
-
             valueField: 'period',
-
             textField: 'period',
-
             prompt: "Choose Period",
-
             onSelect: function(rowPeriod) {
-
-                $("#wp").combobox({
-
-                    url: '<?= base_url('planning/production_schedules/readWpAll?period=') ?>' + window.btoa(rowPeriod.period),
-
-                    valueField: 'wp',
-
-                    textField: 'wp',
-
-                    prompt: "Choose WP",
-
-                    onSelect: function(rowWP) {
-
-                        $("#workorder").textbox('setValue', rowWP.workorder);
-
+                $("#type").combobox({
+                    onChange: function(type){
+                        $("#workorder").combobox({
+                            url: "<?= base_url('planning/supply_requestions/readWorkorders/') ?>" + rowPeriod.period + "/" + type,
+                            valueField: 'wo_no',
+                            textField: 'wo_no',
+                            prompt: 'Choose Workorder',
+                            onSelect: function(row) {
+                                addTable(row.wo_no, type);
+                            }
+                        });
                     }
-
                 });
-
             }
-
         });
-
     }
 
-
-
     function request_no(reqDate = "") {
-
         if (reqDate == "") {
-
             var request_date = $("#request_date").datebox('getValue');
-
         } else {
-
             var request_date = reqDate;
-
         }
-
         $.ajax({
-
             type: "post",
-
             url: "<?= base_url('planning/supply_requestions/request_no') ?>/" + window.btoa(request_date),
-
             dataType: "html",
-
             success: function(result) {
-
                 $("#request_no").textbox('setValue', result);
-
             }
-
         });
-
     }
 
     //INSERT ADD ROW
 
-    function addTable() {
+    function addTable(wo_no, type) {
         var lastIndex;
         var dg = $('#dg2').datagrid({
             columns: [
@@ -198,26 +171,26 @@
                     field: 'item_number',
                     width: 250,
                     halign: 'center',
-                    title: "Product No",
+                    title: "Part No",
                     editor: {
                         type: 'combogrid',
                         options: {
-                            url: '<?= base_url('master/item_rm/reads/') ?>',
+                            url: '<?= base_url('planning/supply_requestions/readItems/') ?>' + window.btoa(wo_no) + "/" + type,
                             required: true,
                             panelWidth: 400,
                             idField: 'number',
                             textField: 'number',
                             mode: 'remote',
                             fitColumns: true,
-                            prompt: 'Choose Product No',
+                            prompt: 'Choose Part No',
                             columns: [
                                 [{
                                     field: 'number',
-                                    title: 'Product No',
+                                    title: 'Part No',
                                     width: 100
                                 }, {
                                     field: 'name',
-                                    title: 'Product Name',
+                                    title: 'Part Name',
                                     width: 200
                                 }]
                             ],
@@ -291,7 +264,7 @@
                     field: 'item_name',
                     width: 150,
                     halign: 'center',
-                    title: "Product Name",
+                    title: "Part Name",
                     editor: {
                         type: 'textbox',
                         options: {
@@ -420,73 +393,39 @@
     }
 
     //Delete Data
-
     function deleted() {
-
         var rows = $('#dg').treegrid('getSelections');
-
         if (rows.length > 0) {
-
             $.messager.confirm('Warning', 'Are you sure you want to delete this data?', function(r) {
-
                 if (r) {
-
                     for (var i = 0; i < rows.length; i++) {
-
                         var row = rows[i];
-
                         $.ajax({
-
                             method: 'post',
-
                             url: '<?= base_url('planning/supply_requestions/delete') ?>',
-
                             data: {
-
                                 id: row.id,
-
                                 request_no: row.request_no,
-
                                 item_rm_id: row.item_rm_id
-
                             },
-
                             success: function(result) {
-
                                 var result = eval('(' + result + ')');
-
                                 $('#dg').treegrid('reload');
-
                             },
-
                             error: function(jqXHR, textStatus, errorThrown) {
-
                                 toastr.error(jqXHR.statusText);
-
                                 $.messager.alert("Error", jqXHR.statusText, 'error');
-
                             },
-
                             complete: function(data) {
-
                                 $('#dg').treegrid('reload');
-
                             }
-
                         });
-
                     }
-
                 }
-
             });
-
         } else {
-
             toastr.warning("Please select one of the data in the table first!", "Information");
-
         }
-
     }
 
 
@@ -494,9 +433,9 @@
     function filter() {
 
         var filter_period = $("#filter_period").combobox('getValue');
-        var filter_wp = $("#filter_wp").combobox('getValue');
+        var filter_workorder = $("#filter_workorder").combobox('getValue');
         var filter_request_no = $("#filter_request_no").combobox('getValue');
-        url = "?filter_period=" + filter_period + "&filter_wp=" + filter_wp + "&filter_request_no=" + filter_request_no;
+        url = "?filter_period=" + filter_period + "&filter_workorder=" + filter_workorder + "&filter_request_no=" + filter_request_no;
         $('#dg').treegrid({
             url: '<?= base_url('planning/supply_requestions/datatables') ?>' + url
         });
@@ -519,11 +458,11 @@
 
         var filter_period = $("#filter_period").combobox('getValue');
 
-        var filter_wp = $("#filter_wp").combobox('getValue');
+        var filter_workorder = $("#filter_workorder").combobox('getValue');
 
         var filter_request_no = $("#filter_request_no").combobox('getValue');
 
-        url = "?filter_period=" + filter_period + "&filter_wp=" + filter_wp + "&filter_request_no=" + filter_request_no;
+        url = "?filter_period=" + filter_period + "&filter_workorder=" + filter_workorder + "&filter_request_no=" + filter_request_no;
 
         window.location.assign('<?= base_url('planning/supply_requestions/print/excel') ?>' + url);
 
@@ -595,9 +534,9 @@
                     var request_date = $("#request_date").datebox('getValue');
                     var request_name = $("#request_name").textbox('getValue');
                     var period = $("#period").combobox('getValue');
-                    var wp = $("#wp").combobox('getValue');
-                    var workorder = $("#workorder").textbox('getValue');
-                    if (period == "" || wp == "" || totalrows <= 0) {
+                    var type = $("#type").combobox('getValue');
+                    var workorder = $("#workorder").combobox('getValue');
+                    if (period == "" || totalrows <= 0) {
                         toastr.error("please complete your input data");
                     } else {
                         var rows = $('#dg2').datagrid('getRows');
@@ -613,7 +552,7 @@
                                         request_no: request_no,
                                         request_name: request_name,
                                         period: period,
-                                        wp: wp,
+                                        type: type,
                                         workorder: workorder,
                                         item_rm_id: rows[i].item_rm_id,
                                         qty: rows[i].qty
@@ -656,23 +595,23 @@
                 }
             }],
             onSelect: function(period) {
-                $("#filter_wp").combobox({
-                    url: '<?= base_url('planning/supply_requestions/readWp/') ?>' + period.period,
-                    valueField: 'wp',
-                    textField: 'wp',
-                    prompt: "Choose WP",
+                $("#filter_workorder").combobox({
+                    url: '<?= base_url('planning/supply_requestions/readWo/') ?>' + period.period,
+                    valueField: 'workorder',
+                    textField: 'workorder',
+                    prompt: "Choose Workorder",
                     icons: [{
                         iconCls: 'icon-clear',
                         handler: function(e) {
                             $(e.data.target).combobox('clear').combobox('textbox').focus();
                         }
                     }],
-                    onSelect: function(wp) {
+                    onSelect: function(wo) {
                         $("#filter_request_no").combobox({
-                            url: '<?= base_url('planning/supply_requestions/readRequestNo/') ?>' + period.period + '/' + window.btoa(wp.wp),
+                            url: '<?= base_url('planning/supply_requestions/readRequestNo/') ?>' + period.period + '/' + window.btoa(wo.workorder),
                             valueField: 'request_no',
                             textField: 'request_no',
-                            prompt: "Choose WP",
+                            prompt: "Choose Request No",
                             icons: [{
                                 iconCls: 'icon-clear',
                                 handler: function(e) {

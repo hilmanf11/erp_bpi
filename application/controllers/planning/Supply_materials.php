@@ -37,14 +37,24 @@ class Supply_materials extends CI_Controller
 
     public function readWp($period)
     {
-        $records = $this->crud->query("SELECT wp FROM supply_materials WHERE `status` = '0' and `period` = '$period' GROUP BY wp");
+        $records = $this->crud->query("SELECT workorder FROM supply_materials WHERE `status` = '0' and `period` = '$period' GROUP BY workorder");
         echo json_encode($records);
     }
 
-    public function readRequestNo($period, $wp)
+    public function readRequestNo($period, $workorder)
     {
-        $wp = base64_decode($wp);
-        $records = $this->crud->query("SELECT request_no FROM supply_materials WHERE status = '0' and `period` = '$period' and wp = '$wp' GROUP BY `request_no`");
+        $workorder = base64_decode($workorder);
+        $records = $this->crud->query("SELECT request_no FROM supply_materials WHERE status = '0' and `period` = '$period' and workorder = '$workorder' GROUP BY `request_no`");
+        echo json_encode($records);
+    }
+
+    public function readItemRm()
+    {
+        $post = isset($_POST['q']) ? $_POST['q'] : "";
+        $records = $this->crud->query("SELECT id, number, name, uom 
+        FROM item_rm 
+        WHERE (item_category_id = 'C01' or (item_category_id = 'C09' AND item_family_id = 'P23')) and `number` like '%$post%' or `name` like '$post'
+        ORDER BY `number` ASC");
         echo json_encode($records);
     }
 
@@ -96,7 +106,7 @@ class Supply_materials extends CI_Controller
     {
         if ($this->input->post()) {
             $filter_period = $this->input->get('filter_period');
-            $filter_wp   = $this->input->get('filter_wp');
+            $filter_workorder   = $this->input->get('filter_workorder');
             $filter_request_no = $this->input->get('filter_request_no');
             $filter_product_family = $this->input->get('filter_product_family');
             $filter_product_no = base64_decode($this->input->get('filter_product_no'));
@@ -119,7 +129,7 @@ class Supply_materials extends CI_Controller
                 $this->db->where('a.deleted', 0);
                 $this->db->where('a.status', 0);
                 $this->db->like("a.period", $filter_period);
-                $this->db->like("a.wp", $filter_wp);
+                $this->db->like("a.workorder", $filter_workorder);
                 if ($filter_request_no != "") {
                     $this->db->where('a.request_no', $filter_request_no);
                 }
@@ -145,8 +155,8 @@ class Supply_materials extends CI_Controller
                         "period" => $record['period'],
                         "item_rm_id" => $record['item_rm_id'],
                         "item_number" => $record['item_number'],
+                        "item_fg_id" => $record['item_fg_id'],
                         "item_name" => $record['item_name'],
-                        "wp" => $record['wp'],
                         "workorder" => $record['workorder'],
                         "state" => "closed"
                     );
@@ -336,9 +346,9 @@ class Supply_materials extends CI_Controller
                                 <div style="float:left; width:35%;">
                                     <table style="width:100%; font-size:12px; margin-bottom:10px;">
                                         <tr>
-                                            <td width="100">Period / WP</td>
+                                            <td width="100">Period</td>
                                             <td width="30">:</td>
-                                            <td><b>' . @$kanban->period . ' / ' . @$kanban->wp . '</b></td>
+                                            <td><b>' . @$kanban->period .'</b></td>
                                         </tr>
                                         <tr>
                                             <td width="50">Print Date</td>
@@ -435,7 +445,7 @@ class Supply_materials extends CI_Controller
             header("Content-Disposition: attachment; filename=supply_materials_$format.xls");
         }
         $filter_period = $this->input->get('filter_period');
-        $filter_wp   = $this->input->get('filter_wp');
+        $filter_workorder   = $this->input->get('filter_workorder');
         $filter_request_no = $this->input->get('filter_request_no');
         $filter_product_family = $this->input->get('filter_product_family');
         $filter_product_no = base64_decode($this->input->get('filter_product_no'));
@@ -450,7 +460,7 @@ class Supply_materials extends CI_Controller
         // $this->db->join('uom d', 'b.uom_id = d.id');
         $this->db->where('a.deleted', 0);
         $this->db->like("a.period", $filter_period);
-        $this->db->like("a.wp", $filter_wp);
+        $this->db->like("a.workorder", $filter_workorder);
         if ($filter_request_no != "") {
             $this->db->where('a.request_no', $filter_request_no);
         }

@@ -39,6 +39,7 @@ class Report_history_transactions_fg extends CI_Controller
         $filter_to   = $this->input->get('filter_to');
         $filter_items = $this->input->get('filter_items');
         $filter_display = $this->input->get("filter_display");
+        $filter_trans_type = $this->input->get("filter_trans_type");
 
         $start = strtotime($filter_from);
         $finish = strtotime($filter_to);
@@ -58,7 +59,7 @@ class Report_history_transactions_fg extends CI_Controller
             (COALESCE(SUM(f.qty),0) - COALESCE(g.qty, 0)) as end_stock
         FROM item_fg a 
         LEFT JOIN production_schedules d ON a.id = d.item_fg_id
-        LEFT JOIN checksheets e ON d.workorder = e.workorder
+        LEFT JOIN checksheets e ON d.wo_no = e.wo_no
         LEFT JOIN scan_item_receipts_fg f ON e.number = f.checksheet_number and DATE_FORMAT(f.created_date, '%Y-%m-%d') between '$filter_from' and '$filter_to'
         LEFT JOIN (SELECT item_fg_id, delivery_note_date, COALESCE(SUM(qty), 0) as qty FROM delivery_notes WHERE delivery_note_date between '$filter_from' and '$filter_to' GROUP BY item_fg_id) g ON a.id = g.item_fg_id
         WHERE a.id like '%$filter_items%'
@@ -110,7 +111,7 @@ class Report_history_transactions_fg extends CI_Controller
                 (COALESCE(SUM(f.qty),0) - COALESCE(g.qty, 0)) as begin_stock
             FROM item_fg a 
             LEFT JOIN production_schedules d ON a.id = d.item_fg_id
-            LEFT JOIN checksheets e ON d.workorder = e.workorder
+            LEFT JOIN checksheets e ON d.wo_no = e.wo_no
             LEFT JOIN scan_item_receipts_fg f ON e.number = f.checksheet_number and DATE_FORMAT(f.created_date, '%Y-%m-%d') < '$filter_from'
             LEFT JOIN (SELECT item_fg_id, delivery_note_date, COALESCE(SUM(qty), 0) as qty FROM delivery_notes WHERE delivery_note_date < '$filter_from' GROUP BY item_fg_id) g ON a.id = g.item_fg_id
             WHERE a.id = '$item_fg_id'
@@ -155,60 +156,125 @@ class Report_history_transactions_fg extends CI_Controller
                 for ($i = $start; $i <= $finish; $i += (60 * 60 * 24)) {
                     $working_date = date('Y-m-d', $i);
 
-                    //RECEIPT
-                    $receipts = $this->crud->query("SELECT f.*, c.name as username
-                        FROM production_schedules d
-                        JOIN checksheets e ON d.workorder = e.workorder
-                        JOIN scan_item_receipts_fg f ON e.number = f.checksheet_number
-                        JOIN users c ON f.created_by = c.username
-                        WHERE d.item_fg_id = '$item_fg_id' 
-                        and DATE_FORMAT(f.created_date, '%Y-%m-%d') between '$working_date' and '$working_date'");
+                    if ($filter_trans_type == 'RECEIPT FG') {
 
-                    //DELIVERY
-                    $returns = $this->crud->query("SELECT a.*,
-                            d.name as username
-                        FROM delivery_notes a 
-                        JOIN users d ON a.created_by = d.username
-                        WHERE a.item_fg_id = '$item_fg_id' and a.delivery_note_date between '$working_date' and '$working_date'");
+                        //RECEIPT
+                        $receipts = $this->crud->query("SELECT f.*, c.name as username
+                            FROM production_schedules d
+                            JOIN checksheets e ON d.wo_no = e.wo_no
+                            JOIN scan_item_receipts_fg f ON e.number = f.checksheet_number
+                            JOIN users c ON f.created_by = c.username
+                            WHERE d.item_fg_id = '$item_fg_id' 
+                            and DATE_FORMAT(f.created_date, '%Y-%m-%d') between '$working_date' and '$working_date'");
 
-                    //Wip Receipt
-                    foreach ($receipts as $receipt) {
-                        $balance = ($begin + ($receipt->qty - $end_qty));
-                        $html .= '  <tr>
-                                                <td></td>
-                                                <td style="text-align:center">' . $nod . '</td>
-                                                <td>RECEIPT FG</td>
-                                                <td>' . $receipt->username . '</td>
-                                                <td>' . $receipt->created_date . '</td>
-                                                <td>' . $receipt->workorder . '</td>
-                                                <td>' . $receipt->checksheet_label . '</td>
-                                                <td style="text-align:right;">' . number_format($begin, 2) . '</td>
-                                                <td style="text-align:right;">' . number_format($receipt->qty, 2) . '</td>
-                                                <td style="text-align:right;">' . number_format(0)  . '</td>
-                                                <td style="text-align:right;">' . number_format($balance, 2)  . '</td>
-                                            </tr>';
-                        $begin += $receipt->qty;
-                        $nod++;
+                        //Wip Receipt
+                        foreach ($receipts as $receipt) {
+                            $balance = ($begin + ($receipt->qty - $end_qty));
+                            $html .= '  <tr>
+                                                    <td></td>
+                                                    <td style="text-align:center">' . $nod . '</td>
+                                                    <td>RECEIPT FG</td>
+                                                    <td>' . $receipt->username . '</td>
+                                                    <td>' . $receipt->created_date . '</td>
+                                                    <td>' . $receipt->workorder . '</td>
+                                                    <td>' . $receipt->checksheet_label . '</td>
+                                                    <td style="text-align:right;">' . number_format($begin, 2) . '</td>
+                                                    <td style="text-align:right;">' . number_format($receipt->qty, 2) . '</td>
+                                                    <td style="text-align:right;">' . number_format(0)  . '</td>
+                                                    <td style="text-align:right;">' . number_format($balance, 2)  . '</td>
+                                                </tr>';
+                            $begin += $receipt->qty;
+                            $nod++;
+                        }
                     }
 
-                    //Delivery Note
-                    foreach ($returns as $return) {
-                        $balance = ($begin - $return->qty);
-                        $html .= '  <tr>
-                                                <td></td>
-                                                <td style="text-align:center">' . $nod . '</td>
-                                                <td>DELIVERY NOTE</td>
-                                                <td>' . $return->username . '</td>
-                                                <td>' . $return->delivery_note_date . '</td>
-                                                <td>' . $return->delivery_order_no  . '</td>
-                                                <td>' . $return->number . '</td>
-                                                <td style="text-align:right;">' . number_format($begin, 2) . '</td>
-                                                <td style="text-align:right;">' . number_format(0) . '</td>
-                                                <td style="text-align:right;">' . number_format($return->qty, 2)  . '</td>
-                                                <td style="text-align:right;">' . number_format($balance, 2)  . '</td>
-                                            </tr>';
-                        $begin -= $return->qty;
-                        $nod++;
+                    if ($filter_trans_type == 'DELIVERY NOTE') {
+
+                        //Delivery Note
+                        //DELIVERY
+                        $returns = $this->crud->query("SELECT a.*,
+                            d.name as username
+                            FROM delivery_notes a 
+                            JOIN users d ON a.created_by = d.username
+                            WHERE a.item_fg_id = '$item_fg_id' and a.delivery_note_date between '$working_date' and '$working_date'");
+
+                        foreach ($returns as $return) {
+                            $balance = ($begin - $return->qty);
+                            $html .= '  <tr>
+                                                    <td></td>
+                                                    <td style="text-align:center">' . $nod . '</td>
+                                                    <td>DELIVERY NOTE</td>
+                                                    <td>' . $return->username . '</td>
+                                                    <td>' . $return->delivery_note_date . '</td>
+                                                    <td>' . $return->delivery_order_no  . '</td>
+                                                    <td>' . $return->delivery_note_no . '</td>
+                                                    <td style="text-align:right;">' . number_format($begin, 2) . '</td>
+                                                    <td style="text-align:right;">' . number_format(0) . '</td>
+                                                    <td style="text-align:right;">' . number_format($return->qty, 2)  . '</td>
+                                                    <td style="text-align:right;">' . number_format($balance, 2)  . '</td>
+                                                </tr>';
+                            $begin -= $return->qty;
+                            $nod++;
+                        }
+                    }
+                    if ($filter_trans_type == '') {
+
+                        //RECEIPT
+                        $receipts = $this->crud->query("SELECT f.*, c.name as username
+                            FROM production_schedules d
+                            JOIN checksheets e ON d.wo_no = e.wo_no
+                            JOIN scan_item_receipts_fg f ON e.number = f.checksheet_number
+                            JOIN users c ON f.created_by = c.username
+                            WHERE d.item_fg_id = '$item_fg_id' 
+                            and DATE_FORMAT(f.created_date, '%Y-%m-%d') between '$working_date' and '$working_date'");
+                        
+                        //DELIVERY
+                        $returns = $this->crud->query("SELECT a.*,
+                            d.name as username
+                            FROM delivery_notes a 
+                            JOIN users d ON a.created_by = d.username
+                            WHERE a.item_fg_id = '$item_fg_id' and a.delivery_note_date between '$working_date' and '$working_date'");
+
+                        //Wip Receipt
+                        foreach ($receipts as $receipt) {
+                            $balance = ($begin + ($receipt->qty - $end_qty));
+                            $html .= '  <tr>
+                                                    <td></td>
+                                                    <td style="text-align:center">' . $nod . '</td>
+                                                    <td>RECEIPT FG</td>
+                                                    <td>' . $receipt->username . '</td>
+                                                    <td>' . $receipt->created_date . '</td>
+                                                    <td>' . $receipt->workorder . '</td>
+                                                    <td>' . $receipt->checksheet_label . '</td>
+                                                    <td style="text-align:right;">' . number_format($begin, 2) . '</td>
+                                                    <td style="text-align:right;">' . number_format($receipt->qty, 2) . '</td>
+                                                    <td style="text-align:right;">' . number_format(0)  . '</td>
+                                                    <td style="text-align:right;">' . number_format($balance, 2)  . '</td>
+                                                </tr>';
+                            $begin += $receipt->qty;
+                            $nod++;
+                        }
+
+                        //delivery note
+                        foreach ($returns as $return) {
+                            $balance = ($begin - $return->qty);
+                            $html .= '  <tr>
+                                                    <td></td>
+                                                    <td style="text-align:center">' . $nod . '</td>
+                                                    <td>DELIVERY NOTE</td>
+                                                    <td>' . $return->username . '</td>
+                                                    <td>' . $return->delivery_note_date . '</td>
+                                                    <td>' . $return->delivery_order_no  . '</td>
+                                                    <td>' . $return->delivery_note_no . '</td>
+                                                    <td style="text-align:right;">' . number_format($begin, 2) . '</td>
+                                                    <td style="text-align:right;">' . number_format(0) . '</td>
+                                                    <td style="text-align:right;">' . number_format($return->qty, 2)  . '</td>
+                                                    <td style="text-align:right;">' . number_format($balance, 2)  . '</td>
+                                                </tr>';
+                            $begin -= $return->qty;
+                            $nod++;
+                        }
+
                     }
                 }
             }

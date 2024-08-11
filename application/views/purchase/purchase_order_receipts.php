@@ -154,7 +154,7 @@
                     <th data-options="field:'uom',width:80">UoM</th>
                     <th data-options="field:'qty_po',width:80,editor:{type:'numberbox', options:{readonly:true}}">PO</th>
                     <th data-options="field:'qty_os',width:80,editor:{type:'numberbox', options:{readonly:true}}">OS PO</th>
-                    <th data-options="field:'qty_receipt',width:80,editor:{type:'numberbox'}">Receipt</th>
+                    <th data-options="field:'qty_receipt',width:80,editor:{type:'numberbox',options:{precision:2}}">Receipt</th>
                     <th data-options="field:'mpq',width:80,editor:{type:'numberbox', options:{readonly:true}}">MPQ</th>
                     <th data-options="field:'qty_label',width:80,editor:{type:'numberbox', options:{readonly:true}}">Label</th>
                 </tr>
@@ -444,20 +444,118 @@
             // },
         });
         //Save Data
+        // $('#dlg_insert').dialog({
+        //     buttons: [{
+        //         text: 'Save All & Print Receiving Note',
+        //         iconCls: 'icon-ok',
+        //         handler: function() {
+        //             var receipt_date = $("#receipt_date").datebox('getValue');
+        //             var receipt_no = $("#receipt_no").textbox('getValue');
+        //             var lotno = $("#lotno").textbox('getValue');
+        //             // var bc_kind = $("#bc_kind").textbox('getValue');
+        //             // var bc_aju = $("#bc_aju").textbox('getValue');
+        //             var bc_document = $("#bc_document").textbox('getValue');
+        //             var bc_date = $("#bc_date").datebox('getValue');
+        //             //var awb_no = $("#awb_no").textbox('getValue');
+        //             //var awb_date = $("#awb_date").datebox('getValue');
+
+        //             if (bc_document == "" || bc_date == "") {
+        //                 toastr.warning("Please input Doc No and Doc Date!", "Information");
+        //             } else {
+        //                 $('#dg_request').datagrid('acceptChanges');
+        //                 var rows = $('#dg_request').datagrid('getSelections');
+        //                 if (rows.length > 0) {
+        //                     $.messager.confirm('Warning', 'Are you sure you want to save this data?', function(r) {
+        //                         if (r) {
+        //                             for (var i = 0; i < rows.length; i++) {
+        //                                 var row = rows[i];
+        //                                 $.ajax({
+        //                                     type: "post",
+        //                                     url: '<?= base_url('purchase/purchase_order_receipts/create') ?>',
+        //                                     data: 'item_rm_id=' + row.item_rm_id +
+        //                                         '&supplier_id=' + row.supplier_id +
+        //                                         '&receipt_date=' + receipt_date +
+        //                                         '&receipt_no=' + receipt_no +
+        //                                         '&lotno=' + lotno +
+        //                                         '&po_no=' + row.po_no +
+        //                                         // '&bc_kind=' + bc_kind +
+        //                                         // '&bc_aju=' + bc_aju +
+        //                                         '&bc_document=' + bc_document +
+        //                                         '&bc_date=' + bc_date +
+        //                                         // '&awb_no=' + awb_no +
+        //                                         // '&awb_date=' + awb_date +
+        //                                         '&qty_po=' + row.qty_po +
+        //                                         '&qty_os=' + row.qty_os +
+        //                                         '&qty_receipt=' + row.qty_receipt +
+        //                                         '&qty_mpq=' + row.mpq +
+        //                                         '&qty_label=' + row.qty_label,
+        //                                     dataType: "json",
+        //                                     success: function(result) {
+        //                                         //toastr.success(result.message, result.title);
+        //                                         Swal.fire({
+        //                                             title: result.message,
+        //                                             icon: result.theme,
+        //                                             confirmButtonText: 'Ok',
+        //                                             allowOutsideClick: false,
+        //                                         }).then((result) => {
+        //                                             if (result.isConfirmed) {
+        //                                                 Swal.fire({
+        //                                                     title: "Are you Want to Print Barcode?",
+        //                                                     showDenyButton: true,
+        //                                                     confirmButtonText: "Yes",
+        //                                                     denyButtonText: `No`
+        //                                                 }).then((result) => {
+
+        //                                                     if (result.isConfirmed) {
+        //                                                         var receipt_no = $("#receipt_no").textbox('getValue');
+        //                                                         var qty_receipt = row ? row.qty_receipt : 0;
+        //                                                         var qty_label = row ? row.qty_label : 0;
+
+        //                                                         var po = {
+        //                                                             receipt_no: receipt_no,
+        //                                                             qty_receipt: qty_receipt,
+        //                                                             qty_label: qty_label
+        //                                                         };
+
+        //                                                         window.location.reload();
+                                                                
+        //                                                         print_po(po);
+        //                                                     } else if (result.isDenied) {
+        //                                                         Swal.fire("You can print QR Code in Datagrid", "", "info").then((result) => {
+        //                                                             if (result.isConfirmed) {
+        //                                                                 window.location.reload();
+        //                                                             }
+        //                                                         });
+        //                                                     }
+        //                                                 });
+        //                                             }
+        //                                         });
+        //                                     }
+        //                                 });
+        //                             }
+                                    
+        //                             $('#dg').treegrid('reload');
+        //                             $('#dlg_insert').dialog('close');
+        //                         }
+        //                     });
+
+        //                 } else {
+        //                     toastr.warning("Please select one of the data in the table first!", "Information");
+        //                 }
+        //             }
+        //         }
+        //     }]
+        // });
+
         $('#dlg_insert').dialog({
             buttons: [{
                 text: 'Save All & Print Receiving Note',
                 iconCls: 'icon-ok',
                 handler: function() {
                     var receipt_date = $("#receipt_date").datebox('getValue');
-                    var receipt_no = $("#receipt_no").textbox('getValue');
                     var lotno = $("#lotno").textbox('getValue');
-                    // var bc_kind = $("#bc_kind").textbox('getValue');
-                    // var bc_aju = $("#bc_aju").textbox('getValue');
                     var bc_document = $("#bc_document").textbox('getValue');
                     var bc_date = $("#bc_date").datebox('getValue');
-                    //var awb_no = $("#awb_no").textbox('getValue');
-                    //var awb_date = $("#awb_date").datebox('getValue');
 
                     if (bc_document == "" || bc_date == "") {
                         toastr.warning("Please input Doc No and Doc Date!", "Information");
@@ -467,63 +565,65 @@
                         if (rows.length > 0) {
                             $.messager.confirm('Warning', 'Are you sure you want to save this data?', function(r) {
                                 if (r) {
-                                    for (var i = 0; i < rows.length; i++) {
-                                        var row = rows[i];
-                                        $.ajax({
-                                            type: "post",
-                                            url: '<?= base_url('purchase/purchase_order_receipts/create') ?>',
-                                            data: 'item_rm_id=' + row.item_rm_id +
-                                                '&supplier_id=' + row.supplier_id +
-                                                '&receipt_date=' + receipt_date +
-                                                '&receipt_no=' + receipt_no +
-                                                '&lotno=' + lotno +
-                                                '&po_no=' + row.po_no +
-                                                // '&bc_kind=' + bc_kind +
-                                                // '&bc_aju=' + bc_aju +
-                                                '&bc_document=' + bc_document +
-                                                '&bc_date=' + bc_date +
-                                                // '&awb_no=' + awb_no +
-                                                // '&awb_date=' + awb_date +
-                                                '&qty_po=' + row.qty_po +
-                                                '&qty_os=' + row.qty_os +
-                                                '&qty_receipt=' + row.qty_receipt +
-                                                '&qty_mpq=' + row.mpq +
-                                                '&qty_label=' + row.qty_label,
-                                            dataType: "json",
-                                            success: function(result) {
-                                                //toastr.success(result.message, result.title);
-                                                Swal.fire({
-                                                    title: result.message,
-                                                    icon: result.theme,
-                                                    confirmButtonText: 'Ok',
-                                                    allowOutsideClick: false,
-                                                }).then((result) => {
-                                                    if (result.isConfirmed) {
+                                    // Fetch the latest receipt number from the server
+                                    var encodedReceiptDate = window.btoa(receipt_date);
+                                    $.ajax({
+                                        type: "get",
+                                        url: '<?= base_url('purchase/purchase_order_receipts/receipt_no/') ?>' + encodedReceiptDate,
+                                        success: function(receipt_number) {
+                                            for (var i = 0; i < rows.length; i++) {
+                                                var row = rows[i];
+                                                $.ajax({
+                                                    type: "post",
+                                                    url: '<?= base_url('purchase/purchase_order_receipts/create') ?>',
+                                                    data: {
+                                                        item_rm_id: row.item_rm_id,
+                                                        supplier_id: row.supplier_id,
+                                                        receipt_date: receipt_date,
+                                                        receipt_no: receipt_number, // Use the receipt_no from the server
+                                                        lotno: lotno,
+                                                        po_no: row.po_no,
+                                                        bc_document: bc_document,
+                                                        bc_date: bc_date,
+                                                        qty_po: row.qty_po,
+                                                        qty_os: row.qty_os,
+                                                        qty_receipt: row.qty_receipt,
+                                                        qty_mpq: row.mpq,
+                                                        qty_label: row.qty_label
+                                                    },
+                                                    dataType: "json",
+                                                    success: function(result) {
                                                         Swal.fire({
-                                                            title: "Are you Want to Print Barcode?",
-                                                            showDenyButton: true,
-                                                            confirmButtonText: "Yes",
-                                                            denyButtonText: `No`
+                                                            title: result.message,
+                                                            icon: result.theme,
+                                                            confirmButtonText: 'Ok',
+                                                            allowOutsideClick: false,
                                                         }).then((result) => {
-
                                                             if (result.isConfirmed) {
-                                                                var receipt_no = $("#receipt_no").textbox('getValue');
-                                                                var qty_receipt = row ? row.qty_receipt : 0;
-                                                                var qty_label = row ? row.qty_label : 0;
-
-                                                                var po = {
-                                                                    receipt_no: receipt_no,
-                                                                    qty_receipt: qty_receipt,
-                                                                    qty_label: qty_label
-                                                                };
-
-                                                                window.location.reload();
-                                                                
-                                                                print_po(po);
-                                                            } else if (result.isDenied) {
-                                                                Swal.fire("You can print QR Code in Datagrid", "", "info").then((result) => {
+                                                                Swal.fire({
+                                                                    title: "Do you want to print the barcode?",
+                                                                    showDenyButton: true,
+                                                                    confirmButtonText: "Yes",
+                                                                    denyButtonText: "No"
+                                                                }).then((result) => {
                                                                     if (result.isConfirmed) {
+                                                                        var qty_receipt = row ? row.qty_receipt : 0;
+                                                                        var qty_label = row ? row.qty_label : 0;
+
+                                                                        var po = {
+                                                                            receipt_no: receipt_number,
+                                                                            qty_receipt: qty_receipt,
+                                                                            qty_label: qty_label
+                                                                        };
+
                                                                         window.location.reload();
+                                                                        print_po(po);
+                                                                    } else if (result.isDenied) {
+                                                                        Swal.fire("You can print QR Code in Datagrid", "", "info").then((result) => {
+                                                                            if (result.isConfirmed) {
+                                                                                window.location.reload();
+                                                                            }
+                                                                        });
                                                                     }
                                                                 });
                                                             }
@@ -531,11 +631,11 @@
                                                     }
                                                 });
                                             }
-                                        });
-                                    }
-                                    
-                                    $('#dg').treegrid('reload');
-                                    $('#dlg_insert').dialog('close');
+
+                                            $('#dg').treegrid('reload');
+                                            $('#dlg_insert').dialog('close');
+                                        }
+                                    });
                                 }
                             });
 

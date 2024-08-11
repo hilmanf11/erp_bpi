@@ -15,7 +15,7 @@
         <tr>
             <th rowspan="2" field="ck" checkbox="true"></th>
             <th rowspan="2" data-options="field:'period',halign:'center',width:100">Period</th>
-            <th rowspan="2" data-options="field:'wp',width:80,halign:'center'">WP</th>
+            <!-- <th rowspan="2" data-options="field:'wp',width:80,halign:'center'">WP</th> -->
             <th rowspan="2" data-options="field:'workorder',width:150,halign:'center'">WO ID</th>
             <th rowspan="2" data-options="field:'item_number',width:150,halign:'center'">Product No</th>
             <th rowspan="2" data-options="field:'item_rm_no',width:200,halign:'center'">Component No</th>
@@ -23,12 +23,20 @@
             <th colspan="3" data-options="field:'',width:100,halign:'center',align:'right',formatter:numberformat"> Quantity</th>
             <th rowspan="2" data-options="field:'warehouse',width:80,align:'center',formatter:numberformat">Stock WHS</th>
             <th rowspan="2" data-options="field:'uom',width:80,align:'center'">UoM</th>
+            <th colspan="3" data-options="field:'',width:100,halign:'center',align:'right',formatter:numberformat">Quantity Crusher</th>
+            <th colspan="3" data-options="field:'',width:100,halign:'center',align:'right',formatter:numberformat">Quantity Purging</th>
             <th colspan="2" data-options="field:'',width:100,halign:'center'"> Created</th>
         </tr>
         <tr>
             <th data-options="field:'qty',width:80,halign:'center',align:'right',formatter:numberformat">Supply</th>
             <th data-options="field:'qty_req',width:80,halign:'center',align:'right',formatter:numberformat">Actual</th>
             <th data-options="field:'balance',width:80,halign:'center',align:'right',formatter:numberformat,styler:numberStyle">Balance <br> WIP</th>
+            <th data-options="field:'qty_crusher',width:80,halign:'center',align:'right',formatter:numberformat">Supply</th>
+            <th data-options="field:'qty_req_crusher',width:80,halign:'center',align:'right',formatter:numberformat">Actual</th>
+            <th data-options="field:'balance_crusher',width:80,halign:'center',align:'right',formatter:numberformat,styler:numberStyle">Balance <br> WIP</th>
+            <th data-options="field:'qty_purging',width:80,halign:'center',align:'right',formatter:numberformat">Supply</th>
+            <th data-options="field:'qty_req_purging',width:80,halign:'center',align:'right',formatter:numberformat">Actual</th>
+            <th data-options="field:'balance_purging',width:80,halign:'center',align:'right',formatter:numberformat,styler:numberStyle">Balance <br> WIP</th>
             <th data-options="field:'created_by',width:100,align:'center'"> By</th>
             <th data-options="field:'created_date',width:150,align:'center'"> Date</th>
         </tr>
@@ -85,17 +93,21 @@
                     success: function(json) {
                         if (json.total > 0) {
                             var row = json.rows;
+                            console.log(row);
                             for (let i = 0; i < json.total; i++) {
                                 $.ajax({
                                     type: "POST",
                                     url: "<?= base_url('warehouse/issued_materials/create') ?>",
                                     data: "item_fg_id=" + row[i].item_fg_id +
                                         "&item_rm_id=" + row[i].item_rm_id +
+                                        "&item_rm_no=" + row[i].item_rm_no +
                                         "&request_no=" + row[i].request_no +
                                         "&period=" + row[i].period +
                                         "&wp=" + row[i].wp +
                                         "&workorder=" + row[i].workorder +
-                                        "&qty=" + row[i].qty_issued,
+                                        "&qty=" + row[i].qty_issued +
+                                        "&qty_crusher=" + row[i].qty_crusher +
+                                        "&qty_purging=" + row[i].qty_purging,
                                     dataType: "json",
                                     success: function(result) {
                                         $('#receipt_id').focus();
@@ -136,6 +148,7 @@
                         console.log(request_no);
                         if (json.total > 0) {
                             var row = json.rows;
+                            console.log(row);
                             for (let i = 0; i < json.total; i++) {
                                 $.ajax({
                                     type: "POST",
@@ -143,6 +156,7 @@
                                     data: "request_no=" + request_no +
                                         "&label_no=" + receipt_id +
                                         "&item_rm_id=" + row[i].item_rm_id + //item_fg_id
+                                        "&type=" + row[i].type +
                                         "&qty=" + row[i].qty,
                                     dataType: "json",
                                     success: function(result) {
@@ -155,7 +169,7 @@
                                             if (result.title == "Not Scanned In" || result.title == "Not Registered") {
                                                 serialNotFound.play();
                                             } else {
-                                                serialNotFound.play();
+                                                serialDuplicate.play();
                                             }
                                             toastr.error(result.message, result.title);
                                             $("#receipt_id").val('');
@@ -179,6 +193,80 @@
                 });
             }
         });
+
+        //Scan Label + crusher
+        // $('#receipt_id').keypress(function(e) {
+        //     if (e.which == 13) {
+        //         var receipt_id = $(this).val();
+        //         var request_no = $("#request_no").val();
+        //         $.ajax({
+        //             type: "POST",
+        //             url: "<?= base_url('warehouse/issued_materials/getPoReceipt') ?>",
+        //             data: "receipt_id=" + receipt_id + "&request_no=" + request_no,
+        //             dataType: "json",
+        //             success: function(json) {
+        //                 if (json.total > 0) {
+        //                     var rows = json.rows;
+        //                     for (let i = 0; i < json.total; i++) {
+        //                         var item_rm_id = rows[i].item_rm_id; // Mengambil item_rm_id
+        //                         console.log(item_rm_id);
+        //                         // AJAX kedua untuk cek item number yang berawalan "CR-"
+        //                         $.ajax({
+        //                             type: "POST",
+        //                             url: "<?= base_url('warehouse/issued_materials/checkItemNumber') ?>",
+        //                             data: "item_rm_id=" + item_rm_id,
+        //                             dataType: "json",
+        //                             success: function(Result) {
+        //                                     // Jika ditemukan item number yang berawalan "CR-", gunakan id baru
+        //                                     var cr_item_rm_id = Result.id;
+        //                                     console.log(cr_item_rm_id);
+
+        //                                     if (!cr_item_rm_id) {
+        //                                         cr_item_rm_id = item_rm_id;
+        //                                     }
+
+        //                                 // Lanjutkan ke proses create_label dengan item_rm_id yang diperbarui (jika ada)
+        //                                 $.ajax({
+        //                                     type: "POST",
+        //                                     url: "<?= base_url('warehouse/issued_materials/create_label') ?>",
+        //                                     data: "request_no=" + request_no +
+        //                                         "&label_no=" + receipt_id +
+        //                                         "&item_rm_id=" + cr_item_rm_id + // item_rm_id bisa diganti dengan item_rm_id yang baru
+        //                                         "&qty=" + rows[i].qty,
+        //                                     dataType: "json",
+        //                                     success: function(result) {
+        //                                         if (result.theme == "success") {
+        //                                             serialSuccess.play();
+        //                                             toastr.success(result.message, result.title);
+        //                                             $("#receipt_id").val('');
+        //                                             $('#receipt_id').focus();
+        //                                         } else {
+        //                                             serialNotFound.play();
+        //                                             toastr.error(result.message, result.title);
+        //                                             $("#receipt_id").val('');
+        //                                             $('#receipt_id').focus();
+        //                                         }
+        //                                     }
+        //                                 });
+        //                             }
+        //                         });
+        //                     }
+
+        //                     $('#dg').datagrid({
+        //                         url: '<?= base_url('warehouse/issued_materials/datatables?request_no=') ?>' + window.btoa(request_no),
+        //                         rownumbers: true
+        //                     });
+                            
+        //                 } else {
+        //                     serialNotFound.play();
+        //                     toastr.warning("Label not found!");
+        //                     $("#receipt_id").val('');
+        //                 }
+        //             }
+        //         });
+        //     }
+        // });
+
     });
     function numberformat(value, row) {
         const formatter = new Intl.NumberFormat('id-ID', {

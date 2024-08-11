@@ -711,9 +711,10 @@ class Ap_payments extends CI_Controller
         $hal = 1;
         $subtotal = 0;
         for ($i = 0; $i < $page; $i++) {
-            $this->db->select('a.*, b.name as supplier_name');
+            $this->db->select('a.*, b.name as supplier_name, c.bank_name');
             $this->db->from('ap_payments a');
             $this->db->join('suppliers b', 'a.supplier_id = b.id');
+            $this->db->join('account_banks c', 'a.bank_account = c.bank_account');
             $this->db->like('a.payment_no', $payment_no);
             $this->db->order_by('a.status', 'ASC');
             $this->db->order_by('a.payment_date', 'DESC');
@@ -812,6 +813,11 @@ class Ap_payments extends CI_Controller
                                             <td width="50">Bank Account</td>
                                             <td width="10">:</td>
                                             <td><b>' . @$records[0]['bank_account'] . '</b></td>
+                                        </tr>
+                                         <tr>
+                                            <td width="50">Bank Name</td>
+                                            <td width="10">:</td>
+                                            <td><b>' . @$records[0]['bank_name'] . '</b></td>
                                         </tr>
                                     </table>
                                 </div>

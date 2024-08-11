@@ -38,6 +38,14 @@
                     <option value="DETAIL">DETAIL</option>
                 </select>
             </div>
+            <div class="fitem">
+                <span style="width:35%; display:inline-block;">Trans Type</span>
+                <select style="width:60%;" id="filter_trans_type" class="easyui-combobox" panelHeight="auto" disabled>
+                    <option value="">Choose All</option>
+                    <option value="RECEIPT">RECEIPT</option>
+                    <option value="ISSUED">ISSUED</option>
+                </select>
+            </div>
         </div>
 
     </fieldset>
@@ -65,8 +73,9 @@
         var filter_item_family = $("#filter_item_family").combobox('getValue');
         var filter_items = $("#filter_items").combobox('getValue');
         var filter_display = $("#filter_display").combobox('getValue');
+        var filter_trans_type = $("#filter_trans_type").combobox('getValue');
         var filter_division = $("#filter_division").combobox('getValue');
-        url = "?filter_from=" + filter_from + "&filter_to=" + filter_to + "&filter_item_category=" + filter_item_category + "&filter_item_family=" + filter_item_family + "&filter_items=" + filter_items + "&filter_display=" + filter_display + "&filter_division=" + filter_division;
+        url = "?filter_from=" + filter_from + "&filter_to=" + filter_to + "&filter_item_category=" + filter_item_category + "&filter_item_family=" + filter_item_family + "&filter_items=" + filter_items + "&filter_display=" + filter_display + "&filter_trans_type=" + filter_trans_type + "&filter_division=" + filter_division;
         $("#printout").contents().find('html').html("<center><br><br><br><b style='font-size:20px;'>Please Wait...</b></center>");
         $("#printout").attr('src', '<?= base_url('warehouse/report_history_transactions/print') ?>' + url);
     }
@@ -80,8 +89,9 @@
         var filter_item_family = $("#filter_item_family").combobox('getValue');
         var filter_items = $("#filter_items").combobox('getValue');
         var filter_display = $("#filter_display").combobox('getValue');
+        var filter_trans_type = $("#filter_trans_type").combobox('getValue');
         var filter_division = $("#filter_division").combobox('getValue');
-        url = "?filter_from=" + filter_from + "&filter_to=" + filter_to + "&filter_item_category=" + filter_item_category + "&filter_item_family=" + filter_item_family + "&filter_items=" + filter_items + "&filter_display=" + filter_display + "&filter_division=" + filter_division;
+        url = "?filter_from=" + filter_from + "&filter_to=" + filter_to + "&filter_item_category=" + filter_item_category + "&filter_item_family=" + filter_item_family + "&filter_items=" + filter_items + "&filter_display=" + filter_display + "&filter_trans_type=" + filter_trans_type + "&filter_division=" + filter_division;
         window.location.assign('<?= base_url('warehouse/report_history_transactions/print/excel') ?>' + url);
     }
 
@@ -169,8 +179,17 @@
         panelHeight: 'panelHeight',
         prompt: 'Choose Division',
     });
-    
 
+    $("#filter_display").combobox({
+        onChange: function(display){
+            if(display === 'DETAIL'){
+                $('#filter_trans_type').combobox('enable');
+            } else {
+                $('#filter_trans_type').combobox('disable');
+            }
+        }
+    });
+        
 
     //Format Datepicker
     function myformatter(date) {

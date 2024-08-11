@@ -386,6 +386,7 @@
                                 }]
                             ],
                             onSelect: function(value, rows) {
+                                console.log(rows);
                                 var dg = $('#dg2');
                                 var row = dg.datagrid('getSelected');
                                 var rowIndex = dg.datagrid('getRowIndex', row);
@@ -1057,6 +1058,32 @@
                 }],
             });
         }
+    });
+
+    $('#filter_sales_order_no').combobox({
+        url: '<?= base_url('sales/sales_orders/readSalesOrders/'); ?>',
+        valueField: 'sales_order_no',
+        textField: 'sales_order_no',
+        prompt: 'Choose All',
+        icons: [{
+            iconCls: 'icon-clear',
+            handler: function(e) {
+                $(e.data.target).combobox('clear').combobox('textbox').focus();
+            }
+        }],
+    });
+
+    $('#filter_customer_order_no').combobox({
+        url: '<?= base_url('sales/sales_orders/readCustomerOrders/'); ?>',
+        valueField: 'customer_order_no',
+        textField: 'customer_order_no',
+        prompt: 'Choose All',
+        icons: [{
+            iconCls: 'icon-clear',
+            handler: function(e) {
+                $(e.data.target).combobox('clear').combobox('textbox').focus();
+            }
+        }],
     });
 
     $('#division').combobox({

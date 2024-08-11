@@ -34,7 +34,7 @@ class Sales_orders extends CI_Controller
     public function readItemFg($customer_id)
     {
         $post = isset($_POST['q']) ? $_POST['q'] : "";
-        $send = $this->crud->query("SELECT b.id, b.number, b.name, b.number_customer, a.price, c.currency, b.uom, COALESCE(SUM(d.qty_del), 0) as delivery
+        $send = $this->crud->query("SELECT b.id, b.number, b.name, b.number_customer, a.price, c.currency, b.uom, '0' as delivery
             FROM customer_items a 
             JOIN item_fg b ON a.item_fg_id = b.id and b.type = 'FG'
             JOIN customers c ON a.customer_id = c.id
@@ -60,9 +60,21 @@ class Sales_orders extends CI_Controller
         echo json_encode($send);
     }
 
+    public function readSalesOrders()
+    {
+        $send = $this->crud->query("SELECT DISTINCT sales_order_no, sales_order_date FROM sales_orders WHERE `status` = 0");
+        echo json_encode($send);
+    }
+
     public function readCustomerOrder($customer_id)
     {
         $send = $this->crud->query("SELECT DISTINCT customer_order_no FROM sales_orders WHERE customer_id = '$customer_id'");
+        echo json_encode($send);
+    }
+
+    public function readCustomerOrders()
+    {
+        $send = $this->crud->query("SELECT DISTINCT customer_order_no FROM sales_orders WHERE `status` = 0");
         echo json_encode($send);
     }
 
@@ -132,11 +144,13 @@ class Sales_orders extends CI_Controller
         if ($this->input->get()) {
             $sales_order_no = base64_decode($this->input->get('sales_order_no'));
 
-            $this->db->select('a.*, b.number as item_fg_number, b.name as item_fg_name');
+            $this->db->select('a.*, b.number as item_fg_number, b.name as item_fg_name, COALESCE(SUM(c.qty),0) as delivery, a.qty - COALESCE(SUM(c.qty), 0) as outstanding');
             $this->db->from('sales_orders a');
             $this->db->join('item_fg b', 'a.item_fg_id = b.id');
+            $this->db->join('sales_order_deliveries c', 'a.sales_order_no = c.sales_order_no AND a.item_fg_id = c.item_fg_id', 'left');
             $this->db->where('a.sales_order_no', $sales_order_no);
             $this->db->order_by('b.number', 'ASC');
+            $this->db->group_by('b.id');
             $records = $this->db->get()->result_array();
 
             echo json_encode($records);

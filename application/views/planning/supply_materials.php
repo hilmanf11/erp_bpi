@@ -6,7 +6,6 @@
             <th rowspan="2" data-options="field:'request_date',width:120,halign:'center'">Kanban Date</th>
             <th rowspan="2" data-options="field:'request_name',width:120,halign:'center'">Requester</th>
             <th rowspan="2" data-options="field:'period',width:100,halign:'center'">Period</th>
-            <th rowspan="2" data-options="field:'wp',width:50,halign:'center'">WP</th>
             <th rowspan="2" data-options="field:'workorder',width:120,halign:'center'">Workorder</th>
             <th rowspan="2" data-options="field:'item_number',width:150,halign:'center'">Product No</th>
             <th rowspan="2" data-options="field:'item_name',width:150,halign:'center'">Product Name</th>
@@ -35,8 +34,8 @@
                     <input style="width:60%;" id="filter_period" class="easyui-combobox">
                 </div>
                 <div class="fitem">
-                    <span style="width:35%; display:inline-block;">Work Period</span>
-                    <input style="width:60%;" id="filter_wp" class="easyui-combobox">
+                    <span style="width:35%; display:inline-block;">Workorder</span>
+                    <input style="width:60%;" id="filter_workorder" class="easyui-combobox">
                 </div>
                 <div class="fitem">
                     <span style="width:35%; display:inline-block;"></span>
@@ -92,17 +91,21 @@
                     <span style="width:35%; display:inline-block;">Period</span>
                     <input style="width:60%;" name="period" id="period" required="" class="easyui-combobox">
                 </div>
-                <div class="fitem">
+                <!-- <div class="fitem">
                     <span style="width:35%; display:inline-block;">WP</span>
                     <input style="width:60%;" name="wp" id="wp" required="" class="easyui-combogrid">
-                </div>
+                </div> -->
                 <div class="fitem">
                     <span style="width:35%; display:inline-block;">Workorder</span>
-                    <input style="width:60%;" name="workorder" id="workorder" class="easyui-textbox">
+                    <input style="width:60%;" name="workorder" id="workorder" class="easyui-combobox">
+                </div>
+                <div class="fitem" hidden>
+                    <span style="width:35%; display:inline-block;">Product No</span>
+                    <input style="width:60%;" name="item_fg_id" id="item_fg_id" required="" class="easyui-textbox">
                 </div>
                 <div class="fitem">
                     <span style="width:35%; display:inline-block;">Product No</span>
-                    <input style="width:60%;" name="item_fg_id" id="item_fg_id" required="" class="easyui-combogrid">
+                    <input style="width:60%;" name="item_fg_number" id="item_fg_number" required="" class="easyui-textbox">
                 </div>
             </div>
         </fieldset>
@@ -127,32 +130,14 @@
             textField: 'period',
             prompt: "Choose Period",
             onSelect: function(rowPeriod) {
-                $("#wp").combogrid({
+                $("#workorder").combobox({
                     url: '<?= base_url('planning/production_schedules/readWpAll?period=') ?>' + window.btoa(rowPeriod.period),
-                    panelWidth: 420,
-                    idField: 'wp',
-                    textField: 'wp',
-                    mode: 'remote',
-                    fitColumns: true,
-                    prompt: "Choose WP",
-                    columns: [
-                        [{
-                            field: 'wp',
-                            title: 'WP',
-                            width: 80
-                        }, {
-                            field: 'so_number',
-                            title: 'SO Number',
-                            width: 150
-                        }, {
-                            field: 'workorder',
-                            title: 'Workorder',
-                            width: 100
-                        }]
-                    ],
-                    onSelect: function(indexWP, rowWP) {
-                        $("#workorder").textbox('setValue', rowWP.workorder);
-                        $("#item_fg_id").combogrid("setValue", rowWP.item_rm_id);
+                    valueField: 'wo_no',
+                    textField: 'wo_no',
+                    prompt: "Choose Workorder",
+                    onSelect: function(rowWP) {
+                        $("#item_fg_id").textbox("setValue", rowWP.item_fg_id);
+                        $("#item_fg_number").textbox("setValue", rowWP.item_fg_number);
                     }
                 });
             }
@@ -188,7 +173,7 @@
                     editor: {
                         type: 'combogrid',
                         options: {
-                            url: '<?= base_url('master/item_rm/reads') ?>',
+                            url: '<?= base_url('planning/supply_materials/readItemRm') ?>',
                             required: true,
                             panelWidth: 400,
                             idField: 'number',
@@ -355,6 +340,9 @@
                 $('#frm_insert').form('load', row);
                 $("#request_date").datebox('disable');
                 
+                $("#item_fg_id").textbox("setValue", row.item_fg_id);
+                $("#item_fg_number").textbox("setValue", row.item_number);
+                
                 // setTimeout(function() {
                 //     $("#request_no").textbox('setValue', row.request_no);
                 // }, 2000);
@@ -406,12 +394,12 @@
 
     function filter() {
         var filter_period = $("#filter_period").combobox('getValue');
-        var filter_wp = $("#filter_wp").combobox('getValue');
+        var filter_workorder = $("#filter_workorder").combobox('getValue');
         var filter_request_no = $("#filter_request_no").combobox('getValue');
         var filter_product_family = $("#filter_product_family").combobox('getValue');
         var filter_product_no = $("#filter_product_no").combogrid('getValue');
 
-        url = "?filter_period=" + filter_period + "&filter_wp=" + filter_wp + "&filter_request_no=" + filter_request_no + "&filter_product_family=" + filter_product_family + "&filter_product_no=" + btoa(filter_product_no);
+        url = "?filter_period=" + filter_period + "&filter_workorder=" + filter_workorder + "&filter_request_no=" + filter_request_no + "&filter_product_family=" + filter_product_family + "&filter_product_no=" + btoa(filter_product_no);
         $('#dg').treegrid({
             url: '<?= base_url('planning/supply_materials/datatables') ?>' + url
         });
@@ -425,12 +413,12 @@
 
     function excel() {
         var filter_period = $("#filter_period").combobox('getValue');
-        var filter_wp = $("#filter_wp").combobox('getValue');
+        var filter_workorder = $("#filter_workorder").combobox('getValue');
         var filter_request_no = $("#filter_request_no").combobox('getValue');
         var filter_product_family = $("#filter_product_family").combobox('getValue');
         var filter_product_no = $("#filter_product_no").combogrid('getValue');
 
-        url = "?filter_period=" + filter_period + "&filter_wp=" + filter_wp + "&filter_request_no=" + filter_request_no + "&filter_product_family=" + filter_product_family + "&filter_product_no=" + btoa(filter_product_no);
+        url = "?filter_period=" + filter_period + "&filter_workorder=" + filter_workorder + "&filter_request_no=" + filter_request_no + "&filter_product_family=" + filter_product_family + "&filter_product_no=" + btoa(filter_product_no);
         window.location.assign('<?= base_url('planning/supply_materials/print/excel') ?>' + url);
     }
 
@@ -484,12 +472,13 @@
                     var request_no = $("#request_no").textbox('getValue');
                     var request_date = $("#request_date").datebox('getValue');
                     var request_name = $("#request_name").textbox('getValue');
-                    var item_fg_id = $("#item_fg_id").combogrid('getValue');
+                    var item_fg_id = $("#item_fg_id").textbox('getValue');
+                    var item_fg_number = $("#item_fg_number").textbox('getValue');
                     var workorder = $("#workorder").textbox('getValue');
                     var period = $("#period").combobox('getValue');
-                    var wp = $("#wp").combogrid('getValue');
+                    // var wp = $("#wp").combogrid('getValue');
 
-                    if (period == "" || wp == "" || item_fg_id == "" || totalrows <= 0) {
+                    if (period == "" || item_fg_id == "" || totalrows <= 0) {
                         toastr.error("please complete your input data");
                     } else {
                         var rows = $('#dg2').datagrid('getRows');
@@ -502,11 +491,12 @@
                                     url: '<?= base_url('planning/supply_materials/create') ?>',
                                     data: {
                                         item_fg_id: item_fg_id,
+                                        item_fg_number: item_fg_number,
                                         request_date: request_date,
                                         request_no: request_no,
                                         request_name: request_name,
                                         period: period,
-                                        wp: wp,
+                                        // wp: wp,
                                         workorder: workorder,
                                         item_rm_id: rows[i].item_rm_id,
                                         qty: rows[i].qty
@@ -538,26 +528,26 @@
             }]
         });
 
-        $('#item_fg_id').combogrid({
-            url: '<?= base_url('master/item_fg/reads/001') ?>',
-            panelWidth: 420,
-            idField: 'id',
-            textField: 'number',
-            mode: 'remote',
-            fitColumns: true,
-            prompt: "Choose Product",
-            columns: [
-                [{
-                    field: 'number',
-                    title: 'Product No',
-                    width: 100
-                }, {
-                    field: 'name',
-                    title: 'Product Name',
-                    width: 200
-                }, ]
-            ]
-        });
+        // $('#item_fg_id').combogrid({
+        //     url: '<?= base_url('master/item_fg/reads/001') ?>',
+        //     panelWidth: 420,
+        //     idField: 'id',
+        //     textField: 'number',
+        //     mode: 'remote',
+        //     fitColumns: true,
+        //     prompt: "Choose Product",
+        //     columns: [
+        //         [{
+        //             field: 'number',
+        //             title: 'Product No',
+        //             width: 100
+        //         }, {
+        //             field: 'name',
+        //             title: 'Product Name',
+        //             width: 200
+        //         }, ]
+        //     ]
+        // });
 
         $("#filter_period").combobox({
             url: '<?= base_url('planning/supply_materials/readPeriod') ?>',
@@ -571,11 +561,11 @@
                 }
             }],
             onSelect: function(period) {
-                $("#filter_wp").combobox({
+                $("#filter_workorder").combobox({
                     url: '<?= base_url('planning/supply_materials/readWp/') ?>' + period.period,
-                    valueField: 'wp',
-                    textField: 'wp',
-                    prompt: "Choose WP",
+                    valueField: 'workorder',
+                    textField: 'workorder',
+                    prompt: "Choose Workorder",
                     icons: [{
                         iconCls: 'icon-clear',
                         handler: function(e) {
@@ -584,10 +574,10 @@
                     }],
                     onSelect: function(wp) {
                         $("#filter_request_no").combobox({
-                            url: '<?= base_url('planning/supply_materials/readRequestNo/') ?>' + period.period + '/' + window.btoa(wp.wp),
+                            url: '<?= base_url('planning/supply_materials/readRequestNo/') ?>' + period.period + '/' + window.btoa(wp.workorder),
                             valueField: 'request_no',
                             textField: 'request_no',
-                            prompt: "Choose WP",
+                            prompt: "Choose Request No",
                             icons: [{
                                 iconCls: 'icon-clear',
                                 handler: function(e) {

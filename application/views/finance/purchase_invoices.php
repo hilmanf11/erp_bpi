@@ -433,7 +433,7 @@
         });
         $("#trans_date").datebox('enable');
         //$("#category_id").combobox('enable');
-        $("#supplier_id").combobox('enable');
+        $("#supplier_id").combogrid('enable');
         $("#por_no").combobox('enable');
         $("#po_no").combobox('enable');
         $("#account_purchase_name").textbox('setValue', "PURCHASE");
@@ -946,7 +946,7 @@
                     });
                     $("#trans_date").datebox('disable');
                     //$("#category_id").combobox('disable');
-                    $("#supplier_id").combobox('disable');
+                    $("#supplier_id").combogrid('disable');
                     $("#por_no").combobox('disable');
                     $("#po_no").combobox('disable');
                     $("#preview").linkbutton('disable');

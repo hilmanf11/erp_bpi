@@ -42,6 +42,8 @@
                     <option value="os_mpp">Upload OS MPP</option>
                     <option value="purchase_orders">Purchase Orders</option>
                     <option value="purchase_requests">Purchase Requests</option>
+                    <option value="delivery_notes">Delivery Notes</option>
+                    <option value="sales_invoices">Sales Invoices</option>
                 </select>
             </div>
             <div class="fitem">

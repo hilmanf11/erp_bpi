@@ -188,7 +188,7 @@ class Purchase_invoices extends CI_Controller
             JOIN purchase_orders d ON a.po_no = d.po_no
             WHERE a.supplier_id = '$supplier_id' and c.id = '$item_category_id' and a.status = '0' $dp
             GROUP BY a.receipt_no 
-            ORDER BY a.created_date desc");
+            ORDER BY a.created_date DESC");
         echo json_encode($records);
     }
 

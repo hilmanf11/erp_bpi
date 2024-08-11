@@ -31,7 +31,7 @@ class Delivery_orders extends CI_Controller
     public function readSalesOrderDeliveries($sales_order)
     {
         if($sales_order == "FG"){
-            $send = $this->crud->query("SELECT DISTINCT trans_date FROM sales_order_deliveries WHERE `status` = '0'");
+            $send = $this->crud->query("SELECT DISTINCT trans_date FROM sales_order_deliveries WHERE `status` = '0' ORDER BY trans_date DESC");
             echo json_encode($send);
         }else{
             $send = $this->crud->query("SELECT DISTINCT trans_date FROM sales_order_delivery_rm WHERE `status` = '0'");
@@ -42,13 +42,12 @@ class Delivery_orders extends CI_Controller
     public function readsC($sales_order, $delivery_date)
     {
         $delivery_date = base64_decode($delivery_date);
-        
         if($sales_order == "FG"){
             $send = $this->crud->query("SELECT c.id, c.name, c.number
                 FROM sales_orders a
                 JOIN sales_order_deliveries b ON a.sales_order_no = b.sales_order_no and b.status = 0
                 JOIN customers c ON a.customer_id = c.id
-                JOIN production_schedules d ON a.sales_order_no = d.so_number
+                -- JOIN production_schedules d ON a.sales_order_no = d.so_number
                 WHERE a.status = 0 and b.trans_date = '$delivery_date' GROUP BY c.id");
             echo json_encode($send);
         }else{
@@ -83,21 +82,91 @@ class Delivery_orders extends CI_Controller
         }
     }
 
-    public function number($delivery_order_date, $customer_no)
+    public function readDeliveryOrder($customer_id)
     {
-        $datenow    = "DO" . $customer_no . date("ym", strtotime(base64_decode($delivery_order_date)));
-        $sqlGetID   = $this->db->query("SELECT max(`delivery_order_no`) as kode FROM delivery_orders WHERE `delivery_order_no` like '%$datenow%'");
-        $rowID      = $sqlGetID->row();
-        $kode       = $rowID->kode;
-        if ($kode == NULL) {
-            $autoID = sprintf("%04s", $kode + 1);
-        } else {
-            $urutan = (int) substr($kode, -3);
-            $urutan++;
-            $autoID = sprintf("%04s", $urutan);
-        }
-        echo $datenow . $autoID;
+        $send = $this->crud->query("SELECT delivery_order_no, customer_order_no, sales_order_no
+            FROM delivery_orders
+            WHERE customer_id = '$customer_id' 
+            ORDER BY delivery_order_no DESC");
+        echo json_encode($send);
     }
+
+    public function readCustomerOrder($customer_order_no)
+    {
+        $send = $this->crud->query("SELECT customer_order_no
+            FROM delivery_orders
+            WHERE customer_order_no = '$customer_order_no' 
+            ORDER BY customer_order_no DESC");
+        echo json_encode($send);
+    }
+
+    public function readSalesOrder($sales_order_no)
+    {
+        $send = $this->crud->query("SELECT sales_order_no
+            FROM delivery_orders
+            WHERE sales_order_no = '$sales_order_no' 
+            ORDER BY sales_order_no DESC");
+        echo json_encode($send);
+    }
+
+    public function readDeliveryOrders()
+    {
+        $send = $this->crud->query("SELECT delivery_order_no
+            FROM delivery_orders
+            WHERE `status` = 0 
+            ORDER BY delivery_order_no DESC");
+        echo json_encode($send);
+    }
+
+    public function readCustomerOrders()
+    {
+        $send = $this->crud->query("SELECT DISTINCT customer_order_no
+            FROM delivery_orders
+            WHERE `status` = 0 
+            ORDER BY customer_order_no DESC");
+        echo json_encode($send);
+    }
+
+    public function readSalesOrders()
+    {
+        $send = $this->crud->query("SELECT DISTINCT sales_order_no
+            FROM delivery_orders
+            WHERE `status` = 0 
+            ORDER BY sales_order_no DESC");
+        echo json_encode($send);
+    }
+
+    public function number($delivery_order_date, $customer_no)
+
+    {
+
+        $datenow    = "DO" . $customer_no . date("ym", strtotime(base64_decode($delivery_order_date)));
+
+        $sqlGetID   = $this->db->query("SELECT max(`delivery_order_no`) as kode FROM delivery_orders WHERE `delivery_order_no` like '%$datenow%'");
+
+        $rowID      = $sqlGetID->row();
+
+        $kode       = $rowID->kode;
+
+        if ($kode == NULL) {
+
+            $autoID = sprintf("%04s", $kode + 1);
+
+        } else {
+
+            $urutan = (int) substr($kode, -3);
+
+            $urutan++;
+
+            $autoID = sprintf("%04s", $urutan);
+
+        }
+
+        echo $datenow . $autoID;
+
+    }
+
+
 
     public function datatablesTemp($sales_order, $delivery_date, $customer_id, $customer_order_no)
     {
@@ -110,18 +179,23 @@ class Delivery_orders extends CI_Controller
                 b.customer_order_no,
                 b.sales_order_no,
                 d.uom, 
+                COALESCE(SUM(f.qty), 0) as qty_dn, 
                 b.qty as qty_so, 
-                (b.qty - COALESCE(SUM(c.qty_del), 0)) as qty_remain,
-                COALESCE(SUM(c.qty_del), 0) as qty_do,
-                COALESCE(a.qty, 0) as qty_del,
+                (a.qty - COALESCE(SUM(g.qty), 0)) as qty_remain,
+                (a.qty - COALESCE(SUM(g.qty), 0)) as qty_do,
+                (a.qty - COALESCE(SUM(g.qty), 0)) as qty_del,
                 COALESCE(SUM(e.qty), 0) as stock,
-                ((b.qty - COALESCE(SUM(c.qty_del), 0)) - a.qty) as stock_bal');
+                COALESCE(g.qty, 0) as accum_qty_do,
+                COALESCE((e.qty - c.qty_del),0) as stock_bal');
             $this->db->from('sales_orders b');
             $this->db->join('sales_order_deliveries a', 'a.sales_order_no = b.sales_order_no and a.item_fg_id = b.item_fg_id and a.customer_id = b.customer_id');
-            $this->db->join('delivery_orders c', 'b.sales_order_no = c.sales_order_no and b.item_fg_id = c.item_fg_id and b.customer_id = c.customer_id', 'left');
+            $this->db->join('delivery_orders c', 'b.sales_order_no = c.sales_order_no and b.item_fg_id = c.item_fg_id and b.customer_id = c.customer_id and a.trans_date = c.delivery_date', 'left');
             $this->db->join('item_fg d', 'b.item_fg_id = d.id');
-            $this->db->join('scan_item_receipts_fg e', 'a.sales_order_no = e.so_number', 'left');
+            $this->db->join("(SELECT b.item_fg_id, COALESCE(SUM(a.qty),0) as qty FROM scan_item_receipts_fg a JOIN wip_receipts b on a.checksheet_number = b.checksheet_number GROUP BY b.item_fg_id) e",'b.item_fg_id = e.item_fg_id','left');
+            $this->db->join('delivery_notes f', 'b.sales_order_no = f.sales_order_no and b.item_fg_id = f.item_fg_id','left');
+            $this->db->join("(SELECT sales_order_no, item_fg_id,delivery_date, COALESCE(SUM(qty_del),0) as qty FROM delivery_orders GROUP BY sales_order_no, item_fg_id, delivery_date) g", 'b.sales_order_no = g.sales_order_no and b.item_fg_id = g.item_fg_id and a.trans_date = g.delivery_date','left');
             $this->db->where('b.customer_id', $customer_id);
+            $this->db->where('a.trans_date', $delivery_date);
             $this->db->where_in('b.customer_order_no', $customer_order_no);
             $this->db->group_by('b.item_fg_id');
             $this->db->group_by('b.sales_order_no');
@@ -131,24 +205,29 @@ class Delivery_orders extends CI_Controller
                 b.customer_order_no,
                 b.sales_order_no,
                 d.uom, 
+                COALESCE(SUM(f.qty), 0) as qty_dn, 
                 b.qty as qty_so, 
-                (b.qty - COALESCE(SUM(c.qty_del), 0)) as qty_remain,
-                COALESCE(SUM(c.qty_del), 0) as qty_do,
-                COALESCE(a.qty, 0) as qty_del,
+                (a.qty - COALESCE(SUM(g.qty), 0)) as qty_remain,
+                (a.qty - COALESCE(SUM(g.qty), 0)) as qty_do,
+                (a.qty - COALESCE(SUM(g.qty), 0)) as qty_del,
                 COALESCE(SUM(e.qty), 0) as stock,
-                ((b.qty - COALESCE(SUM(c.qty_del), 0)) - a.qty) as stock_bal');
+                COALESCE(g.qty, 0) as accum_qty_do,
+                COALESCE((e.qty - c.qty_del),0) as stock_bal');
             $this->db->from('sales_order_rm b');
             $this->db->join('sales_order_delivery_rm a', 'a.sales_order_no = b.sales_order_no and a.item_fg_id = b.item_fg_id and a.customer_id = b.customer_id');
-            $this->db->join('delivery_orders c', 'b.sales_order_no = c.sales_order_no and b.item_fg_id = c.item_fg_id and b.customer_id = c.customer_id', 'left');
+            $this->db->join('delivery_orders c', 'b.sales_order_no = c.sales_order_no and b.item_fg_id = c.item_fg_id and b.customer_id = c.customer_id and a.trans_date = c.delivery_date', 'left');
             $this->db->join('item_fg d', 'b.item_fg_id = d.id');
-            $this->db->join('scan_item_receipts_fg e', 'a.sales_order_no = e.so_number', 'left');
+            $this->db->join("(SELECT b.item_fg_id, COALESCE(SUM(a.qty),0) as qty FROM scan_item_receipts_fg a JOIN wip_receipts b on a.checksheet_number = b.checksheet_number GROUP BY b.item_fg_id) e",'b.item_fg_id = e.item_fg_id','left');
+            $this->db->join('delivery_notes f', 'b.sales_order_no = f.sales_order_no and b.item_fg_id = f.item_fg_id','left');
+            $this->db->join("(SELECT sales_order_no, item_fg_id,delivery_date, COALESCE(SUM(qty_del),0) as qty FROM delivery_orders GROUP BY sales_order_no, item_fg_id, delivery_date) g", 'b.sales_order_no = g.sales_order_no and b.item_fg_id = g.item_fg_id and a.trans_date = g.delivery_date','left');
             $this->db->where('b.customer_id', $customer_id);
+            $this->db->where('a.trans_date', $delivery_date);
             $this->db->where_in('b.customer_order_no', $customer_order_no);
             $this->db->group_by('b.item_fg_id');
             $this->db->group_by('b.sales_order_no');
             $this->db->order_by('b.item_fg_id', 'asc');
         }
-        
+
         $records = $this->db->get()->result_array();
         echo json_encode($records);
     }
@@ -221,6 +300,7 @@ class Delivery_orders extends CI_Controller
     }
 
     // GET DATATABLES UPDATE
+
     public function datatableUpdates()
     {
         if ($this->input->get()) {
@@ -238,47 +318,55 @@ class Delivery_orders extends CI_Controller
     }
 
     //CREATE DATA
+
     public function create()
     {
         if ($this->input->post()) {
             $post = $this->input->post();
-
             $delivery_orders = $this->crud->read("delivery_orders", [], ["delivery_order_no" => $post['delivery_order_no'], "item_fg_id" => $post['item_fg_id'], "sales_order_no" => $post['sales_order_no']]);
-
             if (@$delivery_orders->delivery_order_no != "") {
                 $send = $this->crud->update('delivery_orders', [
                     "delivery_order_no" => $post['delivery_order_no'], 
                     "item_fg_id" => $post['item_fg_id'], 
                     "sales_order_no" => $post['sales_order_no']
-                ], ["remarks" => $post['remarks']]);
+                ], ["remarks" => $post['remarks'],"qty_del" => $post['qty_del'],"stock_bal" => $post['stock_bal']]);
+
+                if($post['qty_del'] == $post['qty_do']){
+                    $this->crud->update("sales_order_deliveries", ["item_fg_id" => $post['item_fg_id'], "sales_order_no" => $post['sales_order_no'], "trans_date" => $post['delivery_date']], ["status" => 1]);
+                }else{
+                    $this->crud->update("sales_order_deliveries", ["item_fg_id" => $post['item_fg_id'], "sales_order_no" => $post['sales_order_no'], "trans_date" => $post['delivery_date']], ["status" => 0]);
+                }
             } else {
                 $send = $this->crud->create('delivery_orders', $post);
-
                 //Ubah Status Sales Order Delivery
-                $this->crud->update("sales_order_deliveries", ["item_fg_id" => $post['item_fg_id'], "sales_order_no" => $post['sales_order_no'], "trans_date" => $post['delivery_date']], ["status" => 1]);
+                if($post['qty_do'] == $post['qty_del']){
+                    $this->crud->update("sales_order_deliveries", ["item_fg_id" => $post['item_fg_id'], "sales_order_no" => $post['sales_order_no'], "trans_date" => $post['delivery_date']], ["status" => 1]);
+                }
             }
-
             echo $send;
+
         } else {
+
             show_error("Cannot Process your request");
+
         }
+
     }
 
     //DELETE DATA
     public function delete()
     {
         $data = $this->input->post();
-        $delivery_orders = $this->crud->read("delivery_orders", [], $data);
-        foreach ($delivery_orders as $delivery_order) {
-            $this->crud->update("sales_order_deliveries", [
-                "item_fg_id" => $delivery_order->item_fg_id,
-                "sales_order_no" => $delivery_order->sales_order_no,
-                "trans_date" => $delivery_order->delivery_date
-            ], [
-                "status" => 0
-            ]);
-        }
+        $delivery_order_no = $data['delivery_order_no'];
 
+        $delivery_orders = $this->crud->reads("delivery_orders", [], ["delivery_order_no" => $delivery_order_no]);
+        foreach ($delivery_orders as $delivery_order) {
+            $item_fg_id = $delivery_order->item_fg_id;
+            $sales_order_no = $delivery_order->sales_order_no;
+            $delivery_date = $delivery_order->delivery_date;
+
+            $update = $this->crud->update('sales_order_deliveries', ["item_fg_id" => $item_fg_id, "sales_order_no" => $sales_order_no, "trans_date" => $delivery_date], ["status" => 0]);
+        }
         $send = $this->crud->delete('delivery_orders', $data);
         echo $send;
     }
@@ -431,7 +519,10 @@ class Delivery_orders extends CI_Controller
         }
         $html .= '</div><script>window.print()</script>';
         die($html);
+
     }
+
+
 
     //PRINT & EXCEL DATA
     public function print($option = "")
@@ -456,7 +547,6 @@ class Delivery_orders extends CI_Controller
         $this->db->select('*');
         $this->db->from('config');
         $config = $this->db->get()->row();
-
         $this->db->select("a.*, b.name as customer_name, c.number as item_fg_number, c.name as item_fg_name");
         $this->db->from('delivery_orders a');
         $this->db->join('customers b', 'a.customer_id = b.id');
@@ -469,84 +559,160 @@ class Delivery_orders extends CI_Controller
         $this->db->like('a.delivery_order_no', $filter_delivery_order_no);
         $this->db->like('a.sales_order_no', $filter_sales_order_no);
         $this->db->like('a.item_fg_id', $filter_item_fg);
-        $this->db->like('d.customer_order_no', $filter_customer_order_no);
+        $this->db->like('a.customer_order_no', $filter_customer_order_no);
         $this->db->like('a.status', $filter_status);
         $this->db->order_by('a.delivery_order_no', 'ASC');
         $records = $this->db->get()->result_array();
 
         $html = '<html><head><title>Print Data</title></head><style>body {font-family: Arial, Helvetica, sans-serif;}#customer_items {border-collapse: collapse;width: 100%;font-size: 12px;}#customer_items td, #customer_items th {border: 1px solid #ddd;padding: 2px;}#customer_items tr:nth-child(even){background-color: #f2f2f2;}#customer_items tr:hover {background-color: #ddd;}#customer_items th {padding-top: 2px;padding-bottom: 2px;text-align: left;color: black;}</style><body>
+
         <center>
+
             <div style="float: left; font-size: 12px; text-align: left;">
+
                 <table style="width: 100%;">
+
                     <tr>
+
                         <td width="50" style="font-size: 12px; vertical-align: top; text-align: center; vertical-align:jus margin-right:10px;">
+
                             <img src="' . $config->favicon . '" width="30">
+
                         </td>
+
                         <td style="font-size: 14px; text-align: left; margin:2px;">
+
                             <b>' . $config->name . '</b><br>
+
                             <small>' . $config->description . '</small>
+
                         </td>
+
                     </tr>
+
                 </table>
+
             </div>
+
             <div style="float: right; font-size: 12px; text-align: right;">
+
                 Print Date ' . date("d M Y H:m:s") . ' <br>
+
                 Print By ' . $this->session->username . '  
+
             </div>
+
             <br><br>
+
             <div style="float: centet; font-size: 16px; text-align: center;">
+
                 <h3>DELIVERY ORDER</h3>
+
             </div>
+
         </center>
+
         
+
         <table id="customer_items" border="1">
+
             <tr>
+
                 <th width="20">No</th>
+
                 <th>Customer Name</th>
+
                 <th>Delivery Order No</th>
+
                 <th>Delivery Order Date</th>
+
                 <th>Delivery Date</th>
+
                 <th>Trans Type</th>
+
                 <th>Sales Order No</th>
+
                 <th>Customer Order No</th>
+
                 <th>Remarks</th>
+
                 <th>Product ID</th>
+
                 <th>Product No</th>
+
                 <th>Product Name</th>
+
                 <th>Uom</th>
+
                 <th>Qty SO</th>
+
                 <th>Qty Remain</th>
+
                 <th>Qty DO</th>
+
                 <th>Qty Delivery</th>
+
                 <th>Stock</th>
+
                 <th>Stock Balance</th>
+
             </tr>';
+
         $no = 1;
+
         foreach ($records as $data) {
+
             $html .= '<tr>
+
                         <td>' . $no . '</td>
+
                         <td>' . $data['customer_name'] . '</td>
+
                         <td>' . $data['delivery_order_no'] . '</td>
+
                         <td>' . $data['delivery_order_date'] . '</td>
+
                         <td>' . $data['delivery_date'] . '</td>
+
                         <td>' . $data['trans_type'] . '</td>
+
                         <td>' . $data['sales_order_no'] . '</td>
+
                         <td>' . $data['customer_order_no'] . '</td>
+
                         <td>' . $data['remarks'] . '</td>
+
                         <td>' . $data['item_fg_id'] . '</td>
+
                         <td>' . $data['item_fg_number'] . '</td>
+
                         <td>' . $data['item_fg_name'] . '</td>
+
                         <td>' . $data['uom'] . '</td>
+
                         <td>' . $data['qty_so'] . '</td>
+
                         <td>' . $data['qty_remain'] . '</td>
+
                         <td>' . $data['qty_do'] . '</td>
+
                         <td>' . $data['qty_del'] . '</td>
+
                         <td>' . $data['stock'] . '</td>
+
                         <td>' . $data['stock_bal'] . '</td>
+
                     </tr>';
+
             $no++;
+
         }
+
         $html .= '</table></body></html>';
+
         echo $html;
+
     }
+
 }
+

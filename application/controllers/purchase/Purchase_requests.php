@@ -71,11 +71,11 @@ class Purchase_requests extends CI_Controller
         echo json_encode($records);
     }
 
-    // public function readRequestnumbers()
-    // {
-    //     $records = $this->crud->query("SELECT request_no, request_date, request_name FROM purchase_requests WHERE `deleted` = '0' GROUP BY request_no ORDER BY created_date desc");// WHERE `status` = '0'
-    //     echo json_encode($records);
-    // }
+    public function readRequestnumbers()
+    {
+        $records = $this->crud->query("SELECT request_no, request_date, request_name FROM purchase_requests WHERE `deleted` = '0' GROUP BY request_no ORDER BY created_date desc");// WHERE `status` = '0'
+        echo json_encode($records);
+    }
 
     public function readRequestno($filter_from, $filter_to)
     {
@@ -129,20 +129,29 @@ class Purchase_requests extends CI_Controller
         echo json_encode($records);
     }
 
-    public function request_no($category = "")
+    public function request_no($category = "", $request_no="", $methode="add")
     {
+        $requestno = base64_decode($request_no);
+
         $datenow    = $category . date("ymd");
         $sqlGetID   = $this->db->query("SELECT max(request_no) as kode FROM purchase_requests WHERE request_no like '%$datenow%' and upload = 'NO'");
         $rowID      = $sqlGetID->row();
         $kode       = $rowID->kode;
-        if ($kode == NULL) {
-            $autoID = sprintf("%04s", $kode + 1);
-        } else {
-            $urutan = (int) substr($kode, -4);
-            $urutan++;
-            $autoID = sprintf("%04s", $urutan);
+
+        if($methode == "add"){
+            if ($kode == NULL) {
+                $autoID = sprintf("%04s", $kode + 1);
+            } else {
+                $urutan = (int) substr($kode, -4);
+                $urutan++;
+                $autoID = sprintf("%04s", $urutan);
+            }
+            
+            echo "PR-" . $datenow . "-" . $autoID;
+        }else{
+            echo $requestno;
         }
-        echo "PR-" . $datenow . "-" . $autoID;
+        
     }
 
     public function datatables()
@@ -150,7 +159,7 @@ class Purchase_requests extends CI_Controller
         $filter_from = $this->input->get('filter_from');
         $filter_to   = $this->input->get('filter_to');
         $filter_request_no = $this->input->get('filter_request_no');
-        $filter_item_category = $this->input->get('filter_item_category');
+        $filter_category_id = $this->input->get('filter_category_id');
         $filter_item_familys = $this->input->get('filter_item_familys');
         $filter_access = $this->readUserAccess();
 
@@ -164,10 +173,24 @@ class Purchase_requests extends CI_Controller
         //Select Query
         $id = $_POST['id'];
         if ($id === "0") {
-            $this->db->select('a.request_no as request_no, request_date, expected_date, request_name, a.division, a.department, a.sub_department, sum(a.qty) as qty, a.status, c.id as item_family_id, c.number as item_family_number, a.approved_to, a.attachment');
+            $this->db->select('a.request_no as request_no, 
+            a.request_date, 
+            a.expected_date, 
+            a.request_name, 
+            a.division, 
+            a.department, 
+            a.sub_department, 
+            sum(a.qty) as qty, 
+            a.status, 
+            c.id as item_family_id, 
+            c.number as item_family_number, 
+            c.item_category_id, 
+            a.approved_to, 
+            a.attachment');
             $this->db->from('purchase_requests a');
             $this->db->join('item_rm b', 'a.item_rm_id = b.id');
             $this->db->join('item_familys c', 'b.item_family_id = c.id');
+            $this->db->join('purchase_orders d', 'a.request_no = d.request_no and a.item_rm_id = d.item_rm_id','left');
             $this->db->where('a.deleted', 0);
             if ($filter_from != "" or $filter_to != "") {
                 $this->db->where('a.request_date >=', $filter_from);
@@ -180,7 +203,7 @@ class Purchase_requests extends CI_Controller
             }
             $this->db->like('a.request_no', $filter_request_no);
             $this->db->like('c.id', $filter_item_familys);
-            $this->db->like('c.item_category_id', $filter_item_category);
+            $this->db->like('c.item_category_id', $filter_category_id);
             $this->db->group_by('request_no');
             $this->db->order_by('a.created_date','DESC');
             $this->db->order_by('a.updated_date', 'DESC');
@@ -209,16 +232,20 @@ class Purchase_requests extends CI_Controller
                 // Update status di purchase_requests
                 $this->db->where('request_no', $record['request_no']);
                 $this->db->update('purchase_requests', ['status' => $status]);
+                
 
                 $arr[] = array(
                     "id" => $record['request_no'],
                     "item_family_id" => $record['item_family_id'],
                     "item_family_number" => $record['item_family_number'],
+                    "item_category_id" => $record['item_category_id'],
                     "request_no" => $record['request_no'],
                     "request_date" => $record['request_date'],
                     "expected_date" => $record['expected_date'],
                     "request_name" => $record['request_name'],
                     "division" => $record['division'],
+                    "department" => $record['department'],
+                    "sub_department" => $record['sub_department'],
                     "qty" => $record['qty'],
                     "approved_to" => $approved_to,
                     "status" => $status,
@@ -235,6 +262,7 @@ class Purchase_requests extends CI_Controller
                 b.name as item_name, 
                 b.uom, 
                 d.po_no, 
+                d.status as status_po, 
                 c.name as category_name');
             $this->db->from('purchase_requests a');
             $this->db->join('item_rm b', 'a.item_rm_id = b.id');
@@ -269,7 +297,11 @@ class Purchase_requests extends CI_Controller
             $post   = $this->input->post();
 
             if ($post['id'] != "") {
-                $send = $this->crud->update('purchase_requests', ["id" => $post['id']], $post);
+                $post_final = [
+                    "qty" => $post['qty'],
+                    "remarks" => $post['remarks']
+                ];
+                $send = $this->crud->update('purchase_requests', ["id" => $post['id']], $post_final);
             } else {
                 $send = $this->crud->create('purchase_requests', $post);
             }
@@ -667,7 +699,7 @@ class Purchase_requests extends CI_Controller
         $filter_from = $this->input->get('filter_from');
         $filter_to   = $this->input->get('filter_to');
         $filter_request_no = $this->input->get('filter_request_no');
-        $filter_item_familys = $this->input->get('filter_item_familys');
+        $filter_category_id = $this->input->get('filter_category_id');
         $filter_access = $this->readUserAccess();
 
         //Config

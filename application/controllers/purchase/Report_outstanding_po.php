@@ -158,12 +158,36 @@ class Report_outstanding_po extends CI_Controller
         foreach ($records as $data) {
             $po_no = $data['po_no'];
             $item_rm_id = $data['item_rm_id'];
+            $supplier = $data['supplier_id'];
+            // var_dump($data);
             if($filter_product_no != "" && $filter_purchase_order != ""){
-                $receipt = $this->crud->query("SELECT a.po_no, SUM(b.qty_receipt) as qty_receipt from purchase_orders a JOIN (SELECT SUM(qty_receipt) as qty_receipt, po_no, item_rm_id FROM purchase_order_receipts GROUP BY po_no, item_rm_id) b ON a.po_no = b.po_no and a.item_rm_id = b.item_rm_id WHERE a.po_no = '$po_no' and a.item_rm_id = '$item_rm_id' and a.status like '%$filter_status%'");
+                $receipt = $this->crud->query("SELECT a.po_no, SUM(b.qty_receipt) as qty_receipt 
+                from purchase_orders a 
+                JOIN (SELECT SUM(qty_receipt) as qty_receipt, po_no, item_rm_id 
+                FROM purchase_order_receipts 
+                GROUP BY po_no, item_rm_id) b ON a.po_no = b.po_no and a.item_rm_id = b.item_rm_id 
+                WHERE a.po_no = '$po_no' and a.item_rm_id = '$item_rm_id' and a.status like '%$filter_status%'");
             }elseif($filter_purchase_order != ""){
-                $receipt = $this->crud->query("SELECT a.po_no, SUM(b.qty_receipt) as qty_receipt from purchase_orders a JOIN (SELECT SUM(qty_receipt) as qty_receipt, po_no, item_rm_id FROM purchase_order_receipts GROUP BY po_no, item_rm_id) b ON a.po_no = b.po_no and a.item_rm_id = b.item_rm_id WHERE a.po_no = '$po_no' and a.status like '%$filter_status%'");
+                $receipt = $this->crud->query("SELECT a.po_no, SUM(b.qty_receipt) as qty_receipt 
+                from purchase_orders a 
+                JOIN (SELECT SUM(qty_receipt) as qty_receipt, po_no, item_rm_id 
+                FROM purchase_order_receipts 
+                GROUP BY po_no, item_rm_id) b ON a.po_no = b.po_no and a.item_rm_id = b.item_rm_id 
+                WHERE a.po_no = '$po_no' and a.status like '%$filter_status%'");
+            }elseif($filter_product_no != ""){
+                $receipt = $this->crud->query("SELECT a.po_no, SUM(b.qty_receipt) as qty_receipt 
+                from purchase_orders a 
+                JOIN (SELECT SUM(qty_receipt) as qty_receipt, po_no, item_rm_id 
+                FROM purchase_order_receipts 
+                GROUP BY po_no, item_rm_id) b ON a.po_no = b.po_no and a.item_rm_id = b.item_rm_id 
+                WHERE a.po_no = '$po_no' and a.item_rm_id = '$item_rm_id' and a.status like '%$filter_status%'");
             }else{
-                $receipt = $this->crud->query("SELECT a.po_no, SUM(b.qty_receipt) as qty_receipt from purchase_orders a JOIN (SELECT SUM(qty_receipt) as qty_receipt, po_no, item_rm_id FROM purchase_order_receipts GROUP BY po_no, item_rm_id) b ON a.po_no = b.po_no and a.item_rm_id = b.item_rm_id WHERE a.po_no = '$po_no' and a.item_rm_id = '$item_rm_id' and a.status like '%$filter_status%'");
+                $receipt = $this->crud->query("SELECT a.po_no, SUM(b.qty_receipt) as qty_receipt 
+                from purchase_orders a 
+                JOIN (SELECT SUM(qty_receipt) as qty_receipt, po_no, item_rm_id 
+                FROM purchase_order_receipts 
+                GROUP BY po_no, item_rm_id) b ON a.po_no = b.po_no and a.item_rm_id = b.item_rm_id 
+                WHERE a.po_no = '$po_no' and a.status like '%$filter_status%'");
             }
             // $receipt = $this->crud->query("SELECT a.po_no, SUM(b.qty_receipt) as qty_receipt from purchase_orders a JOIN (SELECT SUM(qty_receipt) as qty_receipt, po_no, item_rm_id FROM purchase_order_receipts GROUP BY po_no, item_rm_id) b ON a.po_no = b.po_no and a.item_rm_id = b.item_rm_id WHERE (a.po_no = '$po_no' OR '$po_no' IS NULL OR '$po_no' = '') and (a.item_rm_id = '$item_rm_id' OR '$item_rm_id' IS NULL OR '$item_rm_id' = '') and a.status like '%$filter_status%'");
             $os_qty = $data['qty_po'] - @$receipt[0]->qty_receipt;

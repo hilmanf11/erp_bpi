@@ -13,7 +13,7 @@ class Sales_invoices extends CI_Controller
         $this->load->library('Ciqrcode');
         $this->load->model('crud');
         //Validasi Form
-        $this->form_validation->set_rules('item_id', 'Product No', 'required|min_length[1]|max_length[50]');
+        $this->form_validation->set_rules('item_fg_id', 'Product No', 'required|min_length[1]|max_length[50]');
     }
     public function index()
     {
@@ -33,15 +33,14 @@ class Sales_invoices extends CI_Controller
     public function reads($number)
     {
         $number = base64_decode($number);
-        $this->db->select('a.*, c.id as item_id, f.account_name, b.currency');
+        $this->db->select('a.*, c.id as item_fg_id, f.account_name, b.currency');
         $this->db->from('sales_invoices a');
         $this->db->join('customers b', 'a.customer_id = b.id');
-        $this->db->join('items c', 'a.item_id = c.id', 'left');
-        $this->db->join('uom d', 'c.uom_id = d.id', 'left');
-        $this->db->join('item_familys e', 'c.item_family_id = e.id', 'left');
+        $this->db->join('item_fg c', 'a.item_fg_id = c.id', 'left');
+        $this->db->join('item_familys e', 'c.type = e.number', 'left');
         $this->db->join('account_coa f', 'a.account_number = f.account_number', 'left');
-        // $this->db->join('customer_items e', 'b.id = e.customer_id and c.id = e.item_id');
-        // $this->db->join('sales_orders f', 'a.so_number = f.number and b.id = f.customer_id and c.id = f.item_id');
+        // $this->db->join('customer_items e', 'b.id = e.customer_id and c.id = e.item_fg_id');
+        // $this->db->join('sales_orders f', 'a.sales_order_no = f.number and b.id = f.customer_id and c.id = f.item_fg_id');
         $this->db->where('a.deleted', 0);
         $this->db->where('a.status', 0);
         $this->db->where('a.number', $number);
@@ -67,10 +66,10 @@ class Sales_invoices extends CI_Controller
     {
         $customer_id = $this->input->get('customer_id');
 
-        $records = $this->crud->query("SELECT `number`
+        $records = $this->crud->query("SELECT delivery_note_no
             FROM delivery_notes
             WHERE customer_id = '$customer_id' and `status` = '0'
-            GROUP BY `number` 
+            GROUP BY delivery_note_no 
             ORDER BY created_date desc");
         echo json_encode($records);
     }
@@ -83,7 +82,7 @@ class Sales_invoices extends CI_Controller
 
     public function readDeliveryNote()
     {
-        $data = $this->crud->query("SELECT DISTINCT `dn_number` FROM sales_invoices WHERE `status` = '0' ORDER BY `dn_number` ASC");
+        $data = $this->crud->query("SELECT DISTINCT `delivery_note_no` FROM sales_invoices WHERE `status` = '0' ORDER BY `delivery_note_no` ASC");
         echo json_encode($data);
     }
 
@@ -260,9 +259,9 @@ class Sales_invoices extends CI_Controller
         die($due_date);
     }
 
-    public function number($trans_date, $nickname)
+    public function number($trans_date, $number)
     {
-        $datenow    = "SI-" . $nickname . date("Ym", strtotime(base64_decode($trans_date)));
+        $datenow    = "SI-" . $number . date("Ym", strtotime(base64_decode($trans_date)));
         $sqlGetID   = $this->db->query("SELECT max(`number`) as kode FROM sales_invoices WHERE `number` like '%$datenow%'");
         $rowID      = $sqlGetID->row();
         $kode       = $rowID->kode;
@@ -278,34 +277,33 @@ class Sales_invoices extends CI_Controller
 
     public function datatablesTemp()
     {
-        $dn_number = base64_decode($this->input->get('dn_number'));
+        $delivery_note_no = base64_decode($this->input->get('delivery_note_no'));
 
-        $this->db->select('a.number as dn_number, a.customer_po, d.so_number, a.item_id, b.number as item_number, b.name as item_name, f.name as uom, h.account_number, i.account_name,
-            e.currency, d.delivery as qty, g.price, (d.delivery * g.price) as total');
+        $this->db->select('a.delivery_note_no, a.customer_order_no, d.sales_order_no, a.item_fg_id, b.number as item_number, b.name as item_name, b.uom, h.account_number, i.account_name,
+            e.currency, d.qty_del as qty, g.price, (d.qty_del * g.price) as total');
         $this->db->from('delivery_orders d');
-        $this->db->join('items b', 'd.item_id = b.id');
-        $this->db->join('customer_items c', 'd.customer_id = c.customer_id and d.item_id = c.item_id');
-        $this->db->join('delivery_notes a', 'a.do_number = d.number and a.item_id = d.item_id');
+        $this->db->join('item_fg b', 'd.item_fg_id = b.id');
+        $this->db->join('customer_items c', 'd.customer_id = c.customer_id and d.item_fg_id = c.item_fg_id');
+        $this->db->join('delivery_notes a', 'a.delivery_order_no = d.delivery_order_no and a.item_fg_id = d.item_fg_id');
         $this->db->join('customers e', 'a.customer_id = e.id');
-        $this->db->join('uom f', 'b.uom_id = f.id');
-        $this->db->join('sales_orders g', 'd.so_number = g.number and a.customer_id = g.customer_id and a.item_id = g.item_id and a.customer_po = g.customer_po');
-        $this->db->join('item_familys h', 'b.item_family_id = h.id', 'left');
+        $this->db->join('sales_orders g', 'd.sales_order_no = g.sales_order_no and a.customer_id = g.customer_id and a.item_fg_id = g.item_fg_id and a.customer_order_no = g.customer_order_no');
+        $this->db->join('item_familys h', 'b.type = h.number', 'left');
         $this->db->join('account_coa i', 'h.account_number = i.account_number', 'left');
-        $this->db->where('a.number', $dn_number);
-        $this->db->group_by('a.customer_po');
-        $this->db->group_by('d.so_number');
-        $this->db->group_by('a.item_id');
-        $this->db->order_by('a.number', 'asc');
+        $this->db->where('a.delivery_note_no', $delivery_note_no);
+        $this->db->group_by('a.customer_order_no');
+        $this->db->group_by('d.sales_order_no');
+        $this->db->group_by('a.item_fg_id');
+        $this->db->order_by('a.delivery_note_no', 'asc');
         $records = $this->db->get()->result_array();
 
         $total_sub = 0;
         foreach ($records as $record) {
             $total_sub += $record['total'];
             $obj[] = array(
-                "dn_number" => $record['dn_number'],
-                "so_number" => $record['so_number'],
-                "customer_po" => $record['customer_po'],
-                "item_id" => $record['item_id'],
+                "delivery_note_no" => $record['delivery_note_no'],
+                "sales_order_no" => $record['sales_order_no'],
+                "customer_order_no" => $record['customer_order_no'],
+                "item_fg_id" => $record['item_fg_id'],
                 "item_no" => $record['item_number'],
                 "item_name" => $record['item_name'],
                 "uom" => $record['uom'],
@@ -332,7 +330,7 @@ class Sales_invoices extends CI_Controller
         $filter_due_date_from = base64_decode($this->input->get('filter_due_date_from'));
         $filter_due_date_to = base64_decode($this->input->get('filter_due_date_to'));
         $filter_sales_invoice = base64_decode($this->input->get('filter_sales_invoice'));
-        $filter_dn_number = base64_decode($this->input->get('filter_dn_number'));
+        $filter_delivery_note_no = base64_decode($this->input->get('filter_delivery_note_no'));
         $filter_customer = base64_decode($this->input->get('filter_customer'));
         $filter_status = base64_decode($this->input->get('filter_status'));
 
@@ -360,7 +358,7 @@ class Sales_invoices extends CI_Controller
                 $this->db->where("a.trans_date between '$date_from' and '$date_to'");
             }
             $this->db->like('a.number', $filter_sales_invoice);
-            $this->db->like('a.dn_number', $filter_dn_number);
+            $this->db->like('a.delivery_note_no', $filter_delivery_note_no);
             $this->db->like('a.customer_id', $filter_customer);
             $this->db->like('a.status', $filter_status);
             $this->db->order_by('a.status', 'ASC');
@@ -400,7 +398,7 @@ class Sales_invoices extends CI_Controller
                 echo $send;
             } else {
                 $send = $this->crud->create('sales_invoices', $post);
-                $update = $this->crud->update('delivery_notes', ["number" => $post['dn_number'], "customer_po" => $post['customer_po']], ["status" => "1"]);
+                $update = $this->crud->update('delivery_notes', ["delivery_note_no" => $post['delivery_note_no'], "customer_order_no" => $post['customer_order_no']], ["status" => "1"]);
                 echo $send;
             }
         } else {
@@ -464,16 +462,16 @@ class Sales_invoices extends CI_Controller
     public function delete()
     {
         $data = $this->input->post();
-        $packing_lists = $this->crud->reads('packing_lists', [], ["dn_number" => $data['dn_number']]);
+        // $packing_lists = $this->crud->reads('packing_lists', [], ["dn_number" => $data['dn_number']]);
 
-        if (count($packing_lists) > 0) {
-            echo json_encode(array("theme" => "error", "message" => "Please delete packing list first"));
-        } else {
+        // if (count($packing_lists) > 0) {
+        //     echo json_encode(array("theme" => "error", "message" => "Please delete packing list first"));
+        // } else {
             $send = $this->crud->delete('sales_invoices', $data);
             $this->crud->delete('sales_invoice_journals', ["number" => $data['number']]);
-            $update = $this->crud->update('delivery_notes', ["number" => $data['dn_number']], ["status" => "0"]);
+            $update = $this->crud->update('delivery_notes', ["delivery_note_no" => $data['delivery_note_no']], ["status" => "0"]);
             echo $send;
-        }
+        // }
     }
 
     public function print_commercial($invoice_no)
@@ -481,7 +479,7 @@ class Sales_invoices extends CI_Controller
         $invoice_no = base64_decode($invoice_no);
         $sales_invoices = $this->crud->reads('sales_invoices', [], ["number" => $invoice_no]);
         $sales_invoice = $this->crud->read('sales_invoices', [], ["number" => $invoice_no]);
-        $delivery_note = $this->crud->read('delivery_notes', [], ["number" => $sales_invoice->dn_number]);
+        $delivery_note = $this->crud->read('delivery_notes', [], ["delivery_note_no" => $sales_invoice->delivery_note_no]);
 
         if (@$delivery_note->address == "2") {
             $address_no = "_2";
@@ -516,27 +514,22 @@ class Sales_invoices extends CI_Controller
                 d.number as customer_number, 
                 d.name as customer_name,
                 d.type, 
-                d.address, 
-                d.address_2, 
-                d.address_billing, 
-                d.address_billing_2, 
-                d.attention, 
-                d.attention_2, 
-                d.telp_billing,
-                d.telp_billing_2,
-                d.telp,
-                d.telp_2,
+                b.address, 
+                b.address_billing, 
+                b.telp_billing,
+                b.telp,
                 d.currency,
                 g.origin,
                 g.sailing,
-                g.ship,
+                g.ship_by,
                 g.incoterm,
-                g.do_number,
+                g.delivery_order_no,
                 g.trans_type');
             $this->db->from('sales_invoices a');
             $this->db->join('customers d', 'a.customer_id = d.id');
-            $this->db->join('delivery_notes g', 'a.dn_number = g.number and a.customer_po = g.customer_po', 'left');
-            $this->db->join('delivery_orders e', 'g.do_number = e.number', 'left');
+            $this->db->join('customer_address b', 'd.id = b.customer_id');
+            $this->db->join('delivery_notes g', 'a.delivery_note_no = g.delivery_note_no and a.customer_order_no = g.customer_order_no', 'left');
+            $this->db->join('delivery_orders e', 'g.delivery_order_no = e.delivery_order_no', 'left');
             $this->db->where('a.deleted', 0);
             $this->db->where('a.number', $invoice_no);
             $this->db->group_by('a.id');
@@ -626,7 +619,7 @@ class Sales_invoices extends CI_Controller
                                         <tr>
                                             <td>Attention</td>
                                             <td>:</td>
-                                            <td><b>' . $records[0]['attention' . $address_no] . '</b></td>
+                                            <td><b>' . $address_no . '</b></td>
                                         </tr>
                                         <tr>
                                             <td>Telp</td>
@@ -645,7 +638,7 @@ class Sales_invoices extends CI_Controller
                                         <tr>
                                             <td>Delivery Note No</td>
                                             <td>:</td>
-                                            <td><b>' . @$sales_invoice->dn_number . '</b></td>
+                                            <td><b>' . @$sales_invoice->delivery_note_no . '</b></td>
                                         </tr>
                                         <tr>
                                             <td>Trans Type</td>
@@ -655,7 +648,7 @@ class Sales_invoices extends CI_Controller
                                         <tr>
                                             <td>Ship By</td>
                                             <td>:</td>
-                                            <td><b>' . $records[0]['ship'] . '</b></td>
+                                            <td><b>' . $records[0]['ship_by'] . '</b></td>
                                         </tr>
                                         <tr>
                                             <td>Incoterm</td>
@@ -694,10 +687,10 @@ class Sales_invoices extends CI_Controller
             $sub_qty = 0;
             $sub_total = 0;
             foreach ($records as $record) {
-                if ($record['customer_po'] == "") {
-                    $sales_order_no = $record['so_number'];
+                if ($record['customer_order_no'] == "") {
+                    $sales_order_no = $record['sales_order_no'];
                 } else {
-                    $sales_order_no = $record['customer_po'];
+                    $sales_order_no = $record['customer_order_no'];
                 }
 
                 $sub_qty += ($record['qty']);
@@ -788,14 +781,63 @@ class Sales_invoices extends CI_Controller
         //$this->db->group_by('a.number');
         $total_invoice = $this->db->get()->result_array();
 
+        $sales_invoices = $this->crud->read('sales_invoices', [], ["number" => $invoice_no]);
+        $approval = $this->crud->read('approvals', [], ["table_name" => "sales_invoices"]);
+
         $config = $this->db->get('config')->row();
         $config_iso = $this->db->get('config_iso')->row();
-
+       
+        $user_1 = $this->crud->read('users', [], ["username" => $approval->user_approval_1]);
+       
+        if (!empty($approval->user_approval_2)) {
+            $user_2 = $this->crud->read('users', [], ["username" => $approval->user_approval_2]);
+        } else {
+            $user_2 = (object) ["name" => ""];
+        }
+        
+        if (!empty($approval->user_approval_3)) {
+            $user_3 = $this->crud->read('users', [], ["username" => $approval->user_approval_3]);
+        } else {
+            $user_3 = (object) ["name" => ""];
+        }
+        
+        
+        if($sales_invoices->approved == 0){
+            $users_input = '<img src="' . base_url('assets/image/qrcode/' . $this->session->name . '.png') . '" width="80"/>';
+            $users_1 = '';
+            $users_2 = '';
+            $users_3 = '';
+        } elseif ($sales_invoices->approved == 1) {
+            $users_input = '<img src="' . base_url('assets/image/qrcode/' . $this->session->name . '.png') . '" width="80"/>';
+            $users_1 = '';
+            $users_2 = '';
+            $users_3 = '';
+        } elseif ($sales_invoices->approved == 2) {
+            $users_input = '<img src="' . base_url('assets/image/qrcode/' . $this->session->name . '.png') . '" width="80"/>';
+            $users_1 = '<img src="' . base_url('assets/image/qrcode/' . $user_1->name . '.png') . '" width="80"/>';
+            $users_2 = '';
+            $users_3 = '';
+        } elseif ($sales_invoices->approved == 3) {
+            $users_input = '<img src="' . base_url('assets/image/qrcode/' . $this->session->name . '.png') . '" width="80"/>';
+            $users_1 = '<img src="' . base_url('assets/image/qrcode/' . $user_1->name . '.png') . '" width="80"/>';
+            $users_2 = '<img src="' . base_url('assets/image/qrcode/' . $user_2->name . '.png') . '" width="80"/>';
+            $users_3 = '';
+        } else {
+            $users_input = '<img src="' . base_url('assets/image/qrcode/' . $this->session->name . '.png') . '" width="80"/>';
+            $users_1 = '<img src="' . base_url('assets/image/qrcode/' . $user_1->name . '.png') . '" width="80"/>';
+            $users_2 = '<img src="' . base_url('assets/image/qrcode/' . $user_2->name . '.png') . '" width="80"/>';
+            $users_3 = '<img src="' . base_url('assets/image/qrcode/' . $user_3->name . '.png') . '" width="80"/>';
+        }
+        
         //Config Page
         $rows = 10;
         $page = ceil(count($total_invoice) / $rows);
         //Generate QRcode
         $this->createQrcode(@$invoice_no, "assets/image/qrcode/");
+        $this->createQrcode($this->session->name, "assets/image/qrcode/");
+        $this->createQrcode($user_3->name, "assets/image/qrcode/");
+        $this->createQrcode($user_2->name, "assets/image/qrcode/");
+        $this->createQrcode($user_1->name, "assets/image/qrcode/");
         $html = '<html>
                     <head>
                         <title>' . $invoice_no . '</title>
@@ -899,9 +941,9 @@ class Sales_invoices extends CI_Controller
                                             <td><b>' . @$records[0]['customer_name'] . '</b></td>
                                         </tr>
                                         <tr>
-                                            <td width="50">Customer PO</td>
+                                            <td width="50">Customer Order No</td>
                                             <td width="10">:</td>
-                                            <td><b>' . @$records[0]['customer_po'] . '</b></td>
+                                            <td><b>' . @$records[0]['customer_order_no'] . '</b></td>
                                         </tr>
                                         <tr>
                                             <td width="50">Sales Invoice No</td>
@@ -975,8 +1017,8 @@ class Sales_invoices extends CI_Controller
 
                 $html .= '  <tr>
                                 <td style="text-align:center">' . $no . '</td>
-                                <td>' . $record['so_number'] . '</td>
-                                <td>' . $record['dn_number'] . '</td>
+                                <td>' . $record['sales_order_no'] . '</td>
+                                <td>' . $record['delivery_note_no'] . '</td>
                                 <td>' . $record['item_number'] . '</td>
                                 <td>' . $record['item_name'] . '</td>
                                 <td>' . $record['uom'] . '</td>
@@ -1073,16 +1115,16 @@ class Sales_invoices extends CI_Controller
                         <td style="text-align:center; font-weight:bold;">Approved By</td>
                     </tr>
                     <tr>
-                        <td style="height:60px;"></td>
-                        <td style="height:60px;"></td>
-                        <td style="height:60px;"></td>
-                        <td style="height:60px;"></td>
+                        <th style="height:60px;">'. $users_input. '</th>
+                        <th style="height:60px;">'. $users_1. '</th>
+                        <th style="height:60px;">'. $users_2. '</th>
+                        <th style="height:60px;">'. $users_3. '</th>
                     </tr>
                     <tr>
-                        <th style="height:20px; text-align:center;">' . $this->session->name . '<hr style="width:60%;margin-left:20%;">User Entry</th>
-                        <th style="height:20px; text-align:center;"><br><hr style="width:60%;margin-left:20%;">Purchasing</th>
-                        <th style="height:20px; text-align:center;"><br><hr style="width:60%;margin-left:20%;">Accounting Manager</th>
-                        <th style="height:20px; text-align:center;"><br><hr style="width:60%;margin-left:20%;">Director</th>
+                        <th style="height:20px; text-align:center;">' . $this->session->name . '<hr style="width:60%;margin-left:20%;">User</th>
+                        <th style="height:20px; text-align:center;">'. $user_1->name .'<br><hr style="width:60%;margin-left:20%;">Purchasing</th>
+                        <th style="height:20px; text-align:center;">'. $user_2->name .'<br><hr style="width:60%;margin-left:20%;">Accounting Manager</th>
+                        <th style="height:20px; text-align:center;">'. $user_3->name .'<br><hr style="width:60%;margin-left:20%;">Director</th>
                     </tr>
                 </table>
                 </div>
@@ -1105,7 +1147,7 @@ class Sales_invoices extends CI_Controller
         $filter_due_date_from = base64_decode($this->input->get('filter_due_date_from'));
         $filter_due_date_to = base64_decode($this->input->get('filter_due_date_to'));
         $filter_sales_invoice = base64_decode($this->input->get('filter_sales_invoice'));
-        $filter_dn_number = base64_decode($this->input->get('filter_dn_number'));
+        $filter_delivery_note_no = base64_decode($this->input->get('filter_delivery_note_no'));
         $filter_customer = base64_decode($this->input->get('filter_customer'));
         $filter_status = base64_decode($this->input->get('filter_status'));
 
@@ -1123,7 +1165,7 @@ class Sales_invoices extends CI_Controller
             $this->db->where("a.due_date between '$filter_due_date_from' and '$filter_due_date_to'");
         }
         $this->db->like('a.number', $filter_sales_invoice);
-        $this->db->like('a.dn_number', $filter_dn_number);
+        $this->db->like('a.delivery_note_no', $filter_delivery_note_no);
         $this->db->like('a.customer_id', $filter_customer);
         $this->db->like('a.status', $filter_status);
         $this->db->order_by('a.status', 'ASC');
@@ -1206,8 +1248,8 @@ class Sales_invoices extends CI_Controller
             foreach ($details as $detail) {
                 $html .= '  <tr>
                                 <td></td>
-                                <td>' . $detail['dn_number'] . '</td>
-                                <td>' . $detail['so_number'] . '</td>
+                                <td>' . $detail['delivery_note_no'] . '</td>
+                                <td>' . $detail['sales_order_no'] . '</td>
                                 <td>' . $detail['item_no'] . '</td>
                                 <td>' . $detail['item_name'] . '</td>
                                 <td style="text-align:right">' . number_format($detail['qty'], 2) . '</td>
@@ -1237,7 +1279,7 @@ class Sales_invoices extends CI_Controller
         $filter_due_date_from = base64_decode($this->input->get('filter_due_date_from'));
         $filter_due_date_to = base64_decode($this->input->get('filter_due_date_to'));
         $filter_sales_invoice = base64_decode($this->input->get('filter_sales_invoice'));
-        $filter_dn_number = base64_decode($this->input->get('filter_dn_number'));
+        $filter_delivery_note_no = base64_decode($this->input->get('filter_delivery_note_no'));
         $filter_customer = base64_decode($this->input->get('filter_customer'));
         $filter_status = base64_decode($this->input->get('filter_status'));
 
@@ -1266,7 +1308,7 @@ class Sales_invoices extends CI_Controller
             $this->db->where("a.due_date between '$filter_due_date_from' and '$filter_due_date_to'");
         }
         $this->db->like('a.number', $filter_sales_invoice);
-        $this->db->like('a.dn_number', $filter_dn_number);
+        $this->db->like('a.delivery_note_no', $filter_delivery_note_no);
         $this->db->like('a.customer_id', $filter_customer);
         $this->db->like('a.status', $filter_status);
         $this->db->order_by('a.status', 'ASC');
@@ -1328,7 +1370,7 @@ class Sales_invoices extends CI_Controller
                     <th>Remarks</th>
                     <th>Delivery Note</th>
                     <th>SO No</th>
-                    <th>Customer PO</th>
+                    <th>Customer Order No</th>
                     <th>Product No</th>
                     <th>Product Name</th>
                     <th>UoM</th>
@@ -1356,9 +1398,9 @@ class Sales_invoices extends CI_Controller
                             <td style="text-align:right;">' . $data['total_pph'] . '</td>
                             <td style="text-align:right;">' . ($data['total_sub'] + $data['total_vat'] - $data['total_pph']) . '</td>
                             <td>' . $data['remarks'] . '</td>
-                            <td>' . $data['dn_number'] . '</td>
-                            <td>' . $data['so_number'] . '</td>
-                            <td>' . $data['customer_po'] . '</td>
+                            <td>' . $data['delivery_note_no'] . '</td>
+                            <td>' . $data['sales_order_no'] . '</td>
+                            <td>' . $data['customer_order_no'] . '</td>
                             <td>' . $data['item_no'] . '</td>
                             <td>' . $data['item_name'] . '</td>
                             <td>' . $data['uom'] . '</td>
@@ -1392,7 +1434,7 @@ class Sales_invoices extends CI_Controller
         $filter_due_date_from = base64_decode($this->input->get('filter_due_date_from'));
         $filter_due_date_to = base64_decode($this->input->get('filter_due_date_to'));
         $filter_sales_invoice = base64_decode($this->input->get('filter_sales_invoice'));
-        $filter_dn_number = base64_decode($this->input->get('filter_dn_number'));
+        $filter_delivery_note_no = base64_decode($this->input->get('filter_delivery_note_no'));
         $filter_customer = base64_decode($this->input->get('filter_customer'));
         $filter_status = base64_decode($this->input->get('filter_status'));
 
@@ -1424,7 +1466,7 @@ class Sales_invoices extends CI_Controller
             $this->db->where("b.due_date between '$filter_due_date_from' and '$filter_due_date_to'");
         }
         $this->db->like('b.number', $filter_sales_invoice);
-        $this->db->like('b.dn_number', $filter_dn_number);
+        $this->db->like('b.delivery_note_no', $filter_delivery_note_no);
         $this->db->like('b.customer_id', $filter_customer);
         $this->db->like('b.status', $filter_status);
         $this->db->group_by('a.number');

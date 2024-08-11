@@ -47,7 +47,9 @@ class Location_items extends CI_Controller
             $offset = ($page - 1) * $rows;
             $result = array();
             //Select Query
-            $this->db->select('a.*, (CASE WHEN a.item_rm_id is null THEN c.number ELSE b.number END) as item_number, (CASE WHEN a.item_rm_id is null THEN c.name ELSE b.name END) as item_name');
+            $this->db->select('a.*, 
+            (CASE WHEN a.item_rm_id is null THEN c.number ELSE b.number END) as item_number, 
+            (CASE WHEN a.item_rm_id is null THEN c.name ELSE b.name END) as item_name');
             $this->db->from('warehouse_location_items a');
             $this->db->join('item_rm b', 'a.item_rm_id = b.id', 'left');
             $this->db->join('item_fg c', 'a.item_fg_id = c.id', 'left');
@@ -85,13 +87,9 @@ class Location_items extends CI_Controller
     public function create()
     {
         if ($this->input->post()) {
-            if ($this->form_validation->run() == TRUE) {
-                $post   = $this->input->post();
-                $send   = $this->crud->create('warehouse_location_items', $post);
-                echo $send;
-            } else {
-                show_error(validation_errors());
-            }
+            $post   = $this->input->post();
+            $send   = $this->crud->create('warehouse_location_items', $post);
+            echo $send;
         } else {
             show_error("Cannot Process your request");
         }

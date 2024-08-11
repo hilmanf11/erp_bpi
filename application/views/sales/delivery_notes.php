@@ -3,12 +3,15 @@
     <thead>
         <tr>
             <th rowspan="2" field="ck" checkbox="true"></th>
+            <th rowspan="2" data-options="field:'print',width:60,align:'center', formatter:btnPrint">Print</th>
             <th rowspan="2" data-options="field:'delivery_note_no',width:150,halign:'center'">Delivery Note No.</th>
             <th rowspan="2" data-options="field:'delivery_note_date',width:100,halign:'center'">Delivery Date</th>
             <th rowspan="2" data-options="field:'customer_name',width:200,halign:'center'">Customer Name</th>
             <th rowspan="2" data-options="field:'shipping_address',width:500,halign:'center'">Shipping Address</th>
             <!-- <th rowspan="2" data-options="field:'trans_type',width:100,halign:'center'">Transaction<br>Type</th> -->
             <th rowspan="2" data-options="field:'note',width:150,halign:'center'">Note</th>
+            <th rowspan="2" data-options="field:'trans_type',width:100,halign:'center'">Trans Type</th>
+            <th rowspan="2" data-options="field:'sales_invoice_no',width:150,halign:'center'">Sales Invoice No</th>
             <!-- <th rowspan="2" data-options="field:'status_delivery',width:100,align:'center', styler:cellStyler, formatter:cellFormatterDeliveryStatus">Delivery Status</th> -->
             <th rowspan="2" data-options="field:'status',width:80,align:'center', styler:cellStyler, formatter:cellFormatter">Status</th>
             <th colspan="2" data-options="field:'',width:100,halign:'center'"> Created</th>
@@ -187,7 +190,9 @@
                     <th data-options="field:'sales_order_no',width:150,halign:'center'">Sales <br>Order No</th>
                     <th data-options="field:'customer_order_no',width:150,halign:'center'">Customer <br>Order No</th>
                     <th data-options="field:'uom',width:80,halign:'center'">Uom</th>
-                    <th data-options="field:'qty',width:80,editor:{type:'numberbox'},halign:'center'">Qty</th>
+                    <th data-options="field:'trans_type',width:80,halign:'center'">Trans Type</th>
+                    <th data-options="field:'qty',width:80,editor:{type:'numberbox', options:{readonly:true}},halign:'center'">Qty</th>
+                    <th data-options="field:'remarks',width:150,editor:{type:'textbox'},halign:'center'">Note</th>
                 </tr>
             </thead>
         </table>
@@ -233,199 +238,6 @@
             }
         });
     }
-
-
-    // function addTable(customer_id, link = "") {
-    //     $('#dg2').datagrid({
-    //         url: link,
-    //         singleSelect: true,
-    //         columns: [
-    //             [{
-    //                 field: 'delivery_order_no',
-    //                 width: 150,
-    //                 halign: 'center',
-    //                 title: "Delivery Order No.",
-    //                 editor: {
-    //                     type: 'combogrid',
-    //                     options: {
-    //                         url: '<?= base_url('sales/delivery_notes/readDo/'); ?>' + customer_id,
-    //                         required: true,
-    //                         panelWidth: 200,
-    //                         idField: 'delivery_order_no',
-    //                         textField: 'delivery_order_no',
-    //                         mode: 'remote',
-    //                         fitColumns: true,
-    //                         prompt: 'Choose Delivery Order No.',
-    //                         columns: [
-    //                             [{
-    //                                 field: 'delivery_order_no',
-    //                                 title: 'Delivery Order No.',
-    //                                 width: 200
-    //                             }]
-    //                         ],
-    //                         onSelect: function(value, rows) {
-                               
-    //                             var dg = $('#dg2');
-    //                             var row = dg.datagrid('getSelected');
-    //                             var rowIndex = dg.datagrid('getRowIndex', row);
-
-    //                             var ed = dg.datagrid('getEditor', {
-    //                                 index: rowIndex,
-    //                                 field: 'delivery_order_no'
-    //                             });
-    //                             var ed2 = dg.datagrid('getEditor', {
-    //                                 index: rowIndex,
-    //                                 field: 'item_fg_id'
-    //                             });
-    //                             var ed3 = dg.datagrid('getEditor', {
-    //                                 index: rowIndex,
-    //                                 field: 'item_fg_number'
-    //                             });
-    //                             var ed4 = dg.datagrid('getEditor', {
-    //                                 index: rowIndex,
-    //                                 field: 'item_fg_name'
-    //                             });
-    //                             var ed5 = dg.datagrid('getEditor', {
-    //                                 index: rowIndex,
-    //                                 field: 'sales_order_no'
-    //                             });
-    //                             var ed6 = dg.datagrid('getEditor', {
-    //                                 index: rowIndex,
-    //                                 field: 'customer_order_no'
-    //                             });
-    //                             var ed7 = dg.datagrid('getEditor', {
-    //                                 index: rowIndex,
-    //                                 field: 'uom'
-    //                             });
-    //                             var ed8 = dg.datagrid('getEditor', {
-    //                                 index: rowIndex,
-    //                                 field: 'trans_type'
-    //                             });
-                               
-
-    //                             $(ed.target).textbox('setValue', rows.delivery_order_no);
-    //                             $(ed2.target).combogrid({
-    //                                 url: '<?= base_url('sales/delivery_notes/readDo/'); ?>' + customer_id,
-    //                                 required: true,
-    //                                 panelWidth: 200,
-    //                                 idField: 'id',
-    //                                 textField: 'id',
-    //                                 mode: 'remote',
-    //                                 fitColumns: true,
-    //                                 prompt: 'Choose Product ID',
-    //                                 columns: [
-    //                                     [{
-    //                                         field: 'id',
-    //                                         title: 'Product ID',
-    //                                         width: 150
-    //                                     }]
-    //                                 ],
-    //                                 onSelect: function(val, id) {
-    //                                     $(ed3.target).textbox('setValue', rows.number);
-    //                                     $(ed4.target).textbox('setValue', rows.name);
-    //                                     $(ed5.target).textbox('setValue', rows.sales_order_no);
-    //                                     $(ed6.target).textbox('setValue', rows.customer_order_no);
-    //                                     $(ed7.target).textbox('setValue', rows.uom);
-    //                                     $(ed8.target).textbox('setValue', rows.trans_type);
-    //                                 }
-    //                             });
-
-    //                         }
-    //                     }
-    //                 }
-    //             }, {
-    //                 field: 'item_fg_id',
-    //                 width: 170,
-    //                 halign: 'center',
-    //                 title: "Product ID",
-    //                 editor: {
-    //                     type: 'combobox',
-    //                     options: {
-    //                         readonly: true
-    //                     }
-    //                 }
-    //             }, {
-    //                 field: 'item_fg_number',
-    //                 width: 150,
-    //                 halign: 'center',
-    //                 title: "Product No",
-    //                 editor: {
-    //                     type: 'textbox',
-    //                     options: {
-    //                         readonly: true
-    //                     }
-    //                 }
-    //             }, {
-    //                 field: 'item_fg_name',
-    //                 width: 150,
-    //                 halign: 'center',
-    //                 title: "Product Name",
-    //                 editor: {
-    //                     type: 'textbox',
-    //                     options: {
-    //                         readonly: true
-    //                     }
-    //                 }
-    //             }, {
-    //                 field: 'sales_order_no',
-    //                 width: 150,
-    //                 halign: 'center',
-    //                 title: "Sales Order No",
-    //                 editor: {
-    //                     type: 'textbox',
-    //                     options: {
-    //                         readonly: true
-    //                     }
-    //                 }
-    //             }, {
-    //                 field: 'customer_order_no',
-    //                 width: 150,
-    //                 halign: 'center',
-    //                 title: "Customer Order No",
-    //                 editor: {
-    //                     type: 'textbox',
-    //                     options: {
-    //                         readonly: true
-    //                     }
-    //                 }
-    //             }, {
-    //                 field: 'trans_type',
-    //                 width: 80,
-    //                 halign: 'center',
-    //                 title: "Transaction Type",
-    //                 editor: {
-    //                     type: 'textbox',
-    //                     options: {
-    //                         readonly: true
-    //                     }
-    //                 }
-    //             }, {
-    //                 field: 'uom',
-    //                 width: 80,
-    //                 halign: 'center',
-    //                 title: "UoM",
-    //                 editor: {
-    //                     type: 'textbox',
-    //                     options: {
-    //                         readonly: true
-    //                     }
-    //                 }
-    //             }, {
-    //                 field: 'qty',
-    //                 width: 80,
-    //                 halign: 'center',
-    //                 title: "QTY",
-    //                 editor: {
-    //                     type: 'numberbox',
-    //                     options: {
-    //                         readonly: true
-    //                     }
-    //                 }
-    //             }]
-    //         ],
-    //         onClickCell: onClickCell
-    //     });
-    // }
 
     var editIndex = undefined;
 
@@ -518,6 +330,7 @@
             setTimeout(function() { 
                 $('#address_id').textbox('setValue', row.address_id);
                 $('#delivery_note_no').textbox('setValue', row.delivery_note_no);
+                $('#delivery_order_no').textbox('setValue', row.delivery_order_no);
             }, 500);
             
             $("#delivery_note_date").datebox('disable');
@@ -696,6 +509,31 @@
                             align: 'right',
                             width: 80,
                             formatter: numberFormat
+                        }, {
+                            field: 'remarks',
+                            title: 'Note',
+                            align: 'center',
+                            width: 80
+                        }, {
+                            field: 'approved_to',
+                            title: 'Approved To',
+                            halign: 'center',
+                            align: 'center',
+                            width: 100,
+                            formatter: formatApproved,
+                            styler: styleApproved
+                        }, {
+                            field: 'approved_by',
+                            title: 'Approved By',
+                            halign: 'center',
+                            align: 'right',
+                            width: 100
+                        }, {
+                            field: 'approved_date',
+                            title: 'Approved Date',
+                            halign: 'center',
+                            align: 'right',
+                            width: 100
                         }]
                     ],
                     onResize: function() {
@@ -810,6 +648,7 @@
                                             uom: rows[i].uom,
                                             status_delivery: rows[i].status_delivery,
                                             qty: rows[i].qty,
+                                            remarks: rows[i].remarks,
                                         },
                                         dataType: "json",
                                         success: function(result) {
@@ -911,6 +750,58 @@
         }
     });
 
+    $('#filter_delivery_note_no').combobox({
+        url: '<?= base_url('sales/delivery_notes/readDelivery_note_nos'); ?>',
+        valueField: 'delivery_note_no',
+        textField: 'delivery_note_no',
+        prompt: 'Choose All',
+        icons: [{
+            iconCls: 'icon-clear',
+            handler: function(e) {
+                $(e.data.target).combobox('clear').combobox('textbox').focus();
+            }
+        }],
+    });
+
+    $('#filter_delivery_order_no').combobox({
+        url: '<?= base_url('sales/delivery_notes/readDelivery_order_nos'); ?>',
+        valueField: 'delivery_order_no',
+        textField: 'delivery_order_no',
+        prompt: 'Choose All',
+        icons: [{
+            iconCls: 'icon-clear',
+            handler: function(e) {
+                $(e.data.target).combobox('clear').combobox('textbox').focus();
+            }
+        }],
+    });
+
+    $('#filter_sales_order_no').combobox({
+        url: '<?= base_url('sales/delivery_notes/readSalesOrders/'); ?>',
+        valueField: 'sales_order_no',
+        textField: 'sales_order_no',
+        prompt: 'Choose All',
+        icons: [{
+            iconCls: 'icon-clear',
+            handler: function(e) {
+                $(e.data.target).combobox('clear').combobox('textbox').focus();
+            }
+        }],
+    });
+
+    $('#filter_customer_order_no').combobox({
+        url: '<?= base_url('sales/delivery_notes/readCustomerOrders/'); ?>',
+        valueField: 'customer_order_no',
+        textField: 'customer_order_no',
+        prompt: 'Choose All',
+        icons: [{
+            iconCls: 'icon-clear',
+            handler: function(e) {
+                $(e.data.target).combobox('clear').combobox('textbox').focus();
+            }
+        }],
+    });
+
     $('#filter_item_fg').combogrid({
         url: '<?= base_url("master/item_fg/reads") ?>',
         panelWidth: 400,
@@ -979,13 +870,18 @@
                         textField: 'address_name',
                         panelHeight:'auto',
                         prompt: 'Choose Address.',
-                        onSelect: function(customer_address){
+                        onSelect: function(customer_address) {
                             $('#delivery_order_no').combobox({
                                 url: '<?= base_url('sales/delivery_notes/readDo/') ?>' + customer.id + "/" + btoa(sales_orders.division) + "/" + btoa(customer_address.id),
                                 valueField: 'delivery_order_no',
                                 textField: 'delivery_order_no',
                                 multiple: true,
                                 prompt: 'Choose DO No.',
+                                onLoadSuccess: function(data) {
+                                    if (data.length === 0) {
+                                        toastr.warning('Delivery Order No empty, Please Scan DO in Shipping Order', 'Required');
+                                    }
+                                }
                             });
                         }
                     });
@@ -1058,6 +954,7 @@
     }
 
     function btnPrint(val, row) {
+        console.log(row.delivery_order_no);
         var print = "print_do('" + row.delivery_order_no + "')"; 
         return '<a class="btn btn-primary w-100" onClick="' + print + '" style="pointer-events: visible; opacity:1;"><i class="fa fa-print"></i></a>';
     }
@@ -1065,4 +962,21 @@
     function print_do(delivery_order_no) {
         window.open("<?= base_url('sales/delivery_notes/print_do/') ?>" + window.btoa(delivery_order_no), "_blank", "width=1200,height=600");
     }
+
+    function styleApproved(value, row, index) {
+        if (value == "" || value === null ) {
+            return 'background: #53D636; color:white;';
+        } else {
+            return 'background: #FF5F5F; color:white;';
+        }
+    }
+
+    //FORMATTER APPROVE
+    function formatApproved(value) {
+        if (value == "" || value === null ) {
+            return 'Approved';
+        } else {
+            return 'Checking';
+        }
+    };
 </script>

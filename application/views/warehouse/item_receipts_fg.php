@@ -15,8 +15,8 @@
         <tr>
             <th rowspan="2" field="ck" checkbox="true"></th>
             <th rowspan="2" data-options="field:'checksheet_number',halign:'center',width:150">Label No</th>
-            <th rowspan="2" data-options="field:'so_number',width:150,halign:'center'">SO NO</th>
-            <th rowspan="2" data-options="field:'workorder',width:150,halign:'center'">Workorder</th>
+            <th rowspan="2" data-options="field:'packing',halign:'center',width:100">Packing</th>
+            <th rowspan="2" data-options="field:'wo_no',width:150,halign:'center'">Wo No</th>
             <th rowspan="2" data-options="field:'item_number',width:150,halign:'center'">Product No</th>
             <th rowspan="2" data-options="field:'item_name',width:200,halign:'center'">Product Name</th>
             <th rowspan="2" data-options="field:'qty',width:100,halign:'center',align:'right',formatter:numberformat, styler:numberStyle"> Qty</th>
@@ -102,10 +102,26 @@
                 var checksheet_number = $("#checksheet_number").val();
                 var split = checksheet_label.split("|");
 
+                
+                // var row = $('#dg').datagrid('getRows')[0];
+                // console.log(row);
+                // var url;
+
+                // if (row.packing == 2) {
+                //     url = "<?= base_url('warehouse/item_receipts_fg/getChecksheetLabelBox') ?>";
+                // } else if (row.packing == 1) {
+                //     url = "<?= base_url('warehouse/item_receipts_fg/getChecksheetLabel') ?>";
+                // } else if (row.packing == 3) {
+                //     url = "<?= base_url('warehouse/item_receipts_fg/getChecksheetLabel') ?>";
+                // } else {
+                //     url = "<?= base_url('warehouse/item_receipts_fg/getChecksheetLabelNBFG') ?>";
+                // }
+
+
                 $.ajax({
                     type: "POST",
                     url: "<?= base_url('warehouse/item_receipts_fg/getChecksheetLabel') ?>",
-                    data: "checksheet_label=" + split[3] + "&checksheet_number=" + checksheet_number,
+                    data: "checksheet_label=" + split[2] + "&checksheet_number=" + checksheet_number,
                     dataType: "json",
                     success: function(json) {
                         if (json.total > 0) {
@@ -114,10 +130,9 @@
                                 $.ajax({
                                     type: "POST",
                                     url: "<?= base_url('warehouse/item_receipts_fg/create') ?>",
-                                    data: "checksheet_label=" + split[3] +
+                                    data: "checksheet_label=" + split[2] +
                                         "&checksheet_number=" + checksheet_number +
-                                        "&so_number=" + row[i].so_number +
-                                        "&workorder=" + row[i].workorder +
+                                        "&wo_no=" + row[i].wo_no +
                                         "&qty=" + row[i].qty,
                                     dataType: "json",
                                     success: function(result) {

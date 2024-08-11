@@ -30,14 +30,15 @@ class Item_receipts_fg extends CI_Controller
     {
         if ($this->input->get()) {
             $checksheet_number = $this->input->get('checksheet_number');
-            $this->db->select('f.checksheet_number, c.so_number, c.workorder, d.number as item_number, d.name as item_name, d.uom, COALESCE(g.qty, 0) as qty, g.created_by, g.created_date');
+            $this->db->select('COALESCE(f.checksheet_number, h.checksheet_number) as checksheet_number, c.wo_no, d.number as item_number, d.name as item_name, d.uom, COALESCE(SUM(g.qty), 0) as qty, g.created_by, g.created_date , a.packing');
             $this->db->from('wip_receipts a');
             $this->db->join('checksheets b', 'a.checksheet_number = b.number');
-            $this->db->join('production_schedules c', 'b.workorder = c.workorder');
+            $this->db->join('production_schedules c', 'b.wo_no = c.wo_no');
             $this->db->join('item_fg d', 'c.item_fg_id = d.id');
             // $this->db->join('uom e', 'd.uom_id = e.id');
-            $this->db->join('wip_receipt_boxs f', 'a.checksheet_number = f.checksheet_number');
-            $this->db->join('scan_item_receipts_fg g', 'a.checksheet_number = g.checksheet_number and f.checksheet_label = g.checksheet_label', 'left');
+            $this->db->join('wip_receipt_boxs f', 'a.checksheet_number = f.checksheet_number','left');
+            $this->db->join('wip_receipt_labels h', 'a.checksheet_number = h.checksheet_number','left');
+            $this->db->join('scan_item_receipts_fg g', 'a.checksheet_number = g.checksheet_number and (f.checksheet_label = g.checksheet_label or h.checksheet_label = g.checksheet_label)' , 'left');
             $this->db->where('a.checksheet_number', $checksheet_number);
             $this->db->group_by('f.checksheet_label');
 
@@ -57,25 +58,127 @@ class Item_receipts_fg extends CI_Controller
             $checksheet_label = $this->input->post('checksheet_label');
             $checksheet_number = $this->input->post('checksheet_number');
 
-            $this->db->select('f.checksheet_label, c.so_number, c.workorder, COALESCE(f.qty, 0) as qty');
+            $this->db->select('f.checksheet_label, c.so_number, c.wo_no, COALESCE(f.qty, 0) as qty');
             $this->db->from('wip_receipts a');
             $this->db->join('checksheets b', 'a.checksheet_number = b.number');
-            $this->db->join('production_schedules c', 'b.workorder = c.workorder');
+            $this->db->join('production_schedules c', 'b.wo_no = c.wo_no');
             $this->db->join('item_fg d', 'c.item_fg_id = d.id');
             // $this->db->join('uom e', 'd.uom = e.name');
-            $this->db->join('wip_receipt_boxs f', 'a.checksheet_number = f.checksheet_number');
+            $this->db->join('wip_receipt_labels f', 'a.checksheet_number = f.checksheet_number');
             $this->db->where('f.checksheet_number', $checksheet_number);
             $this->db->where('f.checksheet_label', $checksheet_label);
             $this->db->group_by('f.checksheet_label');
 
             $totalRows = $this->db->count_all_results('', false);
             $records = $this->db->get()->result_array();
+
+            if(!$records){
+                $this->db->select('f.checksheet_label, c.so_number, c.wo_no, COALESCE(f.qty, 0) as qty');
+                $this->db->from('wip_receipts a');
+                $this->db->join('checksheets b', 'a.checksheet_number = b.number');
+                $this->db->join('production_schedules c', 'b.wo_no = c.wo_no');
+                $this->db->join('item_fg d', 'c.item_fg_id = d.id');
+                // $this->db->join('uom e', 'd.uom = e.name');
+                $this->db->join('wip_receipt_boxs f', 'a.checksheet_number = f.checksheet_number');
+                $this->db->where('f.checksheet_number', $checksheet_number);
+                $this->db->where('f.checksheet_label', $checksheet_label);
+                $this->db->group_by('f.checksheet_label');
+
+                $totalRows = $this->db->count_all_results('', false);
+                $records = $this->db->get()->result_array();
+
+                if(!$records){
+                    $this->db->select('COALESCE(a.qty, 0) as qty, a.label_no as checksheet_label');
+                    $this->db->from('new_barcode_fg a');
+                    $this->db->join('item_fg b', 'a.item_fg_id = b.id');
+                    $this->db->where('a.label_no', $checksheet_label);
+                    $this->db->group_by('a.label_no');
+
+                    $totalRows = $this->db->count_all_results('', false);
+                    $records = $this->db->get()->result_array();
+                }
+            }
+
+
             //Mapping Data
             $result['total'] = $totalRows;
             $result = array_merge($result, ['rows' => $records]);
             echo json_encode($result);
         }
     }
+
+    // public function getChecksheetLabelBox()
+    // {
+    //     if ($this->input->post()) {
+    //         $checksheet_label = $this->input->post('checksheet_label');
+    //         $checksheet_number = $this->input->post('checksheet_number');
+
+    //         $this->db->select('f.checksheet_label, c.so_number, c.wo_no, COALESCE(f.qty, 0) as qty');
+    //         $this->db->from('wip_receipts a');
+    //         $this->db->join('checksheets b', 'a.checksheet_number = b.number');
+    //         $this->db->join('production_schedules c', 'b.wo_no = c.wo_no');
+    //         $this->db->join('item_fg d', 'c.item_fg_id = d.id');
+    //         // $this->db->join('uom e', 'd.uom = e.name');
+    //         $this->db->join('wip_receipt_boxs f', 'a.checksheet_number = f.checksheet_number');
+    //         $this->db->where('f.checksheet_number', $checksheet_number);
+    //         $this->db->where('f.checksheet_label', $checksheet_label);
+    //         $this->db->group_by('f.checksheet_label');
+
+    //         $totalRows = $this->db->count_all_results('', false);
+    //         $records = $this->db->get()->result_array();
+    //         //Mapping Data
+    //         $result['total'] = $totalRows;
+    //         $result = array_merge($result, ['rows' => $records]);
+    //         echo json_encode($result);
+    //     }
+    // }
+
+    // public function getChecksheetLabel()
+    // {
+    //     if ($this->input->post()) {
+    //         $checksheet_label = $this->input->post('checksheet_label');
+    //         $checksheet_number = $this->input->post('checksheet_number');
+
+    //         $this->db->select('f.checksheet_label, c.so_number, c.wo_no, COALESCE(f.qty, 0) as qty');
+    //         $this->db->from('wip_receipts a');
+    //         $this->db->join('checksheets b', 'a.checksheet_number = b.number');
+    //         $this->db->join('production_schedules c', 'b.wo_no = c.wo_no');
+    //         $this->db->join('item_fg d', 'c.item_fg_id = d.id');
+    //         // $this->db->join('uom e', 'd.uom = e.name');
+    //         $this->db->join('wip_receipt_labels f', 'a.checksheet_number = f.checksheet_number');
+    //         $this->db->where('f.checksheet_number', $checksheet_number);
+    //         $this->db->where('f.checksheet_label', $checksheet_label);
+    //         $this->db->group_by('f.checksheet_label');
+
+    //         $totalRows = $this->db->count_all_results('', false);
+    //         $records = $this->db->get()->result_array();
+    //         //Mapping Data
+    //         $result['total'] = $totalRows;
+    //         $result = array_merge($result, ['rows' => $records]);
+    //         echo json_encode($result);
+    //     }
+    // }
+
+    // public function getChecksheetLabelNBFG()
+    // {
+    //     if ($this->input->post()) {
+    //         $checksheet_label = $this->input->post('checksheet_label');
+    //         $checksheet_number = $this->input->post('checksheet_number');
+
+    //         $this->db->select('a.*, COALESCE(a.qty, 0) as qty');
+    //         $this->db->from('new_barcode_fg a');
+    //         $this->db->join('item_fg b', 'c.item_fg_id = d.id');
+    //         $this->db->where('a.label_no', $checksheet_label);
+    //         $this->db->group_by('a.label_no');
+
+    //         $totalRows = $this->db->count_all_results('', false);
+    //         $records = $this->db->get()->result_array();
+    //         //Mapping Data
+    //         $result['total'] = $totalRows;
+    //         $result = array_merge($result, ['rows' => $records]);
+    //         echo json_encode($result);
+    //     }
+    // }
 
     public function create()
     {

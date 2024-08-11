@@ -86,7 +86,7 @@ class Notifications extends CI_Controller
         $user = $this->crud->read('users', [], ["username" => $user_id]);
 
         if (empty($user->avatar)) {
-            $avatar = "default.png";
+            $avatar = "assets/image/users/default.png";
         } else {
             $avatar = $user->avatar;
         }
@@ -98,7 +98,7 @@ class Notifications extends CI_Controller
                             <tr>
                                 <td>
                                     <div class="icon-container">
-                                        <img src="assets/image/users/' . $avatar . '" class="user-online" />
+                                        <img src="' . $avatar . '" class="user-online" />
                                         <div class="status-circle"></div>
                                     </div>
                                 </td>

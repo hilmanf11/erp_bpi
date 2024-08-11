@@ -23,6 +23,8 @@ class Item_ng extends CI_Controller
             redirect('error_session');
         } elseif ($this->checkuserAccess($this->id_menu()) > 0) {
             $data['button'] = $this->getbutton($this->id_menu());
+            $data['menus_id'] = $this->id_menu();
+
             $this->load->view('template/header', $data);
             $this->load->view('planning/item_ng');
         } else {
@@ -43,47 +45,65 @@ class Item_ng extends CI_Controller
         echo json_encode($send);
     }
 
+
     public function item_ng_no($trans_date)
+
     {
+
         $trans_date = base64_decode($trans_date);
+
         $year       = date("Y", strtotime($trans_date));
+
         $datenow    = date("ymd", strtotime($trans_date));
+
         $sqlGetID   = $this->db->query("SELECT MAX(SUBSTR(document, -4, 4)) as kode FROM item_ng WHERE trans_date like '%$year%'");
+
         $rowID      = $sqlGetID->row();
+
         $kode       = $rowID->kode;
+
         if ($kode == NULL) {
+
             $autoID = sprintf("%04s", $kode + 1);
+
         } else {
+
             $urutan = (int) $kode;
+
             $urutan++;
+
             $autoID = sprintf("%04s", $urutan);
+
         }
 
+
+
         echo "NG-" . $datenow . "-" . $autoID;
+
     }
 
     public function readWorkorders()
     {
-        $post = isset($_POST['q']) ? $_POST['q'] : "";
-        $send = $this->crud->query("SELECT DISTINCT workorder, wp FROM production_schedules 
-        WHERE `status` = '1' and workorder like '%$post%'
-        order by workorder desc");
+        $send = $this->crud->query("SELECT DISTINCT wo_no FROM production_schedules 
+        WHERE `status` = '0'
+        order by wo_no desc");
         echo json_encode($send);
     }
 
     public function readItems($workorder)
     {
-        $workorder = base64_decode($workorder);
+        $workorders = base64_decode($workorder);
 
         $post = isset($_POST['q']) ? $_POST['q'] : "";
-        $send = $this->crud->query("SELECT b.id, b.number, b.name, a.qty_act as qty, b.uom
+        $send = $this->crud->query("SELECT b.id, b.number, b.name, a.qty_act as qty, b.uom, COALESCE(d.scrap, 0) as scrap
         FROM supply_sheets a
         JOIN item_rm b ON a.item_rm_id = b.id
-        -- JOIN uom c ON b.uom_id = c.id
-        WHERE a.workorder = '$workorder' and b.status = '0' and b.number like '%$post%'
+        LEFT JOIN (SELECT item_rm_id, wo_no, SUM(qty) as scrap FROM scraps GROUP BY item_rm_id, wo_no) d ON a.item_rm_id = d.item_rm_id and a.workorder = d.wo_no
+        WHERE a.workorder = '$workorders' and b.status = '0'
         order by b.number asc");
         echo json_encode($send);
     }
+    
 
     public function datatables()
     {
@@ -92,7 +112,7 @@ class Item_ng extends CI_Controller
             $filter_to = $this->input->get('filter_to');
             $filter_document = $this->input->get('filter_document');
             $filter_family_id = $this->input->get('filter_family_id');
-            $filter_item_rm_id = $this->input->get('filter_item_rm_id');
+            $filter_item_id = $this->input->get('filter_item_id');
 
             $page = $this->input->post('page');
             $rows = $this->input->post('rows');
@@ -112,7 +132,7 @@ class Item_ng extends CI_Controller
             }
             $this->db->like('a.document', $filter_document);
             $this->db->like('b.item_family_id', $filter_family_id);
-            $this->db->like('b.id', $filter_item_rm_id);
+            $this->db->like('b.id', $filter_item_id);
             $this->db->order_by('a.trans_date', 'DESC');
             $this->db->order_by('a.document', 'DESC');
             //Total Data
@@ -133,12 +153,29 @@ class Item_ng extends CI_Controller
         if ($this->input->post()) {
             if ($this->form_validation->run() == TRUE) {
                 $post = $this->input->post();
-                $itemNg = $this->crud->reads("item_ng", [], ["item_rm_id" => $post['item_rm_id'], "document" => $post['document']]);
+                $itemNg = $this->crud->reads("item_ng", [], ["item_rm_id" => $post['item_rm_id'], "workorder" => $post['workorder']]);
 
                 if (count($itemNg) > 0) {
                     echo json_encode(array("title" => "Duplicate", "message" => "Data has been created", "theme" => "error"));
                 } else {
-                    $send = $this->crud->create('item_ng', $post);
+                    if($post['scrap'] > 0){
+                        $this->crud->create('scraps', [
+                            "item_rm_id" => $post['item_rm_id'], 
+                            "trans_date" => $post['trans_date'], 
+                            "document" => $post['document_scrap'], 
+                            "wo_no" => $post['workorder'], 
+                            "type" => $post['type'],
+                            "qty" => $post['scrap'], 
+                            "uom" => $post['uom'], 
+                            "remarks" => $post['remarks'], 
+                        ]);
+
+                        $document_scrap = array("document_scrap" => $post['document_scrap']);
+                    }else{
+                        $document_scrap = array("document_scrap" => "-");
+                    }
+
+                    $send = $this->crud->create('item_ng', array_replace($post, $document_scrap));
                     echo $send;
                 }
             } else {
@@ -155,6 +192,17 @@ class Item_ng extends CI_Controller
         if ($this->input->post()) {
             $id   = base64_decode($this->input->get('id'));
             $post = $this->input->post();
+
+            $itemNg = $this->crud->read("item_ng", [], ["id" => $id]);
+            $scraps = $this->crud->reads("scraps", [], ["document" => @$itemNg->document_scrap, "item_rm_id" => @$itemNg->item_rm_id, "trans_date" => @$itemNg->trans_date]);
+            if (count($scraps) > 0) {
+                $send = $this->crud->update('scraps', [
+                    "document" => @$itemNg->document_scrap, 
+                    "item_rm_id" => @$itemNg->item_rm_id, 
+                    "trans_date" => @$itemNg->trans_date
+                ], ["qty" => $post['scrap']]);
+            }
+
             $send = $this->crud->update('item_ng', ["id" => $id], $post);
             echo $send;
         } else {
@@ -165,65 +213,137 @@ class Item_ng extends CI_Controller
     public function delete()
     {
         $data = $this->input->post();
-        $send = $this->crud->delete('item_ng', ["id" => $data['id']]);
+
+        @$itemNg = $this->crud->reads("item_ng", [], ["id" => $data['id']]);
+
+        $document = @$itemNg[0]->document_scrap;
+        $item_rm_id = @$itemNg[0]->item_rm_id;
+        $trans_date = @$itemNg[0]->trans_date;
+
+        $scraps = $this->crud->reads("scraps", [], ["document" => $document, "item_rm_id" => $item_rm_id, "trans_date" => $trans_date]);
+
+        if (count($scraps) > 0) {
+            $this->crud->delete('scraps', [
+                "document" => @$document, 
+                "item_rm_id" => @$item_rm_id, 
+                "trans_date" => @$trans_date
+            ]);
+        }
+
+        @$send = $this->crud->delete('item_ng', ["id" => $data['id']]);
         echo $send;
     }
 
     public function print($option = "")
+
     {
+
         if ($option == "excel") {
+
             $format  = date("Ymd");
+
             header("Content-type: application/vnd-ms-excel");
+
             header("Content-Disposition: attachment; filename=item_ng_$format.xls");
+
         }
+
         $filter_from = $this->input->get('filter_from');
+
         $filter_to = $this->input->get('filter_to');
+
         $filter_document = $this->input->get('filter_document');
+
         $filter_family_id = $this->input->get('filter_family_id');
-        $filter_item_rm_id = $this->input->get('filter_item_rm_id');
+
+        $filter_item_id = $this->input->get('filter_item_id');
+
+
 
         //Config
+
         $this->db->select('*');
+
         $this->db->from('config');
+
         $config = $this->db->get()->row();
 
+
+
         $this->db->select('a.*, b.number as item_number, b.name as item_name');
+
         $this->db->from('item_ng a');
+
         $this->db->join('item_rm b', 'a.item_rm_id = b.id');
+
         $this->db->where('a.deleted', 0);
+
         if ($filter_from != "" or $filter_to != "") {
+
             $this->db->where('a.trans_date >=', $filter_from);
+
             $this->db->where('a.trans_date <=', $filter_to);
+
         }
+
         $this->db->like('a.document', $filter_document);
+
         $this->db->like('b.item_family_id', $filter_family_id);
-        $this->db->like('b.id', $filter_item_rm_id);
+
+        $this->db->like('b.id', $filter_item_id);
+
         $this->db->order_by('a.trans_date', 'DESC');
+
         $records = $this->db->get()->result_array();
 
+
+
         $html = '<html><head><title>Print Data</title></head><style>body {font-family: Arial, Helvetica, sans-serif;}#customers {border-collapse: collapse;width: 100%;font-size: 12px;}#customers td, #customers th {border: 1px solid #ddd;padding: 2px;}#customers tr:nth-child(even){background-color: #f2f2f2;}#customers tr:hover {background-color: #ddd;}#customers th {padding-top: 2px;padding-bottom: 2px;text-align: center;color: black;}</style><body>
+
             <center>
+
                 <div style="float: left; font-size: 12px; text-align: left;">
+
                     <table style="width: 100%;">
+
                         <tr>
+
                             <td width="50" style="font-size: 12px; vertical-align: top; text-align: center; vertical-align:jus margin-right:10px;">
+
                                 <img src="' . $config->favicon . '" width="30">
+
                             </td>
+
                             <td style="font-size: 14px; text-align: left; margin:2px;">
+
                                 <b>' . $config->name . '</b><br>
+
                                 <small>ITEMS NG TRANSACTION</small>
+
                             </td>
+
                         </tr>
+
                     </table>
+
                 </div>
+
                 <div style="float: right; font-size: 12px; text-align: right;">
+
                     Print Date ' . date("d M Y H:i:s") . ' <br>
+
                     Print By ' . $this->session->username . '  
+
                 </div>
+
             </center>
+
             <br><br><br>
+
             
+
             <table id="customers" border="1">
+
                 <tr>
                     <th width="20">No</th>
                     <th>Trans Date</th>
@@ -260,3 +380,4 @@ class Item_ng extends CI_Controller
         echo $html;
     }
 }
+

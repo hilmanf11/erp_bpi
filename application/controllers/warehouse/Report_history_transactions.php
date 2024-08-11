@@ -110,6 +110,8 @@ class Report_history_transactions extends CI_Controller
             header("Content-type: application/vnd-ms-excel");
             header("Content-Disposition: attachment; filename=history_transactions_rm_$format.xls");
         }
+//------------------------------------ Opsi print berakhir disini------------------------------------------------------//
+
         $filter_from = $this->input->get('filter_from');
         $filter_to   = $this->input->get('filter_to');
         $filter_item_category = $this->input->get('filter_item_category');
@@ -117,14 +119,19 @@ class Report_history_transactions extends CI_Controller
         $filter_items = $this->input->get('filter_items');
         $filter_display = $this->input->get("filter_display");
         $filter_division = $this->input->get('filter_division');
+        $filter_trans_type = $this->input->get('filter_trans_type');
 
         $start = strtotime($filter_from);
         $finish = strtotime($filter_to);
+//------------------------------------ Mengambil Filter dari Input GET berakhir disini----------------------------------//
 
         //Config
         $this->db->select('*');
         $this->db->from('config');
         $config = $this->db->get()->row();
+
+//------------------------------------ Mengambil data dari Tabel Config berakhir disini----------------------------------//
+
 
         $records = $this->crud->query("SELECT
             a.id,
@@ -138,7 +145,7 @@ class Report_history_transactions extends CI_Controller
             (COALESCE(SUM(e.qty),0) + COALESCE(g.return_qty, 0) + COALESCE(h.qty_stock_rm, 0)) as qty_in,
             f.qty as qty_out
         FROM item_rm a 
-        JOIN item_familys b ON a.item_family_id = b.id and b.number != '006'
+        JOIN item_familys b ON a.item_family_id = b.id and b.number != 'FG'
         JOIN item_categories c ON a.item_category_id = c.id
         LEFT JOIN purchase_order_receipts d ON a.id = d.item_rm_id and d.receipt_date between '$filter_from' and '$filter_to'
         LEFT JOIN scan_item_receipts e ON d.receipt_id = e.receipt_id
@@ -282,108 +289,174 @@ class Report_history_transactions extends CI_Controller
                 for ($i = $start; $i <= $finish; $i += (60 * 60 * 24)) {
                     $working_date = date('Y-m-d', $i);
 
-                    //RECEIPT
-                    $receipts = $this->crud->query("SELECT
-                        a.receipt_date, 
-                        a.bc_kind, 
-                        a.bc_aju, 
-                        a.bc_document, 
-                        a.bc_date, 
-                        SUM(b.qty) as qty_receipt,
-                        c.name as username
-                    FROM purchase_order_receipts a 
-                    JOIN scan_item_receipts b ON a.receipt_id = b.receipt_id
-                    JOIN users c ON a.created_by = c.username
-                    WHERE a.item_rm_id = '$item_rm_id' and a.receipt_date between '$working_date' and '$working_date'
-                    GROUP BY a.bc_kind, a.bc_aju, a.bc_document, a.bc_date, a.receipt_id");
-                    
-                    //ISSUED
-                    $issueds = $this->crud->query("SELECT * FROM issued_material_details WHERE item_rm_id = '$item_rm_id' and DATE_FORMAT(created_date, '%Y-%m-%d') between '$working_date' and '$working_date'");
+                    if ($filter_trans_type == '' ) {
+                        //RECEIPT
+                        $receipts = $this->crud->query("SELECT
+                            a.receipt_date, 
+                            a.bc_kind, 
+                            a.bc_aju, 
+                            a.bc_document, 
+                            a.bc_date, 
+                            SUM(b.qty) as qty_receipt,
+                            c.name as username
+                        FROM purchase_order_receipts a 
+                        JOIN scan_item_receipts b ON a.receipt_id = b.receipt_id
+                        JOIN users c ON a.created_by = c.username
+                        WHERE a.item_rm_id = '$item_rm_id' and a.receipt_date between '$working_date' and '$working_date'
+                        GROUP BY a.bc_kind, a.bc_aju, a.bc_document, a.bc_date, a.receipt_id");
+                        
+                        //ISSUED
+                        $issueds = $this->crud->query("SELECT * FROM issued_material_details WHERE item_rm_id = '$item_rm_id' and DATE_FORMAT(created_date, '%Y-%m-%d') between '$working_date' and '$working_date'");
 
-                    //RETURN
-                    $returns = $this->crud->query("SELECT
-                        a.return_no,
-                        a.return_id,
-                        a.return_name,
-                        a.return_date,
-                        b.label_no,
-                        b.qty,
-                        d.name as username
-                    FROM return_materials a 
-                    JOIN return_material_labels b ON a.return_id = b.return_id
-                    JOIN scan_item_receipts c ON a.return_id = c.receipt_id
-                    JOIN users d ON a.created_by = d.username
-                    WHERE a.item_rm_id = '$item_rm_id' and a.return_date between '$working_date' and '$working_date'
-                    GROUP BY b.label_no");
+                        //RETURN
+                        $returns = $this->crud->query("SELECT
+                            a.return_no,
+                            a.return_id,
+                            a.return_name,
+                            a.return_date,
+                            b.label_no,
+                            b.qty,
+                            d.name as username
+                        FROM return_materials a 
+                        JOIN return_material_labels b ON a.return_id = b.return_id
+                        JOIN scan_item_receipts c ON a.return_id = c.receipt_id
+                        JOIN users d ON a.created_by = d.username
+                        WHERE a.item_rm_id = '$item_rm_id' and a.return_date between '$working_date' and '$working_date'
+                        GROUP BY b.label_no");
 
-                    //Purchase Order Receipt
-                    foreach ($receipts as $receipt) {
-                        $balance = ($begin + ($receipt->qty_receipt - $end_qty));
-                        $html .= '  <tr>
-                                        <td></td>
-                                        <td style="text-align:center">' . $nod . '</td>
-                                        <td>RECEIPT</td>
-                                        <td>' . $receipt->username . '</td>
-                                        <td>' . $receipt->receipt_date . '</td>
-                                        <td>' . $receipt->bc_kind . '</td>
-                                        <td>' . $receipt->bc_aju . '</td>
-                                        <td>' . $receipt->bc_document . '</td>
-                                        <td>' . $receipt->bc_date . '</td>
-                                        <td style="text-align:right;">' . number_format($begin, 2) . '</td>
-                                        <td style="text-align:right;">' . number_format($receipt->qty_receipt, 2) . '</td>
-                                        <td style="text-align:right;">' . number_format(0)  . '</td>
-                                        <td style="text-align:right;">' . number_format($balance, 2)  . '</td>
-                                    </tr>';
-                        $begin += $receipt->qty_receipt;
-                        $nod++;
+                        //Purchase Order Receipt
+                        foreach ($receipts as $receipt) {
+                            $balance = ($begin + ($receipt->qty_receipt - $end_qty));
+                            $html .= '  <tr>
+                                            <td></td>
+                                            <td style="text-align:center">' . $nod . '</td>
+                                            <td>RECEIPT</td>
+                                            <td>' . $receipt->username . '</td>
+                                            <td>' . $receipt->receipt_date . '</td>
+                                            <td>' . $receipt->bc_kind . '</td>
+                                            <td>' . $receipt->bc_aju . '</td>
+                                            <td>' . $receipt->bc_document . '</td>
+                                            <td>' . $receipt->bc_date . '</td>
+                                            <td style="text-align:right;">' . number_format($begin, 2) . '</td>
+                                            <td style="text-align:right;">' . number_format($receipt->qty_receipt, 2) . '</td>
+                                            <td style="text-align:right;">' . number_format(0)  . '</td>
+                                            <td style="text-align:right;">' . number_format($balance, 2)  . '</td>
+                                        </tr>';
+                            $begin += $receipt->qty_receipt;
+                            $nod++;
+                        }
+
+                        //Issued Material
+                        foreach ($issueds as $issued) {
+                            $user = $this->crud->read("users", [], ["username" => $issued->created_by]);
+                            $balance = ($begin - $issued->qty);
+                            $html .= '  <tr>
+                                            <td></td>
+                                            <td style="text-align:center">' . $nod . '</td>
+                                            <td>ISSUED</td>
+                                            <td>' . $user->name . '</td>
+                                            <td>' . date("Y-m-d", strtotime($issued->created_date)) . '</td>
+                                            <td>-</td>
+                                            <td>' . $issued->label_no . '</td>
+                                            <td>' . $issued->request_no . '</td>
+                                            <td>-</td>
+                                            <td style="text-align:right;">' . number_format($begin, 2) . '</td>
+                                            <td style="text-align:right;">' . number_format(0) . '</td>
+                                            <td style="text-align:right;">' . number_format($issued->qty, 2)  . '</td>
+                                            <td style="text-align:right;">' . number_format($balance, 2)  . '</td>
+                                        </tr>';
+                            $begin -= $issued->qty;
+                            $nod++;
+                        }
+                        //Return Material
+                        foreach ($returns as $return) {
+                            $balance = ($begin + $return->qty);
+                            $html .= '  <tr>
+                                            <td></td>
+                                            <td style="text-align:center">' . $nod . '</td>
+                                            <td>RETURN</td>
+                                            <td>' . $return->username . '</td>
+                                            <td>' . date("Y-m-d", strtotime($return->return_date)) . '</td>
+                                            <td>-</td>
+                                            <td>' . $return->label_no . '</td>
+                                            <td>' . $return->return_no . '</td>
+                                            <td>-</td>
+                                            <td style="text-align:right;">' . number_format($begin, 2) . '</td>
+                                            <td style="text-align:right;">' . number_format($return->qty, 2)  . '</td>
+                                            <td style="text-align:right;">' . number_format(0) . '</td>
+                                            <td style="text-align:right;">' . number_format($balance, 2)  . '</td>
+                                        </tr>';
+                            $begin += $return->qty;
+                            $nod++;
+                        }
+                    }
+            
+                    if ($filter_trans_type == 'RECEIPT') {
+                        //RECEIPT
+                        $receipts = $this->crud->query("SELECT
+                            a.receipt_date, 
+                            a.bc_kind, 
+                            a.bc_aju, 
+                            a.bc_document, 
+                            a.bc_date, 
+                            SUM(b.qty) as qty_receipt,
+                            c.name as username
+                        FROM purchase_order_receipts a 
+                        JOIN scan_item_receipts b ON a.receipt_id = b.receipt_id
+                        JOIN users c ON a.created_by = c.username
+                        WHERE a.item_rm_id = '$item_rm_id' and a.receipt_date between '$working_date' and '$working_date'
+                        GROUP BY a.bc_kind, a.bc_aju, a.bc_document, a.bc_date, a.receipt_id");
+            
+                        foreach ($receipts as $receipt) {
+                            $balance = ($begin + ($receipt->qty_receipt - $end_qty));
+                            $html .= '  <tr>
+                                            <td></td>
+                                            <td style="text-align:center">' . $nod . '</td>
+                                            <td>RECEIPT</td>
+                                            <td>' . $receipt->username . '</td>
+                                            <td>' . $receipt->receipt_date . '</td>
+                                            <td>' . $receipt->bc_kind . '</td>
+                                            <td>' . $receipt->bc_aju . '</td>
+                                            <td>' . $receipt->bc_document . '</td>
+                                            <td>' . $receipt->bc_date . '</td>
+                                            <td style="text-align:right;">' . number_format($begin, 2) . '</td>
+                                            <td style="text-align:right;">' . number_format($receipt->qty_receipt, 2) . '</td>
+                                            <td style="text-align:right;">' . number_format(0)  . '</td>
+                                            <td style="text-align:right;">' . number_format($balance, 2)  . '</td>
+                                        </tr>';
+                            $begin += $receipt->qty_receipt;
+                            $nod++;
+                        }
                     }
 
-                    //Issued Material
-                    foreach ($issueds as $issued) {
-                        $user = $this->crud->read("users", [], ["username" => $issued->created_by]);
-                        $balance = ($begin - $issued->qty);
-                        $html .= '  <tr>
-                                        <td></td>
-                                        <td style="text-align:center">' . $nod . '</td>
-                                        <td>ISSUED</td>
-                                        <td>' . $user->name . '</td>
-                                        <td>' . date("Y-m-d", strtotime($issued->created_date)) . '</td>
-                                        <td>-</td>
-                                        <td>' . $issued->label_no . '</td>
-                                        <td>' . $issued->request_no . '</td>
-                                        <td>-</td>
-                                        <td style="text-align:right;">' . number_format($begin, 2) . '</td>
-                                        <td style="text-align:right;">' . number_format(0) . '</td>
-                                        <td style="text-align:right;">' . number_format($issued->qty, 2)  . '</td>
-                                        <td style="text-align:right;">' . number_format($balance, 2)  . '</td>
-                                    </tr>';
-                        $begin -= $issued->qty;
-                        $nod++;
-                    }
-
-                    //Return Material
-                    foreach ($returns as $return) {
-                        $balance = ($begin + $return->qty);
-                        $html .= '  <tr>
-                                        <td></td>
-                                        <td style="text-align:center">' . $nod . '</td>
-                                        <td>RETURN</td>
-                                        <td>' . $return->username . '</td>
-                                        <td>' . date("Y-m-d", strtotime($return->return_date)) . '</td>
-                                        <td>-</td>
-                                        <td>' . $return->label_no . '</td>
-                                        <td>' . $return->return_no . '</td>
-                                        <td>-</td>
-                                        <td style="text-align:right;">' . number_format($begin, 2) . '</td>
-                                        <td style="text-align:right;">' . number_format($return->qty, 2)  . '</td>
-                                        <td style="text-align:right;">' . number_format(0) . '</td>
-                                        <td style="text-align:right;">' . number_format($balance, 2)  . '</td>
-                                    </tr>';
-                        $begin += $return->qty;
-                        $nod++;
+                    if ($filter_trans_type == 'ISSUED') {
+                        //ISSUED
+                        $issueds = $this->crud->query("SELECT * FROM issued_material_details WHERE item_rm_id = '$item_rm_id' and DATE_FORMAT(created_date, '%Y-%m-%d') between '$working_date' and '$working_date'");
+            
+                        foreach ($issueds as $issued) {
+                            $user = $this->crud->read("users", [], ["username" => $issued->created_by]);
+                            $balance = ($begin - $issued->qty);
+                            $html .= '  <tr>
+                                            <td></td>
+                                            <td style="text-align:center">' . $nod . '</td>
+                                            <td>ISSUED</td>
+                                            <td>' . $user->name . '</td>
+                                            <td>' . date("Y-m-d", strtotime($issued->created_date)) . '</td>
+                                            <td>-</td>
+                                            <td>' . $issued->label_no . '</td>
+                                            <td>' . $issued->request_no . '</td>
+                                            <td>-</td>
+                                            <td style="text-align:right;">' . number_format($beginforisseud, 2) . '</td>
+                                            <td style="text-align:right;">' . number_format(0) . '</td>
+                                            <td style="text-align:right;">' . number_format($issued->qty, 2)  . '</td>
+                                            <td style="text-align:right;">' . number_format($balance, 2)  . '</td>
+                                        </tr>';
+                            $begin -= $issued->qty;
+                            $nod++;
+                        }
                     }
                 }
-            }
+            }      
             $no++;
         }
 
