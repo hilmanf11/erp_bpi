@@ -102,7 +102,7 @@
             prompt: "Choose Delivery Note",
             onSelect: function(row){
                 var trans_date = $("#trans_date").datebox('getValue');
-                number(trans_date, row.nickname);
+                number(trans_date, row.customer_number);
             }
         });
     }
@@ -127,10 +127,10 @@
     }
 
     //NOMOR AUTOMATIC
-    function number(trans_date, customer_id) {
+    function number(trans_date, customer_number) {
         $.ajax({
             type: "post",
-            url: "<?= base_url('sales/packing_lists/number/') ?>" + window.btoa(trans_date) + "/" + customer_id,
+            url: "<?= base_url('sales/packing_lists/number/') ?>" + window.btoa(trans_date) + "/" + customer_number,
             dataType: "html",
             success: function(result) {
                 $("#number").textbox('setValue', result);
@@ -142,7 +142,7 @@
         var dn_number = $("#dn_number").combobox('getValue');
 
         if (link == "") {
-            var links = '<?= base_url('sales/delivery_notes/reads') ?>?number=' + dn_number;
+            var links = '<?= base_url('sales/delivery_notes/reads') ?>?delivery_note_no=' + window.btoa(dn_number);
         } else {
             var links = link;
         }
@@ -164,7 +164,7 @@
                         halign: 'center',
                         title: "Customer PO"
                     }, {
-                        field: 'item_id',
+                        field: 'item_fg_id',
                         width: 150,
                         hidden: true,
                         halign: 'center',
@@ -215,7 +215,7 @@
                             }
                         }
                     }, {
-                        field: 'net_weight',
+                        field: 'weight',
                         width: 100,
                         halign: 'center',
                         align: 'right',
@@ -388,7 +388,7 @@
                                             '&trans_date=' + trans_date +
                                             '&dn_number=' + dn_number +
                                             '&customer_id=' + row.customer_id +
-                                            '&customer_po=' + row.customer_po +
+                                            // '&customer_po=' + row.customer_po +
                                             '&item_id=' + row.item_id +
                                             '&pallet_no=' + row.pallet_no +
                                             '&carton=' + row.carton +

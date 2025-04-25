@@ -13,16 +13,16 @@
 <table id="dg" class="easyui-datagrid" style="width:100%;" toolbar="#toolbar">
     <thead>
         <tr>
-            <th rowspan="2" data-options="field:'label_no',halign:'center',width:180">Serial No</th>
-            <th rowspan="2" data-options="field:'receipt_no',width:120,halign:'center'">Receipt No</th>
+            <th rowspan="2" data-options="field:'label_no',halign:'center',width:200">Serial No</th>
+            <th rowspan="2" data-options="field:'receipt_no',width:140,halign:'center'">Receipt No</th>
             <th rowspan="2" data-options="field:'bc_kind',width:80,halign:'center'">BC Kind</th>
             <th rowspan="2" data-options="field:'bc_document',width:100,halign:'center'">Doc. No</th>
             <th rowspan="2" data-options="field:'bc_date',width:100,halign:'center'">Date</th>
-            <th rowspan="2" data-options="field:'po_no',width:150,halign:'center'">PO No</th>
+            <th rowspan="2" data-options="field:'po_no',width:120,halign:'center'">PO No</th>
             <th rowspan="2" data-options="field:'item_number',width:150,halign:'center'">Product No</th>
             <th rowspan="2" data-options="field:'item_name',width:250,halign:'center'">Product Name</th>
-            <th rowspan="2" data-options="field:'qty',width:80,halign:'center',align:'right',formatter:numberformat">Qty</th>
-            <th rowspan="2" data-options="field:'uom',width:80,align:'center'">UoM</th>
+            <th rowspan="2" data-options="field:'qty',width:60,halign:'center',align:'right',formatter:numberformat">Qty</th>
+            <th rowspan="2" data-options="field:'uom',width:60,align:'center'">UoM</th>
             <th colspan="2" data-options="field:'',width:100,halign:'center'"> Created</th>
         </tr>
         <tr>
@@ -71,6 +71,7 @@
         $('#label_no').keypress(function(e) {
             if (e.which == 13) {
                 var label_no = $("#label_no").val();
+                console.log(label_no);
                 $.ajax({
                     type: "POST",
                     url: "<?= base_url('warehouse/item_receipts/getPoReceipt') ?>",
@@ -87,6 +88,8 @@
                                         "&receipt_no=" + row[i].receipt_no +
                                         "&receipt_id=" + row[i].receipt_id +
                                         "&po_no=" + row[i].po_no +
+                                        "&price=" + row[i].price +
+                                        "&currency=" + row[i].currency +
                                         "&qty=" + row[i].qty,
                                     dataType: "json",
                                     success: function(result) {
@@ -124,5 +127,5 @@
             minimumFractionDigits: 2
         });
         return "<b>" + formatter.format(value) + "</b>";
-    }
+    } 
 </script>

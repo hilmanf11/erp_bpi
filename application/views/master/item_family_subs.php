@@ -8,6 +8,8 @@
             <th rowspan="2" data-options="field:'name',width:150,halign:'center'">Name</th>
             <th rowspan="2" data-options="field:'item_category_name',width:100,halign:'center'">Category</th>
             <th rowspan="2" data-options="field:'item_family_name',width:100,halign:'center'">Product Family</th>
+            <th rowspan="2" data-options="field:'kind',width:100,halign:'center'">Kind</th>
+            <th rowspan="2" data-options="field:'density',width:100,halign:'center'">Density</th>
             <th rowspan="2" data-options="field:'description',width:150,halign:'center'">Description</th>
             <th colspan="2" data-options="field:'',width:100,halign:'center'"> Created</th>
             <th colspan="2" data-options="field:'',width:100,halign:'center'"> Updated</th>
@@ -48,6 +50,18 @@
             <div class="fitem">
                 <span style="width:35%; display:inline-block;">Name</span>
                 <input style="width:60%;" name="name" id="name" required="" class="easyui-textbox">
+            </div>
+            <div class="fitem">
+                <span style="width:35%; display:inline-block;">Kind</span>
+                <select style="width:60%;" name="kind" id="kind" class="easyui-combobox" panelHeight="auto">
+                    <option value="">Choose Kind</option>
+                    <option value="TUBE">TUBE</option>
+                    <option value="CUBE">CUBE</option>
+                </select>
+            </div>
+            <div class="fitem">
+                <span style="width:35%; display:inline-block;">Density</span>
+                <input style="width:60%;" name="density" id="density" required="" class="easyui-numberbox" data-options="precision:2">
             </div>
             <div class="fitem">
                 <span style="width:35%; display:inline-block;">Description</span>

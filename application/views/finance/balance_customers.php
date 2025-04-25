@@ -20,13 +20,26 @@
             <th rowspan="2" data-options="field:'customer_name',width:300,halign:'center'">Customer Name</th>
             <th rowspan="2" data-options="field:'account_number',width:150,halign:'center', 
                 editor: {
-                    type: 'combobox',
+                    type: 'combogrid',
                     options: {
                         url: '<?= base_url('finance/account_coa/reads') ?>',
-                        valueField: 'account_number',
+                        panelWidth: 320,
+                        idField: 'account_number',
                         textField: 'account_name',
+                        mode: 'remote', 
+                        fitColumns: true,
                         prompt: 'Choose Account No',
-                        required: true
+                        columns: [
+                            [{
+                                field: 'account_number',
+                                title: 'Account No',
+                                width: 100
+                            }, {
+                                field: 'account_name',
+                                title: 'Account Name',
+                                width: 200
+                            }, ]
+                        ]
                     }
                 }">Account No</th>
             <th colspan="2" data-options="field:'',width:100,halign:'center'"> Original Currency</th>

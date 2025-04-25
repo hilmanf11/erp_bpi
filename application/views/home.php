@@ -36,6 +36,8 @@
 
 	<!-- MAIN MENU -->
 	<div data-options="region:'west',split:false, collapsed:true, hideCollapsedContent:false, title:'Main Menu'" style="width:250px; padding:10px;">
+		<input id="searchMenu" placeholder="Search Menus" onkeyup="searchMenu(this.value)" title="Type for Search Menu" style="width:100%; padding: 5px;">
+		<br><br>
 		<ul class="easyui-tree" id="menu" data-options="url:'<?= base_url('home/menus') ?>', method:'get',animate:true, lines:true"></ul>
 	</div>
 
@@ -186,13 +188,11 @@
 		<a href="javascript:void(0)" class="easyui-linkbutton" data-options="plain:true" onclick="export_excel()"><i class="fa fa-file"></i> Export Excel</a>
 	</div>
 
-	<div id="dlg_approval_detail" class="easyui-window" title="Approval Confirmation" data-options="closed: true,minimizable:false,collapsible:false" style="width: 1000px; height: 400px; top: 60px;">
-		<div hidden>
-			<input class="easyui-textbox" id="table_name" />
-			<input class="easyui-textbox" id="approved_to" />
-			<input class="easyui-textbox" id="created_by" />
+	<div id="dlg_approval_detail" class="easyui-window" title="Approval Confirmation" data-options="closed: true,minimizable:false,collapsible:false" style="width: 1550px; height: 700px; top: 60px;">
+		<div style="background: black; color: #d0d0d0; padding: 10px; text-align: center;">
+			<h2 style="font-size: 20px !important;" id="header_approval"></h2>
 		</div>
-		<table id="dg_approval" class="easyui-datagrid" style="width:100%;" toolbar="#toolbar_approval" data-options="fitColumns: true, rownumbers: true"></table>
+		<iframe src="" scrolling="yes" id="pageApproval" style="border: 0; width: 100%; height: 93%; margin:0;"></iframe>
 	</div>
 
 	<!-- NOTIFICATIONS -->
@@ -200,6 +200,12 @@
 		<ul class="list-header" id="notificationList">
 
 		</ul>
+	</div>
+
+	<div id="dlg_notification_detail" class="easyui-window" title="Notification Data" data-options="closed: true,minimizable:false,collapsible:false" style="width: 1000px; height: 400px; top: 60px;">
+		<!-- <table id="dg_approval" class="easyui-datagrid" style="width:100%;" toolbar="#toolbar_approval" data-options="fitColumns: false, rownumbers: true"></table> -->
+		<center><h2 style="margin: 10px; font-size: 20px !important;" id="header_notification"></h2></center>
+		<iframe src="" scrolling="yes" id="pageNotification" style="border: 0; width: 100%; height: 93%; margin:0;"></iframe>
 	</div>
 
 	<!-- CHATS -->
@@ -236,12 +242,15 @@
 </body>
 
 <script>
+	function searchMenu(e) {
+		menu(e);
+	};
 	$(function() {
-		var isMobile = /iPhone|iPad|iPod|Android|webOS|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+		// var isMobile = /iPhone|iPad|iPod|Android|webOS|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
 
-		if (isMobile) {
-			window.location.assign('home/device');
-		}
+		// if (isMobile) {
+		// 	window.location.assign('home/device');
+		// }
 
 		//Deteksi Internet
 		window.addEventListener('load', function(event) {
@@ -312,46 +321,89 @@
 				}
 			}
 		});
+
+		menu();
 	});
 
-	$('#menu').tree({
-		url: '<?= base_url('home/menus') ?>',
-		method: 'get',
-		animate: 'true',
-		lines: 'true',
-		loadFilter: function(rows) {
-			return convert(rows);
-		},
-		onSelect: function(node) {
-			var node = $(this).tree('getSelected');
-			if (node) {
-				var nama = node.text;
-				var link = node.link;
-				var id = node.id;
-				if (node.attributes) {
-					link += "," + node.attributes.p1 + "," + node.attributes.p2;
-					nama += "," + node.attributes.p1 + "," + node.attributes.p2;
-					id += "," + node.attributes.p1 + "," + node.attributes.p2;
-				}
-				if ($('#tabs').tabs('exists', nama)) {
-					$('#tabs').tabs('select', nama);
-				} else {
-					if (link == null || link == "") {
-						return false;
+	function menu(searchName = "") {
+		$('#menu').tree({
+			url: '<?= base_url('home/menus?name=') ?>' + searchName,
+			method: 'get',
+			animate: 'true',
+			lines: 'true',
+			loadFilter: function(rows) {
+				return convert(rows);
+			},
+			onSelect: function(node) {
+				var node = $(this).tree('getSelected');
+				if (node) {
+					var nama = node.text;
+					var link = node.link;
+					var id = node.id;
+					if (node.attributes) {
+						link += "," + node.attributes.p1 + "," + node.attributes.p2;
+						nama += "," + node.attributes.p1 + "," + node.attributes.p2;
+						id += "," + node.attributes.p1 + "," + node.attributes.p2;
+					}
+					if ($('#tabs').tabs('exists', nama)) {
+						$('#tabs').tabs('select', nama);
 					} else {
-						var content = '<iframe src="' + link + '/index/' + window.btoa(id) + '" scrolling="yes" id="page" style="border: 0; width: 100%; height: 99%; margin:0;"></iframe>';
-						//$('#form').panel('setTitle', nama);
-						$('#tabs').tabs('add', {
-							title: nama,
-							content: content,
-							closable: true,
-							iconCls: node.iconCls
-						});
+						if (link == null || link == "") {
+							return false;
+						} else {
+							var content = '<iframe src="' + link + '/index/' + window.btoa(id) + '" scrolling="yes" id="page" style="border: 0; width: 100%; height: 99%; margin:0;"></iframe>';
+							//$('#form').panel('setTitle', nama);
+							$('#tabs').tabs('add', {
+								title: nama,
+								content: content,
+								closable: true,
+								iconCls: node.iconCls
+							});
+						}
 					}
 				}
 			}
-		}
-	});
+		});
+	}
+
+	// $('#menu').tree({
+	// 	url: '<?= base_url('home/menus') ?>',
+	// 	method: 'get',
+	// 	animate: 'true',
+	// 	lines: 'true',
+	// 	loadFilter: function(rows) {
+	// 		return convert(rows);
+	// 	},
+	// 	onSelect: function(node) {
+	// 		var node = $(this).tree('getSelected');
+	// 		if (node) {
+	// 			var nama = node.text;
+	// 			var link = node.link;
+	// 			var id = node.id;
+	// 			if (node.attributes) {
+	// 				link += "," + node.attributes.p1 + "," + node.attributes.p2;
+	// 				nama += "," + node.attributes.p1 + "," + node.attributes.p2;
+	// 				id += "," + node.attributes.p1 + "," + node.attributes.p2;
+	// 			}
+	// 			if ($('#tabs').tabs('exists', nama)) {
+	// 				$('#tabs').tabs('select', nama);
+	// 			} else {
+	// 				if (link == null || link == "") {
+	// 					return false;
+	// 				} else {
+	// 					var content = '<iframe src="' + link + '/index/' + window.btoa(id) + '" scrolling="yes" id="page" style="border: 0; width: 100%; height: 99%; margin:0;"></iframe>';
+	// 					//$('#form').panel('setTitle', nama);
+	// 					$('#tabs').tabs('add', {
+	// 						title: nama,
+	// 						content: content,
+	// 						closable: true,
+	// 						iconCls: node.iconCls
+	// 					});
+	// 				}
+	// 			}
+	// 		}
+	// 	}
+	// });
 
 	function convert(rows) {
 		function exists(rows, parentId) {
@@ -483,6 +535,10 @@
 		$('#dlg_approval').dialog('open');
 	}
 
+	function notification(){
+		$('#dlg_notif').dialog('open');
+	}
+
 	approvalList();
 	approvalCount();
 	setInterval(approvalList, 10000);
@@ -510,845 +566,781 @@
 		});
 	}
 
-	function approvalDetail(table = "", approved_to = "", created_by = "") {
+	function approvalDetail(table = "", approved_to = "", created_by = "", updated_by = "") {
 		if (table == "" || approved_to == "") {
 			toastr.error("Notification Cannot get Data", "Error");
 		} else {
+			var outputString = table.replace(/_/g, ' ');
+			var header_approval = outputString.toUpperCase();
+			$("#header_approval").html("APPROVAL " + header_approval);
+
 			$('#dlg_approval_detail').window('open');
-			$("#table_name").textbox('setValue', table);
-			$("#approved_to").textbox('setValue', approved_to);
-			$("#created_by").textbox('setValue', created_by);
-			$("#approveall").linkbutton('enable');
-			$("#disapproveall").linkbutton('enable');
-
-			if (table == "users") {
-				$('#dg_approval').datagrid({
-					singleSelect: true,
-					rownumbers: true,
-					url: '<?= base_url('approvals/approvalUsers/') ?>' + approved_to + "/" + created_by,
-					columns: [
-						[{
-							field: 'number',
-							width: 120,
-							halign: 'center',
-							title: "User ID",
-						}, {
-							field: 'name',
-							width: 150,
-							halign: 'center',
-							title: "Name"
-						}, {
-							field: 'username',
-							width: 100,
-							halign: 'center',
-							title: "Username",
-						}, {
-							field: 'email',
-							width: 120,
-							halign: 'center',
-							title: "Email",
-						}, {
-							field: 'phone',
-							width: 100,
-							halign: 'center',
-							title: "Phone",
-						}, {
-							field: 'position',
-							width: 100,
-							halign: 'center',
-							title: "Position",
-						}, {
-							field: 'created_by',
-							width: 100,
-							halign: 'center',
-							title: "Created Date",
-						}, {
-							field: 'created_date',
-							width: 100,
-							halign: 'center',
-							title: "Created Date",
-						}, {
-							field: 'action',
-							width: 80,
-							align: 'center',
-							title: "Action",
-							formatter: function(val, row) {
-								if (val != "-") {
-									var approve = "approve('" + row.id + "','" + table + "')";
-									var disapprove = "disapprove('" + row.id + "','" + table + "')";
-									var a = '<a class="btn btn-success w-50" style="pointer-events: visible; opacity:1;" onclick="' + approve + '"><i class="fa fa-check"></i></a>';
-									var b = '<a class="btn btn-danger w-50" style="pointer-events: visible; opacity:1;" onclick="' + disapprove + '"><i class="fa fa-times"></i></a>';
-									return a + " " + b;
-								}
-							}
-						}]
-					],
-				}).datagrid('enableFilter');
-
-			} else if (table == "stock_fg") {
-				$('#dg_approval').datagrid({
-					singleSelect: true,
-					rownumbers: true,
-					url: '<?= base_url('approvals/approvalStockFg/') ?>' + approved_to + "/" + created_by,
-					columns: [
-						[{
-							field: 'p_month',
-							width: 80,
-							align: 'center',
-							title: "Month",
-						}, {
-							field: 'p_year',
-							width: 80,
-							align: 'center',
-							title: "Year",
-						}, {
-							field: 'revision',
-							width: 80,
-							align: 'center',
-							title: "Revision",
-						}, {
-							field: 'item_fg_number',
-							width: 150,
-							halign: 'center',
-							title: "Product No",
-						}, {
-							field: 'item_fg_name',
-							width: 150,
-							halign: 'center',
-							title: "Product Name"
-						}, {
-							field: 'document_no',
-							width: 100,
-							halign: 'center',
-							title: "Document No",
-						}, {
-							field: 'qty',
-							width: 80,
-							halign: 'center',
-							align: 'right',
-							formatter: numberformat,
-							title: "Qty",
-						}, {
-							field: 'action',
-							width: 80,
-							align: 'center',
-							title: "Action",
-							formatter: function(val, row) {
-								if (val != "-") {
-									var approve = "approve('" + row.id + "','" + table + "')";
-									var disapprove = "disapprove('" + row.id + "','" + table + "')";
-									var a = '<a class="btn btn-success w-50" style="pointer-events: visible; opacity:1;" onclick="' + approve + '"><i class="fa fa-check"></i></a>';
-									var b = '<a class="btn btn-danger w-50" style="pointer-events: visible; opacity:1;" onclick="' + disapprove + '"><i class="fa fa-times"></i></a>';
-									return a + " " + b;
-								}
-							}
-						}]
-					],
-				}).datagrid('enableFilter');
-
-
-			} else if (table == "stock_wip") {
-				$('#dg_approval').datagrid({
-					singleSelect: true,
-					rownumbers: true,
-					url: '<?= base_url('approvals/approvalStockWip/') ?>' + approved_to + "/" + created_by,
-					columns: [
-						[{
-							field: 'p_month',
-							width: 80,
-							align: 'center',
-							title: "Month",
-						}, {
-							field: 'p_year',
-							width: 80,
-							align: 'center',
-							title: "Year",
-						}, {
-							field: 'revision',
-							width: 80,
-							align: 'center',
-							title: "Revision",
-						}, {
-							field: 'item_fg_number',
-							width: 150,
-							halign: 'center',
-							title: "Product No",
-						}, {
-							field: 'item_fg_name',
-							width: 150,
-							halign: 'center',
-							title: "Product Name"
-						}, {
-							field: 'document_no',
-							width: 100,
-							halign: 'center',
-							title: "Document No",
-						}, {
-							field: 'pp',
-							width: 80,
-							halign: 'center',
-							align: 'right',
-							formatter: numberformat,
-							title: "PP",
-						}, {
-							field: 'p1',
-							width: 80,
-							halign: 'center',
-							align: 'right',
-							formatter: numberformat,
-							title: "P1",
-						}, {
-							field: 'p2',
-							width: 80,
-							halign: 'center',
-							align: 'right',
-							formatter: numberformat,
-							title: "P2",
-						}, {
-							field: 'p3',
-							width: 80,
-							halign: 'center',
-							align: 'right',
-							formatter: numberformat,
-							title: "P3",
-						}, {
-							field: 'action',
-							width: 80,
-							align: 'center',
-							title: "Action",
-							formatter: function(val, row) {
-								if (val != "-") {
-									var approve = "approve('" + row.id + "','" + table + "')";
-									var disapprove = "disapprove('" + row.id + "','" + table + "')";
-									var a = '<a class="btn btn-success w-50" style="pointer-events: visible; opacity:1;" onclick="' + approve + '"><i class="fa fa-check"></i></a>';
-									var b = '<a class="btn btn-danger w-50" style="pointer-events: visible; opacity:1;" onclick="' + disapprove + '"><i class="fa fa-times"></i></a>';
-									return a + " " + b;
-								}
-							}
-						}]
-					],
-				}).datagrid('enableFilter');
-
-			} else if (table == "os_so") {
-				$('#dg_approval').datagrid({
-					singleSelect: true,
-					rownumbers: true,
-					url: '<?= base_url('approvals/approvalOsSo/') ?>' + approved_to + "/" + created_by,
-					columns: [
-						[{
-							field: 'p_month',
-							width: 80,
-							align: 'center',
-							title: "Month",
-						}, {
-							field: 'p_year',
-							width: 80,
-							align: 'center',
-							title: "Year",
-						}, {
-							field: 'revision',
-							width: 80,
-							align: 'center',
-							title: "Revision",
-						}, {
-							field: 'customer_name',
-							width: 200,
-							halign: 'center',
-							title: "Customer",
-						}, {
-							field: 'item_fg_number',
-							width: 150,
-							halign: 'center',
-							title: "Product No",
-						}, {
-							field: 'item_fg_name',
-							width: 150,
-							halign: 'center',
-							title: "Product Name"
-						}, {
-							field: 'document_no',
-							width: 100,
-							halign: 'center',
-							title: "Document No",
-						}, {
-							field: 'qty',
-							width: 80,
-							halign: 'center',
-							align: 'right',
-							formatter: numberformat,
-							title: "Qty",
-						}, {
-							field: 'action',
-							width: 80,
-							align: 'center',
-							title: "Action",
-							formatter: function(val, row) {
-								if (val != "-") {
-									var approve = "approve('" + row.id + "','" + table + "')";
-									var disapprove = "disapprove('" + row.id + "','" + table + "')";
-									var a = '<a class="btn btn-success w-50" style="pointer-events: visible; opacity:1;" onclick="' + approve + '"><i class="fa fa-check"></i></a>';
-									var b = '<a class="btn btn-danger w-50" style="pointer-events: visible; opacity:1;" onclick="' + disapprove + '"><i class="fa fa-times"></i></a>';
-									return a + " " + b;
-								}
-							}
-						}]
-					],
-				}).datagrid('enableFilter');
-
-			} else if (table == "os_mpp") {
-				$('#dg_approval').datagrid({
-					singleSelect: true,
-					rownumbers: true,
-					url: '<?= base_url('approvals/approvalOsMpp/') ?>' + approved_to + "/" + created_by,
-					columns: [
-						[{
-							field: 'p_month',
-							width: 80,
-							align: 'center',
-							title: "Month",
-						}, {
-							field: 'p_year',
-							width: 80,
-							align: 'center',
-							title: "Year",
-						}, {
-							field: 'revision',
-							width: 80,
-							align: 'center',
-							title: "Revision",
-						}, {
-							field: 'customer_name',
-							width: 200,
-							halign: 'center',
-							title: "Customer",
-						}, {
-							field: 'item_fg_number',
-							width: 150,
-							halign: 'center',
-							title: "Product No",
-						}, {
-							field: 'item_fg_name',
-							width: 150,
-							halign: 'center',
-							title: "Product Name"
-						}, {
-							field: 'document_no',
-							width: 100,
-							halign: 'center',
-							title: "Document No",
-						}, {
-							field: 'qty',
-							width: 80,
-							halign: 'center',
-							align: 'right',
-							formatter: numberformat,
-							title: "Qty",
-						}, {
-							field: 'action',
-							width: 80,
-							align: 'center',
-							title: "Action",
-							formatter: function(val, row) {
-								if (val != "-") {
-									var approve = "approve('" + row.id + "','" + table + "')";
-									var disapprove = "disapprove('" + row.id + "','" + table + "')";
-									var a = '<a class="btn btn-success w-50" style="pointer-events: visible; opacity:1;" onclick="' + approve + '"><i class="fa fa-check"></i></a>';
-									var b = '<a class="btn btn-danger w-50" style="pointer-events: visible; opacity:1;" onclick="' + disapprove + '"><i class="fa fa-times"></i></a>';
-									return a + " " + b;
-								}
-							}
-						}]
-					],
-				}).datagrid('enableFilter');
-
-
-			} else if (table == "forecasts") {
-				$('#dg_approval').datagrid({
-					singleSelect: true,
-					rownumbers: true,
-					url: '<?= base_url('approvals/approvalForecasts/') ?>' + approved_to + "/" + created_by,
-					columns: [
-						[{
-							field: 'p_month',
-							width: 80,
-							align: 'center',
-							title: "Month",
-						}, {
-							field: 'p_year',
-							width: 80,
-							align: 'center',
-							title: "Year",
-						}, {
-							field: 'revision',
-							width: 80,
-							align: 'center',
-							title: "Revision",
-						}, {
-							field: 'issued_date',
-							width: 100,
-							align: 'center',
-							title: "Issued Date",
-						}, {
-							field: 'customer_name',
-							width: 200,
-							halign: 'center',
-							title: "Customer",
-						}, {
-							field: 'item_fg_number',
-							width: 150,
-							halign: 'center',
-							title: "Product No",
-						}, {
-							field: 'item_fg_name',
-							width: 150,
-							halign: 'center',
-							title: "Product Name"
-						}, {
-							field: 'document_no',
-							width: 100,
-							halign: 'center',
-							title: "Document No",
-						}, {
-							field: 'month_1',
-							width: 80,
-							halign: 'center',
-							align: 'right',
-							formatter: numberformat,
-							title: "M1",
-						}, {
-							field: 'month_2',
-							width: 80,
-							halign: 'center',
-							align: 'right',
-							formatter: numberformat,
-							title: "M2",
-						}, {
-							field: 'month_3',
-							width: 80,
-							halign: 'center',
-							align: 'right',
-							formatter: numberformat,
-							title: "M3",
-						}, {
-							field: 'month_4',
-							width: 80,
-							halign: 'center',
-							align: 'right',
-							formatter: numberformat,
-							title: "M4",
-						}, {
-							field: 'month_5',
-							width: 80,
-							halign: 'center',
-							align: 'right',
-							formatter: numberformat,
-							title: "M5",
-						}, {
-							field: 'month_6',
-							width: 80,
-							halign: 'center',
-							align: 'right',
-							formatter: numberformat,
-							title: "M6",
-						}, {
-							field: 'month_7',
-							width: 80,
-							halign: 'center',
-							align: 'right',
-							formatter: numberformat,
-							title: "M7",
-						}, {
-							field: 'month_8',
-							width: 80,
-							halign: 'center',
-							align: 'right',
-							formatter: numberformat,
-							title: "M8",
-						}, {
-							field: 'month_9',
-							width: 80,
-							halign: 'center',
-							align: 'right',
-							formatter: numberformat,
-							title: "M9",
-						}, {
-							field: 'month_10',
-							width: 80,
-							halign: 'center',
-							align: 'right',
-							formatter: numberformat,
-							title: "M10",
-						}, {
-							field: 'month_11',
-							width: 80,
-							halign: 'center',
-							align: 'right',
-							formatter: numberformat,
-							title: "M11",
-						}, {
-							field: 'month_12',
-							width: 80,
-							halign: 'center',
-							align: 'right',
-							formatter: numberformat,
-							title: "M12",
-						}, {
-							field: 'action',
-							width: 80,
-							align: 'center',
-							title: "Action",
-							formatter: function(val, row) {
-								if (val != "-") {
-									var approve = "approve('" + row.id + "','" + table + "')";
-									var disapprove = "disapprove('" + row.id + "','" + table + "')";
-									var a = '<a class="btn btn-success w-50" style="pointer-events: visible; opacity:1;" onclick="' + approve + '"><i class="fa fa-check"></i></a>';
-									var b = '<a class="btn btn-danger w-50" style="pointer-events: visible; opacity:1;" onclick="' + disapprove + '"><i class="fa fa-times"></i></a>';
-									return a + " " + b;
-								}
-							}
-						}]
-					],
-				}).datagrid('enableFilter');
-			} else if (table == "purchase_orders") {
-				$('#dg_approval').datagrid({
-					singleSelect: true,
-					rownumbers: true,
-					url: '<?= base_url('approvals/approvalPO/') ?>' + approved_to + "/" + created_by,
-					columns: [
-						[{
-							field: 'id',
-							hideen: true,
-							width: 150,
-							halign: 'center',
-							title: "ID",
-						},{
-							field: 'po_no',
-							width: 150,
-							align: 'center',
-							title: "PO NO",
-						},{
-							field: 'po_date',
-							width: 100,
-							align: 'center',
-							title: "PO Period",
-						}, {
-							field: 'item_number',
-							width: 150,
-							align: 'center',
-							title: "Product No",
-						}, {
-							field: 'item_name',
-							width: 100,
-							align: 'center',
-							title: "Product Name",
-						}, {
-							field: 'item_family_name',
-							width: 150,
-							halign: 'center',
-							title: "Product <br>Family",
-						}, {
-							field: 'uom',
-							width: 80,
-							halign: 'center',
-							title: "UOM",
-						}, {
-							field: 'supplier_name',
-							width: 150,
-							halign: 'center',
-							title: "Supplier"
-						}, {
-							field: 'mpq',
-							width: 80,
-							halign: 'center',
-							title: "MPQ",
-						}, {
-							field: 'moq',
-							width: 80,
-							halign: 'center',
-							title: "MOQ",
-						}, {
-							field: 'qty',
-							width: 80,
-							halign: 'center',
-							title: "QTY",
-						}, {
-							field: 'currency',
-							width: 80,
-							halign: 'center',
-							title: "Currency",
-						}, {
-							field: 'discount',
-							width: 80,
-							halign: 'center',
-							title: "Disc %",
-						}, {
-							field: 'price',
-							width: 80,
-							halign: 'center',
-							title: "Price",
-						}, {
-							field: 'total',
-							width: 80,
-							halign: 'center',
-							title: "Amount",
-						}, {
-							field: 'remarks',
-							width: 80,
-							halign: 'center',
-							title: "Remarks",
-						}, {
-							field: 'month_1',
-							width: 80,
-							halign: 'center',
-							title: "Month 1",
-						}, {
-							field: 'month_2',
-							width: 80,
-							halign: 'center',
-							title: "Month 2",
-						}, {
-							field: 'month_3',
-							width: 80,
-							halign: 'center',
-							title: "Month 3",
-						}, {
-							field: 'action',
-							width: 80,
-							align: 'center',
-							title: "Action",
-							formatter: function(val, row) {
-								if (val != "-") {
-									var approve = "approve('" + row.id + "','" + table + "')";
-									var disapprove = "disapprove('" + row.id + "','" + table + "')";
-									var a = '<a class="btn btn-success w-50" style="pointer-events: visible; opacity:1;" onclick="' + approve + '"><i class="fa fa-check"></i></a>';
-									var b = '<a class="btn btn-danger w-50" style="pointer-events: visible; opacity:1;" onclick="' + disapprove + '"><i class="fa fa-times"></i></a>';
-									return a + " " + b;
-								}
-							}
-						}]
-					],
-				}).datagrid('enableFilter');
-			} else if (table == "purchase_requests") {
-				$('#dg_approval').datagrid({
-					singleSelect: true,
-					rownumbers: true,
-					url: '<?= base_url('approvals/approvalPR/') ?>' + approved_to + "/" + created_by,
-					columns: [
-						[{
-							field: 'id',
-							hidden: true,
-							width: 150,
-							halign: 'center',
-							title: "ID",
-						},{
-							field: 'request_no',
-							width: 150,
-							align: 'center',
-							title: "Request No",
-						},{
-							field: 'request_date',
-							width: 100,
-							align: 'center',
-							title: "Request Date",
-						}, {
-							field: 'expected_date',
-							width: 100,
-							align: 'center',
-							title: "Expected Date",
-						}, {
-							field: 'request_name',
-							width: 150,
-							align: 'center',
-							title: "Request Name",
-						}, {
-							field: 'division',
-							width: 100,
-							align: 'center',
-							title: "Division",
-						}, {
-							field: 'item_number',
-							width: 150,
-							halign: 'center',
-							title: "Product No",
-						}, {
-							field: 'item_name',
-							width: 150,
-							halign: 'center',
-							title: "Product Name",
-						}, {
-							field: 'category_name',
-							width: 150,
-							halign: 'center',
-							title: "Product Family"
-						}, {
-							field: 'uom',
-							width: 80,
-							halign: 'center',
-							title: "UOM",
-						}, {
-							field: 'qty',
-							width: 80,
-							halign: 'center',
-							title: "Total Qty",
-						}, {
-							field: 'remarks',
-							width: 100,
-							halign: 'center',
-							title: "Remarks",
-						}, {
-							field: 'action',
-							width: 80,
-							align: 'center',
-							title: "Action",
-							formatter: function(val, row) {
-								if (val != "-") {
-									var approve = "approve('" + row.id + "','" + table + "')";
-									var disapprove = "disapprove('" + row.id + "','" + table + "')";
-									var a = '<a class="btn btn-success w-50" style="pointer-events: visible; opacity:1;" onclick="' + approve + '"><i class="fa fa-check"></i></a>';
-									var b = '<a class="btn btn-danger w-50" style="pointer-events: visible; opacity:1;" onclick="' + disapprove + '"><i class="fa fa-times"></i></a>';
-									return a + " " + b;
-								}
-							}
-						}]
-					],
-				}).datagrid('enableFilter');
-			}
+			$('#pageApproval').attr('src', '<?= base_url("approvals/") ?>' + table + "/" + btoa(approved_to) + "/" + btoa(created_by) + "/" + btoa(updated_by));
 		}
 	}
+
+	// function approvalDetail(table = "", approved_to = "", approved_by = "") {
+	// 	if (table == "" || approved_to == "") {
+	// 		toastr.error("Notification Cannot get Data", "Error");
+	// 	} else {
+	// 		$('#dlg_approval_detail').window('open');
+	// 		$("#table_name").textbox('setValue', table);
+	// 		$("#approved_to").textbox('setValue', approved_to);
+	// 		$("#approved_by").textbox('setValue', approved_by);
+	// 		$("#approveall").linkbutton('enable');
+	// 		$("#disapproveall").linkbutton('enable');
+
+	// 		if (table == "users") {
+	// 			$('#dg_approval').datagrid({
+	// 				singleSelect: true,
+	// 				rownumbers: true,
+	// 				url: '<?= base_url('approvals/approvalUsers/') ?>' + approved_to + "/" + approved_by,
+	// 				columns: [
+	// 					[{
+	// 						field: 'number',
+	// 						width: 120,
+	// 						halign: 'center',
+	// 						title: "User ID",
+	// 					}, {
+	// 						field: 'name',
+	// 						width: 150,
+	// 						halign: 'center',
+	// 						title: "Name"
+	// 					}, {
+	// 						field: 'username',
+	// 						width: 100,
+	// 						halign: 'center',
+	// 						title: "Username",
+	// 					}, {
+	// 						field: 'email',
+	// 						width: 120,
+	// 						halign: 'center',
+	// 						title: "Email",
+	// 					}, {
+	// 						field: 'phone',
+	// 						width: 100,
+	// 						halign: 'center',
+	// 						title: "Phone",
+	// 					}, {
+	// 						field: 'position',
+	// 						width: 100,
+	// 						halign: 'center',
+	// 						title: "Position",
+	// 					}, {
+	// 						field: 'created_by',
+	// 						width: 100,
+	// 						halign: 'center',
+	// 						title: "Created By",
+	// 					}, {
+	// 						field: 'created_date',
+	// 						width: 100,
+	// 						halign: 'center',
+	// 						title: "Created Date",
+	// 					}, {
+	// 						field: 'action',
+	// 						width: 80,
+	// 						align: 'center',
+	// 						title: "Action",
+	// 						formatter: function(val, row) {
+	// 							if (val != "-") {
+	// 								var approve = "approve('" + row.id + "','" + table + "')";
+	// 								var disapprove = "disapprove('" + row.id + "','" + table + "')";
+	// 								var a = '<a class="btn btn-success w-50" style="pointer-events: visible; opacity:1;" onclick="' + approve + '"><i class="fa fa-check"></i></a>';
+	// 								var b = '<a class="btn btn-danger w-50" style="pointer-events: visible; opacity:1;" onclick="' + disapprove + '"><i class="fa fa-times"></i></a>';
+	// 								return a + " " + b;
+	// 							}
+	// 						}
+	// 					}]
+	// 				],
+	// 			}).datagrid('enableFilter');
+	// 		} else if (table == "stock_fg") {
+	// 			$('#dg_approval').datagrid({
+	// 				singleSelect: true,
+	// 				rownumbers: true,
+	// 				url: '<?= base_url('approvals/approvalStockFg/') ?>' + approved_to + "/" + approved_by,
+	// 				columns: [
+	// 					[{
+	// 						field: 'p_month',
+	// 						width: 80,
+	// 						align: 'center',
+	// 						title: "Month",
+	// 					}, {
+	// 						field: 'p_year',
+	// 						width: 80,
+	// 						align: 'center',
+	// 						title: "Year",
+	// 					}, {
+	// 						field: 'revision',
+	// 						width: 80,
+	// 						align: 'center',
+	// 						title: "Revision",
+	// 					}, {
+	// 						field: 'item_fg_number',
+	// 						width: 150,
+	// 						halign: 'center',
+	// 						title: "Product No",
+	// 					}, {
+	// 						field: 'item_fg_name',
+	// 						width: 150,
+	// 						halign: 'center',
+	// 						title: "Product Name"
+	// 					}, {
+	// 						field: 'document_no',
+	// 						width: 100,
+	// 						halign: 'center',
+	// 						title: "Document No",
+	// 					}, {
+	// 						field: 'qty',
+	// 						width: 80,
+	// 						halign: 'center',
+	// 						align: 'right',
+	// 						formatter: numberformat,
+	// 						title: "Qty",
+	// 					}, {
+	// 						field: 'action',
+	// 						width: 80,
+	// 						align: 'center',
+	// 						title: "Action",
+	// 						formatter: function(val, row) {
+	// 							if (val != "-") {
+	// 								var approve = "approve('" + row.id + "','" + table + "')";
+	// 								var disapprove = "disapprove('" + row.id + "','" + table + "')";
+	// 								var a = '<a class="btn btn-success w-50" style="pointer-events: visible; opacity:1;" onclick="' + approve + '"><i class="fa fa-check"></i></a>';
+	// 								var b = '<a class="btn btn-danger w-50" style="pointer-events: visible; opacity:1;" onclick="' + disapprove + '"><i class="fa fa-times"></i></a>';
+	// 								return a + " " + b;
+	// 							}
+	// 						}
+	// 					}]
+	// 				],
+	// 			}).datagrid('enableFilter');
+
+
+	// 		} else if (table == "stock_wip") {
+	// 			$('#dg_approval').datagrid({
+	// 				singleSelect: true,
+	// 				rownumbers: true,
+	// 				url: '<?= base_url('approvals/approvalStockWip/') ?>' + approved_to + "/" + approved_by,
+	// 				columns: [
+	// 					[{
+	// 						field: 'p_month',
+	// 						width: 80,
+	// 						align: 'center',
+	// 						title: "Month",
+	// 					}, {
+	// 						field: 'p_year',
+	// 						width: 80,
+	// 						align: 'center',
+	// 						title: "Year",
+	// 					}, {
+	// 						field: 'revision',
+	// 						width: 80,
+	// 						align: 'center',
+	// 						title: "Revision",
+	// 					}, {
+	// 						field: 'item_fg_number',
+	// 						width: 150,
+	// 						halign: 'center',
+	// 						title: "Product No",
+	// 					}, {
+	// 						field: 'item_fg_name',
+	// 						width: 150,
+	// 						halign: 'center',
+	// 						title: "Product Name"
+	// 					}, {
+	// 						field: 'document_no',
+	// 						width: 100,
+	// 						halign: 'center',
+	// 						title: "Document No",
+	// 					}, {
+	// 						field: 'pp',
+	// 						width: 80,
+	// 						halign: 'center',
+	// 						align: 'right',
+	// 						formatter: numberformat,
+	// 						title: "PP",
+	// 					}, {
+	// 						field: 'p1',
+	// 						width: 80,
+	// 						halign: 'center',
+	// 						align: 'right',
+	// 						formatter: numberformat,
+	// 						title: "P1",
+	// 					}, {
+	// 						field: 'p2',
+	// 						width: 80,
+	// 						halign: 'center',
+	// 						align: 'right',
+	// 						formatter: numberformat,
+	// 						title: "P2",
+	// 					}, {
+	// 						field: 'p3',
+	// 						width: 80,
+	// 						halign: 'center',
+	// 						align: 'right',
+	// 						formatter: numberformat,
+	// 						title: "P3",
+	// 					}, {
+	// 						field: 'action',
+	// 						width: 80,
+	// 						align: 'center',
+	// 						title: "Action",
+	// 						formatter: function(val, row) {
+	// 							if (val != "-") {
+	// 								var approve = "approve('" + row.id + "','" + table + "')";
+	// 								var disapprove = "disapprove('" + row.id + "','" + table + "')";
+	// 								var a = '<a class="btn btn-success w-50" style="pointer-events: visible; opacity:1;" onclick="' + approve + '"><i class="fa fa-check"></i></a>';
+	// 								var b = '<a class="btn btn-danger w-50" style="pointer-events: visible; opacity:1;" onclick="' + disapprove + '"><i class="fa fa-times"></i></a>';
+	// 								return a + " " + b;
+	// 							}
+	// 						}
+	// 					}]
+	// 				],
+	// 			}).datagrid('enableFilter');
+
+	// 		} else if (table == "os_so") {
+	// 			$('#dg_approval').datagrid({
+	// 				singleSelect: true,
+	// 				rownumbers: true,
+	// 				url: '<?= base_url('approvals/approvalOsSo/') ?>' + approved_to + "/" + approved_by,
+	// 				columns: [
+	// 					[{
+	// 						field: 'p_month',
+	// 						width: 80,
+	// 						align: 'center',
+	// 						title: "Month",
+	// 					}, {
+	// 						field: 'p_year',
+	// 						width: 80,
+	// 						align: 'center',
+	// 						title: "Year",
+	// 					}, {
+	// 						field: 'revision',
+	// 						width: 80,
+	// 						align: 'center',
+	// 						title: "Revision",
+	// 					}, {
+	// 						field: 'customer_name',
+	// 						width: 200,
+	// 						halign: 'center',
+	// 						title: "Customer",
+	// 					}, {
+	// 						field: 'item_fg_number',
+	// 						width: 150,
+	// 						halign: 'center',
+	// 						title: "Product No",
+	// 					}, {
+	// 						field: 'item_fg_name',
+	// 						width: 150,
+	// 						halign: 'center',
+	// 						title: "Product Name"
+	// 					}, {
+	// 						field: 'document_no',
+	// 						width: 100,
+	// 						halign: 'center',
+	// 						title: "Document No",
+	// 					}, {
+	// 						field: 'qty',
+	// 						width: 80,
+	// 						halign: 'center',
+	// 						align: 'right',
+	// 						formatter: numberformat,
+	// 						title: "Qty",
+	// 					}, {
+	// 						field: 'action',
+	// 						width: 80,
+	// 						align: 'center',
+	// 						title: "Action",
+	// 						formatter: function(val, row) {
+	// 							if (val != "-") {
+	// 								var approve = "approve('" + row.id + "','" + table + "')";
+	// 								var disapprove = "disapprove('" + row.id + "','" + table + "')";
+	// 								var a = '<a class="btn btn-success w-50" style="pointer-events: visible; opacity:1;" onclick="' + approve + '"><i class="fa fa-check"></i></a>';
+	// 								var b = '<a class="btn btn-danger w-50" style="pointer-events: visible; opacity:1;" onclick="' + disapprove + '"><i class="fa fa-times"></i></a>';
+	// 								return a + " " + b;
+	// 							}
+	// 						}
+	// 					}]
+	// 				],
+	// 			}).datagrid('enableFilter');
+
+	// 		} else if (table == "os_mpp") {
+	// 			$('#dg_approval').datagrid({
+	// 				singleSelect: true,
+	// 				rownumbers: true,
+	// 				url: '<?= base_url('approvals/approvalOsMpp/') ?>' + approved_to + "/" + approved_by,
+	// 				columns: [
+	// 					[{
+	// 						field: 'p_month',
+	// 						width: 80,
+	// 						align: 'center',
+	// 						title: "Month",
+	// 					}, {
+	// 						field: 'p_year',
+	// 						width: 80,
+	// 						align: 'center',
+	// 						title: "Year",
+	// 					}, {
+	// 						field: 'revision',
+	// 						width: 80,
+	// 						align: 'center',
+	// 						title: "Revision",
+	// 					}, {
+	// 						field: 'customer_name',
+	// 						width: 200,
+	// 						halign: 'center',
+	// 						title: "Customer",
+	// 					}, {
+	// 						field: 'item_fg_number',
+	// 						width: 150,
+	// 						halign: 'center',
+	// 						title: "Product No",
+	// 					}, {
+	// 						field: 'item_fg_name',
+	// 						width: 150,
+	// 						halign: 'center',
+	// 						title: "Product Name"
+	// 					}, {
+	// 						field: 'document_no',
+	// 						width: 100,
+	// 						halign: 'center',
+	// 						title: "Document No",
+	// 					}, {
+	// 						field: 'qty',
+	// 						width: 80,
+	// 						halign: 'center',
+	// 						align: 'right',
+	// 						formatter: numberformat,
+	// 						title: "Qty",
+	// 					}, {
+	// 						field: 'action',
+	// 						width: 80,
+	// 						align: 'center',
+	// 						title: "Action",
+	// 						formatter: function(val, row) {
+	// 							if (val != "-") {
+	// 								var approve = "approve('" + row.id + "','" + table + "')";
+	// 								var disapprove = "disapprove('" + row.id + "','" + table + "')";
+	// 								var a = '<a class="btn btn-success w-50" style="pointer-events: visible; opacity:1;" onclick="' + approve + '"><i class="fa fa-check"></i></a>';
+	// 								var b = '<a class="btn btn-danger w-50" style="pointer-events: visible; opacity:1;" onclick="' + disapprove + '"><i class="fa fa-times"></i></a>';
+	// 								return a + " " + b;
+	// 							}
+	// 						}
+	// 					}]
+	// 				],
+	// 			}).datagrid('enableFilter');
+
+
+	// 		} else if (table == "forecasts") {
+	// 			$('#dg_approval').datagrid({
+	// 				singleSelect: true,
+	// 				rownumbers: true,
+	// 				url: '<?= base_url('approvals/approvalForecasts/') ?>' + approved_to + "/" + approved_by,
+	// 				columns: [
+	// 					[{
+	// 						field: 'p_month',
+	// 						width: 80,
+	// 						align: 'center',
+	// 						title: "Month",
+	// 					}, {
+	// 						field: 'p_year',
+	// 						width: 80,
+	// 						align: 'center',
+	// 						title: "Year",
+	// 					}, {
+	// 						field: 'revision',
+	// 						width: 80,
+	// 						align: 'center',
+	// 						title: "Revision",
+	// 					}, {
+	// 						field: 'issued_date',
+	// 						width: 100,
+	// 						align: 'center',
+	// 						title: "Issued Date",
+	// 					}, {
+	// 						field: 'customer_name',
+	// 						width: 200,
+	// 						halign: 'center',
+	// 						title: "Customer",
+	// 					}, {
+	// 						field: 'item_fg_number',
+	// 						width: 150,
+	// 						halign: 'center',
+	// 						title: "Product No",
+	// 					}, {
+	// 						field: 'item_fg_name',
+	// 						width: 150,
+	// 						halign: 'center',
+	// 						title: "Product Name"
+	// 					}, {
+	// 						field: 'document_no',
+	// 						width: 100,
+	// 						halign: 'center',
+	// 						title: "Document No",
+	// 					}, {
+	// 						field: 'month_1',
+	// 						width: 80,
+	// 						halign: 'center',
+	// 						align: 'right',
+	// 						formatter: numberformat,
+	// 						title: "M1",
+	// 					}, {
+	// 						field: 'month_2',
+	// 						width: 80,
+	// 						halign: 'center',
+	// 						align: 'right',
+	// 						formatter: numberformat,
+	// 						title: "M2",
+	// 					}, {
+	// 						field: 'month_3',
+	// 						width: 80,
+	// 						halign: 'center',
+	// 						align: 'right',
+	// 						formatter: numberformat,
+	// 						title: "M3",
+	// 					}, {
+	// 						field: 'month_4',
+	// 						width: 80,
+	// 						halign: 'center',
+	// 						align: 'right',
+	// 						formatter: numberformat,
+	// 						title: "M4",
+	// 					}, {
+	// 						field: 'month_5',
+	// 						width: 80,
+	// 						halign: 'center',
+	// 						align: 'right',
+	// 						formatter: numberformat,
+	// 						title: "M5",
+	// 					}, {
+	// 						field: 'month_6',
+	// 						width: 80,
+	// 						halign: 'center',
+	// 						align: 'right',
+	// 						formatter: numberformat,
+	// 						title: "M6",
+	// 					}, {
+	// 						field: 'month_7',
+	// 						width: 80,
+	// 						halign: 'center',
+	// 						align: 'right',
+	// 						formatter: numberformat,
+	// 						title: "M7",
+	// 					}, {
+	// 						field: 'month_8',
+	// 						width: 80,
+	// 						halign: 'center',
+	// 						align: 'right',
+	// 						formatter: numberformat,
+	// 						title: "M8",
+	// 					}, {
+	// 						field: 'month_9',
+	// 						width: 80,
+	// 						halign: 'center',
+	// 						align: 'right',
+	// 						formatter: numberformat,
+	// 						title: "M9",
+	// 					}, {
+	// 						field: 'month_10',
+	// 						width: 80,
+	// 						halign: 'center',
+	// 						align: 'right',
+	// 						formatter: numberformat,
+	// 						title: "M10",
+	// 					}, {
+	// 						field: 'month_11',
+	// 						width: 80,
+	// 						halign: 'center',
+	// 						align: 'right',
+	// 						formatter: numberformat,
+	// 						title: "M11",
+	// 					}, {
+	// 						field: 'month_12',
+	// 						width: 80,
+	// 						halign: 'center',
+	// 						align: 'right',
+	// 						formatter: numberformat,
+	// 						title: "M12",
+	// 					}, {
+	// 						field: 'action',
+	// 						width: 80,
+	// 						align: 'center',
+	// 						title: "Action",
+	// 						formatter: function(val, row) {
+	// 							if (val != "-") {
+	// 								var approve = "approve('" + row.id + "','" + table + "')";
+	// 								var disapprove = "disapprove('" + row.id + "','" + table + "')";
+	// 								var a = '<a class="btn btn-success w-50" style="pointer-events: visible; opacity:1;" onclick="' + approve + '"><i class="fa fa-check"></i></a>';
+	// 								var b = '<a class="btn btn-danger w-50" style="pointer-events: visible; opacity:1;" onclick="' + disapprove + '"><i class="fa fa-times"></i></a>';
+	// 								return a + " " + b;
+	// 							}
+	// 						}
+	// 					}]
+	// 				],
+	// 			}).datagrid('enableFilter');
+	// 		} else if (table == "purchase_orders") {
+	// 			$('#dg_approval').datagrid({
+	// 				singleSelect: true,
+	// 				rownumbers: true,
+	// 				url: '<?= base_url('approvals/approvalPO/') ?>' + approved_to + "/" + approved_by,
+	// 				columns: [
+	// 					[{
+	// 						field: 'id',
+	// 						hidden: true,
+	// 						width: 150,
+	// 						halign: 'center',
+	// 						title: "ID",
+	// 					},{
+	// 						field: 'po_no',
+	// 						width: 150,
+	// 						align: 'center',
+	// 						title: "PO NO",
+	// 					},{
+	// 						field: 'po_date',
+	// 						width: 100,
+	// 						align: 'center',
+	// 						title: "PO Period",
+	// 					}, {
+	// 						field: 'item_number',
+	// 						width: 150,
+	// 						align: 'left',
+	// 						title: "Product No",
+	// 					}, {
+	// 						field: 'item_name',
+	// 						width: 100,
+	// 						align: 'left',
+	// 						title: "Product Name",
+	// 					}, {
+	// 						field: 'item_family_name',
+	// 						width: 150,
+	// 						halign: 'center',
+	// 						title: "Product <br>Family",
+	// 					}, {
+	// 						field: 'uom',
+	// 						width: 80,
+	// 						halign: 'center',
+	// 						title: "UOM",
+	// 					}, {
+	// 						field: 'supplier_name',
+	// 						width: 150,
+	// 						halign: 'center',
+	// 						title: "Supplier"
+	// 					}, {
+	// 						field: 'mpq',
+	// 						width: 80,
+	// 						halign: 'center',
+	// 						title: "MPQ",
+	// 						formatter: function(value) {
+	// 							return parseInt(value, 10);
+	// 						}
+	// 					}, {
+	// 						field: 'moq',
+	// 						width: 80,
+	// 						halign: 'center',
+	// 						title: "MOQ",
+	// 						formatter: function(value) {
+	// 							return parseInt(value, 10);
+	// 						}
+	// 					}, {
+	// 						field: 'qty',
+	// 						width: 80,
+	// 						halign: 'center',
+	// 						formatter: numberformats,
+	// 						title: "QTY",
+	// 					}, {
+	// 						field: 'currency',
+	// 						width: 80,
+	// 						halign: 'center',
+	// 						title: "Currency",
+	// 					}, {
+	// 						field: 'discount',
+	// 						width: 80,
+	// 						halign: 'center',
+	// 						title: "Disc %",
+	// 					}, {
+	// 						field: 'price',
+	// 						width: 80,
+	// 						halign: 'center',
+	// 						formatter: numberformats,
+	// 						title: "Price",
+	// 					}, {
+	// 						field: 'total',
+	// 						width: 100,
+	// 						halign: 'center',
+	// 						formatter: numberformats,
+	// 						title: "Amount",
+	// 					}, {
+	// 						field: 'remarks',
+	// 						width: 80,
+	// 						halign: 'center',
+	// 						title: "Remarks",
+	// 					}, {
+	// 						field: 'month_1',
+	// 						width: 70,
+	// 						halign: 'center',
+	// 						title: "Month 1",
+	// 					}, {
+	// 						field: 'month_2',
+	// 						width: 70,
+	// 						halign: 'center',
+	// 						title: "Month 2",
+	// 					}, {
+	// 						field: 'month_3',
+	// 						width: 70,
+	// 						halign: 'center',
+	// 						title: "Month 3",
+	// 					}, {
+	// 						field: 'month_4',
+	// 						width: 70,
+	// 						halign: 'center',
+	// 						title: "Month 4",
+	// 					}, {
+	// 						field: 'action',
+	// 						width: 80,
+	// 						align: 'center',
+	// 						title: "Action",
+	// 						formatter: function(val, row) {
+	// 							if (val != "-") {
+	// 								var approve = "approve('" + row.id + "','" + table + "')";
+	// 								var disapprove = "disapprove('" + row.id + "','" + table + "')";
+	// 								var a = '<a class="btn btn-success w-50" style="pointer-events: visible; opacity:1;" onclick="' + approve + '"><i class="fa fa-check"></i></a>';
+	// 								var b = '<a class="btn btn-danger w-50" style="pointer-events: visible; opacity:1;" onclick="' + disapprove + '"><i class="fa fa-times"></i></a>';
+	// 								return a + " " + b;
+	// 							}
+	// 						}
+	// 					}]
+	// 				],
+	// 			}).datagrid('enableFilter');
+	// 		} else if (table == "purchase_requests") {
+	// 			$('#dg_approval').datagrid({
+	// 				singleSelect: true,
+	// 				rownumbers: true,
+	// 				url: '<?= base_url('approvals/approvalPR/') ?>' + approved_to + "/" + approved_by,
+	// 				columns: [
+	// 					[{
+	// 						field: 'id',
+	// 						hidden: true,
+	// 						width: 150,
+	// 						halign: 'center',
+	// 						title: "ID",
+	// 					},{
+	// 						field: 'request_no',
+	// 						width: 150,
+	// 						align: 'center',
+	// 						title: "Request No",
+	// 					},{
+	// 						field: 'request_date',
+	// 						width: 100,
+	// 						align: 'center',
+	// 						title: "Request Date",
+	// 					}, {
+	// 						field: 'expected_date',
+	// 						width: 100,
+	// 						align: 'center',
+	// 						title: "Expected Date",
+	// 					}, {
+	// 						field: 'request_name',
+	// 						width: 150,
+	// 						align: 'center',
+	// 						title: "Request Name",
+	// 					}, {
+	// 						field: 'division',
+	// 						width: 100,
+	// 						align: 'center',
+	// 						title: "Division",
+	// 					}, {
+	// 						field: 'item_number',
+	// 						width: 150,
+	// 						halign: 'center',
+	// 						title: "Product No",
+	// 					}, {
+	// 						field: 'item_name',
+	// 						width: 150,
+	// 						halign: 'center',
+	// 						title: "Product Name",
+	// 					}, {
+	// 						field: 'category_name',
+	// 						width: 150,
+	// 						halign: 'center',
+	// 						title: "Product Family"
+	// 					}, {
+	// 						field: 'uom',
+	// 						width: 80,
+	// 						halign: 'center',
+	// 						title: "UOM",
+	// 					}, {
+	// 						field: 'qty',
+	// 						width: 80,
+	// 						halign: 'center',
+	// 						title: "Total Qty",
+	// 					}, {
+	// 						field: 'remarks',
+	// 						width: 100,
+	// 						halign: 'center',
+	// 						title: "Remarks",
+	// 					}, {
+	// 						field: 'action',
+	// 						width: 80,
+	// 						align: 'center',
+	// 						title: "Action",
+	// 						formatter: function(val, row) {
+	// 							if (val != "-") {
+	// 								var approve = "approve('" + row.id + "','" + table + "')";
+	// 								var disapprove = "disapprove('" + row.id + "','" + table + "')";
+	// 								var a = '<a class="btn btn-success w-50" style="pointer-events: visible; opacity:1;" onclick="' + approve + '"><i class="fa fa-check"></i></a>';
+	// 								var b = '<a class="btn btn-danger w-50" style="pointer-events: visible; opacity:1;" onclick="' + disapprove + '"><i class="fa fa-times"></i></a>';
+	// 								return a + " " + b;
+	// 							}
+	// 						}
+	// 					}]
+	// 				],
+	// 			}).datagrid('enableFilter');
+	// 		}
+	// 	}
+	// }
 
 	function export_excel() {
 		$('#dg_approval').datagrid('toExcel', 'approvals.xls');
 	}
 
-	// function notification() {
-	// 	$('#dlg_notif').dialog('open');
-	// }
-
-	// notificationList();
-	// notificationCount();
-	// setInterval(notificationList, 20000);
-	// setInterval(notificationCount, 20000);
-
-	// function notificationList() {
-	// 	$.ajax({
-	// 		type: "post",
-	// 		url: "<?= base_url('home/notificationList') ?>",
-	// 		dataType: "html",
-	// 		success: function(response) {
-	// 			$('#notificationList').html(response);
-	// 		}
-	// 	});
-	// }
-
-	// function notificationCount() {
-	// 	$.ajax({
-	// 		type: "post",
-	// 		url: "<?= base_url('home/notificationCount') ?>",
-	// 		dataType: "html",
-	// 		success: function(response) {
-	// 			$('#notificationCount').html(response);
-	// 		}
-	// 	});
-	// }
-
-	function approveall() {
-		var table_name = $("#table_name").textbox('getValue');
-		var approved_to = $("#approved_to").textbox('getValue');
-		var created_by = $("#created_by").textbox('getValue');
-
-		$.messager.confirm('Warning', 'Are you sure you want to approve all data?', function(r) {
-			if (r) {
-				$.post('<?= base_url('approvals/approveall') ?>', {
-					table_name: table_name,
-					approved_to: approved_to,
-					created_by: created_by,
-				}, function(result) {
-					var result = eval('(' + result + ')');
-					if (result.theme == "success") {
-						toastr.success(result.message, result.title);
-						$("#dg_approval").datagrid("reload");
-					} else {
-						toastr.error(result.message, result.title);
-					}
-				});
+	function notificationList() {
+		$.ajax({
+			type: "post",
+			url: "<?= base_url('notifications/notificationList') ?>",
+			dataType: "html",
+			success: function(response) {
+				$('#notificationList').html(response);
 			}
 		});
 	}
 
-	function disapproveall() {
-		var table_name = $("#table_name").textbox('getValue');
-		var approved_to = $("#approved_to").textbox('getValue');
-		var created_by = $("#created_by").textbox('getValue');
-
-		$.messager.confirm('Warning', 'Are you sure you want to disapprove all data?', function(r) {
-			if (r) {
-				Swal.fire({
-					title: 'Please Wait for Process Disapprove',
-					showConfirmButton: false,
-					allowOutsideClick: false,
-					allowEscapeKey: false,
-					didOpen: () => {
-						Swal.showLoading();
-					},
-				});
-
-				$.post('<?= base_url('approvals/disapproveall') ?>', {
-					table_name: table_name,
-					approved_to: approved_to,
-					created_by: created_by,
-				}, function(result) {
-					var result = eval('(' + result + ')');
-					Swal.close();
-
-					if (result.theme == "success") {
-						toastr.success(result.message, result.title);
-						$("#dg_approval").datagrid("reload");
-					} else {
-						toastr.error(result.message, result.title);
-					}
-				});
+	function notificationCount() {
+		$.ajax({
+			type: "post",
+			url: "<?= base_url('notifications/notificationCount') ?>",
+			dataType: "html",
+			success: function(response) {
+				$('#notificationCount').html(response);
 			}
 		});
 	}
 
-	function approve(id, tablename) {
-		$.messager.confirm('Warning', 'Are you sure you want to approve this data?', function(r) {
-			if (r) {
-				$.post('<?= base_url('approvals/approve') ?>', {
-					id: id,
-					tablename: tablename
-				}, function(result) {
-					var result = eval('(' + result + ')');
-					if (result.theme == "success") {
-						toastr.success(result.message, result.title);
-						$("#dg_approval").datagrid("reload");
-					} else {
-						toastr.error(result.message, result.title);
-					}
-				});
-			}
-		});
+	function notificationDetail(user = "", table = "", name = "") {
+		if (user == "" || table == "") {
+			toastr.error("Notification Cannot get Data", "Error");
+		} else {
+			var outputString = table.replace(/_/g, ' ');
+			var header_notification = outputString.toUpperCase();
+			$("#header_notification").html("Notification " + header_notification);
+
+			$('#dlg_notification_detail').window('open');
+			$('#pageNotification').attr('src', '<?= base_url("notifications/") ?>' + table + "/" + btoa(user) + "/" + btoa(name));
+		}
 	}
 
-	function disapprove(id, tablename) {
-		$.messager.confirm('Warning', 'Are you sure you want to disapprove this data?', function(r) {
-			if (r) {
-				$.post('<?= base_url('approvals/disapprove') ?>', {
-					id: id,
-					tablename: tablename
-				}, function(result) {
-					var result = eval('(' + result + ')');
-
-					if (result.theme == "success") {
-						toastr.success(result.message, result.title);
-						$("#dg_approval").datagrid("reload");
-					} else {
-						toastr.error(result.message, result.title);
-					}
-				});
-			}
-		});
-	}
+	notificationList();
+	notificationCount();
+	setInterval(notificationList, 10000);
+	setInterval(notificationCount, 10000);
 
 	function logout() {
 		Swal.fire({
@@ -1386,6 +1378,15 @@
 
 		return "<b>" + formatter.format(value) + "</b>";
 	}
+
+	function numberformats(value, row) {
+        if (value != null) {
+            const formatter = new Intl.NumberFormat('id-ID', {
+                minimumFractionDigits: 2
+            });
+            return "<b>" + formatter.format(value) + "</b>";
+        }
+    }
 </script>
 
 </html>

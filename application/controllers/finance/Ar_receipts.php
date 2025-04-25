@@ -11,7 +11,7 @@ class Ar_receipts extends CI_Controller
         $this->load->library('form_validation');
         $this->load->library('session');
         $this->load->library('Ciqrcode');
-        $this->load->library('Convertcurrency');
+        // $this->load->library('Convertcurrency');
         $this->load->model('crud');
         //Validasi Form
         $this->form_validation->set_rules('sales_invoice', 'Sales Invoice', 'required|min_length[1]|max_length[50]');
@@ -190,13 +190,31 @@ class Ar_receipts extends CI_Controller
         echo json_encode($arr);
     }
 
+    // public function readInvoiceType()
+    // {
+    //     $customer_id = $this->input->get('customer_id');
+    //     $receipt_type = $this->input->get('receipt_type');
+
+    //     $records = $this->crud->query("SELECT `number`, journal_type_id FROM sales_invoices WHERE customer_id = '$customer_id' and `status` = 0 GROUP BY `number` ORDER BY `number` ASC");
+    //     echo json_encode($records);
+    // }
+
     public function readInvoiceType()
     {
         $customer_id = $this->input->get('customer_id');
         $receipt_type = $this->input->get('receipt_type');
 
-        $records = $this->crud->query("SELECT `number`, journal_type_id FROM sales_invoices WHERE customer_id = '$customer_id' and `status` = 0 GROUP BY `number` ORDER BY `number` ASC");
-        echo json_encode($records);
+        $records = $this->crud->query("SELECT `number`, journal_type_id, trans_date, due_date FROM sales_invoices WHERE customer_id = '$customer_id' and `status` = 0 GROUP BY `number` ORDER BY `number` ASC");
+        
+        // Tambahkan nomor urut
+        $data_with_no = [];
+        $no = 1;
+        foreach ($records as $record) {
+            $record->no = $no++; // Tambahkan nomor urut
+            $data_with_no[] = $record;
+        }
+
+        echo json_encode($data_with_no);
     }
 
     public function readReceipts($customer_id)
@@ -229,20 +247,40 @@ class Ar_receipts extends CI_Controller
         echo json_encode($records);
     }
 
-    public function number($trans_date)
+    // public function number($trans_date)
+    // {
+    //     $datenow    = "AR-" . date("Ymd", strtotime(base64_decode($trans_date)));
+    //     $sqlGetID   = $this->db->query("SELECT max(`receipt_no`) as kode FROM ar_receipts WHERE `receipt_no` like '%$datenow%'");
+    //     $rowID      = $sqlGetID->row();
+    //     $kode       = $rowID->kode;
+    //     if ($kode == NULL) {
+    //         $autoID = sprintf("%04s", $kode + 1);
+    //     } else {
+    //         $urutan = (int) substr($kode, -4);
+    //         $urutan++;
+    //         $autoID = sprintf("%04s", $urutan);
+    //     }
+    //     echo $datenow . "-" . $autoID;
+    // }
+
+    public function number($trans_date, $bank_code)
     {
-        $datenow    = "AR-" . date("Ymd", strtotime(base64_decode($trans_date)));
+        $decoded_date = base64_decode($trans_date);
+        $year = date("y", strtotime($decoded_date));
+        $month = date("m", strtotime($decoded_date));
+        // $bank_code = base64_decode($bank_code);
+        $datenow    = $bank_code."/".$month."-".$year."/"."M";
         $sqlGetID   = $this->db->query("SELECT max(`receipt_no`) as kode FROM ar_receipts WHERE `receipt_no` like '%$datenow%'");
         $rowID      = $sqlGetID->row();
         $kode       = $rowID->kode;
         if ($kode == NULL) {
-            $autoID = sprintf("%04s", $kode + 1);
+            $autoID = sprintf("%03s", $kode + 1);
         } else {
-            $urutan = (int) substr($kode, -4);
+            $urutan = (int) substr($kode, 0, 3);
             $urutan++;
-            $autoID = sprintf("%04s", $urutan);
+            $autoID = sprintf("%03s", $urutan);
         }
-        echo $datenow . "-" . $autoID;
+        echo $autoID."/".$datenow;
     }
 
     public function datatablesTemp()
@@ -271,8 +309,8 @@ class Ar_receipts extends CI_Controller
 
             $obj[] = array(
                 "sales_invoice" => $record['number'],
-                "so_number" => $record['so_number'],
-                "description" => $record['customer_po'],
+                "so_number" => $record['sales_order_no'],
+                "description" => $record['customer_order_no'],
                 "currency" => $record['currency'],
                 "amount" => $record['receipt'],
                 "balance" => $record['receipt'],
@@ -362,7 +400,7 @@ class Ar_receipts extends CI_Controller
                     $send = $this->crud->update('ar_receipts', ["id" => $post['id']], $post);
                     echo $send;
                 } else {
-                    $send = $this->crud->create('ar_receipts', $post);
+                    $send = $this->crud->createNotLog('ar_receipts', $post);
                     if ($send) {
                         if ($post['amount'] == $post['receipt']) {
                             $this->crud->update('sales_invoices', ["number" => $post['sales_invoice']], ["status" => 1]);
@@ -473,7 +511,7 @@ class Ar_receipts extends CI_Controller
         $rows = 10;
         $page = ceil(count($receipt_total) / $rows);
         //Generate QRcode
-        $this->createQrcode(@$receipt_no, "assets/image/qrcode/");
+        // $this->createQrcode(@$receipt_no, "assets/image/qrcode/");
         $html = '<html>
                     <head>
                         <title>' . $receipt_no . '</title>
@@ -543,7 +581,7 @@ class Ar_receipts extends CI_Controller
                 $amount = 0;
                 $hide = "hidden";
             }
-
+            // <td width="50" rowspan="4"><img src="' . base_url('assets/image/qrcode/' . $receipt_no . '.png') . '" width="60"/></td>
             $exchangeName = "Rp. " . number_format($amount, 2);
 
             $html .= '  <table style="width:100%;">
@@ -556,15 +594,15 @@ class Ar_receipts extends CI_Controller
                                 <td width="100" style="text-align:right;">
                                     <table style="width:100%; font-size:10px;">
                                         <tr>
-                                            <td width="50" rowspan="4"><img src="' . base_url('assets/image/qrcode/' . $receipt_no . '.png') . '" width="60"/></td>
+                                            
                                             <td width="60">Doc No</td>
                                             <td width="5">:</td>
-                                            <td width="100">' . $config_iso->doc_ar_receipt . '</td>
+                                            <td width="100">' . @$config_iso->doc_ar_receipt . '</td>
                                         </tr>
                                         <tr>
                                             <td>Form</td>
                                             <td>:</td>
-                                            <td>' . $config_iso->form_ar_receipt . '</td>
+                                            <td>' . @$config_iso->form_ar_receipt . '</td>
                                         </tr>
                                         <tr>
                                             <td>Print Date</td>
@@ -681,10 +719,7 @@ class Ar_receipts extends CI_Controller
         }
 
         $html .= '  <table id="customers" style="margin-top:10px;">
-                        <tr>
-                            <th style="text-align:center;">Amount in Words</th>
-                            <td>' . $this->convertcurrency->convertCurrencyToWords($grand_total, $records[0]['currency']) . '</td>
-                        </tr>
+                        
                     </table>
                     <p style="font-size:12px;"><i>*This Receipt Voucher was prepared by ' . $config->name . '</i></p>
                     <div style="width:100%; float:left; margin-bottom:20px;">

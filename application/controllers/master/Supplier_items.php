@@ -64,7 +64,7 @@ class Supplier_items extends CI_Controller
        $this->db->join('suppliers b', 'a.supplier_id = b.id');
        $this->db->join('item_rm c', 'a.item_rm_id = c.id');
        $this->db->where('a.supplier_id', $supplier_id);
-       $this->db->like('c.number', $post);
+       $this->db->like('c.id', $post);//c.number
        $this->db->group_by('a.id');
        $this->db->order_by('a.id', 'ASC');
        $records = $this->db->get()->result_array();
@@ -76,25 +76,51 @@ class Supplier_items extends CI_Controller
     {
         $post = isset($_POST['q']) ? $_POST['q'] : "";
         $item_number = $this->input->get('item_number');
-        $item_id = $this->input->get('item_rm_id');
+        $item_rm_id = $this->input->get('item_rm_id');
         $item_family_id = $this->input->get('item_family_id');
 
-        $this->db->select('b.*, c.number as item_number, a.mpq, a.moq, a.price, a.share_order');
+        $this->db->select('b.*, c.number as item_number, a.mpq, a.moq, a.price, a.share_order, a.uom_default');
         $this->db->from('supplier_items a');
         $this->db->join('suppliers b', 'a.supplier_id = b.id');
         $this->db->join('item_rm c', 'a.item_rm_id = c.id');
         $this->db->join('item_familys d', 'c.item_family_id = d.id');
         $this->db->where('a.deleted', 0);
         // $this->db->where('a.status', 0);
-        $this->db->like("c.number", $item_number);
-        $this->db->like("c.id", $item_id);
-        $this->db->like("d.id", $item_family_id);
-        $this->db->like("b.name", $post);
+        // $this->db->where("c.number", $item_number);
+        $this->db->where("c.id", $item_rm_id);
+        // $this->db->like("d.id", $item_family_id);
+        // $this->db->like("b.name", $post);
         $this->db->group_by('b.number');
         $this->db->order_by('b.name', 'ASC');
         $records = $this->db->get()->result_array();
+
         echo json_encode($records);
     }
+
+    public function readSupplierss()
+{
+    $q = $this->input->post('q');  // Mengambil parameter pencarian dari POST
+    $item_category_id = $this->input->get('item_category_id');
+
+    // Mengamankan parameter input untuk mencegah SQL Injection
+    $q = $this->db->escape_like_str($q);
+
+    $sql = "SELECT DISTINCT b.id, b.name, b.number, b.payment_term, b.vat, b.vat_status
+            FROM supplier_items a 
+            JOIN suppliers b ON a.supplier_id = b.id 
+            JOIN item_rm c ON a.item_rm_id = c.id
+            JOIN item_categories d ON c.item_category_id = d.id
+            WHERE a.deleted = 0 
+              AND d.id = ? 
+              AND (b.name LIKE ? OR b.number LIKE ?)
+            ORDER BY b.name ASC";
+
+    // Menggunakan query builder untuk parameterized query
+    $records = $this->db->query($sql, array($item_category_id, "%$q%", "%$q%"))->result_array();
+
+    echo json_encode($records);
+}
+
 
     //GET DATATABLES
     public function datatables()
@@ -184,7 +210,7 @@ class Supplier_items extends CI_Controller
             $this->db->from('supplier_item_histories');
             $this->db->where('supplier_id', $supplier_id);
             $this->db->where('item_rm_id', $item_rm_id);
-            $this->db->order_by('valid_date', 'DESC');
+            $this->db->order_by('created_date', 'ASC');
             $records = $this->db->get()->result_array();
 
             echo json_encode($records);
@@ -220,6 +246,7 @@ class Supplier_items extends CI_Controller
     {
         $data = $this->input->post();
         $send = $this->crud->delete('supplier_items', $data);
+        $send2 = $this->crud->delete('supplier_item_histories', $data);
         echo $send;
     }
 
@@ -249,7 +276,8 @@ class Supplier_items extends CI_Controller
                 'price' => $data->val($i, 11),
                 'valid_date' => $data->val($i, 12),
                 'safety_stock' => $data->val($i, 13),
-                'calculate' => $data->val($i, 14)
+                'uom_default' => $data->val($i, 14),
+                'calculate' => $data->val($i, 15)
             );
         }
         $datas['total'] = count($datas);
@@ -291,6 +319,14 @@ class Supplier_items extends CI_Controller
     {
         if ($this->input->post()) {
             $data = $this->input->post('data');
+            //Cek Process Number          //table       //field        //field excel
+            $supplier_items = $this->crud->read('supplier_items', [], ["supplier_id" => $data['supplier_id'], "item_rm_id" => $data['item_rm_id']]);
+            $supplier = $this->crud->read('suppliers', [], ["id" => $data['supplier_id']]);
+            $item_rm = $this->crud->read('item_rm', [], ["id" => $data['item_rm_id']]);
+            $supplier_item_histories = $this->crud->read("supplier_item_histories", [], ["supplier_id" => $data['supplier_id'], "item_rm_id" => $data['item_rm_id'], "price" => $data['price']]);
+            
+            $uom = $item_rm->uom;
+            $weight_kg = $item_rm->weight_kg;
 
             $dataFinal = array(
                 //field
@@ -306,15 +342,11 @@ class Supplier_items extends CI_Controller
                 "price" => $data['price'],
                 "valid_date" => $data['valid_date'],
                 "safety_stock" => $data['safety_stock'],
+                "uom_default" => $data['uom_default'],
+                "uom_inventory" => $uom,
+                "weight_kg" => $weight_kg,
                 "calculate" => $data['calculate'],
             );
-
-            //Cek Process Number          //table       //field        //field excel
-            $supplier_items = $this->crud->read('supplier_items', [], ["supplier_id" => $data['supplier_id'], "item_rm_id" => $data['item_rm_id']]);
-            $supplier = $this->crud->read('suppliers', [], ["id" => $data['supplier_id']]);
-            $item_rm = $this->crud->read('item_rm', [], ["id" => $data['item_rm_id']]);
-            $supplier_item_histories = $this->crud->read("supplier_item_histories", [], ["supplier_id" => $data['supplier_id'], "item_rm_id" => $data['item_rm_id'], "price" => $data['price']]);
-
 
             if (@$supplier_items->supplier_id != "") {
                 $send = $this->crud->update('supplier_items', ["supplier_id" => $dataFinal['supplier_id'], "item_rm_id" => $dataFinal['item_rm_id']], $dataFinal);
@@ -401,6 +433,9 @@ class Supplier_items extends CI_Controller
                 <th>Price</th>
                 <th>Valid Date</th>
                 <th>Safety Stock</th>
+                <th>UOM Default</th>
+                <th>UOM Inventory</th>
+                <th>Convertion</th>
                 <th>Calculate</th>
             </tr>';
         $no = 1;
@@ -423,6 +458,9 @@ class Supplier_items extends CI_Controller
                     <td>' . $data['price'] . '</td>
                     <td>' . $data['valid_date'] . '</td>
                     <td>' . $data['safety_stock'] . '</td>
+                    <td>' . $data['uom_default'] . '</td>
+                    <td>' . $data['uom_inventory'] . '</td>
+                    <td>' . $data['weight_kg'] . '</td>
                     <td>' . $data['calculate'] . '</td>';
             $no++;
         }

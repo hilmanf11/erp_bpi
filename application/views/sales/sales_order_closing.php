@@ -1,7 +1,7 @@
 <!-- TABLE DATAGRID -->
 <table id="dg" class="easyui-datagrid" style="width:99.5%;" toolbar="#toolbar">
     <thead>
-        <tr>
+    <tr>
             <th rowspan="2" field="ck" checkbox="true"></th>
             <th rowspan="2" data-options="field:'status',width:80,align:'center', styler:cellStyler, formatter:cellFormatter">Status</th>
             <th rowspan="2" data-options="field:'sales_order_no',width:150,halign:'center'">Sales Order No</th>
@@ -9,14 +9,16 @@
             <th rowspan="2" data-options="field:'customer_name',width:200,halign:'center'">Customer Name</th>
             <th rowspan="2" data-options="field:'sales_order_date',width:150,halign:'center'">Sales Order Date</th>
             <th rowspan="2" data-options="field:'delivery_date',width:150,halign:'center'">Delivery Date</th>
-            <th rowspan="2" data-options="field:'currency',width:80,align:'center'">Currency</th>
-            <th rowspan="2" data-options="field:'total_sub',width:100,halign:'center',align:'right',formatter: numberFormat">Sub Total</th>
-            <th rowspan="2" data-options="field:'total_tax',width:100,halign:'center',align:'right',formatter: numberFormat">Taxes</th>
-            <th rowspan="2" data-options="field:'total_pph',width:100,halign:'center',align:'right',formatter: numberFormat">PPh</th>
-            <th rowspan="2" data-options="field:'total_grand',width:100,halign:'center',align:'right',formatter: numberFormat">Grand Total</th>
+            <th rowspan="2" data-options="field:'item_fg_number',width:120,align:'center'">Product No</th>
+            <th rowspan="2" data-options="field:'item_fg_name',width:120,halign:'center'">Product Name</th>
+            <th rowspan="2" data-options="field:'qty',width:80,halign:'center',align:'right',formatter: numberFormat">Qty SO</th>
+            <th rowspan="2" data-options="field:'delivery',width:80,halign:'center',align:'right',formatter: numberFormat">Qty <br>Delivery</th>
+            <th rowspan="2" data-options="field:'undelivery',width:80,halign:'center',align:'right',formatter: numberFormat">Undelivery <br>Qty</th>
+            <th rowspan="2" data-options="field:'outstanding',width:80,halign:'center',align:'right',formatter: numberFormat">Qty OS</th>
             <th rowspan="2" data-options="field:'remarks',width:150,halign:'center'">Remarks</th>
             <th rowspan="2" data-options="field:'attachment',width:150,halign:'center'">Attachment</th>
             <th rowspan="2" data-options="field:'closing_reason',width:150,halign:'center'">Reason</th>
+            <th rowspan="2" data-options="field:'type',width:150,halign:'center'">Type</th>
             <th colspan="2" data-options="field:'',width:100,halign:'center'"> Created</th>
             <th colspan="2" data-options="field:'',width:100,halign:'center'"> Updated</th>
         </tr>
@@ -83,6 +85,10 @@
                 <input style="width:60%;" name="sales_order_no" id="sales_order_no" readonly class="easyui-textbox">
             </div>
             <div class="fitem">
+                <span style="width:35%; display:inline-block;">Product ID</span>
+                <input style="width:60%;" name="item_fg_id" id="item_fg_id" readonly class="easyui-textbox">
+            </div>
+            <div class="fitem">
                 <span style="width:35%; display:inline-block;">Status</span>
                 <select style="width:60%;" id="status" name="status" panelHeight="auto" class="easyui-combobox">
                     <option value="0">OPEN</option>
@@ -92,6 +98,10 @@
             <div class="fitem">
                 <span style="width:35%; display:inline-block;">Reason</span>
                 <input style="width:60%; height: 80px;" name="closing_reason" id="closing_reason" class="easyui-textbox" multiline="true">
+            </div>
+            <div class="fitem" hidden>
+                <span style="width:35%; display:inline-block;">Type</span>
+                <input style="width:60%;" name="type" id="type" class="easyui-textbox">
             </div>
         </fieldset>
     </form>
@@ -106,6 +116,8 @@
             $('#frm_insert').form('load', row);
 
             $("#sales_order_no").textbox('disable');
+            $("#item_fg_id").textbox('disable');
+            $("#type").textbox('setValue', 'Closing PO');
         } else {
             toastr.warning("Please select one of the data in the table first!", "Information");
         }
@@ -117,12 +129,14 @@
         var filter_to = $("#filter_to").datebox('getValue');
         var filter_customer_id = $("#filter_customer_id").combobox('getValue');
         var filter_sales_order_no = $("#filter_sales_order_no").combobox('getValue');
+        var filter_customer_order_no = $("#filter_customer_order_no").combobox('getValue');
         var filter_status = $("#filter_status").combobox('getValue');
 
         var url = "?filter_from=" + window.btoa(filter_from) +
             "&filter_to=" + window.btoa(filter_to) +
             "&filter_customer_id=" + window.btoa(filter_customer_id) +
             "&filter_sales_order_no=" + window.btoa(filter_sales_order_no) +
+            "&filter_customer_order_no=" + window.btoa(filter_customer_order_no) +
             "&filter_status=" + window.btoa(filter_status);
 
             $('#dg').datagrid({
@@ -151,16 +165,20 @@
                 iconCls: 'icon-ok',
                 handler: function() {
                     var sales_order_no = $("#sales_order_no").textbox('getValue');
+                    var item_fg_id = $("#item_fg_id").textbox('getValue');
                     var status = $("#status").combobox('getValue');
                     var closing_reason = $("#closing_reason").textbox('getValue');
+                    var type = $("#type").textbox('getValue');
 
                     $.ajax({
                         type: "post",
                         url: '<?= base_url('sales/sales_order_closing/create') ?>',
                         data: {
                             sales_order_no: sales_order_no,
+                            item_fg_id: item_fg_id,
                             status: status,
                             closing_reason: closing_reason,
+                            type: type,
                         },
                         dataType: "json",
                         success: function(result) {
@@ -210,7 +228,7 @@
             });
 
             $('#filter_customer_order_no').combobox({
-                url: '<?= base_url('sales/sales_order_closing/readCustomerOrder/'); ?>' + customer.id,
+                url: '<?= base_url('sales/sales_order_closing/s/'); ?>' + customer.id,
                 valueField: 'customer_order_no',
                 textField: 'customer_order_no',
                 prompt: 'Choose All',
@@ -222,6 +240,32 @@
                 }],
             });
         }
+    });
+
+    $('#filter_sales_order_no').combobox({
+        url: '<?= base_url('sales/sales_order_closing/readSalesOrders/'); ?>',
+        valueField: 'sales_order_no',
+        textField: 'sales_order_no',
+        prompt: 'Choose All',
+        icons: [{
+            iconCls: 'icon-clear',
+            handler: function(e) {
+                $(e.data.target).combobox('clear').combobox('textbox').focus();
+            }
+        }],
+    });
+
+    $('#filter_customer_order_no').combobox({
+        url: '<?= base_url('sales/sales_order_closing/readCustomerOrders/'); ?>',
+        valueField: 'customer_order_no',
+        textField: 'customer_order_no',
+        prompt: 'Choose All',
+        icons: [{
+            iconCls: 'icon-clear',
+            handler: function(e) {
+                $(e.data.target).combobox('clear').combobox('textbox').focus();
+            }
+        }],
     });
 
     //CELLSTYLE STATUS
@@ -264,7 +308,7 @@
 
     function numberFormat(value, row) {
         const formatter = new Intl.NumberFormat('id-ID', {
-            minimumFractionDigits: 0
+            minimumFractionDigits: 2
         });
         return "<b>" + formatter.format(value) + "</b>";
     }

@@ -101,7 +101,7 @@
             }],
             onSelect: function(cust) {
                 $('#filter_product_no').combogrid({
-                    url: '<?= base_url('master/customer_items/readItems?customer_id=') ?>' + cust.id,
+                    url: '<?= base_url('master/customer_items/readItems?customer_id=') ?>' + window.btoa(cust.id),
                     panelWidth: 400,
                     idField: 'id',
                     textField: 'number',

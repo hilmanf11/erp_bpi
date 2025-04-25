@@ -61,6 +61,17 @@ class Barcode_divides extends CI_Controller
                     $this->db->where('b.label_no', $label_no);
                     $this->db->group_by('b.label_no');
                     $records = $this->db->get()->result_array();
+
+                    if (!$records) {
+                        $this->db->select('a.label_no, a.qty, b.number, b.name');
+                        $this->db->from('new_barcode a');
+                        $this->db->join('item_rm b', 'a.item_rm_id = b.id');
+                        // $this->db->where('a.deleted', 0);
+                        // $this->db->where('a.status', 0);
+                        $this->db->where('a.label_no', $label_no);
+                        $this->db->group_by('a.label_no');
+                        $records = $this->db->get()->result_array();
+                    }
                 }
             }
             //Mapping Data
@@ -115,6 +126,8 @@ class Barcode_divides extends CI_Controller
                             $message = json_encode(array("title" => "Success", "message" => "Data Saved Successfully ", "theme" => "success"));
                             //Generate QRcode
                             $this->createQrcode($label_divided, "assets/image/qrcode/");
+
+                            $this->crud->update('new_barcode', ["label_no" => $post['label_no']], ["status" => 1]);
                         } else {
                             $message = json_encode(array("title" => "Available", "message" => "Barcode Divided has been created ", "theme" => "error"));
                         }
@@ -166,6 +179,19 @@ class Barcode_divides extends CI_Controller
             $this->db->where('a.label_no', $label_no);
             $this->db->group_by('a.label_divided');
             $records = $this->db->get()->result_object();
+
+            if (!$records) {
+                $this->db->select('a.*,c.number, c.name, b.cut_off_date as receipt_date, d.location');
+                $this->db->from('barcode_divides a');
+                $this->db->join('new_barcode b', 'a.label_no = b.label_no');
+                $this->db->join('item_rm c', 'b.item_rm_id = c.id');
+                $this->db->join('warehouse_location_items d', 'd.item_rm_id = c.id', 'left');
+                $this->db->where('a.deleted', 0);
+                $this->db->where('a.status', 0);
+                $this->db->where('a.label_no', $label_no);
+                $this->db->group_by('a.label_divided');
+                $records = $this->db->get()->result_object();
+            }
         }
 
         $html = '<html>
@@ -177,14 +203,17 @@ class Barcode_divides extends CI_Controller
         $html .= '<div style="width: 120mm;">';
         $no = 1;
         foreach ($records as $record) {
-            if ($no == 3) {
-                $no = 1;
-            }
-            if ($no == 1) {
-                $padding = "padding:0 3mm 1mm 0mm;";
-            } else {
-                $padding = "padding:0 0mm 1mm 4mm;";
-            }
+            // if ($no == 3) {
+            //     $no = 1;
+            // }
+            // if ($no == 1) {
+            //     $padding = "padding:0 3mm 1mm 0mm;";
+            // } else {
+            //     $padding = "padding:0 0mm 1mm 4mm;";
+            // }
+
+            $padding = "padding:3mm 5mm 3mm 3mm;";
+            
             $html .= '  <div style="width: 55mm; max-height:42mm; float:left; ' . $padding . '">
                             <table id="customers" border="1" style="margin-bottom:20px;">
                                 <tr>
@@ -201,7 +230,7 @@ class Barcode_divides extends CI_Controller
                                 </tr>
                                 <tr>
                                     <th style="text-align:left">
-                                        <small>Quantity</small><br><b style="font-size:24px;">' . number_format($record->qty, 0, ",", ".") . '</b>
+                                        <small>Quantity</small><br><b style="font-size:24px;">' . number_format($record->qty, 4, ",", ".") . '</b>
                                     </th>
                                     <th style="text-align:left">
                                         <small>Location</small><br><b style="font-size:24px;">' . $record->location . '</b>

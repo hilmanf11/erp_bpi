@@ -34,9 +34,9 @@
 
     <fieldset style="width: 99%; border:2px solid #d0d0d0; margin-bottom: 5px; margin-top: 5px; border-radius:4px;">
         <legend><b>Form Filter Data</b></legend>
-        <div style="width: 50%; float: left;">
+        <div style="width: 60%; float: left;">
             <div class="fitem">
-                <span style="width:35%; display:inline-block;">Type Date</span>
+                <span style="width:30%; display:inline-block;">Type Date</span>
                 <select style="width:60%;" id="filter_type" class="easyui-combobox" panelHeight="auto">
                     <option value="">Select All</option>
                     <option value="PID">Sales Invoice Date</option>
@@ -44,30 +44,31 @@
                 </select>
             </div>
             <div class="fitem">
-                <span style="width:35%; display:inline-block;">Sales Invoice Date</span>
+                <span style="width:30%; display:inline-block;">Sales Invoice Date</span>
                 <input style="width:30%;" id="filter_trans_date_from" value="<?= date("Y-m-01") ?>" class="easyui-datebox" data-options="prompt:'Start Date',formatter:myformatter,parser:myparser, editable:false">
                 <input style="width:30%;" id="filter_trans_date_to" value="<?= date("Y-m-t") ?>" class="easyui-datebox" data-options="prompt:'Finish Date',formatter:myformatter,parser:myparser, editable:false">
             </div>
             <div class="fitem">
-                <span style="width:35%; display:inline-block;">Payment Due</span>
+                <span style="width:30%; display:inline-block;">Payment Due</span>
                 <input style="width:30%;" id="filter_due_date_from" value="<?= date("Y-m-01") ?>" class="easyui-datebox" data-options="prompt:'Start Date',formatter:myformatter,parser:myparser, editable:false">
                 <input style="width:30%;" id="filter_due_date_to" value="<?= date("Y-m-t") ?>" class="easyui-datebox" data-options="prompt:'Finish Date',formatter:myformatter,parser:myparser, editable:false">
             </div>
             <div class="fitem">
-                <span style="width:35%; display:inline-block;">Customer</span>
+                <span style="width:30%; display:inline-block;">Customer</span>
                 <input style="width:60%;" name="filter_customer" id="filter_customer" class="easyui-combobox">
             </div>
             <div class="fitem">
-                <span style="width:35%; display:inline-block;"></span>
+                <span style="width:30%; display:inline-block;"></span>
                 <a href="javascript:;" class="easyui-linkbutton" onclick="filter()"><i class="fa fa-search"></i> Filter Data</a>
-                <a href="javascript:;" class="easyui-linkbutton" onclick="print_commercial()"><i class="fa fa-print"></i> Commercial Invoice</a>
+                <a href="javascript:;" class="easyui-linkbutton" onclick="print_commercial()"><i class="fa fa-print"></i> Print Invoice Details</a>
+                <a href="javascript:;" class="easyui-linkbutton" onclick="print_commercial_sum()"><i class="fa fa-print"></i> Print Invoice Summary</a>
                 <a href="javascript:;" class="easyui-linkbutton" onclick="print_invoice()"><i class="fa fa-print"></i> Sales Invoice</a>
             </div>
         </div>
-        <div style="width: 50%; float: left;">
+        <div style="width: 40%; float: left;">
             <div class="fitem">
                 <span style="width:35%; display:inline-block;">Delivery Note</span>
-                <input style="width:60%;" id="filter_dn_number" class="easyui-combobox">
+                <input style="width:60%;" id="filter_delivery_note_no" class="easyui-combobox">
             </div>
             <div class="fitem">
                 <span style="width:35%; display:inline-block;">Sales Invoice No</span>
@@ -86,6 +87,10 @@
     <?= $button ?>
     <a href="javascript:void(0)" class="easyui-linkbutton" data-options="plain:true" onclick="excelDetail()"><i class="fa fa-file"></i> Export Excel Detail</a>
     <a href="javascript:void(0)" class="easyui-linkbutton" data-options="plain:true" onclick="excelJournal()"><i class="fa fa-file"></i> Export Excel Journal</a>
+    <a href="javascript:void(0)" class="easyui-linkbutton" data-options="plain:true" onclick="exportCsv()"><i class="fa fa-file"></i> Export Ecoretax</a>
+    <a href="javascript:void(0)" class="easyui-linkbutton" data-options="plain:true" onclick="exportAccurate()"><i class="fa fa-file"></i> Export Accurate</a>
+    <a href="javascript:void(0)" class="easyui-linkbutton" data-options="plain:true" onclick="excel_summary()"><i class="fa fa-file"></i> Export Invoice Summary</a>
+    <!-- <a href="javascript:void(0)" class="easyui-linkbutton" data-options="plain:true" onclick="reload()"><i class="fa fa-refresh"></i> Reload</a> -->
 </div>
 
 <div id="toolbar2">
@@ -121,18 +126,24 @@
                         <input style="width:60%;" required="" id="customer_id" name="customer_name" class="easyui-combogrid">
                     </div>
                     <div class="fitem">
-                        <span style="width:35%; display:inline-block;">Delivery Note</span>
-                        <input style="width:60%;" required="" id="dn_number" name="dn_number" class="easyui-combobox">
+                        <span style="width:35%; display:inline-block;">Country Name</span>
+                        <input style="width:60%;" required="" id="country_name" name="country_name" class="easyui-textbox">
+                    </div>
+                    <div class="fitem"hidden>
+                        <span style="width:35%; display:inline-block;">Plant</span>
+                        <input style="width:60%;" id="customer_address_id" name="customer_address_id" class="easyui-combobox">
                     </div>
                     <div class="fitem">
-                        <span style="width:35%; display:inline-block;"></span>
-                        <a href="javascript:;" class="easyui-linkbutton" onclick="preview()" id="preview"><i class="fa fa-search"></i> Preview Data</a>
+                        <span style="width:35%; display:inline-block;">Division</span>
+                        <input style="width:60%;" name="division" id="division" required="" class="easyui-combobox">
                     </div>
-                </div>
-                <div style="width: 50%; float: left;">
+                    <div class="fitem">
+                        <span style="width:35%; display:inline-block;">Delivery Note</span>
+                        <input style="width:60%;" required="" id="delivery_note_no" name="delivery_note_no" class="easyui-combogrid">
+                    </div>
                     <div class="fitem">
                         <span style="width:35%; display:inline-block;">Taxes</span>
-                        <input style="width:30%;" id="taxes" name="taxes" readonly class="easyui-numberbox">
+                        <input style="width:30%;" id="taxes" name="taxes" class="easyui-numberbox">
                     </div>
                     <div class="fitem">
                         <span style="width:35%; display:inline-block;">Payment Term</span>
@@ -142,6 +153,12 @@
                         <span style="width:35%; display:inline-block;">Payment Due</span>
                         <input style="width:60%;" id="due_date" name="due_date" required="" class="easyui-datebox" data-options="formatter:myformatter,parser:myparser, editable:false">
                     </div>
+                    <div class="fitem">
+                        <span style="width:35%; display:inline-block;"></span>
+                        <a href="javascript:;" class="easyui-linkbutton" onclick="preview()" id="preview"><i class="fa fa-search"></i> Preview Data</a>
+                    </div>
+                </div>
+                <div style="width: 50%; float: left;">
                     <div class="fitem" hidden>
                         <span style="width:35%; display:inline-block;">Voucher</span>
                         <input style="width:60%;" id="voucher" name="voucher" class="easyui-textbox">
@@ -150,18 +167,66 @@
                         <span style="width:35%; display:inline-block;">Remarks</span>
                         <input style="width:60%;" id="remarks" name="remarks" class="easyui-textbox">
                     </div>
+                    <div class="fitem">
+                        <span style="width:35%; display:inline-block;">Kode Faktur Pajak</span>
+                        <input style="width:30%;" id="faktur_code" name="faktur_code" class="easyui-combobox">
+                    </div>
+                    <div class="fitem">
+                        <span style="width:35%; display:inline-block;">FP Pengganti</span>
+                        <select style="width:30%;" id="fp_pengganti" name="fp_pengganti" class="easyui-combobox" panelHeight="auto">
+                            <option value="00">00</option>
+                            <option value="01">01</option>
+                        </select>
+                    </div>
+                    <div class="fitem">
+                        <span style="width:35%; display:inline-block;">Faktur No</span>
+                        <input style="width:30%;" id="faktur_no" name="faktur_no" readonly class="easyui-textbox">
+                    </div>
+                    <div class="fitem">
+                        <span style="width:35%; display:inline-block;">No Seri Faktur Pajak</span>
+                        <input style="width:6%;" id="kode_trans" name="kode_trans" readonly="true" class="easyui-textbox">
+                        <input style="width:5%;" id="tahun_pemeriksaan" name="tahun_pemeriksaan" class="easyui-textbox" readonly>
+                        <input style="width:16%;" id="no_urut" name="no_urut" class="easyui-textbox" required>
+                        <div class="fitem" hidden>
+                            <span style="width:35%; display:inline-block;">Kode Cabang</span>
+                            <input style="width:5%; display: none;" id="kode_cabang" name="kode_cabang" class="easyui-textbox">
+                        </div>
+                    </div>
+                    <div class="fitem" hidden>
+                        <span style="width:35%; display:inline-block;">BC No.</span>
+                        <input style="width:10%;" id="bc1" name="bc1" class="easyui-textbox">
+                        <input style="width:6%;" id="bc2" name="bc2" class="easyui-textbox">
+                        <input style="width:5%;" id="bc3" name="bc3" class="easyui-textbox">
+                        <input style="width:5%;" id="bc4" name="bc4" class="easyui-textbox">
+                    </div>
+                    <div class="fitem">
+                        <span style="width:35%; display:inline-block;">BC No</span>
+                        <input style="width:30%;" id="bc_no" name="bc_no" class="easyui-textbox">
+                    </div>
+                    <div class="fitem">
+                        <span style="width:35%; display:inline-block;">Keterangan Tambahan</span>
+                        <input style="width:60%;" id="keterangan_tambahan" name="keterangan_tambahan" required class="easyui-combogrid">
+                    </div>
+                    <div class="fitem">
+                        <span style="width:35%; display:inline-block;">Cap Fasilitas</span>
+                        <input style="width:60%;" id="cap_fasilitas" name="cap_fasilitas" required class="easyui-combogrid">
+                    </div>
+                    <div class="fitem">
+                        <span style="width:35%; display:inline-block;">Payment To</span>
+                        <input style="width:60%;" id="payment_to" name="payment_to" class="easyui-combobox">
+                    </div>
                 </div>
             </fieldset>
         </div>
-        <table id="dg2" class="easyui-datagrid" style="width:100%;" title="Sales Invoicing Lists" data-options="singleSelect: true" toolbar="#toolbar2" rownumbers="true" , idField="dn_number">
+        <table id="dg2" class="easyui-datagrid" style="width:100%;" title="Sales Invoicing Lists" data-options="singleSelect: true" toolbar="#toolbar2" rownumbers="true" , idField="delivery_note_no">
             <thead>
                 <tr>
                     <th data-options="field:'delete',width:120,formatter:removebtn">Action</th>
-                    <th hidden data-options="field:'id',width:150,editor: {type: 'textbox'}">ID</th>
-                    <th data-options="field:'dn_number',width:150,editor: {type: 'textbox', options: {required: true}}">Delivery Note</th>
-                    <th data-options="field:'so_number',width:160,editor: {type: 'textbox', options: {required: true}}">SO. No</th>
-                    <th data-options="field:'customer_po',width:120,editor: {type: 'textbox', options: {required: true}}">Customer PO</th>
-                    <th data-options="field:'item_id',width:150" hidden>Product Id</th>
+                    <th data-options="field:'id',width:150,editor: {type: 'textbox'}" hidden>ID</th>
+                    <th data-options="field:'delivery_note_no',width:150,editor: {type: 'textbox', options: {required: true}}">Delivery Note</th>
+                    <th data-options="field:'sales_order_no',width:160,editor: {type: 'textbox', options: {required: true}}">Sales Order No</th>
+                    <th data-options="field:'customer_order_no',width:120,editor: {type: 'textbox', options: {required: true}}">Customer Order No</th>
+                    <th data-options="field:'item_fg_id',width:150" hidden>Product Id</th>
                     <th data-options="field:'item_no',width:150,editor: {type: 'textbox', options: {required: true}}">Product No</th>
                     <th data-options="field:'item_name',width:200,editor: {type: 'textbox', options: {required: true}}">Product Name</th>
                     <th data-options="field:'uom',width:80, editor: {
@@ -178,8 +243,8 @@
                     options: {
                         url: '<?= base_url('master/currencies/reads') ?>',
                         editable:false,
-                        valueField: 'number',
-                        textField: 'number',
+                        valueField: 'name',
+                        textField: 'name',
                         prompt: 'Choose Currencies'
                     }}">Currency</th>
                     <th data-options="field:'qty',width:80, formatter:numberformat,editor: {
@@ -303,6 +368,10 @@
                         <input style="width:60%;" id="total_sub" name="total_sub" readonly class="easyui-numberbox" data-options="precision:2,groupSeparator:','">
                     </div>
                     <div class="fitem">
+                        <b style="width:35%; display:inline-block;">DPP</b>
+                        <input style="width:60%;" id="total_dpp" name="total_dpp" disabled class="easyui-numberbox" data-options="precision:2,groupSeparator:','">
+                    </div>
+                    <div class="fitem">
                         <b style="width:35%; display:inline-block;">VAT</b>
                         <input style="width:60%;" id="total_vat" name="total_vat" readonly class="easyui-numberbox" data-options="precision:2,groupSeparator:','">
                     </div>
@@ -334,11 +403,13 @@
 <!-- PDF -->
 <iframe id="printout" src="" style="width: 100%;" hidden></iframe>
 <script>
+     let formMode = 'create';
     //ADD DATA
     function add() {
         $('#dlg_insert').dialog('open');
         $('#dg2').datagrid('loadData', []);
         $('#frm_insert').form('clear');
+        
 
         $('#dg2').datagrid({
             onBeforeEdit: function(index, row) {
@@ -359,12 +430,23 @@
 
         $("#trans_date").datebox('enable');
         $("#customer_id").combobox('enable');
-        $("#dn_number").combobox('enable');
+        $("#delivery_note_no").combogrid('enable');
         $("#preview").linkbutton('enable');
+        $("#number").textbox('enable');
+
+        $("#kode_trans").textbox('enable');
+        $("#kode_cabang").textbox('enable');
+        $("#tahun_pemeriksaan").textbox('enable');
+        $("#no_urut").textbox('enable');
+        $("#faktur_no").textbox('enable');
+        $("#fp_pengganti").textbox('enable');
+        $("#faktur_code").combobox('enable');
 
         $("#account_sales_name").textbox('setValue', "SALES");
         $("#account_pay_name").textbox('setValue', "PAYABLE");
         $("#account_bal_name").textbox('setValue', "BALANCE");
+        $("#fp_pengganti").textbox('setValue', "00");
+        $("#bc2").textbox('setValue', "/KBC.");
 
         // $("#trans_date").datebox({
         //     onChange: function(val) {
@@ -374,7 +456,7 @@
 
         $('#customer_id').combogrid({
             url: '<?= base_url('master/customers/reads') ?>',
-            panelWidth: 420,
+            panelWidth: 370,
             idField: 'id',
             textField: 'name',
             mode: 'remote',
@@ -393,15 +475,60 @@
             ],
             onSelect: function(index, row) {
                 var trans_date = $("#trans_date").datebox('getValue');
-                number(trans_date, row.nickname);
-
+                number(trans_date, row.number);
                 $("#payment_term").numberbox("setValue", row.payment_term);
+                $("#taxes").numberbox('setValue', row.taxes);
+                $("#faktur_code").textbox('setValue', row.faktur_code);
+                $("#country_name").textbox('setValue', row.country_name);
 
-                if (row.vat_status != "VAT") {
-                    $("#taxes").numberbox('setValue', 0);
-                } else {
-                    $("#taxes").numberbox('setValue', row.vat);
-                }
+                $("#faktur_code").combobox({
+                    url: '<?= base_url('finance/sales_invoices/readFakturCode?id=') ?>' + row.id,
+                    valueField: 'value',
+                    textField: 'text',
+                    prompt: "Choose Faktur Code",
+                    onLoadSuccess: function(data) {
+                        if (data && data.length > 0 && data[0].faktur_code) {
+                            // Pastikan faktur_code ada sebelum di-split
+                            var fakturCodes = data[0].faktur_code.split(',');
+
+                            // Buat array dengan objek yang berisi value dan text
+                            var fakturData = fakturCodes.map(function(code) {
+                                return { value: code.trim(), text: code.trim() };
+                            });
+
+                            // Load data ke dalam combobox
+                            $('#faktur_code').combobox('loadData', fakturData);
+                        } else {
+                            console.warn("Faktur code not found or empty.");
+                        }
+                    },
+                    onLoadError: function() {
+                        console.error("Failed to load faktur code.");
+                    },
+                    // onChange: function(newValue, oldValue) {
+                    //     if (newValue !== '07') {
+                    //         $('#keterangan_tambahan').combogrid('setValue', 'Tidak Ada').combogrid('options').required = false;
+                    //         $('#cap_fasilitas').combogrid('setValue', 'Tidak Ada').combogrid('options').required = false;
+                    //     } else {
+                    //         $('#keterangan_tambahan').combogrid('clear').combogrid('options').required = true;
+                    //         $('#cap_fasilitas').combogrid('clear').combogrid('options').required = true;
+                    //     }
+                    //     $('#keterangan_tambahan').combogrid('resize'); // Perbarui UI agar perubahan terlihat
+                    //     $('#cap_fasilitas').combogrid('resize');
+                    // }
+                });
+
+                var fp_pengganti = $("#fp_pengganti").combobox('getValue');
+                var faktur_code = $("#faktur_code").combobox('getValue');
+                var kode_trans = faktur_code + fp_pengganti;
+                $("#kode_trans").textbox('setValue', kode_trans);
+
+                // if (row.vat_status != "VAT") {
+                //     $("#taxes").numberbox('setValue', 0);
+                // } else {
+                //     $("#taxes").numberbox('setValue', row.vat);
+                // }
+
 
                 $.ajax({
                     type: "post",
@@ -412,29 +539,421 @@
                     }
                 });
 
-                $("#dn_number").combobox({
-                    url: '<?= base_url('finance/sales_invoices/readDelivery?customer_id=') ?>' + row.id,
+                // $("#customer_address_id").combogrid({
+                //     url: '<?= base_url('finance/sales_invoices/readPlant?customer_id=') ?>' + row.id,
+                //     panelWidth: 710,
+                //     idField: 'id',
+                //     textField: 'plant',
+                //     mode: 'remote',
+                //     fitColumns: true,
+                //     // multiple: true,
+                //     prompt: "Choose Plant",
+                //     columns: [
+                //         [{
+                //             field: 'no',
+                //             title: 'No',
+                //             width: 60
+                //         }, {
+                //             field: 'plant',
+                //             title: 'Plant',
+                //             width: 150,
+                //             align: 'left'
+                //         }, {
+                //             field: 'address',
+                //             title: 'Address',
+                //             width: 500,
+                //             align: 'left'
+                //         }]
+                //     ],
+                //     onSelect: function(index, row) {
+                //         $("#delivery_note_no").combogrid({
+                //             url: '<?= base_url('finance/sales_invoices/readDelivery?address_id=') ?>' + row.id,
+                //             panelWidth: 400,
+                //             idField: 'delivery_note_no',
+                //             textField: 'delivery_note_no',
+                //             mode: 'remote',
+                //             multiple: true,
+                //             prompt: "Choose Delivery Note",
+                //             columns: [
+                //                 [{
+                //                     field: 'no',
+                //                     title: 'No',
+                //                     width: 80
+                //                 }, {
+                //                     field: 'delivery_note_no',
+                //                     title: 'Delivery Note No',
+                //                     width: 150,
+                //                     align: 'left'
+                //                 }, {
+                //                     field: 'delivery_note_date',
+                //                     title: 'Delivery Note Date',
+                //                     width: 150,
+                //                     align: 'left'
+                //                 }]
+                //             ],
+                //         });
+                //     }
+                // });
+
+                // $("#delivery_note_no").combogrid({
+                //     url: '<?= base_url('finance/sales_invoices/readDeliverys?customer_id=') ?>' + row.id,
+                //     panelWidth: 500,
+                //     idField: 'delivery_note_no',
+                //     textField: 'delivery_note_no',
+                //     mode: 'remote',
+                //     multiple: true,
+                //     prompt: "Choose Delivery Note",
+                //     columns: [
+                //         [{
+                //             field: 'no',
+                //             title: 'No',
+                //             width: 80
+                //         }, {
+                //             field: 'delivery_note_no',
+                //             title: 'Delivery Note No',
+                //             width: 150,
+                //             align: 'left'
+                //         }, {
+                //             field: 'delivery_note_date',
+                //             title: 'Delivery Note Date',
+                //             width: 100,
+                //             align: 'left'
+                //         }, {
+                //             field: 'plant',
+                //             title: 'Plant',
+                //             width: 150,
+                //             align: 'left'
+                //         }]
+                //     ],
+                // });
+
+                $('#division').combobox({ 
+                    url: '<?= base_url('master/divisions/reads'); ?>',
                     valueField: 'number',
-                    textField: 'number',
-                    prompt: "Choose Delivery Note"
+                    textField: 'name',
+                    panelHeight: 'panelHeight',
+                    prompt: 'Choose Division',
+                    onSelect: function(division) {
+                        $("#delivery_note_no").combogrid({
+                            url: '<?= base_url('finance/sales_invoices/readDeliverys') ?>' +  '?customer_id=' + row.id +'&division_number=' + division.number,
+                            panelWidth: 500,
+                            idField: 'delivery_note_no',
+                            textField: 'delivery_note_no',
+                            mode: 'remote',
+                            multiple: true,
+                            prompt: "Choose Delivery Note",
+                            columns: [
+                                [
+                                    {
+                                        field: 'ck', // Kolom checkbox
+                                        checkbox: true, // Mengaktifkan checkbox
+                                    },
+                                    {
+                                        field: 'no',
+                                        title: 'No',
+                                        width: 60
+                                    }, 
+                                    {
+                                        field: 'delivery_note_no',
+                                        title: 'Delivery Note No',
+                                        width: 150,
+                                        align: 'left'
+                                    }, 
+                                    {
+                                        field: 'delivery_note_date',
+                                        title: 'Delivery Note Date',
+                                        width: 120,
+                                        align: 'left'
+                                    }, 
+                                    {
+                                        field: 'plant',
+                                        title: 'Plant',
+                                        width: 150,
+                                        align: 'left'
+                                    }
+                                ]
+                            ],
+                            fitColumns: true, // Menyesuaikan kolom secara otomatis
+                            // pagination: true, // Jika data besar, tambahkan pagination
+                            selectOnCheck: true, // Pilih baris ketika checkbox di-check
+                            checkOnSelect: true, // Centang checkbox ketika baris dipilih
+                            // toolbar: [{
+                            //     iconCls: 'icon-check',
+                            //     text: 'Select All',
+                            //     handler: function () {
+                            //         $.messager.progress({ title: 'Please Wait', msg: 'Selecting all items...' }); // Tampilkan loader
+                            //         setTimeout(() => {
+                            //             let grid = $('#delivery_note_no').combogrid('grid'); // Ambil DataGrid
+                            //             grid.datagrid('checkAll'); // Centang semua baris
+                            //             $.messager.progress('close'); // Tutup loader
+                            //         }, 100); // Beri sedikit jeda untuk memproses
+                            //     }
+                            // }, {
+                            //     iconCls: 'icon-uncheck',
+                            //     text: 'Deselect All',
+                            //     handler: function () {
+                            //         let grid = $('#delivery_note_no').combogrid('grid'); // Ambil grid DataGrid
+                            //         grid.datagrid('uncheckAll'); // Hilangkan centang dari semua baris
+                            //     }
+                            // }]
+                        });
+                    }
+                });
+
+                $("#payment_to").combogrid({
+                    url: '<?= base_url('finance/sales_invoices/readPayment') ?>',
+                    panelWidth: 450,
+                    idField: 'bank_name',
+                    textField: 'bank_name',
+                    mode: 'remote',
+                    prompt: "Choose Payment",
+                    columns: [
+                        [{
+                            field: 'no',
+                            title: 'No',
+                            width: 80
+                        }, {
+                            field: 'bank_name',
+                            title: 'Bank Name',
+                            width: 200,
+                            align: 'left'
+                        }, {
+                            field: 'bank_account',
+                            title: 'Bank Account',
+                            width: 150,
+                            align: 'left'
+                        }]
+                    ],
                 });
             }
         });
+
+        $("#faktur_code").combobox({
+            onChange: function(newValue, oldValue) {
+                var fp_pengganti = $("#fp_pengganti").textbox('getValue');
+                
+                var kode_trans = newValue + fp_pengganti;
+                $("#kode_trans").textbox('setValue', kode_trans);
+
+                if (newValue !== '07') {
+                    $('#keterangan_tambahan').combogrid('setValue', 'Tidak Ada').combogrid('options').required = false;
+                    $('#cap_fasilitas').combogrid('setValue', 'Tidak Ada').combogrid('options').required = false;
+                } else {
+                    $('#keterangan_tambahan').combogrid('clear').combogrid('options').required = true;
+                    $('#cap_fasilitas').combogrid('clear').combogrid('options').required = true;
+                }
+                $('#keterangan_tambahan').combogrid('resize'); // Perbarui UI agar perubahan terlihat
+                $('#cap_fasilitas').combogrid('resize');
+            }
+        });
+
+        $("#fp_pengganti").combobox({
+            onChange: function(newValue, oldValue) {
+                var faktur_code = $("#faktur_code").textbox('getValue');
+                
+                var kode_trans = faktur_code + newValue;
+                $("#kode_trans").textbox('setValue', kode_trans);
+            }
+        });
+
+        $("#trans_date").datebox({
+            onChange: function(newValue, oldValue) {
+                var selectedDate = new Date(newValue);
+                var year = selectedDate.getFullYear().toString().slice(-2);
+                var yearfull = selectedDate.getFullYear().toString();
+                var month = (selectedDate.getMonth() + 1).toString().padStart(2, '0');
+                var day = selectedDate.getDate().toString().padStart(2, '0');
+                var monthday = month + day;
+
+                $("#tahun_pemeriksaan").textbox('setValue', year);
+                $("#bc3").textbox('setValue', monthday);
+                $("#bc4").textbox('setValue', yearfull);
+            }
+        });
+
+        $('#kode_cabang').textbox({
+            validType: 'length[1,3]',
+            inputEvents: $.extend({}, $.fn.textbox.defaults.inputEvents, {
+                keyup: function(e) {
+                    var value = $(this).val();
+                    if (value.length > 3) {
+                        $(this).val(value.slice(0, 3));
+                    }
+                }
+            })
+        });
+
+
+        $("#no_urut").textbox({
+            validType: 'length[1,11]',
+            inputEvents: $.extend({}, $.fn.textbox.defaults.inputEvents, {
+                keyup: function(e) {
+                    var value = $(this).val();
+                    if (value.length > 11) {
+                        $(this).val(value.slice(0, 11));
+                    }
+                }
+            })
+        });
+
+        // $("#bc1").textbox({
+        //     validType: 'length[1,6]',
+        //     inputEvents: $.extend({}, $.fn.textbox.defaults.inputEvents, {
+        //         keyup: function(e) {
+        //             var value = $(this).val();
+        //             if (value.length > 6) {
+        //                 $(this).val(value.slice(0, 6));
+        //             }
+        //         }
+        //     })
+        // });
+
+        // $(document).ready(function() {
+        //     //PENGABUNGAN KODE
+        //     function updateFakturNo() {
+        //         var kode_trans = $('#kode_trans').textbox('getValue');
+        //         var kode_cabang = $('#kode_cabang').textbox('getValue');
+        //         var tahun_pemeriksaan = $('#tahun_pemeriksaan').numberbox('getValue');
+        //         var no_urut = $("#no_urut").textbox('getValue');
+
+        //         // Gabungkan ke dalam format yang diinginkan
+        //         var faktur_no = kode_trans + kode_cabang + tahun_pemeriksaan + no_urut;
+
+        //         // Set ke input faktur_no
+        //         $('#faktur_no').textbox('setValue', faktur_no);
+        //     }
+
+        //     // Event listeners untuk setiap input
+        //     $('#kode_trans').textbox({
+        //         onChange: updateFakturNo
+        //     });
+
+        //     $('#kode_cabang').textbox({
+        //         onChange: updateFakturNo
+        //     });
+
+        //     $('#tahun_pemeriksaan').numberbox({
+        //         onChange: updateFakturNo
+        //     });
+
+        //     $("#no_urut").textbox({
+        //         onChange: updateFakturNo
+        //     });
+        // });
     }
+
+    $(document).ready(function() {
+        // Fungsi untuk menggabungkan nilai menjadi faktur_no
+        function updateFakturNo() {
+            var row = $('#dg').datagrid('getSelected');
+            var kode_trans = $('#kode_trans').textbox('getValue');
+            var kode_cabang = $('#kode_cabang').textbox('getValue');
+            var tahun_pemeriksaan = $('#tahun_pemeriksaan').textbox('getValue');
+            var no_urut = $("#no_urut").textbox('getValue');
+
+            // Gabungkan ke dalam format yang diinginkan
+            var faktur_no = kode_trans + kode_cabang + tahun_pemeriksaan + no_urut;
+
+            // Set nilai gabungan ke input faktur_no
+            $('#faktur_no').textbox('setValue', faktur_no);
+
+            // Cek apakah faktur_no memiliki panjang 16 karakter
+            if (faktur_no.length === 17) {
+                if(formMode === 'update'){
+                    var originalFakturNo = row.faktur_no;
+                    if (faktur_no == originalFakturNo) {
+                        return; // Tidak perlu cek ke server kalau faktur_no belum berubah
+                    }
+                }
+                // Lakukan pengecekan faktur_code menggunakan AJAX
+                $.ajax({
+                    type: "GET",
+                    url: '<?= base_url('finance/sales_invoices/check_faktur_no') ?>',
+                    data: {
+                        faktur_no: window.btoa(faktur_no) // Mengencode faktur_no
+                    },
+                    dataType: "json",
+                    success: function(response) {
+                        if (response.exists) {
+                            toastr.error('Tax invoice already exists. Please input different Combination.');
+                            // $('#kode_cabang').textbox('clear');
+                            $("#no_urut").textbox('clear');
+                            return;
+                        }
+                        // Proses lanjut jika faktur_no belum ada
+                    },
+                    error: function() {
+                        toastr.error('Error occurred while checking the faktur number.');
+                    }
+                });
+            }
+        }
+
+        // Fungsi gabung BC No
+        // function updateBcNo() {
+        //     var bc1 = $('#bc1').textbox('getValue');
+        //     var bc2 = $('#bc2').textbox('getValue');
+        //     var bc3 = $('#bc3').textbox('getValue');
+        //     var bc4 = $("#bc4").textbox('getValue');
+
+        //     var bc_no = bc1 + bc2 + bc3 + bc4;
+        //     $('#bc_no').textbox('setValue', bc_no);
+
+        // }
+
+        // Event listeners untuk setiap input yang memengaruhi faktur_no
+        $('#kode_trans').textbox({
+            onChange: updateFakturNo
+        });
+
+        $('#kode_cabang').textbox({
+            onChange: updateFakturNo
+        });
+
+        $('#tahun_pemeriksaan').textbox({
+            onChange: updateFakturNo
+        });
+
+        $("#no_urut").textbox({
+            onChange: updateFakturNo
+        });
+
+       
+
+        // $("#bc1").textbox({
+        //     onChange: updateBcNo
+        // });
+        
+        // $("#bc2").textbox({
+        //     onChange: updateBcNo
+        // });
+
+        // $("#bc3").textbox({
+        //     onChange: updateBcNo
+        // });
+
+        // $("#bc4").textbox({
+        //     onChange: updateBcNo
+        // });
+    });
 
     function addJournal() {
         var customer_id = $("#customer_id").combogrid('getValue');
 
-        var rows = $('#dg2').datagrid('getRows');
+        var rows = $('#dg2').datagrid('getRows');//datatatblesTemp
         var taxes = $("#taxes").numberbox('getValue');
         var pphname = $("#pph").combobox('getValue');
         var totalrows = rows.length;
 
-        var rows2 = $('#dg3').datagrid('getRows');
+        // console.log(rows);
+
+        var rows2 = $('#dg3').datagrid('getRows');//journal
         var totalrows2 = rows2.length;
+
+        console.log(rows2);
         endEditing2();
 
-        if(pphname != ""){
+        if (pphname != "") {
             if (totalrows > 0) {
                 var data_array = [];
                 var data_array2 = [];
@@ -448,17 +967,22 @@
                         total: rows[i].total
                     }
 
-                    if(rows[i].account_type == "DEBIT"){
+                    if (rows[i].account_type == "DEBIT") {
                         total_sub -= Math.abs(parseFloat(rows[i].total));
-                    }else{
+                    } else {
                         total_sub += Math.abs(parseFloat(rows[i].total));
                     }
-                    
+
                     data_array.push(data);
                 }
 
                 $("#total_sub").numberbox('setValue', Math.abs(total_sub));
-                var disc_tax = parseFloat(Math.abs(total_sub) * (taxes / 100));
+                var total_dpp = parseFloat((total_sub) * 11/12);
+                $("#total_dpp").numberbox('setValue', total_dpp);
+
+                var disc_tax = parseFloat(total_dpp * (taxes / 100));
+
+                // var disc_tax = parseFloat(Math.abs(total_sub) * (taxes / 100));
                 $("#total_vat").numberbox('setValue', disc_tax);
                 var total_pph = $("#total_pph").numberbox('getValue');
                 var total_grand = (parseFloat(Math.abs(total_sub)) + parseFloat(disc_tax) - parseFloat(total_pph));
@@ -493,24 +1017,60 @@
                     }
 
                     //Other income
-                    if (jQuery.inArray(rows2[z].account_number, arr_pph) >= 0) {
+                    if (jQuery.inArray(rows2[z].account_number, arr_pph) >= 0) { //jika di rows2.account_number ada di list array arr_pph
                         var debit = 0;
                         var credit = total_pph;
                         pph_val = 1;
-                    //Other Income
-                    }else if(rows2[z].account_number == "5311006" && rows2[z].flag == "2"){
+                        //Other Income
+                    } else if (rows2[z].account_number == "5311006" && rows2[z].flag == "2") {
                         var debit = total_pph;
                         var credit = 0;
                     }
 
-                    if (jQuery.inArray(rows2[z].account_number, arr_ar) >= 0) {
+                    if (jQuery.inArray(rows2[z].account_number, arr_ar) >= 0) { //jika di rows2.account_number ada di list array arr_ar
                         var debit = total_grand;
                         var credit = 0;
-                    //Other Income
-                    }else if(rows2[z].account_number == "5311006" && rows2[z].flag == "4"){
+                        //Other Income
+                    } else if (rows2[z].account_number == "5311006" && rows2[z].flag == "4") {
                         var debit = 0;
                         var credit = total_sub;
                     }
+
+                    if (rows2[z].account_number == "140.120.00") {
+                        var debit = total_grand;
+                        var credit = 0;
+                    }
+
+                    if (rows2[z].account_number == "140.220.00") {
+                        var debit = total_grand;
+                        var credit = 0;
+                    }
+
+                    if (rows2[z].account_number == "140.110.00") {
+                        var debit = total_grand;
+                        var credit = 0;
+                    }
+
+                    if (rows2[z].account_number == "250.160.00") {
+                        var debit = 0;
+                        var credit = disc_tax;
+                    }
+
+                    if (rows2[z].account_number == "410.150.00") {
+                        var debit = 0;
+                        var credit = total_sub;
+                    }
+
+                    if (rows2[z].account_number == "170.110.00") {
+                        var debit = total_pph;
+                        var credit = 0;
+                    }
+
+                    if (rows2[z].account_number == "410.330.00") {
+                        var debit = 0;
+                        var credit = total_sub;
+                    }
+                
 
                     var data2 = {
                         account_number: rows2[z].account_number,
@@ -523,34 +1083,34 @@
                     data_array2.push(data2);
                 }
 
-                if (taxes > 0 && vat_val == 0) {
-                    var data2 = {
-                        account_number: "2031108",
-                        account_name: "TAX",
-                        debit: 0,
-                        credit: disc_tax,
-                        flag: "3",
-                    }
+                // if (taxes > 0 && vat_val == 0) {
+                //     var data2 = {
+                //         account_number: "250.160.00",
+                //         account_name: "VAT",
+                //         debit: 0,
+                //         credit: disc_tax,
+                //         flag: "3",
+                //     }
 
-                    data_array2.push(data2);
-                }
+                //     data_array2.push(data2);
+                // }
 
-                if (total_pph > 0 && pph_val == 0 && pphname == "5") {
-                    var data2 = {
-                        account_number: "1154101",
-                        account_name: "INCOME TAX ART 21",
-                        debit: 0,
-                        credit: total_pph,
-                        flag: "4",
-                    }
+                // if (total_pph > 0 && pph_val == 0 && pphname == "5") {
+                //     var data2 = {
+                //         account_number: "170.110.00",
+                //         account_name: "PPH 21",
+                //         debit: 0,
+                //         credit: total_pph,
+                //         flag: "4",
+                //     }
 
-                    data_array2.push(data2);
-                }
+                //     data_array2.push(data2);
+                // }
 
                 if (total_pph > 0 && pph_val == 0 && pphname == "2") {
                     var data2 = {
-                        account_number: "1154103",
-                        account_name: "INCOME TAX ART 23",
+                        account_number: "170.130.00",
+                        account_name: "PPH 23",
                         debit: 0,
                         credit: total_pph,
                         flag: "4",
@@ -561,8 +1121,20 @@
 
                 if (total_pph > 0 && pph_val == 0 && pphname == "10") {
                     var data2 = {
-                        account_number: "1154106",
-                        account_name: "INCOME TAX ART 4 (2)",
+                        account_number: "170.150.00",
+                        account_name: "PPH 4(2)",
+                        debit: 0,
+                        credit: total_pph,
+                        flag: "4",
+                    }
+
+                    data_array2.push(data2);
+                }
+
+                if (total_pph > 0 && pph_val == 0 && pphname == "10.0") {
+                    var data2 = {
+                        account_number: "140.230.00",
+                        account_name: "OTHER INCOME",
                         debit: 0,
                         credit: total_pph,
                         flag: "4",
@@ -592,7 +1164,7 @@
             } else {
                 toastr.warning("please selections your data in table first");
             }
-        }else{
+        } else {
             toastr.warning("please select PPH");
         }
     }
@@ -698,9 +1270,11 @@
     }
 
     function balance_journal() {
-        var rows = $('#dg3').datagrid('getRows');
+        var rows = $('#dg3').datagrid('getRows');// journal
         var totalrows = rows.length;
         endEditing2();
+
+        console.log(rows);
 
         if (totalrows > 0) {
             var debit = 0;
@@ -799,6 +1373,7 @@
                 });
 
                 $('#dg2').datagrid('deleteRow', getRowIndex(target));
+                addJournal();
             }
         });
     }
@@ -862,17 +1437,38 @@
 
     //Edit Data
     function update() {
+        formMode = 'update';
         var row = $('#dg').datagrid('getSelected');
+        console.log("Data Loaded:",row);
         if (row) {
             if (row.status == 0) {
-                if(row.gl_no == null){
+                if (row.gl_no == null) {
                     $('#dlg_insert').dialog('open');
                     $('#frm_insert').form('load', row);
 
                     $("#trans_date").datebox('disable');
-                    $("#customer_id").combobox('disable');
-                    $("#dn_number").combobox('disable');
-                    $("#preview").linkbutton('disable');
+                    $("#number").textbox('disable');
+
+                    // $("#customer_id").combobox('disable');
+                    // $("#delivery_note_no").combobox('disable');
+
+                    // $("#kode_trans").textbox('disable');
+                    // $("#kode_cabang").textbox('disable');
+                    // $("#tahun_pemeriksaan").numberbox('disable');
+                    // $("#no_urut").textbox('disable');
+                    // $("#fp_pengganti").textbox('disable');
+                    // $("#faktur_no").textbox('disable');
+                    // $("#faktur_code").combobox('disable');
+                                        
+                    // $("#preview").linkbutton('disable');
+
+                    var deliveryNoteNo = row.delivery_note_nos;
+                    if (deliveryNoteNo) {
+                        // Remove any extra spaces around commas
+                        deliveryNoteNo = deliveryNoteNo.replace(/\s*,\s*/g, ',');
+                    }
+
+                    $("#delivery_note_no").combogrid('setValue', deliveryNoteNo);
 
                     $('#customer_id').combogrid({
                         url: '<?= base_url('master/customers/reads') ?>',
@@ -900,18 +1496,256 @@
                             var trans_date = $("#trans_date").datebox('getValue');
                             $("#payment_term").numberbox("setValue", customer.payment_term);
 
-                            $("#dn_number").combobox({
-                                url: '<?= base_url('finance/sales_invoices/readDelivery?customer_id=') ?>' + customer.id,
-                                valueField: 'number',
-                                textField: 'number',
-                                prompt: "Choose Delivery Note",
-                                onLoadSuccess: function(delivery_no) {
-                                    $("#dn_number").combobox('setValue', row.dn_number);
-                                },
-                            });
+                            // $("#delivery_note_no").combogrid({
+                            //     url: '<?= base_url('finance/sales_invoices/readDeliveryx?customer_id=') ?>' + customer.id,
+                            //     panelWidth: 400,
+                            //     idField: 'delivery_note_no',
+                            //     textField: 'delivery_note_no',
+                            //     mode: 'remote',
+                            //     multiple: true,
+                            //     prompt: "Choose Delivery Note",
+                            //     columns: [
+                            //         [{
+                            //             field: 'period',
+                            //             title: 'No',
+                            //             width: 80
+                            //         }, {
+                            //             field: 'delivery_note_no',
+                            //             title: 'Delivery Note No',
+                            //             width: 150,
+                            //             align: 'left'
+                            //         }, {
+                            //             field: 'delivery_note_date',
+                            //             title: 'Delivery Note Date',
+                            //             width: 150,
+                            //             align: 'left'
+                            //         }]
+                            //     ],
+                                
+
+                            //     onLoadSuccess: function(delivery_no) {
+                                    
+                            //     },
+                            // });
                         }
                     });
 
+                    $("#payment_to").combogrid({
+                        url: '<?= base_url('finance/sales_invoices/readPayment') ?>',
+                        panelWidth: 450,
+                        idField: 'bank_name',
+                        textField: 'bank_name',
+                        mode: 'remote',
+                        prompt: "Choose Payment",
+                        columns: [
+                            [{
+                                field: 'no',
+                                title: 'No',
+                                width: 80
+                            }, {
+                                field: 'bank_name',
+                                title: 'Bank Name',
+                                width: 200,
+                                align: 'left'
+                            }, {
+                                field: 'bank_account',
+                                title: 'Bank Account',
+                                width: 150,
+                                align: 'left'
+                            }]
+                        ],
+                    });
+
+                    $("#customer_address_id").combogrid({
+                        url: '<?= base_url('finance/sales_invoices/readPlant?customer_id=') ?>' + row.customer_id,
+                        panelWidth: 710,
+                        idField: 'id',
+                        textField: 'plant',
+                        mode: 'remote',
+                        fitColumns: true,
+                        // multiple: true,
+                        prompt: "Choose Plant",
+                        columns: [
+                            [{
+                                field: 'no',
+                                title: 'No',
+                                width: 60
+                            }, {
+                                field: 'plant',
+                                title: 'Plant',
+                                width: 150,
+                                align: 'left'
+                            }, {
+                                field: 'address',
+                                title: 'Address',
+                                width: 500,
+                                align: 'left'
+                            }]
+                        ],
+                        onLoadSuccess: function(customer_address_id) {
+                            $("#customer_address_id").combogrid('setValue', row.customer_address_id);
+                        },
+                        onSelect: function(index, row) {
+                        }
+                    });
+
+                    $("#delivery_note_no").combogrid({
+                        url: '<?= base_url('finance/sales_invoices/readDeliverys') ?>' +'?customer_id=' + row.customer_id +'&division_number=' + row.division,
+                        panelWidth: 500,
+                        idField: 'delivery_note_no',
+                        textField: 'delivery_note_no',
+                        mode: 'remote',
+                        multiple: true,
+                        prompt: "Choose Delivery Note",
+                        columns: [
+                            [ {
+                                field: 'ck', // Kolom checkbox
+                                checkbox: true, // Mengaktifkan checkbox
+                            }, {
+                                field: 'no',
+                                title: 'No',
+                                width: 60
+                            }, {
+                                field: 'delivery_note_no',
+                                title: 'Delivery Note No',
+                                width: 150,
+                                align: 'left'
+                            }, {
+                                field: 'delivery_note_date',
+                                title: 'Delivery Note Date',
+                                width: 120,
+                                align: 'left'
+                            }, {
+                                field: 'plant',
+                                title: 'Plant',
+                                width: 150,
+                                align: 'left'
+                            }]
+                        ],
+                        fitColumns: true,
+                        // pagination: true,
+                        selectOnCheck: true,
+                        checkOnSelect: true,
+                        onLoadSuccess: function(delivery_note_nos) {
+                            let cleanedDeliveryNotes = row.delivery_note_nos
+                                .split(',') // Pisahkan data berdasarkan koma
+                                .map(note => note.trim()) // Hapus spasi di awal dan akhir masing-masing note
+                                .join(','); // Gabungkan kembali dengan koma tanpa spasi tambahan
+
+                            // Set nilai ke combogrid
+                            $("#delivery_note_no").combogrid('setValue', cleanedDeliveryNotes);
+                        },
+                    });
+
+                    $("#faktur_code").combobox({
+                        url: '<?= base_url('finance/sales_invoices/readFakturCode?id=') ?>' + row.customer_id,
+                        valueField: 'value',
+                        textField: 'text',
+                        prompt: "Choose Faktur Code",
+                        onLoadSuccess: function(data) {
+                            if (data && data.length > 0 && data[0].faktur_code) {
+                                // Pastikan faktur_code ada sebelum di-split
+                                var fakturCodes = data[0].faktur_code.split(',');
+
+                                // Buat array dengan objek yang berisi value dan text
+                                var fakturData = fakturCodes.map(function(code) {
+                                    return { value: code.trim(), text: code.trim() };
+                                });
+
+                                // Load data ke dalam combobox
+                                $('#faktur_code').combobox('loadData', fakturData);
+                            } else {
+                                console.warn("Faktur code not found or empty.");
+                            }
+                        },
+                        onLoadError: function() {
+                            console.error("Failed to load faktur code.");
+                        }
+                    });
+
+
+                    var fp_pengganti = $("#fp_pengganti").combobox('getValue');
+                    var faktur_code = $("#faktur_code").combobox('getValue');
+                    var kode_trans = faktur_code + fp_pengganti;
+                    $("#kode_trans").textbox('setValue', kode_trans);
+
+                    $("#faktur_code").combobox({
+                        onChange: function(newValue, oldValue) {
+                            var fp_pengganti = $("#fp_pengganti").textbox('getValue');
+                            
+                            var kode_trans = newValue + fp_pengganti;
+                            $("#kode_trans").textbox('setValue', kode_trans);
+                        }
+                    });
+
+
+                    $("#fp_pengganti").combobox({
+                        onChange: function(newValue, oldValue) {
+                            var faktur_code = $("#faktur_code").textbox('getValue');
+                            
+                            var kode_trans = faktur_code + newValue;
+                            $("#kode_trans").textbox('setValue', kode_trans);
+                        }
+                    });
+
+                    $('#kode_cabang').textbox({
+                        validType: 'length[1,3]',
+                        inputEvents: $.extend({}, $.fn.textbox.defaults.inputEvents, {
+                            keyup: function(e) {
+                                var value = $(this).val();
+                                if (value.length > 3) {
+                                    $(this).val(value.slice(0, 3));
+                                }
+                            }
+                        })
+                    });
+
+                    $("#no_urut").textbox({
+                        validType: 'length[1,11]',
+                        inputEvents: $.extend({}, $.fn.textbox.defaults.inputEvents, {
+                            keyup: function(e) {
+                                var value = $(this).val();
+                                if (value.length > 11) {
+                                    $(this).val(value.slice(0, 11));
+                                }
+                            }
+                        })
+                    });
+
+                    var selectedDate = $("#trans_date").datebox('getValue'); 
+                    var date = new Date(selectedDate);
+                    var year = date.getFullYear().toString().slice(-2);
+
+                    $("#tahun_pemeriksaan").textbox('setValue', year);
+                    
+                    setTimeout(function() {
+                        // if(row.faktur_no != ""){
+                        //     $("#faktur_no").textbox('setValue', row.faktur_no);
+                        // }
+                        if(row.faktur_code != ""){
+                            $("#faktur_code").combobox('setValue', row.faktur_code);
+                        }
+                        if(row.fp_pengganti != ""){
+                            $("#fp_pengganti").combobox('setValue', row.fp_pengganti);
+                        }
+                        // if(row.kode_trans != ""){
+                        //     $("#kode_trans").textbox('setValue', row.kode_trans);
+                        // }
+                        // if(row.kode_cabang != ""){
+                        //     $("#kode_cabang").textbox('setValue', row.kode_cabang);
+                        // }
+                        // if(row.tahun_pemeriksaan != ""){
+                        //     $("#tahun_pemeriksaan").textbox('setValue', row.tahun_pemeriksaan);
+                        // }
+                        // if(row.no_urut != ""){
+                        //     $("#no_urut").textbox('setValue', row.no_urut);
+                        // }
+                        // if(row.total_dpp != ""){
+                        //     $("#total_dpp").numberbox('setValue', total_dpp);
+                        // }
+                    }, 1000);
+                    
+                    var total_dpp = parseFloat((row.total_sub) * 11/12);
                     var lastIndex;
                     var dg = $('#dg2').datagrid({
                         url: '<?= base_url('finance/sales_invoices/reads/') ?>' + window.btoa(row.number),
@@ -935,7 +1769,7 @@
                         balance_journal();
                         $("#number").textbox('setValue', row.number);
                     }, 2000);
-                }else{
+                } else {
                     toastr.error("Cannot Update because this Sales Invoice has been created in Posting Journal");
                 }
             } else {
@@ -960,25 +1794,34 @@
 
     function preview() {
         var customer_id = $("#customer_id").combogrid('getValue');
-        var dn_number = $("#dn_number").combobox('getValue');
+        // var delivery_note_no = $("#delivery_note_no").combobox('getValue');
+        var delivery_note_no = $("#delivery_note_no").combobox('getText');
         var trans_date = $("#trans_date").datebox('getValue');
         var due_date = $("#due_date").datebox('getValue');
         var taxes = $("#taxes").numberbox('getValue');
         var journal_type_id = $("#journal_type").combobox('getValue');
 
-        if (dn_number == "" || trans_date == "" || due_date == "" || taxes == "") {
+        if (delivery_note_no == "" || trans_date == "" || due_date == "" || taxes == "") {
             toastr.info('Please completed your data');
         } else {
             $("#pph").combobox('setValue', "0");
 
             var lastIndex;
             var dg = $('#dg2').datagrid({
-                url: '<?= base_url('finance/sales_invoices/datatablesTemp') ?>?dn_number=' + window.btoa(dn_number),
+                url: '<?= base_url('finance/sales_invoices/datatablesTemp/') ?>?delivery_note_no=' + window.btoa(delivery_note_no),
                 onLoadSuccess: function(row) {
                     $("#total_sub").numberbox('setValue', row.total_sub);
-                    var disc_tax = parseFloat(row.total_sub * (taxes / 100));
+                    
+                    var total_dpp = parseFloat((row.total_sub) * 11/12);
+                    $("#total_dpp").numberbox('setValue', total_dpp);
+
+                    var disc_tax = parseFloat(total_dpp * (taxes / 100));
+
+                    // var disc_tax = parseFloat(row.total_sub * (taxes / 100));
                     $("#total_vat").numberbox('setValue', disc_tax);
-                    $("#total_grand").numberbox('setValue', row.total_sub);
+
+                    var total_grand = (parseFloat(row.total_sub) + parseFloat(disc_tax));
+                    $("#total_grand").numberbox('setValue', (total_grand));
 
                     $.ajax({
                         type: "post",
@@ -1011,50 +1854,62 @@
                     for (var i = 0; i < rows.length; i++) {
                         var row = rows[i];
 
-                        $.ajax({
-                            type: "post",
-                            url: "<?= base_url('closing/locks/checkLock') ?>",
-                            data: "period=" + row.trans_date + "&menus_id=<?= $menus_id ?>",
-                            dataType: "json",
-                            success: function (lock) {
-                                if(lock.total > 0){
-                                    toastr.error("This period is not active by Accounting");
-                                    return false;
-                                }
+                        // $.ajax({
+                        //     type: "post",
+                        //     url: "<?= base_url('closing/locks/checkLock') ?>",
+                        //     data: "period=" + row.trans_date + "&menus_id=<?= $menus_id ?>",
+                        //     dataType: "json",
+                        //     success: function (lock) {
+                        //         if(lock.total > 0){
+                        //             toastr.error("This period is not active by Accounting");
+                        //             return false;
+                        //         }
 
-                                if (row.status == 0) {
-                                    if(row.gl_no == null){
-                                        $.ajax({
-                                            method: 'post',
-                                            url: '<?= base_url('finance/sales_invoices/delete') ?>',
-                                            data: {
-                                                number: row.number,
-                                                dn_number: row.dn_number,
-                                            },
-                                            success: function(result) {
-                                                var result = eval('(' + result + ')');
+                        if (row.status == 0) {
+                            if (row.gl_no == null) {
+                                Swal.fire({
+                                    title: 'Please Wait for Deleting Data',
+                                    showConfirmButton: false,
+                                    allowOutsideClick: false,
+                                    allowEscapeKey: false,
+                                    didOpen: () => {
+                                        Swal.showLoading();
+                                    },
+                                });
 
-                                                if (result.theme == "success") {
-                                                    toastr.success(result.message);
-                                                } else {
-                                                    toastr.error(result.message);
-                                                }
-                                            },
-                                            error: function(jqXHR, textStatus, errorThrown) {
-                                                toastr.error(jqXHR.statusText);
-                                            },
-                                            complete: function(data) {
-                                                $('#dg').datagrid('reload');
-                                            }
-                                        });
-                                    }else{
-                                        toastr.error("Cannot Delete because this Sales Invoice has been created in Posting Journal");
+                                $.ajax({
+                                    method: 'post',
+                                    url: '<?= base_url('finance/sales_invoices/delete') ?>',
+                                    data: {
+                                        number: row.number,
+                                        delivery_note_no: row.delivery_note_no,
+                                    },
+                                    success: function(result) {
+                                        var result = eval('(' + result + ')');
+
+                                        if (result.theme == "success") {
+                                            toastr.success(result.message);
+                                        } else {
+                                            toastr.error(result.message);
+                                        }
+
+                                        Swal.close();
+                                    },
+                                    error: function(jqXHR, textStatus, errorThrown) {
+                                        toastr.error(jqXHR.statusText);
+                                    },
+                                    complete: function(data) {
+                                        $('#dg').datagrid('reload');
                                     }
-                                } else {
-                                    toastr.error("Cannot Update because AR Receipt status is closed");
-                                }
+                                });
+                            } else {
+                                toastr.error("Cannot Delete because this Sales Invoice has been created in Posting Journal");
                             }
-                        });
+                        } else {
+                            toastr.error("Cannot Delete because SI status is closed");
+                        }
+                        //     }
+                        // });
                     }
                 }
             });
@@ -1071,7 +1926,7 @@
         var filter_due_date_from = $("#filter_due_date_from").datebox('getValue');
         var filter_due_date_to = $("#filter_due_date_to").datebox('getValue');
         var filter_sales_invoice = $("#filter_sales_invoice").combobox('getValue');
-        var filter_dn_number = $("#filter_dn_number").combobox('getValue');
+        var filter_delivery_note_no = $("#filter_delivery_note_no").combobox('getValue');
         var filter_customer = $("#filter_customer").combobox('getValue');
         var filter_status = $("#filter_status").combobox('getValue');
 
@@ -1081,7 +1936,7 @@
             "&filter_due_date_from=" + window.btoa(filter_due_date_from) +
             "&filter_due_date_to=" + window.btoa(filter_due_date_to) +
             "&filter_sales_invoice=" + window.btoa(filter_sales_invoice) +
-            "&filter_dn_number=" + window.btoa(filter_dn_number) +
+            "&filter_delivery_note_no=" + window.btoa(filter_delivery_note_no) +
             "&filter_customer=" + window.btoa(filter_customer) +
             "&filter_status=" + window.btoa(filter_status);
 
@@ -1106,7 +1961,7 @@
         var filter_due_date_from = $("#filter_due_date_from").datebox('getValue');
         var filter_due_date_to = $("#filter_due_date_to").datebox('getValue');
         var filter_sales_invoice = $("#filter_sales_invoice").combobox('getValue');
-        var filter_dn_number = $("#filter_dn_number").combobox('getValue');
+        var filter_delivery_note_no = $("#filter_delivery_note_no").combobox('getValue');
         var filter_customer = $("#filter_customer").combobox('getValue');
         var filter_status = $("#filter_status").combobox('getValue');
 
@@ -1116,11 +1971,35 @@
             "&filter_due_date_from=" + window.btoa(filter_due_date_from) +
             "&filter_due_date_to=" + window.btoa(filter_due_date_to) +
             "&filter_sales_invoice=" + window.btoa(filter_sales_invoice) +
-            "&filter_dn_number=" + window.btoa(filter_dn_number) +
+            "&filter_delivery_note_no=" + window.btoa(filter_delivery_note_no) +
             "&filter_customer=" + window.btoa(filter_customer) +
             "&filter_status=" + window.btoa(filter_status);
 
         window.location.assign('<?= base_url('finance/sales_invoices/print/excel') ?>' + url);
+    }
+
+    function excel_summary() {
+        var filter_type = $("#filter_type").combobox('getValue');
+        var filter_trans_date_from = $("#filter_trans_date_from").datebox('getValue');
+        var filter_trans_date_to = $("#filter_trans_date_to").datebox('getValue');
+        var filter_due_date_from = $("#filter_due_date_from").datebox('getValue');
+        var filter_due_date_to = $("#filter_due_date_to").datebox('getValue');
+        var filter_sales_invoice = $("#filter_sales_invoice").combobox('getValue');
+        var filter_delivery_note_no = $("#filter_delivery_note_no").combobox('getValue');
+        var filter_customer = $("#filter_customer").combobox('getValue');
+        var filter_status = $("#filter_status").combobox('getValue');
+
+        var url = "?filter_type=" + window.btoa(filter_type) +
+            "&filter_trans_date_from=" + window.btoa(filter_trans_date_from) +
+            "&filter_trans_date_to=" + window.btoa(filter_trans_date_to) +
+            "&filter_due_date_from=" + window.btoa(filter_due_date_from) +
+            "&filter_due_date_to=" + window.btoa(filter_due_date_to) +
+            "&filter_sales_invoice=" + window.btoa(filter_sales_invoice) +
+            "&filter_delivery_note_no=" + window.btoa(filter_delivery_note_no) +
+            "&filter_customer=" + window.btoa(filter_customer) +
+            "&filter_status=" + window.btoa(filter_status);
+
+        window.location.assign('<?= base_url('finance/sales_invoices/print_summary/excel') ?>' + url);
     }
 
     function excelDetail() {
@@ -1130,7 +2009,7 @@
         var filter_due_date_from = $("#filter_due_date_from").datebox('getValue');
         var filter_due_date_to = $("#filter_due_date_to").datebox('getValue');
         var filter_sales_invoice = $("#filter_sales_invoice").combobox('getValue');
-        var filter_dn_number = $("#filter_dn_number").combobox('getValue');
+        var filter_delivery_note_no = $("#filter_delivery_note_no").combobox('getValue');
         var filter_customer = $("#filter_customer").combobox('getValue');
         var filter_status = $("#filter_status").combobox('getValue');
 
@@ -1140,7 +2019,7 @@
             "&filter_due_date_from=" + window.btoa(filter_due_date_from) +
             "&filter_due_date_to=" + window.btoa(filter_due_date_to) +
             "&filter_sales_invoice=" + window.btoa(filter_sales_invoice) +
-            "&filter_dn_number=" + window.btoa(filter_dn_number) +
+            "&filter_delivery_note_no=" + window.btoa(filter_delivery_note_no) +
             "&filter_customer=" + window.btoa(filter_customer) +
             "&filter_status=" + window.btoa(filter_status);
 
@@ -1154,7 +2033,7 @@
         var filter_due_date_from = $("#filter_due_date_from").datebox('getValue');
         var filter_due_date_to = $("#filter_due_date_to").datebox('getValue');
         var filter_sales_invoice = $("#filter_sales_invoice").combobox('getValue');
-        var filter_dn_number = $("#filter_dn_number").combobox('getValue');
+        var filter_delivery_note_no = $("#filter_delivery_note_no").combobox('getValue');
         var filter_customer = $("#filter_customer").combobox('getValue');
         var filter_status = $("#filter_status").combobox('getValue');
 
@@ -1164,7 +2043,7 @@
             "&filter_due_date_from=" + window.btoa(filter_due_date_from) +
             "&filter_due_date_to=" + window.btoa(filter_due_date_to) +
             "&filter_sales_invoice=" + window.btoa(filter_sales_invoice) +
-            "&filter_dn_number=" + window.btoa(filter_dn_number) +
+            "&filter_delivery_note_no=" + window.btoa(filter_delivery_note_no) +
             "&filter_customer=" + window.btoa(filter_customer) +
             "&filter_status=" + window.btoa(filter_status);
 
@@ -1172,24 +2051,42 @@
     }
 
     //PRINT INVOICE
-    function print_invoice() {
-        var invoice_no = $("#filter_sales_invoice").combobox('getValue');
-        if (invoice_no == "") {
-            toastr.warning("Please select Sales Order Invoice!", "Information");
-        } else {
-            window.open("<?= base_url('finance/sales_invoices/print_dn/') ?>" + window.btoa(invoice_no), '_blank', 'location=yes,height=570,width=1000,scrollbars=yes,status=yes');
-        }
-    }
+    // function print_invoice() {
+    //     var invoice_no = $("#filter_sales_invoice").combobox('getValue');
+    //     if (invoice_no == "") {
+    //         toastr.warning("Please select Sales Order Invoice!", "Information");
+    //     } else {
+    //         window.open("<?= base_url('finance/sales_invoices/print_dn/') ?>" + window.btoa(invoice_no), '_blank', 'location=yes,height=570,width=1000,scrollbars=yes,status=yes');
+    //     }
+    // }
 
     //PRINT COMMERCIAL INVOICE
-    function print_commercial() {
-        var invoice_no = $("#filter_sales_invoice").combobox('getValue');
-        if (invoice_no == "") {
-            toastr.warning("Please select Sales Order Invoice!", "Information");
-        } else {
-            window.open("<?= base_url('finance/sales_invoices/print_commercial/') ?>" + window.btoa(invoice_no), '_blank', 'location=yes,height=570,width=1000,scrollbars=yes,status=yes');
-        }
-    }
+    // function print_commercial() {
+    //     var invoice_no = $("#filter_sales_invoice").combobox('getValue');
+    //     if (invoice_no == "") {
+    //         toastr.warning("Please select Sales Order Invoice!", "Information");
+    //     } else {
+    //         window.open("<?= base_url('finance/sales_invoices/print_commercial/') ?>" + window.btoa(invoice_no), '_blank', 'location=yes,height=570,width=1000,scrollbars=yes,status=yes');
+    //     }
+    // }
+
+    // function print_commercial_sum() {
+    //     var invoice_no = $("#filter_sales_invoice").combobox('getValue');
+    //     if (invoice_no == "") {
+    //         toastr.warning("Please select Sales Order Invoice!", "Information");
+    //     } else {
+    //         window.open("<?= base_url('finance/sales_invoices/print_commercial_sum/') ?>" + window.btoa(invoice_no), '_blank', 'location=yes,height=570,width=1000,scrollbars=yes,status=yes');
+    //     }
+    // }
+
+    // function excel_commercial_sum() {
+    //     var invoice_no = $("#filter_sales_invoice").combobox('getValue');
+    //     if (invoice_no == "") {
+    //         toastr.warning("Please select Sales Order Invoice!", "Information");
+    //     } else {
+    //         window.open("<?= base_url('finance/sales_invoices/excel_commercial_sum/') ?>" + window.btoa(invoice_no) + "/" + "excel", '_blank', 'location=yes,height=570,width=1000,scrollbars=yes,status=yes');
+    //     }
+    // }
 
     //RELOAD
     function reload() {
@@ -1258,20 +2155,20 @@
                     rownumbers: true,
                     columns: [
                         [{
-                            field: 'dn_number',
+                            field: 'delivery_note_no',
                             title: 'Delivery Note',
                             halign: 'center',
                             width: 150
                         }, {
-                            field: 'so_number',
-                            title: 'Sales Order',
+                            field: 'sales_order_no',
+                            title: 'Sales Order No',
                             halign: 'center',
                             width: 150
                         }, {
-                            field: 'customer_po',
-                            title: 'Customer PO',
+                            field: 'customer_order_no',
+                            title: 'Customer Order No',
                             halign: 'center',
-                            width: 120
+                            width: 150
                         }, {
                             field: 'item_no',
                             title: 'Product No',
@@ -1313,6 +2210,26 @@
                             halign: 'center',
                             align: 'right',
                             formatter: priceformat
+                        }, {
+                            field: 'approved_to',
+                            title: 'Approved To',
+                            halign: 'center',
+                            align: 'center',
+                            width: 100,
+                            formatter: formatApproved,
+                            styler: styleApproved
+                        }, {
+                            field: 'approved_by',
+                            title: 'Approved By',
+                            halign: 'center',
+                            align: 'right',
+                            width: 100
+                        }, {
+                            field: 'approved_date',
+                            title: 'Approved Date',
+                            halign: 'center',
+                            align: 'right',
+                            width: 100
                         }]
                     ],
                     onResize: function() {
@@ -1328,20 +2245,221 @@
             }
         });
 
-        //SAVE DATA
+        // $('#dlg_insert').dialog({
+        //     buttons: [{
+        //         text: 'Save All',
+        //         iconCls: 'icon-ok',
+        //         handler: function() {
+        //             var trans_date = $("#trans_date").datebox('getValue');
+        //             var number = $("#number").textbox('getValue');
+        //             var customer_id = $("#customer_id").combogrid('getValue');
+        //             var taxes = $("#taxes").numberbox('getValue');
+        //             var payment_term = $("#payment_term").numberbox('getValue');
+        //             var payment_to = $("#payment_to").combobox('getValue');
+        //             var customer_address_id = $("#customer_address_id").combobox('getValue');
+        //             var due_date = $("#due_date").datebox('getValue');
+        //             var remarks = $("#remarks").textbox('getValue');
+        //             var journal_type_id = $("#journal_type").combobox('getValue');
+        //             var fp_pengganti = $("#fp_pengganti").combobox('getValue');
+        //             var faktur_no = $("#faktur_no").textbox('getValue');
+        //             var faktur_code = $("#faktur_code").combobox('getValue');
+        //             var kode_trans = $("#kode_trans").textbox('getValue');
+        //             var kode_cabang = $("#kode_cabang").textbox('getValue');
+        //             var tahun_pemeriksaan = $("#tahun_pemeriksaan").textbox('getValue');
+        //             var no_urut = $("#no_urut").textbox('getValue');
+        //             var country_name = $("#country_name").textbox('getValue');
+        //             var bc1 = $("#bc1").textbox('getValue');
+        //             var bc2 = $("#bc2").textbox('getValue');
+        //             var bc3 = $("#bc3").textbox('getValue');
+        //             var bc4 = $("#bc4").textbox('getValue');
+        //             var bc_no = $("#bc_no").textbox('getValue');
+        //             var keterangan_tambahan = $("#keterangan_tambahan").combogrid('getValue');
+        //             var cap_fasilitas = $("#cap_fasilitas").combogrid('getValue');
+
+        //             var balance_debit = $("#balance_debit").numberbox('getValue');
+        //             var balance_credit = $("#balance_credit").numberbox('getValue');
+
+        //             var total_sub = $("#total_sub").numberbox('getValue');
+        //             var total_vat = $("#total_vat").numberbox('getValue');
+        //             var total_pph = $("#total_pph").numberbox('getValue');
+        //             var total_grand = $("#total_grand").numberbox('getValue');
+        //             var total_local = $("#total_local").numberbox('getValue');
+
+        //             if (parseFloat(balance_debit) == parseFloat(balance_credit)) {
+        //                 if (due_date == "" || trans_date == "" || customer_id == "" || journal_type_id == "" || faktur_no.length != 17) {
+        //                     toastr.error("please complete your input data");
+        //                 } else {
+        //                     $('#dg2').datagrid('acceptChanges');//datatablesTemp
+        //                     var rows = $('#dg2').datagrid('getRows');
+        //                     var totalrows = rows.length;
+
+        //                     var rows2 = $('#dg3').datagrid('getRows');//journal
+        //                     var totalrows2 = rows2.length;
+        //                     endEditing2();
+
+        //                     $.ajax({
+        //                         type: "post",
+        //                         url: "<?= base_url('finance/sales_invoices/deleteJournal') ?>",
+        //                         data: "number=" + number,
+        //                         dataType: "json",
+        //                         success: function(response) {
+        //                             Swal.fire({
+        //                                 title: 'Please Wait for Saving Data',
+        //                                 showConfirmButton: false,
+        //                                 allowOutsideClick: false,
+        //                                 allowEscapeKey: false,
+        //                                 didOpen: () => {
+        //                                     Swal.showLoading();
+        //                                 },
+        //                             });
+
+        //                             if (totalrows > 0) {
+        //                                 $('#dlg_insert').dialog('close');
+
+        //                                 combinedSi = [];
+        //                                 for (let i = 0; i < totalrows; i++) {
+        //                                     var json = rows[i];
+
+        //                                     combinedSi.push({
+        //                                         trans_date: trans_date,
+        //                                         number: number,
+        //                                         customer_id: customer_id,
+        //                                         journal_type_id: journal_type_id,
+        //                                         taxes: taxes,
+        //                                         payment_term: payment_term,
+        //                                         payment_to: payment_to,
+        //                                         customer_address_id: customer_address_id,
+        //                                         due_date: due_date,
+        //                                         remarks: remarks,
+        //                                         fp_pengganti: fp_pengganti,
+        //                                         faktur_no: faktur_no,
+        //                                         faktur_code: faktur_code,
+        //                                         kode_trans: kode_trans,
+        //                                         kode_cabang: kode_cabang,
+        //                                         tahun_pemeriksaan: tahun_pemeriksaan,
+        //                                         no_urut: no_urut,
+        //                                         country_name: country_name,
+        //                                         bc1 : bc1,
+        //                                         bc2 : bc2,
+        //                                         bc3 : bc3, 
+        //                                         bc4 : bc4,
+        //                                         bc_no : bc_no,
+        //                                         keterangan_tambahan : keterangan_tambahan,
+        //                                         cap_fasilitas : cap_fasilitas,
+        //                                         total_sub: total_sub,
+        //                                         total_vat: total_vat,
+        //                                         total_pph: total_pph,
+        //                                         total_grand: total_grand,
+        //                                         total_local: total_local,
+        //                                         id: json.id,
+        //                                         delivery_note_no: json.delivery_note_no,
+        //                                         sales_order_no: json.sales_order_no,
+        //                                         customer_order_no: json.customer_order_no,
+        //                                         item_fg_id: json.item_fg_id,
+        //                                         item_no: json.item_no,
+        //                                         item_name: json.item_name,
+        //                                         uom: json.uom,
+        //                                         currency: json.currency,
+        //                                         qty: json.qty,
+        //                                         price: json.price,
+        //                                         total: json.total,
+        //                                         account_number: json.account_number,
+        //                                         account_type: json.account_type,
+        //                                     });
+        //                                 }
+
+        //                                 if (totalrows2 > 0) {
+        //                                     combinedJournal = [];
+        //                                     for (let z = 0; z < totalrows2; z++) {
+
+        //                                         var json2 = rows2[z];
+        //                                         combinedJournal.push({
+        //                                             number: number,
+        //                                             account_number: rows2[z].account_number,
+        //                                             account_name: rows2[z].account_name,
+        //                                             debit: rows2[z].debit,
+        //                                             credit: rows2[z].credit,
+        //                                             flag: rows2[z].flag,
+        //                                         });
+        //                                     }
+        //                                 }
+
+        //                                 $.ajax({
+        //                                     type: "post",
+        //                                     url: '<?= base_url('finance/sales_invoices/create') ?>',
+        //                                     data: JSON.stringify({ dataSi: combinedSi, dataJournal: combinedJournal }),
+        //                                     dataType: "json",
+        //                                     success: function (result) {
+        //                                         Swal.close();
+                                                
+        //                                         Swal.fire({
+        //                                             title: result.message,
+        //                                             icon: result.theme,
+        //                                             confirmButtonText: 'Ok',
+        //                                             allowOutsideClick: false,
+        //                                         }).then((result) => {
+        //                                             if (result.isConfirmed) {
+        //                                                 window.location.reload();
+        //                                             }
+        //                                         });
+        //                                     }
+        //                                 });
+        //                             } else {
+        //                                 toastr.warning("please selections your data in table first");
+        //                             }
+        //                         }
+        //                     });
+        //                 }
+        //             } else {
+        //                 toastr.error("Balance Debit Cannot match on Balance Credit");
+        //             }
+        //         }
+        //     }]
+        // });
+
+        let isSubmitting = false;
+
         $('#dlg_insert').dialog({
             buttons: [{
                 text: 'Save All',
                 iconCls: 'icon-ok',
                 handler: function() {
+                    if (isSubmitting) return; // cegah klik dobel
+                    
+                    isSubmitting = true;
+                    var btn = $(this);
+                    btn.linkbutton('disable');
+                    setTimeout(function() {
+                        isSubmitting = false;
+                        btn.linkbutton('enable');
+                    }, 3000);
+                    
                     var trans_date = $("#trans_date").datebox('getValue');
                     var number = $("#number").textbox('getValue');
                     var customer_id = $("#customer_id").combogrid('getValue');
                     var taxes = $("#taxes").numberbox('getValue');
                     var payment_term = $("#payment_term").numberbox('getValue');
+                    var payment_to = $("#payment_to").combobox('getValue');
+                    var customer_address_id = $("#customer_address_id").combobox('getValue');
                     var due_date = $("#due_date").datebox('getValue');
                     var remarks = $("#remarks").textbox('getValue');
                     var journal_type_id = $("#journal_type").combobox('getValue');
+                    var fp_pengganti = $("#fp_pengganti").combobox('getValue');
+                    var faktur_no = $("#faktur_no").textbox('getValue');
+                    var faktur_code = $("#faktur_code").combobox('getValue');
+                    var kode_trans = $("#kode_trans").textbox('getValue');
+                    var kode_cabang = $("#kode_cabang").textbox('getValue');
+                    var tahun_pemeriksaan = $("#tahun_pemeriksaan").textbox('getValue');
+                    var no_urut = $("#no_urut").textbox('getValue');
+                    var country_name = $("#country_name").textbox('getValue');
+                    var division = $("#division").combobox('getValue');
+                    var bc1 = $("#bc1").textbox('getValue');
+                    var bc2 = $("#bc2").textbox('getValue');
+                    var bc3 = $("#bc3").textbox('getValue');
+                    var bc4 = $("#bc4").textbox('getValue');
+                    var bc_no = $("#bc_no").textbox('getValue');
+                    var keterangan_tambahan = $("#keterangan_tambahan").combogrid('getValue');
+                    var cap_fasilitas = $("#cap_fasilitas").combogrid('getValue');
 
                     var balance_debit = $("#balance_debit").numberbox('getValue');
                     var balance_credit = $("#balance_credit").numberbox('getValue');
@@ -1352,144 +2470,139 @@
                     var total_grand = $("#total_grand").numberbox('getValue');
                     var total_local = $("#total_local").numberbox('getValue');
 
-                    $.ajax({
-                        type: "post",
-                        url: "<?= base_url('closing/locks/checkLock') ?>",
-                        data: "period=" + trans_date + "&menus_id=<?= $menus_id ?>",
-                        dataType: "json",
-                        success: function (lock) {
-                            if(lock.total > 0){
-                                toastr.error("This period is not active by Accounting");
-                                return false;
-                            }
+                    if (parseFloat(balance_debit) == parseFloat(balance_credit)) {
+                        if (due_date == "" || trans_date == "" || customer_id == "" || journal_type_id == "" || faktur_no.length != 17) {
+                            toastr.error("please complete your input data");
+                        } else {
+                            addJournal();
 
-                            if (parseFloat(balance_debit) == parseFloat(balance_credit)) {
-                                if (due_date == "" || trans_date == "" || customer_id == "" || journal_type_id == "") {
-                                    toastr.error("please complete your input data");
-                                } else {
-                                    $('#dg2').datagrid('acceptChanges');
-                                    var rows = $('#dg2').datagrid('getRows');
-                                    var totalrows = rows.length;
+                            setTimeout(function () {
+                                $('#dg2').datagrid('acceptChanges');//datatablesTemp
+                                var rows = $('#dg2').datagrid('getRows');
+                                var totalrows = rows.length;
 
-                                    var rows2 = $('#dg3').datagrid('getRows');
-                                    var totalrows2 = rows2.length;
-                                    endEditing2();
+                                var rows2 = $('#dg3').datagrid('getRows');//journal
+                                var totalrows2 = rows2.length;
+                                endEditing2();
 
-                                    $.ajax({
-                                        type: "post",
-                                        url: "<?= base_url('finance/sales_invoices/deleteJournal') ?>",
-                                        data: "number=" + number,
-                                        dataType: "json",
-                                        success: function(response) {
-                                            Swal.fire({
-                                                title: 'Please Wait for Saving Data',
-                                                showConfirmButton: false,
-                                                allowOutsideClick: false,
-                                                allowEscapeKey: false,
-                                                didOpen: () => {
-                                                    Swal.showLoading();
-                                                },
-                                            });
+                                $.ajax({
+                                    type: "post",
+                                    url: "<?= base_url('finance/sales_invoices/deleteJournal') ?>",
+                                    data: "number=" + number,
+                                    dataType: "json",
+                                    success: function(response) {
+                                        Swal.fire({
+                                            title: 'Please Wait for Saving Data',
+                                            showConfirmButton: false,
+                                            allowOutsideClick: false,
+                                            allowEscapeKey: false,
+                                            didOpen: () => {
+                                                Swal.showLoading();
+                                            },
+                                        });
 
-                                            if (totalrows > 0) {
-                                                requestData(totalrows, rows);
-                                                $('#dlg_insert').dialog('close');
+                                        if (totalrows > 0) {
+                                            $('#dlg_insert').dialog('close');
 
-                                                function requestData(total, json, jml = 1, value = 0) {
-                                                    if (value < 100) {
-                                                        value = Math.floor((jml / total) * 100);
-                                                        var i = (jml - 1);
+                                            combinedSi = [];
+                                            for (let i = 0; i < totalrows; i++) {
+                                                var json = rows[i];
 
-                                                        $.ajax({
-                                                            type: "post",
-                                                            url: '<?= base_url('finance/sales_invoices/create') ?>',
-                                                            data: {
-                                                                trans_date: trans_date,
-                                                                number: number,
-                                                                customer_id: customer_id,
-                                                                journal_type_id: journal_type_id,
-                                                                taxes: taxes,
-                                                                payment_term: payment_term,
-                                                                due_date: due_date,
-                                                                remarks: remarks,
-                                                                total_sub: total_sub,
-                                                                total_vat: total_vat,
-                                                                total_pph: total_pph,
-                                                                total_grand: total_grand,
-                                                                total_local: total_local,
-                                                                id: json[i].id,
-                                                                dn_number: json[i].dn_number,
-                                                                so_number: json[i].so_number,
-                                                                customer_po: json[i].customer_po,
-                                                                item_id: json[i].item_id,
-                                                                item_no: json[i].item_no,
-                                                                item_name: json[i].item_name,
-                                                                uom: json[i].uom,
-                                                                currency: json[i].currency,
-                                                                qty: json[i].qty,
-                                                                price: json[i].price,
-                                                                total: json[i].total,
-                                                                account_number: json[i].account_number,
-                                                                account_type: json[i].account_type,
-                                                            },
-                                                            dataType: "json",
-                                                            success: function(result) {
-                                                                requestData(total, json, jml + 1, value);
-                                                                if (jml == total) {
-                                                                    Swal.close();
-                                                                    Swal.fire({
-                                                                        title: result.message,
-                                                                        icon: result.theme,
-                                                                        confirmButtonText: 'Ok',
-                                                                        allowOutsideClick: false,
-                                                                    }).then((result) => {
-                                                                        if (result.isConfirmed) {
-                                                                            window.location.reload();
-                                                                        }
-                                                                    });
-
-                                                                    $('#dg').datagrid('reload');
-                                                                }
-                                                            }
-                                                        });
-                                                    }
-                                                }
-
-                                                if (totalrows2 > 0) {
-                                                    for (let z = 0; z < totalrows2; z++) {
-                                                        $.ajax({
-                                                            type: "post",
-                                                            url: '<?= base_url('finance/sales_invoices/createJournals') ?>',
-                                                            data: {
-                                                                number: number,
-                                                                account_number: rows2[z].account_number,
-                                                                account_name: rows2[z].account_name,
-                                                                debit: rows2[z].debit,
-                                                                credit: rows2[z].credit,
-                                                                flag: rows2[z].flag,
-                                                            },
-                                                            dataType: "json",
-                                                            success: function(result2) {
-                                                                // if (result2.theme == "success") {
-                                                                //     toastr.success(result2.message, result2.title);
-                                                                // } else {
-                                                                //     toastr.error(result2.message, result2.title);
-                                                                // }
-                                                            }
-                                                        });
-                                                    }
-                                                }
-                                            } else {
-                                                toastr.warning("please selections your data in table first");
+                                                combinedSi.push({
+                                                    trans_date: trans_date,
+                                                    number: number,
+                                                    customer_id: customer_id,
+                                                    journal_type_id: journal_type_id,
+                                                    taxes: taxes,
+                                                    payment_term: payment_term,
+                                                    payment_to: payment_to,
+                                                    customer_address_id: customer_address_id,
+                                                    due_date: due_date,
+                                                    remarks: remarks,
+                                                    fp_pengganti: fp_pengganti,
+                                                    faktur_no: faktur_no,
+                                                    faktur_code: faktur_code,
+                                                    kode_trans: kode_trans,
+                                                    kode_cabang: kode_cabang,
+                                                    tahun_pemeriksaan: tahun_pemeriksaan,
+                                                    no_urut: no_urut,
+                                                    country_name: country_name,
+                                                    division: division,
+                                                    bc1 : bc1,
+                                                    bc2 : bc2,
+                                                    bc3 : bc3, 
+                                                    bc4 : bc4,
+                                                    bc_no : bc_no,
+                                                    keterangan_tambahan : keterangan_tambahan,
+                                                    cap_fasilitas : cap_fasilitas,
+                                                    total_sub: total_sub,
+                                                    total_vat: total_vat,
+                                                    total_pph: total_pph,
+                                                    total_grand: total_grand,
+                                                    total_local: total_local,
+                                                    id: json.id,
+                                                    delivery_note_no: json.delivery_note_no,
+                                                    sales_order_no: json.sales_order_no,
+                                                    customer_order_no: json.customer_order_no,
+                                                    item_fg_id: json.item_fg_id,
+                                                    item_no: json.item_no,
+                                                    item_name: json.item_name,
+                                                    uom: json.uom,
+                                                    currency: json.currency,
+                                                    qty: json.qty,
+                                                    price: json.price,
+                                                    total: json.total,
+                                                    account_number: json.account_number,
+                                                    account_type: json.account_type,
+                                                });
                                             }
+
+                                            if (totalrows2 > 0) {
+                                                combinedJournal = [];
+                                                for (let z = 0; z < totalrows2; z++) {
+
+                                                    var json2 = rows2[z];
+                                                    combinedJournal.push({
+                                                        number: number,
+                                                        account_number: rows2[z].account_number,
+                                                        account_name: rows2[z].account_name,
+                                                        debit: rows2[z].debit,
+                                                        credit: rows2[z].credit,
+                                                        flag: rows2[z].flag,
+                                                    });
+                                                }
+                                            }
+
+                                            $.ajax({
+                                                type: "post",
+                                                url: '<?= base_url('finance/sales_invoices/create') ?>',
+                                                data: JSON.stringify({ dataSi: combinedSi, dataJournal: combinedJournal }),
+                                                dataType: "json",
+                                                success: function (result) {
+                                                    Swal.close();
+                                                    
+                                                    Swal.fire({
+                                                        title: result.message,
+                                                        icon: result.theme,
+                                                        confirmButtonText: 'Ok',
+                                                        allowOutsideClick: false,
+                                                    }).then((result) => {
+                                                        if (result.isConfirmed) {
+                                                            window.location.reload();
+                                                        }
+                                                    });
+                                                }
+                                            });
+                                        } else {
+                                            toastr.warning("please selections your data in table first");
                                         }
-                                    });
-                                }
-                            } else {
-                                toastr.error("Balance Debit Cannot match on Balance Credit");
-                            }
+                                    }
+                                });
+                            }, 3000); 
                         }
-                    });
+                    } else {
+                        toastr.error("Balance Debit Cannot match on Balance Credit");
+                    }
                 }
             }]
         });
@@ -1541,10 +2654,10 @@
             }],
         });
 
-        $("#filter_dn_number").combobox({
+        $("#filter_delivery_note_no").combobox({
             url: '<?= base_url('finance/sales_invoices/readDeliveryNote') ?>',
-            valueField: 'dn_number',
-            textField: 'dn_number',
+            valueField: 'delivery_note_no',
+            textField: 'delivery_note_no',
             prompt: "Choose Delivery Note",
             icons: [{
                 iconCls: 'icon-clear',
@@ -1589,6 +2702,43 @@
             }
         })
 
+        $('#keterangan_tambahan').combogrid({
+            panelWidth: 600,
+            idField: 'value',
+            textField: 'description',
+            data: [
+                { value: "Tidak Ada", description: "Tidak Ada" },
+                { value: "TD.00501", description: "1 - Pajak Pertambahan Nilai Tidak Dipungut berdasarkan PP Nomor 10 Tahun 2012" },
+                { value: "TD.00502", description: "2 - Pajak Pertambahan Nilai atau Pajak Pertambahan Nilai dan Pajak Penjualan atas Barang Mewah tidak dipungut" },
+                { value: "TD.00503", description: "3 - Pajak Pertambahan Nilai dan Pajak Penjualan atas Barang Mewah Tidak Dipungut" },
+            ],
+            columns: [[
+                { field: 'value', title: 'Kode', width: 100 },
+                { field: 'description', title: 'Keterangan', width: 480 }
+            ]],
+            fitColumns: true,
+            prompt: "Keterangan Tambahan",
+            editable: false,
+        });
+
+        $('#cap_fasilitas').combogrid({
+            panelWidth: 400,
+            idField: 'value',
+            textField: 'description',
+            data: [
+                { value: "Tidak Ada", description: "Tidak Ada" },
+                { value: "TD.01101", description: "1 - Untuk Kawasan Bebas" },
+                { value: "TD.01102", description: "2 - Untuk Tempat Penimbunan Berikat" },
+            ],
+            columns: [[
+                { field: 'value', title: 'Kode', width: 100 },
+                { field: 'description', title: 'Keterangan', width: 300 }
+            ]],
+            fitColumns: true,
+            prompt: "Cap Fasilitas",
+            editable: false,
+        });
+ 
     });
 
     function priceformat(value, row) {
@@ -1640,4 +2790,97 @@
             return 'background-color:#FFC8C8;';
         }
     }
+
+
+    function styleApproved(value, row, index) {
+        if (value == "" || value === null) {
+            return 'background: #53D636; color:white;';
+        } else {
+            return 'background: #FF5F5F; color:white;';
+        }
+    }
+
+    //FORMATTER APPROVE
+    function formatApproved(value) {
+        if (value == "" || value === null) {
+            return 'Approved';
+        } else {
+            return 'Checking';
+        }
+    };
+
+    function print_invoice() {
+        var row = $('#dg').datagrid('getSelections');
+        console.log(row);
+        if (row.length == 1) {
+            var invoice_no = row[0].number;
+            window.open("<?= base_url('finance/sales_invoices/print_dn/') ?>" + window.btoa(invoice_no), '_blank', 'location=yes,height=570,width=1000,scrollbars=yes,status=yes');
+        } else {
+            toastr.warning("Please select one data in the table first!", "Information");
+        }
+    }
+
+    function print_commercial() {
+        var row = $('#dg').datagrid('getSelections');
+        console.log(row);
+        if (row.length == 1) {
+            var invoice_no = row[0].number;
+            window.open("<?= base_url('finance/sales_invoices/print_commercial/') ?>" + window.btoa(invoice_no), '_blank', 'location=yes,height=570,width=1000,scrollbars=yes,status=yes');
+        } else {
+            toastr.warning("Please select one data in the table first!", "Information");
+        }
+    }
+
+    function print_commercial_sum() {
+        var row = $('#dg').datagrid('getSelections');
+        console.log(row);
+        if (row.length == 1) {
+            var invoice_no = row[0].number;
+            window.open("<?= base_url('finance/sales_invoices/print_commercial_sum/') ?>" + window.btoa(invoice_no), '_blank', 'location=yes,height=570,width=1000,scrollbars=yes,status=yes');
+        } else {
+            toastr.warning("Please select one data in the table first!", "Information");
+        }
+    }
+
+    function excel_commercial_sum() {
+        var row = $('#dg').datagrid('getSelections');
+        console.log(row);
+        if (row.length == 1) {
+            var invoice_no = row[0].number;
+            window.open("<?= base_url('finance/sales_invoices/excel_commercial_sum/') ?>" + window.btoa(invoice_no) + "/" + "excel", '_blank', 'location=yes,height=570,width=1000,scrollbars=yes,status=yes');
+        } else {
+            toastr.warning("Please select one data in the table first!", "Information");
+        }
+    }
+
+    function exportCsv() {
+        var rows = $('#dg').datagrid('getSelections');
+        if (rows.length > 0) {
+            // Extract the selected IDs and join them into a comma-separated string
+            var numbers = rows.map(function(row) {
+                return row.number;
+            }).join(',');
+
+            // Send the selected IDs to the exportCsv function
+            window.open('<?= base_url('finance/sales_invoices/export_ecoretax/') ?>' + window.btoa(numbers));
+        } else {
+            toastr.warning("Please select one or more data in the table first!", "Information");
+        }
+    }
+
+    function exportAccurate() {
+        var rows = $('#dg').datagrid('getSelections');
+        if (rows.length > 0) {
+            // Extract the selected IDs and join them into a comma-separated string
+            var ids = rows.map(function(row) {
+                return row.id;
+            }).join(',');
+
+            // Send the selected IDs to the exportAccurate function
+            window.open('<?= base_url('finance/sales_invoices/exportAccurate/') ?>' + window.btoa(ids));
+        } else {
+            toastr.warning("Please select one or more data in the table first!", "Information");
+        }
+    }
+
 </script>

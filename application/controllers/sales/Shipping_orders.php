@@ -33,11 +33,16 @@ class Shipping_orders extends CI_Controller
         if ($this->input->get()) {
             $delivery_order_no = $this->input->get('delivery_order_no');
 
-            $this->db->select('a.delivery_order_no, a.delivery_order_date, a.uom, a.sales_order_no, a.trans_type, a.remarks, b.number as item_fg_number, b.name as item_fg_name, c.name as customer_name, SUM(a.qty_del) as delivery, a.created_by, a.created_date');
+            $this->db->select('a.customer_order_no, a.delivery_order_no, a.delivery_order_date, a.uom, a.sales_order_no, a.trans_type, a.remarks, b.number as item_fg_number, b.name as item_fg_name, c.name as customer_name, a.qty_del as delivery, a.created_by, a.created_date, e.shipping');
             $this->db->from('delivery_orders a');
             $this->db->join('item_fg b', 'a.item_fg_id = b.id');
             $this->db->join('customers c', 'a.customer_id = c.id');
-            //$this->db->join("(SELECT delivery_order_no, c.item_id, SUM(a.qty) as shipping FROM shipping_orders a JOIN scan_item_receipts_fg b on a.checksheet_label = b.checksheet_label JOIN sales_orders c on a.so_number = c.number and b.so_number = c.number WHERE a.delivery_order_no = '$delivery_order_no' GROUP BY a.delivery_order_no, c.item_id) e", 'a.number = e.delivery_order_no and a.item_id = e.item_id', 'left');
+            $this->db->join("(SELECT delivery_order_no, b.item_fg_id, COALESCE(SUM(a.qty),0) as shipping 
+            FROM shipping_orders a 
+            JOIN scan_item_receipts_fg b on a.checksheet_label = b.checksheet_label 
+            JOIN sales_orders c on a.sales_order_no = c.sales_order_no 
+            WHERE a.delivery_order_no = '$delivery_order_no' 
+            GROUP BY a.delivery_order_no, c.item_fg_id) e", 'a.delivery_order_no = e.delivery_order_no and a.item_fg_id = e.item_fg_id', 'left');
             $this->db->where('a.delivery_order_no', $delivery_order_no);
             $this->db->group_by('b.number');
 
@@ -65,7 +70,7 @@ class Shipping_orders extends CI_Controller
             // $this->db->where('a.status', '0');
             // $this->db->group_by('a.checksheet_label');
 
-            $this->db->select("qty, so_number, workorder, '0' as delivery");
+            $this->db->select("qty, wo_no, '0' as delivery");
             $this->db->from('scan_item_receipts_fg');
             $this->db->where('checksheet_label', $checksheet_label);
             $this->db->where('status', '0');
@@ -85,20 +90,23 @@ class Shipping_orders extends CI_Controller
         if ($this->input->post()) {
             if ($this->form_validation->run() == TRUE) {
                 $post   = $this->input->post();
+                // var_dump($post);
                 $shipping_orders = $this->crud->read("shipping_orders", [], ["delivery_order_no" => $post['delivery_order_no'], "checksheet_label" => $post['checksheet_label']]);
 
                 $this->db->select("a.*");
                 $this->db->from('scan_item_receipts_fg a');
-                $this->db->join('sales_orders b', 'a.so_number = b.number');
-                $this->db->join('delivery_orders c', 'b.item_id = c.item_id and c.customer_id = b.customer_id');
+                $this->db->join('wip_receipts d', 'a.checksheet_number = d.checksheet_number','left');
+                $this->db->join('sales_orders b', 'd.item_fg_id = b.item_fg_id','left');
+                $this->db->join('delivery_orders c', 'b.item_fg_id = c.item_fg_id and c.customer_id = b.customer_id','left');//ok
                 $this->db->where('a.checksheet_label', $post['checksheet_label']);
-                $this->db->where('c.number', $post['delivery_order_no']);
+                // $this->db->where('c.delivery_order_no', $post['delivery_order_no']);
                 $this->db->where('a.status', '0');
                 $this->db->group_by('a.checksheet_label');
                 $label_items = $this->db->get()->result_array();
 
                 if ($label_items) {
                     if (!$shipping_orders) {
+
                         $send = $this->crud->create('shipping_orders', $post);
                         $update = $this->crud->update('scan_item_receipts_fg', ["checksheet_label" => $post['checksheet_label']], ["status" => "1"]);
                         echo $send;

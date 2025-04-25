@@ -352,7 +352,7 @@
         $("#journal_date").datebox('enable');
         // $("#transaction_from").datebox('enable');
         // $("#transaction_to").datebox('enable');
-        $("#modul").datebox('enable');
+        $("#modul").combobox('enable');
         $("#journal_type").datebox('enable');
         $("#company_name").datebox('enable');
         $("#document_no").datebox('enable');
@@ -668,16 +668,16 @@
                     for (var i = 0; i < rows.length; i++) {
                         var row = rows[i];
 
-                        $.ajax({
-                            type: "post",
-                            url: "<?= base_url('closing/locks/checkLock') ?>",
-                            data: "period=" + row.journal_date + "&menus_id=<?= $menus_id ?>",
-                            dataType: "json",
-                            success: function (lock) {
-                                if(lock.total > 0){
-                                    toastr.error("This period is not active by Accounting");
-                                    return false;
-                                }
+                        //$.ajax({
+                            // type: "post",
+                            // url: "<?= base_url('closing/locks/checkLock') ?>",
+                            // data: "period=" + row.journal_date + "&menus_id=<?= $menus_id ?>",
+                            // dataType: "json",
+                            // success: function (lock) {
+                                // if(lock.total > 0){
+                                //     toastr.error("This period is not active by Accounting");
+                                //     return false;
+                                // }
 
                                 $.ajax({
                                     method: 'post',
@@ -696,8 +696,8 @@
                                         $('#dg').datagrid('reload');
                                     }
                                 });
-                            }
-                        });
+                            // }
+                        //});
                     }
                 }
             });
@@ -801,16 +801,16 @@
                     var rows = $('#dg2').datagrid('getRows');
                     var totalrows = rows.length;
 
-                    $.ajax({
-                        type: "post",
-                        url: "<?= base_url('closing/locks/checkLock') ?>",
-                        data: "period=" + journal_date + "&menus_id=<?= $menus_id ?>",
-                        dataType: "json",
-                        success: function (lock) {
-                            if(lock.total > 0){
-                                toastr.error("This period is not active by Accounting");
-                                return false;
-                            }
+                    // $.ajax({
+                        // type: "post",
+                        // url: "<?= base_url('closing/locks/checkLock') ?>",
+                        // data: "period=" + journal_date + "&menus_id=<?= $menus_id ?>",
+                        // dataType: "json",
+                        // success: function (lock) {
+                            // if(lock.total > 0){
+                            //     toastr.error("This period is not active by Accounting");
+                            //     return false;
+                            // }
 
                             if (rows.length > 0) {
                                 if(local_debit == local_credit){
@@ -904,8 +904,8 @@
                             } else {
                                 toastr.info("Please Checklist Posting");
                             }
-                        }
-                    });
+                        // }
+                    // });
                 }
             }]
         });

@@ -35,10 +35,12 @@
     <thead>
         <tr>
             <th rowspan="2" field="ck" checkbox="true"></th>
-            <th rowspan="2" data-options="field:'status',width:80,align:'center', styler:cellStyler, formatter:cellFormatter">Status</th>
+            <th rowspan="2" data-options="field:'status2',width:80,align:'center', styler:cellStyler, formatter:cellFormatter">Status</th>
             <th rowspan="2" data-options="field:'sales_order_no',width:150,halign:'center'">Sales Order No</th>
             <th rowspan="2" data-options="field:'customer_order_no',width:150,halign:'center'">Customer Order No</th>
+            <th rowspan="2" data-options="field:'division',width:80,halign:'center'">Division</th>
             <th rowspan="2" data-options="field:'customer_name',width:200,halign:'center'">Customer Name</th>
+            <th rowspan="2" data-options="field:'address_plant',width:200,halign:'center'">Plant</th>
             <th rowspan="2" data-options="field:'sales_order_date',width:150,halign:'center'">Sales Order Date</th>
             <th rowspan="2" data-options="field:'delivery_date',width:150,halign:'center'">Delivery Date</th>
             <th rowspan="2" data-options="field:'currency',width:80,align:'center'">Currency</th>
@@ -64,9 +66,9 @@
 <div id="toolbar" style="height: 200px; padding: 10px;">
     <!-- <div style="width: 100%; display: grid; grid-template-columns: auto auto auto; grid-gap: 5px; display: flex;"> -->
     <div style="width: 100%;">
-        <fieldset style="width: 80%; border:2px solid #d0d0d0; margin-bottom: 5px; margin-top: 5px; border-radius:4px;">
+        <fieldset style="width: 100%; border:2px solid #d0d0d0; margin-bottom: 5px; margin-top: 5px; border-radius:4px;">
             <legend><b>Form Filter Data</b></legend>
-            <div style="width: 50%; float: left;">
+            <div style="width: 35%; float: left;">
                 <div class="fitem">
                     <span style="width:35%; display:inline-block;">Sales Order Date</span>
                     <input style="width:30%;" id="filter_from" value="<?= date("Y-m-01") ?>" data-options="formatter:myformatter,parser:myparser,editable:false" class="easyui-datebox">
@@ -81,7 +83,7 @@
                     <a href="javascript:;" class="easyui-linkbutton" onclick="filter()"><i class="fa fa-search"></i> Filter Data</a>
                 </div>
             </div>
-            <div style="width: 50%; float: left;">
+            <div style="width: 35%; float: left;">
                 <div class="fitem">
                     <span style="width:35%; display:inline-block;">Sales Order No</span>
                     <input style="width:60%;" id="filter_sales_order_no" class="easyui-combobox">
@@ -97,6 +99,12 @@
                         <option value="0">OPEN</option>
                         <option value="1">CLOSE</option>
                     </select>
+                </div>
+            </div>
+            <div style="width: 30%; float: left;">
+                <div class="fitem">
+                    <span style="width:35%; display:inline-block;">Division</span>
+                    <input style="width:60%;" id="filter_division" class="easyui-combobox">
                 </div>
             </div>
         </fieldset>
@@ -140,12 +148,20 @@
                     <span style="width:35%; display:inline-block;">Delivery Date</span>
                     <input style="width:40%;" name="delivery_date" id="delivery_date" required data-options="formatter:myformatter,parser:myparser,editable:false" class="easyui-datebox">
                 </div>
+                <div class="fitem">
+                    <span style="width:35%; display:inline-block;">Plant</span>
+                    <input style="width:60%;" name="plant" id="plant" required="" class="easyui-combogrid">
+                </div>
             </div>
             
             <div style="width: 50%; float: left;">
                 <div class="fitem">
-                    <span style="width:35%; display:inline-block;">Plant</span>
-                    <input style="width:60%;" name="plant" id="plant" required="" class="easyui-combogrid">
+                    <span style="width:35%; display:inline-block;">Type</span>
+                    <select style="width:40%;" id="type_so" name="type_so" required panelHeight="auto" class="easyui-combobox">
+                        <option value="">Choose Type</option>
+                        <option value="FG">FG</option>
+                        <option value="REPAIR">REPAIR</option>
+                    </select>
                 </div>
                 <div class="fitem">
                     <span style="width:35%; display:inline-block;">Department</span>
@@ -163,9 +179,9 @@
                     <span style="width:35%; display:inline-block;">Attention To</span>
                     <input style="width:60%;" name="attention_to" id="attention_to" readonly class="easyui-textbox">
                 </div>
-                <div class="fitem" hidden>
+                <div class="fitem">
                     <span style="width:35%; display:inline-block;">Taxes</span>
-                    <input style="width:60%;" name="taxes" id="taxes" disabled class="easyui-numberbox">
+                    <input style="width:60%;" name="taxes" id="taxes" class="easyui-numberbox">
                 </div>
                 <div class="fitem">
                     <span style="width:35%; display:inline-block;">Remarks</span>
@@ -189,20 +205,24 @@
                 <div style="width: 100%; float: left;">
                     <div class="fitem">
                         <b style="width:35%; display:inline-block;">SUB TOTAL</b>
-                        <input style="width:60%; text-align:right;" id="total_sub" name="total_sub" readonly class="easyui-numberbox" data-options="groupSeparator:','">
+                        <input style="width:60%; text-align:right;" id="total_sub" name="total_sub" readonly class="easyui-numberbox" data-options="precision:2,groupSeparator:','">
                     </div>
                     <div class="fitem">
-                        <b style="width:35%; display:inline-block;">TAX (11%)</b>
-                        <input style="width:60%; text-align:right;" id="total_tax" name="total_tax" readonly class="easyui-numberbox" data-options="groupSeparator:','">
+                        <b style="width:35%; display:inline-block;">DPP</b>
+                        <input style="width:60%; text-align:right;" id="total_dpp" name="total_dpp" readonly class="easyui-numberbox" data-options="precision:2,groupSeparator:','">
+                    </div>
+                    <div class="fitem">
+                        <b style="width:35%; display:inline-block;">TAX (12%)</b>
+                        <input style="width:60%; text-align:right;" id="total_tax" name="total_tax" readonly class="easyui-numberbox" data-options="precision:2,groupSeparator:','">
                     </div>
                     <div class="fitem">
                         <b style="width:20%; display:inline-block;">PPH</b>
                         <input style="width:15%;" id="pph" name="pph" class="easyui-numberbox">
-                        <input style="width:60%; text-align:right;" id="total_pph" name="total_pph" readonly class="easyui-numberbox" data-options="groupSeparator:','">
+                        <input style="width:60%; text-align:right;" id="total_pph" name="total_pph" readonly class="easyui-numberbox" data-options="precision:2,groupSeparator:','">
                     </div>
                     <div class="fitem">
                         <b style="width:35%; display:inline-block;">GRAND TOTAL</b>
-                        <input style="width:60%; text-align:right;" id="total_grand" name="total_grand" readonly required class="easyui-numberbox" data-options="groupSeparator:','">
+                        <input style="width:60%; text-align:right;" id="total_grand" name="total_grand" readonly required class="easyui-numberbox" data-options="precision:2,groupSeparator:','">
                     </div>
                 </div>
             </fieldset>
@@ -234,8 +254,12 @@
 <iframe id="printout" src="<?= base_url('sales/sales_orders/print') ?>" style="width: 100%;" hidden></iframe>
 
 <script>
+
+    var isUpdate = false;
+
     //ADD DATA
     function add() {
+        isUpdate = false;
         $('#dlg_insert').dialog('open');
         $('#dg2').datagrid('loadData', []);
         url_save = '<?= base_url('sales/sales_orders/create') ?>';
@@ -245,7 +269,102 @@
         $("#sales_order_no").textbox('enable');
         $("#sales_order_date").datebox('enable');
         $("#customer_address_id").textbox('enable');
+        $("#customer_order_no").textbox('enable');
         $("#pph").numberbox('setValue', 0);
+        $("#division").combobox('enable');
+        //$("#type_so").combobox('setValue', 'FG');
+
+        $('#customer_id').combobox({
+            url: '<?= base_url('master/customers/reads'); ?>',
+            valueField: 'id',
+            textField: 'name',
+            fitColumns: true,
+            prompt: "Choose Customer",
+            icons: [{
+                iconCls: 'icon-clear',
+                handler: function(e) {
+                    $(e.data.target).combobox('clear').combobox('textbox').focus();
+                }
+            }],
+            onSelect: function(customer) {
+                var sales_order_date = $("#sales_order_date").datebox('getValue');
+                var customer_address_id = $("#customer_address_id").textbox('getValue');
+                var division = $("#division").combobox('getValue');
+                var type_so = $("#type_so").combobox('getValue');
+                // $("#taxes").numberbox('setValue', customer.taxes);
+
+                if (sales_order_date) {
+                    number(customer.id, sales_order_date);
+                }
+
+                addTable(customer.id, customer_address_id, division, type_so);
+
+                    $('#division').combobox({
+                    url: '<?= base_url('master/divisions/reads'); ?>',
+                    valueField: 'number',
+                    textField: 'name',
+                    panelHeight: 'panelHeight',
+                    prompt: 'Choose Division',
+                    onSelect: function(division) {
+                        var customer_address_id = $("#customer_address_id").textbox('getValue');
+                        var customer_id = $("#customer_id").textbox('getValue');
+                        var type_so = $("#type_so").combobox('getValue');
+
+                        addTable(customer_id, customer_address_id, division.number, type_so);
+
+                        $('#plant').combogrid({
+                            url: '<?= base_url('sales/sales_orders/readAddress/'); ?>' + customer.id + "/" + division.number,
+                            panelWidth: 400,
+                            idField: 'plant',
+                            textField: 'plant',
+                            mode: 'remote',
+                            fitColumns: true,
+                            prompt: "Choose Plant Name",
+                            icons: [{
+                                iconCls: 'icon-clear',
+                                handler: function(e) {
+                                    $(e.data.target).combogrid('clear').combogrid('textbox').focus();
+                                }
+                            }],
+                            columns: [[
+                                {
+                                    field: 'plant',
+                                    title: 'Plant Name',
+                                    width: 200
+                                },
+                                {
+                                    field: 'department',
+                                    title: 'Department Name',
+                                    width: 200
+                                }
+                            ]],
+                            onSelect: function(index, row) {
+                                $("#attention_to").textbox('setValue', row.contact_person);
+                                $("#customer_address_id").textbox('setValue', row.id);
+                                $("#customer_address_name").textbox('setValue', row.address);
+                                $("#department").textbox('setValue', row.department);
+                                $("#taxes").numberbox('setValue', row.taxes_plant);
+
+                                var division = $("#division").combobox('getValue');
+                                var type_so = $("#type_so").combobox('getValue');
+
+                                addTable(customer.id, row.id, division, type_so);
+                                $('#type_so').combobox({
+                                    onSelect: function(type_so) {
+                                        var customer_address_id = $("#customer_address_id").textbox('getValue');
+                                        var customer_id = $("#customer_id").textbox('getValue');
+                                        var division = $("#division").combobox('getValue');
+
+                                        addTable(customer_id, customer_address_id, division, type_so.value);
+
+                                    }
+                                });
+                            }
+                        });
+                    }
+                });
+            }
+        });
 
         $("#sales_order_date").datebox({
             onChange: function(sales_order_date) {
@@ -255,56 +374,40 @@
                     $("#sales_order_date").datebox('clear');
                 } else {
                     number(customer_id, sales_order_date);
-                    addTable(customer_id);
                 }
             }
         });
 
-        $('#customer_id').combobox({
-            url: '<?= base_url('master/customers/reads/'); ?>',
-            valueField: 'id',
-            textField: 'name',
-            prompt: 'Choose Customer Name',
-            onSelect: function(customer) {
-                var sales_order_date = $("#sales_order_date").datebox('getValue');
-                $("#taxes").numberbox('setValue', customer.taxes);
+        $('#customer_order_no').textbox({
+            onChange: function() {
 
-                if (sales_order_date != "") {
-                    number(customer.id, sales_order_date);
+                if (isUpdate) {
+                    // Jangan lakukan validasi jika sedang dalam mode update
+                    return;
                 }
+                
+                var customer_order_no = $("#customer_order_no").textbox('getValue');
 
-                $('#plant').combogrid({
-                    url: '<?= base_url('master/customers/readAddress/'); ?>' + customer.id,
-                    panelWidth: 400,
-                    idField: 'plant',
-                    textField: 'plant',
-                    mode: 'remote',
-                    fitColumns: true,
-                    prompt: "Choose Plant Name ",
-                    icons: [{
-                        iconCls: 'icon-clear',
-                        handler: function(e) {
-                            $(e.data.target).combogrid('clear').combogrid('textbox').focus();
+                if (customer_order_no !== "") {
+                    $.ajax({
+                        type: "GET",
+                        url: '<?= base_url('sales/sales_orders/check_customer_order_no') ?>', // URL menuju controller untuk validasi
+                        data: {
+                            customer_order_no: window.btoa(customer_order_no)
+                        },
+                        dataType: "json",
+                        success: function(response) {
+                            if (response.exists) {
+                                toastr.error('Customer Order No already exists. Please use a different number.');
+                                $('#customer_order_no').textbox('clear');
+                                $('#customer_order_no').textbox('textbox').focus();
+                            }
+                        },
+                        error: function(xhr, status, error) {
+                            toastr.error('Error occurred while checking Customer Order No.');
                         }
-                    }],
-                    columns: [
-                        [{
-                            field: 'plant',
-                            title: 'Plant Name',
-                            width: 200
-                        }, {
-                            field: 'department',
-                            title: 'Department Name',
-                            width: 200
-                        }]
-                    ],
-                    onSelect: function(val, row) {
-                        $("#attention_to").textbox('setValue', row.contact_person);
-                        $("#customer_address_id").textbox('setValue', row.id);
-                        $("#customer_address_name").textbox('setValue', row.address);
-                        $("#department").textbox('setValue', row.department);
-                    }
-                });
+                    });
+                }
             }
         });
     }
@@ -319,6 +422,7 @@
             }
         });
     }
+
 
     function calculate() {
         var rows = $('#dg2').datagrid('getRows');
@@ -336,7 +440,10 @@
 
             $("#total_sub").numberbox('setValue', total_sub);
 
-            var total_tax = parseFloat(total_sub * (taxes / 100));
+            var total_dpp = parseFloat(total_sub * 11/12);
+            $("#total_dpp").numberbox('setValue', total_dpp);
+
+            var total_tax = parseFloat(total_dpp * (taxes / 100));
             $("#total_tax").numberbox('setValue', total_tax);
 
             var total_pph = (((parseFloat(total_sub) + parseInt(total_tax)) * parseInt(pph)) / 100);
@@ -349,7 +456,7 @@
         }
     }
 
-    function addTable(customer_id, link = "") {
+    function addTable(customer_id="",customer_address_id ="", division="", type_so="", link = "") {
         $('#dg2').datagrid({
             url: link,
             singleSelect: true,
@@ -362,7 +469,7 @@
                     editor: {
                         type: 'combogrid',
                         options: {
-                            url: '<?= base_url('sales/sales_orders/readItemFg/'); ?>' + customer_id,
+                            url: '<?= base_url('sales/sales_orders/readItemFg/'); ?>' + customer_id + "/" + customer_address_id + "/" + division  + "/" + type_so,
                             required: true,
                             panelWidth: 650,
                             idField: 'id',
@@ -386,6 +493,7 @@
                                 }]
                             ],
                             onSelect: function(value, rows) {
+                                console.log(rows);
                                 var dg = $('#dg2');
                                 var row = dg.datagrid('getSelected');
                                 var rowIndex = dg.datagrid('getRowIndex', row);
@@ -429,6 +537,18 @@
                     width: 150,
                     halign: 'center',
                     title: "Product No",
+                    editor: {
+                        type: 'textbox',
+                        options: {
+                            readonly: true
+                        }
+                    }
+                }, {
+                    field: 'id',
+                    width: 150,
+                    halign: 'center',
+                    hidden: true,
+                    title: "ID",
                     editor: {
                         type: 'textbox',
                         options: {
@@ -490,11 +610,12 @@
                                     field: 'delivery'
                                 });
 
-                                var delivery = $(ed4.target).numberbox('getValue');
-                                var price = $(ed2.target).numberbox('getValue');
+                                var qtyValue = parseFloat(qty) || 0;
+                                var priceValue = parseFloat($(ed2.target).numberbox('getValue')) || 0;
+                                var deliveryValue = parseFloat($(ed4.target).numberbox('getValue')) || 0;
 
-                                var total = (parseInt(qty) * parseInt(price));
-                                var outstanding = (parseInt(qty) - parseInt(delivery));
+                                var total = qtyValue * priceValue;
+                                var outstanding = qtyValue - deliveryValue;
 
                                 $(ed3.target).numberbox('setValue', outstanding);
                                 $(ed.target).numberbox('setValue', total);
@@ -544,7 +665,42 @@
                         type: 'numberbox',
                         options: {
                             readonly: true,
-                            precision: 2
+                            precision: 4,
+                            onChange: function(price) {
+                                var dg = $('#dg2');
+                                var row = dg.datagrid('getSelected');
+                                var rowIndex = dg.datagrid('getRowIndex', row);
+
+                                var ed = dg.datagrid('getEditor', {
+                                    index: rowIndex,
+                                    field: 'total'
+                                });
+
+                                var ed2 = dg.datagrid('getEditor', {
+                                    index: rowIndex,
+                                    field: 'qty'
+                                });
+
+                                var ed3 = dg.datagrid('getEditor', {
+                                    index: rowIndex,
+                                    field: 'outstanding'
+                                });
+
+                                var ed4 = dg.datagrid('getEditor', {
+                                    index: rowIndex,
+                                    field: 'delivery'
+                                });
+
+                                var priceValue = parseFloat(price) || 0;
+                                var qtyValue = parseFloat($(ed2.target).numberbox('getValue')) || 0;
+                                var deliveryValue = parseFloat($(ed4.target).numberbox('getValue')) || 0;
+
+                                var total = qtyValue * priceValue;
+                                var outstanding = qtyValue - deliveryValue;
+
+                                $(ed3.target).numberbox('setValue', outstanding);
+                                $(ed.target).numberbox('setValue', total);
+                            }
                         }
                     }
                 }, {
@@ -558,12 +714,30 @@
                         options: {
                             readonly: true,
                             required: true,
-                            precision: 2
+                            precision: 4
                         }
                     }
-                }, ]
+                }, {
+                    field: 'refresh_price',
+                    width: 100,
+                    halign: 'center',
+                    title: "Update Price",
+                    formatter: function(val, row) {
+                        var refresh = "refreshPrice('" + row.item_fg_id + "')";
+                        return '<a class="btn btn-primary w-100" onClick="' + refresh + '" style="pointer-events: visible; opacity:1;"><i class="fa fa-pencil-square-o"></i>Update</a>';
+                    }
+                },]
             ],
-            onClickCell: onClickCell
+            onClickCell: onClickCell,
+
+            onBeginEdit: function(index, row) {
+                var type_so = $('#type_so').combobox('getValue');
+                var ed_price = $(this).datagrid('getEditor', { index: index, field: 'price' });
+
+                if (ed_price) {
+                    $(ed_price.target).combobox('readonly', type_so !== 'REPAIR');
+                }
+            }
         });
     }
 
@@ -653,24 +827,122 @@
 
     //EDIT DATA
     function update() {
+        isUpdate = true;
         var row = $('#dg').treegrid('getSelected');
+        console.log(row);
         if (row) {
             $('#dlg_insert').dialog('open');
             $('#frm_insert').form('load', row);
             $("#customer_id").combobox('disable');
+            $("#customer_order_no").textbox('disable');
             $("#sales_order_no").textbox('disable');
             $("#sales_order_date").datebox('disable');
             $("#plant").textbox('disable');
-            
-            
+            $("#division").combobox('disable');
+            // $("#type_so").combobox('setValue', 'FG');
 
-            addTable(row.customer_id, '<?= base_url('sales/sales_orders/datatableUpdates?sales_order_no=') ?>' + window.btoa(row.sales_order_no));
+            //url_save = '<?= base_url('sales/sales_orders/update') ?>?id=' + btoa(row.id);
+            url_save = '<?= base_url('sales/sales_orders/create') ?>';
+            $.ajax({
+                type: "post",
+                url: "<?= base_url('sales/sales_orders/getTaxes/') ?>" + row.customer_id,
+                dataType: "json", 
+                success: function(result) {
+                    if(result.success) {
+                        $("#taxes").textbox('setValue', result.taxes);
+                    } else {
+                        $("#taxes").textbox('setValue', 0);
+                        toastr.warning(result.message || "Taxes not found for the selected customer.", "Information");
+                    }
+                },
+                error: function() {
+                    toastr.error("An error occurred while retrieving taxes.", "Error");
+                }
+            });
+
+            $('#type_so').combobox({
+                onSelect: function(type_so) {
+                    var customer_address_id = $("#customer_address_id").textbox('getValue');
+                    var customer_id = $("#customer_id").textbox('getValue');
+                    var division = $("#division").combobox('getValue');
+
+                    addTable(customer_id, customer_address_id, division, type_so.value);
+
+                }
+            });
+
+            setTimeout(function () {
+                $('#type_so').combobox('setValue', row.type_so);
+            }, 300);
+
+            addTable(row.customer_id,row.customer_address_id,row.division,row.type_so, '<?= base_url('sales/sales_orders/datatableUpdates?sales_order_no=') ?>' + window.btoa(row.sales_order_no));
+        
+            // Combobox untuk memilih Type SO
+            // $('#type_so').combobox({
+            //     onSelect: function(type_so) {
+            //         var customer_address_id = $("#customer_address_id").textbox('getValue');
+            //         var customer_id = $("#customer_id").textbox('getValue');
+            //         var division = $("#division").combobox('getValue');
+
+            //         // Jalankan addTable saat user memilih ulang type_so
+            //         addTable(customer_id, customer_address_id, division, type_so.value);
+            //     }
+            // });
+
+            // if (row.type_so && row.type_so !== "") {
+            //     // Set value di combobox
+            //     $('#type_so').combobox('setValue', row.type_so);
+
+            //     // Tunggu combobox selesai render datanya (safe approach)
+            //     setTimeout(function () {
+            //         addTable(row.customer_id,row.customer_address_id,row.division,row.type_so,'<?= base_url('sales/sales_orders/datatableUpdates?sales_order_no=') ?>' + window.btoa(row.sales_order_no));
+            //     }, 300); // delay bisa disesuaikan jika perlu
+            // } else {
+            //     // Jika tidak ada type_so, user harus pilih dulu, nanti `addTable()` jalan di onSelect
+            //     console.log("Type SO belum diisi, harap pilih manual.");
+            // }
         } else {
             toastr.warning("Please select one of the data in the table first!", "Information");
         }
     }
 
     //DELETE DATA
+    // function deleted() {
+    //     var rows = $('#dg').datagrid('getSelections');
+    //     if (rows.length > 0) {
+    //         $.messager.confirm('Warning', 'Are you sure you want to delete this data?', function(r) {
+    //             if (r) {
+    //                 for (var i = 0; i < rows.length; i++) {
+    //                     var row = rows[i];
+    //                     $.ajax({
+    //                         method: 'post',
+    //                         url: '<?= base_url('sales/sales_orders/delete') ?>',
+    //                         data: {
+    //                             sales_order_no: row.sales_order_no
+    //                         },
+    //                         success: function(result) {
+    //                             // var result = eval('(' + result + ')');
+    //                             if (result.success == true) {
+    //                                 toastr.success(result.message);
+    //                             } else {
+    //                                 toastr.error(result.message);
+    //                             }
+    //                         },
+    //                         error: function(jqXHR, textStatus, errorThrown) {
+    //                             toastr.error(jqXHR.statusText);
+    //                         },
+    //                         complete: function(data) {
+    //                             $('#dg').datagrid('reload');
+    //                         }
+    //                     });
+    //                 }
+    //             }
+    //         });
+    //     } else {
+    //         toastr.warning("Please select one of the data in the table first!", "Information");
+    //     }
+    // }
+
     function deleted() {
         var rows = $('#dg').datagrid('getSelections');
         if (rows.length > 0) {
@@ -685,10 +957,17 @@
                                 sales_order_no: row.sales_order_no
                             },
                             success: function(result) {
-                                var result = eval('(' + result + ')');
+                                // Pastikan respons di-parse sebagai JSON
+                                var response = JSON.parse(result);
+
+                                if (response.success) {
+                                    toastr.success(response.message, response.title);
+                                } else {
+                                    toastr.error(response.message, response.title);
+                                }
                             },
                             error: function(jqXHR, textStatus, errorThrown) {
-                                toastr.error(jqXHR.statusText);
+                                toastr.error(jqXHR.statusText, "Error");
                             },
                             complete: function(data) {
                                 $('#dg').datagrid('reload');
@@ -702,19 +981,24 @@
         }
     }
 
+
     //FILTER DATA
     function filter() {
         var filter_from = $("#filter_from").datebox('getValue');
         var filter_to = $("#filter_to").datebox('getValue');
         var filter_customer_id = $("#filter_customer_id").combobox('getValue');
+        var filter_customer_order_no = $("#filter_customer_order_no").combobox('getValue');
         var filter_sales_order_no = $("#filter_sales_order_no").combobox('getValue');
         var filter_status = $("#filter_status").combobox('getValue');
+        var filter_division = $("#filter_division").combobox('getValue');
 
         var url = "?filter_from=" + window.btoa(filter_from) +
             "&filter_to=" + window.btoa(filter_to) +
             "&filter_customer_id=" + window.btoa(filter_customer_id) +
+            "&filter_customer_order_no=" + window.btoa(filter_customer_order_no) +
             "&filter_sales_order_no=" + window.btoa(filter_sales_order_no) +
-            "&filter_status=" + window.btoa(filter_status);
+            "&filter_status=" + window.btoa(filter_status)+
+            "&filter_division=" + window.btoa(filter_division);
 
         $('#dg').datagrid({
             url: '<?= base_url('sales/sales_orders/datatables') ?>' + url,
@@ -761,14 +1045,14 @@
                             halign: 'center',
                             align: 'right',
                             width: 80,
-                            formatter: numberFormat
+                            formatter: numberFormatQty
                         }, {
                             field: 'delivery',
                             title: 'Delivery',
                             halign: 'center',
                             align: 'right',
                             width: 80,
-                            formatter: numberFormat
+                            formatter: numberFormatQty
                         }, {
                             field: 'outstanding',
                             title: 'OS SO',
@@ -782,12 +1066,31 @@
                             align: 'center',
                             width: 80
                         }, {
+                            field: 'price',
+                            title: 'Price',
+                            align: 'center',
+                            width: 80
+                        }, {
                             field: 'total',
                             title: 'Total',
                             halign: 'center',
                             align: 'right',
                             width: 100,
                             formatter: numberFormat
+                        }, {
+                            field: 'status',
+                            title: 'Status',
+                            halign: 'center',
+                            align: 'center',
+                            width: 80,
+                            formatter: cellFormatter,
+                            styler: cellStyler
+                        }, {
+                            field: 'type',
+                            title: 'Type Close',
+                            halign: 'center',
+                            align: 'right',
+                            width: 120
                         }]
                     ],
                     onResize: function() {
@@ -827,13 +1130,17 @@
         var filter_to = $("#filter_to").datebox('getValue');
         var filter_customer_id = $("#filter_customer_id").combobox('getValue');
         var filter_sales_order_no = $("#filter_sales_order_no").combobox('getValue');
+        var filter_customer_order_no = $("#filter_customer_order_no").combobox('getValue');
         var filter_status = $("#filter_status").combobox('getValue');
+        var filter_division = $("#filter_division").combobox('getValue');
 
         var url = "?filter_from=" + window.btoa(filter_from) +
             "&filter_to=" + window.btoa(filter_to) +
             "&filter_customer_id=" + window.btoa(filter_customer_id) +
+            "&filter_customer_order_no=" + window.btoa(filter_customer_order_no) +
             "&filter_sales_order_no=" + window.btoa(filter_sales_order_no) +
-            "&filter_status=" + window.btoa(filter_status);
+            "&filter_status=" + window.btoa(filter_status)+
+            "&filter_division=" + window.btoa(filter_division);
 
         window.location.assign('<?= base_url('sales/sales_orders/print/excel') ?>' + url);
     }
@@ -847,7 +1154,7 @@
         filter();
 
          //Upload Data
-         $('#dlg_upload').dialog({
+        $('#dlg_upload').dialog({
             buttons: [{
                 text: 'List Failed',
                 handler: function() {
@@ -884,13 +1191,12 @@
                                     $('#p_upload').progressbar('setValue', value);
                                     $('#p_start').html(number);
                                     $('#p_finish').html(total);
-
                                     $.ajax({
                                         type: "POST",
                                         async: true,
                                         url: "<?= base_url('sales/sales_orders/uploadCreate') ?>",
                                         data: {
-                                            "data": json[number - 1],
+                                            "data": json,  // Kirimkan seluruh data
                                             "total_sub": json.total_sub,
                                         },
                                         cache: false,
@@ -909,7 +1215,7 @@
                                                     async: true,
                                                     url: "<?= base_url('sales/sales_orders/uploadcreateFailed') ?>",
                                                     data: {
-                                                        data: json[number - 1],
+                                                       "data": json,
                                                         message: result.message
                                                     },
                                                     cache: false
@@ -926,6 +1232,92 @@
                 }
             }]
         });
+
+        // $('#dlg_upload').dialog({
+        //     buttons: [{
+        //         text: 'List Failed',
+        //         handler: function() {
+        //             window.open('<?= base_url('sales/sales_orders/uploadDownloadFailed') ?>', '_blank');
+        //         }
+        //     }, {
+        //         text: 'Upload',
+        //         iconCls: 'icon-ok',
+        //         handler: function() {
+        //             $('#frm_upload').form('submit', {
+        //                 url: '<?= base_url('sales/sales_orders/upload') ?>',
+        //                 onSubmit: function() {
+        //                     if ($(this).form('validate') == false) {
+        //                         return $(this).form('validate');
+        //                     } else {
+        //                         $.messager.progress({
+        //                             title: 'Please Wait',
+        //                             msg: 'Importing Excel to Database'
+        //                         });
+        //                     }
+        //                 },
+        //                 success: function(result) {
+        //                     $.messager.progress('close');
+        //                     // Clear File
+        //                     $.ajax({
+        //                         url: "<?= base_url('sales/sales_orders/uploadclearFailed') ?>"
+        //                     });
+        //                     var json = eval('(' + result + ')');
+
+        //                     // Memastikan json.total ada
+        //                     if (json.total) {
+        //                         requestData(json.total, json);
+        //                     } else {
+        //                         console.error('Total data tidak ditemukan dalam response.');
+        //                     }
+        //                 }
+        //             });
+        //         }
+        //     }]
+        // });
+
+        function requestData(total, json, number = 1, value = 0, success = 1, failed = 1) {
+            if (number <= total) {
+                value = Math.floor((number / total) * 100);  // Perhitungan progres dengan benar
+                $('#p_upload').progressbar('setValue', value);  // Update progress bar
+                $('#p_start').html(number);  // Update start number
+                $('#p_finish').html(total);  // Update total number
+
+                $.ajax({
+                    type: "POST",
+                    async: true,
+                    url: "<?= base_url('sales/sales_orders/uploadCreate') ?>",
+                    data: {
+                        "data": json.data,  // Kirimkan data yang sudah diproses
+                        "total_sub": json.total_sub
+                    },
+                    cache: false,
+                    dataType: "json",
+                    success: function(result) {
+                        if (result.theme == "success") {
+                            $('#p_success').html(success);
+                            var title = "<b style='color: green;'>" + result.title + "</b> | " + result.message;
+                            requestData(total, json, number + 1, value, success + 1, failed); // Recursive call untuk upload data berikutnya
+                        } else {
+                            $('#p_failed').html(failed);
+                            var title = "<b style='color: red;'>" + result.title + "</b> | " + result.message;
+                            // Simpan data yang gagal
+                            $.ajax({
+                                type: "POST",
+                                async: true,
+                                url: "<?= base_url('sales/sales_orders/uploadcreateFailed') ?>",
+                                data: {
+                                    "data": json.data,
+                                    message: result.message
+                                },
+                                cache: false
+                            });
+                            requestData(total, json, number + 1, value, success, failed + 1); // Recursive call untuk upload data berikutnya
+                        }
+                        $("#p_remarks").append(title + "<br>");
+                    }
+                });
+            }
+        }
 
         //SAVE DATA
         $('#dlg_insert').dialog({
@@ -944,11 +1336,13 @@
                     var plant = $("#plant").textbox('getValue');
                     var department = $("#department").textbox('getValue');
                     var attention_to = $("#attention_to").textbox('getValue');
+                    var type_so = $("#type_so").combobox('getValue');
                     var remarks = $("#remarks").textbox('getValue');
                     var pph = $("#pph").numberbox('getValue');
                     var taxes = $("#taxes").numberbox('getValue');
                     var total_sub = $("#total_sub").numberbox('getValue');
                     var total_tax = $("#total_tax").numberbox('getValue');
+                    var total_dpp = $("#total_dpp").numberbox('getValue');
                     var total_pph = $("#total_pph").numberbox('getValue');
                     var total_grand = $("#total_grand").numberbox('getValue');
 
@@ -961,7 +1355,7 @@
                             if (rows[i].item_fg_id) {
                                 $.ajax({
                                     type: "post",
-                                    url: '<?= base_url('sales/sales_orders/create') ?>',
+                                    url: url_save,
                                     data: {
                                         customer_id: customer_id,
                                         customer_order_no: customer_order_no,
@@ -973,15 +1367,18 @@
                                         plant: plant,
                                         department: department,
                                         attention_to: attention_to,
+                                        type_so: type_so,
                                         remarks: remarks,
                                         attachment: attachment,
                                         total_sub: total_sub,
                                         total_tax: total_tax,
+                                        total_dpp: total_dpp,
                                         pph: pph,
                                         taxes: taxes,
                                         total_pph: total_pph,
                                         total_grand: total_grand,
                                         item_fg_id: rows[i].item_fg_id,
+                                        id: rows[i].id,
                                         uom: rows[i].uom,
                                         qty: rows[i].qty,
                                         delivery: rows[i].delivery,
@@ -992,18 +1389,24 @@
                                     },
                                     dataType: "json",
                                     success: function(result) {
-                                        if (i == (totalrows - 1)) {
-                                            Swal.fire({
-                                                title: result.message,
-                                                icon: result.theme,
-                                                confirmButtonText: 'Ok',
-                                                allowOutsideClick: false,
-                                            }).then((result) => {
-                                                if (result.isConfirmed) {
-                                                    window.location.reload();
-                                                }
-                                            });
+                                        if (result.theme === "error") {
+                                            toastr.warning(result.message, "Error");
+                                        }else{
+                                            if (i == (totalrows - 1)) {
+                                                Swal.fire({
+                                                    title: result.message,
+                                                    icon: result.theme,
+                                                    confirmButtonText: 'Ok',
+                                                    allowOutsideClick: false,
+                                                }).then((result) => {
+                                                    if (result.isConfirmed) {
+                                                        window.location.reload();
+                                                    }
+                                                });
+                                            }   
                                         }
+
+                                        
                                     }
                                 });
                             }
@@ -1017,6 +1420,7 @@
                 }
             }]
         });
+
     });
 
     $('#filter_customer_id').combobox({
@@ -1059,7 +1463,33 @@
         }
     });
 
-    $('#division').combobox({
+    $('#filter_sales_order_no').combobox({
+        url: '<?= base_url('sales/sales_orders/readSalesOrders/'); ?>',
+        valueField: 'sales_order_no',
+        textField: 'sales_order_no',
+        prompt: 'Choose All',
+        icons: [{
+            iconCls: 'icon-clear',
+            handler: function(e) {
+                $(e.data.target).combobox('clear').combobox('textbox').focus();
+            }
+        }],
+    });
+
+    $('#filter_customer_order_no').combobox({
+        url: '<?= base_url('sales/sales_orders/readCustomerOrders/'); ?>',
+        valueField: 'customer_order_no',
+        textField: 'customer_order_no',
+        prompt: 'Choose All',
+        icons: [{
+            iconCls: 'icon-clear',
+            handler: function(e) {
+                $(e.data.target).combobox('clear').combobox('textbox').focus();
+            }
+        }],
+    });
+
+    $('#filter_division').combobox({
         url: '<?= base_url('master/divisions/reads'); ?>',
         valueField: 'number',
         textField: 'name',
@@ -1105,9 +1535,26 @@
         }
     }
 
+    // function numberFormat(value, row) {
+    //     const formatter = new Intl.NumberFormat('id-ID', {
+    //         minimumFractionDigits: 2
+    //     });
+    //     return "<b>" + formatter.format(value) + "</b>";
+    // }
+
     function numberFormat(value, row) {
+        const currency = row.currency || 'IDR'; // Default ke 'IDR' jika tidak ada currency
+        const minimumFractionDigits = currency === 'USD' ? 4 : 2;
         const formatter = new Intl.NumberFormat('id-ID', {
-            minimumFractionDigits: 0
+            minimumFractionDigits: minimumFractionDigits,
+        });
+        return "<b>" + formatter.format(value) + "</b>";
+    }
+
+
+    function numberFormatQty(value, row) {
+        const formatter = new Intl.NumberFormat('id-ID', {
+            minimumFractionDigits: 2
         });
         return "<b>" + formatter.format(value) + "</b>";
     }
@@ -1152,4 +1599,84 @@
             });
         }
     });
+
+
+    function refreshPrice(item_fg_id) {
+        var customer_id = $("#customer_id").combobox('getValue');
+        var customer_address_id = $("#customer_address_id").textbox('getValue');
+        var division = $("#division").combobox('getValue');
+        var sales_order_no = $("#sales_order_no").textbox('getValue');
+        var customer_order_no = $("#customer_order_no").textbox('getValue');
+        var dg = $('#dg2');
+        var row = dg.datagrid('getRows').find(function(row) {
+            return row.item_fg_id === item_fg_id && row.customer_id === customer_id;
+        });
+
+        if (!row) {
+            alert('Product ID is missing or invalid.');
+            return;
+        }
+
+        $.ajax({
+            url: '<?= base_url("sales/sales_orders/checkSalesInvoice/"); ?>' + sales_order_no + '/' + btoa(customer_order_no),
+            method: 'GET',
+            dataType: 'json',
+            success: function(response) {
+                if (response.exists) {
+                    // Jika sudah ada di sales_invoices, tampilkan peringatan dan hentikan proses
+                    // alert("Cannot update the Price, Customer Order No has been processed in Sales Invoicing");
+                    toastr.error("Cannot update the Price, Customer Order No has been processed in Sales Invoicing");
+                } else {
+                    // Jika tidak ada, lanjutkan refresh harga
+                    updatePrice(item_fg_id, customer_id, customer_address_id, division,  row, dg);
+                }
+            },
+            error: function() {
+                alert('Failed to check Sales Invoice. Please try again.');
+            }
+        });
+    }
+
+    // **Fungsi untuk update harga jika pengecekan lolos**
+    function updatePrice(item_fg_id, customer_id, customer_address_id, division,  row, dg) {
+        $.ajax({
+            url: '<?= base_url("sales/sales_orders/readPrice/"); ?>' + customer_id + '/' + btoa(item_fg_id) + '/' + customer_address_id + '/' + division,
+            method: 'GET',
+            dataType: 'json',
+            success: function(data) {
+                if (data && data.length > 0) {
+                    var updatedPrice = parseFloat(data[0].price) || 0;
+
+                    var index = dg.datagrid('getRowIndex', row);
+                    dg.datagrid('updateRow', {
+                        index: index,
+                        row: {
+                            price: updatedPrice
+                        }
+                    });
+
+                    var qty = parseFloat(row.qty) || 0;
+                    var total = qty * updatedPrice;
+
+                    dg.datagrid('updateRow', {
+                        index: index,
+                        row: {
+                            total: total
+                        }
+                    });
+
+                    // alert('Price refreshed successfully!');
+                    toastr.success("Price update successfully!");
+                } else {
+                    // alert('Price not found for this item.');
+                    toastr.error("Price not found for this item.");
+
+                }
+            },
+            error: function() {
+                alert('Failed to update price. Please try again.');
+            }
+        });
+    }
+
 </script>

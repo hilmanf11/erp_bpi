@@ -63,11 +63,11 @@
                 </div>
                 <div class="fitem">
                     <span style="width:35%; display:inline-block;">Debit</span>
-                    <input style="width:60%;" name="original_debit" id="original_debit" class="easyui-textbox">
+                    <input style="width:60%;" name="original_debit" id="original_debit" class="easyui-numberbox">
                 </div>
                 <div class="fitem">
                     <span style="width:35%; display:inline-block;">Credit</span>
-                    <input style="width:60%;" name="original_kredit" id="original_kredit" class="easyui-textbox">
+                    <input style="width:60%;" name="original_kredit" id="original_kredit" class="easyui-numberbox">
                 </div>
             </fieldset>
         </div>
@@ -80,11 +80,11 @@
                 </div>
                 <div class="fitem">
                     <span style="width:35%; display:inline-block;">Debit</span>
-                    <input style="width:60%;" name="local_debit" id="local_debit" class="easyui-textbox">
+                    <input style="width:60%;" name="local_debit" id="local_debit" class="easyui-numberbox">
                 </div>
                 <div class="fitem">
                     <span style="width:35%; display:inline-block;">Credit</span>
-                    <input style="width:60%;" name="local_kredit" id="local_kredit" class="easyui-textbox">
+                    <input style="width:60%;" name="local_kredit" id="local_kredit" class="easyui-numberbox">
                 </div>
             </fieldset>
         </div>
@@ -117,6 +117,7 @@
         $('#dlg_insert').dialog('open');
         url_save = '<?= base_url('finance/account_coa/create') ?>';
         $('#frm_insert').form('clear');
+        $('#account_group_detail_id').combobox('enable');
 
         $.ajax({
             type: "post",
@@ -133,6 +134,7 @@
         if (row) {
             $('#dlg_insert').dialog('open');
             $('#frm_insert').form('load', row);
+            $('#account_group_detail_id').combobox('disable');
             url_save = '<?= base_url('finance/account_coa/update') ?>?id=' + btoa(row.id);
         } else {
             toastr.warning("Please select one of the data in the table first!", "Information");

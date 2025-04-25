@@ -61,7 +61,7 @@
 </div>
 
 <!-- Insert & Update -->
-<div id="dlg_insert" class="easyui-dialog" title="Add New" data-options="closed: true,modal:true" style="width: 1400px; height: 500px; padding:10px; top: 20px; left: 20px;">
+<div id="dlg_insert" class="easyui-dialog" title="Add New" data-options="closed: true,modal:true" style="width: 97%; height: 500px; padding:10px; top: 20px; left: 10px;">
     <form id="frm_insert" method="post" novalidate>
         <fieldset style="width:100%; border:1px solid #d0d0d0; margin-bottom: 10px; border-radius:4px; float: left;">
             <legend><b>Form Data</b></legend>
@@ -70,17 +70,19 @@
                 <input style="width:40%;" name="supplier_id" id="supplier_id" required="" class="easyui-combogrid">
             </div>
         </fieldset>
-        <table id="dg2" class="easyui-datagrid" style="width:100%;" title="Supplier Item Lists" toolbar="#toolbar2"></table>
+        <table id="dg2" class="easyui-datagrid" style="width:100%; height: 310px;" title="Supplier Item Lists" toolbar="#toolbar2"></table>
     </form>
 </div>
 
 <!-- Detail Histories -->
-<div id="dlg_history" class="easyui-dialog" title="Price Histories" data-options="closed: true,modal:true" style="width: 400px; height: 300px; top: 20px;">
+<div id="dlg_history" class="easyui-dialog" title="Price Histories" data-options="closed: true,modal:true" style="width: 600px; height: 300px; top: 20px;">
     <table id="dg_history" class="easyui-datagrid" style="width:100%;">
         <thead>
             <tr>
                 <th data-options="field:'price',width:100,halign:'center',formatter: priceformat">Price</th>
                 <th data-options="field:'valid_date',width:100,halign:'center'">Valid Date</th>
+                <th data-options="field:'created_by',width:100,halign:'center'">Created By</th>
+                <th data-options="field:'created_date',width:100,halign:'center'">Created Date</th>
             </tr>
         </thead>
     </table>
@@ -110,6 +112,13 @@
 <iframe id="printout" src="<?= base_url('master/supplier_items/print') ?>" style="width: 100%;" hidden></iframe>
 
 <script>
+
+    // $.extend($.fn.numberbox.defaults, {
+    //     decimalSeparator: ',',
+    //     groupSeparator: '.',
+    //     precision: 4 // Tetap mendukung angka dengan 4 desimal
+    // });
+    
     //ADD DATA
     function add() {
         $('#dlg_insert').dialog('open');
@@ -123,7 +132,12 @@
             url: link,
             singleSelect: true,
             columns: [
-                [{
+                [
+                // {
+                // field:"ck",
+                // checkbox : true
+                // },
+                {
                     field: 'item_rm_number',
                     width: 200,
                     halign: 'center',
@@ -167,10 +181,20 @@
                                     index: rowIndex,
                                     field: 'item_family_name'
                                 });
+                                var ed4 = dg.datagrid('getEditor', {
+                                    index: rowIndex,
+                                    field: 'uom_inventory'
+                                });
+                                var ed5 = dg.datagrid('getEditor', {
+                                    index: rowIndex,
+                                    field: 'weight_kg'
+                                });
 
                                 $(ed.target).textbox('setValue', rows.number);
                                 $(ed2.target).textbox('setValue', rows.id);
                                 $(ed3.target).textbox('setValue', rows.item_family_name);
+                                $(ed4.target).textbox('setValue', rows.uom);
+                                $(ed5.target).numberbox('setValue', rows.weight_kg);
                             }
                         }
                     }
@@ -212,15 +236,18 @@
                     }
                 }, {
                     field: 'mpq',
-                    width: 100,
+                    width: 80,
                     align: 'center',
                     title: "MPQ",
                     editor: {
-                        type: 'numberbox'
+                        type: 'numberbox',
+                        options: {
+                            precision: 2
+                        }
                     }
                 }, {
                     field: 'moq',
-                    width: 100,
+                    width: 80,
                     align: 'center',
                     title: "MOQ",
                     editor: {
@@ -228,17 +255,17 @@
                     }
                 }, {
                     field: 'share_order',
-                    width: 100,
+                    width: 80,
                     align: 'center',
-                    title: "% Share Order",
+                    title: "% Share <br>Order",
                     editor: {
                         type: 'numberbox'
                     }
                 }, {
                     field: 'leadtime',
-                    width: 120,
+                    width: 80,
                     align: 'center',
-                    title: "Lead Time (Days)",
+                    title: "Lead Time <br>(Days)",
                     editor: {
                         type: 'numberbox'
                     }
@@ -250,7 +277,7 @@
                     editor: {
                         type: 'numberbox',
                         options: {
-                            precision: 2
+                            precision: 4
                         }
                     }
                 }, {
@@ -273,6 +300,44 @@
                     title: "Safety Stock %",
                     editor: {
                         type: 'numberbox'
+                    }
+                }, {
+                    field: 'uom_default',
+                    width: 100,
+                    align: 'center',
+                    title: "UOM <br>Default",
+                    editor: {
+                        type: 'combobox',
+                        options: {
+                            url: '<?= base_url('master/uom/reads') ?>',
+                            valueField: 'name',
+                            textField: 'name',
+                            prompt: 'Choose UOM',
+                            editable:false,
+                            required: true,
+                        }
+                    }
+                }, {
+                    field: 'uom_inventory',
+                    width: 100,
+                    align: 'center',
+                    title: "UOM <br>Inventory",
+                    editor: {
+                        type: 'textbox',
+                        options: {
+                            readonly: true
+                        }
+                    }
+                }, {
+                    field: 'weight_kg',
+                    width: 100,
+                    align: 'center',
+                    title: "Convertion",
+                    editor: {
+                        type: 'numberbox',
+                        options: {
+                            precision: 2,
+                        }
                     }
                 }, {
                     field: 'calculate',
@@ -333,16 +398,23 @@
         var supplier_id = $("#supplier_id").combogrid('getValue');
         if (supplier_id != "") {
             if (endEditing()) {
-                $('#dg2').datagrid('appendRow', {
-                    qty: '0'
+                // Mendapatkan indeks baris pertama
+                var firstRowIndex = $('#dg2').datagrid('getRows').length > 0 ? 0 : undefined;
+                // Menyisipkan baris baru di indeks baris pertama
+                $('#dg2').datagrid('insertRow', {
+                    index: firstRowIndex,
+                    row: {
+                        qty: '0'
+                    }
                 });
-                editIndex = $('#dg2').datagrid('getRows').length - 1;
-                $('#dg2').datagrid('selectRow', editIndex).datagrid('beginEdit', editIndex);
+                // Memulai edit pada baris baru
+                $('#dg2').datagrid('selectRow', firstRowIndex).datagrid('beginEdit', firstRowIndex);
             }
         } else {
             toastr.error("Please Choose Supplier first");
         }
     }
+
 
     function removeit() {
         if (editIndex == undefined) {
@@ -415,6 +487,7 @@
                             },
                             success: function(result) {
                                 var result = eval('(' + result + ')');
+                                $('#dg').datagrid('reload');
                             },
                             error: function(jqXHR, textStatus, errorThrown) {
                                 toastr.error(jqXHR.statusText);
@@ -501,6 +574,7 @@
                     url: '<?= base_url('master/supplier_items/datatableDetails?number=') ?>' + window.btoa(row.supplier_number) + "&filter_item_rm_id=" + window.btoa(filter_item_rm_id),
                     singleSelect: true,
                     rownumbers: true,
+                    width: '1600px',
                     columns: [
                         [{
                             field: 'item_rm_id',
@@ -576,6 +650,21 @@
                             width: 100,
                             halign: 'center',
                         }, {
+                            field: 'uom_default',
+                            title: 'Uom <br>Default',
+                            width: 100,
+                            halign: 'center',
+                        }, {
+                            field: 'uom_inventory',
+                            title: 'Uom <br>Inventory',
+                            width: 100,
+                            halign: 'center',
+                        }, {
+                            field: 'weight_kg',
+                            title: 'Convertion %',
+                            width: 100,
+                            halign: 'center',
+                        }, {
                             field: 'calculate',
                             title: 'Calculate MPQ',
                             width: 100,
@@ -603,6 +692,7 @@
                 handler: function() {
                     var supplier_id = $("#supplier_id").combogrid('getValue');
 
+                    $("#dg2").datagrid('acceptChanges');
                     var rows = $('#dg2').datagrid('getRows');
                     var totalrows = rows.length;
                     endEditing();
@@ -624,6 +714,9 @@
                                     price: rows[i].price,
                                     valid_date: rows[i].valid_date,
                                     safety_stock: rows[i].safety_stock,
+                                    uom_default: rows[i].uom_default,
+                                    uom_inventory: rows[i].uom_inventory,
+                                    weight_kg: rows[i].weight_kg,
                                     calculate: rows[i].calculate
                                 },
                                 dataType: "json",
@@ -820,7 +913,7 @@
 
     function priceformat(value, row) {
         const formatter = new Intl.NumberFormat('id-ID', {
-            minimumFractionDigits: 2
+            minimumFractionDigits: 4
         });
         return "<b>" + formatter.format(value) + "</b>";
     }

@@ -61,6 +61,7 @@ class Customer_items extends CI_Controller
             $this->db->like('a.customer_id', $filter_customer_id);
             $this->db->like('a.item_fg_id', $filter_item_fg_id);
             $this->db->group_by('b.name');
+            $this->db->order_by('b.name','ASC');
             $this->db->order_by('b.id', 'ASC');
             //Total Data
             $totalRows = $this->db->count_all_results('', false);
@@ -89,6 +90,7 @@ class Customer_items extends CI_Controller
             $this->db->where('b.number', $number);
             $this->db->like('a.customer_id', $filter_customer_id);
             $this->db->group_by('a.id');
+            $this->db->order_by('c.number', 'ASC');
             $this->db->order_by('a.id', 'ASC');
             $records = $this->db->get()->result_array();
 
@@ -219,6 +221,33 @@ class Customer_items extends CI_Controller
     }
 
     //UPLOAD CREATE DATA
+    // public function uploadcreate()
+    // {
+    //     if ($this->input->post()) {
+    //         $data = $this->input->post('data');
+
+    //         //Cek Process Number          //table       //field        //field excel
+    //         $customer_items = $this->crud->read('customer_items', [], ["customer_id" => $data['customer_id'], "item_fg_id" => $data['item_fg_id']]);
+
+    //         if (!empty($customer_items->customer_id)) {
+    //             echo json_encode(array("title" => "Duplicated", "message" => " Customer " . $data['customer_id'] . " is Duplicate Data", "theme" => "error"));
+    //         } elseif (!empty($customer_items->item_fg_id)) {
+    //             echo json_encode(array("title" => "Duplicated", "message" => " Product No. " . $data['item_fg_id'] . " is Duplicate Data", "theme" => "error"));
+    //         } else {
+    //             $dataFinal = array(
+    //                 //field
+    //                 "customer_id" => $data['customer_id'],
+    //                 "item_fg_id" => $data['item_fg_id'],
+    //                 "price" => $data['price'],
+    //                 "valid_date" => $data['valid_date'],
+    //                 "remark" => $data['remark'],
+    //             );
+    //             $send   = $this->crud->create('customer_items', $dataFinal);
+    //             echo $send;
+    //         }
+    //     }
+    // }
+
     public function uploadcreate()
     {
         if ($this->input->post()) {
@@ -226,11 +255,27 @@ class Customer_items extends CI_Controller
 
             //Cek Process Number          //table       //field        //field excel
             $customer_items = $this->crud->read('customer_items', [], ["customer_id" => $data['customer_id'], "item_fg_id" => $data['item_fg_id']]);
+            $customers = $this->crud->read('customers', [], ["id" => $data['customer_id']]);
+            $item_fg_id = $this->crud->read('item_fg', [], ["id" => $data['item_fg_id']]);
 
-            if (!empty($customer_items->customer_id)) {
-                echo json_encode(array("title" => "Duplicated", "message" => " Customer " . $data['customer_id'] . " is Duplicate Data", "theme" => "error"));
-            } elseif (!empty($customer_items->item_fg_id)) {
-                echo json_encode(array("title" => "Duplicated", "message" => " Product No. " . $data['item_fg_id'] . " is Duplicate Data", "theme" => "error"));
+            if (empty($customers->id)) {
+                echo json_encode(array("title" => "Not Found", "message" => " Customer " . $data['customer_id'] . " is Not Found", "theme" => "error"));
+            }else if (empty($item_fg_id->id)) {
+                echo json_encode(array("title" => "Not Found", "message" => " Item id " . $data['item_fg_id'] . " is Not Found", "theme" => "error"));
+            }else if (!empty($customer_items->customer_id)) {
+                $send   = $this->db->update('customer_items',["price" => $data['price'],"valid_date" => $data['valid_date'],"remark" => $data['remark']], ["customer_id" => $data['customer_id'],"item_fg_id" => $data['item_fg_id']]);
+                
+                $dataFinal = array(
+                    //field
+                    "customer_id" => $data['customer_id'],
+                    "item_fg_id" => $data['item_fg_id'],
+                    "price" => $data['price'],
+                    "valid_date" => $data['valid_date'],
+                    "remark" => $data['remark'],
+                );
+
+                $send2 = $this->crud->createNotLog('customer_item_histories', $dataFinal);
+                echo json_encode(array("title" => "Update", "message" => " Customer " . $data['customer_id'] . " Data Updated", "theme" => "success"));
             } else {
                 $dataFinal = array(
                     //field

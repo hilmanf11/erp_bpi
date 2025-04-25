@@ -8,7 +8,7 @@
             <th rowspan="2" data-options="field:'name',width:150,halign:'center'">Name</th>
             <th rowspan="2" data-options="field:'item_category_name',width:150,halign:'center'">Category</th>
             <th rowspan="2" data-options="field:'account_number',width:100,halign:'center'">Account No</th>
-            <th rowspan="2" data-options="field:'account_name',width:100,halign:'center'">Account Name</th>
+            <th rowspan="2" data-options="field:'account_name',width:150,halign:'center'">Account Name</th>
             <th rowspan="2" data-options="field:'description',width:150,halign:'center'">Description</th>
             <th colspan="2" data-options="field:'',width:100,halign:'center'"> Created</th>
             <th colspan="2" data-options="field:'',width:100,halign:'center'"> Updated</th>
@@ -48,7 +48,7 @@
             </div>
             <div class="fitem">
                 <span style="width:35%; display:inline-block;">Account No</span>
-                <input style="width:60%;" name="account_number" id="account_number" class="easyui-textbox">
+                <input style="width:60%;" name="account_number" id="account_number" class="easyui-combogrid">
             </div>
             <div class="fitem">
                 <span style="width:35%; display:inline-block;">Account Name</span>
@@ -179,5 +179,29 @@
         valueField:'id',
         textField:'name',
         prompt: 'Choose Category',
+    });
+
+    $('#account_number').combogrid({
+        url:'<?= base_url('finance/account_coa/read/'); ?>',
+        panelWidth: 300,
+        idField: 'account_number',
+        textField: 'account_number',
+        mode: 'remote',
+        fitColumns: true,
+        prompt: "Choose Account No",
+        columns: [
+            [{
+                field: 'account_number',
+                title: 'Account Code',
+                width: 150
+            }, {
+                field: 'account_name',
+                title: 'Account Name',
+                width: 150
+            }]
+        ],
+            onSelect: function(index, row) {
+                $('#account_name').textbox('setValue', row.account_name);
+            }
     });
 </script>

@@ -17,6 +17,7 @@
             <th rowspan="2" data-options="field:'item_kind_name',width:150,halign:'center'">Kind Of Box</th>
             <th rowspan="2" data-options="field:'name',width:150,halign:'center'">Name</th>
             <th rowspan="2" data-options="field:'size',width:150,halign:'center'">Size</th>
+            <th rowspan="2" data-options="field:'volume',width:150,halign:'center'">Volume</th>
             <th rowspan="2" data-options="field:'color',width:200,halign:'center'">Color</th>
             <th rowspan="2" data-options="field:'material',width:100,halign:'center'">Material</th>
             <th colspan="2" data-options="field:'',width:100,halign:'center'"> Created</th>
@@ -53,8 +54,12 @@
                 <input style="width:60%;" name="name" id="name" required="" class="easyui-textbox">
             </div>
             <div class="fitem">
-                <span style="width:35%; display:inline-block;">size</span>
+                <span style="width:35%; display:inline-block;">Size</span>
                 <input style="width:60%;" name="size" id="size" required="" class="easyui-textbox">
+            </div>
+            <div class="fitem">
+                <span style="width:35%; display:inline-block;">Volume</span>
+                <input style="width:60%;" name="volume" id="volume" required="" class="easyui-numberbox">
             </div>
             <div class="fitem">
                 <span style="width:35%; display:inline-block;">Color</span>
@@ -152,6 +157,7 @@
             pageList: [20, 50, 100, 500, 1000],
             pageSize: 20,
         }).datagrid('enableFilter');
+
         //SAVE DATA
         $('#dlg_insert').dialog({
             buttons: [{

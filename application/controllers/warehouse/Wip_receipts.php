@@ -36,15 +36,101 @@ class Wip_receipts extends CI_Controller
         echo json_encode($send);
     }
 
+    public function readItems()
+    {
+        $post = isset($_POST['q']) ? $_POST['q'] : "";
+        $checksheet_number = explode(",", $this->input->get('checksheet_number'));
+
+        $this->db->select('a.*,b.id as item_id,b.number as item_number, b.name as item_name , c.lot_no , b.qty_box, b.box_sub, COALESCE (CEIL(a.receipt / b.qty_box), 0) as label_box, coalesce(CEIL(a.receipt / b.box_sub), 0) as label');
+        $this->db->from('checksheets a');
+        $this->db->join('item_fg b', 'a.item_fg_id = b.id');
+        $this->db->join('production_schedules c', 'a.wo_no = c.wo_no','left');
+        $this->db->where_in('a.number', $checksheet_number);
+        $this->db->like('a.number', $post);
+        $this->db->group_by('a.id');
+        $this->db->order_by('a.id', 'ASC');
+        $records = $this->db->get()->result_array();
+
+        echo json_encode($records);
+    }
+
+    public function finalChecksheet()
+    {
+        $trans_date = $this->input->get('trans_date');
+        $shift = $this->input->get('shift');
+
+        if (!$trans_date || !strtotime($trans_date)) {
+            echo json_encode([]);
+            return;
+        }
+
+        $query = "
+        SELECT 
+            a.`number`, 
+            a.`trans_date`, 
+            a.`wo_no`, 
+            b.`number` AS product_no
+        FROM 
+            checksheets a
+        LEFT JOIN 
+            production_schedules c ON a.`wo_no` = c.`wo_no`
+        JOIN 
+            item_fg b ON c.`item_fg_id` = b.`id`
+        WHERE 
+            a.`status` = '0'
+            AND a.`trans_date` = ?
+            AND a.`shift` = ?
+        ORDER BY 
+            a.`number` DESC
+    ";
+
+        $checksheet_numbers = $this->db->query($query, array($trans_date, $shift))->result();
+
+        echo json_encode($checksheet_numbers);
+    }
+
+    public function getshift()
+    {
+        $trans_date = $this->input->get('trans_date');
+
+        if (!$trans_date || !strtotime($trans_date)) {
+            echo json_encode([]);
+            return;
+        }
+
+        $query = "SELECT DISTINCT shift FROM checksheets WHERE packing_date = ? AND deleted = 0";
+        $shift = $this->db->query($query, array($trans_date))->result();
+
+        echo json_encode($shift);
+    }
+
+    public function readfinalchecksheet()
+    {
+        $records = $this->crud->query("SELECT checksheet_number 
+        FROM wip_receipts 
+        WHERE `deleted` = '0' 
+        ORDER BY `checksheet_number` desc"); // WHERE `status` = '0'
+        echo json_encode($records);
+    }
+
+    public function documentNo()
+    {
+        $records = $this->crud->query("SELECT document_no 
+        FROM wip_receipts 
+        WHERE `deleted` = '0' 
+        ORDER BY document_no desc");
+        echo json_encode($records);
+    }
+
     public function readChecksheet($filter = "")
     {
         if ($filter == "") {
             $post = isset($_POST['q']) ? $_POST['q'] : "";
             $send = $this->crud->query("SELECT a.*, c.name as customer_name, d.number as product_no, d.name as product_name, d.qty_box, d.box_sub, coalesce(CEIL(a.receipt / d.qty_box), 0) as `label_box`, coalesce(CEIL(a.receipt / d.box_sub), 0) as `label`
             FROM checksheets a 
-            JOIN production_schedules b ON a.workorder = b.workorder 
+            LEFT JOIN production_schedules b ON a.workorder = b.workorder 
             JOIN customers c ON b.customer_id = c.id 
-            JOIN item_fg d ON b.item_fg_id = d.id 
+            JOIN item_fg d ON a.item_fg_id = d.id 
             WHERE a.status = '0' and a.number like '%$post%'
             GROUP BY a.number
             order by a.number desc");
@@ -54,6 +140,52 @@ class Wip_receipts extends CI_Controller
             $send = $this->crud->reads("wip_receipts", ["checksheet_number" => $post]);
             echo json_encode($send);
         }
+    }
+
+    // public function document_no($date = "")
+    // {
+    //     $dates = date_create(base64_decode($date));
+    //     $p_month = $dates->format('m');
+    //     $p_year = $dates->format('y');
+    //     $datenow = $p_month . $p_year;
+    //     $doc_no = "-RFG-INJ-PPC-";
+
+    //     $sqlGetID   = $this->db->query("SELECT max(document_no) as kode FROM wip_receipts WHERE document_no LIKE '%$datenow%'");
+    //     $rowID      = $sqlGetID->row();
+    //     $kode       = $rowID->kode;
+
+    //     if ($kode == NULL) {
+    //         $autoID = sprintf("%04s", 1) . $doc_no . $p_month . $p_year;
+    //     } else {
+    //         $urutan = (int) substr($kode, 0, 4);
+    //         $autoID = sprintf("%04s", $urutan + 1) . $doc_no . $p_month . $p_year;
+    //     }
+
+    //     echo $autoID;
+    // }
+
+    public function document_no($date = "", $division = "")
+    {
+        $dates = date_create(base64_decode($date));
+        $p_month = $dates->format('m');
+        $p_year = $dates->format('y');
+        $datenow = $p_month . $p_year;
+        
+        $division = base64_decode($division);
+        $doc_no = "-RFG-" . $division . "-PPC-";
+
+        $sqlGetID = $this->db->query("SELECT max(document_no) as kode FROM wip_receipts WHERE document_no LIKE '%$division%' AND document_no LIKE '%$datenow%'");
+        $rowID = $sqlGetID->row();
+        $kode = $rowID->kode;
+
+        if ($kode == NULL) {
+            $autoID = sprintf("%04s", 1) . $doc_no . $p_month . $p_year;
+        } else {
+            $urutan = (int) substr($kode, 0, 4);
+            $autoID = sprintf("%04s", $urutan + 1) . $doc_no . $p_month . $p_year;
+        }
+
+        echo $autoID;
     }
 
     public function label_no($trans_date)
@@ -73,12 +205,107 @@ class Wip_receipts extends CI_Controller
         return $workOrderNo;
     }
 
+    // public function datatablesTemp()
+    // {
+    //     $checksheet_number = base64_decode($this->input->get('checksheet_number'));
+    //     $checksheet_number_ex = explode(",", $checksheet_number);
+
+    //     $this->db->select('a.*,a.number as checksheet_number, a.qty as checksheet_qty, a.receipt as qty, b.id as item_fg_id,b.number as item_number, b.name as item_name , c.lot_no');
+    //     $this->db->from('checksheets a');
+    //     $this->db->join('item_fg b', 'a.item_fg_id = b.id');
+    //     $this->db->join('production_schedules c', 'a.wo_no = c.wo_no');
+    //     $this->db->where('a.deleted', 0);
+    //     // $this->db->where('a.status', 0);
+    //     $this->db->where_in('a.number', $checksheet_number_ex);
+    //     $this->db->group_by('a.wo_no');
+    //     $this->db->group_by('a.item_fg_id');
+    //     $this->db->order_by('a.number', 'asc');
+    //     $records = $this->db->get()->result_array();
+
+    //     $id = 1;
+    //     foreach ($records as $record) {
+    //         $obj[] = array(
+    //             "no_id" => $id,
+    //             "checksheet_number" => $record['checksheet_number'],
+    //             "wo_no" => $record['wo_no'],
+    //             "qty" => $record['qty'],
+    //             "checksheet_qty" => $record['checksheet_qty'],
+    //             "item_fg_id" => $record['item_fg_id'],
+    //             "item_number" => $record['item_number'],
+    //             "item_name" => $record['item_name'],
+    //             "lot_no" => $record['lot_no'],
+    //             "packing_qty" => $record['packing_qty'],
+    //             "packing" => $record['packing']
+    //             // "label" => $record['label']
+    //         );
+
+    //         $id++;
+    //     }
+
+    //     $arr['rows'] = $obj;
+    //     die(json_encode($arr));
+    // }
+
+    public function datatablesTemp()
+    {
+        $prod_date = base64_decode($this->input->get('prod_date'));
+        $shift = $this->input->get('shift');
+        $division = $this->input->get('division');
+
+        $this->db->select('a.*,a.number as checksheet_number, a.qty as checksheet_qty, a.receipt as qty, b.id as item_fg_id, b.number as item_number, b.name as item_name, c.lot_no');
+        $this->db->from('checksheets a');
+        $this->db->join('item_fg b', 'a.item_fg_id = b.id');
+        $this->db->join('production_schedules c', 'a.wo_no = c.wo_no','left');
+        $this->db->where('a.status', 0);
+        $this->db->where('a.packing_date', $prod_date);
+        $this->db->where('a.shift', $shift);
+        $this->db->where('a.division', $division);
+        $this->db->group_by('a.number');
+        $this->db->group_by('a.wo_no');
+        $this->db->group_by('a.item_fg_id');
+        $this->db->order_by('a.number', 'asc');
+        $records = $this->db->get()->result_array();
+
+        // Inisialisasi variabel $obj sebagai array kosong
+        $obj = array();
+        
+        $id = 1;
+        foreach ($records as $record) {
+            $obj[] = array(
+                "no_id" => $id,
+                "checksheet_number" => $record['checksheet_number'],
+                "wo_no" => $record['wo_no'],
+                "division" => $record['division'],
+                "qty" => $record['qty'],
+                "checksheet_qty" => $record['checksheet_qty'],
+                "item_fg_id" => $record['item_fg_id'],
+                "item_number" => $record['item_number'],
+                "item_name" => $record['item_name'],
+                "lot_no" => $record['lot_no'],
+            );
+
+            $id++;
+            
+        }
+
+        // Jika tidak ada data, $obj tetap kosong
+        $arr['rows'] = $obj;
+        echo json_encode($arr);
+    }
+
+
     public function datatables()
     {
         if ($this->input->post()) {
             $filter_from = $this->input->get('filter_from');
             $filter_to = $this->input->get('filter_to');
             $filter_checksheet = $this->input->get('filter_checksheet');
+            $filter_item_fg_id = $this->input->get('filter_item_fg_id');
+            $filter_document_no = $this->input->get('filter_document_no');
+            $filter_division = $this->input->get('filter_division');
+            $filter_shift = $this->input->get('filter_shift');
+            $filter_status = $this->input->get('filter_status');
+            $filter_checksheet_number = $this->input->get('filter_checksheet_number');
 
             $page = $this->input->post('page');
             $rows = $this->input->post('rows');
@@ -87,19 +314,39 @@ class Wip_receipts extends CI_Controller
             $rows   = isset($rows) ? intval($rows) : 10;
             $offset = ($page - 1) * $rows;
             $result = array();
+            $arr = [];
             //Select Query
-            $this->db->select('a.*, b.workorder, d.number as product_no, d.name as product_name, d.uom');
+            $this->db->select('a.*, d.number as product_no, 
+            d.name as product_name, 
+            d.uom, 
+            g.total_status, 
+            f.total_status_open,
+            e.total_status_close');
             $this->db->from('wip_receipts a');
             $this->db->join('checksheets b', 'a.checksheet_number = b.number');
-            $this->db->join('production_schedules c', 'b.workorder = c.workorder and b.wp = c.wp');
-            $this->db->join('item_fg d', 'c.item_fg_id = d.id');
+            $this->db->join('production_schedules c', 'b.wo_no = c.wo_no','left');
+            $this->db->join('item_fg d', 'a.item_fg_id = d.id');
+            $this->db->join('(SELECT document_no, COUNT(status) as total_status_close FROM wip_receipts WHERE status = 1 GROUP BY document_no) e', 'a.document_no = e.document_no', 'left');
+            $this->db->join('(SELECT document_no, COUNT(status) as total_status_open FROM wip_receipts WHERE status = 0 GROUP BY document_no) f', 'a.document_no = f.document_no', 'left');
+            $this->db->join('(SELECT document_no, COUNT(status) as total_status FROM wip_receipts GROUP BY document_no) g', 'a.document_no = g.document_no', 'left');
             // $this->db->join('uom e', 'd.uom_id = e.id');
             $this->db->where('a.deleted', 0);
             if ($filter_from != "" or $filter_to != "") {
                 $this->db->where('a.trans_date >=', $filter_from);
                 $this->db->where('a.trans_date <=', $filter_to);
             }
-            $this->db->like('a.checksheet_number', $filter_checksheet);
+
+            if ($filter_division != "") {
+                $this->db->where('a.division', $filter_division);
+            }
+
+            // $this->db->like('a.checksheet_number', $filter_checksheet);
+            $this->db->like('a.document_no', $filter_document_no);
+            $this->db->like('a.item_fg_id', $filter_item_fg_id);
+            $this->db->like('a.shift', $filter_shift);
+            $this->db->like('a.status', $filter_status);
+            $this->db->like('a.checksheet_number', $filter_checksheet_number);
+            $this->db->group_by('a.document_no');
             $this->db->order_by('a.trans_date', 'DESC');
             $this->db->order_by('a.checksheet_number', 'DESC');
             //Total Data
@@ -109,9 +356,62 @@ class Wip_receipts extends CI_Controller
             //Get Data Array
             $records = $this->db->get()->result_array();
             //Mapping Data
+            foreach ($records as $record) {
+
+                if ($record['total_status'] == $record['total_status_open']) {
+                    $status = "0";
+                } elseif ($record['total_status'] == $record['total_status_close']) {
+                    $status = "1";
+                } elseif ($record['total_status_open'] >= 1) {
+                    $status = "0";
+                } elseif ($record['total_status_close'] >= 1) {
+                    $status = "1";
+                } else {
+                    $status = "0";
+                }
+
+                $arr[] = array(
+                    "document_no" => $record['document_no'],
+                    "division" => $record['division'],
+                    "trans_date" => $record['trans_date'],
+                    "prod_date" => $record['prod_date'],
+                    "shift" => $record['shift'],
+                    "total_status" => $record['total_status'],
+                    "total_status_close" => $record['total_status_close'],
+                    "total_status_open" => $record['total_status_open'],
+                    "status" => $status,
+                    "created_by" => $record['created_by'],
+                    "created_date" => $record['created_date'],
+                    "updated_by" => $record['updated_by'],
+                    "updated_date" => $record['updated_date']
+        
+                );
+            }
             $result['total'] = $totalRows;
-            $result = array_merge($result, ['rows' => $records]);
+            $result = array_merge($result, ['rows' => $arr]);
             echo json_encode($result);
+        }
+    }
+
+    //GET DATATABLES DETAILS
+    public function datatableDetails()
+    {
+        if ($this->input->get()) {
+            $doc_no = base64_decode($this->input->get('document_no'));
+            // $filter_item_fg_id = base64_decode($this->input->get('filter_item_fg_id'));
+
+            $this->db->select('a.*, b.wo_no, d.number as product_no, d.name as product_name, d.uom');
+            $this->db->from('wip_receipts a');
+            $this->db->join('checksheets b', 'a.checksheet_number = b.number','left');
+            $this->db->join('production_schedules c', 'b.wo_no = c.wo_no','left');
+            $this->db->join('item_fg d', 'a.item_fg_id = d.id','left');
+            $this->db->where('a.document_no', $doc_no);
+            // $this->db->like('a.item_fg_id', $filter_item_fg_id);
+            $this->db->group_by('a.id');
+            $this->db->order_by('a.id', 'ASC');
+            $records = $this->db->get()->result_array();
+
+            echo json_encode($records);
         }
     }
 
@@ -137,352 +437,26 @@ class Wip_receipts extends CI_Controller
         }
     }
 
-    public function create_label()
-    {
-        $post = $this->input->post();
-        $checksheet_number = $post['checksheet_number'];
-        $qty = $post['qty'];
-
-        //Read Label ID
-        $sqlGetID = $this->db->query("SELECT max(checksheet_label) as kode FROM wip_receipt_labels WHERE checksheet_number = '$checksheet_number'");
-        $rowID = $sqlGetID->row();
-        $label = $rowID->kode;
-        if ($label == NULL) {
-            $autoID = $checksheet_number .  sprintf("%03s", $label + 1);
-        } else {
-            $urutan = (int) substr($label, -3);
-            $autoID = $checksheet_number . sprintf("%03s", $urutan + 1);
-        }
-
-        //Simpan Label
-        $arrLabel = [
-            "checksheet_number" => $checksheet_number,
-            "checksheet_label" => $autoID,
-            "qty" => $qty
-        ];
-
-        $send = $this->crud->create('wip_receipt_labels', $arrLabel);
-        die($send);
-    }
-
-    public function create_label_box()
-    {
-        $post = $this->input->post();
-        $checksheet_number = $post['checksheet_number'];
-        $qty = $post['qty'];
-
-        //Read Label ID
-        $sqlGetID = $this->db->query("SELECT max(checksheet_label) as kode FROM wip_receipt_boxs WHERE checksheet_number = '$checksheet_number'");
-        $rowID = $sqlGetID->row();
-        $label = $rowID->kode;
-        if ($label == NULL) {
-            $autoID = "B" . $checksheet_number .  sprintf("%03s", $label + 1);
-        } else {
-            $urutan = (int) substr($label, -3);
-            $autoID = "B" . $checksheet_number . sprintf("%03s", $urutan + 1);
-        }
-
-        //Simpan Label
-        $arrLabel = [
-            "checksheet_number" => $checksheet_number,
-            "checksheet_label" => $autoID,
-            "qty" => $qty
-        ];
-
-        $send = $this->crud->create('wip_receipt_boxs', $arrLabel);
-        die($send);
-    }
-
     public function delete()
     {
         $data = $this->input->post();
-        $send = $this->crud->delete('wip_receipt_boxs', ["checksheet_number" => $data['checksheet_number']]);
-        $send = $this->crud->delete('wip_receipt_labels', ["checksheet_number" => $data['checksheet_number']]);
-        $send = $this->crud->delete('wip_receipts', ["id" => $data['id']]);
-        $update = $this->crud->update('checksheets', ["number" => $data['checksheet_number']], ["status" => 0]);
+        $document_no = $data['document_no'];
+
+        $wip_receipts = $this->crud->reads("wip_receipts", [], ["document_no" => $document_no]);
+        foreach ($wip_receipts as $wip_receipt) {
+            $checksheet_number = $wip_receipt->checksheet_number;
+            $update = $this->crud->update('checksheets', ["number" => $checksheet_number], ["status" => 0]);
+        }
+
+        $send = $this->crud->delete('wip_receipts', $data);
         echo $send;
     }
 
-    public function print_label($checksheet_number)
+    public function deleteSingle()
     {
-        //Config
-        $this->db->select('*');
-        $this->db->from('config');
-        $config = $this->db->get()->row();
-
-        $checksheet_number = base64_decode($checksheet_number);
-        //Cek Label
-        $this->db->select('d.number, d.name, d.alias, a.qty, a.checksheet_label, f.trans_date, g.location, c.so_number, i.number as customer_number, d.control_id, d.logo, h.item_cust, j.customer_order_no');// d.description,
-        $this->db->from('wip_receipt_labels a');
-        $this->db->join('checksheets b', 'a.checksheet_number = b.number');
-        $this->db->join('production_schedules c', 'b.workorder = c.workorder');
-        $this->db->join('item_fg d', 'c.item_fg_id = d.id');
-        // $this->db->join('uom e', 'd.uom_id = e.id');
-        $this->db->join('wip_receipts f', 'a.checksheet_number = f.checksheet_number');
-        $this->db->join('warehouse_location_items g', 'd.id = g.item_rm_id', 'left');
-        $this->db->join('customer_items h', 'h.customer_id = c.customer_id and d.id = h.item_fg_id', 'left');
-        $this->db->join('customers i', 'i.id = h.customer_id', 'left');
-        $this->db->join('sales_orders j', 'c.so_number = j.sales_order_no', 'left');
-        $this->db->where('a.deleted', 0);
-        $this->db->where('a.status', 0);
-        $this->db->where('a.checksheet_number', $checksheet_number);
-        $wip_receipt_labels = $this->db->get()->result_object();
-
-        $html = '<html>
-                    <head>
-                        <title>' . $checksheet_number . '</title>
-                        <link rel="icon" href="' . $config->favicon . '" type="image/png" sizes="16x16">
-                    </head>
-                    <style>body {font-family: Arial, Helvetica, sans-serif; margin:5px;}#customers {border-collapse: collapse; width: 100%; font-size: 9px;}#customers td, #customers th {border: 1px solid black;padding: 2px;}#customers tr:hover {background-color: #ddd;}#customers th {padding-top: 2px;padding-bottom: 2px;text-align: center;color: black;}</style><body>';
-        if ($wip_receipt_labels) {
-            //$html .= '<div style="width: 120mm;">';
-            $no = 1;
-            foreach ($wip_receipt_labels as $wip_receipt_label) {
-                // if ($no == 3) {
-                //     $no = 1;
-                // }
-                // if ($no == 1) {
-                //     $padding = "padding:0 3mm 1mm 0mm;";
-                // } else {
-                //     $padding = "padding:0 0mm 1mm 4mm;";
-                // }
-
-                if ($wip_receipt_label->logo == "0") {
-                    $img_leoco = '<img style="width:100%;" src="' . base_url("assets/image/BPI.png") . '" />';
-                } else {
-                    $img_leoco = '';
-                }
-
-                //Generate QRcode
-                $qrcodes = $wip_receipt_label->customer_order_no . "|" . $wip_receipt_label->item_cust . "|" . $wip_receipt_label->alias . "|" . $wip_receipt_label->checksheet_label . "|" . $wip_receipt_label->qty . "|" . $wip_receipt_label->trans_date;
-                $this->createQrcode($qrcodes, "assets/image/qrcode/", $wip_receipt_label->checksheet_label);
-                $html .= '  <div style="width: 70mm; max-height:90mm; border:1px solid black; margin-bottom:5px;">
-                                <table id="customers" border="1">
-                                    <tr>
-                                        <td style="width:15mm; height: 9mm; font-size:12px; text-align:center;">Cust. Code</td>
-                                        <th colspan="2" style="font-size:15px; text-align:left;"><b>' . $wip_receipt_label->customer_number . '</b></th>
-                                    </tr>
-                                    <tr>
-                                        <td style="width:15mm; height: 9mm; font-size:12px; text-align:center;">P/O No.</td>
-                                        <td colspan="2"><small style="font-size:14px;"><b>' . $wip_receipt_label->customer_order_no . '</b></small></td>
-                                    </tr>
-                                    <tr>
-                                        <td style="width:15mm; height: 9mm; font-size:12px; text-align:center;">Cust P/N</td>
-                                        <td colspan="2"><small style="font-size:14px;"><b>' . $wip_receipt_label->item_cust . '</b></small></td>
-                                    </tr>
-                                    <tr>
-                                        <td style="width:15mm; height: 9mm; font-size:14px; text-align:center;">P/N</td>
-                                        <td colspan="2"><small style="font-size:14px;"><b>' . $wip_receipt_label->alias . '</b></small></td>
-                                    </tr>
-                                    <tr>
-                                        <td style="width:15mm; height: 9mm; font-size:12px; text-align:center;">Lot. No</td>
-                                        <td colspan="2"><small style="font-size:14px;"><b>' . $wip_receipt_label->checksheet_label . '</b></small></td>
-                                    </tr>
-                                    <tr>
-                                        <td style="width:15mm; height: 9mm; font-size:12px; text-align:center;">Quantity</td>
-                                        <td style="width:25mm;"><small style="font-size:20px;"><b>' . number_format($wip_receipt_label->qty, 2) . '</b></small></td>
-                                        <td style="text-align:left;" style="width:25mm" rowspan="3">
-                                            <img src="' . base_url('assets/image/qrcode/' . $wip_receipt_label->checksheet_label . '.png') . '" width="100"/>
-                                        </td>
-                                    </tr>
-                                    <tr>
-                                        <td style="width:15mm; height: 9mm; font-size:10px; text-align:center;">Control ID</td>
-                                        <td><b style="font-size:10px;">' . $wip_receipt_label->control_id . '</b></td>
-                                    </tr>
-                                    <tr>
-                                        <td style="width:15mm; height: 9mm; font-size:12px; text-align:center;">Date</td>
-                                        <td><small style="font-size:12px;"><b>' . $wip_receipt_label->trans_date . '</b></small></td>
-                                    </tr>
-                                    <tr>
-                                        <td style="width:15mm; height: 9mm;">' . $img_leoco . '</td>
-                                        <td colspan="2" style="text-align:center;"><small style="font-size:14px;"><b>PT BANSHU PLASTIC INDONESIA</b></small></td>
-                                    </tr>
-                                </table>
-                            </div>';
-                $no++;
-            }
-            $html .= '</div><script>window.print()</script>';
-        } else {
-            $html .= "<br><br><br><center><h3>Data not found or data has been scanned</h3></center>";
-        }
-        die($html);
-    }
-
-    public function print_label_box($checksheet_number)
-    {
-        //Config
-        $this->db->select('*');
-        $this->db->from('config');
-        $config = $this->db->get()->row();
-
-        $checksheet_number = base64_decode($checksheet_number);
-        //Cek Label
-        $this->db->select('d.number, d.name, d.alias, a.qty, a.checksheet_label, f.trans_date, g.location, c.so_number, i.number as customer_number, d.control_id, h.item_cust, j.customer_order_no, d.logo');//d.description,
-        $this->db->from('wip_receipt_boxs a');
-        $this->db->join('checksheets b', 'a.checksheet_number = b.number');
-        $this->db->join('production_schedules c', 'b.workorder = c.workorder');
-        $this->db->join('item_fg d', 'c.item_fg_id = d.id');
-        // $this->db->join('uom e', 'd.uom_id = e.id');
-        $this->db->join('wip_receipts f', 'a.checksheet_number = f.checksheet_number');
-        $this->db->join('warehouse_location_items g', 'd.id = g.item_rm_id', 'left');
-        $this->db->join('customer_items h', 'h.customer_id = c.customer_id and d.id = h.item_fg_id', 'left');
-        $this->db->join('customers i', 'i.id = h.customer_id', 'left');
-        $this->db->join('sales_orders j', 'c.so_number = j.sales_order_no', 'left');
-        $this->db->where('a.deleted', 0);
-        $this->db->where('a.status', 0);
-        $this->db->where('a.checksheet_number', $checksheet_number);
-        $wip_receipt_labels = $this->db->get()->result_object();
-
-        $html = '<html>
-                    <head>
-                        <title>' . $checksheet_number . '</title>
-                        <link rel="icon" href="' . $config->favicon . '" type="image/png" sizes="16x16">
-                    </head>
-                    <style>body {font-family: Arial, Helvetica, sans-serif; margin:5px;}#customers {border-collapse: collapse; width: 100%; font-size: 9px;}#customers td, #customers th {border: 1px solid black;padding: 2px;}#customers tr:hover {background-color: #ddd;}#customers th {padding-top: 2px;padding-bottom: 2px;text-align: center;color: black;}</style><body>';
-        if ($wip_receipt_labels) {
-            //$html .= '<div style="width: 120mm;">';
-            $no = 1;
-            foreach ($wip_receipt_labels as $wip_receipt_label) {
-                // if ($no == 3) {
-                //     $no = 1;
-                // }
-                // if ($no == 1) {
-                //     $padding = "padding:0 3mm 1mm 0mm;";
-                // } else {
-                //     $padding = "padding:0 0mm 1mm 4mm;";
-                // }
-                //Generate QRcode
-
-                if ($wip_receipt_label->logo == "0") {
-                    $img_leoco = '<img style="width:100%;" src="' . base_url("assets/image/BPI.png") . '" />';
-                } else {
-                    $img_leoco = '';
-                }
-
-                $qrcodes = $wip_receipt_label->customer_order_no . "|" . $wip_receipt_label->item_cust . "|" . $wip_receipt_label->alias . "|" . $wip_receipt_label->checksheet_label . "|" . $wip_receipt_label->qty . "|" . $wip_receipt_label->trans_date;
-                $this->createQrcode($qrcodes, "assets/image/qrcode/", $wip_receipt_label->checksheet_label);
-                $html .= '  <div style="width: 70mm; max-height:90mm; border:1px solid black; margin-bottom:5px;">
-                                <table id="customers" border="1">
-                                    <tr>
-                                        <td style="width:15mm; height: 9mm; font-size:12px; text-align:center;">Cust. Code</td>
-                                        <th colspan="2" style="font-size:15px; text-align:left;"><b>' . $wip_receipt_label->customer_number . '</b></th>
-                                    </tr>
-                                    <tr>
-                                        <td style="width:15mm; height: 9mm; font-size:12px; text-align:center;">P/O No.</td>
-                                        <td colspan="2"><small style="font-size:14px;"><b>' . $wip_receipt_label->customer_order_no . '</b></small></td>
-                                    </tr>
-                                    <tr>
-                                        <td style="width:15mm; height: 9mm; font-size:12px; text-align:center;">Cust P/N</td>
-                                        <td colspan="2"><small style="font-size:14px;"><b>' . $wip_receipt_label->item_cust . '</b></small></td>
-                                    </tr>
-                                    <tr>
-                                        <td style="width:15mm; height: 9mm; font-size:14px; text-align:center;">P/N</td>
-                                        <td colspan="2"><small style="font-size:14px;"><b>' . $wip_receipt_label->alias . '</b></small></td>
-                                    </tr>
-                                    <tr>
-                                        <td style="width:15mm; height: 9mm; font-size:12px; text-align:center;">Lot. No</td>
-                                        <td colspan="2"><small style="font-size:14px;"><b>' . $wip_receipt_label->checksheet_label . '</b></small></td>
-                                    </tr>
-                                    <tr>
-                                        <td style="width:15mm; height: 9mm; font-size:12px; text-align:center;">Quantity</td>
-                                        <td style="width:25mm;"><small style="font-size:20px;"><b>' . number_format($wip_receipt_label->qty, 2) . '</b></small></td>
-                                        <td style="text-align:center;" style="width:25mm" rowspan="3">
-                                            <img src="' . base_url('assets/image/qrcode/' . $wip_receipt_label->checksheet_label . '.png') . '" width="100"/>
-                                        </td>
-                                    </tr>
-                                    <tr>
-                                        <td style="width:15mm; height: 9mm; font-size:10px; text-align:center;">Control ID</td>
-                                        <td><small style="font-size:12px;"><b>' . $wip_receipt_label->control_id . '</b></small></td>
-                                    </tr>
-                                    <tr>
-                                        <td style="width:15mm; height: 9mm; font-size:12px; text-align:center;">Date</td>
-                                        <td><small style="font-size:12px;"><b>' . $wip_receipt_label->trans_date . '</b></small></td>
-                                    </tr>
-                                    <tr>
-                                        <td style="width:15mm; height: 9mm;">' . $img_leoco . '</td>
-                                        <td colspan="2" style="text-align:center;"><small style="font-size:14px;"><b>PT BANSHU PLASTIC INDONESIA</b></small></td>
-                                    </tr>
-                                </table>
-                            </div>';
-                $no++;
-            }
-            $html .= '</div><script>window.print()</script>';
-        } else {
-            $html .= "<br><br><br><center><h3>Data not found or data has been scanned</h3></center>";
-        }
-        die($html);
-    }
-
-    public function print_label_strip($checksheet_number)
-    {
-        //Config
-        $this->db->select('*');
-        $this->db->from('config');
-        $config = $this->db->get()->row();
-
-        $checksheet_number = base64_decode($checksheet_number);
-        //Cek Label
-        $this->db->select('d.number, d.name, a.qty, a.checksheet_label, f.trans_date, g.location, c.so_number, i.number as customer_number, h.item_cust');// d.description,
-        $this->db->from('wip_receipt_labels a');
-        $this->db->join('checksheets b', 'a.checksheet_number = b.number');
-        $this->db->join('production_schedules c', 'b.workorder = c.workorder');
-        $this->db->join('item_fg d', 'c.item_fg_id = d.id');
-        // $this->db->join('uom e', 'd.uom_id = e.id');
-        $this->db->join('wip_receipts f', 'a.checksheet_number = f.checksheet_number');
-        $this->db->join('warehouse_location_items g', 'd.id = g.item_rm_id', 'left');
-        $this->db->join('customer_items h', 'h.customer_id = c.customer_id and d.id = h.item_fg_id', 'left');
-        $this->db->join('customers i', 'i.id = h.customer_id', 'left');
-        $this->db->where('a.deleted', 0);
-        $this->db->where('a.status', 0);
-        $this->db->where('a.checksheet_number', $checksheet_number);
-        $wip_receipt_labels = $this->db->get()->result_object();
-
-        $html = '<html>
-                    <head>
-                        <title>' . $checksheet_number . '</title>
-                        <link rel="icon" href="' . $config->favicon . '" type="image/png" sizes="16x16">
-                    </head>
-                    <style>body {font-family: Arial, Helvetica, sans-serif; margin:5px;}#customers {border-collapse: collapse; width: 100%; font-size: 9px;}#customers td, #customers th {border: 0px solid black;padding: 2px;}#customers tr:hover {background-color: #ddd;}#customers th {padding-top: 2px;padding-bottom: 2px;text-align: center;color: black;}</style><body>';
-        if ($wip_receipt_labels) {
-            $html .= '  <div style="width: 90mm; max-height:17mm;">';
-            $no = 1;
-            foreach ($wip_receipt_labels as $wip_receipt_label) {
-
-                if ($no == 3) {
-                    $no = 1;
-                }
-                if ($no == 1) {
-                    $margin = "margin:2mm 1mm 2mm 0mm;";
-                } else {
-                    $margin = "margin:2mm 0mm 2mm 1mm;";
-                }
-
-                $qrcodes = "BPI" . $wip_receipt_label->checksheet_label . "-" . $wip_receipt_label->trans_date . "-" . $wip_receipt_label->qty;
-                $this->createQrcode($qrcodes, "assets/image/qrcode/", $wip_receipt_label->checksheet_label);
-                $html .= '  <div style="float:left; width:48%; ' . $margin . '">
-                                <table id="customers" style="border: 1px solid black;">
-                                    <tr>
-                                        <td style="width:10mm; text-align:center;" rowspan="4"><img src="' . base_url('assets/image/qrcode/' . $wip_receipt_label->checksheet_label . '.png') . '" width="50"/></td>
-                                        <th style="font-size:8px; text-align:left;">BPI</th>
-                                    </tr>
-                                    <tr>
-                                        <th style="font-size:8px; text-align:left;">' . $wip_receipt_label->name . '</th>
-                                    </tr>
-                                    <tr>
-                                        <th style="font-size:8px; text-align:left;">' . date("d-m-Y") . '</th>
-                                    </tr>
-                                    <tr>
-                                        <th style="font-size:8px; text-align:left;">' . $wip_receipt_label->checksheet_label . '</th>
-                                    </tr>
-                                </table>
-                            </div>';
-                $no++;
-            }
-            $html .= '</div><script>window.print()</script>';
-        } else {
-            $html .= "<br><br><br><center><h3>Data not found or data has been scanned</h3></center>";
-        }
-        die($html);
+        $data = $this->input->post();
+        $send = $this->crud->delete('wip_receipts', $data);
+        echo $send;
     }
 
     public function print($option = "")
@@ -496,86 +470,216 @@ class Wip_receipts extends CI_Controller
         $filter_from = $this->input->get('filter_from');
         $filter_to = $this->input->get('filter_to');
         $filter_checksheet = $this->input->get('filter_checksheet');
-
+        $filter_item_fg_id = $this->input->get('filter_item_fg_id');
+        $filter_document_no = $this->input->get('filter_document_no');
+        $filter_division = $this->input->get('filter_division');
+        $filter_shift = $this->input->get('filter_shift');
+        $filter_status = $this->input->get('filter_status');
+        $filter_checksheet_number = $this->input->get('filter_checksheet_number');
         //Config
         $this->db->select('*');
         $this->db->from('config');
         $config = $this->db->get()->row();
 
-        $this->db->select('a.*, b.workorder, d.number as product_no, d.name as product_name, d.uom');
+        $config_iso = $this->db->get('config_iso')->row();
+
+        $wip_receipts = $this->crud->read('wip_receipts', ["checksheet_number" => $filter_checksheet_number, "document_no" => $filter_document_no,], []);
+
+        $this->db->select('a.*, b.wo_no, d.number as product_no, d.name as product_name, d.uom, c.lot_no');
         $this->db->from('wip_receipts a');
         $this->db->join('checksheets b', 'a.checksheet_number = b.number');
-        $this->db->join('production_schedules c', 'b.workorder = c.workorder and b.wp = c.wp');
-        $this->db->join('item_fg d', 'c.item_fg_id = d.id');
+        $this->db->join('production_schedules c', 'b.wo_no = c.wo_no','left');
+        $this->db->join('item_fg d', 'a.item_fg_id = d.id');
         // $this->db->join('uom e', 'd.uom_id = e.id');
         $this->db->where('a.deleted', 0);
         if ($filter_from != "" or $filter_to != "") {
             $this->db->where('a.trans_date >=', $filter_from);
             $this->db->where('a.trans_date <=', $filter_to);
         }
+        if ($filter_division != "") {
+            $this->db->where('a.division', $filter_division);
+        }
         $this->db->like('a.checksheet_number', $filter_checksheet);
+        $this->db->like('a.document_no', $filter_document_no);
+        $this->db->like('a.item_fg_id', $filter_item_fg_id);
+        $this->db->like('a.shift', $filter_shift);
+        $this->db->like('a.status', $filter_status);
+        $this->db->like('a.checksheet_number', $filter_checksheet_number);
         $this->db->order_by('a.trans_date', 'DESC');
         $this->db->order_by('a.checksheet_number', 'DESC');
         $records = $this->db->get()->result_array();
 
-        $html = '<html><head><title>Print Data</title></head><style>body {font-family: Arial, Helvetica, sans-serif;}#customers {border-collapse: collapse;width: 100%;font-size: 12px;}#customers td, #customers th {border: 1px solid #ddd;padding: 2px;}#customers tr:nth-child(even){background-color: #f2f2f2;}#customers tr:hover {background-color: #ddd;}#customers th {padding-top: 2px;padding-bottom: 2px;text-align: center;color: black;}</style><body>
-            <center>
-                <div style="float: left; font-size: 12px; text-align: left;">
-                    <table style="width: 100%;">
+        $qrcodes = $wip_receipts->document_no;
+        $this->createQrcode($qrcodes, "assets/image/qrcode/", $wip_receipts->document_no);
+        $html = '<html>
+            <head>
+                <title>Print Data</title>
+                <style>
+                    body {
+                        font-family: Arial, Helvetica, sans-serif;
+                    }
+                    #customers {
+                        border-collapse: collapse;
+                        width: 100%;
+                        font-size: 12px;
+                    }
+                    #customers td, #customers th {
+                        border: 1px solid #ddd;
+                        padding: 2px;
+                    }
+                    #customers tr:nth-child(even) {
+                        background-color: #f2f2f2;
+                    }
+                    #customers tr:hover {
+                        background-color: #ddd;
+                    }
+                    #customers th {
+                        padding-top: 2px;
+                        padding-bottom: 2px;
+                        text-align: center;
+                        color: black;
+                    }
+                    .header-table {
+                        width: 100%;
+                        font-size: 12px;
+                        margin-bottom: 20px;
+                    }
+                    .header-table td {
+                        vertical-align: top;
+                    }
+                </style>
+            </head>
+            <body>
+                <center>
+                    <table class="header-table">
                         <tr>
-                            <td width="50" style="font-size: 12px; vertical-align: top; text-align: center; vertical-align:jus margin-right:10px;">
-                                <img src="' . $config->favicon . '" width="30">
+                            <td width="10%">
+                                <img src="' . $config->favicon . '" width="60">
                             </td>
-                            <td style="font-size: 14px; text-align: left; margin:2px;">
-                                <b>' . $config->name . '</b><br>
-                                <small>FINAL CHECKSHEET</small>
+                            <td width="70%">
+                                <b style="font-size: 14px;">' . $config->name . '</b><br>
+                                <span style="font-size: 10px;">' . $config->description . '</span><br>
+                                <span style="font-size: 10px;">Jl. Jababeka XIV, Blok U No.12B</span><br>
+                                <span style="font-size: 10px;">Cikarang Industrial Estate, Bekasi 17530, Indonesia</span>
+                            </td>
+                            <td width="20%" style="text-align: right;">
+                                <table style="width: 100%; font-size: 10px;">
+                                    <tr>
+                                        <td>Form No</td>
+                                        <td>:</td>
+                                        <td>' . $config_iso->doc_wip_receipt . '</td>
+                                    </tr>
+                                    <tr>
+                                        <td>Print Date</td>
+                                        <td>:</td>
+                                        <td>' . date("d M Y H:i:s") . '</td>
+                                    </tr>
+                                    <tr>
+                                        <td>Print By</td>
+                                        <td>:</td>
+                                        <td>' . $this->session->username . '</td>
+                                    </tr>
+                                </table>
                             </td>
                         </tr>
                     </table>
-                </div>
-                <div style="float: right; font-size: 12px; text-align: right;">
-                    Print Date ' . date("d M Y H:i:s") . ' <br>
-                    Print By ' . $this->session->username . '  
-                </div>
-            </center>
-            <br><br><br>
-            
-            <table id="customers" border="1">
-                <tr>
-                    <th width="20">No</th>
-                    <th>Checksheet ID</th>
-                    <th>Workorder</th>
-                    <th>Trans Date</th>
-                    <th>WP</th>
-                    <th>Product No</th>
-                    <th>Product Name</th>
-                    <th>UoM</th>
-                    <th>Qty</th>
-                    <th>Lot Qty</th>
-                    <th>Lot Box</th>
-                    <th>Label Qty</th>
-                    <th>Label Box</th>
-                </tr>';
+                    <h2 style="text-align: center; margin-bottom: 0;">RECEIVING FINISHED GOOD</h2>
+                    <div style="text-align: left; font-size: 12px; margin-bottom: 10px;">
+                        <table style="width: 100%; font-size: 12px; border-collapse: collapse;">
+                            <tr>
+                                <td>
+                                    <table style="width: 100%; font-size: 12px; border-collapse: collapse;">
+                                        <tr>
+                                            <td style="width: 150px;">Document No</td>
+                                            <td style="width: 10px;">:</td>
+                                            <td>' . $wip_receipts->document_no . '</td>
+                                        </tr>
+                                        <tr>
+                                            <td>Production Date</td>
+                                            <td>:</td>
+                                            <td>' . $wip_receipts->prod_date . '</td>
+                                        </tr>
+                                        <tr>
+                                            <td>Process Name</td>
+                                            <td>:</td>
+                                            <td>INJECTION</td>
+                                        </tr>
+                                        <tr>
+                                            <td>Shift</td>
+                                            <td>:</td>
+                                            <td>' . $wip_receipts->shift . '</td>
+                                        </tr>
+                                    </table>
+                                </td>
+                                <td style="width: 100px; text-align: center;">
+                                    <img src="' . base_url('assets/image/qrcode/' . $wip_receipts->document_no . '.png') . '" width="80"/>
+                                </td>
+                            </tr>
+                        </table>
+
+                    </div>
+                </center>
+                
+                <table id="customers">
+                    <tr>
+                        <th width="20">No</th>
+                        <th>Product No</th>
+                        <th>Product Name</th>
+                        <th>Lot No</th>
+                        <th>Qty</th>
+                        <th>Unit</th>
+                        <th>Remarks</th>
+                    </tr>';
+
         $no = 1;
         foreach ($records as $data) {
             $html .= '<tr>
                             <td style="text-align:center">' . $no . '</td>
-                            <td>' . $data['checksheet_number'] . '</td>
-                            <td>' . $data['workorder'] . '</td>
-                            <td>' . $data['trans_date'] . '</td>
-                            <td>' . $data['wp'] . '</td>
                             <td>' . $data['product_no'] . '</td>
                             <td>' . $data['product_name'] . '</td>
+                            <td>' . $data['lot_no'] . '</td>
+                            <td style="text-align:right">' . number_format($data['qty']) . '</td>
                             <td>' . $data['uom'] . '</td>
-                            <td>' . number_format($data['qty']) . '</td>
-                            <td>' . number_format($data['lot_label']) . '</td>
-                            <td>' . number_format($data['lot_box']) . '</td>
-                            <td>' . number_format($data['label']) . '</td>
-                            <td>' . number_format($data['label_box']) . '</td>
+                            <td>' . $data['remarks'] . '</td>
                         </tr>';
             $no++;
         }
+
+        $html .= '</table>
+            <br><br>
+            <table style="width: 100%; border-collapse: collapse; font-size: 12px; text-align: center; border: 1px solid #ddd;">
+                <tr>
+                    <td style="width: 25%; border: 1px solid #ddd; padding: 20px;">
+                        <b>Approved By</b>
+                    </td>
+                    <td style="width: 25%; border: 1px solid #ddd; padding: 20px;">
+                        <b>Accepted By</b>
+                    </td>
+                    <td style="width: 25%; border: 1px solid #ddd; padding: 20px;">
+                        <b>Approved By</b>
+                    </td>
+                    <td style="width: 25%; border: 1px solid #ddd; padding: 20px;">
+                        <b>Submitted By</b>
+                    </td>
+                </tr>
+                <tr>
+                    <td style="height: 60px; border: 1px solid #ddd;"></td>
+                    <td style="height: 60px; border: 1px solid #ddd;"></td>
+                    <td style="height: 60px; border: 1px solid #ddd;"></td>
+                    <td style="height: 60px; border: 1px solid #ddd;"></td>
+                </tr>
+            </table>
+            <table style="width: 100%; border-collapse: collapse; font-size: 12px; text-align: left; margin-top: 10px;">
+                <tr>
+                    <td style="width: 100%; border: 1px solid #ddd; padding: 5px;">
+                        <b>Note:</b>
+                    </td>
+                </tr>
+            </table>
+        </body></html>';
+
         $html .= '</table></body></html>';
+
         echo $html;
     }
 }

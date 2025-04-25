@@ -116,7 +116,7 @@
                 <div style="width: 50%; float: left;">
                     <div class="fitem" id="type_selection_purchase">
                         <span style="width:35%; display:inline-block;">Sales Invoice No</span>
-                        <input style="width:60%;" required="" id="sales_invoice" name="sales_invoice" class="easyui-combobox">
+                        <input style="width:60%;" required="" id="sales_invoice" name="sales_invoice" class="easyui-combogrid">
                     </div>
                     <div class="fitem">
                         <span style="width:35%; display:inline-block;">Journal Type</span>
@@ -125,6 +125,10 @@
                     <div class="fitem" id="type_selection_purchase">
                         <span style="width:35%; display:inline-block;">Bank Account</span>
                         <input style="width:60%;" required="" id="bank_account" name="bank_account" class="easyui-combogrid">
+                    </div>
+                    <div class="fitem" hidden>
+                        <span style="width:35%; display:inline-block;">Bank code</span>
+                        <input style="width:60%;" id="bank_code" name="bank_code" class="easyui-textbox">
                     </div>
                     <div class="fitem">
                         <span style="width:35%; display:inline-block;">Receipt By</span>
@@ -166,8 +170,8 @@
                         type: 'combobox',
                         options: {
                             url: '<?= base_url('master/currencies/reads') ?>',
-                            valueField: 'number',
-                            textField: 'number',
+                            valueField: 'name',
+                            textField: 'name',
                             editable:false,
                             prompt: 'Choose Currency',
                             panelHeight: 'auto',
@@ -346,7 +350,8 @@
 
         $("#receipt_date").datebox({
             onChange: function(val) {
-                number(val);
+                var bank_code = $("#bank_code").textbox('getValue');
+                number(val, bank_code);
             }
         });
     }
@@ -574,26 +579,27 @@
                     field: 'id'
                 });
 
-                $.ajax({
-                    method: 'post',
-                    url: '<?= base_url('finance/ar_receipts/deleteSingle') ?>',
-                    data: {
-                        id: row.id,
-                        sales_invoice: row.sales_invoice
-                    },
-                    success: function(result) {
-                        var result = eval('(' + result + ')');
-                        toastr.success(result.message);
-                    },
-                    error: function(jqXHR, textStatus, errorThrown) {
-                        //toastr.error(jqXHR.statusText);
-                    },
-                    complete: function(data) {
-                        $('#dg').datagrid('reload');
-                    }
-                });
+                // $.ajax({
+                //     method: 'post',
+                //     url: '<?= base_url('finance/ar_receipts/deleteSingle') ?>',
+                //     data: {
+                //         id: row.id,
+                //         sales_invoice: row.sales_invoice
+                //     },
+                //     success: function(result) {
+                //         var result = eval('(' + result + ')');
+                //         toastr.success(result.message);
+                //     },
+                //     error: function(jqXHR, textStatus, errorThrown) {
+                //         //toastr.error(jqXHR.statusText);
+                //     },
+                //     complete: function(data) {
+                //         $('#dg').datagrid('reload');
+                //     }
+                // });
 
                 $('#dg2').datagrid('deleteRow', getRowIndex(target));
+                addJournal();
             }
         });
     }
@@ -720,10 +726,21 @@
     }
 
     //NOMOR AUTOMATIC
-    function number(trans_date) {
+    // function number(trans_date) {
+    //     $.ajax({
+    //         type: "post",
+    //         url: "<?= base_url('finance/ar_receipts/number/') ?>" + window.btoa(trans_date),
+    //         dataType: "html",
+    //         success: function(result) {
+    //             $("#receipt_no").textbox('setValue', result);
+    //         }
+    //     });
+    // }
+
+    function number(trans_date, bank_code) {
         $.ajax({
             type: "post",
-            url: "<?= base_url('finance/ar_receipts/number/') ?>" + window.btoa(trans_date),
+            url: "<?= base_url('finance/ar_receipts/number/') ?>" + window.btoa(trans_date) +"/"+ bank_code,
             dataType: "html",
             success: function(result) {
                 $("#receipt_no").textbox('setValue', result);
@@ -800,17 +817,17 @@
 
                     for (var i = 0; i < rows.length; i++) {
                         var row = rows[i];
-                        $.ajax({
-                            type: "post",
-                            url: "<?= base_url('closing/locks/checkLock') ?>",
-                            data: "period=" + row.receipt_date + "&menus_id=<?= $menus_id ?>",
-                            dataType: "json",
-                            success: function (lock) {
-                                if(lock.total > 0){
-                                    Swal.close();
-                                    toastr.error("This module is not active by Accounting");
-                                    return false;
-                                }
+                        // $.ajax({
+                        //     type: "post",
+                        //     url: "<?= base_url('closing/locks/checkLock') ?>",
+                        //     data: "period=" + row.receipt_date + "&menus_id=<?= $menus_id ?>",
+                        //     dataType: "json",
+                        //     success: function (lock) {
+                        //         if(lock.total > 0){
+                        //             Swal.close();
+                        //             toastr.error("This module is not active by Accounting");
+                        //             return false;
+                        //         }
 
                                 if(row.gl_no == null){
                                     $.ajax({
@@ -835,8 +852,8 @@
                                 }else{
                                     toastr.error("Cannot Delete because this AR Receipt has been created in Posting Journal");
                                 }
-                            }
-                        });
+                        //     }
+                        // });
                     }
                 }
             });
@@ -946,13 +963,12 @@
     }
 
     function print_voucher() {
-        var filter_receipt_no = $("#filter_receipt_no").combobox('getValue');
-
-        if (filter_receipt_no == "") {
-            toastr.warning("Please select Receipt No!");
+        var row = $('#dg').datagrid('getSelections');
+        if (row.length == 1) {
+            var receipt_no = row[0].receipt_no;
+            window.open("<?= base_url('finance/ar_receipts/print_voucher/') ?>" + window.btoa(receipt_no), "_blank", 'location=yes,height=600,width=1200,scrollbars=yes,status=yes');
         } else {
-            //window.open("<?= base_url('finance/ar_receipts/print_voucher/') ?>" + window.btoa(filter_receipt_no), "_blank");
-            window.open("<?= base_url('finance/ar_receipts/print_voucher/') ?>" + window.btoa(filter_receipt_no), "_blank", 'location=yes,height=600,width=1200,scrollbars=yes,status=yes');
+            toastr.warning("Please select one data in the table first!", "Information");
         }
     }
 
@@ -1101,16 +1117,16 @@
                     var balance_debit = $("#balance_debit").numberbox('getValue');
                     var balance_credit = $("#balance_credit").numberbox('getValue');
 
-                    $.ajax({
-                        type: "post",
-                        url: "<?= base_url('closing/locks/checkLock') ?>",
-                        data: "period=" + receipt_date + "&menus_id=<?= $menus_id ?>",
-                        dataType: "json",
-                        success: function (lock) {
-                            if(lock.total > 0){
-                                toastr.error("This module is not active by Accounting");
-                                return false;
-                            }
+                    // $.ajax({
+                    //     type: "post",
+                    //     url: "<?= base_url('closing/locks/checkLock') ?>",
+                    //     data: "period=" + receipt_date + "&menus_id=<?= $menus_id ?>",
+                    //     dataType: "json",
+                    //     success: function (lock) {
+                    //         if(lock.total > 0){
+                    //             toastr.error("This module is not active by Accounting");
+                    //             return false;
+                    //         }
 
                             if (parseFloat(balance_debit) == parseFloat(balance_credit)) {
                                 if (sales_invoice == "" || bank_account == "" || receipt_date == "" || receipt_by == "" || journal_type_id == "") {
@@ -1124,68 +1140,27 @@
                                     var totalrows2 = rows2.length;
                                     endEditing2();
 
-                                    $.ajax({
-                                        type: "post",
-                                        url: "<?= base_url('finance/ar_receipts/deleteJournal') ?>",
-                                        data: "receipt_no=" + receipt_no,
-                                        dataType: "json",
-                                        success: function(response) {
-                                            Swal.fire({
-                                                title: 'Please Wait for Saving Data',
-                                                showConfirmButton: false,
-                                                allowOutsideClick: false,
-                                                allowEscapeKey: false,
-                                                didOpen: () => {
-                                                    Swal.showLoading();
-                                                },
-                                            });
+                                    if (totalrows > 0) {
+                                        requestData(totalrows, rows);
+                                        $('#dlg_insert').dialog('close');
 
-                                            if (totalrows > 0) {
-                                                for (let i = 0; i < totalrows; i++) {
-                                                    if (rows[i].sales_invoice) {
-                                                        $.ajax({
-                                                            type: "post",
-                                                            url: '<?= base_url('finance/ar_receipts/create') ?>',
-                                                            data: {
-                                                                receipt_type: receipt_type,
-                                                                receipt_date: receipt_date,
-                                                                receipt_no: receipt_no,
-                                                                customer_id: customer_id,
-                                                                journal_type_id: journal_type_id,
-                                                                bank_account: bank_account,
-                                                                receipt_by: receipt_by,
-                                                                cheque_no: cheque_no,
-                                                                note: note,
-                                                                total_receipt: total_receipt,
-                                                                id: rows[i].id,
-                                                                sales_invoice: rows[i].sales_invoice,
-                                                                description: rows[i].description,
-                                                                so_number: rows[i].so_number,
-                                                                currency: rows[i].currency,
-                                                                amount: rows[i].amount,
-                                                                balance: rows[i].balance,
-                                                                receipt: rows[i].receipt,
-                                                                remarks: rows[i].remarks,
-                                                                account_number: rows[i].account_number,
-                                                                account_type: rows[i].account_type,
-                                                            },
-                                                            dataType: "json",
-                                                            success: function(result) {
-                                                                Swal.fire({
-                                                                    title: result.message,
-                                                                    icon: result.theme,
-                                                                    confirmButtonText: 'Ok',
-                                                                    allowOutsideClick: false,
-                                                                }).then((result) => {
-                                                                    if (result.isConfirmed) {
-                                                                        window.location.reload();
-                                                                    }
-                                                                });
-                                                            }
-                                                        });
-                                                    }
-                                                }
+                                        Swal.fire({
+                                            title: 'Please Wait for Saving Data',
+                                            showConfirmButton: false,
+                                            allowOutsideClick: false,
+                                            allowEscapeKey: false,
+                                            didOpen: () => {
+                                                Swal.showLoading();
+                                            },
+                                        });
 
+                                        $.ajax({
+                                            method: 'post',
+                                            url: "<?= base_url('finance/ar_receipts/deleteJournal') ?>",
+                                            data: {
+                                                receipt_no: receipt_no
+                                            },
+                                            success: function(result) {
                                                 if (totalrows2 > 0) {
                                                     for (let z = 0; z < totalrows2; z++) {
                                                         $.ajax({
@@ -1209,20 +1184,168 @@
                                                         });
                                                     }
                                                 }
+                                            }
+                                        });
 
-                                                $('#dg').datagrid('reload');
-                                                $('#dlg_insert').dialog('close');
-                                            } else {
-                                                toastr.warning("please selections your data in table first");
+                                        function requestData(total, json, jml = 1, value = 0) {
+                                            if (value < 100) {
+                                                value = Math.floor((jml / total) * 100);
+                                                var i = (jml - 1);
+
+                                                if (json[i].sales_invoice) {
+                                                    $.ajax({
+                                                        type: "post",
+                                                        url: '<?= base_url('finance/ar_receipts/create') ?>',
+                                                        data: {
+                                                            receipt_type: receipt_type,
+                                                            receipt_date: receipt_date,
+                                                            receipt_no: receipt_no,
+                                                            customer_id: customer_id,
+                                                            journal_type_id: journal_type_id,
+                                                            bank_account: bank_account,
+                                                            receipt_by: receipt_by,
+                                                            cheque_no: cheque_no,
+                                                            note: note,
+                                                            total_receipt: total_receipt,
+                                                            id: rows[i].id,
+                                                            sales_invoice: rows[i].sales_invoice,
+                                                            description: rows[i].description,
+                                                            so_number: rows[i].so_number,
+                                                            currency: rows[i].currency,
+                                                            amount: rows[i].amount,
+                                                            balance: rows[i].balance,
+                                                            receipt: rows[i].receipt,
+                                                            remarks: rows[i].remarks,
+                                                            account_number: rows[i].account_number,
+                                                            account_type: rows[i].account_type,
+                                                        },
+                                                        dataType: "json",
+                                                        success: function(result) {
+                                                            requestData(total, json, jml + 1, value);
+                                                            if (jml == total) {
+                                                                Swal.close();
+
+                                                                Swal.fire({
+                                                                    title: result.message,
+                                                                    icon: result.theme,
+                                                                    confirmButtonText: 'Ok',
+                                                                    allowOutsideClick: false,
+                                                                }).then((result) => {
+                                                                    if (result.isConfirmed) {
+                                                                        window.location.reload();
+                                                                    }
+                                                                });
+                                                            }
+                                                        }
+                                                    });
+                                                }
                                             }
                                         }
-                                    });
+
+                                        $('#dg').datagrid('reload');
+                                    } else {
+                                        toastr.warning("please selections your data in table first");
+                                    }
+
+                                    // $.ajax({
+                                    //     type: "post",
+                                    //     url: "<?= base_url('finance/ar_receipts/deleteJournal') ?>",
+                                    //     data: "receipt_no=" + receipt_no,
+                                    //     dataType: "json",
+                                    //     success: function(response) {
+                                    //         Swal.fire({
+                                    //             title: 'Please Wait for Saving Data',
+                                    //             showConfirmButton: false,
+                                    //             allowOutsideClick: false,
+                                    //             allowEscapeKey: false,
+                                    //             didOpen: () => {
+                                    //                 Swal.showLoading();
+                                    //             },
+                                    //         });
+
+                                    //         if (totalrows > 0) {
+                                    //             for (let i = 0; i < totalrows; i++) {
+                                    //                 if (rows[i].sales_invoice) {
+                                    //                     $.ajax({
+                                    //                         type: "post",
+                                    //                         url: '<?= base_url('finance/ar_receipts/create') ?>',
+                                    //                         data: {
+                                    //                             receipt_type: receipt_type,
+                                    //                             receipt_date: receipt_date,
+                                    //                             receipt_no: receipt_no,
+                                    //                             customer_id: customer_id,
+                                    //                             journal_type_id: journal_type_id,
+                                    //                             bank_account: bank_account,
+                                    //                             receipt_by: receipt_by,
+                                    //                             cheque_no: cheque_no,
+                                    //                             note: note,
+                                    //                             total_receipt: total_receipt,
+                                    //                             id: rows[i].id,
+                                    //                             sales_invoice: rows[i].sales_invoice,
+                                    //                             description: rows[i].description,
+                                    //                             so_number: rows[i].so_number,
+                                    //                             currency: rows[i].currency,
+                                    //                             amount: rows[i].amount,
+                                    //                             balance: rows[i].balance,
+                                    //                             receipt: rows[i].receipt,
+                                    //                             remarks: rows[i].remarks,
+                                    //                             account_number: rows[i].account_number,
+                                    //                             account_type: rows[i].account_type,
+                                    //                         },
+                                    //                         dataType: "json",
+                                    //                         success: function(result) {
+                                    //                             Swal.fire({
+                                    //                                 title: result.message,
+                                    //                                 icon: result.theme,
+                                    //                                 confirmButtonText: 'Ok',
+                                    //                                 allowOutsideClick: false,
+                                    //                             }).then((result) => {
+                                    //                                 if (result.isConfirmed) {
+                                    //                                     window.location.reload();
+                                    //                                 }
+                                    //                             });
+                                    //                         }
+                                    //                     });
+                                    //                 }
+                                    //             }
+
+                                    //             if (totalrows2 > 0) {
+                                    //                 for (let z = 0; z < totalrows2; z++) {
+                                    //                     $.ajax({
+                                    //                         type: "post",
+                                    //                         url: '<?= base_url('finance/ar_receipts/createJournals') ?>',
+                                    //                         data: {
+                                    //                             receipt_no: receipt_no,
+                                    //                             account_number: rows2[z].account_number,
+                                    //                             account_name: rows2[z].account_name,
+                                    //                             description: rows2[z].description,
+                                    //                             debit: rows2[z].debit,
+                                    //                             credit: rows2[z].credit,
+                                    //                             local_debit: rows2[z].local_debit,
+                                    //                             local_credit: rows2[z].local_credit,
+                                    //                             flag: rows2[z].flag,
+                                    //                         },
+                                    //                         dataType: "json",
+                                    //                         success: function(result2) {
+                                    //                             //
+                                    //                         }
+                                    //                     });
+                                    //                 }
+                                    //             }
+
+                                    //             $('#dg').datagrid('reload');
+                                    //             $('#dlg_insert').dialog('close');
+                                    //         } else {
+                                    //             toastr.warning("please selections your data in table first");
+                                    //         }
+                                    //     }
+                                    // });
                                 }
                             } else {
                                 toastr.error("Balance Debit Cannot match on Balance Credit");
                             }
-                        }
-                    });
+                    //     }
+                    // });
                 }
             }]
         });
@@ -1313,15 +1436,62 @@
             onSelect: function(customer) {
                 var receipt_type = $("#receipt_type").combobox('getValue');
 
-                $("#sales_invoice").combobox({
+                // $("#sales_invoice").combobox({
+                //     url: '<?= base_url('finance/ar_receipts/readInvoiceType?customer_id=') ?>' + customer.id + "&receipt_type=" + receipt_type,
+                //     valueField: 'number',
+                //     textField: 'number',
+                //     multiple: true,
+                //     prompt: "Choose Sales Invoice No",
+                //     onSelect: function(pi) {
+                //         if (pi.journal_type_id != null) {
+                //             $("#journal_type").combobox('setValue', pi.journal_type_id);
+                //         } else {
+                //             toastr.info("The journal type on the Sales Invoice is still empty");
+                //             $("#journal_type").combobox('clear');
+                //         }
+                //     }
+                // });
+
+                $("#sales_invoice").combogrid({
                     url: '<?= base_url('finance/ar_receipts/readInvoiceType?customer_id=') ?>' + customer.id + "&receipt_type=" + receipt_type,
-                    valueField: 'number',
+                    panelWidth: 520,
+                    idField: 'number',
                     textField: 'number',
+                    mode: 'remote',
                     multiple: true,
-                    prompt: "Choose Sales Invoice No",
-                    onSelect: function(pi) {
-                        if (pi.journal_type_id != null) {
-                            $("#journal_type").combobox('setValue', pi.journal_type_id);
+                    prompt: "Choose Purchase Invoice No",
+                    columns: [
+                        [ {
+                            field: 'ck', // Kolom checkbox
+                            checkbox: true, // Mengaktifkan checkbox
+                        }, {
+                            field: 'no',
+                            title: 'No',
+                            width: 60
+                        }, {
+                            field: 'number',
+                            title: 'Sales Invoice No',
+                            width: 150,
+                            align: 'left'
+                        }, {
+                            field: 'trans_date',
+                            title: 'SI Date',
+                            width: 100,
+                            align: 'left'
+                        }, {
+                            field: 'due_date',
+                            title: 'Payment Due',
+                            width: 100,
+                            align: 'left'
+                        }]
+                    ],
+                    fitColumns: true, // Menyesuaikan kolom secara otomatis
+                    selectOnCheck: true, // Pilih baris ketika checkbox di-check
+                    checkOnSelect: true,
+
+                    onSelect: function (index, row) {
+                        if (row.journal_type_id != null) {
+                            $("#journal_type").combobox('setValue', row.journal_type_id);
                         } else {
                             toastr.info("The journal type on the Sales Invoice is still empty");
                             $("#journal_type").combobox('clear');
@@ -1335,7 +1505,7 @@
             url: '<?= base_url('finance/account_banks/reads') ?>',
             panelWidth: 500,
             idField: 'bank_account',
-            textField: 'bank_account',
+            textField: 'bank_name',
             mode: 'remote',
             fitColumns: true,
             prompt: "Choose Bank Account",
@@ -1354,6 +1524,11 @@
                     width: 100
                 }, ]
             ],
+            onSelect: function (index, row) {
+                $("#bank_code").textbox('setValue', row.bank_code);
+                var trans_date = $("#receipt_date").datebox('getValue');
+                number(trans_date,row.bank_code);
+            }
         });
 
         $("#receipt_by").combobox({

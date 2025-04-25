@@ -29,6 +29,8 @@
             <th rowspan="2" data-options="field:'total_mold',width:50,align:'center'">Total <br>Mold</th>
             <th rowspan="2" data-options="field:'process',width:80,align:'center'">Process <br>Type</th>
             <th rowspan="2" data-options="field:'division_name',width:100,halign:'center'">Division</th>
+            <th rowspan="2" data-options="field:'type',width:50,align:'center'">Type</th>
+            <th rowspan="2" data-options="field:'item_family_name',width:100,align:'center'">Product Family</th>
             <th rowspan="2" data-options="field:'control_id',width:100,halign:'center'">Control</th>
             <th rowspan="2" data-options="field:'boxs',width:200,halign:'center'">Box</th>
             <th rowspan="2" data-options="field:'polybag',width:150,align:'center'">Polybag <br>Label</th>
@@ -43,12 +45,11 @@
             <th rowspan="2" data-options="field:'moq',width:50,align:'center'">MOQ</th>
             <th rowspan="2" data-options="field:'uom',width:50,align:'center'">UoM</th>
             <th rowspan="2" data-options="field:'qty_box',width:80,align:'center'">QTY/Box</th>
-            <th rowspan="2" data-options="field:'box_sub',width:80,align:'center'">QTY/Sub Box</th>
-            <!-- <th rowspan="2" data-options="field:'safety_stock',width:100,halign:'center'">Safety Stock</th> -->
+            <th rowspan="2" data-options="field:'box_sub',width:80,align:'center'">QTY/Sub <br>Box</th>
+            <th rowspan="2" data-options="field:'default_packing',width:100,halign:'center'">Default <br>Packing</th>
             <th rowspan="2" data-options="field:'min',width:50,align:'center'">Min</th>
             <th rowspan="2" data-options="field:'max',width:50,align:'center'">Max</th>
             <th rowspan="2" data-options="field:'attachment',width:100,halign:'center',formatter:cellbutton">Attachment</th>
-            <th rowspan="2" data-options="field:'type',width:50,align:'center'">Type</th>
             <th rowspan="2" data-options="field:'logo',width:100,align:'center', styler:cellStyler, formatter:cellFormatterLogo">Logo</th>
             <th rowspan="2" data-options="field:'status',width:100,align:'center', styler:cellStyler, formatter:cellFormatter">Status</th>
             <th rowspan="2" data-options="field:'approved_to',width:100,halign:'center', styler:styleApproved, formatter:formatApproved">Approved To</th>
@@ -106,6 +107,10 @@
                     <input style="width:60%;" name="division_id" id="division_id" required="" class="easyui-combobox">
                 </div>
                 <div class="fitem">
+                    <span style="width:35%; display:inline-block;">Product Family</span>
+                    <input style="width:60%;" name="item_family_id" id="item_family_id" required="" class="easyui-combobox">
+                </div>
+                <div class="fitem">
                     <span style="width:35%; display:inline-block;">Control</span>
                     <input style="width:60%;" name="control_id" id="control_id" class="easyui-textbox">
                 </div>
@@ -159,12 +164,12 @@
                     <span style="width:35%; display:inline-block;">Color</span>
                     <input style="width:60%;" name="color" id="color" required="" class="easyui-textbox">
                 </div>
-            </div>
-            <div style="float:left; width:33%;">
                 <div class="fitem">
                     <span style="width:35%; display:inline-block;">Leadtime (Day)</span>
                     <input style="width:60%;" name="leadtime" id="leadtime" class="easyui-numberbox">
                 </div>
+            </div>
+            <div style="float:left; width:33%;">
                 <div class="fitem">
                     <span style="width:35%; display:inline-block;">MPQ</span>
                     <input style="width:60%;" name="mpq" id="mpq" class="easyui-numberbox">
@@ -184,6 +189,13 @@
                 <div class="fitem">
                     <span style="width:35%; display:inline-block;">Qty/Sub Box</span>
                     <input style="width:60%;" name="box_sub" id="box_sub" class="easyui-numberbox">
+                </div>
+                <div class="fitem">
+                    <span style="width:35%; display:inline-block;">Default Packing</span>
+                    <select style="width:60%;" name="default_packing" id="default_packing" panelHeight="auto" class="easyui-combobox">
+                        <option value="MPQ">MPQ</option>
+                        <option value="BOX">BOX</option>
+                    </select>
                 </div>
                 <div class="fitem">
                     <span style="width:35%; display:inline-block;">Attachment</span>
@@ -236,25 +248,36 @@
         $('#dlg_insert').dialog('open');
         url_save = '<?= base_url('master/item_fg/create') ?>';
         $('#frm_insert').form('clear');
+        $('#id').textbox('enable');
 
         $('#polybag').combobox('setValue', 'Label Manual Logo BPI');
         $('#box_label').combobox('setValue', 'YES');
         $('#status').combobox('setValue', '0');
         $('#type').combobox('setValue', 'FG');
+        $('#default_packing').combobox('setValue', 'MPQ');
     }
 
     //EDIT DATA
     function update() {
         var row = $('#dg').datagrid('getSelected');
-
+        console.log(row);
         setTimeout(function() { 
             $('#id').textbox('setValue', row.id);
         }, 500);
 
+        $('#division_id').combobox({
+            url: '<?= base_url('master/divisions/reads/'); ?>',
+            valueField: 'id',
+            textField: 'name',
+            prompt: 'Choose Division',
+            onSelect: function(division) {
+            }
+        });
+
         if (row) {
             $('#dlg_insert').dialog('open');
             $('#frm_insert').form('load', row);
-            // $('#id').textbox('disable');
+            $('#id').textbox('disable');
 
             url_save = '<?= base_url('master/item_fg/update') ?>?id=' + btoa(row.id);
         } else {
@@ -347,6 +370,7 @@
 
                             $('#dlg_insert').dialog('close');
                             $('#dg').datagrid('reload');
+                            window.location.reload();
                         }
                     });
                 }
@@ -399,6 +423,12 @@
         prompt: 'Choose Unit of Measure',
     });
 
+    $('#item_family_id').combobox({
+        url:'<?= base_url('master/item_fg/readFamily'); ?>',
+        valueField:'id',
+        textField:'name',
+        prompt: 'Choose Product Family',
+    });
     //CELLSTYLE STATUS
     function cellStyler(value, row, index) {
         if (value == 0) {

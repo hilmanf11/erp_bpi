@@ -169,6 +169,7 @@
         $("#customer_id").combogrid('enable');
         $("#p_month").combobox('enable');
         $("#p_year").combobox('enable');
+        $("#document_no").textbox('enable');
 
         $("#revision").combobox('setValue', '0');
         $("#p_month").combobox('setValue', '<?= date("m") ?>');
@@ -479,6 +480,11 @@
             $("#customer_id").combogrid('disable');
             $("#p_month").combobox('disable');
             $("#p_year").combobox('disable');
+            $("#document_no").textbox('disable');
+
+            setTimeout(function() {
+                $("#document_no").textbox('setValue', row.document_no);
+            }, 1000);
 
             addTable(row.customer_id, '<?= base_url('planning/forecasts/datatableUpdates?customer_id=') ?>' + btoa(row.customer_id) + "&p_month=" + btoa(row.p_month) + "&p_year=" + btoa(row.p_year) + "&revision=" + btoa(row.revision));
         } else {
@@ -607,7 +613,7 @@
                     dataType: "json",
                     success: function(result) {
                         ddv.datagrid({
-                            url: '<?= base_url('planning/forecasts/datatableDetails?customer_id=') ?>' + window.btoa(row.customer_id) + "&p_month=" + window.btoa(row.p_month) + "&p_year=" + window.btoa(row.p_year) + "&revision=" + window.btoa(row.revision),
+                            url: '<?= base_url('planning/forecasts/datatableDetails?customer_id=') ?>' + window.btoa(row.customer_id) + "&p_month=" + window.btoa(row.p_month) + "&p_year=" + window.btoa(row.p_year) + "&revision=" + window.btoa(row.revision) + "&document_no=" + window.btoa(row.document_no),
                             singleSelect: true,
                             rownumbers: true,
                             columns: [

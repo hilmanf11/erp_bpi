@@ -330,7 +330,7 @@
     });
 
     $('#mold_id').combogrid({
-        url: '<?= base_url("master/molds/reads") ?>',
+        url: '<?= base_url("master/molds/readss") ?>',
         panelWidth: 400,
         idField: 'id',
         textField: 'mold_name',

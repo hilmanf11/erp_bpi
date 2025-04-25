@@ -42,15 +42,15 @@
             </div>
             <div class="fitem">
                 <span style="width:20%; display:inline-block;">Qty</span>
-                <input style="width:70%;" id="qty" value="0" class="easyui-numberbox" data-options="precision:2" disabled>
+                <input style="width:70%;" id="qty" value="0" class="easyui-numberbox" data-options="precision:4" disabled>
             </div>
             <div class="fitem">
                 <span style="width:20%; display:inline-block;">Supply</span>
-                <input style="width:70%;" id="supply" value="0" class="easyui-numberbox" data-options="precision:2">
+                <input style="width:70%;" id="supply" value="0" class="easyui-numberbox" data-options="precision:4">
             </div>
             <div class="fitem">
                 <span style="width:20%; display:inline-block;">Balance</span>
-                <input style="width:70%;" id="balance" value="0" class="easyui-numberbox" data-options="precision:2" disabled>
+                <input style="width:70%;" id="balance" value="0" class="easyui-numberbox" data-options="precision:4" disabled>
             </div>
             <div class="fitem">
                 <span style="width:20%; display:inline-block;"></span>
@@ -92,7 +92,7 @@
                             $("#balance").numberbox('setValue', 0);
                             toastr.success("Serial Found");
                         } else {
-                            toastr.warning("Purchase Order Receipt not found!");
+                            toastr.error(json.message);
                             $("#label_no").val('');
                         }
                     }

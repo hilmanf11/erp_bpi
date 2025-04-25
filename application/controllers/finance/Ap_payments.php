@@ -11,7 +11,7 @@ class Ap_payments extends CI_Controller
         $this->load->library('form_validation');
         $this->load->library('session');
         $this->load->library('Ciqrcode');
-        $this->load->library('Convertcurrency');
+        // $this->load->library('Convertcurrency');
         $this->load->model('crud');
         // //Validasi Form
         // $this->form_validation->set_rules('purchase_invoice', 'Purchase Invoice', 'required|min_length[1]|max_length[50]');
@@ -208,6 +208,7 @@ class Ap_payments extends CI_Controller
 
     public function readPayments($supplier_id)
     {
+        $supplier_id = base64_decode($supplier_id);
         $data = $this->crud->query("SELECT DISTINCT payment_no FROM ap_payments WHERE supplier_id = '$supplier_id' ORDER BY `payment_no` ASC");
         echo json_encode($data);
     }
@@ -215,6 +216,7 @@ class Ap_payments extends CI_Controller
     public function readInvoices($supplier_id)
     {
         $date_now = date("Y-m-t");
+        $supplier_id = base64_decode($supplier_id);
         $data = $this->crud->query("SELECT DISTINCT `purchase_invoice` FROM ap_payments WHERE supplier_id = '$supplier_id' and `status` = 0 ORDER BY `purchase_invoice` ASC");
         echo json_encode($data);
     }
@@ -237,20 +239,41 @@ class Ap_payments extends CI_Controller
         echo json_encode($records);
     }
 
-    public function number($trans_date)
+    // public function number($trans_date)
+    // {
+    //     $datenow    = "AP-" . date("Ym", strtotime(base64_decode($trans_date)));
+    //     $sqlGetID   = $this->db->query("SELECT max(`payment_no`) as kode FROM ap_payments WHERE `payment_no` like '%$datenow%'");
+    //     $rowID      = $sqlGetID->row();
+    //     $kode       = $rowID->kode;
+    //     if ($kode == NULL) {
+    //         $autoID = sprintf("%04s", $kode + 1);
+    //     } else {
+    //         $urutan = (int) substr($kode, -4);
+    //         $urutan++;
+    //         $autoID = sprintf("%04s", $urutan);
+    //     }
+    //     echo $datenow . "-" . $autoID;
+    // }
+
+    public function number($trans_date, $bank_code)
     {
-        $datenow    = "AP-" . date("Ymd", strtotime(base64_decode($trans_date)));
+        $decoded_date = base64_decode($trans_date);
+        $decoded_bank_code = base64_decode($bank_code);
+        $year = date("y", strtotime($decoded_date));
+        $month = date("m", strtotime($decoded_date));
+        // $bank_code = base64_decode($bank_code);
+        $datenow    = $decoded_bank_code."/".$month."-".$year."/K";
         $sqlGetID   = $this->db->query("SELECT max(`payment_no`) as kode FROM ap_payments WHERE `payment_no` like '%$datenow%'");
         $rowID      = $sqlGetID->row();
         $kode       = $rowID->kode;
         if ($kode == NULL) {
-            $autoID = sprintf("%04s", $kode + 1);
+            $autoID = sprintf("%03s", $kode + 1);
         } else {
-            $urutan = (int) substr($kode, -4);
+            $urutan = (int) substr($kode, 0, 3);
             $urutan++;
-            $autoID = sprintf("%04s", $urutan);
+            $autoID = sprintf("%03s", $urutan);
         }
-        echo $datenow . "-" . $autoID;
+        echo $autoID."/".$datenow;
     }
 
     public function datatablesTemp()
@@ -337,7 +360,7 @@ class Ap_payments extends CI_Controller
             $this->db->like('a.bank_account', $filter_bank_no);
             $this->db->like('a.payment_by', $filter_payment_by);
             $this->db->order_by('a.status', 'ASC');
-            $this->db->order_by('a.payment_date', 'DESC');
+            $this->db->order_by('a.payment_no', 'DESC');
             $this->db->group_by('a.payment_no');
             //Total Data
             $totalRows = $this->db->count_all_results('', false);
@@ -709,9 +732,10 @@ class Ap_payments extends CI_Controller
         $hal = 1;
         $subtotal = 0;
         for ($i = 0; $i < $page; $i++) {
-            $this->db->select('a.*, b.name as supplier_name');
+            $this->db->select('a.*, b.name as supplier_name, c.bank_name');
             $this->db->from('ap_payments a');
             $this->db->join('suppliers b', 'a.supplier_id = b.id');
+            $this->db->join('account_banks c', 'a.bank_account = c.bank_account');
             $this->db->like('a.payment_no', $payment_no);
             $this->db->order_by('a.status', 'ASC');
             $this->db->order_by('a.payment_date', 'DESC');
@@ -811,6 +835,11 @@ class Ap_payments extends CI_Controller
                                             <td width="10">:</td>
                                             <td><b>' . @$records[0]['bank_account'] . '</b></td>
                                         </tr>
+                                         <tr>
+                                            <td width="50">Bank Name</td>
+                                            <td width="10">:</td>
+                                            <td><b>' . @$records[0]['bank_name'] . '</b></td>
+                                        </tr>
                                     </table>
                                 </div>
                                 <div ' . $hide . ' style="float:left; width:25%; border:2px solid black; padding:10px; font-size:12px; margin-left:20px;"> 
@@ -870,11 +899,13 @@ class Ap_payments extends CI_Controller
             $hal++;
         }
 
+        //<td>' . $this->convertcurrency->convertCurrencyToWords($subtotal, $records[0]['currency']) . '</td>
         $html .= '<div style="width:100%; float:left;">
                         <table id="customers" style="margin-top:10px;">
                             <tr>
                                 <th style="text-align:center;">Amount in Words</th>
-                                <td>' . $this->convertcurrency->convertCurrencyToWords($subtotal, $records[0]['currency']) . '</td>
+                                
+                               
                             </tr>
                         </table>
                         <p style="font-size:12px;"><i>Note: ' . @$records[0]['note'] . '</i>
@@ -938,16 +969,19 @@ class Ap_payments extends CI_Controller
                     <tr>
                         <td style="text-align:center;">Prepared By</td>
                         <td style="text-align:center;">Checked By</td>
+                        <td style="text-align:center;">Checked By</td>
                         <td style="text-align:center;">Approved By</td>
                     </tr>
                     <tr>
                         <td style="height:60px;"></td>
                         <td style="height:60px;"></td>
                         <td style="height:60px;"></td>
+                        <td style="height:60px;"></td>
                     </tr>
                     <tr>
                         <th style="height:20px; text-align:center;">' . $this->session->name . '<hr style="width:60%;margin-left:20%;">User Entry</th>
-                        <th style="height:20px; text-align:center;"><br><hr style="width:60%;margin-left:20%;">Accounting Manager</th>
+                        <th style="height:20px; text-align:center;"><br><hr style="width:60%;margin-left:20%;">Assistant Manager</th>
+                        <th style="height:20px; text-align:center;"><br><hr style="width:60%;margin-left:20%;">Finance Accounting Manager</th>
                         <th style="height:20px; text-align:center;"><br><hr style="width:60%;margin-left:20%;">Director</th>
                     </tr>
                 </table>

@@ -36,6 +36,13 @@ class Account_coa extends CI_Controller
         echo json_encode($send);
     }
 
+    public function read()
+    {
+        $post = isset($_POST['q']) ? $_POST['q'] : "";
+        $send = $this->crud->reads('account_coa', ["account_number" => $post]);
+        echo json_encode($send);
+    }
+
     //GET DATATABLES
     public function datatables()
     {
@@ -60,7 +67,7 @@ class Account_coa extends CI_Controller
                 }
             }
 
-            $this->db->order_by('account_coa.id', 'asc');
+            $this->db->order_by('account_coa.account_number', 'asc');
             //Total Data
             $totalRows = $this->db->count_all_results('', false);
             //Limit 1 - 10
@@ -153,14 +160,13 @@ class Account_coa extends CI_Controller
     {
         if ($this->input->post()) {
             $data = $this->input->post('data');
+            $account_group = $this->crud->read('account_group_details',[], ["number" => $data['account_group_detail_id']]);
 
-            $account_coa = $this->crud->read('account_coa', [], ["account_group_detail_id" => $data['account_group_detail_id']]);
-
-            if (empty($account_coa->id)) {
-                echo json_encode(array("title" => "Not Found", "message" => "Account Group Details with ID " . $data['account_group_detail_id'] . " Not Found", "theme" => "error"));
+            if (empty($account_group->number)) {
+                echo json_encode(array("title" => "Not Found", "message" => "Account Group Details Code " . $data['account_group_detail_id'] . " Not Found", "theme" => "error"));
             } else {
                 $dataFinal = array(
-                    "account_group_detail_id" => $data['account_group_detail_id'],
+                    "account_group_detail_id" => $account_group->id,
                     "account_number" => $data['account_number'],
                     "account_name" => $data['account_name'],
                     "original_currency" => $data['original_currency'],
@@ -197,7 +203,7 @@ class Account_coa extends CI_Controller
         $this->db->join('account_group_details agd', 'ac.account_group_detail_id = agd.id', 'left');
         $this->db->join('account_groups ag', 'agd.account_group_id = ag.id', 'left');
         $this->db->where('ac.deleted', 0);
-        $this->db->order_by('ac.id', 'ASC');
+        $this->db->order_by('ac.account_number', 'ASC');
         $records = $this->db->get()->result_array();
 
         $html = '<html><head><title>Print Data</title></head><style>body {font-family: Arial, Helvetica, sans-serif;}#customers {border-collapse: collapse;width: 100%;font-size: 12px;}#customers td, #customers th {border: 1px solid #ddd;padding: 2px;}#customers tr:nth-child(even){background-color: #f2f2f2;}#customers tr:hover {background-color: #ddd;}#customers th {padding-top: 2px;padding-bottom: 2px;text-align: left;color: black;}</style><body>

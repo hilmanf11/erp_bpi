@@ -410,7 +410,7 @@
 
     function numberFormat(value, row) {
         const formatter = new Intl.NumberFormat('id-ID', {
-            minimumFractionDigits: 0
+            minimumFractionDigits: 2
         });
         return "<b>" + formatter.format(value) + "</b>";
     }

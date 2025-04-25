@@ -1,24 +1,26 @@
-<table id="dg" class="easyui-treegrid" style="width:99.5%;" toolbar="#toolbar">
+<table id="dg" class="easyui-datagrid" style="width:100%;" toolbar="#toolbar">
     <thead>
         <tr>
             <th rowspan="2" field="ck" checkbox="true"></th>
             <th rowspan="2" data-options="field:'request_no',halign:'center',width:160" sortable="true">Supply No</th>
+            <th rowspan="2" data-options="field:'status',width:80,align:'center',formatter:statusformat,styler:statusStyle">Status</th>
             <th rowspan="2" data-options="field:'request_date',width:120,halign:'center'" sortable="true">Supply Date</th>
             <th rowspan="2" data-options="field:'request_name',width:120,halign:'center'" sortable="true">Requester</th>
-            <th rowspan="2" data-options="field:'period',width:100,halign:'center'" sortable="true">Period</th>
-            <th rowspan="2" data-options="field:'wp',width:50,halign:'center'" sortable="true">WP</th>
+            <!-- <th rowspan="2" data-options="field:'period',width:100,halign:'center'" sortable="true">Period</th> -->
+            <th rowspan="2" data-options="field:'lot_no',width:80,halign:'center'" sortable="true">Lot No</th>
             <th rowspan="2" data-options="field:'workorder',width:150,halign:'center'" sortable="true">Work Order</th>
-            <th rowspan="2" data-options="field:'item_number',width:150,halign:'center'" sortable="true">Product No</th>
-            <th rowspan="2" data-options="field:'item_name',width:150,halign:'center'" sortable="true">Product Name</th>
-            <th rowspan="2" data-options="field:'uom',width:80,align:'center'" sortable="true">UoM</th>
+            <th rowspan="2" data-options="field:'item_fg_number',width:150,halign:'center'" sortable="true">Product No</th>
+            <th rowspan="2" data-options="field:'item_fg_name',width:150,halign:'center'" sortable="true">Product Name</th>
+            <th rowspan="2" data-options="field:'remarks',width:150,halign:'center'" sortable="true">Remarks</th>
+           <!--  <th rowspan="2" data-options="field:'uom',width:80,align:'center'" sortable="true">UoM</th>
             <th rowspan="2" data-options="field:'qpa',width:80,halign:'center',align:'right',formatter:numberformatQpa" sortable="true">QPA</th>
             <th rowspan="2" data-options="field:'mpq',width:80,halign:'center',align:'right',formatter:numberformatQpa" sortable="true">MPQ</th>
             <th rowspan="2" data-options="field:'qty',width:80,halign:'center',align:'right',formatter:numberformatQpa" sortable="true">WO Qty</th>
             <th rowspan="2" data-options="field:'qty_req',width:80,halign:'center',align:'right',formatter:numberformatQpa" sortable="true">Req Qty</th>
             <th rowspan="2" data-options="field:'qty_act',width:80,halign:'center',align:'right',formatter:numberformatQpa" sortable="true">Actual Qty</th>
             <th rowspan="2" data-options="field:'qty_issued',width:80,halign:'center',align:'right',formatter:numberformatQpa" sortable="true">Issued</th>
-            <th rowspan="2" data-options="field:'qty_issued_bal',width:80,halign:'center',align:'right',formatter:numberformatQpa" sortable="true">O/S Qty</th>
-            <th rowspan="2" data-options="field:'supply_type',width:80,align:'center',formatter:issuedformat,styler:statusIssued" sortable="true">Supply<br>Type</th>
+            <th rowspan="2" data-options="field:'qty_issued_bal',width:80,halign:'center',align:'right',formatter:numberformatQpa" sortable="true">O/S Qty</th> -->
+            <!-- <th rowspan="2" data-options="field:'supply_type',width:80,align:'center',formatter:issuedformat,styler:statusIssued" sortable="true">Supply<br>Type</th> -->
             <th colspan="2" data-options="field:'',width:100,halign:'center'"> Created</th>
             <th colspan="2" data-options="field:'',width:100,halign:'center'"> Updated</th>
         </tr>
@@ -33,44 +35,63 @@
 <div id="toolbar" style="height: 200px; padding: 10px;">
     <!-- <div style="width: 100%; display: grid; grid-template-columns: auto auto auto; grid-gap: 5px; display: flex;"> -->
     <div style="width: 100%;">
-        <fieldset style="width: 60%; border:2px solid #d0d0d0; margin-bottom: 5px; margin-top: 5px; border-radius:4px;">
+        <fieldset style="width: 80%; border:2px solid #d0d0d0; margin-bottom: 5px; margin-top: 5px; border-radius:4px;">
             <legend><b>Form Filter Data</b></legend>
-            <div style="width: 50%; float:left;">
-                <div class="fitem">
+            <div style="width: 30%; float:left;">
+                <div class="fitem" hidden>
                     <span style="width:35%; display:inline-block;">Supply Type</span>
                     <input style="width:60%;" id="filter_supply_type" class="easyui-combobox" panelHeight="auto">
                 </div>
                 <div class="fitem">
                     <span style="width:35%; display:inline-block;">Period</span>
-                    <input style="width:60%;" id="filter_period" class="easyui-combobox">
+                    <input style="width:60%;" id="filter_period" value="<?= date("Ym") ?>" class="easyui-combobox">
+                </div>
+                <div class="fitem">
+                    <span style="width:35%; display:inline-block;">Lot No</span>
+                    <input style="width:60%;" id="filter_lot_no" class="easyui-combobox">
                 </div>
                 <div class="fitem">
                     <span style="width:35%; display:inline-block;"></span>
                     <a href="javascript:;" class="easyui-linkbutton" onclick="filter()"><i class="fa fa-search"></i> Filter Data</a>
                 </div>
             </div>
-            <div style="width: 50%; float:left;">
-                <div class="fitem">
-                    <span style="width:35%; display:inline-block;">WP</span>
-                    <input style="width:60%;" id="filter_wp" class="easyui-combobox">
-                </div>
+            <div style="width: 30%; float:left;">
                 <div class="fitem">
                     <span style="width:35%; display:inline-block;">Supply No</span>
                     <input style="width:60%;" id="filter_request_no" class="easyui-combobox">
+                </div>
+                <div class="fitem">
+                    <span style="width:35%; display:inline-block;">Wo No</span>
+                    <input style="width:60%;" id="filter_wo_no" class="easyui-combobox">
                 </div>
                 <!-- <div class="fitem">
                     <span style="width:35%; display:inline-block;">Operation</span>
                     <input style="width:60%;" id="filter_operation" class="easyui-combobox">
                 </div> -->
             </div>
+            <div style="width: 30%; float:left;">
+                <div class="fitem">
+                    <span style="width:35%; display:inline-block;">Product No</span>
+                    <input style="width:60%;" id="filter_item_fg_id" class="easyui-combobox">
+                </div>
+                <div class="fitem">
+                    <span style="width:35%; display:inline-block;">Status</span>
+                    <select style="width:60%;" id="filter_status" class="easyui-combobox" panelHeight="auto">
+                        <option value="">Select All</option>
+                        <option value="0">OPEN</option>
+                        <option value="1">CLOSE</option>
+                    </select>
+                </div>
+            </div>
         </fieldset>
         <?= $button ?>
         <a href="javascript:;" class="easyui-linkbutton" plain="true" onclick="print_kanban()"><i class="fa fa-print"></i> Print Supply Sheet</a>
+        <a href="javascript:;" class="easyui-linkbutton" plain="true" onclick="print_label_supply()"><i class="fa fa-print"></i> Print Label Supply</a>
     </div>
 </div>
 
 <!-- Insert & Update -->
-<div id="dlg_insert" class="easyui-dialog" title="Add New" data-options="closed: true,modal:true" style="width: 1150px; height: auto; padding:10px; top: 20px;">
+<div id="dlg_insert" class="easyui-dialog" title="Add New" data-options="closed: true,modal:true" style="width: 1150px; height: auto; padding:10px; top: 20px; left: 20px;">
     <form id="frm_insert" method="post" novalidate>
         <fieldset style="width:100%; border:1px solid #d0d0d0; margin-bottom: 10px; border-radius:4px; float: left;">
             <legend><b>Form Data</b></legend>
@@ -91,31 +112,36 @@
                     <span style="width:35%; display:inline-block;">Period</span>
                     <input style="width:60%;" id="period" required="" class="easyui-combobox">
                 </div>
-                <div class="fitem">
-                    <span style="width:35%; display:inline-block;">WP</span>
-                    <input style="width:60%;" id="wp" required="" class="easyui-combobox">
-                </div>
+               
                 <div class="fitem">
                     <span style="width:35%; display:inline-block;"></span>
                     <a href="javascript:;" class="easyui-linkbutton" onclick="preview()"><i class="fa fa-search"></i> Preview Data</a>
                 </div>
             </div>
             <div style="width: 50%; float: left;">
-                <div class="fitem">
-                    <span style="width:35%; display:inline-block;">Work Order ID</span>
-                    <input style="width:60%;" name="workorder" id="workorder" class="easyui-combobox">
-                </div>
-                <div class="fitem">
+                <div class="fitem" hidden>
                     <span style="width:35%; display:inline-block;">Sales Order ID</span>
                     <input style="width:60%;" name="so_number" id="so_number" readonly class="easyui-textbox">
                 </div>
                 <div class="fitem">
-                    <span style="width:35%; display:inline-block;">Customer</span>
-                    <input style="width:60%;" name="customer_id" id="customer_id" required="" class="easyui-combogrid">
+                    <span style="width:35%; display:inline-block;">Work Order</span>
+                    <input style="width:60%;" name="workorder" id="workorder" class="easyui-combobox">
+                </div>
+                <div class="fitem">
+                    <span style="width:35%; display:inline-block;">Lotno</span>
+                    <input style="width:60%;" id="lot_no" readonly class="easyui-textbox">
+                </div>
+                <div class="fitem" hidden>
+                    <span style="width:35%; display:inline-block;">Product No</span>
+                    <input style="width:60%;" name="item_fg_id" id="item_fg_id" readonly class="easyui-textbox">
                 </div>
                 <div class="fitem">
                     <span style="width:35%; display:inline-block;">Product No</span>
-                    <input style="width:60%;" name="item_fg_id" id="item_fg_id" required="" class="easyui-combogrid">
+                    <input style="width:60%;" name="item_fg_number" id="item_fg_number" readonly class="easyui-textbox">
+                </div>
+                <div class="fitem">
+                    <span style="width:35%; display:inline-block;">Remarks</span>
+                    <input style="width:60%;" id="remarks" name="remarks" class="easyui-textbox">
                 </div>
                 <div class="fitem" hidden>
                     <span style="width:35%; display:inline-block;">Operation</span>
@@ -129,81 +155,96 @@
     </form>
 </div>
 <!-- PDF -->
-<iframe id="printout" src="<?= base_url('planning/supply_sheets/print') ?>" style="width: 100%;" hidden></iframe>
+<iframe id="printout" style="width: 100%;" hidden></iframe>
 <script>
     //Add Data
+    // function add() {
+    //     $('#dlg_insert').dialog('open');
+    //     $('#dg_request').datagrid('loadData', []);
+    //     request_no();
+    //     $("#period").combobox({
+    //         url: '<?= base_url('planning/supply_sheets/bpiPeriod') ?>',
+    //         valueField: 'period',
+    //         textField: 'period',
+    //         prompt: "Select Period",
+    //         onSelect: function(rowPeriod) {
+    //             $("#lot_no").combobox({
+    //                 url: '<?= base_url('planning/supply_sheets/bpiWp/') ?>' + rowPeriod.period,
+    //                 valueField: 'lot_no',
+    //                 textField: 'lot_no',
+    //                 prompt: "Select Lot No",
+    //                 onSelect: function(rowlotno) {
+    //                     $("#workorder").combobox({
+    //                         url: '<?= base_url('planning/supply_sheets/bpiWo/') ?>' + rowPeriod.period + '/' + rowlotno.lot_no,
+    //                         valueField: 'wo_no',
+    //                         textField: 'wo_no',
+    //                         prompt: "Select Wo No",
+    //                         onSelect: function(rowWorkorder) {
+    //                             $("#item_fg_id").combogrid({
+    //                                 url: '<?= base_url('planning/supply_sheets/readItems/') ?>' + window.btoa(rowWorkorder.wo_no),
+    //                                 panelWidth: 420,
+    //                                 idField: 'item_fg_id',
+    //                                 textField: 'item_number',
+    //                                 prompt: "Select Product No",
+    //                                 columns: [
+    //                                     [{ 
+    //                                         field: 'item_name', 
+    //                                         title: 'Product Name', 
+    //                                         width: 150 
+    //                                     }, { 
+    //                                         field: 'item_number', 
+    //                                         title: 'Product Number',
+    //                                         width: 270 }
+    //                                     ]
+    //                                 ],
+    //                                 onSelect: function(index,row) {
+    //                                     var item_number = row.item_number;  
+    //                                     $("#item_fg_number").textbox('setValue', item_number);
+    //                                 }
+    //                             });
+    //                         }
+    //                     });
+    //                 }
+    //             });
+    //         }
+    //     });
+    // }
+
     function add() {
         $('#dlg_insert').dialog('open');
         $('#dg_request').datagrid('loadData', []);
         request_no();
+
+        // Load periods
         $("#period").combobox({
-            url: '<?= base_url('planning/production_schedules/readPeriod') ?>',
+            url: '<?= base_url('planning/supply_sheets/bpiPeriod') ?>',
             valueField: 'period',
             textField: 'period',
             prompt: "Select Period",
+            onLoadSuccess: function(data) {
+                // Parse the data if needed
+                $("#period").combobox('setValue', "<?= date("Ym") ?>");
+            },
             onSelect: function(rowPeriod) {
-                $("#wp").combobox({
-                    url: '<?= base_url('planning/production_schedules/readWp?period=') ?>' + window.btoa(rowPeriod.period),
-                    valueField: 'wp',
-                    textField: 'wp',
-                    prompt: "Select WP",
-                    onSelect: function(rowWP) {
-                        $("#workorder").combobox({
-                            url: '<?= base_url('planning/production_schedules/readWorkorder?period=') ?>' + window.btoa(rowPeriod.period) + '&wp=' + window.btoa(rowWP.wp),
-                            valueField: 'workorder',
-                            textField: 'workorder',
-                            prompt: "Select Workorder",
-                            onSelect: function(rowWorkorder) {
-                                $("#so_number").textbox('setValue', rowWorkorder.so_number);
-                                $("#customer_id").combogrid({
-                                    url: '<?= base_url('planning/production_schedules/readCustomer?wp=') ?>' + window.btoa(rowWP.wp) + "&period=" + window.btoa(rowPeriod.period) + "&workorder=" + window.btoa(rowWorkorder.workorder),
-                                    panelWidth: 420,
-                                    idField: 'customer_id',
-                                    textField: 'customer_name',
-                                    mode: 'remote',
-                                    fitColumns: true,
-                                    prompt: "Select Customer No",
-                                    columns: [
-                                        [{
-                                            field: 'customer_number',
-                                            title: 'Customer No',
-                                            width: 120
-                                        }, {
-                                            field: 'customer_name',
-                                            title: 'Customer Name',
-                                            width: 250
-                                        }, ]
-                                    ],
-                                    onSelect: function(val, rowCust) {
-                                        $("#item_fg_id").combogrid({
-                                            url: '<?= base_url('planning/production_schedules/readItems?wp=') ?>' + window.btoa(rowWP.wp) + "&period=" + window.btoa(rowPeriod.period) + "&customer_id=" + rowCust.customer_id + "&workorder=" + window.btoa(rowWorkorder.workorder),
-                                            panelWidth: 420,
-                                            idField: 'item_fg_id',
-                                            textField: 'item_number',
-                                            mode: 'remote',
-                                            fitColumns: true,
-                                            prompt: "Select Product No",
-                                            columns: [
-                                                [{
-                                                    field: 'item_number',
-                                                    title: 'Product No',
-                                                    width: 120
-                                                }, {
-                                                    field: 'item_name',
-                                                    title: 'Product Name',
-                                                    width: 250
-                                                }, ]
-                                            ]
-                                        });
-                                    }
-                                });
-                            }
-                        });
-                    }
-                });
+                loadWorkorder(rowPeriod.period);
             }
         });
     }
+
+    function loadWorkorder(period) {
+        $("#workorder").combobox({
+            url: '<?= base_url('planning/supply_sheets/bpiWo/') ?>' + period,
+            valueField: 'wo_no',
+            textField: 'wo_no',
+            prompt: "Select Wo No",
+            onSelect: function(rowWorkorder) {
+                $("#lot_no").textbox('setValue', rowWorkorder.lot_no);
+                $("#item_fg_id").textbox('setValue', rowWorkorder.item_fg_id);
+                $("#item_fg_number").textbox('setValue', rowWorkorder.item_fg_number);
+            }
+        });
+    }
+
 
     function request_no(reqDate = "") {
         if (reqDate == "") {
@@ -222,15 +263,19 @@
     }
 
     function preview() {
-        var item_fg_id = $("#item_fg_id").combogrid('getValue');
-        var workorder = $("#workorder").textbox('getValue');
+        var item_fg_id = $("#item_fg_id").textbox('getValue');
+        var workorder = $("#workorder").combobox('getValue');
+
         var operation = $("#operation").combobox('getValue');
+        var item_fg_number = $("#item_fg_number").textbox('getValue');
         if (workorder == "" || item_fg_id == "") {
             toastr.warning('Please select Product No', 'Required');
         } else {
             var lastIndex;
+            var originalQtyReq;
+
             var dg = $('#dg_request').datagrid({
-                url: '<?= base_url('planning/supply_sheets/datatablesTemp') ?>?workorder=' + workorder + '&operation=' + operation,
+                url: '<?= base_url('planning/supply_sheets/datatablesTemp/') ?>?workorder=' + window.btoa(workorder) + '&operation=' + operation + '&item_fg_id=' + item_fg_id + '&item_fg_number=' + item_fg_number,
                 singleSelect: false,
                 idField: 'item_rm_id',
                 columns: [
@@ -259,11 +304,11 @@
                         width: 150,
                         halign: 'center',
                         title: "Component Name",
-                    }, {
-                        field: 'operation',
-                        width: 80,
-                        halign: 'center',
-                        title: "Operation",
+                    // }, {
+                    //     field: 'operation',
+                    //     width: 80,
+                    //     halign: 'center',
+                    //     title: "Operation",
                     }, {
                         field: 'qpa',
                         width: 80,
@@ -290,23 +335,72 @@
                         width: 80,
                         halign: 'center',
                         title: "Qty",
+                        editor: {
+                            type: 'numberbox',
+                            options: {
+                                required: true,
+                                precision: 4
+                            }
+                        }
                     }, {
                         field: 'qty_act',
+                        width: 100,
+                        halign: 'center',
+                        hidden: true,
+                        title: "Req Qty",
+                        editor: {
+                            type: 'numberbox',
+                            options: {
+                                readonly: true,
+                                precision: 4
+                            }
+                        }
+                    }, {
+                        field: 'qty_real',
                         width: 100,
                         halign: 'center',
                         title: "Req Qty",
                         editor: {
                             type: 'numberbox',
                             options: {
-                                required: true,
-                                precision: 2
+                                readonly: true,
+                                precision: 4
                             }
                         }
+                    }, {
+                        field: 'total_purging',
+                        width: 100,
+                        halign: 'center',
+                        title: "Total Purging",
+                        editor: {
+                            type: 'numberbox',
+                            options: {
+                                readonly: true,
+                                precision: 4
+                            }
+                        }
+                    // }, {
+                    //     field: 'qty_total_rounded',
+                    //     width: 100,
+                    //     halign: 'center',
+                    //     title: "Qty Purging",
+                    //     editor: {
+                    //         type: 'numberbox',
+                    //         options: {
+                    //             readonly: true,
+                    //             precision: 4
+                    //         }
+                    //     }
                     }, {
                         field: 'uom',
                         width: 80,
                         halign: 'center',
                         title: "Uom",
+                    }, {
+                        field: 'warehouse',
+                        width: 80,
+                        halign: 'center',
+                        title: "Warehouse",
                     }, {
                         field: 'action',
                         title: 'Action',
@@ -328,7 +422,7 @@
                 onBeginEdit: function(rowIndex, row) {
                     var editors = $('#dg_request').datagrid('getEditors', rowIndex);
 
-                    var item_fg_id = $(editors[0].target).textbox('getValue');
+                    var item_fg_id = $(editors[0].target).combogrid('getValue');
                     $(editors[1].target).combogrid({
                         url: '<?= base_url('planning/supply_sheets/readMPQ/') ?>' + btoa(item_fg_id),
                         panelWidth: 420,
@@ -350,15 +444,30 @@
                         ],
                     });
                 },
+                onBeforeEdit: function(index, row) {
+                    row.editing = true;
+                    $(this).datagrid('refreshRow', index);
+
+                    originalQtyReq = row.qty_req;
+                },
                 onEndEdit: function(index, row) {
+                    var qtyReq = row.qty_req; //qty
+                    var qtyReal = row.qty_real; // req qty
+
+                    if (qtyReq < qtyReal) {
+                        toastr.warning('Qty Req cannot be less than Qty', 'Warning');
+
+                        row.qty_req = originalQtyReq;
+                        $(this).datagrid('updateRow', {
+                            index: index,
+                            row: row
+                        });
+                    }
+
                     var ed = $(this).datagrid('getEditor', {
                         index: index,
                         field: 'item_rm_id'
                     });
-                },
-                onBeforeEdit: function(index, row) {
-                    row.editing = true;
-                    $(this).datagrid('refreshRow', index);
                 },
                 onAfterEdit: function(index, row) {
                     row.editing = false;
@@ -399,31 +508,39 @@
 
     //Delete Data
     function deleted() {
-        var rows = $('#dg').treegrid('getSelections');
+        var rows = $('#dg').datagrid('getSelections');
         if (rows.length > 0) {
-            $.messager.confirm('Warning', 'Are you sure you want to delete this data?', function(r) {
-                if (r) {
+            Swal.fire({
+                title: 'Warning',
+                text: 'Are you sure you want to delete this data?',
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonText: 'Yes',
+                cancelButtonText: 'Cancel'
+            }).then((result) => {
+                if (result.isConfirmed) {
                     for (var i = 0; i < rows.length; i++) {
                         var row = rows[i];
                         $.ajax({
                             method: 'post',
                             url: '<?= base_url('planning/supply_sheets/delete') ?>',
                             data: {
-                                id: row.id,
-                                workorder: row.workorder,
-                                item_fg_id: row.item_fg_id,
-                                request_no: row.request_no,
-                                item_rm_id: row.item_rm_id
+                                request_no: row.request_no
                             },
                             success: function(result) {
                                 var result = eval('(' + result + ')');
                             },
                             error: function(jqXHR, textStatus, errorThrown) {
                                 toastr.error(jqXHR.statusText);
-                                $.messager.alert("Error", jqXHR.statusText, 'error');
+                                Swal.fire({
+                                    title: 'Error',
+                                    text: jqXHR.statusText,
+                                    icon: 'error',
+                                    confirmButtonText: 'Ok'
+                                });
                             },
                             complete: function(data) {
-                                $('#dg').treegrid('reload');
+                                window.location.reload();
                             }
                         });
                     }
@@ -434,25 +551,139 @@
         }
     }
 
+
     function filter() {
         var filter_supply_type = $("#filter_supply_type").combobox('getValue');
         var filter_period = $("#filter_period").combobox('getValue');
-        var filter_wp = $("#filter_wp").combobox('getValue');
+        var filter_lot_no = $("#filter_lot_no").combobox('getValue');
         var filter_request_no = $("#filter_request_no").combobox('getValue');
-        var filter_operation = $("#filter_operation").combobox('getValue');
-        url = "?filter_period=" + filter_period + "&filter_wp=" + filter_wp + "&filter_request_no=" + filter_request_no + "&filter_operation=" + filter_operation + "&filter_supply_type=" + filter_supply_type;
-        $('#dg').treegrid({
+        var filter_status = $("#filter_status").combobox('getValue');
+        var filter_wo_no = $("#filter_wo_no").combobox('getValue');
+        var filter_item_fg_id = $("#filter_item_fg_id").combogrid('getValue');
+
+        url = "?filter_period=" + filter_period + "&filter_lot_no=" + filter_lot_no + "&filter_request_no=" + filter_request_no
+         + "&filter_supply_type=" + filter_supply_type + "&filter_status=" + filter_status + "&filter_wo_no=" + filter_wo_no + "&filter_item_fg_id=" + filter_item_fg_id; //"&filter_operation=" + filter_operation +
+
+        $('#dg').datagrid({
             url: '<?= base_url('planning/supply_sheets/datatables') ?>' + url,
+            pagination: true,
             rownumbers: true,
-            idField: 'id',
-            treeField: 'request_no',
-            singleSelect: false,
-            onBeforeLoad: function(row, param) {
-                if (!row) {
-                    param.id = 0;
-                }
+            fit: true,
+            view: detailview,
+            detailFormatter:function(index,row){
+                return '<div style="padding:2px;position:relative;"><table class="ddv" title="Detail Of ' + row.request_no + '"></table></div>';
             },
+            onExpandRow: function(index, row) {
+                var ddv = $(this).datagrid('getRowDetail', index).find('table.ddv');
+
+                ddv.datagrid({
+                    url: '<?= base_url('planning/supply_sheets/datatableDetails/') ?>' + window.btoa(row.request_no),
+                    singleSelect: true,
+                    rownumbers: true,
+                    columns: [
+                        [{
+                            field: 'status',
+                            title: 'Status',
+                            halign: 'center',
+                            align: 'center',
+                            width: 100,
+                            formatter: statusformat,
+                            styler: statusStyle
+                        },{
+                            field: 'item_rm_number',
+                            title: 'Part No',
+                            halign: 'center',
+                            width: 200
+                        },{
+                            field: 'item_rm_name',
+                            title: 'Part Name.',
+                            halign: 'center',
+                            width: 200
+                        },{
+                            field: 'item_rm_family',
+                            title: 'Product Family.',
+                            halign: 'center',
+                            width: 200
+                        }, {
+                            field: 'uom',
+                            title: 'UoM',
+                            halign: 'center',
+                            width: 80
+                        }, {
+                            field: 'qty_wo',
+                            title: 'Qty WO',
+                            halign: 'center',
+                            width: 80
+                        }, {
+                            field: 'composition',
+                            title: 'Qpa',
+                            halign: 'center',
+                            width: 80
+                        }, {
+                            field: 'mpq',
+                            title: 'MPQ',
+                            halign: 'center',
+                            width: 80,
+                            formatter: numberformatQpa
+                        }, {
+                            field: 'qty_req',
+                            title: 'Supply',
+                            halign: 'center',
+                            align: 'right',
+                            width: 100,
+                            formatter: numberformatQpa
+                        }, {
+                            field: 'need',
+                            title: 'Need',
+                            halign: 'center',
+                            align: 'right',
+                            width: 100,
+                            formatter: numberformatQpa
+                        }, {
+                            field: 'qty_issued',
+                            title: 'Issued',
+                            halign: 'center',
+                            align: 'right',
+                            width: 100,
+                            formatter: numberformatQpa
+                        }, 
+                        {
+                            field: 'issued_qty_crusher',
+                            title: 'Issued Qty <br> Crusher',
+                            halign: 'center',
+                            width: 100,
+                            formatter: numberformatQpa
+                        }, 
+                        {
+                            field: 'issued_qty_peletizing',
+                            title: 'Issued Qty <br> Peletizing',
+                            halign: 'center',
+                            width: 100,
+                            formatter: numberformatQpa
+                        }, 
+                        {
+                            field: 'qty_purging',
+                            title: 'Req Qty <br> Purging',
+                            halign: 'center',
+                            width: 100,
+                            formatter: numberformatQpa
+                        }
+                       
+                        ]
+                    ],
+                    onResize: function() {
+                        $('#dg').datagrid('fixDetailRowHeight', index);
+                    },
+                    onLoadSuccess: function() {
+                        setTimeout(function() {
+                            $('#dg').datagrid('fixDetailRowHeight', index);
+                        }, 0);
+                    }
+                });
+                $('#dg').datagrid('fixDetailRowHeight', index);
+            }
         });
+
         $("#printout").contents().find('html').html("<center><br><br><br><b style='font-size:20px;'>Please Wait...</b></center>");
         $("#printout").attr('src', '<?= base_url('planning/supply_sheets/print') ?>' + url);
     }
@@ -464,18 +695,33 @@
     function excel() {
         var filter_supply_type = $("#filter_supply_type").combobox('getValue');
         var filter_period = $("#filter_period").combobox('getValue');
-        var filter_wp = $("#filter_wp").combobox('getValue');
+        var filter_lot_no = $("#filter_lot_no").combobox('getValue');
         var filter_request_no = $("#filter_request_no").combobox('getValue');
-        var filter_operation = $("#filter_operation").combobox('getValue');
+        var filter_status = $("#filter_status").combobox('getValue');
+        var filter_wo_no = $("#filter_wo_no").combobox('getValue');
+        var filter_item_fg_id = $("#filter_item_fg_id").combogrid('getValue');
+        // var filter_operation = $("#filter_operation").combobox('getValue');
 
-        url = "?filter_period=" + filter_period + "&filter_wp=" + filter_wp + "&filter_request_no=" + filter_request_no + "&filter_operation=" + filter_operation + "&filter_supply_type=" + filter_supply_type;
+        url = "?filter_period=" + filter_period + "&filter_lot_no=" + filter_lot_no + "&filter_request_no=" + filter_request_no 
+        + "&filter_supply_type=" + filter_supply_type + "&filter_status=" + filter_status + "&filter_wo_no=" + filter_wo_no + "&filter_item_fg_id=" + filter_item_fg_id; //"&filter_operation=" + filter_operation +
         window.location.assign('<?= base_url('planning/supply_sheets/print/excel') ?>' + url);
     }
 
     function print_kanban() {
-        var row = $('#dg').treegrid('getSelected');
+        var row = $('#dg').datagrid('getSelected');
+        console.log(row);
         if (row) {
             window.open("<?= base_url('planning/supply_sheets/print_kanban/') ?>" + window.btoa(row.request_no));// + "/" + window.btoa(operation), "_blank"
+        }else{
+            toastr.warning("Please select one of the data in the table first!", "Information");
+        }
+    }
+
+    function print_label_supply() {
+        var row = $('#dg').datagrid('getSelected');
+        console.log(row);
+        if (row) {
+            window.open("<?= base_url('planning/supply_sheets/label_supply/') ?>" + window.btoa(row.request_no));// + "/" + window.btoa(operation), "_blank"
         }else{
             toastr.warning("Please select one of the data in the table first!", "Information");
         }
@@ -484,49 +730,10 @@
     function reload() {
         window.location.reload();
     }
-    // function supply_no() {
-    //     $("#filter_request_no").combobox({
-    //         url: '<?= base_url('planning/supply_sheets/readRequestNo') ?>',
-    //         valueField: 'request_no',
-    //         textField: 'request_no',
-    //         prompt: "Select Supply No",
-    //         icons: [{
-    //             iconCls: 'icon-clear',
-    //             handler: function(e) {
-    //                 $(e.data.target).combobox('clear').combobox('textbox').focus();
-    //             }
-    //         }],
-    //     });
-    // }
+    
     $(function() {
-        $('#dg').treegrid({
-            url: '<?= base_url('planning/supply_sheets/datatables') ?>',
-            pagination: true,
-            rownumbers: true,
-            idField: 'id',
-            treeField: 'request_no',
-            fit: true,
-            pageList: [10, 50, 100, 500, 1000],
-            pageSize: 10,
-            singleSelect: false,
-            onBeforeLoad: function(row, param) {
-                if (!row) {
-                    param.id = 0;
-                }
-            },
-            // onClickRow: function(index) {
-            //     if (index != 1) {
-            //         $(this).datagrid('unselectRow', index).datagrid('selectRow', 1);
-            //     }
-            // }
-            // rowStyler: function(row) {
-            //     if (row.state != "closed") {
-            //         return 'background-color:#CFE6FF;font-weight:bold;';
-            //     }
-            // },
-        });
+        filter();
 
-        //Save Data
         $('#dlg_insert').dialog({
             buttons: [{
                 text: 'Save All',
@@ -535,13 +742,19 @@
                     var request_no = $("#request_no").textbox('getValue');
                     var request_date = $("#request_date").datebox('getValue');
                     var request_name = $("#request_name").textbox('getValue');
-                    var workorder = $("#workorder").textbox('getValue');
-                    var item_fg_id = $("#item_fg_id").combogrid('getValue');
+                    var period = $("#period").combobox('getValue');
+                    var lot_no = $("#lot_no").textbox('getValue');
+                    var workorder = $("#workorder").combobox('getValue');
+                    var remarks = $("#remarks").textbox('getValue');
+                    var item_fg_id = $("#item_fg_id").textbox('getValue');
 
                     var rows = $('#dg_request').datagrid('getSelections');
                     if (rows.length > 0) {
                         $.messager.confirm('Warning', 'Are you sure you want to save this data?', function(r) {
                             if (r) {
+                                var totalRequests = rows.length;
+                                var completedRequests = 0;
+
                                 for (var i = 0; i < rows.length; i++) {
                                     var row = rows[i];
                                     $.ajax({
@@ -549,33 +762,47 @@
                                         url: '<?= base_url('planning/supply_sheets/create') ?>',
                                         data: 'item_fg_id=' + item_fg_id +
                                             '&item_rm_id=' + row.item_rm_id +
+                                            '&period=' + period +
+                                            '&lot_no=' + lot_no +
                                             '&workorder=' + workorder +
                                             '&request_date=' + request_date +
                                             '&request_no=' + request_no +
                                             '&request_name=' + request_name +
-                                            '&qty_req=' + row.qty_req +
-                                            '&qty_act=' + row.qty_act +
+                                            '&qty_wo=' + row.qty +
+                                            '&qty_req=' + row.qty_req + //QTY
+                                            '&qty_act=' + row.qty_act + //REQ QTY
+                                            '&qty_purging=' + row.total_purging + //QTY PURGING
+                                            '&remarks=' + remarks +
                                             '&mpq=' + row.mpq +
-                                            '&qty_bal=' + (parseInt(row.qty_req) - parseInt(row.qty_act)),
+                                            '&qty_bal=' + (parseInt(row.qty_act) - parseInt(row.qty_req)),
                                         dataType: "json",
                                         success: function(result) {
                                             if (result.theme == "error") {
                                                 toastr.warning(result.message, "Error");
+                                            } else {
+                                                completedRequests++;
                                             }
+
+                                            if (completedRequests === totalRequests) {
+                                                Swal.fire({
+                                                    title: "Data Saved Successfully",
+                                                    icon: "success",
+                                                    confirmButtonText: 'Ok',
+                                                    allowOutsideClick: false,
+                                                }).then((result) => {
+                                                    if (result.isConfirmed) {
+                                                        window.location.reload();
+                                                    }
+                                                });
+
+                                                $('#dg').datagrid('reload');
+                                                $('#dlg_insert').dialog('close');
+                                            }
+                                        },
+                                        error: function() {
+                                            toastr.error("An error occurred while processing your request.", "Error");
                                         }
                                     });
-                                    Swal.fire({
-                                        title: "Data Saved Successfully",
-                                        icon: "success",
-                                        confirmButtonText: 'Ok',
-                                        allowOutsideClick: false,
-                                    }).then((result) => {
-                                        if (result.isConfirmed) {
-                                            window.location.reload();
-                                        }
-                                    });
-                                    $('#dg').treegrid('reload');
-                                    $('#dlg_insert').dialog('close');
                                 }
                             }
                         });
@@ -585,6 +812,7 @@
                 }
             }]
         });
+
 
         $("#filter_supply_type").combobox({
             data: [{
@@ -604,7 +832,7 @@
         });
 
         $("#filter_period").combobox({
-            url: '<?= base_url('planning/supply_sheets/readPeriod') ?>',
+            url: '<?= base_url('planning/supply_sheets/bpiPeriod') ?>',
             valueField: 'period',
             textField: 'period',
             prompt: "Select Period",
@@ -615,11 +843,12 @@
                 }
             }],
             onSelect: function(rowPeriod) {
-                $("#filter_wp").combobox({
-                    url: '<?= base_url('planning/supply_sheets/readWp?period=') ?>' + window.btoa(rowPeriod.period),
-                    valueField: 'wp',
-                    textField: 'wp',
-                    prompt: "Select WP",
+                console.log(rowPeriod);
+                $("#filter_lot_no").combobox({
+                    url: '<?= base_url('planning/supply_sheets/bpiWp/') ?>' + rowPeriod.period,
+                    valueField: 'lot_no',
+                    textField: 'lot_no',
+                    prompt: "Select Lot No",
                     icons: [{
                         iconCls: 'icon-clear',
                         handler: function(e) {
@@ -627,29 +856,28 @@
                         }
                     }],
                     onSelect: function(rowWp) {
-                        $("#filter_request_no").combobox({
-                            url: '<?= base_url('planning/supply_sheets/readRequestNo?period=') ?>' + window.btoa(rowPeriod.period) + "&wp=" + window.btoa(rowWp.wp),
-                            valueField: 'request_no',
-                            textField: 'request_no',
-                            prompt: "Select Supply No",
-                            icons: [{
-                                iconCls: 'icon-clear',
-                                handler: function(e) {
-                                    $(e.data.target).combobox('clear').combobox('textbox').focus();
-                                }
-                            }],
-                        });
+                        // $("#filter_request_no").combobox({
+                        //     url: '<?= base_url('planning/supply_sheets/readRequestNo/') ?>' + "&period=" + rowPeriod.period + "&wp=" + rowWp.wp,
+                        //     valueField: 'request_no',
+                        //     textField: 'request_no',
+                        //     prompt: "Select Supply No",
+                        //     icons: [{
+                        //         iconCls: 'icon-clear',
+                        //         handler: function(e) {
+                        //             $(e.data.target).combobox('clear').combobox('textbox').focus();
+                        //         }
+                        //     }],
+                        // });
                     }
                 });
             }
         });
 
-        $("#filter_operation").combobox({
-            url: '<?= base_url('master/bom/readOperations') ?>',
-            valueField: 'operation',
-            textField: 'operation',
-            prompt: "Select Operation",
-            panelHeight: 'auto',
+        $("#filter_request_no").combobox({
+            url: '<?= base_url('planning/supply_sheets/readRequestNo') ?>',
+            valueField: 'request_no',
+            textField: 'request_no',
+            prompt: "Select Supply No",
             icons: [{
                 iconCls: 'icon-clear',
                 handler: function(e) {
@@ -657,12 +885,12 @@
                 }
             }],
         });
-        $("#operation").combobox({
-            url: '<?= base_url('master/bom/readOperations') ?>',
-            valueField: 'operation',
-            textField: 'operation',
-            prompt: "All Operation",
-            panelHeight: 'auto',
+
+        $("#filter_wo_no").combobox({
+            url: '<?= base_url('planning/supply_sheets/readWoNo') ?>',
+            valueField: 'workorder',
+            textField: 'workorder',
+            prompt: "Select WO No",
             icons: [{
                 iconCls: 'icon-clear',
                 handler: function(e) {
@@ -670,12 +898,80 @@
                 }
             }],
         });
+
+        $('#filter_item_fg_id').combogrid({
+            url: '<?= base_url('master/item_fg/reads/'); ?>',
+            panelWidth: 420,
+            idField: 'id',
+            textField: 'number',
+            mode: 'remote',
+            fitColumns: true,
+            prompt: "Select Product No",
+            columns: [
+                [{
+                    field: 'number',
+                    title: 'Product No',
+                    width: 120
+                }, {
+                    field: 'name',
+                    title: 'Product Name',
+                    width: 250
+                }, ]
+            ],
+            icons: [{
+                iconCls: 'icon-clear',
+                handler: function(e) {
+                    $(e.data.target).combogrid('clear').combogrid('textbox').focus();
+                }
+            }],
+        });
+
+        // $("#filter_operation").combobox({
+        //     url: '<?= base_url('master/bom/readOperations') ?>',
+        //     valueField: 'operation',
+        //     textField: 'operation',
+        //     prompt: "Select Operation",
+        //     panelHeight: 'auto',
+        //     icons: [{
+        //         iconCls: 'icon-clear',
+        //         handler: function(e) {
+        //             $(e.data.target).combobox('clear').combobox('textbox').focus();
+        //         }
+        //     }],
+        // });
+        // $("#operation").combobox({
+        //     url: '<?= base_url('master/bom/readOperations') ?>',
+        //     valueField: 'operation',
+        //     textField: 'operation',
+        //     prompt: "All Operation",
+        //     panelHeight: 'auto',
+        //     icons: [{
+        //         iconCls: 'icon-clear',
+        //         handler: function(e) {
+        //             $(e.data.target).combobox('clear').combobox('textbox').focus();
+        //         }
+        //     }],
+        // });
         $("#request_date").datebox({
             onChange: function(val) {
                 request_no(val);
             }
         });
     });
+
+    // $("#filter_lot_no").combobox({
+    //     url: '<?= base_url('planning/supply_sheets/bpiWps/') ?>',
+    //     valueField: 'lot_no',
+    //     textField: 'lot_no',
+    //     prompt: "Select Lot No",
+    //     icons: [{
+    //         iconCls: 'icon-clear',
+    //         handler: function(e) {
+    //             $(e.data.target).combobox('clear').combobox('textbox').focus();
+    //         }
+    //     }],
+    // });
+
     //Format Datepicker
     function myformatter(date) {
         var y = date.getFullYear();
@@ -707,12 +1003,13 @@
     }
 
     function numberformatQpa(value, row) {
-        if (value) {
+        if (value !== null && value !== undefined) {
             const formatter = new Intl.NumberFormat('id-ID', {
-                minimumFractionDigits: 2
+                minimumFractionDigits: 4
             });
             return "<b>" + formatter.format(value) + "</b>";
         }
+        return "<b>0.00</b>"; // Atur agar 0 tetap ditampilkan dengan format yang sama
     }
 
     function statusformat(value, row) {
@@ -731,7 +1028,7 @@
         }
     }
 
-    function statusIssued(value, row, index) {
+    function statusissued(value, row, index) {
         if (value == "OPEN") {
             return 'background-color:#C8FFCC;';
         } else {

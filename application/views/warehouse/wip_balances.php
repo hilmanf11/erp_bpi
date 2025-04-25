@@ -3,12 +3,13 @@
     <thead>
         <tr>
             <th rowspan="2" field="ck" checkbox="true"></th>
-            <th rowspan="2" data-options="field:'item_number',width:150,halign:'center'">Item ID</th>
+            <th rowspan="2" data-options="field:'item_number',width:200,halign:'center'">Item ID</th>
             <th rowspan="2" data-options="field:'item_name',width:150,halign:'center'">Item Name</th>
             <th rowspan="2" data-options="field:'uom',width:100,align:'center'">Uom</th>
             <th rowspan="2" data-options="field:'request_no',width:150,align:'center'">Supply Sheet</th>
             <th rowspan="2" data-options="field:'begin',width:80,halign:'center',align:'right', formatter:numberformat">Begin</th>
-            <th rowspan="2" data-options="field:'need',width:80,halign:'center',align:'right', formatter:numberformat">Need</th>
+            <th rowspan="2" data-options="field:'needs',width:80,halign:'center',align:'right', formatter:numberformats">Need</th>
+            <th rowspan="2" data-options="field:'supply',width:80,halign:'center',align:'right', formatter:numberformat">Supply</th>
             <th rowspan="2" data-options="field:'issued',width:80,halign:'center',align:'right', formatter:numberformat">Issued</th>
             <th rowspan="2" data-options="field:'balance',width:80,halign:'center',align:'right', formatter:numberformat">Balance</th>
             <th rowspan="2" data-options="field:'warehouse',width:80,halign:'center',align:'right', formatter:numberformat">Warehouse</th>
@@ -202,6 +203,14 @@
         if (value) {
             const formatter = new Intl.NumberFormat('id-ID', {
                 minimumFractionDigits: 2
+            });
+            return "<b>" + formatter.format(value) + "</b>";
+        }
+    }
+    function numberformats(value, row) {
+        if (value) {
+            const formatter = new Intl.NumberFormat('id-ID', {
+                minimumFractionDigits: 4
             });
             return "<b>" + formatter.format(value) + "</b>";
         }

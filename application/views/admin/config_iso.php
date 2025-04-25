@@ -13,6 +13,10 @@
                     <input style="width:60%;" name="doc_purchase_order" value="<?= $config->doc_purchase_order ?>" class="easyui-textbox">
                 </div>
                 <div class="fitem">
+                    <span style="width:35%; display:inline-block;">Purchase Invoice</span>
+                    <input style="width:60%;" name="doc_purchase_invoice" value="<?= $config->doc_purchase_invoice ?>" class="easyui-textbox">
+                </div>
+                <div class="fitem">
                     <span style="width:35%; display:inline-block;">Receiving Note</span>
                     <input style="width:60%;" name="doc_receiving_note" value="<?= $config->doc_receiving_note ?>" class="easyui-textbox">
                 </div>
@@ -48,6 +52,18 @@
                     <span style="width:35%; display:inline-block;">Customer</span>
                     <input style="width:60%;" name="doc_customer" value="<?= $config->doc_customer ?>" class="easyui-textbox">
                 </div>
+                <div class="fitem">
+                    <span style="width:35%; display:inline-block;">Journal Posting</span>
+                    <input style="width:60%;" name="doc_general_ledger" value="<?= $config->doc_general_ledger ?>" class="easyui-textbox">
+                </div>
+                <div class="fitem">
+                    <span style="width:35%; display:inline-block;">Wip Receipt</span>
+                    <input style="width:60%;" name="doc_wip_receipt" value="<?= $config->doc_wip_receipt ?>" class="easyui-textbox">
+                </div>
+                <div class="fitem">
+                    <span style="width:35%; display:inline-block;">Barcode FG</span>
+                    <input style="width:60%;" name="doc_barcode_fg" value="<?= $config->doc_barcode_fg ?>" class="easyui-textbox">
+                </div>
             </fieldset>
             <fieldset style="width:30%; border:1px solid #d0d0d0; margin-bottom: 10px; border-radius:4px; float: left;">
                 <legend><b>Form ISO</b></legend>
@@ -58,6 +74,10 @@
                 <div class="fitem">
                     <span style="width:35%; display:inline-block;">Purchase Order</span>
                     <input style="width:60%;" name="form_purchase_order" value="<?= $config->form_purchase_order ?>" class="easyui-textbox">
+                </div>
+                <div class="fitem">
+                    <span style="width:35%; display:inline-block;">Purchase Invoice</span>
+                    <input style="width:60%;" name="form_purchase_invoice" value="<?= $config->form_purchase_invoice ?>" class="easyui-textbox">
                 </div>
                 <div class="fitem">
                     <span style="width:35%; display:inline-block;">Receiving Note</span>
@@ -94,6 +114,18 @@
                 <div class="fitem">
                     <span style="width:35%; display:inline-block;">Customer</span>
                     <input style="width:60%;" name="form_customer" value="<?= $config->form_customer ?>" class="easyui-textbox">
+                </div>
+                <div class="fitem">
+                    <span style="width:35%; display:inline-block;">Journal Posting</span>
+                    <input style="width:60%;" name="form_general_ledger" value="<?= $config->form_general_ledger ?>" class="easyui-textbox">
+                </div>
+                <div class="fitem">
+                    <span style="width:35%; display:inline-block;">Wip Receipt</span>
+                    <input style="width:60%;" name="form_wip_receipt" value="<?= $config->form_wip_receipt ?>" class="easyui-textbox">
+                </div>
+                <div class="fitem">
+                    <span style="width:35%; display:inline-block;">Barcode FG</span>
+                    <input style="width:60%;" name="form_barcode_fg" value="<?= $config->form_barcode_fg ?>" class="easyui-textbox">
                 </div>
             </fieldset>
         </div>

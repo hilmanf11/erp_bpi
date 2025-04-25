@@ -1,3 +1,7 @@
+<div id="dlg_check" class="easyui-dialog" title="Items Not in Menu Loading" style="width:400px;height:300px;padding:10px"
+    data-options="modal:true,closed:true">
+    <ul id="missing_items_list"></ul>
+</div>
 <div id="f" class="easyui-panel" style="width:100%; background: #F4F4F4; padding: 10px;">
     <div style="width: 100%; display: grid; grid-template-columns: auto auto auto; grid-gap: 5px; display: flex;">
         <fieldset style="width: 35%; border:2px solid #d0d0d0; margin-bottom: 5px; margin-top: 5px; border-radius:4px;">
@@ -12,17 +16,22 @@
                 <input style="width:60%;" name="filter_revision" id="filter_revision" value="<?= "0" ?>" class="easyui-combobox" data-options="prompt:'Revision'" panelHeight="auto">
             </div>
             <div class="fitem">
+                <span style="width:35%; display:inline-block;">Cut Off</span>
+                <input style="width:60%;" id="filter_cutoff" class="easyui-datebox" value="<?= date("Y-m-d") ?>" required data-options="formatter:myformatter,parser:myparser, editable:false">
+            </div>
+            <div class="fitem" hidden>
                 <span style="width:35%; display:inline-block;">Customer</span>
                 <input style="width:60%;" id="filter_customer" class="easyui-combobox">
             </div>
             <div class="fitem">
                 <span style="width:35%; display:inline-block;">Product No</span>
-                <input style="width:60%;" name="filter_product_no" id="filter_product_no" class="easyui-combogrid">
+                <input style="width:60%;" name="filter_item_fg" id="filter_item_fg" class="easyui-combogrid">
             </div>
             <div class="fitem">
                 <span style="width:35%; display:inline-block;"></span>
                 <a href="javascript:;" class="easyui-linkbutton" onclick="filter()"><i class="fa fa-search"></i> Filter Data</a>
                 <a href="javascript:;" class="easyui-linkbutton" onclick="formula()"><i class="fa fa-list"></i> Formula</a>
+                <!-- <a href="javascript:;" class="easyui-linkbutton c1" id="push_data" onclick="push_data()"><i class="fa fa-database"></i> Push Data</a> -->
             </div>
         </fieldset>
         <fieldset style="width: 15%; border:2px solid #d0d0d0; margin-bottom: 5px; margin-top: 5px; border-radius:4px;">
@@ -43,7 +52,7 @@
                 <input class="easyui-checkbox" id="check_ost_so" value="on" readonly="true"> &nbsp; OST Sales Order
             </div>
             <div style="margin:12px;">
-                <input class="easyui-checkbox" id="check_ost_mpp" value="on" readonly="true"> &nbsp; OST MPP
+                <input class="easyui-checkbox" id="check_ost_mpp" value="on" readonly="true"> &nbsp; OST Workorder
             </div>
         </fieldset>
         <fieldset style="width: 15%; border:2px solid #d0d0d0; margin-bottom: 5px; margin-top: 5px; border-radius:4px;">
@@ -66,28 +75,41 @@
         </fieldset>
     </div>
     <?= $button ?>
-</div>
-
-<div id="dlg-formula" class="easyui-dialog" title="Formula" style="width: 600px; padding:10px; top: 20px;" data-options="closed: true, modal:false">
-    <ul>
-        <li>TOTAL STOCK = <b>(WIP + FG + OST MPP)</b></li>
-        <li>BALANCE AWAL = <b>(TOTAL STOCK - OST SO)</b></li>
-        <li>ITO = <b>(BALANCE AWAL / DELIVERY RATE)</b></li>
-        <li>DELIVERY RATE = <b>(FC / HKW)</b></li>
-        <li>SAFETY STOCK = <b>((LEADTIME + FG SS) / HKW(next month) x FC(next month))</b></li>
-        <li>PROD PLAN = <b>(FC + SAFETY STOCK - BALANCE AWAL)</b></li>
-    </ul>
-
-    <i>*) Next month everything is the same</i>
+    <a href="javascript:void(0)" class="easyui-linkbutton" data-options="plain:true" onclick="checkMenuLoading();"><i class="fa fa-check"></i> Check Menu Loading</a>
 </div>
 
 <div id="p" class="easyui-panel" title="Print Preview" style="width:100%;">
-    <iframe id="printout" src="" style="width: 100%; height: 450px; border: 0;"></iframe>
+    <iframe id="printout" src="" style="width: 100%; height: 550px; border: 0;"></iframe>
 </div>
 
 <script>
-    function formula() {
-        $("#dlg-formula").dialog('open');
+    function formula(){
+        Swal.fire({
+            width: 600,
+            html: `<div style="text-align:left;">
+                    <center><b style="font-size:16px !important;">COMPONENT CHECK</b><hr></center>
+                    <ul>
+                        <li><b>Forecast</b> is taken from <b>Order Management > Forecasting > Forecast Customer</b></li>
+                        <li><b>Stock Finish Good</b> is taken from <b>Stock FG Based on Cutoff</b></li>
+                        <li><b>Stock WIP</b> is taken from <b>Production Schedule - RFG (start from M-1 to Cutoff)</b></li>
+                        <li><b>Sales Order</b> is taken from <b>Sales Orders on Cutoff</b></li>
+                        <li><b>OST Sales Order</b> is taken from <b>Sales Orders in Previous Month</b></li>
+                        <li><b>OST MPP</b> is taken from <b>MPP Qty - Production Schedule Based on Cutoff</b></li>
+                    </ul>
+                    <center><b style="font-size:16px !important;">FORMULA</b><hr></center>
+                    <ul>
+                        <li>TOTAL STOCK = <b>(WIP + FG + OST MPP)</b></li>
+                        <li>BEGIN BALANCE = <b>(TOTAL STOCK - OST SO)</b></li>
+                        <li>BEGIN BALANCE NEXT MONTH = <b>((PRODPLAN + BEGIN BALANCE) - (FC or SO))</b></li>
+                        <li>ITO = <b>(BEGIN BALANCE / DELIVERY RATE)</b></li>
+                        <li>DELIVERY RATE = <b>((FC or SO) / HKW)</b></li>
+                        <li>SAFETY STOCK = taken from Item Finish Good <b>% Safety Stock</b></li>
+                        <li>PROD PLAN = <b>((FC or SO) + SAFETY STOCK - BEGIN BALANCE)</b></li>
+                    </ul>
+
+                    <i>*) Next month everything is the same</i>
+                    </div>`,
+        });
     }
 
     //Add Data
@@ -95,8 +117,9 @@
         var filter_month = $("#filter_month").combobox('getValue');
         var filter_year = $("#filter_year").textbox('getValue');
         var filter_revision = $("#filter_revision").combobox('getValue');
+        var filter_cutoff = $("#filter_cutoff").datebox('getValue');
         var filter_customer = $("#filter_customer").combobox('getValue');
-        var filter_product_no = $("#filter_product_no").combogrid('getValue');
+        var filter_item_fg = $("#filter_item_fg").combogrid('getValue');
         var check_forecast = $("#check_forecast").checkbox('options');
         var check_fg = $("#check_fg").checkbox('options');
         var check_wip = $("#check_wip").checkbox('options');
@@ -107,15 +130,15 @@
         if (check_forecast.checked == true && check_fg.checked == true && check_wip.checked == true && check_ost_so.checked == true && check_ost_mpp.checked == true == check_so.checked == true) {
             $.messager.prompt('Generate MPS', 'Please input Password Generate', function(r) {
                 if (r == "GENERATEMPS") {
-                    Swal.fire({
-                        title: 'Please Wait for Push Data',
-                        showConfirmButton: false,
-                        allowOutsideClick: false,
-                        allowEscapeKey: false,
-                        didOpen: () => {
-                            Swal.showLoading();
-                        },
-                    });
+                    // Swal.fire({
+                    //     title: 'Please Wait for Push Data',
+                    //     showConfirmButton: false,
+                    //     allowOutsideClick: false,
+                    //     allowEscapeKey: false,
+                    //     didOpen: () => {
+                    //         Swal.showLoading();
+                    //     },
+                    // });
                     Swal.fire({
                         title: 'Please Wait 5 - 10 Minutes for Generating Data',
                         showConfirmButton: false,
@@ -132,8 +155,9 @@
                         data: "filter_month=" + window.btoa(filter_month) +
                             "&filter_year=" + window.btoa(filter_year) +
                             "&filter_revision=" + window.btoa(filter_revision) +
+                            "&filter_cutoff=" + window.btoa(filter_cutoff) +
                             "&filter_customer=" + window.btoa(filter_customer) +
-                            "&filter_product_no=" + window.btoa(filter_product_no),
+                            "&filter_item_fg=" + window.btoa(filter_item_fg),
                         dataType: "json",
                         success: function(rows) {
                             Swal.close();
@@ -196,6 +220,9 @@
                                     });
                                 }
                             }
+                        },
+                        error: function(){
+                            Swal.fire('Failed!', 'Process Calculating Data is Failed, Please Try Again!', 'error');
                         }
                     });
                 }
@@ -205,6 +232,130 @@
         }
     }
 
+    function push_data(){
+        var filter_month = $("#filter_month").combobox('getValue');
+        var filter_year = $("#filter_year").textbox('getValue');
+        var filter_revision = $("#filter_revision").combobox('getValue');
+        var filter_cutoff = $("#filter_cutoff").datebox('getValue');
+        var filter_customer = $("#filter_customer").combobox('getValue');
+        var filter_item_fg = $("#filter_item_fg").combogrid('getValue');
+
+        $.messager.prompt('Push Data MPS', 'Please input Password Push Data', function(r){
+            if (r == "PUSHDATAMPS"){
+                Swal.fire({
+                    title: 'Please Wait for Push Data',
+                    showConfirmButton: false,
+                    allowOutsideClick: false,
+                    allowEscapeKey: false,
+                    didOpen: () => {
+                        Swal.showLoading();
+                    },
+                });
+
+                $.ajax({
+                    type: "get",
+                    url: "<?= base_url('planning/generate_mps/push_data_check') ?>",
+                    data: "filter_month=" + window.btoa(filter_month) +
+                        "&filter_year=" + window.btoa(filter_year) +
+                        "&filter_revision=" + window.btoa(filter_revision) +
+                        "&filter_cutoff=" + window.btoa(filter_cutoff),
+                    dataType: "json",
+                    success: function(check) {
+                        if(check.theme == "error"){
+                            Swal.fire(check.title, check.message, 'error');
+                            return false;
+                        }else{
+                            $("#push_data").linkbutton('disable');
+                            
+                            $.ajax({
+                                type: "get",
+                                url: "<?= base_url('planning/generate_mps/push_data_header') ?>",
+                                data: "filter_month=" + window.btoa(filter_month) +
+                                    "&filter_year=" + window.btoa(filter_year) +
+                                    "&filter_revision=" + window.btoa(filter_revision),
+                                dataType: "json",
+                                success: function(headerData) {
+                                    $.ajax({
+                                        type: "get",
+                                        url: "<?= base_url('planning/generate_mps/push_data') ?>",
+                                        data: "filter_month=" + window.btoa(filter_month) +
+                                            "&filter_year=" + window.btoa(filter_year) +
+                                            "&filter_revision=" + window.btoa(filter_revision) +
+                                            "&filter_item_fg=" + window.btoa(filter_item_fg) +
+                                            "&filter_customer=" + window.btoa(filter_customer),
+                                        dataType: "json",
+                                        success: function(rows) {
+                                            Swal.close();
+                                            requestDataPush(rows['total'], rows);
+
+                                            function requestDataPush(total, json, number = 1, value = 0, success = 1, failed = 1) {
+                                                if (value < 100) {
+                                                    value = Math.floor((number / total) * 100);
+                                                    $('#p_upload').progressbar('setValue', value);
+                                                    $('#p_start').html(number);
+                                                    $('#p_finish').html(total);
+
+                                                    $.post('<?= base_url('planning/generate_mps/push_data_create') ?>', {
+                                                        data: json[number - 1], header: headerData
+                                                    }, function(note) {
+                                                        var result = eval('(' + note + ')');
+                                                        if (result.theme == "success") {
+                                                            Swal.close();
+                                                            $('#p_success').html(success);
+                                                            var title = "<b style='color: green;'>" + result.title + "</b> | " + result.message;
+                                                            requestDataPush(total, json, number + 1, value, success + 1, failed + 0);
+                                                        } else {
+                                                            $('#p_failed').html(failed);
+                                                            var title = "<b style='color: red;'>" + result.title + "</b> | " + result.message;
+
+                                                            //Json Failed
+                                                            $.ajax({
+                                                                type: "POST",
+                                                                async: true,
+                                                                url: "<?= base_url('planning/generate_mps/uploadcreateFailed') ?>",
+                                                                data: {
+                                                                    data: json[number - 1],
+                                                                    message: result.message
+                                                                },
+                                                                cache: false
+                                                            });
+
+                                                            requestDataPush(total, json, number + 1, value, success + 0, failed + 1);
+                                                        }
+
+                                                        if (value == 100) {
+                                                            Swal.fire('Good job!', 'Process Save Data Completed!', 'success');
+                                                        }
+
+                                                        $("#p_remarks").append(title + "<br>");
+                                                    }).fail(function(jqXHR, textStatus) {
+                                                        if (textStatus == "error") {
+                                                            Swal.fire({
+                                                                title: 'Connection Time Out, Check Your Connection',
+                                                                showConfirmButton: false,
+                                                                allowOutsideClick: false,
+                                                                allowEscapeKey: false,
+                                                                didOpen: () => {
+                                                                    Swal.showLoading();
+                                                                },
+                                                            });
+
+                                                            requestDataPush(total, json, number, value, success + 0, failed + 0);
+                                                        }
+                                                    });
+                                                }
+                                            }
+                                        }
+                                    });
+                                }
+                            });
+                        }
+                    }
+                });
+            }
+        });
+    }
+    
     function downloadFailed() {
         window.open('<?= base_url('planning/generate_mps/uploadDownloadFailed') ?>', '_blank');
     }
@@ -212,15 +363,17 @@
     function filter() {
         var filter_month = $("#filter_month").combobox('getValue');
         var filter_year = $("#filter_year").textbox('getValue');
+        var filter_cutoff = $("#filter_cutoff").datebox('getValue');
         var filter_revision = $("#filter_revision").combobox('getValue');
         var filter_customer = $("#filter_customer").combobox('getValue');
-        var filter_product_no = $("#filter_product_no").combogrid('getValue');
+        var filter_item_fg = $("#filter_item_fg").combogrid('getValue');
 
         var url = "?filter_month=" + window.btoa(filter_month) +
             "&filter_year=" + window.btoa(filter_year) +
             "&filter_revision=" + window.btoa(filter_revision) +
+            "&filter_cutoff=" + window.btoa(filter_cutoff) +
             "&filter_customer=" + window.btoa(filter_customer) +
-            "&filter_product_no=" + window.btoa(filter_product_no);
+            "&filter_item_fg=" + window.btoa(filter_item_fg);
 
         if (filter_month == "" || filter_year == "") {
             toastr.warning("Please select Period!", "Information");
@@ -390,16 +543,14 @@
         var filter_month = $("#filter_month").combobox('getValue');
         var filter_year = $("#filter_year").textbox('getValue');
         var filter_revision = $("#filter_revision").combobox('getValue');
-        var filter_line_no = $("#filter_line_no").combobox('getValue');
-        var filter_customer_id = $("#filter_customer_id").combobox('getValue');
-        var filter_product_no = $("#filter_product_no").combogrid('getValue');
+        var filter_customer = $("#filter_customer").combobox('getValue');
+        var filter_item_fg = $("#filter_item_fg").combogrid('getValue');
 
         var url = "?filter_month=" + window.btoa(filter_month) +
             "&filter_year=" + window.btoa(filter_year) +
             "&filter_revision=" + window.btoa(filter_revision) +
-            "&filter_line_no=" + window.btoa(filter_line_no) +
-            "&filter_customer_id=" + window.btoa(filter_customer_id) +
-            "&filter_product_no=" + window.btoa(filter_product_no);
+            "&filter_customer=" + window.btoa(filter_customer) +
+            "&filter_item_fg=" + window.btoa(filter_item_fg);
 
         if (filter_month == "" || filter_year == "") {
             toastr.warning("Please select Period!", "Information");
@@ -517,9 +668,9 @@
                 }
             }],
             onSelect: function(customer) {
-                $('#filter_product_no').combogrid({
+                $('#filter_item_fg').combogrid({
                     url: '<?= base_url('master/customer_items/reads/') ?>' + btoa(customer.id),
-                    panelWidth: 400,
+                    panelWidth: 600,
                     idField: 'id',
                     textField: 'number',
                     mode: 'remote',
@@ -534,16 +685,51 @@
                     columns: [
                         [{
                             field: 'number',
-                            title: 'Product No',
+                            title: 'Product EBWS',
+                            width: 150
+                        },{
+                            field: 'number_customer',
+                            title: 'Product Customer',
                             width: 200
                         }, {
                             field: 'name',
-                            title: 'Product Name',
+                            title: 'Description',
                             width: 200
                         }]
                     ]
                 });
             }
+        });
+
+        $('#filter_item_fg').combogrid({
+            url: '<?= base_url('master/customer_items/reads') ?>',
+            panelWidth: 600,
+            idField: 'id',
+            textField: 'number',
+            mode: 'remote',
+            fitColumns: true,
+            prompt: "Choose Product No",
+            icons: [{
+                iconCls: 'icon-clear',
+                handler: function(e) {
+                    $(e.data.target).combogrid('clear').combogrid('textbox').focus();
+                }
+            }],
+            columns: [
+                [{
+                    field: 'number',
+                    title: 'Product EBWS',
+                    width: 150
+                },{
+                    field: 'number_customer',
+                    title: 'Product Customer',
+                    width: 200
+                }, {
+                    field: 'name',
+                    title: 'Description',
+                    width: 200
+                }]
+            ]
         });
     });
 
@@ -567,5 +753,28 @@
         } else {
             return new Date();
         }
+    }
+
+    function checkMenuLoading() {
+        $.ajax({
+            url: '<?= base_url('planning/generate_mps/check_menu_loading') ?>',
+            type: 'GET',
+            dataType: 'json',
+            success: function(response) {
+                if (response.length > 0) {
+                    var listHtml = '';
+                    response.forEach(function(item) {
+                        listHtml += '<li>' + item.item_number + '</li>';
+                    });
+                    $('#missing_items_list').html(listHtml);
+                } else {
+                    $('#missing_items_list').html('<li>All items are available in menu loading.</li>');
+                }
+                $('#dlg_check').dialog('open');
+            },
+            error: function() {
+                toastr.error('Error fetching data');
+            }
+        });
     }
 </script>

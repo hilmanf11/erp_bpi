@@ -1,7 +1,7 @@
 <!-- UPDATE DATA -->
 <div class="easyui-panel" title="Configuration" style="width:100%; padding:10px; background:#fafafa;" data-options="collapsible:true, maximizable:false, fit:true">
     <form id="frm_insert" method="post" enctype="multipart/form-data" novalidate>
-        <fieldset style="width:39%; height: 330px; border:1px solid #d0d0d0; margin-bottom: 10px; border-radius:4px; float: left;">
+        <fieldset style="width:39%; height: 340px; border:1px solid #d0d0d0; margin-bottom: 10px; border-radius:4px; float: left;">
             <legend><b>Setting Application</b></legend>
             <div class="fitem">
                 <span style="width:35%; display:inline-block;">ID</span>
@@ -30,6 +30,10 @@
             <div class="fitem">
                 <span style="width:35%; display:inline-block;">Login</span>
                 <input style="width:60%;" name="image" class="easyui-filebox">
+            </div>
+            <div class="fitem">
+                <span style="width:35%; display:inline-block;">NPWP</span>
+                <input style="width:60%;" name="npwp" value="<?= $config->npwp ?>" class="easyui-textbox">
             </div>
             <div class="fitem" hidden>
                 <span style="width:35%; display:inline-block;">Theme</span>

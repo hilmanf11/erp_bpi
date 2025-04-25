@@ -32,13 +32,20 @@ class Customers extends CI_Controller
     public function reads()
     {
         $post = isset($_POST['q']) ? $_POST['q'] : "";
-        $send = $this->crud->query("SELECT * FROM customers WHERE id like '%$post%' or `number` like '%$post%' or `name` like '%$post%'");
+        $send = $this->crud->query("SELECT DISTINCT * FROM customers WHERE id like '%$post%' or `number` like '%$post%' or `name` like '%$post%'");
         echo json_encode($send);
     }
 
     public function readAddress($customer_id)
     {
         $send = $this->crud->query("SELECT * FROM customer_address WHERE customer_id = '$customer_id'");
+        echo json_encode($send);
+    }
+
+    public function readCoa()
+    {
+        $post = isset($_POST['q']) ? $_POST['q'] : "";
+        $send = $this->crud->reads('account_coa', ["account_name" => $post],["deleted" => 0], "", "account_number", "ASC");
         echo json_encode($send);
     }
 
@@ -56,7 +63,7 @@ class Customers extends CI_Controller
             $result = array();
             //Select Query
             $this->db->select('*');
-            $this->db->from('customers');
+            $this->db->from('customers a');
             $this->db->where('deleted', 0);
             if (@count($filters) > 0) {
                 foreach ($filters as $filter) {
@@ -207,7 +214,11 @@ class Customers extends CI_Controller
                 'payment_term' => $data->val($i, 7),
                 'bank_account' => $data->val($i, 8),
                 'bank_name' => $data->val($i, 9),
-                'status' => $data->val($i, 10)
+                'faktur_code' => $data->val($i, 10),
+                'npwp' => $data->val($i, 11),
+                'account_number' => $data->val($i, 12),
+                'coa_name' => $data->val($i, 13),
+                'status' => $data->val($i, 14)
             );
         }
         $datas['total'] = count($datas);
@@ -269,6 +280,10 @@ class Customers extends CI_Controller
                     "payment_term" => $data['payment_term'],
                     "bank_account" => $data['bank_account'],
                     "bank_name" => $data['bank_name'],
+                    "faktur_code" => $data['faktur_code'],
+                    "npwp" => $data['npwp'],
+                    "account_number" => $data['account_number'],
+                    "coa_name" => $data['coa_name'],
                     "status" => $data['status'],
                 );
                 $send   = $this->crud->create('customers', $dataFinal);
@@ -428,6 +443,10 @@ class Customers extends CI_Controller
                 <th>Payment Term (Day)</th>
                 <th>Bank Account</th>
                 <th>Bank Name</th>
+                <th>Faktur Code</th>
+                <th>NPWP</th>
+                <th>COA No</th>
+                <th>COA Name</th>
                 <th>Status</th>
             </tr>';
         $no = 1;

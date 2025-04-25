@@ -39,6 +39,7 @@
                         <option value="">Choose All</option>
                         <option value="0">OPEN</option>
                         <option value="1">CLOSE</option>
+                        <option value="2">COMPLETE</option>
                     </select>
                 </div>
             </div>
@@ -165,8 +166,21 @@
             }
         });
 
+        $('#filter_purchase_order').combobox({
+            url: '<?php echo base_url('purchase/report_outstanding_po/readPurchaseOrders'); ?>',
+            valueField: 'po_no',
+            textField: 'po_no',
+            prompt: 'Select Purchase Order',
+            icons: [{
+                iconCls: 'icon-clear',
+                handler: function(e) {
+                    $(e.data.target).combobox('clear').combobox('textbox').focus();
+                }
+            }],
+        });
+
         $('#filter_product_no').combogrid({
-            url: '<?= base_url("master/items/reads") ?>',
+            url: '<?= base_url("master/item_rm/reads") ?>',
             panelWidth: 400,
             idField: 'id',
             textField: 'number',

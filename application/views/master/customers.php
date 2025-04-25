@@ -18,11 +18,16 @@
             <th rowspan="2" data-options="field:'name',width:250,halign:'center'">Customer Name</th>
             <th rowspan="2" data-options="field:'number',width:80,align:'center'">Customer<br>Code</th>
             <th rowspan="2" data-options="field:'type',width:80,align:'center'">Type</th>
+            <th rowspan="2" data-options="field:'country_name',width:80,align:'center'">Country</th>
             <th rowspan="2" data-options="field:'currency',width:80,align:'center'">Currency</th>
             <th rowspan="2" data-options="field:'taxes',width:80,halign:'center',align:'right'">Taxes</th>
             <th rowspan="2" data-options="field:'payment_term',width:100,halign:'center',align:'right'">Payment Term<br>(Day)</th>
             <th rowspan="2" data-options="field:'bank_account',width:150,halign:'center'">Bank Account</th>
             <th rowspan="2" data-options="field:'bank_name',width:150,halign:'center'">Bank Name</th>
+            <th rowspan="2" data-options="field:'faktur_code',width:150,halign:'center'">Kode Faktur</th>
+            <th rowspan="2" data-options="field:'npwp',width:150,halign:'center'">NPWP</th>
+            <th rowspan="2" data-options="field:'account_number',width:150,halign:'center'">Account Number</th>
+            <th rowspan="2" data-options="field:'account_name',width:150,halign:'center'">Account Name</th>
             <th rowspan="2" data-options="field:'status',width:80,align:'center', styler:cellStyler, formatter:cellFormatter">Status</th>
             <th colspan="2" data-options="field:'',width:100,halign:'center'"> Created</th>
             <th colspan="2" data-options="field:'',width:100,halign:'center'"> Updated</th>
@@ -75,11 +80,13 @@
                     </select>
                 </div>
                 <div class="fitem">
+                    <span style="width:35%; display:inline-block;">Country Name</span>
+                    <input style="width:60%;" name="country_name" id="country_name" required="" class="easyui-textbox">
+                </div>
+                <div class="fitem">
                     <span style="width:35%; display:inline-block;">Currency</span>
                     <input style="width:60%;" name="currency" id="currency" required="" class="easyui-textbox">
                 </div>
-            </div>
-            <div style="float:left; width:50%;">
                 <div class="fitem">
                     <span style="width:35%; display:inline-block;">Taxes</span>
                     <input style="width:60%;" name="taxes" id="taxes" class="easyui-numberbox">
@@ -88,6 +95,8 @@
                     <span style="width:35%; display:inline-block;">Payment Term (Day)</span>
                     <input style="width:60%;" name="payment_term" id="payment_term" class="easyui-numberbox">
                 </div>
+            </div>
+            <div style="float:left; width:50%;">
                 <div class="fitem">
                     <span style="width:35%; display:inline-block;">Bank Account</span>
                     <input style="width:60%;" name="bank_account" id="bank_account" class="easyui-numberbox">
@@ -95,6 +104,36 @@
                 <div class="fitem">
                     <span style="width:35%; display:inline-block;">Bank Name</span>
                     <input style="width:60%;" name="bank_name" id="bank_name" class="easyui-textbox">
+                </div>
+                <div class="fitem">
+                    <span style="width:35%; display:inline-block;">Kode Faktur Pajak</span>
+                    <select style="width:60%;" name="faktur_code" id="faktur_code" class="easyui-combobox" 
+                        data-options="panelHeight:'150', multiple:true">
+                        <option value="01">01</option>
+                        <option value="02">02</option>
+                        <option value="03">03</option>
+                        <option value="04">04</option>
+                        <option value="05">05</option>
+                        <option value="06">06</option>
+                        <option value="07">07</option>
+                        <option value="08">08</option>
+                        <option value="09">09</option>
+                    </select>
+                </div>
+                <div class="fitem">
+                    <input type="hidden" name="faktur_code" id="faktur_code_hidden">
+                </div> 
+                <div class="fitem">
+                    <span style="width:35%; display:inline-block;">NPWP</span>
+                    <input style="width:60%;" name="npwp" id="npwp" class="easyui-numberbox">
+                </div>
+                <div class="fitem">
+                    <span style="width:35%; display:inline-block;">COA No</span>
+                    <input style="width:60%;" id="account_number" name="account_number" class="easyui-combogrid">
+                </div>
+                <div class="fitem">
+                    <span style="width:35%; display:inline-block;">COA Name</span>
+                    <input style="width:60%;" id="account_name" name="account_name" class="easyui-textbox">
                 </div>
                 <div class="fitem">
                     <span style="width:35%; display:inline-block;">Status</span>
@@ -124,6 +163,7 @@
                 <th rowspan="2" data-options="field:'telp_billing',width:100,halign:'center'">Billing Contact</th>
                 <th rowspan="2" data-options="field:'email',width:100,halign:'center'">Email</th>
                 <th rowspan="2" data-options="field:'website',width:100,halign:'center'">Website</th>
+                <th rowspan="2" data-options="field:'taxes_plant',width:100,halign:'center'">Taxes</th>
                 <th colspan="2" data-options="field:'',width:100,halign:'center'"> Created</th>
                 <th colspan="2" data-options="field:'',width:100,halign:'center'"> Updated</th>
             </tr>
@@ -181,6 +221,10 @@
                 <span style="width:35%; display:inline-block;">Website</span>
                 <input style="width:60%;" name="website" id="website" class="easyui-textbox">
             </div>
+            <div class="fitem">
+                <span style="width:35%; display:inline-block;">Taxes</span>
+                <input style="width:60%;" name="taxes_plant" id="taxes_plant" class="easyui-textbox">
+            </div>
         </fieldset>
     </form>
 </div>
@@ -235,8 +279,20 @@
         $('#frm_insert').form('clear');
 
         $('#type').combobox('setValue', 'LOCAL');
+        $('#currency').combobox('setValue', 'IDR');
         $('#status').combobox('setValue', '0');
-        $('#taxes').numberbox('setValue', '11');
+        $('#taxes').numberbox('setValue', '12');
+        $('#country_name').textbox('setValue', 'INDONESIA');
+
+        $('#type').combobox({
+            onChange: function(newValue, oldValue) {
+                if (newValue === "LOCAL") {
+                    $('#country_name').textbox('setValue', 'INDONESIA');
+                } else {
+                    $('#country_name').textbox('setValue', '');
+                }
+            }
+        });
 
         $.ajax({
             type: "post",
@@ -252,17 +308,30 @@
     function add2() {
         $('#dlg_insert2').dialog('open');
         var customer_id = $("#customer_id").textbox('getValue');
+        var taxes = $("#taxes_plant").textbox('getValue');
         url_save2 = '<?= base_url('master/customers/create2') ?>';
         $('#frm_insert2').form('clear');
         $("#customer_id").textbox('setValue', customer_id);
+        $("#taxes_plant").textbox('setValue', taxes);
     }
+
+    $(document).ready(function() {
+       
+    });
 
     //EDIT DATA
     function update() {
         var row = $('#dg').datagrid('getSelected');
         if (row) {
+            // Pastikan faktur_code tidak null sebelum memuat data ke form
+            if (!row.faktur_code) {
+                row.faktur_code = ''; // Gantikan null dengan string kosong
+            }
+
             $('#dlg_insert').dialog('open');
             $('#frm_insert').form('load', row);
+
+            console.log(row); // Debug untuk melihat data yang dikirim
             url_save = '<?= base_url('master/customers/update') ?>?id=' + btoa(row.id);
         } else {
             toastr.warning("Please select one of the data in the table first!", "Information");
@@ -390,13 +459,84 @@
         }).datagrid('enableFilter');
 
         //SAVE DATA
+        // $('#dlg_insert').dialog({
+        //     buttons: [{
+        //         text: 'Save',
+        //         iconCls: 'icon-ok',
+        //         handler: function() {
+        //             $('#frm_insert').form('submit', {
+        //                 url: url_save,
+        //                 onSubmit: function() {
+        //                     return $(this).form('validate');
+        //                 },
+        //                 success: function(result) {
+        //                     var result = eval('(' + result + ')');
+        //                     if (result.theme == "success") {
+        //                         toastr.success(result.message, result.title);
+        //                     } else {
+        //                         toastr.error(result.message, result.title);
+        //                     }
+        //                     $('#dlg_insert').dialog('close');
+        //                     $('#dg').datagrid('reload');
+        //                 }
+        //             });
+        //         }
+        //     }]
+        // });
+
+        // $('#dlg_insert').dialog({
+        //     buttons: [{
+        //         text: 'Save',
+        //         iconCls: 'icon-ok',
+        //         handler: function() {
+        //             // Ambil nilai combobox faktur_code (array untuk multiple)
+        //             var fakturCodes = $('#faktur_code').combobox('getValues');
+
+        //             // Set nilai ke hidden input sebelum submit
+        //             $('#faktur_code_hidden').val(fakturCodes.join(',')); // Gabungkan menjadi string dengan koma
+
+        //             // Submit form
+        //             $('#frm_insert').form('submit', {
+        //                 url: url_save,
+        //                 method: 'post', // Metode HTTP yang digunakan
+        //                 onSubmit: function() {
+        //                     return $(this).form('validate');
+        //                 },
+        //                 success: function(result) {
+        //                     var result = eval('(' + result + ')');
+        //                     if (result.theme == "success") {
+        //                         toastr.success(result.message, result.title);
+        //                     } else {
+        //                         toastr.error(result.message, result.title);
+        //                     }
+        //                     $('#dlg_insert').dialog('close');
+        //                     $('#dg').datagrid('reload');
+        //                 }
+        //             });
+        //         }
+        //     }]
+        // });
+
         $('#dlg_insert').dialog({
             buttons: [{
                 text: 'Save',
                 iconCls: 'icon-ok',
                 handler: function() {
+                    // Ambil nilai combobox faktur_code (array untuk multiple)
+                    var fakturCodes = $('#faktur_code').combobox('getValues');
+
+                    // Periksa apakah fakturCodes kosong/null
+                    if (!fakturCodes || fakturCodes.length === 0) {
+                        fakturCodes = ['']; // Atur ke array kosong untuk mencegah error
+                    }
+
+                    // Set nilai ke hidden input sebelum submit
+                    $('#faktur_code_hidden').val(fakturCodes.join(',')); // Gabungkan menjadi string dengan koma
+
+                    // Submit form
                     $('#frm_insert').form('submit', {
                         url: url_save,
+                        method: 'post', // Metode HTTP yang digunakan
                         onSubmit: function() {
                             return $(this).form('validate');
                         },
@@ -414,6 +554,7 @@
                 }
             }]
         });
+
 
         $('#dlg_insert2').dialog({
             buttons: [{
@@ -458,14 +599,45 @@
         }
     };
 
+    // function btnDetails(val, row) {
+    //     details = "details('" + row.id + "', '" + row.taxes + "')"; //mengambil id dari customers kemudian di simpan di function details
+    //     return '<a class="btn btn-primary w-100" onClick="' + details + '" style="pointer-events: visible; opacity:1;"><i class="fa fa-list"></i> Detail</a>';
+    // }
+
     function btnDetails(val, row) {
-        var details = "details('" + row.id + "')"; //mengambil id dari customers kemudian di simpan di function details
-        return '<a class="btn btn-primary w-100" onClick="' + details + '" style="pointer-events: visible; opacity:1;"><i class="fa fa-list"></i> Detail</a>';
+        return `<a class="btn btn-primary w-100 btn-details" data-id="${row.id}" data-taxes="${row.taxes || ''}" style="pointer-events: visible; opacity:1;">
+                    <i class="fa fa-list"></i> Detail
+                </a>`;
     }
 
-    function details(customer_id) {
+    // Tambahkan event listener setelah tombol dirender
+    $(document).on('click', '.btn-details', function () {
+        var customer_id = $(this).data('id');
+        var taxes = $(this).data('taxes');
+        details(customer_id, taxes);
+    });
+
+    // function details(customer_id, taxes) {
+    //     $("#dlg_details").dialog('open');
+    //     $("#customer_id").textbox('setValue', customer_id); // id customer di simpan di textbox customer_id sekaligus saat add id tersimpan
+    //     $("#taxes_plant").textbox('setValue', taxes); // id customer di simpan di textbox customer_id sekaligus saat add id tersimpan
+
+    //     $('#dg2').datagrid({
+    //         url: '<?= base_url('master/customers/datatables2/') ?>' + customer_id,
+    //         pagination: true,
+    //         clientPaging: false,
+    //         remoteFilter: true,
+    //         rownumbers: true
+    //     }).datagrid('enableFilter');
+    // }
+
+    function details(customer_id, taxes) {
+        console.log("Customer ID:", customer_id);
+        console.log("Taxes:", taxes);
+
         $("#dlg_details").dialog('open');
-        $("#customer_id").textbox('setValue', customer_id); // id customer di simpan di textbox customer_id sekaligus saat add id tersimpan
+        $("#customer_id").textbox('setValue', customer_id); 
+        $("#taxes_plant").textbox('setValue', taxes); 
 
         $('#dg2').datagrid({
             url: '<?= base_url('master/customers/datatables2/') ?>' + customer_id,
@@ -481,6 +653,30 @@
         valueField: 'name',
         textField: 'name',
         prompt: 'Choose Currencies',
+    });
+
+    $('#account_number').combogrid({
+        url: '<?= base_url('master/customers/readCoa') ?>',
+        panelWidth: 370,
+        idField: 'account_number',
+        textField: 'account_number',
+        mode: 'remote',
+        fitColumns: true,
+        prompt: "Choose COA No",
+        columns: [
+            [{
+                field: 'account_number',
+                title: 'Account No',
+                width: 120
+            }, {
+                field: 'account_name',
+                title: 'Account Name',
+                width: 250
+            }, ]
+        ],
+        onSelect: function(index, coa) {
+            $("#account_name").textbox("setValue", coa.account_name);
+        }
     });
 
     // UPLOAD

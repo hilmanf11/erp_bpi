@@ -1,5 +1,5 @@
 <table id="dg" class="easyui-datagrid" style="width:100%;" toolbar="#toolbar"></table>
-<div id="toolbar" style="height: 200px; padding: 10px;">
+<div id="toolbar" style="padding:10px;">
     <!-- <div style="width: 100%; display: grid; grid-template-columns: auto auto auto; grid-gap: 5px; display: flex;"> -->
     <fieldset style="width: 100%; border:2px solid #d0d0d0; margin-bottom: 5px; margin-top: 5px; border-radius:4px;">
         <legend><b>Form Filter Data</b></legend>
@@ -7,7 +7,15 @@
             <div class="fitem">
                 <span style="width:35%; display:inline-block;">Receipt Date</span>
                 <input style="width:28%;" id="filter_from" class="easyui-datebox" value="<?= date("Y-m-01") ?>" data-options="formatter:myformatter,parser:myparser, editable:false"> To
-                <input style="width:28%;" id="filter_to" class="easyui-datebox" value="<?= date("Y-m-t") ?>" data-options="formatter:myformatter,parser:myparser, editable:false">
+                <input style="width:29%;" id="filter_to" class="easyui-datebox" value="<?= date("Y-m-t") ?>" data-options="formatter:myformatter,parser:myparser, editable:false">
+            </div>
+            <div class="fitem">
+                <span style="width:35%; display:inline-block;">Division</span>
+                <input style="width:60%;" id="filter_division" class="easyui-combobox">
+            </div>
+            <div class="fitem">
+                <span style="width:35%; display:inline-block;">Category</span>
+                <input style="width:60%;" id="filter_item_category" class="easyui-combobox">
             </div>
             <div class="fitem">
                 <span style="width:35%; display:inline-block;">Product Family</span>
@@ -20,9 +28,9 @@
         </div>
         <div style="width: 49%; float:left;">
             <div class="fitem">
-                <span style="width:35%; display:inline-block;">Part No</span>
-                <input style="width:60%;" id="filter_item_rm" class="easyui-combogrid">
-            </div>
+                    <span style="width:35%; display:inline-block;">Product No</span>
+                    <input style="width:60%;" id="filter_items" class="easyui-combobox">
+                </div>
             <div class="fitem">
                 <span style="width:35%; display:inline-block;">Report Display</span>
                 <select style="width:60%;" id="filter_display" class="easyui-combobox" panelHeight="auto">
@@ -32,142 +40,32 @@
             </div>
             <div class="fitem" hidden>
                 <span style="width:35%; display:inline-block;">Trans Type</span>
-                <input style="width:60%;" id="filter_transtype" class="easyui-combobox">
+                <select style="width:60%;" id="filter_trans_type" class="easyui-combobox" panelHeight="auto" disabled>
+                    <option value="">Choose All</option>
+                    <option value="RECEIPT">RECEIPT</option>
+                    <option value="ISSUED">ISSUED</option>
+                    <option value="ADJ IN STO">ADJ IN STO</option>
+                    <option value="ADJ OUT STO">ADJ OUT STO</option>
+                    <option value="BPM">BPM</option>
+                    <option value="BPB">BPB</option>
+                    <option value="KANBAN WO">KANBAN WO</option>
+                </select>
             </div>
         </div>
+
     </fieldset>
     <?= $button ?>
 </div>
 
-<div id="dlg_generate" class="easyui-dialog" title="Save Data" data-options="closed: true,modal:true,closable: false" style="width: 500px; padding:10px; top: 20px;">
-    <div class="alert alert-warning" role="alert">
-        Please wait until the save process is complete
-    </div>
-    <div id="p_upload" class="easyui-progressbar" style="width:460px; margin-top: 10px;"></div>
-    <center><b id="p_start">0</b> Of <b id="p_finish">0</b></center>
-    <div id="p_remarks" class="easyui-panel" style="width:460px; height:200px; padding:10px; margin-top: 10px;">
-        <p>History Save Data</p>
-        <ul id="remarks">
-
-        </ul>
-    </div>
+<div class="easyui-panel" title="Print Preview" style="width:100%;padding:10px;">
+    <iframe id="printout" src="" style="width: 100%; height:500px; border: 0;"></iframe>
 </div>
 
-<div class="easyui-panel" title="Print Preview" style="width:100%;padding:10px;">
-    <iframe id="printout" src="" style="width: 100%; height:520px; border: 0;"></iframe>
+<div id="loadingOverlay" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 9999; text-align: center; color: white; font-size: 20px; padding-top: 20%;">
+    <b>Please Wait until Dialog download show up...</b>
 </div>
 
 <script>
-    function add(){
-        var filter_from = $("#filter_from").datebox('getValue');
-        var filter_to = $("#filter_to").datebox('getValue');
-        var filter_item_family = $("#filter_item_family").combobox('getValue');
-        var filter_item_rm = $("#filter_item_rm").combogrid('getValue');
-        var filter_display = $("#filter_display").combobox('getValue');
-        var filter_transtype = $("#filter_transtype").combobox('getValue');
-
-        $.ajax({
-            type: "post",
-            url: "<?= base_url('closing/locks/checkLock') ?>",
-            data: "period=" + filter_from + "&menus_id=<?= $menus_id ?>",
-            dataType: "json",
-            success: function (lock) {
-                if(lock.total > 0){
-                    toastr.error("This period is not active by Accounting");
-                    return false;
-                }
-
-                if(filter_item_family != ""){
-                    $.messager.confirm('Warning', 'Are you sure you want to save this data?', function(r) {
-                        if (r) {
-                            Swal.fire({
-                                title: 'Please Wait for Save Inventory Data',
-                                showConfirmButton: false,
-                                allowOutsideClick: false,
-                                allowEscapeKey: false,
-                                didOpen: () => {
-                                    Swal.showLoading();
-                                },
-                            });
-
-                            $("#p_remarks").html("");
-
-                            $.ajax({
-                                type: "post",
-                                url: '<?= base_url('finance/inventory_rm/getData') ?>',
-                                data: {
-                                    filter_from: filter_from,
-                                    filter_to: filter_to,
-                                    filter_item_family: filter_item_family,
-                                    filter_item_rm: filter_item_rm,
-                                },
-                                dataType: "json",
-                                success: function(data) {
-                                    Swal.close();
-
-                                    if(data.total > 0){
-                                        requestData(data.total, data.rows);
-                                        $('#dlg_generate').dialog('open');
-
-                                        function requestData(total, json, jml = 1, value = 0) {
-                                            if (value < 100) {
-                                                value = Math.floor((jml / total) * 100);
-                                                var i = (jml - 1);
-
-                                                $('#p_upload').progressbar('setValue', value);
-                                                $('#p_start').html(jml);
-                                                $('#p_finish').html(data.total);
-
-                                                $.ajax({
-                                                    type: "post",
-                                                    url: '<?= base_url('finance/inventory_rm/create') ?>',
-                                                    data: {
-                                                        data: json[i]
-                                                    },
-                                                    dataType: "json",
-                                                    success: function(result) {
-                                                        requestData(total, json, jml + 1, value);
-
-                                                        if (result.theme == "success") {
-                                                            var title = "<b style='color: green;'>" + result.title + "</b> | " + result.message;
-                                                        } else {
-                                                            var title = "<b style='color: red;'>" + result.title + "</b> | " + result.message;
-                                                        }
-
-                                                        $("#p_remarks").append(title + "<br>");
-
-                                                        if (i == (data.total - 1)) {
-                                                            $('#dlg_generate').dialog('close');
-
-                                                            Swal.fire({
-                                                                title: result.message,
-                                                                icon: result.theme,
-                                                                confirmButtonText: 'Ok',
-                                                                allowOutsideClick: false,
-                                                            }).then((result) => {
-                                                                // if (result.isConfirmed) {
-                                                                //     window.location.reload();
-                                                                // }
-                                                            });
-                                                        }
-                                                    }
-                                                });
-                                            }
-                                        }
-                                    }else{
-                                        toastr.warning("Data not Found!");
-                                    }
-                                }
-                            });
-                        }
-                    });
-                }else{
-                    toastr.warning("Please select Product Family!");
-                }
-            }
-        });
-    }
-
     function reload() {
         window.location.reload();
     }
@@ -179,120 +77,135 @@
     function filter() {
         var filter_from = $("#filter_from").datebox('getValue');
         var filter_to = $("#filter_to").datebox('getValue');
+        var filter_item_category = $("#filter_item_category").combobox('getValue');
         var filter_item_family = $("#filter_item_family").combobox('getValue');
-        var filter_item_rm = $("#filter_item_rm").combogrid('getValue');
+        var filter_items = $("#filter_items").combobox('getValue');
         var filter_display = $("#filter_display").combobox('getValue');
-        var filter_transtype = $("#filter_transtype").combobox('getValue');
-
-        if(filter_item_family != ""){
-            url = "?filter_from=" + filter_from + "&filter_to=" + filter_to + "&filter_item_family=" + filter_item_family + "&filter_item_rm=" + filter_item_rm + "&filter_display=" + filter_display + "&filter_transtype=" + filter_transtype;
-            $("#printout").contents().find('html').html("<center><br><br><br><b style='font-size:20px;'>Please Wait...</b></center>");
-            $("#printout").attr('src', '<?= base_url('finance/inventory_rm/print') ?>' + url);
-        }else{
-            toastr.warning("Please select Product Family!");
-        }
+        var filter_trans_type = $("#filter_trans_type").combobox('getValue');
+        var filter_division = $("#filter_division").combobox('getValue');
+        url = "?filter_from=" + filter_from + "&filter_to=" + filter_to + "&filter_item_category=" + filter_item_category + "&filter_item_family=" + filter_item_family + "&filter_items=" + filter_items + "&filter_display=" + filter_display + "&filter_trans_type=" + filter_trans_type + "&filter_division=" + filter_division;
+        $("#printout").contents().find('html').html("<center><br><br><br><b style='font-size:20px;'>Please Wait...</b></center>");
+        $("#printout").attr('src', '<?= base_url('finance/inventory_rm/print') ?>' + url);
     }
 
     function excel() {
         var filter_from = $("#filter_from").datebox('getValue');
         var filter_to = $("#filter_to").datebox('getValue');
+        var filter_item_category = $("#filter_item_category").combobox('getValue');
         var filter_item_family = $("#filter_item_family").combobox('getValue');
-        var filter_item_rm = $("#filter_item_rm").combogrid('getValue');
+        var filter_items = $("#filter_items").combobox('getValue');
         var filter_display = $("#filter_display").combobox('getValue');
-        var filter_transtype = $("#filter_transtype").combobox('getValue');
+        var filter_trans_type = $("#filter_trans_type").combobox('getValue');
+        var filter_division = $("#filter_division").combobox('getValue');
+        var url = "?filter_from=" + filter_from + "&filter_to=" + filter_to + "&filter_item_category=" + filter_item_category + "&filter_item_family=" + filter_item_family + "&filter_items=" + filter_items + "&filter_display=" + filter_display + "&filter_trans_type=" + filter_trans_type + "&filter_division=" + filter_division;
 
-        if(filter_item_family != ""){
-            url = "?filter_from=" + filter_from + "&filter_to=" + filter_to + "&filter_item_family=" + filter_item_family + "&filter_item_rm=" + filter_item_rm + "&filter_display=" + filter_display + "&filter_transtype=" + filter_transtype;
-            window.location.assign('<?= base_url('finance/inventory_rm/print/excel') ?>' + url);
-        }else{
-            toastr.warning("Please select Product Family!");
-        }
+        // Tampilkan overlay
+        $("#loadingOverlay").show();
+
+        // Unduh file
+        window.location.assign('<?= base_url('finance/inventory_rm/print/excel') ?>' + url);
+
+        // Sembunyikan overlay setelah beberapa saat
+        setTimeout(function () {
+            $("#loadingOverlay").hide();
+        }, 3000); // Sesuaikan waktu jika perlu
     }
 
     $(function() {
-        $("#add").html("Save Inventory RM");
-        
-        $("#filter_transtype").combobox({
-            url: '<?= base_url('master/transaction_types/reads') ?>',
-            valueField: 'number',
+        $("#filter_item_category").combobox({
+            url: '<?= base_url('master/item_categories/readsnotfg') ?>',
+            valueField: 'id',
             textField: 'name',
-            prompt: "Select Transaction Type",
-            icons: [{
-                iconCls: 'icon-clear',
-                handler: function(e) {
-                    $(e.data.target).combobox('clear').combobox('textbox').focus();
-                }
-            }],
-        });
-
-        $("#filter_item_family").combobox({
-            url: '<?= base_url('finance/inventory_rm/readItemFamily/001') ?>',
-            valueField: 'number',
-            textField: 'name',
-            prompt: "Select Product Family",
-            icons: [{
-                iconCls: 'icon-clear',
-                handler: function(e) {
-                    $(e.data.target).combobox('clear').combobox('textbox').focus();
-                }
-            }],
-            onSelect: function(row) {
-                $('#filter_item_rm').combogrid({
-                    url: '<?= base_url('master/item_rm/reads/') ?>' + row.number,
-                    panelWidth: 420,
-                    idField: 'id',
-                    textField: 'number',
-                    mode: 'remote',
-                    fitColumns: true,
-                    prompt: "Select Part No",
+            prompt: "Select Categories",
+            onSelect: function(category) {
+                $("#filter_item_family").combobox({
+                    url: '<?= base_url('finance/inventory_rm/readItemFamily/') ?>' + category.id,
+                    valueField: 'number',
+                    textField: 'name',
+                    prompt: "Select Product Family",
                     icons: [{
                         iconCls: 'icon-clear',
                         handler: function(e) {
-                            $(e.data.target).combogrid('clear').combogrid('textbox').focus();
+                            $(e.data.target).combobox('clear').combobox('textbox').focus();
                         }
                     }],
-                    columns: [
-                        [{
-                            field: 'number',
-                            title: 'Part No',
-                            width: 200
-                        }, {
-                            field: 'name',
-                            title: 'Part Name',
-                            width: 200
-                        }, ]
-                    ]
+                    onSelect: function(row) {
+                        $('#filter_items').combobox({
+                            url: '<?= base_url('master/item_rm/read/') ?>' + row.id,
+                            valueField: 'id',
+                            textField: 'number',
+                            prompt: "Select Product No",
+                            icons: [{
+                                iconCls: 'icon-clear',
+                                handler: function(e) {
+                                    $(e.data.target).combobox('clear').combobox('textbox').focus();
+                                }
+                            }],
+                        });
+                    }
                 });
             }
         });
-
-        $('#filter_item_rm').combogrid({
-            url: '<?= base_url('master/item_rm') ?>',
-            panelWidth: 420,
-            idField: 'id',
-            textField: 'number',
-            mode: 'remote',
-            fitColumns: true,
-            prompt: "Select Part No",
-            icons: [{
-                iconCls: 'icon-clear',
-                handler: function(e) {
-                    $(e.data.target).combogrid('clear').combogrid('textbox').focus();
-                }
-            }],
-            columns: [
-                [{
-                    field: 'number',
-                    title: 'Part No',
-                    width: 200
-                }, {
-                    field: 'name',
-                    title: 'Part Name',
-                    width: 200
-                }, ]
-            ]
-        });
     });
+
+    $("#filter_item_family").combobox({
+        url: '<?= base_url('finance/inventory_rm/readItemFamilys/') ?>',
+        valueField: 'number',
+        textField: 'name',
+        prompt: "Select Product Family",
+        icons: [{
+            iconCls: 'icon-clear',
+            handler: function(e) {
+                $(e.data.target).combobox('clear').combobox('textbox').focus();
+            }
+        }],
+        onSelect: function(row) {
+            $('#filter_items').combobox({
+                url: '<?= base_url('master/item_rm/read/') ?>' + row.id,
+                valueField: 'id',
+                textField: 'number',
+                prompt: "Select Product No",
+                icons: [{
+                    iconCls: 'icon-clear',
+                    handler: function(e) {
+                        $(e.data.target).combobox('clear').combobox('textbox').focus();
+                    }
+                }],
+            });
+        }
+    });
+
+    $('#filter_items').combobox({
+        url: '<?= base_url('master/item_rm/reads/') ?>',
+        valueField: 'id',
+        textField: 'number',
+        prompt: "Select Product No",
+        icons: [{
+            iconCls: 'icon-clear',
+            handler: function(e) {
+                $(e.data.target).combobox('clear').combobox('textbox').focus();
+            }
+        }],
+    });
+
+    $('#filter_division').combobox({
+        url: '<?= base_url('master/divisions/reads'); ?>',
+        valueField: 'number',
+        textField: 'number',
+        panelHeight: 'panelHeight',
+        prompt: 'Choose Division',
+    });
+
+    $("#filter_display").combobox({
+        onChange: function(display){
+            if(display === 'DETAIL'){
+                $('#filter_trans_type').combobox('enable');
+            } else {
+                $('#filter_trans_type').combobox('disable');
+            }
+        }
+    });
+        
 
     //Format Datepicker
     function myformatter(date) {
@@ -301,7 +214,6 @@
         var d = date.getDate();
         return y + '-' + (m < 10 ? ('0' + m) : m) + '-' + (d < 10 ? ('0' + d) : d);
     }
-
     //Format Datepicker
     function myparser(s) {
         if (!s) return new Date();

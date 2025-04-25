@@ -39,6 +39,16 @@
                     <select style="width:60%;" id="filter_display" class="easyui-combobox" panelHeight="auto">
                         <option value="RECAP">RECAP</option>
                         <option value="DETAIL">DETAIL</option>
+                        <option value="RECAP SO">RECAP SO</option>
+                        <option value="SO CUSTOMER">SO CUSTOMER</option>
+                    </select>
+                </div>
+                <div class="fitem">
+                    <span style="width:35%; display:inline-block;">Status</span>
+                    <select style="width:60%;" id="filter_status" class="easyui-combobox" panelHeight="auto">
+                        <option value="">Choose All</option>
+                        <option value="OPEN">OPEN</option>
+                        <option value="CLOSE">CLOSE</option>
                     </select>
                 </div>
             </div>
@@ -63,6 +73,7 @@
         var filter_item_fg = $("#filter_item_fg").combobox("getValue");
         var filter_division = $("#filter_division").combobox("getValue");
         var filter_display = $("#filter_display").combobox("getValue");
+        var filter_status = $("#filter_status").combobox("getValue");
 
         var url = "?filter_so_date_from=" + window.btoa(filter_so_date_from) +
             "&filter_so_date_to=" + window.btoa(filter_so_date_to) +
@@ -71,6 +82,7 @@
             "&filter_sales_order_no=" + window.btoa(filter_sales_order_no) +
             "&filter_item_fg=" + window.btoa(filter_item_fg) +
             "&filter_division=" + window.btoa(filter_division) +
+            "&filter_status=" + window.btoa(filter_status) +
             "&filter_display=" + window.btoa(filter_display);
 
         if (filter_so_date_from == "" && filter_so_date_to == "") {
@@ -90,6 +102,7 @@
         var filter_item_fg = $("#filter_item_fg").combobox("getValue");
         var filter_division = $("#filter_division").combobox("getValue");
         var filter_display = $("#filter_display").combobox("getValue");
+        var filter_status = $("#filter_status").combobox("getValue");
 
         var url = "?filter_so_date_from=" + window.btoa(filter_so_date_from) +
             "&filter_so_date_to=" + window.btoa(filter_so_date_to) +
@@ -98,6 +111,7 @@
             "&filter_sales_order_no=" + window.btoa(filter_sales_order_no) +
             "&filter_item_fg=" + window.btoa(filter_item_fg) +
             "&filter_division=" + window.btoa(filter_division) +
+            "&filter_status=" + window.btoa(filter_status) +
             "&filter_display=" + window.btoa(filter_display);
 
         if (filter_so_date_from == "" && filter_so_date_to == "") {
@@ -219,7 +233,7 @@
 
         $('#filter_division').combobox({
             url: '<?= base_url('master/divisions/reads'); ?>',
-            valueField: 'name',
+            valueField: 'number',
             textField: 'name',
             prompt: 'Choose Division',
         });

@@ -32,17 +32,132 @@ class Supply_requestions extends CI_Controller
         $records = $this->crud->query("SELECT `period` FROM supply_requestions WHERE `status` = '0' GROUP BY `period`");
         echo json_encode($records);
     }
-    public function readWp($period)
+
+    public function readWo($period)
     {
-        $records = $this->crud->query("SELECT wp FROM supply_requestions WHERE `status` = '0' and `period` = '$period' GROUP BY wp");
+        $records = $this->crud->query("SELECT `workorder` FROM supply_requestions WHERE `period` = '$period' GROUP BY `workorder`");
         echo json_encode($records);
     }
-    public function readRequestNo($period, $wp)
+
+    public function readRequestNo($period, $workorder)
     {
-        $wp = base64_decode($wp);
-        $records = $this->crud->query("SELECT request_no FROM supply_requestions WHERE status = '0' and `period` = '$period' and wp = '$wp' GROUP BY `request_no`");
+        $worko = base64_decode($workorder);
+        $records = $this->crud->query("SELECT request_no FROM supply_requestions WHERE status = '0' and `period` = '$period' and workorder = '$worko' GROUP BY `request_no`");
         echo json_encode($records);
     }
+
+    public function readWorkorders($period, $type)
+    {
+        if($type == "SCP"){
+            $send = $this->crud->query("SELECT DISTINCT wo_no, `period` FROM scraps WHERE `period` = '$period' and `status` = '0'ORDER BY wo_no DESC");
+            echo json_encode($send);
+        }else{
+            $send = $this->crud->query("SELECT DISTINCT wo_no, `period` FROM production_schedules WHERE `period` = '$period' and `status` = '0'ORDER BY wo_no DESC");
+            echo json_encode($send);
+        }
+    }
+
+    public function readScrapNo($wo_no)
+    { 
+        $wo_nos = base64_decode($wo_no);
+        $send = $this->crud->query("SELECT DISTINCT document FROM scraps WHERE `wo_no` = '$wo_nos' and `status` = '0'ORDER BY wo_no DESC");
+        echo json_encode($send);
+    }
+
+    // public function readItems($wo_no="", $type)
+    // {   
+    //     $worko = base64_decode($wo_no);
+    //     if($type == "SCP"){
+    //         $send = $this->crud->query("SELECT a.* 
+    //         FROM item_rm a 
+    //         JOIN scraps b ON a.id = b.item_rm_id 
+    //         WHERE b.wo_no = '$worko' ORDER BY b.item_rm_id DESC");
+    //         echo json_encode($send);
+    //     }else{
+    //         $send = $this->crud->query("SELECT a.*, b.name as item_family_name 
+    //         FROM item_rm a 
+    //         JOIN item_familys b ON a.item_family_id = b.id 
+    //         WHERE a.status = '0'");
+    //         echo json_encode($send);
+    //     }
+    // }
+
+    public function datatablesTemp()
+    {
+        $workorder = base64_decode($this->input->get('workorder'));
+        $type = base64_decode($this->input->get('type'));
+        $document = base64_decode($this->input->get('document'));
+        //var_dump($workorder);
+
+        if($type == "SCP") {
+            $this->db->select('b.id, b.number, b.name, d.qty, b.uom, COALESCE(e.shoot_weight, 0) as shoot_weight, COALESCE(e.runner_weight, 0) as runner_weight, c.weight, e.cavity_standard as cavity, f.mpq');
+            $this->db->from('supply_sheets a');
+            $this->db->join('item_rm b', 'a.item_rm_id = b.id');
+            $this->db->join('item_fg c', 'a.item_fg_id = c.id');
+            $this->db->join('scraps d', 'a.item_rm_id = d.item_rm_id AND a.workorder = d.wo_no', 'left');
+            $this->db->join('molds e', 'c.number = e.mold_name', 'left');
+            $this->db->join('supplier_items f', 'b.id = f.item_rm_id','left');
+            $this->db->where('a.workorder', $workorder);
+            $this->db->where('d.document', $document);
+            $this->db->where('f.share_order', 100);
+            $this->db->order_by('b.number', 'asc');
+            $records = $this->db->get()->result_array();
+            //echo $this->db->last_query();
+        
+            $id = 1;
+            $obj = []; 
+            foreach ($records as $record) {
+                // Hitung qty berdasarkan shoot_weight
+                $qty = ($record['shoot_weight'] == 0) ? $record['qty'] : $record['qty'] * (10 * $record['shoot_weight']);
+                
+                // Ambil nilai mpq
+                $mpq = $record['mpq'];
+        
+                // Pastikan qty adalah kelipatan mpq
+                if ($mpq > 0) {
+                    $qty = ceil($qty / $mpq) * $mpq;
+                }
+        
+                $obj[] = array(
+                    "no_id" => $id,
+                    "item_rm_id" => $record['id'],
+                    "number" => $record['number'],
+                    "name" => $record['name'],
+                    "qty" => number_format($qty, 4), 
+                    "uom" => $record['uom']
+                );
+                $id++;
+            }
+        }else{
+            $this->db->select('b.id, b.number, b.name, 0 as qty, b.uom');
+            $this->db->from('supply_sheets a');
+            $this->db->join('item_rm b', 'a.item_rm_id = b.id');
+            $this->db->where('a.workorder',$workorder);
+            $this->db->where('b.status', 0);
+            $this->db->order_by('b.number', 'asc');
+            $records = $this->db->get()->result_array();
+            //echo $this->db->last_query();
+
+            $id = 1;
+            $obj = []; 
+            foreach ($records as $record) {
+                $obj[] = array(
+                    "no_id" => $id,
+                    "item_rm_id" => $record['id'],
+                    "number" => $record['number'],
+                    "name" => $record['name'],
+                    "qty" => $record['qty'],
+                    "uom" => $record['uom']
+                );
+                $id++;
+            }
+        }
+
+        $arr['rows'] = $obj;
+        die(json_encode($arr));
+    }
+
+
     public function request_no($trans_date)
     {
         $trans_date = base64_decode($trans_date);
@@ -59,6 +174,7 @@ class Supply_requestions extends CI_Controller
         }
         echo "PRQ-" . $datenow . "-" . $autoID;
     }
+    
     public function datatables()
     {
         if ($this->input->post()) {
@@ -84,7 +200,7 @@ class Supply_requestions extends CI_Controller
                 $this->db->where('a.deleted', 0);
                 $this->db->where('a.status', 0);
                 $this->db->like("a.period", $filter_period);
-                $this->db->like("a.wp", $filter_wp);
+                $this->db->like("a.workorder", $filter_wp);
                 if ($filter_request_no != "") {
                     $this->db->where('a.request_no', $filter_request_no);
                 }
@@ -102,8 +218,8 @@ class Supply_requestions extends CI_Controller
                         "request_date" => $record['request_date'],
                         "request_name" => $record['request_name'],
                         "period" => $record['period'],
-                        "wp" => $record['wp'],
                         "workorder" => $record['workorder'],
+                        "document" => $record['document'],
                         "item_number" => $record['item_number'],
                         "item_name" => $record['item_name'],
                         "state" => "closed"
@@ -129,8 +245,8 @@ class Supply_requestions extends CI_Controller
                         "request_no" => $record['request_no'],
                         "request_date" => $record['request_date'],
                         "request_name" => $record['request_name'],
+                        "document" => $record['document'],
                         "period" => $record['period'],
-                        "wp" => $record['wp'],
                         "workorder" => $record['workorder'],
                         "item_rm_id" => $record['item_rm_id'],
                         "item_number" => $record['item_number'],
@@ -194,7 +310,7 @@ class Supply_requestions extends CI_Controller
                     if (!empty($wip_balances->balance)) {
                         if ($post['qty'] >= $wip_balances->balance) {
                             //kalo items di hitung mpq
-                            if (@$supplier_items->calculate == 1) {
+                            if (@$supplier_items->calculate == 'YES') {
                                 $begin = $wip_balances->balance;
                                 $need = $post['qty'];
                                 $issued = (ceil(($post['qty'] - $wip_balances->balance) / @$supplier_items->mpq) * @$supplier_items->mpq);
@@ -248,6 +364,10 @@ class Supply_requestions extends CI_Controller
                         ]);
                     }
                     $send   = $this->crud->create('supply_requestions', $post);
+
+                    if(!empty($post['document'])){
+                        $update = $this->crud->update('scraps', ["document" => $post['document']], ["status" => 1]);
+                    }
                     echo $send;
                 }
             } else {
@@ -257,11 +377,13 @@ class Supply_requestions extends CI_Controller
             show_error("Cannot Process your request");
         }
     }
+    
     public function delete()
     {
         $data = $this->input->post();
         $send = $this->crud->delete('supply_requestions', ["id" => $data['id']]);
         $delete = $this->crud->delete('wip_balances', ["request_no" => $data['request_no'], "item_rm_id" => $data['item_rm_id']]);
+        $update = $this->crud->update('scraps', ["document" => $data['document']], ["status" => 0]);
         echo $send;
     }
 
@@ -326,7 +448,7 @@ class Supply_requestions extends CI_Controller
             $this->db->from('supply_requestions a');
             $this->db->join('item_rm b', 'a.item_rm_id = b.id');
             // $this->db->join('uom d', 'b.uom_id = d.id');
-            $this->db->join('warehouse_location_items f', "a.item_rm_id = f.item_rm_id and type = 'RM'", 'left');
+            $this->db->join('warehouse_location_items f', "a.item_rm_id = f.item_rm_id and f.type = 'RM'", 'left');
             $this->db->where('a.deleted', 0);
             $this->db->like('a.request_no', base64_decode($request_no));
             $this->db->limit(8, ($i * 8));
@@ -392,9 +514,9 @@ class Supply_requestions extends CI_Controller
                                 <div style="float:left; width:30%;">
                                     <table style="width:100%; font-size:12px; margin-bottom:10px;">
                                         <tr>
-                                            <td width="100">Period / WP</td>
+                                            <td width="100">Period</td>
                                             <td width="30">:</td>
-                                            <td><b>' . @$kanban->period . ' / ' . @$kanban->wp . '</b></td>
+                                            <td><b>' . @$kanban->period . '</b></td>
                                         </tr>
                                         <tr>
                                             <td width="100">Work Order ID</td>
@@ -428,7 +550,6 @@ class Supply_requestions extends CI_Controller
                                         <th width="80">WHS Stock</th>
                                         <th width="80">WIP Balance</th>
                                         <th width="80">WHS Location</th>
-                                        <th width="80">Remarks</th>
                                     </tr>';
             $no = 1;
             foreach ($records as $record) {
@@ -442,7 +563,7 @@ class Supply_requestions extends CI_Controller
                     (COALESCE(SUM(e.qty),0) + COALESCE(g.return_qty,0) - COALESCE(f.qty, 0)) as end_stock
                 FROM item_rm a 
                 JOIN item_familys b ON a.item_family_id = b.id
-                JOIN uom c ON a.uom = c.uom
+                -- JOIN uom c ON a.uom = c.uom
                 LEFT JOIN purchase_order_receipts d ON a.id = d.item_rm_id and d.receipt_date <= '$dateNow'
                 LEFT JOIN scan_item_receipts e ON d.receipt_id = e.receipt_id
                 LEFT JOIN (SELECT item_rm_id, COALESCE(SUM(qty), 0) as qty FROM issued_material_details WHERE DATE_FORMAT(created_date, '%Y-%m-%d') <= '$dateNow' GROUP BY item_rm_id) f ON a.id = f.item_rm_id
@@ -472,7 +593,6 @@ class Supply_requestions extends CI_Controller
                                 <td style="text-align:right;">' . number_format((@$stockWarehouse[0]->end_stock), 2) . '</td>
                                 <td style="text-align:right;">' . number_format((@$wip_balances->balance), 2) . '</td>
                                 <td style="text-align:center;">' . $record['location'] . '</td>
-                                <td style="text-align:center;">' . $remarksSupply . '</td>
                             </tr>';
                 $no++;
             }
@@ -522,7 +642,7 @@ class Supply_requestions extends CI_Controller
         // $this->db->join('uom d', 'b.uom_id = d.id');
         $this->db->where('a.deleted', 0);
         $this->db->like("a.period", $filter_period);
-        $this->db->like("a.wp", $filter_wp);
+        $this->db->like("a.workorder", $filter_wp);
         if ($filter_request_no != "") {
             $this->db->where('a.request_no', $filter_request_no);
         }

@@ -18,7 +18,7 @@
             <th rowspan="2" data-options="field:'item_rm_number',width:150,align:'center'">Part No</th>
             <th rowspan="2" data-options="field:'item_rm_name',width:200,halign:'center'">Part Name</th>
             <th rowspan="2" data-options="field:'uom_po',width:150,halign:'center'">UOM PO</th>
-            <th rowspan="2" data-options="field:'uom_soft',width:150,halign:'center'">UOM Soft</th>
+            <th rowspan="2" data-options="field:'uom_soft',width:150,halign:'center'">UOM Supply</th>
             <th rowspan="2" data-options="field:'convertion',width:150,halign:'center'">Convertion</th>
             <th colspan="2" data-options="field:'',width:100,halign:'center'"> Created</th>
             <th colspan="2" data-options="field:'',width:100,halign:'center'"> Updated</th>

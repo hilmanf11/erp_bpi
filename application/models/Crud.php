@@ -94,11 +94,7 @@ class Crud extends CI_Model
     function create($table, $values)
     {
         if ($this->session->username != "") {
-            if(empty($values['id'])){
-                $id = $this->autoid($table);
-            }else{
-                $id = $values['id'];
-            }
+            $id = $this->autoid($table);
 
             if (@$values['id'] != "") {
                 $data = array_merge($values, [
@@ -115,7 +111,37 @@ class Crud extends CI_Model
 
             if ($this->db->insert($table, $data)) {
                 $this->logs("Create", json_encode($data), $table);
-                $this->approvals($table, $id, []);
+                $this->approvals($table, $id);
+                return json_encode(array("title" => "Good Job", "message" => "Data Saved Successfully", "theme" => "success"));
+            } else {
+                return log_message('error', 'There is an error in your system or data');
+            }
+        } else {
+            return log_message('error', 'Your Session has been Expired');
+        }
+    }
+
+    function createNotLog($table, $values)
+    {
+        if ($this->session->username != "") {
+            $id = $this->autoid($table);
+
+            if (@$values['id'] != "") {
+                $data = array_merge($values, [
+                    "created_by" => $this->session->username,
+                    "created_date" => date('Y-m-d H:i:s')
+                ]);
+            } else {
+                $data = array_merge($values, [
+                    "id" => $id,
+                    "created_by" => $this->session->username,
+                    "created_date" => date('Y-m-d H:i:s')
+                ]);
+            }
+
+            if ($this->db->insert($table, $data)) {
+                // $this->logs("Create", json_encode($data), $table);
+                // $this->approvals($table, $id);
                 return json_encode(array("title" => "Good Job", "message" => "Data Saved Successfully", "theme" => "success"));
             } else {
                 return log_message('error', 'There is an error in your system or data');
@@ -141,7 +167,7 @@ class Crud extends CI_Model
                 $this->logs("Update New", json_encode($data), $table);
 
                 $read = $this->read($table, [], $where);
-                $this->approvals($table, @$read->id, $dataBefore);
+                $this->approvals($table, @$read->id);
 
                 return json_encode(array("title" => "Good Job", "message" => "Data Updated Successfully", "theme" => "success"));
             } else {
@@ -224,13 +250,13 @@ class Crud extends CI_Model
         $this->db->insert('logs', $data);
     }
 
-    function approvals($table, $table_id, $data)
+    function approvals($table, $table_id)
     {
         $query = $this->db->query("DESCRIBE $table");
         $fields = $query->result_array();
 
         $user = $this->read('users', [], ["username" => $this->session->username]);
-        $approval = $this->read('approvals', [], ["table_name" => $table]);
+        $approval = $this->read('approvals', [], ["table_name" => $table, "sub_department" => $this->session->sub_department, "department" => $this->session->department, "division" => $this->session->division]);
 
         $fieldExists = false;
         foreach ($fields as $field) {
@@ -246,7 +272,6 @@ class Crud extends CI_Model
                     "approved" => 1,
                     "approved_to" => $approval->user_approval_1,
                     "approved_by" => $this->session->username,
-                    "approved_data" => json_encode($data),
                 ];
 
                 $this->db->where(["id" => $table_id]);

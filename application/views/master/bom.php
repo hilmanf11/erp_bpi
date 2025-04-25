@@ -22,7 +22,7 @@
     <thead>
         <tr>
             <th rowspan="2" field="ck" checkbox="true"></th>
-            <th rowspan="2" data-options="field:'item_fg_id',width:150,align:'center'">Product ID</th>
+            <th rowspan="2" data-options="field:'item_fg_id',width:150,align:'left'">Product ID</th>
             <th rowspan="2" data-options="field:'item_fg_number',width:250,halign:'center'">Product No</th>
             <th rowspan="2" data-options="field:'item_fg_name',width:300,halign:'center'">Product Name</th>
             <th colspan="2" data-options="field:'',width:100,halign:'center'"> Created</th>
@@ -125,10 +125,10 @@
                     editor: {
                         type: 'combogrid',
                         options: {
-                            url: '<?= base_url('master/item_rm/reads'); ?>',
+                            url: '<?= base_url('master/bom/readItem'); ?>',
                             required: true,
                             panelWidth: 400,
-                            idField: 'id',
+                            idField: 'number',
                             textField: 'number',
                             mode: 'remote',
                             fitColumns: true,
@@ -142,6 +142,10 @@
                                     field: 'name',
                                     title: 'Part Name',
                                     width: 200
+                                }, {
+                                    field: 'type',
+                                    title: 'Type',
+                                    width: 80
                                 }]
                             ],
                             onSelect: function (value, rows) {
@@ -151,7 +155,8 @@
 
                                 var item_fg_id = $("#item_fg_id").combogrid('getValue');
 
-                                var weight, runner, cavity_standard;
+                                // var weight, runner, cavity_standard;
+                                var weight, total_runner;
 
                                 // Use $.when to wait for both AJAX requests to complete
                                 $.when(
@@ -171,8 +176,15 @@
                                         data: "item_fg_id=" + item_fg_id,
                                         dataType: "json",
                                         success: function (menu_loading) {
-                                            runner = menu_loading[0].runner;
-                                            cavity_standard = menu_loading[0].cavity_standard;
+                                            if (menu_loading.length === 0) {
+                                                // runner = 0;
+                                                // cavity_standard = 0;
+                                                total_runner = 0;
+                                            }else{
+                                                // runner = menu_loading[0].runner;
+                                                // cavity_standard = menu_loading[0].cavity_standard;
+                                                total_runner = menu_loading[0].total_runner;
+                                            }
                                         }
                                     })
                                 ).then(function () {
@@ -181,9 +193,13 @@
                                     var calculatedComposition;
 
                                     if (item_family_name == 'VIRGIN') {
-                                        calculatedComposition = ((parseFloat(weight) + parseFloat(runner / cavity_standard)) / 1000);
+                                        if(total_runner != 0){
+                                            calculatedComposition = ((parseFloat(weight) + parseFloat(total_runner)) / 1000);
+                                        }else{
+                                            calculatedComposition = 0;
+                                        }
                                     } else {
-                                        calculatedComposition = "";
+                                        calculatedComposition = 0;
                                     }
 
                                     var ed = dg.datagrid('getEditor', {
@@ -206,15 +222,30 @@
                                         index: rowIndex,
                                         field: 'composition'
                                     });
+                                    var ed7 = dg.datagrid('getEditor', {
+                                        index: rowIndex,
+                                        field: 'type_item'
+                                    });
+                                    
 
                                     $(ed.target).textbox('setValue', rows.name);
                                     $(ed3.target).textbox('setValue', rows.id);
                                     $(ed4.target).textbox('setValue', rows.item_family_name);
                                     $(ed5.target).textbox('setValue', rows.uom);
                                     $(ed6.target).numberbox('setValue', calculatedComposition);
+                                    $(ed7.target).textbox('setValue', rows.type);
                                 });
                             }
                         }
+                    }
+                }, {
+                    field: 'id',
+                    width: 150,
+                    
+                    halign: 'center',
+                    title: "ID",
+                    editor: {
+                        type: 'textbox'
                     }
                 }, {
                     field: 'item_rm_id',
@@ -222,6 +253,15 @@
                     hidden: true,
                     halign: 'center',
                     title: "Product ID",
+                    editor: {
+                        type: 'textbox'
+                    }
+                }, {
+                    field: 'type_item',
+                    width: 150,
+                    hidden: true,
+                    halign: 'center',
+                    title: "Type",
                     editor: {
                         type: 'textbox'
                     }
@@ -270,13 +310,12 @@
                             textField: 'name',
                             prompt: 'Choose Type',
                             panelHeight: true,
-                            required: true,
                             data: [{
                                     name: "ORIGINAL",
                                     type: "0"
                                 },
                                 {
-                                    name: "RECYCLE",
+                                    name: "CRUSHER",
                                     type: "100"
                                 },
                                 {
@@ -308,7 +347,7 @@
                     field: 'recyle',
                     width: 80,
                     align: 'center',
-                    title: "Recycle",
+                    title: "Crusher",
                     editor: {
                         type: 'numberbox',
                     }
@@ -321,7 +360,7 @@
                     editor: {
                         type: 'numberbox',
                         options: {
-                            precision: 5,
+                            precision: 9,
                         }
                     }
                 }, {
@@ -402,7 +441,7 @@
             method: 'post',
             url: '<?= base_url('master/bom/delete') ?>',
             data: {
-                item_fg_id: row.item_fg_id,
+                item_fg_id: item_fg_id,
                 item_rm_id: item_rm_id
             },
             success: function(result) {
@@ -540,17 +579,17 @@
                     rownumbers: true,
                     columns: [
                         [{
-                            field: 'item_rm_id',
+                            field: 'selected_item_id',
                             title: 'Part ID',
                             halign: 'center',
                             width: 150
                         }, {
-                            field: 'item_rm_number',
+                            field: 'selected_item_number',
                             title: 'Part No',
                             halign: 'center',
                             width: 150
                         }, {
-                            field: 'item_rm_name',
+                            field: 'selected_item_name',
                             title: 'Part Name',
                             halign: 'center',
                             width: 200
@@ -561,17 +600,17 @@
                             width: 100
                         }, {
                             field: 'recyle',
-                            title: 'Recyle',
+                            title: 'Crusher',
                             width: 100,
                             halign: 'center',
                             align: 'right',
                         }, {
-                            field: 'product_family_name',
+                            field: 'selected_item_prodfam',
                             title: 'Product Family',
                             halign: 'center',
                             width: 150
                         }, {
-                            field: 'uom',
+                            field: 'selected_item_uom',
                             title: 'UoM',
                             align: 'center',
                             width: 80
@@ -615,17 +654,39 @@
 
                     for (let i = 0; i < totalrows; i++) {
                         if (rows[i].item_rm_id) {
-                            $.ajax({
-                                type: "post",
-                                url: '<?= base_url('master/bom/create') ?>',
-                                data: {
+                            
+                            if(rows[i].type_item == "SA"){
+                                var dataFinal = {
                                     item_fg_id: item_fg_id,
+                                    id: rows[i].id,
+                                    item_fg_sa_id: rows[i].item_rm_id,
+                                    type: rows[i].type,
+                                    recyle: rows[i].recyle,
+                                    composition: rows[i].composition,
+                                    remark: rows[i].remark
+                                };
+                            }else{
+                                var dataFinal = {
+                                    item_fg_id: item_fg_id,
+                                    id: rows[i].id,
                                     item_rm_id: rows[i].item_rm_id,
                                     type: rows[i].type,
                                     recyle: rows[i].recyle,
                                     composition: rows[i].composition,
                                     remark: rows[i].remark
-                                },
+                                };
+                            }
+
+                            if(rows[i].type_item == "SA"){
+                                var url_save = "<?= base_url('master/bom/create_SA') ?>";
+                            }else{
+                                var url_save = "<?= base_url('master/bom/create') ?>";
+                            }
+
+                            $.ajax({
+                                type: "post",
+                                url: url_save,
+                                data: dataFinal,
                                 dataType: "json",
                                 success: function(result) {
                                     if (i == (totalrows - 1)) {

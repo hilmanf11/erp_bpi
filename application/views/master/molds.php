@@ -19,11 +19,13 @@
             <th rowspan="2" data-options="field:'customer_name',width:200,halign:'center'">Customer Name</th>
             <th rowspan="2" data-options="field:'model',width:150,halign:'center'">Model</th>
             <th rowspan="2" data-options="field:'mold_size',width:150,halign:'center'">Mold Size</th>
-            <th rowspan="2" data-options="field:'project_year',width:150,halign:'center'">Project Year</th>
-            <th rowspan="2" data-options="field:'cavity_standard',width:150,halign:'center'">Standard Cavity</th>
-            <th rowspan="2" data-options="field:'cavity_actual',width:150,halign:'center'">Actual Cavity</th>
-            <th rowspan="2" data-options="field:'shoot_standard',width:150,halign:'center'">Standard Shoot</th>
-            <th rowspan="2" data-options="field:'shoot_actual',width:150,halign:'center'">Actual Shoot</th>
+            <th rowspan="2" data-options="field:'project_year',width:80,halign:'center'">Project Year</th>
+            <th rowspan="2" data-options="field:'cavity_standard',width:100,halign:'center'">Standard <br>Cavity</th>
+            <th rowspan="2" data-options="field:'cavity_actual',width:100,halign:'center'">Actual Cavity</th>
+            <th rowspan="2" data-options="field:'shoot_standard',width:100,halign:'center'">Standard <br>Shoot</th>
+            <th rowspan="2" data-options="field:'shoot_actual',width:100,halign:'center'">Actual Shoot</th>
+            <th rowspan="2" data-options="field:'shoot_weight',width:100,halign:'center'">Shoot Weight</th>
+            <th rowspan="2" data-options="field:'runner_weight',width:100,halign:'center'">Runner Weight</th>
             <th rowspan="2" data-options="field:'mold_type',width:80,halign:'center'">Mold Type</th>
             <th rowspan="2" data-options="field:'remark',width:150,halign:'center'">Remarks</th>
             <th rowspan="2" data-options="field:'status',width:150,halign:'center', styler:cellStyler, formatter:cellFormatter">Status</th>
@@ -44,74 +46,87 @@
     <a href="javascript:void(0)" class="easyui-linkbutton" data-options="plain:true" onclick="$('#dlg_help').dialog('open');"><i class="fa fa-info"></i> Help</a>
 </div>
 <!-- DIALOG SAVE AND UPDATE -->
-<div id="dlg_insert" class="easyui-dialog" title="Add New" data-options="closed: true,modal:true" style="width: 600px; padding:10px; top: 20px;">
+<div id="dlg_insert" class="easyui-dialog" title="Add New" data-options="closed: true,modal:true" style="width: 1150px; height: auto; padding:10px; top: 20px; left: 20px;">
     <form id="frm_insert" method="post" novalidate>
         <fieldset style="width:100%; border:1px solid #d0d0d0; margin-bottom: 10px; border-radius:4px; float: left;">
             <legend><b>Form Data</b></legend>
-            <div class="fitem">
-                <span style="width:35%; display:inline-block;">Mold ID</span>
-                <input style="width:60%;" name="id" id="id" required="" class="easyui-textbox" readonly>
+            <div style="width: 50%; float: left;">
+                <div class="fitem">
+                    <span style="width:35%; display:inline-block;">Mold ID</span>
+                    <input style="width:60%;" name="id" id="id" required="" class="easyui-textbox" readonly>
+                </div>
+                <div class="fitem">
+                    <span style="width:35%; display:inline-block;">Mold Name</span>
+                    <input style="width:60%;" name="mold_name" id="mold_name" required="" class="easyui-textbox">
+                </div>
+                <div class="fitem">
+                    <span style="width:35%; display:inline-block;">Type</span>
+                    <select style="width:60%;" name="type" id="type" required="" panelHeight="auto" class="easyui-combobox">
+                        <option value="INTERNAL">INTERNAL</option>
+                        <option value="CUSTOMER PROPERTY">CUSTOMER PROPERTY</option>
+                    </select>
+                </div>
+                <div class="fitem">
+                    <span style="width:35%; display:inline-block;">Customer</span>
+                    <input style="width:60%;" name="customer_id" id="customer_id" required="" class="easyui-combobox">
+                </div>
+                <div class="fitem">
+                    <span style="width:35%; display:inline-block;">Model</span>
+                    <input style="width:60%;" name="model" id="model" class="easyui-textbox">
+                </div>
+                <div class="fitem">
+                    <span style="width:35%; display:inline-block;">Mold Size</span>
+                    <input style="width:60%;" name="mold_size" id="mold_size" class="easyui-textbox">
+                </div>
+                <div class="fitem">
+                    <span style="width:35%; display:inline-block;">Project Year</span>
+                    <input style="width:60%;" name="project_year" id="project_year" class="easyui-numberbox">
+                </div>
+                <div class="fitem">
+                    <span style="width:35%; display:inline-block;">Standard Cavity</span>
+                    <input style="width:60%;" name="cavity_standard" id="cavity_standard" class="easyui-numberbox">
+                </div>
             </div>
-            <div class="fitem">
-                <span style="width:35%; display:inline-block;">Mold Name</span>
-                <input style="width:60%;" name="mold_name" id="mold_name" required="" class="easyui-textbox">
-            </div>
-            <div class="fitem">
-                <span style="width:35%; display:inline-block;">Type</span>
-                <select style="width:60%;" name="type" id="type" required="" panelHeight="auto" class="easyui-combobox">
-                    <option value="INTERNAL">INTERNAL</option>
-                    <option value="CUSTOMER PROPERTY">CUSTOMER PROPERTY</option>
-                </select>
-            </div>
-            <div class="fitem">
-                <span style="width:35%; display:inline-block;">Customer</span>
-                <input style="width:60%;" name="customer_id" id="customer_id" required="" class="easyui-combobox">
-            </div>
-            <div class="fitem">
-                <span style="width:35%; display:inline-block;">Model</span>
-                <input style="width:60%;" name="model" id="model" class="easyui-textbox">
-            </div>
-            <div class="fitem">
-                <span style="width:35%; display:inline-block;">Mold Size</span>
-                <input style="width:60%;" name="mold_size" id="mold_size" class="easyui-textbox">
-            </div>
-            <div class="fitem">
-                <span style="width:35%; display:inline-block;">Project Year</span>
-                <input style="width:60%;" name="project_year" id="project_year" class="easyui-numberbox">
-            </div>
-            <div class="fitem">
-                <span style="width:35%; display:inline-block;">Standard Cavity</span>
-                <input style="width:60%;" name="cavity_standard" id="cavity_standard" class="easyui-numberbox">
-            </div>
-            <div class="fitem">
-                <span style="width:35%; display:inline-block;">Actual Cavity</span>
-                <input style="width:60%;" name="cavity_actual" id="cavity_actual" class="easyui-numberbox">
-            </div>
-            <div class="fitem">
-                <span style="width:35%; display:inline-block;">Standard Shoot</span>
-                <input style="width:60%;" name="shoot_standard" id="shoot_standard" class="easyui-numberbox">
-            </div>
-            <div class="fitem">
-                <span style="width:35%; display:inline-block;">Actual Shoot</span>
-                <input style="width:60%;" name="shoot_actual" id="shoot_actual" class="easyui-numberbox">
-            </div>
-            <div class="fitem">
-                <span style="width:35%; display:inline-block;">Mold Type</span>
-                <select style="width:60%;" name="mold_type" id="mold_type" panelHeight="auto" class="easyui-combobox">
-                    <option value="SINGLE">SINGLE</option>
-                    <option value="DOUBLE">DOUBLE</option>
-                </select>
-            </div>
-            <div class="fitem">
-                <span style="width:35%; display:inline-block;">Remarks</span>
-                <input style="width:60%;" name="remark" id="remark" class="easyui-textbox">
-            </div>
-            <div class="fitem">
-                <span style="width:35%; display:inline-block;">Status</span>
-                <select style="width:60%;" name="status" id="status" required="" panelHeight="auto" class="easyui-combobox">
-                    <option value="0">Active</option>
-                    <option value="1">Not Active</option>
-                </select>
+
+            <div style="width: 50%; float: left;">
+                <div class="fitem">
+                    <span style="width:35%; display:inline-block;">Actual Cavity</span>
+                    <input style="width:60%;" name="cavity_actual" id="cavity_actual" class="easyui-numberbox">
+                </div>
+                <div class="fitem">
+                    <span style="width:35%; display:inline-block;">Standard Shoot</span>
+                    <input style="width:60%;" name="shoot_standard" id="shoot_standard" class="easyui-numberbox">
+                </div>
+                <div class="fitem">
+                    <span style="width:35%; display:inline-block;">Actual Shoot</span>
+                    <input style="width:60%;" name="shoot_actual" id="shoot_actual" class="easyui-numberbox">
+                </div>
+                <div class="fitem">
+                    <span style="width:35%; display:inline-block;">Shoot Weight</span>
+                    <input style="width:60%;" name="shoot_weight" id="shoot_weight" class="easyui-numberbox">
+                </div>
+                <div class="fitem">
+                    <span style="width:35%; display:inline-block;">Runner Weight</span>
+                    <input style="width:60%;" name="runner_weight" id="runner_weight" class="easyui-numberbox">
+                </div>
+                <div class="fitem">
+                    <span style="width:35%; display:inline-block;">Mold Type</span>
+                    <select style="width:60%;" name="mold_type" id="mold_type" panelHeight="auto" class="easyui-combobox">
+                        <option value="SINGLE">SINGLE</option>
+                        <option value="DOUBLE">DOUBLE</option>
+                    </select>
+                </div>
+                <div class="fitem">
+                    <span style="width:35%; display:inline-block;">Remarks</span>
+                    <input style="width:60%;" name="remark" id="remark" class="easyui-textbox">
+                </div>
+                <div class="fitem">
+                    <span style="width:35%; display:inline-block;">Status</span>
+                    <select style="width:60%;" name="status" id="status" required="" panelHeight="auto" class="easyui-combobox">
+                        <option value="0">Active</option>
+                        <option value="1">Not Active</option>
+                    </select>
+                </div>
             </div>
         </fieldset>
     </form>
