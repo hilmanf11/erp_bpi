@@ -37,19 +37,55 @@ class Standard_price_rm extends CI_Controller
 
     public function readItemByDivision($division)
     {
-        $this->db->select('a.*'); //c.specification
-        $this->db->from('item_rm a');
-        $this->db->where('a.division', $division);
-        $records = $this->db->get()->result_array();
+        $post = isset($_POST['q']) ? $_POST['q'] : "";
+        $send = $this->crud->query("SELECT a.*, b.name as item_category_name, c.name as item_family_name FROM item_rm a 
+        left join item_categories b on a.item_category_id = b.id
+        left join item_familys c on a.item_family_id = c.id
+        WHERE a.division = '$division' and (a.number like '%$post%' or a.name like '$post')");
 
-        echo json_encode($records);
+        // $this->db->select('a.*'); //c.specification
+        // $this->db->from('item_rm a');
+        // $this->db->where('a.division', $division);
+        // $send = $this->db->get()->result_array();
+
+        echo json_encode($send);
+    }
+
+
+    public function autonumber()
+    {
+        $post = $this->input->post();
+        $division = $post['division'];
+        $start_date = $post['start_date'];
+        $end_date = $post['end_date'];
+        $datenow = date("y", strtotime($start_date));
+        $sql = $this->db->query("SELECT max(`document_number`) as kode From standard_price_rm where division='$division' AND `start_date`='$start_date' AND `end_date`='$end_date'");
+        $sql2 = $this->db->query("SELECT max(`document_number`) as kode From standard_price_rm where `start_date`='$start_date' AND `end_date`='$end_date'");
+        $row = $sql->row();
+        $row2 = $sql2->row();
+        if (!empty(@$row->kode)) {
+            $autoid = @$row->kode;
+        } else {
+            if (empty(@$row2->kode)) {
+                $kode = substr(@$row2->kode, 1);
+                $autoid = "SP-RM" . $datenow . sprintf("%02s", $kode + 1);
+            } else {
+                $kode = substr(@$row2->kode, -2);
+                $autoid = "SP-RM" . $datenow . sprintf("%02s", $kode + 1);
+            }
+        }
+        echo $autoid;
     }
 
     //GET DATATABLES
     public function datatables()
     {
         if ($this->input->post()) {
-            $filters = json_decode($this->input->post('filterRules'));
+            $get = $this->input->get();
+            $filter_start_date = @base64_decode($get['filter_start_date']);
+            $filter_end_date = @base64_decode($get['filter_end_date']);
+            $filter_division = @base64_decode($get['filter_division']);
+            $filter_item_rm_id = @base64_decode($get['filter_item_rm_id']);
             $page = $this->input->post('page');
             $rows = $this->input->post('rows');
             //Pagination 1-10
@@ -58,32 +94,24 @@ class Standard_price_rm extends CI_Controller
             $offset = ($page - 1) * $rows;
             $result = array();
             //Select Query
-            $this->db->select('a.*, b.name as item_rm_name, b.number as item_rm_number, b.division, b.uom, c.name as division_name, d.name as item_category_name, e.name as item_family_name');
+            $this->db->select('a.*, c.name as division_name');
             $this->db->from('standard_price_rm a');
             $this->db->join('item_rm b', 'a.item_rm_id = b.id');
             $this->db->join('divisions c', 'b.division = c.number');
             $this->db->join('item_categories d', 'b.item_category_id = d.id');
             $this->db->join('item_familys e', 'b.item_family_id = e.id');
             $this->db->where('a.deleted', 0);
-            if (@count($filters) > 0) {
-                foreach ($filters as $filter) {
-                    if ($filter->field == "item_rm_number") {
-                        $this->db->like("b.id", $filter->value);
-                    } elseif ($filter->field == "item_rm_name") {
-                        $this->db->like("b.id", $filter->value);
-                    } elseif ($filter->field == "uom") {
-                        $this->db->like("b.uom", $filter->value);
-                    } elseif ($filter->field == "division_name") {
-                        $this->db->like("c.name", $filter->value);
-                    } elseif ($filter->field == "item_category_name") {
-                        $this->db->like("d.name", $filter->value);
-                    } elseif ($filter->field == "item_family_name") {
-                        $this->db->like("e.name", $filter->value);
-                    } else {
-                        $this->db->like("a." . $filter->field, $filter->value);
-                    }
-                }
+            if ($filter_start_date != "" || $filter_end_date != "") {
+                $this->db->where('a.start_date >=', $filter_start_date);
+                $this->db->where('a.end_date <=', $filter_end_date);
             }
+            if (!empty($filter_division)) {
+                $this->db->where('b.division', $filter_division);
+            }
+            if (!empty($filter_item_rm_id)) {
+                $this->db->where('a.item_rm_id', $filter_item_rm_id);
+            }
+            $this->db->group_by('a.document_number,a.start_date,a.end_date,a.division');
             $this->db->order_by('a.id', 'ASC');
             //Total Data
             $totalRows = $this->db->count_all_results('', false);
@@ -98,7 +126,44 @@ class Standard_price_rm extends CI_Controller
         }
     }
 
-    //GET DATATABLES
+    public function datatableUpdates()
+    {
+        if ($this->input->get()) {
+            $document_number = base64_decode($this->input->get('document_number'));
+
+            $this->db->select('a.*,b.number as item_rm_number, b.name as item_rm_name, b.uom, c.name as item_category_name, d.name as item_family_name');
+            // $this->db->select('a.*');
+            $this->db->from('standard_price_rm a');
+            $this->db->join('item_rm b', 'a.item_rm_id=b.id', 'left');
+            $this->db->join('item_categories c', 'b.item_category_id=c.id', 'left');
+            $this->db->join('item_familys d', 'b.item_family_id=d.id', 'left');
+            $this->db->where('a.document_number', $document_number);
+            $this->db->order_by('a.id', 'ASC');
+            $records = $this->db->get()->result_array();
+
+            echo json_encode($records);
+        }
+    }
+    public function datatableDetails()
+    {
+        if ($this->input->get()) {
+            $document_number = base64_decode($this->input->get('document_number'));
+
+            $this->db->select('a.*,b.number as item_rm_number, b.name as item_rm_name, b.uom, c.name as item_category_name, d.name as item_family_name, e.name as division_name');
+            // $this->db->select('a.*');
+            $this->db->from('standard_price_rm a');
+            $this->db->join('item_rm b', 'a.item_rm_id=b.id', 'left');
+            $this->db->join('item_categories c', 'b.item_category_id=c.id', 'left');
+            $this->db->join('item_familys d', 'b.item_family_id=d.id', 'left');
+            $this->db->join('divisions e', 'b.division=e.number', 'left');
+            $this->db->where('a.document_number', $document_number);
+            $this->db->order_by('a.id', 'ASC');
+            $records = $this->db->get()->result_array();
+
+            echo json_encode($records);
+        }
+    }
+
     public function datatableHistory()
     {
 
@@ -133,34 +198,68 @@ class Standard_price_rm extends CI_Controller
     public function create()
     {
         if ($this->input->post()) {
-            $data = $this->input->post();
-            $send   = $this->crud->create('standard_price_rm', $data);
-            $send2   = $this->crud->create('standard_price_rm_histories', $data);
-            echo $send;
-        } else {
-            show_error("Cannot Process your request");
-        }
-    }
-    //UPDATE DATA
-    public function update()
-    {
-        if ($this->input->post()) {
-            $id   = base64_decode($this->input->get('id'));
             $post = $this->input->post();
-            $send = $this->crud->update('standard_price_rm', ["id" => $id], $post);
-            $send2   = $this->crud->create('standard_price_rm_histories', $post);
+            $whereupdate = array(
+                'document_number' => $post['document_number'],
+                'start_date' => $post['start_date'],
+                'end_date' => $post['end_date'],
+                'item_rm_id' => $post['item_rm_id'],
+
+            );
+
+            $postFinal = array(
+                'document_number' => $post['document_number'],
+                'division' => $post['division'],
+                'start_date' =>  $post['start_date'],
+                'end_date' => $post['end_date'],
+                'item_rm_id' => $post['item_rm_id'],
+                'currency' => $post['currency'],
+                'price' => $post['price'],
+            );
+            $standard_price_rm = $this->crud->read("standard_price_rm", [], $whereupdate);
+            if (@$standard_price_rm->item_rm_id != "") {
+                if (
+                    @$standard_price_rm->document_number == $post['document_number'] &&
+                    @$standard_price_rm->division == $post['division'] &&
+                    @$standard_price_rm->start_date == $post['start_date'] &&
+                    @$standard_price_rm->end_date == $post['end_date'] &&
+                    @$standard_price_rm->item_rm_id == $post['item_rm_id'] &&
+                    @$standard_price_rm->currency == $post['currency'] &&
+                    @$standard_price_rm->price == $post['price']
+                ) {
+                    $send = json_encode(array("title" => "Good Job", "message" => "Data Updated Successfully", "theme" => "success"));
+                } else {
+                    $send = $this->crud->update('standard_price_rm', $whereupdate, $postFinal);
+                    $send2 = $this->crud->create('standard_price_rm_histories', $postFinal);
+                }
+            } else {
+                $send = $this->crud->create('standard_price_rm', $postFinal);
+                $send2 = $this->crud->create('standard_price_rm_histories', $postFinal);
+            }
             echo $send;
         } else {
             show_error("Cannot Process your request");
         }
     }
+
     //DELETE DATA
     public function delete()
     {
         $data = $this->input->post();
         $send = $this->crud->delete('standard_price_rm', $data);
+        $send = $this->crud->delete('standard_price_rm_histories', $data);
         echo $send;
     }
+
+    public function deleteItem()
+    {
+        if ($this->input->post()) {
+            $id = $this->input->post('id');
+            $send = $this->crud->delete('standard_price_rm', ["id" => $id]);
+            echo $send;
+        }
+    }
+
     //UPLOAD DATA
     public function upload()
     {
@@ -222,19 +321,45 @@ class Standard_price_rm extends CI_Controller
             $item_rm = $this->crud->read('item_rm', [], ["id" => $data['item_rm_id']]);
             $currencies = $this->crud->read('currencies', [], ["name" => $data['currency']]);
 
+            $division = @$item_rm->division;
+            $start_date = $data['start_date'];
+            $end_date = $data['end_date'];
+
+            $datenow = date("y", strtotime($start_date));
+            $sql = $this->db->query("SELECT max(`document_number`) as kode From standard_price_rm where division='$division' AND `start_date`='$start_date' AND `end_date`='$end_date'");
+            $sql2 = $this->db->query("SELECT max(`document_number`) as kode From standard_price_rm where `start_date`='$start_date' AND `end_date`='$end_date'");
+            $row = $sql->row();
+            $row2 = $sql2->row();
+            if (!empty(@$row->kode)) {
+                $document_number = @$row->kode;
+            } else {
+                if (empty(@$row2->kode)) {
+                    $kode = substr(@$row2->kode, 1);
+                    $document_number = "SP-RM" . $datenow . sprintf("%02s", $kode + 1);
+                } else {
+                    $kode = substr(@$row2->kode, -2);
+                    $document_number = "SP-RM" . $datenow . sprintf("%02s", $kode + 1);
+                }
+            }
+
             if (empty($item_rm->number)) {
                 echo json_encode(array("title" => "Not Found", "message" => " Part No. " . $data['item_rm_id'] . " Not Found", "theme" => "error"));
             } else if (empty($currencies->name)) {
                 echo json_encode(array("title" => "Not Found", "message" => " Currency Code. " . $data['currency'] . " Not Found", "theme" => "error"));
             } else {
-                $standard_price_rm = $this->crud->read('standard_price_rm', [], [
+                $whereupdate = array(
+                    "document_number" => $document_number,
                     "item_rm_id" => $data['item_rm_id'],
                     "start_date" => $data['start_date'],
                     "end_date" => $data['end_date'],
-                ]);
+
+                );
+                $standard_price_rm = $this->crud->read('standard_price_rm', [], $whereupdate);
 
                 $dataFinal = array(
                     //field
+                    "document_number" => $document_number,
+                    "division" => $division,
                     "item_rm_id" => $data['item_rm_id'],
                     "start_date" => $data['start_date'],
                     "end_date" => $data['end_date'],
@@ -242,12 +367,24 @@ class Standard_price_rm extends CI_Controller
                     "price" => $data['price']
                 );
 
-                if (empty($standard_price_rm->item_rm_id)) {
-                    $send   = $this->crud->create('standard_price_rm', $dataFinal);
-                    $send2   = $this->crud->create('standard_price_rm_histories', $dataFinal);
+                if (@$standard_price_rm->item_rm_id != "") {
+                    if (
+                        @$standard_price_rm->document_number == $document_number &&
+                        @$standard_price_rm->division == $division &&
+                        @$standard_price_rm->start_date == $data['start_date'] &&
+                        @$standard_price_rm->end_date == $data['end_date'] &&
+                        @$standard_price_rm->item_rm_id == $data['item_rm_id'] &&
+                        @$standard_price_rm->currency == $data['currency'] &&
+                        @$standard_price_rm->price == $data['price']
+                    ) {
+                        $send = json_encode(array("title" => "No Update", "message" => "Data Is Same", "theme" => "warning"));
+                    } else {
+                        $send = $this->crud->update('standard_price_rm', $whereupdate, $dataFinal);
+                        $send2 = $this->crud->create('standard_price_rm_histories', $dataFinal);
+                    }
                 } else {
-                    $send = $this->crud->update('standard_price_rm', ["id" => @$standard_price_rm->id], $dataFinal);
-                    $send2   = $this->crud->create('standard_price_rm_histories', $dataFinal);
+                    $send = $this->crud->create('standard_price_rm', $dataFinal);
+                    $send2 = $this->crud->create('standard_price_rm_histories', $dataFinal);
                 }
 
                 echo $send;
@@ -267,12 +404,29 @@ class Standard_price_rm extends CI_Controller
         $this->db->from('config');
         $config = $this->db->get()->row();
 
+        $get = $this->input->get();
+        $filter_start_date = @base64_decode($get['filter_start_date']);
+        $filter_end_date = @base64_decode($get['filter_end_date']);
+        $filter_division = @base64_decode($get['filter_division']);
+        $filter_item_rm_id = @base64_decode($get['filter_item_rm_id']);
+
         $this->db->select('a.*, b.name as item_rm_name, b.number as item_rm_number, b.division, b.uom, c.name as division_name, d.name as item_category_name, e.name as item_family_name');
         $this->db->from('standard_price_rm a');
         $this->db->join('item_rm b', 'a.item_rm_id = b.id');
         $this->db->join('divisions c', 'b.division = c.number');
         $this->db->join('item_categories d', 'b.item_category_id = d.id');
         $this->db->join('item_familys e', 'b.item_family_id = e.id');
+        if ($filter_start_date != "" || $filter_end_date != "") {
+            $this->db->where('a.start_date >=', $filter_start_date);
+            $this->db->where('a.end_date <=', $filter_end_date);
+        }
+        if (!empty($filter_division)) {
+            $this->db->where('b.division', $filter_division);
+        }
+        if (!empty($filter_item_rm_id)) {
+            $this->db->where('a.item_rm_id', $filter_item_rm_id);
+        }
+
         $this->db->order_by('a.id', 'ASC');
         $records = $this->db->get()->result_array();
         $html = '<html><head><title>Print Data</title></head><style>body {font-family: Arial, Helvetica, sans-serif;}#customers {border-collapse: collapse;width: 100%;font-size: 12px;}#customers td, #customers th {border: 1px solid #ddd;padding: 2px;}#customers tr:nth-child(even){background-color: #f2f2f2;}#customers tr:hover {background-color: #ddd;}#customers th {padding-top: 2px;padding-bottom: 2px;text-align: left;color: black;}</style><body>

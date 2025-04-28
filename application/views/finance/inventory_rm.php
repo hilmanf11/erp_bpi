@@ -28,9 +28,9 @@
         </div>
         <div style="width: 49%; float:left;">
             <div class="fitem">
-                    <span style="width:35%; display:inline-block;">Product No</span>
-                    <input style="width:60%;" id="filter_items" class="easyui-combobox">
-                </div>
+                <span style="width:35%; display:inline-block;">Product No</span>
+                <input style="width:60%;" id="filter_items" class="easyui-combobox">
+            </div>
             <div class="fitem">
                 <span style="width:35%; display:inline-block;">Report Display</span>
                 <select style="width:60%;" id="filter_display" class="easyui-combobox" panelHeight="auto">
@@ -83,9 +83,17 @@
         var filter_display = $("#filter_display").combobox('getValue');
         var filter_trans_type = $("#filter_trans_type").combobox('getValue');
         var filter_division = $("#filter_division").combobox('getValue');
-        url = "?filter_from=" + filter_from + "&filter_to=" + filter_to + "&filter_item_category=" + filter_item_category + "&filter_item_family=" + filter_item_family + "&filter_items=" + filter_items + "&filter_display=" + filter_display + "&filter_trans_type=" + filter_trans_type + "&filter_division=" + filter_division;
-        $("#printout").contents().find('html').html("<center><br><br><br><b style='font-size:20px;'>Please Wait...</b></center>");
-        $("#printout").attr('src', '<?= base_url('finance/inventory_rm/print') ?>' + url);
+
+        var yearFrom = filter_from.substring(0, 4);
+        var yearTo = filter_to.substring(0, 4);
+        if (yearFrom !== yearTo) {
+            toastr.warning("Please select the same year for Receipt Date", "Information");
+        } else {
+            url = "?filter_from=" + filter_from + "&filter_to=" + filter_to + "&filter_item_category=" + filter_item_category + "&filter_item_family=" + filter_item_family + "&filter_items=" + filter_items + "&filter_display=" + filter_display + "&filter_trans_type=" + filter_trans_type + "&filter_division=" + filter_division;
+            $("#printout").contents().find('html').html("<center><br><br><br><b style='font-size:20px;'>Please Wait...</b></center>");
+            $("#printout").attr('src', '<?= base_url('finance/inventory_rm/print') ?>' + url);
+        }
+
     }
 
     function excel() {
@@ -97,18 +105,25 @@
         var filter_display = $("#filter_display").combobox('getValue');
         var filter_trans_type = $("#filter_trans_type").combobox('getValue');
         var filter_division = $("#filter_division").combobox('getValue');
-        var url = "?filter_from=" + filter_from + "&filter_to=" + filter_to + "&filter_item_category=" + filter_item_category + "&filter_item_family=" + filter_item_family + "&filter_items=" + filter_items + "&filter_display=" + filter_display + "&filter_trans_type=" + filter_trans_type + "&filter_division=" + filter_division;
+        
+        var yearFrom = filter_from.substring(0, 4);
+        var yearTo = filter_to.substring(0, 4);
+        if (yearFrom !== yearTo) {
+            toastr.warning("Please select the same year for Receipt Date", "Information");
+        } else {
+            var url = "?filter_from=" + filter_from + "&filter_to=" + filter_to + "&filter_item_category=" + filter_item_category + "&filter_item_family=" + filter_item_family + "&filter_items=" + filter_items + "&filter_display=" + filter_display + "&filter_trans_type=" + filter_trans_type + "&filter_division=" + filter_division;
 
-        // Tampilkan overlay
-        $("#loadingOverlay").show();
+            // Tampilkan overlay
+            $("#loadingOverlay").show();
 
-        // Unduh file
-        window.location.assign('<?= base_url('finance/inventory_rm/print/excel') ?>' + url);
+            // Unduh file
+            window.location.assign('<?= base_url('finance/inventory_rm/print/excel') ?>' + url);
 
-        // Sembunyikan overlay setelah beberapa saat
-        setTimeout(function () {
-            $("#loadingOverlay").hide();
-        }, 3000); // Sesuaikan waktu jika perlu
+            // Sembunyikan overlay setelah beberapa saat
+            setTimeout(function() {
+                $("#loadingOverlay").hide();
+            }, 3000); // Sesuaikan waktu jika perlu
+        }
     }
 
     $(function() {
@@ -197,15 +212,15 @@
     });
 
     $("#filter_display").combobox({
-        onChange: function(display){
-            if(display === 'DETAIL'){
+        onChange: function(display) {
+            if (display === 'DETAIL') {
                 $('#filter_trans_type').combobox('enable');
             } else {
                 $('#filter_trans_type').combobox('disable');
             }
         }
     });
-        
+
 
     //Format Datepicker
     function myformatter(date) {

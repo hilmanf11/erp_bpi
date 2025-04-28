@@ -83,7 +83,7 @@ class Inventory_rm extends CI_Controller
     {
         $this->db->select('*');
         $this->db->from('item_familys');
-        $this->db->where('id !=', "P08"); 
+        $this->db->where('id !=', "P08");
         $this->db->where('deleted', 0);
         $this->db->where("item_category_id", $item_category_id);
         $this->db->order_by('name', 'ASC');
@@ -95,7 +95,7 @@ class Inventory_rm extends CI_Controller
     {
         $this->db->select('*');
         $this->db->from('item_familys');
-        $this->db->where('id !=', "P08"); 
+        $this->db->where('id !=', "P08");
         $this->db->where('deleted', 0);
         // $this->db->where("item_category_id", $item_category_id);
         $this->db->order_by('name', 'ASC');
@@ -144,7 +144,7 @@ class Inventory_rm extends CI_Controller
         //     COALESCE(0,0) as begin_stock,
         //     (COALESCE(SUM(e.qty),0) + COALESCE(g.return_qty, 0) + COALESCE(h.qty_stock_rm, 0) + COALESCE(i.qty, 0)) as qty_in,
         //     (COALESCE(f.qty,0) + COALESCE(j.qty, 0)) as qty_out
-    
+
         //     FROM item_rm a 
         //     JOIN item_familys b ON a.item_family_id = b.id and b.number != 'FG'
         //     JOIN item_categories c ON a.item_category_id = c.id
@@ -157,7 +157,7 @@ class Inventory_rm extends CI_Controller
         //         JOIN scan_item_receipts c ON a.return_id = c.receipt_id and b.label_no = c.label_no
         //         WHERE a.return_date between '$filter_from' and '$filter_to'
         //         GROUP BY a.item_rm_id) g ON a.id = g.item_rm_id
-            
+
         //     LEFT JOIN (SELECT a.item_rm_id, SUM(a.qty) as qty_stock_rm
         //         FROM os_rm a
         //         JOIN item_rm b ON a.item_rm_id = b.id
@@ -179,7 +179,7 @@ class Inventory_rm extends CI_Controller
         //         WHERE a.request_date BETWEEN '$filter_from' AND '$filter_to'
         //         GROUP BY a.item_rm_id, a.transaction_kind
         //     ) j ON a.id = j.item_rm_id and j.transaction_kind = 'OUT'
-        
+
         // WHERE c.id like '%$filter_item_category%' and b.number like '%$filter_item_family%' and a.id like '%$filter_items%' and a.division like '%$filter_division%' 
         // GROUP BY a.id
         // ORDER BY c.name DESC, b.name DESC, a.number");
@@ -268,11 +268,9 @@ class Inventory_rm extends CI_Controller
             a.name, 
             a.division, 
             b.name as prodfam, 
-            COALESCE(d.price,0) as price,
-            COALESCE(d.currency,'-') as currency,
+            COALESCE(aa.price,0) as price,
+            COALESCE(aa.currency,'-') as currency,
             d.receipt_date,
-            COALESCE(h.price,d.price) as price_out,
-            COALESCE(h.currency,'-') as currency_out,
             h.created_date as receipt_date_out,
             a.uom,
             c.name as category_name,
@@ -282,6 +280,7 @@ class Inventory_rm extends CI_Controller
         FROM item_rm a
         JOIN item_familys b ON a.item_family_id = b.id AND b.number != 'FG'
         JOIN item_categories c ON a.item_category_id = c.id
+        LEFT JOIN (SELECT item_rm_id, currency, price from standard_price_rm where '$filter_from' >= `start_date` and '$filter_to' <= `end_date`) aa on a.id = aa.item_rm_id
         LEFT JOIN (SELECT MAX(b.price) AS price, MAX(b.currency) AS currency, MAX(b.receipt_date) AS receipt_date, b.item_rm_id, SUM(a.qty) AS qty_scan_in FROM scan_item_receipts a JOIN purchase_order_receipts b ON a.receipt_id = b.receipt_id WHERE b.receipt_date BETWEEN '$filter_from' AND '$filter_to' GROUP BY b.item_rm_id) d ON a.id = d.item_rm_id
         LEFT JOIN (SELECT item_rm_id, SUM(qty) AS qty_os_rm FROM os_rm WHERE trans_date BETWEEN '$filter_from' AND '$filter_to' GROUP BY item_rm_id) e ON a.id = e.item_rm_id
         LEFT JOIN (SELECT item_rm_id, SUM(qty) AS qty_trans_rm_in FROM transaction_rm WHERE request_date BETWEEN '$filter_from' AND '$filter_to' AND transaction_kind = 'IN' GROUP BY item_rm_id) f ON a.id = f.item_rm_id
@@ -321,7 +320,7 @@ class Inventory_rm extends CI_Controller
                             </td>
                             <td style="font-size: 14px; text-align: left; margin:2px;">
                                 <b>' . $config->name . '</b><br>
-                                <small>'.$config->description.'</small>
+                                <small>' . $config->description . '</small>
                             </td>
                         </tr>
                     </table>
@@ -340,28 +339,25 @@ class Inventory_rm extends CI_Controller
                 <tr>
                     <th rowspan="2" width="20">No</th>
                     <th rowspan="2" colspan="3">Product No</th>
-                    <th rowspan="2" colspan="2">Product Name</th>
-                    <th rowspan="2" colspan="2">Uom</th>
-                    <th rowspan="2" colspan="2">Division</th>
-                    <th rowspan="2" colspan="2">Category</th>
-                    <th rowspan="2" >Product Family</th>
-                    <th colspan="6" >Begin<br>Stock</th>
-                    <th colspan="6" width="100">In</th>
+                    <th rowspan="2">Product Name</th>
+                    <th rowspan="2">Uom</th>
+                    <th rowspan="2">Division</th>
+                    <th rowspan="2">Category</th>
+                    <th rowspan="2">Product Family</th>
+                    <th rowspan="2">Currency</th>
+                    <th rowspan="2">Price Standard</th>
+                    <th rowspan="2">Rate</th>
+                    <th colspan="3" >Begin<br>Stock</th>
+                    <th colspan="3" width="100">In</th>
                     <th colspan="3" width="100">Out</th>
                     <th colspan="3" width="100">Balance</th>
                 </tr>
                 <tr>
                     <th width="80">QTY</th>
-                    <th width="80">CCY</th>
-                    <th width="80">PRICE</th>
-                    <th width="80">RATE</th>
                     <th width="80">PRICE</th>
                     <th width="80">AMOUNT</th>
 
                     <th width="80">QTY</th>
-                    <th width="80">CCY</th>
-                    <th width="80">PRICE</th>
-                    <th width="80">RATE</th>
                     <th width="80">PRICE</th>
                     <th width="80">AMOUNT</th>
 
@@ -382,49 +378,22 @@ class Inventory_rm extends CI_Controller
 
         foreach ($records as $record) {
             $item_rm_id = $record->id;
-            $receipt_date = $record->receipt_date;
-            $currency = $record->currency;
+            $receipt_date = @$record->receipt_date;
+            $currency = @$record->currency;
             $rate = 1;
-        
+
             if ($currency == 'USD') {
-                $this->db->where('currency_from', 'USD');
-                $this->db->where('start_date <=', $receipt_date);
-                $this->db->where('end_date >=', $receipt_date);
-                $query = $this->db->get('exchange_rates');
-        
-                if ($query->num_rows() > 0) {
-                    $rate = $query->row()->middle;
-                }
-            }
+                if (empty($receipt_date)) {
+                    $rate = 0;
+                } else {
+                    $this->db->where('currency_from', 'USD');
+                    $this->db->where('start_date <=', $receipt_date);
+                    $this->db->where('end_date >=', $receipt_date);
+                    $query = $this->db->get('standard_exchange_rates');
 
-            $receipt_date_out = $record->receipt_date_out;
-            $currency_out = $record->currency_out;
-            $rate_out = 1;
-
-            if ($currency_out == 'USD') {
-                $this->db->where('currency_from', 'USD');
-                $this->db->where('start_date <=', $receipt_date_out);
-                $this->db->where('end_date >=', $receipt_date_out);
-                $query = $this->db->get('exchange_rates');
-        
-                if ($query->num_rows() > 0) {
-                    $rate_out = $query->row()->middle;
-                }
-            }
-
-            $monthBf = date('Y-m-01', strtotime('-1 month', strtotime($filter_from)));
-            $receipt_date_begin = $monthBf;
-            $currency_begin = $record->currency;
-            $rate_begin = 1;
-
-            if ($currency_begin == 'USD') {
-                $this->db->where('currency_from', 'USD');
-                $this->db->where('start_date <=', $receipt_date_begin);
-                $this->db->where('end_date >=', $receipt_date_begin);
-                $query = $this->db->get('exchange_rates');
-        
-                if ($query->num_rows() > 0) {
-                    $rate_begin = $query->row()->middle;
+                    if ($query->num_rows() > 0) {
+                        $rate = $query->row()->middle;
+                    }
                 }
             }
 
@@ -437,38 +406,30 @@ class Inventory_rm extends CI_Controller
             $html .= '  <tr>
                             <td style="text-align:center">' . $no . '</td>
                             <td colspan="3">' . $record->number . '</td>
-                            <td colspan="2">' . $record->name . '</td>
-                            <td colspan="2">' . $record->uom . '</td>
-                            <td colspan="2">' . $record->division . '</td>
-                            <td colspan="2">' . $record->category_name . '</td>
+                            <td>' . $record->name . '</td>
+                            <td>' . $record->uom . '</td>
+                            <td>' . $record->division . '</td>
+                            <td>' . $record->category_name . '</td>
                             <td>' . $record->prodfam . '</td>
-                            
-                            <td style="text-align:right;">' . number_format(@$record->begin_stock, 2) . '</td>
-                            <td style="text-align:right;">' . $record->currency . '</td>
-                            <td style="text-align:right;">' . number_format($record->price, 2) . '</td>
-                            <td style="text-align:right;">' . number_format($rate_begin, 2) . '</td>
-                            <td style="text-align:right;">' . number_format($record->price * $rate_begin, 2) . '</td>
-                            <td style="text-align:right;">' . number_format(($record->price * $rate_begin) * $record->begin_stock , 2) . '</td>
-
-                            <td style="text-align:right;">' . number_format($record->qty_in, 2) . '</td>
                             <td style="text-align:right;">' . $record->currency . '</td>
                             <td style="text-align:right;">' . number_format($record->price, 2) . '</td>
                             <td style="text-align:right;">' . number_format($rate, 2) . '</td>
+                            
+                            <td style="text-align:right;">' . number_format(@$record->begin_stock, 2) . '</td>
                             <td style="text-align:right;">' . number_format($record->price * $rate, 2) . '</td>
-                            <td style="text-align:right;">' . number_format(($record->price * $rate) * $record->qty_in , 2) . '</td>
+                            <td style="text-align:right;">' . number_format(($record->price * $rate) * $record->begin_stock, 2) . '</td>
+
+                            <td style="text-align:right;">' . number_format($record->qty_in, 2) . '</td>
+                            <td style="text-align:right;">' . number_format($record->price * $rate, 2) . '</td>
+                            <td style="text-align:right;">' . number_format(($record->price * $rate) * $record->qty_in, 2) . '</td>
 
                             <td style="text-align:right;">' . number_format($record->qty_out, 2) . '</td>
-                            <td style="text-align:right;">' . number_format($record->price_out * $rate_out, 2) . '</td>
-                            <td style="text-align:right;">' . number_format(($record->price_out * $rate_out) * $record->qty_out, 2) . '</td>
+                            <td style="text-align:right;">' . number_format($record->price * $rate, 2) . '</td>
+                            <td style="text-align:right;">' . number_format(($record->price * $rate) * $record->qty_out, 2) . '</td>
 
                             <td style="text-align:right;">' . number_format((@$record->begin_stock + $record->qty_in) - $record->qty_out, 2) . '</td>
-                            <td style="text-align:right;">' . number_format(
-                                                                ((@$record->price * $rate) * $record->qty_in + ($record->price * $rate) * $record->begin_stock - ($record->price_out * $rate_out) * $record->qty_out) /
-                                                                ((($den = (@$record->begin_stock + $record->qty_in - $record->qty_out)) != 0) ? $den : 1) *
-                                                                ($den != 0 ? 1 : 0),
-                                                                2
-                                                            ) . '</td>
-                            <td style="text-align:right;">' . number_format((@($record->price * $rate) * $record->qty_in) + (($record->price * $rate) * $record->begin_stock) - (($record->price_out * $rate_out) * $record->qty_out), 2) . '</td>
+                            <td style="text-align:right;">' . number_format($record->price * $rate, 2) . '</td>
+                            <td style="text-align:right;">' . number_format((@($record->price * $rate) * $record->qty_in) + (($record->price * $rate) * $record->begin_stock) - (($record->price * $rate) * $record->qty_out), 2) . '</td>
                         </tr>';
 
             if ($filter_display == "DETAIL") {
@@ -485,22 +446,19 @@ class Inventory_rm extends CI_Controller
                                 <th rowspan="2">Custom. No</th>
                                 <th rowspan="2">Doc. No</th>
                                 <th rowspan="2">Custom. Date</th>
-                                <th colspan="6">Begin</th>
-                                <th colspan="6">In</th>
+                                <th rowspan="2">CCY</th>
+                                <th rowspan="2">Price</th>
+                                <th rowspan="2">Rate</th>
+                                <th colspan="3">Begin</th>
+                                <th colspan="3">In</th>
                                 <th colspan="3">Out</th>
                                 <th colspan="3">Balance</th>
                             <tr>
                                 <th width="80">QTY</th>
-                                <th width="80">CCY</th>
-                                <th width="80">PRICE</th>
-                                <th width="80">RATE</th>
                                 <th width="80">PRICE</th>
                                 <th width="80">AMOUNT</th>
 
                                 <th width="80">QTY</th>
-                                <th width="80">CCY</th>
-                                <th width="80">PRICE</th>
-                                <th width="80">RATE</th>
                                 <th width="80">PRICE</th>
                                 <th width="80">AMOUNT</th>
 
@@ -521,25 +479,29 @@ class Inventory_rm extends CI_Controller
                 $end_qty = 0;
                 $balance = 0;
                 $rate = 1;
-        
+
                 if ($currency == 'USD') {
-                    $this->db->where('currency', 'USD');
-                    $this->db->where('start_date <=', $receipt_date);
-                    $this->db->where('end_date >=', $receipt_date);
-                    $query = $this->db->get('exchange_rates');
-            
-                    if ($query->num_rows() > 0) {
-                        $rate = $query->row()->middle;
+                    if (empty($receipt_date)) {
+                        $rate = 0;
+                    } else {
+                        $this->db->where('currency_from', 'USD');
+                        $this->db->where('start_date <=', $receipt_date);
+                        $this->db->where('end_date >=', $receipt_date);
+                        $query = $this->db->get('standard_exchange_rates');
+
+                        if ($query->num_rows() > 0) {
+                            $rate = $query->row()->middle;
+                        }
                     }
                 }
 
                 // for ($i = $start; $i <= $finish; $i += (60 * 60 * 24)) {
                 //     $working_date = date('Y-m-d', $i);
 
-                    if ($filter_trans_type == '' ) {
-                        //-------------- Awal Query disini----------------------------------//                    
-                        //RECEIPT
-                        $receipts = $this->crud->query("SELECT
+                if ($filter_trans_type == '') {
+                    //-------------- Awal Query disini----------------------------------//                    
+                    //RECEIPT
+                    $receipts = $this->crud->query("SELECT
                             a.receipt_date, 
                             a.bc_kind, 
                             a.bc_aju, 
@@ -552,12 +514,12 @@ class Inventory_rm extends CI_Controller
                         JOIN users c ON a.created_by = c.username
                         WHERE a.item_rm_id = '$item_rm_id' and a.receipt_date between '$filter_from' and '$filter_to'
                         GROUP BY a.bc_kind, a.bc_aju, a.bc_document, a.bc_date, a.receipt_id");
-                        
-                        //ISSUED
-                        $issueds = $this->crud->query("SELECT created_by, qty, created_date, label_no, request_no FROM issued_material_details WHERE item_rm_id = '$item_rm_id' and DATE_FORMAT(created_date, '%Y-%m-%d') between '$filter_from' and '$filter_to'");
 
-                        //RETURN
-                        $returns = $this->crud->query("SELECT
+                    //ISSUED
+                    $issueds = $this->crud->query("SELECT created_by, qty, created_date, label_no, request_no FROM issued_material_details WHERE item_rm_id = '$item_rm_id' and DATE_FORMAT(created_date, '%Y-%m-%d') between '$filter_from' and '$filter_to'");
+
+                    //RETURN
+                    $returns = $this->crud->query("SELECT
                             a.return_no,
                             a.return_id,
                             a.return_name,
@@ -572,11 +534,11 @@ class Inventory_rm extends CI_Controller
                         WHERE a.item_rm_id = '$item_rm_id' and a.return_date between '$filter_from' and '$filter_to'
                         GROUP BY b.label_no");
 
-                        // //OS RM
-                        $os_rms = $this->crud->query("SELECT created_by, created_date, qty FROM os_rm WHERE item_rm_id = '$item_rm_id' and DATE_FORMAT(trans_date, '%Y-%m-%d') between '$filter_from' and '$filter_to'");
+                    // //OS RM
+                    $os_rms = $this->crud->query("SELECT created_by, created_date, qty FROM os_rm WHERE item_rm_id = '$item_rm_id' and DATE_FORMAT(trans_date, '%Y-%m-%d') between '$filter_from' and '$filter_to'");
 
-                        //SCAN BPM
-                        $bpm_scans = $this->crud->query("SELECT 
+                    //SCAN BPM
+                    $bpm_scans = $this->crud->query("SELECT 
                         created_by, 
                         qty, 
                         created_date, 
@@ -586,8 +548,8 @@ class Inventory_rm extends CI_Controller
                         FROM scan_item_bpm 
                         WHERE item_rm_id = '$item_rm_id' and DATE_FORMAT(request_date, '%Y-%m-%d') between '$filter_from' and '$filter_to'");
 
-                        // // TRANSACTION RM (IN and OUT)
-                        $transactions = $this->crud->query("SELECT
+                    // // TRANSACTION RM (IN and OUT)
+                    $transactions = $this->crud->query("SELECT
                             a.request_date,
                             a.transaction_type,
                             a.transaction_kind,
@@ -598,114 +560,114 @@ class Inventory_rm extends CI_Controller
                         JOIN users b ON a.created_by = b.username
                         WHERE a.item_rm_id = '$item_rm_id' and a.request_date between '$filter_from' and '$filter_to'");
 
-                        //-------------- Akhir query disini----------------------------------//
+                    //-------------- Akhir query disini----------------------------------//
 
-                        $all_data = [];
+                    $all_data = [];
 
-                        // --- RECEIPT ---
-                        foreach ($receipts as $r) {
-                            $all_data[] = [
-                                'type' => 'RECEIPT',
-                                'date' => $r->receipt_date,
-                                'username' => $r->username,
-                                'qty_in' => $r->qty_receipt,
-                                'qty_out' => 0,
-                                'doc1' => $r->bc_kind,
-                                'doc2' => $r->bc_aju,
-                                'doc3' => $r->bc_document,
-                                'doc4' => $r->bc_date
-                            ];
-                        }
+                    // --- RECEIPT ---
+                    foreach ($receipts as $r) {
+                        $all_data[] = [
+                            'type' => 'RECEIPT',
+                            'date' => $r->receipt_date,
+                            'username' => $r->username,
+                            'qty_in' => $r->qty_receipt,
+                            'qty_out' => 0,
+                            'doc1' => $r->bc_kind,
+                            'doc2' => $r->bc_aju,
+                            'doc3' => $r->bc_document,
+                            'doc4' => $r->bc_date
+                        ];
+                    }
 
-                        // --- ISSUED ---
-                        foreach ($issueds as $i) {
-                            $user = $this->crud->read("users", [], ["username" => $i->created_by]);
-                            $all_data[] = [
-                                'type' => 'ISSUED',
-                                'date' => $i->created_date,
-                                'username' => $user->name,
-                                'qty_in' => 0,
-                                'qty_out' => $i->qty,
-                                'doc1' => '-',
-                                'doc2' => $i->label_no,
-                                'doc3' => $i->request_no,
-                                'doc4' => '-'
-                            ];
-                        }
+                    // --- ISSUED ---
+                    foreach ($issueds as $i) {
+                        $user = $this->crud->read("users", [], ["username" => $i->created_by]);
+                        $all_data[] = [
+                            'type' => 'ISSUED',
+                            'date' => $i->created_date,
+                            'username' => $user->name,
+                            'qty_in' => 0,
+                            'qty_out' => $i->qty,
+                            'doc1' => '-',
+                            'doc2' => $i->label_no,
+                            'doc3' => $i->request_no,
+                            'doc4' => '-'
+                        ];
+                    }
 
-                        // --- RETURN ---
-                        foreach ($returns as $r) {
-                            $all_data[] = [
-                                'type' => 'RETURN',
-                                'date' => $r->return_date,
-                                'username' => $r->username,
-                                'qty_in' => $r->qty,
-                                'qty_out' => 0,
-                                'doc1' => '-',
-                                'doc2' => $r->label_no,
-                                'doc3' => $r->return_no,
-                                'doc4' => '-'
-                            ];
-                        }
+                    // --- RETURN ---
+                    foreach ($returns as $r) {
+                        $all_data[] = [
+                            'type' => 'RETURN',
+                            'date' => $r->return_date,
+                            'username' => $r->username,
+                            'qty_in' => $r->qty,
+                            'qty_out' => 0,
+                            'doc1' => '-',
+                            'doc2' => $r->label_no,
+                            'doc3' => $r->return_no,
+                            'doc4' => '-'
+                        ];
+                    }
 
-                        // --- OS RM ---
-                        foreach ($os_rms as $o) {
-                            $user = $this->crud->read("users", [], ["username" => $o->created_by]);
-                            $all_data[] = [
-                                'type' => 'OS RM',
-                                'date' => $o->created_date,
-                                'username' => $user->name,
-                                'qty_in' => $o->qty,
-                                'qty_out' => 0,
-                                'doc1' => '-',
-                                'doc2' => '-',
-                                'doc3' => '-',
-                                'doc4' => '-'
-                            ];
-                        }
+                    // --- OS RM ---
+                    foreach ($os_rms as $o) {
+                        $user = $this->crud->read("users", [], ["username" => $o->created_by]);
+                        $all_data[] = [
+                            'type' => 'OS RM',
+                            'date' => $o->created_date,
+                            'username' => $user->name,
+                            'qty_in' => $o->qty,
+                            'qty_out' => 0,
+                            'doc1' => '-',
+                            'doc2' => '-',
+                            'doc3' => '-',
+                            'doc4' => '-'
+                        ];
+                    }
 
-                        // --- SCAN BPM ---
-                        foreach ($bpm_scans as $b) {
-                            $user = $this->crud->read("users", [], ["username" => $b->created_by]);
-                            $all_data[] = [
-                                'type' => 'BPM',
-                                'date' => $b->created_date,
-                                'username' => $user->name,
-                                'qty_in' => $b->qty,
-                                'qty_out' => 0,
-                                'doc1' => '-',
-                                'doc2' => $b->label,
-                                'doc3' => $b->request_id,
-                                'doc4' => $b->request_date
-                            ];
-                        }
+                    // --- SCAN BPM ---
+                    foreach ($bpm_scans as $b) {
+                        $user = $this->crud->read("users", [], ["username" => $b->created_by]);
+                        $all_data[] = [
+                            'type' => 'BPM',
+                            'date' => $b->created_date,
+                            'username' => $user->name,
+                            'qty_in' => $b->qty,
+                            'qty_out' => 0,
+                            'doc1' => '-',
+                            'doc2' => $b->label,
+                            'doc3' => $b->request_id,
+                            'doc4' => $b->request_date
+                        ];
+                    }
 
-                        // --- TRANSACTION ---
-                        foreach ($transactions as $t) {
-                            $qty_in = $t->transaction_kind == 'IN' ? $t->qty : 0;
-                            $qty_out = $t->transaction_kind == 'OUT' ? $t->qty : 0;
+                    // --- TRANSACTION ---
+                    foreach ($transactions as $t) {
+                        $qty_in = $t->transaction_kind == 'IN' ? $t->qty : 0;
+                        $qty_out = $t->transaction_kind == 'OUT' ? $t->qty : 0;
 
-                            $all_data[] = [
-                                'type' => $t->transaction_type,
-                                'date' => $t->request_date,
-                                'username' => $t->username,
-                                'qty_in' => $qty_in,
-                                'qty_out' => $qty_out,
-                                'doc1' => '-',
-                                'doc2' => '-',
-                                'doc3' => $t->request_no,
-                                'doc4' => '-'
-                            ];
-                        }
+                        $all_data[] = [
+                            'type' => $t->transaction_type,
+                            'date' => $t->request_date,
+                            'username' => $t->username,
+                            'qty_in' => $qty_in,
+                            'qty_out' => $qty_out,
+                            'doc1' => '-',
+                            'doc2' => '-',
+                            'doc3' => $t->request_no,
+                            'doc4' => '-'
+                        ];
+                    }
 
-                        usort($all_data, function ($a, $b) {
-                            return strtotime($a['date']) - strtotime($b['date']);
-                        });
+                    usort($all_data, function ($a, $b) {
+                        return strtotime($a['date']) - strtotime($b['date']);
+                    });
 
-                        foreach ($all_data as $data) {
-                            $balance = $begin + $data['qty_in'] - $data['qty_out'];
-                        
-                            $html .= '<tr>
+                    foreach ($all_data as $data) {
+                        $balance = $begin + $data['qty_in'] - $data['qty_out'];
+
+                        $html .= '<tr>
                                 <td></td>
                                 <td style="text-align:center">' . $nod . '</td>
                                 <td>' . $data['type'] . '</td>
@@ -715,17 +677,14 @@ class Inventory_rm extends CI_Controller
                                 <td>' . $data['doc2'] . '</td>
                                 <td>' . $data['doc3'] . '</td>
                                 <td>' . $data['doc4'] . '</td>
-                                <td style="text-align:right;">' . number_format($begin, 2) . '</td>
                                 <td style="text-align:right;">' . $currency . '</td>
                                 <td style="text-align:right;">' . number_format($price, 2) . '</td>
                                 <td style="text-align:right;">' . number_format($rate, 2) . '</td>
+                                <td style="text-align:right;">' . number_format($begin, 2) . '</td>
                                 <td style="text-align:right;">' . number_format($rate * $price, 2) . '</td>
                                 <td style="text-align:right;">' . number_format(($rate * $price) * $begin, 2) . '</td>
 
                                 <td style="text-align:right;">' . number_format($data['qty_in'], 2) . '</td>
-                                <td style="text-align:right;">' . $currency . '</td>
-                                <td style="text-align:right;">' . number_format($price, 2) . '</td>
-                                <td style="text-align:right;">' . number_format($rate, 2) . '</td>
                                 <td style="text-align:right;">' . number_format($rate * $price, 2) . '</td>
                                 <td style="text-align:right;">' . number_format(($rate * $price) * $data['qty_in'], 2) . '</td>
 
@@ -737,156 +696,156 @@ class Inventory_rm extends CI_Controller
                                 <td style="text-align:right;">' . number_format($rate * $price, 2) . '</td>
                                 <td style="text-align:right;">' . number_format(($rate * $price) * $balance, 2) . '</td>
                             </tr>';
-                        
-                            $begin = $balance;
-                            $nod++;
-                        }
-                        
-                        // Dokumentasi : penerapan HTML tanpa sort Date ------------- //
-                            // //Purchase Order Receipt
-                            // foreach ($receipts as $receipt) {
-                            //     $balance = ($begin + ($receipt->qty_receipt - $end_qty));
-                            //     $html .= '  <tr>
-                            //                     <td></td>
-                            //                     <td style="text-align:center">' . $nod . '</td>
-                            //                     <td>RECEIPT</td>
-                            //                     <td>' . $receipt->username . '</td>
-                            //                     <td>' . $receipt->receipt_date . '</td>
-                            //                     <td>' . $receipt->bc_kind . '</td>
-                            //                     <td>' . $receipt->bc_aju . '</td>
-                            //                     <td>' . $receipt->bc_document . '</td>
-                            //                     <td>' . $receipt->bc_date . '</td>
-                            //                     <td style="text-align:right;">' . number_format($begin, 2) . '</td>
-                            //                     <td style="text-align:right;">' . number_format($receipt->qty_receipt, 2) . '</td>
-                            //                     <td style="text-align:right;">' . number_format(0)  . '</td>
-                            //                     <td style="text-align:right;">' . number_format($balance, 2)  . '</td>
-                            //                 </tr>';
-                            //     $begin += $receipt->qty_receipt;
-                            //     $nod++;
-                            // }
-                            // //Issued Material
-                            // foreach ($issueds as $issued) {
-                            //     $user = $this->crud->read("users", [], ["username" => $issued->created_by]);
-                            //     $balance = ($begin - $issued->qty);
-                            //     $html .= '  <tr>
-                            //                     <td></td>
-                            //                     <td style="text-align:center">' . $nod . '</td>
-                            //                     <td>ISSUED</td>
-                            //                     <td>' . $user->name . '</td>
-                            //                     <td>' . date("Y-m-d", strtotime($issued->created_date)) . '</td>
-                            //                     <td>-</td>
-                            //                     <td>' . $issued->label_no . '</td>
-                            //                     <td>' . $issued->request_no . '</td>
-                            //                     <td>-</td>
-                            //                     <td style="text-align:right;">' . number_format($begin, 2) . '</td>
-                            //                     <td style="text-align:right;">' . number_format(0) . '</td>
-                            //                     <td style="text-align:right;">' . number_format($issued->qty, 2)  . '</td>
-                            //                     <td style="text-align:right;">' . number_format($balance, 2)  . '</td>
-                            //                 </tr>';
-                            //     $begin -= $issued->qty;
-                            //     $nod++;
-                            // }
-                            // //Return Material
-                            // foreach ($returns as $return) {
-                            //     $balance = ($begin + $return->qty);
-                            //     $html .= '  <tr>
-                            //                     <td></td>
-                            //                     <td style="text-align:center">' . $nod . '</td>
-                            //                     <td>RETURN</td>
-                            //                     <td>' . $return->username . '</td>
-                            //                     <td>' . date("Y-m-d", strtotime($return->return_date)) . '</td>
-                            //                     <td>-</td>
-                            //                     <td>' . $return->label_no . '</td>
-                            //                     <td>' . $return->return_no . '</td>
-                            //                     <td>-</td>
-                            //                     <td style="text-align:right;">' . number_format($begin, 2) . '</td>
-                            //                     <td style="text-align:right;">' . number_format($return->qty, 2)  . '</td>
-                            //                     <td style="text-align:right;">' . number_format(0) . '</td>
-                            //                     <td style="text-align:right;">' . number_format($balance, 2)  . '</td>
-                            //                 </tr>';
-                            //     $begin += $return->qty;
-                            //     $nod++;
-                            // }
-                            // //OS RM
-                            // foreach ($os_rms as $os_rm) {
-                            //     $user = $this->crud->read("users", [], ["username" => $os_rm->created_by]);
-                            //     $balance = ($begin + $os_rm->qty);
-                            //     $html .= '  <tr>
-                            //                     <td></td>
-                            //                     <td style="text-align:center">' . $nod . '</td>
-                            //                     <td>OS RM</td>
-                            //                     <td>' . $user->name . '</td>
-                            //                     <td>' . date("Y-m-d", strtotime($os_rm->created_date)) . '</td>
-                            //                     <td>-</td>
-                            //                     <td>-</td>
-                            //                     <td>-</td>
-                            //                     <td>-</td>
-                            //                     <td style="text-align:right;">' . number_format($begin, 2) . '</td>
-                            //                     <td style="text-align:right;">' . number_format($os_rm->qty, 2)  . '</td>
-                            //                     <td style="text-align:right;">' . number_format(0) . '</td>
-                            //                     <td style="text-align:right;">' . number_format($balance, 2)  . '</td>
-                            //                 </tr>';
-                            //     $begin += $os_rm->qty;
-                            //     $nod++;
-                            // }
-                            // //SCAN BPM
-                            // foreach ($bpm_scans as $bpm_scan) {
-                            //     $user = $this->crud->read("users", [], ["username" => $bpm_scan->created_by]);
-                            //     $balance = ($begin + $bpm_scan->qty);
-                            //     $html .= '  <tr>
-                            //                     <td></td>
-                            //                     <td style="text-align:center">' . $nod . '</td>
-                            //                     <td>BPM</td>
-                            //                     <td>' . $user->name . '</td>
-                            //                     <td>' . date("Y-m-d", strtotime($bpm_scan->created_date)) . '</td>
-                            //                     <td>-</td>
-                            //                     <td>' . $bpm_scan->label . '</td>
-                            //                     <td>' . $bpm_scan->request_id . '</td>
-                            //                     <td>' . $bpm_scan->request_date . '</td>
-                            //                     <td style="text-align:right;">' . number_format($begin, 2) . '</td>
-                            //                     <td style="text-align:right;">' . number_format($bpm_scan->qty, 2)  . '</td>
-                            //                     <td style="text-align:right;">' . number_format(0) . '</td>
-                            //                     <td style="text-align:right;">' . number_format($balance, 2)  . '</td>
-                            //                 </tr>';
-                            //     $begin += $bpm_scan->qty;
-                            //     $nod++;
-                            // }
-                            // //TRANSACTION
-                            // foreach ($transactions as $transaction) {
-                            //     $trans_type_label = $transaction->transaction_type;
-                            //     $balance = ($transaction->transaction_kind == 'IN') ? ($begin + $transaction->qty) : ($begin - $transaction->qty);
-                            
-                            //     $html .= '  <tr>
-                            //                     <td></td>
-                            //                     <td style="text-align:center">' . $nod . '</td>
-                            //                     <td>' . $trans_type_label . '</td>
-                            //                     <td>' . $transaction->username . '</td>
-                            //                     <td>' . date("Y-m-d", strtotime($transaction->request_date)) . '</td>
-                            //                     <td>-</td>
-                            //                     <td>-</td>
-                            //                     <td>' . $transaction->request_no . '</td>
-                            //                     <td>-</td>
-                            //                     <td style="text-align:right;">' . number_format($begin, 2) . '</td>
-                            //                     <td style="text-align:right;">' . ($transaction->transaction_kind == 'IN' ? number_format($transaction->qty, 2) : number_format(0)) . '</td>
-                            //                     <td style="text-align:right;">' . ($transaction->transaction_kind == 'OUT' ? number_format($transaction->qty, 2) : number_format(0)) . '</td>
-                            //                     <td style="text-align:right;">' . number_format($balance, 2) . '</td>
-                            //                 </tr>';
-                            
-                            //     // Update balance
-                            //     if ($transaction->transaction_kind == 'IN') {
-                            //         $begin += $transaction->qty;
-                            //     } else {
-                            //         $begin -= $transaction->qty;
-                            //     }
-                                
-                            //     $nod++;
-                            // }
-                         // Dokumentasi berakhir disini ------------------------- //
+
+                        $begin = $balance;
+                        $nod++;
                     }
-            
-                    if ($filter_trans_type == 'RECEIPT') {
-                        //RECEIPT
-                        $receipts = $this->crud->query("SELECT
+
+                    // Dokumentasi : penerapan HTML tanpa sort Date ------------- //
+                    // //Purchase Order Receipt
+                    // foreach ($receipts as $receipt) {
+                    //     $balance = ($begin + ($receipt->qty_receipt - $end_qty));
+                    //     $html .= '  <tr>
+                    //                     <td></td>
+                    //                     <td style="text-align:center">' . $nod . '</td>
+                    //                     <td>RECEIPT</td>
+                    //                     <td>' . $receipt->username . '</td>
+                    //                     <td>' . $receipt->receipt_date . '</td>
+                    //                     <td>' . $receipt->bc_kind . '</td>
+                    //                     <td>' . $receipt->bc_aju . '</td>
+                    //                     <td>' . $receipt->bc_document . '</td>
+                    //                     <td>' . $receipt->bc_date . '</td>
+                    //                     <td style="text-align:right;">' . number_format($begin, 2) . '</td>
+                    //                     <td style="text-align:right;">' . number_format($receipt->qty_receipt, 2) . '</td>
+                    //                     <td style="text-align:right;">' . number_format(0)  . '</td>
+                    //                     <td style="text-align:right;">' . number_format($balance, 2)  . '</td>
+                    //                 </tr>';
+                    //     $begin += $receipt->qty_receipt;
+                    //     $nod++;
+                    // }
+                    // //Issued Material
+                    // foreach ($issueds as $issued) {
+                    //     $user = $this->crud->read("users", [], ["username" => $issued->created_by]);
+                    //     $balance = ($begin - $issued->qty);
+                    //     $html .= '  <tr>
+                    //                     <td></td>
+                    //                     <td style="text-align:center">' . $nod . '</td>
+                    //                     <td>ISSUED</td>
+                    //                     <td>' . $user->name . '</td>
+                    //                     <td>' . date("Y-m-d", strtotime($issued->created_date)) . '</td>
+                    //                     <td>-</td>
+                    //                     <td>' . $issued->label_no . '</td>
+                    //                     <td>' . $issued->request_no . '</td>
+                    //                     <td>-</td>
+                    //                     <td style="text-align:right;">' . number_format($begin, 2) . '</td>
+                    //                     <td style="text-align:right;">' . number_format(0) . '</td>
+                    //                     <td style="text-align:right;">' . number_format($issued->qty, 2)  . '</td>
+                    //                     <td style="text-align:right;">' . number_format($balance, 2)  . '</td>
+                    //                 </tr>';
+                    //     $begin -= $issued->qty;
+                    //     $nod++;
+                    // }
+                    // //Return Material
+                    // foreach ($returns as $return) {
+                    //     $balance = ($begin + $return->qty);
+                    //     $html .= '  <tr>
+                    //                     <td></td>
+                    //                     <td style="text-align:center">' . $nod . '</td>
+                    //                     <td>RETURN</td>
+                    //                     <td>' . $return->username . '</td>
+                    //                     <td>' . date("Y-m-d", strtotime($return->return_date)) . '</td>
+                    //                     <td>-</td>
+                    //                     <td>' . $return->label_no . '</td>
+                    //                     <td>' . $return->return_no . '</td>
+                    //                     <td>-</td>
+                    //                     <td style="text-align:right;">' . number_format($begin, 2) . '</td>
+                    //                     <td style="text-align:right;">' . number_format($return->qty, 2)  . '</td>
+                    //                     <td style="text-align:right;">' . number_format(0) . '</td>
+                    //                     <td style="text-align:right;">' . number_format($balance, 2)  . '</td>
+                    //                 </tr>';
+                    //     $begin += $return->qty;
+                    //     $nod++;
+                    // }
+                    // //OS RM
+                    // foreach ($os_rms as $os_rm) {
+                    //     $user = $this->crud->read("users", [], ["username" => $os_rm->created_by]);
+                    //     $balance = ($begin + $os_rm->qty);
+                    //     $html .= '  <tr>
+                    //                     <td></td>
+                    //                     <td style="text-align:center">' . $nod . '</td>
+                    //                     <td>OS RM</td>
+                    //                     <td>' . $user->name . '</td>
+                    //                     <td>' . date("Y-m-d", strtotime($os_rm->created_date)) . '</td>
+                    //                     <td>-</td>
+                    //                     <td>-</td>
+                    //                     <td>-</td>
+                    //                     <td>-</td>
+                    //                     <td style="text-align:right;">' . number_format($begin, 2) . '</td>
+                    //                     <td style="text-align:right;">' . number_format($os_rm->qty, 2)  . '</td>
+                    //                     <td style="text-align:right;">' . number_format(0) . '</td>
+                    //                     <td style="text-align:right;">' . number_format($balance, 2)  . '</td>
+                    //                 </tr>';
+                    //     $begin += $os_rm->qty;
+                    //     $nod++;
+                    // }
+                    // //SCAN BPM
+                    // foreach ($bpm_scans as $bpm_scan) {
+                    //     $user = $this->crud->read("users", [], ["username" => $bpm_scan->created_by]);
+                    //     $balance = ($begin + $bpm_scan->qty);
+                    //     $html .= '  <tr>
+                    //                     <td></td>
+                    //                     <td style="text-align:center">' . $nod . '</td>
+                    //                     <td>BPM</td>
+                    //                     <td>' . $user->name . '</td>
+                    //                     <td>' . date("Y-m-d", strtotime($bpm_scan->created_date)) . '</td>
+                    //                     <td>-</td>
+                    //                     <td>' . $bpm_scan->label . '</td>
+                    //                     <td>' . $bpm_scan->request_id . '</td>
+                    //                     <td>' . $bpm_scan->request_date . '</td>
+                    //                     <td style="text-align:right;">' . number_format($begin, 2) . '</td>
+                    //                     <td style="text-align:right;">' . number_format($bpm_scan->qty, 2)  . '</td>
+                    //                     <td style="text-align:right;">' . number_format(0) . '</td>
+                    //                     <td style="text-align:right;">' . number_format($balance, 2)  . '</td>
+                    //                 </tr>';
+                    //     $begin += $bpm_scan->qty;
+                    //     $nod++;
+                    // }
+                    // //TRANSACTION
+                    // foreach ($transactions as $transaction) {
+                    //     $trans_type_label = $transaction->transaction_type;
+                    //     $balance = ($transaction->transaction_kind == 'IN') ? ($begin + $transaction->qty) : ($begin - $transaction->qty);
+
+                    //     $html .= '  <tr>
+                    //                     <td></td>
+                    //                     <td style="text-align:center">' . $nod . '</td>
+                    //                     <td>' . $trans_type_label . '</td>
+                    //                     <td>' . $transaction->username . '</td>
+                    //                     <td>' . date("Y-m-d", strtotime($transaction->request_date)) . '</td>
+                    //                     <td>-</td>
+                    //                     <td>-</td>
+                    //                     <td>' . $transaction->request_no . '</td>
+                    //                     <td>-</td>
+                    //                     <td style="text-align:right;">' . number_format($begin, 2) . '</td>
+                    //                     <td style="text-align:right;">' . ($transaction->transaction_kind == 'IN' ? number_format($transaction->qty, 2) : number_format(0)) . '</td>
+                    //                     <td style="text-align:right;">' . ($transaction->transaction_kind == 'OUT' ? number_format($transaction->qty, 2) : number_format(0)) . '</td>
+                    //                     <td style="text-align:right;">' . number_format($balance, 2) . '</td>
+                    //                 </tr>';
+
+                    //     // Update balance
+                    //     if ($transaction->transaction_kind == 'IN') {
+                    //         $begin += $transaction->qty;
+                    //     } else {
+                    //         $begin -= $transaction->qty;
+                    //     }
+
+                    //     $nod++;
+                    // }
+                    // Dokumentasi berakhir disini ------------------------- //
+                }
+
+                if ($filter_trans_type == 'RECEIPT') {
+                    //RECEIPT
+                    $receipts = $this->crud->query("SELECT
                             a.receipt_date, 
                             a.bc_kind, 
                             a.bc_aju, 
@@ -900,10 +859,10 @@ class Inventory_rm extends CI_Controller
                         WHERE a.item_rm_id = '$item_rm_id' and a.receipt_date between '$filter_from' and '$filter_to'
                         GROUP BY a.bc_kind, a.bc_aju, a.bc_document, a.bc_date, a.receipt_id
                         ORDER BY a.receipt_date");
-            
-                        foreach ($receipts as $receipt) {
-                            $balance = ($begin + ($receipt->qty_receipt - $end_qty));
-                            $html .= '  <tr>
+
+                    foreach ($receipts as $receipt) {
+                        $balance = ($begin + ($receipt->qty_receipt - $end_qty));
+                        $html .= '  <tr>
                                             <td></td>
                                             <td style="text-align:center">' . $nod . '</td>
                                             <td>RECEIPT</td>
@@ -918,14 +877,14 @@ class Inventory_rm extends CI_Controller
                                             <td style="text-align:right;">' . number_format(0)  . '</td>
                                             <td style="text-align:right;">' . number_format($balance, 2)  . '</td>
                                         </tr>';
-                            $begin += $receipt->qty_receipt;
-                            $nod++;
-                        }
+                        $begin += $receipt->qty_receipt;
+                        $nod++;
                     }
+                }
 
-                    if ($filter_trans_type == 'ADJ IN STO') {
-                        //TRANSACTION
-                        $transactions = $this->crud->query("SELECT
+                if ($filter_trans_type == 'ADJ IN STO') {
+                    //TRANSACTION
+                    $transactions = $this->crud->query("SELECT
                             a.request_date,
                             a.transaction_type,
                             a.transaction_kind,
@@ -936,13 +895,13 @@ class Inventory_rm extends CI_Controller
                         JOIN users b ON a.created_by = b.username
                         WHERE a.item_rm_id = '$item_rm_id' and a.transaction_type = 'ADJ IN STO' and a.request_date between '$filter_from' and '$filter_to'
                         ORDER BY a.request_date");
-            
-                        foreach ($transactions as $transaction) {
-                            $balance = ($transaction->transaction_kind == 'IN') 
-                                        ? ($begin + $transaction->qty) 
-                                        : ($begin - $transaction->qty);
-                        
-                            $html .= '  <tr>
+
+                    foreach ($transactions as $transaction) {
+                        $balance = ($transaction->transaction_kind == 'IN')
+                            ? ($begin + $transaction->qty)
+                            : ($begin - $transaction->qty);
+
+                        $html .= '  <tr>
                                             <td></td>
                                             <td style="text-align:center">' . $nod . '</td>
                                             <td>ADJ IN STO</td>
@@ -957,21 +916,21 @@ class Inventory_rm extends CI_Controller
                                             <td style="text-align:right;">' . ($transaction->transaction_kind == 'OUT' ? number_format($transaction->qty, 2) : number_format(0)) . '</td>
                                             <td style="text-align:right;">' . number_format($balance, 2) . '</td>
                                         </tr>';
-                        
-                            // Update balance
-                            if ($transaction->transaction_kind == 'IN') {
-                                $begin += $transaction->qty;
-                            } else {
-                                $begin -= $transaction->qty;
-                            }
-                            
-                            $nod++;
-                        }
-                    }
 
-                    if ($filter_trans_type == 'BPM') {
-                        //TRANSACTION
-                        $transactions = $this->crud->query("SELECT
+                        // Update balance
+                        if ($transaction->transaction_kind == 'IN') {
+                            $begin += $transaction->qty;
+                        } else {
+                            $begin -= $transaction->qty;
+                        }
+
+                        $nod++;
+                    }
+                }
+
+                if ($filter_trans_type == 'BPM') {
+                    //TRANSACTION
+                    $transactions = $this->crud->query("SELECT
                             a.request_date,
                             a.transaction_type,
                             a.transaction_kind,
@@ -982,13 +941,13 @@ class Inventory_rm extends CI_Controller
                         JOIN users b ON a.created_by = b.username
                         WHERE a.item_rm_id = '$item_rm_id' and a.transaction_type = 'BPM' and a.request_date between '$filter_from' and '$filter_to'
                         ORDER BY a.request_date");
-            
-                        foreach ($transactions as $transaction) {
-                            $balance = ($transaction->transaction_kind == 'IN') 
-                                        ? ($begin + $transaction->qty) 
-                                        : ($begin - $transaction->qty);
-                        
-                            $html .= '  <tr>
+
+                    foreach ($transactions as $transaction) {
+                        $balance = ($transaction->transaction_kind == 'IN')
+                            ? ($begin + $transaction->qty)
+                            : ($begin - $transaction->qty);
+
+                        $html .= '  <tr>
                                             <td></td>
                                             <td style="text-align:center">' . $nod . '</td>
                                             <td>BPM</td>
@@ -1003,25 +962,25 @@ class Inventory_rm extends CI_Controller
                                             <td style="text-align:right;">' . ($transaction->transaction_kind == 'OUT' ? number_format($transaction->qty, 2) : number_format(0)) . '</td>
                                             <td style="text-align:right;">' . number_format($balance, 2) . '</td>
                                         </tr>';
-                        
-                            // Update balance
-                            if ($transaction->transaction_kind == 'IN') {
-                                $begin += $transaction->qty;
-                            } else {
-                                $begin -= $transaction->qty;
-                            }
-                            
-                            $nod++;
+
+                        // Update balance
+                        if ($transaction->transaction_kind == 'IN') {
+                            $begin += $transaction->qty;
+                        } else {
+                            $begin -= $transaction->qty;
                         }
 
-                        if(!$transactions){
-                            $transactions = $this->crud->query("SELECT * 
+                        $nod++;
+                    }
+
+                    if (!$transactions) {
+                        $transactions = $this->crud->query("SELECT * 
                             FROM scan_item_bpm WHERE item_rm_id = '$item_rm_id' and DATE_FORMAT(request_date, '%Y-%m-%d') between '$filter_from' and '$filter_to' ORDER BY request_date");
 
-                            foreach ($transactions as $transaction) {
-                                $user = $this->crud->read("users", [], ["username" => $transaction->created_by]);
-                                $balance = ($begin + $transaction->qty);
-                                $html .= '  <tr>
+                        foreach ($transactions as $transaction) {
+                            $user = $this->crud->read("users", [], ["username" => $transaction->created_by]);
+                            $balance = ($begin + $transaction->qty);
+                            $html .= '  <tr>
                                                 <td></td>
                                                 <td style="text-align:center">' . $nod . '</td>
                                                 <td>BPM</td>
@@ -1036,15 +995,15 @@ class Inventory_rm extends CI_Controller
                                                 <td style="text-align:right;">' . number_format(0) . '</td>
                                                 <td style="text-align:right;">' . number_format($balance, 2)  . '</td>
                                             </tr>';
-                                $begin += $transaction->qty;
-                                $nod++;
-                            }
+                            $begin += $transaction->qty;
+                            $nod++;
                         }
                     }
+                }
 
-                    if ($filter_trans_type == 'ADJ OUT STO') {
-                        //TRANSACTION
-                        $transactions = $this->crud->query("SELECT
+                if ($filter_trans_type == 'ADJ OUT STO') {
+                    //TRANSACTION
+                    $transactions = $this->crud->query("SELECT
                             a.request_date,
                             a.transaction_type,
                             a.transaction_kind,
@@ -1055,13 +1014,13 @@ class Inventory_rm extends CI_Controller
                         JOIN users b ON a.created_by = b.username
                         WHERE a.item_rm_id = '$item_rm_id' and a.transaction_type = 'ADJ OUT STO' and a.request_date between '$filter_from' and '$filter_to'
                         ORDER BY a.request_date");
-            
-                        foreach ($transactions as $transaction) {
-                            $balance = ($transaction->transaction_kind == 'IN') 
-                                        ? ($begin + $transaction->qty) 
-                                        : ($begin - $transaction->qty);
-                        
-                            $html .= '  <tr>
+
+                    foreach ($transactions as $transaction) {
+                        $balance = ($transaction->transaction_kind == 'IN')
+                            ? ($begin + $transaction->qty)
+                            : ($begin - $transaction->qty);
+
+                        $html .= '  <tr>
                                             <td></td>
                                             <td style="text-align:center">' . $nod . '</td>
                                             <td>ADJ OUT STO</td>
@@ -1076,21 +1035,21 @@ class Inventory_rm extends CI_Controller
                                             <td style="text-align:right;">' . ($transaction->transaction_kind == 'OUT' ? number_format($transaction->qty, 2) : number_format(0)) . '</td>
                                             <td style="text-align:right;">' . number_format($balance, 2) . '</td>
                                         </tr>';
-                        
-                            // Update balance
-                            if ($transaction->transaction_kind == 'IN') {
-                                $begin += $transaction->qty;
-                            } else {
-                                $begin -= $transaction->qty;
-                            }
-                            
-                            $nod++;
-                        }
-                    }
 
-                    if ($filter_trans_type == 'BPB') {
-                        //TRANSACTION
-                        $transactions = $this->crud->query("SELECT
+                        // Update balance
+                        if ($transaction->transaction_kind == 'IN') {
+                            $begin += $transaction->qty;
+                        } else {
+                            $begin -= $transaction->qty;
+                        }
+
+                        $nod++;
+                    }
+                }
+
+                if ($filter_trans_type == 'BPB') {
+                    //TRANSACTION
+                    $transactions = $this->crud->query("SELECT
                             a.request_date,
                             a.transaction_type,
                             a.transaction_kind,
@@ -1101,13 +1060,13 @@ class Inventory_rm extends CI_Controller
                         JOIN users b ON a.created_by = b.username
                         WHERE a.item_rm_id = '$item_rm_id' and a.transaction_type = 'BPB' and a.request_date between '$filter_from' and '$filter_to'
                         ORDER BY a.request_date");
-            
-                        foreach ($transactions as $transaction) {
-                            $balance = ($transaction->transaction_kind == 'IN') 
-                                        ? ($begin + $transaction->qty) 
-                                        : ($begin - $transaction->qty);
-                        
-                            $html .= '  <tr>
+
+                    foreach ($transactions as $transaction) {
+                        $balance = ($transaction->transaction_kind == 'IN')
+                            ? ($begin + $transaction->qty)
+                            : ($begin - $transaction->qty);
+
+                        $html .= '  <tr>
                                             <td></td>
                                             <td style="text-align:center">' . $nod . '</td>
                                             <td>BPB</td>
@@ -1122,21 +1081,21 @@ class Inventory_rm extends CI_Controller
                                             <td style="text-align:right;">' . ($transaction->transaction_kind == 'OUT' ? number_format($transaction->qty, 2) : number_format(0)) . '</td>
                                             <td style="text-align:right;">' . number_format($balance, 2) . '</td>
                                         </tr>';
-                        
-                            // Update balance
-                            if ($transaction->transaction_kind == 'IN') {
-                                $begin += $transaction->qty;
-                            } else {
-                                $begin -= $transaction->qty;
-                            }
-                            
-                            $nod++;
-                        }
-                    }
 
-                    if ($filter_trans_type == 'KANBAN WO') {
-                        //TRANSACTION
-                        $transactions = $this->crud->query("SELECT
+                        // Update balance
+                        if ($transaction->transaction_kind == 'IN') {
+                            $begin += $transaction->qty;
+                        } else {
+                            $begin -= $transaction->qty;
+                        }
+
+                        $nod++;
+                    }
+                }
+
+                if ($filter_trans_type == 'KANBAN WO') {
+                    //TRANSACTION
+                    $transactions = $this->crud->query("SELECT
                             a.request_date,
                             a.transaction_type,
                             a.transaction_kind,
@@ -1147,13 +1106,13 @@ class Inventory_rm extends CI_Controller
                         JOIN users b ON a.created_by = b.username
                         WHERE a.item_rm_id = '$item_rm_id' and a.transaction_type = 'KANBAN WO' and a.request_date between '$filter_from' and '$filter_to'
                         ORDER BY a.request_date");
-            
-                        foreach ($transactions as $transaction) {
-                            $balance = ($transaction->transaction_kind == 'IN') 
-                                        ? ($begin + $transaction->qty) 
-                                        : ($begin - $transaction->qty);
-                        
-                            $html .= '  <tr>
+
+                    foreach ($transactions as $transaction) {
+                        $balance = ($transaction->transaction_kind == 'IN')
+                            ? ($begin + $transaction->qty)
+                            : ($begin - $transaction->qty);
+
+                        $html .= '  <tr>
                                             <td></td>
                                             <td style="text-align:center">' . $nod . '</td>
                                             <td>KANBAN WO</td>
@@ -1168,26 +1127,26 @@ class Inventory_rm extends CI_Controller
                                             <td style="text-align:right;">' . ($transaction->transaction_kind == 'OUT' ? number_format($transaction->qty, 2) : number_format(0)) . '</td>
                                             <td style="text-align:right;">' . number_format($balance, 2) . '</td>
                                         </tr>';
-                        
-                            // Update balance
-                            if ($transaction->transaction_kind == 'IN') {
-                                $begin += $transaction->qty;
-                            } else {
-                                $begin -= $transaction->qty;
-                            }
-                            
-                            $nod++;
-                        }
-                    }
 
-                    if ($filter_trans_type == 'ISSUED') {
-                        //ISSUED
-                        $issueds = $this->crud->query("SELECT * FROM issued_material_details WHERE item_rm_id = '$item_rm_id' and DATE_FORMAT(created_date, '%Y-%m-%d') between '$filter_from' and '$filter_to' ORDER BY created_date");
-            
-                        foreach ($issueds as $issued) {
-                            $user = $this->crud->read("users", [], ["username" => $issued->created_by]);
-                            $balance = ($begin - $issued->qty);
-                            $html .= '  <tr>
+                        // Update balance
+                        if ($transaction->transaction_kind == 'IN') {
+                            $begin += $transaction->qty;
+                        } else {
+                            $begin -= $transaction->qty;
+                        }
+
+                        $nod++;
+                    }
+                }
+
+                if ($filter_trans_type == 'ISSUED') {
+                    //ISSUED
+                    $issueds = $this->crud->query("SELECT * FROM issued_material_details WHERE item_rm_id = '$item_rm_id' and DATE_FORMAT(created_date, '%Y-%m-%d') between '$filter_from' and '$filter_to' ORDER BY created_date");
+
+                    foreach ($issueds as $issued) {
+                        $user = $this->crud->read("users", [], ["username" => $issued->created_by]);
+                        $balance = ($begin - $issued->qty);
+                        $html .= '  <tr>
                                             <td></td>
                                             <td style="text-align:center">' . $nod . '</td>
                                             <td>ISSUED</td>
@@ -1202,10 +1161,10 @@ class Inventory_rm extends CI_Controller
                                             <td style="text-align:right;">' . number_format($issued->qty, 2)  . '</td>
                                             <td style="text-align:right;">' . number_format($balance, 2)  . '</td>
                                         </tr>';
-                            $begin -= $issued->qty;
-                            $nod++;
-                        }
+                        $begin -= $issued->qty;
+                        $nod++;
                     }
+                }
                 //}
             }
             $no++;
@@ -1218,7 +1177,7 @@ class Inventory_rm extends CI_Controller
         //     <td style="text-align:right;">' . number_format($totalOut, 2) . '</td>
         //     <td style="text-align:right;">' . number_format($totalEndingStock, 2) . '</td>
         // </tr>';
-      
+
         $html .= '</table></body></html>';
         echo $html;
     }
@@ -1406,7 +1365,7 @@ class Inventory_rm extends CI_Controller
                             </td>
                             <td style="font-size: 14px; text-align: left; margin:2px;">
                                 <b>' . $config->name . '</b><br>
-                                <small>'.$config->description.'</small>
+                                <small>' . $config->description . '</small>
                             </td>
                         </tr>
                     </table>
@@ -1453,7 +1412,7 @@ class Inventory_rm extends CI_Controller
                     <th width="80">ADJ STO</th>
                 </tr>';
 
-                
+
         $no = 1;
         $totalBeginStock = 0;
         $totalIn = 0;
@@ -1530,7 +1489,7 @@ class Inventory_rm extends CI_Controller
             $totalIn += $record->qty_in;
             $totalOut += $record->qty_out;
             $totalEndingStock += @(@$itemReceipts[0]->begin_stock + $record->qty_in) - $record->qty_out;
-            
+
             $totalReceiptQty += $record->receipt_qty;
             $totalBpmQty += $record->bpm_qty;
             $totalAdjInQty += $record->adj_in_qty;
@@ -1568,8 +1527,8 @@ class Inventory_rm extends CI_Controller
                             <td style="text-align:right;">' . $record->bpb_qty . '</td>
                             <td style="text-align:right;">' . $record->adj_out_qty . '</td>
 
-                            <td style="text-align:right;">' . number_format($record->receipt_qty + $record->bpm_qty + $record->adj_in_qty,2) . '</td>
-                            <td style="text-align:right;">' . number_format($record->qty_issued + $record->qty_kanban + $record->adj_out_qty + $record->bpb_qty,2) . '</td>
+                            <td style="text-align:right;">' . number_format($record->receipt_qty + $record->bpm_qty + $record->adj_in_qty, 2) . '</td>
+                            <td style="text-align:right;">' . number_format($record->qty_issued + $record->qty_kanban + $record->adj_out_qty + $record->bpb_qty, 2) . '</td>
                             <td style="text-align:right;">' . number_format(($record->receipt_qty + $record->bpm_qty + $record->adj_in_qty) - $record->qty_in, 2) . '</td>
                             <td style="text-align:right;">' . number_format(($record->qty_issued + $record->qty_kanban + $record->adj_out_qty + $record->bpb_qty) - $record->qty_out, 2) . '</td>
 
@@ -1599,11 +1558,11 @@ class Inventory_rm extends CI_Controller
             <td style="text-align:right;">' . number_format($totalQtySelisihOut, 2) . '</td>
             
         </tr>';
-      
+
         $html .= '</table></body></html>';
         echo $html;
     }
-  
+
     public function detail_transaction($option = "")
     {
         if ($option == "excel") {
@@ -1709,7 +1668,7 @@ class Inventory_rm extends CI_Controller
                             </td>
                             <td style="font-size: 14px; text-align: left; margin:2px;">
                                 <b>' . $config->name . '</b><br>
-                                <small>'.$config->description.'</small>
+                                <small>' . $config->description . '</small>
                             </td>
                         </tr>
                     </table>
@@ -1817,7 +1776,7 @@ class Inventory_rm extends CI_Controller
                 for ($i = $start; $i <= $finish; $i += (60 * 60 * 24)) {
                     $working_date = date('Y-m-d', $i);
 
-                    if ($filter_trans_type == '' ) {
+                    if ($filter_trans_type == '') {
                         //-------------- Awal Query disini----------------------------------//                    
                         //RECEIPT
                         $receipts = $this->crud->query("SELECT
@@ -1833,7 +1792,7 @@ class Inventory_rm extends CI_Controller
                         JOIN users c ON a.created_by = c.username
                         WHERE a.item_rm_id = '$item_rm_id' and a.receipt_date between '$working_date' and '$working_date'
                         GROUP BY a.bc_kind, a.bc_aju, a.bc_document, a.bc_date, a.receipt_id");
-                        
+
                         //ISSUED
                         $issueds = $this->crud->query("SELECT * FROM issued_material_details WHERE item_rm_id = '$item_rm_id' and DATE_FORMAT(created_date, '%Y-%m-%d') between '$working_date' and '$working_date'");
 
@@ -1881,7 +1840,7 @@ class Inventory_rm extends CI_Controller
 
                         //-------------- Akhir query disini----------------------------------//
 
-                        
+
                         //Purchase Order Receipt
                         foreach ($receipts as $receipt) {
                             $balance = ($begin + ($receipt->qty_receipt - $end_qty));
@@ -2017,7 +1976,7 @@ class Inventory_rm extends CI_Controller
                         foreach ($transactions as $transaction) {
                             $trans_type_label = $transaction->transaction_type;
                             $balance = ($transaction->transaction_kind == 'IN') ? ($begin + $transaction->qty) : ($begin - $transaction->qty);
-                        
+
                             $html .= '  <tr>
                                             <td style="text-align:center">' . $no . '</td>
                                             <td>' . $record->number . '</td>
@@ -2037,19 +1996,18 @@ class Inventory_rm extends CI_Controller
                                             <td style="text-align:right;">' . ($transaction->transaction_kind == 'OUT' ? number_format($transaction->qty, 2) : number_format(0)) . '</td>
                                             <td style="text-align:right;">' . number_format($balance, 2) . '</td>
                                         </tr>';
-                        
+
                             // Update balance
                             if ($transaction->transaction_kind == 'IN') {
                                 $begin += $transaction->qty;
                             } else {
                                 $begin -= $transaction->qty;
                             }
-                            
+
                             $no++;
                         }
-
                     }
-            
+
                     if ($filter_trans_type == 'RECEIPT') {
                         //RECEIPT
                         $receipts = $this->crud->query("SELECT
@@ -2065,7 +2023,7 @@ class Inventory_rm extends CI_Controller
                         JOIN users c ON a.created_by = c.username
                         WHERE a.item_rm_id = '$item_rm_id' and a.receipt_date between '$working_date' and '$working_date'
                         GROUP BY a.bc_kind, a.bc_aju, a.bc_document, a.bc_date, a.receipt_id");
-            
+
                         foreach ($receipts as $receipt) {
                             $balance = ($begin + ($receipt->qty_receipt - $end_qty));
                             $html .= '  <tr>
@@ -2104,13 +2062,13 @@ class Inventory_rm extends CI_Controller
                         FROM transaction_rm a
                         JOIN users b ON a.created_by = b.username
                         WHERE a.item_rm_id = '$item_rm_id' and a.transaction_type = 'ADJ IN STO' and a.request_date between '$working_date' and '$working_date'");
-            
+
                         foreach ($transactions as $transaction) {
-                            $balance = ($transaction->transaction_kind == 'IN') 
-                                        ? ($begin + $transaction->qty) 
-                                        : ($begin - $transaction->qty);
-                        
-                                        $html .= '  <tr>
+                            $balance = ($transaction->transaction_kind == 'IN')
+                                ? ($begin + $transaction->qty)
+                                : ($begin - $transaction->qty);
+
+                            $html .= '  <tr>
                                             <td style="text-align:center">' . $no . '</td>
                                             <td>' . $record->number . '</td>
                                             <td>' . $record->category_name . '</td>
@@ -2129,14 +2087,14 @@ class Inventory_rm extends CI_Controller
                                             <td style="text-align:right;">' . ($transaction->transaction_kind == 'OUT' ? number_format($transaction->qty, 2) : number_format(0)) . '</td>
                                             <td style="text-align:right;">' . number_format($balance, 2) . '</td>
                                         </tr>';
-                        
+
                             // Update balance
                             if ($transaction->transaction_kind == 'IN') {
                                 $begin += $transaction->qty;
                             } else {
                                 $begin -= $transaction->qty;
                             }
-                            
+
                             $no++;
                         }
                     }
@@ -2154,13 +2112,13 @@ class Inventory_rm extends CI_Controller
                         FROM transaction_rm a
                         JOIN users b ON a.created_by = b.username
                         WHERE a.item_rm_id = '$item_rm_id' and a.transaction_type = 'BPM' and a.request_date between '$working_date' and '$working_date'");
-            
+
                         foreach ($transactions as $transaction) {
-                            $balance = ($transaction->transaction_kind == 'IN') 
-                                        ? ($begin + $transaction->qty) 
-                                        : ($begin - $transaction->qty);
-                        
-                                        $html .= '  <tr>
+                            $balance = ($transaction->transaction_kind == 'IN')
+                                ? ($begin + $transaction->qty)
+                                : ($begin - $transaction->qty);
+
+                            $html .= '  <tr>
                                             <td style="text-align:center">' . $no . '</td>
                                             <td>' . $record->number . '</td>
                                             <td>' . $record->category_name . '</td>
@@ -2179,14 +2137,14 @@ class Inventory_rm extends CI_Controller
                                             <td style="text-align:right;">' . ($transaction->transaction_kind == 'OUT' ? number_format($transaction->qty, 2) : number_format(0)) . '</td>
                                             <td style="text-align:right;">' . number_format($balance, 2) . '</td>
                                         </tr>';
-                        
+
                             // Update balance
                             if ($transaction->transaction_kind == 'IN') {
                                 $begin += $transaction->qty;
                             } else {
                                 $begin -= $transaction->qty;
                             }
-                            
+
                             $no++;
                         }
                     }
@@ -2203,13 +2161,13 @@ class Inventory_rm extends CI_Controller
                         FROM transaction_rm a
                         JOIN users b ON a.created_by = b.username
                         WHERE a.item_rm_id = '$item_rm_id' and a.transaction_type = 'ADJ OUT STO' and a.request_date between '$working_date' and '$working_date'");
-            
+
                         foreach ($transactions as $transaction) {
-                            $balance = ($transaction->transaction_kind == 'IN') 
-                                        ? ($begin + $transaction->qty) 
-                                        : ($begin - $transaction->qty);
-                        
-                                        $html .= '  <tr>
+                            $balance = ($transaction->transaction_kind == 'IN')
+                                ? ($begin + $transaction->qty)
+                                : ($begin - $transaction->qty);
+
+                            $html .= '  <tr>
                                             <td style="text-align:center">' . $no . '</td>
                                             <td>' . $record->number . '</td>
                                             <td>' . $record->category_name . '</td>
@@ -2228,14 +2186,14 @@ class Inventory_rm extends CI_Controller
                                             <td style="text-align:right;">' . ($transaction->transaction_kind == 'OUT' ? number_format($transaction->qty, 2) : number_format(0)) . '</td>
                                             <td style="text-align:right;">' . number_format($balance, 2) . '</td>
                                         </tr>';
-                        
+
                             // Update balance
                             if ($transaction->transaction_kind == 'IN') {
                                 $begin += $transaction->qty;
                             } else {
                                 $begin -= $transaction->qty;
                             }
-                            
+
                             $no++;
                         }
                     }
@@ -2252,13 +2210,13 @@ class Inventory_rm extends CI_Controller
                         FROM transaction_rm a
                         JOIN users b ON a.created_by = b.username
                         WHERE a.item_rm_id = '$item_rm_id' and a.transaction_type = 'BPB' and a.request_date between '$working_date' and '$working_date'");
-            
+
                         foreach ($transactions as $transaction) {
-                            $balance = ($transaction->transaction_kind == 'IN') 
-                                        ? ($begin + $transaction->qty) 
-                                        : ($begin - $transaction->qty);
-                        
-                                        $html .= '  <tr>
+                            $balance = ($transaction->transaction_kind == 'IN')
+                                ? ($begin + $transaction->qty)
+                                : ($begin - $transaction->qty);
+
+                            $html .= '  <tr>
                                             <td style="text-align:center">' . $no . '</td>
                                             <td>' . $record->number . '</td>
                                             <td>' . $record->category_name . '</td>
@@ -2277,14 +2235,14 @@ class Inventory_rm extends CI_Controller
                                             <td style="text-align:right;">' . ($transaction->transaction_kind == 'OUT' ? number_format($transaction->qty, 2) : number_format(0)) . '</td>
                                             <td style="text-align:right;">' . number_format($balance, 2) . '</td>
                                         </tr>';
-                        
+
                             // Update balance
                             if ($transaction->transaction_kind == 'IN') {
                                 $begin += $transaction->qty;
                             } else {
                                 $begin -= $transaction->qty;
                             }
-                            
+
                             $no++;
                         }
                     }
@@ -2301,13 +2259,13 @@ class Inventory_rm extends CI_Controller
                         FROM transaction_rm a
                         JOIN users b ON a.created_by = b.username
                         WHERE a.item_rm_id = '$item_rm_id' and a.transaction_type = 'KANBAN WO' and a.request_date between '$working_date' and '$working_date'");
-            
+
                         foreach ($transactions as $transaction) {
-                            $balance = ($transaction->transaction_kind == 'IN') 
-                                        ? ($begin + $transaction->qty) 
-                                        : ($begin - $transaction->qty);
-                        
-                                        $html .= '  <tr>
+                            $balance = ($transaction->transaction_kind == 'IN')
+                                ? ($begin + $transaction->qty)
+                                : ($begin - $transaction->qty);
+
+                            $html .= '  <tr>
                                             <td style="text-align:center">' . $no . '</td>
                                             <td>' . $record->number . '</td>
                                             <td>' . $record->category_name . '</td>
@@ -2326,14 +2284,14 @@ class Inventory_rm extends CI_Controller
                                             <td style="text-align:right;">' . ($transaction->transaction_kind == 'OUT' ? number_format($transaction->qty, 2) : number_format(0)) . '</td>
                                             <td style="text-align:right;">' . number_format($balance, 2) . '</td>
                                         </tr>';
-                        
+
                             // Update balance
                             if ($transaction->transaction_kind == 'IN') {
                                 $begin += $transaction->qty;
                             } else {
                                 $begin -= $transaction->qty;
                             }
-                            
+
                             $no++;
                         }
                     }
@@ -2341,7 +2299,7 @@ class Inventory_rm extends CI_Controller
                     if ($filter_trans_type == 'ISSUED') {
                         //ISSUED
                         $issueds = $this->crud->query("SELECT * FROM issued_material_details WHERE item_rm_id = '$item_rm_id' and DATE_FORMAT(created_date, '%Y-%m-%d') between '$working_date' and '$working_date'");
-            
+
                         foreach ($issueds as $issued) {
                             $user = $this->crud->read("users", [], ["username" => $issued->created_by]);
                             $balance = ($begin - $issued->qty);
@@ -2380,9 +2338,8 @@ class Inventory_rm extends CI_Controller
         //     <td style="text-align:right;">' . number_format($totalOut, 2) . '</td>
         //     <td style="text-align:right;">' . number_format($totalEndingStock, 2) . '</td>
         // </tr>';
-      
+
         $html .= '</table></body></html>';
         echo $html;
     }
-
 }

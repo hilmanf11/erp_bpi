@@ -64,7 +64,7 @@ class Approvals extends CI_Controller
         $data = $this->crud->read($tablename, [], ["id" => $id]);
         $user = $this->crud->read('users', [], ["username" => $data->approved_by]);
         $approval = $this->crud->read('approvals', ["sub_department" => $user->sub_department, "department" => $user->department, "division" => $user->division], ["table_name" => $tablename]);
-        
+
         if ($data->approved == 1) {
             $users_id = @$approval->user_approval_2;
             $approved = 2;
@@ -129,9 +129,9 @@ class Approvals extends CI_Controller
         $data = json_decode($read->approved_data, false);
 
         /* Default */
-        if(empty($data)){
+        if (empty($data)) {
             $send = $this->crud->delete($tablename, ["id" => $id]);
-        }else{
+        } else {
             $send = $this->db->update($tablename, $data, ["id" => $id]);
         }
 
@@ -142,7 +142,7 @@ class Approvals extends CI_Controller
         //     "description" => 'Data in Module ' . strtoupper(str_replace("_", " ", $tablename)) . ' has been disapproved',
         //     "log" => json_encode($read)
         // ]);
-        
+
         echo json_encode(array("title" => "Disapproved", "message" => "Data Disapproved Successfully", "theme" => "success"));
     }
 
@@ -153,8 +153,10 @@ class Approvals extends CI_Controller
         $purchase_requests = $this->crud->reads('purchase_requests', [], ["approved_to" => $this->session->username], "", "", "", ["approved_to", "approved_by"]);
         $delivery_notes = $this->crud->reads('delivery_notes', [], ["approved_to" => $this->session->username], "", "", "", ["approved_to", "approved_by"]);
         $sales_invoices = $this->crud->reads('sales_invoices', [], ["approved_to" => $this->session->username], "", "", "", ["approved_to", "approved_by"]);
+        $standard_price_rm = $this->crud->reads('standard_price_rm', [], ["approved_to" => $this->session->username], "", "", "", ["approved_to", "approved_by"]);
+        $standard_exchange_rates = $this->crud->reads('standard_exchange_rates', [], ["approved_to" => $this->session->username], "", "", "", ["approved_to", "approved_by"]);
 
-        $totalRows = (count($users) + count($purchase_orders) + count($purchase_requests) + count($delivery_notes) + count($sales_invoices)); //+ count($forecasts) + count($stock_fg) + count($stock_wip) + count($os_so) + count($os_mpp) 
+        $totalRows = (count($users) + count($purchase_orders) + count($purchase_requests) + count($delivery_notes) + count($sales_invoices) + count($standard_price_rm) + count($standard_exchange_rates)); //+ count($forecasts) + count($stock_fg) + count($stock_wip) + count($os_so) + count($os_mpp) 
         if ($totalRows > 0) {
             echo '<span class="badge">' . $totalRows . '</span>';
         } else {
@@ -223,7 +225,8 @@ class Approvals extends CI_Controller
                 </li>';
     }
 
-    public function users($approved_to, $approved_by){
+    public function users($approved_to, $approved_by)
+    {
         if (empty($this->session->username)) {
             redirect('error_session');
         } else {
@@ -235,7 +238,8 @@ class Approvals extends CI_Controller
         }
     }
 
-    public function purchase_requests($approved_to, $approved_by){
+    public function purchase_requests($approved_to, $approved_by)
+    {
         if (empty($this->session->username)) {
             redirect('error_session');
         } else {
@@ -247,7 +251,8 @@ class Approvals extends CI_Controller
         }
     }
 
-    public function purchase_orders($approved_to, $approved_by){
+    public function purchase_orders($approved_to, $approved_by)
+    {
         if (empty($this->session->username)) {
             redirect('error_session');
         } else {
@@ -259,7 +264,8 @@ class Approvals extends CI_Controller
         }
     }
 
-    public function delivery_notes($approved_to, $approved_by){
+    public function delivery_notes($approved_to, $approved_by)
+    {
         if (empty($this->session->username)) {
             redirect('error_session');
         } else {
@@ -271,7 +277,8 @@ class Approvals extends CI_Controller
         }
     }
 
-    public function sales_invoices($approved_to, $approved_by){
+    public function sales_invoices($approved_to, $approved_by)
+    {
         if (empty($this->session->username)) {
             redirect('error_session');
         } else {
@@ -283,11 +290,37 @@ class Approvals extends CI_Controller
         }
     }
 
+    public function standard_price_rm($approved_to, $approved_by)
+    {
+        if (empty($this->session->username)) {
+            redirect('error_session');
+        } else {
+            $data['approved_to'] = base64_decode($approved_to);
+            $data['approved_by'] = base64_decode($approved_by);
+            $data['table'] = "standard_price_rm";
+            $this->load->view('template/header', $data);
+            $this->load->view('approval/standard_price_rm');
+        }
+    }
+
+    public function standard_exchage_rates($approved_to, $approved_by)
+    {
+        if (empty($this->session->username)) {
+            redirect('error_session');
+        } else {
+            $data['approved_to'] = base64_decode($approved_to);
+            $data['approved_by'] = base64_decode($approved_by);
+            $data['table'] = "standard_exchange_rates";
+            $this->load->view('template/header', $data);
+            $this->load->view('approval/standard_exchange_rates');
+        }
+    }
+
     public function approvalUsers($approved_to, $approved_by)
     {
         $approved_to = base64_decode($approved_to);
         $approved_by = base64_decode($approved_by);
-        
+
         $this->db->select('*');
         $this->db->from('users a');
         $this->db->where('approved_to', $approved_to);
@@ -328,7 +361,7 @@ class Approvals extends CI_Controller
         $this->db->join('item_familys c', 'b.item_family_id = c.id');
         $this->db->join('suppliers d', 'a.supplier_id = d.id');
         $this->db->join('supplier_items e', 'a.item_rm_id = e.item_rm_id and a.supplier_id = e.supplier_id');
-                // $this->db->join('(SELECT po_no, COUNT(status) as total_status_close FROM purchase_orders WHERE status = 1 GROUP BY po_no) g', 'a.po_no = g.po_no', 'left');
+        // $this->db->join('(SELECT po_no, COUNT(status) as total_status_close FROM purchase_orders WHERE status = 1 GROUP BY po_no) g', 'a.po_no = g.po_no', 'left');
         $this->db->where('a.approved_to', $approved_to);
         $this->db->where('a.approved_by', $approved_by);
         $this->db->order_by('a.created_date', 'DESC');
@@ -378,7 +411,7 @@ class Approvals extends CI_Controller
         $this->db->join('customers b', 'a.customer_id = b.id');
         $this->db->join('customer_address d', 'b.id = d.customer_id');
         $this->db->join('sales_orders c', 'a.sales_order_no = c.sales_order_no and a.item_fg_id = c.item_fg_id and a.customer_id = c.customer_id');
-        $this->db->join('delivery_orders e','a.delivery_order_no = e.delivery_order_no');
+        $this->db->join('delivery_orders e', 'a.delivery_order_no = e.delivery_order_no');
         $this->db->join('item_fg f', 'e.item_fg_id = f.id');
         $this->db->where('a.approved_to', $approved_to);
         $this->db->where('a.approved_by', $approved_by);
@@ -401,6 +434,41 @@ class Approvals extends CI_Controller
         $this->db->where('a.approved_to', $approved_to);
         $this->db->where('a.approved_by', $approved_by);
         $this->db->order_by('a.created_date', 'DESC');
+        $records = $this->db->get()->result_array();
+
+        die(json_encode($records));
+    }
+
+    public function approvalStandardPriceRm($approved_to, $approved_by)
+    {
+        $approved_to = base64_decode($approved_to);
+        $approved_by = base64_decode($approved_by);
+
+        $this->db->select('a.*,b.number as item_rm_number, b.name as item_rm_name, b.uom, c.name as item_category_name, d.name as item_family_name, e.name as division_name');
+        // $this->db->select('a.*');
+        $this->db->from('standard_price_rm a');
+        $this->db->join('item_rm b', 'a.item_rm_id=b.id', 'left');
+        $this->db->join('item_categories c', 'b.item_category_id=c.id', 'left');
+        $this->db->join('item_familys d', 'b.item_family_id=d.id', 'left');
+        $this->db->join('divisions e', 'b.division=e.number', 'left');
+        $this->db->where('a.approved_to', $approved_to);
+        $this->db->where('a.approved_by', $approved_by);
+        $this->db->order_by('a.id', 'ASC');
+        $records = $this->db->get()->result_array();
+
+        die(json_encode($records));
+    }
+
+    public function approvalStandardExchangeRates($approved_to, $approved_by)
+    {
+        $approved_to = base64_decode($approved_to);
+        $approved_by = base64_decode($approved_by);
+
+        $this->db->select('*');
+        $this->db->from('standard_exchange_rates a');
+        $this->db->where('a.approved_to', $approved_to);
+        $this->db->where('a.approved_by', $approved_by);
+        $this->db->order_by('a.id', 'ASC');
         $records = $this->db->get()->result_array();
 
         die(json_encode($records));

@@ -44,6 +44,8 @@
                     <option value="purchase_requests">Purchase Requests</option>
                     <option value="delivery_notes">Delivery Notes</option>
                     <option value="sales_invoices">Sales Invoices</option>
+                    <option value="standard_price_rm">Standard Price Material</option>
+                    <option value="standard_exchange_rates">Standard Exchange Rates</option>
                 </select>
             </div>
             <div class="fitem">
