@@ -1,5 +1,5 @@
 <table id="dg" class="easyui-datagrid" style="width:100%;" toolbar="#toolbar"></table>
-<div id="toolbar" style="height: 235px; padding: 10px;">
+<div id="toolbar" style="height: 200px; padding: 10px;">
     <!-- <div style="width: 100%; display: grid; grid-template-columns: auto auto auto; grid-gap: 5px; display: flex;"> -->
     <fieldset style="width: 100%; border:2px solid #d0d0d0; margin-bottom: 5px; margin-top: 5px; border-radius:4px;">
         <legend><b>Form Filter Data</b></legend>
@@ -10,8 +10,27 @@
                 <input style="width:28%;" id="filter_to" class="easyui-datebox" value="<?= date("Y-m-t") ?>" data-options="formatter:myformatter,parser:myparser, editable:false">
             </div>
             <div class="fitem">
+                <span style="width:35%; display:inline-block;">Division</span>
+                <input style="width:60%;" id="filter_division" class="easyui-combobox">
+            </div>
+            <div class="fitem">
+                <span style="width:35%; display:inline-block;"></span>
+                <a href="javascript:;" class="easyui-linkbutton" onclick="filter()"><i class="fa fa-search"></i> Filter Data</a>
+            </div>
+        </div>
+        <div style="width: 49%; float:left;">
+            <div class="fitem">
                 <span style="width:35%; display:inline-block;">Product No</span>
-                <input style="width:60%;" id="filter_item_fg" class="easyui-combogrid">
+                <input style="width:60%;" id="filter_items" class="easyui-combogrid">
+            </div>
+            <div class="fitem">
+                <span style="width:35%; display:inline-block;">Shift</span>
+                <select style="width:60%;" id="filter_shift" class="easyui-combobox" panelHeight="auto">
+                    <option value="">Choose All</option>
+                    <option value="1">1</option>
+                    <option value="2">2</option>
+                    <option value="3">3</option>
+                </select>
             </div>
             <div class="fitem">
                 <span style="width:35%; display:inline-block;">Report Display</span>
@@ -19,10 +38,6 @@
                     <option value="RECAP">RECAP</option>
                     <option value="DETAIL">DETAIL</option>
                 </select>
-            </div>
-            <div class="fitem">
-                <span style="width:35%; display:inline-block;"></span>
-                <a href="javascript:;" class="easyui-linkbutton" onclick="filter()"><i class="fa fa-search"></i> Filter Data</a>
             </div>
         </div>
     </fieldset>
@@ -48,10 +63,10 @@
 </div>
 
 <script>
-    function add(){
+    function add() {
         var filter_from = $("#filter_from").datebox('getValue');
         var filter_to = $("#filter_to").datebox('getValue');
-        var filter_item_fg = $("#filter_item_fg").combogrid('getValue');
+        var filter_item_fg = $("#filter_items").combogrid('getValue');
         var filter_display = $("#filter_display").combobox('getValue');
 
         $.ajax({
@@ -59,13 +74,13 @@
             url: "<?= base_url('closing/locks/checkLock') ?>",
             data: "period=" + filter_from + "&menus_id=<?= $menus_id ?>",
             dataType: "json",
-            success: function (lock) {
-                if(lock.total > 0){
+            success: function(lock) {
+                if (lock.total > 0) {
                     toastr.error("This period is not active by Accounting");
                     return false;
                 }
 
-                if(filter_from != "" && filter_to != ""){
+                if (filter_from != "" && filter_to != "") {
                     $.messager.confirm('Warning', 'Are you sure you want to save this data?', function(r) {
                         if (r) {
                             Swal.fire({
@@ -92,7 +107,7 @@
                                 success: function(data) {
                                     Swal.close();
 
-                                    if(data.total > 0){
+                                    if (data.total > 0) {
                                         requestData(data.total, data.rows);
                                         $('#dlg_generate').dialog('open');
 
@@ -141,14 +156,14 @@
                                                 });
                                             }
                                         }
-                                    }else{
+                                    } else {
                                         toastr.warning("Data not Found!");
                                     }
                                 }
                             });
                         }
                     });
-                }else{
+                } else {
                     toastr.warning("Please select Trans Date!");
                 }
             }
@@ -166,28 +181,44 @@
     function filter() {
         var filter_from = $("#filter_from").datebox('getValue');
         var filter_to = $("#filter_to").datebox('getValue');
-        var filter_item_fg = $("#filter_item_fg").combogrid('getValue');
+        var filter_items = $("#filter_items").combogrid('getValue');
         var filter_display = $("#filter_display").combobox('getValue');
+        var filter_division = $("#filter_division").combobox('getValue');
+        var filter_shift = $("#filter_shift").combobox('getValue');
 
-        url = "?filter_from=" + filter_from + "&filter_to=" + filter_to + "&filter_item_fg=" + filter_item_fg + "&filter_display=" + filter_display;
-        $("#printout").contents().find('html').html("<center><br><br><br><b style='font-size:20px;'>Please Wait...</b></center>");
-        $("#printout").attr('src', '<?= base_url('finance/inventory_wip/print') ?>' + url);
+        var yearFrom = filter_from.substring(0, 4);
+        var yearTo = filter_to.substring(0, 4);
+        if (yearFrom !== yearTo) {
+            toastr.warning("Please select the same year for Receipt Date", "Information");
+        } else {
+            url = "?filter_from=" + filter_from + "&filter_to=" + filter_to + "&filter_items=" + filter_items + "&filter_display=" + filter_display + "&filter_division=" + filter_division + "&filter_shift=" + filter_shift;
+            $("#printout").contents().find('html').html("<center><br><br><br><b style='font-size:20px;'>Please Wait...</b></center>");
+            $("#printout").attr('src', '<?= base_url('finance/inventory_wip/print') ?>' + url);
+        }
     }
 
     function excel() {
         var filter_from = $("#filter_from").datebox('getValue');
         var filter_to = $("#filter_to").datebox('getValue');
-        var filter_item_fg = $("#filter_item_fg").combogrid('getValue');
+        var filter_items = $("#filter_items").combogrid('getValue');
         var filter_display = $("#filter_display").combobox('getValue');
+        var filter_division = $("#filter_division").combobox('getValue');
+        var filter_shift = $("#filter_shift").combobox('getValue');
 
-        url = "?filter_from=" + filter_from + "&filter_to=" + filter_to + "&filter_item_fg=" + filter_item_fg + "&filter_display=" + filter_display;
-        window.location.assign('<?= base_url('finance/inventory_wip/print/excel') ?>' + url);
+        var yearFrom = filter_from.substring(0, 4);
+        var yearTo = filter_to.substring(0, 4);
+        if (yearFrom !== yearTo) {
+            toastr.warning("Please select the same year for Receipt Date", "Information");
+        } else {
+            url = "?filter_from=" + filter_from + "&filter_to=" + filter_to + "&filter_items=" + filter_items + "&filter_display=" + filter_display + "&filter_division=" + filter_division + "&filter_shift=" + filter_shift;
+            window.location.assign('<?= base_url('finance/inventory_wip/print/excel') ?>' + url);
+        }
     }
 
     $(function() {
         $("#add").html("Save Inventory WIP");
 
-        $('#filter_item_fg').combogrid({
+        $('#filter_items').combogrid({
             url: '<?= base_url('master/item_fg/reads') ?>',
             panelWidth: 420,
             idField: 'id',
@@ -213,6 +244,14 @@
                 }, ]
             ]
         });
+    });
+
+    $('#filter_division').combobox({
+        url: '<?= base_url('master/divisions/reads'); ?>',
+        valueField: 'id',
+        textField: 'number',
+        panelHeight: 'panelHeight',
+        prompt: 'Choose Division',
     });
 
     //Format Datepicker

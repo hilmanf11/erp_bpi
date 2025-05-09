@@ -24,12 +24,12 @@
                 <input style="width:60%;" id="filter_items" class="easyui-combogrid">
             </div>
             <div class="fitem">
-                <span style="width:35%; display:inline-block;">Type</span>
-                <select style="width:60%;" name="filter_type" id="filter_type" class="easyui-combobox" panelHeight="auto">
+                <span style="width:35%; display:inline-block;">Shift</span>
+                <select style="width:60%;" id="filter_shift" class="easyui-combobox" panelHeight="auto">
                     <option value="">Choose All</option>
-                    <option value="FG">FG</option>
-                    <option value="RM">RM</option>
-                    <option value="SA">SUB ASSY</option>
+                    <option value="1">1</option>
+                    <option value="2">2</option>
+                    <option value="3">3</option>
                 </select>
             </div>
             <div class="fitem">
@@ -67,8 +67,8 @@
         var filter_from = $("#filter_from").datebox('getValue');
         var filter_to = $("#filter_to").datebox('getValue');
         var filter_items = $("#filter_items").combogrid('getValue');
+        var filter_shift = $("#filter_shift").combogrid('getValue');
         var filter_display = $("#filter_display").combobox('getValue');
-        var filter_type = $("#filter_type").combobox('getValue');
 
         $.ajax({
             type: "post",
@@ -98,11 +98,12 @@
 
                             $.ajax({
                                 type: "post",
-                                url: '<?= base_url('finance/inventory_fg/getData') ?>',
+                                url: '<?= base_url('finance/progress_wip/getData') ?>',
                                 data: {
                                     filter_from: filter_from,
                                     filter_to: filter_to,
                                     filter_items: filter_items,
+                                    filter_shift: filter_shift,
                                 },
                                 dataType: "json",
                                 success: function(data) {
@@ -123,7 +124,7 @@
 
                                                 $.ajax({
                                                     type: "post",
-                                                    url: '<?= base_url('finance/inventory_fg/create') ?>',
+                                                    url: '<?= base_url('finance/progress_wip/create') ?>',
                                                     data: {
                                                         data: json[i]
                                                     },
@@ -185,16 +186,16 @@
         var filter_items = $("#filter_items").combogrid('getValue');
         var filter_display = $("#filter_display").combobox('getValue');
         var filter_division = $("#filter_division").combobox('getValue');
-        var filter_type = $("#filter_type").combobox('getValue');
+        var filter_shift = $("#filter_shift").combobox('getValue');
 
         var yearFrom = filter_from.substring(0, 4);
         var yearTo = filter_to.substring(0, 4);
         if (yearFrom !== yearTo) {
             toastr.warning("Please select the same year for Receipt Date", "Information");
         } else {
-            url = "?filter_from=" + filter_from + "&filter_to=" + filter_to + "&filter_items=" + filter_items + "&filter_display=" + filter_display + "&filter_division=" + filter_division + "&filter_type=" + filter_type;
+            url = "?filter_from=" + filter_from + "&filter_to=" + filter_to + "&filter_items=" + filter_items + "&filter_display=" + filter_display + "&filter_division=" + filter_division + "&filter_shift=" + filter_shift;
             $("#printout").contents().find('html').html("<center><br><br><br><b style='font-size:20px;'>Please Wait...</b></center>");
-            $("#printout").attr('src', '<?= base_url('finance/inventory_fg/print') ?>' + url);
+            $("#printout").attr('src', '<?= base_url('finance/progress_wip/print') ?>' + url);
         }
     }
 
@@ -204,15 +205,15 @@
         var filter_items = $("#filter_items").combogrid('getValue');
         var filter_display = $("#filter_display").combobox('getValue');
         var filter_division = $("#filter_division").combobox('getValue');
-        var filter_type = $("#filter_type").combobox('getValue');
+        var filter_shift = $("#filter_shift").combobox('getValue');
 
         var yearFrom = filter_from.substring(0, 4);
         var yearTo = filter_to.substring(0, 4);
         if (yearFrom !== yearTo) {
             toastr.warning("Please select the same year for Receipt Date", "Information");
         } else {
-            url = "?filter_from=" + filter_from + "&filter_to=" + filter_to + "&filter_items=" + filter_items + "&filter_display=" + filter_display + "&filter_division=" + filter_division + "&filter_type=" + filter_type;
-            window.location.assign('<?= base_url('finance/inventory_fg/print/excel') ?>' + url);
+            url = "?filter_from=" + filter_from + "&filter_to=" + filter_to + "&filter_items=" + filter_items + "&filter_display=" + filter_display + "&filter_division=" + filter_division + "&filter_shift=" + filter_shift;
+            window.location.assign('<?= base_url('finance/progress_wip/print/excel') ?>' + url);
         }
     }
 

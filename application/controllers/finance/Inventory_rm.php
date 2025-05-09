@@ -108,7 +108,7 @@ class Inventory_rm extends CI_Controller
         if ($option == "excel") {
             $format  = date("Ymd");
             header("Content-type: application/vnd-ms-excel");
-            header("Content-Disposition: attachment; filename=history_transactions_rm_$format.xls");
+            header("Content-Disposition: attachment; filename=inventory_rm_$format.xls");
         }
         //------------------------------------ Opsi print berakhir disini------------------------------------------------------//
 
@@ -372,9 +372,13 @@ class Inventory_rm extends CI_Controller
 
         $no = 1;
         $totalBeginStock = 0;
+        $totalBeginAmount = 0;
         $totalIn = 0;
+        $totalAmountIn = 0;
         $totalOut = 0;
+        $totalAmountOut = 0;
         $totalEndingStock = 0;
+        $totalAmountEndingStock = 0;
 
         foreach ($records as $record) {
             $item_rm_id = $record->id;
@@ -398,9 +402,13 @@ class Inventory_rm extends CI_Controller
             }
 
             $totalBeginStock += @$record->begin_stock;
-            $totalIn += $record->qty_in;
-            $totalOut += $record->qty_out;
+            $totalBeginAmount += @$record->price * $rate * @$record->begin_stock;
+            $totalIn += @$record->qty_in;
+            $totalAmountIn += @$record->price * $rate * @$record->qty_in;
+            $totalOut += @$record->qty_out;
+            $totalAmountOut += @$record->price * $rate * @$record->qty_out;
             $totalEndingStock += @(@$record->begin_stock + $record->qty_in) - $record->qty_out;
+            $totalAmountEndingStock += ((@$record->price * $rate) * @$record->qty_in) + ((@$record->price * $rate) * @$record->begin_stock) - ((@$record->price * $rate) * @$record->qty_out);
 
 
             $html .= '  <tr>
@@ -1170,13 +1178,21 @@ class Inventory_rm extends CI_Controller
             $no++;
         }
 
-        // $html .= '<tr>
-        //     <td colspan="13" style="text-align:right;"><b>GRAND TOTAL</b></td>
-        //     <td style="text-align:right;">' . number_format($totalBeginStock, 2) . '</td>
-        //     <td style="text-align:right;">' . number_format($totalIn, 2) . '</td>
-        //     <td style="text-align:right;">' . number_format($totalOut, 2) . '</td>
-        //     <td style="text-align:right;">' . number_format($totalEndingStock, 2) . '</td>
-        // </tr>';
+        $html .= '<tr>
+            <td colspan="12" style="text-align:right;"><b>GRAND TOTAL</b></td>
+            <td style="text-align:right;"><b>' . number_format($totalBeginStock, 2) . '</b></td>
+            <td style="text-align:right;"></td>
+            <td style="text-align:right;"><b>' . number_format($totalBeginAmount, 2) . '</b></td>
+            <td style="text-align:right;">' . number_format($totalIn, 2) . '</b></td>
+            <td style="text-align:right;"><b></td>
+            <td style="text-align:right;"><b>' . number_format($totalAmountIn, 2) . '</b></td>
+            <td style="text-align:right;"><b>' . number_format($totalOut, 2) . '</b></td>
+            <td style="text-align:right;"></td>
+            <td style="text-align:right;"><b>' . number_format($totalAmountOut, 2) . '</b></td>
+            <td style="text-align:right;"><b>' . number_format($totalEndingStock, 2) . '</b></td>
+            <td style="text-align:right;"></td>
+            <td style="text-align:right;"><b>' . number_format($totalAmountEndingStock, 2) . '</b></td>
+        </tr>';
 
         $html .= '</table></body></html>';
         echo $html;

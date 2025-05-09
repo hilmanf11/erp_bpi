@@ -497,7 +497,7 @@
     }
     // DOWNLOAD
     function download_excel() {
-        window.location.assign('<?= base_url('template/tmp_bom.xls') ?>');
+        window.location.assign('<?= base_url('template/tmp_standard_price_material.xls') ?>');
     }
 
     //FILTER DATA

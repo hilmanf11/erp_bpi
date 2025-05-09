@@ -182,13 +182,14 @@ class Inventory_fg extends CI_Controller
         if ($option == "excel") {
             $format  = date("Ymd");
             header("Content-type: application/vnd-ms-excel");
-            header("Content-Disposition: attachment; filename=history_transactions_fg_$format.xls");
+            header("Content-Disposition: attachment; filename=inventory_fg_$format.xls");
         }
         $filter_from = $this->input->get('filter_from');
         $filter_to   = $this->input->get('filter_to');
         $filter_items = $this->input->get('filter_items');
         $filter_display = $this->input->get("filter_display");
         $filter_division = $this->input->get("filter_division");
+        $filter_type = $this->input->get("filter_type");
 
         $start = strtotime($filter_from);
         $finish = strtotime($filter_to);
@@ -322,6 +323,7 @@ class Inventory_fg extends CI_Controller
             a.number, 
             a.name, 
             a.uom,
+            a.type,
             xy.number as division,
             COALESCE(aa.price,0) as price,
             COALESCE(aa.currency,'-') as currency,
@@ -355,7 +357,7 @@ class Inventory_fg extends CI_Controller
             LEFT JOIN ($query_scan_repair_of_goods2) qh ON a.id = qh.item_fg_id
             LEFT JOIN ($query_qty_in_wip_receipt2) qw ON a.id = qw.item_fg_id
             GROUP BY a.id) x ON a.id = x.id
-        WHERE a.id LIKE '%$filter_items%' AND a.division_id LIKE '%$filter_division%'
+        WHERE a.id LIKE '%$filter_items%' AND a.division_id LIKE '%$filter_division%' AND a.type LIKE '%$filter_type%'
         ORDER BY a.number
         ";
 
@@ -396,6 +398,7 @@ class Inventory_fg extends CI_Controller
                     <th rowspan="2">Uom</th>
                     <th rowspan="2">Division</th>
                     <th rowspan="2">Product Family</th>
+                    <th rowspan="2">Type</th>
                     <th rowspan="2">Currency</th>
                     <th rowspan="2">Price</th>
                     <th rowspan="2">Rate</th>
@@ -422,6 +425,14 @@ class Inventory_fg extends CI_Controller
                     <th width="80">AMOUNT</th>
                 </tr>';
         $no = 1;
+        $totalBeginStock = 0;
+        $totalBeginAmount = 0;
+        $totalIn = 0;
+        $totalAmountIn = 0;
+        $totalOut = 0;
+        $totalAmountOut = 0;
+        $totalEndingStock = 0;
+        $totalAmountEndingStock = 0;
         foreach ($records as $record) {
             $item_fg_id = $record->id;
             $currency = @$record->currency;
@@ -442,6 +453,16 @@ class Inventory_fg extends CI_Controller
                 }
             }
 
+            $totalBeginStock += @$record->begin_stock;
+            $totalBeginAmount += @$record->price * $rate * @$record->begin_stock;
+            $totalIn += @$record->qty_in;
+            $totalAmountIn += @$record->price * $rate * @$record->qty_in;
+            $totalOut += @$record->qty_out;
+            $totalAmountOut += @$record->price * $rate * @$record->qty_out;
+            $totalEndingStock += @(@$record->begin_stock + $record->qty_in) - $record->qty_out;
+            $totalAmountEndingStock += ((@$record->price * $rate) * @$record->qty_in) + ((@$record->price * $rate) * @$record->begin_stock) - ((@$record->price * $rate) * @$record->qty_out);
+
+
             $html .= '  <tr>
                             <td style="text-align:center">' . $no . '</td>
                             <td colspan="3" style="mso-number-format:\@;">' . $record->number . '</td>
@@ -449,6 +470,7 @@ class Inventory_fg extends CI_Controller
                             <td>' . $record->uom . '</td>
                             <td>' . $record->division . '</td>
                             <td>FINISH GOOD</td>
+                            <td>' . $record->type . '</td>
                             <td style="text-align:center;">' . $record->currency . '</td>
                             <td style="text-align:right;">' . number_format($record->price, 2) . '</td>
                             <td style="text-align:right;">' . number_format($rate, 2) . '</td>
@@ -473,7 +495,7 @@ class Inventory_fg extends CI_Controller
 
             if ($filter_display == "DETAIL") {
                 $html .= '  <tr>
-                                <td colspan="23" style="background:#D1FFC6; font-size: 11px;"><b>DETAIL OF ' . $record->number . ' - ' . $record->name . '</b></td>
+                                <td colspan="24" style="background:#D1FFC6; font-size: 11px;"><b>DETAIL OF ' . $record->number . ' - ' . $record->name . '</b></td>
                             </tr>';
                 $html .= '  <tr>
                                 <th rowspan="2" width="20"></th>
@@ -482,7 +504,7 @@ class Inventory_fg extends CI_Controller
                                 <th rowspan="2">Created By</th>
                                 <th rowspan="2">Trans Date</th>
                                 <th rowspan="2">WO / DO</th>
-                                <th rowspan="2" colspan="2" >Doc. No</th>
+                                <th rowspan="2" colspan="3" >Doc. No</th>
                                 <th rowspan="2">CCY</th>
                                 <th rowspan="2">Price</th>
                                 <th rowspan="2">Rate</th>
@@ -805,7 +827,7 @@ class Inventory_fg extends CI_Controller
                                     <td>' . $data['username'] . '</td>
                                     <td>' . $data['date'] . '</td>
                                     <td>' . $data['wo_no'] . '</td>
-                                    <td colspan="2">' . $data['label'] . '</td>
+                                    <td colspan="3">' . $data['label'] . '</td>
                                     <td style="text-align:center;">' . $currency . '</td>
                                     <td style="text-align:right;">' . number_format($price, 2) . '</td>
                                     <td style="text-align:right;">' . number_format($rate, 2) . '</td>
@@ -832,6 +854,22 @@ class Inventory_fg extends CI_Controller
             }
             $no++;
         }
+
+        $html .= '<tr>
+                    <td colspan="12" style="text-align:right;"><b>GRAND TOTAL</b></td>
+                    <td style="text-align:right;"><b>' . number_format($totalBeginStock, 2) . '</b></td>
+                    <td style="text-align:right;"></td>
+                    <td style="text-align:right;"><b>' . number_format($totalBeginAmount, 2) . '</b></td>
+                    <td style="text-align:right;"><b>' . number_format($totalIn, 2) . '</b></td>
+                    <td style="text-align:right;"></td>
+                    <td style="text-align:right;"><b>' . number_format($totalAmountIn, 2) . '</b></td>
+                    <td style="text-align:right;"><b>' . number_format($totalOut, 2) . '</b></td>
+                    <td style="text-align:right;"></td>
+                    <td style="text-align:right;"><b>' . number_format($totalAmountOut, 2) . '</b></td>
+                    <td style="text-align:right;"><b>' . number_format($totalEndingStock, 2) . '</b></td>
+                    <td style="text-align:right;"></td>
+                    <td style="text-align:right;"><b>' . number_format($totalAmountEndingStock, 2) . '</b></td>
+                </tr>';
         $html .= '</table></body></html>';
         echo $html;
     }
