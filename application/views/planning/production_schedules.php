@@ -270,34 +270,39 @@
     //Delete Data
     function deleted() {
         var rows = $('#dg').datagrid('getSelections');
-        if (rows.length > 0) {
-            $.messager.confirm('Warning', 'Are you sure you want to delete this data?', function(r) {
-                if (r) {
-                    for (var i = 0; i < rows.length; i++) {
-                        var row = rows[i];
-                        $.ajax({
-                            method: 'post',
-                            url: '<?= base_url('planning/production_schedules/delete') ?>',
-                            data: {
-                                id: row.id,
-                                item_fg_id: row.item_fg_id
-                            },
-                            success: function(result) {
-                                var result = eval('(' + result + ')');
-                            },
-                            error: function(jqXHR, textStatus, errorThrown) {
-                                toastr.error(jqXHR.statusText);
-                                $.messager.alert("Error", jqXHR.statusText, 'error');
-                            },
-                            complete: function(data) {
-                                $('#dg').datagrid('reload');
-                            }
-                        });
+        console.log(rows);
+        if(rows.status == 0){
+            if (rows.length > 0) {
+                $.messager.confirm('Warning', 'Are you sure you want to delete this data?', function(r) {
+                    if (r) {
+                        for (var i = 0; i < rows.length; i++) {
+                            var row = rows[i];
+                            $.ajax({
+                                method: 'post',
+                                url: '<?= base_url('planning/production_schedules/delete') ?>',
+                                data: {
+                                    id: row.id,
+                                    item_fg_id: row.item_fg_id
+                                },
+                                success: function(result) {
+                                    var result = eval('(' + result + ')');
+                                },
+                                error: function(jqXHR, textStatus, errorThrown) {
+                                    toastr.error(jqXHR.statusText);
+                                    $.messager.alert("Error", jqXHR.statusText, 'error');
+                                },
+                                complete: function(data) {
+                                    $('#dg').datagrid('reload');
+                                }
+                            });
+                        }
                     }
-                }
-            });
+                });
+            } else {
+                toastr.warning("Please select one of the data in the table first!", "Information");
+            }
         } else {
-            toastr.warning("Please select one of the data in the table first!", "Information");
+            toastr.warning("Production Schedule is Closed!", "Information");
         }
     }
 

@@ -15,7 +15,6 @@
         <tr>
             <th rowspan="2" field="ck" checkbox="true"></th>
             <th rowspan="2" data-options="field:'customer_name',width:220,halign:'center'">Customer Name</th>
-            <th rowspan="2" data-options="field:'document_no',width:150,halign:'center'">Document No</th>
             <th rowspan="2" data-options="field:'issued_date',width:100,halign:'center'">Issued Date</th>
             <th colspan="2" data-options="field:'',width:200,halign:'center'">Period</th>
             <th rowspan="2" data-options="field:'revision',width:80,align:'center'">Revision</th>
@@ -623,6 +622,11 @@
                                     halign: 'center',
                                     width: 50,
                                     formatter: btnHistories
+                                }, {
+                                    field: 'document_no',
+                                    title: 'Document No',
+                                    halign: 'center',
+                                    width: 120
                                 }, {
                                     field: 'item_fg_number',
                                     title: 'Product No',

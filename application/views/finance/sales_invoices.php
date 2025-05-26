@@ -364,6 +364,14 @@
             <fieldset style="width:100%; border:1px solid #d0d0d0; margin-bottom: 10px; border-radius:4px;">
                 <div style="width: 100%; float: left;">
                     <div class="fitem">
+                        <b style="width:35%; display:inline-block;">TOTAL INVOICE</b>
+                        <input style="width:60%;" id="total_invoice" name="total_invoice" readonly class="easyui-numberbox" data-options="precision:2,groupSeparator:','">
+                    </div>
+                    <div class="fitem">
+                        <b style="width:35%; display:inline-block;">DISC</b>
+                        <input style="width:60%;" id="discount" name="discount" class="easyui-numberbox" data-options="precision:2,groupSeparator:','">
+                    </div>
+                      <div class="fitem">
                         <b style="width:35%; display:inline-block;">SUB TOTAL</b>
                         <input style="width:60%;" id="total_sub" name="total_sub" readonly class="easyui-numberbox" data-options="precision:2,groupSeparator:','">
                     </div>
@@ -380,7 +388,7 @@
                         <input style="width:30%;" id="total_pph" name="total_pph" disabled class="easyui-numberbox" data-options="precision:2,groupSeparator:','">
                         <select style="width:30%;" id="pph" name="pph" class="easyui-combobox" data-options="prompt: 'PPH'" panelHeight="auto">
                             <option value="0">NON PPH</option>
-                            <option value="5">PPH 21</option>
+                            <!-- <option value="5">PPH 21</option> -->
                             <option value="2">PPH 23</option>
                             <option value="10">PPH 4(2)</option>
                             <option value="10.0">Other Income</option>
@@ -939,13 +947,17 @@
 
     function addJournal() {
         var customer_id = $("#customer_id").combogrid('getValue');
+        var trans_date = $("#trans_date").datebox('getValue');
 
         var rows = $('#dg2').datagrid('getRows');//datatatblesTemp
         var taxes = $("#taxes").numberbox('getValue');
         var pphname = $("#pph").combobox('getValue');
+        var discount = parseFloat($("#discount").numberbox('getValue')) || 0;
         var totalrows = rows.length;
 
-        // console.log(rows);
+        var currency = rows[0].currency;
+
+        console.log(currency);
 
         var rows2 = $('#dg3').datagrid('getRows');//journal
         var totalrows2 = rows2.length;
@@ -957,7 +969,7 @@
             if (totalrows > 0) {
                 var data_array = [];
                 var data_array2 = [];
-                var total_sub = 0;
+                var total_invoice = 0;
 
                 for (let i = 0; i < totalrows; i++) {
                     var data = {
@@ -968,16 +980,18 @@
                     }
 
                     if (rows[i].account_type == "DEBIT") {
-                        total_sub -= Math.abs(parseFloat(rows[i].total));
+                        total_invoice -= Math.abs(parseFloat(rows[i].total));
                     } else {
-                        total_sub += Math.abs(parseFloat(rows[i].total));
+                        total_invoice += Math.abs(parseFloat(rows[i].total));
                     }
 
                     data_array.push(data);
                 }
-
-                $("#total_sub").numberbox('setValue', Math.abs(total_sub));
-                var total_dpp = parseFloat((total_sub) * 11/12);
+                
+                $("#total_invoice").numberbox('setValue', Math.abs(total_invoice));
+                var total_sub_discount = Math.abs(total_invoice) - discount;
+                $("#total_sub").numberbox('setValue', Math.abs(total_sub_discount));
+                var total_dpp = parseFloat(Math.abs(total_sub_discount) * 11/12);
                 $("#total_dpp").numberbox('setValue', total_dpp);
 
                 var disc_tax = parseFloat(total_dpp * (taxes / 100));
@@ -985,18 +999,20 @@
                 // var disc_tax = parseFloat(Math.abs(total_sub) * (taxes / 100));
                 $("#total_vat").numberbox('setValue', disc_tax);
                 var total_pph = $("#total_pph").numberbox('getValue');
-                var total_grand = (parseFloat(Math.abs(total_sub)) + parseFloat(disc_tax) - parseFloat(total_pph));
+                var total_grand = (parseFloat(Math.abs(total_sub_discount)) + parseFloat(disc_tax) - parseFloat(total_pph));
                 $("#total_grand").numberbox('setValue', (total_grand));
 
                 $.ajax({
                     type: "post",
-                    url: "<?= base_url('finance/sales_invoices/readExchangeRates?customer_id=') ?>" + customer_id,
+                    //url: "<?= base_url('finance/sales_invoices/readExchangeRates?customer_id=') ?>" + customer_id,
+                    url: "<?= base_url('finance/sales_invoices/readExchangeRates?currency=') ?>" + currency + "&trans_date=" + trans_date,
                     dataType: "json",
                     success: function(exchange) {
+                        console.log(exchange[0].middle);
                         if (exchange.length > 0) {
-                            $("#total_local").numberbox('setValue', (parseInt(total_grand) * parseInt(exchange[0].selling)));
+                            $("#total_local").numberbox('setValue', (parseFloat(total_grand) * parseFloat(exchange[0].middle)));
                         } else {
-                            $("#total_local").numberbox('setValue', (parseInt(total_grand) * 1));
+                            $("#total_local").numberbox('setValue', (parseFloat(total_grand) * 1));
                         }
                     }
                 });
@@ -1033,7 +1049,7 @@
                         //Other Income
                     } else if (rows2[z].account_number == "5311006" && rows2[z].flag == "4") {
                         var debit = 0;
-                        var credit = total_sub;
+                        var credit = total_sub_discount;
                     }
 
                     if (rows2[z].account_number == "140.120.00") {
@@ -1051,6 +1067,11 @@
                         var credit = 0;
                     }
 
+                    if (rows2[z].account_number == "210.120.00") {
+                        var debit = 0;
+                        var credit = total_grand;
+                    }
+
                     if (rows2[z].account_number == "250.160.00") {
                         var debit = 0;
                         var credit = disc_tax;
@@ -1058,7 +1079,12 @@
 
                     if (rows2[z].account_number == "410.150.00") {
                         var debit = 0;
-                        var credit = total_sub;
+                        var credit = total_sub_discount;
+                    }
+
+                    if (rows2[z].account_number == "420.130.00") {
+                        var debit = 0;
+                        var credit = total_sub_discount;
                     }
 
                     if (rows2[z].account_number == "170.110.00") {
@@ -1068,7 +1094,7 @@
 
                     if (rows2[z].account_number == "410.330.00") {
                         var debit = 0;
-                        var credit = total_sub;
+                        var credit = total_sub_discount;
                     }
                 
 
@@ -1111,8 +1137,8 @@
                     var data2 = {
                         account_number: "170.130.00",
                         account_name: "PPH 23",
-                        debit: 0,
-                        credit: total_pph,
+                        debit: total_pph,
+                        credit: 0,
                         flag: "4",
                     }
 
@@ -1123,8 +1149,8 @@
                     var data2 = {
                         account_number: "170.150.00",
                         account_name: "PPH 4(2)",
-                        debit: 0,
-                        credit: total_pph,
+                        debit: total_pph,
+                        credit: 0,
                         flag: "4",
                     }
 
@@ -1135,8 +1161,8 @@
                     var data2 = {
                         account_number: "140.230.00",
                         account_name: "OTHER INCOME",
-                        debit: 0,
-                        credit: total_pph,
+                        debit: total_pph,
+                        credit: 0, //tukar antara debit dan credit
                         flag: "4",
                     }
 
@@ -1798,6 +1824,7 @@
         var delivery_note_no = $("#delivery_note_no").combobox('getText');
         var trans_date = $("#trans_date").datebox('getValue');
         var due_date = $("#due_date").datebox('getValue');
+        var discount = parseFloat($("#discount").numberbox('getValue')) || 0;
         var taxes = $("#taxes").numberbox('getValue');
         var journal_type_id = $("#journal_type").combobox('getValue');
 
@@ -1805,14 +1832,17 @@
             toastr.info('Please completed your data');
         } else {
             $("#pph").combobox('setValue', "0");
+            $("#discount").numberbox('setValue', "0");
 
             var lastIndex;
             var dg = $('#dg2').datagrid({
                 url: '<?= base_url('finance/sales_invoices/datatablesTemp/') ?>?delivery_note_no=' + window.btoa(delivery_note_no),
                 onLoadSuccess: function(row) {
+                    console.log("Dari Preview:", row);
                     $("#total_sub").numberbox('setValue', row.total_sub);
+                    $("#total_invoice").numberbox('setValue', row.total_sub);
                     
-                    var total_dpp = parseFloat((row.total_sub) * 11/12);
+                    var total_dpp = parseFloat((row.total_sub - discount) * 11/12);
                     $("#total_dpp").numberbox('setValue', total_dpp);
 
                     var disc_tax = parseFloat(total_dpp * (taxes / 100));
@@ -1823,14 +1853,15 @@
                     var total_grand = (parseFloat(row.total_sub) + parseFloat(disc_tax));
                     $("#total_grand").numberbox('setValue', (total_grand));
 
-                    $.ajax({
-                        type: "post",
-                        url: "<?= base_url('finance/sales_invoices/readExchangeRates?customer_id=') ?>" + customer_id,
-                        dataType: "json",
-                        success: function(exchange) {
-                            $("#total_local").numberbox('setValue', (row.total_sub * exchange[0].selling));
-                        }
-                    });
+                    // $.ajax({
+                    //     type: "post",
+                    //     url: "<?= base_url('finance/sales_invoices/readExchangeRates?customer_id=') ?>" + customer_id,
+                    //     //url: "<?= base_url('finance/sales_invoices/readExchangeRates?currency=') ?>" + row.currency,
+                    //     dataType: "json",
+                    //     success: function(exchange) {
+                    //         $("#total_local").numberbox('setValue', (row.total_sub * exchange[0].selling));
+                    //     }
+                    // });
 
                     addTable2('<?= base_url('finance/sales_invoices/readJournal/') ?>' + window.btoa(journal_type_id));
                 },
@@ -2432,7 +2463,7 @@
                     setTimeout(function() {
                         isSubmitting = false;
                         btn.linkbutton('enable');
-                    }, 3000);
+                    }, 5000);
                     
                     var trans_date = $("#trans_date").datebox('getValue');
                     var number = $("#number").textbox('getValue');
@@ -2465,6 +2496,8 @@
                     var balance_credit = $("#balance_credit").numberbox('getValue');
 
                     var total_sub = $("#total_sub").numberbox('getValue');
+                    var total_invoice = $("#total_invoice").numberbox('getValue');
+                    var discount = $("#discount").numberbox('getValue');
                     var total_vat = $("#total_vat").numberbox('getValue');
                     var total_pph = $("#total_pph").numberbox('getValue');
                     var total_grand = $("#total_grand").numberbox('getValue');
@@ -2536,6 +2569,8 @@
                                                     keterangan_tambahan : keterangan_tambahan,
                                                     cap_fasilitas : cap_fasilitas,
                                                     total_sub: total_sub,
+                                                    total_invoice: total_invoice,
+                                                    discount: discount,
                                                     total_vat: total_vat,
                                                     total_pph: total_pph,
                                                     total_grand: total_grand,
@@ -2677,12 +2712,58 @@
             }
         });
 
+        $("#discount").numberbox({
+            onChange: function(val) {
+                var customer_id = $("#customer_id").combogrid('getValue');
+                var total_invoice = $("#total_invoice").numberbox('getValue');
+                var total_vat = $("#total_vat").numberbox('getValue');
+                var trans_date = $("#trans_date").datebox('getValue');
+                var taxes = $("#taxes").numberbox('getValue');
+                var pph = $("#pph").combobox('getValue');
+                var rows = $('#dg2').datagrid('getRows');//datatatblesTemp
+                var currency = (rows.length > 0 && rows[0].currency) ? rows[0].currency : 'IDR';
+
+                console.log("Dari Pph :",rows);
+                var total_sub = total_invoice - val ;
+                $("#total_sub").numberbox('setValue', total_sub);
+                              
+                var total_dpp = parseFloat(Math.abs(total_sub) * 11/12);
+                $("#total_dpp").numberbox('setValue', total_dpp);
+
+                var disc_tax = parseFloat(total_dpp * (taxes / 100));
+
+                // var disc_tax = parseFloat(Math.abs(total_sub) * (taxes / 100));
+                $("#total_vat").numberbox('setValue', disc_tax);
+                var total_pph = $("#total_pph").numberbox('getValue');
+
+                var grand_total = (parseFloat(total_sub) + parseFloat(total_vat) - parseFloat(total_pph));
+                $("#total_grand").numberbox('setValue', grand_total);
+
+                $.ajax({
+                    type: "post",
+                    // url: "<?= base_url('finance/sales_invoices/readExchangeRates?customer_id=') ?>" + customer_id,
+                    url: "<?= base_url('finance/sales_invoices/readExchangeRates?currency=') ?>" + currency + "&trans_date=" + trans_date,
+                    dataType: "json",
+                    success: function(exchange) {
+                        if (exchange) {
+                            $("#total_local").numberbox('setValue', (grand_total * parseFloat(exchange[0].middle)));
+                        }
+                    }
+                });
+            }
+        })
+
         $("#pph").combobox({
             onChange: function(e) {
                 var customer_id = $("#customer_id").combogrid('getValue');
                 var total_sub = $("#total_sub").numberbox('getValue');
                 var total_vat = $("#total_vat").numberbox('getValue');
+                var trans_date = $("#trans_date").datebox('getValue');
                 var pph = $("#pph").combobox('getValue');
+                var rows = $('#dg2').datagrid('getRows');//datatatblesTemp
+                var currency = (rows.length > 0 && rows[0].currency) ? rows[0].currency : 'IDR';
+
+                console.log("Dari Pph :",rows);
                 var total_pph = parseFloat(total_sub * parseFloat(parseInt(pph) / 100));
                 $("#total_pph").numberbox('setValue', total_pph);
 
@@ -2691,11 +2772,12 @@
 
                 $.ajax({
                     type: "post",
-                    url: "<?= base_url('finance/sales_invoices/readExchangeRates?customer_id=') ?>" + customer_id,
+                    // url: "<?= base_url('finance/sales_invoices/readExchangeRates?customer_id=') ?>" + customer_id,
+                    url: "<?= base_url('finance/sales_invoices/readExchangeRates?currency=') ?>" + currency + "&trans_date=" + trans_date,
                     dataType: "json",
                     success: function(exchange) {
                         if (exchange) {
-                            $("#total_local").numberbox('setValue', (grand_total * exchange[0].selling));
+                            $("#total_local").numberbox('setValue', (grand_total * parseFloat(exchange[0].middle)));
                         }
                     }
                 });

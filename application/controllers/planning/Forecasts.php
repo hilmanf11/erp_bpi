@@ -130,15 +130,15 @@ class Forecasts extends CI_Controller
             $this->db->like('a.p_year', $filter_period_year);
             $this->db->like('a.customer_id', $filter_customer_id);
             $this->db->like('a.revision', $filter_revision);
-            // $this->db->group_by('a.customer_id');
-            // $this->db->group_by('a.p_month');
-            // $this->db->group_by('a.p_year');
-            // $this->db->group_by('a.revision');
-            // $this->db->group_by('a.customer_id');
+            $this->db->group_by('a.customer_id');
+            $this->db->group_by('a.p_month');
+            $this->db->group_by('a.p_year');
+            $this->db->group_by('a.revision');
             // $this->db->group_by('a.item_fg_id');
-            $this->db->group_by('a.document_no');
-            $this->db->order_by('a.created_date', 'DESC');
-
+            // $this->db->group_by('a.document_no');
+            $this->db->order_by('a.p_month', 'ASC');
+            $this->db->order_by('a.p_year', 'ASC');
+            $this->db->order_by('a.customer_id', 'ASC');
             //Total Data
             $totalRows = $this->db->count_all_results('', false);
             //Limit 1 - 10
@@ -167,10 +167,10 @@ class Forecasts extends CI_Controller
             $this->db->join('customers b', 'a.customer_id = b.id');
             $this->db->join('item_fg c', 'a.item_fg_id = c.id');
             $this->db->where('a.customer_id', $customer_id);
-            $this->db->where('a.document_no', $document_no);
-            // $this->db->where('a.p_month', $p_month);
-            // $this->db->where('a.p_year', $p_year);
-            // $this->db->where('a.revision', $revision);
+            // $this->db->where('a.document_no', $document_no);
+            $this->db->where('a.p_month', $p_month);
+            $this->db->where('a.p_year', $p_year);
+            $this->db->where('a.revision', $revision);
             $this->db->group_by('a.id');
             $this->db->order_by('a.id', 'ASC');
             $records = $this->db->get()->result_array();
@@ -352,7 +352,7 @@ class Forecasts extends CI_Controller
             $data = $this->input->post('data');
 
             //Cek Process Number          //table       //field        //field excel
-            $forecasts = $this->crud->reads('forecasts', [], ["customer_id" => $data['customer_id'], "item_fg_id" => $data['item_fg_id'], "p_month" => $data['p_month'], "p_year" => $data['p_year']]);
+            $forecasts = $this->crud->reads('forecasts', [], ["customer_id" => $data['customer_id'], "item_fg_id" => $data['item_fg_id'], "p_month" => $data['p_month'], "p_year" => $data['p_year'], "revision" => $data['revision']]);
 
             $post = $this->input->post();
             $issued_date = $data["issued_date"];
@@ -367,10 +367,27 @@ class Forecasts extends CI_Controller
             }
             $autoid =$format. sprintf("%03s", $kode + 1);
 
-            if (!empty($forecasts->customer_id)) {
-                echo json_encode(array("title" => "Duplicated", "message" => " Customer " . $data['customer_id'] . " is Duplicate Data", "theme" => "error"));
-            } elseif (!empty($forecasts->item_fg_id)) {
-                echo json_encode(array("title" => "Duplicated", "message" => " Product No. " . $data['item_fg_id'] . " is Duplicate Data", "theme" => "error"));
+            if ($forecasts) {                
+                $dataFinal = array(
+                    //field
+                    "month_1" => $data['month_1'],
+                    "month_2" => $data['month_2'],
+                    "month_3" => $data['month_3'],
+                    "month_4" => $data['month_4'],
+                    "month_5" => $data['month_5'],
+                    "month_6" => $data['month_6'],
+                    "month_7" => $data['month_7'],
+                    "month_8" => $data['month_8'],
+                    "month_9" => $data['month_9'],
+                    "month_10" => $data['month_10'],
+                    "month_11" => $data['month_11'],
+                    "month_12" => $data['month_12'],
+                    "remark" => $data['remark'],
+                );
+                $send   = $this->db->update('forecasts',$dataFinal, ["customer_id" => $data['customer_id'], "item_fg_id" => $data['item_fg_id'], "p_month" => $data['p_month'], "p_year" => $data['p_year'], "revision" => $data['revision']]);
+                $send2 = $this->crud->createNotLog('forecast_histories', $dataFinal);
+                echo json_encode(array("title" => "Update", "message" => " Customer " . $data['customer_id'] . " Data Updated", "theme" => "success"));
+           
             } else {
                 $dataFinal = array(
                     //field

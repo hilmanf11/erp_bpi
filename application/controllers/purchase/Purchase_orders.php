@@ -106,7 +106,7 @@ class Purchase_orders extends CI_Controller
     {
         // $po_no = $this->input->post('po_no');
         $id = $this->input->post('id');
-        $update = $this->db->update('purchase_orders', ["status" => 2], ["id" => $id]);// , "qty" => 0
+        $update = $this->db->update('purchase_orders', ["status" => 0], ["id" => $id]);// , "qty" => 0
         echo $update;
     }
 
@@ -183,6 +183,7 @@ class Purchase_orders extends CI_Controller
                     SUM(a.total) as total_price,
                     a.status,
                     COUNT(a.status) as total_status,
+                    COUNT(a.approved_to) as total_approved_to,
                     f.max_status as status_pi,
                     a.total_sub,
                     a.approved_to, 
@@ -197,7 +198,9 @@ class Purchase_orders extends CI_Controller
                     h.total_status_complete,
                     i.total_status_open,
                     g.total_status_close,
-                    j.number as category_code');
+                    j.number as category_code,
+                    k.total_approved_to_checking,
+                    l.total_approved_to_approved');
                 $this->db->from('purchase_orders a');
                 $this->db->join('item_rm b', 'a.item_rm_id = b.id');
                 $this->db->join('item_familys c', 'b.item_family_id = c.id');
@@ -208,6 +211,8 @@ class Purchase_orders extends CI_Controller
                 $this->db->join('(SELECT po_no, COUNT(status) as total_status_complete FROM purchase_orders WHERE status = 2 GROUP BY po_no) h', 'a.po_no = h.po_no', 'left');
                 $this->db->join('(SELECT po_no, COUNT(status) as total_status_open FROM purchase_orders WHERE status = 0 GROUP BY po_no) i', 'a.po_no = i.po_no', 'left');
                 $this->db->join('item_categories j', 'b.item_category_id = j.id','left');
+                $this->db->join('(SELECT po_no, COUNT(approved_to) as total_approved_to_checking FROM purchase_orders WHERE approved_to != "" || approved_to = NULL GROUP BY po_no) k', 'a.po_no = k.po_no', 'left');
+                $this->db->join('(SELECT po_no, COUNT(approved_to) as total_approved_to_approved FROM purchase_orders WHERE approved_to = "" || approved_to = NULL GROUP BY po_no) l', 'a.po_no = l.po_no', 'left');
                 $this->db->where('a.deleted', 0);
                 if ($filter_from != "" or $filter_to != "") {
                     $this->db->where('a.po_date >=', $filter_from);
@@ -271,11 +276,24 @@ class Purchase_orders extends CI_Controller
                         $status = "0";
                     }
 
-                    if($record['approved_to'] == "" || $record['approved_to'] == null){
+                    if ($record['total_approved_to'] == $record['total_approved_to_checking']) {
+                        $approved_to = "Checking";
+                    } elseif ($record['total_approved_to'] == $record['total_approved_to_approved']) {
+                        $approved_to = "";
+                    } elseif ($record['total_approved_to_checking'] >= 1) {
+                        $approved_to = "Checking";
+                    } elseif ($record['total_approved_to_approved'] >= 1) {
                         $approved_to = "";
                     } else {
-                        $approved_to = "Checking";
+                        $approved_to = "";
                     }
+
+
+                    // if($record['approved_to'] == "" || $record['approved_to'] == null){
+                    //     $approved_to = "";
+                    // } else {
+                    //     $approved_to = "Checking";
+                    // }
 
 
 
@@ -314,6 +332,8 @@ class Purchase_orders extends CI_Controller
                         "approved_to" => $approved_to,
                         "approved_by" => $record['approved_by'],
                         "approved_date" => $record['approved_date'],
+                        "total_checking" => $record['total_approved_to_checking'],
+                        "total_approved" => $record['total_approved_to_approved'],
                         "total_sub" => $record['total_sub'],
                         "datatable" => 1
                     );
@@ -490,28 +510,69 @@ class Purchase_orders extends CI_Controller
 
             $items = $this->crud->read('item_rm', [], ['id' => $post['item_rm_id']]);
             $purchaseOrder = $this->crud->read('purchase_orders', [], ["request_no" => $post['request_no'], "supplier_id" => $post['supplier_id'], "item_rm_id" => $items->id]);
-            $purchase_orders = $this->db->update('purchase_orders',["supplier_id" => $post['supplier_id'],"qty" => $post['qty'],"discount" => $post['discount'],
-                "po_date" => $post['po_date'],
-                "price" => $post['price'],
-                "total" => $post['total'],
-                "taxes" => $post['taxes'],
-                "delivery_date" => $post['delivery_date'],
-                "remarks" => $post['remarks'],
-                "month_1" => $post['month_1'],
-                "month_2" => $post['month_2'],
-                "month_3" => $post['month_3'],
-                "month_4" => $post['month_4'],
-                "total_sub" => $post['total_sub'],
-                "disc_pr" => $post['disc_pr'],
-                "discount_total" => $post['discount_total'],
-                "income_tax" => $post['income_tax'],
-                "income_total" => $post['income_total'],
-                "total_dp" => $post['total_dp'],
-                "total_grand" => $post['total_grand'],
-                "total_vat" => $post['total_vat'],
-                "total_dpp" => $post['total_dpp'],
-                "revision" => (@$purchaseOrder->revision + 1)
-            ],["request_no" => $post['request_no'], "item_rm_id" => $items->id]);
+            $qty = @$purchaseOrder->qty;
+            $supplier_id = @$purchaseOrder->supplier_id;
+            $price = @$purchaseOrder->price;
+            $month_1 = @$purchaseOrder->month_1;
+            $month_2 = @$purchaseOrder->month_2;
+            $month_3 = @$purchaseOrder->month_3;
+            $month_4 = @$purchaseOrder->month_4;
+
+            if($qty == $post['qty'] && $supplier_id == $post['supplier_id'] && $price == $post['price'] && $month_1 == $post['month_1'] && $month_2 == $post['month_2'] && $month_3 == $post['month_3'] && $month_4 == $post['month_4']){
+                //Dokumentasi : update tidak meminta Approval
+                        $purchase_orders = $this->db->update('purchase_orders',["supplier_id" => $post['supplier_id'],
+                        "qty" => $post['qty'],
+                        "discount" => $post['discount'],
+                        "po_date" => $post['po_date'],
+                        "price" => $post['price'],
+                        "total" => $post['total'],
+                        "taxes" => $post['taxes'],
+                        "delivery_date" => $post['delivery_date'],
+                        "remarks" => $post['remarks'],
+                        "month_1" => $post['month_1'],
+                        "month_2" => $post['month_2'],
+                        "month_3" => $post['month_3'],
+                        "month_4" => $post['month_4'],
+                        "total_sub" => $post['total_sub'],
+                        "disc_pr" => $post['disc_pr'],
+                        "discount_total" => $post['discount_total'],
+                        "income_tax" => $post['income_tax'],
+                        "income_total" => $post['income_total'],
+                        "total_dp" => $post['total_dp'],
+                        "total_grand" => $post['total_grand'],
+                        "total_vat" => $post['total_vat'],
+                        "total_dpp" => $post['total_dpp'],
+                        "revision" => (@$purchaseOrder->revision + 1)
+                    ],["request_no" => $post['request_no'], "item_rm_id" => $items->id]);
+                //
+            } else{
+                $purchase_orders = $this->crud->update('purchase_orders',["request_no" => $post['request_no'],"item_rm_id" => $items->id],
+                    [   "supplier_id" => $post['supplier_id'],
+                        "qty" => $post['qty'],
+                        "discount" => $post['discount'],
+                        "po_date" => $post['po_date'],
+                        "price" => $post['price'],
+                        "total" => $post['total'],
+                        "taxes" => $post['taxes'],
+                        "delivery_date" => $post['delivery_date'],
+                        "remarks" => $post['remarks'],
+                        "month_1" => $post['month_1'],
+                        "month_2" => $post['month_2'],
+                        "month_3" => $post['month_3'],
+                        "month_4" => $post['month_4'],
+                        "total_sub" => $post['total_sub'],
+                        "disc_pr" => $post['disc_pr'],
+                        "discount_total" => $post['discount_total'],
+                        "income_tax" => $post['income_tax'],
+                        "income_total" => $post['income_total'],
+                        "total_dp" => $post['total_dp'],
+                        "total_grand" => $post['total_grand'],
+                        "total_vat" => $post['total_vat'],
+                        "total_dpp" => $post['total_dpp'],
+                        "revision" => (@$purchaseOrder->revision + 1)
+                    ]
+                );
+            }
 
             $purchase_requests = $this->db->update('purchase_requests',["qty" => $post['qty']],["request_no" => $post['request_no'], "item_rm_id" => $items->id]);
 

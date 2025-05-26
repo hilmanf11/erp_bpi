@@ -40,7 +40,7 @@ class Sales_invoices extends CI_Controller
         }
     }
 
-    public function reads($number)
+    public function reads($number)//untuk memanggil data saat update
     {
         $number = base64_decode($number);
         $this->db->select('a.*, c.id as item_fg_id, f.account_name, b.currency');
@@ -60,15 +60,33 @@ class Sales_invoices extends CI_Controller
         die(json_encode($records));
     }
 
+    // public function readExchangeRates()
+    // {
+    //     $customer_id = $this->input->get('customer_id');
+
+    //     $records = $this->crud->query("SELECT b.selling
+    //         FROM customers a 
+    //         JOIN exchange_rates b ON a.currency = b.currency_from and b.currency_to = 'IDR'
+    //         WHERE a.id = '$customer_id'
+    //         GROUP BY a.currency 
+    //         ORDER BY b.created_date desc");
+    //     echo json_encode($records);
+    // }
+
     public function readExchangeRates()
     {
-        $customer_id = $this->input->get('customer_id');
+        $currency = $this->input->get('currency');
+        $trans_date = $this->input->get('trans_date');//sales_invoice_date
 
-        $records = $this->crud->query("SELECT b.selling
-            FROM customers a JOIN exchange_rates b ON a.currency = b.currency_from and b.currency_to = 'IDR'
-            WHERE a.id = '$customer_id'
-            GROUP BY a.currency 
-            ORDER BY b.created_date desc");
+        $records = $this->crud->query("SELECT COALESCE((
+            SELECT middle 
+            FROM exchange_rates
+            WHERE currency_from = '$currency' 
+            AND currency_to = 'IDR' 
+            AND '$trans_date' BETWEEN start_date AND end_date
+            ORDER BY created_date DESC
+            LIMIT 1
+        ), 1) AS middle");
         echo json_encode($records);
     }
 
@@ -475,12 +493,12 @@ class Sales_invoices extends CI_Controller
             b.uom, 
             e.account_number, 
             e.account_name,
-            e.currency, 
+            c.currency, 
             d.qty_del as qty, 
             COALESCE(g.price, g2.price) as price, 
             (d.qty_del * COALESCE(g.price, g2.price)) as total, 
             j.id as si_id');
-
+            // Dokumentasi : Perubahan pengambilan Currency menjadi ke Customer_items
         $this->db->from('delivery_orders d');
         $this->db->join('item_fg b', 'd.item_fg_id = b.id');
         $this->db->join('customer_items c', 'd.customer_id = c.customer_id and d.item_fg_id = c.item_fg_id', 'left');
@@ -924,6 +942,8 @@ class Sales_invoices extends CI_Controller
                     $sales_order_no = $record['customer_order_no'];
                 }
 
+                $total_invoice = ($record['total_invoice']);
+                $discount = ($record['discount']);
                 $sub_total = ($record['total_sub']);
                 $dpp_total = (($record['total_sub']) * 11/12);
                 $vat_total = ($dpp_total * ($record['taxes']/100));
@@ -979,6 +999,14 @@ class Sales_invoices extends CI_Controller
             }
 
             if (($i + 1) == $page) {
+                $html .= '<tr>
+                            <td colspan="8" style="text-align:right"><b>Total Invoice</b></td>
+                            <td style="text-align:right"><b>' . number_format($total_invoice, 2, ",", ".") . '</b></td>
+                        </tr>';
+                $html .= '<tr>
+                            <td colspan="8" style="text-align:right"><b>Discount</b></td>
+                            <td style="text-align:right"><b>' . number_format($discount, 2, ",", ".") . '</b></td>
+                        </tr>';
                 $html .= '<tr>
                             <td colspan="8" style="text-align:right"><b>Sub Total</b></td>
                             <td style="text-align:right"><b>' . number_format($sub_total, 2, ",", ".") . '</b></td>
@@ -1298,6 +1326,8 @@ class Sales_invoices extends CI_Controller
                     $sales_order_no = $record['customer_order_no'];
                 }
 
+                $total_invoice = ($record['total_invoice']);
+                $discount = ($record['discount']);
                 $sub_total = ($record['total_sub']);
                 $dpp_total = (($record['total_sub']) * 11/12);
                 $vat_total = ($dpp_total * ($record['taxes']/100));
@@ -1352,6 +1382,14 @@ class Sales_invoices extends CI_Controller
             }
 
             if (($i + 1) == $page) {
+                $html .= '<tr>
+                            <td colspan="7" style="text-align:right"><b>Total Invoice</b></td>
+                            <td style="text-align:right"><b>' . number_format($total_invoice, 2, ",", ".") . '</b></td>
+                        </tr>';
+                $html .= '<tr>
+                            <td colspan="7" style="text-align:right"><b>Discount</b></td>
+                            <td style="text-align:right"><b>' . number_format($discount, 2, ",", ".") . '</b></td>
+                        </tr>';
                 $html .= '<tr>
                             <td colspan="7" style="text-align:right"><b>Sub Total</b></td>
                             <td style="text-align:right"><b>' . number_format($sub_total, 2, ",", ".") . '</b></td>
@@ -2003,6 +2041,7 @@ class Sales_invoices extends CI_Controller
                 $sub_total_local += $amount;
                 $grand_total += $record['total'];
                 $grand_total_local += $amount;
+                $discount = ($record['discount']);
                 
                 $html .= '  <tr>
                                 <td style="text-align:center">' . $no . '</td>
@@ -2094,8 +2133,12 @@ class Sales_invoices extends CI_Controller
                     <div style="width:30%; float:left;">
                         <table id="customers" style="width:100%; font-size:12px;">
                             <tr>
+                                <td style="font-weight:bold;">Discount</td>
+                                <td style="font-weight:bold; text-align:right;">' . @number_format($discount, 2) . '</td>
+                            </tr>
+                            <tr>
                                 <td style="font-weight:bold;">Sub Total</td>
-                                <td style="font-weight:bold; text-align:right;">' . @number_format($grand_total, 2) . '</td>
+                                <td style="font-weight:bold; text-align:right;">' . @number_format(($grand_total - $discount), 2) . '</td>
                             </tr>
                             <tr>
                                 <td style="font-weight:bold;">VAT</td>
@@ -2107,7 +2150,7 @@ class Sales_invoices extends CI_Controller
                             </tr>
                             <tr>
                                 <td style="font-weight:bold;">Grand Total</td>
-                                <td style="font-weight:bold; text-align:right;">' . @number_format(((@$grand_total + $records[0]['total_vat']) - $records[0]['total_pph']), 2) . '</td>
+                                <td style="font-weight:bold; text-align:right;">' . @number_format((((@$grand_total - $discount) + $records[0]['total_vat']) - $records[0]['total_pph']), 2) . '</td>
                             </tr>
                         </table>
                     </div>
@@ -2205,6 +2248,8 @@ class Sales_invoices extends CI_Controller
                     <th>Supplier Name</th>
                     <th>Trans Date</th>
                     <th>Due Date</th>
+                    <th>Total Invoice</th>
+                    <th>Discount</th>
                     <th>Sub Total</th>
                     <th>VAT</th>
                     <th>PPH 23</th>
@@ -2228,6 +2273,8 @@ class Sales_invoices extends CI_Controller
                             <td>' . $data['customer_name'] . '</td>
                             <td>' . $data['trans_date'] . '</td>
                             <td>' . $data['due_date'] . '</td>
+                            <td style="text-align:right;">' . number_format($data['total_invoice'], 4) . '</td>
+                            <td style="text-align:right;">' . number_format($data['discount'], 4) . '</td>
                             <td style="text-align:right;">' . number_format($data['total_sub'], 4) . '</td>
                             <td style="text-align:right;">' . number_format($data['total_vat'], 4) . '</td>
                             <td style="text-align:right;">' . number_format($data['total_pph'], 4) . '</td>

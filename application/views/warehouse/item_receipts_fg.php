@@ -42,14 +42,15 @@
             <div class="fitem" style="padding:0 200px 0 200px;" hidden>
                 <input style="width:100%; height: 80px;" type="text" id="checksheet_number" name="checksheet_number" class="scan" placeholder="SCAN DOCUMENT NO HERE">
             </div>
-            <div class="fitem" style="padding:0 200px 0 200px;">
+            <div class="fitem" id="document_no_wrapper" style="padding:0 200px 0 200px;">
                 <input style="width:100%; height: 80px;" type="text" id="document_no" name="document_no" class="scan" placeholder="SCAN DOCUMENT NO HERE">
             </div>
-            <div class="fitem" style="padding:0 200px 0 200px;">
+            <div class="fitem" id="checksheet_label_wrapper" style="padding:0 200px 0 200px;">
                 <input style="width:100%; height: 80px;" type="text" id="checksheet_label" name="checksheet_label" class="scan" placeholder="SCAN LABEL HERE">
             </div>
             <div class="fitem" style="padding:0 200px 10px 200px;">
                 <a href="javascript:;" class="easyui-linkbutton" onclick="reload()"><i class="fa fa-rotate-right"></i> Reload</a>
+                <a href="javascript:;" class="easyui-linkbutton" id="btnToggle" onclick="toggleInput()"><i class="fa fa-rotate-right"></i> New Barcode</a>
             </div>
         </fieldset>
     </div>
@@ -87,14 +88,64 @@
         window.location.reload();
     }
 
-    $(document).ready(function() {
-        $('#checksheet_label').hide(); // Hide input label saat halaman pertama kali load
+    // $(document).ready(function() {
+    //     $('#checksheet_label').hide(); // Hide input label saat halaman pertama kali load
 
-        // Ketika document_no diubah, sembunyikan kembali scan label
-        $('#document_no').on('input', function() {
-            $('#checksheet_label').hide();
+    //     // Ketika document_no diubah, sembunyikan kembali scan label
+    //     $('#document_no').on('input', function() {
+    //         $('#checksheet_label').hide();
+    //     });
+    // });
+
+    let manualScanMode = false;
+
+    $(document).ready(function () {
+        $('#checksheet_label_wrapper').hide(); // Sembunyikan wrapper, bukan hanya input
+
+        $('#document_no').on('input', function () {
+            if (!manualScanMode && $(this).val().trim() !== '') {
+                $('#checksheet_label_wrapper').show();
+            }
         });
     });
+
+    function toggleInput() {
+        const btn = $('#btnToggle');
+
+        if (!manualScanMode) {
+            // Masuk manual mode
+            manualScanMode = true;
+            $('#document_no_wrapper').hide();
+            $('#checksheet_label_wrapper').show();
+            btn.html('<i class="fa fa-check"></i> WIP Receipt');
+        } else {
+            // Kembali ke normal mode
+            manualScanMode = false;
+            $('#document_no_wrapper').show();
+            $('#checksheet_label_wrapper').hide().find('input').val('');
+            btn.html('<i class="fa fa-rotate-right"></i> New Barcode');
+        }
+    }
+
+    // Tombol New Barcode → WIP Receipt
+    function toggleInput() {
+        const btn = $('#btnToggle');
+
+        if (!manualScanMode) {
+            // Masuk manual scan mode
+            manualScanMode = true;
+            $('#document_no').closest('.fitem').hide();
+            $('#checksheet_label').closest('.fitem').show();
+            btn.html('<i class="fa fa-check"></i> WIP Receipt');
+        } else {
+            // Kembali ke normal mode
+            manualScanMode = false;
+            $('#document_no').closest('.fitem').show();
+            $('#checksheet_label').val('').hide(); // Kosongkan dan hide
+            btn.html('<i class="fa fa-rotate-right"></i> New Barcode');
+        }
+    }
+
 
     $(function() {
         //Audio Config
@@ -322,4 +373,5 @@
             rownumbers: true
         }).datagrid('enableFilter');
     }
+
 </script>

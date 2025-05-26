@@ -51,14 +51,10 @@ class Wip_balances extends CI_Controller
             b.number as item_number, 
             b.name as item_name, 
             b.uom, 
-            c.qty_req as supply, 
-            e.qty as wo_qty,
-            ROUND(COALESCE(f.composition, 0) * COALESCE(e.qty, 0), 4) AS needs');
+            a.issued as supply, 
+            a.need AS needs');
             $this->db->from('wip_balances a');
-            $this->db->join('item_rm b', 'a.item_rm_id = b.id');
-            $this->db->join('supply_sheets c', 'a.request_no = c.request_no');
-            $this->db->join('production_schedules e', 'c.workorder = e.wo_no and c.item_fg_id = e.item_fg_id','left');
-            $this->db->join('bom f', 'c.item_fg_id = f.item_fg_id and c.item_rm_id = f.item_rm_id','left');
+            $this->db->join('item_rm b', 'a.item_rm_id = b.id','left');
             // $this->db->join('uom c', 'b.uom_id = c.id');
             $this->db->where('a.deleted', 0);
             if (@count($filters) > 0) {
@@ -199,5 +195,38 @@ class Wip_balances extends CI_Controller
         }
         $html .= '</table></body></html>';
         echo $html;
+    }
+
+    public function create_all()
+    {
+        $created_date = date('Y-m-d H:i:s');
+        $created_by = $this->session->username;
+
+        // Ambil semua item_rm_id unik
+        $query = "SELECT DISTINCT item_rm_id
+        FROM wip_balances
+        WHERE deleted = 0";
+        $items = $this->db->query($query)->result();
+
+        $inserted = 0;
+        foreach ($items as $item) {
+            $item_rm_id = $item->item_rm_id;
+            if ($item_rm_id !="") {
+                $dataFinal = array(
+                    "item_rm_id" => $item_rm_id,
+                    "begin" => 0,
+                    "need" => 0,
+                    "issued" => 0,
+                    "balance" => 0,
+                    "created_date" => $created_date,
+                    "created_by" => $created_by
+                );
+    
+                $this->crud->create('wip_balances', $dataFinal);
+                $inserted++;
+            }
+        }
+
+        echo json_encode(['message' => "Success. {$inserted} Items created."]);
     }
 }

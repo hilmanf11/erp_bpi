@@ -646,60 +646,66 @@
                                         type: "get",
                                         url: '<?= base_url('purchase/purchase_order_receipts/receipt_no/') ?>' + encodedReceiptDate,
                                         success: function(receipt_number) {
-                                            for (var i = 0; i < rows.length; i++) {
-                                                var row = rows[i];
-                                                $.ajax({
-                                                    type: "post",
-                                                    url: '<?= base_url('purchase/purchase_order_receipts/create') ?>',
-                                                    data: {
-                                                        item_rm_id: row.item_rm_id,
-                                                        supplier_id: row.supplier_id,
-                                                        receipt_date: receipt_date,
-                                                        receipt_no: receipt_number, // Use the receipt_no from the server
-                                                        lotno: lotno,
-                                                        po_no: row.po_no,
-                                                        bc_document: bc_document,
-                                                        bc_date: bc_date,
-                                                        qty_po: row.qty_po,
-                                                        qty_os: row.qty_os,
-                                                        qty_receipt: row.qty_convertion,
-                                                        qty_receipt2: row.qty_receipt, //digunakan untuk mengambil nilai receipt sebelum di convertion
-                                                        qty_mpq: row.mpq,
-                                                        qty_label: row.qty_label
-                                                        ,currency: row.currency,
-                                                        price: row.price
-                                                    },
-                                                    dataType: "json",
-                                                    success: function(result) {
-                                                        Swal.fire({
-                                                            title: result.message,
-                                                            icon: result.theme,
-                                                            confirmButtonText: 'Ok',
-                                                            allowOutsideClick: false,
-                                                        }).then((result) => {
-                                                            if (result.isConfirmed) {
+                                            $.ajax({
+                                                type: "get",
+                                                url: '<?= base_url('purchase/purchase_order_receipts/lotno/') ?>' + encodedReceiptDate,
+                                                success: function(lotno) {
+                                                    for (var i = 0; i < rows.length; i++) {
+                                                        var row = rows[i];
+                                                        $.ajax({
+                                                            type: "post",
+                                                            url: '<?= base_url('purchase/purchase_order_receipts/create') ?>',
+                                                            data: {
+                                                                item_rm_id: row.item_rm_id,
+                                                                supplier_id: row.supplier_id,
+                                                                receipt_date: receipt_date,
+                                                                receipt_no: receipt_number,
+                                                                lotno: lotno, // ← gunakan lotno dari server
+                                                                po_no: row.po_no,
+                                                                bc_document: bc_document,
+                                                                bc_date: bc_date,
+                                                                qty_po: row.qty_po,
+                                                                qty_os: row.qty_os,
+                                                                qty_receipt: row.qty_convertion,
+                                                                qty_receipt2: row.qty_receipt,
+                                                                qty_mpq: row.mpq,
+                                                                qty_label: row.qty_label,
+                                                                currency: row.currency,
+                                                                price: row.price
+                                                            },
+                                                            dataType: "json",
+                                                            success: function(result) {
                                                                 Swal.fire({
-                                                                    title: "Do you want to print the barcode?",
-                                                                    showDenyButton: true,
-                                                                    confirmButtonText: "Yes",
-                                                                    denyButtonText: "No"
+                                                                    title: result.message,
+                                                                    icon: result.theme,
+                                                                    confirmButtonText: 'Ok',
+                                                                    allowOutsideClick: false,
                                                                 }).then((result) => {
                                                                     if (result.isConfirmed) {
-                                                                        var qty_receipt = row ? row.qty_receipt : 0;
-                                                                        var qty_label = row ? row.qty_label : 0;
-
-                                                                        var po = {
-                                                                            receipt_no: receipt_number,
-                                                                            qty_receipt: qty_receipt,
-                                                                            qty_label: qty_label
-                                                                        };
-
-                                                                        window.location.reload();
-                                                                        print_po(po);
-                                                                    } else if (result.isDenied) {
-                                                                        Swal.fire("You can print QR Code in Datagrid", "", "info").then((result) => {
+                                                                        Swal.fire({
+                                                                            title: "Do you want to print the barcode?",
+                                                                            showDenyButton: true,
+                                                                            confirmButtonText: "Yes",
+                                                                            denyButtonText: "No"
+                                                                        }).then((result) => {
                                                                             if (result.isConfirmed) {
+                                                                                var qty_receipt = row ? row.qty_receipt : 0;
+                                                                                var qty_label = row ? row.qty_label : 0;
+
+                                                                                var po = {
+                                                                                    receipt_no: receipt_number,
+                                                                                    qty_receipt: qty_receipt,
+                                                                                    qty_label: qty_label
+                                                                                };
+
                                                                                 window.location.reload();
+                                                                                print_po(po);
+                                                                            } else if (result.isDenied) {
+                                                                                Swal.fire("You can print QR Code in Datagrid", "", "info").then((result) => {
+                                                                                    if (result.isConfirmed) {
+                                                                                        window.location.reload();
+                                                                                    }
+                                                                                });
                                                                             }
                                                                         });
                                                                     }
@@ -707,11 +713,11 @@
                                                             }
                                                         });
                                                     }
-                                                });
-                                            }
 
-                                            $('#dg').treegrid('reload');
-                                            $('#dlg_insert').dialog('close');
+                                                    $('#dg').treegrid('reload');
+                                                    $('#dlg_insert').dialog('close');
+                                                }
+                                            });
                                         }
                                     });
                                 }

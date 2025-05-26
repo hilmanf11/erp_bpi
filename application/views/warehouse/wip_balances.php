@@ -7,12 +7,11 @@
             <th rowspan="2" data-options="field:'item_name',width:150,halign:'center'">Item Name</th>
             <th rowspan="2" data-options="field:'uom',width:100,align:'center'">Uom</th>
             <th rowspan="2" data-options="field:'request_no',width:150,align:'center'">Supply Sheet</th>
-            <th rowspan="2" data-options="field:'begin',width:80,halign:'center',align:'right', formatter:numberformat">Begin</th>
-            <th rowspan="2" data-options="field:'needs',width:80,halign:'center',align:'right', formatter:numberformats">Need</th>
-            <th rowspan="2" data-options="field:'supply',width:80,halign:'center',align:'right', formatter:numberformat">Supply</th>
-            <th rowspan="2" data-options="field:'issued',width:80,halign:'center',align:'right', formatter:numberformat">Issued</th>
-            <th rowspan="2" data-options="field:'balance',width:80,halign:'center',align:'right', formatter:numberformat">Balance</th>
-            <th rowspan="2" data-options="field:'warehouse',width:80,halign:'center',align:'right', formatter:numberformat">Warehouse</th>
+            <th rowspan="2" data-options="field:'begin',width:80,halign:'center',align:'right', formatter:numberformats">Begin</th>
+            <th rowspan="2" data-options="field:'needs',width:80,halign:'center',align:'right', formatter:numberformats">Need</th>  <!-- need setelah di tambah purging -->
+            <th rowspan="2" data-options="field:'supply',width:80,halign:'center',align:'right', formatter:numberformats">Supply</th>
+            <th rowspan="2" data-options="field:'balance',width:80,halign:'center',align:'right', formatter:numberformats">Balance</th>
+            <th rowspan="2" data-options="field:'warehouse',width:80,halign:'center',align:'right', formatter:numberformats">Warehouse</th>
             <th colspan="2" data-options="field:'',width:100,halign:'center'"> Created</th>
             <th colspan="2" data-options="field:'',width:100,halign:'center'"> Updated</th>
         </tr>
@@ -27,6 +26,7 @@
 <!-- TOOLBAR DATAGRID -->
 <div id="toolbar" style="height: 35px;">
     <?= $button ?>
+    <a href="javascript:;" class="easyui-linkbutton" plain="true" onclick="adjWipBalance()"><i class="fa fa-adjust"></i> Adjust</a>
 </div>
 <!-- DIALOG SAVE AND UPDATE -->
 <div id="dlg_insert" class="easyui-dialog" title="Add New" data-options="closed: true,modal:true" style="width: 400px; padding:10px; top: 20px;">
@@ -214,5 +214,40 @@
             });
             return "<b>" + formatter.format(value) + "</b>";
         }
+    }
+
+    function adjWipBalance() {
+        $.messager.confirm('Confirm', 'Are you sure you want to create WIP balance?', function(r) {
+            if (r) {
+                // Tampilkan loading pakai SweetAlert2
+                Swal.fire({
+                    title: 'Please wait...',
+                    text: 'Creating WIP balances...',
+                    allowOutsideClick: false,
+                    didOpen: () => {
+                        Swal.showLoading();
+                    }
+                });
+
+                $.post("<?= site_url('warehouse/wip_balances/create_all') ?>", function(response) {
+                    Swal.close(); // Tutup loading SweetAlert
+                    Swal.fire({
+                        title: 'Success',
+                        text: response.message,
+                        icon: 'success'
+                    });
+                    $('#dg').datagrid('reload');
+                }, 'json')
+                .fail(function() {
+                    Swal.close();
+                    Swal.fire({
+                        title: 'Error',
+                        text: 'Failed to create WIP balances.',
+                        icon: 'error'
+                    });
+                    $('#dg').datagrid('reload');
+                });
+            }
+        });
     }
 </script>
