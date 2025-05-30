@@ -164,6 +164,7 @@
                     <th data-options="field:'stock',width:100,editor:{type:'numberbox', options:{readonly:true, precision:2}}">Stock WHS</th>
                     <th data-options="field:'stock_bal',width:100,editor:{type:'numberbox', options:{readonly:true, precision:2}}">Balance <br>Stock</th>
                     <th data-options="field:'qty_sod',width:100,editor:{type:'numberbox', options:{readonly:true, precision:2}}">Qty SO <br>Delivery</th>
+                    <th data-options="field:'njo_number',width:100">NJO Number</th>
                 </tr>
             </thead>
         </table>
@@ -583,7 +584,13 @@
                             align: 'right',
                             width: 80,
                             formatter: numberFormat
-                        },  {
+                        }, {
+                            field: 'njo_number',
+                            title: 'NJO Number',
+                            halign: 'center',
+                            align: 'right',
+                            width: 80,
+                        }, {
                             field: 'status_scan',
                             title: 'Status Scan',
                             halign: 'center',
@@ -911,6 +918,7 @@
                                                 accum_qty_do: selectedItems[i].accum_qty_do,
                                                 stock: selectedItems[i].stock,
                                                 stock_bal: selectedItems[i].stock_bal,
+                                                njo_number: selectedItems[i].njo_number,
                                             },
                                             dataType: "json",
                                             success: function(result) {

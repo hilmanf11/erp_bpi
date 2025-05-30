@@ -159,7 +159,7 @@ class Delivery_orders extends CI_Controller
         $customer_order_no = explode(",", base64_decode($customer_order_no));
 
         if($sales_order == "FG"){
-            $this->db->select('b.item_fg_id, d.number as item_fg_number, d.name as item_fg_name, 
+            $this->db->select('b.item_fg_id, d.number as item_fg_number, d.name as item_fg_name, b.njo_number,
                 b.customer_order_no,
                 b.sales_order_no,
                 d.uom, 
@@ -550,6 +550,7 @@ class Delivery_orders extends CI_Controller
                         "accum_qty_do" => $post['accum_qty_do'],
                         "stock" => $post['stock'],
                         "stock_bal" => $post['stock_bal'],
+                        "njo_number" => $post['njo_number'],
     
                     );
 
@@ -734,6 +735,7 @@ class Delivery_orders extends CI_Controller
                         "accum_qty_do" => $post['accum_qty_do'],
                         "stock" => $post['stock'],
                         "stock_bal" => $post['stock_bal'],
+                        "njo_number" => $post['njo_number'],
     
                     );
 

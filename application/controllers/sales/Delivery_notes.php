@@ -50,7 +50,7 @@ class Delivery_notes extends CI_Controller
         $delivery_note_date = base64_decode($delivery_note_date);
         // var_dump($delivery_note_date);
 
-        $this->db->select("a.delivery_order_no, 
+        $this->db->select("a.delivery_order_no, a.njo_number,
             b.id as item_fg_id, 
             b.number as item_fg_number, 
             b.name as item_fg_name,

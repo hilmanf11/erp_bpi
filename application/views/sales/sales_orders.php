@@ -423,7 +423,6 @@
         });
     }
 
-
     function calculate() {
         var rows = $('#dg2').datagrid('getRows');
         var taxes = $("#taxes").numberbox('getValue');
@@ -715,6 +714,36 @@
                             readonly: true,
                             required: true,
                             precision: 4
+                        }
+                    }
+                }, {
+                    field: 'njo_number',
+                    width: 100,
+                    halign: 'center',
+                    align: 'right',
+                    title: "NJO Number",
+                    editor: {
+                        type: 'textbox',
+                        options: {
+                            onChange: function(newVal) {
+                                var dg = $('#dg2');
+                                var row = dg.datagrid('getSelected');
+                                var rowIndex = dg.datagrid('getRowIndex', row);
+                                var rows = dg.datagrid('getRows');
+
+                                for (var i = 0; i < rows.length; i++) {
+                                    if (i !== rowIndex && rows[i].njo_number === newVal && newVal !== "") {
+                                        // $.messager.alert('Warning', 'NJO Number "' + newVal + '" sudah digunakan di item lain.', 'warning');
+                                        toastr.warning('NJO Number "' + newVal + '" Already Use.');
+                                        // Kosongkan jika duplicate
+                                        var ed = dg.datagrid('getEditor', { index: rowIndex, field: 'njo_number' });
+                                        if (ed) {
+                                            $(ed.target).textbox('setValue', '');
+                                        }
+                                        break;
+                                    }
+                                }
+                            }
                         }
                     }
                 }, {
@@ -1078,6 +1107,12 @@
                             width: 100,
                             formatter: numberFormat
                         }, {
+                            field: 'njo_number',
+                            title: 'NJO Number',
+                            halign: 'center',
+                            align: 'right',
+                            width: 100
+                        }, {
                             field: 'status',
                             title: 'Status',
                             halign: 'center',
@@ -1385,6 +1420,7 @@
                                         outstanding: rows[i].outstanding,
                                         currency: rows[i].currency,
                                         price: rows[i].price,
+                                        njo_number: rows[i].njo_number,
                                         total: rows[i].total
                                     },
                                     dataType: "json",

@@ -218,9 +218,10 @@
                     <th data-options="field:'sales_order_no',width:150,halign:'center'">Sales <br>Order No</th>
                     <th data-options="field:'customer_order_no',width:150,halign:'center'">Customer <br>Order No</th>
                     <th data-options="field:'uom',width:80,halign:'center'">Uom</th>
-                    <th data-options="field:'trans_type',width:80,halign:'center'">Trans Type</th>
+                    <th data-options="field:'trans_type',width:80,halign:'center'">Trans<br>Type</th>
                     <th data-options="field:'qty',width:80,editor:{type:'numberbox', options:{readonly:true}},halign:'center'">Qty</th>
                     <th data-options="field:'remarks',width:150,editor:{type:'textbox'},halign:'center'">Remark</th>
+                    <th data-options="field:'njo_number',width:100,halign:'center'">NJO <br>Number</th>
                 </tr>
             </thead>
         </table>
@@ -567,6 +568,11 @@
                             width: 80,
                             formatter: numberFormat
                         }, {
+                            field: 'njo_number',
+                            title: 'NJO Number',
+                            align: 'center',
+                            width: 100
+                        }, {
                             field: 'remarks',
                             title: 'Remark',
                             align: 'center',
@@ -729,6 +735,7 @@
                                                     status_delivery: rows[i].status_delivery,
                                                     qty: rows[i].qty,
                                                     remarks: rows[i].remarks,
+                                                    njo_number: rows[i].njo_number,
                                                 },
                                                 dataType: "json",
                                                 success: function(result) {
