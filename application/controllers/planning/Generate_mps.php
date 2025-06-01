@@ -93,19 +93,23 @@ class Generate_mps extends CI_Controller
             $monthBack = date('F Y', strtotime('-1 month', strtotime($filter_year . "-" . $filter_month . "-01")));
             $varBackYear = date('Y', strtotime('+1 month', strtotime($filter_year . "-" . $filter_month . "-01")));
             $varBackMonth = date('m', strtotime('+1 month', strtotime($filter_year . "-" . $filter_month . "-01")));
-            $period = date("Y-m-t", strtotime("-1 month", strtotime($filter_cutoff)));// mengurangi jumlah bulan dari filter cutoff kemudian di ganti ke akhir bulan tsb
+            $period = date("Y-m-t", strtotime("-1 month", strtotime($filter_cutoff)));
             $period2 = $filter_year.$filter_month;
 
             $monthStart = strtotime($filter_year . "-" . $filter_month . "-01");
-            $monthName3 = date("Y-m", $monthStart); //Mengubah monthStart menjadi format YYYY-MM.
+            $monthName3 = date("Y-m", $monthStart);
+            $cutoff_start = date("Y-m-d", strtotime("+1 day", strtotime($filter_cutoff)));
+            $cutoff_end = date("Y-m-t", strtotime($filter_cutoff));
 
             //Configuration Planning
             $this->db->select('*');
             $this->db->from("config");
             $config = $this->db->get()->row();
 
+            //
+
             //Select Query a.safety_stock
-            $this->db->select('a.id, a.number, a.name, a.leadtime, a.number_customer,a.mpq,
+            $this->db->select('a.id, a.number, a.name, COALESCE(j.safety_stock,0) as safety_stock, a.number_customer,a.mpq,
                 COALESCE(c.pp, 0) as injection,
                 COALESCE(c.p1, 0) as assembly,
                 COALESCE(c.p2, 0) as onhold,
@@ -123,48 +127,68 @@ class Generate_mps extends CI_Controller
                 COALESCE(h.shift_hour, 0) as shift_hour,
                 COALESCE(h.productcivity, 0) as productivity,
                 COALESCE(h.cavity_standard, 0) as cavity_standard,
-                COALESCE(i.qty, 0) as qty_so');
+                (COALESCE(i.qty, 0) + COALESCE(k.qty, 0)) as qty_so');
             $this->db->from('item_fg a');
-            // $this->db->join('customer_items b', 'a.id = b.item_fg_id');
+            $this->db->join('item_fg_subs b', "a.id = b.item_fg_sa_id", 'left');
             $this->db->join('stock_wip c', "a.id = c.item_fg_id and c.p_month = '$filter_month' and c.p_year = '$filter_year' and c.revision = '$filter_revision'", 'left');
             $this->db->join('os_mpp d', "a.id = d.item_fg_id and d.p_month = '$filter_month' and d.p_year = '$filter_year' and d.revision = '$filter_revision'", 'left');
             $this->db->join("(SELECT a.id, (COALESCE(b.qty_scan, 0) + COALESCE(c.qty_nb, 0) + COALESCE(d.qty_adj_in, 0) + COALESCE(e.qty_wip, 0) - COALESCE(f.qty_adj_out, 0) - COALESCE(g.qty_dn, 0) - COALESCE(h.qty_repair, 0)) AS stock_fg
                 FROM item_fg a
-                LEFT JOIN (SELECT a.item_fg_id, SUM(a.qty) AS qty_scan FROM scan_item_receipts_fg a JOIN checksheets b ON a.checksheet_number = b.number AND a.item_fg_id = b.item_fg_id WHERE b.packing_date < '$filter_cutoff' GROUP BY a.item_fg_id) b ON a.id = b.item_fg_id
-                LEFT JOIN (SELECT item_fg_id, SUM(qty) AS qty_nb FROM scan_item_receipts_fg WHERE `type` = 'NBFG' AND packing_date < '$filter_cutoff' GROUP BY item_fg_id) c ON a.id = c.item_fg_id
-                LEFT JOIN (SELECT item_fg_id, SUM(qty) AS qty_adj_in FROM transaction_fg WHERE transaction_kind = 'IN' AND request_date < '$filter_cutoff' GROUP BY item_fg_id) d ON a.id = d.item_fg_id
-                LEFT JOIN (SELECT item_fg_id, SUM(qty) AS qty_wip FROM wip_receipts WHERE division = 'MTS' AND trans_date < '$filter_cutoff' GROUP BY item_fg_id) e ON a.id = e.item_fg_id
-                LEFT JOIN (SELECT item_fg_id, SUM(qty) AS qty_adj_out FROM transaction_fg WHERE transaction_kind = 'OUT' AND request_date < '$filter_cutoff' GROUP BY item_fg_id) f ON a.id = f.item_fg_id
-                LEFT JOIN (SELECT item_fg_id, SUM(qty) AS qty_dn FROM delivery_notes WHERE delivery_note_date < '$filter_cutoff' GROUP BY item_fg_id) g ON a.id = g.item_fg_id
-                LEFT JOIN (SELECT a.item_fg_id, SUM(a.qty) AS qty_repair FROM scan_repair_of_goods a JOIN repair_of_goods b ON a.document_no = b.document_no AND a.item_fg_id = b.item_fg_id WHERE b.trans_date < '$filter_cutoff' GROUP BY a.item_fg_id) h ON a.id = h.item_fg_id
-                GROUP BY a.id) e", 'a.id = e.id', 'left');
+                LEFT JOIN (SELECT a.item_fg_id, SUM(a.qty) AS qty_scan FROM scan_item_receipts_fg a JOIN checksheets b ON a.checksheet_number = b.number AND a.item_fg_id = b.item_fg_id WHERE b.packing_date <= '$filter_cutoff' GROUP BY a.item_fg_id) b ON a.id = b.item_fg_id
+                LEFT JOIN (SELECT item_fg_id, SUM(qty) AS qty_nb FROM scan_item_receipts_fg WHERE `type` = 'NBFG' AND packing_date <= '$filter_cutoff' GROUP BY item_fg_id) c ON a.id = c.item_fg_id
+                LEFT JOIN (SELECT item_fg_id, SUM(qty) AS qty_adj_in FROM transaction_fg WHERE transaction_kind = 'IN' AND request_date <= '$filter_cutoff' GROUP BY item_fg_id) d ON a.id = d.item_fg_id
+                LEFT JOIN (SELECT item_fg_id, SUM(qty) AS qty_wip FROM wip_receipts WHERE division = 'MTS' AND trans_date <= '$filter_cutoff' GROUP BY item_fg_id) e ON a.id = e.item_fg_id
+                LEFT JOIN (SELECT item_fg_id, SUM(qty) AS qty_adj_out FROM transaction_fg WHERE transaction_kind = 'OUT' AND request_date <= '$filter_cutoff' GROUP BY item_fg_id) f ON a.id = f.item_fg_id
+                LEFT JOIN (SELECT item_fg_id, SUM(qty) AS qty_dn FROM delivery_notes WHERE delivery_note_date <= '$filter_cutoff' GROUP BY item_fg_id) g ON a.id = g.item_fg_id
+                LEFT JOIN (SELECT a.item_fg_id, SUM(a.qty) AS qty_repair FROM scan_repair_of_goods a JOIN repair_of_goods b ON a.document_no = b.document_no AND a.item_fg_id = b.item_fg_id WHERE b.trans_date <= '$filter_cutoff' GROUP BY a.item_fg_id) h ON a.id = h.item_fg_id
+                GROUP BY a.id) e", '(a.id = e.id or b.item_fg_id = e.id)', 'left');
             $this->db->join("(SELECT z.id, SUM(z.qty_outstanding) AS os_so FROM (
                 SELECT b.id, b.number_customer, a.qty_so, COALESCE(c.qty_delivery, 0) AS qty_delivery, (a.qty_so - COALESCE(c.qty_delivery, 0)) AS qty_outstanding
                 FROM (SELECT *, SUM(qty) AS qty_so FROM sales_orders WHERE `status` = 0 AND sales_order_no != '' GROUP BY sales_order_no, item_fg_id) a
                 JOIN item_fg b ON a.item_fg_id = b.id
-                LEFT JOIN (SELECT sales_order_no, item_fg_id, SUM(qty) AS qty_delivery FROM delivery_notes WHERE delivery_note_date < '$period' GROUP BY sales_order_no, item_fg_id) c ON a.sales_order_no = c.sales_order_no AND a.item_fg_id = c.item_fg_id
-                WHERE a.delivery_date < '$period'
+                LEFT JOIN (SELECT sales_order_no, item_fg_id, SUM(qty) AS qty_delivery FROM delivery_notes WHERE delivery_note_date <= '$filter_cutoff' GROUP BY sales_order_no, item_fg_id) c ON a.sales_order_no = c.sales_order_no AND a.item_fg_id = c.item_fg_id
+                WHERE a.delivery_date <= '$filter_cutoff'
                 GROUP BY a.sales_order_no, a.item_fg_id) z
-                GROUP BY z.id) f", 'a.id = f.id', 'left');
-            $this->db->join("(SELECT item_fg_id, SUM(month_1) as month_1, SUM(month_2) as month_2, SUM(month_3) as month_3, SUM(month_4) as month_4, SUM(month_5) as month_5, SUM(month_6) as month_6 FROM forecasts WHERE p_year = '$filter_year' and p_month = '$filter_month' and revision = '$filter_revision' GROUP BY item_fg_id) g ", 'a.id = g.item_fg_id', 'left');
+                GROUP BY z.id) f", '(a.id = f.id or b.item_fg_id = f.id)', 'left');
+            $this->db->join("(SELECT
+                f.item_fg_id,
+                SUM(f.month_1) AS month_1,
+                SUM(f.month_2) AS month_2,
+                SUM(f.month_3) AS month_3,
+                SUM(f.month_4) AS month_4,
+                SUM(f.month_5) AS month_5,
+                SUM(f.month_6) AS month_6
+            FROM forecasts f
+            JOIN (SELECT item_fg_id, MAX(revision) AS latest_revision FROM forecasts WHERE p_year = '$filter_year' AND p_month = '$filter_month' GROUP BY item_fg_id) AS latest_revisions ON f.item_fg_id = latest_revisions.item_fg_id AND f.revision = latest_revisions.latest_revision
+            WHERE p_year = '$filter_year' AND p_month = '$filter_month'
+            GROUP BY f.item_fg_id) g ", '(a.id = g.item_fg_id or b.item_fg_id = g.item_fg_id)', 'left');
             $this->db->join("(SELECT DISTINCT a.item_fg_id, a.cycle_time, a.shift_hour, a.productcivity, b.cavity_standard, a.priority FROM menu_loadings a JOIN molds b ON a.mold_id = b.id WHERE a.priority = 1 GROUP BY a.item_fg_id) h ", 'a.id = h.item_fg_id', 'left');
-            $this->db->join("(SELECT item_fg_id, SUM(qty) as qty FROM sales_orders WHERE `status` = 0 and delivery_date like '%$monthName3%' GROUP BY item_fg_id) i ", 'a.id = i.item_fg_id', 'left');
-
-            // if ($filter_customer != "") {
-            //     $this->db->where('b.customer_id', $filter_customer);
-            // }
+            $this->db->join("(SELECT z.id, SUM(z.qty_outstanding) AS qty FROM (
+                SELECT b.id, b.number_customer, a.qty_so, COALESCE(c.qty_delivery, 0) AS qty_delivery, (a.qty_so - COALESCE(c.qty_delivery, 0)) AS qty_outstanding
+                FROM (SELECT *, SUM(qty) AS qty_so FROM sales_orders WHERE `status` = 0 AND sales_order_no != '' GROUP BY sales_order_no, item_fg_id) a
+                JOIN item_fg b ON a.item_fg_id = b.id
+                LEFT JOIN (SELECT sales_order_no, item_fg_id, SUM(qty) AS qty_delivery FROM delivery_notes GROUP BY sales_order_no, item_fg_id) c ON a.sales_order_no = c.sales_order_no AND a.item_fg_id = c.item_fg_id
+                WHERE a.delivery_date like '%$monthName3%'
+                GROUP BY a.sales_order_no, a.item_fg_id) z
+                GROUP BY z.id) i", '(a.id = i.id or b.item_fg_id = i.id)', 'left');
+            $this->db->join("(SELECT z.id, SUM(z.qty_outstanding) AS qty FROM (
+                SELECT b.id, b.number_customer, a.qty_so, COALESCE(c.qty_delivery, 0) AS qty_delivery, (a.qty_so - COALESCE(c.qty_delivery, 0)) AS qty_outstanding
+                FROM (SELECT *, SUM(qty) AS qty_so FROM sales_orders WHERE `status` = 0 AND sales_order_no != '' GROUP BY sales_order_no, item_fg_id) a
+                JOIN item_fg b ON a.item_fg_id = b.id
+                LEFT JOIN (SELECT sales_order_no, item_fg_id, SUM(qty) AS qty_delivery FROM delivery_notes GROUP BY sales_order_no, item_fg_id) c ON a.sales_order_no = c.sales_order_no AND a.item_fg_id = c.item_fg_id
+                WHERE a.delivery_date between '$cutoff_start' and '$cutoff_end'
+                GROUP BY a.sales_order_no, a.item_fg_id) z
+                GROUP BY z.id) k", '(a.id = k.id or b.item_fg_id = k.id)', 'left');
+            $this->db->join("(SELECT item_fg_id, safety_stock FROM safety_stocks GROUP BY item_fg_id) j ", '(a.id = j.item_fg_id or b.item_fg_id = j.item_fg_id)', 'left');
             if ($filter_product_no != "") {
                 $this->db->where('a.id', $filter_product_no);
             }
-            // $this->db->group_by('b.customer_id');
             $this->db->where('a.status', 0);
             $this->db->where('a.division_id', 'DIV01');
             $this->db->where_in('a.type', ['FG', 'SA']);
             $this->db->group_by('a.id');
             $this->db->order_by('a.number', 'asc');
             $records = $this->db->get()->result_array();
-            // echo json_encode($records);
-            // exit;
 
             foreach ($records as $data) {
                 $totalStock = ($data['injection'] + $data['assembly'] + $data['onhold'] + $data['subcont'] + $data['os_mpp'] + $data['stock_fg']);
@@ -179,10 +203,8 @@ class Generate_mps extends CI_Controller
                     "p_year" => $filter_year,
                     "revision" => $filter_revision,
                     "cutoff" => $filter_cutoff . " " . date("H:i:s"),
-                    // "customer_id" => $data['customer_id'],
                     "item_fg_id" => $data['id'],
                     "wip_month" => strtoupper($monthBack),
-                    // "pp" => $data['total_wip'],
                     "pp" => $data['injection'],
                     "p1" => $data['assembly'],
                     "p2" => $data['onhold'],
@@ -190,8 +212,7 @@ class Generate_mps extends CI_Controller
                     "fg" => $data['stock_fg'],
                     "os_mpp" => $data['os_mpp'],
                     "total_stock" => "$totalStock",
-                    "os_so" => $data['os_so'],//dari query utama
-                    // "balance" => "$balance",
+                    "os_so" => $data['os_so'],
                     "month_1" => $data['month_1'],
                     "month_2" => $data['month_2'],
                     "month_3" => $data['month_3'],
@@ -203,7 +224,7 @@ class Generate_mps extends CI_Controller
                     "productivity" => $data['productivity'],
                     "cavity_standard" => $data['cavity_standard'],
                     "qty_so" => $data['qty_so'],
-                    "leadtime" => $data['leadtime'],
+                    "safety_stock" => $data['safety_stock'],
                     "mpq" => $data['mpq']
                 );
             }
@@ -293,7 +314,7 @@ class Generate_mps extends CI_Controller
         $this->db->select('*');
         $this->db->from('sales_orders');
         $this->db->where("status", 0);
-        $this->db->like("sales_order_date", $period);
+        $this->db->like("delivery_date", $period);
         $records = $this->db->get()->result_array();
 
         if (count($records) > 0) {
@@ -332,7 +353,7 @@ class Generate_mps extends CI_Controller
         $this->db->select('*');
         $this->db->from('sales_orders');
         $this->db->where("status", 0);
-        $this->db->like("sales_order_date", $period);
+        $this->db->like("delivery_date", $period);
         $records = $this->db->get()->result_array();
 
         if (count($records) > 0) {
@@ -534,72 +555,72 @@ class Generate_mps extends CI_Controller
                     if($soData > $forecastData){ $qtySoFc = $soData; }else{ $qtySoFc = $forecastData; }
                     $deliveryRate = @round($qtySoFc / $hkw);
                     $ito = @round($beginBalance / $deliveryRate);
-                    $safetyStock = @round($post['month_1'] * (@$post['leadtime'] / 100));
+                    $safetyStock = @round($post['month_1'] * (@$post['safety_stock'] / 100));
                     // $prodPlan = @round(($qtySoFc + $safetyStock) - $beginBalance);
                     $need = round($beginBalance - $qtySoFc - $safetyStock);
                     $need = ($need < 0) ? abs($need) : 0;
                     $prodplan = ceil($need / $capacityPerShift) * $capacityPerShift;
                     $prodplan = ceil($prodplan / $mpq) * $mpq;
                 } else if ($i == 2) {
-                    $beginBalance = (($prodPlan + $beginBalance) - $forecastData - $safetyStock);
-                    $soData = @round($post['qty_so']);
+                    $beginBalance = (($prodPlan + $beginBalance) - $qtySoFc - $safetyStock);
+                    $soData = 0;
                     $forecastData = @round($post['month_2']);
                     if($soData > $forecastData){ $qtySoFc = $soData; }else{ $qtySoFc = $forecastData; }
                     $deliveryRate = @round($qtySoFc / $hkw);
                     $ito = @round($beginBalance / $deliveryRate);
-                    $safetyStock = @round($post['month_2'] * (@$post['leadtime'] / 100));
+                    $safetyStock = @round($post['month_2'] * (@$post['safety_stock'] / 100));
                     // $prodPlan = @round(($qtySoFc + $safetyStock) - $beginBalance);
                     $need = round($beginBalance - $qtySoFc - $safetyStock);
                     $need = ($need < 0) ? abs($need) : 0;
                     $prodplan = ceil($need / $capacityPerShift) * $capacityPerShift;
                     $prodplan = ceil($prodplan / $mpq) * $mpq;
                 } elseif ($i == 3) {
-                    $beginBalance = (($prodPlan + $beginBalance) - $forecastData - $safetyStock);
-                    $soData = @round($post['qty_so']);
+                    $beginBalance = (($prodPlan + $beginBalance) - $qtySoFc - $safetyStock);
+                    $soData = 0;
                     $forecastData = @round($post['month_3']);
                     if($soData > $forecastData){ $qtySoFc = $soData; }else{ $qtySoFc = $forecastData; }
                     $deliveryRate = @round($qtySoFc / $hkw);
                     $ito = @round($beginBalance / $deliveryRate);
-                    $safetyStock = @round($post['month_3'] * (@$post['leadtime'] / 100));
+                    $safetyStock = @round($post['month_3'] * (@$post['safety_stock'] / 100));
                     // $prodPlan = @round(($qtySoFc + $safetyStock) - $beginBalance);
                     $need = round($beginBalance - $qtySoFc - $safetyStock);
                     $need = ($need < 0) ? abs($need) : 0;
                     $prodplan = ceil($need / $capacityPerShift) * $capacityPerShift;
                     $prodplan = ceil($prodplan / $mpq) * $mpq;
                 } elseif ($i == 4) {
-                    $beginBalance = (($prodPlan + $beginBalance) - $forecastData - $safetyStock);
-                    $soData = @round($post['qty_so']);
+                    $beginBalance = (($prodPlan + $beginBalance) - $qtySoFc - $safetyStock);
+                    $soData = 0;
                     $forecastData = @round($post['month_4']);
                     if($soData > $forecastData){ $qtySoFc = $soData; }else{ $qtySoFc = $forecastData; }
                     $deliveryRate = @round($qtySoFc / $hkw);
                     $ito = @round($beginBalance / $deliveryRate);
-                    $safetyStock = @round($post['month_4'] * (@$post['leadtime'] / 100));
+                    $safetyStock = @round($post['month_4'] * (@$post['safety_stock'] / 100));
                     // $prodPlan = @round(($qtySoFc + $safetyStock) - $beginBalance);
                     $need = round($beginBalance - $qtySoFc - $safetyStock);
                     $need = ($need < 0) ? abs($need) : 0;
                     $prodplan = ceil($need / $capacityPerShift) * $capacityPerShift;
                     $prodplan = ceil($prodplan / $mpq) * $mpq;
                 } elseif ($i == 5) {
-                    $beginBalance = (($prodPlan + $beginBalance) - $forecastData - $safetyStock);
-                    $soData = @round($post['qty_so']);
+                    $beginBalance = (($prodPlan + $beginBalance) - $qtySoFc - $safetyStock);
+                    $soData = 0;
                     $forecastData = @round($post['month_5']);
                     if($soData > $forecastData){ $qtySoFc = $soData; }else{ $qtySoFc = $forecastData; }
                     $deliveryRate = @round($qtySoFc / $hkw);
                     $ito = @round($beginBalance / $deliveryRate);
-                    $safetyStock = @round($post['month_5'] * (@$post['leadtime'] / 100));
+                    $safetyStock = @round($post['month_5'] * (@$post['safety_stock'] / 100));
                     // $prodPlan = @round(($qtySoFc + $safetyStock) - $beginBalance);
                     $need = round($beginBalance - $qtySoFc - $safetyStock);
                     $need = ($need < 0) ? abs($need) : 0;
                     $prodplan = ceil($need / $capacityPerShift) * $capacityPerShift;
                     $prodplan = ceil($prodplan / $mpq) * $mpq;
                 } elseif ($i == 6) {
-                    $beginBalance = (($prodPlan + $beginBalance) - $forecastData - $safetyStock);
-                    $soData = @round($post['qty_so']);
+                    $beginBalance = (($prodPlan + $beginBalance) - $qtySoFc - $safetyStock);
+                    $soData = 0;
                     $forecastData = @round($post['month_6']);
                     if($soData > $forecastData){ $qtySoFc = $soData; }else{ $qtySoFc = $forecastData; }
                     $deliveryRate = @round($qtySoFc / $hkw);
                     $ito = @round($beginBalance / $deliveryRate);
-                    $safetyStock = @round($post['month_6'] * (@$post['leadtime'] / 100));
+                    $safetyStock = @round($post['month_6'] * (@$post['safety_stock'] / 100));
                     // $prodPlan = @round(($qtySoFc + $safetyStock) - $beginBalance);
                     $need = round($beginBalance - $qtySoFc - $safetyStock);
                     $need = ($need < 0) ? abs($need) : 0;
@@ -905,391 +926,6 @@ class Generate_mps extends CI_Controller
         }
     }
 
-    public function push_data(){
-        if($this->input->get()){
-            //Filter Data
-            $filter_month = base64_decode($this->input->get('filter_month'));
-            $filter_year = base64_decode($this->input->get('filter_year'));
-            $filter_item_fg = base64_decode($this->input->get('filter_item_fg'));
-            $filter_customer = base64_decode($this->input->get('filter_customer'));
-            $filter_revision = base64_decode($this->input->get('filter_revision'));
-
-            $this->db->select('a.*, c.number_customer as product_no, c.name as product_name, d.circuit_no');
-            $this->db->from('generate_mps a');
-            $this->db->join('generate_mps_details b', 'a.p_month = b.p_month and a.p_year = b.p_year and a.revision = b.revision and a.item_fg_id = b.item_fg_id');
-            $this->db->join('item_fg c', 'a.item_fg_id = c.id');
-            $this->db->join("(SELECT z.item_fg_id, COUNT(z.circuit_no) as circuit_no FROM (SELECT distinct item_fg_id, circuit_no FROM `wos`) z GROUP BY z.item_fg_id) d", 'a.item_fg_id = d.item_fg_id');
-            if ($filter_month != "" or $filter_year != "") {
-                $this->db->where('a.p_month', $filter_month);
-                $this->db->where('a.p_year', $filter_year);
-            }
-            // $this->db->where("(a.pp > 0 or a.wc > 0 or a.ha > 0 or a.c > 0 or a.v > 0 or a.p > 0 or a.fg > 0 or a.os_mpp > 0 or a.os_so > 0)");
-            $this->db->where('a.deleted', 0);
-            $this->db->like('a.customer_id', $filter_customer);
-            $this->db->like('a.revision', $filter_revision);
-            $this->db->like('a.item_fg_id', $filter_item_fg);
-            $this->db->group_by('a.item_fg_id');
-            $records = $this->db->get()->result_array();
-
-            $jsonData = array();
-            foreach ($records as $data) {
-                $this->db->select('a.*');
-                $this->db->from('generate_mps_details a');
-                $this->db->where('a.p_month', $data['p_month']);
-                $this->db->where('a.p_year', $data['p_year']);
-                $this->db->where('a.revision', $data['revision']);
-                $this->db->where('a.customer_id', $data['customer_id']);
-                $this->db->where('a.item_fg_id', $data['item_fg_id']);
-                $this->db->where('a.deleted', 0);
-                $this->db->group_by('a.ltpp_month');
-                $this->db->order_by('a.id');
-                $details2 = $this->db->get()->result_array();
-
-                $nodetail = 1;
-                $jsonDataDetail = array();
-                foreach ($details2 as $detail2) {
-                    $safety_stock = $detail2['safety_stock'];
-
-                    $jsonDataDetail[] = array(
-                        "begin_balance_".$nodetail => $detail2['begin_balance'],
-                        "ito_".$nodetail => $detail2['ito'],
-                        "xbar_".$nodetail => 0,
-                        "forecast_".$nodetail => $detail2['forecast'],
-                        "delivery_rate_".$nodetail => $detail2['delivery_rate'],
-                        "safety_stock_".$nodetail => $safety_stock,
-                        "prod_plan_".$nodetail => $detail2['prod_plan']
-                    );
-
-                    $nodetail++;
-                }
-
-                $jsonData[] = array(
-                    "p_month" => $filter_month,
-                    "p_year" => $filter_year,
-                    "revision" => $filter_revision,
-                    "line_no" => "",
-                    "product_no" => trim($data['product_no']),
-                    "product_name" => trim($data['product_name']),
-                    "circuit_no" => $data['circuit_no'],
-                    "pp" => $data['pp'],
-                    "p1" => $data['wc'],
-                    "p2" => $data['ha'],
-                    "p3" => $data['c'],
-                    "p4" => $data['v'],
-                    "p5" => $data['p'],
-                    "p6" => 0,
-                    "p7" => 0,
-                    "p8" => 0,
-                    "p9" => 0,
-                    "p10" => 0,
-                    "stock_tf" => ($data['wc'] + $data['ha'] + $data['c'] + $data['v'] + $data['p']),
-                    "rqa" => 0,
-                    "hav" => 0,
-                    "fg" => $data['fg'],
-                    "os_mpp" => $data['os_mpp'],
-                    "total_stock" => $data['total_stock'],
-                    "os_sales_order" => $data['os_so'],
-                    "balance" => $data['balance'],
-                    "details" => $jsonDataDetail
-                );
-            }
-
-            $jsonData['total'] = count($jsonData);
-            die(json_encode($jsonData));
-        }
-    }
-
-    public function push_data_create(){
-        if ($this->input->post()) {
-            $data = $this->input->post('data');
-            $header = $this->input->post('header');
-
-            // $sales_order = $this->crud->read('sales_order', [], [
-            //     "p_month" => $data['p_month'],
-            //     "p_year" => $data['p_year'],
-            //     "revision" => $data['revision'],
-            //     "product_no" => $data['product_no']
-            // ]);
-
-            $this->dummy = $this->load->database('dummy', TRUE);
-
-            $this->dummy->select('COALESCE(lotqty, 0) as lotqty');
-            $this->dummy->from("mst_item");
-            $this->dummy->where("item_id", trim($data['product_no']));
-            $mst_item = $this->dummy->get()->row();
-
-            $this->dummy->select('*');
-            $this->dummy->from("ltpp_generate");
-            $this->dummy->where("period", $header[0]['period']);
-            $this->dummy->where("assy_no", $data['product_no']);
-            $this->dummy->where("rev", $header[0]['rev']);
-            $ltpp_generate = $this->dummy->get()->result_array();
-
-            if(count($ltpp_generate) > 0){
-                $ltpp_doc = $ltpp_generate[0]['ltpp_doc'];
-            }else{
-                $ltpp_doc = $header[0]['ltpp_doc'];
-            }
-
-            if(@is_nan(ceil($data['details'][0]['prod_plan_1'] / $mst_item->lotqty) * $mst_item->lotqty)){
-            	$prod_plan_1 = 0;
-            }else{
-            	$prod_plan_1 = @(ceil($data['details'][0]['prod_plan_1'] / $mst_item->lotqty) * $mst_item->lotqty);;
-            }
-
-            if(@is_nan(ceil($data['details'][1]['prod_plan_2'] / $mst_item->lotqty) * $mst_item->lotqty)){
-            	$prod_plan_2 = 0;
-            }else{
-            	$prod_plan_2 = @(ceil($data['details'][1]['prod_plan_2'] / $mst_item->lotqty) * $mst_item->lotqty);;
-            }
-
-            if(@is_nan(ceil($data['details'][2]['prod_plan_3'] / $mst_item->lotqty) * $mst_item->lotqty) ){
-            	$prod_plan_3 = 0;
-            }else{
-            	$prod_plan_3 = @(ceil($data['details'][2]['prod_plan_3'] / $mst_item->lotqty) * $mst_item->lotqty);;
-            }
-
-            if(@is_nan(ceil($data['details'][3]['prod_plan_4'] / $mst_item->lotqty) * $mst_item->lotqty)){
-            	$prod_plan_4 = 0;
-            }else{
-            	$prod_plan_4 = @(ceil($data['details'][3]['prod_plan_4'] / $mst_item->lotqty) * $mst_item->lotqty);;
-            }
-
-            if(@is_nan(ceil($data['details'][4]['prod_plan_5'] / $mst_item->lotqty) * $mst_item->lotqty)){
-            	$prod_plan_5 = 0;
-            }else{
-            	$prod_plan_5 = @(ceil($data['details'][4]['prod_plan_5'] / $mst_item->lotqty) * $mst_item->lotqty);;
-            }
-
-            if(@is_nan(ceil($data['details'][5]['prod_plan_6'] / $mst_item->lotqty) * $mst_item->lotqty)){
-            	$prod_plan_6 = 0;
-            }else{
-            	$prod_plan_6 = @(ceil($data['details'][5]['prod_plan_6'] / $mst_item->lotqty) * $mst_item->lotqty);;
-            }
-
-            $postFinal = array(
-                "ltpp_doc" => $ltpp_doc,
-                "period" => $header[0]['period'],
-                "date_period" => $header[0]['date_period'],
-                "lt" => $header[0]['lt'],
-                "hkw_1" => $header[0]['hkw_1'],
-                "hkw_2" => $header[0]['hkw_2'],
-                "hkw_3" => $header[0]['hkw_3'],
-                "hkw_4" => $header[0]['hkw_4'],
-                "hkw_5" => $header[0]['hkw_5'],
-                "hkw_6" => $header[0]['hkw_6'],
-                "fc_m4" => $header[0]['fc_m4'],
-                "rev" => $header[0]['rev'],
-                "assy_no" => trim($data['product_no']),
-                "item_name" => trim($data['product_name']),
-                "cct" => $data['circuit_no'],
-                "pp" => $data['pp'],
-                "p1" => $data['p1'],
-                "p2" => $data['p2'],
-                "p3" => $data['p3'],
-                "p4" => $data['p4'],
-                "p5" => $data['p5'],
-                "p6" => $data['p6'],
-                "p7" => $data['p7'],
-                "p8" => $data['p8'],
-                "p9" => $data['p9'],
-                "p10" => $data['p10'],
-                "rep_qa" => $data['rqa'],
-                "hav" => $data['hav'],
-                "fg" => $data['fg'],
-                "ost_mpp" => $data['os_mpp'],
-                "t_stock" => $data['total_stock'],
-                "fc1" => $data['details'][0]['forecast_1'],
-                "fc2" => $data['details'][1]['forecast_2'],
-                "fc3" => $data['details'][2]['forecast_3'],
-                "fc4" => $data['details'][3]['forecast_4'],
-                "fc5" => $data['details'][4]['forecast_5'],
-                "fc6" => $data['details'][5]['forecast_6'],
-                "t_fc" => ($data['details'][0]['forecast_1'] + $data['details'][1]['forecast_2'] + $data['details'][2]['forecast_3'] + $data['details'][3]['forecast_4'] + $data['details'][4]['forecast_5'] + $data['details'][5]['forecast_6']),
-                // "so_0" => @$sales_order->qty_1,
-                // "so_1" => @$sales_order->qty_2,
-                // "so_2" => @$sales_order->qty_3,
-                // "so_3" => @$sales_order->qty_4,
-                // "so_4" => @$sales_order->qty_5,
-                // "so_5" => @$sales_order->qty_6,
-                "so_0" => "0.0000",
-                "so_1" => "0.0000",
-                "so_2" => "0.0000",
-                "so_3" => "0.0000",
-                "so_4" => "0.0000",
-                "so_5" => "0.0000",
-                "so_6" => "0.0000",
-                "bal_1" => $data['details'][0]['begin_balance_1'],
-                "bal_2" => $data['details'][1]['begin_balance_2'],
-                "bal_3" => $data['details'][2]['begin_balance_3'],
-                "bal_4" => $data['details'][3]['begin_balance_4'],
-                "bal_5" => $data['details'][4]['begin_balance_5'],
-                "bal_6" => $data['details'][5]['begin_balance_6'],
-                "ito_1" => $data['details'][0]['ito_1'],
-                "ito_2" => $data['details'][1]['ito_2'],
-                "ito_3" => $data['details'][2]['ito_3'],
-                "ito_4" => $data['details'][3]['ito_4'],
-                "ito_5" => $data['details'][4]['ito_5'],
-                "ito_6" => $data['details'][5]['ito_6'],
-                "del_rate_1" => $data['details'][0]['delivery_rate_1'],
-                "del_rate_2" => $data['details'][1]['delivery_rate_2'],
-                "del_rate_3" => $data['details'][2]['delivery_rate_3'],
-                "del_rate_4" => $data['details'][3]['delivery_rate_4'],
-                "del_rate_5" => $data['details'][4]['delivery_rate_5'],
-                "del_rate_6" => $data['details'][5]['delivery_rate_6'],
-                "s_stock_1" => $data['details'][0]['safety_stock_1'],
-                "s_stock_2" => $data['details'][1]['safety_stock_2'],
-                "s_stock_3" => $data['details'][2]['safety_stock_3'],
-                "s_stock_4" => $data['details'][3]['safety_stock_4'],
-                "s_stock_5" => $data['details'][4]['safety_stock_5'],
-                "s_stock_6" => $data['details'][5]['safety_stock_6'],
-                // "prod_plan_1" => $prod_plan_1,
-                // "prod_plan_2" => $prod_plan_2,
-                // "prod_plan_3" => $prod_plan_3,
-                // "prod_plan_4" => $prod_plan_4,
-                // "prod_plan_5" => $prod_plan_5,
-                // "prod_plan_6" => $prod_plan_6,
-                "prod_plan_1" => $data['details'][0]['prod_plan_1'],
-                "prod_plan_2" => $data['details'][1]['prod_plan_2'],
-                "prod_plan_3" => $data['details'][2]['prod_plan_3'],
-                "prod_plan_4" => $data['details'][3]['prod_plan_4'],
-                "prod_plan_5" => $data['details'][4]['prod_plan_5'],
-                "prod_plan_6" => $data['details'][5]['prod_plan_6'],
-                "need_1" => $data['details'][0]['prod_plan_1'],
-                "need_2" => $data['details'][1]['prod_plan_2'],
-                "need_3" => $data['details'][2]['prod_plan_3'],
-                "need_4" => $data['details'][3]['prod_plan_4'],
-                "need_5" => $data['details'][4]['prod_plan_5'],
-                "need_6" => $data['details'][5]['prod_plan_6'],
-                "bal_end" => $data['balance'],
-                "ltpp_date" => date("Y-m-d"),
-                "notes" => "",
-            );
-
-            $postFinal_rev = array(
-                "ltpp_doc" => $ltpp_doc,
-                "period" => $header[0]['period'],
-                "date_period" => $header[0]['date_period'],
-                "lt" => $header[0]['lt'],
-                "hkw_1" => $header[0]['hkw_1'],
-                "hkw_2" => $header[0]['hkw_2'],
-                "hkw_3" => $header[0]['hkw_3'],
-                "hkw_4" => $header[0]['hkw_4'],
-                "hkw_5" => $header[0]['hkw_5'],
-                "hkw_6" => $header[0]['hkw_6'],
-                "fc_m4" => $header[0]['fc_m4'],
-                "rev" => $header[0]['rev'],
-                "assy_no" => trim($data['product_no']),
-                "item_name" => trim($data['product_name']),
-                "cct" => $data['circuit_no'],
-                "pp" => $data['pp'],
-                "p1" => $data['p1'],
-                "p2" => $data['p2'],
-                "p3" => $data['p3'],
-                "p4" => $data['p4'],
-                "p5" => $data['p5'],
-                "p6" => $data['p6'],
-                "p7" => $data['p7'],
-                "p8" => $data['p8'],
-                "p9" => $data['p9'],
-                "p10" => $data['p10'],
-                "rep_qa" => $data['rqa'],
-                "hav" => $data['hav'],
-                "fg" => $data['fg'],
-                "ost_mpp" => $data['os_mpp'],
-                "t_stock" => $data['total_stock'],
-                "fc1" => $data['details'][0]['forecast_1'],
-                "fc2" => $data['details'][1]['forecast_2'],
-                "fc3" => $data['details'][2]['forecast_3'],
-                "fc4" => $data['details'][3]['forecast_4'],
-                "fc5" => $data['details'][4]['forecast_5'],
-                "fc6" => $data['details'][5]['forecast_6'],
-                "t_fc" => ($data['details'][0]['forecast_1'] + $data['details'][1]['forecast_2'] + $data['details'][2]['forecast_3'] + $data['details'][3]['forecast_4'] + $data['details'][4]['forecast_5'] + $data['details'][5]['forecast_6']),
-                "so_0" => @$sales_order->qty_1,
-                "so_1" => @$sales_order->qty_2,
-                "so_2" => @$sales_order->qty_3,
-                "so_3" => @$sales_order->qty_4,
-                "so_4" => @$sales_order->qty_5,
-                "so_5" => @$sales_order->qty_6,
-                "so_6" => "0.0000",
-                "bal_1" => $data['details'][0]['begin_balance_1'],
-                "bal_2" => $data['details'][1]['begin_balance_2'],
-                "bal_3" => $data['details'][2]['begin_balance_3'],
-                "bal_4" => $data['details'][3]['begin_balance_4'],
-                "bal_5" => $data['details'][4]['begin_balance_5'],
-                "bal_6" => $data['details'][5]['begin_balance_6'],
-                "ito_1" => $data['details'][0]['ito_1'],
-                "ito_2" => $data['details'][1]['ito_2'],
-                "ito_3" => $data['details'][2]['ito_3'],
-                "ito_4" => $data['details'][3]['ito_4'],
-                "ito_5" => $data['details'][4]['ito_5'],
-                "ito_6" => $data['details'][5]['ito_6'],
-                "del_rate_1" => $data['details'][0]['delivery_rate_1'],
-                "del_rate_2" => $data['details'][1]['delivery_rate_2'],
-                "del_rate_3" => $data['details'][2]['delivery_rate_3'],
-                "del_rate_4" => $data['details'][3]['delivery_rate_4'],
-                "del_rate_5" => $data['details'][4]['delivery_rate_5'],
-                "del_rate_6" => $data['details'][5]['delivery_rate_6'],
-                "s_stock_1" => $data['details'][0]['safety_stock_1'],
-                "s_stock_2" => $data['details'][1]['safety_stock_2'],
-                "s_stock_3" => $data['details'][2]['safety_stock_3'],
-                "s_stock_4" => $data['details'][3]['safety_stock_4'],
-                "s_stock_5" => $data['details'][4]['safety_stock_5'],
-                "s_stock_6" => $data['details'][5]['safety_stock_6'],
-                // "prod_plan_1" => $prod_plan_1,
-                // "prod_plan_2" => $prod_plan_2,
-                // "prod_plan_3" => $prod_plan_3,
-                // "prod_plan_4" => $prod_plan_4,
-                // "prod_plan_5" => $prod_plan_5,
-                // "prod_plan_6" => $prod_plan_6,
-                "prod_plan_1" => $data['details'][0]['prod_plan_1'],
-                "prod_plan_2" => $data['details'][1]['prod_plan_2'],
-                "prod_plan_3" => $data['details'][2]['prod_plan_3'],
-                "prod_plan_4" => $data['details'][3]['prod_plan_4'],
-                "prod_plan_5" => $data['details'][4]['prod_plan_5'],
-                "prod_plan_6" => $data['details'][5]['prod_plan_6'],
-                "need_1" => $data['details'][0]['prod_plan_1'],
-                "need_2" => $data['details'][1]['prod_plan_2'],
-                "need_3" => $data['details'][2]['prod_plan_3'],
-                "need_4" => $data['details'][3]['prod_plan_4'],
-                "need_5" => $data['details'][4]['prod_plan_5'],
-                "need_6" => $data['details'][5]['prod_plan_6'],
-                "bal_end" => $data['balance'],
-                "ltpp_date" => date("Y-m-d"),
-                "notes" => "",
-                "revisi_update" => "1",
-                "update_date" => date("Y-m-d H:i:s"),
-                "update_user" => $this->session->username,
-            );
-
-            if (count($ltpp_generate) > 0) {
-                $this->dummy->where([
-                    "period" => $header[0]['period'],
-                    "assy_no" => $data['product_no'],
-                    "rev" => $header[0]['rev']
-                ]);
-
-                if($this->dummy->update('ltpp_generate', $postFinal)){
-                    $this->dummy->update('ltpp_generate_rev', $postFinal_rev, [
-                        "period" => $header[0]['period'],
-                        "assy_no" => $data['product_no'],
-                        "rev" => $header[0]['rev']
-                    ]);
-                    echo json_encode(array("title" => "Good Job", "message" => $data['product_no'] . " | " . $data['product_name'] . " | Data Updated Successfully", "theme" => "success"));
-                }else{
-                    echo json_encode(array("title" => "Error", "message" => $data['product_no'] . " | " . $data['product_name'] . " | Data Unupdate", "theme" => "error"));
-                }
-            } else {
-                if ($this->dummy->insert('ltpp_generate', $postFinal)) {
-                    $this->dummy->insert('ltpp_generate_rev', $postFinal_rev);
-                    echo json_encode(array("title" => "Good Job", "message" => $data['product_no'] . " | " . $data['product_name'] . " | Data Saved Successfully", "theme" => "success"));
-                } else {
-                    echo json_encode(array("title" => "Error", "message" => $data['product_no'] . " | " . $data['product_name'] . " | Data Unsaved", "theme" => "error"));
-                }
-            }
-        }
-    }
-
     public function print($option = "")
     {
         if ($option == "excel") {
@@ -1388,6 +1024,7 @@ class Generate_mps extends CI_Controller
                 <th style="text-align:center;" rowspan="2" width="100">PRODUCT NO</th>
                 <th style="text-align:center;" rowspan="2" width="150">PRODUCT CUSTOMER</th>
                 <th style="text-align:center;" rowspan="2" width="100">DESCRIPTION</th>
+                <th style="text-align:center;" rowspan="2" width="100">TYPE</th>
                 <th style="text-align:center;" rowspan="2" width="100">MPQ</th>
                 <th style="text-align:center;" colspan="4" width="100">WIP</th>
                 <th style="text-align:center;" rowspan="2" width="50">FG</th>
@@ -1419,7 +1056,7 @@ class Generate_mps extends CI_Controller
         //                     <th colspan="100" style="text-align:left;"><b>' . $customer_name . '</b></th>
         //                 </tr>';
             //Select Full
-            $this->db->select('a.*, e.number as item_fg_number, e.name as item_fg_name, e.number_customer, e.mpq');
+            $this->db->select('a.*, e.number as item_fg_number, e.name as item_fg_name, e.number_customer, e.mpq, e.type');
             $this->db->from('generate_mps a');
             $this->db->join('generate_mps_details b', 'a.p_month = b.p_month and a.p_year = b.p_year and a.revision = b.revision and a.item_fg_id = b.item_fg_id');
             // $this->db->join('customers c', 'a.customer_id = c.id');
@@ -1444,6 +1081,7 @@ class Generate_mps extends CI_Controller
                             <td style="mso-number-format:\@;">' . $data['item_fg_number'] . '</td>
                             <td style="mso-number-format:\@;">' . $data['number_customer'] . '</td>
                             <td>' . $data['item_fg_name'] . '</td>
+                            <td>' . $data['type'] . '</td>
                             <td>' . $data['mpq'] . '</td>
                             <td style="text-align:right;">' . $data['pp'] . '</td>
                             <td style="text-align:right;">' . $data['p2'] . '</td>
