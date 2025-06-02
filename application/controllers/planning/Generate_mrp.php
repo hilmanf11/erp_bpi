@@ -441,6 +441,7 @@ class Generate_mrp extends CI_Controller
                 h.type as supplier_type,
                 coalesce(b.leadtime, 0) as leadtime,
                 coalesce(j.qty_os, 0) as os_po,
+                coalesce(d.balance, 0) as qty_wip,
                 coalesce(k.begin_stock, 0) as qty_whs, 
                 (coalesce(f.actual, 0) + coalesce(l.qty_out_transaction, 0)) as used_3,
                 (coalesce(f2.actual, 0) + coalesce(l2.qty_out_transaction, 0)) as used_2,
@@ -448,41 +449,17 @@ class Generate_mrp extends CI_Controller
             $this->db->from('generate_mrp a');
             $this->db->join('item_rm i', "a.item_rm_id = i.id");
             $this->db->join('supplier_items b', "a.item_rm_id = b.item_rm_id and (b.mpq > 0 and b.moq > 0 and b.leadtime > 0 and b.share_order > 0)");
-           
-            // coalesce(c.end_stock, 0) as qty_rm, 
-            // $this->db->join("(SELECT
-            //     a.id,
-            //     ((COALESCE(SUM(c.qty_sto),0) + COALESCE(dd.sto_qty_in, 0) + COALESCE(j.qty_rgp_in, 0) + COALESCE(e.qty_receipt, 0) + COALESCE(g.return_qty, 0)) - COALESCE(f.qty, 0) - COALESCE(d.sto_qty_out, 0) - COALESCE(k.qty_rgp_out, 0) - COALESCE(h.qty_reject, 0)) AS end_stock
-            //     FROM item_rm a 
-            //     JOIN item_familys b ON a.item_family_id = b.id AND b.number != '006'
-            //     LEFT JOIN (SELECT a.item_rm_id, COALESCE(SUM(b.qty), 0) AS qty_sto FROM os_rm a JOIN scan_item_receipts b ON a.id  = b.receipt_id WHERE a.trans_date <= '$filter_cutoff' GROUP BY item_rm_id) c ON a.id = c.item_rm_id
-            //     LEFT JOIN (SELECT a.item_rm_id, COALESCE(SUM(a.qty), 0) as sto_qty_out FROM sto_rm a WHERE a.type = 'OUT' and a.trans_date <= '$filter_cutoff' and a.approved_to = '' GROUP BY item_rm_id) d ON a.id = d.item_rm_id
-            //     LEFT JOIN (SELECT a.item_rm_id, COALESCE(SUM(a.qty), 0) as sto_qty_in FROM sto_rm a WHERE a.type = 'IN' and a.trans_date <= '$filter_cutoff' and a.approved_to = '' GROUP BY item_rm_id) dd ON a.id = dd.item_rm_id
-            //     LEFT JOIN (SELECT a.item_rm_id, COALESCE(SUM(b.qty), 0) AS qty_receipt FROM purchase_order_receipts a JOIN scan_item_receipts b ON a.receipt_id  = b.receipt_id WHERE a.receipt_date <= '$filter_cutoff' GROUP BY item_rm_id) e ON a.id = e.item_rm_id
-            //     LEFT JOIN (SELECT item_rm_id, COALESCE(SUM(qty), 0) AS qty FROM issued_material_details WHERE DATE_FORMAT(created_date, '%Y-%m-%d') <= '$filter_cutoff' GROUP BY item_rm_id) f ON a.id = f.item_rm_id
-            //     LEFT JOIN (SELECT a.item_rm_id, COALESCE(SUM(b.qty), 0) AS qty_reject FROM purchase_order_receipts a JOIN scan_item_rejections b ON a.receipt_id  = b.receipt_id WHERE DATE_FORMAT(b.created_date, '%Y-%m-%d') <= '$filter_cutoff' GROUP BY item_rm_id) h ON a.id = h.item_rm_id
-            //     LEFT JOIN (SELECT a.item_id, COALESCE(SUM(b.qty), 0) as qty_rgp_in FROM rgp_transactions a JOIN scan_item_rgp b ON a.number = b.rgp_number and a.item_id = b.item_id WHERE a.type = 'IN' and a.transaction_date <= '$filter_cutoff' GROUP BY a.item_id) j ON a.id = j.item_id
-            //     LEFT JOIN (SELECT a.item_id, COALESCE(SUM(b.qty), 0) as qty_rgp_out FROM rgp_transactions a JOIN scan_item_rgp b ON a.number = b.rgp_number and a.item_id = b.item_id WHERE a.type = 'OUT' and a.transaction_date <= '$filter_cutoff' GROUP BY a.item_id) k ON a.id = k.item_id
-            //     LEFT JOIN (SELECT a.item_rm_id, SUM(c.qty) AS return_qty
-            //     FROM return_materials a 
-            //     JOIN return_material_labels b ON a.return_id = b.return_id
-            //     JOIN scan_item_receipts c ON a.return_id = c.receipt_id AND b.label_no = c.label_no
-            //     WHERE a.return_date <= '$filter_cutoff'
-            //     GROUP BY a.item_rm_id) g ON a.id = g.item_rm_id
-            //     GROUP BY a.id) c", 'a.item_rm_id = c.id', 'left');
-
-            //coalesce(d.balance, 0) as qty_wip, 
-            // $this->db->join("(SELECT a.item_rm_id, (COALESCE(b.issued, 0) - SUM(a.total)) AS balance FROM (
-            //         SELECT b.item_rm_id, a.item_fg_id, SUM(a.qty), b.composition, (SUM(a.qty) * b.composition) AS total
-            //         FROM production_schedules a
-            //         JOIN bom b ON a.item_fg_id = b.item_fg_id
-            //         WHERE a.trans_date BETWEEN '$month1' AND '$filter_cutoff' 
-            //         GROUP BY a.item_fg_id, b.item_rm_id) a
-            //     LEFT JOIN (SELECT item_rm_id, SUM(qty) AS issued FROM issued_material_details WHERE DATE_FORMAT(created_date, '%Y-%m-%d') BETWEEN '$month1' AND '$filter_cutoff' GROUP BY item_rm_id) b ON a.item_rm_id = b.item_rm_id
-            //     JOIN item_rm c ON a.item_rm_id = c.id
-            //     JOIN item_familys d ON c.item_family_id = d.id
-            //     GROUP BY a.item_rm_id
-            //     ORDER BY c.item_family_id, c.id asc) d", "a.item_rm_id = d.item_rm_id", "left");
+            $this->db->join("(SELECT a.item_rm_id, (COALESCE(b.issued, 0) - SUM(a.total)) AS balance FROM (
+                    SELECT b.item_rm_id, a.item_fg_id, SUM(a.qty), b.composition, (SUM(a.qty) * b.composition) AS total
+                    FROM production_schedules a
+                    JOIN bom b ON a.item_fg_id = b.item_fg_id
+                    WHERE a.trans_date BETWEEN '$month1' AND '$filter_cutoff' 
+                    GROUP BY a.item_fg_id, b.item_rm_id) a
+                LEFT JOIN (SELECT item_rm_id, SUM(qty) AS issued FROM issued_material_details WHERE DATE_FORMAT(created_date, '%Y-%m-%d') BETWEEN '$month1' AND '$filter_cutoff' and request_no like '%SH%' GROUP BY item_rm_id) b ON a.item_rm_id = b.item_rm_id
+                JOIN item_rm c ON a.item_rm_id = c.id
+                JOIN item_familys d ON c.item_family_id = d.id
+                GROUP BY a.item_rm_id
+                ORDER BY c.item_family_id, c.id asc) d", "a.item_rm_id = d.item_rm_id", "left");
 
             // (CASE WHEN e.actual >= 0 THEN coalesce(e.actual, 0) ELSE 0 END) as qty_vendor,
             // $this->db->join("(SELECT z.id, SUM(z.begin_stock) AS actual FROM (
@@ -529,29 +506,20 @@ class Generate_mrp extends CI_Controller
                 GROUP BY item_rm_id) l3", 'a.item_rm_id = l3.item_rm_id', 'left');
 
             $this->db->join('suppliers h', 'b.supplier_id = h.id and h.status = 0');
-
-            $this->db->join("(SELECT a.item_rm_id, SUM(a.qty) AS qty_po, b.qty_receipt,SUM(a.qty) - b.qty_receipt as qty_os
-                    FROM purchase_orders a JOIN (
-                    SELECT item_rm_id, SUM(qty_receipt) AS qty_receipt
-                    FROM purchase_order_receipts
-                    WHERE receipt_date < '$filter_cutoff' 
-                    GROUP BY item_rm_id
-                ) b ON a.item_rm_id = b.item_rm_id
-                WHERE a.po_date < '$filter_cutoff' 
-                GROUP BY a.item_rm_id, b.qty_receipt
-                HAVING SUM(a.qty) - b.qty_receipt > 0) j", "a.item_rm_id = j.item_rm_id", "left");
-
-            $this->db->join("(SELECT a.id, a.number, ((COALESCE(b.qty_scan_in, 0) + COALESCE(c.qty_os_rm, 0) + COALESCE(d.qty_trans_rm_in, 0) + COALESCE(e.return_qty, 0) + COALESCE(h.qty_scan_bpm, 0)) - (COALESCE(f.qty_issued, 0) + COALESCE(g.qty_trans_rm_out, 0))) AS begin_stock
+            $this->db->join("(SELECT a.item_rm_id, SUM(COALESCE(a.qty, 0)) - SUM(COALESCE(b.qty_receipt, 0)) AS qty_os
+                FROM (SELECT item_rm_id, po_no, SUM(qty) AS qty FROM purchase_orders WHERE STATUS = 0 AND po_date < '$filter_cutoff' GROUP BY item_rm_id, po_no) a
+                JOIN (SELECT item_rm_id, po_no, SUM(qty_receipt) AS qty_receipt FROM purchase_order_receipts GROUP BY item_rm_id, po_no) b ON a.item_rm_id = b.item_rm_id AND a.po_no = b.po_no
+                GROUP BY a.item_rm_id) j", "a.item_rm_id = j.item_rm_id", "left");
+            $this->db->join("(SELECT a.id, a.number, ((COALESCE(d.qty_scan_in, 0) + COALESCE(e.qty_os_rm, 0) + COALESCE(f.qty_trans_rm_in, 0) + COALESCE(g.return_qty, 0) + COALESCE(k.qty_scan_bpm, 0)) - (COALESCE(h.qty_issued, 0) + COALESCE(i.qty_trans_rm_out, 0))) AS begin_stock
                 FROM item_rm a
-                LEFT JOIN (SELECT b.item_rm_id, SUM(a.qty) AS qty_scan_in FROM scan_item_receipts a JOIN purchase_order_receipts b ON a.receipt_id = b.receipt_id WHERE b.receipt_date < '$filter_cutoff'  GROUP BY b.item_rm_id) b ON a.id = b.item_rm_id
-                LEFT JOIN (SELECT item_rm_id, SUM(qty) AS qty_os_rm FROM os_rm WHERE trans_date < '$filter_cutoff' GROUP BY item_rm_id) c ON a.id = c.item_rm_id
-                LEFT JOIN (SELECT item_rm_id, SUM(qty) AS qty_trans_rm_in FROM transaction_rm WHERE request_date < '$filter_cutoff' AND transaction_kind = 'IN' GROUP BY item_rm_id) d ON a.id = d.item_rm_id
-                LEFT JOIN (SELECT a.item_rm_id, SUM(c.qty) as return_qty FROM return_materials a JOIN return_material_labels b ON a.return_id = b.return_id JOIN scan_item_receipts c ON a.return_id = c.receipt_id AND b.label_no = c.label_no WHERE a.return_date < '$filter_cutoff' GROUP BY a.item_rm_id) e ON a.id = e.item_rm_id
-                LEFT JOIN (SELECT item_rm_id, SUM(qty) AS qty_issued FROM issued_material_details WHERE created_date < '$filter_cutoff' GROUP BY item_rm_id) f ON a.id = f.item_rm_id
-                LEFT JOIN (SELECT item_rm_id, SUM(qty) AS qty_trans_rm_out FROM transaction_rm WHERE request_date < '$filter_cutoff' AND transaction_kind = 'OUT' GROUP BY item_rm_id) g ON a.id = g.item_rm_id
-                LEFT JOIN (SELECT item_rm_id, SUM(qty) AS qty_scan_bpm FROM scan_item_bpm WHERE DATE_FORMAT(request_date, '%Y-%m-%d') < '$filter_cutoff' GROUP BY item_rm_id) h ON a.id = h.item_rm_id
+                LEFT JOIN (SELECT b.item_rm_id, SUM(a.qty) AS qty_scan_in FROM scan_item_receipts a JOIN purchase_order_receipts b ON a.receipt_id = b.receipt_id WHERE b.receipt_date <= '$filter_cutoff' GROUP BY b.item_rm_id) d ON a.id = d.item_rm_id
+                LEFT JOIN (SELECT item_rm_id, SUM(qty) AS qty_os_rm FROM os_rm WHERE trans_date <= '$filter_cutoff' GROUP BY item_rm_id) e ON a.id = e.item_rm_id
+                LEFT JOIN (SELECT item_rm_id, SUM(qty) AS qty_trans_rm_in FROM transaction_rm WHERE request_date <= '$filter_cutoff' AND transaction_kind = 'IN' GROUP BY item_rm_id) f ON a.id = f.item_rm_id
+                LEFT JOIN (SELECT a.item_rm_id, SUM(c.qty) AS return_qty FROM return_materials a JOIN return_material_labels b ON a.return_id = b.return_id JOIN scan_item_receipts c ON a.return_id = c.receipt_id AND b.label_no = c.label_no WHERE a.return_date <= '$filter_cutoff' GROUP BY a.item_rm_id) g ON a.id = g.item_rm_id
+                LEFT JOIN (SELECT item_rm_id, SUM(qty) AS qty_issued FROM issued_material_details WHERE DATE_FORMAT(created_date, '%Y-%m-%d') <= '$filter_cutoff' GROUP BY item_rm_id) h ON a.id = h.item_rm_id
+                LEFT JOIN (SELECT item_rm_id, SUM(qty) AS qty_trans_rm_out FROM transaction_rm WHERE request_date <= '$filter_cutoff' AND transaction_kind = 'OUT' GROUP BY item_rm_id) i ON a.id = i.item_rm_id
+                LEFT JOIN (SELECT item_rm_id, SUM(qty) AS qty_scan_bpm FROM scan_item_bpm WHERE DATE_FORMAT(request_date, '%Y-%m-%d') <= '$filter_cutoff' GROUP BY item_rm_id) k ON a.id = k.item_rm_id
             ) k", "a.item_rm_id = k.id", 'left');
-
             $this->db->join('safety_stock_rm m', "a.item_rm_id = m.item_rm_id",'left');
 
             //$this->db->where('assy_no', 'ZYM024-081C');
@@ -598,13 +566,14 @@ class Generate_mrp extends CI_Controller
                     //     $qty_wip = abs(round($supply));
                     // }
 
-                    // if($generate['qty_wip'] > 0){
-                    //     $qty_wip = $generate['qty_wip'];
-                    //     $qty_supply = 0;
-                    // }else{
-                    //     $qty_wip = 0;
-                    //     $qty_supply = abs($generate['qty_wip']);
-                    // }
+                     if($generate['qty_wip'] > 0){
+                        $qty_wip = $generate['qty_wip'];
+                        $qty_supply = 0;
+                    }else{
+                        $qty_wip = 0;
+                        $qty_supply = abs($generate['qty_wip']);
+                    }
+
 
                     // $total_stock = ($generate['qty_rm'] + $qty_wip + $generate['qty_vendor']);
                     // $total_wo = ($qty_supply + 0);
@@ -656,14 +625,16 @@ class Generate_mrp extends CI_Controller
                     }
                 }
 
-                $os_supply = $generate['os_po'];
+                $os_po = $generate['os_po'];
                 $stock = $generate['qty_whs'];
+                $os_wo = 0;
                 $used_1 = $generate['used_1'];
                 $used_2 = $generate['used_2'];
                 $used_3 = $generate['used_3'];
 
                 // $balance_1 = ($total_stock - ($total_wo + $need_11));
-                $balance_1 = (($os_supply + $stock) - $need_11);
+                // $balance_1 = (($os_supply + $stock) - $need_11);
+                $balance_1 = ($stock + $qty_wip + $os_po - $os_wo - $qty_supply - $need_11);
                 $balance_2 = ($balance_1 - $need_2);
                 $balance_3 = ($balance_2 - $need_3);
                 $balance_4 = ($balance_3 - $need_4);
@@ -677,6 +648,12 @@ class Generate_mrp extends CI_Controller
                     $ito = round($stock / $avg_usage, 2); // dibulatkan 2 desimal
                 } else {
                     $ito = 0; 
+                }
+
+                if($balance_1 > 0){
+                    $total_need = 0;
+                }else{
+                    $total_need = abs($balance_1);
                 }
                 
                 //Dokumentasi : dikomen dahulu tidak menggunkan supplier type Local atau export 
@@ -759,7 +736,7 @@ class Generate_mrp extends CI_Controller
                     // }
                 //
 
-                $leadtimeMonth = ceil(($generate['leadtime'] + $cutoffDate - 1) / 30);
+                // $leadtimeMonth = ceil(($generate['leadtime'] + $cutoffDate - 1) / 30);
 
                 //Dokumentasi : di komen dahulu karena safety stock menggunakan upload
                     // switch ($leadtimeMonth) {
@@ -831,19 +808,19 @@ class Generate_mrp extends CI_Controller
                     //         $avg_balance = ($balance_6 - $avg_need);
                     // }
 
-                    // $share_order_qty = ($total_need * ($generate['share_order'] / 100)); 
-                    // $safety_stock = round($share_order_qty * ($generate['safety_stock'] / 100));
-                    // $total_need = ($share_order_qty + $safety_stock);
+                    $share_order_qty = ($total_need * ($generate['share_order'] / 100)); 
+                    $safety_stock = round($share_order_qty * ($generate['safety_stock'] / 100));
+                    $total_need = ($share_order_qty + $safety_stock);
 
-                    // if($total_need > 0 && $generate['moq'] > 0){
-                    //     if($total_need > $generate['moq']){
-                    //         $purchase_order = (ceil($total_need / $generate['mpq']) * $generate['mpq']);
-                    //     }else{
-                    //         $purchase_order = (ceil($total_need / $generate['moq']) * $generate['moq']);
-                    //     }
-                    // }else{
-                    //     $purchase_order = 0;
-                    // }
+                    if($total_need > 0 && $generate['moq'] > 0){
+                        if($total_need > $generate['moq']){
+                            $purchase_order = (ceil($total_need / $generate['mpq']) * $generate['mpq']);
+                        }else{
+                            $purchase_order = (ceil($total_need / $generate['moq']) * $generate['moq']);
+                        }
+                    }else{
+                        $purchase_order = 0;
+                    }
                 //------------------------------------------------------------------------------
 
                 $arr[] = array(
@@ -858,17 +835,17 @@ class Generate_mrp extends CI_Controller
                     "moq" => $generate['moq'],
                     "leadtime" => $generate['leadtime'],
                     "qty_rm" => $generate['qty_whs'],
-                    "os_supply" => $os_supply,//belum penambahan field db
-                    // "qty_wip" => $qty_wip,
+                    "qty_wip" => $qty_wip,
+                    "qty_supply" => $qty_supply,
                     // "qty_vendor" => $generate['qty_vendor'],
                     // "total_stock" => $total_stock,
-                    // "qty_supply" => $qty_supply,
+                    "os_po" => $os_po,
                     // "qty_wo" => $qty_wo,
-                    "ito" => $ito,//belum penambahan field db
-                    "used_1" => $used_1,//belum penambahan field db
-                    "used_2" => $used_2,//belum penambahan field db
-                    "used_3" => $used_3,//belum penambahan field db
-                    "average" => $average,//belum penambahan field db
+                    "ito" => $ito,//tambah field db
+                    "used_1" => $used_1,//tambah field db
+                    "used_2" => $used_2,//tambah field db
+                    "used_3" => $used_3,//tambah field db
+                    "average" => $average,//tambah field db
                     "qty_wo" => 0,
                     "total_wo" => $total_wo,
                     "need_1" => $need_1,
@@ -976,7 +953,7 @@ class Generate_mrp extends CI_Controller
                 }
 
                 $this->db->select('*');
-                $this->db->from('safety_stock');
+                $this->db->from('safety_stock_abc');
                 $this->db->where("start <= '$composition' and ending >= '$composition'");
                 $safety_stock = $this->db->get()->row();
 
@@ -1015,17 +992,17 @@ class Generate_mrp extends CI_Controller
             ]);
 
             if (count($records) > 0) {
-                $send = $this->crud->update('generate_mrp', [
+                $send = $this->db->update('generate_mrp', $post, [
                     "p_month" => $post['p_month'],
                     "p_year" => $post['p_year'],
                     "revision" => $post['revision'],
                     "period" => $post['period'],
                     "item_rm_id" => $post['item_rm_id']
-                ], $post);
+                ]);
 
                 echo $send;
             } else {
-                $send = $this->crud->create('generate_mrp', $post);
+                $send = $this->crud->createNotLog('generate_mrp', $post);
                 echo $send;
             }
         }
@@ -1129,17 +1106,17 @@ class Generate_mrp extends CI_Controller
             ));
 
             if (count($records) > 0) {
-                $send = $this->crud->update('generate_mrp_finals', [
+                $send = $this->db->update('generate_mrp_finals', $postFinal, [
                     "p_month" => $post['p_month'],
                     "p_year" => $post['p_year'],
                     "revision" => $post['revision'],
                     "item_rm_id" => $post['item_rm_id'],
                     "supplier_id" => $post['supplier_id'],
-                ], $postFinal);
+                ]);
 
                 echo $send;
             } else {
-                $send = $this->crud->create('generate_mrp_finals', $postFinal);
+                $send = $this->crud->createNotLog('generate_mrp_finals', $postFinal);
                 echo $send;
             }
         }
@@ -1158,17 +1135,17 @@ class Generate_mrp extends CI_Controller
             ]);
 
             if (count($records) > 0) {
-                $send = $this->crud->update('generate_mrp_abcclass', [
+                $send = $this->db->update('generate_mrp_abcclass', $post, [
                     "p_month" => $post['p_month'],
                     "p_year" => $post['p_year'],
                     "revision" => $post['revision'],
                     "item_rm_id" => $post['item_rm_id'],
                     "supplier_id" => $post['supplier_id'],
-                ], $post);
+                ]);
 
                 echo $send;
             } else {
-                $send = $this->crud->create('generate_mrp_abcclass', $post);
+                $send = $this->crud->createNotLog('generate_mrp_abcclass', $post);
                 echo $send;
             }
         }
@@ -1238,7 +1215,7 @@ class Generate_mrp extends CI_Controller
             // $this->db->limit(10);
             $records = $this->db->get()->result_array();
 
-            $html = '<html><head><title>Print Data</title></head><style>body {font-family: Arial, Helvetica, sans-serif;}#customers {border-collapse: collapse;width: 250%;font-size: 11px;}#customers td, #customers th {border: 1px solid #ddd;padding: 2px;}#customers tr:nth-child(even){background-color: #f2f2f2;}#customers tr:hover {background-color: #ddd;}#customers th {padding-top: 2px;padding-bottom: 2px;text-align: left;color: black;} 
+            $html = '<html><head><title>Print Data</title></head><style>body {font-family: Arial, Helvetica, sans-serif;}#customers {border-collapse: collapse;width: 200%;font-size: 11px;}#customers td, #customers th {border: 1px solid #ddd;padding: 2px;}#customers tr:nth-child(even){background-color: #f2f2f2;}#customers tr:hover {background-color: #ddd;}#customers th {padding-top: 2px;padding-bottom: 2px;text-align: left;color: black;} 
             .box-green{
                 height: 10px;
                 width: 10px;
@@ -1283,49 +1260,49 @@ class Generate_mrp extends CI_Controller
                         <th rowspan="2" style="text-align:center;" width="20">No</th>
                         <th rowspan="2" style="text-align:center;">PART NO</th>
                         <th rowspan="2" style="text-align:center;">PART NAME</th>
+                        <th rowspan="2" style="text-align:center;">PRODUCT FAMILY</th>
+                        <th rowspan="2" style="text-align:center;">SUPPLIER NAME</th>
                         <th rowspan="2" style="text-align:center;">CLASS<br>A/B/C</th>
-                        <th rowspan="2" style="text-align:center;">KATEGORI<br>FREKUENSI</th>
-                        <th rowspan="2" style="text-align:center;">KATEGORI<br>QTY</th>
-                        <th rowspan="2" style="text-align:center;">L TIME</th>
-                        <th rowspan="2" style="text-align:center;">MOQ</th>
+                        <th rowspan="2" style="text-align:center;">LEADTIME</th>
                         <th rowspan="2" style="text-align:center;">MPQ</th>
-                        <th rowspan="2" style="text-align:center;">OS<br>SUPPLY</th>
-                        <th colspan="3" style="text-align:center;">STOCK</th>
-                        <th colspan="1" style="text-align:center;">USED1</th>
-                        <th colspan="1" style="text-align:center;">USED2</th>
-                        <th colspan="1" style="text-align:center;">USED3</th>
-                        <th rowspan="2" style="text-align:center;">AVERAGE</th>
-                        <th colspan="3" style="text-align:center;">'.$period_1.'</th>
+                        <th rowspan="2" style="text-align:center;">MOQ</th>
+                        <th colspan="3" style="text-align:center;">STOCK OF RAW MATERIAL</th>
+                        <th colspan="4" style="text-align:center;">ISSUED MATERIAL</th>
+                        <th rowspan="2" style="text-align:center;">OS PO</th>
+                        <th rowspan="2" style="text-align:center;">OS<br>Supply</th>
+                        <th rowspan="2" style="text-align:center;">OS<br>WO</th>
+                        <th colspan="2" style="text-align:center;">'.$period_1.'</th>
                         <th colspan="2" style="text-align:center;">'.$period_2.'</th>
                         <th colspan="2" style="text-align:center;">'.$period_3.'</th>
                         <th colspan="2" style="text-align:center;">'.$period_4.'</th>
+                        <th colspan="2" style="text-align:center;">'.$period_5.'</th>
+                        <th colspan="2" style="text-align:center;">'.$period_6.'</th>
                         <th rowspan="2" style="text-align:center;">ITO</th>
+                        <th rowspan="2" style="text-align:center;">SHARE<br>ORDER</th>
                         <th rowspan="2" style="text-align:center;">SAFETY<br>STOCK</th>
                         <th rowspan="2" style="text-align:center;">PLAN<br>ORDER</th>
                         <th rowspan="2" style="text-align:center;">FIX<br>ORDER</th>
                         <th rowspan="2" style="text-align:center;">STATUS<br>ORDER</th>
-                        <th rowspan="2" style="text-align:center;">SUGGEST<br>ORDER</th>
                     </tr>
                     <tr>
-                        <th style="text-align:center;">WH</th>
+                        <th style="text-align:center;">WHS</th>
                         <th style="text-align:center;">WIP</th>
                         <th style="text-align:center;">TOTAL</th>
-
-                        <th style="text-align:center;"></th>
-                        <th style="text-align:center;"></th>
-                        <th style="text-align:center;"></th>
-
-                        <th style="text-align:center;">WO</th>
-                        <th style="text-align:center;">FC</th>
+                        <th style="text-align:center;">USED 1</th>
+                        <th style="text-align:center;">USED 2</th>
+                        <th style="text-align:center;">USED 3</th>
+                        <th style="text-align:center;">AVERAGE</th>
+                        <th style="text-align:center;">NEED</th>
                         <th style="text-align:center;">BAL</th>
-
-                        <th style="text-align:center;">FC</th>
+                        <th style="text-align:center;">NEED</th>
                         <th style="text-align:center;">BAL</th>
-
-                        <th style="text-align:center;">FC</th>
+                        <th style="text-align:center;">NEED</th>
                         <th style="text-align:center;">BAL</th>
-
-                        <th style="text-align:center;">FC</th>
+                        <th style="text-align:center;">NEED</th>
+                        <th style="text-align:center;">BAL</th>
+                        <th style="text-align:center;">NEED</th>
+                        <th style="text-align:center;">BAL</th>
+                        <th style="text-align:center;">NEED</th>
                         <th style="text-align:center;">BAL</th>
                     </tr>';
 
@@ -1362,31 +1339,24 @@ class Generate_mrp extends CI_Controller
 
                         $html .= "  <tr>
                                         <td>".$no."</td>
-                                        <td style='text-align:center; $styleApp'>".$approved."</td>
-                                        <td style='mso-number-format:\@;'>".trim($record['approved_by'])."</td>
-                                        <td style='mso-number-format:\@;'>".trim($record['period'])."</td>
-                                        <td style='mso-number-format:\@;'>".trim($record['item_rm_id'])."</td>
                                         <td style='mso-number-format:\@;'>".trim($record['item_rm_number'])."</td>
                                         <td style='mso-number-format:\@;'>".$record['item_rm_name']."</td>
                                         <td>".$record['product_family']."</td>
-                                        <td>".$record['supplier_number']."</td>
                                         <td>".$record['supplier_name']."</td>
                                         <td>".$record['class']."</td>
-                                        <td>".$record['leadtime2']."</td>
                                         <td>".$record['leadtime']."</td>
                                         <td>".$record['mpq']."</td>
                                         <td>".$record['moq']."</td>
-                                        <td style='text-align:right;'>".round($record['issued_1'])."</td>
-                                        <td style='text-align:right;'>".round($record['issued_2'])."</td>
-                                        <td style='text-align:right;'>".round($record['issued_3'])."</td>
-                                        <td style='text-align:right;'>".round($record['issued_avg'])."</td>
                                         <td style='text-align:right;'>".round($record['qty_rm'])."</td>
                                         <td style='text-align:right;'>".round($record['qty_wip'])."</td>
-                                        <td style='text-align:right;'>".round($record['qty_vendor'])."</td>
-                                        <td style='text-align:right;'>".round($record['total_stock'])."</td>
+                                        <td style='text-align:right;'>".round($record['qty_rm'] + $record['qty_wip'])."</td>
+                                        <td style='text-align:right;'>".round($record['used_1'])."</td>
+                                        <td style='text-align:right;'>".round($record['used_2'])."</td>
+                                        <td style='text-align:right;'>".round($record['used_3'])."</td>
+                                        <td style='text-align:right;'>".round($record['average'])."</td>
+                                        <td style='text-align:right;'>".round($record['os_po'])."</td>
                                         <td style='text-align:right;'>".round($record['qty_supply'])."</td>
                                         <td style='text-align:right;'>".round($record['qty_wo'])."</td>
-                                        <td style='text-align:right;'>".round($record['total_wo'])."</td>
                                         <td style='text-align:right;'>".round($record['need_1'])."</td>
                                         <td style='text-align:right;$style_1'>".round($record['balance_1'])."</td>
                                         <td style='text-align:right;'>".round($record['need_2'])."</td>
@@ -1399,16 +1369,12 @@ class Generate_mrp extends CI_Controller
                                         <td style='text-align:right;$style_5'>".round($record['balance_5'])."</td>
                                         <td style='text-align:right;'>".round($record['need_6'])."</td>
                                         <td style='text-align:right;$style_6'>".round($record['balance_6'])."</td>
-                                        <td style='text-align:right;'>".round($record['avg_need'])."</td>
-                                        <td style='text-align:right;$style_avg'>".round($record['avg_balance'])."</td>
+                                        <td style='text-align:center;'>".$record['ito']."</td>
                                         <td style='text-align:center;'>".$record['share_order']."</td>
                                         <td style='text-align:right;'>".round($record['safety_stock_persen'])."</td>
-                                        <td style='text-align:right;'>".round($record['safety_stock'])."</td>
-                                        <td style='text-align:right;'>".round($record['share_order_qty'])."</td>
                                         <td style='text-align:right;'>".round($record['total_need'])."</td>
-                                        <td style='text-align:right;'>".round($mrp_result)."</td>
-                                        <td style='text-align:center;".$style_7."'>".$status."</td>
-                                        <td style='text-align:center;".$style_8."'>".$po."</td>
+                                        <td style='text-align:right;'>".round($record['purchase_order'])."</td>
+                                        <td style='text-align:right;".$style_7."'>".$status."</td>
                                     </tr>";
                         $no++;
                     }
