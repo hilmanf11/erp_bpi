@@ -1096,6 +1096,16 @@
                         var debit = 0;
                         var credit = total_sub_discount;
                     }
+
+                    if (rows2[z].account_number == "460.110.00") {
+                        var debit = discount;
+                        var credit = 0;
+                    }
+
+                    if (rows2[z].account_number == "460.120.00") {
+                        var debit = discount;
+                        var credit = 0;
+                    }
                 
 
                     var data2 = {
@@ -2277,6 +2287,7 @@
         });
 
         let isSubmitting = false;
+
         $('#dlg_insert').dialog({
             buttons: [{
                 text: 'Save All',

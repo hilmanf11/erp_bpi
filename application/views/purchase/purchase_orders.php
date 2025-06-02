@@ -533,6 +533,15 @@
                                 editor: {
                                     type: 'textbox',
                                 }
+                            },{//20
+                                field: 'type',
+                                width: 150,
+                                // hidden: true,
+                                halign: 'center',
+                                title: "Type",
+                                editor: {
+                                    type: 'textbox',
+                                }
                             }]
                         ],
                         onBeforeEdit: function(index, row) {
@@ -574,67 +583,6 @@
                                     editors[11].target.numberbox('setValue', total);
                                 }
                             });
-
-                            // supplier_id.combogrid({
-                            //     url: '<?= base_url('master/supplier_items/readSuppliers?item_rm_id=') ?>' + item_rm_id,
-                            //     required: true,
-                            //     panelWidth: 400,
-                            //     idField: 'name',
-                            //     textField: 'name',
-                            //     mode: 'remote',
-                            //     fitColumns: true,
-                            //     prompt: 'Choose Supplier',
-                            //     columns: [
-                            //         [{
-                            //             field: 'number',
-                            //             title: 'Supplier No',
-                            //             width: 100
-                            //         }, {
-                            //             field: 'name',
-                            //             title: 'Supplier Name',
-                            //             width: 250
-                            //         }]
-                            //     ],
-
-                            //     onLoadSuccess: function(supp) {
-                            //         console.log(supp);
-
-                            //         // Cari supplier dengan share_order "100"
-                            //         var selectedSupplier = null;
-                            //         for (var i = 0; i < supp.rows.length; i++) {
-                            //             if (supp.rows[i].share_order == "100") {
-                            //                 selectedSupplier = supp.rows[i];
-                            //                 break; // Keluar dari loop setelah menemukan supplier yang cocok
-                            //             }
-                            //         }
-
-                            //         if (selectedSupplier) {
-                            //             // Jika ada supplier dengan share_order 100
-                            //             supplier_id.combogrid('setValue', selectedSupplier.name);
-
-                            //             $(editors[2].target).textbox('setValue', selectedSupplier.uom_default);
-                            //             $(editors[4].target).textbox('setValue', selectedSupplier.id);
-                            //             $(editors[5].target).textbox('setValue', selectedSupplier.mpq);
-                            //             $(editors[6].target).textbox('setValue', selectedSupplier.moq);
-                            //             $(editors[8].target).textbox('setValue', selectedSupplier.currency);
-                            //             $(editors[9].target).textbox('setValue', 0);
-                            //             $(editors[10].target).textbox('setValue', selectedSupplier.price);
-
-                            //             $(editors[19].target).textbox('setValue', selectedSupplier.vat);
-
-                            //             // Menghitung total harga setelah diskon
-                            //             var qty = parseFloat($(editors[7].target).textbox('getValue'));
-                            //             var price = parseFloat($(editors[10].target).textbox('getValue'));
-                            //             var discount = parseFloat($(editors[9].target).textbox('getValue') || 0);
-
-                            //             var totalDiscountedPrice = (qty * price) - ((qty * price) * (discount / 100));
-                            //             $(editors[11].target).numberbox('setValue', totalDiscountedPrice);
-                            //         } else {
-                            //             // Jika tidak ada supplier dengan share_order 100, lakukan tindakan lainnya
-                            //             toastr.warning("Please Input Product No in Supplier Items");
-                            //         }
-                            //     }
-                            // });
 
                             supplier_id.combogrid({
                                 url: '<?= base_url('master/supplier_items/readSuppliers?item_rm_id=') ?>' + item_rm_id,
@@ -700,6 +648,7 @@
                                 $(editors[9].target).textbox('setValue', 0);
                                 $(editors[10].target).textbox('setValue', supplier.price);
                                 $(editors[19].target).textbox('setValue', supplier.vat); // Tambahkan ini agar VAT juga diset
+                                $(editors[20].target).textbox('setValue', supplier.type); // Supplier Type
                                 // Menghitung total harga setelah diskon
                                 var qty = parseFloat($(editors[7].target).textbox('getValue')) || 0;
                                 var price = parseFloat($(editors[10].target).textbox('getValue')) || 0;
@@ -737,10 +686,11 @@
 
                                 if (rows.length > 0) {
                                     tax = parseFloat(rows[0].taxes || 0);
+                                    type = rows[0].type;
                                 }
 
                                 $("#total_sub").numberbox('setValue', total_subs);
-                                calculateTotal(total_subs, 0, 0, 0, tax); 
+                                calculateTotal(total_subs, 0, 0, 0, tax, type); 
                                 
                                 $("#disc_pr").numberbox({
                                     onChange: function() {
@@ -748,7 +698,7 @@
                                         var income_tax = $("#income_tax").numberbox('getValue');
                                         var total_dp = $("#total_dp").numberbox('getValue');
                                         
-                                        calculateTotal(total_subs, disc_pr, income_tax, total_dp, tax);
+                                        calculateTotal(total_subs, disc_pr, income_tax, total_dp, tax, type);
                                     }
                                 });
 
@@ -758,7 +708,7 @@
                                         var income_tax = $("#income_tax").numberbox('getValue');
                                         var total_dp = $("#total_dp").numberbox('getValue');
                                         
-                                        calculateTotal(total_subs, disc_pr, income_tax, total_dp, tax);
+                                        calculateTotal(total_subs, disc_pr, income_tax, total_dp, tax, type);
                                     }
                                 });
 
@@ -768,7 +718,7 @@
                                         var income_tax = $("#income_tax").numberbox('getValue');
                                         var total_dp = $("#total_dp").numberbox('getValue');
                                         
-                                        calculateTotal(total_subs, disc_pr, income_tax, total_dp, tax);
+                                        calculateTotal(total_subs, disc_pr, income_tax, total_dp, tax, type);
                                     }
                                 });
                                 
@@ -782,38 +732,19 @@
         }
     }
 
-    // function calculateTotal(total_subs, disc_pr = 0, income_tax = 0, total_dp = 0, ){
-    //     var discount_total = (total_subs * (disc_pr / 100));
-    //     $("#discount_total").numberbox('setValue', discount_total);
-
-    //     $.ajax({
-    //         type: "post",
-    //         url: "<?= base_url('admin/config/read') ?>",
-    //         dataType: "json",
-    //         success: function(config) {
-    //             console.log(config);
-    //             var taxes = config.tax;
-    //             var total_vat = Math.floor((total_subs - discount_total) * (taxes / 100));
-    //             $("#total_vat").numberbox('setValue', total_vat);
-
-    //             var income_total = ((total_subs - discount_total) * (income_tax / 100));
-    //             $("#income_total").numberbox('setValue', income_total);
-                
-    //             var total_grand = ((total_subs - discount_total) + total_vat - income_total - total_dp);
-
-    //             $("#total_grand").numberbox('setValue', total_grand);
-    //         }
-    //     });
-    // }
-
-    function calculateTotal(total_subs, disc_pr = 0, income_tax = 0, total_dp = 0, tax = 0) {
+    function calculateTotal(total_subs, disc_pr = 0, income_tax = 0, total_dp = 0, tax = 0, type="") {
         var discount_total = (total_subs * (disc_pr / 100));
         $("#discount_total").numberbox('setValue', discount_total);
 
         // var total_vat = Math.floor((total_subs - discount_total) * (tax / 100));
         // $("#total_vat").numberbox('setValue', total_vat);
 
-        var total_dpp = parseFloat((total_subs - discount_total) * 11/12);
+        if(type == "LOCAL"){
+            var total_dpp = parseFloat((total_subs - discount_total) * 11/12);
+        }else{
+            var total_dpp = parseFloat((total_subs - discount_total) * 0);
+        }
+        
         $("#total_dpp").numberbox('setValue', total_dpp);
 
         var total_vat = parseFloat((total_dpp) * (tax / 100));
@@ -1185,6 +1116,7 @@
                                             var currency = row.currency;
                                             var total = row.total;
                                             var taxes = row.taxes;
+                                            var type = row.type;
                                             var delivery_date = row.delivery_date;
                                             var remarks = row.remarks;
                                             var month_1 = row.month_1;
@@ -1225,6 +1157,7 @@
                                                     '&currency=' + currency +
                                                     '&total=' + total +
                                                     '&taxes=' + taxes +
+                                                    '&type=' + type +
                                                     '&delivery_date=' + delivery_date +
                                                     '&remarks=' + remarks +
                                                     '&month_1=' + month_1 +
@@ -1431,22 +1364,6 @@
         }
     };
 
-    // function calculateManually() {
-    //     // Ambil nilai dari input numberbox
-
-    //     var rows = $('#dg_request').datagrid('getRows');
-    //     var total_subs += parseFloat(rows[i].total);
-    //     var disc_pr = parseFloat($("#disc_pr").numberbox('getValue')) || 0;
-    //     var income_tax = parseFloat($("#income_tax").numberbox('getValue')) || 0;
-    //     var total_dp = parseFloat($("#total_dp").numberbox('getValue')) || 0;
-    //     var tax = parseFloat(rows[0].taxes) || 0;
-
-    //     $("#total_sub").numberbox('setValue', total_subs);
-
-    //     // Panggil fungsi calculateTotal dengan parameter yang diperlukan
-    //     calculateTotal(total_subs, disc_pr, income_tax, total_dp, tax);
-    // }
-
     function calculateManually() {
         // Ambil semua baris dari datagrid
         var rows = $('#dg_request').datagrid('getRows');
@@ -1464,12 +1381,13 @@
         var income_tax = parseFloat($("#income_tax").numberbox('getValue')) || 0;
         var total_dp = parseFloat($("#total_dp").numberbox('getValue')) || 0;
         var tax = parseFloat(rows[0]?.taxes || 0); // Gunakan optional chaining untuk menghindari error jika rows kosong
+        var type = rows[0].type ; 
 
         // Set nilai ke #total_sub
         $("#total_sub").numberbox('setValue', total_subs);
 
         // Panggil fungsi calculateTotal dengan parameter yang diperoleh
-        calculateTotal(total_subs, disc_pr, income_tax, total_dp, tax);
+        calculateTotal(total_subs, disc_pr, income_tax, total_dp, tax, type);
     }
 
 </script>

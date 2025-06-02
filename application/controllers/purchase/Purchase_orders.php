@@ -482,6 +482,7 @@ class Purchase_orders extends CI_Controller
                     "currency" => $post['currency'],
                     "total" => $post['total'],
                     "taxes" => $post['taxes'],
+                    "type" => $post['type'],
                     "remarks" => $post['remarks'],
                     "month_1" => $post['month_1'],
                     "month_2" => $post['month_2'],
