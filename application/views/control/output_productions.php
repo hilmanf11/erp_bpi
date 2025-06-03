@@ -308,6 +308,17 @@
                         }
                     }
                 }, {
+                    field: 'qty_wip',
+                    width: 80,
+                    align: 'right',
+                    title: "Qty WIP",
+                    editor: {
+                        type: 'numberbox',
+                        options: {
+                            precision: 2,
+                        }
+                    }
+                }, {
                     field: 'remarks',
                     width: 200,
                     halign: 'center',
@@ -354,7 +365,8 @@
         if (period != "") {
             if (endEditing()) {
                 $('#dg2').datagrid('appendRow', {
-                    qty: '0'
+                    qty: '0',
+                    qty_wip: '0'
                 });
                 editIndex = $('#dg2').datagrid('getRows').length - 1;
                 $('#dg2').datagrid('selectRow', editIndex).datagrid('beginEdit', editIndex);
@@ -634,6 +646,13 @@
                             width: 80,
                             formatter: numberformat
                         }, {
+                            field: 'qty_wip',
+                            title: 'Qty WIP',
+                            halign: 'center',
+                            align: 'right',
+                            width: 80,
+                            formatter: numberformat
+                        }, {
                             field: 'remarks',
                             title: 'Remarks',
                             width: 200,
@@ -681,6 +700,7 @@
                                 wo_no: rows[i].wo_no,
                                 lot_no: rows[i].lot_no,
                                 qty: rows[i].qty,
+                                qty_wip: rows[i].qty_wip,
                                 remarks: rows[i].remarks
                             };
 

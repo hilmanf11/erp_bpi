@@ -36,7 +36,7 @@ class Output_productions extends CI_Controller
         echo json_encode($send);
     }
 
-    public function readItemFg($period)
+    public function readItemFg($period="")
     {
         $post = isset($_POST['q']) ? $_POST['q'] : "";
         $send = $this->crud->query("select distinct a.item_fg_id, a.workorder as wo_no, a.period, b.number, b.name, a.lot_no from supply_sheets a 
@@ -196,6 +196,7 @@ class Output_productions extends CI_Controller
                 "wo_no" => $post['wo_no'],
                 "lot_no" => $post['lot_no'],
                 "qty" => $post['qty'],
+                "qty_wip" => $post['qty_wip'],
                 "remarks" => $post['remarks'],
             );
 
@@ -390,6 +391,7 @@ class Output_productions extends CI_Controller
                 <th>Lot No</th>
                 <th>Work Order No</th>
                 <th>Qty</th>
+                <th>Qty WIP</th>
                 <th>Remarks</th>
             </tr>';
         $no = 1;
@@ -406,6 +408,7 @@ class Output_productions extends CI_Controller
                     <td>' . $data['lot_no'] . '</td>
                     <td>' . $data['wo_no'] . '</td>
                     <td>' . $data['qty'] . '</td>
+                    <td>' . $data['qty_wip'] . '</td>
                     <td>' . $data['remarks'] . '</td>';
             $no++;
         }
