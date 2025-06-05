@@ -44,21 +44,61 @@ class Purchase_orders extends CI_Controller
         echo json_encode($records);
     }
 
+    // public function readPono()
+    // {
+    //     $post = isset($_POST['q']) ? $_POST['q'] : "";
+    //     $supplier_id = $this->input->get('supplier_id');
+
+    //     $this->db->select('a.po_no, a.po_date, a.po_name, b.number as supplier_number, b.name as supplier_name');
+    //     $this->db->from('purchase_orders a');
+    //     $this->db->join('suppliers b', 'a.supplier_id = b.id');
+    //     $this->db->where('a.deleted', 0);
+    //     $this->db->where('a.status', 0);
+    //     $this->db->like('a.supplier_id', $supplier_id);
+    //     $this->db->like('a.po_no', $post);
+    //     $this->db->group_by('a.po_no');
+    //     $this->db->order_by('a.created_date', 'desc');
+        
+    //     $records = $this->db->get()->result_object();
+    //     echo json_encode($records);
+    // }
+
     public function readPono()
     {
         $post = isset($_POST['q']) ? $_POST['q'] : "";
         $supplier_id = $this->input->get('supplier_id');
 
+        // Ambil semua po_no yang memiliki item dengan price = 1
+        $this->db->select('po_no');
+        $this->db->from('purchase_orders');
+        $this->db->where('status_price', "Incomplete");
+        $po_with_price_one = $this->db->get()->result_array();
+        $exclude_po_nos = array_column($po_with_price_one, 'po_no');
+
+        // Query utama
         $this->db->select('a.po_no, a.po_date, a.po_name, b.number as supplier_number, b.name as supplier_name');
         $this->db->from('purchase_orders a');
         $this->db->join('suppliers b', 'a.supplier_id = b.id');
         $this->db->where('a.deleted', 0);
         $this->db->where('a.status', 0);
-        $this->db->like('a.supplier_id', $supplier_id);
-        $this->db->like('a.po_no', $post);
+
+        // Filter berdasarkan inputan
+        if (!empty($supplier_id)) {
+            $this->db->like('a.supplier_id', $supplier_id);
+        }
+
+        if (!empty($post)) {
+            $this->db->like('a.po_no', $post);
+        }
+
+        // Tambahkan pengecualian untuk po_no yang price-nya 1
+        if (!empty($exclude_po_nos)) {
+            $this->db->where_not_in('a.po_no', $exclude_po_nos);
+        }
+
         $this->db->group_by('a.po_no');
         $this->db->order_by('a.created_date', 'desc');
-        
+
         $records = $this->db->get()->result_object();
         echo json_encode($records);
     }
@@ -184,6 +224,7 @@ class Purchase_orders extends CI_Controller
                     a.status,
                     COUNT(a.status) as total_status,
                     COUNT(a.approved_to) as total_approved_to,
+                    COUNT(a.status_price) as total_status_price,
                     f.max_status as status_pi,
                     a.total_sub,
                     a.approved_to, 
@@ -200,7 +241,9 @@ class Purchase_orders extends CI_Controller
                     g.total_status_close,
                     j.number as category_code,
                     k.total_approved_to_checking,
-                    l.total_approved_to_approved');
+                    l.total_approved_to_approved,
+                    m.status_price_complete,
+                    n.status_price_incomplete');
                 $this->db->from('purchase_orders a');
                 $this->db->join('item_rm b', 'a.item_rm_id = b.id');
                 $this->db->join('item_familys c', 'b.item_family_id = c.id');
@@ -210,6 +253,8 @@ class Purchase_orders extends CI_Controller
                 $this->db->join('(SELECT po_no, COUNT(status) as total_status_close FROM purchase_orders WHERE status = 1 GROUP BY po_no) g', 'a.po_no = g.po_no', 'left');
                 $this->db->join('(SELECT po_no, COUNT(status) as total_status_complete FROM purchase_orders WHERE status = 2 GROUP BY po_no) h', 'a.po_no = h.po_no', 'left');
                 $this->db->join('(SELECT po_no, COUNT(status) as total_status_open FROM purchase_orders WHERE status = 0 GROUP BY po_no) i', 'a.po_no = i.po_no', 'left');
+                $this->db->join('(SELECT po_no, COUNT(status_price) as status_price_complete FROM purchase_orders WHERE status_price = "Complete" GROUP BY po_no) m', 'a.po_no = m.po_no', 'left');
+                $this->db->join('(SELECT po_no, COUNT(status_price) as status_price_incomplete FROM purchase_orders WHERE status_price = "Incomplete" GROUP BY po_no) n', 'a.po_no = n.po_no', 'left');
                 $this->db->join('item_categories j', 'b.item_category_id = j.id','left');
                 $this->db->join('(SELECT po_no, COUNT(approved_to) as total_approved_to_checking FROM purchase_orders WHERE approved_to != "" || approved_to = NULL GROUP BY po_no) k', 'a.po_no = k.po_no', 'left');
                 $this->db->join('(SELECT po_no, COUNT(approved_to) as total_approved_to_approved FROM purchase_orders WHERE approved_to = "" || approved_to = NULL GROUP BY po_no) l', 'a.po_no = l.po_no', 'left');
@@ -288,20 +333,15 @@ class Purchase_orders extends CI_Controller
                         $approved_to = "";
                     }
 
-
-                    // if($record['approved_to'] == "" || $record['approved_to'] == null){
-                    //     $approved_to = "";
-                    // } else {
-                    //     $approved_to = "Checking";
-                    // }
-
-
-
-                    // if ($record['status_pi'] == 1) {
-                    //     $status_pi = "1";
-                    // } else {
-                    //     $status_pi = "0";
-                    // }
+                    if ($record['total_status_price'] == $record['status_price_complete']) {
+                        $status_price = "Complete";
+                    } elseif ($record['total_status_price'] == $record['status_price_incomplete']) {
+                        $status_price = "Incomplete";
+                    } elseif ($record['status_price_incomplete'] >= 1) {
+                        $status_price = "Incomplete";
+                    } else {
+                        $status_price = "Complete";
+                    }
 
                     $arr[] = array(
                         "id" => $record['po_no'],
@@ -330,8 +370,11 @@ class Purchase_orders extends CI_Controller
                         "state" => "closed",
                         "category_code" => $record['category_code'],
                         "approved_to" => $approved_to,
-                        "approved_by" => $record['approved_by'],
-                        "approved_date" => $record['approved_date'],
+                        "status_price" => $status_price,
+                        "status_price_complete" => $record['status_price_complete'],
+                        "status_price_incomplete" => $record['status_price_incomplete'],
+                        // "approved_by" => $record['approved_by'],
+                        // "approved_date" => $record['approved_date'],
                         "total_checking" => $record['total_approved_to_checking'],
                         "total_approved" => $record['total_approved_to_approved'],
                         "total_sub" => $record['total_sub'],
@@ -489,6 +532,7 @@ class Purchase_orders extends CI_Controller
                     "month_3" => $post['month_3'],
                     "month_4" => $post['month_4'],
                     "total_sub" => $post['total_sub'],
+                    "status_price" => $post['status_price'],
                 );
 
                 $send = $this->crud->create('purchase_orders', $data);
@@ -570,6 +614,7 @@ class Purchase_orders extends CI_Controller
                         "total_grand" => $post['total_grand'],
                         "total_vat" => $post['total_vat'],
                         "total_dpp" => $post['total_dpp'],
+                        "status_price" => $post['status_price'],
                         "revision" => (@$purchaseOrder->revision + 1)
                     ]
                 );
@@ -759,6 +804,7 @@ class Purchase_orders extends CI_Controller
         $no = 1;
         $hal = 1;
         $subtotal = 0;
+        $judul = "PURCHASE ORDER"; 
         for ($i = 0; $i < $page; $i++) {
             $this->db->select('a.*, b.id as item_id, b.number as item_number, b.name as item_name, b.uom, c.currency, a.price, b.description, a.month_1, a.month_2, a.month_3, a.month_4, 
             b.item_category_id as category_id, b.item_family_id as family_id');
@@ -777,6 +823,13 @@ class Purchase_orders extends CI_Controller
             } else {
                 $revision_date = $purchase_orders->created_date;
             }
+
+            foreach ($records as $row) {
+                if ($row['price'] == 1) {
+                    $judul = "DRAFT PURCHASE ORDER";
+                }
+            }
+
             $html .= '  <table style="width:100%;">
                             <tr>
                                 <th width="10">
@@ -817,7 +870,7 @@ class Purchase_orders extends CI_Controller
                             <div style="padding:10px;">
                                 <center>
                                     <br>
-                                    <h3 style="margin:0;"><u>PURCHASE ORDER</u></h3>
+                                    <h3 style="margin:0;"><u>'.$judul.'</u></h3>
                                     <small>NO : ' . @$purchase_orders->po_no . '</small>
                                 </center>
                                 <table style="width:100%; font-size:12px; margin-bottom:10px;">

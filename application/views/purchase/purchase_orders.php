@@ -22,6 +22,7 @@
             <th rowspan="2" data-options="field:'price',width:100,halign:'center',align:'right',formatter:numberformat">Price</th>
             <th rowspan="2" data-options="field:'discount',width:80,halign:'center',align:'right',formatter:numberformatDefault">Disc %</th>
             <th rowspan="2" data-options="field:'total',width:120,halign:'center',align:'right',formatter:numberformat">Total Price</th>
+            <th rowspan="2" data-options="field:'status_price',width:120,halign:'center',formatter:statuspriceformat,styler:statuspriceStyle">Status Price</th>
             <th rowspan="2" data-options="field:'currency',width:80,align:'center'">Currency</th>
             <th rowspan="2" data-options="field:'revision',width:80,align:'center'">Revision</th>
             <th rowspan="2" data-options="field:'remarks',width:100,halign:'center'">Remarks</th>
@@ -41,7 +42,7 @@
         </tr>
     </thead>
 </table>
-<div id="toolbar" style="height: 230px; padding:10px;">
+<div id="toolbar" style="height: 200px; padding:10px;">
     <!-- <div style="width: 100%; display: grid; grid-template-columns: auto auto auto; grid-gap: 5px; display: flex;"> -->
     <div style="width: 100%;">
     <fieldset style="width: 70%; border:2px solid #d0d0d0; margin-bottom: 5px; margin-top: 5px; border-radius:4px;">    
@@ -1141,6 +1142,12 @@
                                                 var url_save = "<?= base_url('purchase/purchase_orders/update') ?>";
                                             }
 
+                                            if(price == 1){
+                                                status_price = "Incomplete";
+                                            }else{
+                                                status_price = "Complete";
+                                            }
+
                                             $.ajax({
                                                 type: "post",
                                                 url: url_save,
@@ -1172,6 +1179,7 @@
                                                     '&income_total=' + income_total +
                                                     '&total_grand=' + total_grand +
                                                     '&total_dp=' + total_dp +
+                                                    '&status_price=' + status_price +
                                                     '&discount_total=' + discount_total,
                                                 dataType: "json",
                                                 success: function(result) {
@@ -1343,6 +1351,22 @@
             return 'background-color:#FFC8C8;';
         } else if (value == 2) {
             return 'background-color:#4B54E7;';
+        }
+    }
+
+     function statuspriceformat(value, row) {
+        if (value == "Complete") {
+            return "<b style='color:green;'>COMPLETE</b>";
+        } else{
+            return "<b style='color:red;'>INCOMPLETE</b>";
+        }
+    }
+
+    function statuspriceStyle(value, row, index) {
+        if (value == "Complete") {
+            return 'background-color:#C8FFCC;';
+        } else {
+            return 'background-color:#FFC8C8;';
         }
     }
 
