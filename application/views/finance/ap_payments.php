@@ -1773,13 +1773,24 @@
 
 
 
-        //SAVE DATA
+        let isSubmitting = false;
 
+        //SAVE DATA
         $('#dlg_insert').dialog({
             buttons: [{
                 text: 'Save All',
                 iconCls: 'icon-ok',
                 handler: function() {
+                    if (isSubmitting) return; // cegah klik dobel
+                    
+                    isSubmitting = true;
+                    var btn = $(this);
+                    btn.linkbutton('disable');
+                    setTimeout(function() {
+                        isSubmitting = false;
+                        btn.linkbutton('enable');
+                    }, 5000);
+                    
                     var payment_type = $("#payment_type").combobox('getValue');
                     var payment_date = $("#payment_date").datebox('getValue');
                     var payment_no = $("#payment_no").textbox('getValue');
