@@ -680,6 +680,16 @@
                     var credit = total_grand;
                 }
 
+                if (rows2[z].account_number == "210.120.00") {
+                    var debit = 0;
+                    var credit = total_grand;
+                }
+
+                if (rows2[z].account_number == "170.170.00") {
+                    var debit = disc_tax;
+                    var credit = 0;
+                }
+
                 var data2 = {
                     account_number: rows2[z].account_number,
                     account_name: rows2[z].account_name,
@@ -1631,12 +1641,24 @@
             }
         });
 
+        let isSubmitting = false;
+
         //SAVE DATA
         $('#dlg_insert').dialog({
             buttons: [{
                 text: 'Save All',
                 iconCls: 'icon-ok',
                 handler: function() {
+                    if (isSubmitting) return; // cegah klik dobel
+                    
+                    isSubmitting = true;
+                    var btn = $(this);
+                    btn.linkbutton('disable');
+                    setTimeout(function() {
+                        isSubmitting = false;
+                        btn.linkbutton('enable');
+                    }, 5000);
+
                     var type = $("#type").combobox('getValue');
                     var trans_date = $("#trans_date").datebox('getValue');
                     var number = $("#number").textbox('getValue');
