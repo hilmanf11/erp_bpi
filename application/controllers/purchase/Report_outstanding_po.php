@@ -31,6 +31,15 @@ class Report_outstanding_po extends CI_Controller
         }
     }
 
+    //GET DATA - EXCLUDE ITEM CR (request Bu Septi)
+    public function reads()
+    {
+        $post = isset($_POST['q']) ? $_POST['q'] : "";
+        $send = $this->crud->query("SELECT a.*, b.name as item_family_name FROM item_rm a JOIN item_familys b ON a.item_family_id = b.id 
+        WHERE b.is_unread = 0 AND (a.number like '%$post%' or a.name like '$post')");
+        echo json_encode($send);
+    }
+
     public function readPurchaseOrder()
     {
         $post = isset($_POST['q']) ? $_POST['q'] : "";

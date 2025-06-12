@@ -180,7 +180,7 @@
         });
 
         $('#filter_product_no').combogrid({
-            url: '<?= base_url("master/item_rm/reads") ?>',
+            url: '<?= base_url("purchase/report_outstanding_po/reads") ?>',
             panelWidth: 400,
             idField: 'id',
             textField: 'number',
