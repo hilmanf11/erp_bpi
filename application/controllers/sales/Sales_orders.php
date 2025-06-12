@@ -200,7 +200,12 @@ class Sales_orders extends CI_Controller
             $offset = ($page - 1) * $rows;
             $result = array();
             //Select Query
-            $this->db->select("a.*, b.name as customer_name, c.plant as address_plant,
+            // $this->db->select("a.*, b.name as customer_name, c.plant as address_plant,
+            $this->db->select("a.*, b.name as customer_name, 
+            (CASE 
+                WHEN c.plant IS NULL THEN a.plant 
+                ELSE c.plant 
+            END) AS address_plant,
             d.total_status_open, 
             c.total_status_close, 
             COUNT(a.status) as total_status,
