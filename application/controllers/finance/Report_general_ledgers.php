@@ -210,22 +210,27 @@ class Report_general_ledgers extends CI_Controller
         $local_debit = 0;
         $local_credit = 0;
 
-        $html .= '  <tr>
-                        <td style="text-align:center">-</td>
-                        <td>' . $filter_from . '</td>
-                        <td></td>
-                        <td style="text-align:center">' . $account_coa->account_number . '</td>
-                        <td style="text-align:center">' . $account_coa->account_name . '</td>
-                        <td>BALANCE</td>
-                        <td style="text-align:center;">' . $account_coa->original_currency . '</td>
-                        <td style="text-align:right;font-weight:bold;">' . number_format($ori_balance, 2) . '</td>
-                        <td style="text-align:right;font-weight:bold;">' . number_format(0, 2) . '</td>
-                        <td style="text-align:right;font-weight:bold;">' . number_format(0, 2) . '</td>
-                        <td style="text-align:right;font-weight:bold;">-</td>
-                        <td style="text-align:right;font-weight:bold;">' . number_format($local_balance, 2) . '</td>
-                        <td style="text-align:right;font-weight:bold;">' . number_format(0, 2) . '</td>
-                        <td style="text-align:right;font-weight:bold;">' . number_format(0, 2) . '</td>
-                    </tr>';
+        $html .= '<tr>
+                    <td style="text-align:center">-</td>
+                    <td>' . $filter_from . '</td>
+                    <td></td>';
+                    if (count($journals) === 0) {
+                        $html .= '<td style="text-align:center">' . $account_coa->account_number . '</td>
+                                <td style="text-align:center">' . $account_coa->account_name . '</td>';
+                    } else {
+                        $html .= '<td></td>
+                                <td></td>';
+                    }
+        $html .= '  <td>BALANCE</td>
+                    <td style="text-align:center;">' . $account_coa->original_currency . '</td>
+                    <td style="text-align:right;font-weight:bold;">' . number_format($ori_balance, 2) . '</td>
+                    <td style="text-align:right;font-weight:bold;">' . number_format(0, 2) . '</td>
+                    <td style="text-align:right;font-weight:bold;">' . number_format(0, 2) . '</td>
+                    <td style="text-align:right;font-weight:bold;">-</td>
+                    <td style="text-align:right;font-weight:bold;">' . number_format($local_balance, 2) . '</td>
+                    <td style="text-align:right;font-weight:bold;">' . number_format(0, 2) . '</td>
+                    <td style="text-align:right;font-weight:bold;">' . number_format(0, 2) . '</td>
+                </tr>';
 
         foreach ($journals as $journal) {
             $account_no = $journal['account_number'];
