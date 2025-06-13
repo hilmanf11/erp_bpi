@@ -214,8 +214,8 @@ class Report_general_ledgers extends CI_Controller
                         <td style="text-align:center">-</td>
                         <td>' . $filter_from . '</td>
                         <td></td>
-                        <td></td>
-                        <td></td>
+                        <td style="text-align:center">' . $account_coa->account_number . '</td>
+                        <td style="text-align:center">' . $account_coa->account_name . '</td>
                         <td>BALANCE</td>
                         <td style="text-align:center;">' . $account_coa->original_currency . '</td>
                         <td style="text-align:right;font-weight:bold;">' . number_format($ori_balance, 2) . '</td>
