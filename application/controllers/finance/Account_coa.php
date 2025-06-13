@@ -63,7 +63,11 @@ class Account_coa extends CI_Controller
 
             if (@count($filters) > 0) {
                 foreach ($filters as $filter) {
-                    $this->db->like($filter->field, $filter->value);
+                    if ($filter->field == 'account_group_detail_id') {
+                        $this->db->like('account_group_details.name', $filter->value);
+                    } else {
+                        $this->db->like('account_coa.'.$filter->field, $filter->value);
+                    }
                 }
             }
 
