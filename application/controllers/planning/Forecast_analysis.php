@@ -123,7 +123,15 @@ class Forecast_analysis extends CI_Controller
         $this->db->from('config');
         $config = $this->db->get()->row();
 
-        $this->db->select('a.revision, a.month_1 as qty_month_1, a.month_2 as qty_month_2, a.month_3 as qty_month_3, SUM(a.month_1 * (CASE WHEN d.price IS NULL THEN 0 ELSE d.price END)) as amount_month_1, SUM(a.month_2 * (CASE WHEN d.price IS NULL THEN 0 ELSE d.price END)) as amount_month_2, SUM(a.month_3 * (CASE WHEN d.price IS NULL THEN 0 ELSE d.price END)) as amount_month_3, b.number as item_fg_number, b.name as item_fg_name, c.name as customer_name, (CASE WHEN a.month_1 > a.month_2 THEN 0 ELSE 1 END) as bg_month_2, (CASE WHEN a.month_1 > a.month_3 THEN 0 ELSE 1 END) as bg_month_3');
+        $this->db->select('MAX(a.revision) as version, a.p_month, a.p_year, a.customer_id, a.item_fg_id, 
+            a.month_1 as qty_month_1, a.month_2 as qty_month_2, a.month_3 as qty_month_3, 
+            b.id as item_fg_id, b.number as item_fg_number, b.name as item_fg_name,
+            c.name as customer_name, d.currency, d.price');
+        $this->db->select("(SELECT middle FROM exchange_rates 
+            WHERE currency_to='IDR' 
+            AND DATE_FORMAT(start_date, '%m') = " . $filter_period_month . " 
+            AND DATE_FORMAT(start_date, '%Y') = " . $filter_period_year . ") AS rate", FALSE);
+        
         $this->db->from('forecasts a');
         $this->db->join('item_fg b', 'a.item_fg_id = b.id', 'left');
         $this->db->join('customers c', 'a.customer_id = c.id', 'left');
@@ -241,8 +249,8 @@ class Forecast_analysis extends CI_Controller
         $grand_total_amount_2 = 0;
         $grand_total_amount_3 = 0;
 
-        foreach ($records as $data) {
-
+        foreach ($records as $data) 
+        {
             if ($current_customer !== $data['customer_name']) {
                 if ($current_customer !== '') {
                     $html .= "<tr style='background-color:#FFFF00;'>
@@ -250,9 +258,9 @@ class Forecast_analysis extends CI_Controller
                                 <td style='text-align:right; font-weight:bold;'>{$this->format_number($total_qty_1)}</td>
                                 <td style='text-align:right; font-weight:bold;'>{$this->format_number($total_qty_2)}</td>
                                 <td style='text-align:right; font-weight:bold;'>{$this->format_number($total_qty_3)}</td>
-                                <td style='text-align:right; font-weight:bold;'>Rp.{$this->format_number($total_amount_1)}</td>
-                                <td style='text-align:right; font-weight:bold;'>Rp.{$this->format_number($total_amount_2)}</td>
-                                <td style='text-align:right; font-weight:bold;'>Rp.{$this->format_number($total_amount_3)}</td>
+                                <td style='text-align:right; font-weight:bold;'>{$this->format_number($total_amount_1)}</td>
+                                <td style='text-align:right; font-weight:bold;'>{$this->format_number($total_amount_2)}</td>
+                                <td style='text-align:right; font-weight:bold;'>{$this->format_number($total_amount_3)}</td>
                               </tr>";
                 }
                 // Reset for the new group
@@ -265,45 +273,62 @@ class Forecast_analysis extends CI_Controller
                 $total_amount_3 = 0;
             }
 
-            $backgroundColor2 = $data['bg_month_2'] == 0 ? '#F4B084' : 'transparent';
-            $backgroundColor3 = $data['bg_month_3'] == 0 ? '#F4B084' : 'transparent';
+            $backgroundColor1 = $data['qty_month_1'] == 0 ? '#FFC2C2' : 'transparent';
+            $backgroundColor2 = $data['qty_month_2'] == 0 ? '#FFC2C2' : 'transparent';
+            $backgroundColor3 = $data['qty_month_3'] == 0 ? '#FFC2C2' : 'transparent';
+
+            // validate rate
+            if ($data['currency'] == "IDR" || empty($data['currency'])) {
+                $rate = 1;
+            } else {
+                if (empty($data['rate'])) {
+                    $rate = 0;
+                } else {
+                    $rate = $data['rate'];
+                }
+            }
+
+            $subtotal_month_1 = ($data['price']  * $rate) * $data['qty_month_1'];
+            $subtotal_month_2 = ($data['price']  * $rate) * $data['qty_month_2'];
+            $subtotal_month_3 = ($data['price']  * $rate) * $data['qty_month_3'];
 
             $html .= '<tr>
                         <td>' . $no . '</td>
                         <td>' . $data['customer_name'] . '</td>
                         <td>' . $data['item_fg_number'] . '</td>
                         <td>' . $data['item_fg_name'] . '</td>
-                        <td style="text-align:right;">' . $this->format_number($data['qty_month_1']) . '</td>
+                        <td style="text-align:right;background-color:' . $backgroundColor1 . ';">' . $this->format_number($data['qty_month_1']) . '</td>
                         <td style="text-align:right;background-color:' . $backgroundColor2 . ';">' . $this->format_number($data['qty_month_2']) . '</td>
                         <td style="text-align:right;background-color:' . $backgroundColor3 . ';">' . $this->format_number($data['qty_month_3']) . '</td>
-                        <td style="text-align:right;">Rp.' . $this->format_number($data['amount_month_1']) . '</td>
-                        <td style="text-align:right;">Rp.' . $this->format_number($data['amount_month_2']) . '</td>
-                        <td style="text-align:right;">Rp.' . $this->format_number($data['amount_month_3']) . '</td>
+                        <td style="text-align:right;">' . $this->format_number($subtotal_month_1) . '</td>
+                        <td style="text-align:right;">' . $this->format_number($subtotal_month_2) . '</td>
+                        <td style="text-align:right;">' . $this->format_number($subtotal_month_3) . '</td>
                         </tr>';
             $no++;
             $total_qty_1 += $data['qty_month_1'];
             $total_qty_2 += $data['qty_month_2'];
             $total_qty_3 += $data['qty_month_3'];
-            $total_amount_1 += $data['amount_month_1'];
-            $total_amount_2 += $data['amount_month_2'];
-            $total_amount_3 += $data['amount_month_3'];
+            $total_amount_1 += $subtotal_month_1;
+            $total_amount_2 += $subtotal_month_2;
+            $total_amount_3 += $subtotal_month_3;
 
             $grand_total_qty_1 += $data['qty_month_1'];
             $grand_total_qty_2 += $data['qty_month_2'];
             $grand_total_qty_3 += $data['qty_month_3'];
-            $grand_total_amount_1 += $data['amount_month_1'];
-            $grand_total_amount_2 += $data['amount_month_2'];
-            $grand_total_amount_3 += $data['amount_month_3'];
+            $grand_total_amount_1 += $subtotal_month_1;
+            $grand_total_amount_2 += $subtotal_month_2;
+            $grand_total_amount_3 += $subtotal_month_3;
         }
+
         if ($current_customer !== '') {
-            $html .= "<tr>
+            $html .= "<tr style='background-color:#FFFF00;'>
                         <td style='text-align:center; font-weight:bold;' colspan='4'>Total</td>
                         <td style='text-align:right; font-weight:bold;'>{$this->format_number($total_qty_1)}</td>
                         <td style='text-align:right; font-weight:bold;'>{$this->format_number($total_qty_2)}</td>
                         <td style='text-align:right; font-weight:bold;'>{$this->format_number($total_qty_3)}</td>
-                        <td style='text-align:right; font-weight:bold;'>Rp.{$this->format_number($total_amount_1)}</td>
-                        <td style='text-align:right; font-weight:bold;'>Rp.{$this->format_number($total_amount_2)}</td>
-                        <td style='text-align:right; font-weight:bold;'>Rp.{$this->format_number($total_amount_3)}</td>
+                        <td style='text-align:right; font-weight:bold;'>{$this->format_number($total_amount_1)}</td>
+                        <td style='text-align:right; font-weight:bold;'>{$this->format_number($total_amount_2)}</td>
+                        <td style='text-align:right; font-weight:bold;'>{$this->format_number($total_amount_3)}</td>
                         </tr>";
         }
            
@@ -312,9 +337,9 @@ class Forecast_analysis extends CI_Controller
                     <td style='text-align:right; font-weight:bold;'>{$this->format_number($grand_total_qty_1)}</td>
                     <td style='text-align:right; font-weight:bold;'>{$this->format_number($grand_total_qty_2)}</td>
                     <td style='text-align:right; font-weight:bold;'>{$this->format_number($grand_total_qty_3)}</td>
-                    <td style='text-align:right; font-weight:bold;'>Rp.{$this->format_number($grand_total_amount_1)}</td>
-                    <td style='text-align:right; font-weight:bold;'>Rp.{$this->format_number($grand_total_amount_2)}</td>
-                    <td style='text-align:right; font-weight:bold;'>Rp.{$this->format_number($grand_total_amount_3)}</td>
+                    <td style='text-align:right; font-weight:bold;'>{$this->format_number($grand_total_amount_1)}</td>
+                    <td style='text-align:right; font-weight:bold;'>{$this->format_number($grand_total_amount_2)}</td>
+                    <td style='text-align:right; font-weight:bold;'>{$this->format_number($grand_total_amount_3)}</td>
                 </tr>";
 
         $html .= '</table></body></html>';
