@@ -64,6 +64,8 @@ class Sales_report extends CI_Controller
                 $query= "SELECT 
                     a.id, 
                     c.name as customer_name,
+                    (CASE WHEN a.sales_order_no_rm IS NOT NULL THEN 'RM / SUBCONT'
+                        ELSE a.division END) as division,
                     a.delivery_note_no,
                     a.delivery_note_date,
                     a.item_fg_id,
@@ -131,6 +133,7 @@ class Sales_report extends CI_Controller
                     <tr>
                         <th width="20">No</th>
                         <th width="200">Customer Name</th>
+                        <th>Division</th>
                         <th width="150">Delivery Note No</th>
                         <th width="100">Delivery Note Date</th>
                         <th>Product ID</th>
@@ -142,9 +145,9 @@ class Sales_report extends CI_Controller
                         <th>Qty</th>
                         <th>Currency</th>
                         <th>Price</th>
-                        <th>Amount</th>
+                        <th width="85">Amount</th>
                         <th>Exchange Rate</th>
-                        <th>Amount (IDR)</th>
+                        <th width="85">Amount (IDR)</th>
                     </tr>';
             $no = 1;
             $totalAmount = 0;
@@ -170,6 +173,7 @@ class Sales_report extends CI_Controller
                 $html .= '  <tr>
                                 <td style="text-align:center">' . $no . '</td>
                                 <td>' . $record->customer_name . '</td>
+                                <td style="text-align:center">' . $record->division . '</td>
                                 <td>' . $record->delivery_note_no . '</td>
                                 <td>' . $record->delivery_note_date . '</td>
                                 <td>' . $record->item_fg_id . '</td>
@@ -191,7 +195,7 @@ class Sales_report extends CI_Controller
             }
 
             $html .= '<tr>
-                <td colspan="13" style="text-align:right;"><b>GRAND TOTAL</b></td>
+                <td colspan="14" style="text-align:right;"><b>GRAND TOTAL</b></td>
                 <td style="text-align:right">' . number_format($totalAmount, 2, ',', '.') . '</td>
                 <td style="text-align:right;">-</td>
                 <td style="text-align:right">' . number_format($totalAmountIDR, 2, ',', '.') . '</td>
@@ -199,24 +203,34 @@ class Sales_report extends CI_Controller
 
             $html .= '</table></body></html>';
             echo $html;
-        }else{
-                    $query= "SELECT 
-                    a.customer_id,
-                    c.name AS customer_name,
-                    a.delivery_note_date,
-                    SUM(a.qty) AS total_qty,
-                    SUM(COALESCE(d.price, e.price) * a.qty) AS amount,
-                    COALESCE(d.currency, e.currency) AS currency
-                FROM delivery_notes a
-                LEFT JOIN item_fg b ON a.item_fg_id = b.id
-                LEFT JOIN customers c ON a.customer_id = c.id
-                LEFT JOIN sales_orders d ON a.sales_order_no = d.sales_order_no AND a.item_fg_id = d.item_fg_id
-                LEFT JOIN sales_order_rm e ON a.sales_order_no_rm = e.sales_order_no AND a.item_fg_id = e.item_fg_id
-                WHERE a.customer_id LIKE '%$filter_customer_id%' and a.division LIKE '%$filter_division%' and 
-                DATE_FORMAT(a.delivery_note_date, '%Y-%m-%d') BETWEEN '$filter_from' and '$filter_to' AND a.trans_type = 'SALES'
-                GROUP BY a.customer_id 
-                ORDER BY b.name ASC";
-            $records = $this->crud->query($query);
+        }
+        else
+        {
+            $this->db->select("a.customer_id,
+                c.name AS customer_name,
+                a.delivery_note_date,                
+                SUM(a.qty) AS total_qty,
+                SUM(COALESCE(d.price, e.price) * a.qty) AS amount,
+                COALESCE(d.currency, e.currency) AS currency,");
+            // division RM check sales_order_no_rm di Delivery Notes
+            $this->db->select("COUNT(a.sales_order_no_rm) AS rm,
+                COUNT(CASE WHEN f.number = 'INJ' AND a.sales_order_no_rm IS NULL THEN 1 END) AS inj,
+                COUNT(CASE WHEN f.number = 'MTS' THEN 1 END) AS mts,
+                COUNT(CASE WHEN f.number = 'ADM' THEN 1 END) AS adm");
+            
+            $this->db->from('delivery_notes a');
+            $this->db->join('item_fg b', 'a.item_fg_id = b.id', 'left');
+            $this->db->join('customers c', 'a.customer_id = c.id','left');
+            $this->db->join('sales_orders d', 'a.sales_order_no = d.sales_order_no AND a.item_fg_id = d.item_fg_id','left');
+            $this->db->join('sales_order_rm e', 'a.sales_order_no_rm = e.sales_order_no AND a.item_fg_id = e.item_fg_id','left');
+            $this->db->join('divisions f', 'b.division_id = f.id', 'left');
+
+            $this->db->where("a.customer_id LIKE '%{$filter_customer_id}%' and a.division LIKE '%{$filter_division}%' ");
+            $this->db->where("DATE_FORMAT(a.delivery_note_date, '%Y-%m-%d') BETWEEN '{$filter_from}' and '{$filter_to}' AND a.trans_type = 'SALES' ");
+            
+            $this->db->group_by('a.customer_id');
+            $this->db->order_by('b.name', 'ASC');
+            $records = $this->db->get()->result_object();
 
             $html = '<html><head><title>Print Data</title></head><style>body {font-family: Arial, Helvetica, sans-serif;}#customers {border-collapse: collapse;width: 100%;font-size: 12px;}#customers td, #customers th {border: 1px solid #ddd;padding: 2px;}#customers tr:nth-child(even){background-color: #f2f2f2;}#customers tr:hover {background-color: #ddd;}#customers th {padding-top: 2px;padding-bottom: 2px;text-align: center;color: black;}</style><body>
                 <center>
@@ -260,11 +274,20 @@ class Sales_report extends CI_Controller
                     </table>
                 </div>
                 <table id="customers" border="1" style="font-size: 11px;">
-                    <tr>
-                        <th width="20">No</th>
-                        <th width="200">Customer Name</th>
-                        <th width="100">Amount (IDR)</th>
-                    </tr>';
+                    <thead>
+                        <tr>
+                            <th width="20" rowspan="2">No</th>
+                            <th width="200" rowspan="2">Customer Name</th>
+                            <th width="200" colspan="4">SEGMENT</th>
+                            <th width="100" rowspan="2">TOTAL</th>
+                        </tr>
+                        <tr>
+                            <th width="100">RM / SUBCONT</th>
+                            <th width="100">INJ</th>
+                            <th width="100">MTS</th>
+                            <th width="100">ADM</th>
+                        </tr>
+                    </thead>';
             $no = 1;
             $totalAmount = 0;
             $totalAmountIDR = 0;
@@ -288,6 +311,10 @@ class Sales_report extends CI_Controller
                 $html .= '  <tr>
                                 <td style="text-align:center">' . $no . '</td>
                                 <td>' . $record->customer_name . '</td>
+                                <td style="text-align:center">' . $record->rm . '</td>
+                                <td style="text-align:center">' . $record->inj . '</td>
+                                <td style="text-align:center">' . $record->mts . '</td>
+                                <td style="text-align:center">' . $record->adm . '</td>
                                 <td style="text-align:right">' . number_format($amountIDR, 2, ',', '.') . '</td>
                             </tr>';
                 $no++;
@@ -295,7 +322,7 @@ class Sales_report extends CI_Controller
             }
 
             $html .= '<tr>
-                <td colspan="2" style="text-align:right;"><b>GRAND TOTAL</b></td>
+                <td colspan="6" style="text-align:right;"><b>GRAND TOTAL</b></td>
                 
                 <td style="text-align:right">' . number_format($totalAmountIDR, 2, ',', '.') . '</td>
             </tr>';
