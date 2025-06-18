@@ -214,9 +214,12 @@ class Sales_report extends CI_Controller
                 COALESCE(d.currency, e.currency) AS currency,");
             // division RM check sales_order_no_rm di Delivery Notes
             $this->db->select("COUNT(a.sales_order_no_rm) AS rm,
-                COUNT(CASE WHEN f.number = 'INJ' AND a.sales_order_no_rm IS NULL THEN 1 END) AS inj,
-                COUNT(CASE WHEN f.number = 'MTS' THEN 1 END) AS mts,
-                COUNT(CASE WHEN f.number = 'ADM' THEN 1 END) AS adm");
+                SUM(CASE
+                    WHEN a.sales_order_no_rm IS NOT NULL THEN (e.price * a.qty)
+                END) AS amount_rm,
+                SUM(CASE WHEN f.number = 'INJ' AND a.sales_order_no_rm IS NULL THEN (d.price * a.qty) END) AS amount_inj,
+                SUM(CASE WHEN f.number = 'MTS' THEN (d.price * a.qty) END) AS amount_mts,
+                SUM(CASE WHEN f.number = 'ADM' THEN (d.price * a.qty) END) AS amount_adm");
             
             $this->db->from('delivery_notes a');
             $this->db->join('item_fg b', 'a.item_fg_id = b.id', 'left');
@@ -308,15 +311,15 @@ class Sales_report extends CI_Controller
 
                 $amountIDR = ($record->amount * $exchange_rate);
 
-                $html .= '  <tr>
-                                <td style="text-align:center">' . $no . '</td>
-                                <td>' . $record->customer_name . '</td>
-                                <td style="text-align:center">' . $record->rm . '</td>
-                                <td style="text-align:center">' . $record->inj . '</td>
-                                <td style="text-align:center">' . $record->mts . '</td>
-                                <td style="text-align:center">' . $record->adm . '</td>
-                                <td style="text-align:right">' . number_format($amountIDR, 2, ',', '.') . '</td>
-                            </tr>';
+                $html .= '<tr>
+                            <td style="text-align:center">' . $no . '</td>
+                            <td>' . $record->customer_name . '</td>
+                            <td style="text-align:right">' . number_format($record->amount_rm, 2, ',', '.') . '</td>
+                            <td style="text-align:right">' . number_format($record->amount_inj, 2, ',', '.') . '</td>
+                            <td style="text-align:right">' . number_format($record->amount_mts, 2, ',', '.') . '</td>
+                            <td style="text-align:right">' . number_format($record->amount_adm, 2, ',', '.') . '</td>
+                            <td style="text-align:right">' . number_format($amountIDR, 2, ',', '.') . '</td>
+                        </tr>';
                 $no++;
                 $totalAmountIDR += $amountIDR;
             }
