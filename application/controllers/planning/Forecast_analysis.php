@@ -82,7 +82,14 @@ class Forecast_analysis extends CI_Controller
 
     public function readsProductFamily() {
         $post = isset($_POST['q']) ? $_POST['q'] : "";
-        $send = $this->crud->query("SELECT DISTINCT * FROM item_familys WHERE id like '%$post%' or `number` like '%$post%' or `name` like '%$post%'");
+        $query = "SELECT DISTINCT a.*, b.name as category
+            FROM item_familys a
+            JOIN item_categories b ON a.item_category_id = b.id 
+            WHERE b.name = 'FINISHED GOOD' ";
+        if (!empty($post)) {
+            $query .= " AND a.id like '%$post%' or a.number like '%$post%' or a.name like '%$post%' ";
+        }
+        $send = $this->crud->query($query);
         echo json_encode($send);
     }
 
