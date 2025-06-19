@@ -124,18 +124,45 @@ class Account_coa extends CI_Controller
     //     }
     // }
 
+    public function checkExisting($field, $value) 
+    {
+        $check = $this->crud->read('account_coa', [], [$field => $value]);
+        return $check;
+    }
+
     public function create()
     {
         if ($this->input->post()) {
             $post   = $this->input->post();
-            $account_coa = $this->crud->read('account_coa', [], ["account_number" => $post['account_number']]);
 
-            if (!empty($account_coa->account_number)) {
-                echo json_encode(array("title" => "Duplicated", "message" => "Account No " . $account_coa->account_number . " Duplicate Data", "theme" => "error"));
+            $check_number = $this->checkExisting("account_number", $post['account_number']);
+            $check_name   = $this->checkExisting("account_name", $post['account_name']);
+            $number_exists = !empty($check_number->account_number);
+            $name_exists   = !empty($check_name->account_name);
+
+            if ($number_exists && $name_exists) {
+                echo json_encode(array(
+                    "title"   => "Duplicated",
+                    "message" => "Account No " . $check_number->account_number . " and Account Name " . $check_name->account_name . " are already in use.",
+                    "theme"   => "error"
+                ));
+            } elseif ($number_exists) {
+                echo json_encode(array(
+                    "title"   => "Duplicated",
+                    "message" => "Account No " . $check_number->account_number . " is already in use.",
+                    "theme"   => "error"
+                ));
+            } elseif ($name_exists) {
+                echo json_encode(array(
+                    "title"   => "Duplicated",
+                    "message" => "Account Name " . $check_name->account_name . " is already in use.",
+                    "theme"   => "error"
+                ));
             } else {
                 $send   = $this->crud->create('account_coa', $post);
                 echo $send;
             }
+            
         } else {
             show_error("Cannot Process your request");
         }
@@ -146,8 +173,35 @@ class Account_coa extends CI_Controller
         if ($this->input->post()) {
             $id   = base64_decode($this->input->get('id'));
             $post = $this->input->post();
-            $send = $this->crud->update('account_coa', ["id" => $id], $post);
-            echo $send;
+
+            $check_number = $this->checkExisting("account_number", $post['account_number']);
+            $check_name   = $this->checkExisting("account_name", $post['account_name']);
+            $number_exists = !empty($check_number->account_number);
+            $name_exists   = !empty($check_name->account_name);
+
+            if ($number_exists && $name_exists) {
+                echo json_encode(array(
+                    "title"   => "Duplicated",
+                    "message" => "Account No " . $check_number->account_number . " and Account Name " . $check_name->account_name . " are already in use.",
+                    "theme"   => "error"
+                ));
+            } elseif ($number_exists) {
+                echo json_encode(array(
+                    "title"   => "Duplicated",
+                    "message" => "Account No " . $check_number->account_number . " is already in use.",
+                    "theme"   => "error"
+                ));
+            } elseif ($name_exists) {
+                echo json_encode(array(
+                    "title"   => "Duplicated",
+                    "message" => "Account Name " . $check_name->account_name . " is already in use.",
+                    "theme"   => "error"
+                ));
+            } else {
+                $send = $this->crud->update('account_coa', ["id" => $id], $post);
+                echo $send;
+            }
+
         } else {
             show_error("Cannot Process your request");
         }
