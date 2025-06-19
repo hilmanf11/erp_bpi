@@ -210,8 +210,15 @@ class Sales_report extends CI_Controller
                 c.name AS customer_name,
                 a.delivery_note_date,                
                 SUM(a.qty) AS total_qty,
-                SUM(COALESCE(d.price, e.price) * a.qty) AS amount,
-                COALESCE(d.currency, e.currency) AS currency,");
+                SUM(COALESCE(d.price, e.price)) AS price,
+                SUM(CASE
+                    WHEN a.sales_order_no_rm IS NOT NULL THEN e.price
+                    ELSE d.price
+                END) AS amount,
+                (CASE
+                    WHEN a.sales_order_no_rm IS NOT NULL THEN e.currency
+                    ELSE d.currency
+                END) AS currency");
             // division RM check sales_order_no_rm di Delivery Notes
             $this->db->select("COUNT(a.sales_order_no_rm) AS rm,
                 SUM(CASE
@@ -309,15 +316,21 @@ class Sales_report extends CI_Controller
                     $exchange_rate = 1;
                 }
 
-                $amountIDR = ($record->amount * $exchange_rate);
+                $amount_rm  = $record->amount_rm * $exchange_rate;
+                $amount_inj = $record->amount_inj * $exchange_rate;
+                $amount_mts = $record->amount_mts * $exchange_rate;
+                $amount_adm = $record->amount_adm * $exchange_rate;
+                
+                // $amountIDR = ($record->amount * $record->total_qty) * $exchange_rate;
+                $amountIDR = $amount_rm + $amount_inj + $amount_mts + $amount_adm;
 
                 $html .= '<tr>
                             <td style="text-align:center">' . $no . '</td>
                             <td>' . $record->customer_name . '</td>
-                            <td style="text-align:right">' . number_format($record->amount_rm, 2, ',', '.') . '</td>
-                            <td style="text-align:right">' . number_format($record->amount_inj, 2, ',', '.') . '</td>
-                            <td style="text-align:right">' . number_format($record->amount_mts, 2, ',', '.') . '</td>
-                            <td style="text-align:right">' . number_format($record->amount_adm, 2, ',', '.') . '</td>
+                            <td style="text-align:right">' . number_format($amount_rm, 2, ',', '.') . '</td>
+                            <td style="text-align:right">' . number_format($amount_inj, 2, ',', '.') . '</td>
+                            <td style="text-align:right">' . number_format($amount_mts, 2, ',', '.') . '</td>
+                            <td style="text-align:right">' . number_format($amount_adm, 2, ',', '.') . '</td>
                             <td style="text-align:right">' . number_format($amountIDR, 2, ',', '.') . '</td>
                         </tr>';
                 $no++;
