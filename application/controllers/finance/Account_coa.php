@@ -162,11 +162,12 @@ class Account_coa extends CI_Controller
                 $send   = $this->crud->create('account_coa', $post);
                 echo $send;
             }
-            
+
         } else {
             show_error("Cannot Process your request");
         }
     }
+    
     //UPDATE DATA
     public function update()
     {
@@ -185,12 +186,6 @@ class Account_coa extends CI_Controller
                     "message" => "Account No " . $check_number->account_number . " and Account Name " . $check_name->account_name . " are already in use.",
                     "theme"   => "error"
                 ));
-            } elseif ($number_exists) {
-                echo json_encode(array(
-                    "title"   => "Duplicated",
-                    "message" => "Account No " . $check_number->account_number . " is already in use.",
-                    "theme"   => "error"
-                ));
             } elseif ($name_exists) {
                 echo json_encode(array(
                     "title"   => "Duplicated",
@@ -206,6 +201,7 @@ class Account_coa extends CI_Controller
             show_error("Cannot Process your request");
         }
     }
+
     //DELETE DATA
     public function delete()
     {
