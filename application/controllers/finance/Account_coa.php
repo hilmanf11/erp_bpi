@@ -186,12 +186,6 @@ class Account_coa extends CI_Controller
                     "message" => "Account No " . $check_number->account_number . " and Account Name " . $check_name->account_name . " are already in use.",
                     "theme"   => "error"
                 ));
-            } elseif ($name_exists) {
-                echo json_encode(array(
-                    "title"   => "Duplicated",
-                    "message" => "Account Name " . $check_name->account_name . " is already in use.",
-                    "theme"   => "error"
-                ));
             } else {
                 $send = $this->crud->update('account_coa', ["id" => $id], $post);
                 echo $send;
