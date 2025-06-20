@@ -28,7 +28,60 @@ class Report_general_ledgers extends CI_Controller
         }
     }
 
-    public function print($option = "")
+    public function readCategories() 
+    {
+        $post = isset($_POST['q']) ? $_POST['q'] : "";
+        $this->db->select('a.*, a.name as category_name');
+        $this->db->where("a.name LIKE '%$post%' or a.number LIKE '%$post%'");
+        $this->db->from('account_group_details a');
+        
+        $send = $this->db->get()->result_array();
+        echo json_encode($send);
+    }
+
+    public function readCoa($category_number = "")
+    {
+        $post = isset($_POST['q']) ? $_POST['q'] : "";
+        $category = isset($category_number) ? base64_decode($category_number) : "";
+
+        $this->db->select('a.*, b.number as category_number');
+        $this->db->from('account_coa a');
+        $this->db->join('account_group_details b', 'b.id = a.account_group_detail_id');
+        $this->db->where("(a.account_name LIKE '%$post%' or a.account_number LIKE '%$post%') AND b.number LIKE '%$category%' ");
+
+        $send = $this->db->get()->result_array();
+        echo json_encode($send);
+    }
+
+    public function print($option = "") 
+    {
+        $filter_from = base64_decode($this->input->get("filter_from"));
+        $filter_to = base64_decode($this->input->get("filter_to"));
+        $filter_account = base64_decode($this->input->get("filter_account"));
+
+        //Config
+        $this->db->select('*');
+        $this->db->from('config');
+        $config = $this->db->get()->row();
+        $settings = ['favicon' => $config->favicon, 'name' => $config->name, 'description' => $config->description];
+
+        $html = '';
+
+        if (strpos($filter_account, ',') !== false) {
+            $filter_account = explode(',', $filter_account); // ubah ke array
+
+            foreach ($filter_account as $account_number) {
+                $html .= $this->calculate($settings, $filter_from, $filter_to, $account_number, $option);
+            }
+        } else {
+            $html .= $this->calculate($settings, $filter_from, $filter_to, $filter_account, $option);
+        }
+
+        echo $html;
+    }
+
+    // perhitungan dipisah agar dapat di loop jika multiple account_number
+    public function calculate($settings, $filter_from, $filter_to, $filter_account, $option = "")
     {
         if ($option == "excel") {
             $format  = date("Ymd");
@@ -36,17 +89,62 @@ class Report_general_ledgers extends CI_Controller
             header("Content-Disposition: attachment; filename=report_general_ledgers_$format.xls");
         }
 
-        $filter_from = base64_decode($this->input->get("filter_from"));
-        $filter_to = base64_decode($this->input->get("filter_to"));
-        $filter_account = base64_decode($this->input->get("filter_account"));
-
         $filter_before = date("Y-01-01", strtotime($filter_from));
         $filter_before_to = date("Y-m-t", strtotime("-1 month", strtotime($filter_from)));
 
-        //Config
-        $this->db->select('*');
-        $this->db->from('config');
-        $config = $this->db->get()->row();
+        $html = '<html>
+            <head>
+                <title>Print Data</title>
+                <style>body {font-family: Arial, Helvetica, sans-serif;}#customers {border-collapse: collapse;width: 100%;font-size: 12px;}#customers td, #customers th {border: 1px solid #ddd;padding: 2px;}#customers tr:nth-child(even){background-color: #f2f2f2;}#customers tr:hover {background-color: #ddd;}#customers th {padding-top: 2px;padding-bottom: 2px;text-align: center;color: black;}</style>
+            </head>
+            <body>
+            <center>
+                <div style="float: left; font-size: 12px; text-align: left;">
+                    <table style="width: 100%; page-break-after: auto;">
+                        <tr>
+                            <td width="50" style="font-size: 12px; vertical-align: top; text-align: center; vertical-align:jus margin-right:10px;">
+                                <img src="' . $settings['favicon'] . '" width="30">
+                            </td>
+                            <td style="font-size: 14px; text-align: left; margin:2px;">
+                                <b style="font-size:14px;">' . $settings['name'] . '</b><br>
+                                <span style="font-size:10px;">' . $settings['description'] . '</span><br>
+                            </td>
+                        </tr>
+                    </table>
+                </div>
+                <div style="float: right; font-size: 12px; text-align: right;">
+                    Print Date ' . date("d M Y H:i:s") . ' <br>
+                    Print By ' . $this->session->username . '  
+                </div>
+            </center>
+            <br><br><br><br>
+            <center>
+                <h3 style="margin:0;">GENERAL LEDGER</h3>
+                <small>PERIOD : <b>' . $filter_from . '</b> To <b>' . $filter_to . '</b></small>
+            </center>
+            <br><br>
+            
+            <table id="customers" border="1" style="margin-bottom:50px;">
+            <tr>
+                <th rowspan="2" width="20">No</th>
+                <th rowspan="2">Voucher Date</th>
+                <th rowspan="2">Voucher No</th>
+                <th rowspan="2">Account No</th>
+                <th rowspan="2">Account Name</th>
+                <th rowspan="2">Description</th>
+                <th rowspan="2">Currency</th>
+                <th colspan="3">ORIGINAL CURRENCY</th>
+                <th colspan="4">LOCAL CURRENCY</th>
+            </tr>
+            <tr>
+                <th>Balance</th>
+                <th>Debit</th>
+                <th>Credit</th>
+                <th>Rate</th>
+                <th>Balance</th>
+                <th>Debit</th>
+                <th>Credit</th>
+        </tr>';
 
         $this->db->select('*');
         $this->db->from('journal_postings');
@@ -71,55 +169,6 @@ class Report_general_ledgers extends CI_Controller
         $this->db->from('account_coa');
         $this->db->where("account_number", $filter_account);
         $account_coa = $this->db->get()->row();
-
-        $html = '<html><head><title>Print Data</title></head><style>body {font-family: Arial, Helvetica, sans-serif;}#customers {border-collapse: collapse;width: 100%;font-size: 12px;}#customers td, #customers th {border: 1px solid #ddd;padding: 2px;}#customers tr:nth-child(even){background-color: #f2f2f2;}#customers tr:hover {background-color: #ddd;}#customers th {padding-top: 2px;padding-bottom: 2px;text-align: center;color: black;}</style><body>
-            <center>
-                <div style="float: left; font-size: 12px; text-align: left;">
-                    <table style="width: 100%;">
-                        <tr>
-                            <td width="50" style="font-size: 12px; vertical-align: top; text-align: center; vertical-align:jus margin-right:10px;">
-                                <img src="' . $config->favicon . '" width="30">
-                            </td>
-                            <td style="font-size: 14px; text-align: left; margin:2px;">
-                                <b style="font-size:14px;">' . $config->name . '</b><br>
-                                <span style="font-size:10px;">' . $config->description . '</span><br>
-                            </td>
-                        </tr>
-                    </table>
-                </div>
-                <div style="float: right; font-size: 12px; text-align: right;">
-                    Print Date ' . date("d M Y H:i:s") . ' <br>
-                    Print By ' . $this->session->username . '  
-                </div>
-            </center>
-            <br><br><br><br>
-            <center>
-                <h3 style="margin:0;">GENERAL LEDGER</h3>
-                <small>PERIOD : <b>' . $filter_from . '</b> To <b>' . $filter_to . '</b></small>
-            </center>
-            <br><br>
-            
-            <table id="customers" border="1">
-            <tr>
-                <th rowspan="2" width="20">No</th>
-                <th rowspan="2">Voucher Date</th>
-                <th rowspan="2">Voucher No</th>
-                <th rowspan="2">Account No</th>
-                <th rowspan="2">Account Name</th>
-                <th rowspan="2">Description</th>
-                <th rowspan="2">Currency</th>
-                <th colspan="3">ORIGINAL CURRENCY</th>
-                <th colspan="4">LOCAL CURRENCY</th>
-            </tr>
-            <tr>
-                <th>Balance</th>
-                <th>Debit</th>
-                <th>Credit</th>
-                <th>Rate</th>
-                <th>Balance</th>
-                <th>Debit</th>
-                <th>Credit</th>
-            </tr>';
 
         $journal_ori_debit = @$journal_bf->original_debit;
         $journal_ori_credit = @$journal_bf->original_credit;
@@ -304,7 +353,6 @@ class Report_general_ledgers extends CI_Controller
                         <th style="text-align:right;">-</th>
                         <th style="text-align:right;">-</th>
                     </tr>';
-
         $html .= '  <tr style="background:#DEDEDE;">
                         <th style="text-align:right;" colspan="7"><b>GRAND TOTAL</b></th>
                         <th style="text-align:right;"></th>
@@ -316,7 +364,10 @@ class Report_general_ledgers extends CI_Controller
                         <th style="text-align:right;">' . number_format(abs($local_credit), 2) . '</th>
                     </tr>';
 
-        $html .= '</table></body></html>';
-        echo $html;
+        $html .= '</table> 
+            <div style="break-after:page"></div> <!-- untuk page break -->
+        </body></html> ';
+        
+        return $html;
     }
 }
