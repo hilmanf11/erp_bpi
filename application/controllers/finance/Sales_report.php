@@ -297,10 +297,16 @@ class Sales_report extends CI_Controller
                             <th width="100">MTS</th>
                             <th width="100">ADM</th>
                         </tr>
-                    </thead>';
+                </thead>';
+            
             $no = 1;
             $totalAmount = 0;
+            $totalAmountRM = 0;
+            $totalAmountINJ = 0;
+            $totalAmountMTS = 0;
+            $totalAmountADM = 0;
             $totalAmountIDR = 0;
+
             foreach ($records as $record) {
                 $currency = $record->currency;
                 $monthBf = date('Y-m-01', strtotime('-1 month', strtotime($record->delivery_note_date)));
@@ -334,13 +340,21 @@ class Sales_report extends CI_Controller
                             <td style="text-align:right">' . number_format($amountIDR, 2, ',', '.') . '</td>
                         </tr>';
                 $no++;
+
+                $totalAmountRM += $amount_rm;
+                $totalAmountINJ += $amount_inj;
+                $totalAmountMTS += $amount_mts;
+                $totalAmountADM += $amount_adm;
                 $totalAmountIDR += $amountIDR;
             }
 
-            $html .= '<tr>
-                <td colspan="6" style="text-align:right;"><b>GRAND TOTAL</b></td>
-                
-                <td style="text-align:right">' . number_format($totalAmountIDR, 2, ',', '.') . '</td>
+            $html .= '<tr style="text-align:right; font-weight:bold; background-color:#E0E0E0;">
+                <td colspan="2"><b>GRAND TOTAL</b></td>
+                <td>' . number_format($totalAmountRM, 2, ',', '.') . '</td>
+                <td>' . number_format($totalAmountINJ, 2, ',', '.') . '</td>
+                <td>' . number_format($totalAmountMTS, 2, ',', '.') . '</td>
+                <td>' . number_format($totalAmountADM, 2, ',', '.') . '</td>
+                <td>' . number_format($totalAmountIDR, 2, ',', '.') . '</td>
             </tr>';
 
             $html .= '</table></body></html>';
