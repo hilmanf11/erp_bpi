@@ -2351,27 +2351,32 @@ class Journal_postings extends CI_Controller
         $no = 1;
         foreach ($records as $data) {
             $html .= '<tr>
-                    <td>' . $no . '</td>
-                    <td>' . $data['number'] . '</td>
-                    <td>' . $data['journal_date'] . '</td>
-                    <td>' . $data['journal_type_name'] . '</td>
-                    <td>' . $data['modul'] . '</td>
-                    <td>' . $data['document_no'] . '</td>
-                    <td>' . $data['invoice_no'] . '</td>
-                    <td>' . $data['company_name'] . '</td>
-                    <td>' . $data['trans_date'] . '</td>
-                    <td>' . $data['description'] . '</td>
-                    <td>' . $data['account_number'] . '</td>
-                    <td>' . $data['account_name'] . '</td>
-                    <td>' . $data['currency'] . '</td>
-                    <td>' . number_format($data['original_debit'], 4) . '</td>
-                    <td>' . number_format($data['original_credit'], 4) . '</td>
-                    <td>' . number_format($data['rates'], 2) . '</td>
-                    <td>' . number_format($data['local_debit'], 4) . '</td>
-                    <td>' . number_format($data['local_credit'], 4) . '</td>';
+                    <td style="vertical-align:middle;">' . $no . '</td>
+                    <td style="vertical-align:middle;">' . $data['number'] . '</td>
+                    <td style="vertical-align:middle;">' . $data['journal_date'] . '</td>
+                    <td style="vertical-align:middle;">' . $data['journal_type_name'] . '</td>
+                    <td style="vertical-align:middle;">' . $data['modul'] . '</td>
+                    <td style="vertical-align:middle;">' . $data['document_no'] . '</td>
+                    <td style="vertical-align:middle;">' . $data['invoice_no'] . '</td>
+                    <td style="vertical-align:middle;">' . $data['company_name'] . '</td>
+                    <td style="vertical-align:middle;">' . $data['trans_date'] . '</td>
+                    <td style="vertical-align:middle;">' . $data['description'] . '</td>
+                    <td style="vertical-align:middle;">' . $data['account_number'] . '</td>
+                    <td style="vertical-align:middle;">' . $data['account_name'] . '</td>
+                    <td style="text-align:center; vertical-align:middle;">' . $data['currency'] . '</td>
+                    <td style="text-align:right; vertical-align:middle;">' . $this->formatIDR($data['original_debit'], 4) . '</td>
+                    <td style="text-align:right; vertical-align:middle;">' . $this->formatIDR($data['original_credit'], 4) . '</td>
+                    <td style="text-align:center; vertical-align:middle;">' . $this->formatIDR($data['rates'], 2) . '</td>
+                    <td style="text-align:right; vertical-align:middle;">' . $this->formatIDR($data['local_debit'], 4) . '</td>
+                    <td style="text-align:right; vertical-align:middle;">' . $this->formatIDR($data['local_credit'], 4) . '</td>';
             $no++;
         }
         $html .= '</table></body></html>';
         echo $html;
+    }
+
+    function formatIDR($number, $decimal_places = 2) {
+        $formatted_number = number_format($number, $decimal_places, ',', '');
+        return $formatted_number;
     }
 }
