@@ -49,7 +49,7 @@
     function excel() {
         var filter_from = $("#filter_from").datebox("getValue");
         var filter_to = $("#filter_to").datebox("getValue");
-        var filter_account = $("#filter_account").combogrid("getValue");
+        var filter_account = $("#filter_account").combogrid('getText');
 
         var url = "?filter_from=" + window.btoa(filter_from) +
             "&filter_to=" + window.btoa(filter_to) +
