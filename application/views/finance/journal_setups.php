@@ -20,6 +20,8 @@
             <th rowspan="2" data-options="field:'status',width:100,align:'center'">Debit/Credit</th>
             <th rowspan="2" data-options="field:'ap_payment',width:100,align:'center'">Ap Payment</th>
             <th rowspan="2" data-options="field:'ar_receipt',width:100,align:'center'">AR Receipt</th>
+            <th rowspan="2" data-options="field:'vat',width:100,align:'center'">VAT</th>
+            <th rowspan="2" data-options="field:'pph',width:100,align:'center'">PPH</th>
             <th colspan="2" data-options="field:'',width:100,halign:'center'"> Created</th>
             <th colspan="2" data-options="field:'',width:100,halign:'center'"> Updated</th>
         </tr>
@@ -185,7 +187,47 @@
                             }],
                             valueField: 'id',
                             textField: 'id',
-                            prompt: 'Choose AP',
+                            prompt: 'Choose AR',
+                            panelHeight: 'auto'
+                        }
+                    }
+                }, {
+                    field: 'vat',
+                    width: 100,
+                    readonly: true,
+                    halign: 'center',
+                    title: "VAT",
+                    editor: {
+                        type: 'combobox',
+                        options: {
+                            data: [{
+                                'id': 'YES'
+                            }, {
+                                'id': 'NO'
+                            }],
+                            valueField: 'id',
+                            textField: 'id',
+                            prompt: 'Choose VAT',
+                            panelHeight: 'auto'
+                        }
+                    }
+                }, {
+                    field: 'pph',
+                    width: 100,
+                    readonly: true,
+                    halign: 'center',
+                    title: "PPH",
+                    editor: {
+                        type: 'combobox',
+                        options: {
+                            data: [{
+                                'id': 'YES'
+                            }, {
+                                'id': 'NO'
+                            }],
+                            valueField: 'id',
+                            textField: 'id',
+                            prompt: 'Choose PPH',
                             panelHeight: 'auto'
                         }
                     }
