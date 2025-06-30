@@ -108,12 +108,12 @@ class Report_balance_sheets extends CI_Controller
         }
     }
 
-    function formattingPercent($amount_1, $amount_2) 
+    function getPercent($account, $total) 
     {
-        if (is_numeric($amount_1) && is_numeric($amount_2) || !empty($amount_1) && !empty($amount_2)) {
-            return $this->formatting(round(($amount_1 / $amount_2) * 100, 2, ",", "."));
+        if ($total == 0 || !is_numeric($account) || !is_numeric($total)) {
+            return 0;
         }
-        return 0;
+        return round(($account / $total) * 100, 2);
     }
 
     public function generateData(){
@@ -352,68 +352,68 @@ class Report_balance_sheets extends CI_Controller
                                     <td>Cash on Hand</td>
                                     <td>1</td>
                                     <td style="text-align:right;">'.$this->formatting($cash_on_hand).'</td>
-                                    <td style="text-align:right;">'.$this->formattingPercent($cash_on_hand, $total_assets).'%</td>
+                                    <td style="text-align:right;">'.$this->formatting($this->getPercent($cash_on_hand, $total_assets)).'%</td>
                                     <td>Short Term Loans</td>
                                     <td>17</td>
                                     <td style="text-align:right;">'.$this->formatting($short_term_loans).'</td>
-                                    <td style="text-align:right;">'.$this->formattingPercent($short_term_loans, $total_liabilities_equity).'%</td>
+                                    <td style="text-align:right;">'.$this->formatting($this->getPercent($short_term_loans, $total_liabilities_equity)).'%</td>
                                 </tr>
                                 <tr>
                                     <td>Cash in Bank</td>
                                     <td>2</td>
                                     <td style="text-align:right;">'.$this->formatting($cash_in_bank).'</td>
-                                    <td style="text-align:right;">'.$this->formattingPercent($cash_in_bank, $total_assets).'%</td>
+                                    <td style="text-align:right;">'.$this->formatting($this->getPercent($cash_in_bank, $total_assets)).'%</td>
                                     <td>Account Payable</td>
                                     <td>18</td>
                                     <td style="text-align:right;">'.$this->formatting($account_payable).'</td>
-                                    <td style="text-align:right;">'.$this->formattingPercent($account_payable, $total_liabilities_equity).'%</td>
+                                    <td style="text-align:right;">'.$this->formatting($this->getPercent($account_payable, $total_liabilities_equity)).'%</td>
                                 </tr>
                                 <tr>
                                     <td>Time Deposit</td>
                                     <td>3</td>
                                     <td style="text-align:right;">'.$this->formatting($time_deposit).'</td>
-                                    <td style="text-align:right;">'.$this->formattingPercent($time_deposit, $total_assets).'%</td>
+                                    <td style="text-align:right;">'.$this->formatting($this->getPercent($time_deposit, $total_assets)).'%</td>
                                     <td>Accrued Expense</td>
                                     <td>19</td>
                                     <td style="text-align:right;">'.$this->formatting($accured_expense).'</td>
-                                    <td style="text-align:right;">'.$this->formattingPercent($accured_expense, $total_liabilities_equity).'%</td>
+                                    <td style="text-align:right;">'.$this->formatting($this->getPercent($accured_expense, $total_liabilities_equity)).'%</td>
                                 </tr>
                                 <tr>
                                     <td>Account Receivable</td>
                                     <td>4</td>
                                     <td style="text-align:right;">'.$this->formatting($account_receivable).'</td>
-                                    <td style="text-align:right;">'.$this->formattingPercent($account_receivable, $total_assets).'%</td>
+                                    <td style="text-align:right;">'.$this->formatting($this->getPercent($account_receivable, $total_assets)).'%</td>
                                     <td colspan="4"></td>
                                 </tr>
                                 <tr>
                                     <td>Allow.Bad Debt</td>
                                     <td>5</td>
                                     <td style="text-align:right;">'.$this->formatting($allow_bad_debt).'</td>
-                                    <td style="text-align:right;">'.$this->formattingPercent($allow_bad_debt, $total_assets).'%</td>
+                                    <td style="text-align:right;">'.$this->formatting($this->getPercent($allow_bad_debt, $total_assets)).'%</td>
                                     <td>Taxes Payable</td>
                                     <td>20</td>
                                     <td style="text-align:right;">'.$this->formatting($taxes_payable).'</td>
-                                    <td style="text-align:right;">'.$this->formattingPercent($taxes_payable, $total_liabilities_equity).'%</td>
+                                    <td style="text-align:right;">'.$this->formatting($this->getPercent($taxes_payable, $total_liabilities_equity)).'%</td>
                                 </tr>
                                 <tr>
                                     <td>Inventories</td>
                                     <td>6</td>
                                     <td style="text-align:right;">'.$this->formatting($inventories).'</td>
-                                    <td style="text-align:right;">'.$this->formattingPercent($inventories, $total_assets).'%</td>
+                                    <td style="text-align:right;">'.$this->formatting($this->getPercent($inventories, $total_assets)).'%</td>
                                     <td>Acc.Payable Machine</td>
                                     <td>21</td>
                                     <td style="text-align:right;">'.$this->formatting($acc_payable_machine).'</td>
-                                    <td style="text-align:right;">'.$this->formattingPercent($acc_payable_machine, $total_liabilities_equity).'%</td>
+                                    <td style="text-align:right;">'.$this->formatting($this->getPercent($acc_payable_machine, $total_liabilities_equity)).'%</td>
                                 </tr>
                                 <tr>
                                     <td>Prepaid Expense</td>
                                     <td>7</td>
                                     <td style="text-align:right;">'.$this->formatting($prepaid_expense).'</td>
-                                    <td style="text-align:right;">'.$this->formattingPercent($prepaid_expense, $total_assets).'%</td>
+                                    <td style="text-align:right;">'.$this->formatting($this->getPercent($prepaid_expense, $total_assets)).'%</td>
                                     <td>Acc.Payable Other</td>
                                     <td>22</td>
                                     <td style="text-align:right;">'.$this->formatting($acc_payable_other).'</td>
-                                    <td style="text-align:right;">'.$this->formattingPercent($acc_payable_other, $total_liabilities_equity).'%</td>
+                                    <td style="text-align:right;">'.$this->formatting($this->getPercent($acc_payable_other, $total_liabilities_equity)).'%</td>
                                 </tr>
                                 <tr>
                                     <td colspan="4" style="height:20px;"></td>
@@ -423,11 +423,11 @@ class Report_balance_sheets extends CI_Controller
                                     <td><b>Total Current Assets</b></td>
                                     <td><b>8</b></td>
                                     <td style="text-align:right;"><b>'.$this->formatting($total_current_assets).'</b></td>
-                                    <td style="text-align:right;"><b>'.$this->formattingPercent($total_current_assets, $total_assets).'%</b></td>
+                                    <td style="text-align:right;"><b>'.$this->formatting($this->getPercent($total_current_assets, $total_assets)).'%</b></td>
                                     <td><b>Total Current Liabilities</b></td>
                                     <td><b>23</b></td>
                                     <td style="text-align:right;"><b>'.$this->formatting($total_current_liabilities).'</b></td>
-                                    <td style="text-align:right;"><b>'.$this->formattingPercent($total_current_liabilities, $total_liabilities_equity).'%</b></td>
+                                    <td style="text-align:right;"><b>'.$this->formatting($this->getPercent($total_current_liabilities, $total_liabilities_equity)).'%</b></td>
                                 </tr>';
 
                     //Other Assets & Investor Equity
@@ -439,11 +439,11 @@ class Report_balance_sheets extends CI_Controller
                                     <td>Long-term Investment</td>
                                     <td>9</td>
                                     <td style="text-align:right;">'.$this->formatting($long_term_investment).'</td>
-                                    <td style="text-align:right;">'.$this->formattingPercent($long_term_investment, $total_assets).'%</td>
+                                    <td style="text-align:right;">'.$this->formatting($this->getPercent($long_term_investment, $total_assets)).'%</td>
                                     <td>Long Term Liabilities</td>
                                     <td>24</td>
                                     <td style="text-align:right;">'.$this->formatting($long_term_liabilities).'</td>
-                                    <td style="text-align:right;">'.$this->formattingPercent($long_term_liabilities, $total_liabilities_equity).'%</td>
+                                    <td style="text-align:right;">'.$this->formatting($this->getPercent($long_term_liabilities, $total_liabilities_equity)).'%</td>
                                 </tr>
                                 <tr>
                                     <td colspan="4" style="height:20px;"></td>
@@ -453,17 +453,17 @@ class Report_balance_sheets extends CI_Controller
                                     <td>Fixed assets-cost</td>
                                     <td>10</td>
                                     <td style="text-align:right;">'.$this->formatting($fixed_asset_cost).'</td>
-                                    <td style="text-align:right;">'.$this->formattingPercent($fixed_asset_cost, $total_assets).'%</td>
+                                    <td style="text-align:right;">'.$this->formatting($this->getPercent($fixed_asset_cost, $total_assets)).'%</td>
                                     <td>Total Liabilities</td>
                                     <td>25</td>
                                     <td style="text-align:right;">'.$this->formatting($total_liabilities).'</td>
-                                    <td style="text-align:right;">'.$this->formattingPercent($total_liabilities, $total_liabilities_equity).'%</td>
+                                    <td style="text-align:right;">'.$this->formatting($this->getPercent($total_liabilities, $total_liabilities_equity)).'%</td>
                                 </tr>
                                 <tr>
                                     <td>Less: Accumulated depreciation</td>
                                     <td>11</td>
                                     <td style="text-align:right;">'.$this->formatting($less_accumulated).'</td>
-                                    <td style="text-align:right;">'.$this->formattingPercent($less_accumulated, $total_assets).'%</td>
+                                    <td style="text-align:right;">'.$this->formatting($this->getPercent($less_accumulated, $total_assets)).'%</td>
                                     <td colspan="4" style="height:20px;"></td>
                                 </tr>
                                 <tr>
@@ -474,45 +474,45 @@ class Report_balance_sheets extends CI_Controller
                                     <td>Total Fixed Assets</td>
                                     <td>12</td>
                                     <td style="text-align:right;">'.$this->formatting($total_fixed_asset).'</td>
-                                    <td style="text-align:right;">'.$this->formattingPercent($total_fixed_asset, $total_assets).'%</td>
+                                    <td style="text-align:right;">'.$this->formatting($this->getPercent($total_fixed_asset, $total_assets)).'%</td>
                                     <td>Paid in Capital</td>
                                     <td>26</td>
                                     <td style="text-align:right;">'.$this->formatting($paid_in_capital).'</td>
-                                    <td style="text-align:right;">'.$this->formattingPercent($paid_in_capital, $total_liabilities_equity).'%</td>
+                                    <td style="text-align:right;">'.$this->formatting($this->getPercent($paid_in_capital, $total_liabilities_equity)).'%</td>
                                 </tr>
                                 <tr>
                                     <td colspan="4" style="height:20px;"></td>
                                     <td>Capital Surplus</td>
                                     <td>27</td>
                                     <td style="text-align:right;">'.$this->formatting($capital_surplus).'</td>
-                                    <td style="text-align:right;">'.$this->formattingPercent($capital_surplus, $total_liabilities_equity).'%</td>
+                                    <td style="text-align:right;">'.$this->formatting($this->getPercent($capital_surplus, $total_liabilities_equity)).'%</td>
                                 </tr>
                                 <tr>
                                     <td>Right to use sites</td>
                                     <td>13</td>
                                     <td style="text-align:right;">'.$this->formatting($right_to_use_sites).'</td>
-                                    <td style="text-align:right;">'.$this->formattingPercent($right_to_use_sites, $total_assets).'%</td>
+                                    <td style="text-align:right;">'.$this->formatting($this->getPercent($right_to_use_sites, $total_assets)).'%</td>
                                     <td>Revaluation Surplus</td>
                                     <td>28</td>
                                     <td style="text-align:right;">'.$this->formatting($revaluation_surplus).'</td>
-                                    <td style="text-align:right;">'.$this->formattingPercent($revaluation_surplus, $total_liabilities_equity).'%</td>
+                                    <td style="text-align:right;">'.$this->formatting($this->getPercent($revaluation_surplus, $total_liabilities_equity)).'%</td>
                                 </tr>
                                 <tr>
                                     <td>Other Deffered expeniture</td>
                                     <td>14</td>
                                     <td style="text-align:right;">'.$this->formatting($other_deffered_expeniture).'</td>
-                                    <td style="text-align:right;">'.$this->formattingPercent($other_deffered_expeniture, $total_assets).'%</td>
+                                    <td style="text-align:right;">'.$this->formatting($this->getPercent($other_deffered_expeniture, $total_assets)).'%</td>
                                     <td>Retained Earning (Last Year)</td>
                                     <td>29</td>
                                     <td style="text-align:right;">'.$this->formatting($retained_earning).'</td>
-                                    <td style="text-align:right;">'.$this->formattingPercent($retained_earning, $total_liabilities_equity).'%</td>
+                                    <td style="text-align:right;">'.$this->formatting($this->getPercent($retained_earning, $total_liabilities_equity)).'%</td>
                                 </tr>
                                 <tr>
                                     <td colspan="4" style="height:20px;"></td>
                                     <td>P/L From Jan - Now</td>
                                     <td>30</td>
                                     <td style="text-align:right;">'.$this->formatting($pl_from_jan_now).'</td>
-                                    <td style="text-align:right;">'.$this->formattingPercent($pl_from_jan_now, $total_liabilities_equity).'%</td>
+                                    <td style="text-align:right;">'.$this->formatting($this->getPercent($pl_from_jan_now, $total_liabilities_equity)).'%</td>
                                 </tr>
                                 <tr>
                                     <td colspan="4" style="height:20px;"></td>
@@ -522,11 +522,11 @@ class Report_balance_sheets extends CI_Controller
                                     <td><b>Total Other Assets</b></td>
                                     <td><b>15</b></td>
                                     <td style="text-align:right;"><b>'.$this->formatting($total_other_assets).'</b></td>
-                                    <td style="text-align:right;"><b>'.$this->formattingPercent($total_other_assets, $total_assets).'%</b></td>
+                                    <td style="text-align:right;"><b>'.$this->formatting($this->getPercent($total_other_assets, $total_assets)).'%</b></td>
                                     <td><b>Total Investor`s Equity</b></td>
                                     <td><b>31</b></td>
                                     <td style="text-align:right;"><b>'.$this->formatting($total_investor_equity).'</b></td>
-                                    <td style="text-align:right;"><b>'.$this->formattingPercent($total_investor_equity, $total_liabilities_equity).'%</b></td>
+                                    <td style="text-align:right;"><b>'.$this->formatting($this->getPercent($total_investor_equity, $total_liabilities_equity)).'%</b></td>
                                 </tr>
                                 <tr>
                                     <td colspan="4" style="height:20px;"></td>
