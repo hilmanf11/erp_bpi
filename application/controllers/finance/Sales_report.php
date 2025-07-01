@@ -59,26 +59,30 @@ class Sales_report extends CI_Controller
         $this->db->from('config');
         $config = $this->db->get()->row();
 
-        if($filter_display == 'DETAIL'){
-
-                $query= "SELECT 
-                    a.id, 
-                    c.name as customer_name,
-                    (CASE WHEN a.sales_order_no_rm IS NOT NULL THEN 'RM / SUBCONT'
-                        ELSE a.division END) as division,
-                    a.delivery_note_no,
-                    a.delivery_note_date,
-                    a.item_fg_id,
-                    b.number as item_fg_number,
-                    b.name as item_fg_name,
-                    COALESCE(a.sales_order_no,a.sales_order_no_rm) as sales_order_no,
-                    a.customer_order_no,
-                    a.uom,
-                    a.qty,
-                    COALESCE(d.currency,e.currency) as currency,
-                    COALESCE(d.price,e.price) as price
+        if($filter_display == 'DETAIL')
+        {
+            $query= "SELECT
+                a.id,
+                c.name AS customer_name,
+                (CASE WHEN a.sales_order_no_rm IS NOT NULL THEN 'RM / SUBCONT' ELSE a.division END) AS division,
+                a.delivery_note_no,
+                a.delivery_note_date,
+                a.item_fg_id,
+                b.number AS item_fg_number,
+                b.name AS item_fg_name,
+                COALESCE(a.sales_order_no, a.sales_order_no_rm) AS sales_order_no,
+                a.customer_order_no,
+                a.uom,
+                a.qty,
+                f.currency,
+                (CASE
+                    WHEN a.sales_order_no_rm IS NOT NULL THEN e.price
+                    WHEN a.sales_order_no IS NOT NULL THEN d.price
+                    ELSE NULL 
+                END) AS price 
                 FROM delivery_notes a
                 LEFT JOIN item_fg b ON a.item_fg_id = b.id
+                LEFT JOIN customer_items f ON a.customer_id = f.customer_id AND a.item_fg_id = f.item_fg_id
                 LEFT JOIN customers c ON a.customer_id = c.id
                 LEFT JOIN sales_orders d ON a.sales_order_no = d.sales_order_no and a.item_fg_id = d.item_fg_id
                 LEFT JOIN sales_order_rm e ON a.sales_order_no_rm = e.sales_order_no and a.item_fg_id = e.item_fg_id
@@ -132,15 +136,15 @@ class Sales_report extends CI_Controller
                 <table id="customers" border="1" style="font-size: 11px;">
                     <tr>
                         <th width="20">No</th>
-                        <th width="200">Customer Name</th>
+                        <th width="250">Customer Name</th>
                         <th>Division</th>
                         <th width="150">Delivery Note No</th>
                         <th width="100">Delivery Note Date</th>
-                        <th>Product ID</th>
-                        <th width="120">Product No</th>
-                        <th>Product Name</th>
+                        <th witth="150">Product ID</th>
+                        <th width="150">Product No</th>
+                        <th width="150">Product Name</th>
                         <th>Sales Order No</th>
-                        <th>Customer Order No</th>
+                        <th width="150">Customer Order No</th>
                         <th>Uom</th>
                         <th>Qty</th>
                         <th>Currency</th>
@@ -182,19 +186,19 @@ class Sales_report extends CI_Controller
                                 <td>' . $record->sales_order_no . '</td>
                                 <td>' . $record->customer_order_no . '</td>
                                 <td>' . $record->uom . '</td>
-                                <td style="text-align:right">' . number_format($record->qty, 2, ',', '.') . '</td>
-                                <td>' . $record->currency . '</td>
-                                <td style="text-align:right">' . number_format($record->price, 2, ',', '.') . '</td>
-                                <td style="text-align:right">' . number_format($amount, 2, ',', '.') . '</td>
-                                <td style="text-align:right">' . $exchange_rate . '</td>
-                                <td style="text-align:right">' . number_format($amountIDR, 2, ',', '.') . '</td>
+                                <td style="text-align:right;">' . number_format($record->qty, 2, ',', '.') . '</td>
+                                <td style="text-align:center;">' . $record->currency . '</td>
+                                <td style="text-align:right;">' . number_format($record->price, 2, ',', '.') . '</td>
+                                <td style="text-align:right;">' . number_format($amount, 2, ',', '.') . '</td>
+                                <td style="text-align:center;">' . $exchange_rate . '</td>
+                                <td style="text-align:right;">' . number_format($amountIDR, 2, ',', '.') . '</td>
                             </tr>';
                 $no++;
                 $totalAmount += $amount;
                 $totalAmountIDR += $amountIDR;
             }
 
-            $html .= '<tr>
+            $html .= '<tr style="background-color:#EBEBEB;">
                 <td colspan="14" style="text-align:right;"><b>GRAND TOTAL</b></td>
                 <td style="text-align:right">' . number_format($totalAmount, 2, ',', '.') . '</td>
                 <td style="text-align:right;">-</td>
@@ -215,10 +219,7 @@ class Sales_report extends CI_Controller
                     WHEN a.sales_order_no_rm IS NOT NULL THEN e.price
                     ELSE d.price
                 END) AS amount,
-                (CASE
-                    WHEN a.sales_order_no_rm IS NOT NULL THEN e.currency
-                    ELSE d.currency
-                END) AS currency");
+                ci.currency");
             // division RM check sales_order_no_rm di Delivery Notes
             $this->db->select("COUNT(a.sales_order_no_rm) AS rm,
                 SUM(CASE
@@ -230,6 +231,7 @@ class Sales_report extends CI_Controller
             
             $this->db->from('delivery_notes a');
             $this->db->join('item_fg b', 'a.item_fg_id = b.id', 'left');
+            $this->db->join('customer_items ci', 'a.customer_id = ci.customer_id AND a.item_fg_id = ci.item_fg_id', 'left');
             $this->db->join('customers c', 'a.customer_id = c.id','left');
             $this->db->join('sales_orders d', 'a.sales_order_no = d.sales_order_no AND a.item_fg_id = d.item_fg_id','left');
             $this->db->join('sales_order_rm e', 'a.sales_order_no_rm = e.sales_order_no AND a.item_fg_id = e.item_fg_id','left');
