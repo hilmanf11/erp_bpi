@@ -215,7 +215,7 @@
                         <span style="width:35%; display:inline-block;">Payment To</span>
                         <input style="width:60%;" id="payment_to" name="payment_to" class="easyui-combobox">
                     </div>
-                    <div class="fitem" hidden>
+                    <div class="fitem">
                         <span style="width:35%; display:inline-block;">Type</span>
                         <input style="width:60%;" id="type" name="type" class="easyui-textbox">
                     </div>
@@ -1459,6 +1459,7 @@
     function deleterow(target) {
         $.messager.confirm('Confirm', 'Are you sure?', function(r) {
             if (r) {
+                var rows = $('#dg').datagrid('getSelected');
                 var dg = $('#dg2');
                 var row = dg.datagrid('getSelected');
                 var rowIndex = dg.datagrid('getRowIndex', row);
@@ -1468,11 +1469,16 @@
                     field: 'id'
                 });
 
+                console.log(row);
+                console.log("Data Loaded:",rows);
+
                 $.ajax({
                     method: 'post',
                     url: '<?= base_url('finance/sales_invoices/deleteSingle') ?>',
                     data: {
-                        id: row.id
+                        id: row.id,
+                        delivery_note_no: row.delivery_note_no,
+                        item_fg_id: row.item_fg_id
                     },
                     success: function(result) {
                         var result = eval('(' + result + ')');
@@ -1487,6 +1493,7 @@
                 });
 
                 $('#dg2').datagrid('deleteRow', getRowIndex(target));
+                UpdatedDeliveryNotes(rows.number); 
                 addJournal();
             }
         });
@@ -1498,6 +1505,31 @@
 
     function cancelrow(target) {
         $('#dg2').datagrid('cancelEdit', getRowIndex(target));
+    }
+
+      function UpdatedDeliveryNotes(number) {
+        $.ajax({
+            method: 'post',
+            url: '<?= base_url('finance/sales_invoices/get_delivery_notes') ?>',
+            data: {
+                number: number
+            },
+            dataType: 'json',
+            success: function (response) {
+                if (response.status === 'success') {
+                    const cleanedNotes = response.delivery_note_nos.join(',').trim();
+                    $('#delivery_note_no').combogrid('setValue', cleanedNotes);
+
+                    console.log("Updated delivery notes:", cleanedNotes);
+                } else {
+                    $('#delivery_note_no').combogrid('clear');
+                    toastr.info('No delivery notes found.');
+                }
+            },
+            error: function () {
+                toastr.error('Failed to fetch updated delivery notes');
+            }
+        });
     }
 
     //DATAGRID JOURNAL
@@ -1604,7 +1636,9 @@
                             }, ]
                         ],
                         onLoadSuccess: function(customer_id) {
+                            console.log(customer_id);
                             $("#customer_id").combogrid('setValue', row.customer_id);
+                            $("#type").textbox('setValue', row.type);
                         },
                         onSelect: function(index, customer) {
                             var trans_date = $("#trans_date").datebox('getValue');

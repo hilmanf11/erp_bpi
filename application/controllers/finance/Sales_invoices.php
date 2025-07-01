@@ -43,7 +43,7 @@ class Sales_invoices extends CI_Controller
     public function reads($number)//untuk memanggil data saat update
     {
         $number = base64_decode($number);
-        $this->db->select('a.*, c.id as item_fg_id, f.account_name, b.currency');
+        $this->db->select('a.*, c.id as item_fg_id, f.account_name');
         $this->db->from('sales_invoices a');
         $this->db->join('customers b', 'a.customer_id = b.id');
         $this->db->join('item_fg c', 'a.item_fg_id = c.id', 'left');
@@ -572,7 +572,7 @@ class Sales_invoices extends CI_Controller
             $this->db->query("SET SESSION group_concat_max_len = 100000");
 
             //Select Query
-            $this->db->select('a.*, c.number as gl_no, b.name as customer_name, GROUP_CONCAT(DISTINCT REPLACE(a.delivery_note_no, " ", "") SEPARATOR ",") as delivery_note_nos');
+            $this->db->select('a.*, c.number as gl_no, b.type, b.name as customer_name, GROUP_CONCAT(DISTINCT REPLACE(a.delivery_note_no, " ", "") SEPARATOR ",") as delivery_note_nos');
             $this->db->from('sales_invoices a');
             $this->db->join('customers b', 'a.customer_id = b.id');
             $this->db->join('journal_postings c', 'a.number = c.document_no', 'left');
@@ -688,6 +688,7 @@ class Sales_invoices extends CI_Controller
     {
         $data = $this->input->post();
         $send = $this->crud->delete('sales_invoices', array("id" => $data['id']));
+        $update = $this->db->update('delivery_notes', ["status" => "0"], ["delivery_note_no" => $data['delivery_note_no'], "item_fg_id"=> $data['item_fg_id']]);
         echo $send;
     }
 
@@ -713,6 +714,30 @@ class Sales_invoices extends CI_Controller
             }
             echo $send;
         // }
+    }
+
+    public function get_delivery_notes()
+    {
+        $number = $this->input->post('number');
+
+        $this->db->select('delivery_note_no');
+        $this->db->from('sales_invoices');
+        $this->db->where('number', $number);
+        $this->db->where('deleted', 0);
+
+        $query = $this->db->get();
+        $notes = [];
+
+        foreach ($query->result() as $row) {
+            if (!empty($row->delivery_note_no)) {
+                $notes[] = trim($row->delivery_note_no);
+            }
+        }
+
+        echo json_encode([
+            'status' => count($notes) > 0 ? 'success' : 'empty',
+            'delivery_note_nos' => $notes
+        ]);
     }
 
     public function print_commercial($invoice_no)
@@ -760,7 +785,7 @@ class Sales_invoices extends CI_Controller
                 b.address_billing, 
                 b.telp_billing,
                 b.telp,
-                d.currency,
+                COALESCE(h.currency,h2.currency) as currency,
                 g.origin,
                 g.sailing,
                 g.ship_by,
@@ -976,7 +1001,12 @@ class Sales_invoices extends CI_Controller
                     $tax = "";
                     $tax_total = 0;
                 }
-                
+
+                if($record['currency'] == 'IDR'){
+                    $format_no = 2;
+                }else{
+                    $format_no = 4;
+                }
                 
                 $grand_total = ((($sub_total - $down_payment) + $vat_total) - $tax_total);
 
@@ -995,8 +1025,8 @@ class Sales_invoices extends CI_Controller
                                 <td style="text-align:center;"><span style="font-size:10px;">' . $record['uom'] . '</span></td>
                                 <td style="text-align:right">' . number_format($record['qty'], 0, ",", ".") . '</td>
                                 <td style="text-align:center;"><span style="font-size:10px;">' . $record['currency'] . '</span></td>
-                                <td style="text-align:right">' . number_format($record['price'], 2, ",", ".") . '</td>
-                                <td style="text-align:right">' . number_format(($record['price'] * $record['qty']), 2, ",", ".") . '</td>
+                                <td style="text-align:right">' . number_format($record['price'], $format_no, ",", ".") . '</td>
+                                <td style="text-align:right">' . number_format(($record['price'] * $record['qty']), $format_no, ",", ".") . '</td>
                             </tr>';
                 $no++;
             }
@@ -1082,7 +1112,7 @@ class Sales_invoices extends CI_Controller
                             <th style="height:150px;"></th>
                         </tr>
                         <tr>
-                            <th style="height:20px; text-align:center;">Andi Laksono</th>
+                            <th style="height:20px; text-align:center;">Finance Dept</th>
                         </tr>
                     </table>
                 </div>';
@@ -1159,7 +1189,7 @@ class Sales_invoices extends CI_Controller
                 b.address_billing, 
                 b.telp_billing,
                 b.telp,
-                d.currency,
+                COALESCE(i.currency,i2.currency) as currency,
                 g.origin,
                 g.sailing,
                 g.ship_by,
@@ -1176,10 +1206,11 @@ class Sales_invoices extends CI_Controller
             $this->db->join('sales_orders i', 'a.sales_order_no = i.sales_order_no', 'left');
             $this->db->join('sales_order_rm i2', 'a.sales_order_no = i2.sales_order_no', 'left');
             $this->db->join('customer_address b', 'COALESCE(i.customer_address_id, i2.customer_address_id) = b.id', 'left');
-            $this->db->join("(SELECT id, item_fg_id, SUM(qty) as qty, price FROM sales_invoices WHERE number = '$invoice_no' GROUP BY item_fg_id, price) h", "a.item_fg_id = h.item_fg_id ", "left");
+            $this->db->join("(SELECT id, item_no, item_fg_id, SUM(qty) as qty, price FROM sales_invoices WHERE number = '$invoice_no' GROUP BY item_fg_id, item_no, price) h", "a.item_fg_id = h.item_fg_id ", "left");
             $this->db->where('a.deleted', 0);
             $this->db->where('a.number', $invoice_no);
             $this->db->group_by('h.item_fg_id');
+            $this->db->group_by('h.item_no');
             $this->db->group_by('h.price');
             $this->db->order_by('a.item_no', 'ASC');
             // $this->db->order_by('a.trans_date', 'DESC');
@@ -1371,12 +1402,17 @@ class Sales_invoices extends CI_Controller
                     $tax_total = 0;
                 }
                 
+                if($record['currency'] == 'IDR'){
+                    $format_no = 2;
+                }else{
+                    $format_no = 4;
+                }
                 
                 $grand_total = ((($sub_total - $down_payment) + $vat_total) - $tax_total);
 
                 if ($record['type'] == "EXPORT") {
-                    $content = '<td style="text-align:right">' . number_format($record['price'], 4, ",", ".") . '</td>
-                                <td style="text-align:right">' . number_format(($record['price'] * $record['qty']), 2, ",", ".") . '</td>';
+                    $content = '<td style="text-align:right">' . number_format($record['price'], $format_no, ",", ".") . '</td>
+                                <td style="text-align:right">' . number_format(($record['price'] * $record['qty']), $format_no, ",", ".") . '</td>';
                 } else {
                     $content = "";
                 }
@@ -1388,8 +1424,8 @@ class Sales_invoices extends CI_Controller
                                 <td style="text-align:center;"><span style="font-size:10px;">' . $record['uom'] . '</span></td>
                                 <td style="text-align:right">' . number_format($record['qty_sum'], 0, ",", ".") . '</td>
                                 <td style="text-align:center;"><span style="font-size:10px;">' . $record['currency'] . '</span></td>
-                                <td style="text-align:right">' . number_format($record['prices'], 2, ",", ".") . '</td>
-                                <td style="text-align:right">' . number_format(($record['prices'] * $record['qty_sum']), 2, ",", ".") . '</td>
+                                <td style="text-align:right">' . number_format($record['prices'], $format_no, ",", ".") . '</td>
+                                <td style="text-align:right">' . number_format(($record['prices'] * $record['qty_sum']), $format_no, ",", ".") . '</td>
                             </tr>';
                 $no++;
             }
@@ -1474,7 +1510,7 @@ class Sales_invoices extends CI_Controller
                             <th style="height:150px;"></th>
                         </tr>
                         <tr>
-                            <th style="height:20px; text-align:center;">Andi Laksono</th>
+                            <th style="height:20px; text-align:center;">Finance Dept</th>
                         </tr>
                     </table>
                 </div>';
@@ -1733,6 +1769,12 @@ class Sales_invoices extends CI_Controller
                     $price = 1;
                 }
 
+                if($record['currency'] == 'IDR'){
+                    $format_no = 2;
+                }else{
+                    $format_no = 4;
+                }
+
                 $amount = ($record['total'] * $price);
                 $sub_total += $record['total'];
                 $sub_total_local += $amount;
@@ -1751,8 +1793,8 @@ class Sales_invoices extends CI_Controller
                                 <td>' . $record['uom'] . '</td>
                                 <td style="text-align:right;">' . @number_format(($record['qty']), 2) . '</td>
                                 <td>' . $record['currency'] . '</td>
-                                <td style="text-align:right;">' . @number_format($record['price'], 2) . '</td>
-                                <td style="text-align:right;">' . @number_format($record['total'], 2) . '</td>
+                                <td style="text-align:right;">' . @number_format($record['price'], $format_no) . '</td>
+                                <td style="text-align:right;">' . @number_format($record['total'], $format_no) . '</td>
                                 <td>IDR</td>
                                 <td style="text-align:right;">' . @number_format($amount, 2) . '</td>
                             </tr>';
