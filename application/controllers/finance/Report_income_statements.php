@@ -89,11 +89,16 @@ class Report_income_statements extends CI_Controller
     }
 
 
-    function formatting($amount){
-        if($amount >= 0){
-            return number_format($amount, 2);
-        }else{
-            return "(".number_format(abs($amount), 2).")";
+    function formatting($amount)
+    {
+        if (!is_numeric($amount) || empty($amount)) {
+            return 0;
+        }
+
+        if ($amount >= 0) {
+            return number_format($amount, 2, ",", ".");
+        } else {
+            return "(".number_format(abs($amount), 2, ",", ".").")";
         }
     }
 
@@ -280,6 +285,12 @@ class Report_income_statements extends CI_Controller
         $this->db->select('*');
         $this->db->from('config');
         $config = $this->db->get()->row();
+
+        $check_availability = $this->db->select('*')->from('income_statements')->where('period', $period)->get()->row();
+        if (empty($check_availability)) {
+            echo ('<h3> Belum ada laporan pada periode ini. Silakan Generate. </h3>');
+            return;
+        }
 
         $html = '<html><head><title>Print Data</title></head><style>body {font-family: Arial, Helvetica, sans-serif;}#customers {border-collapse: collapse;width: 100%;font-size: 12px;}#customers td, #customers th {border: 1px solid #ddd;padding: 3px; padding-left: 10px;}#customers tr:hover {background-color: #ddd;}#customers th {padding-top: 2px;padding-bottom: 2px;text-align: center;color: black;}</style><body>
             <center>

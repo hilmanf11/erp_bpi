@@ -7,8 +7,10 @@
                 <div style="text-align: center;">Category</div>
             </th>
             <th rowspan="2" data-options="field:'account_number',width:100,halign:'center'">Account Code</th>
-            <th rowspan="2" data-options="field:'account_name',width:150,halign:'center'">Account Name</th>
-            <!-- <th rowspan="2" data-options="field:'closing_jurnal',width:150,halign:'center'">Closing Jurnal</th> -->
+            <th rowspan="2" data-options="field:'account_name',width:250,halign:'center'">Account Name</th>
+            <th rowspan="2" data-options="field:'closing_journal',width:70,halign:'center',align:'center',formatter: statusformat, styler:statusStyle">Closing<br>Journal</th>
+            <th rowspan="2" data-options="field:'module',width:120,halign:'center',align:'center'">AP / AR<br>Other</th>
+            <th rowspan="2" data-options="field:'starting_from',width:100,halign:'center',align:'center'">Starting From</th>
             <th colspan="3" data-options="field:'',width:150,halign:'center'"> Original Currency</th>
             <th colspan="3" data-options="field:'',width:150,halign:'center'"> Local Currency</th>
             <th colspan="2" data-options="field:'',width:100,halign:'center'"> Created</th>
@@ -195,13 +197,49 @@
 
         if (value != null) {
             const formatter = new Intl.NumberFormat(format, {
-                style: 'currency',
+                // style: 'currency',
                 currency: currency,
                 minimumFractionDigits: digits
             });
 
             return "<b>" + formatter.format(value) + "</b>";
         }
+    }
+
+    function statusformat(value, row) {
+
+        if (value == 'CLOSE') {
+
+            return "<b style='color:red;'>NO</b>";
+            
+        } else if (value == 'footer') {
+            
+            return "";
+            
+        } else {
+            
+            return "<b style='color:green;'>YES</b>";
+
+        }
+
+    }
+
+    function statusStyle(value, row, index) {
+
+        if (value == 'CLOSE') {
+
+            return 'background-color:#FFC8C8;';
+            
+        } else if (value == 'footer') {
+            
+            return "";
+            
+        } else {
+            
+            return 'background-color:#C8FFCC;';
+
+        }
+
     }
 
     function priceformatlocal(value, row) {
@@ -225,7 +263,7 @@
 
         if (value != null) {
             const formatter = new Intl.NumberFormat(format, {
-                style: 'currency',
+                // style: 'currency',
                 currency: currency,
                 minimumFractionDigits: digits
             });
@@ -266,7 +304,58 @@
             fit: true,
             pageList: [20, 50, 100, 500, 1000],
             pageSize: 20,
-        }).datagrid('enableFilter');
+            showFooter: true,
+            onLoadSuccess: function(data) {                
+                var totalDebitOriginal = 0;
+                var totalCreditOriginal = 0;
+                var totalDebitLocal = 0;
+                var totalCreditLocal = 0;
+
+                for (var i=0; i<data.rows.length; i++) {
+                    totalDebitOriginal += parseFloat(data.rows[i].original_debit, 0);
+                    totalCreditOriginal += parseFloat(data.rows[i].original_kredit, 0);
+                    totalDebitLocal += parseFloat(data.rows[i].local_debit, 0);
+                    totalCreditLocal += parseFloat(data.rows[i].local_kredit, 0);
+                }
+
+                let footerData = [{
+                    closing_journal: 'footer',
+                    original_currency: '<b>Grand Total</b>',
+                    original_debit: totalDebitOriginal,
+                    original_kredit: totalCreditOriginal,
+                    local_debit: totalDebitLocal,
+                    local_kredit: totalCreditLocal
+                }];
+                // console.log(footerData);
+
+                $(this).datagrid('reloadFooter', footerData);
+            }
+        }).datagrid('enableFilter', [{
+            field:'closing_journal',
+            type:'combobox',
+            options:{
+                data: [
+                    { value: '', text: 'All' }, 
+                    { value: 'OPEN', text: 'YES' }, 
+                    { value: 'CLOSE', text: 'NO' },
+                ],
+                valueField: 'value',
+                textField: 'text',
+                panelHeight: 'auto',
+                onChange: function(newValue, oldValue){
+                    if (newValue == '') {
+                        $('#dg').datagrid('removeFilterRule', 'closing_journal');
+                    } else {
+                        $('#dg').datagrid('addFilterRule', {
+                            field: 'closing_journal',
+                            op: 'contains',
+                            value: newValue
+                        });
+                    }
+                    $('#dg').datagrid('doFilter');
+                }
+            },
+        }]);
 
         $('#account_group_detail_id').combobox({
             url: '<?= base_url('finance/account_group_details/reads') ?>', // URL to your PHP script

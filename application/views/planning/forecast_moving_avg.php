@@ -5,64 +5,56 @@
                 <li><b>Filter Data</b> is to show Forecast Analyst base on <b>Filter Customer</b> or <b>Filter Product No</b>, The data is based on <b>Order Management > Forecasting > Forecast Customer</b> that were previously input.</li>
                 <li><b>The Data Forecast</b> is based on <b>Order Management > Forecasting > Forecast Customer</b> that were previously input.</li>
                 <li><b>The Data 4 Month</b> is based on <b>Calculating</b></li>
-                <ul>
-                    <li><b>The Data 4 month table for the 4th month</b>: Data (1st Month + 2nd Month + 3rd Month + 4th Month) / 4</b></li>
-                    <li><b>The Data 4 month table for the 5th month</b>: Data (2nd Month + 3rd Month + 4th Month + 5th Month) / 4</b></li>
-                    <li><b>The Data 4 month table for the 6th month</b>: Data (3rd Month + 4th Month + 5th Month + 6th Month) / 4</b></li>
-                    <li><b>The Data 4 month table for the 7th month</b>: Data (4th Month + 5th Month + 6th Month + 7th Month) / 4</b></li>
-                    <li><b>The Data 4 month table for the 8th month</b>: Data (5th Month + 6th Month + 7th Month + 8th Month) / 4</b></li>
-                    <li><b>The Data 4 month table for the 9th month</b>: Data (6th Month + 7th Month + 8th Month + 9th Month) / 4</b></li>
-                    <li><b>The Data 4 month table for the 10th month</b>: Data (7th Month + 8th Month + 9th Month + 10th Month) / 4</b></li>
-                    <li><b>The Data 4 month table for the 11th month</b>: Data (8th Month + 9th Month + 10th Month + 11th Month) / 4</b></li>
-                    <li><b>The Data 4 month table for the 12th month</b>: Data (9th Month + 10th Month + 11th Month + 12th Month) / 4</b></li>
-                </ul>
+                    <ul>
+                        <li><b>The Data 4 month table for the 4th month</b>: Data (1st Month + 2nd Month + 3rd Month + 4th Month) / 4</b></li>
+                        <li><b>The Data 4 month table for the 5th month</b>: Data (2nd Month + 3rd Month + 4th Month + 5th Month) / 4</b></li>
+                        <li><b>The Data 4 month table for the 6th month</b>: Data (3rd Month + 4th Month + 5th Month + 6th Month) / 4</b></li>
+                        <li><b>The Data 4 month table for the 7th month</b>: Data (4th Month + 5th Month + 6th Month + 7th Month) / 4</b></li>
+                        <li><b>The Data 4 month table for the 8th month</b>: Data (5th Month + 6th Month + 7th Month + 8th Month) / 4</b></li>
+                        <li><b>The Data 4 month table for the 9th month</b>: Data (6th Month + 7th Month + 8th Month + 9th Month) / 4</b></li>
+                        <li><b>The Data 4 month table for the 10th month</b>: Data (7th Month + 8th Month + 9th Month + 10th Month) / 4</b></li>
+                        <li><b>The Data 4 month table for the 11th month</b>: Data (8th Month + 9th Month + 10th Month + 11th Month) / 4</b></li>
+                        <li><b>The Data 4 month table for the 12th month</b>: Data (9th Month + 10th Month + 11th Month + 12th Month) / 4</b></li>
+                    </ul>
                 <li><b>The Data 6 Month</b> is based on <b>Calculating</b></li>
-                <ul>
-                    <li><b>The Data 6 month table for the 6th month</b>: Data (1st Month + 2nd Month + 3rd Month + 4th Month + 5th Month + 6th Month) / 6</b></li>
-                    <li><b>The Data 6 month table for the 7th month</b>: Data (2nd Month + 3rd Month + 4th Month + 5th Month + 6th Month + 7th Month) / 6</b></li>
-                    <li><b>The Data 6 month table for the 8th month</b>: Data (3rd Month + 4th Month + 5th Month + 6th Month + 7th Month + 8th Month) / 6</b></li>
-                    <li><b>The Data 6 month table for the 9th month</b>: Data (4th Month + 5th Month + 6th Month + 7th Month + 8th Month + 9th Month) / 6</b></li>
-                    <li><b>The Data 6 month table for the 10th month</b>: Data (5th Month + 6th Month + 7th Month + 8th Month + 9th Month + 10th Month) / 6</b></li>
-                    <li><b>The Data 6 month table for the 11th month</b>: Data (6th Month + 7th Month + 8th Month + 9th Month + 10th Month + 11th Month) / 6</b></li>
-                    <li><b>The Data 6 month table for the 12th month</b>: Data (7th Month + 8th Month + 9th Month + 10th Month + 11th Month + 12th Month) / 6</b></li>
-                </ul>
+                    <ul>
+                        <li><b>The Data 6 month table for the 6th month</b>: Data (1st Month + 2nd Month + 3rd Month + 4th Month + 5th Month + 6th Month) / 6</b></li>
+                        <li><b>The Data 6 month table for the 7th month</b>: Data (2nd Month + 3rd Month + 4th Month + 5th Month + 6th Month + 7th Month) / 6</b></li>
+                        <li><b>The Data 6 month table for the 8th month</b>: Data (3rd Month + 4th Month + 5th Month + 6th Month + 7th Month + 8th Month) / 6</b></li>
+                        <li><b>The Data 6 month table for the 9th month</b>: Data (4th Month + 5th Month + 6th Month + 7th Month + 8th Month + 9th Month) / 6</b></li>
+                        <li><b>The Data 6 month table for the 10th month</b>: Data (5th Month + 6th Month + 7th Month + 8th Month + 9th Month + 10th Month) / 6</b></li>
+                        <li><b>The Data 6 month table for the 11th month</b>: Data (6th Month + 7th Month + 8th Month + 9th Month + 10th Month + 11th Month) / 6</b></li>
+                        <li><b>The Data 6 month table for the 12th month</b>: Data (7th Month + 8th Month + 9th Month + 10th Month + 11th Month + 12th Month) / 6</b></li>
+                    </ul>
                 <li><b>The Data 12 Month</b> is based on <b>Calculating</b></li>
-                <ul>
-                    <li><b>The Data 12 month table for the 12th month</b>: Data (1st Month + 2nd Month + 3rd Month + 4th Month + 5th Month + 6th Month + 7th Month + 8th Month + 9th Month + 10th Month + 11th Month + 12th Month) / 12</b></li>
-                </ul>
+                    <ul>
+                        <li><b>The Data 12 month table for the 12th month</b>: Data (1st Month + 2nd Month + 3rd Month + 4th Month + 5th Month + 6th Month + 7th Month + 8th Month + 9th Month + 10th Month + 11th Month + 12th Month) / 12</b></li>
+                    </ul>
             </ul>
         </div>
     </div>
 </div>
 
 <div id="f" class="easyui-panel" style="width:99.5%; background: #F4F4F4;">
-    <div style="width: 100%;">
-        <fieldset style="width: 80%; border:2px solid #d0d0d0; margin-bottom: 5px; margin-top: 5px; margin-left: 10px; border-radius:4px;">
+    <div style="width: 100%; display: grid; grid-template-columns: auto auto auto; grid-gap: 5px; display: flex;">
+        <fieldset style="width: 40%; border:2px solid #d0d0d0; margin-bottom: 5px; margin-top: 5px; margin-left: 10px; border-radius:4px;">
             <legend><b>Form Filter Data</b></legend>
-            <div style="float: left; width: 50%;">
-                <div class="fitem">
-                    <span style="width:35%; display:inline-block;">Period</span>
-                    <input style="width:30%;" id="filter_period_year" value="<?= date("Y") ?>" class="easyui-combobox">
-                    <input style="width:29.6%;" id="filter_period_month" value="<?= date("m") ?>" class="easyui-combobox">
-                </div>
-                <div class="fitem">
-                    <span style="width:35%; display:inline-block;">Customer Name</span>
-                    <input style="width:60%;" id="filter_customer_name" class="easyui-combogrid">
-                </div>
+            <div class="fitem">
+                <span style="width:35%; display:inline-block;">Period</span>
+                <input style="width:30%;" id="filter_period_year" value="<?= date("Y") ?>" class="easyui-combobox">
+                <input style="width:30%;" id="filter_period_month" value="<?= date("m") ?>" class="easyui-combobox"> 
             </div>
-            <div style="float: left; width: 50%;">
-                <div class="fitem">
-                    <span style="width:35%; display:inline-block;">Product Family</span>
-                    <input style="width:60%;" id="filter_product_family" class="easyui-combogrid">
-                </div>
-                <div class="fitem">
-                    <span style="width:35%; display:inline-block;">Product No</span>
-                    <input style="width:60%;" id="filter_item_fg" class="easyui-combogrid">
-                </div>
-                <div class="fitem" style="text-align: right; width: 100%; padding-right: 4.5%;">
-                    <span style="width:35%; display:inline-block;"></span>
-                    <a href="javascript:;" class="easyui-linkbutton" onclick="filter()"><i class="fa fa-search"></i> Filter Data</a>
-                </div>
+            <div class="fitem">
+                <span style="width:35%; display:inline-block;">Customer Name</span>
+                <input style="width:60%;" id="filter_customer_name" class="easyui-combogrid">
+            </div>
+            <div class="fitem">
+                <span style="width:35%; display:inline-block;">Product No</span>
+                <input style="width:60%;" id="filter_item_fg" class="easyui-combogrid">
+            </div>
+            <div class="fitem">
+                <span style="width:35%; display:inline-block;"></span>
+                <a href="javascript:;" class="easyui-linkbutton" onclick="filter()"><i class="fa fa-search"></i> Filter Data</a>
             </div>
         </fieldset>
     </div>
@@ -82,19 +74,15 @@
         var filter_period_month = $("#filter_period_month").datebox("getValue");
         var filter_customer_name = $("#filter_customer_name").combobox("getValue");
         var filter_item_fg = $("#filter_item_fg").combobox("getValue");
-        var filter_product_family = $("#filter_product_family").combogrid('getValue');
-
         var url = "?filter_period_year=" + window.btoa(filter_period_year) +
             "&filter_period_month=" + window.btoa(filter_period_month) +
             "&filter_customer_name=" + filter_customer_name +
-            "&filter_item_fg=" + filter_item_fg +
-            "&filter_product_family=" + window.btoa(filter_product_family);
-
+            "&filter_item_fg=" + filter_item_fg;
         if (filter_period_year == "" && filter_period_month == "") {
             toastr.warning("Please select Periode, Customer, and Product No.!");
         } else {
             $("#printout").contents().find('html').html("<center><br><br><br><b style='font-size:20px;'>Please Wait...</b></center>");
-            $("#printout").attr('src', '<?= base_url('planning/forecast_analysis/print') ?>' + url);
+            $("#printout").attr('src', '<?= base_url('planning/forecast_moving_avg/print') ?>' + url);
         }
     }
 
@@ -103,18 +91,14 @@
         var filter_period_month = $("#filter_period_month").datebox("getValue");
         var filter_customer_name = $("#filter_customer_name").combobox("getValue");
         var filter_item_fg = $("#filter_item_fg").combogrid("getValue");
-        var filter_product_family = $("#filter_product_family").combogrid('getValue');
-
         var url = "?filter_period_year=" + window.btoa(filter_period_year) +
             "&filter_period_month=" + window.btoa(filter_period_month) +
             "&filter_customer_name=" + filter_customer_name +
-            "&filter_item_fg=" + filter_item_fg +
-            "&filter_product_family=" + window.btoa(filter_product_family);
-
+            "&filter_item_fg=" + filter_item_fg;
         if (filter_period_year == "" && filter_period_month == "") {
             toastr.warning("Please select Periode, Customer, and Product No.!");
         } else {
-            window.location.assign('<?= base_url('planning/forecast_analysis/print/excel') ?>' + url);
+            window.location.assign('<?= base_url('planning/forecast_moving_avg/print/excel') ?>' + url);
         }
     }
 
@@ -206,30 +190,11 @@
         ],
     });
 
-    $('#filter_product_family').combogrid({
-        url: '<?= base_url('planning/forecast_analysis/readsProductFamily') ?>',
-        panelWidth: 420,
-        idField: 'number',
-        textField: 'name',
-        mode: 'remote',
-        fitColumns: true,
-        prompt: "Select Product Family",
-        icons: [{
-            iconCls: 'icon-clear',
-            handler: function(e) {
-                $(e.data.target).combogrid('clear').combogrid('textbox').focus();
-            }
-        }],
-        columns: [[
-            {field: 'number', title: 'Code', width: 100},
-            {field: 'name', title: 'Product Family', width: 200}
-        ]]
-    });
-
+    
 
     // $(function() {
     //     var filter_period_year = $("#filter_period_year").combobox('getValue');
     //     var filter_period_month = $("#filter_period_month").combobox('getValue');
-
+        
     // });
 </script>

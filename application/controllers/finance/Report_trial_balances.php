@@ -215,6 +215,332 @@ class Report_trial_balances extends CI_Controller
         }
 
         $filter_from = base64_decode($this->input->get("filter_from"));
+        $filter_to   = base64_decode($this->input->get("filter_to"));
+
+        if (empty($filter_from) || !strtotime($filter_from)) {
+            show_error('Invalid "filter_from" date parameter.');
+            return;
+        }
+        if (empty($filter_to) || !strtotime($filter_to)) {
+            show_error('Invalid "filter_to" date parameter.');
+            return;
+        }
+
+        $period_start = date("Ym", strtotime($filter_from));
+        $period_end   = date("Ym", strtotime($filter_to));
+
+        //Config
+        $this->db->select('*');
+        $this->db->from('config');
+        $config = $this->db->get()->row();
+
+        // Ambil Begin Balances
+        $this->db->select('account_number, begin_debit, begin_credit');
+        $this->db->from('trial_balances');
+        $this->db->where('period', $period_start);
+        $this->db->group_by('account_number', 'begin_debit', 'begin_credit');
+        $begin_balances = $this->db->get()->result_array();
+
+        $begin_balance_mapping = [];
+        foreach ($begin_balances as $row) {
+            $begin_balance_mapping[$row['account_number']] = [
+                'debit' => $row['begin_debit'],
+                'credit' => $row['begin_credit'],
+            ];
+        }
+
+        
+        // Ambil End Balance
+        $this->db->select('account_number, account_name, header, 
+        ending_debit, ending_credit');
+        $this->db->from('trial_balances');
+        $this->db->where('period', $period_end);
+        $this->db->group_by('account_number, account_name, header, ending_debit, ending_credit');
+        $ending_balances = $this->db->get()->result_array();
+        
+        $ending_balance_mapping = [];
+        foreach ($ending_balances as $row) {
+            $ending_balance_mapping[$row['account_number']] = [
+                'name' => $row['account_name'],
+                'header' => $row['header'],
+                'debit' => $row['ending_debit'],
+                'credit' => $row['ending_credit'],
+            ];
+        }
+
+        // Ambil mutasi (Transaction)
+        $this->db->select('a.account_number, b.account_group_detail_id, a.header,
+            SUM(a.local_debit) as total_local_debit, 
+            SUM(a.local_credit) as total_local_credit');
+        $this->db->from('trial_balances a');
+        $this->db->join('account_coa b', 'a.account_number = b.account_number', 'left');
+        $this->db->where('a.period >=', $period_start);
+        $this->db->where('a.period <=', $period_end);
+        $this->db->group_by('a.account_number');
+        $local_mutations = $this->db->get()->result_array();
+
+        $local_mutation_mapping = [];
+        foreach ($local_mutations as $row) {
+            $local_mutation_mapping[$row['account_number']] = [
+                'debit' => $row['total_local_debit'],
+                'credit' => $row['total_local_credit'],
+            ];
+
+            $groupId = $this->db->query("SELECT id FROM account_group_details WHERE number = '" . $row['account_number'] . "' ")->row();
+            $account_mapping[] = [
+                'group_id'       => !empty($row['account_group_detail_id']) ? $row['account_group_detail_id'] : $groupId->id,
+                'account_number' => $row['account_number'],
+                'header'         => $row['header'],
+            ];
+        }
+        
+        if (empty($account_mapping)) {
+            echo ('<h3> Belum ada laporan pada periode ini. Silakan Generate. </h3>');
+            return;
+        }
+
+        usort($account_mapping, function($a, $b) {
+            $groupComparison = $a['group_id'] <=> $b['group_id'];   // Sort Prioritas 1: group_id (ascending alphabetical)
+            if ($groupComparison !== 0) {
+                return $groupComparison;
+            }
+
+            $headerComparison = $a['header'] <=> $b['header'];      // Sort Prioritas 2: header (0 first, then 1 - ascending numerical)
+            if ($headerComparison !== 0) {
+                return $headerComparison;
+            }
+
+            return $a['account_number'] <=> $b['account_number'];   // Sort Prioritas 3: id (ascending numerical)
+        });
+
+        $trial_balances = [];
+        foreach ($account_mapping as $account) 
+        {
+            $name   = $ending_balance_mapping[$account['account_number']]['name'] ?? 'N/A';
+            $header = $ending_balance_mapping[$account['account_number']]['header'] ?? 1;
+            
+            $begin_debit  = $begin_balance_mapping[$account['account_number']]['debit'] ?? 0;
+            $begin_credit = $begin_balance_mapping[$account['account_number']]['credit'] ?? 0;
+            
+            $local_debit  = $local_mutation_mapping[$account['account_number']]['debit'] ?? 0;
+            $local_credit = $local_mutation_mapping[$account['account_number']]['credit'] ?? 0;
+            
+            $ending_debit  = $ending_balance_mapping[$account['account_number']]['debit'] ?? 0;
+            $ending_credit = $ending_balance_mapping[$account['account_number']]['credit'] ?? 0;
+            
+            $trial_balances[] = [
+                'account_number' => $account['account_number'],
+                'account_name'   => $name,
+                'header'         => $header,
+                'begin_debit'    => $begin_debit,
+                'begin_credit'   => $begin_credit,
+                'local_debit'    => $local_debit,
+                'local_credit'   => $local_credit,
+                'ending_debit'   => $ending_debit,
+                'ending_credit'  => $ending_credit,
+            ];
+        }
+        
+        $html = '<html>
+            <head>
+                <title>Trial Balance - <?php echo date("F Y", strtotime($filter_to)); ?></title>
+                <style>
+                    body {
+                        font-family: Arial, Helvetica, sans-serif;
+                        margin: 20px;
+                    }
+                    .header-section {
+                        overflow: hidden;
+                        margin-bottom: 20px;
+                    }
+                    .company-info {
+                        float: left;
+                        width: 60%;
+                        font-size: 12px;
+                        text-align: left;
+                    }
+                    .print-info {
+                        float: right;
+                        width: 38%;
+                        font-size: 12px;
+                        text-align: right;
+                    }
+                    .company-logo {
+                        vertical-align: top;
+                        padding-right: 10px;
+                    }
+                    .company-details b {
+                        font-size: 14px;
+                    }
+                    .company-details span {
+                        font-size: 10px;
+                    }
+                    .report-title {
+                        text-align: center;
+                        margin-top: 20px;
+                        margin-bottom: 20px;
+                    }
+                    .report-title h3 {
+                        margin: 0;
+                        font-size: 18px;
+                    }
+                    .report-title small {
+                        font-size: 12px;
+                    }
+                    #customers {
+                        border-collapse: collapse;
+                        width: 100%;
+                        font-size: 13px; 
+                        margin-top: 15px;
+                    }
+                    #customers th,
+                    #customers td {
+                        border: 1px solid #ddd;
+                        padding: 4px 8px; 
+                    }
+                    #customers th {
+                        background-color: #f0f0f0;
+                        text-align: center;
+                        color: black;
+                        font-weight: bold;
+                    }
+                    #customers tr:nth-child(even) {
+                        background-color: #f9f9f9;
+                    }
+                    #customers tr:hover {
+                        background-color: #f1f1f1;
+                    }
+                    .text-right { text-align: right; }
+                    .text-center { text-align: center; }
+                    .font-bold { font-weight: bold; }
+                    .bg-light-green { background-color: #CAFFB3; } /* Untuk baris kelompok akun */
+                    .bg-grey { background-color: #EBEBEB; } /* Untuk grand total */
+
+                    .clearfix::after {
+                        content: "";
+                        clear: both;
+                        display: table;
+                    }
+                </style>
+            </head>
+            <body>';
+
+            $html .= '<div class="header-section clearfix">
+                    <div class="company-info">
+                        <table>
+                            <tr>
+                                <td class="company-logo">
+                                    <img src="' . htmlspecialchars($config->favicon ?? "") . '" width="30" alt="Logo">
+                                </td>
+                                <td class="company-details">
+                                    <b>' . htmlspecialchars($config->name ?? 'Company Name Not Set') . '</b><br>
+                                    <span>' . htmlspecialchars($config->description ?? 'Description Not Set') . '</span><br>
+                                </td>
+                            </tr>
+                        </table>
+                    </div>';
+
+            $html .= '<div class="print-info">
+                        Print Date ' . date("d M Y H:i:s") . ' <br>
+                        Print By ' .  htmlspecialchars($this->session->username) . '
+                    </div>
+                </div> <br>';
+
+            $html .= '<div class="report-title">
+                    <h3>TRIAL BALANCE</h3>
+                    <small>PERIOD : <b>' . htmlspecialchars(date("d M Y", strtotime($filter_from))) . '</b> To <b> ' . htmlspecialchars(date("d M Y", strtotime($filter_to))) . ' </b></small>
+                </div>
+                <br><br>                
+                <table id="customers">
+                    <thead>
+                        <tr>
+                            <th rowspan="3" width="20">No</th>
+                            <th rowspan="3">Account No</th>
+                            <th rowspan="3">Account Name</th>
+                            <th colspan="6">LOCAL CURRENCY</th>
+                        </tr>
+                        <tr>
+                            <th colspan="2">Begin Balance</th>
+                            <th colspan="2">Transaction</th>
+                            <th colspan="2">End Balance</th>
+                        </tr>
+                        <tr>
+                            <th>Debit</th>
+                            <th>Credit</th>
+                            <th>Debit</th>
+                            <th>Credit</th>
+                            <th>Debit</th>
+                            <th>Credit</th>
+                        </tr>
+                    </thead>
+                    <tbody>';
+                        
+                            $no = 1;
+                            $grand_total_begin_debit = 0;
+                            $grand_total_begin_credit = 0;
+                            $grand_total_local_debit = 0;
+                            $grand_total_local_credit = 0;
+                            $grand_total_ending_debit = 0;
+                            $grand_total_ending_credit = 0;
+
+                            foreach ($trial_balances as $trial_balance) 
+                            {
+                                $row_class = '';
+                                $font_style = '';
+
+                                if ($trial_balance['header'] == 0) { 
+                                    $row_class = 'background:#CAFFB3; font-weight:bold;';
+                                } else { 
+                                    // Akumulasi grand total hanya untuk baris detail (header=1)
+                                    $grand_total_begin_debit += $trial_balance['begin_debit'];
+                                    $grand_total_begin_credit += $trial_balance['begin_credit'];
+                                    $grand_total_local_debit += $trial_balance['local_debit'];
+                                    $grand_total_local_credit += $trial_balance['local_credit'];
+                                    $grand_total_ending_debit += $trial_balance['ending_debit'];
+                                    $grand_total_ending_credit += $trial_balance['ending_credit'];
+                                }
+                            
+        $html .= '<tr style="' . $row_class . '"> 
+                                    <td class="text-center">' . $no . '</td>
+                                    <td>' . htmlspecialchars($trial_balance['account_number']) . '</td>
+                                    <td>' . $trial_balance['account_name'] . '</td>
+                                    <td class="text-right">' . number_format($trial_balance['begin_debit'], 2, ',', '.') . '</td>
+                                    <td class="text-right">' . number_format($trial_balance['begin_credit'], 2, ',', '.') . '</td>
+                                    <td class="text-right">' . number_format($trial_balance['local_debit'], 2, ',', '.') . '</td>
+                                    <td class="text-right">' . number_format($trial_balance['local_credit'], 2, ',', '.') . '</td>
+                                    <td class="text-right">' . number_format($trial_balance['ending_debit'], 2, ',', '.') . '</td>
+                                    <td class="text-right">' . number_format($trial_balance['ending_credit'], 2, ',', '.') . '</td>
+                                </tr>';
+                            
+                                $no++;
+                            }
+
+        $html .= '</tbody>
+                    <tfoot>
+                        <tr style="background-color: #EBEBEB; font-weight: bold;">
+                            <td colspan="3" class="text-center">GRAND TOTAL</td>
+                            <td class="text-right">' . number_format($grand_total_begin_debit, 2, ',', '.') . '</td>
+                            <td class="text-right">' . number_format($grand_total_begin_credit, 2, ',', '.') . '</td>
+                            <td class="text-right">' . number_format($grand_total_local_debit, 2, ',', '.') . '</td>
+                            <td class="text-right">' . number_format($grand_total_local_credit, 2, ',', '.') . '</td>
+                            <td class="text-right">' . number_format($grand_total_ending_debit, 2, ',', '.') . '</td>
+                            <td class="text-right">' . number_format($grand_total_ending_credit, 2, ',', '.') . '</td>
+                        </tr>
+                    </tfoot>';
+
+        $html .= '</table></body></html>';
+        echo $html;
+    }
+
+    public function printOld($option = "")
+    {
+        if ($option == "excel") {
+            $format  = date("Ymd");
+            header("Content-type: application/vnd-ms-excel");
+            header("Content-Disposition: attachment; filename=trial_balances_$format.xls");
+        }
+
+        $filter_from = base64_decode($this->input->get("filter_from"));
         $filter_to = base64_decode($this->input->get("filter_to"));
         $filter_before = date("Y-01-01", strtotime($filter_from));
         $filter_before_to = date("Y-m-t", strtotime("-1 month", strtotime($filter_from)));
@@ -308,12 +634,12 @@ class Report_trial_balances extends CI_Controller
                             <td style="'.$font.'">' . $no . '</td>
                             <td style="'.$font.'">' . $trial_balance['account_number'] . '</td>
                             <td style="'.$font.'">' . $trial_balance['account_name'] . '</td>
-                            <td style="text-align:right;'.$font.'">' . number_format($trial_balance['begin_debit'], 2) . '</td>
-                            <td style="text-align:right;'.$font.'">' . number_format($trial_balance['begin_credit'], 2) . '</td>
-                            <td style="text-align:right;'.$font.'">' . number_format($trial_balance['local_debit'], 2) . '</td>
-                            <td style="text-align:right;'.$font.'">' . number_format($trial_balance['local_credit'], 2) . '</td>
-                            <td style="text-align:right;'.$font.'">' . number_format($trial_balance['ending_debit'], 2) . '</td>
-                            <td style="text-align:right;'.$font.'">' . number_format($trial_balance['ending_credit'], 2) . '</td>
+                            <td style="text-align:right;'.$font.'">' . number_format($trial_balance['begin_debit'], 2, ',', '.') . '</td>
+                            <td style="text-align:right;'.$font.'">' . number_format($trial_balance['begin_credit'], 2, ',', '.') . '</td>
+                            <td style="text-align:right;'.$font.'">' . number_format($trial_balance['local_debit'], 2, ',', '.') . '</td>
+                            <td style="text-align:right;'.$font.'">' . number_format($trial_balance['local_credit'], 2, ',', '.') . '</td>
+                            <td style="text-align:right;'.$font.'">' . number_format($trial_balance['ending_debit'], 2, ',', '.') . '</td>
+                            <td style="text-align:right;'.$font.'">' . number_format($trial_balance['ending_credit'], 2, ',', '.') . '</td>
                         </tr>';
 
             if($trial_balance['header'] == 0){
@@ -329,12 +655,12 @@ class Report_trial_balances extends CI_Controller
 
         $html .= '  <tr style="background:#EBEBEB;">
                         <td colspan="3"><b>GRAND TOTAL</b></td>
-                        <td style="text-align:right;"><b>' . number_format(@$grand_total_begin_debit, 2) . '</b></td>
-                        <td style="text-align:right;"><b>' . number_format(@$grand_total_begin_credit, 2) . '</b></td>
-                        <td style="text-align:right;"><b>' . number_format(@$grand_total_local_debit, 2) . '</b></td>
-                        <td style="text-align:right;"><b>' . number_format(@$grand_total_local_credit, 2) . '</b></td>
-                        <td style="text-align:right;"><b>' . number_format($grand_total_ending_debit, 2) . '</b></td>
-                        <td style="text-align:right;"><b>' . number_format($grand_total_ending_credit, 2) . '</b></td>
+                        <td style="text-align:right;"><b>' . number_format(@$grand_total_begin_debit, 2, ',', '.') . '</b></td>
+                        <td style="text-align:right;"><b>' . number_format(@$grand_total_begin_credit, 2, ',', '.') . '</b></td>
+                        <td style="text-align:right;"><b>' . number_format(@$grand_total_local_debit, 2, ',', '.') . '</b></td>
+                        <td style="text-align:right;"><b>' . number_format(@$grand_total_local_credit, 2, ',', '.') . '</b></td>
+                        <td style="text-align:right;"><b>' . number_format($grand_total_ending_debit, 2, ',', '.') . '</b></td>
+                        <td style="text-align:right;"><b>' . number_format($grand_total_ending_credit, 2, ',', '.') . '</b></td>
                     </tr>';
 
 

@@ -8,6 +8,10 @@
                 <input style="width:30%;" id="filter_to" value="<?= date("Y-m-t") ?>" class="easyui-datebox" data-options="prompt:'Finish Date',formatter:myformatter,parser:myparser, editable:false">
             </div>
             <div class="fitem">
+                <span style="width:35%; display:inline-block;">Account Category</span>
+                <input style="width:60%;" id="filter_category" class="easyui-combogrid">
+            </div>
+            <div class="fitem">
                 <span style="width:35%; display:inline-block;">Account No</span>
                 <input style="width:60%;" id="filter_account" class="easyui-combogrid">
             </div>
@@ -28,7 +32,7 @@
     function filter() {
         var filter_from = $("#filter_from").datebox("getValue");
         var filter_to = $("#filter_to").datebox("getValue");
-        var filter_account = $("#filter_account").combogrid("getValue");
+        var filter_account = $("#filter_account").combogrid('getText');
 
         var url = "?filter_from=" + window.btoa(filter_from) +
             "&filter_to=" + window.btoa(filter_to) +
@@ -45,7 +49,7 @@
     function excel() {
         var filter_from = $("#filter_from").datebox("getValue");
         var filter_to = $("#filter_to").datebox("getValue");
-        var filter_account = $("#filter_account").combogrid("getValue");
+        var filter_account = $("#filter_account").combogrid('getText');
 
         var url = "?filter_from=" + window.btoa(filter_from) +
             "&filter_to=" + window.btoa(filter_to) +
@@ -72,11 +76,15 @@
             panelWidth: 320,
             idField: 'account_number',
             textField: 'account_number',
+            multiple: true,
             mode: 'remote',
             fitColumns: true,
             prompt: 'Choose Account No',
             columns: [
                 [{
+                    field:'ck',
+                    checkbox:true
+                }, {
                     field: 'account_number',
                     title: 'Account No',
                     width: 100
@@ -84,8 +92,64 @@
                     field: 'account_name',
                     title: 'Account Name',
                     width: 200
+                }]
+            ],
+        });
+    });
+
+    $(function() {
+        $('#filter_category').combogrid({
+            url: '<?= base_url('finance/report_general_ledgers/readCategories') ?>',
+            panelWidth: 320,
+            idField: 'number',
+            textField: 'number',
+            mode: 'remote',
+            fitColumns: true,
+            prompt: 'Choose Account Category',
+            columns: [
+                [{
+                    field: 'number',
+                    title: 'Account No',
+                    width: 100
+                }, {
+                    field: 'name',
+                    title: 'Category Name',
+                    width: 200
                 }, ]
             ],
+            onChange: function(category, oldValue) {
+                var url;
+                if (category) {
+                    url = '<?= base_url('finance/report_general_ledgers/readCoa/') ?>' + window.btoa(category);
+                } else {
+                    url = '<?= base_url('finance/report_general_ledgers/readCoa/') ?>';
+                }
+
+                $('#filter_account').combogrid({
+                    url: url,
+                    panelWidth: 320,
+                    idField: 'account_number',
+                    textField: 'account_number',
+                    multiple: true,
+                    mode: 'remote',
+                    fitColumns: true,
+                    prompt: 'Choose Account No',
+                    columns: [
+                        [{
+                            field:'ck',
+                            checkbox:true
+                        }, {
+                            field: 'account_number',
+                            title: 'Account No',
+                            width: 100
+                        }, {
+                            field: 'account_name',
+                            title: 'Account Name',
+                            width: 200
+                        }, ]
+                    ],
+                });
+            }
         });
     });
 

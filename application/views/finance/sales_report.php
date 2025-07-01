@@ -27,7 +27,7 @@
                 <span style="width:35%; display:inline-block;">Display By</span>
                 <select style="width:60%;" id="filter_display" class="easyui-combobox" panelHeight="auto">
                     <option value="DETAIL">DETAIL</option>
-                    <option value="SUMMARY">SUMMARY</option>
+                    <option value="SUMMARY" selected>SUMMARY</option>
                 </select>
             </div>
         </div>

@@ -57,13 +57,30 @@ class Account_coa extends CI_Controller
             $result = array();
             //Select Query
             $this->db->select('account_coa.*, account_group_details.name as account_group_detail_id');
+            $this->db->select("journal_types.module, DATE_FORMAT(account_coa.created_date, '%Y-%m-%d') as starting_from, 
+                (CASE WHEN account_coa.status = 0 THEN 'CLOSE'
+                ELSE 'OPEN' END) as closing_journal");
             $this->db->from('account_coa');
             $this->db->join('account_group_details', 'account_group_details.id = account_coa.account_group_detail_id', 'left');
+            $this->db->join('journal_types', 'journal_types.account_number = account_coa.account_number', 'left');
             $this->db->where('account_coa.deleted', 0);
 
             if (@count($filters) > 0) {
                 foreach ($filters as $filter) {
-                    $this->db->like($filter->field, $filter->value);
+                    if ($filter->field == 'account_group_detail_id') {
+                        $this->db->like('account_group_details.name', $filter->value);
+                    } elseif ($filter->field == 'module') {
+                        $this->db->like('journal_types.module', $filter->value);
+                    } elseif ($filter->field == 'closing_journal') {
+                        $status = ($filter->value == 'CLOSE') ? 0 : 1;
+                        $this->db->like('account_coa.status', $status);
+                    } elseif ($filter->field == 'starting_from') {
+                        $this->db->like("DATE_FORMAT(account_coa.created_date, '%Y')", $filter->value);
+                        $this->db->or_like("DATE_FORMAT(account_coa.created_date, '%m')", $filter->value);
+                        $this->db->or_like("DATE_FORMAT(account_coa.created_date, '%d')", $filter->value);
+                    } else {
+                        $this->db->like('account_coa.'.$filter->field, $filter->value);
+                    }
                 }
             }
 
@@ -107,34 +124,78 @@ class Account_coa extends CI_Controller
     //     }
     // }
 
+    public function checkExisting($field, $value) 
+    {
+        $check = $this->crud->read('account_coa', [], [$field => $value]);
+        return $check;
+    }
+
     public function create()
     {
         if ($this->input->post()) {
             $post   = $this->input->post();
-            $account_coa = $this->crud->read('account_coa', [], ["account_number" => $post['account_number']]);
 
-            if (!empty($account_coa->account_number)) {
-                echo json_encode(array("title" => "Duplicated", "message" => "Account No " . $account_coa->account_number . " Duplicate Data", "theme" => "error"));
+            $check_number = $this->checkExisting("account_number", $post['account_number']);
+            $check_name   = $this->checkExisting("account_name", $post['account_name']);
+            $number_exists = !empty($check_number->account_number);
+            $name_exists   = !empty($check_name->account_name);
+
+            if ($number_exists && $name_exists) {
+                echo json_encode(array(
+                    "title"   => "Duplicated",
+                    "message" => "Account No " . $check_number->account_number . " and Account Name " . $check_name->account_name . " are already in use.",
+                    "theme"   => "error"
+                ));
+            } elseif ($number_exists) {
+                echo json_encode(array(
+                    "title"   => "Duplicated",
+                    "message" => "Account No " . $check_number->account_number . " is already in use.",
+                    "theme"   => "error"
+                ));
+            } elseif ($name_exists) {
+                echo json_encode(array(
+                    "title"   => "Duplicated",
+                    "message" => "Account Name " . $check_name->account_name . " is already in use.",
+                    "theme"   => "error"
+                ));
             } else {
                 $send   = $this->crud->create('account_coa', $post);
                 echo $send;
             }
+
         } else {
             show_error("Cannot Process your request");
         }
     }
+    
     //UPDATE DATA
     public function update()
     {
         if ($this->input->post()) {
             $id   = base64_decode($this->input->get('id'));
             $post = $this->input->post();
-            $send = $this->crud->update('account_coa', ["id" => $id], $post);
-            echo $send;
+
+            $check_number = $this->checkExisting("account_number", $post['account_number']);
+            $check_name   = $this->checkExisting("account_name", $post['account_name']);
+            $number_exists = !empty($check_number->account_number);
+            $name_exists   = !empty($check_name->account_name);
+
+            if ($number_exists && $name_exists) {
+                echo json_encode(array(
+                    "title"   => "Duplicated",
+                    "message" => "Account No " . $check_number->account_number . " and Account Name " . $check_name->account_name . " are already in use.",
+                    "theme"   => "error"
+                ));
+            } else {
+                $send = $this->crud->update('account_coa', ["id" => $id], $post);
+                echo $send;
+            }
+
         } else {
             show_error("Cannot Process your request");
         }
     }
+
     //DELETE DATA
     public function delete()
     {
@@ -218,7 +279,7 @@ class Account_coa extends CI_Controller
         $config = $this->db->get()->row();
 
         // Fetch data using JOIN for account COA
-        $this->db->select('ac.*, ag.name as group_name');
+        $this->db->select('ac.*, ag.name as group_name, agd.name as category');
         $this->db->from('account_coa ac');
         $this->db->join('account_group_details agd', 'ac.account_group_detail_id = agd.id', 'left');
         $this->db->join('account_groups ag', 'agd.account_group_id = ag.id', 'left');
@@ -272,21 +333,44 @@ class Account_coa extends CI_Controller
             <th>Debit</th>
             <th>Credit</th>
         </tr>';
+        
         $no = 1;
+        $total_original_debit  = 0;
+        $total_original_kredit = 0;
+        $total_local_debit = 0;
+        $total_local_kredit = 0;
+
         foreach ($records as $data) {
             $html .= '<tr>
-                <td>' . $no . '</td>
-                <td>' . $data['account_group_detail_id'] . '</td>
-                <td>' . $data['account_number'] . '</td>
-                <td>' . $data['account_name'] . '</td>
-                <td>' . $data['original_currency'] . '</td>
-                <td>' . $data['original_debit'] . '</td>
-                <td>' . $data['original_kredit'] . '</td>
-                <td>' . $data['local_currency'] . '</td>
-                <td>' . $data['local_debit'] . '</td>
-                <td>' . $data['local_kredit'] . '</td>';
+                <td style="text-align:center;">' . $no . '</td>
+                <td style="text-align:left;">' . $data['category'] . '</td>
+                <td style="text-align:left;">' . $data['account_number'] . '</td>
+                <td style="text-align:left;">' . $data['account_name'] . '</td>
+                <td style="text-align:center;">' . $data['original_currency'] . '</td>
+                <td style="text-align:right;">' . number_format($data['original_debit'], 2, ',', '.') . '</td>
+                <td style="text-align:right;">' . number_format($data['original_kredit'], 2, ',', '.') . '</td>
+                <td style="text-align:center;">' . $data['local_currency'] . '</td>
+                <td style="text-align:right;">' . number_format($data['local_debit'], 2, ',', '.') . '</td>
+                <td style="text-align:right;">' . number_format($data['local_kredit'], 2, ',', '.') . '</td>
+            </tr>';
+            
             $no++;
+
+            $total_original_debit += $data['original_debit'];
+            $total_original_kredit += $data['original_kredit'];
+            $total_local_debit += $data['local_debit'];
+            $total_local_kredit += $data['local_kredit'];
         }
+
+        $html .= '<tr style="background-color:#FFFF00;">
+                <td colspan="5" style="text-align:right; padding-right:30px;"><b>Grand Total</b></td>
+                <td style="text-align:right">' . number_format($total_original_debit, 2, ',', '.') . '</td>
+                <td style="text-align:right">' . number_format($total_original_kredit, 2, ',', '.') . '</td>
+                <td style="text-align:center;">-</td>
+                <td style="text-align:right">' . number_format($total_local_debit, 2, ',', '.') . '</td>
+                <td style="text-align:right">' . number_format($total_local_kredit, 2, ',', '.') . '</td>
+            </tr>';
+
         $html .= '</table></body></html>';
         echo $html;
     }
