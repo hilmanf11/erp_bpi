@@ -201,10 +201,6 @@
                         <span style="width:35%; display:inline-block;">Remarks</span>
                         <input style="width:60%;" id="remarks" name="remarks" class="easyui-textbox">
                     </div>
-                    <div class="fitem" hidden>
-                        <span style="width:35%; display:inline-block;">&nbsp;</span>
-                        <input style="width:60%;" id="company_id" name="company_id" class="easyui-textbox">
-                    </div>
                 </div>
             </fieldset>
         </div>
@@ -597,6 +593,196 @@
             }
         });
     }
+
+    // function addJournal() {//berubah
+    //     var rows = $('#dg2').datagrid('getRows');
+    //     var taxes = $("#taxes").numberbox('getValue');
+    //     var pphname = $("#pph").combobox('getValue');
+    //     var check_vat = $("#check_vat").checkbox('options');
+
+    //     var totalrows = rows.length;
+
+    //     var rows2 = $('#dg3').datagrid('getRows');
+    //     var totalrows2 = rows2.length;
+    //     endEditing2();
+
+    //     if (totalrows > 0) {
+    //         var data_array = [];
+    //         var data_array2 = [];
+    //         var total_sub = 0;
+    //         for (let i = 0; i < totalrows; i++) {
+    //             var data = {
+    //                 account_number: rows[i].account_number,
+    //                 account_name: rows[i].account_name,
+    //                 account_type: rows[i].account_type,
+    //                 total: rows[i].total
+    //             }
+
+    //             if (rows[i].account_type == "DEBIT") {
+    //                 total_sub += Math.abs(parseFloat(rows[i].total));
+    //             } else {
+    //                 total_sub -= Math.abs(parseFloat(rows[i].total));
+    //             }
+
+    //             data_array.push(data);
+    //         }
+
+    //         $("#total_sub").numberbox('setValue', total_sub);
+
+    //         if (check_vat.checked == true) {
+    //             var disc_tax = $("#total_vat").numberbox('getValue');
+    //         } else {
+    //             var disc_tax = parseFloat(total_sub * (taxes / 100));
+    //             $("#total_vat").numberbox('setValue', disc_tax);
+    //         }
+
+    //         var total_pph = $("#total_pph").numberbox('getValue');
+    //         var total_grand = (parseFloat(total_sub) + parseFloat(disc_tax) - parseFloat(total_pph));
+    //         $("#total_grand").numberbox('setValue', (total_grand));
+
+    //         var pph_val = 0;
+    //         var vat_val = 0;
+    //         var arr_pph = ["2031101", "2031103", "2031104"];
+    //         var arr_ap = ["2022101", "2022102", "2022103"];
+
+    //         for (let z = 0; z < totalrows2; z++) {
+    //             if (rows2[z].account_number == "1154105") {
+    //                 var debit = disc_tax;
+    //                 var credit = 0;
+    //                 vat_val = 1;
+    //             } else {
+    //                 var debit = rows2[z].debit;
+    //                 var credit = rows2[z].credit;
+    //             }
+
+    //             if (jQuery.inArray(rows2[z].account_number, arr_pph) >= 0) {
+    //                 var debit = 0;
+    //                 var credit = total_pph;
+    //                 pph_val = 1;
+    //             }
+
+    //             if (jQuery.inArray(rows2[z].account_number, arr_ap) >= 0) {
+    //                 var debit = 0;
+    //                 var credit = total_grand;
+    //             }
+
+    //             var data2 = {
+    //                 account_number: rows2[z].account_number,
+    //                 account_name: rows2[z].account_name,
+    //                 debit: debit,
+    //                 credit: credit,
+    //                 flag: rows2[z].flag,
+    //             }
+
+    //             data_array2.push(data2);
+    //         }
+
+    //         // if (taxes > 0 && vat_val == 0) {
+    //         //     var data2 = {
+    //         //         account_number: "",
+    //         //         account_name: "VAT",
+    //         //         debit: disc_tax,
+    //         //         credit: 0,
+    //         //         flag: "3",
+    //         //     }
+
+    //         //     data_array2.push(data2);
+    //         // }
+
+    //         if (taxes > 0 && vat_val == 0) {//nambah
+    //             var data2 = {
+    //                 account_number: "250.160.00",
+    //                 account_name: "PPN Keluaran (VAT OUT)",
+    //                 debit: disc_tax,
+    //                 credit: 0,
+    //                 flag: "0",
+    //             }
+
+    //             data_array2.push(data2);
+    //         }
+
+    //         if (taxes > 0 && vat_val == 0) {//nambah
+    //             var data2 = {
+    //                 account_number: "220.110.00",
+    //                 account_name: "Relatied Parties (Others)",
+    //                 debit: 0,
+    //                 credit: total_grand,
+    //                 flag: "0",
+    //             }
+
+    //             data_array2.push(data2);
+    //         }
+
+    //         if (total_pph > 0 && pph_val == 0 && pphname == "5") {
+    //             var data2 = {
+    //                 account_number: "250.110.00",
+    //                 account_name: "PPH 21",
+    //                 debit: 0,
+    //                 credit: total_pph,
+    //                 flag: "4",
+    //             }
+
+    //             data_array2.push(data2);
+    //         }
+
+    //         if (total_pph > 0 && pph_val == 0 && pphname == "1") {
+    //             var data2 = {
+    //                 account_number: "220.130.00",
+    //                 account_name: "OTHER INCOME",
+    //                 debit: 0,
+    //                 credit: total_pph,
+    //                 flag: "4",
+    //             }
+
+    //             data_array2.push(data2);
+    //         }
+
+    //         if (total_pph > 0 && pph_val == 0 && pphname == "2") {
+    //             var data2 = {
+    //                 account_number: "250.130.00",
+    //                 account_name: "PPH 23",
+    //                 debit: 0,
+    //                 credit: total_pph,
+    //                 flag: "4",
+    //             }
+
+    //             data_array2.push(data2);
+    //         }
+
+    //         if (total_pph > 0 && pph_val == 0 && pphname == "10") {
+    //             var data2 = {
+    //                 account_number: "250.150.00",
+    //                 account_name: "PPH 4(2)",
+    //                 debit: 0,
+    //                 credit: total_pph,
+    //                 flag: "4",
+    //             }
+
+    //             data_array2.push(data2);
+    //         }
+
+    //         var jsonData = JSON.stringify(data_array);
+    //         var jsonData2 = JSON.stringify(data_array2);
+
+    //         $.ajax({
+    //             type: "POST",
+    //             url: "<?= base_url('finance/purchase_invoices/createJson') ?>",
+    //             data: {
+    //                 jsonData: jsonData,
+    //                 jsonData2: jsonData2,
+    //             },
+    //             success: function(response) {
+    //                 addTable2('<?= base_url('finance/purchase_invoices/calculateJournal') ?>');
+
+    //                 setTimeout(function() {
+    //                     balance_journal();
+    //                 }, 2000);
+    //             },
+    //         });
+    //     } else {
+    //         toastr.warning("please selections your data in table first");
+    //     }
+    // }
 
     function addJournal() {//berubah
         var rows = $('#dg2').datagrid('getRows');//datatatblesTemp
@@ -1218,7 +1404,7 @@
                     toastr.error("Cannot Update because this Purchase Invoice has been created in Posting Journal");
                 }
             } else {
-                toastr.error("Purchase Invoices Status is closed");
+                toastr.error("AP Payment Status is closed");
             }
         } else {
             toastr.warning("Please select one of the data in the table first!", "Information");
@@ -1778,119 +1964,14 @@
                                                         requestData(total, json, jml + 1, value);
                                                         if (jml == total) {
                                                             Swal.close();
-                                                            
                                                             Swal.fire({
-                                                                title: "Add Posting Journal?",
-                                                                text: result.message + ". Do you want to save the Posting Journal too?",
+                                                                title: result.message,
                                                                 icon: result.theme,
-                                                                confirmButtonText: 'Yes, Add to Journal!',
+                                                                confirmButtonText: 'Ok',
                                                                 allowOutsideClick: false,
-                                                                showCancelButton: true,
                                                             }).then((result) => {
                                                                 if (result.isConfirmed) {
-                                                                    Swal.fire({
-                                                                        title: 'Please Wait for Saving Data',
-                                                                        showConfirmButton: false,
-                                                                        allowOutsideClick: false,
-                                                                        allowEscapeKey: false,
-                                                                        didOpen: () => {
-                                                                            Swal.showLoading();
-                                                                        },
-                                                                    });
-
-                                                                    // AUTO GENERATE POSTING JOURNALS
-                                                                    var modul = 'PURCHASE INVOICING';
-                                                                    var journalDate = trans_date;
-                                                                    var companyId = $("#company_id").val();
-                                                                    var documentNo = $("#number").val();
-                                                                    
-                                                                    $.ajax({
-                                                                        method: 'post',
-                                                                        url: '<?= base_url('finance/journal_postings/datatablesTemp') ?>?journal_date=' + window.btoa(journalDate) +
-                                                                        "&modul=" + window.btoa(modul) +
-                                                                        "&company_id=" + window.btoa(companyId) +
-                                                                        "&document_no=" + window.btoa(documentNo),
-                                                                        data: {
-                                                                            journal_date: window.btoa(journalDate),
-                                                                            modul: window.btoa(modul),
-                                                                            company_id: window.btoa(companyId),
-                                                                            document_no: window.btoa(documentNo),
-                                                                        },
-                                                                        dataType: "json",
-                                                                        success: function(dataPosting) {
-                                                                            // console.log(JSON.stringify(dataPosting));
-                                                                            $.ajax({
-                                                                                type: "post",
-                                                                                url: "<?= base_url('finance/journal_postings/number/') ?>" + window.btoa(journalDate),
-                                                                                dataType: "html",
-                                                                                success: function(noGL) {
-                                                                                    var nomorGL = noGL;
-                                                                                    var rowsData  = dataPosting.rows;
-                                                                                    var totalData = dataPosting.total;
-
-                                                                                    for (let no = 0; no < rowsData.length; no++) {
-                                                                                        // console.log(rowsData[no]);
-                                                                                        $.ajax({
-                                                                                            type: "post",
-                                                                                            url: '<?= base_url('finance/journal_postings/create') ?>',
-                                                                                            data: {
-                                                                                                journal_date: journalDate,
-                                                                                                modul: modul,
-                                                                                                journal_type_id: journal_type_id,
-                                                                                                number: nomorGL,
-                                                                                                remarks: null,
-                                                                                                trans_date: rowsData[no].trans_date,
-                                                                                                document_no: rowsData[no].document_no,
-                                                                                                invoice_no: rowsData[no].invoice_no,
-                                                                                                company_name: rowsData[no].company_name,
-                                                                                                account_number: rowsData[no].account_number,
-                                                                                                account_name: rowsData[no].account_name,
-                                                                                                description: rowsData[no].description,
-                                                                                                currency: rowsData[no].currency,
-                                                                                                original_debit: rowsData[no].original_debit,
-                                                                                                original_credit: rowsData[no].original_credit,
-                                                                                                rates: rowsData[no].rates,
-                                                                                                local_debit: rowsData[no].local_debit,
-                                                                                                local_credit: rowsData[no].local_credit
-                                                                                            },
-                                                                                            dataType: "json",
-                                                                                            success: function(responses) {
-                                                                                                if (responses.theme == "success") {
-                                                                                                    console.log('Success auto-generate Posting Journals #' + no);
-                                                                                                } else {
-                                                                                                    console.log('Failed! auto-generate Posting Journals #' + no);
-                                                                                                    console.log(responses);
-                                                                                                }
-                                                                                            }
-                                                                                        });
-                                                                                    }
-
-                                                                                    Swal.fire({
-                                                                                        title: "Good Job",
-                                                                                        icon: "success",
-                                                                                        text: "Data Successfully created to Posting Journal with code: " + nomorGL,
-                                                                                        confirmButtonText: 'Done',
-                                                                                        allowOutsideClick: false,
-                                                                                    }).then(function(){ 
-                                                                                        window.location.reload();
-                                                                                    });
-                                                                                }
-                                                                            });
-                                                                        }
-                                                                    });
-                                                                    // END - AUTO GENERATE POSTING JOURNAL
-
-                                                                } else {
-                                                                    // WITHOUT AUTO GENERATE POSTING JOURNAL
-                                                                    Swal.fire({
-                                                                        title: "Purchase Invoices",
-                                                                        icon: "info",
-                                                                        text: "Data Successfully saved without Posting Journal.",
-                                                                        confirmButtonText: 'Done',
-                                                                        allowOutsideClick: false,
-                                                                    }).then(function(){ 
-                                                                        window.location.reload();
-                                                                    });
+                                                                    window.location.reload();
                                                                 }
                                                             });
 
@@ -2076,7 +2157,6 @@
                         var trans_date = $("#trans_date").datebox('getValue');
                         var type = $("#type").combobox('getValue');
 
-                        $("#company_id").textbox('setValue', row.id); // get company_id for posting journal
                         $("#payment_term").numberbox("setValue", row.payment_term);
                         $("#taxes").numberbox("setValue", row.vat);
 
@@ -2119,7 +2199,7 @@
                             });
                         } else {
                             $("#po_no").combobox({
-                                url: '<?= base_url('purchase/purchase_order_others/readPono/') ?>' + window.btoa(row.id),
+                                url: '<?= base_url('purchase/purchase_order_others/readPono/') ?>' + row.id,
                                 valueField: 'po_no',
                                 textField: 'po_no',
                                 prompt: "Choose Purchase Order Misc",
