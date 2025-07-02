@@ -157,12 +157,12 @@ class Report_history_transactions extends CI_Controller
         $start = strtotime($filter_from);
         $finish = strtotime($filter_to);
 
-        $filter_from_minus1 = date('Y-m-01', strtotime('-1 month', strtotime($filter_to)));
-        $filter_to_minus1   = date('Y-m-t',  strtotime('-1 month', strtotime($filter_to)));
-        $filter_from_minus2 = date('Y-m-01', strtotime('-2 month', strtotime($filter_to)));
-        $filter_to_minus2   = date('Y-m-t',  strtotime('-2 month', strtotime($filter_to)));
-        $filter_from_minus3 = date('Y-m-01', strtotime('-3 month', strtotime($filter_to)));
-        $filter_to_minus3   = date('Y-m-t',  strtotime('-3 month', strtotime($filter_to)));
+        $filter_from_minus1 = date('Y-m-01', strtotime('-1 month', strtotime($filter_from)));
+        $filter_to_minus1   = date('Y-m-t',  strtotime('-1 month', strtotime($filter_from)));
+        $filter_from_minus2 = date('Y-m-01', strtotime('-2 month', strtotime($filter_from)));
+        $filter_to_minus2   = date('Y-m-t',  strtotime('-2 month', strtotime($filter_from)));
+        $filter_from_minus3 = date('Y-m-01', strtotime('-3 month', strtotime($filter_from)));
+        $filter_to_minus3   = date('Y-m-t',  strtotime('-3 month', strtotime($filter_from)));
 
         //------------------------------------ Mengambil Filter dari Input GET berakhir disini----------------------------------//
 
@@ -170,7 +170,7 @@ class Report_history_transactions extends CI_Controller
         $this->db->select('*');
         $this->db->from('config');
         $config = $this->db->get()->row();
-        
+
         //Config ISO
         $this->db->select('*');
         $this->db->from('config_iso');
@@ -529,7 +529,24 @@ class Report_history_transactions extends CI_Controller
                         JOIN purchase_order_labels b ON a.label_no = b.label_no
                         JOIN purchase_order_receipts c ON b.receipt_id = c.receipt_id
                         WHERE a.item_rm_id = '$item_rm_id' 
+                        and DATE_FORMAT(a.created_date, '%Y-%m-%d') between '$filter_from' and '$filter_to'
+                        
+                        UNION
+
+                        SELECT 
+                            a.created_by, 
+                            a.qty, 
+                            a.created_date, 
+                            a.label_no, 
+                            a.request_no,
+                            c.lot_no as lotno
+                        FROM issued_material_details a
+                        JOIN bpm_labels b ON a.label_no = b.label_no
+                        JOIN bpm c ON b.request_id = c.request_id
+                        WHERE a.item_rm_id = '$item_rm_id' 
                         and DATE_FORMAT(a.created_date, '%Y-%m-%d') between '$filter_from' and '$filter_to'");
+
+                        // $issueds = $this->crud->query("SELECT * FROM issued_material_details WHERE item_rm_id = '$item_rm_id' and DATE_FORMAT(created_date, '%Y-%m-%d') between '$filter_from' and '$filter_to'");
 
                         //RETURN
                         $returns = $this->crud->query("SELECT
@@ -1168,6 +1185,21 @@ class Report_history_transactions extends CI_Controller
                         JOIN purchase_order_labels b ON a.label_no = b.label_no
                         JOIN purchase_order_receipts c ON b.receipt_id = c.receipt_id
                         WHERE a.item_rm_id = '$item_rm_id' 
+                        and DATE_FORMAT(a.created_date, '%Y-%m-%d') between '$filter_from' and '$filter_to'
+                        
+                        UNION
+
+                        SELECT 
+                            a.created_by, 
+                            a.qty, 
+                            a.created_date, 
+                            a.label_no, 
+                            a.request_no,
+                            c.lot_no as lotno
+                        FROM issued_material_details a
+                        JOIN bpm_labels b ON a.label_no = b.label_no
+                        JOIN bpm c ON b.request_id = c.request_id
+                        WHERE a.item_rm_id = '$item_rm_id' 
                         and DATE_FORMAT(a.created_date, '%Y-%m-%d') between '$filter_from' and '$filter_to'");
             
                         foreach ($issueds as $issued) {
@@ -1233,12 +1265,12 @@ class Report_history_transactions extends CI_Controller
         $start = strtotime($filter_from);
         $finish = strtotime($filter_to);
 
-        $filter_from_minus1 = date('Y-m-01', strtotime('-1 month', strtotime($filter_to)));
-        $filter_to_minus1   = date('Y-m-t',  strtotime('-1 month', strtotime($filter_to)));
-        $filter_from_minus2 = date('Y-m-01', strtotime('-2 month', strtotime($filter_to)));
-        $filter_to_minus2   = date('Y-m-t',  strtotime('-2 month', strtotime($filter_to)));
-        $filter_from_minus3 = date('Y-m-01', strtotime('-3 month', strtotime($filter_to)));
-        $filter_to_minus3   = date('Y-m-t',  strtotime('-3 month', strtotime($filter_to)));
+        $filter_from_minus1 = date('Y-m-01', strtotime('-1 month', strtotime($filter_from)));
+        $filter_to_minus1   = date('Y-m-t',  strtotime('-1 month', strtotime($filter_from)));
+        $filter_from_minus2 = date('Y-m-01', strtotime('-2 month', strtotime($filter_from)));
+        $filter_to_minus2   = date('Y-m-t',  strtotime('-2 month', strtotime($filter_from)));
+        $filter_from_minus3 = date('Y-m-01', strtotime('-3 month', strtotime($filter_from)));
+        $filter_to_minus3   = date('Y-m-t',  strtotime('-3 month', strtotime($filter_from)));
 
         //------------------------------------ Mengambil Filter dari Input GET berakhir disini----------------------------------//
 

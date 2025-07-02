@@ -45,6 +45,13 @@ class Report_history_transactions_fg extends CI_Controller
         $start = strtotime($filter_from);
         $finish = strtotime($filter_to);
 
+        $filter_from_minus1 = date('Y-m-01', strtotime('-1 month', strtotime($filter_from)));
+        $filter_to_minus1   = date('Y-m-t',  strtotime('-1 month', strtotime($filter_from)));
+        $filter_from_minus2 = date('Y-m-01', strtotime('-2 month', strtotime($filter_from)));
+        $filter_to_minus2   = date('Y-m-t',  strtotime('-2 month', strtotime($filter_from)));
+        $filter_from_minus3 = date('Y-m-01', strtotime('-3 month', strtotime($filter_from)));
+        $filter_to_minus3   = date('Y-m-t',  strtotime('-3 month', strtotime($filter_from)));
+
         //Config
         $this->db->select('*');
         $this->db->from('config');
@@ -103,6 +110,21 @@ class Report_history_transactions_fg extends CI_Controller
         $query_delivery_notes = "SELECT item_fg_id, SUM(qty) as initial_out_g
         FROM delivery_notes
         WHERE delivery_note_date BETWEEN '$filter_from' AND '$filter_to'
+        GROUP BY item_fg_id";
+
+        $query_delivery_notes_sales_minus1 = "SELECT item_fg_id, SUM(qty) as qty_notes_sales
+        FROM delivery_notes
+        WHERE delivery_note_date BETWEEN '$filter_from_minus1' AND '$filter_to_minus1' AND trans_type = 'SALES'
+        GROUP BY item_fg_id";
+
+        $query_delivery_notes_sales_minus2 = "SELECT item_fg_id, SUM(qty) as qty_notes_sales
+        FROM delivery_notes
+        WHERE delivery_note_date BETWEEN '$filter_from_minus2' AND '$filter_to_minus2' AND trans_type = 'SALES'
+        GROUP BY item_fg_id";
+
+        $query_delivery_notes_sales_minus3 = "SELECT item_fg_id, SUM(qty) as qty_notes_sales
+        FROM delivery_notes
+        WHERE delivery_note_date BETWEEN '$filter_from_minus3' AND '$filter_to_minus3' AND trans_type = 'SALES'
         GROUP BY item_fg_id";
 
         // Step 6: Hitung initial `h` (scan_repair_of_goods)
@@ -179,6 +201,10 @@ class Report_history_transactions_fg extends CI_Controller
             
             COALESCE(qo.qty_out, 0) + COALESCE(qg.initial_out_g, 0) + COALESCE(qh.initial_out_h, 0) AS qty_out,
             
+            COALESCE(dns1.qty_notes_sales, 0) as qty_out_sales_minus1,
+            COALESCE(dns2.qty_notes_sales, 0) as qty_out_sales_minus2,
+            COALESCE(dns3.qty_notes_sales, 0) as qty_out_sales_minus3,
+            
             (COALESCE(qc.qty_in_checksheet, 0) + COALESCE(qnc.qty_in_no_checksheet, 0) + COALESCE(qi.initial_in, 0) + COALESCE(qw.qty_in_wip_receipt, 0) - 
             (COALESCE(qo.qty_out, 0) + COALESCE(qg.initial_out_g, 0) + COALESCE(qh.initial_out_h, 0))) AS end_stock
         FROM item_fg a
@@ -187,6 +213,9 @@ class Report_history_transactions_fg extends CI_Controller
         LEFT JOIN ($query_transaction_fg_in) qi ON a.id = qi.item_fg_id
         LEFT JOIN ($query_qty_out) qo ON a.id = qo.item_fg_id
         LEFT JOIN ($query_delivery_notes) qg ON a.id = qg.item_fg_id
+        LEFT JOIN ($query_delivery_notes_sales_minus1) dns1 ON a.id = dns1.item_fg_id
+        LEFT JOIN ($query_delivery_notes_sales_minus2) dns2 ON a.id = dns2.item_fg_id
+        LEFT JOIN ($query_delivery_notes_sales_minus3) dns3 ON a.id = dns3.item_fg_id
         LEFT JOIN ($query_scan_repair_of_goods) qh ON a.id = qh.item_fg_id
         LEFT JOIN ($query_qty_in_wip_receipt) qw ON a.id = qw.item_fg_id
 
@@ -243,10 +272,18 @@ class Report_history_transactions_fg extends CI_Controller
                     <th width="100">In</th>
                     <th width="100">Out</th>
                     <th width="100">Ending<br>Stock</th>
+                    <th width="100">ITO<br>(MONTH)</th>
                 </tr>';
         $no = 1;
         foreach ($records as $record) {
             $item_fg_id = $record->id;
+
+            $total_sales_minus = $record->qty_out_sales_minus1 + $record->qty_out_sales_minus2 + $record->qty_out_sales_minus3;
+            $avg_sales_minus = ($total_sales_minus > 0) ? number_format($total_sales_minus / 3, 2) : '0';
+
+            $stock_coverage = ($total_sales_minus > 0)
+                ? number_format(((@$record->begin_stock + $record->qty_in) - $record->qty_out) / ($total_sales_minus / 3), 2)
+                : '0'; // atau bisa diganti jadi '0.00' atau '-'
 
             $html .= '  <tr>
                             <td style="text-align:center">' . $no . '</td>
@@ -259,11 +296,12 @@ class Report_history_transactions_fg extends CI_Controller
                             <td style="text-align:right;">' . number_format($record->qty_in, 2) . '</td>
                             <td style="text-align:right;">' . number_format($record->qty_out, 2) . '</td>
                             <td style="text-align:right;">' . number_format((@$record->begin_stock + $record->qty_in - $record->qty_out), 2) . '</td>
+                            <td style="text-align:right;">' . $stock_coverage . '</td>
                         </tr>';
 
             if ($filter_display == "DETAIL") {
                 $html .= '  <tr>
-                                <td colspan="11" style="background:#D1FFC6; font-size: 11px;"><b>DETAIL OF ' . $record->number . ' - ' . $record->name . '</b></td>
+                                <td colspan="12" style="background:#D1FFC6; font-size: 11px;"><b>DETAIL OF ' . $record->number . ' - ' . $record->name . '</b></td>
                             </tr>';
                 $html .= '  <tr>
                                 <th width="20"></th>
@@ -276,7 +314,7 @@ class Report_history_transactions_fg extends CI_Controller
                                 <th>Begin</th>
                                 <th>In</th>
                                 <th>Out</th>
-                                <th>Balance</th>
+                                <th colspan ="2">Balance</th>
                             </tr>';
                 $nod = 1;
                 $begin = @$record->begin_stock;
@@ -563,7 +601,7 @@ class Report_history_transactions_fg extends CI_Controller
                                     <td style="text-align:right;">' . number_format($begin, 2) . '</td>
                                     <td style="text-align:right;">' . number_format($data['qty_in'], 2) . '</td>
                                     <td style="text-align:right;">' . number_format($data['qty_out'], 2) . '</td>
-                                    <td style="text-align:right;">' . number_format($balance, 2) . '</td>
+                                    <td colspan = "2" style="text-align:right;">' . number_format($balance, 2) . '</td>
                                 </tr>';
 
                     $begin = $balance;
@@ -615,7 +653,7 @@ class Report_history_transactions_fg extends CI_Controller
                                         <td style="text-align:right;">' . number_format($begin, 2) . '</td>
                                         <td style="text-align:right;">' . number_format($receipt->qty, 2) . '</td>
                                         <td style="text-align:right;">' . number_format(0)  . '</td>
-                                        <td style="text-align:right;">' . number_format($balance, 2)  . '</td>
+                                        <td colspan = "2" style="text-align:right;">' . number_format($balance, 2)  . '</td>
                                     </tr>';
                         $begin += $receipt->qty;
                         $nod++;
@@ -651,7 +689,7 @@ class Report_history_transactions_fg extends CI_Controller
                                         <td style="text-align:right;">' . number_format($begin, 2) . '</td>
                                         <td style="text-align:right;">' . number_format($receipt->qty, 2) . '</td>
                                         <td style="text-align:right;">' . number_format(0)  . '</td>
-                                        <td style="text-align:right;">' . number_format($balance, 2)  . '</td>
+                                        <td colspan = "2" style="text-align:right;">' . number_format($balance, 2)  . '</td>
                                     </tr>';
                         $begin += $receipt->qty;
                         $nod++;
@@ -680,7 +718,7 @@ class Report_history_transactions_fg extends CI_Controller
                                         <td style="text-align:right;">' . number_format($begin, 2) . '</td>
                                         <td style="text-align:right;">' . number_format(0) . '</td>
                                         <td style="text-align:right;">' . number_format($return->qty, 2)  . '</td>
-                                        <td style="text-align:right;">' . number_format($balance, 2)  . '</td>
+                                        <td colspan = "2" style="text-align:right;">' . number_format($balance, 2)  . '</td>
                                     </tr>';
                         $begin -= $return->qty;
                         $nod++;
@@ -715,7 +753,7 @@ class Report_history_transactions_fg extends CI_Controller
                                         <td style="text-align:right;">' . number_format($begin, 2) . '</td>
                                         <td style="text-align:right;">' . number_format(0) . '</td>
                                         <td style="text-align:right;">' . number_format($repair->qty, 2)  . '</td>
-                                        <td style="text-align:right;">' . number_format($balance, 2)  . '</td>
+                                        <td colspan = "2" style="text-align:right;">' . number_format($balance, 2)  . '</td>
                                     </tr>';
                         $begin -= $repair->qty;
                         $nod++;
@@ -751,7 +789,7 @@ class Report_history_transactions_fg extends CI_Controller
                                         <td style="text-align:right;">' . number_format($begin, 2) . '</td>
                                         <td style="text-align:right;">' . ($transaction->transaction_kind == 'IN' ? number_format($transaction->qty, 2) : number_format(0)) . '</td>
                                         <td style="text-align:right;">' . ($transaction->transaction_kind == 'OUT' ? number_format($transaction->qty, 2) : number_format(0)) . '</td>
-                                        <td style="text-align:right;">' . number_format($balance, 2) . '</td>
+                                        <td colspan = "2" style="text-align:right;">' . number_format($balance, 2) . '</td>
                                     </tr>';
                     
                         // Update balance
@@ -794,7 +832,7 @@ class Report_history_transactions_fg extends CI_Controller
                                         <td style="text-align:right;">' . number_format($begin, 2) . '</td>
                                         <td style="text-align:right;">' . ($transaction->transaction_kind == 'IN' ? number_format($transaction->qty, 2) : number_format(0)) . '</td>
                                         <td style="text-align:right;">' . ($transaction->transaction_kind == 'OUT' ? number_format($transaction->qty, 2) : number_format(0)) . '</td>
-                                        <td style="text-align:right;">' . number_format($balance, 2) . '</td>
+                                        <td colspan = "2" style="text-align:right;">' . number_format($balance, 2) . '</td>
                                     </tr>';
                     
                         // Update balance
@@ -837,7 +875,7 @@ class Report_history_transactions_fg extends CI_Controller
                                         <td style="text-align:right;">' . number_format($begin, 2) . '</td>
                                         <td style="text-align:right;">' . ($transaction->transaction_kind == 'IN' ? number_format($transaction->qty, 2) : number_format(0)) . '</td>
                                         <td style="text-align:right;">' . ($transaction->transaction_kind == 'OUT' ? number_format($transaction->qty, 2) : number_format(0)) . '</td>
-                                        <td style="text-align:right;">' . number_format($balance, 2) . '</td>
+                                        <td colspan = "2" style="text-align:right;">' . number_format($balance, 2) . '</td>
                                     </tr>';
                     
                         // Update balance
@@ -875,6 +913,14 @@ class Report_history_transactions_fg extends CI_Controller
 
         $start = strtotime($filter_from);
         $finish = strtotime($filter_to);
+
+        $filter_from_minus1 = date('Y-m-01', strtotime('-1 month', strtotime($filter_from)));
+        $filter_to_minus1   = date('Y-m-t',  strtotime('-1 month', strtotime($filter_from)));
+        $filter_from_minus2 = date('Y-m-01', strtotime('-2 month', strtotime($filter_from)));
+        $filter_to_minus2   = date('Y-m-t',  strtotime('-2 month', strtotime($filter_from)));
+        $filter_from_minus3 = date('Y-m-01', strtotime('-3 month', strtotime($filter_from)));
+        $filter_to_minus3   = date('Y-m-t',  strtotime('-3 month', strtotime($filter_from)));
+
         //------------------------------------ Mengambil Filter dari Input GET berakhir disini----------------------------------//
 
         //Config
@@ -890,6 +936,24 @@ class Report_history_transactions_fg extends CI_Controller
         FROM scan_item_receipts_fg f
         JOIN checksheets e ON e.number = f.checksheet_number
         WHERE DATE_FORMAT(e.packing_date, '%Y-%m-%d') BETWEEN '$filter_from' AND '$filter_to'
+        GROUP BY e.item_fg_id";
+
+        $query_qty_in_checksheet_non_subcont = "SELECT e.item_fg_id, SUM(f.qty) as qty_in_non_subcont
+        FROM scan_item_receipts_fg f
+        JOIN checksheets e ON e.number = f.checksheet_number
+        WHERE DATE_FORMAT(e.packing_date, '%Y-%m-%d') BETWEEN '$filter_from' AND '$filter_to' AND e.status_subcont = 'NO'
+        GROUP BY e.item_fg_id";
+
+        $query_qty_in_checksheet_subcont_jasa = "SELECT e.item_fg_id, SUM(f.qty) as qty_in_subcont_jasa
+        FROM scan_item_receipts_fg f
+        JOIN checksheets e ON e.number = f.checksheet_number
+        WHERE DATE_FORMAT(e.packing_date, '%Y-%m-%d') BETWEEN '$filter_from' AND '$filter_to' AND e.subcont_type = 'Jasa'
+        GROUP BY e.item_fg_id";
+
+        $query_qty_in_checksheet_subcont_fg = "SELECT e.item_fg_id, SUM(f.qty) as qty_in_subcont_fg
+        FROM scan_item_receipts_fg f
+        JOIN checksheets e ON e.number = f.checksheet_number
+        WHERE DATE_FORMAT(e.packing_date, '%Y-%m-%d') BETWEEN '$filter_from' AND '$filter_to' AND e.subcont_type = 'Finished Good'
         GROUP BY e.item_fg_id";
 
         // Step 2: Hitung qty_in tanpa checksheet
@@ -946,6 +1010,21 @@ class Report_history_transactions_fg extends CI_Controller
         $query_delivery_notes_sales = "SELECT item_fg_id, SUM(qty) as qty_notes_sales
         FROM delivery_notes
         WHERE delivery_note_date BETWEEN '$filter_from' AND '$filter_to' AND trans_type = 'SALES'
+        GROUP BY item_fg_id";
+
+        $query_delivery_notes_sales_minus1 = "SELECT item_fg_id, SUM(qty) as qty_notes_sales
+        FROM delivery_notes
+        WHERE delivery_note_date BETWEEN '$filter_from_minus1' AND '$filter_to_minus1' AND trans_type = 'SALES'
+        GROUP BY item_fg_id";
+
+        $query_delivery_notes_sales_minus2 = "SELECT item_fg_id, SUM(qty) as qty_notes_sales
+        FROM delivery_notes
+        WHERE delivery_note_date BETWEEN '$filter_from_minus2' AND '$filter_to_minus2' AND trans_type = 'SALES'
+        GROUP BY item_fg_id";
+
+        $query_delivery_notes_sales_minus3 = "SELECT item_fg_id, SUM(qty) as qty_notes_sales
+        FROM delivery_notes
+        WHERE delivery_note_date BETWEEN '$filter_from_minus3' AND '$filter_to_minus3' AND trans_type = 'SALES'
         GROUP BY item_fg_id";
 
         $query_delivery_notes_return = "SELECT item_fg_id, SUM(qty) as qty_notes_return
@@ -1032,17 +1111,23 @@ class Report_history_transactions_fg extends CI_Controller
             a.type,
             COALESCE(x.begin_stock,0) AS begin_stock,
 
-            COALESCE(qc.qty_in_checksheet, 0) + COALESCE(qir.initial_in_rfg, 0) + COALESCE(qw.qty_in_wip_receipt, 0) as qty_rfg,
+            COALESCE(qins.qty_in_non_subcont, 0) + COALESCE(qir.initial_in_rfg, 0) + COALESCE(qw.qty_in_wip_receipt, 0) as qty_rfg,
             COALESCE(qi.initial_in, 0) as adj_in_qty,
             COALESCE(qia.initial_in_adj, 0) as qty_in_adj,
             COALESCE(qir.initial_in_rfg, 0) as qty_in_rfg,
             COALESCE(qnc.qty_in_no_checksheet, 0) as qty_in_new_barcode,
+            COALESCE(qins.qty_in_non_subcont, 0) as qty_in_non_subcont,
+            COALESCE(qisj.qty_in_subcont_jasa, 0) as qty_in_subcont_jasa,
+            COALESCE(qisfg.qty_in_subcont_fg, 0) as qty_in_subcont_fg,
 
             COALESCE(qc.qty_in_checksheet, 0) + COALESCE(qnc.qty_in_no_checksheet, 0) + COALESCE(qi.initial_in, 0) + COALESCE(qw.qty_in_wip_receipt, 0) AS qty_in,
             
             COALESCE(qo.qty_out, 0) + COALESCE(qg.initial_out_g, 0) + COALESCE(qh.initial_out_h, 0) AS qty_out,
 
             COALESCE(dns.qty_notes_sales, 0) as qty_out_sales,
+            COALESCE(dns1.qty_notes_sales, 0) as qty_out_sales_minus1,
+            COALESCE(dns2.qty_notes_sales, 0) as qty_out_sales_minus2,
+            COALESCE(dns3.qty_notes_sales, 0) as qty_out_sales_minus3,
             COALESCE(dnr.qty_notes_return, 0) as qty_out_return,
             COALESCE(dnss.qty_notes_sample, 0) as qty_out_sample,
 
@@ -1066,10 +1151,16 @@ class Report_history_transactions_fg extends CI_Controller
         LEFT JOIN ($query_qty_out_adj) qoa ON a.id = qoa.item_fg_id
         LEFT JOIN ($query_delivery_notes) qg ON a.id = qg.item_fg_id
         LEFT JOIN ($query_delivery_notes_sales) dns ON a.id = dns.item_fg_id
+        LEFT JOIN ($query_delivery_notes_sales_minus1) dns1 ON a.id = dns1.item_fg_id
+        LEFT JOIN ($query_delivery_notes_sales_minus2) dns2 ON a.id = dns2.item_fg_id
+        LEFT JOIN ($query_delivery_notes_sales_minus3) dns3 ON a.id = dns3.item_fg_id
         LEFT JOIN ($query_delivery_notes_return) dnr ON a.id = dnr.item_fg_id
         LEFT JOIN ($query_delivery_notes_sample) dnss ON a.id = dnss.item_fg_id
         LEFT JOIN ($query_scan_repair_of_goods) qh ON a.id = qh.item_fg_id
         LEFT JOIN ($query_qty_in_wip_receipt) qw ON a.id = qw.item_fg_id
+        LEFT JOIN ($query_qty_in_checksheet_non_subcont) qins ON a.id = qins.item_fg_id
+        LEFT JOIN ($query_qty_in_checksheet_subcont_jasa) qisj ON a.id = qisj.item_fg_id
+        LEFT JOIN ($query_qty_in_checksheet_subcont_fg) qisfg ON a.id = qisfg.item_fg_id
 
         LEFT JOIN ( SELECT a.id,
             (COALESCE(qc.qty_in_checksheet, 0) + COALESCE(qnc.qty_in_no_checksheet, 0) + COALESCE(qi.initial_in, 0) + COALESCE(qw.qty_in_wip_receipt, 0) - 
@@ -1117,31 +1208,37 @@ class Report_history_transactions_fg extends CI_Controller
             
             <table id="customers" border="1" style="font-size: 11px;">
                 <tr>
-                    <th rowspan="2" width="20">No</th>
-                    <th rowspan="2">Product No</th>
-                    <th rowspan="2">Product Name</th>
-                    <th rowspan="2">UOM</th>
-                    <th rowspan="2">Type</th>
-                    <th rowspan="2" width="100">Begin<br>Stock</th>
+                    <th rowspan="3" width="20">No</th>
+                    <th rowspan="3">Product No</th>
+                    <th rowspan="3">Product Name</th>
+                    <th rowspan="3">UOM</th>
+                    <th rowspan="3">Type</th>
+                    <th rowspan="3" width="100">Begin<br>Stock</th>
                     
-                    <th colspan="4">IN</th>
-                    <th rowspan="2" width="100">Total<br>In</th>
+                    <th colspan="5">IN</th>
+                    <th rowspan="3" width="100">Total<br>In</th>
                     <th colspan="5">OUT</th>
-                    <th rowspan="2" width="100">Total<br>Out</th>
+                    <th rowspan="3" width="100">Total<br>Out</th>
 
-                    <th rowspan="2" width="100">Ending<br>Stock</th>
+                    <th rowspan="3" width="100">Ending<br>Stock</th>
+                    <th rowspan="3" width="100">ITO<br>(MONTH)</th>
                 </tr>
                 <tr>
-                    <th width="80">IN RFG</th>
-                    <th width="80">NEW BARCODE</th>
-                    <th width="80">IN SUBCON</th>
-                    <th width="80">ADJ STO</th>
+                    <th rowspan="2" width="80">IN RFG</th>
+                    <th rowspan="2" width="80">NEW BARCODE</th>
+                    <th colspan="2" width="80">SUBCONT</th>
+                    <th rowspan="2" width="80">ADJ STO</th>
 
-                    <th width="80">OUT SJ</th>
-                    <th width="80">OUT BPB</th>
-                    <th width="80">OUT RETUR<br>TKG</th>
-                    <th width="80">OUT SAMPLE</th>
-                    <th width="80">OUT ADJ<br>(STO)</th>
+                    <th rowspan="2" width="80">OUT SJ</th>
+                    <th rowspan="2" width="80">OUT BPB</th>
+                    <th rowspan="2" width="80">OUT RETUR<br>TKG</th>
+                    <th rowspan="2" width="80">OUT SAMPLE</th>
+                    <th rowspan="2" width="80">OUT ADJ<br>(STO)</th>
+
+                </tr>
+                <tr>
+                    <th width="80">FG</th>
+                    <th width="80">JASA</th>
                 </tr>';
 
                 
@@ -1153,10 +1250,14 @@ class Report_history_transactions_fg extends CI_Controller
 
         $totalRfgQty = 0;
         $totalNBQty = 0;
-        $totalSubcontQty = 0;
+        $totalSubcontFGQty = 0;
+        $totalSubcontJSQty = 0;
         $totalAdjInQty = 0;
 
         $totalOutSales = 0;
+        $totalOutSalesMinus1 = 0;
+        $totalOutSalesMinus2 = 0;
+        $totalOutSalesMinus3 = 0;
         $totalOutReturn = 0;
         $totalOutSample = 0;
         $totalOutBpb = 0;
@@ -1166,6 +1267,9 @@ class Report_history_transactions_fg extends CI_Controller
         $totalQtyOut = 0;
         $totalQtySelisihIn = 0;
         $totalQtySelisihOut = 0;
+
+        $totalAverageOut = 0;
+        $totalITOMonth = 0;
 
         foreach ($records as $record) {
 
@@ -1179,14 +1283,34 @@ class Report_history_transactions_fg extends CI_Controller
             
             $totalRfgQty += $record->qty_rfg;
             $totalNBQty += $record->qty_in_new_barcode;
-            $totalSubcontQty += $record->subcont_qty;
+            $totalSubcontFGQty += $record->qty_in_subcont_fg;
+            $totalSubcontJSQty += $record->qty_in_subcont_jasa;
             $totalAdjInQty += $record->qty_in_adj;
 
             $totalOutSales += $record->qty_out_sales;
+            $totalOutSalesMinus1 += $record->qty_out_sales_minus1;
+            $totalOutSalesMinus2 += $record->qty_out_sales_minus2;
+            $totalOutSalesMinus3 += $record->qty_out_sales_minus3;
             $totalOutReturn += $record->qty_out_return;
             $totalOutSample += $record->qty_out_sample;
             $totalOutBpb += $record->qty_out_bpb;
             $totalOutAdj += $record->qty_out_adj;
+
+            $total_sales_minus = $record->qty_out_sales_minus1 + $record->qty_out_sales_minus2 + $record->qty_out_sales_minus3;
+
+            // Perhitungan numerik asli
+            $numeric_avg_sales_minus = ($total_sales_minus > 0) ? $total_sales_minus / 3 : 0;
+            $numeric_stock_coverage = ($total_sales_minus > 0)
+                ? ((@$record->begin_stock + $record->qty_in) - $record->qty_out) / $numeric_avg_sales_minus
+                : 0;
+
+            // Format hanya jika perlu ditampilkan
+            $avg_sales_minus = number_format($numeric_avg_sales_minus, 2);
+            $stock_coverage = number_format($numeric_stock_coverage, 2);
+
+            // Jumlahkan dengan nilai numerik murni
+            $totalAverageOut += $numeric_avg_sales_minus;
+            $totalITOMonth += $numeric_stock_coverage;
 
             $html .= '  <tr>
                             <td style="text-align:center">' . $no . '</td>
@@ -1199,10 +1323,11 @@ class Report_history_transactions_fg extends CI_Controller
                             
                             <td style="text-align:right;">' . $record->qty_rfg . '</td>
                             <td style="text-align:right;">' . $record->qty_in_new_barcode . '</td>
-                            <td style="text-align:right;">' . number_format($record->subcont_qty, 2) . '</td>
+                            <td style="text-align:right;">' . number_format($record->qty_in_subcont_fg, 2) . '</td>
+                            <td style="text-align:right;">' . number_format($record->qty_in_subcont_jasa, 2) . '</td>
                             <td style="text-align:right;">' . $record->qty_in_adj . '</td>
 
-                            <td style="text-align:right;">' . number_format($record->qty_rfg + $record->qty_in_new_barcode + $record->subcont_qty + $record->qty_in_adj,2) . '</td>
+                            <td style="text-align:right;">' . number_format($record->qty_rfg + $record->qty_in_new_barcode + $record->qty_in_subcont_fg + $record->qty_in_subcont_jasa + $record->qty_in_adj,2) . '</td>
 
                             <td style="text-align:right;">' . $record->qty_out_sales . '</td>
                             <td style="text-align:right;">' . $record->qty_out_bpb . '</td>
@@ -1214,6 +1339,7 @@ class Report_history_transactions_fg extends CI_Controller
                                                         
                             <td style="text-align:right;">' . number_format((@$record->begin_stock + $record->qty_in) - $record->qty_out, 2) . '</td>
 
+                            <td style="text-align:right;">' . $stock_coverage . '</td>
                         </tr>';
             $no++;
         }
@@ -1223,7 +1349,8 @@ class Report_history_transactions_fg extends CI_Controller
             <td style="text-align:right;">' . number_format($totalBeginStock, 2) . '</td>
             <td style="text-align:right;">' . number_format($totalRfgQty, 2) . '</td>
             <td style="text-align:right;">' . number_format($totalNBQty, 2) . '</td>
-            <td style="text-align:right;">' . number_format($totalSubcontQty, 2) . '</td>
+            <td style="text-align:right;">' . number_format($totalSubcontFGQty, 2) . '</td>
+            <td style="text-align:right;">' . number_format($totalSubcontJSQty, 2) . '</td>
             <td style="text-align:right;">' . number_format($totalAdjInQty, 2) . '</td>
 
             <td style="text-align:right;">' . number_format($totalIn, 2) . '</td>
@@ -1235,6 +1362,8 @@ class Report_history_transactions_fg extends CI_Controller
             <td style="text-align:right;">' . number_format($totalOut, 2) . '</td>
 
             <td style="text-align:right;">' . number_format($totalEndingStock, 2) . '</td>
+          
+            <td style="text-align:right;">' . number_format($totalITOMonth, 2) . '</td>
         </tr>';
       
         $html .= '</table></body></html>';
@@ -1389,8 +1518,9 @@ class Report_history_transactions_fg extends CI_Controller
         LEFT JOIN ($query_qty_in_wip_receipt) qw ON a.id = qw.item_fg_id
 
         LEFT JOIN ( SELECT a.id,
-            (COALESCE(qc.qty_in_checksheet, 0) + COALESCE(qnc.qty_in_no_checksheet, 0) + COALESCE(qi.initial_in, 0) - 
+            (COALESCE(qc.qty_in_checksheet, 0) + COALESCE(qnc.qty_in_no_checksheet, 0) + COALESCE(qi.initial_in, 0) + COALESCE(qw.qty_in_wip_receipt, 0) - 
             (COALESCE(qo.qty_out, 0) + COALESCE(qg.initial_out_g, 0) + COALESCE(qh.initial_out_h, 0))) AS begin_stock
+
             FROM item_fg a
             LEFT JOIN ($query_qty_in_checksheet2) qc ON a.id = qc.item_fg_id
             LEFT JOIN ($query_qty_in_no_checksheet2) qnc ON a.id = qnc.item_fg_id
