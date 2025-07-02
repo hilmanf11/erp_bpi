@@ -623,19 +623,35 @@ class Sales_invoices extends CI_Controller
             $sales_invoice_journals = $post['dataJournal'];
 
             foreach ($sales_invoices as $sales_invoice) {
+                $sales_invoices_read = $this->crud->read('sales_invoices', [], [
+                    "delivery_note_no" => $sales_invoice['delivery_note_no'], 
+                    "sales_order_no" => $sales_invoice['sales_order_no'],
+                    "customer_order_no" => $sales_invoice['customer_order_no'],
+                    "item_fg_id" => $sales_invoice['item_fg_id']
+                ]);
+
                 if (!empty($sales_invoice['id'])) {
                     $send = $this->db->update('sales_invoices', $sales_invoice, ["id" => $sales_invoice['id']]);
                 } else {
-                    $send = $this->crud->createNotLog('sales_invoices', $sales_invoice);
-                    $this->db->update('delivery_notes',["status" => "1"], ["delivery_note_no" => $sales_invoice['delivery_note_no'], "customer_order_no" => $sales_invoice['customer_order_no']]);
+                    if(!$sales_invoices_read){
+                        $send = $this->crud->createNotLog('sales_invoices', $sales_invoice);
+                        $this->db->update('delivery_notes',["status" => "1"], ["delivery_note_no" => $sales_invoice['delivery_note_no'], "customer_order_no" => $sales_invoice['customer_order_no']]);
+                    }
                 }
             }
 
             foreach ($sales_invoice_journals as $sales_invoice_journal) {
+                 $sales_invoice_journals_read = $this->crud->read('sales_invoice_journals', [], [
+                    "number" => $sales_invoice_journal['number'], 
+                    "account_number" => $sales_invoice_journal['account_number']
+                ]);
+
                 if (@$sales_invoice_journal['id'] != "") {
                     $send = $this->db->update('sales_invoice_journals', $sales_invoice_journal, ["number" => $sales_invoice_journal['number'], "account_number" => $sales_invoice_journal['account_number']]);
                 } else {
-                    $send = $this->crud->createNotLog('sales_invoice_journals', $sales_invoice_journal);
+                    if(!$sales_invoice_journals_read){
+                        $send = $this->crud->createNotLog('sales_invoice_journals', $sales_invoice_journal);
+                    } 
                 }
             }
 
@@ -1026,7 +1042,7 @@ class Sales_invoices extends CI_Controller
                                 <td style="text-align:right">' . number_format($record['qty'], 0, ",", ".") . '</td>
                                 <td style="text-align:center;"><span style="font-size:10px;">' . $record['currency'] . '</span></td>
                                 <td style="text-align:right">' . number_format($record['price'], $format_no, ",", ".") . '</td>
-                                <td style="text-align:right">' . number_format(($record['price'] * $record['qty']), $format_no, ",", ".") . '</td>
+                                <td style="text-align:right">' . number_format(($record['price'] * $record['qty']), 2, ",", ".") . '</td>
                             </tr>';
                 $no++;
             }
@@ -1425,7 +1441,7 @@ class Sales_invoices extends CI_Controller
                                 <td style="text-align:right">' . number_format($record['qty_sum'], 0, ",", ".") . '</td>
                                 <td style="text-align:center;"><span style="font-size:10px;">' . $record['currency'] . '</span></td>
                                 <td style="text-align:right">' . number_format($record['prices'], $format_no, ",", ".") . '</td>
-                                <td style="text-align:right">' . number_format(($record['prices'] * $record['qty_sum']), $format_no, ",", ".") . '</td>
+                                <td style="text-align:right">' . number_format(($record['prices'] * $record['qty_sum']), 2, ",", ".") . '</td>
                             </tr>';
                 $no++;
             }
@@ -1794,7 +1810,7 @@ class Sales_invoices extends CI_Controller
                                 <td style="text-align:right;">' . @number_format(($record['qty']), 2) . '</td>
                                 <td>' . $record['currency'] . '</td>
                                 <td style="text-align:right;">' . @number_format($record['price'], $format_no) . '</td>
-                                <td style="text-align:right;">' . @number_format($record['total'], $format_no) . '</td>
+                                <td style="text-align:right;">' . @number_format($record['total'], 2) . '</td>
                                 <td>IDR</td>
                                 <td style="text-align:right;">' . @number_format($amount, 2) . '</td>
                             </tr>';
@@ -2046,6 +2062,11 @@ class Sales_invoices extends CI_Controller
                             <th>Amount</th>
                         </tr>';
             foreach ($details as $detail) {
+                if($detail['currency'] == 'IDR'){
+                    $format = 2;
+                }else{
+                    $format = 4;
+                }
                 $html .= '  <tr>
                                 <td></td>
                                 <td>' . $detail['delivery_note_no'] . '</td>
@@ -2056,7 +2077,7 @@ class Sales_invoices extends CI_Controller
                                 <td style="text-align:right">' . number_format($detail['qty'], 2, ',', '.') . '</td>
                                 <td>' . $detail['uom'] . '</td>
                                 <td>' . $detail['currency'] . '</td>
-                                <td style="text-align:right">' . number_format($detail['price'], 2, ',', '.') . '</td>
+                                <td style="text-align:right">' . number_format($detail['price'], $format, ',', '.') . '</td>
                                 <td style="text-align:right">' . number_format($detail['total'], 2, ',', '.') . '</td>
                             </tr>';
             }

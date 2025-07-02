@@ -219,7 +219,7 @@
                         <span style="width:35%; display:inline-block;">Payment To</span>
                         <input style="width:60%;" id="payment_to" name="payment_to" class="easyui-combobox">
                     </div>
-                    <div class="fitem">
+                    <div class="fitem" hidden>
                         <span style="width:35%; display:inline-block;">Type</span>
                         <input style="width:60%;" id="type" name="type" class="easyui-textbox">
                     </div>
@@ -304,7 +304,7 @@
                                 $(ed.target).textbox('setValue', (parseFloat(value) * parseFloat(qty)));
                             }
                         }}">Price</th>
-                    <th data-options="field:'total',width:120, formatter:priceformat,halign:'center',align:'right',editor: {type: 'numberbox', options: {required: true, readonly: true, precision: 4}}">Amount</th>
+                    <th data-options="field:'total',width:120, formatter:numberformat,halign:'center',align:'right',editor: {type: 'numberbox', options: {required: true, readonly: true, precision: 2}}">Amount</th>
                     <th data-options="field:'account_number',width:100, halign:'center', editor: {
                         type: 'combogrid',
                         options: {
@@ -1513,7 +1513,7 @@
         $('#dg2').datagrid('cancelEdit', getRowIndex(target));
     }
 
-      function UpdatedDeliveryNotes(number) {
+    function UpdatedDeliveryNotes(number) {
         $.ajax({
             method: 'post',
             url: '<?= base_url('finance/sales_invoices/get_delivery_notes') ?>',
@@ -1642,7 +1642,6 @@
                             }, ]
                         ],
                         onLoadSuccess: function(customer_id) {
-                            console.log(customer_id);
                             $("#customer_id").combogrid('setValue', row.customer_id);
                             $("#type").textbox('setValue', row.type);
                         },
@@ -2378,7 +2377,7 @@
                             width: 150,
                             halign: 'center',
                             align: 'right',
-                            formatter: priceformat
+                            formatter: numberformat
                         }, {
                             field: 'approved_to',
                             title: 'Approved To',
@@ -3233,5 +3232,4 @@
             toastr.warning("Please select one or more data in the table first!", "Information");
         }
     }
-
 </script>
