@@ -1,5 +1,5 @@
 <table id="dg" class="easyui-datagrid" style="width:100%;" toolbar="#toolbar"></table>
-<div id="toolbar" style="height: 200px; padding: 10px;">
+<div id="toolbar" style="height: 240px; padding: 10px;">
     <!-- <div style="width: 100%; display: grid; grid-template-columns: auto auto auto; grid-gap: 5px; display: flex;"> -->
     <fieldset style="width: 100%; border:2px solid #d0d0d0; margin-bottom: 5px; margin-top: 5px; border-radius:4px;">
         <legend><b>Form Filter Data</b></legend>
@@ -14,15 +14,18 @@
                 <input style="width:60%;" id="filter_division" class="easyui-combobox">
             </div>
             <div class="fitem">
-                <span style="width:35%; display:inline-block;"></span>
-                <a href="javascript:;" class="easyui-linkbutton" onclick="filter()"><i class="fa fa-search"></i> Filter Data</a>
-            </div>
-        </div>
-        <div style="width: 49%; float:left;">
-            <div class="fitem">
                 <span style="width:35%; display:inline-block;">Product No</span>
                 <input style="width:60%;" id="filter_items" class="easyui-combogrid">
             </div>
+            <div class="fitem">
+                <span style="width:35%; display:inline-block;"></span>
+                <a href="javascript:;" class="easyui-linkbutton" onclick="filter()"><i class="fa fa-search"></i> Filter Data</a>
+                <a href="javascript:;" class="easyui-linkbutton" onclick="filter_wo()"><i class="fa fa-search"></i> Filter Recap WO</a>
+                <a href="javascript:;" class="easyui-linkbutton" onclick="filter_rm()"><i class="fa fa-search"></i> Filter Recap RM</a>
+            </div>
+           
+        </div>
+        <div style="width: 49%; float:left;">
             <div class="fitem">
                 <span style="width:35%; display:inline-block;">Shift</span>
                 <select style="width:60%;" id="filter_shift" class="easyui-combobox" panelHeight="auto">
@@ -39,9 +42,15 @@
                     <option value="DETAIL">DETAIL</option>
                 </select>
             </div>
+            <div class="fitem">
+                <span style="width:35%; display:inline-block;">Workorder</span>
+                <input style="width:60%;" id="filter_workorder" class="easyui-combobox">
+            </div>
         </div>
     </fieldset>
     <?= $button ?>
+    <a href="javascript:void(0)" class="easyui-linkbutton" data-options="plain:true" onclick="excelwo()"><i class="fa fa-file"></i> Export Excel WO</a>
+    <a href="javascript:void(0)" class="easyui-linkbutton" data-options="plain:true" onclick="excelrm()"><i class="fa fa-file"></i> Export Excel RM</a>
 </div>
 
 <div id="dlg_generate" class="easyui-dialog" title="Save Data" data-options="closed: true,modal:true,closable: false" style="width: 500px; padding:10px; top: 20px;">
@@ -187,15 +196,56 @@
         var filter_display = $("#filter_display").combobox('getValue');
         var filter_division = $("#filter_division").combobox('getValue');
         var filter_shift = $("#filter_shift").combobox('getValue');
+        var filter_workorder = $("#filter_workorder").combobox('getValue');
 
         var yearFrom = filter_from.substring(0, 4);
         var yearTo = filter_to.substring(0, 4);
         if (yearFrom !== yearTo) {
             toastr.warning("Please select the same year for Receipt Date", "Information");
         } else {
-            url = "?filter_from=" + filter_from + "&filter_to=" + filter_to + "&filter_items=" + filter_items + "&filter_display=" + filter_display + "&filter_division=" + filter_division + "&filter_shift=" + filter_shift;
+            url = "?filter_from=" + filter_from + "&filter_to=" + filter_to + "&filter_items=" + filter_items + "&filter_display=" + filter_display + "&filter_division=" + filter_division + "&filter_shift=" + filter_shift + "&filter_workorder=" + filter_workorder;
             $("#printout").contents().find('html').html("<center><br><br><br><b style='font-size:20px;'>Please Wait...</b></center>");
             $("#printout").attr('src', '<?= base_url('finance/progress_wip/print') ?>' + url);
+        }
+    }
+
+    function filter_wo() {
+        var filter_from = $("#filter_from").datebox('getValue');
+        var filter_to = $("#filter_to").datebox('getValue');
+        var filter_items = $("#filter_items").combogrid('getValue');
+        var filter_display = $("#filter_display").combobox('getValue');
+        var filter_division = $("#filter_division").combobox('getValue');
+        var filter_shift = $("#filter_shift").combobox('getValue');
+        var filter_workorder = $("#filter_workorder").combobox('getValue');
+
+        var yearFrom = filter_from.substring(0, 4);
+        var yearTo = filter_to.substring(0, 4);
+        if (yearFrom !== yearTo) {
+            toastr.warning("Please select the same year for Receipt Date", "Information");
+        } else {
+            url = "?filter_from=" + filter_from + "&filter_to=" + filter_to + "&filter_items=" + filter_items + "&filter_display=" + filter_display + "&filter_division=" + filter_division + "&filter_shift=" + filter_shift + "&filter_workorder=" + filter_workorder;
+            $("#printout").contents().find('html').html("<center><br><br><br><b style='font-size:20px;'>Please Wait...</b></center>");
+            $("#printout").attr('src', '<?= base_url('finance/progress_wip/print_wo') ?>' + url);
+        }
+    }
+
+    function filter_rm() {
+        var filter_from = $("#filter_from").datebox('getValue');
+        var filter_to = $("#filter_to").datebox('getValue');
+        var filter_items = $("#filter_items").combogrid('getValue');
+        var filter_display = $("#filter_display").combobox('getValue');
+        var filter_division = $("#filter_division").combobox('getValue');
+        var filter_shift = $("#filter_shift").combobox('getValue');
+        var filter_workorder = $("#filter_workorder").combobox('getValue');
+
+        var yearFrom = filter_from.substring(0, 4);
+        var yearTo = filter_to.substring(0, 4);
+        if (yearFrom !== yearTo) {
+            toastr.warning("Please select the same year for Receipt Date", "Information");
+        } else {
+            url = "?filter_from=" + filter_from + "&filter_to=" + filter_to + "&filter_items=" + filter_items + "&filter_display=" + filter_display + "&filter_division=" + filter_division + "&filter_shift=" + filter_shift + "&filter_workorder=" + filter_workorder;
+            $("#printout").contents().find('html').html("<center><br><br><br><b style='font-size:20px;'>Please Wait...</b></center>");
+            $("#printout").attr('src', '<?= base_url('finance/progress_wip/print_rm') ?>' + url);
         }
     }
 
@@ -206,14 +256,53 @@
         var filter_display = $("#filter_display").combobox('getValue');
         var filter_division = $("#filter_division").combobox('getValue');
         var filter_shift = $("#filter_shift").combobox('getValue');
+        var filter_workorder = $("#filter_workorder").combobox('getValue');
 
         var yearFrom = filter_from.substring(0, 4);
         var yearTo = filter_to.substring(0, 4);
         if (yearFrom !== yearTo) {
             toastr.warning("Please select the same year for Receipt Date", "Information");
         } else {
-            url = "?filter_from=" + filter_from + "&filter_to=" + filter_to + "&filter_items=" + filter_items + "&filter_display=" + filter_display + "&filter_division=" + filter_division + "&filter_shift=" + filter_shift;
+            url = "?filter_from=" + filter_from + "&filter_to=" + filter_to + "&filter_items=" + filter_items + "&filter_display=" + filter_display + "&filter_division=" + filter_division + "&filter_shift=" + filter_shift + "&filter_workorder=" + filter_workorder;
             window.location.assign('<?= base_url('finance/progress_wip/print/excel') ?>' + url);
+        }
+    }
+
+    function excelwo() {
+        var filter_from = $("#filter_from").datebox('getValue');
+        var filter_to = $("#filter_to").datebox('getValue');
+        var filter_items = $("#filter_items").combogrid('getValue');
+        var filter_display = $("#filter_display").combobox('getValue');
+        var filter_division = $("#filter_division").combobox('getValue');
+        var filter_shift = $("#filter_shift").combobox('getValue');
+        var filter_workorder = $("#filter_workorder").combobox('getValue');
+
+        var yearFrom = filter_from.substring(0, 4);
+        var yearTo = filter_to.substring(0, 4);
+        if (yearFrom !== yearTo) {
+            toastr.warning("Please select the same year for Receipt Date", "Information");
+        } else {
+            url = "?filter_from=" + filter_from + "&filter_to=" + filter_to + "&filter_items=" + filter_items + "&filter_display=" + filter_display + "&filter_division=" + filter_division + "&filter_shift=" + filter_shift + "&filter_workorder=" + filter_workorder;
+            window.location.assign('<?= base_url('finance/progress_wip/print_wo/excel') ?>' + url);
+        }
+    }
+
+     function excelrm() {
+        var filter_from = $("#filter_from").datebox('getValue');
+        var filter_to = $("#filter_to").datebox('getValue');
+        var filter_items = $("#filter_items").combogrid('getValue');
+        var filter_display = $("#filter_display").combobox('getValue');
+        var filter_division = $("#filter_division").combobox('getValue');
+        var filter_shift = $("#filter_shift").combobox('getValue');
+        var filter_workorder = $("#filter_workorder").combobox('getValue');
+
+        var yearFrom = filter_from.substring(0, 4);
+        var yearTo = filter_to.substring(0, 4);
+        if (yearFrom !== yearTo) {
+            toastr.warning("Please select the same year for Receipt Date", "Information");
+        } else {
+            url = "?filter_from=" + filter_from + "&filter_to=" + filter_to + "&filter_items=" + filter_items + "&filter_display=" + filter_display + "&filter_division=" + filter_division + "&filter_shift=" + filter_shift + "&filter_workorder=" + filter_workorder;
+            window.location.assign('<?= base_url('finance/progress_wip/print_rm/excel') ?>' + url);
         }
     }
 
@@ -254,6 +343,19 @@
         textField: 'number',
         panelHeight: 'panelHeight',
         prompt: 'Choose Division',
+    });
+
+    $('#filter_workorder').combobox({
+        url: '<?= base_url('finance/progress_wip/readWO'); ?>',
+        valueField: 'workorder',
+        textField: 'workorder',
+        prompt: 'Choose Wo No',
+        icons: [{
+            iconCls: 'icon-clear',
+            handler: function(e) {
+                $(e.data.target).combobox('clear').combobox('textbox').focus();
+            }
+        }],
     });
 
     //Format Datepicker
