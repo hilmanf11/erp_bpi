@@ -170,7 +170,13 @@ class Report_history_transactions extends CI_Controller
         $this->db->select('*');
         $this->db->from('config');
         $config = $this->db->get()->row();
-
+        
+        //Config ISO
+        $this->db->select('*');
+        $this->db->from('config_iso');
+        $config_iso = $this->db->get()->row();
+        $formHistoricalRM = !empty($config_iso->form_historical_rm) ? $config_iso->form_historical_rm : 'DOC';
+        
         //------------------------------------ Mengambil data dari Tabel Config berakhir disini----------------------------------//
 
 
@@ -357,7 +363,19 @@ class Report_history_transactions extends CI_Controller
         // Eksekusi query
         $records = $this->crud->query($query_main);
 
-        $html = '<html><head><title>Print Data</title></head><style>body {font-family: Arial, Helvetica, sans-serif;}#customers {border-collapse: collapse;width: 100%;font-size: 12px;}#customers td, #customers th {border: 1px solid #ddd;padding: 2px;}#customers tr:nth-child(even){background-color: #f2f2f2;}#customers tr:hover {background-color: #ddd;}#customers th {padding-top: 2px;padding-bottom: 2px;text-align: center;color: black;}</style><body>
+        $html = '<html><head><title>Print Data</title></head>
+            <style>
+                body {font-family: Arial, Helvetica, sans-serif;}#customers {border-collapse: collapse;width: 100%;font-size: 12px;}#customers td, #customers th {border: 1px solid #ddd;padding: 2px;}#customers tr:nth-child(even){background-color: #f2f2f2;}#customers tr:hover {background-color: #ddd;}#customers th {padding-top: 2px;padding-bottom: 2px;text-align: center;color: black;}
+                /* Style khusus untuk media cetak */
+                @media print {
+                    #customers thead {
+                        display: table-header-group;
+                    }
+                    #customers tbody tr {
+                        page-break-inside: avoid;
+                    }
+                }
+            </style><body>
             <center>
                 <div style="float: left; font-size: 12px; text-align: left;">
                     <table style="width: 100%;">
@@ -371,18 +389,31 @@ class Report_history_transactions extends CI_Controller
                             </td>
                         </tr>
                     </table>
-                </div>
-                <div style="float: right; font-size: 12px; text-align: right;">
-                    Print Date ' . date("d M Y H:i:s") . ' <br>
-                    Print By ' . $this->session->username . '  
-                </div>
-                <br><br><br>
+                </div>';
+                
+        if ($option == "excel") {
+            $html .= '<div style="float: right; font-size: 12px; text-align: right;">
+                        <span style="border:1px solid black; font-weight:bold; text-align:center; padding:5px;">' . $formHistoricalRM . '</span> <br>
+                        Print Date ' . date("d M Y H:i:s") . ' <br>
+                        Print By ' . $this->session->username . '  
+                    </div>';
+        } else {
+            $html .= '<div style="float: right; font-size: 12px; text-align: right;">
+                        <span style="border:1px solid black; font-weight:bold; text-align:center; padding:5px;">' . $formHistoricalRM . '</span> <br><br>
+                        Print Date ' . date("d M Y H:i:s") . ' <br>
+                        Print By ' . $this->session->username . '  
+                    </div>
+                <br><br>';
+        }
+        
+        $html .= '<br><br>
                 <h3 style="margin:0;">INVENTORY HISTORY TRANSACTION (RM)</h3>
                 <small>PERIOD : <b>' . $filter_from . '</b> To <b>' . $filter_to . '</b></small>
             </center>
-            <br>
+            <br><br>
             
             <table id="customers" border="1" style="font-size: 11px;">
+             <thead>
                 <tr>
                     <th width="20">No</th>
                     <th colspan="3">Product No</th>
@@ -391,12 +422,13 @@ class Report_history_transactions extends CI_Controller
                     <th>Division</th>
                     <th>Category</th>
                     <th>Product Family</th>
-                    <th width="100">Begin<br>Stock</th>
+                    <th width="100">Begin Stock</th>
                     <th width="100">In</th>
                     <th width="100">Out</th>
-                    <th width="100">Ending<br>Stock</th>
+                    <th width="100">Ending Stock</th>
                     <th width="100">ITO<br>(MONTH)</th>
-                </tr>';
+                </tr>
+             </thead>';
 
 
         $no = 1;
@@ -423,7 +455,7 @@ class Report_history_transactions extends CI_Controller
 
             $totalIto += $stock_coverage;
 
-            $html .= '  <tr>
+            $html .= '<tbody><tr>
                             <td style="text-align:center">' . $no . '</td>
                             <td colspan="3">' . $record->number . '</td>
                             <td colspan="2">' . $record->name . '</td>
@@ -1173,7 +1205,8 @@ class Report_history_transactions extends CI_Controller
             <td style="text-align:right;">' . number_format($totalOut, 2) . '</td>
             <td style="text-align:right;">' . number_format($totalEndingStock, 2) . '</td>
             <td style="text-align:right;">' . number_format($totalIto, 2) . '</td>
-        </tr>';
+        </tr>
+        </tbody>';
       
         $html .= '</table></body></html>';
         echo $html;
@@ -1214,6 +1247,12 @@ class Report_history_transactions extends CI_Controller
         $this->db->from('config');
         $config = $this->db->get()->row();
 
+        //Config ISO
+        $this->db->select('*');
+        $this->db->from('config_iso');
+        $config_iso = $this->db->get()->row();
+        $formHistoricalRM = !empty($config_iso->form_historical_rm) ? $config_iso->form_historical_rm : 'FORM NO.';
+        
         //------------------------------------ Mengambil data dari Tabel Config berakhir disini----------------------------------//
 
 
@@ -1372,7 +1411,20 @@ class Report_history_transactions extends CI_Controller
         // $records = $this->crud->query($query_main);
 
 
-        $html = '<html><head><title>Print Data</title></head><style>body {font-family: Arial, Helvetica, sans-serif;}#customers {border-collapse: collapse;width: 100%;font-size: 12px;}#customers td, #customers th {border: 1px solid #ddd;padding: 2px;}#customers tr:nth-child(even){background-color: #f2f2f2;}#customers tr:hover {background-color: #ddd;}#customers th {padding-top: 2px;padding-bottom: 2px;text-align: center;color: black;}</style><body>
+        $html = '<html><head><title>Print Data</title></head>
+            <style>
+                body {font-family: Arial, Helvetica, sans-serif;}#customers {border-collapse: collapse;width: 100%;font-size: 12px;}#customers td, #customers th {border: 1px solid #ddd;padding: 2px;}#customers tr:nth-child(even){background-color: #f2f2f2;}#customers tr:hover {background-color: #ddd;}#customers th {padding-top: 2px;padding-bottom: 2px;text-align: center;color: black;}
+                
+                /* Style khusus untuk media cetak */
+                @media print {
+                    #customers thead {
+                        display: table-header-group;
+                    }
+                    #customers tbody tr {
+                        page-break-inside: avoid;
+                    }
+                }
+            </style><body>
             <center>
                 <div style="float: left; font-size: 12px; text-align: left;">
                     <table style="width: 100%;">
@@ -1388,6 +1440,7 @@ class Report_history_transactions extends CI_Controller
                     </table>
                 </div>
                 <div style="float: right; font-size: 12px; text-align: right;">
+                    <span style="border:1px solid black; font-weight:bold; padding:5px;">' . $formHistoricalRM . '</span> <br><br>
                     Print Date ' . date("d M Y H:i:s") . ' <br>
                     Print By ' . $this->session->username . '  
                 </div>
