@@ -1247,12 +1247,6 @@ class Report_history_transactions extends CI_Controller
         $this->db->from('config');
         $config = $this->db->get()->row();
 
-        //Config ISO
-        $this->db->select('*');
-        $this->db->from('config_iso');
-        $config_iso = $this->db->get()->row();
-        $formHistoricalRM = !empty($config_iso->form_historical_rm) ? $config_iso->form_historical_rm : 'FORM NO.';
-        
         //------------------------------------ Mengambil data dari Tabel Config berakhir disini----------------------------------//
 
 
@@ -1411,20 +1405,7 @@ class Report_history_transactions extends CI_Controller
         // $records = $this->crud->query($query_main);
 
 
-        $html = '<html><head><title>Print Data</title></head>
-            <style>
-                body {font-family: Arial, Helvetica, sans-serif;}#customers {border-collapse: collapse;width: 100%;font-size: 12px;}#customers td, #customers th {border: 1px solid #ddd;padding: 2px;}#customers tr:nth-child(even){background-color: #f2f2f2;}#customers tr:hover {background-color: #ddd;}#customers th {padding-top: 2px;padding-bottom: 2px;text-align: center;color: black;}
-                
-                /* Style khusus untuk media cetak */
-                @media print {
-                    #customers thead {
-                        display: table-header-group;
-                    }
-                    #customers tbody tr {
-                        page-break-inside: avoid;
-                    }
-                }
-            </style><body>
+        $html = '<html><head><title>Print Data</title></head><style>body {font-family: Arial, Helvetica, sans-serif;}#customers {border-collapse: collapse;width: 100%;font-size: 12px;}#customers td, #customers th {border: 1px solid #ddd;padding: 2px;}#customers tr:nth-child(even){background-color: #f2f2f2;}#customers tr:hover {background-color: #ddd;}#customers th {padding-top: 2px;padding-bottom: 2px;text-align: center;color: black;}</style><body>
             <center>
                 <div style="float: left; font-size: 12px; text-align: left;">
                     <table style="width: 100%;">
@@ -1440,7 +1421,6 @@ class Report_history_transactions extends CI_Controller
                     </table>
                 </div>
                 <div style="float: right; font-size: 12px; text-align: right;">
-                    <span style="border:1px solid black; font-weight:bold; padding:5px;">' . $formHistoricalRM . '</span> <br><br>
                     Print Date ' . date("d M Y H:i:s") . ' <br>
                     Print By ' . $this->session->username . '  
                 </div>
