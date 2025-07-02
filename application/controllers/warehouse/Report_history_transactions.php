@@ -28,6 +28,47 @@ class Report_history_transactions extends CI_Controller
         }
     }
 
+    // public function readEndingStock()
+    // {
+    //     if ($this->input->post()) {
+    //         $item_rm_id = $this->input->post('item_rm_id');
+    //         $trans_date = @$this->input->post('trans_date');
+
+    //         if (@$trans_date == "") {
+    //             $date = date("Y-m-d");
+    //         } else {
+    //             $date = $trans_date;
+    //         }
+
+    //         $records = $this->crud->query("SELECT
+    //             a.id,
+    //             a.number, 
+    //             a.name, 
+    //             b.name as prodfam, 
+    //             a.uom, 
+    //             COALESCE(0,0) as begin_stock,
+    //             (COALESCE(SUM(e.qty),0) + COALESCE(g.return_qty, 0)) as qty_in,
+    //             f.qty as qty_out,
+    //             (COALESCE(SUM(e.qty),0) - COALESCE(f.qty, 0) + COALESCE(g.return_qty, 0)) as end_stock
+    //         FROM item_rm a 
+    //         JOIN item_familys b ON a.item_family_id = b.id
+    //         LEFT JOIN purchase_order_receipts d ON a.id = d.item_rm_id and d.receipt_date <= '$date'
+    //         LEFT JOIN scan_item_receipts e ON d.receipt_id = e.receipt_id
+    //         LEFT JOIN (SELECT item_rm_id, COALESCE(SUM(qty), 0) as qty FROM issued_material_details WHERE DATE_FORMAT(created_date, '%Y-%m-%d') <= '$date' GROUP BY item_rm_id) f ON a.id = f.item_rm_id
+    //         LEFT JOIN (SELECT a.item_rm_id, SUM(c.qty) as return_qty
+    //             FROM return_materials a 
+    //             JOIN return_material_labels b ON a.return_id = b.return_id
+    //             JOIN scan_item_receipts c ON a.return_id = c.receipt_id and b.label_no = c.label_no
+    //             WHERE a.return_date <=  '$date'
+    //             GROUP BY a.item_rm_id) g ON a.id = g.item_rm_id
+    //         WHERE a.id like '$item_rm_id'
+    //         GROUP BY a.id
+    //         ORDER BY a.number");
+
+    //         echo json_encode($records);
+    //     }
+    // }
+
     public function readEndingStock()
     {
         if ($this->input->post()) {
@@ -40,27 +81,19 @@ class Report_history_transactions extends CI_Controller
                 $date = $trans_date;
             }
 
-            $records = $this->crud->query("SELECT
-                a.id,
-                a.number, 
-                a.name, 
-                b.name as prodfam, 
-                a.uom, 
-                COALESCE(0,0) as begin_stock,
-                (COALESCE(SUM(e.qty),0) + COALESCE(g.return_qty, 0)) as qty_in,
-                f.qty as qty_out,
-                (COALESCE(SUM(e.qty),0) - COALESCE(f.qty, 0) + COALESCE(g.return_qty, 0)) as end_stock
-            FROM item_rm a 
-            JOIN item_familys b ON a.item_family_id = b.id
-            LEFT JOIN purchase_order_receipts d ON a.id = d.item_rm_id and d.receipt_date <= '$date'
-            LEFT JOIN scan_item_receipts e ON d.receipt_id = e.receipt_id
-            LEFT JOIN (SELECT item_rm_id, COALESCE(SUM(qty), 0) as qty FROM issued_material_details WHERE DATE_FORMAT(created_date, '%Y-%m-%d') <= '$date' GROUP BY item_rm_id) f ON a.id = f.item_rm_id
-            LEFT JOIN (SELECT a.item_rm_id, SUM(c.qty) as return_qty
-                FROM return_materials a 
-                JOIN return_material_labels b ON a.return_id = b.return_id
-                JOIN scan_item_receipts c ON a.return_id = c.receipt_id and b.label_no = c.label_no
-                WHERE a.return_date <=  '$date'
-                GROUP BY a.item_rm_id) g ON a.id = g.item_rm_id
+            $records = $this->crud->query("SELECT 
+            a.id, 
+            a.number, 
+            ((COALESCE(b.qty_scan_in, 0) + COALESCE(c.qty_os_rm, 0) + COALESCE(d.qty_trans_rm_in, 0) + COALESCE(e.return_qty, 0) + COALESCE(h.qty_scan_bpm, 0)) - 
+            (COALESCE(f.qty_issued, 0) + COALESCE(g.qty_trans_rm_out, 0))) AS begin_stock
+                        FROM item_rm a
+                        LEFT JOIN (SELECT b.item_rm_id, SUM(a.qty) AS qty_scan_in FROM scan_item_receipts a JOIN purchase_order_receipts b ON a.receipt_id = b.receipt_id WHERE b.receipt_date < '$date'  GROUP BY b.item_rm_id) b ON a.id = b.item_rm_id
+                        LEFT JOIN (SELECT item_rm_id, SUM(qty) AS qty_os_rm FROM os_rm WHERE trans_date < '$date' GROUP BY item_rm_id) c ON a.id = c.item_rm_id
+                        LEFT JOIN (SELECT item_rm_id, SUM(qty) AS qty_trans_rm_in FROM transaction_rm WHERE request_date < '$date' AND transaction_kind = 'IN' GROUP BY item_rm_id) d ON a.id = d.item_rm_id
+                        LEFT JOIN (SELECT a.item_rm_id, SUM(c.qty) as return_qty FROM return_materials a JOIN return_material_labels b ON a.return_id = b.return_id JOIN scan_item_receipts c ON a.return_id = c.receipt_id AND b.label_no = c.label_no WHERE a.return_date < '$date' GROUP BY a.item_rm_id) e ON a.id = e.item_rm_id
+                        LEFT JOIN (SELECT item_rm_id, SUM(qty) AS qty_issued FROM issued_material_details WHERE created_date < '$date' GROUP BY item_rm_id) f ON a.id = f.item_rm_id
+                        LEFT JOIN (SELECT item_rm_id, SUM(qty) AS qty_trans_rm_out FROM transaction_rm WHERE request_date < '$date' AND transaction_kind = 'OUT' GROUP BY item_rm_id) g ON a.id = g.item_rm_id
+                        LEFT JOIN (SELECT item_rm_id, SUM(qty) AS qty_scan_bpm FROM scan_item_bpm WHERE DATE_FORMAT(request_date, '%Y-%m-%d') < '$date' GROUP BY item_rm_id) h ON a.id = h.item_rm_id
             WHERE a.id like '$item_rm_id'
             GROUP BY a.id
             ORDER BY a.number");
@@ -123,6 +156,14 @@ class Report_history_transactions extends CI_Controller
 
         $start = strtotime($filter_from);
         $finish = strtotime($filter_to);
+
+        $filter_from_minus1 = date('Y-m-01', strtotime('-1 month', strtotime($filter_to)));
+        $filter_to_minus1   = date('Y-m-t',  strtotime('-1 month', strtotime($filter_to)));
+        $filter_from_minus2 = date('Y-m-01', strtotime('-2 month', strtotime($filter_to)));
+        $filter_to_minus2   = date('Y-m-t',  strtotime('-2 month', strtotime($filter_to)));
+        $filter_from_minus3 = date('Y-m-01', strtotime('-3 month', strtotime($filter_to)));
+        $filter_to_minus3   = date('Y-m-t',  strtotime('-3 month', strtotime($filter_to)));
+
         //------------------------------------ Mengambil Filter dari Input GET berakhir disini----------------------------------//
 
         //Config
@@ -272,7 +313,10 @@ class Report_history_transactions extends CI_Controller
             c.name as category_name,
             COALESCE(j.begin_stock) AS begin_stock,
             (COALESCE(d.qty_scan_in, 0) + COALESCE(e.qty_os_rm, 0) + COALESCE(f.qty_trans_rm_in, 0) + COALESCE(g.return_qty, 0) + COALESCE(k.qty_scan_bpm, 0)) AS qty_in,
-            (COALESCE(h.qty_issued, 0) + COALESCE(i.qty_trans_rm_out, 0)) AS qty_out
+            (COALESCE(h.qty_issued, 0) + COALESCE(i.qty_trans_rm_out, 0)) AS qty_out,
+            (COALESCE(h1.qty_issued, 0) + COALESCE(i1.qty_trans_rm_out, 0)) AS qty_out_minus1,
+            (COALESCE(h2.qty_issued, 0) + COALESCE(i2.qty_trans_rm_out, 0)) AS qty_out_minus2,
+            (COALESCE(h3.qty_issued, 0) + COALESCE(i3.qty_trans_rm_out, 0)) AS qty_out_minus3
         FROM item_rm a
         JOIN item_familys b ON a.item_family_id = b.id AND b.number != 'FG'
         JOIN item_categories c ON a.item_category_id = c.id
@@ -282,6 +326,14 @@ class Report_history_transactions extends CI_Controller
         LEFT JOIN (SELECT a.item_rm_id, SUM(c.qty) as return_qty FROM return_materials a JOIN return_material_labels b ON a.return_id = b.return_id JOIN scan_item_receipts c ON a.return_id = c.receipt_id AND b.label_no = c.label_no WHERE a.return_date BETWEEN '$filter_from' AND '$filter_to' GROUP BY a.item_rm_id) g ON a.id = g.item_rm_id
         LEFT JOIN (SELECT item_rm_id, SUM(qty) AS qty_issued FROM issued_material_details WHERE DATE_FORMAT(created_date, '%Y-%m-%d') BETWEEN '$filter_from' AND '$filter_to' GROUP BY item_rm_id) h ON a.id = h.item_rm_id
         LEFT JOIN (SELECT item_rm_id, SUM(qty) AS qty_trans_rm_out FROM transaction_rm WHERE request_date BETWEEN '$filter_from' AND '$filter_to' AND transaction_kind = 'OUT' GROUP BY item_rm_id) i ON a.id = i.item_rm_id
+
+        LEFT JOIN (SELECT item_rm_id, SUM(qty) AS qty_issued FROM issued_material_details WHERE DATE_FORMAT(created_date, '%Y-%m-%d') BETWEEN '$filter_from_minus1' AND '$filter_to_minus1' GROUP BY item_rm_id) h1 ON a.id = h1.item_rm_id
+        LEFT JOIN (SELECT item_rm_id, SUM(qty) AS qty_trans_rm_out FROM transaction_rm WHERE request_date BETWEEN '$filter_from_minus1' AND '$filter_to_minus1' AND transaction_kind = 'OUT' GROUP BY item_rm_id) i1 ON a.id = i1.item_rm_id
+        LEFT JOIN (SELECT item_rm_id, SUM(qty) AS qty_issued FROM issued_material_details WHERE DATE_FORMAT(created_date, '%Y-%m-%d') BETWEEN '$filter_from_minus2' AND '$filter_to_minus2' GROUP BY item_rm_id) h2 ON a.id = h2.item_rm_id
+        LEFT JOIN (SELECT item_rm_id, SUM(qty) AS qty_trans_rm_out FROM transaction_rm WHERE request_date BETWEEN '$filter_from_minus2' AND '$filter_to_minus2' AND transaction_kind = 'OUT' GROUP BY item_rm_id) i2 ON a.id = i2.item_rm_id
+        LEFT JOIN (SELECT item_rm_id, SUM(qty) AS qty_issued FROM issued_material_details WHERE DATE_FORMAT(created_date, '%Y-%m-%d') BETWEEN '$filter_from_minus3' AND '$filter_to_minus3' GROUP BY item_rm_id) h3 ON a.id = h3.item_rm_id
+        LEFT JOIN (SELECT item_rm_id, SUM(qty) AS qty_trans_rm_out FROM transaction_rm WHERE request_date BETWEEN '$filter_from_minus3' AND '$filter_to_minus3' AND transaction_kind = 'OUT' GROUP BY item_rm_id) i3 ON a.id = i3.item_rm_id
+
         LEFT JOIN (SELECT item_rm_id, SUM(qty) AS qty_scan_bpm FROM scan_item_bpm WHERE DATE_FORMAT(request_date, '%Y-%m-%d') BETWEEN '$filter_from' AND '$filter_to' GROUP BY item_rm_id) k ON a.id = k.item_rm_id
 
         LEFT JOIN (SELECT a.id, a.number, ((COALESCE(b.qty_scan_in, 0) + COALESCE(c.qty_os_rm, 0) + COALESCE(d.qty_trans_rm_in, 0) + COALESCE(e.return_qty, 0) + COALESCE(h.qty_scan_bpm, 0)) - (COALESCE(f.qty_issued, 0) + COALESCE(g.qty_trans_rm_out, 0))) AS begin_stock
@@ -335,14 +387,15 @@ class Report_history_transactions extends CI_Controller
                     <th width="20">No</th>
                     <th colspan="3">Product No</th>
                     <th colspan="2">Product Name</th>
-                    <th colspan="2">Uom</th>
-                    <th colspan="2">Division</th>
-                    <th colspan="2">Category</th>
+                    <th>Uom</th>
+                    <th>Division</th>
+                    <th>Category</th>
                     <th>Product Family</th>
                     <th width="100">Begin<br>Stock</th>
                     <th width="100">In</th>
                     <th width="100">Out</th>
                     <th width="100">Ending<br>Stock</th>
+                    <th width="100">ITO<br>(MONTH)</th>
                 </tr>';
 
 
@@ -351,6 +404,7 @@ class Report_history_transactions extends CI_Controller
         $totalIn = 0;
         $totalOut = 0;
         $totalEndingStock = 0;
+        $totalIto = 0;
 
         foreach ($records as $record) {
             $item_rm_id = $record->id;
@@ -360,24 +414,33 @@ class Report_history_transactions extends CI_Controller
             $totalOut += $record->qty_out;
             $totalEndingStock += @(@$record->begin_stock + $record->qty_in) - $record->qty_out;
 
+            $total_sales_minus = $record->qty_out_minus1 + $record->qty_out_minus2 + $record->qty_out_minus3;
+            $avg_sales_minus = ($total_sales_minus > 0) ? number_format($total_sales_minus / 3, 2) : '0.00';
+
+            $stock_coverage = ($total_sales_minus > 0)
+                ? number_format(((@$record->begin_stock + $record->qty_in) - $record->qty_out) / ($total_sales_minus / 3), 2)
+                : '0'; // atau bisa diganti jadi '0.00' atau '-'
+
+            $totalIto += $stock_coverage;
 
             $html .= '  <tr>
                             <td style="text-align:center">' . $no . '</td>
                             <td colspan="3">' . $record->number . '</td>
                             <td colspan="2">' . $record->name . '</td>
-                            <td colspan="2">' . $record->uom . '</td>
-                            <td colspan="2">' . $record->division . '</td>
-                            <td colspan="2">' . $record->category_name . '</td>
+                            <td>' . $record->uom . '</td>
+                            <td>' . $record->division . '</td>
+                            <td>' . $record->category_name . '</td>
                             <td>' . $record->prodfam . '</td>
                             <td style="text-align:right;">' . number_format(@$record->begin_stock, 2) . '</td>
                             <td style="text-align:right;">' . number_format($record->qty_in, 2) . '</td>
                             <td style="text-align:right;">' . number_format($record->qty_out, 2) . '</td>
                             <td style="text-align:right;">' . number_format((@$record->begin_stock + $record->qty_in) - $record->qty_out, 2) . '</td>
+                            <td style="text-align:right;">' . $stock_coverage . '</td>
                         </tr>';
 
             if ($filter_display == "DETAIL") {
                 $html .= '  <tr>
-                                <td colspan="13" style="background:#D1FFC6; font-size: 11px;"><b>DETAIL OF ' . $record->number . ' - ' . $record->name . '</b></td>
+                                <td colspan="14" style="background:#D1FFC6; font-size: 11px;"><b>DETAIL OF ' . $record->number . ' - ' . $record->name . '</b></td>
                             </tr>
                             <tr>
                                 <th width="20"></th>
@@ -386,7 +449,8 @@ class Report_history_transactions extends CI_Controller
                                 <th>Created By</th>
                                 <th>Trans Date</th>
                                 <th>Custom. Kind</th>
-                                <th>Custom. No</th>
+                                <th>Receipt No</th>
+                                <th>Lot No</th>
                                 <th>Doc. No</th>
                                 <th>Custom. Date</th>
                                 <th>Begin</th>
@@ -413,6 +477,7 @@ class Report_history_transactions extends CI_Controller
                             a.bc_document, 
                             a.bc_date, 
                             SUM(b.qty) as qty_receipt,
+                            a.lotno,
                             c.name as username
                         FROM purchase_order_receipts a 
                         JOIN scan_item_receipts b ON a.receipt_id = b.receipt_id
@@ -421,7 +486,18 @@ class Report_history_transactions extends CI_Controller
                         GROUP BY a.bc_kind, a.bc_aju, a.bc_document, a.bc_date, a.receipt_id");
                         
                         //ISSUED
-                        $issueds = $this->crud->query("SELECT created_by, qty, created_date, label_no, request_no FROM issued_material_details WHERE item_rm_id = '$item_rm_id' and DATE_FORMAT(created_date, '%Y-%m-%d') between '$filter_from' and '$filter_to'");
+                        $issueds = $this->crud->query("SELECT 
+                            a.created_by, 
+                            a.qty, 
+                            a.created_date, 
+                            a.label_no, 
+                            a.request_no,
+                            c.lotno
+                        FROM issued_material_details a 
+                        JOIN purchase_order_labels b ON a.label_no = b.label_no
+                        JOIN purchase_order_receipts c ON b.receipt_id = c.receipt_id
+                        WHERE a.item_rm_id = '$item_rm_id' 
+                        and DATE_FORMAT(a.created_date, '%Y-%m-%d') between '$filter_from' and '$filter_to'");
 
                         //RETURN
                         $returns = $this->crud->query("SELECT
@@ -479,6 +555,7 @@ class Report_history_transactions extends CI_Controller
                                 'qty_out' => 0,
                                 'doc1' => $r->bc_kind,
                                 'doc2' => $r->bc_aju,
+                                'lotno' => $r->lotno,
                                 'doc3' => $r->bc_document,
                                 'doc4' => $r->bc_date
                             ];
@@ -495,6 +572,7 @@ class Report_history_transactions extends CI_Controller
                                 'qty_out' => $i->qty,
                                 'doc1' => '-',
                                 'doc2' => $i->label_no,
+                                'lotno' => $i->lotno,
                                 'doc3' => $i->request_no,
                                 'doc4' => '-'
                             ];
@@ -510,6 +588,7 @@ class Report_history_transactions extends CI_Controller
                                 'qty_out' => 0,
                                 'doc1' => '-',
                                 'doc2' => $r->label_no,
+                                'lotno' => '-',
                                 'doc3' => $r->return_no,
                                 'doc4' => '-'
                             ];
@@ -526,6 +605,7 @@ class Report_history_transactions extends CI_Controller
                                 'qty_out' => 0,
                                 'doc1' => '-',
                                 'doc2' => '-',
+                                'lotno' => '-',
                                 'doc3' => '-',
                                 'doc4' => '-'
                             ];
@@ -542,6 +622,7 @@ class Report_history_transactions extends CI_Controller
                                 'qty_out' => 0,
                                 'doc1' => '-',
                                 'doc2' => $b->label,
+                                'lotno' => '-',
                                 'doc3' => $b->request_id,
                                 'doc4' => $b->request_date
                             ];
@@ -560,6 +641,7 @@ class Report_history_transactions extends CI_Controller
                                 'qty_out' => $qty_out,
                                 'doc1' => '-',
                                 'doc2' => '-',
+                                'lotno' => '-',
                                 'doc3' => $t->request_no,
                                 'doc4' => '-'
                             ];
@@ -580,6 +662,7 @@ class Report_history_transactions extends CI_Controller
                                 <td>' . date("Y-m-d", strtotime($data['date'])) . '</td>
                                 <td>' . $data['doc1'] . '</td>
                                 <td>' . $data['doc2'] . '</td>
+                                <td>' . $data['lotno'] . '</td>
                                 <td>' . $data['doc3'] . '</td>
                                 <td>' . $data['doc4'] . '</td>
                                 <td style="text-align:right;">' . number_format($begin, 2) . '</td>
@@ -742,6 +825,7 @@ class Report_history_transactions extends CI_Controller
                             a.bc_aju, 
                             a.bc_document, 
                             a.bc_date, 
+                            a.lotno,
                             SUM(b.qty) as qty_receipt,
                             c.name as username
                         FROM purchase_order_receipts a 
@@ -761,6 +845,7 @@ class Report_history_transactions extends CI_Controller
                                             <td>' . $receipt->receipt_date . '</td>
                                             <td>' . $receipt->bc_kind . '</td>
                                             <td>' . $receipt->bc_aju . '</td>
+                                            <td>' . $receipt->lotno . '</td>
                                             <td>' . $receipt->bc_document . '</td>
                                             <td>' . $receipt->bc_date . '</td>
                                             <td style="text-align:right;">' . number_format($begin, 2) . '</td>
@@ -798,6 +883,7 @@ class Report_history_transactions extends CI_Controller
                                             <td>ADJ IN STO</td>
                                             <td>' . $transaction->username . '</td>
                                             <td>' . date("Y-m-d", strtotime($transaction->request_date)) . '</td>
+                                            <td>-</td>
                                             <td>-</td>
                                             <td>-</td>
                                             <td>' . $transaction->request_no . '</td>
@@ -847,6 +933,7 @@ class Report_history_transactions extends CI_Controller
                                             <td>' . date("Y-m-d", strtotime($transaction->request_date)) . '</td>
                                             <td>-</td>
                                             <td>-</td>
+                                            <td>-</td>
                                             <td>' . $transaction->request_no . '</td>
                                             <td>-</td>
                                             <td style="text-align:right;">' . number_format($begin, 2) . '</td>
@@ -878,6 +965,7 @@ class Report_history_transactions extends CI_Controller
                                                 <td>BPM</td>
                                                 <td>' . $user->name . '</td>
                                                 <td>' . date("Y-m-d", strtotime($transaction->request_date)) . '</td>
+                                                <td>-</td>
                                                 <td>-</td>
                                                 <td>' . $transaction->label . '</td>
                                                 <td>' . $transaction->request_id . '</td>
@@ -918,6 +1006,7 @@ class Report_history_transactions extends CI_Controller
                                             <td>ADJ OUT STO</td>
                                             <td>' . $transaction->username . '</td>
                                             <td>' . date("Y-m-d", strtotime($transaction->request_date)) . '</td>
+                                            <td>-</td>
                                             <td>-</td>
                                             <td>-</td>
                                             <td>' . $transaction->request_no . '</td>
@@ -966,6 +1055,7 @@ class Report_history_transactions extends CI_Controller
                                             <td>' . date("Y-m-d", strtotime($transaction->request_date)) . '</td>
                                             <td>-</td>
                                             <td>-</td>
+                                            <td>-</td>
                                             <td>' . $transaction->request_no . '</td>
                                             <td>-</td>
                                             <td style="text-align:right;">' . number_format($begin, 2) . '</td>
@@ -1012,6 +1102,7 @@ class Report_history_transactions extends CI_Controller
                                             <td>' . date("Y-m-d", strtotime($transaction->request_date)) . '</td>
                                             <td>-</td>
                                             <td>-</td>
+                                            <td>-</td>
                                             <td>' . $transaction->request_no . '</td>
                                             <td>-</td>
                                             <td style="text-align:right;">' . number_format($begin, 2) . '</td>
@@ -1033,7 +1124,19 @@ class Report_history_transactions extends CI_Controller
 
                     if ($filter_trans_type == 'ISSUED') {
                         //ISSUED
-                        $issueds = $this->crud->query("SELECT * FROM issued_material_details WHERE item_rm_id = '$item_rm_id' and DATE_FORMAT(created_date, '%Y-%m-%d') between '$filter_from' and '$filter_to' ORDER BY created_date");
+                        // $issueds = $this->crud->query("SELECT * FROM issued_material_details WHERE item_rm_id = '$item_rm_id' and DATE_FORMAT(created_date, '%Y-%m-%d') between '$filter_from' and '$filter_to' ORDER BY created_date");
+                        $issueds = $this->crud->query("SELECT 
+                            a.created_by, 
+                            a.qty, 
+                            a.created_date, 
+                            a.label_no, 
+                            a.request_no,
+                            c.lotno
+                        FROM issued_material_details a 
+                        JOIN purchase_order_labels b ON a.label_no = b.label_no
+                        JOIN purchase_order_receipts c ON b.receipt_id = c.receipt_id
+                        WHERE a.item_rm_id = '$item_rm_id' 
+                        and DATE_FORMAT(a.created_date, '%Y-%m-%d') between '$filter_from' and '$filter_to'");
             
                         foreach ($issueds as $issued) {
                             $user = $this->crud->read("users", [], ["username" => $issued->created_by]);
@@ -1046,6 +1149,7 @@ class Report_history_transactions extends CI_Controller
                                             <td>' . date("Y-m-d", strtotime($issued->created_date)) . '</td>
                                             <td>-</td>
                                             <td>' . $issued->label_no . '</td>
+                                            <td>' . $issued->lotno . '</td>
                                             <td>' . $issued->request_no . '</td>
                                             <td>-</td>
                                             <td style="text-align:right;">' . number_format($begin, 2) . '</td>
@@ -1063,11 +1167,12 @@ class Report_history_transactions extends CI_Controller
         }
 
         $html .= '<tr>
-            <td colspan="13" style="text-align:right;"><b>GRAND TOTAL</b></td>
+            <td colspan="10" style="text-align:right;"><b>GRAND TOTAL</b></td>
             <td style="text-align:right;">' . number_format($totalBeginStock, 2) . '</td>
             <td style="text-align:right;">' . number_format($totalIn, 2) . '</td>
             <td style="text-align:right;">' . number_format($totalOut, 2) . '</td>
             <td style="text-align:right;">' . number_format($totalEndingStock, 2) . '</td>
+            <td style="text-align:right;">' . number_format($totalIto, 2) . '</td>
         </tr>';
       
         $html .= '</table></body></html>';
@@ -1094,6 +1199,14 @@ class Report_history_transactions extends CI_Controller
 
         $start = strtotime($filter_from);
         $finish = strtotime($filter_to);
+
+        $filter_from_minus1 = date('Y-m-01', strtotime('-1 month', strtotime($filter_to)));
+        $filter_to_minus1   = date('Y-m-t',  strtotime('-1 month', strtotime($filter_to)));
+        $filter_from_minus2 = date('Y-m-01', strtotime('-2 month', strtotime($filter_to)));
+        $filter_to_minus2   = date('Y-m-t',  strtotime('-2 month', strtotime($filter_to)));
+        $filter_from_minus3 = date('Y-m-01', strtotime('-3 month', strtotime($filter_to)));
+        $filter_to_minus3   = date('Y-m-t',  strtotime('-3 month', strtotime($filter_to)));
+
         //------------------------------------ Mengambil Filter dari Input GET berakhir disini----------------------------------//
 
         //Config
@@ -1124,6 +1237,10 @@ class Report_history_transactions extends CI_Controller
             COALESCE(m.qty,0) as adj_out_qty,
             COALESCE(n.qty,0) as bpb_qty, 
 
+            (COALESCE(h1.qty_issued, 0) + COALESCE(i1.qty_trans_rm_out, 0)) AS qty_out_minus1,
+            (COALESCE(h2.qty_issued, 0) + COALESCE(i2.qty_trans_rm_out, 0)) AS qty_out_minus2,
+            (COALESCE(h3.qty_issued, 0) + COALESCE(i3.qty_trans_rm_out, 0)) AS qty_out_minus3,
+
             (COALESCE(SUM(e.qty),0) + COALESCE(g.return_qty, 0) + COALESCE(h.qty_stock_rm, 0) + COALESCE(i.qty, 0) + COALESCE(k.qty, 0) + COALESCE(o.qty_bpm_scan, 0)) as qty_in,
             (COALESCE(f.qty,0) + COALESCE(j.qty, 0) + COALESCE(m.qty, 0)+ COALESCE(n.qty, 0)) as qty_out
     
@@ -1138,6 +1255,14 @@ class Report_history_transactions extends CI_Controller
             LEFT JOIN scan_item_receipts e ON d.receipt_id = e.receipt_id
             LEFT JOIN item_family_subs l ON a.item_sub_family_id = l.id
             LEFT JOIN (SELECT item_rm_id, COALESCE(SUM(qty), 0) as qty FROM issued_material_details WHERE DATE_FORMAT(created_date, '%Y-%m-%d') between '$filter_from' and '$filter_to' GROUP BY item_rm_id) f ON a.id = f.item_rm_id
+
+            LEFT JOIN (SELECT item_rm_id, SUM(qty) AS qty_issued FROM issued_material_details WHERE DATE_FORMAT(created_date, '%Y-%m-%d') BETWEEN '$filter_from_minus1' AND '$filter_to_minus1' GROUP BY item_rm_id) h1 ON a.id = h1.item_rm_id
+            LEFT JOIN (SELECT item_rm_id, SUM(qty) AS qty_trans_rm_out FROM transaction_rm WHERE request_date BETWEEN '$filter_from_minus1' AND '$filter_to_minus1' AND transaction_kind = 'OUT' GROUP BY item_rm_id) i1 ON a.id = i1.item_rm_id
+            LEFT JOIN (SELECT item_rm_id, SUM(qty) AS qty_issued FROM issued_material_details WHERE DATE_FORMAT(created_date, '%Y-%m-%d') BETWEEN '$filter_from_minus2' AND '$filter_to_minus2' GROUP BY item_rm_id) h2 ON a.id = h2.item_rm_id
+            LEFT JOIN (SELECT item_rm_id, SUM(qty) AS qty_trans_rm_out FROM transaction_rm WHERE request_date BETWEEN '$filter_from_minus2' AND '$filter_to_minus2' AND transaction_kind = 'OUT' GROUP BY item_rm_id) i2 ON a.id = i2.item_rm_id
+            LEFT JOIN (SELECT item_rm_id, SUM(qty) AS qty_issued FROM issued_material_details WHERE DATE_FORMAT(created_date, '%Y-%m-%d') BETWEEN '$filter_from_minus3' AND '$filter_to_minus3' GROUP BY item_rm_id) h3 ON a.id = h3.item_rm_id
+            LEFT JOIN (SELECT item_rm_id, SUM(qty) AS qty_trans_rm_out FROM transaction_rm WHERE request_date BETWEEN '$filter_from_minus3' AND '$filter_to_minus3' AND transaction_kind = 'OUT' GROUP BY item_rm_id) i3 ON a.id = i3.item_rm_id
+
             LEFT JOIN (SELECT a.item_rm_id, SUM(c.qty) as return_qty
                 FROM return_materials a 
                 JOIN return_material_labels b ON a.return_id = b.return_id
@@ -1292,6 +1417,7 @@ class Report_history_transactions extends CI_Controller
                     <th rowspan="2" width="100">Total<br>Out</th>
                     <th rowspan="2" width="100">Selisih Summary <br>VS Detail (IN)</th>
                     <th rowspan="2" width="100">Selisih Summary <br>VS Detail (OUT)</th>
+                    <th rowspan="2" width="100">ITO (MONTH)</th>
                 </tr>
                 <tr>
                     <th width="80">Purchase</th>
@@ -1324,6 +1450,8 @@ class Report_history_transactions extends CI_Controller
         $totalQtyOut = 0;
         $totalQtySelisihIn = 0;
         $totalQtySelisihOut = 0;
+
+        $totalIto = 0;
 
         foreach ($records as $record) {
 
@@ -1396,6 +1524,15 @@ class Report_history_transactions extends CI_Controller
             $totalQtySelisihIn += (($record->receipt_qty + $record->bpm_qty + $record->adj_in_qty) - $record->qty_in);
             $totalQtySelisihOut += (($record->qty_issued + $record->qty_kanban + $record->adj_out_qty + $record->bpb_qty) - $record->qty_out);
 
+            $total_sales_minus = $record->qty_out_minus1 + $record->qty_out_minus2 + $record->qty_out_minus3;
+            $avg_sales_minus = ($total_sales_minus > 0) ? number_format($total_sales_minus / 3, 2) : '0.00';
+
+            $stock_coverage = ($total_sales_minus > 0)
+                ? number_format(((@$itemReceipts[0]->begin_stock + $record->qty_in) - $record->qty_out) / ($total_sales_minus / 3), 2)
+                : '0'; // atau bisa diganti jadi '0.00' atau '-'
+
+            $totalIto += $stock_coverage;
+
             $html .= '  <tr>
                             <td style="text-align:center">' . $no . '</td>
                             <td>' . $record->number . '</td>
@@ -1424,6 +1561,7 @@ class Report_history_transactions extends CI_Controller
                             <td style="text-align:right;">' . number_format(($record->receipt_qty + $record->bpm_qty + $record->adj_in_qty) - $record->qty_in, 2) . '</td>
                             <td style="text-align:right;">' . number_format(($record->qty_issued + $record->qty_kanban + $record->adj_out_qty + $record->bpb_qty) - $record->qty_out, 2) . '</td>
 
+                            <td style="text-align:right;">' . $stock_coverage . '</td>
                         </tr>';
             $no++;
         }
@@ -1448,6 +1586,8 @@ class Report_history_transactions extends CI_Controller
             <td style="text-align:right;">' . number_format($totalQtyOut, 2) . '</td>
             <td style="text-align:right;">' . number_format($totalQtySelisihIn, 2) . '</td>
             <td style="text-align:right;">' . number_format($totalQtySelisihOut, 2) . '</td>
+
+            <td style="text-align:right;">' . $totalIto . '</td>
             
         </tr>';
       
