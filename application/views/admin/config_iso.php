@@ -29,6 +29,10 @@
                     <input style="width:60%;" name="doc_supply_sheet" value="<?= $config->doc_supply_sheet ?>" class="easyui-textbox">
                 </div>
                 <div class="fitem">
+                    <span style="width:35%; display:inline-block;">Non Supply Sheet</span>
+                    <input style="width:60%;" name="doc_non_supply_sheet" value="<?= $config->doc_non_supply_sheet ?>" class="easyui-textbox">
+                </div>
+                <div class="fitem">
                     <span style="width:35%; display:inline-block;">Check Sheet</span>
                     <input style="width:60%;" name="doc_checksheet" value="<?= $config->doc_checksheet ?>" class="easyui-textbox">
                 </div>
@@ -64,6 +68,10 @@
                     <span style="width:35%; display:inline-block;">Barcode FG</span>
                     <input style="width:60%;" name="doc_barcode_fg" value="<?= $config->doc_barcode_fg ?>" class="easyui-textbox">
                 </div>
+                <div class="fitem">
+                    <span style="width:35%; display:inline-block;">Historical RM</span>
+                    <input style="width:60%;" name="doc_historical_rm" value="<?= $config->doc_historical_rm ?>" class="easyui-textbox">
+                </div>
             </fieldset>
             <fieldset style="width:30%; border:1px solid #d0d0d0; margin-bottom: 10px; border-radius:4px; float: left;">
                 <legend><b>Form ISO</b></legend>
@@ -90,6 +98,10 @@
                 <div class="fitem">
                     <span style="width:35%; display:inline-block;">Supply Sheet</span>
                     <input style="width:60%;" name="form_supply_sheet" value="<?= $config->form_supply_sheet ?>" class="easyui-textbox">
+                </div>
+                <div class="fitem">
+                    <span style="width:35%; display:inline-block;">Non Supply Sheet</span>
+                    <input style="width:60%;" name="form_non_supply_sheet" value="<?= $config->form_non_supply_sheet ?>" class="easyui-textbox">
                 </div>
                 <div class="fitem">
                     <span style="width:35%; display:inline-block;">Check Sheet</span>
@@ -126,6 +138,10 @@
                 <div class="fitem">
                     <span style="width:35%; display:inline-block;">Barcode FG</span>
                     <input style="width:60%;" name="form_barcode_fg" value="<?= $config->form_barcode_fg ?>" class="easyui-textbox">
+                </div>
+                <div class="fitem">
+                    <span style="width:35%; display:inline-block;">Historical RM</span>
+                    <input style="width:60%;" name="form_historical_rm" value="<?= $config->form_historical_rm ?>" class="easyui-textbox">
                 </div>
             </fieldset>
         </div>
