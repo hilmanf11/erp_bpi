@@ -47,8 +47,7 @@ class Purchase_invoices extends CI_Controller
         $this->db->order_by('a.item_no', 'asc');
         $records = $this->db->get()->result_array();
 
-        file_put_contents('purchase_invoicing.json', json_encode($records));
-        die(json_encode($records));
+        echo json_encode($records);
     }
 
     public function readSuppliers()
