@@ -6,7 +6,7 @@
             <th rowspan="2" data-options="field:'number',width:150,align:'left'">Document No</th>
             <th rowspan="2" data-options="field:'start_date',width:150,halign:'center'">Start Date</th>
             <th rowspan="2" data-options="field:'end_date',width:150,halign:'center'">End Date</th>
-            <th rowspan="2" data-options="field:'division',width:100,halign:'center'">Division</th>
+            <th rowspan="2" data-options="field:'division',width:150,halign:'center'">Division</th>
             <th colspan="2" data-options="field:'',width:150,halign:'center'"> Created</th>
             <th colspan="2" data-options="field:'',width:150,halign:'center'"> Updated</th>
         </tr>
@@ -24,20 +24,32 @@
 <div id="toolbar" style="height: 200px; padding: 10px;">
     <!-- <div style="width: 100%; display: grid; grid-template-columns: auto auto auto; grid-gap: 5px; display: flex;"> -->
     <div style="width: 100%;">
-        <fieldset style="width: 45%; border:2px solid #d0d0d0; margin-bottom: 5px; margin-top: 5px; border-radius:4px;">
+        <fieldset style="width: 75%; border:2px solid #d0d0d0; margin-bottom: 5px; margin-top: 5px; border-radius:4px;">
             <legend><b>Form Filter Data</b></legend>
-            <div class="fitem">
-                <span style="width:35%; display:inline-block;">Document No</span>
-                <input style="width:60%;" id="filter_number" class="easyui-combobox">
-            </div>
-            <div class="fitem">
-                <span style="width:35%; display:inline-block;">Product No</span>
-                <input style="width:60%;" id="filter_item_fg_id" class="easyui-combogrid">
-            </div>
-            <div class="fitem">
-                <span style="width:35%; display:inline-block;"></span>
-                <a href="javascript:;" class="easyui-linkbutton" onclick="filter()"><i class="fa fa-search"></i> Filter Data</a>
-            </div>
+                <div style="float:left; width:50%">
+                    <div class="fitem">
+                        <span style="width:35%; display:inline-block;">Start Date</span>
+                        <input style="width:60%;" id="filter_start_date" class="easyui-datebox" value="<?= date('Y') . '-01-01'; ?>" data-options="formatter:myformatter,parser:myparser, editable:false">
+                    </div>
+                    <div class="fitem">
+                        <span style="width:35%; display:inline-block;">Ending Date</span>
+                        <input style="width:60%;" id="filter_end_date" class="easyui-datebox" value="<?= date('Y') . '-12-31'; ?>" data-options="formatter:myformatter,parser:myparser, editable:false">
+                    </div>
+                    <div class="fitem">
+                        <span style="width:35%; display:inline-block;"></span>
+                        <a href="javascript:;" class="easyui-linkbutton" onclick="filter()"><i class="fa fa-search"></i> Filter Data</a>
+                    </div>
+                </div>
+                <div style="float:left; width:48%">
+                    <div class="fitem">
+                        <span style="width:35%; display:inline-block;">Document No</span>
+                        <input style="width:60%;" id="filter_number" class="easyui-combobox">
+                    </div>
+                    <div class="fitem">
+                        <span style="width:35%; display:inline-block;">Product No</span>
+                        <input style="width:60%;" id="filter_item_fg_id" class="easyui-combogrid">
+                    </div>
+                </div>
         </fieldset>
         <?= $button ?>
     </div>
@@ -492,10 +504,14 @@
 
     //FILTER DATA
     function filter() {
+        var filter_start_date = $("#filter_start_date").datebox('getValue');
+        var filter_end_date = $("#filter_end_date").datebox('getValue');
         var filter_item_fg_id = $("#filter_item_fg_id").combogrid('getValue');
         var filter_number = $("#filter_number").combobox('getValue');
 
         var url = "?filter_item_fg_id=" + window.btoa(filter_item_fg_id) +
+            "&filter_start_date=" + window.btoa(filter_end_date) +
+            "&filter_end_date=" + window.btoa(filter_end_date) +
             "&filter_number=" + window.btoa(filter_number);
 
         $('#dg').datagrid({
@@ -513,10 +529,14 @@
 
     //PRINT EXCEL
     function excel() {
+        var filter_start_date = $("#filter_start_date").datebox('getValue');
+        var filter_end_date = $("#filter_end_date").datebox('getValue');
         var filter_item_fg_id = $("#filter_item_fg_id").combogrid('getValue');
         var filter_number = $("#filter_number").combobox('getValue');
 
         var url = "?filter_item_fg_id=" + window.btoa(filter_item_fg_id) +
+            "&filter_start_date=" + window.btoa(filter_end_date) +
+            "&filter_end_date=" + window.btoa(filter_end_date) +
             "&filter_number=" + window.btoa(filter_number);
 
         window.location.assign('<?= base_url('master/standard_price_fg/print/excel') ?>' + url);
