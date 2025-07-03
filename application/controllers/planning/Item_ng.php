@@ -461,6 +461,8 @@ class Item_ng extends CI_Controller
                     <th>Qty</th>
                     <th>Uom</th>
                     <th>Remarks</th>
+                    <th>Created By</th>
+                    <th>Created Date</th>
                 </tr>';
         $no = 1;
         foreach ($records as $data) {
@@ -480,6 +482,8 @@ class Item_ng extends CI_Controller
                             <td>' . number_format($data['qty']) . '</td>
                             <td>' . $data['uom'] . '</td>
                             <td>' . $data['remarks'] . '</td>
+                            <td style="text-align:center;">' . $data['created_by'] . '</td>
+                            <td style="text-align:center;">' . $data['created_date'] . '</td>
                         </tr>';
             $no++;
         }
