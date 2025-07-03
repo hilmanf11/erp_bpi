@@ -544,6 +544,36 @@ class Report_history_transactions extends CI_Controller
                         JOIN bpm_labels b ON a.label_no = b.label_no
                         JOIN bpm c ON b.request_id = c.request_id
                         WHERE a.item_rm_id = '$item_rm_id' 
+                        and DATE_FORMAT(a.created_date, '%Y-%m-%d') between '$filter_from' and '$filter_to'
+                        
+                        UNION
+                        
+                        SELECT 
+                            a.created_by, 
+                            a.qty, 
+                            a.created_date, 
+                            a.label_no, 
+                            a.request_no,
+                            COALESCE(c.lotno,'-') as lotno
+                        FROM issued_material_details a 
+                        JOIN barcode_divides b ON a.label_no = b.label_divided
+                        LEFT JOIN purchase_order_receipts c ON b.reff = c.receipt_id
+                        LEFT JOIN new_barcode d ON b.reff = d.label_no
+                        WHERE a.item_rm_id = '$item_rm_id' 
+                        and DATE_FORMAT(a.created_date, '%Y-%m-%d') between '$filter_from' and '$filter_to'
+                        
+                        UNION
+
+                        SELECT 
+                            a.created_by, 
+                            a.qty, 
+                            a.created_date, 
+                            a.label_no, 
+                            a.request_no,
+                            '-' as lotno
+                        FROM issued_material_details a 
+                        JOIN new_barcode b ON a.label_no = b.label_no
+                        WHERE a.item_rm_id = '$item_rm_id' 
                         and DATE_FORMAT(a.created_date, '%Y-%m-%d') between '$filter_from' and '$filter_to'");
 
                         // $issueds = $this->crud->query("SELECT * FROM issued_material_details WHERE item_rm_id = '$item_rm_id' and DATE_FORMAT(created_date, '%Y-%m-%d') between '$filter_from' and '$filter_to'");
@@ -1174,7 +1204,7 @@ class Report_history_transactions extends CI_Controller
                     if ($filter_trans_type == 'ISSUED') {
                         //ISSUED
                         // $issueds = $this->crud->query("SELECT * FROM issued_material_details WHERE item_rm_id = '$item_rm_id' and DATE_FORMAT(created_date, '%Y-%m-%d') between '$filter_from' and '$filter_to' ORDER BY created_date");
-                        $issueds = $this->crud->query("SELECT 
+                       $issueds = $this->crud->query("SELECT 
                             a.created_by, 
                             a.qty, 
                             a.created_date, 
@@ -1199,6 +1229,36 @@ class Report_history_transactions extends CI_Controller
                         FROM issued_material_details a
                         JOIN bpm_labels b ON a.label_no = b.label_no
                         JOIN bpm c ON b.request_id = c.request_id
+                        WHERE a.item_rm_id = '$item_rm_id' 
+                        and DATE_FORMAT(a.created_date, '%Y-%m-%d') between '$filter_from' and '$filter_to'
+                        
+                        UNION
+                        
+                        SELECT 
+                            a.created_by, 
+                            a.qty, 
+                            a.created_date, 
+                            a.label_no, 
+                            a.request_no,
+                            COALESCE(c.lotno,'-') as lotno
+                        FROM issued_material_details a 
+                        JOIN barcode_divides b ON a.label_no = b.label_divided
+                        LEFT JOIN purchase_order_receipts c ON b.reff = c.receipt_id
+                        LEFT JOIN new_barcode d ON b.reff = d.label_no
+                        WHERE a.item_rm_id = '$item_rm_id' 
+                        and DATE_FORMAT(a.created_date, '%Y-%m-%d') between '$filter_from' and '$filter_to'
+                        
+                        UNION
+
+                        SELECT 
+                            a.created_by, 
+                            a.qty, 
+                            a.created_date, 
+                            a.label_no, 
+                            a.request_no,
+                            '-' as lotno
+                        FROM issued_material_details a 
+                        JOIN new_barcode b ON a.label_no = b.label_no
                         WHERE a.item_rm_id = '$item_rm_id' 
                         and DATE_FORMAT(a.created_date, '%Y-%m-%d') between '$filter_from' and '$filter_to'");
             
