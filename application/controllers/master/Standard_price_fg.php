@@ -102,6 +102,8 @@ class Standard_price_fg extends CI_Controller
     {
         if ($this->input->post()) {
             $get = $this->input->get();
+            $filter_start_date = @base64_decode($get['filter_start_date']);
+            $filter_end_date = @base64_decode($get['filter_end_date']);
             $filter_item_fg_id = @base64_decode($get['filter_item_fg_id']);
             $filter_number = @base64_decode($get['filter_number']);
 
@@ -116,8 +118,19 @@ class Standard_price_fg extends CI_Controller
             $this->db->select('a.*, b.name as division');
             $this->db->from('standard_price_fg a');
             $this->db->join('divisions b', 'a.division_id = b.id');
-            $this->db->like('a.item_fg_id', $filter_item_fg_id);
-            $this->db->like('a.number', $filter_number);
+            // $this->db->like('a.item_fg_id', $filter_item_fg_id);
+            // $this->db->like('a.number', $filter_number);
+            if (!empty($filter_start_date) && !empty($filter_end_date)) {
+                $this->db->where('a.start_date <=', $filter_end_date); 
+                $this->db->where('a.end_date >=', $filter_start_date);
+            }
+
+            if (!empty($filter_number)) {
+                $this->db->where('a.number', $filter_number);
+            }
+            if (!empty($filter_item_fg_id)) {
+                $this->db->where('a.item_fg_id', $filter_item_fg_id);
+            }
             $this->db->group_by('a.number, a.start_date, a.end_date');
             $this->db->order_by('a.created_date', 'DESC');
             // $this->db->order_by('b.number', 'ASC');
