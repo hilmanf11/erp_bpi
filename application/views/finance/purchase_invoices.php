@@ -614,22 +614,44 @@
         if (totalrows > 0) {
             var data_array = [];
             var data_array2 = [];
+            var accountTotals = {}; 
             var total_sub = 0;
-            for (let i = 0; i < totalrows; i++) {
-                var data = {
-                    account_number: rows[i].account_number,
-                    account_name: rows[i].account_name,
-                    account_type: rows[i].account_type,
-                    total: rows[i].total
-                }
-
+            
+            for (let i = 0; i < totalrows; i++) 
+            {
+                var row = rows[i];
+                var accountNumber = row.account_number;
+                var totalValue = parseFloat(row.total);
+                
                 if (rows[i].account_type == "DEBIT") {
                     total_sub += Math.abs(parseFloat(rows[i].total));
                 } else {
                     total_sub -= Math.abs(parseFloat(rows[i].total));
                 }
 
-                data_array.push(data);
+                // mapping total berdasarkan account_number yang sama
+                if (accountTotals[accountNumber]) {
+                    accountTotals[accountNumber].total += totalValue;
+                } else {
+                    accountTotals[accountNumber] = {
+                        account_name: row.account_name,
+                        account_type: row.account_type,
+                        total: totalValue
+                    };
+                }
+            }
+
+            // push ke data_array untuk di tampilkan            
+            for (var accNum in accountTotals) {
+                if (accountTotals.hasOwnProperty(accNum)) {
+                    var aggregatedData = {
+                        account_number: accNum,
+                        account_name: accountTotals[accNum].account_name,
+                        account_type: accountTotals[accNum].account_type, // Ambil account_type dari data pertama
+                        total: accountTotals[accNum].total
+                    };
+                    data_array.push(aggregatedData);
+                }
             }
 
             $("#total_sub").numberbox('setValue', total_sub);
@@ -637,7 +659,7 @@
             if (check_vat.checked == true) {
                 var disc_tax = $("#total_vat").numberbox('getValue');
             } else {
-                var total_dpp = Math.floor((total_sub) * 11/12);
+                var total_dpp = Math.floor(total_sub * (11/12));
                 $("#total_dpp").numberbox('setValue', total_dpp);
 
                 var disc_tax = parseFloat(total_dpp * (taxes / 100));
