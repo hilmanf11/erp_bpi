@@ -9,11 +9,12 @@
             <th rowspan="2" data-options="field:'process',width:120,halign:'center'">Process</th>
             <th rowspan="2" data-options="field:'type',width:150,halign:'center'">NG Type</th>
             <th rowspan="2" data-options="field:'workorder',width:150,halign:'center'">Work Order</th>
-            <!-- <th rowspan="2" data-options="field:'item_number',width:150,halign:'center'">Product No</th>
-            <th rowspan="2" data-options="field:'item_name',width:200,halign:'center'">Product Name</th>
-            <th rowspan="2" data-options="field:'stock',width:80,halign:'center',align:'right',formatter:numberformat">Qty</th>
-            <th rowspan="2" data-options="field:'qty',width:80,halign:'center',align:'right',formatter:numberformat">NG</th>
-            <th rowspan="2" data-options="field:'scrap',width:80,halign:'center',align:'right',formatter:numberformat">Scrap</th>
+            <th rowspan="2" data-options="field:'product_no',width:150,halign:'center'">Product No</th>
+            <th rowspan="2" data-options="field:'product_name',width:200,halign:'center'">Product Name</th>
+            <th rowspan="2" data-options="field:'qty_sh',width:80,halign:'center',align:'right',formatter:numberformat">Qty WO</th>
+            <th rowspan="2" data-options="field:'qty_product',width:80,halign:'center',align:'right',formatter:numberformat">Qty NG</th>
+            <th rowspan="2" data-options="field:'shift',width:80,halign:'center'">Shift</th>
+            <!--<th rowspan="2" data-options="field:'scrap',width:80,halign:'center',align:'right',formatter:numberformat">Scrap</th>
             <th rowspan="2" data-options="field:'balance',width:80,halign:'center',align:'right',formatter:numberformat">Balance</th>
             <th rowspan="2" data-options="field:'uom',width:80,align:'center'">Uom</th> -->
             <!-- <th rowspan="2" data-options="field:'remarks',width:150,halign:'center'">Remarks</th> -->
@@ -50,7 +51,7 @@
                 </div>
                 <div class="fitem">
                     <span style="width:35%; display:inline-block;">Product No</span>
-                    <input style="width:60%;" id="filter_item_rm_id" class="easyui-combogrid">
+                    <input style="width:60%;" id="filter_item_fg_id" class="easyui-combogrid">
                 </div>
                 <div class="fitem">
                     <span style="width:35%; display:inline-block;"></span>
@@ -103,17 +104,17 @@
                 </div>
             </div>
             <div style="width: 50%; float: left;">
-                <div class="fitem">
-                    <span style="width:35%; display:inline-block;">Workorder</span>
-                    <input style="width:60%;" name="workorder" id="workorder" class="easyui-combobox" required>
-                </div>
                 <div class="fitem" hidden>
                     <span style="width:35%; display:inline-block;">Product Id</span>
                     <input style="width:60%;" name="item_fg_id" id="item_fg_id" class="easyui-textbox" required>
                 </div>
                 <div class="fitem">
                     <span style="width:35%; display:inline-block;">Product No</span>
-                    <input style="width:60%;" name="item_fg_number" id="item_fg_number" class="easyui-textbox">
+                    <input style="width:60%;" name="item_fg_number" id="item_fg_number" class="easyui-combogrid">
+                </div>
+                <div class="fitem">
+                    <span style="width:35%; display:inline-block;">Workorder</span>
+                    <input style="width:60%;" name="workorder" id="workorder" class="easyui-textbox" required>
                 </div>
                 <div class="fitem">
                     <span style="width:35%; display:inline-block;">Qty WO</span>
@@ -130,6 +131,14 @@
                 <div class="fitem">
                     <span style="width:35%; display:inline-block;">Balance</span>
                     <input style="width:60%;" name="balance_sh" id="balance_sh" class="easyui-numberbox" readonly>
+                </div>
+                <div class="fitem">
+                    <span style="width:35%; display:inline-block;">Shift</span>
+                        <select style="width:30%;" name="shift" id="shift" required="" panelHeight="auto" class="easyui-combobox">
+                            <option value="1">1</option>
+                            <option value="2">2</option>
+                            <option value="3">3</option>
+                        </select>
                 </div>
                 <div class="fitem" hidden>
                     <span style="width:35%; display:inline-block;">Period</span>
@@ -492,7 +501,7 @@
     // }
 
     function preview() {
-        var workorder = $("#workorder").combobox('getValue');
+        var workorder = $("#workorder").textbox('getValue');
         var qty_product = $("#qty_product").textbox('getValue');
         var qty_sh = $("#qty_sh").textbox('getValue');
         console.log(workorder);
@@ -666,11 +675,11 @@
 
         var filter_family_id = $("#filter_family_id").combobox('getValue');
 
-        var filter_item_rm_id = $("#filter_item_rm_id").combogrid('getValue');
+        var filter_item_fg_id = $("#filter_item_fg_id").combogrid('getValue');
 
 
 
-        url = "?filter_from=" + filter_from + "&filter_to=" + filter_to + "&filter_document=" + filter_document + "&filter_family_id" + filter_family_id + "&filter_item_rm_id=" + filter_item_rm_id;
+        url = "?filter_from=" + filter_from + "&filter_to=" + filter_to + "&filter_document=" + filter_document + "&filter_family_id" + filter_family_id + "&filter_item_fg_id=" + filter_item_fg_id;
 
         $('#dg').datagrid({
 
@@ -693,9 +702,9 @@
         var filter_to = $("#filter_to").datebox('getValue');
         var filter_document = $("#filter_document").combobox('getValue');
         var filter_family_id = $("#filter_family_id").combobox('getValue');
-        var filter_item_rm_id = $("#filter_item_rm_id").combogrid('getValue');
+        var filter_item_fg_id = $("#filter_item_fg_id").combogrid('getValue');
 
-        url = "?filter_from=" + filter_from + "&filter_to=" + filter_to + "&filter_document=" + filter_document + "&filter_family_id" + filter_family_id + "&filter_item_rm_id=" + filter_item_rm_id;
+        url = "?filter_from=" + filter_from + "&filter_to=" + filter_to + "&filter_document=" + filter_document + "&filter_family_id" + filter_family_id + "&filter_item_fg_id=" + filter_item_fg_id;
 
         window.location.assign('<?= base_url('planning/item_ng/print/excel') ?>' + url);
     }
@@ -720,7 +729,7 @@
             },
             onExpandRow: function(index, row) {
                 var ddv = $(this).datagrid('getRowDetail', index).find('table.ddv');
-                // var filter_item_rm_id = $("#filter_item_rm_id").combogrid('getValue');
+                // var filter_item_fg_id = $("#filter_item_fg_id").combogrid('getValue');
 
                 ddv.datagrid({
                     url: '<?= base_url('planning/item_ng/datatableDetails?document=') ?>' + window.btoa(row.document),
@@ -831,12 +840,13 @@
                     var departement = $("#departement").textbox('getValue');
                     var process = $("#process").combogrid('getValue');
                     var type = $("#type").combobox('getText');
-                    var workorder = $("#workorder").combobox('getValue');
+                    var workorder = $("#workorder").textbox('getValue');
                     var item_fg_id = $("#item_fg_id").textbox('getValue');
                     var qty_sh = $("#qty_sh").numberbox('getValue');
                     var qty_product = $("#qty_product").numberbox('getValue');
                     var accumulate_sh = $("#accumulate_sh").numberbox('getValue');
                     var balance_sh = $("#balance_sh").numberbox('getValue');
+                    var shift = $("#shift").combobox('getValue');
                     var period = $("#period").textbox('getValue');
 
                     // $.ajax({
@@ -881,6 +891,7 @@
                                     qty_product: qty_product,
                                     accumulate_sh: accumulate_sh,
                                     balance_sh: balance_sh,
+                                    shift: shift,
                                     period: period,
                                     item_rm_id: rows[i].item_rm_id,
                                     stock: rows[i].stock,
@@ -982,34 +993,6 @@
                     $(e.data.target).combobox('clear').combobox('textbox').focus();
                 }
             }],
-            onSelect: function(row) {
-                $('#filter_item_rm_id').combogrid({
-                    url: '<?= base_url('master/items/reads/') ?>' + row.number,
-                    panelWidth: 500,
-                    idField: 'id',
-                    textField: 'number',
-                    mode: 'remote',
-                    fitColumns: true,
-                    prompt: "Choose Product No",
-                    icons: [{
-                        iconCls: 'icon-clear',
-                        handler: function(e) {
-                            $(e.data.target).combogrid('clear').combogrid('textbox').focus();
-                        }
-                    }],
-                    columns: [
-                        [{
-                            field: 'number',
-                            title: 'Product No',
-                            width: 150
-                        }, {
-                            field: 'name',
-                            title: 'Product Name',
-                            width: 200
-                        }]
-                    ],
-                });
-            }
         });
 
         $("#filter_document").combobox({
@@ -1025,16 +1008,68 @@
             }],
         });
 
-        $("#workorder").combobox({
+        $('#filter_item_fg_id').combogrid({
+            url: '<?= base_url('master/item_fg/reads/') ?>',
+            panelWidth: 500,
+            idField: 'id',
+            textField: 'number',
+            mode: 'remote',
+            fitColumns: true,
+            prompt: "Choose Product No",
+            icons: [{
+                iconCls: 'icon-clear',
+                handler: function(e) {
+                    $(e.data.target).combogrid('clear').combogrid('textbox').focus();
+                }
+            }],
+            columns: [
+                [{
+                    field: 'number',
+                    title: 'Product No',
+                    width: 150
+                }, {
+                    field: 'name',
+                    title: 'Product Name',
+                    width: 200
+                }]
+            ],
+        });
+
+        $("#item_fg_number").combogrid({
             url: "<?= base_url('planning/item_ng/readWorkorders/') ?>",
-            valueField: 'wo_no',
-            textField: 'wo_no',
-            prompt: 'Choose Workorder',
-            onSelect: function(row) {
+            panelWidth: 550,
+            idField: 'product_no',
+            textField: 'product_no',
+            mode: 'remote',
+            fitColumns: true,
+            prompt: "Choose Product No",
+            columns: [
+                [{
+                    field: 'period',
+                    title: 'Period',
+                    width: 150
+                }, {
+                    field: 'lot_no',
+                    title: 'Lot No',
+                    width: 100,
+                    align: 'left'
+                }, {
+                    field: 'wo_no',
+                    title: 'Wo No',
+                    width: 100,
+                    align: 'left'
+                }, {
+                    field: 'product_no',
+                    title: 'Product No',
+                    width: 200,
+                    align: 'left'
+                }]
+            ],
+            onSelect: function(val, row) {
                 // addTable(row.wo_no);
                 $("#period").textbox('setValue', row.period);
                 $("#item_fg_id").textbox('setValue', row.item_fg_id);
-                $("#item_fg_number").textbox('setValue', row.item_fg_number);
+                $("#workorder").textbox('setValue', row.wo_no);
                 $("#qty_sh").numberbox('setValue', row.qty);
 
                 var wo_no = row.wo_no;

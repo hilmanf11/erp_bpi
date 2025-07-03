@@ -79,13 +79,37 @@ class Item_ng extends CI_Controller
         echo "NG-" . $datenow . "-" . $autoID;
     }
 
+    // public function readWorkorders()
+    // {
+    //     $send = $this->crud->query("SELECT DISTINCT a.wo_no, a.period, a.item_fg_id, a.item_fg_name, a.qty, b.number as item_fg_number 
+    //     FROM production_schedules a
+    //     JOIN item_fg b ON a.item_fg_id = b.id
+    //     WHERE a.status = '0'
+    //     order by a.wo_no desc");
+    //     echo json_encode($send);
+    // }
+
     public function readWorkorders()
     {
-        $send = $this->crud->query("SELECT DISTINCT a.wo_no, a.period, a.item_fg_id, a.item_fg_name, a.qty, b.number as item_fg_number 
+        $post = isset($_POST['q']) ? $_POST['q'] : "";
+        $send = $this->crud->query("SELECT DISTINCT 
+                a.wo_no AS wo_no, 
+                a.period AS period, 
+                a.qty AS qty, 
+                a.lot_no as lot_no, 
+                a.item_fg_id AS item_fg_id, 
+                a.item_fg_name AS product_name, 
+                b.number AS product_no,
+                a.division as division,
+                b.status_subcont,
+                b.subcont_type
         FROM production_schedules a
         JOIN item_fg b ON a.item_fg_id = b.id
-        WHERE a.status = '0'
-        order by a.wo_no desc");
+        WHERE a.status = 0 
+        AND a.wo_no != '' 
+        AND b.type !='SA'
+        AND b.number LIKE '%$post%' or a.lot_no LIKE '%$post%' or a.wo_no LIKE '%$post%' or a.period LIKE '%$post%' 
+        ORDER BY b.number DESC");
         echo json_encode($send);
     }
 
@@ -162,7 +186,7 @@ class Item_ng extends CI_Controller
             $filter_to = $this->input->get('filter_to');
             $filter_document = $this->input->get('filter_document');
             $filter_family_id = $this->input->get('filter_family_id');
-            $filter_item_id = $this->input->get('filter_item_id');
+            $filter_item_fg_id = $this->input->get('filter_item_fg_id');
 
             $page = $this->input->post('page');
             $rows = $this->input->post('rows');
@@ -172,7 +196,7 @@ class Item_ng extends CI_Controller
             $offset = ($page - 1) * $rows;
             $result = array();
             //Select Query
-            $this->db->select('a.*, b.number as item_number, b.name as item_name');
+            $this->db->select('a.*, b.number as item_number, b.name as item_name, c.number as product_no, c.name as product_name');
             $this->db->from('item_ng a');
             $this->db->join('item_rm b', 'a.item_rm_id = b.id');
             $this->db->join('item_fg c', 'a.item_fg_id = c.id','left');
@@ -183,7 +207,7 @@ class Item_ng extends CI_Controller
             }
             $this->db->like('a.document', $filter_document);
             $this->db->like('b.item_family_id', $filter_family_id);
-            $this->db->like('b.id', $filter_item_id);
+            $this->db->like('c.id', $filter_item_fg_id);
             $this->db->group_by('a.document');
             $this->db->order_by('a.trans_date', 'DESC');
             $this->db->order_by('a.document', 'DESC');
@@ -262,53 +286,51 @@ class Item_ng extends CI_Controller
     // }
 
     public function create()
-{
-    if ($this->input->post()) {
-        if ($this->form_validation->run() == TRUE) {
-            $post = $this->input->post();
-            $document = $this->db->escape($post['document']); // Escape variable to prevent SQL injection
+    {
+        if ($this->input->post()) {
+            if ($this->form_validation->run() == TRUE) {
+                $post = $this->input->post();
+                $document = $this->db->escape($post['document']); // Escape variable to prevent SQL injection
 
-            // Hitung jumlah data yang sudah ada dengan dokumen yang sama
-            $existingCountQuery = $this->crud->query("SELECT COUNT(*) AS count FROM item_ng WHERE document = $document");
+                // Hitung jumlah data yang sudah ada dengan dokumen yang sama
+                $existingCountQuery = $this->crud->query("SELECT COUNT(*) AS count FROM item_ng WHERE document = $document");
 
-            // Akses hasil dari query sebagai objek
-            $existingCount = isset($existingCountQuery[0]->count) ? $existingCountQuery[0]->count : 0;
+                // Akses hasil dari query sebagai objek
+                $existingCount = isset($existingCountQuery[0]->count) ? $existingCountQuery[0]->count : 0;
 
-            // Tambahkan 1 ke existingCount untuk membuat nomor urut baru
-            $newSequence = $existingCount + 1;
+                // Tambahkan 1 ke existingCount untuk membuat nomor urut baru
+                $newSequence = $existingCount + 1;
 
-            if ($post['qty'] > 0) {
-                $this->crud->create('scraps', [
-                    "item_rm_id" => $post['item_rm_id'],
-                    "trans_date" => $post['trans_date'],
-                    "document" => $post['document_scrap'],
-                    "wo_no" => $post['workorder'],
-                    "type" => $post['type'],
-                    "period" => $post['period'],
-                    "qty" => $post['qty'],
-                    "uom" => $post['uom'],
-                    // "remarks" => $post['remarks'],
-                ]);
+                if ($post['qty'] > 0) {
+                    $this->crud->create('scraps', [
+                        "item_rm_id" => $post['item_rm_id'],
+                        "trans_date" => $post['trans_date'],
+                        "document" => $post['document_scrap'],
+                        "wo_no" => $post['workorder'],
+                        "type" => $post['type'],
+                        "period" => $post['period'],
+                        "qty" => $post['qty'],
+                        "uom" => $post['uom'],
+                        // "remarks" => $post['remarks'],
+                    ]);
 
-                $document_scrap = ["document_scrap" => $post['document_scrap']];
+                    $document_scrap = ["document_scrap" => $post['document_scrap']];
+                } else {
+                    $document_scrap = ["document_scrap" => "-"];
+                }
+
+                // Gabungkan nomor urut baru dengan data lainnya dan buat catatan di tabel item_ng
+                $dataToInsert = array_replace($post, $document_scrap, ["no_urut" => $newSequence]);
+                $send = $this->crud->create('item_ng', $dataToInsert);
+
+                echo $send;
             } else {
-                $document_scrap = ["document_scrap" => "-"];
+                show_error(validation_errors());
             }
-
-            // Gabungkan nomor urut baru dengan data lainnya dan buat catatan di tabel item_ng
-            $dataToInsert = array_replace($post, $document_scrap, ["no_urut" => $newSequence]);
-            $send = $this->crud->create('item_ng', $dataToInsert);
-
-            echo $send;
         } else {
-            show_error(validation_errors());
+            show_error("Cannot Process your request");
         }
-    } else {
-        show_error("Cannot Process your request");
     }
-}
-
-
 
 
     //UPDATE DATA
@@ -385,9 +407,10 @@ class Item_ng extends CI_Controller
         $this->db->from('config');
         $config = $this->db->get()->row();
 
-        $this->db->select('a.*, b.number as item_number, b.name as item_name');
+        $this->db->select('a.*, b.number as item_rm_number, b.name as item_rm_name, c.number as item_fg_number, c.name as item_fg_name');
         $this->db->from('item_ng a');
         $this->db->join('item_rm b', 'a.item_rm_id = b.id');
+        $this->db->join('item_fg c', 'a.item_fg_id = c.id','left');
         $this->db->where('a.deleted', 0);
         if ($filter_from != "" or $filter_to != "") {
             $this->db->where('a.trans_date >=', $filter_from);
@@ -432,6 +455,9 @@ class Item_ng extends CI_Controller
                     <th>Work Order</th>
                     <th>Product No</th>
                     <th>Product Name</th>
+                    <th>Qty Product NG</th>
+                    <th>Part No</th>
+                    <th>Part Name</th>
                     <th>Qty</th>
                     <th>Uom</th>
                     <th>Remarks</th>
@@ -446,8 +472,11 @@ class Item_ng extends CI_Controller
                             <td>' . $data['process'] . '</td>
                             <td>' . $data['type'] . '</td>
                             <td>' . $data['workorder'] . '</td>
-                            <td>' . $data['item_number'] . '</td>
-                            <td>' . $data['item_name'] . '</td>
+                            <td>' . $data['item_fg_number'] . '</td>
+                            <td>' . $data['item_fg_name'] . '</td>
+                            <td>' . $data['qty_product'] . '</td>
+                            <td>' . $data['item_rm_number'] . '</td>
+                            <td>' . $data['item_rm_name'] . '</td>
                             <td>' . number_format($data['qty']) . '</td>
                             <td>' . $data['uom'] . '</td>
                             <td>' . $data['remarks'] . '</td>
