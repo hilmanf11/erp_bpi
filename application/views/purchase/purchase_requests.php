@@ -10,9 +10,9 @@
             <th rowspan="2" data-options="field:'division',width:150,halign:'center'">Division</th>
             <th rowspan="2" data-options="field:'department',width:150,halign:'center'">Department</th>
             <th rowspan="2" data-options="field:'sub_department',width:150,halign:'center'">Sub Department</th>
-            <th rowspan="2" data-options="field:'item_number',width:170,halign:'center'">Product No</th>
-            <th rowspan="2" data-options="field:'item_name',width:150,halign:'center'">Product Name</th>
-            <th rowspan="2" data-options="field:'category_name',width:150,halign:'center'">Product Family</th>
+            <th rowspan="2" data-options="field:'item_number',width:170,halign:'center'">Part No</th>
+            <th rowspan="2" data-options="field:'item_name',width:150,halign:'center'">Part Name</th>
+            <th rowspan="2" data-options="field:'category_name',width:150,halign:'center'">Part Family</th>
             <th rowspan="2" data-options="field:'uom',width:80,align:'center'">UoM</th>
             <th rowspan="2" data-options="field:'qty',width:80,halign:'center',align:'right'">Total Qty</th>
             <th rowspan="2" data-options="field:'remarks',width:100,halign:'center'">Remarks</th>
@@ -63,6 +63,14 @@
                 <div class="fitem">
                     <span style="width:35%; display:inline-block;">Product Family</span>
                     <input style="width:60%;" id="filter_item_familys" class="easyui-combogrid">
+                </div>
+                <div class="fitem">
+                    <span style="width:35%; display:inline-block;">Status</span>
+                    <select style="width:60%;" id="filter_status" class="easyui-combobox" panelHeight="auto">
+                        <option value="">Choose All</option>
+                        <option value="0">UNCONVERTED</option>
+                        <option value="1">CONVERTED</option>
+                    </select>
                 </div>
             </div>
         </fieldset>
@@ -896,8 +904,9 @@
         var filter_request_no = $("#filter_request_no").combobox('getValue');
         var filter_item_familys = $("#filter_item_familys").combogrid('getValue');
         var filter_category_id = $("#filter_category_id").combobox('getValue');
+        var filter_status = $("#filter_status").combobox('getValue');
 
-        url = "?filter_from=" + filter_from + "&filter_to=" + filter_to + "&filter_request_no=" + filter_request_no + "&filter_item_familys=" + filter_item_familys + "&filter_category_id=" + filter_category_id;
+        url = "?filter_from=" + filter_from + "&filter_to=" + filter_to + "&filter_request_no=" + filter_request_no + "&filter_item_familys=" + filter_item_familys + "&filter_category_id=" + filter_category_id  + "&filter_status=" + filter_status;
 
         $('#dg').treegrid({
             url: '<?= base_url('purchase/purchase_requests/datatables') ?>' + url,
@@ -928,8 +937,9 @@
         var filter_request_no = $("#filter_request_no").combobox('getValue');
         var filter_item_familys = $("#filter_item_familys").combobox('getValue');
         var filter_category_id = $("#filter_category_id").combobox('getValue');
+        var filter_status = $("#filter_status").combobox('getValue');
 
-        url = "?filter_from=" + filter_from + "&filter_to=" + filter_to + "&filter_request_no=" + filter_request_no + "&filter_item_familys=" + filter_item_familys + "&filter_category_id=" + filter_category_id;
+        url = "?filter_from=" + filter_from + "&filter_to=" + filter_to + "&filter_request_no=" + filter_request_no + "&filter_item_familys=" + filter_item_familys + "&filter_category_id=" + filter_category_id  + "&filter_status=" + filter_status;
         window.location.assign('<?= base_url('purchase/purchase_requests/print/excel') ?>' + url);
     }
 

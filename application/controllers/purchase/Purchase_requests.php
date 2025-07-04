@@ -161,6 +161,7 @@ class Purchase_requests extends CI_Controller
         $filter_request_no = $this->input->get('filter_request_no');
         $filter_category_id = $this->input->get('filter_category_id');
         $filter_item_familys = $this->input->get('filter_item_familys');
+        $filter_status = $this->input->get('filter_status');
         $filter_access = $this->readUserAccess();
 
         $page = $this->input->post('page');
@@ -204,6 +205,7 @@ class Purchase_requests extends CI_Controller
             $this->db->like('a.request_no', $filter_request_no);
             $this->db->like('c.id', $filter_item_familys);
             $this->db->like('c.item_category_id', $filter_category_id);
+            $this->db->like('a.status', $filter_status);
             $this->db->group_by('request_no');
             $this->db->order_by('a.created_date','DESC');
             $this->db->order_by('a.updated_date', 'DESC');
@@ -700,13 +702,14 @@ class Purchase_requests extends CI_Controller
         $filter_to   = $this->input->get('filter_to');
         $filter_request_no = $this->input->get('filter_request_no');
         $filter_category_id = $this->input->get('filter_category_id');
+        $filter_item_familys = $this->input->get('filter_item_familys');
         $filter_access = $this->readUserAccess();
 
         //Config
         $this->db->select('*');
         $this->db->from('config');
         $config = $this->db->get()->row();
-        $this->db->select('a.*, b.number as item_rm_id, b.name as item_name, c.name as item_family_name, e.po_no, b.uom');
+        $this->db->select('a.*, b.number as item_rm_id, b.name as item_name, c.name as item_family_name, e.po_no, e.status as status_po, b.uom');
         $this->db->from('purchase_requests a');
         $this->db->join('item_rm b', 'a.item_rm_id = b.id');
         $this->db->join('item_familys c', 'b.item_family_id = c.id');
@@ -751,30 +754,38 @@ class Purchase_requests extends CI_Controller
             <tr>
                 <th width="20">No</th>
                 <th>Request No</th>
+                <th>Status</th>
                 <th>Request Date</th>
                 <th>Expected Date</th>
                 <th>Request Name</th>
                 <th>Division</th>
                 <th>Department</th>
                 <th>Sub Department</th>
-                <th>Product No</th>
-                <th>Product Name</th>
+                <th>Part No</th>
+                <th>Part Name</th>
                 <th>Qty</th>
                 <th>Uom</th>
-                <th>PO No</th>
-                <th>Status</th>
                 <th>Remarks</th>
+                <th>PO No</th>
+                <th>Status PO</th>
             </tr>';
         $no = 1;
         foreach ($records as $data) {
             if ($data['status'] == 0) {
-                $status = "OPEN";
+                $status = "UNCONVERT";
             } else {
-                $status = "CLOSED";
+                $status = "CONVERTED";
+            }
+
+            if ($data['status_po'] == 0) {
+                $status_po = "OPEN";
+            } else {
+                $status_po = "CLOSED";
             }
             $html .= '<tr>
                         <td style="text-align:center">' . $no . '</td>
                         <td>' . $data['request_no'] . '</td>
+                        <td>' . $status . '</td>
                         <td>' . $data['request_date'] . '</td>
                         <td>' . $data['expected_date'] . '</td>
                         <td>' . $data['request_name'] . '</td>
@@ -785,9 +796,9 @@ class Purchase_requests extends CI_Controller
                         <td>' . $data['item_name'] . '</td>
                         <td>' . number_format($data['qty'], 2) . '</td>
                         <td>' . $data['uom'] . '</td>
-                        <td>' . $data['po_no'] . '</td>
-                        <td>' . $status . '</td>
                         <td>' . $data['remarks'] . '</td>
+                        <td>' . $data['po_no'] . '</td>
+                        <td>' . $status_po . '</td>
                     </tr>';
             $no++;
         }
