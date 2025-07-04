@@ -451,9 +451,9 @@ class Report_history_transactions extends CI_Controller
 
             $stock_coverage = ($total_sales_minus > 0)
                 ? number_format(((@$record->begin_stock + $record->qty_in) - $record->qty_out) / ($total_sales_minus / 3), 2)
-                : '0'; // atau bisa diganti jadi '0.00' atau '-'
+                : '0.00'; // atau bisa diganti jadi '0.00' atau '-'
 
-            $totalIto += $stock_coverage;
+            // $totalIto += $stock_coverage;
 
             $html .= '<tbody><tr>
                             <td style="text-align:center">' . $no . '</td>
@@ -1296,7 +1296,7 @@ class Report_history_transactions extends CI_Controller
             <td style="text-align:right;">' . number_format($totalIn, 2) . '</td>
             <td style="text-align:right;">' . number_format($totalOut, 2) . '</td>
             <td style="text-align:right;">' . number_format($totalEndingStock, 2) . '</td>
-            <td style="text-align:right;">' . number_format($totalIto, 2) . '</td>
+            <td style="text-align:right;">-</td>
         </tr>
         </tbody>';
       
