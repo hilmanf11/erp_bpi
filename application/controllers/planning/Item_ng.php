@@ -474,13 +474,13 @@ class Item_ng extends CI_Controller
                             <td>' . $data['process'] . '</td>
                             <td>' . $data['type'] . '</td>
                             <td>' . $data['workorder'] . '</td>
-                            <td>' . $data['item_fg_number'] . '</td>
+                            <td style="mso-number-format:\@;">' . $data['item_fg_number'] . '</td>
                             <td>' . $data['item_fg_name'] . '</td>
                             <td>' . $data['qty_product'] . '</td>
                             <td>' . $data['item_rm_number'] . '</td>
                             <td>' . $data['item_rm_name'] . '</td>
                             <td>' . number_format($data['qty']) . '</td>
-                            <td>' . $data['uom'] . '</td>
+                            <td style="text-align:center;">' . $data['uom'] . '</td>
                             <td>' . $data['remarks'] . '</td>
                             <td style="text-align:center;">' . $data['created_by'] . '</td>
                             <td style="text-align:center;">' . $data['created_date'] . '</td>
