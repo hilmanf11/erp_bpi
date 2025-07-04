@@ -4874,6 +4874,7 @@ class Progress_wip extends CI_Controller
                  foreach ($grouped_data as $record) {
                     $supplies = isset($supplyData[$record->wo_no]) ? $supplyData[$record->wo_no] : [null];
                     foreach ($supplies as $supply) {
+                        $composition = isset($supply->composition) ? $supply->composition : 0;
                         $html .= '<tr>
                             <td style="text-align:center">' . $no . '</td>
                             <td style="mso-number-format:\@;">' . $record->wo_no . '</td>
@@ -4887,13 +4888,14 @@ class Progress_wip extends CI_Controller
                             <td style="mso-number-format:\@;">' . ($supply->name_rm ?? '-') . '</td>
                             <td style="mso-number-format:\@;">' . ($supply->number_rm ?? '-') . '</td>
                             <td style="mso-number-format:\@;">' . ($supply->uom_rm ?? '-') . '</td>
-                            <td style="mso-number-format:\@;">' . number_format($supply->qty_wo * $supply->composition,2) . '</td>
-                            <td style="mso-number-format:\@;">' . number_format($record->actual_production * $supply->composition,2) . '</td>
-                            <td style="mso-number-format:\@;">' . number_format(($record->qty_wip ?? '0') * ($supply->composition ?? 1) ,2) . '</td>
-                            <td style="mso-number-format:\@;">' . number_format($record->ng * $supply->composition,2)  . '</td>
-                            <td style="mso-number-format:\@;">' . number_format(((($record->actual_production ?? 0) * ($supply->composition ?? 1)) + (($record->qty_wip ?? 0) * ($supply->composition ?? 1)) + ($record->ng * $supply->composition)) , 2) . '</td>
-                            <td style="mso-number-format:\@;">' . number_format($record->rfg * $supply->composition,2) . '</td>
-                            <td style="mso-number-format:\@;">' . number_format((((($record->actual_production ?? 0) * ($supply->composition ?? 1)) + (($record->qty_wip ?? 0) * ($supply->composition ?? 1)) + ($record->ng * $supply->composition))) - ($record->rfg * $supply->composition) , 2) . '</td>
+                            <td style="mso-number-format:\@;">' . number_format($supply->qty_wo ?? 0 * $composition ?? 0,2) . '</td>
+                            <td style="mso-number-format:\@;">' . number_format($record->actual_production * $composition ?? 0,2) . '</td>
+                            <td style="mso-number-format:\@;">' . number_format(($record->qty_wip ?? 0) * ($composition ?? 0) ,2) . '</td>
+                            <td style="mso-number-format:\@;">' . number_format($record->ng * $composition ?? 0,2)  . '</td>
+                            <td style="mso-number-format:\@;">' . number_format(((($record->actual_production ?? 0) * ($composition ?? 0)) + (($record->qty_wip ?? 0) * ($composition ?? 0)) + ($record->ng * $composition ?? 0)) , 2) . '</td>
+                            <td style="mso-number-format:\@;">' . number_format($record->rfg * $composition ?? 0,2) . '</td>
+                            <td style="mso-number-format:\@;">' . number_format((((($record->actual_production ?? 0) * ($composition ?? 0)) + (($record->qty_wip ?? 0) * ($composition ?? 0)) + ($record->ng * $composition))) - ($record->rfg * $composition ?? 0) , 2) . '</td>
+                            <td style="mso-number-format:\@;">' . number_format((($record->actual_production + $record->qty_wip ?? 0) - $record->rfg) * $composition ?? 0,2) . '</td>
                         </tr>';
                         $no++;
                     }
