@@ -22,9 +22,9 @@
     <thead>
         <tr>
             <th rowspan="2" field="ck" checkbox="true"></th>
-            <th rowspan="2" data-options="field:'item_fg_id',width:150,align:'left'">Product ID</th>
-            <th rowspan="2" data-options="field:'item_fg_number',width:250,halign:'center'">Product No</th>
-            <th rowspan="2" data-options="field:'item_fg_name',width:300,halign:'center'">Product Name</th>
+            <th rowspan="2" data-options="field:'item_fg_id',width:200,align:'left'">Product ID</th>
+            <th rowspan="2" data-options="field:'item_fg_number',width:400,halign:'center'">Product No</th>
+            <th rowspan="2" data-options="field:'item_fg_name',width:500,halign:'center'">Product Name</th>
             <th colspan="2" data-options="field:'',width:100,halign:'center'"> Created</th>
             <th colspan="2" data-options="field:'',width:100,halign:'center'"> Updated</th>
         </tr>
@@ -624,6 +624,26 @@
                             field: 'remark',
                             title: 'Remarks',
                             width: 200,
+                            halign: 'center',
+                        }, {
+                            field: 'created_by',
+                            title: 'Created By',
+                            width: 100,
+                            halign: 'center',
+                        }, {
+                            field: 'created_date',
+                            title: 'Created Date',
+                            width: 120,
+                            halign: 'center',
+                         }, {
+                            field: 'updated_by',
+                            title: 'Update By',
+                            width: 100,
+                            halign: 'center',
+                        }, {
+                            field: 'updated_date',
+                            title: 'Update Date',
+                            width: 120,
                             halign: 'center',
                         }]
                     ],
