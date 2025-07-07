@@ -74,7 +74,11 @@ class Sales_report extends CI_Controller
                 a.customer_order_no,
                 a.uom,
                 a.qty,
-                f.currency,
+                (CASE
+                    WHEN a.sales_order_no_rm IS NOT NULL THEN e.currency
+                    WHEN a.sales_order_no IS NOT NULL THEN d.currency
+                    ELSE NULL 
+                END) AS currency, 
                 (CASE
                     WHEN a.sales_order_no_rm IS NOT NULL THEN e.price
                     WHEN a.sales_order_no IS NOT NULL THEN d.price
@@ -82,7 +86,6 @@ class Sales_report extends CI_Controller
                 END) AS price 
                 FROM delivery_notes a
                 LEFT JOIN item_fg b ON a.item_fg_id = b.id
-                LEFT JOIN customer_items f ON a.customer_id = f.customer_id AND a.item_fg_id = f.item_fg_id
                 LEFT JOIN customers c ON a.customer_id = c.id
                 LEFT JOIN sales_orders d ON a.sales_order_no = d.sales_order_no and a.item_fg_id = d.item_fg_id
                 LEFT JOIN sales_order_rm e ON a.sales_order_no_rm = e.sales_order_no and a.item_fg_id = e.item_fg_id
@@ -210,39 +213,47 @@ class Sales_report extends CI_Controller
         }
         else
         {
-            $this->db->select("a.customer_id,
+            // SUMMARY REPORT
+            $query = "SELECT
+                a.id,
                 c.name AS customer_name,
-                a.delivery_note_date,                
-                SUM(a.qty) AS total_qty,
-                SUM(COALESCE(d.price, e.price)) AS price,
-                SUM(CASE
+                c.id AS customer_id,
+                (CASE WHEN a.sales_order_no_rm IS NOT NULL THEN 'RM / SUBCONT' ELSE a.division END) AS division,
+                a.delivery_note_no,
+                a.delivery_note_date,
+                a.item_fg_id,
+                b.number AS item_fg_number,
+                b.name AS item_fg_name,
+                COALESCE(a.sales_order_no, a.sales_order_no_rm) AS sales_order_no,
+                a.customer_order_no,
+                a.uom,
+                a.qty,
+                (CASE
+                    WHEN a.sales_order_no_rm IS NOT NULL THEN e.currency
+                    WHEN a.sales_order_no IS NOT NULL THEN d.currency
+                    ELSE NULL 
+                END) AS currency, 
+                (CASE
                     WHEN a.sales_order_no_rm IS NOT NULL THEN e.price
-                    ELSE d.price
-                END) AS amount,
-                ci.currency");
-            // division RM check sales_order_no_rm di Delivery Notes
-            $this->db->select("COUNT(a.sales_order_no_rm) AS rm,
-                SUM(CASE
-                    WHEN a.sales_order_no_rm IS NOT NULL THEN (e.price * a.qty)
-                END) AS amount_rm,
-                SUM(CASE WHEN f.number = 'INJ' AND a.sales_order_no_rm IS NULL THEN (d.price * a.qty) END) AS amount_inj,
-                SUM(CASE WHEN f.number = 'MTS' THEN (d.price * a.qty) END) AS amount_mts,
-                SUM(CASE WHEN f.number = 'ADM' THEN (d.price * a.qty) END) AS amount_adm");
-            
-            $this->db->from('delivery_notes a');
-            $this->db->join('item_fg b', 'a.item_fg_id = b.id', 'left');
-            $this->db->join('customer_items ci', 'a.customer_id = ci.customer_id AND a.item_fg_id = ci.item_fg_id', 'left');
-            $this->db->join('customers c', 'a.customer_id = c.id','left');
-            $this->db->join('sales_orders d', 'a.sales_order_no = d.sales_order_no AND a.item_fg_id = d.item_fg_id','left');
-            $this->db->join('sales_order_rm e', 'a.sales_order_no_rm = e.sales_order_no AND a.item_fg_id = e.item_fg_id','left');
-            $this->db->join('divisions f', 'b.division_id = f.id', 'left');
+                    WHEN a.sales_order_no IS NOT NULL THEN d.price
+                    ELSE NULL 
+                END) AS price 
+                FROM delivery_notes a
+                LEFT JOIN item_fg b ON a.item_fg_id = b.id
+                LEFT JOIN customers c ON a.customer_id = c.id
+                LEFT JOIN sales_orders d ON a.sales_order_no = d.sales_order_no and a.item_fg_id = d.item_fg_id
+                LEFT JOIN sales_order_rm e ON a.sales_order_no_rm = e.sales_order_no and a.item_fg_id = e.item_fg_id
+                WHERE a.customer_id LIKE '%$filter_customer_id%' and a.division LIKE '%$filter_division%' and 
+                DATE_FORMAT(a.delivery_note_date, '%Y-%m-%d') BETWEEN '$filter_from' and '$filter_to' AND a.trans_type = 'SALES'
+                GROUP BY a.id  
+                ORDER BY c.name ASC, a.delivery_note_no ASC, b.number ASC";
+            $records = $this->db->query($query)->result_array();
 
-            $this->db->where("a.customer_id LIKE '%{$filter_customer_id}%' and a.division LIKE '%{$filter_division}%' ");
-            $this->db->where("DATE_FORMAT(a.delivery_note_date, '%Y-%m-%d') BETWEEN '{$filter_from}' and '{$filter_to}' AND a.trans_type = 'SALES' ");
-            
-            $this->db->group_by('a.customer_id');
-            $this->db->order_by('b.name', 'ASC');
-            $records = $this->db->get()->result_object();
+            // mapping data per customer_id and division
+            $summary_data = $this->mappingDataSummary($records);
+
+            $customer_display_name = $this->getCustomerName($filter_customer_id);
+            $division_display_name = ($filter_division === '') ? 'ALL' : $filter_division;
 
             $html = '<html><head><title>Print Data</title></head><style>body {font-family: Arial, Helvetica, sans-serif;}#customers {border-collapse: collapse;width: 100%;font-size: 12px;}#customers td, #customers th {border: 1px solid #ddd;padding: 2px;}#customers tr:nth-child(even){background-color: #f2f2f2;}#customers tr:hover {background-color: #ddd;}#customers th {padding-top: 2px;padding-bottom: 2px;text-align: center;color: black;}</style><body>
                 <center>
@@ -261,7 +272,7 @@ class Sales_report extends CI_Controller
                 </div>
                 <div style="float: right; font-size: 12px; text-align: right;">
                     Print Date ' . date("d M Y H:i:s") . ' <br>
-                    Print By ' . $this->session->username . '  
+                    Print By ' . ($this->session->username ?? 'Admin') . '
                 </div>
                 <br><br><br>
                 <h3 style="margin:0;">SALES REPORT - SUMMARY</h3>
@@ -276,12 +287,12 @@ class Sales_report extends CI_Controller
                         <tr>
                             <td width="100">Division</td>
                             <td width="5">:</td>
-                            <td>' . $division_num . '</td>
+                            <td>' . $division_display_name . '</td>
                         </tr>
                         <tr>
                             <td width="100">Customer</td>
                             <td width="5">:</td>
-                            <td>' . $customer_name . '</td>
+                            <td>' . $customer_display_name . '</td>
                         </tr>
                     </table>
                 </div>
@@ -299,68 +310,115 @@ class Sales_report extends CI_Controller
                             <th width="100">MTS</th>
                             <th width="100">ADM</th>
                         </tr>
-                </thead>';
-            
+                    </thead>
+                    <tbody>';
+
             $no = 1;
-            $totalAmount = 0;
-            $totalAmountRM = 0;
-            $totalAmountINJ = 0;
-            $totalAmountMTS = 0;
-            $totalAmountADM = 0;
-            $totalAmountIDR = 0;
+            $grand_total_rm = 0;
+            $grand_total_inj = 0;
+            $grand_total_mts = 0;
+            $grand_total_adm = 0;
+            $grand_overall_total = 0;
 
-            foreach ($records as $record) {
-                $currency = $record->currency;
-                $monthBf = date('Y-m-01', strtotime('-1 month', strtotime($record->delivery_note_date)));
-                $exchange = $this->crud->read('exchange_rates', [], ["start_date" => $monthBf, "currency_from" => $currency, "currency_to" => "IDR"]);
+            foreach ($summary_data as $customer_group) {
+                $html .= '<tr>';
+                $html .= '<td style="text-align: center;">' . $no++ . '</td>';
+                $html .= '<td>' . htmlspecialchars($customer_group['customer_name']) . '</td>';
+                $html .= '<td style="text-align: right;">' . number_format($customer_group['divisions']['RM / SUBCONT'], 2, ",", ".") . '</td>';
+                $html .= '<td style="text-align: right;">' . number_format($customer_group['divisions']['INJ'], 2, ",", ".") . '</td>';
+                $html .= '<td style="text-align: right;">' . number_format($customer_group['divisions']['MTS'], 2, ",", ".") . '</td>';
+                $html .= '<td style="text-align: right;">' . number_format($customer_group['divisions']['ADM'], 2, ",", ".") . '</td>';
+                $html .= '<td style="text-align: right;">' . number_format($customer_group['total_per_customer_overall'], 2, ",", ".") . '</td>';
+                $html .= '</tr>';
 
-                if ($currency != "IDR") {
-                    if ($exchange) {
-                        $exchange_rate = $exchange->middle;
-                    } else {
-                        $exchange_rate = 0;
-                    }
-                } else {
-                    $exchange_rate = 1;
-                }
-
-                $amount_rm  = $record->amount_rm * $exchange_rate;
-                $amount_inj = $record->amount_inj * $exchange_rate;
-                $amount_mts = $record->amount_mts * $exchange_rate;
-                $amount_adm = $record->amount_adm * $exchange_rate;
-                
-                // $amountIDR = ($record->amount * $record->total_qty) * $exchange_rate;
-                $amountIDR = $amount_rm + $amount_inj + $amount_mts + $amount_adm;
-
-                $html .= '<tr>
-                            <td style="text-align:center">' . $no . '</td>
-                            <td>' . $record->customer_name . '</td>
-                            <td style="text-align:right">' . number_format($amount_rm, 2, ',', '.') . '</td>
-                            <td style="text-align:right">' . number_format($amount_inj, 2, ',', '.') . '</td>
-                            <td style="text-align:right">' . number_format($amount_mts, 2, ',', '.') . '</td>
-                            <td style="text-align:right">' . number_format($amount_adm, 2, ',', '.') . '</td>
-                            <td style="text-align:right">' . number_format($amountIDR, 2, ',', '.') . '</td>
-                        </tr>';
-                $no++;
-
-                $totalAmountRM += $amount_rm;
-                $totalAmountINJ += $amount_inj;
-                $totalAmountMTS += $amount_mts;
-                $totalAmountADM += $amount_adm;
-                $totalAmountIDR += $amountIDR;
+                // Akumulasi grand totals
+                $grand_total_rm += $customer_group['divisions']['RM / SUBCONT'];
+                $grand_total_inj += $customer_group['divisions']['INJ'];
+                $grand_total_mts += $customer_group['divisions']['MTS'];
+                $grand_total_adm += $customer_group['divisions']['ADM'];
+                $grand_overall_total += $customer_group['total_per_customer_overall'];
             }
 
-            $html .= '<tr style="text-align:right; font-weight:bold; background-color:#E0E0E0;">
-                <td colspan="2"><b>GRAND TOTAL</b></td>
-                <td>' . number_format($totalAmountRM, 2, ',', '.') . '</td>
-                <td>' . number_format($totalAmountINJ, 2, ',', '.') . '</td>
-                <td>' . number_format($totalAmountMTS, 2, ',', '.') . '</td>
-                <td>' . number_format($totalAmountADM, 2, ',', '.') . '</td>
-                <td>' . number_format($totalAmountIDR, 2, ',', '.') . '</td>
-            </tr>';
+            $html .= '</tbody>';
+            $html .= '<tfoot>';
+            $html .= '<tr style="background-color:#EBEBEB;">';
+            $html .= '<th colspan="2" style="text-align: right;">GRAND TOTAL</th>';
+            $html .= '<th style="text-align: right;">' . number_format($grand_total_rm, 2, ",", ".") . '</th>';
+            $html .= '<th style="text-align: right;">' . number_format($grand_total_inj, 2, ",", ".") . '</th>';
+            $html .= '<th style="text-align: right;">' . number_format($grand_total_mts, 2, ",", ".") . '</th>';
+            $html .= '<th style="text-align: right;">' . number_format($grand_total_adm, 2, ",", ".") . '</th>';
+            $html .= '<th style="text-align: right;">' . number_format($grand_overall_total, 2, ",", ".") . '</th>';
+            $html .= '</tr>';
+            $html .= '</tfoot>';
+            $html .= '</table>';
+            $html .= '</body></html>';
 
-            $html .= '</table></body></html>';
             echo $html;
         }
     }
+
+    private function mappingDataSummary($records)
+    {
+        $grouped_data = [];
+
+        foreach ($records as $record) 
+        {
+            $customer_id = $record['customer_id'];
+            $customer_name = $record['customer_name'];
+            $division = $record['division'];
+            
+            if (!isset($grouped_data[$customer_id])) {
+                $grouped_data[$customer_id] = [
+                    'customer_id' => $customer_id,
+                    'customer_name' => $customer_name,
+                    'divisions' => [
+                        'RM / SUBCONT' => 0,
+                        'INJ'          => 0,
+                        'MTS'          => 0,
+                        'ADM'          => 0,
+                    ],
+                    'total_per_customer_overall' => 0 
+                ];
+            }
+            $currency = $record['currency'];
+            $monthBf = date('Y-m-01', strtotime('-1 month', strtotime($record['delivery_note_date'])));
+            $exchange = $this->crud->read('exchange_rates', [], ["start_date" => $monthBf, "currency_from" => $currency, "currency_to" => "IDR"]);
+
+            if ($currency != "IDR") {
+                if ($exchange) {
+                    $exchange_rate = $exchange->middle;
+                } else {
+                    $exchange_rate = 0;
+                }
+            } else {
+                $exchange_rate = 1;
+            }
+
+            $item_total_price = $record['qty'] * $record['price'] * $exchange_rate;
+
+            // Tambahkan ke total divisi yang sesuai
+            if (isset($grouped_data[$customer_id]['divisions'][$division])) {
+                $grouped_data[$customer_id]['divisions'][$division] += $item_total_price;
+            } else {
+                $grouped_data[$customer_id]['divisions'][$division] = $item_total_price;
+            }
+
+            $grouped_data[$customer_id]['total_per_customer_overall'] += $item_total_price;
+        }
+
+        return array_values($grouped_data);
+    }
+
+    public function getCustomerName($customer_id)
+    {
+        if (empty($customer_id)) {
+            return 'ALL';
+        }
+        $query = $this->db->get_where('customers', ['id' => $customer_id]);
+        if ($query->num_rows() > 0) {
+            return $query->row()->name;
+        }
+        return 'UNKNOWN CUSTOMER';
+    }
+
 }
