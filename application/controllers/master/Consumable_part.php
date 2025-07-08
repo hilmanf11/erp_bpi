@@ -34,37 +34,19 @@ class Consumable_part extends CI_Controller
     public function item_fg() // Finish Goods
     {
         $post = isset($_POST['q']) ? $_POST['q'] : "";
-        
-        $this->db->select("*");
-        $this->db->from("item_fg");
-        $this->db->where("status", 0);              // Hanya tampil yang status = aktif
-        $this->db->where_in("type", ['FG','SA']);   // Hanya tampil FG dan SA
-
-        if (!empty($post)) {
-            $this->db->like("number", $post);
-            $this->db->or_like("number_customer", $post);
-            $this->db->or_like("name", $post);
-        }
-        $this->db->order_by('TRIM(name) ASC');
-        $send = $this->db->get()->result_object();
+        $send = $this->crud->query("SELECT * FROM item_fg 
+            WHERE status = 0 AND type IN ('FG', 'SA') AND division_id IN ('DIV01')
+            AND (id like '%$post%' or number like '%$post%' or number_customer like '%$post%' or name like '%$post%')");
         echo json_encode($send);
     }
     
     public function item_rm() // Part
     {
         $post = isset($_POST['q']) ? $_POST['q'] : "";
-        
-        $this->db->select("a.*, b.name as item_family_name");
-        $this->db->from("item_rm a");
-        $this->db->join("item_familys b", "a.item_family_id = b.id");
-        $this->db->where("a.status", 0);
-
-        if (!empty($post)) {
-            $this->db->like("a.number", $post);
-            $this->db->or_like("a.name", $post);
-        }
-        $this->db->order_by("TRIM(a.name) ASC");
-        $send = $this->db->get()->result_object();
+        $send = $this->crud->query("SELECT a.*, b.name as item_family_name FROM item_rm a 
+            JOIN item_familys b ON a.item_family_id = b.id 
+            WHERE status = 0 
+            AND (a.number like '%$post%' or a.name like '%$post%')");
         echo json_encode($send);
     }
 
@@ -441,7 +423,6 @@ class Consumable_part extends CI_Controller
             $menu_loading = $this->crud->query("SELECT a.item_fg_id, SUM(a.runner) as runner, b.cavity_standard
             FROM menu_loadings a JOIN molds b on a.mold_id = b.id
             WHERE a.item_fg_id = '$item_fg_id' group by a.item_fg_id");
-
             
             $consumable_part = $this->crud->read('consumable_part', [], ["item_fg_id" => $data['item_fg_id'], "item_rm_id" => $data['item_rm_id']]);
 
