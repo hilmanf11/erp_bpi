@@ -29,44 +29,6 @@ class Consumable_part extends CI_Controller
             redirect('error_access');
         }
     }
-
-    public function item_fg() // Finish Goods
-    {
-        $post = isset($_POST['q']) ? $_POST['q'] : "";
-        
-        $this->db->select("*");
-        $this->db->from("item_fg");
-        $this->db->where("status", 0);              // Hanya tampil yang status = aktif
-        $this->db->where_in("type", ['FG','SA']);   // Hanya tampil FG dan SA
-
-        if (!empty($post)) {
-            $this->db->like("number", $post);
-            $this->db->or_like("number_customer", $post);
-            $this->db->or_like("name", $post);
-        }
-        $this->db->order_by('TRIM(name) ASC');
-        $send = $this->db->get()->result_object();
-        echo json_encode($send);
-    }
-    
-    public function item_rm() // Part
-    {
-        $post = isset($_POST['q']) ? $_POST['q'] : "";
-        
-        $this->db->select("a.*, b.name as item_family_name");
-        $this->db->from("item_rm a");
-        $this->db->join("item_familys b", "a.item_family_id = b.id");
-        $this->db->where("a.status", 0);
-
-        if (!empty($post)) {
-            $this->db->like("a.number", $post);
-            $this->db->or_like("a.name", $post);
-        }
-        $this->db->order_by("TRIM(a.name) ASC");
-        $send = $this->db->get()->result_object();
-        echo json_encode($send);
-    }
-
     //GET DATA
     public function reads()
     {
@@ -83,6 +45,7 @@ class Consumable_part extends CI_Controller
         JOIN item_familys b ON a.item_family_id = b.id 
         JOIN item_categories c ON a.item_category_id = c.id 
         WHERE a.status = 0 AND (a.item_category_id = 'C01' or (a.item_category_id = 'C09' AND a.item_family_id = 'P23')) AND (a.number like '%$post%' or a.name like '$post') 
+        AND (a.number LIKE '%$post%' OR a.name LIKE '%$post%')
         ORDER BY a.number ASC");
         $item_fg = $this->crud->query("SELECT * FROM item_fg WHERE `type` = 'SA' AND status = 0 AND (number like '%$post%' or name like '$post')");
 
@@ -94,7 +57,8 @@ class Consumable_part extends CI_Controller
                 "name" => $rm->name,
                 "uom" => $rm->uom,
                 "item_family_name" => $rm->item_family_name,
-                "part_type" => "RM",
+                "type" => "RM",
+                "status" => $rm->status,
             );
         }
 
@@ -105,7 +69,7 @@ class Consumable_part extends CI_Controller
                 "name" => $fg->name,
                 "uom" => $fg->uom,
                 "item_family_name" => "SUB ASSY",
-                "part_type" => $fg->type,
+                "type" => $fg->type,
             );
         }
 
@@ -119,17 +83,6 @@ class Consumable_part extends CI_Controller
         $item_fg = $this->crud->read("item_fg", [] ,["id" => $post['item_fg_id']]);
         echo json_encode($item_fg);
     }
-
-    //GET DATA
-//     public function readRunner()
-//     {
-//        $post = $this->input->post();
-//        $item_fg_id = $post['item_fg_id'];
-//        $menu_loading = $this->crud->query("SELECT SUM(a.runner) as runner, b.cavity_standard
-//        FROM menu_loadings a JOIN molds b on a.mold_id = b.id
-//        WHERE a.item_fg_id = '$item_fg_id' group by a.item_fg_id");
-//        echo json_encode($menu_loading);
-//    }
 
    public function readRunner()
     {
@@ -189,18 +142,33 @@ class Consumable_part extends CI_Controller
             $filter_item_rm_id = base64_decode($this->input->get('filter_item_rm_id'));
 
             $this->db->select('a.*, 
-            a.item_rm_id AS selected_item_id,
-            c.number AS selected_item_number,
-            c.name AS selected_item_name,
-            c.uom AS selected_item_uom,
-            e.name AS selected_item_category,
-            d.name AS selected_item_product_family');
+            (CASE 
+                WHEN a.item_fg_sa_id IS NULL THEN a.item_rm_id
+                ELSE a.item_fg_sa_id 
+            END) AS selected_item_id,
+            (CASE 
+                WHEN a.item_fg_sa_id IS NULL THEN c.number
+                ELSE e.number
+            END) AS selected_item_number,
+            (CASE 
+                WHEN a.item_fg_sa_id IS NULL THEN c.name
+                ELSE e.name
+            END) AS selected_item_name,
+            (CASE 
+                WHEN a.item_fg_sa_id IS NULL THEN c.uom
+                ELSE e.uom
+            END) AS selected_item_uom,
+            (CASE 
+                WHEN a.item_fg_sa_id IS NULL THEN d.name
+                ELSE "SUB ASSY"
+            END) AS selected_item_prodfam');
             $this->db->from('consumable_part a');
             $this->db->join('item_fg b', 'a.item_fg_id = b.id','left');
             $this->db->join('item_rm c', 'a.item_rm_id = c.id', 'left');
             $this->db->join('item_familys d', 'c.item_family_id = d.id', 'left');
-            $this->db->join('item_categories e', 'e.number = b.type', 'left');
+            $this->db->join('item_fg e', 'a.item_fg_sa_id = e.id','left');
             $this->db->where('b.number', $number);
+            // $this->db->like('a.item_rm_id', $filter_item_rm_id); // bentrok dengan datagrid sub assy
             $this->db->group_by('a.id');
             $this->db->order_by('a.id', 'ASC');
             $records = $this->db->get()->result_array();
@@ -300,7 +268,7 @@ class Consumable_part extends CI_Controller
             $dataFinal = array(
                 //field
                 "item_fg_sa_id" => $post['item_fg_sa_id'],
-                "part_type" => $post["part_type"],
+                "type" => $post['type'],
                 "composition" => $post['composition'],
                 "remark" => $post['remark'],
             );
@@ -326,7 +294,7 @@ class Consumable_part extends CI_Controller
             $dataFinal = array(
                 //field
                 "item_rm_id" => $post['item_rm_id'],
-                "part_type" => $post["part_type"],
+                "type" => $post['type'],
                 "composition" => $post['composition'],
                 "remark" => $post['remark'],
             );
@@ -353,7 +321,8 @@ class Consumable_part extends CI_Controller
 
     public function delete()
     {
-        if ($this->input->method() === 'post') {
+        if ($this->input->method() === 'post') 
+        {
             $item_fg_id = $this->input->post('item_fg_id');
             $item_rm_id = $this->input->post('item_rm_id'); 
 
@@ -403,9 +372,9 @@ class Consumable_part extends CI_Controller
                 //excel
                 'item_fg_id' => $data->val($i, 2),
                 'item_rm_id' => $data->val($i, 3),
-                "part_type" => $data->val($i, 4),
-                'composition' => $data->val($i, 6),
-                'remark' => $data->val($i, 7)
+                'type' => $data->val($i, 4),
+                'composition' => $data->val($i, 5),
+                'remark' => $data->val($i, 6)
             );
         }
         $datas['total'] = count($datas);
@@ -484,7 +453,7 @@ class Consumable_part extends CI_Controller
                     //field
                     "item_fg_id" => $data['item_fg_id'],
                     "item_rm_id" => $data['item_rm_id'],
-                    "part_type" => $data["part_type"],
+                    "type" => $data['type'],
                     "remark" => $data['remark'],
                 );
 
@@ -549,8 +518,6 @@ class Consumable_part extends CI_Controller
         // $this->db->like('a.item_rm_id', $filter_item_rm_id);
         $this->db->order_by('a.id', 'ASC');
         $records = $this->db->get()->result_array();
-
-        
         $html = '<html><head><title>Print Data</title></head><style>body {font-family: Arial, Helvetica, sans-serif;}#consumable_part {border-collapse: collapse;width: 100%;font-size: 12px;}#consumable_part td, #consumable_part th {border: 1px solid #ddd;padding: 2px;}#consumable_part tr:nth-child(even){background-color: #f2f2f2;}#consumable_part tr:hover {background-color: #ddd;}#consumable_part th {padding-top: 2px;padding-bottom: 2px;text-align: left;color: black;}</style><body>
         <center>
             <div style="float: left; font-size: 12px; text-align: left;">
@@ -571,7 +538,7 @@ class Consumable_part extends CI_Controller
             </div>
             <br><br>
             <div style="float: centet; font-size: 16px; text-align: center;">
-                <h3>MASTER CONSUMABLE PART</h3>
+                <h3>MASTER BILL OF MATERIAL</h3>
             </div>
         </center>
         
@@ -602,7 +569,7 @@ class Consumable_part extends CI_Controller
                     <td>' . $data['selected_item_id'] . '</td>
                     <td>' . $data['selected_item_number'] . '</td>
                     <td>' . $data['selected_item_name'] . '</td>
-                    <td>' . $data["part_type"] . '</td>
+                    <td>' . $data['type'] . '</td>
                     <td>' . $data['selected_item_prodfam'] . '</td>
                     <td>' . $data['selected_item_uom'] . '</td>
                     <td style="mso-number-format:\@;">' . $data['composition'] . '</td>

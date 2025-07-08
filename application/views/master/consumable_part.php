@@ -20,9 +20,9 @@
     <thead>
         <tr>
             <th rowspan="2" field="ck" checkbox="true"></th>
-            <th rowspan="2" data-options="field:'item_fg_id',width:250,align:'left'">Product ID</th>
-            <th rowspan="2" data-options="field:'item_fg_number',width:250,halign:'center'">Product No</th>
-            <th rowspan="2" data-options="field:'item_fg_name',width:300,halign:'center'">Product Name</th>
+            <th rowspan="2" data-options="field:'item_fg_id',width:200,align:'left'">Product ID</th>
+            <th rowspan="2" data-options="field:'item_fg_number',width:400,halign:'center'">Product No</th>
+            <th rowspan="2" data-options="field:'item_fg_name',width:500,halign:'center'">Product Name</th>
             <th colspan="2" data-options="field:'',width:100,halign:'center'"> Created</th>
             <th colspan="2" data-options="field:'',width:100,halign:'center'"> Updated</th>
         </tr>
@@ -204,6 +204,10 @@
                                         index: rowIndex,
                                         field: 'item_rm_name'
                                     });
+                                    var ed3 = dg.datagrid('getEditor', {
+                                        index: rowIndex,
+                                        field: 'item_rm_id'
+                                    });
                                     var ed4 = dg.datagrid('getEditor', {
                                         index: rowIndex,
                                         field: 'item_family_name'
@@ -223,6 +227,7 @@
                                     
 
                                     $(ed.target).textbox('setValue', rows.name);
+                                    $(ed3.target).textbox('setValue', rows.id);
                                     $(ed4.target).textbox('setValue', rows.item_family_name);
                                     $(ed5.target).textbox('setValue', rows.uom);
                                     $(ed6.target).numberbox('setValue', calculatedComposition);
@@ -232,13 +237,27 @@
                         }
                     }
                 }, {
+                    field: 'id',
+                    width: 150,
+                    halign: 'center',
+                    title: "ID",
+                    editor: {
+                        type: 'textbox',
+                        options: {
+                            readonly: true
+                        }
+                    }
+                }, {
                     field: 'item_rm_id',
                     width: 150,
-                    hidden: true,
+                    // hidden: true,
                     halign: 'center',
                     title: "Product ID",
                     editor: {
-                        type: 'textbox'
+                        type: 'textbox',
+                        options: {
+                            readonly: true
+                        }
                     }
                 }, {
                     field: 'type_item',
@@ -290,21 +309,18 @@
                     editor: {
                         type: 'combobox',
                         options: {
+                            required: true,
                             valueField: 'name',
                             textField: 'name',
                             prompt: 'Choose Type',
                             panelHeight: true,
                             data: [{
-                                    name: "ORIGINAL",
-                                    type: "0"
+                                    name: "DIRECT",
+                                    type: "DIRECT"
                                 },
                                 {
-                                    name: "CRUSHER",
-                                    type: "100"
-                                },
-                                {
-                                    name: "BOTH",
-                                    type: ""
+                                    name: "INDIRECT",
+                                    type: "INDIRECT"
                                 },
                             ],
                             onSelect: function(rows) {
@@ -314,13 +330,13 @@
 
                                 var ed = dg.datagrid('getEditor', {
                                     index: rowIndex,
-                                    field: 'recyle'
+                                    field: 'composition'
                                 });
 
-                                if (rows.type != "") {
-                                    $(ed.target).numberbox('disable');
-                                } else {
+                                if (rows.type != "INDIRECT") {
                                     $(ed.target).numberbox('enable');
+                                } else {
+                                    $(ed.target).numberbox('disable');
                                 }
 
                                 $(ed.target).numberbox('setValue', rows.type);
@@ -409,18 +425,24 @@
             index: editIndex,
             field: 'item_rm_id'
         });
+        var ed2 = dg.datagrid('getEditor', {
+            index: editIndex,
+            field: 'item_rm_number'
+        });
 
         var item_fg_id = $("#item_fg_id").combogrid('getValue');
         var item_rm_id = $(ed.target).textbox('getValue');
+        var item_rm_number = $(ed2.target).textbox('getValue');
 
         $.ajax({
             method: 'post',
             url: '<?= base_url('master/consumable_part/delete') ?>',
             data: {
                 item_fg_id: item_fg_id,
-                item_rm_id: item_rm_id
+                item_rm_id: item_rm_id ?? item_fg_number,
             },
             success: function(result) {
+                var result = eval('(' + result + ')');
                 toastr.success(result.message);
             },
             error: function(jqXHR, textStatus, errorThrown) {
@@ -464,8 +486,19 @@
                             data: {
                                 item_fg_id: row.item_fg_id
                             },
+                            dataType: "json",
                             success: function(result) {
-                                console.log(result);
+                                var result = eval('(' + result + ')');
+                                Swal.fire({
+                                    title: result.message,
+                                    icon: result.theme,
+                                    confirmButtonText: 'OK',
+                                    allowOutsideClick: false,
+                                }).then((result) => {
+                                    if (result.isConfirmed) {
+                                        window.location.reload();
+                                    }
+                                });
                             },
                             error: function(jqXHR, textStatus, errorThrown) {
                                 toastr.error(jqXHR.statusText);
@@ -558,54 +591,61 @@
                             title: 'Part ID',
                             halign: 'center',
                             width: 150
-                        }, 
-                        {
+                        }, {
                             field: 'selected_item_number',
                             title: 'Part No',
                             halign: 'center',
                             width: 150
-                        }, 
-                        {
+                        }, {
                             field: 'selected_item_name',
                             title: 'Part Name',
                             halign: 'center',
                             width: 200
-                        }, 
-                        {
-                            field: 'selected_item_category',
-                            title: 'Category',
+                        }, {
+                            field: 'type',
+                            title: 'Type',
                             halign: 'center',
-                            width: 150
-                        }, 
-                        {
-                            field: 'selected_item_product_family',
+                            width: 100
+                        }, {
+                            field: 'selected_item_prodfam',
                             title: 'Product Family',
                             halign: 'center',
                             width: 150
-                        }, 
-                        {
+                        }, {
                             field: 'selected_item_uom',
                             title: 'UoM',
                             align: 'center',
                             width: 80
-                        }, 
-                        {
-                            field: 'part_type',
-                            title: 'Type',
-                            halign: 'center',
-                            width: 100
-                        }, 
-                        {
+                        }, {
                             field: 'composition',
                             title: 'Composition',
                             width: 100,
                             halign: 'center',
                             align: 'right',
-                        }, 
-                        {
+                        }, {
                             field: 'remark',
                             title: 'Remarks',
                             width: 200,
+                            halign: 'center',
+                        }, {
+                            field: 'created_by',
+                            title: 'Created By',
+                            width: 100,
+                            halign: 'center',
+                        }, {
+                            field: 'created_date',
+                            title: 'Created Date',
+                            width: 120,
+                            halign: 'center',
+                         }, {
+                            field: 'updated_by',
+                            title: 'Update By',
+                            width: 100,
+                            halign: 'center',
+                        }, {
+                            field: 'updated_date',
+                            title: 'Update Date',
+                            width: 120,
                             halign: 'center',
                         }]
                     ],
@@ -643,7 +683,6 @@
                                     id: rows[i].id,
                                     item_fg_sa_id: rows[i].item_rm_id,
                                     type: rows[i].type,
-                                    recyle: rows[i].recyle,
                                     composition: rows[i].composition,
                                     remark: rows[i].remark
                                 };
@@ -653,7 +692,6 @@
                                     id: rows[i].id,
                                     item_rm_id: rows[i].item_rm_id,
                                     type: rows[i].type,
-                                    recyle: rows[i].recyle,
                                     composition: rows[i].composition,
                                     remark: rows[i].remark
                                 };
@@ -717,7 +755,7 @@
     });
 
     $('#filter_item_fg_id').combogrid({
-        url: '<?= base_url('master/consumable_part/item_fg'); ?>',
+        url: '<?= base_url('master/item_fg/reads'); ?>',
         panelWidth: 750,
         idField: 'id',
         textField: 'number',
@@ -752,7 +790,7 @@
     });
 
     $('#filter_item_rm_id').combogrid({
-        url: '<?= base_url('master/consumable_part/item_rm'); ?>',
+        url: '<?= base_url('master/item_rm/reads'); ?>',
         panelWidth: 500,
         idField: 'id',
         textField: 'number',
@@ -805,14 +843,13 @@
                             });
                         }
                     },
-                    dataType: 'json',
                     success: function(result) {
                         $.messager.progress('close');
                         //Clear File
                         $.ajax({
                             url: "<?= base_url('master/consumable_part/uploadclearFailed') ?>"
                         });
-                        
+                        var json = eval('(' + result + ')');
                         requestData(json.total, json);
 
                         function requestData(total, json, number = 1, value = 0, success = 1, failed = 1) {
@@ -853,6 +890,7 @@
                                             requestData(total, json, number + 1, value, success + 0, failed + 1);
                                         }
                                         $("#p_remarks").append(title + "<br>");
+                                        // location.reload(); tidak reload agar bisa download failed upload
                                     }
                                 });
                             }
