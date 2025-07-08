@@ -42,7 +42,7 @@
         </tr>
     </thead>
 </table>
-<div id="toolbar" style="height: 200px; padding:10px;">
+<div id="toolbar" style="height: 250px; padding:10px;">
     <!-- <div style="width: 100%; display: grid; grid-template-columns: auto auto auto; grid-gap: 5px; display: flex;"> -->
     <div style="width: 100%;">
     <fieldset style="width: 70%; border:2px solid #d0d0d0; margin-bottom: 5px; margin-top: 5px; border-radius:4px;">    
@@ -52,6 +52,11 @@
                     <span style="width:35%; display:inline-block;">Period</span>
                     <input style="width:28%;" id="filter_from" class="easyui-datebox" data-options="formatter:myformatter,parser:myparser, editable:false"> To
                     <input style="width:28%;" id="filter_to" class="easyui-datebox" data-options="formatter:myformatter,parser:myparser, editable:false">
+                </div>
+                <div class="fitem">
+                    <span style="width:35%; display:inline-block;">Updated Date</span>
+                    <input style="width:28%;" id="filter_from_update" class="easyui-datebox" data-options="formatter:myformatter,parser:myparser, editable:false"> To
+                    <input style="width:28%;" id="filter_to_update" class="easyui-datebox" data-options="formatter:myformatter,parser:myparser, editable:false">
                 </div>
                 <div class="fitem">
                     <span style="width:35%; display:inline-block;">Supplier</span>
@@ -899,12 +904,14 @@
     function filter() {
         var filter_from = $("#filter_from").datebox('getValue');
         var filter_to = $("#filter_to").datebox('getValue');
+        var filter_from_update = $("#filter_from_update").datebox('getValue');
+        var filter_to_update = $("#filter_to_update").datebox('getValue');
         var filter_po_no = $("#filter_po_no").combogrid('getValue');
         var filter_suppliers = $("#filter_suppliers").combobox('getValue');
         var filter_categories = $("#filter_categories").combobox('getValue');
         var filter_status = $("#filter_status").combobox('getValue');
 
-        url = "?filter_from=" + filter_from + "&filter_to=" + filter_to + "&filter_po_no=" + filter_po_no + "&filter_suppliers=" + filter_suppliers + "&filter_status=" + filter_status + "&filter_categories=" + filter_categories;
+        url = "?filter_from=" + filter_from + "&filter_to=" + filter_to + "&filter_from_update=" + filter_from_update + "&filter_to_update=" + filter_to_update + "&filter_po_no=" + filter_po_no + "&filter_suppliers=" + filter_suppliers + "&filter_status=" + filter_status + "&filter_categories=" + filter_categories;
         $('#dg').treegrid({
             url: '<?= base_url('purchase/purchase_orders/datatables') ?>' + url
         });
@@ -919,12 +926,14 @@
     function excel() {
         var filter_from = $("#filter_from").datebox('getValue');
         var filter_to = $("#filter_to").datebox('getValue');
+        var filter_from_update = $("#filter_from_update").datebox('getValue');
+        var filter_to_update = $("#filter_to_update").datebox('getValue');
         var filter_po_no = $("#filter_po_no").combogrid('getValue');
         var filter_suppliers = $("#filter_suppliers").combobox('getValue');
         var filter_categories = $("#filter_categories").combobox('getValue');
         var filter_status = $("#filter_status").combobox('getValue');
 
-        url = "?filter_from=" + filter_from + "&filter_to=" + filter_to + "&filter_po_no=" + filter_po_no + "&filter_suppliers=" + filter_suppliers + "&filter_status=" + filter_status + "&filter_categories=" + filter_categories;
+        url = "?filter_from=" + filter_from + "&filter_to=" + filter_to + "&filter_from_update=" + filter_from_update + "&filter_to_update=" + filter_to_update + "&filter_po_no=" + filter_po_no + "&filter_suppliers=" + filter_suppliers + "&filter_status=" + filter_status + "&filter_categories=" + filter_categories;
         window.location.assign('<?= base_url('purchase/purchase_orders/print/excel') ?>' + url);
     }
 

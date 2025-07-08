@@ -190,6 +190,8 @@ class Purchase_orders extends CI_Controller
         if ($this->input->post()) {
             $filter_from = $this->input->get('filter_from');
             $filter_to   = $this->input->get('filter_to');
+            $filter_from_update = $this->input->get('filter_from_update');
+            $filter_to_update   = $this->input->get('filter_to_update');
             $filter_po_no = $this->input->get('filter_po_no');
             $filter_suppliers = $this->input->get('filter_suppliers');
             $filter_categories = $this->input->get('filter_categories');
@@ -263,13 +265,16 @@ class Purchase_orders extends CI_Controller
                     $this->db->where('a.po_date >=', $filter_from);
                     $this->db->where('a.po_date <=', $filter_to);
                 }
+                if ($filter_from_update != "" or $filter_to_update != "") {
+                    $this->db->where('DATE(a.updated_date) >=', $filter_from_update);
+                    $this->db->where('DATE(a.updated_date) <=', $filter_to_update);
+                }
                 $this->db->like('a.po_no', $filter_po_no);
                 $this->db->like('d.id', $filter_suppliers);
                 $this->db->like('b.item_category_id', $filter_categories);
                 $this->db->like('a.status', $filter_status);
                 $this->db->group_by('a.po_no');
 
-                $this->db->order_by('a.updated_date', 'DESC');
                 $this->db->order_by('a.created_date', 'DESC');
                 $this->db->order_by('a.po_no', 'DESC');
                 $this->db->order_by('a.po_date', 'DESC');
@@ -1143,8 +1148,11 @@ class Purchase_orders extends CI_Controller
         }
         $filter_from = $this->input->get('filter_from');
         $filter_to   = $this->input->get('filter_to');
+        $filter_from_update = $this->input->get('filter_from_update');
+        $filter_to_update   = $this->input->get('filter_to_update');
         $filter_po_no = $this->input->get('filter_po_no');
         $filter_suppliers = $this->input->get('filter_suppliers');
+        $filter_categories = $this->input->get('filter_categories');
         $filter_status = $this->input->get('filter_status');
         //Config
         $this->db->select('*');
@@ -1168,6 +1176,10 @@ class Purchase_orders extends CI_Controller
         if ($filter_from != "" or $filter_to != "") {
             $this->db->where('a.po_date >=', $filter_from);
             $this->db->where('a.po_date <=', $filter_to);
+        }
+        if ($filter_from_update != "" or $filter_to_update != "") {
+            $this->db->where('a.updated_date >=', $filter_from_update);
+            $this->db->where('a.updated_date <=', $filter_to_update);
         }
         $this->db->like('a.po_no', $filter_po_no);
         $this->db->like('d.id', $filter_suppliers);

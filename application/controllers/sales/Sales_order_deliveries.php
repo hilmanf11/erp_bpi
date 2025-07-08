@@ -253,6 +253,105 @@ class Sales_order_deliveries extends CI_Controller
         echo $send;
     }
 
+    //UPLOAD DATA
+    public function upload()
+    {
+        error_reporting(0);
+        require_once 'assets/vendors/excel_reader2.php';
+        $target = basename($_FILES['file_upload']['name']);
+        move_uploaded_file($_FILES['file_upload']['tmp_name'], $target);
+        chmod($_FILES['file_upload']['name'], 0777);
+        $file = $_FILES['file_upload']['name'];
+        $data = new Spreadsheet_Excel_Reader($file, false);
+        $total_row = $data->rowcount($sheet_index = 0);
+        for ($i = 3; $i <= $total_row; $i++) {
+            $datas[] = array(
+                //excel
+                'sales_order_no' => $data->val($i, 2),
+                'number' => $data->val($i, 3),
+                'trans_date' => $data->val($i, 4),
+                'qty' => $data->val($i, 5)
+            );
+        }
+        $datas['total'] = count($datas);
+        echo json_encode($datas);
+        unlink($_FILES['file_upload']['name']);
+    }
+    public function uploadclearFailed()
+    {
+        @unlink('failed/delivery_schedules.txt');
+    }
+    public function uploadcreateFailed()
+    {
+        if ($this->input->post()) {
+            $message = $this->input->post('message');
+            $textFailed = fopen('failed/delivery_schedules.txt', 'a');
+            fwrite($textFailed, $message . "\n");
+            fclose($textFailed);
+        }
+    }
+    //UPLOAD DOWNLOAD FAILED
+    public function uploadDownloadFailed()
+    {
+        $file = "failed/delivery_schedules.txt";
+        header('Content-Description: File Failed');
+        header('Content-Disposition: attachment; filename=' . basename($file));
+        header('Expires: 0');
+        header('Cache-Control: must-revalidate');
+        header('Pragma: public');
+        header('Content-Length: ' . @filesize($file));
+        header("Content-Type: text/plain");
+        @readfile($file);
+    }
+    //UPLOAD CREATE DATA
+    //upload data tanpa sortir trans date
+    public function uploadcreate()
+    {
+        if ($this->input->post()) {
+            $data = $this->input->post('data');
+
+            //Cek Process Number          //table       //field        //field excel
+            $item_fg = $this->crud->read('item_fg', [], ["number" => $data['number']]);
+            $sales_orders = $this->crud->read('sales_orders', [], ["sales_order_no" => $data['sales_order_no']]);
+            $sales_order_item = $this->crud->read('sales_orders', [], ["sales_order_no" => $data['sales_order_no'], "item_fg_id" => $item_fg->id]);
+            $sales_order_duplicate = $this->crud->read('sales_order_deliveries', [], ["sales_order_no" => $data['sales_order_no'],"item_fg_id" => $item_fg->id,"trans_date" => $data['trans_date']]);
+            $sales_order_deliveries_total = $this->crud->query("SELECT SUM(qty) as total FROM sales_order_deliveries WHERE sales_order_no='$sales_orders->sales_order_no' and item_fg_id = '$item_fg->id' GROUP BY sales_order_no, item_fg_id");
+
+            $qty_so = $sales_order_item->qty;
+
+            // var_dump("Acumulate: ", $sales_order_deliveries_total[0]->total);
+            // var_dump("Qty Upload: ", $data['qty']);
+            // var_dump("Qty SO: ", $qty_so);
+            // var_dump("SO NO:", $sales_orders->sales_order_no);
+            // var_dump("Item FG Id:", $item_fg->id);
+            // return;
+            
+            if (empty($sales_orders->sales_order_no)) {
+                echo json_encode(array("title" => "Not Found", "message" => " Sales Order No " . $data['sales_order_no'] . " Not Found", "theme" => "error"));
+            }elseif (!$sales_order_item) {
+                echo json_encode(array("title" => "Item Not Found", "message" => " Product No " .$data['number']. " Not Found in " .$data['sales_order_no'] , "theme" => "error"));
+            }elseif ($sales_order_duplicate) {
+                echo json_encode(array("title" => "Duplicate", "message" => " Product No " . $data['number'] . " Trans Date " . $data['trans_date'] , "theme" => "error"));
+            } elseif (empty($item_fg->number)) {
+                echo json_encode(array("title" => "Not Found", "message" => " Product No. " . $data['number'] . " Not Found", "theme" => "error"));
+            } elseif (round($qty_so) < round(@$sales_order_deliveries_total[0]->total + $data['qty'])) {
+                echo json_encode(array("title" => "Qty Over", "message" => " Product No. " . $data['number'] . " Trans Date " . $data['trans_date'] ." Qty is greater than the Sales Order", "theme" => "error"));
+            } else {
+                $dataFinal = array(
+                    //field
+                    "sales_order_no" => $data['sales_order_no'],
+                    "customer_id" => $sales_orders->customer_id,
+                    "item_fg_id" => $item_fg->id,
+                    "trans_date" => $data['trans_date'],
+                    "qty" => $data['qty'],
+                    "remarks" => 'Upload Data',
+                );
+                $send   = $this->crud->create('sales_order_deliveries', $dataFinal);
+                echo $send;
+            }
+        }
+    }
+
     //PRINT & EXCEL DATA
     public function print($option = "")
     {
