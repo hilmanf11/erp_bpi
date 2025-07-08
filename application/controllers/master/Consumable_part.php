@@ -66,7 +66,7 @@ class Consumable_part extends CI_Controller
         $send = $this->db->get()->result_object();
         echo json_encode($send);
     }
-    
+
     //GET DATA
     public function reads()
     {
@@ -78,14 +78,20 @@ class Consumable_part extends CI_Controller
     public function readItem()
     {
         $post = isset($_POST['q']) ? $_POST['q'] : "";
-        $item_rm = $this->crud->query("SELECT a.*, b.name as item_family_name 
-        FROM item_rm a 
-        JOIN item_familys b ON a.item_family_id = b.id 
-        JOIN item_categories c ON a.item_category_id = c.id 
-        WHERE a.status = 0 AND (a.item_category_id = 'C01' or (a.item_category_id = 'C09' AND a.item_family_id = 'P23')) AND (a.number like '%$post%' or a.name like '$post') 
-        AND (a.number LIKE '%$post%' OR a.name LIKE '%$post%')
-        ORDER BY a.number ASC");
-        $item_fg = $this->crud->query("SELECT * FROM item_fg WHERE `type` = 'SA' AND status = 0 AND (number like '%$post%' or name like '$post')");
+        $item_rm = $this->crud->query("SELECT a.*, b.name as item_family_name, c.name as item_category_name 
+            FROM item_rm a 
+            JOIN item_familys b ON a.item_family_id = b.id 
+            LEFT JOIN item_categories c ON a.item_category_id = c.id 
+            WHERE a.status = 0 AND (a.item_category_id = 'C01' or (a.item_category_id = 'C09' AND a.item_family_id = 'P23')) AND (a.number like '%$post%' or a.name like '$post') 
+            AND (a.number LIKE '%$post%' OR a.name LIKE '%$post%')
+            ORDER BY a.number ASC");
+
+        $item_fg = $this->crud->query("SELECT a.*, c.name as item_category_name 
+            FROM item_fg a
+            LEFT JOIN item_categories c ON a.type = c.number 
+            WHERE a.type = 'SA' AND a.status = 0 
+            AND (a.number like '%$post%' or a.name like '$post')
+            ORDER BY a.number ASC");
 
         $datas = array();
         foreach ($item_rm as $rm) {
@@ -95,6 +101,7 @@ class Consumable_part extends CI_Controller
                 "name" => $rm->name,
                 "uom" => $rm->uom,
                 "item_family_name" => $rm->item_family_name,
+                "item_category_name" => $rm->item_category_name,
                 "type" => "RM",
                 "status" => $rm->status,
             );
@@ -107,6 +114,7 @@ class Consumable_part extends CI_Controller
                 "name" => $fg->name,
                 "uom" => $fg->uom,
                 "item_family_name" => "SUB ASSY",
+                "item_category_name" => $fg->item_category_name,
                 "type" => $fg->type,
             );
         }
@@ -548,12 +556,14 @@ class Consumable_part extends CI_Controller
             (CASE 
                 WHEN a.item_fg_sa_id IS NULL THEN d.name
                 ELSE "SUB ASSY"
-            END) AS selected_item_prodfam');
+            END) AS selected_item_prodfam,
+            f.name AS selected_item_category');
         $this->db->from('consumable_part a');
         $this->db->join('item_fg b', 'a.item_fg_id = b.id','left');
         $this->db->join('item_rm c', 'a.item_rm_id = c.id', 'left');
         $this->db->join('item_familys d', 'c.item_family_id = d.id', 'left');
         $this->db->join('item_fg e', 'a.item_fg_sa_id = e.id','left');
+        $this->db->join('item_categories f', 'f.number = b.type', 'left');
         $this->db->like('a.item_fg_id', $filter_item_fg_id);
         // $this->db->like('a.item_rm_id', $filter_item_rm_id);
         $this->db->order_by('a.id', 'ASC');
@@ -592,6 +602,7 @@ class Consumable_part extends CI_Controller
                 <th>Part No</th>
                 <th>Part Name</th>
                 <th>Part Type</th>
+                <th>Category</th>
                 <th>Product Family</th>
                 <th>Unit Of Measure</th>
                 <th>Composition</th>
@@ -610,6 +621,7 @@ class Consumable_part extends CI_Controller
                     <td>' . $data['selected_item_number'] . '</td>
                     <td>' . $data['selected_item_name'] . '</td>
                     <td>' . $data['type'] . '</td>
+                    <td>' . $data['selected_item_category'] . '</td>
                     <td>' . $data['selected_item_prodfam'] . '</td>
                     <td>' . $data['selected_item_uom'] . '</td>
                     <td style="mso-number-format:\@;">' . $data['composition'] . '</td>

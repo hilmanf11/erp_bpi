@@ -65,7 +65,7 @@
 </div>
 
 <!-- Insert & Update -->
-<div id="dlg_insert" class="easyui-dialog" title="Add New" data-options="closed: true,modal:true" style="width: 1100px; height: 600px; padding:10px; top: 20px;">
+<div id="dlg_insert" class="easyui-dialog" title="Add New" data-options="closed: true,modal:true" style="width: 1300px; height: 600px; padding:10px; top: 20px;">
     <form id="frm_insert" method="post" novalidate>
         <fieldset style="width:100%; border:1px solid #d0d0d0; margin-bottom: 10px; border-radius:4px; float: left;">
             <legend><b>Form Data</b></legend>
@@ -246,14 +246,18 @@
                                         index: rowIndex,
                                         field: 'type_item'
                                     });
+                                    var ed8 = dg.datagrid('getEditor', {
+                                        index: rowIndex,
+                                        field: 'item_category_name'
+                                    });
                                     
-
                                     $(ed.target).textbox('setValue', rows.name);
                                     $(ed3.target).textbox('setValue', rows.id);
                                     $(ed4.target).textbox('setValue', rows.item_family_name);
                                     $(ed5.target).textbox('setValue', rows.uom);
                                     $(ed6.target).numberbox('setValue', calculatedComposition);
                                     $(ed7.target).textbox('setValue', rows.type);
+                                    $(ed8.target).textbox('setValue', rows.item_category_name);
                                 });
                             }
                         }
@@ -295,6 +299,17 @@
                     width: 150,
                     halign: 'center',
                     title: "Part Name",
+                    editor: {
+                        type: 'textbox',
+                        options: {
+                            readonly: true
+                        }
+                    }
+                }, {
+                    field: 'item_category_name',
+                    width: 120,
+                    halign: 'center',
+                    title: "Category",
                     editor: {
                         type: 'textbox',
                         options: {
@@ -357,6 +372,7 @@
 
                                 if (rows.type != "INDIRECT") {
                                     $(ed.target).numberbox('enable');
+                                    $(ed.target).numberbox('setValue', 0);
                                 } else {
                                     $(ed.target).numberbox('disable');
                                 }
