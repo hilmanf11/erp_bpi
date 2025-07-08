@@ -60,6 +60,12 @@ class Purchase_order_receipts extends CI_Controller
         echo json_encode($records);
     }
 
+    public function readLotNo()
+    {
+        $records = $this->crud->query("SELECT lotno FROM purchase_order_receipts WHERE `status` = '0' GROUP BY lotno ORDER BY created_date desc");
+        echo json_encode($records);
+    }
+
     public function readReceipt($supplier_id)
     {
         $supplier_id = base64_decode($supplier_id);
@@ -196,6 +202,7 @@ class Purchase_order_receipts extends CI_Controller
             $filter_receipt = $this->input->get('filter_receipt');
             $filter_doc_no = $this->input->get('filter_doc_no');
             $filter_categories = $this->input->get('filter_categories');
+            $filter_lotno = $this->input->get('filter_lotno');
             $filter_division = $this->input->get('filter_division');
             $filter_status_invoice = $this->input->get('filter_status_invoice');
 
@@ -208,7 +215,7 @@ class Purchase_order_receipts extends CI_Controller
             $result = array();
             $id = $_POST['id'];
             if ($id === "0") {
-                $this->db->select('a.po_no, a.receipt_no, a.receipt_date, a.awb_no, a.awb_date, a.bc_kind, a.bc_document, a.bc_aju, a.bc_date, b.number as supplier_id, 
+                $this->db->select('a.po_no, a.receipt_no, a.receipt_date, a.awb_no, a.awb_date, a.bc_kind, a.bc_document, a.bc_aju, a.bc_date, b.number as supplier_id, a.lotno, 
                 b.name as supplier_name, a.total_receipt as qty_receipt, a.total_label as qty_label, a.status, e.number as category_code, f.division, a.print, g.number as invoice_no');
                 $this->db->from('(SELECT *, sum(qty_label) as total_label, sum(qty_receipt) as total_receipt FROM purchase_order_receipts GROUP BY receipt_no ORDER BY status asc) a');
                 $this->db->join('suppliers b', 'a.supplier_id = b.id');
@@ -243,9 +250,11 @@ class Purchase_order_receipts extends CI_Controller
                 if ($filter_division != "") {
                     $this->db->where('f.division', $filter_division);
                 }
-
                 if ($filter_status_invoice !== "") { 
                     $this->db->where('a.status', $filter_status_invoice);
+                }
+                if ($filter_lotno !== "") { 
+                    $this->db->where('a.lotno', $filter_lotno);
                 }
     
                 $this->db->group_by('a.receipt_no');
@@ -265,6 +274,7 @@ class Purchase_order_receipts extends CI_Controller
                     $arr[] = array(
                         "id" => $record['receipt_no'],
                         "po_no" => $record['po_no'],
+                        "lotno" => $record['lotno'],
                         "bc_kind" => $record['bc_kind'],
                         "bc_document" => $record['bc_document'],
                         "bc_aju" => $record['bc_aju'],
@@ -381,7 +391,8 @@ class Purchase_order_receipts extends CI_Controller
         $data = $this->input->post();
         $deletePurchaseOrderReceipts = $this->crud->delete('purchase_order_receipts', ["id" => $data['id']]);
         $deleteScanItemReceipts = $this->crud->delete('scan_item_receipts', ["receipt_id" => $data['receipt_id']]);
-        $updatePurchaseOrders = $this->crud->update('purchase_orders', ["po_no" => $data['po_no'], "item_rm_id" => $data['item_rm_id']], ["status" => 0]);
+        //$updatePurchaseOrders = $this->crud->update('purchase_orders', ["po_no" => $data['po_no'], "item_rm_id" => $data['item_rm_id']], ["status" => 0]); // update memakai approval
+        $updatePurchaseOrders = $this->db->update('purchase_orders', ["status" => 0], ["po_no" => $data['po_no'], "item_rm_id" => $data['item_rm_id']]); //update tidak approval
         echo $deletePurchaseOrderReceipts;
     }
 

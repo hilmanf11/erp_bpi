@@ -1098,13 +1098,13 @@
                             var balance = $("#balance_sh").numberbox('setValue', result);
                             var accumulate_total = $("#accumulate_sh").numberbox('setValue', calculate);
 
-                            if (result < 0) {
-                                toastr.warning("Balance minus, please correct your Qty!");
-                                $("#qty_product").numberbox('setValue', 0);
-                                $("#accumulate_sh").numberbox('setValue', accumulateAjax);
-                            } else {
-                                return result;
-                            }
+                            // if (result < 0) {
+                            //     toastr.warning("Balance minus, please correct your Qty!");
+                            //     $("#qty_product").numberbox('setValue', 0);
+                            //     $("#accumulate_sh").numberbox('setValue', accumulateAjax);
+                            // } else {
+                            //     return result;
+                            // }
                         }else{
                             $("#qty_product").numberbox('setValue', 0);
                         }

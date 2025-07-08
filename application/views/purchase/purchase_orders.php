@@ -85,7 +85,7 @@
             </div>
         </fieldset>
         <?= $button ?>
-        <a href="javascript:;" class="easyui-linkbutton" data-options="plain:true" onclick="complete_po()"><i class="fa fa-check"></i> Complete</a>
+        <a href="javascript:;" class="easyui-linkbutton" data-options="plain:true" onclick="complete_po()"><i class="fa fa-check"></i> Complete/Open</a>
     </div>
 </div>
 
@@ -971,37 +971,37 @@
                                     }
                                 });
                             } else {
-                                toastr.error("this data has been Completed");
-                                // Swal.fire({
-                                //     title: "Are you sure?",
-                                //     text: "You want to Unompleted this data!",
-                                //     icon: "warning",
-                                //     showCancelButton: true,
-                                //     confirmButtonColor: "#3085d6",
-                                //     cancelButtonColor: "#d33",
-                                //     confirmButtonText: "Yes",
-                                // }).then((result) => {
-                                //     if (result.isConfirmed) {
-                                //         $.ajax({
-                                //             method: 'post',
-                                //             url: '<?= base_url('purchase/purchase_orders/uncompletePo') ?>',
-                                //             data: {
-                                //                 id: row.id,
-                                //             },
-                                //             success: function(result) {
-                                //                 var result = eval('(' + result + ')');
-                                //                 toastr.success(result.message);
-                                //             },
-                                //             error: function(jqXHR, textStatus, errorThrown) {
-                                //                 toastr.error(jqXHR.statusText);
-                                //                 $.messager.alert("Error", jqXHR.statusText, 'error');
-                                //             },
-                                //             complete: function(data) {
-                                //                 $('#dg').treegrid('reload');
-                                //             }
-                                //         });
-                                //     }
-                                // });
+                                // toastr.error("this data has been Completed");
+                                Swal.fire({
+                                    title: "Are you sure?",
+                                    text: "You want to Open this data!",
+                                    icon: "warning",
+                                    showCancelButton: true,
+                                    confirmButtonColor: "#3085d6",
+                                    cancelButtonColor: "#d33",
+                                    confirmButtonText: "Yes",
+                                }).then((result) => {
+                                    if (result.isConfirmed) {
+                                        $.ajax({
+                                            method: 'post',
+                                            url: '<?= base_url('purchase/purchase_orders/uncompletePo') ?>',
+                                            data: {
+                                                id: row.id,
+                                            },
+                                            success: function(result) {
+                                                var result = eval('(' + result + ')');
+                                                toastr.success(result.message);
+                                            },
+                                            error: function(jqXHR, textStatus, errorThrown) {
+                                                toastr.error(jqXHR.statusText);
+                                                $.messager.alert("Error", jqXHR.statusText, 'error');
+                                            },
+                                            complete: function(data) {
+                                                $('#dg').treegrid('reload');
+                                            }
+                                        });
+                                    }
+                                });
                             }
                         }
                     }

@@ -269,7 +269,7 @@ class Purchase_orders extends CI_Controller
                 $this->db->like('a.status', $filter_status);
                 $this->db->group_by('a.po_no');
 
-                
+                $this->db->order_by('a.updated_date', 'DESC');
                 $this->db->order_by('a.created_date', 'DESC');
                 $this->db->order_by('a.po_no', 'DESC');
                 $this->db->order_by('a.po_date', 'DESC');
