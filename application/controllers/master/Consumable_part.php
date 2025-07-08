@@ -16,6 +16,7 @@ class Consumable_part extends CI_Controller
         $this->form_validation->set_rules('item_fg_id', 'Product No.', 'required|min_length[1]|max_length[20]|is_unique[consumable_part.item_fg_id]');
         $this->form_validation->set_rules('item_rm_id', 'Part No.', 'required|min_length[1]|max_length[20]|is_unique[consumable_part.item_rm_id]');
     }
+
     //HALAMAN UTAMA
     public function index()
     {
@@ -82,7 +83,7 @@ class Consumable_part extends CI_Controller
             FROM item_rm a 
             JOIN item_familys b ON a.item_family_id = b.id 
             LEFT JOIN item_categories c ON a.item_category_id = c.id 
-            WHERE a.status = 0 AND (a.item_category_id = 'C01' or (a.item_category_id = 'C09' AND a.item_family_id = 'P23')) AND (a.number like '%$post%' or a.name like '$post') 
+            WHERE a.status = 0 
             AND (a.number LIKE '%$post%' OR a.name LIKE '%$post%')
             ORDER BY a.number ASC");
 
@@ -272,40 +273,6 @@ class Consumable_part extends CI_Controller
     }
 
     //CREATE DATA
-    // public function create_SA()
-    // {
-    //     if ($this->input->post()) {
-    //         $post = $this->input->post();
-
-    //         $consumable_part = $this->crud->read("consumable_part", [], ["item_fg_id" => $post['item_fg_id'], "item_fg_sa_id" => $post['item_fg_sa_id']]);
-    //         if (@$consumable_part->item_fg_id != "") {
-    //             $send = $this->crud->update('consumable_part', ["item_fg_id" => $post['item_fg_id'], "item_rm_id" => $post['item_rm_id']], $post);
-    //         } else {
-    //             $send = $this->crud->create('consumable_part', $post);
-    //         }
-    //         echo $send;
-    //     } else {
-    //         show_error("Cannot Process your request");
-    //     }
-    // }
-
-    // public function create()
-    // {
-    //     if ($this->input->post()) {
-    //         $post = $this->input->post();
-    //         var_dump($post);
-    //         $consumable_part = $this->crud->read("consumable_part", [], ["item_fg_id" => $post['item_fg_id'], "item_rm_id" => $post['item_rm_id']]);
-    //         if (@$consumable_part->item_fg_id != "") {
-    //             $send = $this->crud->update('consumable_part', ["item_fg_id" => $post['item_fg_id'], "item_rm_id" => $post['item_rm_id']], $post);
-    //         } else {
-    //             $send = $this->crud->create('consumable_part', $post);
-    //         }
-    //         echo $send;
-    //     } else {
-    //         show_error("Cannot Process your request");
-    //     }
-    // }
-
     public function create_SA()
     {
         if ($this->input->post()) {
@@ -359,14 +326,6 @@ class Consumable_part extends CI_Controller
     }
 
     //DELETE DATA
-    // public function delete()
-    // {
-    //     $data = $this->input->post();
-    //     var_dump($data);
-    //     $send = $this->crud->delete('consumable_part', $data);
-    //     echo $send;
-    // }
-
     public function delete()
     {
         if ($this->input->method() === 'post') 
@@ -565,7 +524,6 @@ class Consumable_part extends CI_Controller
         $this->db->join('item_fg e', 'a.item_fg_sa_id = e.id','left');
         $this->db->join('item_categories f', 'f.number = b.type', 'left');
         $this->db->like('a.item_fg_id', $filter_item_fg_id);
-        // $this->db->like('a.item_rm_id', $filter_item_rm_id);
         $this->db->order_by('a.id', 'ASC');
         $records = $this->db->get()->result_array();
         $html = '<html><head><title>Print Data</title></head><style>body {font-family: Arial, Helvetica, sans-serif;}#consumable_part {border-collapse: collapse;width: 100%;font-size: 12px;}#consumable_part td, #consumable_part th {border: 1px solid #ddd;padding: 2px;}#consumable_part tr:nth-child(even){background-color: #f2f2f2;}#consumable_part tr:hover {background-color: #ddd;}#consumable_part th {padding-top: 2px;padding-bottom: 2px;text-align: left;color: black;}</style><body>
@@ -588,7 +546,7 @@ class Consumable_part extends CI_Controller
             </div>
             <br><br>
             <div style="float: centet; font-size: 16px; text-align: center;">
-                <h3>MASTER BILL OF MATERIAL</h3>
+                <h3>MASTER CONSUMABLE PART</h3>
             </div>
         </center>
         

@@ -74,7 +74,7 @@
                 <input style="width:40%;" name="item_fg_id" id="item_fg_id" required="" class="easyui-combogrid">
             </div>
         </fieldset>
-        <table id="dg2" class="easyui-datagrid" style="width:100%;" title="Bill of Material Lists" toolbar="#toolbar2"></table>
+        <table id="dg2" class="easyui-datagrid" style="width:100%;" title="Consumable Part" toolbar="#toolbar2"></table>
     </form>
 </div>
 
