@@ -94,9 +94,9 @@ class Consumable_part extends CI_Controller
             AND (a.number like '%$post%' or a.name like '$post')
             ORDER BY a.number ASC");
 
-        $datas = array();
+        $datas = [];
         foreach ($item_rm as $rm) {
-            $datas[] = array(
+            $datas[] = [
                 "id" => $rm->id,
                 "number" => $rm->number,
                 "name" => $rm->name,
@@ -105,11 +105,11 @@ class Consumable_part extends CI_Controller
                 "item_category_name" => $rm->item_category_name,
                 "type" => "RM",
                 "status" => $rm->status,
-            );
+            ];
         }
 
         foreach ($item_fg as $fg) {
-            $datas[] = array(
+            $datas[] = [
                 "id" => $fg->id,
                 "number" => $fg->number,
                 "name" => $fg->name,
@@ -117,7 +117,7 @@ class Consumable_part extends CI_Controller
                 "item_family_name" => "SUB ASSY",
                 "item_category_name" => $fg->item_category_name,
                 "type" => $fg->type,
-            );
+            ];
         }
 
         echo json_encode($datas);
@@ -158,7 +158,7 @@ class Consumable_part extends CI_Controller
             $page   = isset($page) ? intval($page) : 1;
             $rows   = isset($rows) ? intval($rows) : 10;
             $offset = ($page - 1) * $rows;
-            $result = array();
+            $result = [];
             //Select Query
             $this->db->select('b.id as item_fg_id, b.number as item_fg_number, b.name as item_fg_name, a.created_by, a.created_date, a.updated_by, a.updated_date');
             $this->db->from('consumable_part a');
@@ -280,13 +280,19 @@ class Consumable_part extends CI_Controller
 
             // $consumable_part = $this->crud->read("consumable_part", [], ["item_fg_id" => $post['item_fg_id'], "item_rm_id" => $post['item_rm_id']]);
            
-            $dataFinal = array(
-                //field
+            // -- validasi Part Type dan Composition
+            if ($post['type'] == "INDIRECT") {
+                $composition = 0;
+            } else {
+                $composition = $post['composition'];
+            }
+
+            $dataFinal = [
                 "item_fg_sa_id" => $post['item_fg_sa_id'],
-                "type" => $post['type'],
-                "composition" => $post['composition'],
-                "remark" => $post['remark'],
-            );
+                "type"          => $post['type'],
+                "composition"   => $composition,
+                "remark"    => $post['remark'],
+            ];
             
             if (@$post['id'] != "") {
                 $send = $this->crud->update('consumable_part', ["id" => $post['id']], $dataFinal);
@@ -305,14 +311,20 @@ class Consumable_part extends CI_Controller
             $post = $this->input->post();
 
             // $consumable_part = $this->crud->read("consumable_part", [], ["item_fg_id" => $post['item_fg_id'], "item_rm_id" => $post['item_rm_id']]);
-           
-            $dataFinal = array(
-                //field
-                "item_rm_id" => $post['item_rm_id'],
-                "type" => $post['type'],
-                "composition" => $post['composition'],
-                "remark" => $post['remark'],
-            );
+            
+            // -- validasi Part Type dan Composition
+            if ($post['type'] == "INDIRECT") {
+                $composition = 0;
+            } else {
+                $composition = $post['composition'];
+            }
+
+            $dataFinal = [
+                "item_rm_id"  => $post['item_rm_id'],
+                "type"        => $post['type'],
+                "composition" => $composition,
+                "remark"      => $post['remark'],
+            ];
             
             if (@$post['id'] != "") {
                 $send = $this->crud->update('consumable_part', ["id" => $post['id']], $dataFinal);
@@ -333,18 +345,18 @@ class Consumable_part extends CI_Controller
             $item_fg_id = $this->input->post('item_fg_id');
             $item_rm_id = $this->input->post('item_rm_id'); 
 
-            // if ($item_fg_id !== null && $item_rm_id !== null) {
-            if ($item_fg_id !== null) {
-                // check availability first
-                $consumable_part_item_rm_id = $this->crud->read("consumable_part", [], ["item_fg_id" => $item_fg_id, "item_rm_id" => $item_rm_id]);
-                if (!empty($consumable_part_item_rm_id)) {
+            if ($item_fg_id !== null) 
+            {
+                // check availability first 
+                $check_availability = $this->crud->read("consumable_part", [], ["item_fg_id" => $item_fg_id, "item_rm_id" => $item_rm_id]);
+                if (!empty($check_availability)) {
                     $dataFinal = [
                         "item_fg_id" => $item_fg_id,
                         "item_rm_id" => $item_rm_id,
                     ];
                 } else {
                     $dataFinal = [
-                        "item_fg_id" => $item_fg_id,
+                        "item_fg_id"    => $item_fg_id,
                         "item_fg_sa_id" => $item_rm_id,
                     ];
                 }
@@ -375,14 +387,13 @@ class Consumable_part extends CI_Controller
         $data = new Spreadsheet_Excel_Reader($file, false);
         $total_row = $data->rowcount($sheet_index = 0);
         for ($i = 3; $i <= $total_row; $i++) {
-            $datas[] = array(
-                //excel
+            $datas[] = [
                 'item_fg_id' => $data->val($i, 2),
                 'item_rm_id' => $data->val($i, 3),
                 'type' => $data->val($i, 4),
                 'composition' => $data->val($i, 5),
                 'remark' => $data->val($i, 6)
-            );
+            ];
         }
         $datas['total'] = count($datas);
         echo json_encode($datas);
@@ -435,39 +446,47 @@ class Consumable_part extends CI_Controller
             $consumable_part = $this->crud->read('consumable_part', [], ["item_fg_id" => $data['item_fg_id'], "item_rm_id" => $data['item_rm_id']]);
 
             if (empty($item_fg->id)) {
-                echo json_encode(array("title" => "Not Found", "message" => "Part ID" . $data['item_fg_id'] ." Not Found", "theme" => "error"));
-            } elseif (empty($item_rm->id)) {
-                echo json_encode(array("title" => "Not Found", "message" => "Part ID" . $data['item_rm_id'] ." Not Found", "theme" => "error"));
-            } elseif (empty($menu_loading[0]->item_fg_id)) {
-                echo json_encode(array("title" => "Not Found", "message" => "Part ID" . $data['item_fg_id'] . " in Menu Loading Not Found", "theme" => "error"));
-            } elseif ($item_rm->item_family_id == 'P06' && $data['composition'] != "") {
-                echo json_encode(array("title" => "Alert", "message" => "Part ID" . $data['item_rm_id'] ." Product Family is VIRGIN ", "theme" => "error"));
-            } elseif (!empty($consumable_part->item_rm_id)) {
-                echo json_encode(array("title" => "Duplicated", "message" => "Part ID" . $data['item_rm_id'] . " is Duplicate Data", "theme" => "error"));
+                echo json_encode(array("title" => "Not Found", "message" => "Part ID " . $data['item_fg_id'] ." Not Found", "theme" => "error"));
+            } 
+            elseif (empty($item_rm->id)) {
+                echo json_encode(array("title" => "Not Found", "message" => "Part ID " . $data['item_rm_id'] ." Not Found", "theme" => "error"));
+            } 
+            elseif (empty($menu_loading[0]->item_fg_id)) {
+                echo json_encode(array("title" => "Not Found", "message" => "Part ID " . $data['item_fg_id'] . " in Menu Loading Not Found", "theme" => "error"));
+            } 
+            elseif ($item_fg->status == 1) {
+                echo json_encode(array("title" => "Alert", "message" => "Part ID " . $data['item_fg_id'] ." Status is not active", "theme" => "error"));
+            } 
+            elseif ($item_rm->status == 1) {
+                echo json_encode(array("title" => "Alert", "message" => "Part ID " . $data['item_rm_id'] ." Status is not active", "theme" => "error"));
+            } 
+            elseif ($item_rm->item_family_id == 'P06' && $data['composition'] != "") {
+                echo json_encode(array("title" => "Alert", "message" => "Part ID " . $data['item_rm_id'] ." Product Family is VIRGIN ", "theme" => "error"));
+            } 
+            elseif (!empty($consumable_part->item_rm_id)) {
+                echo json_encode(array("title" => "Duplicated", "message" => "Part ID " . $data['item_rm_id'] . " is Duplicate Data", "theme" => "error"));
             } else {
                  // Hitung nilai untuk field composition
                 $weight = $item_fg->weight;
                 $runner = $menu_loading[0]->runner;
                 $cavity_standard = $menu_loading[0]->cavity_standard;
 
-                // if ($item_rm->item_family_id == 'P06') {
-                //     $dataFinal['composition'] = (floatval($weight) + floatval($runner / $cavity_standard));
-                // } elseif ($item_rm->item_family_id != 'P06') {
-                //     $dataFinal['composition'] = $data['composition'];
-                // }
-
-                $dataFinal = array(
-                    //field
+                $dataFinal = [
                     "item_fg_id" => $data['item_fg_id'],
                     "item_rm_id" => $data['item_rm_id'],
-                    "type" => $data['type'],
-                    "remark" => $data['remark'],
-                );
+                    "type"       => $data['type'],
+                    "remark"     => $data['remark'],
+                ];
 
-                if ($item_rm->item_family_id == 'P06') {
-                    $dataFinal['composition'] = (floatval($weight) + floatval($runner / $cavity_standard));
-                } elseif ($item_rm->item_family_id != 'P06') {
-                    $dataFinal['composition'] = $data['composition'];
+                // validasi Part Type dan Composition
+                if ($data['type'] == "INDIRECT") {
+                    $dataFinal['composition'] = 0;
+                } else {
+                    if ($item_rm->item_family_id == 'P06') { // VIRGIN 
+                        $dataFinal['composition'] = (floatval($weight) + floatval($runner / $cavity_standard));
+                    } elseif ($item_rm->item_family_id != 'P06') {
+                        $dataFinal['composition'] = $data['composition'];
+                    }
                 }
 
                 $send   = $this->crud->create('consumable_part', $dataFinal);

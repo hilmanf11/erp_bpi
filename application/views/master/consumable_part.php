@@ -671,6 +671,12 @@
                             width: 100,
                             halign: 'center',
                             align: 'right',
+                            formatter: function(value, row, index) {
+                                if (row.type === 'INDIRECT') {
+                                    return '<span style="color: #aaa;">0.00</span>';
+                                }
+                                return value;
+                            },
                         }, {
                             field: 'remark',
                             title: 'Remarks',
