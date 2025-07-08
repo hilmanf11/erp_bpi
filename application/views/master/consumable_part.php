@@ -102,6 +102,18 @@
 <iframe id="printout" src="<?= base_url('master/consumable_part/print') ?>" style="width: 100%;" hidden></iframe>
 
 <script>
+    function showNotification(type, message, title = "Information") {
+        if (type === 'success') {
+            toastr.success(message, title);
+        } else if (type === 'error') {
+            toastr.error(message, title);
+        } else if (type === 'warning') {
+            toastr.warning(message, title);
+        } else {
+            console.warn("Unknown notification type:", type);
+        }
+    }
+
     //ADD DATA
     function add() {
         $('#dlg_insert').dialog('open');
@@ -155,6 +167,16 @@
 
                                 // var weight, runner, cavity_standard;
                                 var weight, total_runner;
+
+                                 // --- VALIDASI DUPLIKAT PART NO ---
+                                const allRows = dg.datagrid('getRows');
+                                const isDuplicate = allRows.some((existingRow, idx) => {
+                                    return idx !== rowIndex && existingRow.item_rm_number === rows.number;
+                                });
+                                if (isDuplicate) {
+                                    showNotification("error", `Part No. '${rows.number}' telah ditambahkan. Tidak boleh ada Part No. yang sama!`);
+                                    return;
+                                }
 
                                 // Use $.when to wait for both AJAX requests to complete
                                 $.when(
@@ -413,13 +435,19 @@
     }
 
     function removeit() {
-        if (editIndex == undefined) {
-            return true;
+        if (editIndex === undefined) {
+            showNotification("warning", "Please select a row to delete.");
+            return;
         }
 
         var dg = $('#dg2');
         var row = dg.datagrid('getSelected');
         var rowIndex = dg.datagrid('getRowIndex', row);
+
+        if (!row) {
+            showNotification("warning", "No row selected for deletion.");
+            return;
+        }
 
         var ed = dg.datagrid('getEditor', {
             index: editIndex,
@@ -442,8 +470,8 @@
                 item_rm_id: item_rm_id ?? item_fg_number,
             },
             success: function(result) {
-                var result = eval('(' + result + ')');
-                toastr.success(result.message);
+                // var result = eval('(' + result + ')');
+                toastr.success("Successfully delete data");
             },
             error: function(jqXHR, textStatus, errorThrown) {
                 toastr.error(jqXHR.statusText);
@@ -602,10 +630,10 @@
                             halign: 'center',
                             width: 200
                         }, {
-                            field: 'type',
-                            title: 'Type',
+                            field: 'selected_item_category',
+                            title: 'Category',
                             halign: 'center',
-                            width: 100
+                            width: 150
                         }, {
                             field: 'selected_item_prodfam',
                             title: 'Product Family',
@@ -616,6 +644,11 @@
                             title: 'UoM',
                             align: 'center',
                             width: 80
+                        }, {
+                            field: 'type',
+                            title: 'Part Type',
+                            halign: 'center',
+                            width: 100
                         }, {
                             field: 'composition',
                             title: 'Composition',
@@ -734,7 +767,7 @@
     });
 
     $('#item_fg_id').combogrid({
-        url: '<?= base_url('master/item_fg/reads/'); ?>',
+        url: '<?= base_url('master/consumable_part/item_fg'); ?>',
         panelWidth: 420,
         idField: 'id',
         textField: 'number',
@@ -755,7 +788,7 @@
     });
 
     $('#filter_item_fg_id').combogrid({
-        url: '<?= base_url('master/item_fg/reads'); ?>',
+        url: '<?= base_url('master/consumable_part/item_fg'); ?>',
         panelWidth: 750,
         idField: 'id',
         textField: 'number',

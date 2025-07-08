@@ -29,6 +29,44 @@ class Consumable_part extends CI_Controller
             redirect('error_access');
         }
     }
+
+    public function item_fg() // Finish Goods
+    {
+        $post = isset($_POST['q']) ? $_POST['q'] : "";
+        
+        $this->db->select("*");
+        $this->db->from("item_fg");
+        $this->db->where("status", 0);              // Hanya tampil yang status = aktif
+        $this->db->where_in("type", ['FG','SA']);   // Hanya tampil FG dan SA
+
+        if (!empty($post)) {
+            $this->db->like("number", $post);
+            $this->db->or_like("number_customer", $post);
+            $this->db->or_like("name", $post);
+        }
+        $this->db->order_by('TRIM(name) ASC');
+        $send = $this->db->get()->result_object();
+        echo json_encode($send);
+    }
+    
+    public function item_rm() // Part
+    {
+        $post = isset($_POST['q']) ? $_POST['q'] : "";
+        
+        $this->db->select("a.*, b.name as item_family_name");
+        $this->db->from("item_rm a");
+        $this->db->join("item_familys b", "a.item_family_id = b.id");
+        $this->db->where("a.status", 0);
+
+        if (!empty($post)) {
+            $this->db->like("a.number", $post);
+            $this->db->or_like("a.name", $post);
+        }
+        $this->db->order_by("TRIM(a.name) ASC");
+        $send = $this->db->get()->result_object();
+        echo json_encode($send);
+    }
+    
     //GET DATA
     public function reads()
     {
@@ -161,12 +199,14 @@ class Consumable_part extends CI_Controller
             (CASE 
                 WHEN a.item_fg_sa_id IS NULL THEN d.name
                 ELSE "SUB ASSY"
-            END) AS selected_item_prodfam');
+            END) AS selected_item_prodfam,
+            f.name AS selected_item_category');
             $this->db->from('consumable_part a');
             $this->db->join('item_fg b', 'a.item_fg_id = b.id','left');
             $this->db->join('item_rm c', 'a.item_rm_id = c.id', 'left');
             $this->db->join('item_familys d', 'c.item_family_id = d.id', 'left');
             $this->db->join('item_fg e', 'a.item_fg_sa_id = e.id','left');
+            $this->db->join('item_categories f', 'f.number = b.type', 'left');
             $this->db->where('b.number', $number);
             // $this->db->like('a.item_rm_id', $filter_item_rm_id); // bentrok dengan datagrid sub assy
             $this->db->group_by('a.id');
