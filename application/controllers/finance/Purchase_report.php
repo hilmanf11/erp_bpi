@@ -48,13 +48,13 @@ class Purchase_report extends CI_Controller
         $filter_category_id = $this->input->get("filter_category_id");
 
         $division = $this->crud->read('divisions',[],["number"=> $filter_division]);
-        $division_num = isset($division->number) && !empty($division->number) ? $division->number : '-';
+        $division_num = isset($division->number) && !empty($division->number) ? $division->number : NULL;
 
         $supplier = $this->crud->read('suppliers',[],["id"=> $filter_supplier_id]);
         $supplier_name = isset($supplier->name) && !empty($supplier->name) ? $supplier->name : 'ALL';
 
         $item_categories = $this->crud->read('item_categories',[],["id"=> $filter_category_id]);
-        $categorie_name = isset($item_categories->number) && !empty($item_categories->number) ? $item_categories->number : '-';
+        $category_name = isset($item_categories->number) && !empty($item_categories->number) ? $item_categories->number : NULL;
 
         //Config
         $this->db->select('*');
@@ -78,6 +78,7 @@ class Purchase_report extends CI_Controller
                     a.qty_receipt,
                     f.currency,
                     g.uom_default as uom,
+                    b.division,
                     d.price
                 FROM purchase_order_receipts a
                 LEFT JOIN item_rm b ON a.item_rm_id = b.id
@@ -120,18 +121,22 @@ class Purchase_report extends CI_Controller
                             <td width="100">Periode</td>
                             <td width="5">:</td>
                             <td>' . $filter_from . ' to ' . $filter_to . '</td>
-                        </tr>
-                        <tr>
+                        </tr>';
+                if (!empty($division_num)) {
+                $html .= '<tr>
                             <td width="100">Division</td>
                             <td width="5">:</td>
                             <td>' . $division_num . '</td>
-                        </tr>
-                        <tr>
+                        </tr>';
+                }
+                if (!empty($category_name)) {
+                $html .='<tr>
                             <td width="100">Category</td>
                             <td width="5">:</td>
-                            <td>' . $categorie_name . '</td>
-                        </tr>
-                        <tr>
+                            <td>' . $category_name . '</td>
+                        </tr>';
+                }
+                $html .= '<tr>
                             <td width="100">Supplier</td>
                             <td width="5">:</td>
                             <td>' . $supplier_name . '</td>
@@ -142,7 +147,8 @@ class Purchase_report extends CI_Controller
                     <tr>
                         <th width="20">No</th>
                         <th width="150">Receipt No</th>
-                        <th>Category</th>
+                        <th width="60">Category</th>
+                        <th>Division</th>
                         <th>PO No</th>
                         <th>Document</th>
                         <th>Document Date</th>
@@ -179,22 +185,23 @@ class Purchase_report extends CI_Controller
                 $amountIDR = ($amount * $exchange_rate);
 
                 $html .= '  <tr>
-                                <td style="text-align:center">' . $no . '</td>
+                                <td style="text-align:center;">' . $no . '</td>
                                 <td>' . $record->receipt_no . '</td>
-                                <td>' . $record->category_number . '</td>
+                                <td style="text-align:center;">' . $record->category_number . '</td>
+                                <td style="text-align:center;">' . $record->division . '</td>
                                 <td>' . $record->po_no . '</td>
                                 <td>' . $record->bc_document . '</td>
                                 <td>' . $record->bc_date . '</td>
                                 <td>' . $record->supplier_name . '</td>
                                 <td style="mso-number-format:\@;">' . $record->item_rm_number . '</td>
                                 <td style="mso-number-format:\@;">' . $record->item_rm_name . '</td>
-                                <td style="text-align:right">' . number_format($record->qty_receipt, 2, ',', '.') . '</td>
-                                <td>' . $record->uom . '</td>
-                                <td>' . $record->currency . '</td>
-                                <td style="text-align:right">' . number_format($record->price, 2, ',', '.') . '</td>
-                                <td style="text-align:right">' . number_format($amount, 2, ',', '.') . '</td>
-                                <td style="text-align:right">' . $exchange_rate . '</td>
-                                <td style="text-align:right">' . number_format($amountIDR, 2, ',', '.') . '</td>
+                                <td style="text-align:right">' . $this->numberFormatPrint($record->qty_receipt, $option) . '</td>
+                                <td style="text-align:center;">' . $record->uom . '</td>
+                                <td style="text-align:center;">' . $record->currency . '</td>
+                                <td style="text-align:right;">' . $this->numberFormatPrint($record->price, $option) . '</td>
+                                <td style="text-align:right;">' . $this->numberFormatPrint($amount, $option) . '</td>
+                                <td style="text-align:center;">' . $exchange_rate . '</td>
+                                <td style="text-align:right;">' . $this->numberFormatPrint($amountIDR, $option) . '</td>
                             </tr>';
                 $no++;
                 $totalAmount += $amount;
@@ -202,22 +209,37 @@ class Purchase_report extends CI_Controller
             }
 
             $html .= '<tr>
-                <td colspan="13" style="text-align:right;"><b>GRAND TOTAL</b></td>
-                <td style="text-align:right">' . number_format($totalAmount, 2, ',', '.') . '</td>
+                <td colspan="14" style="text-align:right;"><b>GRAND TOTAL</b></td>
+                <td style="text-align:right">' . $this->numberFormatPrint($totalAmount, $option) . '</td>
                 <td style="text-align:right;">-</td>
-                <td style="text-align:right">' . number_format($totalAmountIDR, 2, ',', '.') . '</td>
+                <td style="text-align:right">' . $this->numberFormatPrint($totalAmountIDR, $option) . '</td>
             </tr>';
 
             $html .= '</table></body></html>';
             echo $html;
-        }else{
-                    $query= "SELECT 
-                    a.supplier_id,
-                    c.name AS supplier_name,
+        }
+        else
+        {
+            // SUMMARY REPORT 
+            $query = "SELECT 
+                    a.id, 
+                    c.id as supplier_id,
+                    c.name as supplier_name,
+                    a.receipt_no,
+                    e.number as category_number,
+                    a.po_no,
+                    a.bc_document,
+                    a.bc_date,
                     a.receipt_date,
-                    SUM(a.qty_receipt) AS total_qty,
-                    SUM(d.price * a.qty_receipt) AS amount,
-                    f.currency
+                    a.item_rm_id,
+                    b.number as item_rm_number,
+                    b.name as item_rm_name,
+                    a.qty_receipt,
+                    a.qty_receipt as qty,
+                    f.currency,
+                    g.uom_default as uom,
+                    b.division,
+                    d.price
                 FROM purchase_order_receipts a
                 LEFT JOIN item_rm b ON a.item_rm_id = b.id
                 LEFT JOIN suppliers c ON a.supplier_id = c.id
@@ -227,9 +249,12 @@ class Purchase_report extends CI_Controller
                 LEFT JOIN supplier_items g ON d.item_rm_id = g.item_rm_id and d.supplier_id = g.supplier_id
                 WHERE a.supplier_id LIKE '%$filter_supplier_id%' and b.division LIKE '%$filter_division%' and 
                 DATE_FORMAT(a.receipt_date, '%Y-%m-%d') BETWEEN '$filter_from' and '$filter_to' and b.item_category_id LIKE '%$filter_category_id%'
-                GROUP BY a.supplier_id 
-                ORDER BY b.name ASC";
-            $records = $this->crud->query($query);
+                GROUP BY a.id  
+                ORDER BY a.receipt_no ASC, b.number DESC";
+            $records = $this->db->query($query)->result_array();
+
+            // mapping data per supplier_id and division
+            $summary_data = $this->mappingDataSummary($records);
 
             $html = '<html><head><title>Print Data</title></head><style>body {font-family: Arial, Helvetica, sans-serif;}#customers {border-collapse: collapse;width: 100%;font-size: 12px;}#customers td, #customers th {border: 1px solid #ddd;padding: 2px;}#customers tr:nth-child(even){background-color: #f2f2f2;}#customers tr:hover {background-color: #ddd;}#customers th {padding-top: 2px;padding-bottom: 2px;text-align: center;color: black;}</style><body>
                 <center>
@@ -259,62 +284,143 @@ class Purchase_report extends CI_Controller
                             <td width="100">Periode</td>
                             <td width="5">:</td>
                             <td>' . $filter_from . ' to ' . $filter_to . '</td>
-                        </tr>
-                        <tr>
+                        </tr>';
+                    if (!empty($division_num)) {
+                    $html .= '<tr>
                             <td width="100">Division</td>
                             <td width="5">:</td>
                             <td>' . $division_num . '</td>
-                        </tr>
-                        <tr>
-                            <td width="100">Customer</td>
+                        </tr>';
+                    }
+                    if (!empty($category_name)) {
+                    $html .='<tr>
+                            <td width="100">Category</td>
+                            <td width="5">:</td>
+                            <td>' . $category_name . '</td>
+                        </tr>';
+                    }
+                    $html .= '<tr>
+                            <td width="100">Supplier</td>
                             <td width="5">:</td>
                             <td>' . $supplier_name . '</td>
                         </tr>
                     </table>
                 </div>
                 <table id="customers" border="1" style="font-size: 11px;">
-                    <tr>
-                        <th width="20">No</th>
-                        <th width="200">Supplier Name</th>
-                        <th width="100">Amount (IDR)</th>
-                    </tr>';
+                    <thead>
+                        <tr>
+                            <th width="20" rowspan="2">No</th>
+                            <th width="200" rowspan="2">Supplier Name</th>
+                            <th width="200" colspan="3">DIVISION</th>
+                            <th width="100" rowspan="2">TOTAL</th>
+                        </tr>
+                        <tr>
+                            <th width="100">INJ</th>
+                            <th width="100">MTS</th>
+                            <th width="100">ADM</th>
+                        </tr>
+                    </thead>
+                    <tbody>';
+                    
             $no = 1;
-            $totalAmount = 0;
-            $totalAmountIDR = 0;
-            foreach ($records as $record) {
-                $currency = $record->currency;
-                $monthBf = date('Y-m-01', strtotime('-1 month', strtotime($record->receipt_date)));
-                $exchange = $this->crud->read('exchange_rates', [], ["start_date" => $monthBf, "currency_from" => $currency, "currency_to" => "IDR"]);
+            $grand_total_inj = 0;
+            $grand_total_mts = 0;
+            $grand_total_adm = 0;
+            $grand_overall_total = 0;
 
-                if ($currency != "IDR") {
-                    if ($exchange) {
-                        $exchange_rate = $exchange->middle;
-                    } else {
-                        $exchange_rate = 0;
-                    }
-                } else {
-                    $exchange_rate = 1;
-                }
+            foreach ($summary_data as $supplier_group) {
+                $html .= '<tr>';
+                $html .= '<td style="text-align: center;">'. $no++ .'</td>';
+                $html .= '<td>'. htmlspecialchars($supplier_group['supplier_name']) .'</td>';
+                $html .= '<td style="text-align: right;">' . $this->numberFormatPrint($supplier_group['divisions']['INJ'], $option) . '</td>';
+                $html .= '<td style="text-align: right;">' . $this->numberFormatPrint($supplier_group['divisions']['MTS'], $option) . '</td>';
+                $html .= '<td style="text-align: right;">' . $this->numberFormatPrint($supplier_group['divisions']['ADM'], $option) . '</td>';
+                $html .= '<td style="text-align: right;">' . $this->numberFormatPrint($supplier_group['total_per_supplier_overall'], $option) . '</td>';
+                $html .= '</tr>';
 
-                $amountIDR = ($record->amount * $exchange_rate);
-
-                $html .= '  <tr>
-                                <td style="text-align:center">' . $no . '</td>
-                                <td>' . $record->supplier_name . '</td>
-                                <td style="text-align:right">' . number_format($amountIDR, 2, ',', '.') . '</td>
-                            </tr>';
-                $no++;
-                $totalAmountIDR += $amountIDR;
+                // Akumulasi grand totals
+                $grand_total_inj += $supplier_group['divisions']['INJ'];
+                $grand_total_mts += $supplier_group['divisions']['MTS'];
+                $grand_total_adm += $supplier_group['divisions']['ADM'];
+                $grand_overall_total += $supplier_group['total_per_supplier_overall'];
             }
 
-            $html .= '<tr>
-                <td colspan="2" style="text-align:right;"><b>GRAND TOTAL</b></td>
-                
-                <td style="text-align:right">' . number_format($totalAmountIDR, 2, ',', '.') . '</td>
-            </tr>';
+            $html .= '</tbody>';
+            $html .= '<tfoot>';
+            $html .= '<tr style="background-color:#EBEBEB;">';
+            $html .= '<th colspan="2" style="text-align: right;">GRAND TOTAL</th>';
+            $html .= '<th style="text-align: right;">' . $this->numberFormatPrint($grand_total_inj, $option) . '</th>';
+            $html .= '<th style="text-align: right;">' . $this->numberFormatPrint($grand_total_mts, $option) . '</th>';
+            $html .= '<th style="text-align: right;">' . $this->numberFormatPrint($grand_total_adm, $option) . '</th>';
+            $html .= '<th style="text-align: right;">' . $this->numberFormatPrint($grand_overall_total, $option) . '</th>';
+            $html .= '</tr>';
+            $html .= '</tfoot>';
+            $html .= '</table>';
+            $html .= '</body></html>';
 
-            $html .= '</table></body></html>';
             echo $html;
         }
     }
+        
+    function mappingDataSummary($records) 
+    {
+        $grouped_data = [];
+    
+        foreach ($records as $record) {
+            $supplier_id = $record['supplier_id'];
+            $supplier_name = $record['supplier_name'];
+            $division = $record['division'];
+    
+            if (!isset($grouped_data[$supplier_id])) {
+                $grouped_data[$supplier_id] = [
+                    'supplier_id' => $supplier_id,
+                    'supplier_name' => $supplier_name,
+                    'divisions' => [
+                        'INJ' => 0,
+                        'MTS' => 0,
+                        'ADM' => 0,
+                    ],
+                    'total_per_supplier_overall' => 0
+                ];
+            }
+    
+            $currency = $record['currency'];
+            $monthBf = date('Y-m-01', strtotime('-1 month', strtotime($record['receipt_date'])));
+            $exchange = $this->crud->read('exchange_rates', [], ["start_date" => $monthBf, "currency_from" => $currency, "currency_to" => "IDR"]);
+    
+            if ($currency != "IDR") {
+                if ($exchange) {
+                    $exchange_rate = $exchange->middle;
+                } else {
+                    $exchange_rate = 0;
+                }
+            } else {
+                $exchange_rate = 1;
+            }
+    
+            $item_total_price = $record['qty'] * $record['price'] * $exchange_rate;
+    
+            // Masukkan ke total divisi yang sesuai
+            if (isset($grouped_data[$supplier_id]['divisions'][$division])) {
+                $grouped_data[$supplier_id]['divisions'][$division] += $item_total_price;
+            } else {
+                $grouped_data[$supplier_id]['divisions'][$division] = $item_total_price;
+            }
+    
+            $grouped_data[$supplier_id]['total_per_supplier_overall'] += $item_total_price;
+        }
+
+        return array_values($grouped_data);
+    }
+
+    function numberFormatPrint($nominal, $option = "") 
+    {
+        if ($option == "excel") {
+            $formatted = number_format($nominal, 2, ",", "");
+        } else {
+            $formatted = number_format($nominal, 2, ",", ".");        
+        }
+        return $formatted;
+    }
+
 }
