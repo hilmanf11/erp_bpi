@@ -90,7 +90,7 @@ class Purchase_report extends CI_Controller
                 WHERE a.supplier_id LIKE '%$filter_supplier_id%' and b.division LIKE '%$filter_division%' and 
                 DATE_FORMAT(a.receipt_date, '%Y-%m-%d') BETWEEN '$filter_from' and '$filter_to' and b.item_category_id LIKE '%$filter_category_id%'
                 GROUP BY a.id  
-                ORDER BY a.receipt_no ASC, b.number DESC";
+                ORDER BY c.name ASC, a.receipt_no ASC, b.number DESC";
             $records = $this->crud->query($query);
 
             $html = '<html><head><title>Print Data</title></head><style>body {font-family: Arial, Helvetica, sans-serif;}#customers {border-collapse: collapse;width: 100%;font-size: 12px;}#customers td, #customers th {border: 1px solid #ddd;padding: 2px;}#customers tr:nth-child(even){background-color: #f2f2f2;}#customers tr:hover {background-color: #ddd;}#customers th {padding-top: 2px;padding-bottom: 2px;text-align: center;color: black;}</style><body>
@@ -250,7 +250,7 @@ class Purchase_report extends CI_Controller
                 WHERE a.supplier_id LIKE '%$filter_supplier_id%' and b.division LIKE '%$filter_division%' and 
                 DATE_FORMAT(a.receipt_date, '%Y-%m-%d') BETWEEN '$filter_from' and '$filter_to' and b.item_category_id LIKE '%$filter_category_id%'
                 GROUP BY a.id  
-                ORDER BY a.receipt_no ASC, b.number DESC";
+                ORDER BY c.name ASC, a.receipt_no ASC, b.number DESC";
             $records = $this->db->query($query)->result_array();
 
             // mapping data per supplier_id and division

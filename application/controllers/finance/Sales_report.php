@@ -92,7 +92,7 @@ class Sales_report extends CI_Controller
                 WHERE a.customer_id LIKE '%$filter_customer_id%' and a.division LIKE '%$filter_division%' and 
                 DATE_FORMAT(a.delivery_note_date, '%Y-%m-%d') BETWEEN '$filter_from' and '$filter_to' AND a.trans_type = 'SALES'
                 GROUP BY a.id  
-                ORDER BY a.delivery_note_no ASC, b.number ASC, c.name ASC";
+                ORDER BY c.name ASC, a.delivery_note_no ASC, b.number ASC";
             $records = $this->crud->query($query);
 
             $html = '<html><head><title>Print Data</title></head><style>body {font-family: Arial, Helvetica, sans-serif;}#customers {border-collapse: collapse;width: 100%;font-size: 12px;}#customers td, #customers th {border: 1px solid #ddd;padding: 2px;}#customers tr:nth-child(even){background-color: #f2f2f2;}#customers tr:hover {background-color: #ddd;}#customers th {padding-top: 2px;padding-bottom: 2px;text-align: center;color: black;}</style><body>
