@@ -70,14 +70,17 @@ class Item_familys extends CI_Controller
             $offset = ($page - 1) * $rows;
             $result = array();
             //Select Query
-            $this->db->select('a.*, b.name as item_category_name');
+            $this->db->select('a.*, b.name as item_category_name, c.name as item_division_name');
             $this->db->from('item_familys a');
             $this->db->join('item_categories b', 'a.item_category_id = b.id');
+            $this->db->join('divisions c', 'a.division_id = c.id', 'left');
             $this->db->where('a.deleted', 0);
             if (@count($filters) > 0) {
                 foreach ($filters as $filter) {
                     if($filter->field == "item_category_name"){
                         $this->db->like("b.name", $filter->value);
+                    } elseif($filter->field == "item_division_name"){
+                        $this->db->like("c.name", $filter->value);
                     }else{
                         $this->db->like("a.".$filter->field, $filter->value);
                     }
@@ -151,9 +154,10 @@ class Item_familys extends CI_Controller
         $this->db->from('config');
         $config = $this->db->get()->row();
 
-        $this->db->select('a.*, b.name as item_category_name');
+        $this->db->select('a.*, b.name as item_category_name, c.name as item_division_name');
         $this->db->from('item_familys a');
         $this->db->join('item_categories b', 'a.item_category_id = b.id');
+        $this->db->join('divisions c', 'a.division_id = c.id', 'left');
         $this->db->where('a.deleted', 0);
         $this->db->order_by('a.id', 'ASC');
         $records = $this->db->get()->result_array();
@@ -190,6 +194,7 @@ class Item_familys extends CI_Controller
                 <th>Account No.</th>
                 <th>Account Name</th>
                 <th>Category</th>
+                <th>Division</th>
                 <th>Description</th>
             </tr>';
         $no = 1;
@@ -202,6 +207,7 @@ class Item_familys extends CI_Controller
                     <td>' . $data['account_number'] . '</td>
                     <td>' . $data['account_name'] . '</td>
                     <td>' . $data['item_category_name'] . '</td>
+                    <td>' . $data['item_division_name'] . '</td>
                     <td>' . $data['description'] . '</td>';
             $no++;
         }

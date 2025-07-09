@@ -7,6 +7,7 @@
             <th rowspan="2" data-options="field:'number',width:80,halign:'center'">Code</th>
             <th rowspan="2" data-options="field:'name',width:150,halign:'center'">Name</th>
             <th rowspan="2" data-options="field:'item_category_name',width:150,halign:'center'">Category</th>
+            <th rowspan="2" data-options="field:'item_division_name',width:100,halign:'center'">Division</th>
             <th rowspan="2" data-options="field:'account_number',width:100,halign:'center'">Account No</th>
             <th rowspan="2" data-options="field:'account_name',width:150,halign:'center'">Account Name</th>
             <th rowspan="2" data-options="field:'description',width:150,halign:'center'">Description</th>
@@ -45,6 +46,10 @@
             <div class="fitem">
                 <span style="width:35%; display:inline-block;">Category</span>
                 <input style="width:60%;" name="item_category_id" id="item_category_id" required="" class="easyui-combobox">
+            </div>
+            <div class="fitem">
+                <span style="width:35%; display:inline-block;">Division</span>
+                <input style="width:60%;" name="division_id" id="division_id" class="easyui-combobox">
             </div>
             <div class="fitem">
                 <span style="width:35%; display:inline-block;">Account No</span>
@@ -179,6 +184,13 @@
         valueField:'id',
         textField:'name',
         prompt: 'Choose Category',
+    });
+    
+    $('#division_id').combobox({
+        url:'<?= base_url('master/divisions/reads'); ?>',
+        valueField:'id',
+        textField:'name',
+        prompt: 'Choose Division',
     });
 
     $('#account_number').combogrid({
