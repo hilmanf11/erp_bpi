@@ -11,8 +11,8 @@ class Exchange_rates extends CI_Controller
         $this->load->library('session');
         $this->load->model('crud');
         //VALIDASI FORM
-        $this->form_validation->set_rules('start_date', 'Start Date', 'required|min_length[1]|max_length[30]|is_unique[exchange_rates.start_date]');
-        $this->form_validation->set_rules('end_date', 'End DAte', 'required|min_length[1]|max_length[30]|is_unique[exchange_rates.end_date]');
+        // $this->form_validation->set_rules('start_date', 'Start Date', 'required|min_length[1]|max_length[30]|is_unique[exchange_rates.start_date]');
+        // $this->form_validation->set_rules('end_date', 'End DAte', 'required|min_length[1]|max_length[30]|is_unique[exchange_rates.end_date]');
     }
     //HALAMAN UTAMA
     public function index()
@@ -72,13 +72,19 @@ class Exchange_rates extends CI_Controller
     public function create()
     {
         if ($this->input->post()) {
-            if ($this->form_validation->run() == TRUE) {
+            // if ($this->form_validation->run() == TRUE) {
                 $post   = $this->input->post();
-                $send   = $this->crud->create('exchange_rates', $post);
-                echo $send;
-            } else {
-                show_error(validation_errors());
-            }
+                $exchange_rates = $this->crud->read('exchange_rates', [], ["start_date" => $post['start_date'],"end_date" => $post['end_date'], "currency_from" => $post['currency_from'], "currency_to" => $post['currency_to']]);
+                if(!$exchange_rates){
+                    $send   = $this->crud->create('exchange_rates', $post);
+                    echo $send;
+                }else{
+                    show_error("Duplicate Data");
+                }
+                
+            // } else {
+            //     show_error(validation_errors());
+            // }
         } else {
             show_error("Cannot Process your request");
         }
@@ -89,8 +95,14 @@ class Exchange_rates extends CI_Controller
         if ($this->input->post()) {
             $id   = base64_decode($this->input->get('id'));
             $post = $this->input->post();
-            $send = $this->crud->update('exchange_rates', ["id" => $id], $post);
-            echo $send;
+            $exchange_rates = $this->crud->read('exchange_rates', [], ["start_date" => $post['start_date'],"end_date" => $post['end_date'], "currency_from" => $post['currency_from'], "currency_to" => $post['currency_to']]);
+            if(!$exchange_rates){
+                $send = $this->crud->update('exchange_rates', ["id" => $id], $post);
+                echo $send;
+            }else{
+                show_error("Duplicate Data");
+            }
+          
         } else {
             show_error("Cannot Process your request");
         }
