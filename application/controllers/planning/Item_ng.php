@@ -107,7 +107,6 @@ class Item_ng extends CI_Controller
         JOIN item_fg b ON a.item_fg_id = b.id
         WHERE a.status = 0 
         AND a.wo_no != '' 
-        AND b.type !='SA'
         AND b.number LIKE '%$post%' or a.lot_no LIKE '%$post%' or a.wo_no LIKE '%$post%' or a.period LIKE '%$post%' 
         ORDER BY b.number DESC");
         echo json_encode($send);
