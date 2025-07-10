@@ -157,6 +157,54 @@ class Delivery_orders extends CI_Controller
         $delivery_date = base64_decode($delivery_date);
         $customer_id = base64_decode($customer_id);
         $customer_order_no = explode(",", base64_decode($customer_order_no));
+        $date = date("Y-m-t");
+
+        $query_qty_in_checksheet2 = "SELECT e.item_fg_id, SUM(f.qty) as qty_in_checksheet
+        FROM scan_item_receipts_fg f
+        JOIN checksheets e ON e.number = f.checksheet_number
+        WHERE DATE_FORMAT(e.packing_date, '%Y-%m-%d') <= '$date'
+        GROUP BY e.item_fg_id";
+
+        // Step 2: Hitung qty_in tanpa checksheet
+        $query_qty_in_no_checksheet2 = "SELECT i.item_fg_id, SUM(i.qty) as qty_in_no_checksheet
+        FROM scan_item_receipts_fg i
+        WHERE i.type = 'NBFG'
+        AND i.packing_date <= '$date'
+        GROUP BY i.item_fg_id";
+
+        // Step 3: Hitung initial `i` dari transaction_fg (kind IN)
+        $query_transaction_fg_in2 = "SELECT a.item_fg_id, SUM(a.qty) as initial_in
+        FROM transaction_fg a
+        WHERE a.transaction_kind = 'IN'
+        AND a.request_date <= '$date'
+        GROUP BY a.item_fg_id";
+
+        // Step 4: Hitung qty_out dari transaction_fg
+        $query_qty_out2 = "SELECT a.item_fg_id, SUM(a.qty) as qty_out
+        FROM transaction_fg a
+        WHERE a.transaction_kind = 'OUT'
+        AND a.request_date <= '$date'
+        GROUP BY a.item_fg_id";
+
+        // Step 5: Hitung initial `g` (delivery_notes)
+        $query_delivery_notes2 = "SELECT item_fg_id, SUM(qty) as initial_out_g
+        FROM delivery_notes
+        WHERE delivery_note_date <= '$date'
+        GROUP BY item_fg_id";
+
+        // Step 6: Hitung initial `h` (scan_repair_of_goods)
+        $query_scan_repair_of_goods2 = "SELECT e.item_fg_id, SUM(f.qty) as initial_out_h
+        FROM scan_repair_of_goods f
+        JOIN repair_of_goods e ON e.document_no = f.document_no and f.item_fg_id = e.item_fg_id
+        WHERE DATE_FORMAT(e.trans_date, '%Y-%m-%d') <= '$date'
+        GROUP BY f.item_fg_id";
+
+        // Step 8: Hitung qty_in WIP division MTS
+        $query_qty_in_wip_receipt2 = "SELECT i.item_fg_id, SUM(i.qty) as qty_in_wip_receipt
+        FROM wip_receipts i
+        WHERE i.division = 'MTS'
+        AND i.trans_date <= '$date'
+        GROUP BY i.item_fg_id";
 
         if($sales_order == "FG"){
             $this->db->select('b.item_fg_id, d.number as item_fg_number, d.name as item_fg_name, b.njo_number,
@@ -164,7 +212,7 @@ class Delivery_orders extends CI_Controller
                 b.sales_order_no,
                 d.uom, 
                 b.division,
-                COALESCE(SUM(f.qty), 0) as qty_dn, 
+                COALESCE(f.qty_dn, 0) as qty_dn, 
                 b.qty as qty_so, 
                 a.qty as qty_sod, 
                 CASE 
@@ -183,17 +231,34 @@ class Delivery_orders extends CI_Controller
                     ELSE a.qty
                 END as qty_del,
 
-                COALESCE(SUM(e.qty), 0) as stock,
+                COALESCE(x.begin_stock, 0) as stock,
                 COALESCE(g.qty, 0) as accum_qty_do,
-                COALESCE((e.qty - c.qty_del),0) as stock_bal');
+                COALESCE(g.qty, 0) as accum_qty_do,
+                COALESCE((x.begin_stock - c.qty_del),0) as stock_bal');
             $this->db->from('sales_orders b');
             $this->db->join('sales_order_deliveries a', 'a.sales_order_no = b.sales_order_no and a.item_fg_id = b.item_fg_id and a.customer_id = b.customer_id');
             $this->db->join('delivery_orders c', 'b.sales_order_no = c.sales_order_no and b.item_fg_id = c.item_fg_id and b.customer_id = c.customer_id and a.trans_date = c.delivery_date', 'left');
             $this->db->join('item_fg d', 'b.item_fg_id = d.id');
             $this->db->join("(SELECT b.item_fg_id, COALESCE(SUM(a.qty),0) as qty FROM scan_item_receipts_fg a JOIN wip_receipts b on a.checksheet_number = b.checksheet_number GROUP BY b.item_fg_id) e",'b.item_fg_id = e.item_fg_id','left');
-            $this->db->join('delivery_notes f', 'b.sales_order_no = f.sales_order_no and b.item_fg_id = f.item_fg_id','left');
+            // $this->db->join('delivery_notes f', 'b.sales_order_no = f.sales_order_no and b.item_fg_id = f.item_fg_id','left');
+            $this->db->join("(SELECT SUM(qty) as qty_dn, sales_order_no, item_fg_id FROM delivery_notes GROUP BY sales_order_no,item_fg_id) f",'b.sales_order_no = f.sales_order_no and b.item_fg_id = f.item_fg_id','left');
             $this->db->join("(SELECT sales_order_no, item_fg_id, COALESCE(SUM(qty_del),0) as qty FROM delivery_orders GROUP BY sales_order_no, item_fg_id) g", 'b.sales_order_no = g.sales_order_no and b.item_fg_id = g.item_fg_id','left');
             $this->db->join("(SELECT sales_order_no, item_fg_id,delivery_date, COALESCE(SUM(qty_del),0) as qty FROM delivery_orders GROUP BY sales_order_no, item_fg_id, delivery_date) h", 'b.sales_order_no = h.sales_order_no and b.item_fg_id = h.item_fg_id and a.trans_date = h.delivery_date','left');
+            $this->db->join("(
+                SELECT a.id AS item_fg_id,
+                    (COALESCE(qc.qty_in_checksheet, 0) + COALESCE(qnc.qty_in_no_checksheet, 0) + 
+                     COALESCE(qi.initial_in, 0) + COALESCE(qw.qty_in_wip_receipt, 0) - 
+                    (COALESCE(qo.qty_out, 0) + COALESCE(qg.initial_out_g, 0) + COALESCE(qh.initial_out_h, 0))) AS begin_stock
+                FROM item_fg a
+                LEFT JOIN ($query_qty_in_checksheet2) qc ON a.id = qc.item_fg_id
+                LEFT JOIN ($query_qty_in_no_checksheet2) qnc ON a.id = qnc.item_fg_id
+                LEFT JOIN ($query_transaction_fg_in2) qi ON a.id = qi.item_fg_id
+                LEFT JOIN ($query_qty_out2) qo ON a.id = qo.item_fg_id
+                LEFT JOIN ($query_delivery_notes2) qg ON a.id = qg.item_fg_id
+                LEFT JOIN ($query_scan_repair_of_goods2) qh ON a.id = qh.item_fg_id
+                LEFT JOIN ($query_qty_in_wip_receipt2) qw ON a.id = qw.item_fg_id
+                GROUP BY a.id
+            ) x", 'b.item_fg_id = x.item_fg_id', 'left');
             $this->db->where('b.customer_id', $customer_id);
             $this->db->where('a.trans_date', $delivery_date);
             $this->db->where('a.status', 0);
@@ -202,7 +267,7 @@ class Delivery_orders extends CI_Controller
             $this->db->group_by('b.sales_order_no');
             $this->db->order_by('b.item_fg_id', 'asc');
         }else{
-            $this->db->select('b.item_fg_id, d.number as item_fg_number, d.name as item_fg_name, 
+            $this->db->select('b.item_fg_id, d.number as item_fg_number, d.name as item_fg_name, "" as njo_number,
                 b.customer_order_no,
                 b.sales_order_no,
                 b.division,
@@ -246,6 +311,19 @@ class Delivery_orders extends CI_Controller
             $this->db->order_by('b.item_fg_id', 'asc');
         }
 
+        // die("SELECT a.id AS item_fg_id,
+        //             (COALESCE(qc.qty_in_checksheet, 0) + COALESCE(qnc.qty_in_no_checksheet, 0) + 
+        //              COALESCE(qi.initial_in, 0) + COALESCE(qw.qty_in_wip_receipt, 0) - 
+        //             (COALESCE(qo.qty_out, 0) + COALESCE(qg.initial_out_g, 0) + COALESCE(qh.initial_out_h, 0))) AS begin_stock
+        //         FROM item_fg a
+        //         LEFT JOIN ($query_qty_in_checksheet2) qc ON a.id = qc.item_fg_id
+        //         LEFT JOIN ($query_qty_in_no_checksheet2) qnc ON a.id = qnc.item_fg_id
+        //         LEFT JOIN ($query_transaction_fg_in2) qi ON a.id = qi.item_fg_id
+        //         LEFT JOIN ($query_qty_out2) qo ON a.id = qo.item_fg_id
+        //         LEFT JOIN ($query_delivery_notes2) qg ON a.id = qg.item_fg_id
+        //         LEFT JOIN ($query_scan_repair_of_goods2) qh ON a.id = qh.item_fg_id
+        //         LEFT JOIN ($query_qty_in_wip_receipt2) qw ON a.id = qw.item_fg_id
+        //         GROUP BY a.id");
         $records = $this->db->get()->result_array();
         echo json_encode($records);
     }
@@ -373,6 +451,8 @@ class Delivery_orders extends CI_Controller
     {
         if ($this->input->post()) {
             $post = $this->input->post();
+            // var_dump($post);
+            // die;
 
             if ($post['sales_order'] == 'FG') {
                 $delivery_orders = $this->crud->read("delivery_orders", [], [
@@ -429,6 +509,7 @@ class Delivery_orders extends CI_Controller
                 // var_dump($post['qty_so']);
                 // var_dump($accum_qty_del2);
                 // var_dump($post['qty_del']);
+                // var_dump($delivery_orders->delivery_order_no);
                 // die;
                 
                 if (@$delivery_orders->delivery_order_no != "") {
@@ -440,35 +521,16 @@ class Delivery_orders extends CI_Controller
                         ]);
                         return;
                     }
-    
-                    if ($qty_so_date == ($post['qty_del'])) {
-                        $this->crud->update("sales_order_deliveries", [
-                            "item_fg_id" => $post['item_fg_id'],
-                            "sales_order_no" => $post['sales_order_no'],
-                            "trans_date" => $post['delivery_date']
-                        ], ["status" => 1]);
-                    }else{
-                        $this->crud->update("sales_order_delivery_rm", [
-                            "item_fg_id" => $post['item_fg_id'],
-                            "sales_order_no" => $post['sales_order_no'],
-                            "trans_date" => $post['delivery_date']
-                        ], ["status" => 1]);
-                    }
-    
-                    if ($delivery_orders->qty_del > ($post['qty_del'])) {
-                        $this->crud->update("sales_order_deliveries", [
-                            "item_fg_id" => $post['item_fg_id'],
-                            "sales_order_no" => $post['sales_order_no'],
-                            "trans_date" => $post['delivery_date']
-                        ], ["status" => 0]);
-                    }else{
-                        $this->crud->update("sales_order_delivery_rm", [
-                            "item_fg_id" => $post['item_fg_id'],
-                            "sales_order_no" => $post['sales_order_no'],
-                            "trans_date" => $post['delivery_date']
-                        ], ["status" => 0]);
-                    }
-    
+
+                    $dataUpdate = array(
+                        "remarks" => $post['remarks'],
+                        "qty_remain" => $post['qty_remain'],
+                        "qty_remain_date" => $post['qty_remain_date'],
+                        "qty_del" => $post['qty_del'],
+                        "stock_bal" => $post['stock_bal'],
+                    );
+                    // var_dump($dataUpdate);
+
                     if($post['qty_del'] == 0){
                         $send = $this->crud->update('delivery_orders', [
                             "delivery_order_no" => $post['delivery_order_no'], 
@@ -480,16 +542,31 @@ class Delivery_orders extends CI_Controller
                             "delivery_order_no" => $post['delivery_order_no'], 
                             "item_fg_id" => $post['item_fg_id'], 
                             "sales_order_no" => $post['sales_order_no']
-                        ], ["remarks" => $post['remarks'],"qty_del" => $post['qty_del'],"qty_remain_date" => $post['qty_remain_date'],"qty_remain" => $post['qty_remain'],"stock_bal" => $post['stock_bal']]);
+                        ], $dataUpdate);
+                        //die(json_encode($send));
     
                         if($post['qty_so'] == ($post['qty_del']+$total_qty_del)){
                             $this->crud->update("sales_order_deliveries", ["item_fg_id" => $post['item_fg_id'], "sales_order_no" => $post['sales_order_no']], ["status" => 1]);
-                        }else{
-                            $this->crud->update("sales_order_delivery_rm", ["item_fg_id" => $post['item_fg_id'], "sales_order_no" => $post['sales_order_no']], ["status" => 1]);
                         }
                     }
+    
+                    if ($qty_so_date == ($post['qty_del'])) {
+                        $this->crud->update("sales_order_deliveries", [
+                            "item_fg_id" => $post['item_fg_id'],
+                            "sales_order_no" => $post['sales_order_no'],
+                            "trans_date" => $post['delivery_date']
+                        ], ["status" => 1]);
+                    }
 
-                    if($post['qty_del'] = round($shipping_qty)){
+                    if ($delivery_orders->qty_del > ($post['qty_del'])) {
+                        $this->crud->update("sales_order_deliveries", [
+                            "item_fg_id" => $post['item_fg_id'],
+                            "sales_order_no" => $post['sales_order_no'],
+                            "trans_date" => $post['delivery_date']
+                        ], ["status" => 0]);
+                    }
+
+                    if($post['qty_del'] == round($shipping_qty)){
                         $send = $this->crud->update('delivery_orders', [
                             "delivery_order_no" => $post['delivery_order_no'], 
                             "item_fg_id" => $post['item_fg_id'], 
@@ -649,12 +726,6 @@ class Delivery_orders extends CI_Controller
                     }
     
                     if ($delivery_orders->qty_del > ($post['qty_del'])) {
-                        $this->crud->update("sales_order_deliveries", [
-                            "item_fg_id" => $post['item_fg_id'],
-                            "sales_order_no" => $post['sales_order_no'],
-                            "trans_date" => $post['delivery_date']
-                        ], ["status" => 0]);
-                    }else{
                         $this->crud->update("sales_order_delivery_rm", [
                             "item_fg_id" => $post['item_fg_id'],
                             "sales_order_no" => $post['sales_order_no'],
@@ -680,7 +751,7 @@ class Delivery_orders extends CI_Controller
                         }
                     }
 
-                    if($post['qty_del'] = round($shipping_qty)){
+                    if($post['qty_del'] == round($shipping_qty)){
                         $send = $this->crud->update('delivery_orders', [
                             "delivery_order_no" => $post['delivery_order_no'], 
                             "item_fg_id" => $post['item_fg_id'], 
