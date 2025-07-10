@@ -37,7 +37,7 @@ class Sales_orders extends CI_Controller
         if($type_so == 'FG'){
             $divisions = $this->crud->read('divisions', [], ["number" => $division]);
             $division_id = $divisions->id;
-            $send = $this->crud->query("SELECT b.id, b.number, b.name, b.number_customer, a.price, c.currency, b.uom, '0' as delivery
+            $send = $this->crud->query("SELECT b.id, b.number, b.name, b.number_customer, a.price, a.currency, b.uom, '0' as delivery
                 FROM customer_items a 
                 JOIN item_fg b ON a.item_fg_id = b.id and b.type = 'FG'
                 JOIN customers c ON a.customer_id = c.id
@@ -47,7 +47,7 @@ class Sales_orders extends CI_Controller
         }else{
             $divisions = $this->crud->read('divisions', [], ["number" => $division]);
             $division_id = $divisions->id;
-            $send = $this->crud->query("SELECT b.id, b.number, b.name, b.number_customer, a.price, c.currency, b.uom, '0' as delivery
+            $send = $this->crud->query("SELECT b.id, b.number, b.name, b.number_customer, a.price, a.currency, b.uom, '0' as delivery
                 FROM customer_items a 
                 JOIN item_fg b ON a.item_fg_id = b.id and b.type = 'FG' and b.item_family_id = 'P41'
                 JOIN customers c ON a.customer_id = c.id
@@ -186,10 +186,13 @@ class Sales_orders extends CI_Controller
             $get = $this->input->get();
             $filter_from = @base64_decode($get['filter_from']);
             $filter_to = @base64_decode($get['filter_to']);
+            $filter_delivery_date_to = @base64_decode($get['filter_delivery_date_to']);
+            $filter_delivery_date_from = @base64_decode($get['filter_delivery_date_from']);
             $filter_customer_id = @base64_decode($get['filter_customer_id']);
             $filter_customer_order_no = @base64_decode($get['filter_customer_order_no']);
             $filter_sales_order_no = @base64_decode($get['filter_sales_order_no']);
             $filter_status = @base64_decode($get['filter_status']);
+            $filter_item_fg = @base64_decode($get['filter_item_fg']);
             $filter_division = @base64_decode($get['filter_division']);
 
             $page = $this->input->post('page');
@@ -201,29 +204,34 @@ class Sales_orders extends CI_Controller
             $result = array();
             //Select Query
             // $this->db->select("a.*, b.name as customer_name, c.plant as address_plant,
-            $this->db->select("a.*, b.name as customer_name, 
+            $this->db->select("a.*, b.name as customer_name,
             (CASE 
                 WHEN c.plant IS NULL THEN a.plant 
                 ELSE c.plant 
             END) AS address_plant,
             d.total_status_open, 
-            c.total_status_close, 
-            COUNT(a.status) as total_status,
+            e.total_status_close, 
+            (SELECT COUNT(*) FROM sales_orders so2 WHERE so2.sales_order_no = a.sales_order_no) as total_status,
             (CASE 
-                WHEN d.total_status_open = COUNT(a.status) THEN '0'
-                WHEN c.total_status_close = COUNT(a.status) THEN '1'
+                WHEN d.total_status_open = (SELECT COUNT(*) FROM sales_orders so2 WHERE so2.sales_order_no = a.sales_order_no) THEN '0'
+                WHEN e.total_status_close = (SELECT COUNT(*) FROM sales_orders so2 WHERE so2.sales_order_no = a.sales_order_no) THEN '1'
                 WHEN d.total_status_open >= 1 THEN '0'
-                WHEN c.total_status_close >= 1 THEN '1'
+                WHEN e.total_status_close >= 1 THEN '1'
                 ELSE '0'
             END) as status2");
             $this->db->from('sales_orders a');
             $this->db->join('customers b', 'a.customer_id = b.id');
             $this->db->join('customer_address c', 'a.customer_address_id = c.id','left');
-            $this->db->join('(SELECT sales_order_no, COUNT(status) as total_status_close FROM sales_orders WHERE status = 1 GROUP BY sales_order_no) c', 'a.sales_order_no = c.sales_order_no', 'left');
+            $this->db->join('(SELECT sales_order_no, COUNT(status) as total_status_close FROM sales_orders WHERE status = 1 GROUP BY sales_order_no) e', 'a.sales_order_no = e.sales_order_no', 'left');
             $this->db->join('(SELECT sales_order_no, COUNT(status) as total_status_open FROM sales_orders WHERE status = 0 GROUP BY sales_order_no) d', 'a.sales_order_no = d.sales_order_no', 'left');
             if ($filter_from != "" && $filter_to != "") {
                 $this->db->where('a.sales_order_date >=', $filter_from);
                 $this->db->where('a.sales_order_date <=', $filter_to);
+            }
+
+            if ($filter_delivery_date_from != "" && $filter_delivery_date_to != "") {
+                $this->db->where('a.delivery_date >=', $filter_delivery_date_from);
+                $this->db->where('a.delivery_date <=', $filter_delivery_date_to);
             }
 
             if ($filter_status !== "") {
@@ -235,6 +243,7 @@ class Sales_orders extends CI_Controller
             }
 
             $this->db->like('a.customer_id', $filter_customer_id);
+            $this->db->like('a.item_fg_id', $filter_item_fg);
             $this->db->like('a.sales_order_no', $filter_sales_order_no);
             // $this->db->like('a.status', $filter_status);
             $this->db->like('a.customer_order_no', $filter_customer_order_no);
@@ -279,9 +288,21 @@ class Sales_orders extends CI_Controller
         if ($this->input->get()) {
             $sales_order_no = base64_decode($this->input->get('sales_order_no'));
 
-            $this->db->select('a.*, b.number as item_fg_number, b.name as item_fg_name');
+            $this->db->select('a.item_fg_id, 
+            a.id, 
+            a.uom, 
+            a.qty, 
+            a.delivery, 
+            a.outstanding, 
+            a.price, 
+            a.total, 
+            a.njo_number, 
+            b.number as item_fg_number, 
+            b.name as item_fg_name, 
+            c.currency');
             $this->db->from('sales_orders a');
             $this->db->join('item_fg b', 'a.item_fg_id = b.id');
+            $this->db->join('customer_items c', 'a.item_fg_id = c.item_fg_id AND a.customer_address_id = c.customer_address_id AND a.customer_id = c.customer_id','left');            
             $this->db->where('a.sales_order_no', $sales_order_no);
             $this->db->order_by('b.number', 'ASC');
             $records = $this->db->get()->result_array();

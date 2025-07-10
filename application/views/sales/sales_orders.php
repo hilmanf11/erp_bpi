@@ -119,7 +119,7 @@
 </div>
 
 <!-- Insert & Update -->
-<div id="dlg_insert" class="easyui-dialog" title="Add New" data-options="closed: true,modal:true" style="width: 1100px; height: 90%; padding:10px; top: 20px;">
+<div id="dlg_insert" class="easyui-dialog" title="Add New" data-options="closed: true,modal:true" style="width: 1300px; height: 90%; padding:10px; top: 20px;">
     <form id="frm_insert" method="post" novalidate>
         <fieldset style="width:100%; border:1px solid #d0d0d0; margin-bottom: 10px; border-radius:4px; float: left;">
             <legend><b>Form Data</b></legend>
@@ -1645,7 +1645,7 @@
         var customer_order_no = $("#customer_order_no").textbox('getValue');
         var dg = $('#dg2');
         var row = dg.datagrid('getRows').find(function(row) {
-            return row.item_fg_id === item_fg_id && row.customer_id === customer_id;
+            return row.item_fg_id === item_fg_id;
         });
 
         if (!row) {
