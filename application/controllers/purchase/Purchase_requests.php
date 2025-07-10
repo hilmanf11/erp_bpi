@@ -52,6 +52,68 @@ class Purchase_requests extends CI_Controller
         echo json_encode($records);
     }
 
+    function readTotalPo() 
+    {
+        $item_rm = base64_decode($this->input->post('item_rm_id'));
+        $item_no = base64_decode($this->input->post('item_number'));
+
+        $this->db->select('a.id, a.item_rm_id, SUM(a.qty) as qty_po,
+            b.number as supplier_number, 
+            b.name as supplier_name, 
+            c.uom, 
+            c.number as item_number, 
+            c.name as item_name, 
+            d.qty_receipt,
+            a.status, 
+            h.total_status_complete');
+        $this->db->from('purchase_orders a');
+        $this->db->join('suppliers b', 'a.supplier_id = b.id');
+        $this->db->join('item_rm c', 'a.item_rm_id = c.id');       
+        $this->db->join('(SELECT po_no, COUNT(status) as total_status_complete FROM purchase_orders WHERE status = 2 GROUP BY po_no) h', 'a.po_no = h.po_no', 'left');
+        $this->db->join('(SELECT po_no, item_rm_id, SUM(qty_receipt) as qty_receipt FROM purchase_order_receipts GROUP BY po_no, item_rm_id) d', 'a.po_no = d.po_no AND a.item_rm_id = d.item_rm_id', 'left');        
+        $this->db->where('a.deleted', 0);
+        $this->db->where('a.status', 0);
+        $this->db->like('a.item_rm_id', $item_rm);
+        $this->db->like('c.number', $item_no);
+        $this->db->order_by('a.status', 'ASC'); 
+        $this->db->group_by('a.po_no');
+        $this->db->group_by('a.item_rm_id');
+        $records = $this->db->get()->result_array();
+
+        $mapping_data = [];
+
+        foreach ($records as $record) {
+            $item_id = $record['id'];
+
+            if (!isset($mapping_data[$item_id])) {
+                $mapping_data[$item_id] = [
+                    'id'          => $item_id,
+                    'item_rm_id'  => $record['item_rm_id'],
+                    'item_number' => $record['item_number'],
+                    'item_name'   => $record['item_name'],
+                    'qty'         => $record['qty_po'],
+                    'qty_receipt' => $record['qty_receipt'] ?? 0,
+                ];
+            }
+
+            $mapping_data[$item_id]['os_qty'] = $record['qty_po'] - @$record['qty_receipt'];
+
+            // -- Get Outstanding PO status
+            if ($record['status'] == 2) {
+                $mapping_data[$item_id]['os_status'] = "COMPLETE";
+                $data['qty'] = 0;
+                $mapping_data[$item_id]['os_qty'] = 0;
+            } elseif (($record['qty_po'] - @$record['qty_receipt']) > 0) {
+                $mapping_data[$item_id]['os_status'] = "OPEN";
+            } else {
+                $mapping_data[$item_id]['os_status'] = "CLOSE";
+            }
+        }
+
+        $result = array_values($mapping_data);
+        echo json_encode($result);
+    }
+
     function readUserAccess(){
         $username = $this->session->username;
         $user = $this->crud->read("users", [], ["username" => $username]);

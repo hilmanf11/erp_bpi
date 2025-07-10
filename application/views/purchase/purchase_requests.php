@@ -227,245 +227,6 @@
         methode= "add";
     }
 
-    // function addTable(item_family_id, link = "") {
-    //     var lastIndex;
-    //     var dg = $('#dg2').datagrid({
-    //         url: link,
-    //         singleSelect: true,
-    //         columns: [
-    //             [{
-    //                 field: 'id',
-    //                 width: 150,
-    //                 readonly: true,
-    //                 hidden: true,
-    //                 halign: 'center',
-    //                 title: "ID",
-    //                 editor: {
-    //                     type: 'textbox'
-    //                 }
-    //             },{
-    //                 field: 'item_number',
-    //                 width: 250,
-    //                 halign: 'center',
-    //                 title: "Product No",
-    //                 editor: {
-    //                     type: 'combogrid',
-    //                     options: {
-    //                         url: '<?= base_url('master/item_rm/readItems?item_family_id=') ?>' + item_family_id,
-    //                         required: true,
-    //                         panelWidth: 650,
-    //                         idField: 'item_number',
-    //                         textField: 'item_number',
-    //                         mode: 'remote',
-    //                         fitColumns: true,
-    //                         prompt: 'Choose Product',
-    //                         columns: [
-    //                             [{
-    //                                 field: 'item_number',
-    //                                 title: 'Product No',
-    //                                 width: 450
-    //                             }, {
-    //                                 field: 'item_name',
-    //                                 title: 'Product Name',
-    //                                 width: 200
-    //                             }]
-    //                         ],
-    //                         onSelect: function(value, rows) {
-    //                             var dg = $('#dg2');
-    //                             var row = dg.datagrid('getSelected');
-    //                             var rowIndex = dg.datagrid('getRowIndex', row);
-
-    //                             var ed = dg.datagrid('getEditor', {
-    //                                 index: rowIndex,
-    //                                 field: 'item_rm_id'
-    //                             });
-
-    //                             var ed2 = dg.datagrid('getEditor', {
-    //                                 index: rowIndex,
-    //                                 field: 'item_name'
-    //                             });
-
-    //                             var ed3 = dg.datagrid('getEditor', {
-    //                                 index: rowIndex,
-    //                                 field: 'stock'
-    //                             });
-
-    //                             var ed4 = dg.datagrid('getEditor', {
-    //                                 index: rowIndex,
-    //                                 field: 'po'
-    //                             });
-
-                                
-    //                             var ed5 = dg.datagrid('getEditor', {
-    //                                 index: rowIndex,
-    //                                 field: 'uom'
-    //                             });
-
-    //                             $(ed.target).textbox('setValue', rows.id);
-    //                             $(ed2.target).textbox('setValue', rows.item_name);
-    //                             $(ed5.target).textbox('setValue', rows.uom);
-
-    //                             // $.ajax({
-    //                             //     type: "post",
-    //                             //     url: "<?= base_url('warehouse/report_history_transactions/readEndingStock') ?>",
-    //                             //     data: "item_rm_id=" + rows.id,
-    //                             //     dataType: "json",
-    //                             //     success: function(json) {
-    //                             //         if (json != null) {
-    //                             //             $(ed3.target).numberbox('setValue', json[0].end_stock);
-    //                             //         } else {
-    //                             //             $(ed3.target).numberbox('setValue', 0);
-    //                             //         }
-    //                             //     }
-    //                             // });
-
-    //                             $.ajax({
-    //                                 type: "post",
-    //                                 url: "<?= base_url('purchase/purchase_orders/readTotalPo') ?>",
-    //                                 data: "item_rm_id=" + rows.id,
-    //                                 dataType: "json",
-    //                                 success: function(jsonpo) {
-    //                                     if (jsonpo != null) {
-    //                                         $(ed4.target).numberbox('setValue', jsonpo.qty);
-    //                                     } else {
-    //                                         $(ed4.target).numberbox('setValue', 0);
-    //                                     }
-    //                                 }
-    //                             });
-    //                         }
-    //                     }
-    //                 }
-    //             }, {
-    //                 field: 'item_name',
-    //                 width: 150,
-    //                 readonly: true,
-    //                 halign: 'center',
-    //                 title: "Product Name",
-    //                 editor: {
-    //                     type: 'textbox'
-    //                 }
-    //             }, {
-    //                 field: 'item_rm_id',
-    //                 hidden: true,
-    //                 width: 100,
-    //                 halign: 'center',
-    //                 title: "ID",
-    //                 editor: {
-    //                     type: 'textbox'
-    //                 }
-    //             }, {
-    //                 field: 'qty',
-    //                 width: 80,
-    //                 halign: 'center',
-    //                 title: "Qty",
-    //                 editor: {
-    //                     type: 'numberbox',
-    //                     options: {
-    //                         required: true,
-    //                         precision: 2
-    //                     }
-    //                 }
-    //             }, {
-    //                 field: 'uom',
-    //                 width: 80,
-    //                 halign: 'center',
-    //                 title: "Uom",
-    //                 editor: {
-    //                     type: 'textbox',
-    //                 }
-    //             }, {
-    //                 field: 'stock',
-    //                 width: 80,
-    //                 halign: 'center',
-    //                 title: "Stock",
-    //                 editor: {
-    //                     type: 'numberbox',
-    //                     options: {
-    //                         readonly: true,
-    //                         precision: 2
-    //                     }
-    //                 }
-    //             }, {
-    //                 field: 'po',
-    //                 width: 80,
-    //                 halign: 'center',
-    //                 title: "PO",
-    //                 editor: {
-    //                     type: 'numberbox',
-    //                     options: {
-    //                         readonly: true,
-    //                         precision: 2
-    //                     }
-    //                 }
-    //             }, {
-    //                 field: 'remarks',
-    //                 width: 200,
-    //                 halign: 'center',
-    //                 title: "Remarks",
-    //                 editor: {
-    //                     type: 'textbox'
-    //                 }
-    //             }, {
-    //                 field: 'attachment_upload',
-    //                 width: 200,
-    //                 halign: 'center',
-    //                 title: "Attachment",
-    //                 editor:{
-    //                     type:'filebox',
-    //                     options:{
-    //                         // required: true,
-    //                         buttonText:'Browse File',
-    //                         accept:'.jpg, .png, .pdf',
-    //                         onChange: function(){
-    //                             var dg = $('#dg2');
-    //                             var row = dg.datagrid('getSelected');
-    //                             var rowIndex = dg.datagrid('getRowIndex', row);
-
-    //                             var ed = dg.datagrid('getEditor', {
-    //                                 index: rowIndex,
-    //                                 field: 'attachment'
-    //                             });
-
-    //                             var files = $(this).filebox('files')
-    //                             var formData = new FormData();
-    //                             for(var i=0; i<files.length; i++){
-    //                                 var file = files[i];
-    //                                 formData.append('file',file,file.name);
-    //                             }
-    //                             $.ajax({
-    //                                 url: '<?= base_url('purchase/purchase_requests/uploadatt') ?>',
-    //                                 type:'post',
-    //                                 data: formData,
-    //                                 contentType:false,
-    //                                 processData:false,
-    //                                 dataType: 'json',
-    //                                 success:function(data){
-    //                                     if(data.success == true){
-    //                                         toastr.success(data.message);
-    //                                         $(ed.target).textbox('setValue', data.filename);
-    //                                     }else{
-    //                                         toastr.error(data.message);
-    //                                     }
-    //                                 }
-    //                             })
-    //                         }
-    //                     }
-    //                 }
-    //             }, {
-    //                 field: 'attachment',
-    //                 width: 200,
-    //                 hidden: true,
-    //                 halign: 'center',
-    //                 title: "Attachment",
-    //                 editor: {
-    //                     type: 'textbox'
-    //                 }
-    //             }]
-    //         ],
-    //         onClickCell: onClickCell
-    //     });
-    // }
-
     function addTable(item_family_id, link = "") {
         var dg = $('#dg2').datagrid({
             url: link,
@@ -555,17 +316,27 @@
 
                                 $.ajax({
                                     type: "post",
-                                    url: "<?= base_url('purchase/purchase_orders/readTotalPo') ?>",
-                                    data: "item_rm_id=" + row.id,
+                                    url: "<?= base_url('purchase/purchase_requests/readTotalPo') ?>",
+                                    data: {
+                                        item_rm_id: window.btoa(row.id),
+                                        item_number: window.btoa(row.item_number),
+                                    },
                                     dataType: "json",
                                     success: function(jsonpo) {
-                                        if (jsonpo != null) {
-                                            $(ed4.target).numberbox('setValue', jsonpo.qty);
+                                        if (jsonpo.length > 0) {
+                                            // jika status outstanding open maka isi qty
+                                            if (jsonpo[0].os_status == "OPEN") {
+                                                $(ed4.target).numberbox('setValue', jsonpo[0].qty);
+                                            } else {
+                                                $(ed4.target).numberbox('setValue', 0);
+                                            }
                                         } else {
+                                            toastr.warning('Item tidak ada di Outstanding PO');
                                             $(ed4.target).numberbox('setValue', 0);
                                         }
                                     }
                                 });
+
                             }
                         }
                     }
