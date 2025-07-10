@@ -326,7 +326,7 @@
                                         if (jsonpo.length > 0) {
                                             // jika status outstanding open maka isi qty
                                             if (jsonpo[0].os_status == "OPEN") {
-                                                $(ed4.target).numberbox('setValue', jsonpo[0].qty);
+                                                $(ed4.target).numberbox('setValue', jsonpo[0].os_qty);
                                             } else {
                                                 $(ed4.target).numberbox('setValue', 0);
                                             }

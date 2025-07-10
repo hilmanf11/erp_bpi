@@ -91,23 +91,25 @@ class Purchase_requests extends CI_Controller
                     'item_rm_id'  => $record['item_rm_id'],
                     'item_number' => $record['item_number'],
                     'item_name'   => $record['item_name'],
-                    'qty'         => $record['qty_po'],
+                    'qty_po'      => $record['qty_po'],
                     'qty_receipt' => $record['qty_receipt'] ?? 0,
                 ];
             }
 
-            $mapping_data[$item_id]['os_qty'] = $record['qty_po'] - @$record['qty_receipt'];
+            $os_qty = $record['qty_po'] - @$record['qty_receipt'];
 
             // -- Get Outstanding PO status
             if ($record['status'] == 2) {
-                $mapping_data[$item_id]['os_status'] = "COMPLETE";
-                $data['qty'] = 0;
-                $mapping_data[$item_id]['os_qty'] = 0;
+                $os_status = "COMPLETE";
+                $os_qty = 0;
             } elseif (($record['qty_po'] - @$record['qty_receipt']) > 0) {
-                $mapping_data[$item_id]['os_status'] = "OPEN";
+                $os_status = "OPEN";
             } else {
-                $mapping_data[$item_id]['os_status'] = "CLOSE";
+                $os_status = "CLOSE";
             }
+
+            $mapping_data[$item_id]['os_qty'] = $os_qty;
+            $mapping_data[$item_id]['os_status'] = $os_status;
         }
 
         $result = array_values($mapping_data);
