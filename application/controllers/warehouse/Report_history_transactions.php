@@ -574,7 +574,21 @@ class Report_history_transactions extends CI_Controller
                         FROM issued_material_details a 
                         JOIN new_barcode b ON a.label_no = b.label_no
                         WHERE a.item_rm_id = '$item_rm_id' 
-                        and DATE_FORMAT(a.created_date, '%Y-%m-%d') between '$filter_from' and '$filter_to'");
+                        and DATE_FORMAT(a.created_date, '%Y-%m-%d') between '$filter_from' and '$filter_to'
+                        
+                        UNION
+                        
+                        SELECT 
+                            a.created_by, 
+                            a.qty, 
+                            a.created_date, 
+                            '-' as label_no, 
+                            a.request_no,
+                            '-' as lotno
+                        FROM issued_material_details a 
+                        WHERE a.item_rm_id = '$item_rm_id' 
+                        AND a.type = 'Other'
+                        AND DATE_FORMAT(a.created_date, '%Y-%m-%d') between '$filter_from' and '$filter_to'");
 
                         // $issueds = $this->crud->query("SELECT * FROM issued_material_details WHERE item_rm_id = '$item_rm_id' and DATE_FORMAT(created_date, '%Y-%m-%d') between '$filter_from' and '$filter_to'");
 
