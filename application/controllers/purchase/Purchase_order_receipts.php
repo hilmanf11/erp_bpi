@@ -15,6 +15,7 @@ class Purchase_order_receipts extends CI_Controller
         //Validasi Form
         $this->form_validation->set_rules('item_rm_id', 'Product No', 'required|min_length[1]|max_length[50]');
     }
+    
     public function index()
     {
         if (empty($this->session->username)) {

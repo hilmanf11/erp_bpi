@@ -22,6 +22,7 @@
             <th rowspan="2" data-options="field:'qty_label',width:80,halign:'center',align:'right'">Qty <br> Label</th>
             <th rowspan="2" data-options="field:'state',width:80,align:'center',formatter:BtnPrintLabel">Label</th>
             <th rowspan="2" data-options="field:'invoice_no',width:120,halign:'center',align:'right'">Invoice No</th>
+            <th rowspan="2" data-options="field:'lotno',width:80,halign:'center',align:'right'">Lot No</th>
             <th colspan="2" data-options="field:'',width:100,halign:'center'"> Created</th>
             <th colspan="2" data-options="field:'',width:100,halign:'center'"> Updated</th>
         </tr>
@@ -39,7 +40,7 @@
         </tr>
     </thead>
 </table>
-<div id="toolbar" style="height: 270px; padding:10px;">
+<div id="toolbar" style="height: 310px; padding:10px;">
     <!-- <div style="width: 100%; display: grid; grid-template-columns: auto auto auto; grid-gap: 5px; display: flex;"> -->
     <div style="width: 100%; display: grid; grid-template-columns: auto auto auto; grid-gap: 5px; display: flex;">
         <fieldset style="width: 65%; border:2px solid #d0d0d0; margin-bottom: 5px; margin-top: 5px; border-radius:4px;">
@@ -63,16 +64,15 @@
                     <input style="width:60%;" id="filter_receipt" class="easyui-combobox">
                 </div>
                 <div class="fitem">
+                    <span style="width:35%; display:inline-block;">Document No</span>
+                    <input style="width:60%;" id="filter_doc_no" class="easyui-combobox">
+                </div>
+                <div class="fitem">
                     <span style="width:35%; display:inline-block;"></span>
                     <a href="javascript:;" class="easyui-linkbutton" onclick="filter()"><i class="fa fa-search"></i> Filter Data</a>
                 </div>
             </div>
             <div style="width: 50%; float: left;">
-               
-                <div class="fitem">
-                    <span style="width:35%; display:inline-block;">Document No</span>
-                    <input style="width:60%;" id="filter_doc_no" class="easyui-combobox">
-                </div>
                 <div class="fitem">
                     <span style="width:35%; display:inline-block;">PO No</span>
                     <input style="width:60%;" id="filter_po_no" class="easyui-combobox">
@@ -92,6 +92,10 @@
                         <option value="0">OPEN</option>
                         <option value="1">CLOSE</option>
                     </select>
+                </div>
+                <div class="fitem">
+                    <span style="width:35%; display:inline-block;">Lot No</span>
+                    <input style="width:60%;" id="filter_lotno" class="easyui-combobox">
                 </div>
             </div>
         </fieldset>
@@ -405,12 +409,14 @@
         var filter_po_no = $("#filter_po_no").combobox('getValue');
         var filter_part_no = $("#filter_part_no").combogrid('getValue');
         var filter_receipt = $("#filter_receipt").combobox('getValue');
+        var filter_lotno = $("#filter_lotno").combobox('getValue');
         var filter_doc_no = $("#filter_doc_no").combobox('getValue');
         var filter_status_invoice = $("#filter_status_invoice").combobox('getValue');
 
         url = "?filter_from=" + filter_from + "&filter_to=" + filter_to + 
         "&filter_po_no=" + filter_po_no + "&filter_part_no=" + filter_part_no + 
         "&filter_supplier=" + filter_supplier + "&filter_receipt=" + filter_receipt + 
+        "&filter_lotno=" + filter_lotno + 
         "&filter_doc_no=" + filter_doc_no + "&filter_categories=" + filter_categories + 
         "&filter_division=" + filter_division + "&filter_status_invoice=" + filter_status_invoice;
 
@@ -434,12 +440,14 @@
         var filter_po_no = $("#filter_po_no").combobox('getValue');
         var filter_part_no = $("#filter_part_no").combogrid('getValue');
         var filter_receipt = $("#filter_receipt").combobox('getValue');
+        var filter_lotno = $("#filter_lotno").combobox('getValue');
         var filter_doc_no = $("#filter_doc_no").combobox('getValue');
         var filter_status_invoice = $("#filter_status_invoice").combobox('getValue');
 
         url = "?filter_from=" + filter_from + "&filter_to=" + filter_to + 
         "&filter_po_no=" + filter_po_no + "&filter_part_no=" + filter_part_no + 
         "&filter_supplier=" + filter_supplier + "&filter_receipt=" + filter_receipt + 
+        "&filter_lotno=" + filter_lotno + 
         "&filter_doc_no=" + filter_doc_no + "&filter_categories=" + filter_categories + 
         "&filter_division=" + filter_division + "&filter_status_invoice=" + filter_status_invoice;
         
@@ -659,8 +667,8 @@
                                                                 item_rm_id: row.item_rm_id,
                                                                 supplier_id: row.supplier_id,
                                                                 receipt_date: receipt_date,
-                                                                receipt_no: receipt_number,
-                                                                lotno: lotno, // ← gunakan lotno dari server
+                                                                receipt_no: receipt_number,  // gunakan receipt_number dari server
+                                                                lotno: lotno, // gunakan lotno dari server
                                                                 po_no: row.po_no,
                                                                 bc_document: bc_document,
                                                                 bc_date: bc_date,
@@ -821,6 +829,19 @@
             valueField: 'po_no',
             textField: 'po_no',
             prompt: "Select PO No",
+            icons: [{
+                iconCls: 'icon-clear',
+                handler: function(e) {
+                    $(e.data.target).combobox('clear').combobox('textbox').focus();
+                }
+            }],
+        });
+
+        $("#filter_lotno").combobox({
+            url: '<?= base_url('purchase/purchase_order_receipts/readLotNo/') ?>',
+            valueField: 'lotno',
+            textField: 'lotno',
+            prompt: "Select Lot No",
             icons: [{
                 iconCls: 'icon-clear',
                 handler: function(e) {
