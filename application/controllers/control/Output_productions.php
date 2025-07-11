@@ -50,10 +50,12 @@ class Output_productions extends CI_Controller
         select distinct a.item_fg_id, a.wo_no, a.period, b.number, b.name, a.lot_no , 'Production Schedule' as modul
         from production_schedules a 
         join item_fg b on a.item_fg_id=b.id 
-        where a.period='$period' and (b.number like '%$post%' or b.number_customer like '%$post%' or b.name like '%$post%' or a.wo_no like '%$post%' or a.lot_no like '%$post%') 
+        where a.period='$period' and a.status_subcont = 'YES' and a.subcont_type = 'Jasa'
+        and (b.number like '%$post%' or b.number_customer like '%$post%' or b.name like '%$post%' or a.wo_no like '%$post%' or a.lot_no like '%$post%') 
         
         order by modul,item_fg_id asc 
-        ");
+        ");  /** production_schedules hanya tampil Subcont Type Jasa (Bu Septi) */
+        
         echo json_encode($send);
     }
 
