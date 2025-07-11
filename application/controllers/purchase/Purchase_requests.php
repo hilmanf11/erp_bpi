@@ -57,7 +57,7 @@ class Purchase_requests extends CI_Controller
         $item_rm = base64_decode($this->input->post('item_rm_id'));
         $item_no = base64_decode($this->input->post('item_number'));
 
-        $this->db->select('a.id, a.item_rm_id, SUM(a.qty) as qty_po,
+        $this->db->select('a.id, a.item_rm_id, a.po_date, SUM(a.qty) as qty_po,
             b.number as supplier_number, 
             b.name as supplier_name, 
             c.uom, 
@@ -82,20 +82,8 @@ class Purchase_requests extends CI_Controller
 
         $mapping_data = [];
 
-        foreach ($records as $record) {
-            $item_id = $record['id'];
-
-            if (!isset($mapping_data[$item_id])) {
-                $mapping_data[$item_id] = [
-                    'id'          => $item_id,
-                    'item_rm_id'  => $record['item_rm_id'],
-                    'item_number' => $record['item_number'],
-                    'item_name'   => $record['item_name'],
-                    'qty_po'      => $record['qty_po'],
-                    'qty_receipt' => $record['qty_receipt'] ?? 0,
-                ];
-            }
-
+        foreach ($records as $record) 
+        {
             $os_qty = $record['qty_po'] - @$record['qty_receipt'];
 
             // -- Get Outstanding PO status
@@ -108,11 +96,43 @@ class Purchase_requests extends CI_Controller
                 $os_status = "CLOSE";
             }
 
-            $mapping_data[$item_id]['os_qty'] = $os_qty;
-            $mapping_data[$item_id]['os_status'] = $os_status;
+            $record['os_qty'] = $os_qty;
+            $record['os_status'] = $os_status;
+
+            $mapping_data[] = $record;
+        }
+        
+        $result = [];
+
+        // jika outstanding status ada open, maka hanya tampilkan open
+        $hasOpen = false;
+        foreach ($mapping_data as $item) {
+            if ($item['os_status'] === "OPEN") {
+                $hasOpen = true;
+                break;
+            }
+        }
+        if ($hasOpen) {
+            $result = array_filter($mapping_data, function($item) {
+                return $item['os_status'] === "OPEN";
+            });
+        } else {
+            $result = $mapping_data;
         }
 
-        $result = array_values($mapping_data);
+        // sort by date desc
+        usort($result, function($a, $b) {
+            $dateA = strtotime($a['po_date']);
+            $dateB = strtotime($b['po_date']);
+            if ($dateA > $dateB) {
+                return -1;
+            } elseif ($dateA < $dateB) {
+                return 1;
+            } else {
+                return 0;
+            }
+        });
+
         echo json_encode($result);
     }
 
