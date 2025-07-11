@@ -1042,7 +1042,7 @@ class Sales_invoices extends CI_Controller
                                 <td style="text-align:right">' . number_format($record['qty'], 0, ",", ".") . '</td>
                                 <td style="text-align:center;"><span style="font-size:10px;">' . $record['currency'] . '</span></td>
                                 <td style="text-align:right">' . number_format($record['price'], $format_no, ",", ".") . '</td>
-                                <td style="text-align:right">' . number_format(($record['price'] * $record['qty']), 2, ",", ".") . '</td>
+                                <td style="text-align:right">' . number_format(($record['price'] * $record['qty']), $format_no, ",", ".") . '</td>
                             </tr>';
                 $no++;
             }
@@ -1050,41 +1050,41 @@ class Sales_invoices extends CI_Controller
             if (($i + 1) == $page) {
                 $html .= '<tr>
                             <td colspan="8" style="text-align:right"><b>Total Invoice</b></td>
-                            <td style="text-align:right"><b>' . number_format($total_invoice, 2, ",", ".") . '</b></td>
+                            <td style="text-align:right"><b>' . number_format($total_invoice, $format_no, ",", ".") . '</b></td>
                         </tr>';
 
                 $html .= '<tr>
                             <td colspan="8" style="text-align:right"><b>Discount ('. number_format($disc_pr,0).' %)</b></td>
-                            <td style="text-align:right"><b>' . number_format($discount, 2, ",", ".") . '</b></td>
+                            <td style="text-align:right"><b>' . number_format($discount, $format_no, ",", ".") . '</b></td>
                         </tr>';
 
                 $html .= '<tr>
                             <td colspan="8" style="text-align:right"><b>Sub Total</b></td>
-                            <td style="text-align:right"><b>' . number_format($sub_total, 2, ",", ".") . '</b></td>
+                            <td style="text-align:right"><b>' . number_format($sub_total, $format_no, ",", ".") . '</b></td>
                         </tr>';
 
                 $html .= '<tr>
                         <td colspan="8" style="text-align:right"><b>Down Payment ('. number_format($disc_dp,0).' %)</b></td>
-                        <td style="text-align:right"><b>' . number_format($down_payment, 2, ",", ".") . '</b></td>
+                        <td style="text-align:right"><b>' . number_format($down_payment, $format_no, ",", ".") . '</b></td>
                     </tr>';
 
                 $html .= '<tr>
                             <td colspan="8" style="text-align:right"><b>DPP</b></td>
-                            <td style="text-align:right"><b>' . number_format($dpp_total, 2, ",", ".") . '</b></td>
+                            <td style="text-align:right"><b>' . number_format($dpp_total, $format_no, ",", ".") . '</b></td>
                         </tr>';
 
                 $html .= '<tr>
                             <td colspan="8" style="text-align:right"><b>VAT ('. number_format($record['taxes'],0).' %)</b></td>
-                            <td style="text-align:right"><b>' . number_format($vat_total, 2, ",", ".") . '</b></td>
+                            <td style="text-align:right"><b>' . number_format($vat_total, $format_no, ",", ".") . '</b></td>
                         </tr>';
                 
                 $html .= '<tr>
                             <td colspan="8" style="text-align:right"><b>Income Tax '.$tax.'</b></td>
-                            <td style="text-align:right"><b>' . number_format($tax_total, 2, ",", ".") . '</b></td>
+                            <td style="text-align:right"><b>' . number_format($tax_total, $format_no, ",", ".") . '</b></td>
                         </tr>';
                 $html .= '<tr>
                             <td colspan="8" style="text-align:right"><b>Grand Total</b></td>
-                            <td style="text-align:right"><b>' . number_format($grand_total, 2, ",", ".") . '</b></td>
+                            <td style="text-align:right"><b>' . number_format($grand_total, $format_no, ",", ".") . '</b></td>
                         </tr>';
 
                 $html .= '  <div style="position:fixed; bottom:0; width:98.7%;">
@@ -1441,7 +1441,7 @@ class Sales_invoices extends CI_Controller
                                 <td style="text-align:right">' . number_format($record['qty_sum'], 0, ",", ".") . '</td>
                                 <td style="text-align:center;"><span style="font-size:10px;">' . $record['currency'] . '</span></td>
                                 <td style="text-align:right">' . number_format($record['prices'], $format_no, ",", ".") . '</td>
-                                <td style="text-align:right">' . number_format(($record['prices'] * $record['qty_sum']), 2, ",", ".") . '</td>
+                                <td style="text-align:right">' . number_format(($record['prices'] * $record['qty_sum']), $format_no, ",", ".") . '</td>
                             </tr>';
                 $no++;
             }
@@ -1449,40 +1449,40 @@ class Sales_invoices extends CI_Controller
             if (($i + 1) == $page) {
                 $html .= '<tr>
                             <td colspan="7" style="text-align:right"><b>Total Invoice</b></td>
-                            <td style="text-align:right"><b>' . number_format($total_invoice, 2, ",", ".") . '</b></td>
+                            <td style="text-align:right"><b>' . number_format($total_invoice, $format_no, ",", ".") . '</b></td>
                         </tr>';
                 $html .= '<tr>
                             <td colspan="7" style="text-align:right"><b>Discount ('. number_format($disc_pr,0).' %)</b></td>
-                            <td style="text-align:right"><b>' . number_format($discount, 2, ",", ".") . '</b></td>
+                            <td style="text-align:right"><b>' . number_format($discount, $format_no, ",", ".") . '</b></td>
                         </tr>';
 
                 $html .= '<tr>
                             <td colspan="7" style="text-align:right"><b>Sub Total</b></td>
-                            <td style="text-align:right"><b>' . number_format($sub_total, 2, ",", ".") . '</b></td>
+                            <td style="text-align:right"><b>' . number_format($sub_total, $format_no, ",", ".") . '</b></td>
                         </tr>';
 
                 $html .= '<tr>
                             <td colspan="7" style="text-align:right"><b>Down Payment ('. number_format($disc_dp,0).' %)</b></td>
-                            <td style="text-align:right"><b>' . number_format($down_payment, 2, ",", ".") . '</b></td>
+                            <td style="text-align:right"><b>' . number_format($down_payment, $format_no, ",", ".") . '</b></td>
                         </tr>';
 
                 $html .= '<tr>
                             <td colspan="7" style="text-align:right"><b>DPP</b></td>
-                            <td style="text-align:right"><b>' . number_format($dpp_total, 2, ",", ".") . '</b></td>
+                            <td style="text-align:right"><b>' . number_format($dpp_total, $format_no, ",", ".") . '</b></td>
                         </tr>';
 
                 $html .= '<tr>
                             <td colspan="7" style="text-align:right"><b>VAT ('. number_format($record['taxes'],0).' %)</b></td>
-                            <td style="text-align:right"><b>' . number_format($vat_total, 2, ",", ".") . '</b></td>
+                            <td style="text-align:right"><b>' . number_format($vat_total, $format_no, ",", ".") . '</b></td>
                         </tr>';
                 
                 $html .= '<tr>
                             <td colspan="7" style="text-align:right"><b>Income Tax '.$tax.'</b></td>
-                            <td style="text-align:right"><b>' . number_format($tax_total, 2, ",", ".") . '</b></td>
+                            <td style="text-align:right"><b>' . number_format($tax_total, $format_no, ",", ".") . '</b></td>
                         </tr>';
                 $html .= '<tr>
                             <td colspan="7" style="text-align:right"><b>Grand Total</b></td>
-                            <td style="text-align:right"><b>' . number_format($grand_total, 2, ",", ".") . '</b></td>
+                            <td style="text-align:right"><b>' . number_format($grand_total, $format_no, ",", ".") . '</b></td>
                         </tr>';
 
                 $html .= '  <div style="position:fixed; bottom:0; width:98.7%;">
@@ -1810,9 +1810,9 @@ class Sales_invoices extends CI_Controller
                                 <td style="text-align:right;">' . @number_format(($record['qty']), 2) . '</td>
                                 <td>' . $record['currency'] . '</td>
                                 <td style="text-align:right;">' . @number_format($record['price'], $format_no) . '</td>
-                                <td style="text-align:right;">' . @number_format($record['total'], 2) . '</td>
+                                <td style="text-align:right;">' . @number_format($record['total'], $format_no) . '</td>
                                 <td>IDR</td>
-                                <td style="text-align:right;">' . @number_format($amount, 2) . '</td>
+                                <td style="text-align:right;">' . @number_format($amount, $format_no) . '</td>
                             </tr>';
                 $no++;
             }
@@ -1820,15 +1820,15 @@ class Sales_invoices extends CI_Controller
             if (($i + 1) == $page) {
                 $html .= '<tr>
                             <th colspan="9" style="text-align:right">SUB TOTAL</th>
-                            <th style="text-align:right">' . number_format($sub_total, 2) . '</th>
+                            <th style="text-align:right">' . number_format($sub_total, $format_no) . '</th>
                             <th></th>
-                            <th style="text-align:right">' . number_format($sub_total_local, 2) . '</th>
+                            <th style="text-align:right">' . number_format($sub_total_local, $format_no) . '</th>
                           </tr>
                           <tr>
                             <th colspan="9" style="text-align:right">GRAND TOTAL</th>
-                            <th style="text-align:right">' . number_format($grand_total, 2) . '</th>
+                            <th style="text-align:right">' . number_format($grand_total, $format_no) . '</th>
                             <th></th>
-                            <th style="text-align:right">' . number_format($grand_total_local, 2) . '</th>
+                            <th style="text-align:right">' . number_format($grand_total_local, $format_no) . '</th>
                           </tr>';
             }else{
                 $html .= '<tr>
@@ -1891,31 +1891,31 @@ class Sales_invoices extends CI_Controller
                         <table id="customers" style="width:100%; font-size:12px;">
                             <tr>
                                 <td style="font-weight:bold;">Discount</td>
-                                <td style="font-weight:bold; text-align:right;">' . @number_format($discount, 2) . '</td>
+                                <td style="font-weight:bold; text-align:right;">' . @number_format($discount, $format_no) . '</td>
                             </tr>
                             <tr>
                                 <td style="font-weight:bold;">Sub Total</td>
-                                <td style="font-weight:bold; text-align:right;">' . @number_format(($grand_total - $discount), 2) . '</td>
+                                <td style="font-weight:bold; text-align:right;">' . @number_format(($grand_total - $discount), $format_no) . '</td>
                             </tr>
                             <tr>
                                 <td style="font-weight:bold;">Down Payment</td>
-                                <td style="font-weight:bold; text-align:right;">' . @number_format(($down_payment), 2) . '</td>
+                                <td style="font-weight:bold; text-align:right;">' . @number_format(($down_payment), $format_no) . '</td>
                             </tr>
                             <tr>
                                 <td style="font-weight:bold;">DPP</td>
-                                <td style="font-weight:bold; text-align:right;">' . @number_format(($dpp_total), 2) . '</td>
+                                <td style="font-weight:bold; text-align:right;">' . @number_format(($dpp_total), $format_no) . '</td>
                             </tr>
                             <tr>
                                 <td style="font-weight:bold;">VAT</td>
-                                <td style="font-weight:bold; text-align:right;">' . @number_format(@$records[0]['total_vat'], 2) . '</td>
+                                <td style="font-weight:bold; text-align:right;">' . @number_format(@$records[0]['total_vat'], $format_no) . '</td>
                             </tr>
                             <tr>
                                 <td style="font-weight:bold;">PPH</td>
-                                <td style="font-weight:bold; text-align:right;">' . @number_format(@$records[0]['total_pph'], 2) . '</td>
+                                <td style="font-weight:bold; text-align:right;">' . @number_format(@$records[0]['total_pph'], $format_no) . '</td>
                             </tr>
                             <tr>
                                 <td style="font-weight:bold;">Grand Total</td>
-                                <td style="font-weight:bold; text-align:right;">' . @number_format(((((@$grand_total - $discount) - $down_payment) + $records[0]['total_vat']) - $records[0]['total_pph']), 2) . '</td>
+                                <td style="font-weight:bold; text-align:right;">' . @number_format(((((@$grand_total - $discount) - $down_payment) + $records[0]['total_vat']) - $records[0]['total_pph']), $format_no) . '</td>
                             </tr>
                         </table>
                     </div>

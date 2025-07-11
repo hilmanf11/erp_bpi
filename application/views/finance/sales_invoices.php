@@ -304,7 +304,7 @@
                                 $(ed.target).textbox('setValue', (parseFloat(value) * parseFloat(qty)));
                             }
                         }}">Price</th>
-                    <th data-options="field:'total',width:120, formatter:numberformat,halign:'center',align:'right',editor: {type: 'numberbox', options: {required: true, readonly: true, precision: 2}}">Amount</th>
+                    <th data-options="field:'total',width:120, formatter:priceformat,halign:'center',align:'right',editor: {type: 'numberbox', options: {required: true, readonly: true, precision: 2}}">Amount</th>
                     <th data-options="field:'account_number',width:100, halign:'center', editor: {
                         type: 'combogrid',
                         options: {
@@ -1979,6 +1979,29 @@
                     }else{
                          var total_dpp = parseFloat((row.total_sub - discount) * 0);
                     }
+
+                    console.log("Dari Preview Currency:", row.rows[0].currency);
+                    if (row.rows[0].currency == 'USD') {
+                        $('#total_invoice').numberbox({precision:4});
+                        $('#discount').numberbox({precision:4});
+                        $('#total_sub').numberbox({precision:4});
+                        $('#down_payment').numberbox({precision:4});
+                        $('#total_dpp').numberbox({precision:4});
+                        $('#total_vat').numberbox({precision:4});
+                        $('#total_pph').numberbox({precision:4});
+                        $('#total_grand').numberbox({precision:4});
+                        $('#total_local').numberbox({precision:4});
+                    } else {
+                        $('#total_invoice').numberbox({precision:2});
+                        $('#discount').numberbox({precision:2});
+                        $('#total_sub').numberbox({precision:2});
+                        $('#down_payment').numberbox({precision:2});
+                        $('#total_dpp').numberbox({precision:2});
+                        $('#total_vat').numberbox({precision:2});
+                        $('#total_pph').numberbox({precision:2});
+                        $('#total_grand').numberbox({precision:2});
+                        $('#total_local').numberbox({precision:2});
+                    }
                     
                     $("#total_dpp").numberbox('setValue', total_dpp);
 
@@ -3105,7 +3128,7 @@
             var currency = 'EUR';
             var format = "de-DE";
         } else {
-            var digits = 0;
+            var digits = 2;
             var currency = 'IDR';
             var format = "id-ID";
         }
