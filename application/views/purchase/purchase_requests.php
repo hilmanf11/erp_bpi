@@ -324,12 +324,14 @@
                                     dataType: "json",
                                     success: function(jsonpo) {
                                         if (jsonpo.length > 0) {
-                                            // jika status outstanding open maka isi qty
-                                            if (jsonpo[0].os_status == "OPEN") {
-                                                $(ed4.target).numberbox('setValue', jsonpo[0].os_qty);
-                                            } else {
-                                                $(ed4.target).numberbox('setValue', 0);
-                                            }
+                                            jsonpo.forEach(function(item) {
+                                                // jika status outstanding open maka isi qty
+                                                if (item.os_status == "OPEN") {
+                                                    $(ed4.target).numberbox('setValue', item.os_qty);
+                                                } else {
+                                                    $(ed4.target).numberbox('setValue', 0);
+                                                }
+                                            });
                                         } else {
                                             toastr.warning('Item tidak ada di Outstanding PO');
                                             $(ed4.target).numberbox('setValue', 0);
