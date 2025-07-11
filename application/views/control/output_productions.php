@@ -216,6 +216,10 @@
                                     field: 'wo_no',
                                     title: 'Work Order No',
                                     width: 80
+                                }, {
+                                    field: 'modul',
+                                    title: 'Modul',
+                                    width: 100
                                 }]
                             ],
                             onSelect: function(value, rows) {
@@ -398,7 +402,7 @@
 
                 $(item_fg_id.target).combogrid({
                     url: '<?= base_url('control/output_productions/readItemFg/'); ?>' + period,
-                    panelWidth: 650,
+                    panelWidth: 700,
                     idField: 'item_fg_id',
                     textField: 'Product ID',
                     mode: 'remote',
@@ -421,6 +425,10 @@
                             field: 'wo_no',
                             title: 'Work Order No',
                             width: 80
+                        }, {
+                            field: 'modul',
+                            title: 'Modul',
+                            width: 100
                         }]
                     ],
                     onSelect: function(value, rows) {
@@ -640,7 +648,7 @@
                             width: 200
                         }, {
                             field: 'qty',
-                            title: 'Qty',
+                            title: 'Qty FG',
                             halign: 'center',
                             align: 'right',
                             width: 80,

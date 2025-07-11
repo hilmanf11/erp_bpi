@@ -39,9 +39,21 @@ class Output_productions extends CI_Controller
     public function readItemFg($period="")
     {
         $post = isset($_POST['q']) ? $_POST['q'] : "";
-        $send = $this->crud->query("select distinct a.item_fg_id, a.workorder as wo_no, a.period, b.number, b.name, a.lot_no from supply_sheets a 
-                                    join item_fg b on a.item_fg_id=b.id 
-                                    where a.period='$period' and (b.number like '%$post%' or b.number_customer like '%$post%' or b.name like '%$post%' or a.workorder like '%$post%' or a.lot_no like '%$post%') order by a.item_fg_id asc ");
+        $send = $this->crud->query("
+        select distinct a.item_fg_id, a.workorder as wo_no, a.period, b.number, b.name, a.lot_no ,'Supply Sheets' as modul
+        from supply_sheets a 
+        join item_fg b on a.item_fg_id=b.id 
+        where a.period='$period' and (b.number like '%$post%' or b.number_customer like '%$post%' or b.name like '%$post%' or a.workorder like '%$post%' or a.lot_no like '%$post%')
+        
+        UNION
+
+        select distinct a.item_fg_id, a.wo_no, a.period, b.number, b.name, a.lot_no , 'Production Schedule' as modul
+        from production_schedules a 
+        join item_fg b on a.item_fg_id=b.id 
+        where a.period='$period' and (b.number like '%$post%' or b.number_customer like '%$post%' or b.name like '%$post%' or a.wo_no like '%$post%' or a.lot_no like '%$post%') 
+        
+        order by modul,item_fg_id asc 
+        ");
         echo json_encode($send);
     }
 
