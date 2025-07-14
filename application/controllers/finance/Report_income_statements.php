@@ -102,7 +102,8 @@ class Report_income_statements extends CI_Controller
         }
     }
 
-    public function generateData(){
+    public function generateData() 
+    {
         $filter_date   = $this->input->post('filter_date');
         $filter_from = date("Y-m-01", strtotime($filter_date));
         $filter_to = date("Y-m-t", strtotime($filter_date));
@@ -153,26 +154,27 @@ class Report_income_statements extends CI_Controller
         //Sales
         $sales = abs($this->getData($filter_from, $filter_to, "Sales", "Income Statement", "Sales"));
         $sales_acc = ($sales + $this->getDataAcc($filter_from_bf, $filter_to, "Sales"));
+        $sales_repair = abs($this->getData($filter_from, $filter_to, "Sales", "Income Statement", "Sales Repair"));
+        $sales_repair_acc = ($sales_repair + $this->getDataAcc($filter_from_bf, $filter_to, "Sales Repair"));        
         $sales_rerturn = abs($this->getData($filter_from, $filter_to, "Sales", "Income Statement", "Sales Return"));
         $sales_rerturn_acc = ($sales_rerturn + $this->getDataAcc($filter_from_bf, $filter_to, "Sales Return"));
         $sales_discount = $this->getData($filter_from, $filter_to, "Sales", "Income Statement", "Sales Discount");
         $sales_discount_acc = ($sales_discount + $this->getDataAcc($filter_from_bf, $filter_to, "Sales Discount"));
-        $total_sales = ($sales + $sales_rerturn + $sales_discount);
-        $total_sales_acc = ($sales_acc + $sales_rerturn_acc + $sales_discount_acc);
+        $total_sales = ($sales + $sales_repair + $sales_rerturn + $sales_discount);
+        $total_sales_acc = ($sales_acc + $sales_repair_acc + $sales_rerturn_acc + $sales_discount_acc);
 
         //Gross Profit Loss
         $cogs = $this->getData($filter_from, $filter_to, "Cost of Good Sold", "Income Statement", "Cost of Good Sold");
         $cogs_acc = ($cogs + $this->getDataAcc($filter_from_bf, $filter_to, "Cost of Good Sold"));
         $total_cogs = ($total_sales - $cogs);
         $total_cogs_acc = ($total_sales_acc - $cogs_acc);
-        $net_profit_before = ($total_cogs - $total_operating_expenses);
-
+        
         //Operating Expenses
         $selling = $this->getData($filter_from, $filter_to, "Operating Expenses", "Income Statement", "Selling");
         $selling_acc = ($selling + $this->getDataAcc($filter_from_bf, $filter_to, "Selling"));
         $general_administrative = $this->getData($filter_from, $filter_to, "Operating Expenses", "Income Statement", "General and Administrative");
         $general_administrative_acc = ($general_administrative + $this->getDataAcc($filter_from_bf, $filter_to, "General and Administrative"));
-
+        
         //Non Operating Expenses
         $interest_income = $this->getData($filter_from, $filter_to, "Non Operating Expenses", "Income Statement", "Interest Income");
         $interest_income_acc = ($interest_income + $this->getDataAcc($filter_from_bf, $filter_to, "Interest Income"));
@@ -184,9 +186,10 @@ class Report_income_statements extends CI_Controller
         $foreign_exchange_loss_acc = ($foreign_exchange_loss + $this->getDataAcc($filter_from_bf, $filter_to, "Foreign Exchange Loss/Profit"));
         $total_non_operating_expenses = ($interest_income + $bank_charge + $foreign_exchange_loss + $other);
         $total_non_operating_expenses_acc = ($interest_income_acc + $bank_charge_acc + $foreign_exchange_loss_acc + $other_acc);
-
+        
         $total_operating_expenses = ($selling + $general_administrative + $total_non_operating_expenses);
         $total_operating_expenses_acc = ($selling_acc + $general_administrative_acc + $total_non_operating_expenses_acc);
+        $net_profit_before = ($total_cogs - $total_operating_expenses);
 
         //Taxes
         $corporate_income_tax = $this->getData($filter_from, $filter_to, "Taxes", "Income Statement", "Corporate Income Tax");
@@ -213,6 +216,7 @@ class Report_income_statements extends CI_Controller
                 ["period" => $period,"name" => "FINISH GOODS, ENDING","amount" => $finishgood_ending, "accumulated" => $finishgood_ending_acc],
                 ["period" => $period,"name" => "COGS","amount" => $cost_of_good_finishgood, "accumulated" => $cost_of_good_finishgood_acc],
                 ["period" => $period,"name" => "Sales","amount" => $sales, "accumulated" => $sales_acc],
+                ["period" => $period,"name" => "Sales Repair","amount" => $sales_repair, "accumulated" => $sales_repair_acc],
                 ["period" => $period,"name" => "Sales Return","amount" => $sales_rerturn, "accumulated" => $sales_rerturn_acc],
                 ["period" => $period,"name" => "Sales Discount","amount" => $sales_discount, "accumulated" => $sales_discount_acc],
                 ["period" => $period,"name" => "Total Sales","amount" => $total_sales, "accumulated" => $total_sales_acc],
@@ -319,7 +323,8 @@ class Report_income_statements extends CI_Controller
             </center>
             <br>';
 
-            if($filter_display == "1"){
+            if ($filter_display == "1")
+            {
                 $html .= '<table id="customers" border="1">';
 
                     //Sales
@@ -340,14 +345,20 @@ class Report_income_statements extends CI_Controller
                                     <td style="text-align:right;">'.$this->formatting($this->datatables($period, "Sales")->accumulated).'</td>
                                 </tr>
                                 <tr>
-                                    <td>Sales Return</td>
+                                    <td>Sales Repair</td>
                                     <td>2</td>
+                                    <td style="text-align:right;">'.$this->formatting($this->datatables($period, "Sales Repair")->amount).'</td>
+                                    <td style="text-align:right;">'.$this->formatting($this->datatables($period, "Sales Repair")->accumulated).'</td>
+                                </tr>
+                                <tr>
+                                    <td>Sales Return</td>
+                                    <td>3</td>
                                     <td style="text-align:right;">'.$this->formatting($this->datatables($period, "Sales Return")->amount).'</td>
                                     <td style="text-align:right;">'.$this->formatting($this->datatables($period, "Sales Return")->accumulated).'</td>
                                 </tr>
                                 <tr>
                                     <td>Sales Discount</td>
-                                    <td>3</td>
+                                    <td>4</td>
                                     <td style="text-align:right;">'.$this->formatting($this->datatables($period, "Sales Discoun")->amount).'</td>
                                     <td style="text-align:right;">'.$this->formatting($this->datatables($period, "Sales Discoun")->accumulated).'</td>
                                 </tr>
@@ -356,7 +367,7 @@ class Report_income_statements extends CI_Controller
                                 </tr>
                                 <tr style="background: #E8E8E8;">
                                     <td><b>Total Sales</b></td>
-                                    <td><b>4</b></td>
+                                    <td><b>5</b></td>
                                     <td style="text-align:right;">'.$this->formatting($this->datatables($period, "Total Sales")->amount).'</td>
                                     <td style="text-align:right;">'.$this->formatting($this->datatables($period, "Total Sales")->accumulated).'</td>
                                 </tr>';
@@ -364,7 +375,7 @@ class Report_income_statements extends CI_Controller
                     //Gross Profit Loss        
                     $html .= '  <tr>
                                     <td>Cost of Good Sold</td>
-                                    <td>5</td>
+                                    <td>6</td>
                                     <td style="text-align:right;">'.$this->formatting($this->datatables($period, "Cost Of Good Sold")->amount).'</td>
                                     <td style="text-align:right;">'.$this->formatting($this->datatables($period, "Cost Of Good Sold")->accumulated).'</td>
                                 </tr>
@@ -373,7 +384,7 @@ class Report_income_statements extends CI_Controller
                                 </tr>
                                 <tr style="background: #E8E8E8;">
                                     <td><b>Gross Profit Loss</b></td>
-                                    <td><b>6</b></td>
+                                    <td><b>7</b></td>
                                     <td style="text-align:right;">'.$this->formatting($this->datatables($period, "Gross Profit Loss")->amount).'</td>
                                     <td style="text-align:right;">'.$this->formatting($this->datatables($period, "Gross Profit Loss")->accumulated).'</td>
                                 </tr>';
@@ -384,13 +395,13 @@ class Report_income_statements extends CI_Controller
                                 </tr>
                                 <tr>
                                     <td style="padding-left: 50px;">Selling</td>
-                                    <td>7</td>
+                                    <td>8</td>
                                     <td style="text-align:right;">'.$this->formatting($this->datatables($period, "Selling")->amount).'</td>
                                     <td style="text-align:right;">'.$this->formatting($this->datatables($period, "Selling")->accumulated).'</td>
                                 </tr>
                                 <tr>
                                     <td style="padding-left: 50px;">General and Administrative</td>
-                                    <td>8</td>
+                                    <td>9</td>
                                     <td style="text-align:right;">'.$this->formatting($this->datatables($period, "General and Administrative")->amount).'</td>
                                     <td style="text-align:right;">'.$this->formatting($this->datatables($period, "General and Administrative")->accumulated).'</td>
                                 </tr>
@@ -402,37 +413,37 @@ class Report_income_statements extends CI_Controller
                                 </tr>
                                 <tr>
                                     <td style="padding-left: 50px;">Interest Income</td>
-                                    <td>9</td>
+                                    <td>10</td>
                                     <td style="text-align:right;">'.$this->formatting($this->datatables($period, "Interest Income")->amount).'</td>
                                     <td style="text-align:right;">'.$this->formatting($this->datatables($period, "Interest Income")->accumulated).'</td>
                                 </tr>
                                 <tr>
                                     <td style="padding-left: 50px;">Bank Charge</td>
-                                    <td>10</td>
+                                    <td>11</td>
                                     <td style="text-align:right;">'.$this->formatting($this->datatables($period, "Bank Charge")->amount).'</td>
                                     <td style="text-align:right;">'.$this->formatting($this->datatables($period, "Bank Charge")->accumulated).'</td>
                                 </tr>
                                 <tr>
                                     <td style="padding-left: 50px;">Foreign Exchange Loss/Profit</td>
-                                    <td>11</td>
+                                    <td>12</td>
                                     <td style="text-align:right;">'.$this->formatting($this->datatables($period, "Foreign Exchange Loss/Profit")->amount).'</td>
                                     <td style="text-align:right;">'.$this->formatting($this->datatables($period, "Foreign Exchange Loss/Profit")->accumulated).'</td>
                                 </tr>
                                 <tr>
                                     <td style="padding-left: 50px;">Other</td>
-                                    <td>12</td>
+                                    <td>13</td>
                                     <td style="text-align:right;">'.$this->formatting($this->datatables($period, "Other")->amount).'</td>
                                     <td style="text-align:right;">'.$this->formatting($this->datatables($period, "Other")->accumulated).'</td>
                                 </tr>
                                 <tr style="background: #E8E8E8;">
                                     <td><b>Total Non Operating Expenses (Income)</b></td>
-                                    <td><b>13</b></td>
+                                    <td><b>14</b></td>
                                     <td style="text-align:right;">'.$this->formatting($this->datatables($period, "Total Non Operating Expenses (Income)")->amount).'</td>
                                     <td style="text-align:right;">'.$this->formatting($this->datatables($period, "Total Non Operating Expenses (Income)")->accumulated).'</td>
                                 </tr>
                                 <tr style="background: #E8E8E8;">
                                     <td><b>Total Operating Expenses</b></td>
-                                    <td><b>14</b></td>
+                                    <td><b>15</b></td>
                                     <td style="text-align:right;">'.$this->formatting($this->datatables($period, "Total Operating Expenses")->amount).'</td>
                                     <td style="text-align:right;">'.$this->formatting($this->datatables($period, "Total Operating Expenses")->accumulated).'</td>
                                 </tr>
@@ -441,7 +452,7 @@ class Report_income_statements extends CI_Controller
                                 </tr>
                                 <tr style="background: #E8E8E8;">
                                     <td><b>NET PROFIT LOSS BEFORE TAXES</b></td>
-                                    <td><b>15</b></td>
+                                    <td><b>16</b></td>
                                     <td style="text-align:right;">'.$this->formatting($this->datatables($period, "Gross Profit Loss")->amount - $this->datatables($period, "Total Operating Expenses")->amount).'</td>
                                     <td style="text-align:right;">'.$this->formatting($this->datatables($period, "Gross Profit Loss")->accumulated - $this->datatables($period, "Total Operating Expenses")->accumulated).'</td>
                                 </tr>';
@@ -452,28 +463,31 @@ class Report_income_statements extends CI_Controller
                                 </tr>
                                 <tr>
                                     <td>Corporate Income Tax</td>
-                                    <td>16</td>
+                                    <td>17</td>
                                     <td style="text-align:right;">'.$this->formatting($this->datatables($period, "Corporate Income Tax")->amount).'</td>
                                     <td style="text-align:right;">'.$this->formatting($this->datatables($period, "Corporate Income Tax")->accumulated).'</td>
                                 </tr>
                                 <tr>
                                     <td>Deffered Income Tax</td>
-                                    <td>17</td>
+                                    <td>18</td>
                                     <td style="text-align:right;">'.$this->formatting($this->datatables($period, "Deffered Income Tax")->amount).'</td>
                                     <td style="text-align:right;">'.$this->formatting($this->datatables($period, "Deffered Income Tax")->accumulated).'</td>
                                 </tr>
                                 <tr style="background: #E8E8E8;">
                                     <td><b>NET PROFIT LOSS AFTER TAXES</b></td>
-                                    <td><b>18</b></td>
+                                    <td><b>19</b></td>
                                     <td style="text-align:right;">'.$this->formatting($this->datatables($period, "NET PROFIT LOSS AFTER TAXES")->amount).'</td>
                                     <td style="text-align:right;">'.$this->formatting($this->datatables($period, "NET PROFIT LOSS AFTER TAXES")->accumulated).'</td>
                                 </tr>';
 
                 $html .= '</table>';
-            }else{
+            }
+            else
+            {
+                // FORMAT 2
                 $html .= '<table id="customers" border="1">';
-                    $html .= '<div style="width: 100%; font-size:12px; text-align:right;"><i>(Expressed in Rupiah)</i></div>';
-                    $html .= '<table id="customers" border="1">';
+                $html .= '<div style="width: 100%; font-size:12px; text-align:right;"><i>(Expressed in Rupiah)</i></div>';
+                $html .= '<table id="customers" border="1">';
 
                     //Manufacturing
                     $html .= '  <tr style="background: #E8E8E8;">
@@ -601,14 +615,20 @@ class Report_income_statements extends CI_Controller
                                     <td style="text-align:right;">'.$this->formatting($this->datatables($period, "Sales")->accumulated).'</td>
                                 </tr>
                                 <tr>
-                                    <td>Sales Return</td>
+                                    <td>Sales Repair</td>
                                     <td>18</td>
+                                    <td style="text-align:right;">'.$this->formatting($this->datatables($period, "Sales Repair")->amount).'</td>
+                                    <td style="text-align:right;">'.$this->formatting($this->datatables($period, "Sales Repair")->accumulated).'</td>
+                                </tr>
+                                <tr>
+                                    <td>Sales Return</td>
+                                    <td>19</td>
                                     <td style="text-align:right;">'.$this->formatting($this->datatables($period, "Sales Return")->amount).'</td>
                                     <td style="text-align:right;">'.$this->formatting($this->datatables($period, "Sales Return")->accumulated).'</td>
                                 </tr>
                                 <tr>
                                     <td>Sales Discount</td>
-                                    <td>19</td>
+                                    <td>20</td>
                                     <td style="text-align:right;">'.$this->formatting($this->datatables($period, "Sales Discount")->amount).'</td>
                                     <td style="text-align:right;">'.$this->formatting($this->datatables($period, "Sales Discount")->accumulated).'</td>
                                 </tr>
@@ -617,7 +637,7 @@ class Report_income_statements extends CI_Controller
                                 </tr>
                                 <tr style="background: #E8E8E8;">
                                     <td><b>Total Sales</b></td>
-                                    <td><b>20</b></td>
+                                    <td><b>21</b></td>
                                     <td style="text-align:right;">'.$this->formatting($this->datatables($period, "Total Sales")->amount).'</td>
                                     <td style="text-align:right;">'.$this->formatting($this->datatables($period, "Total Sales")->accumulated).'</td>
                                 </tr>';
@@ -625,7 +645,7 @@ class Report_income_statements extends CI_Controller
                     //Gross Profit Loss        
                     $html .= '  <tr>
                                     <td>Cost of Good Sold</td>
-                                    <td>21</td>
+                                    <td>22</td>
                                     <td style="text-align:right;">'.$this->formatting($this->datatables($period, "Cost Of Good Sold")->amount).'</td>
                                     <td style="text-align:right;">'.$this->formatting($this->datatables($period, "Cost Of Good Sold")->accumulated).'</td>
                                 </tr>
@@ -634,7 +654,7 @@ class Report_income_statements extends CI_Controller
                                 </tr>
                                 <tr style="background: #E8E8E8;">
                                     <td><b>Gross Profit Loss</b></td>
-                                    <td><b>22</b></td>
+                                    <td><b>23</b></td>
                                     <td style="text-align:right;">'.$this->formatting($this->datatables($period, "Gross Profit Loss")->amount).'</td>
                                     <td style="text-align:right;">'.$this->formatting($this->datatables($period, "Gross Profit Loss")->accumulated).'</td>
                                 </tr>';
@@ -645,13 +665,13 @@ class Report_income_statements extends CI_Controller
                                 </tr>
                                 <tr>
                                     <td style="padding-left: 50px;">Selling</td>
-                                    <td>23</td>
+                                    <td>24</td>
                                     <td style="text-align:right;">'.$this->formatting($this->datatables($period, "Selling")->amount).'</td>
                                     <td style="text-align:right;">'.$this->formatting($this->datatables($period, "Selling")->accumulated).'</td>
                                 </tr>
                                 <tr>
                                     <td style="padding-left: 50px;">General and Administrative</td>
-                                    <td>24</td>
+                                    <td>25</td>
                                     <td style="text-align:right;">'.$this->formatting($this->datatables($period, "General and Administrative")->amount).'</td>
                                     <td style="text-align:right;">'.$this->formatting($this->datatables($period, "General and Administrative")->accumulated).'</td>
                                 </tr>
@@ -663,37 +683,37 @@ class Report_income_statements extends CI_Controller
                                 </tr>
                                 <tr>
                                     <td style="padding-left: 50px;">Interest Income</td>
-                                    <td>25</td>
+                                    <td>26</td>
                                     <td style="text-align:right;">'.$this->formatting($this->datatables($period, "Interest Income")->amount).'</td>
                                     <td style="text-align:right;">'.$this->formatting($this->datatables($period, "Interest Income")->accumulated).'</td>
                                 </tr>
                                 <tr>
                                     <td style="padding-left: 50px;">Bank Charge</td>
-                                    <td>26</td>
+                                    <td>27</td>
                                     <td style="text-align:right;">'.$this->formatting($this->datatables($period, "Bank Charge")->amount).'</td>
                                     <td style="text-align:right;">'.$this->formatting($this->datatables($period, "Bank Charge")->accumulated).'</td>
                                 </tr>
                                 <tr>
                                     <td style="padding-left: 50px;">Foreign Exchange Loss/Profit</td>
-                                    <td>27</td>
+                                    <td>28</td>
                                     <td style="text-align:right;">'.$this->formatting($this->datatables($period, "Foreign Exchange Loss/Profit")->amount).'</td>
                                     <td style="text-align:right;">'.$this->formatting($this->datatables($period, "Foreign Exchange Loss/Profit")->accumulated).'</td>
                                 </tr>
                                 <tr>
                                     <td style="padding-left: 50px;">Other</td>
-                                    <td>28</td>
+                                    <td>29</td>
                                     <td style="text-align:right;">'.$this->formatting($this->datatables($period, "Other")->amount).'</td>
                                     <td style="text-align:right;">'.$this->formatting($this->datatables($period, "other")->accumulated).'</td>
                                 </tr>
                                 <tr style="background: #E8E8E8;">
                                     <td><b>Total Non Operating Expenses (Income)</b></td>
-                                    <td><b>29</b></td>
+                                    <td><b>30</b></td>
                                     <td style="text-align:right;">'.$this->formatting($this->datatables($period, "Total Non Operating Expenses (Income)")->amount).'</td>
                                     <td style="text-align:right;">'.$this->formatting($this->datatables($period, "Total Non Operating Expenses (Income)")->accumulated).'</td>
                                 </tr>
                                 <tr style="background: #E8E8E8;">
                                     <td><b>Total Operating Expenses</b></td>
-                                    <td><b>30</b></td>
+                                    <td><b>31</b></td>
                                     <td style="text-align:right;">'.$this->formatting($this->datatables($period, "Total Operating Expenses")->amount).'</td>
                                     <td style="text-align:right;">'.$this->formatting($this->datatables($period, "Total Operating Expenses")->accumulated).'</td>
                                 </tr>
@@ -702,7 +722,7 @@ class Report_income_statements extends CI_Controller
                                 </tr>
                                 <tr style="background: #E8E8E8;">
                                     <td><b>NET PROFIT LOSS BEFORE TAXES</b></td>
-                                    <td><b>31</b></td>
+                                    <td><b>32</b></td>
                                     <td style="text-align:right;">'.$this->formatting($this->datatables($period, "Gross Profit Loss")->amount - $this->datatables($period, "Total Operating Expenses")->amount).'</td>
                                     <td style="text-align:right;">'.$this->formatting($this->datatables($period, "Gross Profit Loss")->accumulated - $this->datatables($period, "Total Operating Expenses")->accumulated).'</td>
                                 </tr>';
@@ -713,19 +733,19 @@ class Report_income_statements extends CI_Controller
                                 </tr>
                                 <tr>
                                     <td>Corporate Income Tax</td>
-                                    <td>32</td>
+                                    <td>33</td>
                                     <td style="text-align:right;">'.$this->formatting($this->datatables($period, "Corporate Income Tax")->amount).'</td>
                                     <td style="text-align:right;">'.$this->formatting($this->datatables($period, "Corporate Income Tax")->accumulated).'</td>
                                 </tr>
                                 <tr>
                                     <td>Deffered Income Tax</td>
-                                    <td>33</td>
+                                    <td>34</td>
                                     <td style="text-align:right;">'.$this->formatting($this->datatables($period, "Deffered Income Tax")->amount).'</td>
                                     <td style="text-align:right;">'.$this->formatting($this->datatables($period, "Deffered Income Tax")->accumulated).'</td>
                                 </tr>
                                 <tr style="background: #E8E8E8;">
                                     <td><b>NET PROFIT LOSS AFTER TAXES</b></td>
-                                    <td><b>34</b></td>
+                                    <td><b>35</b></td>
                                     <td style="text-align:right;">'.$this->formatting($this->datatables($period, "NET PROFIT LOSS AFTER TAXES")->amount).'</td>
                                     <td style="text-align:right;">'.$this->formatting($this->datatables($period, "NET PROFIT LOSS AFTER TAXES")->accumulated).'</td>
                                 </tr>';
