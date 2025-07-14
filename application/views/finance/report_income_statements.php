@@ -11,6 +11,8 @@
                 <select style="width:60%;" id="filter_display" class="easyui-combobox" panelHeight="auto">
                     <option value="1">Format 1</option>
                     <option value="2">Format 2</option>
+                    <option value="3">Format Details</option>
+                    <option value="4">Format Yearly</option>
                 </select>
             </div>
             <div class="fitem">
@@ -115,18 +117,78 @@
 
                                                         $("#p_remarks").append(title + "<br>");
 
-                                                        if (i == (data.total - 1)) {
-                                                            $('#dlg_generate').dialog('close');
-
+                                                        if (i == (data.total - 1)) 
+                                                        {
                                                             Swal.fire({
-                                                                title: result.message,
-                                                                icon: result.theme,
-                                                                confirmButtonText: 'Ok',
+                                                                title: 'Please Wait for Save Trial Balance Detail',
+                                                                showConfirmButton: false,
                                                                 allowOutsideClick: false,
-                                                            }).then((result) => {
-                                                                // if (result.isConfirmed) {
-                                                                //     window.location.reload();
-                                                                // }
+                                                                allowEscapeKey: false,
+                                                                didOpen: () => {
+                                                                    Swal.showLoading();
+                                                                },
+                                                            });
+
+                                                            $.ajax({
+                                                                type: "post",
+                                                                url: '<?= base_url('finance/report_income_statements/generateData2') ?>',
+                                                                data: {
+                                                                    filter_date: filter_date,
+                                                                },
+                                                                dataType: "json",
+                                                                success: function(data2) {
+                                                                    Swal.close();
+
+                                                                    if(data2.total > 0){
+                                                                        requestData2(data2.total, data2.rows);
+                                                                        $('#dlg_generate').dialog('open');
+
+                                                                        function requestData2(total2, json2, jml2 = 1, value2 = 0) {
+                                                                            if (value2 < 100) {
+                                                                                value2 = Math.floor((jml2 / total2) * 100);
+                                                                                var z = (jml2 - 1);
+
+                                                                                $('#p_upload').progressbar('setValue', value2);
+                                                                                $('#p_start').html(jml2);
+                                                                                $('#p_finish').html(data2.total);
+
+                                                                                $.ajax({
+                                                                                    type: "post",
+                                                                                    url: '<?= base_url('finance/report_income_statements/createDetail') ?>',
+                                                                                    data: {
+                                                                                        data: json2[z]
+                                                                                    },
+                                                                                    dataType: "json",
+                                                                                    success: function(result2) {
+                                                                                        requestData2(total2, json2, jml2 + 1, value2);
+
+                                                                                        if (result2.theme == "success") {
+                                                                                            var title = "<b style='color: green;'>" + result2.title + "</b> | " + result2.message;
+                                                                                        } else {
+                                                                                            var title = "<b style='color: red;'>" + result2.title + "</b> | " + result2.message;
+                                                                                        }
+
+                                                                                        $("#p_remarks").append(title + "<br>");
+
+                                                                                        if (z == (data2.total - 1)) {
+                                                                                            $('#dlg_generate').dialog('close');
+                                                                                            Swal.fire({
+                                                                                                title: result.message,
+                                                                                                icon: result.theme,
+                                                                                                confirmButtonText: 'Ok',
+                                                                                                allowOutsideClick: false,
+                                                                                            }).then((result) => {
+                                                                                                // if (result.isConfirmed) {
+                                                                                                //     window.location.reload();
+                                                                                                // }
+                                                                                            });
+                                                                                        }
+                                                                                    }
+                                                                                });
+                                                                            }
+                                                                        }
+                                                                    }
+                                                                }
                                                             });
                                                         }
                                                     }
