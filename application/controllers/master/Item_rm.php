@@ -44,6 +44,7 @@ class Item_rm extends CI_Controller
        $this->db->select('a.*,a.number as item_number, a.name as item_name');//c.specification
        $this->db->from('item_rm a');
        $this->db->where_in('a.item_family_id', $item_family_id);
+       $this->db->where('a.status', 0);
        $this->db->like('a.number', $post);
        $this->db->group_by('a.id');
        $this->db->order_by('a.id', 'ASC');
@@ -54,9 +55,10 @@ class Item_rm extends CI_Controller
 
     public function readFamily($categoryId)
     {
-        $this->db->select('a.*,a.name, a.account_name, a.account_number');//c.specification
+        $this->db->select("a.*,a.name, a.account_name, a.account_number, COALESCE(c.number,'-') as division_number");//c.specification
         $this->db->from('item_familys a');
         $this->db->join('item_categories b','a.item_category_id = b.id');
+        $this->db->join('divisions c','a.division_id = c.id','left');
         $this->db->where('a.item_category_id', $categoryId);
         $records = $this->db->get()->result_array();
 

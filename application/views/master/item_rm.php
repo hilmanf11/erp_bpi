@@ -31,7 +31,7 @@
             <th rowspan="2" data-options="field:'item_sub_family_name',width:150,halign:'center'">Sub Product Family</th>
             <th rowspan="2" data-options="field:'account_number',width:150,halign:'center'">Account No</th>
             <th rowspan="2" data-options="field:'account_name',width:150,halign:'center'">Account Name</th>
-            <th rowspan="2" data-options="field:'kind',width:150,halign:'center'">Account Name</th>
+            <th rowspan="2" data-options="field:'kind',width:150,halign:'center'">Kind</th>
             <th rowspan="2" data-options="field:'length',width:100,halign:'center'">Length</th>
             <th rowspan="2" data-options="field:'width',width:100,halign:'center'">Width</th>
             <th rowspan="2" data-options="field:'thickness',width:100,halign:'center'">Thickness</th>
@@ -87,7 +87,7 @@
                 </div>
                 <div class="fitem">
                     <span style="width:35%; display:inline-block;">Product Family</span>
-                    <input style="width:60%;" name="item_family_id" id="item_family_id" required="" class="easyui-combobox">
+                    <input style="width:60%;" name="item_family_id" id="item_family_id" required="" class="easyui-combogrid">
                 </div>
                 <div class="fitem">
                     <span style="width:35%; display:inline-block;">Color</span>
@@ -243,20 +243,39 @@
                     $('#supply').combobox('setValue', 'YES');
                 }
                 
-                $('#item_family_id').combobox({
-                    url: '<?= base_url('master/item_rm/readFamily/'); ?>' + category.id,
-                    valueField: 'id',
+                $('#item_family_id').combogrid({
+                    url:'<?= base_url('master/item_rm/readFamily/'); ?>' + category.id,
+                    panelWidth: 300,
+                    idField: 'id',
                     textField: 'name',
+                    mode: 'remote',
+                    fitColumns: true,
                     prompt: 'Choose Product Family',
-                    onLoadSuccess: function () {
-                        $('#item_family_id').combobox('setValue', row.item_family_id);
+                    columns: [
+                        [{
+                            field: 'name',
+                            title: 'Product Family',
+                            width: 200
+                        }, {
+                            field: 'division_number',
+                            title: 'Div',
+                            width: 100
+                        }]
+                    ],
+                    onLoadSuccess: function (data) {
+                        if (row && row.item_family_id) {
+                            const match = data.rows.find(item => item.id == row.item_family_id);
+                            if (match) {
+                                $('#item_family_id').combogrid('setValue', row.item_family_id);
+                            }
+                        }
                     },
-                    onSelect: function (family) {
-                        $('#account_number').textbox('setValue', family.account_number);
-                        $('#account_name').textbox('setValue', family.account_name);
+                    onSelect: function(value, rows) {
+                        $('#account_number').textbox('setValue', rows.account_number);
+                        $('#account_name').textbox('setValue', rows.account_name);
                         
                         $('#item_sub_family_id').combobox({
-                            url: '<?= base_url('master/item_family_subs/reads/'); ?>' + family.id,
+                            url: '<?= base_url('master/item_family_subs/reads/'); ?>' + rows.id,
                             valueField: 'id',
                             textField: 'name',
                             editable: false,
@@ -401,16 +420,31 @@
             } else {
                 $('#supply').combobox('setValue', 'YES');
             }
-            $('#item_family_id').combobox({
+
+            $('#item_family_id').combogrid({
                 url:'<?= base_url('master/item_rm/readFamily/'); ?>' + category.id,
-                valueField:'id',
-                textField:'name',
+                panelWidth: 300,
+                idField: 'id',
+                textField: 'name',
+                mode: 'remote',
+                fitColumns: true,
                 prompt: 'Choose Product Family',
-                onSelect: function(family) {
-                    $('#account_number').textbox('setValue',family.account_number);
-                    $('#account_name').textbox('setValue',family.account_name);
+                columns: [
+                    [{
+                        field: 'name',
+                        title: 'Product Family',
+                        width: 200
+                    }, {
+                        field: 'division_number',
+                        title: 'Div',
+                        width: 100
+                    }]
+                ],
+                onSelect: function(value, rows) {
+                    $('#account_number').textbox('setValue',rows.account_number);
+                    $('#account_name').textbox('setValue',rows.account_name);
                     $('#item_sub_family_id').combobox({
-                        url:'<?= base_url('master/item_family_subs/reads/'); ?>' + family.id,
+                        url:'<?= base_url('master/item_family_subs/reads/'); ?>' + rows.id,
                         valueField:'id',
                         textField:'name',
                         editable: false,
@@ -422,7 +456,7 @@
                     });
                     $.ajax({
                         type : "post",
-                        url : "<?= base_url('master/item_rm/autoid/')?>" + category.number + "/" + family.number,
+                        url : "<?= base_url('master/item_rm/autoid/')?>" + category.number + "/" + rows.number,
                         dataType : "html",
                         success : function(response){
                             $('#id').textbox('setValue', response);
@@ -430,6 +464,36 @@
                     });
                 }
             });
+
+            // $('#item_family_id').combobox({
+            //     url:'<?= base_url('master/item_rm/readFamily/'); ?>' + category.id,
+            //     valueField:'id',
+            //     textField:'name',
+            //     prompt: 'Choose Product Family',
+            //     onSelect: function(family) {
+            //         $('#account_number').textbox('setValue',family.account_number);
+            //         $('#account_name').textbox('setValue',family.account_name);
+            //         $('#item_sub_family_id').combobox({
+            //             url:'<?= base_url('master/item_family_subs/reads/'); ?>' + family.id,
+            //             valueField:'id',
+            //             textField:'name',
+            //             editable: false,
+            //             prompt: 'Choose Sub Product Family',
+            //             onSelect: function(family_sub) {
+            //                 $('#kind').textbox('setValue',family_sub.kind);
+            //                 $('#density').textbox('setValue',family_sub.density);
+            //             }
+            //         });
+            //         $.ajax({
+            //             type : "post",
+            //             url : "<?= base_url('master/item_rm/autoid/')?>" + category.number + "/" + family.number,
+            //             dataType : "html",
+            //             success : function(response){
+            //                 $('#id').textbox('setValue', response);
+            //             }
+            //         });
+            //     }
+            // });
         }
     });
 
