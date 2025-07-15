@@ -1276,7 +1276,7 @@
             var lastIndex;
             if (por_no != "") {
                 var dg = $('#dg2').datagrid({
-                    url: '<?= base_url('finance/purchase_invoices/datatablesTemp') ?>?por_no=' + window.btoa(por_no),
+                    url: '<?= base_url('finance/purchase_invoices/datatablesTemp') ?>?por_no=' + window.btoa(por_no) + '&trans_date=' + window.btoa(trans_date),//menambahkan trans_date
                     onLoadSuccess: function(row) {
                         $("#total_sub").numberbox('setValue', row.total_sub);
 

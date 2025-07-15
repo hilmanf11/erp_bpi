@@ -443,6 +443,7 @@ class Purchase_invoices extends CI_Controller
     public function datatablesTemp()//berubah : penambahan COALESCE(g. middle,1) as middle
     {
         $por_no = base64_decode($this->input->get('por_no'));
+        $trans_date = base64_decode($this->input->get('trans_date'));
         $por_no_ex = explode(",", $por_no);
 
         $this->db->select("a.receipt_no as por_no, a.po_no, c.id as item_rm_id, c.number as item_number, c.name as item_name, c.uom, b.currency, e.item_supplier as supplier_product,
@@ -455,7 +456,8 @@ class Purchase_invoices extends CI_Controller
         // $this->db->join('uom d', 'c.uom_id = d.id');
         $this->db->join('supplier_items e', 'b.id = e.supplier_id and c.id = e.item_rm_id');
         $this->db->join('purchase_orders f', 'a.po_no = f.po_no and b.id = f.supplier_id and c.id = f.item_rm_id');
-        $this->db->join('exchange_rates g', "g.start_date = DATE_FORMAT((a.receipt_date - INTERVAL '1' MONTH), '%Y-%m-01') and g.currency_from = b.currency", 'left');
+        // $this->db->join('exchange_rates g', "g.start_date = DATE_FORMAT((a.receipt_date - INTERVAL '1' MONTH), '%Y-%m-01') and g.currency_from = b.currency", 'left');
+        $this->db->join('exchange_rates g',"g.start_date <= '{$trans_date}' AND g.end_date >= '{$trans_date}' AND g.currency_from = b.currency",'left');
         $this->db->join('item_familys h', "c.item_family_id = h.id", 'left');
         $this->db->join('account_coa i', "h.account_number = i.account_number", 'left');
         $this->db->where('a.deleted', 0);
