@@ -134,7 +134,9 @@ class Supply_materials extends CI_Controller
             $filter_request_no = $this->input->get('filter_request_no');
             $filter_product_family = $this->input->get('filter_product_family');
             $filter_product_no = base64_decode($this->input->get('filter_product_no'));
-            $filter_kanban_date = $this->input->get('filter_kanban_date');
+            $filter_from = $this->input->get('filter_from');
+            $filter_to   = $this->input->get('filter_to');
+            $filter_type   = $this->input->get('filter_type');
             $filter_status = $this->input->get('filter_status');
 
             $page = $this->input->post('page');
@@ -166,8 +168,12 @@ class Supply_materials extends CI_Controller
                 if($filter_product_no != ""){
                     $this->db->where('a.item_rm_id', $filter_product_no);
                 }
-                if($filter_kanban_date != ""){
-                    $this->db->where('a.request_date', $filter_kanban_date);
+                if($filter_type != ""){
+                    $this->db->where('a.type', $filter_type);
+                }
+                if ($filter_from != "" and $filter_to != "") {
+                    $this->db->where('a.request_date >=', $filter_from);
+                    $this->db->where('a.request_date <=', $filter_to);
                 }
                 if($filter_status != ""){
                     $this->db->where('a.status', $filter_status);
@@ -204,6 +210,8 @@ class Supply_materials extends CI_Controller
                         "item_fg_id" => $record['item_fg_id'],
                         "item_name" => $record['item_name'],
                         "workorder" => $record['workorder'],
+                        "type" => $record['type'],
+                        "remarks" => $record['remarks'],
                         "status" => $status,
                         "state" => "closed"
                     );
@@ -213,10 +221,16 @@ class Supply_materials extends CI_Controller
                 echo json_encode($result);
             } else {
                 //Select Query
-                $this->db->select('a.*, b.number as item_number, b.name as item_name, b.uom, COALESCE(SUM(c.qty),0) as qty_actual');
+                $this->db->select('a.*, b.number as item_number, b.name as item_name, b.uom, COALESCE(SUM(c.qty),0) as qty_actual, l.lotnos');
                 $this->db->from('supply_materials a');
                 $this->db->join('item_rm b', 'a.item_rm_id = b.id');
                 $this->db->join('issued_material_details c', 'a.request_no = c.request_no and a.item_rm_id = c.item_rm_id','left');
+                $this->db->join('(SELECT a.request_no,a.item_rm_id, GROUP_CONCAT(DISTINCT d.lotno ORDER BY d.lotno SEPARATOR ", ") as lotnos
+                FROM supply_materials a
+                LEFT JOIN issued_material_details b ON a.request_no = b.request_no and a.item_rm_id = b.item_rm_id
+                LEFT JOIN purchase_order_labels c ON c.label_no = b.label_no
+                LEFT JOIN purchase_order_receipts d ON d.receipt_id = c.receipt_id
+                GROUP BY a.request_no , a.item_rm_id) l', 'a.request_no =l.request_no and a.item_rm_id = l.item_rm_id', 'left');
                 $this->db->where('a.deleted', 0);
                 $this->db->where('a.request_no', $id);
                 $this->db->group_by('a.id');
@@ -226,8 +240,9 @@ class Supply_materials extends CI_Controller
                 if($filter_product_no != ""){
                     $this->db->where('a.item_rm_id', $filter_product_no);
                 }
-                if($filter_kanban_date != ""){
-                    $this->db->where('a.request_date', $filter_kanban_date);
+                if ($filter_from != "" and $filter_to != "") {
+                    $this->db->where('a.request_date >=', $filter_from);
+                    $this->db->where('a.request_date <=', $filter_to);
                 }
                 if($filter_status != ""){
                     $this->db->where('a.status', $filter_status);
@@ -255,8 +270,10 @@ class Supply_materials extends CI_Controller
                         "item_number" => $record['item_number'],
                         "item_name" => $record['item_name'],
                         "qty" => $record['qty'],
+                        "qty_actual" => $record['qty_actual'],
                         "uom" => $record['uom'],
                         "remarks" => $record['remarks'],
+                        "lotnos" => $record['lotnos'],
                         "status" => $status,
                         "created_by" => $record['created_by'],
                         "created_date" => $record['created_date'],
@@ -312,6 +329,7 @@ class Supply_materials extends CI_Controller
         $kanbans = $this->crud->reads('supply_materials', [], ["request_no" => base64_decode($request_no)]);
         $kanban = $this->crud->read('supply_materials', [], ["request_no" => base64_decode($request_no)]);
         $config = $this->db->get('config')->row();
+        $config_iso = $this->db->get('config_iso')->row();
         $rows = 8;
         $page = ceil(count($kanbans) / $rows);
         //Generate QRcode
@@ -362,22 +380,54 @@ class Supply_materials extends CI_Controller
         $hal = 1;
         $subtotal = 0;
         for ($i = 0; $i < $page; $i++) {
-            $this->db->select('a.*, b.number as item_number, b.name as item_name, f.location, b.uom');
+            $this->db->select('a.*, b.number as item_number, b.name as item_name, f.location, b.uom , COALESCE(SUM(c.qty),0) as qty_actual, l.lotnos');
             $this->db->from('supply_materials a');
             $this->db->join('item_rm b', 'a.item_rm_id = b.id');
             // $this->db->join('uom d', 'b.uom_id = d.id');
-            $this->db->join('warehouse_location_items f', "a.item_rm_id = f.item_rm_id and type = 'RM'", 'left');
+            $this->db->join('warehouse_location_items f', "a.item_rm_id = f.item_rm_id and f.type = 'RM'", 'left');
+            $this->db->join('issued_material_details c', 'a.request_no = c.request_no and a.item_rm_id = c.item_rm_id','left');
+            $this->db->join('(SELECT a.request_no,a.item_rm_id, GROUP_CONCAT(DISTINCT d.lotno ORDER BY d.lotno SEPARATOR ", ") as lotnos
+            FROM supply_materials a
+            LEFT JOIN issued_material_details b ON a.request_no = b.request_no and a.item_rm_id = b.item_rm_id
+            LEFT JOIN purchase_order_labels c ON c.label_no = b.label_no
+            LEFT JOIN purchase_order_receipts d ON d.receipt_id = c.receipt_id
+            GROUP BY a.request_no , a.item_rm_id) l', 'a.request_no =l.request_no and a.item_rm_id = l.item_rm_id', 'left');
             $this->db->where('a.deleted', 0);
             $this->db->like('a.request_no', base64_decode($request_no));
             $this->db->group_by('a.item_rm_id');
             $this->db->limit(8, ($i * 8));
             $records = $this->db->get()->result_array();
-            $html .= '<table>
+            $html .= '<table style="width:100%;">
                             <tr>
-                                <th style="padding:10px;"><img src="' . $config->favicon . '" width="50" /></th>
-                                <td width="700" style="padding:10px;">
+                                <th width="10"><img src="' . $config->favicon . '" width="60" /></th>
+                                <td width="250" style="padding:10px;">
                                     <b style="font-size:14px;">' . $config->name . '</b><br>
                                     <span style="font-size:10px;">' . $config->address . '</span><br>
+                                </td>
+                                 <td width="100" style="text-align:right;">
+                                    <table style="width:100%; font-size:10px;">
+                                        <tr>
+                                            <td width="50" rowspan="4"><img src="' . base_url('assets/image/qrcode/' . $kanban->request_no . '.png') . '" width="60"/></td>
+                                            <td width="60">Doc No</td>
+                                            <td width="5">:</td>
+                                            <td width="100">' . $config_iso->doc_non_supply_sheet . '</td>
+                                        </tr>
+                                        <tr>
+                                            <td>Form</td>
+                                            <td>:</td>
+                                            <td>' . $config_iso->form_non_supply_sheet . '</td>
+                                        </tr>
+                                        <tr>
+                                            <td>Print Date</td>
+                                            <td>:</td>
+                                            <td>' . date("Y-m-d H:i") . '</td>
+                                        </tr>
+                                        <tr>
+                                            <td>Print By</td>
+                                            <td>:</td>
+                                            <td>' . $this->session->name . '</td>
+                                        </tr>
+                                    </table>
                                 </td>
                             </tr>
                         </table>
@@ -429,37 +479,43 @@ class Supply_materials extends CI_Controller
                                 </div> 
                                 <table id="customers">
                                     <tr>
-                                        <th>No</th>
-                                        <th>Product No</th>
-                                        <th>Product Name</th>
-                                        <th>Uom</th>
-                                        <th>Qty</th>
-                                        <th width="80">WHS Stock</th>
-                                        <th width="80">WHS Location</th>
+                                        <th style="text-align:center">No</th>
+                                        <th style="text-align:center">Product No</th>
+                                        <th style="text-align:center">Product Name</th>
+                                        <th style="text-align:center">Uom</th>
+                                        <th style="text-align:center">Qty</th>
+                                        <th style="text-align:center">Qty Issued</th>
+                                        <th style="text-align:center">Lot No RM</th>
+                                        <th style="text-align:center; width=80">WHS Stock</th>
+                                        <th style="text-align:center; width=80">WHS Location</th>
                                     </tr>';
             $no = 1;
             foreach ($records as $record) {
                 $dateNow = date("Y-m-d");
+                $date = date("Y-m-t");
                 $item_rm_id = $record['item_rm_id'];
-                //Stock kWarehouse RM
-                $stockWarehouse = $this->crud->query("SELECT
-                    a.id,
-                    (COALESCE(SUM(e.qty),0) + COALESCE(g.return_qty,0) - COALESCE(f.qty, 0)) as end_stock
-                FROM item_rm a 
-                JOIN item_familys b ON a.item_family_id = b.id
-                JOIN uom c ON a.uom = c.name
-                LEFT JOIN purchase_order_receipts d ON a.id = d.item_rm_id and d.receipt_date <= '$dateNow'
-                LEFT JOIN scan_item_receipts e ON d.receipt_id = e.receipt_id
-                LEFT JOIN (SELECT item_rm_id, COALESCE(SUM(qty), 0) as qty FROM issued_material_details WHERE DATE_FORMAT(created_date, '%Y-%m-%d') <= '$dateNow' GROUP BY item_rm_id) f ON a.id = f.item_rm_id
-                LEFT JOIN (SELECT a.item_rm_id, SUM(c.qty) as return_qty
-                    FROM return_materials a 
-                    JOIN return_material_labels b ON a.return_id = b.return_id
-                    JOIN scan_item_receipts c ON a.return_id = c.receipt_id and b.label_no = c.label_no
-                    WHERE a.return_date <= '$dateNow'
-                    GROUP BY a.item_rm_id) g ON a.id = g.item_rm_id
+                $query = $this->crud->query("SELECT 
+                a.id, 
+                a.number, 
+                ((COALESCE(b.qty_scan_in, 0) + COALESCE(c.qty_os_rm, 0) + COALESCE(d.qty_trans_rm_in, 0) + COALESCE(e.return_qty, 0) + COALESCE(h.qty_scan_bpm, 0)) - 
+                (COALESCE(f.qty_issued, 0) + COALESCE(g.qty_trans_rm_out, 0))) AS ending_stock
+                            FROM item_rm a
+                            LEFT JOIN (SELECT b.item_rm_id, SUM(a.qty) AS qty_scan_in FROM scan_item_receipts a JOIN purchase_order_receipts b ON a.receipt_id = b.receipt_id WHERE b.receipt_date <= '$date'  GROUP BY b.item_rm_id) b ON a.id = b.item_rm_id
+                            LEFT JOIN (SELECT item_rm_id, SUM(qty) AS qty_os_rm FROM os_rm WHERE trans_date <= '$date' GROUP BY item_rm_id) c ON a.id = c.item_rm_id
+                            LEFT JOIN (SELECT item_rm_id, SUM(qty) AS qty_trans_rm_in FROM transaction_rm WHERE request_date <= '$date' AND transaction_kind = 'IN' GROUP BY item_rm_id) d ON a.id = d.item_rm_id
+                            LEFT JOIN (SELECT a.item_rm_id, SUM(c.qty) as return_qty FROM return_materials a JOIN return_material_labels b ON a.return_id = b.return_id JOIN scan_item_receipts c ON a.return_id = c.receipt_id AND b.label_no = c.label_no WHERE a.return_date <= '$date' GROUP BY a.item_rm_id) e ON a.id = e.item_rm_id
+                            LEFT JOIN (SELECT item_rm_id, SUM(qty) AS qty_issued FROM issued_material_details WHERE created_date <= '$date' GROUP BY item_rm_id) f ON a.id = f.item_rm_id
+                            LEFT JOIN (SELECT item_rm_id, SUM(qty) AS qty_trans_rm_out FROM transaction_rm WHERE request_date <= '$date' AND transaction_kind = 'OUT' GROUP BY item_rm_id) g ON a.id = g.item_rm_id
+                            LEFT JOIN (SELECT item_rm_id, SUM(qty) AS qty_scan_bpm FROM scan_item_bpm WHERE DATE_FORMAT(request_date, '%Y-%m-%d') <= '$date' GROUP BY item_rm_id) h ON a.id = h.item_rm_id
                 WHERE a.id like '$item_rm_id'
                 GROUP BY a.id
                 ORDER BY a.number");
+
+                if ($query && count($query) > 0) {
+                    $ending_stock = $query[0]->ending_stock;
+                } else {
+                    $ending_stock = 0;
+                }
 
                 $html .= '  <tr>
                                 <td>' . $no . '</td>
@@ -467,7 +523,9 @@ class Supply_materials extends CI_Controller
                                 <td>' . $record['item_name'] . '</td>
                                 <td>' . $record['uom'] . '</td>
                                 <td style="text-align:right;">' . $record['qty'] . '</td>
-                                <td style="text-align:right;">' . number_format((@$stockWarehouse[0]->end_stock), 2) . '</td>
+                                <td>' . $record['qty_actual'] . '</td>
+                                <td>' . $record['lotnos'] . '</td>
+                                <td style="text-align:right;">' . @number_format(($ending_stock), 2) . '</td>
                                 <td style="text-align:center;">' . $record['location'] . '</td>
                             </tr>';
                 $no++;
@@ -511,7 +569,9 @@ class Supply_materials extends CI_Controller
         $filter_request_no = $this->input->get('filter_request_no');
         $filter_product_family = $this->input->get('filter_product_family');
         $filter_product_no = base64_decode($this->input->get('filter_product_no'));
-        $filter_kanban_date = $this->input->get('filter_kanban_date');
+        $filter_from = $this->input->get('filter_from');
+        $filter_to   = $this->input->get('filter_to');
+        $filter_type   = $this->input->get('filter_type');
         $filter_status = $this->input->get('filter_status');
 
         //Config
@@ -534,8 +594,12 @@ class Supply_materials extends CI_Controller
         if($filter_product_no != ""){
             $this->db->where('a.item_rm_id', $filter_product_no);
         }
-        if($filter_kanban_date != ""){
-            $this->db->where('a.request_date', $filter_kanban_date);
+        if($filter_type != ""){
+            $this->db->where('a.type', $filter_type);
+        }
+        if ($filter_from != "" and $filter_to != "") {
+            $this->db->where('a.request_date >=', $filter_from);
+            $this->db->where('a.request_date <=', $filter_to);
         }
         if($filter_status != ""){
             $this->db->where('a.status', $filter_status);

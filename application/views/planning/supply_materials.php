@@ -12,6 +12,9 @@
             <th rowspan="2" data-options="field:'item_name',width:150,halign:'center'">Product Name</th>
             <th rowspan="2" data-options="field:'uom',width:80,align:'center'">UoM</th>
             <th rowspan="2" data-options="field:'qty',width:80,halign:'center',align:'right',formatter:numberformatQpa">Qty</th>
+            <th rowspan="2" data-options="field:'qty_actual',width:80,halign:'center',align:'right',formatter:numberformatQpa">Qty Issued</th>
+            <th rowspan="2" data-options="field:'lotnos',width:80,halign:'center',align:'right'">Lot No RM</th>
+            <th rowspan="2" data-options="field:'type',width:120,align:'left'">Type</th>
             <th rowspan="2" data-options="field:'remarks',width:250,align:'left'">Remarks</th>
             <th colspan="2" data-options="field:'',width:100,halign:'center'"> Created</th>
             <th colspan="2" data-options="field:'',width:100,halign:'center'"> Updated</th>
@@ -59,12 +62,21 @@
                 </div>
                 <div class="fitem">
                     <span style="width:35%; display:inline-block;">Kanban Date</span>
-                    <input style="width:60%;" id="filter_kanban_date" class="easyui-datebox" data-options="formatter:myformatter,parser:myparser, editable:false">
+                    <input style="width:28%;" id="filter_from" class="easyui-datebox" value="" data-options="formatter:myformatter,parser:myparser, editable:false"> To
+                    <input style="width:27%;" id="filter_to" class="easyui-datebox" value="" data-options="formatter:myformatter,parser:myparser, editable:false">
                 </div>
             </div>
             <div style="width: 30%; float: left;">
                 <div class="fitem">
-                    <span style="width:35%; display:inline-block;">Report Display</span>
+                    <span style="width:35%; display:inline-block;">Type</span>
+                    <select style="width:60%;" id="filter_type" class="easyui-combobox" panelHeight="auto">
+                        <option value="">Choose All</option>
+                        <option value="Issued Production">Issued Production</option>
+                        <option value="Issued Customer">Issued Customer</option>
+                    </select>
+                </div>
+                <div class="fitem">
+                    <span style="width:35%; display:inline-block;">Status</span>
                     <select style="width:60%;" id="filter_status" class="easyui-combobox" panelHeight="auto">
                         <option value="">Choose All</option>
                         <option value="0">OPEN</option>
@@ -84,7 +96,7 @@
     <a href="javascript:void(0)" class="easyui-linkbutton" data-options="plain:true" onclick="removeit()"><i class="fa fa-times"></i> Remove</a>
 </div>
 <!-- Insert & Update -->
-<div id="dlg_insert" class="easyui-dialog" title="Add New" data-options="closed: true,modal:true" style="width: 800px; height: 600px; padding:10px; top: 20px;">
+<div id="dlg_insert" class="easyui-dialog" title="Add New" data-options="closed: true,modal:true" style="width: 800px; height: 650px; padding:10px; top: 20px;">
     <form id="frm_insert" method="post" novalidate>
         <fieldset style="width:100%; border:1px solid #d0d0d0; margin-bottom: 10px; border-radius:4px; float: left;">
             <legend><b>Form Data</b></legend>
@@ -97,11 +109,15 @@
                     <span style="width:35%; display:inline-block;">Request No</span>
                     <input style="width:60%;" name="request_no" id="request_no" readonly class="easyui-textbox">
                 </div>
-            </div>
-            <div style="width: 50%; float: left;">
                 <div class="fitem">
                     <span style="width:35%; display:inline-block;">Request Name</span>
                     <input style="width:60%;" name="request_name" id="request_name" value="<?= $this->session->name ?>" readonly class="easyui-textbox">
+                </div>
+            </div>
+            <div style="width: 50%; float: left;">
+                <div class="fitem">
+                    <span style="width:35%; display:inline-block;">Type</span>
+                    <input style="width:60%;" name="type" id="type" required="" class="easyui-combobox">
                 </div>
                 <div class="fitem">
                     <span style="width:35%; display:inline-block;">Remarks</span>
@@ -343,15 +359,23 @@
         }
     }
 
-    function removeit() {
-        if (endEditing()) {
-            var row = $('#dg2').datagrid('getSelected'); // Dapatkan baris yang dipilih
-            if (row) {
-                var rowIndex = $('#dg2').datagrid('getRowIndex', row); // Dapatkan index baris
-                $('#dg2').datagrid('deleteRow', rowIndex); // Hapus baris yang dipilih
-            }
-            editIndex = undefined; // Reset editIndex
+    // function removeit() {
+    //     if (endEditing()) {
+    //         var row = $('#dg2').datagrid('getSelected'); // Dapatkan baris yang dipilih
+    //         if (row) {
+    //             var rowIndex = $('#dg2').datagrid('getRowIndex', row); // Dapatkan index baris
+    //             $('#dg2').datagrid('deleteRow', rowIndex); // Hapus baris yang dipilih
+    //         }
+    //         editIndex = undefined; // Reset editIndex
+    //     }
+    // }
+
+     function removeit() {
+        if (editIndex == undefined) {
+            return true;
         }
+        $('#dg2').datagrid('cancelEdit', editIndex).datagrid('deleteRow', editIndex);
+        editIndex = undefined;
     }
 
 
@@ -423,10 +447,15 @@
         var filter_request_no = $("#filter_request_no").combobox('getValue');
         var filter_product_family = $("#filter_product_family").combobox('getValue');
         var filter_product_no = $("#filter_product_no").combogrid('getValue');
-        var filter_kanban_date = $("#filter_kanban_date").datebox('getValue');
+        var filter_from = $("#filter_from").datebox('getValue');
+        var filter_to = $("#filter_to").datebox('getValue');
+        var filter_type = $("#filter_type").combobox('getValue');
         var filter_status = $("#filter_status").combobox('getValue');
 
-        url = "?&filter_request_no=" + filter_request_no + "&filter_product_family=" + filter_product_family + "&filter_product_no=" + btoa(filter_product_no) + "&filter_kanban_date=" + filter_kanban_date + "&filter_status=" + filter_status;
+        url = "?&filter_request_no=" + filter_request_no + "&filter_product_family=" + filter_product_family + 
+        "&filter_product_no=" + btoa(filter_product_no) + "&filter_type=" + filter_type + 
+        "&filter_from=" + filter_from + "&filter_to=" + filter_to +
+        "&filter_status=" + filter_status;
         $('#dg').treegrid({
             url: '<?= base_url('planning/supply_materials/datatables') ?>' + url
         });
@@ -444,10 +473,15 @@
         var filter_request_no = $("#filter_request_no").combobox('getValue');
         var filter_product_family = $("#filter_product_family").combobox('getValue');
         var filter_product_no = $("#filter_product_no").combogrid('getValue');
-        var filter_kanban_date = $("#filter_kanban_date").datebox('getValue');
+        var filter_from = $("#filter_from").datebox('getValue');
+        var filter_to = $("#filter_to").datebox('getValue');
+        var filter_type = $("#filter_type").combobox('getValue');
         var filter_status = $("#filter_status").combobox('getValue');
 
-        url = "?&filter_request_no=" + filter_request_no + "&filter_product_family=" + filter_product_family + "&filter_product_no=" + btoa(filter_product_no) + "&filter_kanban_date=" + filter_kanban_date + "&filter_status=" + filter_status;
+        url = "?&filter_request_no=" + filter_request_no + "&filter_product_family=" + filter_product_family + 
+        "&filter_product_no=" + btoa(filter_product_no) + "&filter_type=" + filter_type + 
+        "&filter_from=" + filter_from + "&filter_to=" + filter_to +
+        "&filter_status=" + filter_status;
         window.location.assign('<?= base_url('planning/supply_materials/print/excel') ?>' + url);
     }
 
@@ -501,17 +535,19 @@
                     var request_no = $("#request_no").textbox('getValue');
                     var request_date = $("#request_date").datebox('getValue');
                     var request_name = $("#request_name").textbox('getValue');
+                    var type = $("#type").combobox('getValue');
                     var remarks = $("#remarks").textbox('getValue');
-                    // var item_fg_id = $("#item_fg_id").textbox('getValue');
-                    // var item_fg_number = $("#item_fg_number").textbox('getValue');
-                    // var workorder = $("#workorder").textbox('getValue');
-                    // var period = $("#period").combobox('getValue');
-                    // var wp = $("#wp").combogrid('getValue');
+
+                    if(type == ""){
+                        toastr.error("please complete your input data");
+                        return;
+                    }
 
                     // if (period == "" || item_fg_id == "" || totalrows <= 0) {
                     if (totalrows <= 0) {
                         toastr.error("please complete your input data");
                     } else {
+                        $('#dg2').datagrid('acceptChanges');
                         var rows = $('#dg2').datagrid('getRows');
                         var totalrows = rows.length;
                         endEditing();
@@ -526,6 +562,7 @@
                                         request_date: request_date,
                                         request_no: request_no,
                                         request_name: request_name,
+                                        type: type,
                                         remarks: remarks,
                                         // period: period,
                                         // wp: wp,
@@ -691,6 +728,18 @@
             }
         });
     });
+
+    $('#type').combobox({
+        data: [
+            { name: 'Issued Production' },
+            { name: 'Issued Customer' }
+        ],
+        valueField: 'name',
+        textField: 'name',
+        panelHeight: 'panelHeight',
+        prompt: 'Choose Type'
+    });
+
     //Format Datepicker
     function myformatter(date) {
         var y = date.getFullYear();
