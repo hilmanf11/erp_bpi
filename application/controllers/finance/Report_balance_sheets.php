@@ -161,6 +161,7 @@ class Report_balance_sheets extends CI_Controller
         $retained_earning = $this->getDataRotate($filter_from, $filter_to, "Current Investor Equity", "Balance Sheet", "Retained Earning (Last Year)");
 
         //Income Statement =====================================================================================
+        // $total_taxes = $this->crud->read("income_statements", [], ["name" => "NET PROFIT LOSS AFTER TAXES", "period" => $period]);
         $total_taxes = $this->crud->read("income_statements", [], ["name" => "NET PROFIT LOSS AFTER TAXES", "period" => $period]);
         //$balance_sheet_before = $this->balanceSheet($filter_from);
 
@@ -171,47 +172,142 @@ class Report_balance_sheets extends CI_Controller
 
         $total_liabilities_equity = ($total_liabilities + $total_investor_equity);
 
-
-        $data = array(["period" => $period,"name" => "Cash on Hand","amount" => $cash_on_hand],
-                ["period" => $period,"name" => "Cash in Bank","amount" => $cash_in_bank],
-                ["period" => $period,"name" => "Time Deposit","amount" => $time_deposit],
-                ["period" => $period,"name" => "Account Receivable","amount" => $account_receivable],
-                ["period" => $period,"name" => "Allow.Bad Debt","amount" => $allow_bad_debt],
-                ["period" => $period,"name" => "Inventories","amount" => $inventories],
-                ["period" => $period,"name" => "Prepaid Expense","amount" => $prepaid_expense],
-                ["period" => $period,"name" => "Total Current Assets","amount" => $total_current_assets],
-                ["period" => $period,"name" => "Long-term Investment","amount" => $long_term_investment],
-                ["period" => $period,"name" => "Fixed assets-cost","amount" => $fixed_asset_cost],
-                ["period" => $period,"name" => "Less: Accumulated depreciation","amount" => $less_accumulated],
-                ["period" => $period,"name" => "Total Fixed Assets","amount" => $total_fixed_asset],
-                ["period" => $period,"name" => "Right to use sites","amount" => $right_to_use_sites],
-                ["period" => $period,"name" => "Other Deffered expeniture","amount" => $other_deffered_expeniture],
-                ["period" => $period,"name" => "Total Other Assets","amount" => $total_other_assets],
-                ["period" => $period,"name" => "Total Assets","amount" => $total_assets],
-                ["period" => $period,"name" => "Account Payable","amount" => $account_payable],
-                ["period" => $period,"name" => "Accrued Expense","amount" => $accured_expense],
-                ["period" => $period,"name" => "Taxes Payable","amount" => $taxes_payable],
-                ["period" => $period,"name" => "Acc.Payable Machine","amount" => $acc_payable_machine],
-                ["period" => $period,"name" => "Acc.Payable Other","amount" => $acc_payable_other],
-                ["period" => $period,"name" => "Total Current Liabilities","amount" => $total_current_liabilities],
-                ["period" => $period,"name" => "Long Term Liabilities","amount" => $long_term_liabilities],
-                ["period" => $period,"name" => "Total Liabilities","amount" => $total_liabilities],
-                ["period" => $period,"name" => "Paid in Capital","amount" => $paid_in_capital],
-                ["period" => $period,"name" => "Capital Surplus","amount" => $capital_surplus],
-                ["period" => $period,"name" => "Revaluation Surplus","amount" => $revaluation_surplus],
-                ["period" => $period,"name" => "Retained Earning (Last Year)","amount" => $retained_earning],
-                ["period" => $period,"name" => "P/L From Jan - Now","amount" => $pl_from_jan_now],
-                ["period" => $period,"name" => "Total Investor Equity","amount" => $total_investor_equity],
-                ["period" => $period,"name" => "Total Liabilities Equity","amount" => $total_liabilities_equity]);
+        $data = [
+            ["index" => 1, "order" => 1, "period" => $period, "name" => "Cash on Hand", "amount" => $cash_on_hand],
+            ["index" => 1, "order" => 2, "period" => $period, "name" => "Cash in Bank", "amount" => $cash_in_bank],
+            ["index" => 1, "order" => 3, "period" => $period, "name" => "Time Deposit", "amount" => $time_deposit],
+            ["index" => 1, "order" => 4, "period" => $period, "name" => "Account Receivable", "amount" => $account_receivable],
+            ["index" => 1, "order" => 5, "period" => $period, "name" => "Allow.Bad Debt", "amount" => $allow_bad_debt],
+            ["index" => 1, "order" => 6, "period" => $period, "name" => "Inventories", "amount" => $inventories],
+            ["index" => 1, "order" => 7, "period" => $period, "name" => "Prepaid Expense", "amount" => $prepaid_expense],
+            ["index" => 1, "order" => 8, "period" => $period, "name" => "Total Current Assets", "amount" => $total_current_assets],
+            ["index" => 1, "order" => 9, "period" => $period, "name" => "Long-term Investment", "amount" => $long_term_investment],
+            ["index" => 1, "order" => 10, "period" => $period, "name" => "Fixed assets-cost", "amount" => $fixed_asset_cost],
+            ["index" => 1, "order" => 11, "period" => $period, "name" => "Less: Accumulated depreciation", "amount" => $less_accumulated],
+            ["index" => 1, "order" => 12, "period" => $period, "name" => "Total Fixed Assets", "amount" => $total_fixed_asset],
+            ["index" => 1, "order" => 13, "period" => $period, "name" => "Right to use sites", "amount" => $right_to_use_sites],
+            ["index" => 1, "order" => 14, "period" => $period, "name" => "Other Deffered expeniture", "amount" => $other_deffered_expeniture],
+            ["index" => 1, "order" => 15, "period" => $period, "name" => "Total Other Assets", "amount" => $total_other_assets],
+            ["index" => 1, "order" => 16, "period" => $period, "name" => "Total Assets", "amount" => $total_assets],
+            ["index" => 1, "order" => 17, "period" => $period, "name" => "Account Payable", "amount" => $account_payable],
+            ["index" => 1, "order" => 18, "period" => $period, "name" => "Accrued Expense", "amount" => $accured_expense],
+            ["index" => 1, "order" => 19, "period" => $period, "name" => "Taxes Payable", "amount" => $taxes_payable],
+            ["index" => 1, "order" => 20, "period" => $period, "name" => "Acc.Payable Machine", "amount" => $acc_payable_machine],
+            ["index" => 1, "order" => 21, "period" => $period, "name" => "Acc.Payable Other", "amount" => $acc_payable_other],
+            ["index" => 1, "order" => 22, "period" => $period, "name" => "Total Current Liabilities", "amount" => $total_current_liabilities],
+            ["index" => 1, "order" => 23, "period" => $period, "name" => "Long Term Liabilities", "amount" => $long_term_liabilities],
+            ["index" => 1, "order" => 24, "period" => $period, "name" => "Total Liabilities", "amount" => $total_liabilities],
+            ["index" => 1, "order" => 25, "period" => $period, "name" => "Paid in Capital", "amount" => $paid_in_capital],
+            ["index" => 1, "order" => 26, "period" => $period, "name" => "Capital Surplus", "amount" => $capital_surplus],
+            ["index" => 1, "order" => 27, "period" => $period, "name" => "Revaluation Surplus", "amount" => $revaluation_surplus],
+            ["index" => 1, "order" => 28, "period" => $period, "name" => "Retained Earning (Last Year)", "amount" => $retained_earning],
+            ["index" => 1, "order" => 29, "period" => $period, "name" => "P/L From Jan - Now", "amount" => $pl_from_jan_now],
+            ["index" => 1, "order" => 30, "period" => $period, "name" => "Total Investor Equity", "amount" => $total_investor_equity],
+            ["index" => 1, "order" => 31, "period" => $period, "name" => "Total Liabilities Equity", "amount" => $total_liabilities_equity]
+        ];
 
         $result['total'] = count($data);
         $result = array_merge($result, ['rows' => $data]);
         echo json_encode($result);
     }
 
+    public function generateData2(){
+        $filter_date = $this->input->post('filter_date');
+        $period = date("Ym", strtotime($filter_date));
+        $getData = $this->crud->reads("balance_sheets", [], ["index" => 1, "period" => $period]);
+
+        $datas = array();
+        foreach ($getData as $income_statement) {
+            $name = $income_statement->name;
+
+            $this->db->select('b.account_number, b.account_name, b.local_debit, b.local_kredit');
+            $this->db->from('account_statements a');
+            $this->db->join('account_coa b', 'a.account_number = b.account_number');
+            $this->db->where('a.modul', "Balance Sheet");
+            $this->db->where('a.name', $name);
+            $this->db->group_by('b.account_number');
+            $accounts = $this->db->get()->result_array();
+            
+            foreach ($accounts as $account) {
+                $account_number = $account['account_number'];
+                $account_name = $account['account_name'];
+                $trial_balance = $this->crud->read("trial_balances", [], ["account_number" => $account_number, "period" => $period]);
+
+                $year = substr($period, 0, 4);
+                $month = substr($period, 4);
+
+                $period_from = date("Y01", strtotime($year."-".$month));
+                $period_to = date("Ym", strtotime("-1 month", strtotime($year."-".$month)));
+
+                $income = $this->crud->query("SELECT name, account_number, SUM(amount) as amount 
+                FROM balance_sheets WHERE name = '$name' and account_number = '$account_number' and `period` between '$period_from' and '$period_to'
+                GROUP BY name, account_number");
+
+                $amount = (@$trial_balance->ending_debit - abs(@$trial_balance->ending_credit));
+                $accumulated = ((@$trial_balance->ending_debit - abs(@$trial_balance->ending_credit)) + @$income[0]->amount);
+
+                $datas[] = [
+                    "index" => 2,
+                    "period" => $period,
+                    "name" => $name,
+                    "account_number" => $account_number,
+                    "account_name" => $account_name,
+                    "amount" => $amount,
+                    "accumulated" => $accumulated,
+                ];
+            }
+        }
+
+        $result['total'] = count($datas);
+        $result = array_merge($result, ['rows' => $datas]);
+        echo json_encode($result);
+    }
+
     public function datatables($period, $name){
         $account_statements = $this->crud->read('balance_sheets', [], ["period" => $period, "name" => $name]);
         return $account_statements->amount;
+    }
+
+    
+    public function datatableDetails($period, $name){
+        $account_statements = $this->crud->reads('balance_sheets', [], ["period" => $period, "name" => $name, "index" => 2], "", "account_number", "asc");
+
+        $htmlSales = "";
+        foreach ($account_statements as $account_statement) {
+            $htmlSales .= '<tr>
+                                <td style="mso-number-format:\@;">'.$account_statement->account_number.'</td>
+                                <td>'.$account_statement->account_name.'</td>
+                                <td style="text-align:right;">'.$this->formatting($account_statement->amount).'</td>
+                            </tr>';
+        }
+
+        return array("rowspan" => count($account_statements) + 1, "html" => $htmlSales);
+    }
+
+    function datatableYear($account_number, $filter_date, $header = ""){
+        $filter_year = date('Y', strtotime($filter_date));
+        $filter_month = date('m', strtotime($filter_date));
+
+        $months = [];
+
+        // Loop dari bulan Januari (01) hingga bulan saat ini ($filter_month)
+        for ($i = 1; $i <= $filter_month; $i++) {
+            $months[] = $filter_year . str_pad($i, 2, "0", STR_PAD_LEFT);
+        }
+
+        $arr = [];
+        // Output bulan
+        foreach ($months as $month) {
+            if($header == ""){
+                $income_statement = $this->crud->read("balance_sheets", [], ["period" => $month, "account_number" => $account_number]);
+            }else{
+                $income_statement = $this->crud->read("balance_sheets", [], ["period" => $month, "name" => $account_number, "index" => 1]);
+            }
+            
+            $arr[] = isset($income_statement->amount) ? $income_statement->amount : 0; 
+        }
+
+        return $arr;
     }
 
     public function create()
@@ -221,13 +317,45 @@ class Report_balance_sheets extends CI_Controller
 
             $trial_balances = $this->crud->reads("balance_sheets", [], [
                 "period" => $post['period'], 
-                "name" => $post['name']
+                "name"   => $post['name'],
+                "index"  => 1,
             ]);
 
             if(count($trial_balances) > 0){
                 $send = $this->crud->update('balance_sheets', [
                     "period" => $post['period'], 
-                    "name" => $post['name']
+                    "name"   => $post['name'],
+                    "index"  => 1,
+                ], $post);
+
+                echo $send;
+            }else{
+                $send = $this->crud->create('balance_sheets', $post);
+                echo $send;
+            }
+        } else {
+            show_error("Cannot Process your request");
+        }
+    }    
+
+    public function createDetail()
+    {
+        if ($this->input->post()) {
+            $post = $this->input->post('data');
+            
+            $trial_balances = $this->crud->reads("balance_sheets", [], [
+                "period" => $post['period'], 
+                "name" => $post['name'],
+                "account_number" => $post['account_number'],
+                "index" => 2,
+            ]);
+
+            if(count($trial_balances) > 0){
+                $send = $this->crud->update('balance_sheets', [
+                    "period" => $post['period'], 
+                    "name" => $post['name'],
+                    "account_number" => $post['account_number'],
+                    "index" => 2,
                 ], $post);
 
                 echo $send;
@@ -259,6 +387,16 @@ class Report_balance_sheets extends CI_Controller
         $this->db->select('*');
         $this->db->from('config');
         $config = $this->db->get()->row();
+        
+        if($filter_display == "1"){
+            $title = "BALANCE SHEET FORMAT 1";
+        }elseif($filter_display == "2"){
+            $title = "BALANCE SHEET FORMAT 2";
+        }elseif($filter_display == "3"){
+            $title = "BALANCE SHEET DETAILS";
+        }else{
+            $title = "BALANCE SHEET YEARLY";
+        }
 
         $check_availability = $this->db->select('*')->from('balance_sheets')->where('period', $period)->get()->row();
         if (empty($check_availability)) {
@@ -288,7 +426,7 @@ class Report_balance_sheets extends CI_Controller
             </center>
             <br><br><br><br>
             <center>
-                <h3 style="margin:0;">BALANCE SHEET</h3>
+                <h3 style="margin:0;">'.$title.'</h3>
                 <small>PERIOD : <b>' . $filter_from . '</b> To <b>' . $filter_to . '</b></small>
             </center>
             <br>';
@@ -336,7 +474,8 @@ class Report_balance_sheets extends CI_Controller
 
             $total_liabilities_equity = $this->datatables($period, "Total Liabilities Equity");
 
-            if($filter_display == "1"){
+            if($filter_display == "1")
+            {
                 $html .= '<table id="customers" border="1">';
 
                     //Current Assets & Current Liabilities
@@ -544,7 +683,10 @@ class Report_balance_sheets extends CI_Controller
                                 </tr>';
 
                 $html .= '</table>';
-            }else{
+            }
+            elseif($filter_display == "2")
+            {
+                // FORMAT 2 
                 $html .= '<div style="width: 100%; font-size:12px; text-align:right;"><i>(Expressed in Rupiah)</i></div>';
                 $html .= '<table id="customers" border="1">';
                 //Current Assets
@@ -767,6 +909,476 @@ class Report_balance_sheets extends CI_Controller
                                 <td><b>32</b></td>
                                 <td style="text-align:right;"><b>'.$this->formatting($total_liabilities_equity).'</b></td>
                             </tr>';
+
+                $html .= '</table>';
+            }
+            elseif($filter_display == "3")
+            {
+                // FORMAT DETAILS 
+                $html .= '<div style="width: 100%; font-size:12px; text-align:right;"><i>(Expressed in Rupiah)</i></div>';
+                $html .= '<table id="customers" border="1">';
+                
+                //Current Assets
+                $html .= '  <tr style="background: #E8E8E8;">
+                                <th width="200">DESCRIPTION</th>
+                                <th width="10">Notes</th>
+                                <th width="50">Account Number</th>
+                                <th width="150">Account Name</th>
+                                <th width="50">Amount</th>
+                            </tr>
+                            <tr>
+                                <td colspan="5" style="height:20px;"></td>
+                            </tr>
+
+                            <tr>
+                                <td style="vertical-align:top;" rowspan="'.$this->datatableDetails($period, "Cash on Hand")['rowspan'].'">Cash on Hand</td>
+                                <td style="vertical-align:top;" rowspan="'.$this->datatableDetails($period, "Cash on Hand")['rowspan'].'">1</td>
+                            </tr>
+                            '.$this->datatableDetails($period, "Cash on Hand")['html'].'
+                            <tr>
+                                <td colspan="4"><b>Total Cash on Hand</b></td>
+                                <td style="text-align:right;"><b>'.$this->formatting($cash_on_hand).'</b></td>
+                            </tr>
+
+                            <tr>
+                                <td style="vertical-align:top;" rowspan="'.$this->datatableDetails($period, "Cash in Bank")['rowspan'].'">Cash in Bank</td>
+                                <td style="vertical-align:top;" rowspan="'.$this->datatableDetails($period, "Cash in Bank")['rowspan'].'">2</td>
+                            </tr>
+                            '.$this->datatableDetails($period, "Cash in Bank")['html'].'
+                            <tr>
+                                <td colspan="4"><b>Total Cash in Bank</b></td>
+                                <td style="text-align:right;"><b>'.$this->formatting($cash_in_bank).'</b></td>
+                            </tr>
+
+                            <tr>
+                                <td style="vertical-align:top;" rowspan="'.$this->datatableDetails($period, "Time Deposit")['rowspan'].'">Time Deposit</td>
+                                <td style="vertical-align:top;" rowspan="'.$this->datatableDetails($period, "Time Deposit")['rowspan'].'">3</td>
+                            </tr>
+                            '.$this->datatableDetails($period, "Time Deposit")['html'].'
+                            <tr>
+                                <td colspan="4"><b>Total Time Deposit</b></td>
+                                <td style="text-align:right;"><b>'.$this->formatting($time_deposit).'</b></td>
+                            </tr>
+
+                            <tr>
+                                <td style="vertical-align:top;" rowspan="'.$this->datatableDetails($period, "Account Receivable")['rowspan'].'">Account Receivable</td>
+                                <td style="vertical-align:top;" rowspan="'.$this->datatableDetails($period, "Account Receivable")['rowspan'].'">4</td>
+                            </tr>
+                            '.$this->datatableDetails($period, "Account Receivable")['html'].'
+                            <tr>
+                                <td colspan="4"><b>Total Account Receivable</b></td>
+                                <td style="text-align:right;"><b>'.$this->formatting($account_receivable).'</b></td>
+                            </tr>
+
+                            <tr>
+                                <td style="vertical-align:top;" rowspan="'.$this->datatableDetails($period, "Allow.Bad Debt")['rowspan'].'">Allow.Bad Debt</td>
+                                <td style="vertical-align:top;" rowspan="'.$this->datatableDetails($period, "Allow.Bad Debt")['rowspan'].'">5</td>
+                            </tr>
+                            '.$this->datatableDetails($period, "Allow.Bad Debt")['html'].'
+                            <tr>
+                                <td colspan="4"><b>Total Allow.Bad Debt</b></td>
+                                <td style="text-align:right;"><b>'.$this->formatting($allow_bad_debt).'</b></td>
+                            </tr>
+
+                            <tr>
+                                <td style="vertical-align:top;" rowspan="'.$this->datatableDetails($period, "Inventories")['rowspan'].'">Inventories</td>
+                                <td style="vertical-align:top;" rowspan="'.$this->datatableDetails($period, "Inventories")['rowspan'].'">6</td>
+                            </tr>
+                            '.$this->datatableDetails($period, "Inventories")['html'].'
+                            <tr>
+                                <td colspan="4"><b>Total Inventories</b></td>
+                                <td style="text-align:right;"><b>'.$this->formatting($inventories).'</b></td>
+                            </tr>
+
+                            <tr>
+                                <td style="vertical-align:top;" rowspan="'.$this->datatableDetails($period, "Prepaid Expense")['rowspan'].'">Prepaid Expense</td>
+                                <td style="vertical-align:top;" rowspan="'.$this->datatableDetails($period, "Prepaid Expense")['rowspan'].'">7</td>
+                            </tr>
+                            '.$this->datatableDetails($period, "Prepaid Expense")['html'].'
+                            <tr>
+                                <td colspan="4"><b>Total Prepaid Expense</b></td>
+                                <td style="text-align:right;"><b>'.$this->formatting($prepaid_expense).'</b></td>
+                            </tr>
+                            
+                            <tr>
+                                <td colspan="5" style="height:20px;"></td>
+                            </tr>
+                            <tr style="background: #E8E8E8;">
+                                <td><b>Total Current Assets</b></td>
+                                <td><b>8</b></td>
+                                <td></td>
+                                <td></td>
+                                <td style="text-align:right;"><b>'.$this->formatting($total_current_assets).'</b></td>
+                            </tr>';
+
+                //Other Assets
+                $html .= '  <tr>
+                                <td colspan="5" style="height:20px;"></td>
+                            </tr>
+                            <tr>
+                                <td style="vertical-align:top;" rowspan="'.$this->datatableDetails($period, "Long-term Investment")['rowspan'].'">Long-term Investment</td>
+                                <td style="vertical-align:top;" rowspan="'.$this->datatableDetails($period, "Long-term Investment")['rowspan'].'">9</td>
+                                <td></td>
+                                <td></td>
+                                <td style="text-align:right;">'.$this->formatting($long_term_investment).'</td>
+                            </tr>
+                            '.$this->datatableDetails($period, "Long-term Investment")['html'].'
+                            <tr>
+                                <td colspan="5" style="height:20px;"></td>
+                            </tr>
+
+                            <tr>
+                                <td style="vertical-align:top;" rowspan="'.$this->datatableDetails($period, "Fixed assets-cost")['rowspan'].'">Fixed assets-cost</td>
+                                <td style="vertical-align:top;" rowspan="'.$this->datatableDetails($period, "Fixed assets-cost")['rowspan'].'">10</td>
+                            </tr>
+                            '.$this->datatableDetails($period, "Fixed assets-cost")['html'].'
+                            <tr>
+                                <td colspan="4"><b>Total Fixed assets-cost</b></td>
+                                <td style="text-align:right;"><b>'.$this->formatting($fixed_asset_cost).'</b></td>
+                            </tr>
+
+                            <tr>
+                                <td style="vertical-align:top;" rowspan="'.$this->datatableDetails($period, "Less: Accumulated depreciation")['rowspan'].'">Less: Accumulated depreciation</td>
+                                <td style="vertical-align:top;" rowspan="'.$this->datatableDetails($period, "Less: Accumulated depreciation")['rowspan'].'">11</td>
+                            </tr>
+                            '.$this->datatableDetails($period, "Less: Accumulated depreciation")['html'].'
+                            <tr>
+                                <td colspan="4"><b>Total Less: Accumulated depreciation</b></td>
+                                <td style="text-align:right;"><b>'.$this->formatting($less_accumulated).'</b></td>
+                            </tr>
+
+                            <tr>
+                                <td>Total Fixed Assets</td>
+                                <td>13</td>
+                                <td></td>
+                                <td></td>
+                                <td style="text-align:right;">'.$this->formatting($total_fixed_asset).'</td>
+                            </tr>
+                            <tr>
+                                <td colspan="5" style="height:20px;"></td>
+                            </tr>
+                            <tr>
+                                <td style="vertical-align:top;" rowspan="'.$this->datatableDetails($period, "Right to use sites")['rowspan'].'">Right to use sites</td>
+                                <td style="vertical-align:top;" rowspan="'.$this->datatableDetails($period, "Right to use sites")['rowspan'].'">14</td>
+                            </tr>
+                            '.$this->datatableDetails($period, "Right to use sites")['html'].'
+                            <tr>
+                                <td colspan="4"><b>Total Right to use sites</b></td>
+                                <td style="text-align:right;"><b>'.$this->formatting($right_to_use_sites).'</b></td>
+                            </tr>
+
+                            <tr>
+                                <td style="vertical-align:top;" rowspan="'.$this->datatableDetails($period, "Other Deffered expeniture")['rowspan'].'">Other Deffered expeniture</td>
+                                <td style="vertical-align:top;" rowspan="'.$this->datatableDetails($period, "Other Deffered expeniture")['rowspan'].'">15</td>
+                            </tr>
+                            '.$this->datatableDetails($period, "Other Deffered expeniture")['html'].'
+                            <tr>
+                                <td colspan="4"><b>Total Other Deffered expeniture</b></td>
+                                <td style="text-align:right;"><b>'.$this->formatting($other_deffered_expeniture).'</b></td>
+                            </tr>
+
+                            <tr>
+                                <td colspan="5" style="height:20px;"></td>
+                            </tr>
+                            <tr style="background: #E8E8E8;">
+                                <td><b>Total Other Assets</b></td>
+                                <td><b>16</b></td>
+                                <td></td>
+                                <td></td>
+                                <td style="text-align:right;"><b>'.$this->formatting($total_other_assets).'</b></td>
+                            </tr>
+                            <tr>
+                                <td colspan="5" style="height:20px;"></td>
+                            </tr>
+                            <tr style="background: #E8E8E8;">
+                                <td><b>Total Assets</b></td>
+                                <td><b>17</b></td>
+                                <td></td>
+                                <td></td>
+                                <td style="text-align:right;"><b>'.$this->formatting($total_assets).'</b></td>
+                            </tr>';
+
+                //Current Liabilities
+                $html .= '  <tr>
+                                <td colspan="5" style="height:20px;"></td>
+                            </tr>
+                            <tr>
+                                <td style="vertical-align:top;" rowspan="'.$this->datatableDetails($period, "Short Term Loans")['rowspan'].'">Short Term Loans</td>
+                                <td style="vertical-align:top;" rowspan="'.$this->datatableDetails($period, "Short Term Loans")['rowspan'].'">18</td>
+                            </tr>
+                            '.$this->datatableDetails($period, "Short Term Loans")['html'].'
+                            <tr>
+                                <td colspan="4"><b>Total Short Term Loans</b></td>
+                                <td style="text-align:right;"><b>'.$this->formatting($short_term_loans).'</b></td>
+                            </tr>
+
+                            <tr>
+                                <td style="vertical-align:top;" rowspan="'.$this->datatableDetails($period, "Account Payable")['rowspan'].'">Account Payable</td>
+                                <td style="vertical-align:top;" rowspan="'.$this->datatableDetails($period, "Account Payable")['rowspan'].'">19</td>
+                            </tr>
+                            '.$this->datatableDetails($period, "Account Payable")['html'].'
+                            <tr>
+                                <td colspan="4"><b>Total Account Payable</b></td>
+                                <td style="text-align:right;"><b>'.$this->formatting($account_payable).'</b></td>
+                            </tr>
+
+                            <tr>
+                                <td style="vertical-align:top;" rowspan="'.$this->datatableDetails($period, "Accrued Expense")['rowspan'].'">Accured Expense</td>
+                                <td style="vertical-align:top;" rowspan="'.$this->datatableDetails($period, "Accrued Expense")['rowspan'].'">20</td>
+                            </tr>
+                            '.$this->datatableDetails($period, "Accrued Expense")['html'].'
+                            <tr>
+                                <td colspan="4"><b>Total Accrued Expense</b></td>
+                                <td style="text-align:right;"><b>'.$this->formatting($accured_expense).'</b></td>
+                            </tr>
+
+                            <tr>
+                                <td colspan="5" style="height:20px;"></td>
+                            </tr>
+                            <tr>
+                                <td style="vertical-align:top;" rowspan="'.$this->datatableDetails($period, "Taxes Payable")['rowspan'].'">Taxes Payable</td>
+                                <td style="vertical-align:top;" rowspan="'.$this->datatableDetails($period, "Taxes Payable")['rowspan'].'">21</td>
+                            </tr>
+                            '.$this->datatableDetails($period, "Taxes Payable")['html'].'
+                            <tr>
+                                <td colspan="4"><b>Total Taxes Payable</b></td>
+                                <td style="text-align:right;"><b>'.$this->formatting($taxes_payable).'</b></td>
+                            </tr>
+
+                            <tr>
+                                <td style="vertical-align:top;" rowspan="'.$this->datatableDetails($period, "Acc.Payable Machine")['rowspan'].'">Acc.Payable Machine</td>
+                                <td style="vertical-align:top;" rowspan="'.$this->datatableDetails($period, "Acc.Payable Machine")['rowspan'].'">22</td>
+                            </tr>
+                            '.$this->datatableDetails($period, "Acc.Payable Machine")['html'].'
+                            <tr>
+                                <td colspan="4"><b>Total Acc.Payable Machine</b></td>
+                                <td style="text-align:right;"><b>'.$this->formatting($acc_payable_machine).'</b></td>
+                            </tr>
+
+                            <tr>
+                                <td style="vertical-align:top;" rowspan="'.$this->datatableDetails($period, "Acc.Payable Other")['rowspan'].'">Acc.Payable Other</td>
+                                <td style="vertical-align:top;" rowspan="'.$this->datatableDetails($period, "Acc.Payable Other")['rowspan'].'">23</td>
+                            </tr>
+                            '.$this->datatableDetails($period, "Acc.Payable Other")['html'].'
+                            <tr>
+                                <td colspan="4"><b>Total Acc.Payable Other</b></td>
+                                <td style="text-align:right;"><b>'.$this->formatting($acc_payable_other).'</b></td>
+                            </tr>
+
+                            <tr>
+                                <td colspan="5" style="height:20px;"></td>
+                            </tr>
+                            <tr style="background: #E8E8E8;">
+                                <td><b>Total Current Liabilities</b></td>
+                                <td><b>24</b></td>
+                                <td></td>
+                                <td></td>
+                                <td style="text-align:right;"><b>'.$this->formatting($total_current_liabilities).'</b></td>
+                            </tr>';
+
+                //Investor Equity
+                $html .= '  <tr>
+                                <td colspan="5" style="height:20px;"></td>
+                            </tr>
+                            <tr>
+                                <td style="vertical-align:top;" rowspan="'.$this->datatableDetails($period, "Long Term Liabilities")['rowspan'].'">Long Term Liabilities</td>
+                                <td style="vertical-align:top;" rowspan="'.$this->datatableDetails($period, "Long Term Liabilities")['rowspan'].'">25</td>
+                            </tr>
+                            '.$this->datatableDetails($period, "Long Term Liabilities")['html'].'
+                            <tr>
+                                <td colspan="4"><b>Total Long Term Liabilities</b></td>
+                                <td style="text-align:right;"><b>'.$this->formatting($long_term_liabilities).'</b></td>
+                            </tr>
+
+                            <tr>
+                                <td colspan="5" style="height:20px;"></td>
+                            </tr>
+                            <tr>
+                                <td>Total Liabilities</td>
+                                <td>26</td>
+                                <td></td>
+                                <td></td>
+                                <td style="text-align:right;">'.$this->formatting($total_liabilities).'</td>
+                            </tr>
+                            <tr>
+                                <td colspan="5" style="height:20px;"></td>
+                            </tr>
+                            <tr>
+                                <td style="vertical-align:top;" rowspan="'.$this->datatableDetails($period, "Paid in Capital")['rowspan'].'">Paid in Capital</td>
+                                <td style="vertical-align:top;" rowspan="'.$this->datatableDetails($period, "Paid in Capital")['rowspan'].'">27</td>
+                            </tr>
+                            '.$this->datatableDetails($period, "Paid in Capital")['html'].'
+                            <tr>
+                                <td colspan="4"><b>Total Paid in Capital</b></td>
+                                <td style="text-align:right;"><b>'.$this->formatting($paid_in_capital).'</b></td>
+                            </tr>
+
+                            <tr>
+                                <td style="vertical-align:top;" rowspan="'.$this->datatableDetails($period, "Capital Surplus")['rowspan'].'">Capital Surplus</td>
+                                <td style="vertical-align:top;" rowspan="'.$this->datatableDetails($period, "Capital Surplus")['rowspan'].'">28</td>
+                            </tr>
+                            '.$this->datatableDetails($period, "Capital Surplus")['html'].'
+                            <tr>
+                                <td colspan="4"><b>Total Capital Surplus</b></td>
+                                <td style="text-align:right;"><b>'.$this->formatting($capital_surplus).'</b></td>
+                            </tr>
+
+                            <tr>
+                                <td style="vertical-align:top;" rowspan="'.$this->datatableDetails($period, "Revaluation Surplus")['rowspan'].'">Revaluation Surplus</td>
+                                <td style="vertical-align:top;" rowspan="'.$this->datatableDetails($period, "Revaluation Surplus")['rowspan'].'">29</td>
+                            </tr>
+                            '.$this->datatableDetails($period, "Revaluation Surplus")['html'].'
+                            <tr>
+                                <td colspan="4"><b>Total Revaluation Surplus</b></td>
+                                <td style="text-align:right;"><b>'.$this->formatting($revaluation_surplus).'</b></td>
+                            </tr>
+
+                            <tr>
+                                <td style="vertical-align:top;" rowspan="'.$this->datatableDetails($period, "Retained Earning (Last Year)")['rowspan'].'">Retained Earning (Last Year)</td>
+                                <td style="vertical-align:top;" rowspan="'.$this->datatableDetails($period, "Retained Earning (Last Year)")['rowspan'].'">30</td>
+                            </tr>
+                            '.$this->datatableDetails($period, "Retained Earning (Last Year)")['html'].'
+                            <tr>
+                                <td colspan="4"><b>Total Retained Earning (Last Year)</b></td>
+                                <td style="text-align:right;"><b>'.$this->formatting($retained_earning).'</b></td>
+                            </tr>
+
+                            <tr>
+                                <td>P/L From Jan - Now</td>
+                                <td>31</td>
+                                <td></td>
+                                <td></td>
+                                <td style="text-align:right;">'.$this->formatting($pl_from_jan_now).'</td>
+                            </tr>
+                            <tr>
+                                <td colspan="5" style="height:20px;"></td>
+                            </tr>
+                            <tr style="background: #E8E8E8;">
+                                <td><b>Total Investor`s Equity</b></td>
+                                <td><b>32</b></td>
+                                <td></td>
+                                <td></td>
+                                <td style="text-align:right;"><b>'.$this->formatting($total_investor_equity).'</b></td>
+                            </tr>
+                            <tr>
+                                <td colspan="5" style="height:20px;"></td>
+                            </tr>
+                            <tr style="background: #E8E8E8;">
+                                <td><b>Total Liabilities And Equity</b></td>
+                                <td><b>33</b></td>
+                                <td></td>
+                                <td></td>
+                                <td style="text-align:right;"><b>'.$this->formatting($total_liabilities_equity).'</b></td>
+                            </tr>';
+
+                $html .= '</table>';
+            }else{
+                // FORMAT YEARLY
+                $this->db->select('name, amount');
+                $this->db->from('balance_sheets');
+                $this->db->where('index', 1);
+                $this->db->where('order !=', 0);
+                $this->db->where('period', $period);
+                $this->db->group_by('name');
+                $this->db->order_by('order', 'asc');
+                $account_groups = $this->db->get()->result_array();
+
+                $html .= '<table id="customers" border="1">';
+
+                    //Sales
+                    $html .= '<div style="width: 100%; font-size:12px; text-align:right;"><i>(Expressed in Rupiah)</i></div>';
+                    $html .= '<table id="customers" border="1">';
+
+                    //Sales
+                    $html .= '  <tr style="background: #E8E8E8;">
+                                    <th colspan="2" width="100">Account Number</th>
+                                    <th width="200">Account Name</th>
+                                    <th width="50">01</th>
+                                    <th width="50">02</th>
+                                    <th width="50">03</th>
+                                    <th width="50">04</th>
+                                    <th width="50">05</th>
+                                    <th width="50">06</th>
+                                    <th width="50">07</th>
+                                    <th width="50">08</th>
+                                    <th width="50">09</th>
+                                    <th width="50">10</th>
+                                    <th width="50">11</th>
+                                    <th width="50">12</th>
+                                </tr>';
+                    foreach ($account_groups as $account_group) {
+                        $name = $account_group['name'];
+
+                        $this->db->select('*');
+                        $this->db->from('balance_sheets');
+                        $this->db->where('name', $name);
+                        $this->db->where('period', $period);
+                        $this->db->where('index', 2);
+                        $this->db->order_by('account_number', 'asc');
+                        $accounts = $this->db->get()->result_array();
+
+                        if(count($accounts) > 0){
+                            $html .= "  <tr style='background:#e7e7e7;'>
+                                            <td colspan='15'><b>".$account_group['name']."</b></td>
+                                        </tr>";
+                        }else{
+                            $html .= "  <tr style='background:#e7e7e7;'>
+                                        <td colspan='3'><b>".$account_group['name']."</b></td>
+                                        <td style='text-align:right; font-weight:bold;'>".$this->formatting(@$this->datatableYear($name, $filter_date, "header")[0])."</td>
+                                        <td style='text-align:right; font-weight:bold;'>".$this->formatting(@$this->datatableYear($name, $filter_date, "header")[1])."</td>
+                                        <td style='text-align:right; font-weight:bold;'>".$this->formatting(@$this->datatableYear($name, $filter_date, "header")[2])."</td>
+                                        <td style='text-align:right; font-weight:bold;'>".$this->formatting(@$this->datatableYear($name, $filter_date, "header")[3])."</td>
+                                        <td style='text-align:right; font-weight:bold;'>".$this->formatting(@$this->datatableYear($name, $filter_date, "header")[4])."</td>
+                                        <td style='text-align:right; font-weight:bold;'>".$this->formatting(@$this->datatableYear($name, $filter_date, "header")[5])."</td>
+                                        <td style='text-align:right; font-weight:bold;'>".$this->formatting(@$this->datatableYear($name, $filter_date, "header")[6])."</td>
+                                        <td style='text-align:right; font-weight:bold;'>".$this->formatting(@$this->datatableYear($name, $filter_date, "header")[7])."</td>
+                                        <td style='text-align:right; font-weight:bold;'>".$this->formatting(@$this->datatableYear($name, $filter_date, "header")[8])."</td>
+                                        <td style='text-align:right; font-weight:bold;'>".$this->formatting(@$this->datatableYear($name, $filter_date, "header")[9])."</td>
+                                        <td style='text-align:right; font-weight:bold;'>".$this->formatting(@$this->datatableYear($name, $filter_date, "header")[10])."</td>
+                                        <td style='text-align:right; font-weight:bold;'>".$this->formatting(@$this->datatableYear($name, $filter_date, "header")[11])."</td>
+                                    </tr>";
+                        }
+
+                        foreach ($accounts as $account) {
+                            $account_number = $account['account_number'];
+
+                            $html .= "  <tr>
+                                            <td width='50'></td>
+                                            <td width='100' style='mso-number-format:\@;'>".$account['account_number']."</td>
+                                            <td width='200'>".$account['account_name']."</td>
+                                            <td style='text-align:right;'>".$this->formatting(@$this->datatableYear($account_number, $filter_date)[0])."</td>
+                                            <td style='text-align:right;'>".$this->formatting(@$this->datatableYear($account_number, $filter_date)[1])."</td>
+                                            <td style='text-align:right;'>".$this->formatting(@$this->datatableYear($account_number, $filter_date)[2])."</td>
+                                            <td style='text-align:right;'>".$this->formatting(@$this->datatableYear($account_number, $filter_date)[3])."</td>
+                                            <td style='text-align:right;'>".$this->formatting(@$this->datatableYear($account_number, $filter_date)[4])."</td>
+                                            <td style='text-align:right;'>".$this->formatting(@$this->datatableYear($account_number, $filter_date)[5])."</td>
+                                            <td style='text-align:right;'>".$this->formatting(@$this->datatableYear($account_number, $filter_date)[6])."</td>
+                                            <td style='text-align:right;'>".$this->formatting(@$this->datatableYear($account_number, $filter_date)[7])."</td>
+                                            <td style='text-align:right;'>".$this->formatting(@$this->datatableYear($account_number, $filter_date)[8])."</td>
+                                            <td style='text-align:right;'>".$this->formatting(@$this->datatableYear($account_number, $filter_date)[9])."</td>
+                                            <td style='text-align:right;'>".$this->formatting(@$this->datatableYear($account_number, $filter_date)[10])."</td>
+                                            <td style='text-align:right;'>".$this->formatting(@$this->datatableYear($account_number, $filter_date)[11])."</td>
+                                        </tr>";
+                        }
+
+                        if(count($accounts) > 0){
+                            $html .= "  <tr style='background:#e7e7e7;'>
+                                            <td colspan='3'><b>Total ".$account_group['name']."</b></td>
+                                            <td style='text-align:right; font-weight:bold;'>".$this->formatting(@$this->datatableYear($name, $filter_date, "header")[0])."</td>
+                                            <td style='text-align:right; font-weight:bold;'>".$this->formatting(@$this->datatableYear($name, $filter_date, "header")[1])."</td>
+                                            <td style='text-align:right; font-weight:bold;'>".$this->formatting(@$this->datatableYear($name, $filter_date, "header")[2])."</td>
+                                            <td style='text-align:right; font-weight:bold;'>".$this->formatting(@$this->datatableYear($name, $filter_date, "header")[3])."</td>
+                                            <td style='text-align:right; font-weight:bold;'>".$this->formatting(@$this->datatableYear($name, $filter_date, "header")[4])."</td>
+                                            <td style='text-align:right; font-weight:bold;'>".$this->formatting(@$this->datatableYear($name, $filter_date, "header")[5])."</td>
+                                            <td style='text-align:right; font-weight:bold;'>".$this->formatting(@$this->datatableYear($name, $filter_date, "header")[6])."</td>
+                                            <td style='text-align:right; font-weight:bold;'>".$this->formatting(@$this->datatableYear($name, $filter_date, "header")[7])."</td>
+                                            <td style='text-align:right; font-weight:bold;'>".$this->formatting(@$this->datatableYear($name, $filter_date, "header")[8])."</td>
+                                            <td style='text-align:right; font-weight:bold;'>".$this->formatting(@$this->datatableYear($name, $filter_date, "header")[9])."</td>
+                                            <td style='text-align:right; font-weight:bold;'>".$this->formatting(@$this->datatableYear($name, $filter_date, "header")[10])."</td>
+                                            <td style='text-align:right; font-weight:bold;'>".$this->formatting(@$this->datatableYear($name, $filter_date, "header")[11])."</td>
+                                        </tr>";
+                        }
+                    }
 
                 $html .= '</table>';
             }
