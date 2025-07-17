@@ -90,6 +90,10 @@
                                         "&po_no=" + row[i].po_no +
                                         "&price=" + row[i].price +
                                         "&currency=" + row[i].currency +
+                                        "&item_rm_id=" + row[i].item_rm_id +
+                                        "&bc_document=" + row[i].bc_document +
+                                        "&item_category_id=" + row[i].item_category_id +
+                                        "&item_family_id=" + row[i].item_family_id +
                                         "&qty=" + row[i].qty,
                                     dataType: "json",
                                     success: function(result) {

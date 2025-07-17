@@ -29,14 +29,16 @@ class Item_receipts extends CI_Controller
     {
         if ($this->input->post()) {
             $label_no = $this->input->post('label_no');
-            $this->db->select('b.po_no, b.receipt_no, b.receipt_id, a.label_no, a.qty, b.item_rm_id, b.price, b.currency');
+            $this->db->select('b.po_no, b.receipt_no, b.receipt_id, a.label_no, a.qty, b.item_rm_id, b.price, b.currency, c.item_category_id, c.item_family_id, b.bc_document');
             $this->db->from('purchase_order_labels a');
             $this->db->join('purchase_order_receipts b', 'a.receipt_id = b.receipt_id');
+            $this->db->join('item_rm c', 'b.item_rm_id = c.id');
             $this->db->where('a.label_no', $label_no);
             $totalRows = $this->db->count_all_results('', false);
             $records = $this->db->get()->result_array();
+
             if (!$records) {
-                $this->db->select('c.po_no, c.receipt_no, c.receipt_id, a.label_divided as label_no, a.qty, c.item_rm_id, c.price, c.currency');
+                $this->db->select("c.po_no, c.receipt_no, c.receipt_id, a.label_divided as label_no, a.qty, c.item_rm_id, c.price, c.currency, '-' as item_category_id, '-' as item_family_id, '-' as bc_document");
                 $this->db->from('barcode_divides a');
                 $this->db->join('purchase_order_labels b', 'a.reff = b.label_no');
                 $this->db->join('purchase_order_receipts c', 'b.receipt_id = c.receipt_id');
@@ -45,7 +47,7 @@ class Item_receipts extends CI_Controller
                 $records = $this->db->get()->result_array();
 
                 if (!$records) {
-                    $this->db->select("('RETURN MATERIAL') as po_no, b.return_no as receipt_no, b.return_id as receipt_id, a.label_no, a.qty, b.item_rm_id, '0' as price , NULL as currency");
+                    $this->db->select("('RETURN MATERIAL') as po_no, b.return_no as receipt_no, b.return_id as receipt_id, a.label_no, a.qty, b.item_rm_id, '0' as price , NULL as currency, '-' as item_category_id, '-' as item_family_id, '-' as bc_document");
                     $this->db->from('return_material_labels a');
                     $this->db->join('return_materials b', 'a.return_id = b.return_id');
                     $this->db->where('a.label_no', $label_no);
@@ -53,7 +55,7 @@ class Item_receipts extends CI_Controller
                     $records = $this->db->get()->result_array();
 
                     if (!$records) {
-                        $this->db->select("a.label_no, a.qty, a.item_rm_id,, '0' as price , NULL as currency");
+                        $this->db->select("a.label_no, a.qty, a.item_rm_id, '0' as price , NULL as currency, '-' as item_category_id, '-' as item_family_id, '-' as bc_document");
                         $this->db->from('new_barcode a');
                         $this->db->where('a.label_no', $label_no);
                         $totalRows = $this->db->count_all_results('', false);
@@ -134,11 +136,35 @@ class Item_receipts extends CI_Controller
                 $post   = $this->input->post();
                 $item_receipts = $this->crud->read("scan_item_receipts", [], ["label_no" => $post['label_no']]);
                 if (!$item_receipts) {
-                    $send   = $this->crud->create('scan_item_receipts', $post);
+                    $dataFinal = array(
+                        //field
+                        "label_no" => $post['label_no'],
+                        "receipt_no" => $post['receipt_no'],
+                        "receipt_id" => $post['receipt_id'],
+                        "po_no" => $post['po_no'],
+                        "price"=> $post['price'],
+                        "currency" => $post['currency'],
+                        "qty" => $post['qty'],
+                    );
+
+                    $send   = $this->crud->create('scan_item_receipts', $dataFinal);
                     if ($send) {
                         $update   = $this->crud->update('purchase_order_labels', ["label_no" => $post['label_no']], ["status" => 1]);
                         $update   = $this->crud->update('return_material_labels', ["label_no" => $post['label_no']], ["status" => 1]);
                         $update   = $this->crud->update('new_barcode', ["label_no" => $post['label_no']], ["status" => 1]);
+
+                        if($post['item_category_id'] == 'C01' && $post['item_family_id'] == 'P27'){
+                            $dataFinal2 = array(
+                                //field
+                                "request_no" => $post['bc_document'],
+                                "label_no" => $post['label_no'],
+                                "item_rm_id" => $post['item_rm_id'],
+                                "qty" => $post['qty'],
+                                "type"=> 'WIP',
+                            );
+                            $update   = $this->crud->update('purchase_order_labels', ["label_no" => $post['label_no']], ["status_issued" => 1]);
+                            $send   = $this->crud->create('issued_material_details', $dataFinal2);
+                        }
                         echo $send;
                     }
                 } else {

@@ -505,7 +505,7 @@ class Report_history_transactions extends CI_Controller
                         $receipts = $this->crud->query("SELECT
                             a.receipt_date, 
                             a.bc_kind, 
-                            a.bc_aju, 
+                            a.receipt_no,  
                             a.bc_document, 
                             a.bc_date, 
                             SUM(b.qty) as qty_receipt,
@@ -647,7 +647,7 @@ class Report_history_transactions extends CI_Controller
                                 'qty_in' => $r->qty_receipt,
                                 'qty_out' => 0,
                                 'doc1' => $r->bc_kind,
-                                'doc2' => $r->bc_aju,
+                                'doc2' => $r->receipt_no,
                                 'lotno' => $r->lotno,
                                 'doc3' => $r->bc_document,
                                 'doc4' => $r->bc_date
@@ -915,7 +915,7 @@ class Report_history_transactions extends CI_Controller
                         $receipts = $this->crud->query("SELECT
                             a.receipt_date, 
                             a.bc_kind, 
-                            a.bc_aju, 
+                            a.receipt_no,
                             a.bc_document, 
                             a.bc_date, 
                             a.lotno,
@@ -937,7 +937,7 @@ class Report_history_transactions extends CI_Controller
                                             <td>' . $receipt->username . '</td>
                                             <td>' . $receipt->receipt_date . '</td>
                                             <td>' . $receipt->bc_kind . '</td>
-                                            <td>' . $receipt->bc_aju . '</td>
+                                            <td>' . $receipt->receipt_no . '</td>
                                             <td>' . $receipt->lotno . '</td>
                                             <td>' . $receipt->bc_document . '</td>
                                             <td>' . $receipt->bc_date . '</td>
