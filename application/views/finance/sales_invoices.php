@@ -3,6 +3,7 @@
     <thead>
         <tr>
             <th rowspan="2" field="ck" checkbox="true"></th>
+            <th rowspan="2" data-options="field:'details',width:90,align:'center', formatter:btnDetails">Detail</th>
             <th rowspan="2" data-options="field:'number',width:150,halign:'center'">Sales Invoice No</th>
             <th rowspan="2" data-options="field:'status',width:100,align:'center',formatter:statusformat,styler:statusStyle">Receipt<br>Status</th>
             <th rowspan="2" data-options="field:'gl_no',width:100,align:'center'">GL NO</th>
@@ -100,6 +101,332 @@
 <div id="toolbar3">
     <a href="javascript:void(0)" class="easyui-linkbutton" data-options="plain:true" onclick="append2()"><i class="fa fa-plus"></i> Add</a>
     <a href="javascript:void(0)" class="easyui-linkbutton" data-options="plain:true" onclick="removeit3()"><i class="fa fa-times"></i> Remove</a>
+</div>
+
+<div id="toolbarDetail">
+    <a href="javascript:void(0)" class="easyui-linkbutton" data-options="plain:true" style="color:gray;"><i class="fa fa-plus"></i> Add</a>
+</div>
+<div id="toolbarDetailJournal">
+    <a href="javascript:void(0)" class="easyui-linkbutton" data-options="plain:true" style="color:gray;"><i class="fa fa-plus"></i> Add</a>
+    <a href="javascript:void(0)" class="easyui-linkbutton" data-options="plain:true" style="color:gray;"><i class="fa fa-times"></i> Remove</a>
+</div>
+
+<!-- DIALOG DETAIL DIPISAH UNTUK DISABLE FORM INPUT -->
+<div id="dlg_detail" class="easyui-dialog" title="Detail" data-options="closed: true,modal:true" style="width: 99%; height: 600px; padding:15px; top: 10px; left:5px;">
+    <form id="frm_detail" method="post" novalidate>
+        <div style="width: 100%; display: grid; grid-template-columns: auto auto auto; grid-gap: 5px; display: flex;">
+            <fieldset style="width:100%; border:1px solid #d0d0d0; margin-bottom: 10px; border-radius:4px;">
+                <legend><b>Form Data</b></legend>
+                <div style="width: 50%; float: left;">
+                    <div class="fitem">
+                        <span style="width:35%; display:inline-block;">Sales Invoice Date</span>
+                        <input style="width:60%;" id="d_trans_date" name="d_trans_date" class="easyui-datebox" data-options="formatter:myformatter,parser:myparser, editable:false">
+                    </div>
+                    <div class="fitem">
+                        <span style="width:35%; display:inline-block;">Sales Invoice No</span>
+                        <input style="width:60%;" readonly id="d_number" name="d_number" class="easyui-textbox" data-options="prompt:'Automatic From Purchase Invoce Date & Customer'">
+                    </div>
+                    <div class="fitem">
+                        <span style="width:35%; display:inline-block;">Journal Type</span>
+                        <input style="width:60%;" name="d_journal_type" id="d_journal_type" class="easyui-textbox">
+                    </div>
+                    <div class="fitem">
+                        <span style="width:35%; display:inline-block;">Customer Name</span>
+                        <input style="width:60%;" id="d_customer_name" name="d_customer_name" class="easyui-textbox">
+                    </div>
+                    <div class="fitem">
+                        <span style="width:35%; display:inline-block;">Country Name</span>
+                        <input style="width:60%;" id="d_country_name" name="d_country_name" class="easyui-textbox">
+                    </div>
+                    <div class="fitem"hidden>
+                        <span style="width:35%; display:inline-block;">Plant</span>
+                        <input style="width:60%;" id="d_customer_address_id" name="d_customer_address_id" class="easyui-combobox">
+                    </div>
+                    <div class="fitem">
+                        <span style="width:35%; display:inline-block;">Division</span>
+                        <input style="width:60%;" name="d_division" id="d_division" class="easyui-textbox">
+                    </div>
+                    <div class="fitem">
+                        <span style="width:35%; display:inline-block;">Delivery Note</span>
+                        <input style="width:60%;" id="d_delivery_note_no" name="d_delivery_note_no" class="easyui-combogrid">
+                    </div>
+                    <div class="fitem">
+                        <span style="width:35%; display:inline-block;">Taxes</span>
+                        <input style="width:30%;" id="d_taxes" name="d_taxes" class="easyui-numberbox">
+                    </div>
+                    <div class="fitem">
+                        <span style="width:35%; display:inline-block;">Payment Term</span>
+                        <input style="width:30%;" name="d_payment_term" readonly="" id="d_payment_term" class="easyui-numberbox" data-options="buttonText:'Days',buttonAlign:'right'">
+                    </div>
+                    <div class="fitem">
+                        <span style="width:35%; display:inline-block;">Payment Due</span>
+                        <input style="width:60%;" id="d_due_date" name="d_due_date" class="easyui-datebox" data-options="formatter:myformatter,parser:myparser, editable:false">
+                    </div>
+                    <div class="fitem">
+                        <span style="width:35%; display:inline-block;"></span>
+                        <a href="javascript:;" class="easyui-linkbutton" disabled><i class="fa fa-search"></i> Preview Data</a>
+                    </div>
+                </div>
+                <div style="width: 50%; float: left;">
+                    <div class="fitem" hidden>
+                        <span style="width:35%; display:inline-block;">Voucher</span>
+                        <input style="width:60%;" id="d_voucher" name="d_voucher" class="easyui-textbox">
+                    </div>
+                    <div class="fitem" hidden>
+                        <span style="width:35%; display:inline-block;">&nbsp;</span>
+                        <input style="width:60%;" id="d_company_id" name="d_company_id" class="easyui-textbox">
+                    </div>
+                    <div class="fitem">
+                        <span style="width:35%; display:inline-block;">Remarks</span>
+                        <input style="width:60%;" id="d_remarks" name="d_remarks" class="easyui-textbox">
+                    </div>
+                    <div class="fitem">
+                        <span style="width:35%; display:inline-block;">Kode Faktur Pajak</span>
+                        <input style="width:30%;" id="d_faktur_code" name="d_faktur_code" class="easyui-textbox">
+                    </div>
+                    <div class="fitem">
+                        <span style="width:35%; display:inline-block;">FP Pengganti</span>
+                        <input style="width:30%;" id="d_fp_pengganti" name="d_fp_pengganti" readonly class="easyui-textbox">
+                    </div>
+                    <div class="fitem">
+                        <span style="width:35%; display:inline-block;">Faktur No</span>
+                        <input style="width:30%;" id="d_faktur_no" name="d_faktur_no" readonly class="easyui-textbox">
+                    </div>
+                    <div class="fitem">
+                        <span style="width:35%; display:inline-block;">No Seri Faktur Pajak</span>
+                        <input style="width:6%;" id="d_kode_trans" name="d_kode_trans" readonly="true" class="easyui-textbox">
+                        <input style="width:5%;" id="d_tahun_pemeriksaan" name="d_tahun_pemeriksaan" class="easyui-textbox" readonly>
+                        <input style="width:16%;" id="d_no_urut" name="d_no_urut" class="easyui-textbox">
+                        <div class="fitem" hidden>
+                            <span style="width:35%; display:inline-block;">Kode Cabang</span>
+                            <input style="width:5%; display: none;" id="d_kode_cabang" name="d_kode_cabang" class="easyui-textbox">
+                        </div>
+                    </div>
+                    <div class="fitem" hidden>
+                        <span style="width:35%; display:inline-block;">BC No.</span>
+                        <input style="width:10%;" id="bc1" name="bc1" class="easyui-textbox">
+                        <input style="width:6%;" id="bc2" name="bc2" class="easyui-textbox">
+                        <input style="width:5%;" id="bc3" name="bc3" class="easyui-textbox">
+                        <input style="width:5%;" id="bc4" name="bc4" class="easyui-textbox">
+                    </div>
+                    <div class="fitem">
+                        <span style="width:35%; display:inline-block;">BC No</span>
+                        <input style="width:30%;" id="d_bc_no" name="d_bc_no" class="easyui-textbox" data-options="prompt:'Number Only'">
+                    </div>
+                    <div class="fitem">
+                        <span style="width:35%; display:inline-block;">Keterangan Tambahan</span>
+                        <input style="width:60%;" id="d_keterangan_tambahan" name="d_keterangan_tambahan" class="easyui-textbox">
+                    </div>
+                    <div class="fitem">
+                        <span style="width:35%; display:inline-block;">Cap Fasilitas</span>
+                        <input style="width:60%;" id="d_cap_fasilitas" name="d_cap_fasilitas" class="easyui-textbox">
+                    </div>
+                    <div class="fitem">
+                        <span style="width:35%; display:inline-block;">Payment To</span>
+                        <input style="width:60%;" id="d_payment_to" name="d_payment_to" class="easyui-textbox">
+                    </div>
+                    <div class="fitem" hidden>
+                        <span style="width:35%; display:inline-block;">Type</span>
+                        <input style="width:60%;" id="d_type" name="d_type" class="easyui-textbox">
+                    </div>
+                </div>
+            </fieldset>
+        </div>
+
+        <table id="dgDetail" class="easyui-datagrid" style="width:100%;" title="Sales Invoicing Lists" data-options="singleSelect: true" toolbar="#toolbarDetail" rownumbers="true" , idField="delivery_note_no">
+            <thead>
+                <tr>
+                    <th data-options="field:'id',width:150,editor: {type: 'textbox'}" hidden>ID</th>
+                    <th data-options="field:'delivery_note_no',width:150,editor: {type: 'textbox', options: {required: true}}">Delivery Note</th>
+                    <th data-options="field:'sales_order_no',width:160,editor: {type: 'textbox', options: {required: true}}">Sales Order No</th>
+                    <th data-options="field:'customer_order_no',width:160,editor: {type: 'textbox', options: {required: true}}">Customer Order No</th>
+                    <th data-options="field:'item_fg_id',width:150" hidden>Product Id</th>
+                    <th data-options="field:'item_no',width:150,editor: {type: 'textbox', options: {required: true}}">Product No</th>
+                    <th data-options="field:'item_name',width:200,editor: {type: 'textbox', options: {required: true}}">Product Name</th>
+                    <th data-options="field:'uom',width:80, editor: {
+                    type: 'combobox',
+                    options: {
+                        url: '<?= base_url('master/uom/reads') ?>',
+                        editable:false,
+                        valueField: 'name',
+                        textField: 'name',
+                        prompt: 'Choose Uom'
+                    }}">UoM</th>
+                    <th data-options="field:'currency',width:80, editor: {
+                    type: 'combobox',
+                    options: {
+                        url: '<?= base_url('master/currencies/reads') ?>',
+                        editable:false,
+                        valueField: 'name',
+                        textField: 'name',
+                        prompt: 'Choose Currencies'
+                    }}">Currency</th>
+                    <th data-options="field:'qty',width:80, formatter:numberformat,editor: {
+                        type: 'numberbox', 
+                        options: {
+                            required: true,
+                            readonly: true,
+                            onChange: function(value) {
+                                var dg = $('#dgDetail');
+                                var row = dg.datagrid('getSelected');
+                                var rowIndex = dg.datagrid('getRowIndex', row);
+
+                                var ed = dg.datagrid('getEditor', {
+                                    index: rowIndex,
+                                    field: 'total'
+                                });
+
+                                var ed2 = dg.datagrid('getEditor', {
+                                    index: rowIndex,
+                                    field: 'price'
+                                });
+
+                                var price = $(ed2.target).numberbox('getValue');
+                                $(ed.target).textbox('setValue', (parseFloat(value) * parseFloat(price)));
+                            }
+                        }
+                    }">Qty</th>
+                    <th data-options="field:'price',width:80, halign:'center',align:'right', formatter:priceformat,editor: {type: 'numberbox', 
+                        options: {
+                            required: true,
+                            precision: 4,
+                            readonly: true,
+                            onChange: function(value) {
+                                var dg = $('#dgDetail');
+                                var row = dg.datagrid('getSelected');
+                                var rowIndex = dg.datagrid('getRowIndex', row);
+
+                                var ed = dg.datagrid('getEditor', {
+                                    index: rowIndex,
+                                    field: 'total'
+                                });
+
+                                var ed2 = dg.datagrid('getEditor', {
+                                    index: rowIndex,
+                                    field: 'qty'
+                                });
+
+                                var qty = $(ed2.target).numberbox('getValue');
+                                $(ed.target).textbox('setValue', (parseFloat(value) * parseFloat(qty)));
+                            }
+                        }}">Price</th>
+                    <th data-options="field:'total',width:120, formatter:priceformat,halign:'center',align:'right',editor: {type: 'numberbox', options: {required: true, readonly: true, precision: 2}}">Amount</th>
+                    <th data-options="field:'account_number',width:100, halign:'center', editor: {
+                        type: 'combogrid',
+                        options: {
+                            url: '<?= base_url('finance/account_coa/reads') ?>',
+                            panelWidth: 320,
+                            idField: 'account_number',
+                            textField: 'account_number',
+                            mode: 'remote', 
+                            fitColumns: true,
+                            prompt: 'Choose Account No',
+                            columns: [
+                                [{
+                                    field: 'account_number',
+                                    title: 'Account No',
+                                    width: 100
+                                }, {
+                                    field: 'account_name',
+                                    title: 'Account Name',
+                                    width: 200
+                                }, ]
+                            ],
+                            onSelect: function(value, rows) {
+                                var dg = $('#dgDetail');
+                                var row = dg.datagrid('getSelected');
+                                var rowIndex = dg.datagrid('getRowIndex', row);
+                                var ed = dg.datagrid('getEditor', {
+                                    index: rowIndex,
+                                    field: 'account_name'
+                                });
+
+                                $(ed.target).textbox('setValue', rows.account_name);
+                            }
+                        }}">Account No</th>
+                    <th data-options="field:'account_name',width:150, editor: {type: 'textbox', options: {readonly: true}}">Account Name</th>
+                    <th data-options="field:'account_type',width:100, halign:'center', editor: {
+                        type: 'combobox',
+                        options: {
+                            data: [{
+                                'id':'DEBIT'
+                            },{
+                                'id':'CREDIT'
+                            }],
+                            valueField: 'id',
+                            textField: 'id',
+                            prompt: 'Choose Debit/Credit',
+                            panelHeight: 'auto'
+                        }}">Debit/Credit</th>
+                </tr>
+            </thead>
+        </table>
+
+        <div style="width: 50%; float: left; margin-top:20px;">
+            <a style="width: 100%;" class="easyui-linkbutton c2" disabled>Add to Journal</a>
+            <br><br>
+            <table id="dgDetailJournal" class="easyui-datagrid" title="Journal Lists" style="width: 100%;" data-options="singleSelect: true" toolbar="#toolbarDetailJournal"></table>
+
+            <div class="fitem">
+                <b style="width:45%; display:inline-block; padding-left: 50px;">BALANCE TOTAL</b>
+                <input style="width:18%;" id="d_balance_debit" name="balance_debit" class="easyui-numberbox" data-options="precision:2,groupSeparator:'.', decimalSeparator:','">
+                <input style="width:18%;" id="d_balance_credit" name="balance_credit" class="easyui-numberbox" data-options="precision:2,groupSeparator:'.', decimalSeparator:','">
+            </div>
+        </div>
+
+        <div style="width: 30%; display: grid; grid-template-columns: auto auto auto; grid-gap: 5px; display: flex; float: right; margin-top:20px;">
+            <fieldset style="width:100%; border:1px solid #d0d0d0; margin-bottom: 10px; border-radius:4px;">
+                <div style="width: 100%; float: left;">
+                    <div class="fitem">
+                        <b style="width:35%; display:inline-block;">TOTAL INVOICE</b>
+                        <input style="width:60%;" id="d_total_invoice" name="d_total_invoice" readonly class="easyui-numberbox" data-options="precision:2,groupSeparator:','">
+                    </div>
+                    <div class="fitem">
+                        <b style="width:35%; display:inline-block;">DISC %</b>
+                        <input style="width:10%;" id="d_disc_pr" name="d_disc_pr" value="0" class="easyui-numberbox" data-options="precision:2">
+                        <input style="width:50%; text-align:right;" id="d_discount" name="d_discount" class="easyui-numberbox" value="0" data-options="precision:2,groupSeparator:','">
+                    </div>
+                    <div class="fitem">
+                        <b style="width:35%; display:inline-block;">SUB TOTAL</b>
+                        <input style="width:60%;" id="d_total_sub" name="d_total_sub" readonly class="easyui-numberbox" data-options="precision:2,groupSeparator:','">
+                    </div>
+                    <div class="fitem">
+                        <b style="width:35%; display:inline-block;">DOWN PAYMENT %</b>
+                        <input style="width:10%;" id="d_disc_dp" name="d_disc_dp" value="0" class="easyui-numberbox" data-options="precision:2">
+                        <input style="width:50%; text-align:right;" id="d_down_payment" name="d_down_payment" class="easyui-numberbox" value="0" data-options="precision:2,groupSeparator:','">
+                    </div>
+                    <div class="fitem">
+                        <b style="width:35%; display:inline-block;">DPP</b>
+                        <input style="width:60%;" id="d_total_dpp" name="d_total_dpp" disabled class="easyui-numberbox" data-options="precision:2,groupSeparator:','">
+                    </div>
+                    <div class="fitem">
+                        <b style="width:35%; display:inline-block;">VAT</b>
+                        <input style="width:60%;" id="d_total_vat" name="d_total_vat" readonly class="easyui-numberbox" data-options="precision:2,groupSeparator:','">
+                    </div>
+                    <div class="fitem">
+                        <b style="width:35%; display:inline-block;">PPH</b>
+                        <input style="width:30%;" id="d_total_pph" name="d_total_pph" disabled class="easyui-numberbox" data-options="precision:2,groupSeparator:','">
+                        <select style="width:30%;" id="d_pph" name="d_pph" class="easyui-combobox" data-options="prompt: 'PPH'" panelHeight="auto">
+                            <option value="0">NON PPH</option>
+                            <!-- <option value="5">PPH 21</option> -->
+                            <option value="2">PPH 23</option>
+                            <option value="10">PPH 4(2)</option>
+                            <option value="10.0">Other Income</option>
+                        </select>
+                    </div>
+                    <div class="fitem">
+                        <b style="width:35%; display:inline-block;">GRAND TOTAL</b>
+                        <input style="width:60%;" id="d_total_grand" name="d_total_grand" readonly required class="easyui-numberbox" data-options="precision:2,groupSeparator:','">
+                    </div>
+                    <div class="fitem">
+                        <b style="width:35%; display:inline-block;">CONVERT IDR</b>
+                        <input style="width:60%;" id="d_total_local" name="d_total_local" disabled class="easyui-numberbox" data-options="precision:2,groupSeparator:','">
+                    </div>
+                </div>
+            </fieldset>
+        </div>
+
+    </form>
 </div>
 
 <!-- DIALOG SAVE AND UPDATE -->
@@ -205,7 +532,7 @@
                     </div>
                     <div class="fitem">
                         <span style="width:35%; display:inline-block;">BC No</span>
-                        <input style="width:30%;" id="bc_no" name="bc_no" class="easyui-textbox">
+                        <input style="width:30%;" id="bc_no" name="bc_no" class="easyui-textbox" data-options="prompt:'Number Only'">
                     </div>
                     <div class="fitem">
                         <span style="width:35%; display:inline-block;">Keterangan Tambahan</span>
@@ -432,7 +759,9 @@
      let formMode = 'create';
     //ADD DATA
     function add() {
-        $('#dlg_insert').dialog('open');
+        $('#dlg_insert').dialog('open');        
+        $("#dlg_insert").window('setTitle', "Add New Sales Invoices");
+
         $('#dg2').datagrid('loadData', []);
         $('#frm_insert').form('clear');
         
@@ -888,11 +1217,14 @@
 
             // Cek apakah faktur_no memiliki panjang 16 karakter
             if (faktur_no.length === 17) {
-                if(formMode === 'update'){
-                    var originalFakturNo = row.faktur_no;
-                    if (faktur_no == originalFakturNo) {
-                        return; // Tidak perlu cek ke server kalau faktur_no belum berubah
+                if(formMode === 'update' || formMode === 'detail') {
+                    if (formMode === 'update') {
+                        var originalFakturNo = row.faktur_no;
+                        if (faktur_no == originalFakturNo) {
+                            return; // Tidak perlu cek ke server kalau faktur_no belum berubah
+                        }
                     }
+                    return;
                 }
                 // Lakukan pengecekan faktur_code menggunakan AJAX
                 $.ajax({
@@ -1388,7 +1720,6 @@
             }
         });
     }
-
     function balance_journal() {
         var rows = $('#dg3').datagrid('getRows');// journal
         var totalrows = rows.length;
@@ -1408,6 +1739,135 @@
             $("#balance_credit").numberbox('setValue', credit);
         }
     }
+
+    // Datagrid Journal di dlg_detail
+    function addTableJournal(link = "") {
+        var lastIndex;
+        var dg = $('#dgDetailJournal').datagrid({
+            url: link,
+            singleSelect: true,
+            columns: [
+                [{
+                    field: 'account_number',
+                    width: 130,
+                    halign: 'center',
+                    title: "Account No",
+                    editor: {
+                        type: 'combogrid',
+                        options: {
+                            readonly: true,
+                            url: '<?= base_url('finance/account_coa/reads') ?>',
+                            panelWidth: 320,
+                            idField: 'account_number',
+                            textField: 'account_number',
+                            mode: 'remote',
+                            fitColumns: true,
+                            prompt: 'Choose Account No',
+                            columns: [
+                                [{
+                                    field: 'account_number',
+                                    title: 'Account No',
+                                    width: 100
+                                }, {
+                                    field: 'account_name',
+                                    title: 'Account Name',
+                                    width: 200
+                                }]
+                            ],
+                            onSelect: function(value, rows) {
+                                var dg = $('#dgDetailJournal');
+                                var row = dg.datagrid('getSelected');
+                                var rowIndex = dg.datagrid('getRowIndex', row);
+                                var ed = dg.datagrid('getEditor', {
+                                    index: rowIndex,
+                                    field: 'account_name'
+                                });
+
+                                $(ed.target).textbox('setValue', rows.account_name);
+                            }
+                        }
+                    }
+                }, {
+                    field: 'account_name',
+                    width: 230,
+                    halign: 'center',
+                    title: "Account Name",
+                    editor: {
+                        type: 'textbox',
+                        options: {
+                            readonly: true
+                        }
+                    }
+                }, {
+                    field: 'debit',
+                    width: 110,
+                    halign: 'center',
+                    title: "Debit",
+                    formatter: numberformat,
+                    editor: {
+                        type: 'numberbox',
+                        options: {
+                            precision: 4,
+                            readonly: true
+                        }
+                    }
+                }, {
+                    field: 'credit',
+                    width: 110,
+                    halign: 'center',
+                    title: "Credit",
+                    formatter: numberformat,
+                    editor: {
+                        type: 'numberbox',
+                        options: {
+                            precision: 4,
+                            readonly: true
+                        }
+                    }
+                }, {
+                    field: 'flag',
+                    width: 50,
+                    halign: 'center',
+                    title: "Order",
+                    editor: {
+                        type: 'numberbox',
+                        options: {
+                            required: true,
+                            readonly: true
+                        }
+                    }
+                }, ],
+            ],
+            onLoadSuccess: function(data) {
+                // hitung total debit dan credit journal 
+                const rows = data.rows || []; 
+                const totalrows = rows.length;
+
+                let debit = 0;
+                let credit = 0;
+
+                if (totalrows > 0) {
+                    for (let i = 0; i < totalrows; i++) {
+                        debit += parseFloat(rows[i].debit || 0);
+                        credit += parseFloat(rows[i].credit || 0);
+                    }
+                }
+                
+                $("#d_balance_debit").numberbox('setValue', debit);
+                $("#d_balance_credit").numberbox('setValue', credit);
+            }
+        });
+    }
+
+    $('#dlg_detail').dialog({
+        buttons: [{
+            text: 'Close',
+            iconCls: 'icon-ok',
+            handler: function() { 
+                $('#dlg_detail').dialog('close');
+            }
+        }]
+    });
 
     var editIndex = undefined;
 
@@ -1596,6 +2056,8 @@
             if (row.status == 0) {
                 if (row.gl_no == null) {
                     $('#dlg_insert').dialog('open');
+                    $("#dlg_insert").window('setTitle', "Update " + row.number);
+                    
                     $('#frm_insert').form('load', row);
 
                     $("#trans_date").datebox('disable');
@@ -1899,6 +2361,8 @@
                     }, 1000);
                     
                     var total_dpp = parseFloat((row.total_sub) * 11/12);
+                    $("#total_dpp").numberbox('setValue', total_dpp);
+
                     var lastIndex;
                     var dg = $('#dg2').datagrid({
                         url: '<?= base_url('finance/sales_invoices/reads/') ?>' + window.btoa(row.number),
@@ -2496,7 +2960,27 @@
 
                     if (parseFloat(balance_debit) == parseFloat(balance_credit)) {
                         if (due_date == "" || trans_date == "" || customer_id == "" || journal_type_id == "" || faktur_no.length != 17) {
-                            toastr.error("please complete your input data");
+
+                            if (due_date == "") {
+                                toastr.error("Please complete your input data : Due Date");
+                            }
+
+                            if (trans_date == "") {
+                                toastr.error("Please complete your input data : Transaction Date" );
+                            }
+
+                            if (customer_id == "") {
+                                toastr.error("Please complete your input data : Customer / Supplier" );
+                            }
+
+                            if (journal_type_id == "") {
+                                toastr.error("Please complete your input data : Journal Type" );
+                            }
+                            
+                            if (faktur_no.length != 17) {
+                                toastr.error("Please complete your input data : Faktur No. must have 17 characters" );
+                            }
+
                         } else {
                             addJournal();
 
@@ -3113,6 +3597,137 @@
         });
  
     });
+    
+    function btnDetails(val, row) {
+        var details = "viewDetails('" + row.number + "')";
+        return '<a class="btn btn-primary w-100" onClick="' + details + '" style="pointer-events: visible; opacity:1;"><i class="fa fa-eye"></i> View</a>';
+    }
+
+    //Detail Data
+    function viewDetails(number) {
+        $("#d_number").textbox('disable');
+        $("#d_number").textbox('setValue', number);
+
+        formMode = 'detail';
+        var row = $('#dg').datagrid('getSelected');
+        console.log("Data Loaded:",row);
+        if (row) {
+            $('#dlg_detail').dialog('open');
+            $("#dlg_detail").window('setTitle', "Detail of " + row.number);
+            
+            $('#frm_detail').form('load', row);
+
+            $("#d_trans_date").datebox('disable');
+            $("#d_trans_date").datebox('setValue', row.trans_date);
+
+            // -- Disable all form input
+            $('#frm_detail').find('input, select, textarea').prop('disabled', true);
+            $('#frm_detail').find('.easyui-textbox').textbox('disable');
+            $('#frm_detail').find('.easyui-numberbox').numberbox('disable');
+            $('#frm_detail').find('.easyui-passwordbox').passwordbox('disable');
+            $('#frm_detail').find('.easyui-combobox').combobox('disable');
+            $('#frm_detail').find('.easyui-combogrid').combogrid('disable');
+            $('#frm_detail').find('.easyui-datebox').datebox('disable');
+            $('#frm_detail').find('.easyui-datetimebox').datetimebox('disable');
+            $('#frm_detail').find('input[type="checkbox"]').prop('disabled', true);
+            $('#frm_detail').find('input[type="radio"]').prop('disabled', true);
+            $('#frm_detail').find('textarea').prop('disabled', true);
+
+            $.ajax({
+                url: '<?= base_url('finance/sales_invoices/readJournalType/') ?>',
+                type: 'POST',
+                dataType: 'json',
+                data: {
+                    id: window.btoa(row.journal_type_id)
+                },
+                success: function(response) {
+                    if (response && response.name) {
+                        $("#d_journal_type").textbox('setValue', response.name);
+                    } else {
+                        console.warn("Nama jurnal tidak ditemukan dalam respons atau format tidak sesuai:", response);
+                        $("#d_journal_type").textbox('setValue', '-');
+                    }
+                }
+            });
+
+            var deliveryNoteNo = row.delivery_note_nos;
+            if (deliveryNoteNo) {
+                // Remove any extra spaces around commas
+                deliveryNoteNo = deliveryNoteNo.replace(/\s*,\s*/g, ',');
+            }
+            $("#d_delivery_note_no").combogrid('setValue', deliveryNoteNo);
+
+            $("#d_country_name").textbox('setValue', row.country_name);
+            $("#d_customer_name").textbox('setValue', row.customer_name);
+            $("#d_division").textbox('setValue', row.division);
+            $("#d_taxes").textbox('setValue', parseFloat(row.taxes));
+            $("#d_payment_term").textbox('setValue', row.payment_term);
+            $("#d_due_date").datebox('setValue', row.due_date);
+
+            $("#d_remarks").textbox('setValue', row.remarks);
+            $("#d_faktur_code").textbox('setValue', row.faktur_code);
+            $("#d_fp_pengganti").textbox('setValue', row.fp_pengganti);
+            $("#d_faktur_no").textbox('setValue', row.faktur_no);
+            
+            $("#d_bc_no").textbox('setValue', row.bc_no);
+            $("#d_keterangan_tambahan").textbox('setValue', row.keterangan_tambahan);
+            $("#d_cap_fasilitas").textbox('setValue', row.cap_fasilitas);
+            $("#d_payment_to").textbox('setValue', row.payment_to);
+            
+            $("#d_kode_trans").textbox('setValue', row.kode_trans);
+            $("#d_tahun_pemeriksaan").textbox('setValue', row.tahun_pemeriksaan);
+            $("#d_no_urut").textbox('setValue', row.no_urut);
+
+            // Bagian Box kanan bawah 
+            $("#d_total").textbox('setValue', formatPriceDetail(row.total));
+            $("#d_total_discount").textbox('setValue', formatPriceDetail(row.total_discount));
+            $("#d_total_grand").textbox('setValue', formatPriceDetail(row.total_grand));
+            $("#d_total_invoice").textbox('setValue', formatPriceDetail(row.total_invoice));
+            $("#d_total_local").textbox('setValue', formatPriceDetail(row.total_local));
+            $("#d_total_pph").textbox('setValue', formatPriceDetail(row.total_pph));
+            $("#d_total_sub").textbox('setValue', formatPriceDetail(row.total_sub));
+            $("#d_total_vat").textbox('setValue', formatPriceDetail(row.total_vat));
+            
+            
+            var d_total_dpp = parseFloat((row.total_sub) * 11/12);
+            $("#d_total_dpp").textbox('setValue', formatPriceDetail(d_total_dpp));
+
+            var lastIndex;
+            var dg = $('#dgDetail').datagrid({
+                url: '<?= base_url('finance/sales_invoices/reads/') ?>' + window.btoa(row.number),
+                onBeforeEdit: function(index, row) {
+                    row.editing = true;
+                    $(this).datagrid('refreshRow', index);
+                },
+                onAfterEdit: function(index, row) {
+                    row.editing = false;
+                    $(this).datagrid('refreshRow', index);
+                },
+                onCancelEdit: function(index, row) {
+                    row.editing = false;
+                    $(this).datagrid('refreshRow', index);
+                },
+            });
+
+            addTableJournal('<?= base_url('finance/sales_invoices/readJournals/') ?>' + window.btoa(row.number));
+
+            setTimeout(function() {
+                balance_journal();
+                $("#number").textbox('setValue', row.number);
+            }, 2000);
+
+        } else {
+            console.log("Click again to get Detail " + number);
+            // toastr.warning("Please select one of the data in the table first!", "Information");
+        }
+    }
+
+    function formatPriceDetail(nominal) {
+        return parseFloat(nominal).toLocaleString('en-US', {
+            minimumFractionDigits: 2,
+            maximumFractionDigits: 2
+        });
+    }
 
     function priceformat(value, row) {
         if (row.currency == "USD") {

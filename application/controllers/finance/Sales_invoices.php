@@ -246,6 +246,22 @@ class Sales_invoices extends CI_Controller
         echo json_encode($data);
     }
 
+    public function readJournalType()
+    {
+        $id = $this->input->post('id');
+        $id   = base64_decode($id);
+        
+        $journalData = null;
+
+        if (!empty($id)) {
+            $query = $this->db->query('SELECT id, name FROM journal_types WHERE id = ?', [$id]);
+            if ($query->num_rows() > 0) {
+                $journalData = $query->row_array();
+            }
+        }
+        echo json_encode($journalData);
+    }
+
     public function readJournal($journal_type_id)
     {
         $post = isset($_POST['q']) ? $_POST['q'] : "";
@@ -573,6 +589,7 @@ class Sales_invoices extends CI_Controller
 
             //Select Query
             $this->db->select('a.*, c.number as gl_no, b.type, b.name as customer_name, GROUP_CONCAT(DISTINCT REPLACE(a.delivery_note_no, " ", "") SEPARATOR ",") as delivery_note_nos');
+            $this->db->select("'view' as details");
             $this->db->from('sales_invoices a');
             $this->db->join('customers b', 'a.customer_id = b.id');
             $this->db->join('journal_postings c', 'a.number = c.document_no', 'left');
@@ -598,6 +615,7 @@ class Sales_invoices extends CI_Controller
             $number = base64_decode($this->input->get('number'));
 
             $this->db->select('a.*');
+            $this->db->select("'view' as details");
             $this->db->from('sales_invoices a');
             $this->db->join('customers b', 'a.customer_id = b.id');
             $this->db->where('a.number', $number);
