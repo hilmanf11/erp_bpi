@@ -273,12 +273,8 @@ class Report_income_statements extends CI_Controller
     
     public function generateData2(){
         $filter_date = $this->input->post('filter_date');
-        $period2 = date("Ym", strtotime($filter_date));
-        $income_statements = $this->crud->reads("income_statements", [], ["index" => 1, "period" => $period2]);
-
-        $month = date("m", strtotime($filter_date));
-        $year_min = date("Y", strtotime("-1 year", strtotime($filter_date)));
-        $year = date("Y", strtotime($filter_date));
+        $period = date("Ym", strtotime($filter_date));
+        $income_statements = $this->crud->reads("income_statements", [], ["index" => 1, "period" => $period]);
 
         $datas = array();
         foreach ($income_statements as $income_statement) {
@@ -296,29 +292,18 @@ class Report_income_statements extends CI_Controller
             foreach ($accounts as $account) {
                 $account_number = $account['account_number'];
                 $account_name = $account['account_name'];
-                $trial_balance = $this->crud->read("trial_balances", [], ["account_number" => $account_number, "period" => $period2]);
+                $trial_balance = $this->crud->read("trial_balances", [], ["account_number" => $account_number, "period" => $period]);
+                
+                $year = substr($period, 0, 4);
+                $month = substr($period, 4);
 
-                if($month == "11"){
-                    $period = $year."11";
-                    $period_to = date("Ym", strtotime($filter_from));
-                    $income_amount = 0;
-                }elseif($month == "12"){
-                    $period = $year."11";
-                    $period_to = date("Ym", strtotime($filter_from));
+                $period_from = date("Y01", strtotime($year."-".$month));
+                $period_to = date("Ym", strtotime("-1 month", strtotime($year."-".$month)));
 
-                    $income = $this->crud->query("SELECT name, account_number, SUM(amount) as amount 
-                    FROM income_statements WHERE name = '$name' and account_number = '$account_number' and `period` between '$period' and '$period_to'
-                    GROUP BY name, account_number");
-                    $income_amount = @$income[0]->amount;
-                }else{
-                    $period = $year_min."11";
-                    $period_to = date("Ym", strtotime("-1 month", strtotime($filter_from)));
-
-                    $income = $this->crud->query("SELECT name, account_number, SUM(amount) as amount 
-                    FROM income_statements WHERE name = '$name' and account_number = '$account_number' and `period` between '$period' and '$period_to'
-                    GROUP BY name, account_number");
-                    $income_amount = @$income[0]->amount;
-                }
+                $income = $this->crud->query("SELECT name, account_number, SUM(amount) as amount 
+                FROM income_statements WHERE name = '$name' and account_number = '$account_number' and `period` between '$period_from' and '$period_to'
+                GROUP BY name, account_number");
+                $income_amount = @$income[0]->amount;
 
                 if($name == "Sales" || $name == "Sales Return"){
                     $amount = (abs(@$trial_balance->local_debit - abs(@$trial_balance->local_credit)));
@@ -328,6 +313,7 @@ class Report_income_statements extends CI_Controller
                     $accumulated = ((@$trial_balance->local_debit - abs(@$trial_balance->local_credit)) + @$income_amount);
                 }
 
+                // negative account 
                 if(in_array($account_number, ["9-9200", "9-9201"])){
                     $amount = ($amount * -1);
                     $accumulated = ($accumulated * -1);
@@ -335,7 +321,7 @@ class Report_income_statements extends CI_Controller
 
                 $datas[] = [
                     "index" => 2,
-                    "period" => $period2,
+                    "period" => $period,
                     "name" => $name,
                     "account_number" => $account_number,
                     "account_name" => $account_name,
