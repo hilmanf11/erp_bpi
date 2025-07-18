@@ -29,6 +29,52 @@
         </tr>
     </thead>
 </table>
+
+<style>
+    /* AI Style Form Inputs when disabled to see the value clearly */
+    input[disabled],
+    select[disabled],
+    textarea[disabled] {
+        background-color: white !important;
+        color: black !important;
+        -webkit-text-fill-color: black !important;
+        opacity: 1 !important;
+        cursor: not-allowed; /* Standard cursor for disabled elements */
+    }
+
+    .textbox.textbox-disabled .textbox-text,
+    .textbox.textbox-disabled
+    {
+        background-color: white !important;
+        color: black !important;
+        -webkit-text-fill-color: black !important;
+        opacity: 1 !important;
+        cursor: not-allowed;
+    }
+
+    .combo.combo-disabled .combo-text,
+    .combo.combo-disabled 
+    {
+        background-color: white !important;
+        color: black !important;
+        -webkit-text-fill-color: black !important;
+        opacity: 1 !important;
+        cursor: not-allowed;
+    }
+
+    .combo.combo-disabled .combo-arrow,
+    .datebox.textbox-disabled .textbox-addon {
+        background-color: white !important;
+        opacity: 1 !important;
+    }
+    
+    input[type="checkbox"][disabled],
+    input[type="radio"][disabled] {
+        opacity: 1 !important;
+        cursor: not-allowed;
+    }
+</style>
+
 <!-- FORM FILTER DATAGRID -->
 <div id="toolbar" style="height: 270px; padding:10px;">
     <!-- <div style="width: 100%; display: grid; grid-template-columns: auto auto auto; grid-gap: 5px; display: flex;"> -->
@@ -2083,6 +2129,56 @@
                     }
 
                     $("#delivery_note_no").combogrid('setValue', deliveryNoteNo);
+                    
+                    $("#delivery_note_no").combogrid({
+                        url: '<?= base_url('finance/sales_invoices/readDeliverys') ?>' +'?customer_id=' + row.customer_id +'&division_number=' + row.division,
+                        panelWidth: 500,
+                        idField: 'delivery_note_no',
+                        textField: 'delivery_note_no',
+                        mode: 'remote',
+                        multiple: true,
+                        prompt: "Choose Delivery Note",
+                        columns: [
+                            [ {
+                                field: 'ck', // Kolom checkbox
+                                checkbox: true, // Mengaktifkan checkbox
+                            }, {
+                                field: 'no',
+                                title: 'No',
+                                width: 60
+                            }, {
+                                field: 'delivery_note_no',
+                                title: 'Delivery Note No',
+                                width: 150,
+                                align: 'left'
+                            }, {
+                                field: 'delivery_note_date',
+                                title: 'Delivery Note Date',
+                                width: 120,
+                                align: 'left'
+                            }, {
+                                field: 'plant',
+                                title: 'Plant',
+                                width: 150,
+                                align: 'left'
+                            }]
+                        ],
+                        fitColumns: true,
+                        // pagination: true,
+                        selectOnCheck: true,
+                        checkOnSelect: true,
+                        onLoadSuccess: function(delivery_note_nos) {
+                            let cleanedDeliveryNotes = row.delivery_note_nos
+                                .split(',') // Pisahkan data berdasarkan koma
+                                .map(note => note.trim()) // Hapus spasi di awal dan akhir masing-masing note
+                                .join(','); // Gabungkan kembali dengan koma tanpa spasi tambahan
+
+                            // Set nilai ke combogrid
+                            $("#delivery_note_no").combogrid('setValue', cleanedDeliveryNotes);
+                        },
+                    });
+
+                    
 
                     $('#customer_id').combogrid({
                         url: '<?= base_url('master/customers/reads') ?>',
@@ -2110,38 +2206,6 @@
                         onSelect: function(index, customer) {
                             var trans_date = $("#trans_date").datebox('getValue');
                             $("#payment_term").numberbox("setValue", customer.payment_term);
-
-                            // $("#delivery_note_no").combogrid({
-                            //     url: '<?= base_url('finance/sales_invoices/readDeliveryx?customer_id=') ?>' + customer.id,
-                            //     panelWidth: 400,
-                            //     idField: 'delivery_note_no',
-                            //     textField: 'delivery_note_no',
-                            //     mode: 'remote',
-                            //     multiple: true,
-                            //     prompt: "Choose Delivery Note",
-                            //     columns: [
-                            //         [{
-                            //             field: 'period',
-                            //             title: 'No',
-                            //             width: 80
-                            //         }, {
-                            //             field: 'delivery_note_no',
-                            //             title: 'Delivery Note No',
-                            //             width: 150,
-                            //             align: 'left'
-                            //         }, {
-                            //             field: 'delivery_note_date',
-                            //             title: 'Delivery Note Date',
-                            //             width: 150,
-                            //             align: 'left'
-                            //         }]
-                            //     ],
-                                
-
-                            //     onLoadSuccess: function(delivery_no) {
-                                    
-                            //     },
-                            // });
                         }
                     });
 
@@ -2202,54 +2266,6 @@
                         },
                         onSelect: function(index, row) {
                         }
-                    });
-
-                    $("#delivery_note_no").combogrid({
-                        url: '<?= base_url('finance/sales_invoices/readDeliverys') ?>' +'?customer_id=' + row.customer_id +'&division_number=' + row.division,
-                        panelWidth: 500,
-                        idField: 'delivery_note_no',
-                        textField: 'delivery_note_no',
-                        mode: 'remote',
-                        multiple: true,
-                        prompt: "Choose Delivery Note",
-                        columns: [
-                            [ {
-                                field: 'ck', // Kolom checkbox
-                                checkbox: true, // Mengaktifkan checkbox
-                            }, {
-                                field: 'no',
-                                title: 'No',
-                                width: 60
-                            }, {
-                                field: 'delivery_note_no',
-                                title: 'Delivery Note No',
-                                width: 150,
-                                align: 'left'
-                            }, {
-                                field: 'delivery_note_date',
-                                title: 'Delivery Note Date',
-                                width: 120,
-                                align: 'left'
-                            }, {
-                                field: 'plant',
-                                title: 'Plant',
-                                width: 150,
-                                align: 'left'
-                            }]
-                        ],
-                        fitColumns: true,
-                        // pagination: true,
-                        selectOnCheck: true,
-                        checkOnSelect: true,
-                        onLoadSuccess: function(delivery_note_nos) {
-                            let cleanedDeliveryNotes = row.delivery_note_nos
-                                .split(',') // Pisahkan data berdasarkan koma
-                                .map(note => note.trim()) // Hapus spasi di awal dan akhir masing-masing note
-                                .join(','); // Gabungkan kembali dengan koma tanpa spasi tambahan
-
-                            // Set nilai ke combogrid
-                            $("#delivery_note_no").combogrid('setValue', cleanedDeliveryNotes);
-                        },
                     });
 
                     $("#faktur_code").combobox({
@@ -2409,7 +2425,106 @@
         });
     }
 
+    // AI Optimasi Preview Data
     function preview() {
+        const customerId = $("#customer_id").combogrid('getValue');
+        const deliveryNoteNo = $("#delivery_note_no").combobox('getText');
+        const transDate = $("#trans_date").datebox('getValue');
+        const dueDate = $("#due_date").datebox('getValue');
+        const type = $("#type").textbox('getValue');
+        let discount = parseFloat($("#discount").numberbox('getValue')) || 0;
+        let downPayment = parseFloat($("#down_payment").numberbox('getValue')) || 0;
+        const taxes = parseFloat($("#taxes").numberbox('getValue')) || 0;
+        const journalTypeId = $("#journal_type").combobox('getValue');
+
+        if (!deliveryNoteNo || !transDate || !dueDate || !taxes) { // Check for empty values directly
+            toastr.info('Please complete all required data (Delivery Note, Trans Date, Due Date, Taxes).');
+            return;
+        }
+
+        $("#pph").combobox('setValue', "0");
+        $("#discount").numberbox('setValue', "0");
+        $("#disc_pr").numberbox('setValue', "0");
+        $("#down_payment").numberbox('setValue', "0");
+        $("#disc_dp").numberbox('setValue', "0");
+
+        discount = parseFloat($("#discount").numberbox('getValue')) || 0;
+        downPayment = parseFloat($("#down_payment").numberbox('getValue')) || 0;
+
+        const encodedDeliveryNoteNo = window.btoa(deliveryNoteNo);
+
+        $('#dg2').datagrid({
+            url: `<?= base_url('finance/sales_invoices/datatablesTemp/') ?>?delivery_note_no=${encodedDeliveryNoteNo}`,
+            onLoadSuccess: function(data) {
+                console.log("Data from Preview:", data);
+
+                // Check if data.rows exists and has elements before accessing data.rows[0]
+                if (!data.rows || data.rows.length === 0) {
+                    toastr.warning('No detail data found for the selected delivery note.');
+                    // Clear related fields if no data
+                    $("#total_sub").numberbox('setValue', 0);
+                    $("#total_invoice").numberbox('setValue', 0);
+                    $("#total_dpp").numberbox('setValue', 0);
+                    $("#total_vat").numberbox('setValue', 0);
+                    $("#total_grand").numberbox('setValue', 0);
+                    $("#total_local").numberbox('setValue', 0);
+                    $('#dg_journal').datagrid('loadData', []); 
+                    return;
+                }
+
+                const totalSub = parseFloat(data.total_sub) || 0;
+                $("#total_sub").numberbox('setValue', totalSub);
+                $("#total_invoice").numberbox('setValue', totalSub);
+
+                // Calculation for total_dpp
+                const totalDpp = (type === "LOCAL") ? (totalSub - discount) * (11 / 12) : 0;
+
+                $("#total_dpp").numberbox('setValue', totalDpp);
+
+                const discTax = totalDpp * (taxes / 100);
+                $("#total_vat").numberbox('setValue', discTax);
+
+                const totalGrand = totalSub + discTax;
+                $("#total_grand").numberbox('setValue', totalGrand);
+
+                const currency = data.rows[0].currency;
+                console.log("Currency from Preview:", currency);
+
+                const precision = (currency === 'USD') ? 4 : 2;
+                ['#total_invoice', '#discount', '#total_sub', '#down_payment', '#total_dpp',
+                '#total_vat', '#total_pph', '#total_grand', '#total_local'].forEach(selector => {
+                    $(selector).numberbox({ precision: precision });
+                });
+
+                /*
+                $.ajax({
+                    type: "post",
+                    url: `<?= base_url('finance/sales_invoices/readExchangeRates?currency=') ?>${currency}&trans_date=${transDate}`,
+                    dataType: "json",
+                    success: function(exchange) {
+                        const exchangeRate = (exchange.length > 0 && exchange[0]?.middle) ? parseFloat(exchange[0].middle) : 1;
+                        $("#total_local").numberbox('setValue', totalGrand * exchangeRate);
+                    },
+                    error: function(xhr, status, error) {
+                        console.error("Error fetching exchange rates:", error);
+                        $("#total_local").numberbox('setValue', totalGrand * 1); // Fallback
+                    }
+                });
+                */
+                
+                addTable2(`<?= base_url('finance/sales_invoices/readJournal/') ?>${window.btoa(journalTypeId)}`);
+            },
+            onClickRow: function(rowIndex) {
+                if (lastIndex != rowIndex) {
+                    $(this).datagrid('endEdit', lastIndex);
+                    $(this).datagrid('beginEdit', rowIndex);
+                }
+                lastIndex = rowIndex;
+            }
+        });
+    }
+
+    function previewOld() {
         var customer_id = $("#customer_id").combogrid('getValue');
         // var delivery_note_no = $("#delivery_note_no").combobox('getValue');
         var delivery_note_no = $("#delivery_note_no").combobox('getText');
