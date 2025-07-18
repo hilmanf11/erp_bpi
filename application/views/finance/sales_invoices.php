@@ -1340,14 +1340,14 @@
         var totalrows = rows.length;
         var type = $("#type").textbox('getValue');
 
-        var currency = rows[0].currency;
+        var currency = (rows.length > 0 && rows[0].currency) ? rows[0].currency : 'IDR'; // default IDR
 
-        console.log(currency);
+        console.log("Currency AddJournal : " + currency);
 
         var rows2 = $('#dg3').datagrid('getRows');//journal
         var totalrows2 = rows2.length;
 
-        console.log(rows2);
+        console.log("dg3 AddJournal : " + totalrows2);
         endEditing2();
 
         if (pphname != "") {
@@ -2123,23 +2123,10 @@
                                         
                     // $("#preview").linkbutton('disable');
 
-                    let customerId = '';
-                    let divisionNumber = '';
-
-                    if (formMode === 'update' && row) {
-                        customerId = row.customer_id;
-                        divisionNumber = row.division;
-                    } else if (formMode === 'create') {
-                        customerId = $("#customer_id").combogrid('getValue');
-                        divisionNumber = $("#division").combobox('getValue');
-                    }
-
                     var deliveryNoteNo = row.delivery_note_nos;
                     if (deliveryNoteNo) {
-                        // Remove any extra spaces around commas
                         deliveryNoteNo = deliveryNoteNo.replace(/\s*,\s*/g, ',');
                     }
-
                     $("#delivery_note_no").combogrid('setValue', deliveryNoteNo);
                     
                     $("#delivery_note_no").combogrid({
@@ -2180,8 +2167,7 @@
                         selectOnCheck: true,
                         checkOnSelect: true,
                         onLoadSuccess: function(data) {
-                            // validasi mode form
-                            if (formMode === 'update' && row && row.delivery_note_nos) {
+                            if (row && row.delivery_note_nos) {
                                 // Siapkan delivery_note dari row yang akan diupdate
                                 let selectedDeliveryNotes = row.delivery_note_nos
                                                                 .split(',')
@@ -2206,14 +2192,12 @@
                                 
                             }
                         },
-                        onCheck: function(index, rowData) {
-                            // --- otomatis ubah dg2 ketika checklist Delivery Notes ---
-                            let checkedDeliveryNoteNo = rowData.delivery_note_no;
-                            console.log(checkedDeliveryNoteNo);
-                            
-                            preview(); // refresh dg2 journal list
-                            
-                        },
+                        // onCheck: function(index, rowData) { // ---- COMMENT KARENA HARUS KLIK ULANG AddJournal
+                        //     // --- otomatis ubah dg2 ketika checklist Delivery Notes ---
+                        //     let checkedDeliveryNoteNo = rowData.delivery_note_no;
+                        //     // console.log(checkedDeliveryNoteNo);
+                        //     preview(); // refresh dg2 journal list
+                        // },
                         onUncheck: function(index, rowData) {
                             // --- otomatis ubah dg2 ketika Un-checklist Delivery Notes ---
                             let uncheckedDeliveryNoteNo = rowData.delivery_note_no;
@@ -2236,7 +2220,6 @@
                         },
                     });
 
-                    
 
                     $('#customer_id').combogrid({
                         url: '<?= base_url('master/customers/reads') ?>',
@@ -3392,6 +3375,7 @@
 
                                                 }
                                             });
+
                                         } else {
                                             toastr.warning("please selections your data in table first");
                                         }
