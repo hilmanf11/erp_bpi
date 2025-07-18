@@ -64,16 +64,6 @@
                 if(filter_date != ""){
                     $.messager.confirm('Warning', 'Are you sure you want to save this data?', function(r) {
                         if (r) {
-                            Swal.fire({
-                                title: 'Please Wait for Save Trial Balance',
-                                showConfirmButton: false,
-                                allowOutsideClick: false,
-                                allowEscapeKey: false,
-                                didOpen: () => {
-                                    Swal.showLoading();
-                                },
-                            });
-
                             $("#p_remarks").html("");
 
                             $.ajax({
@@ -84,9 +74,18 @@
                                 },
                                 dataType: "json",
                                 success: function(data) {
-                                    Swal.close();
+                                    if(data.total > 0)
+                                    {
+                                        Swal.fire({
+                                            title: 'Please Wait for Save Trial Balance',
+                                            showConfirmButton: false,
+                                            allowOutsideClick: false,
+                                            allowEscapeKey: false,
+                                            didOpen: () => {
+                                                Swal.showLoading();
+                                            },
+                                        });
 
-                                    if(data.total > 0){
                                         requestData(data.total, data.rows);
                                         $('#dlg_generate').dialog('open');
 
@@ -119,16 +118,7 @@
 
                                                         if (i == (data.total - 1)) 
                                                         {
-                                                            Swal.fire({
-                                                                title: 'Please Wait for Save Trial Balance Detail',
-                                                                showConfirmButton: false,
-                                                                allowOutsideClick: false,
-                                                                allowEscapeKey: false,
-                                                                didOpen: () => {
-                                                                    Swal.showLoading();
-                                                                },
-                                                            });
-
+                                                            // get data detail per account_number
                                                             $.ajax({
                                                                 type: "post",
                                                                 url: '<?= base_url('finance/report_income_statements/generateData2') ?>',
@@ -137,9 +127,19 @@
                                                                 },
                                                                 dataType: "json",
                                                                 success: function(data2) {
-                                                                    Swal.close();
+                                                                    // create detail jika ada data
+                                                                    if(data2.total > 0)
+                                                                    {
+                                                                        Swal.fire({
+                                                                            title: 'Please Wait for Save Trial Balance Detail',
+                                                                            showConfirmButton: false,
+                                                                            allowOutsideClick: false,
+                                                                            allowEscapeKey: false,
+                                                                            didOpen: () => {
+                                                                                Swal.showLoading();
+                                                                            },
+                                                                        });
 
-                                                                    if(data2.total > 0){
                                                                         requestData2(data2.total, data2.rows);
                                                                         $('#dlg_generate').dialog('open');
 
@@ -188,12 +188,21 @@
                                                                             }
                                                                         }
                                                                     }
+                                                                    else
+                                                                    {
+                                                                        $.messager.alert("Error", 'Data per Account Number(s) in this period are not available.', 'error', function() {
+                                                                            window.location.reload(); 
+                                                                        });
+
+                                                                    }
                                                                 }
                                                             });
                                                         }
                                                     }
                                                 });
                                             }
+                                            
+                                            Swal.close();
                                         }
                                     }else{
                                         toastr.warning("Data not Found!");
@@ -211,6 +220,7 @@
                                     }
                                 }
                             });
+
                         }
                     });
                 }else{
