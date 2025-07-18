@@ -813,6 +813,7 @@
         
 
         $('#dg2').datagrid({
+            url: '<?= base_url('finance/sales_invoices/reads/') ?>' + window.btoa(0), // clear datagrid
             onBeforeEdit: function(index, row) {
                 row.editing = true;
                 $(this).datagrid('refreshRow', index);
@@ -2122,6 +2123,17 @@
                                         
                     // $("#preview").linkbutton('disable');
 
+                    let customerId = '';
+                    let divisionNumber = '';
+
+                    if (formMode === 'update' && row) {
+                        customerId = row.customer_id;
+                        divisionNumber = row.division;
+                    } else if (formMode === 'create') {
+                        customerId = $("#customer_id").combogrid('getValue');
+                        divisionNumber = $("#division").combobox('getValue');
+                    }
+
                     var deliveryNoteNo = row.delivery_note_nos;
                     if (deliveryNoteNo) {
                         // Remove any extra spaces around commas
@@ -2131,7 +2143,7 @@
                     $("#delivery_note_no").combogrid('setValue', deliveryNoteNo);
                     
                     $("#delivery_note_no").combogrid({
-                        url: '<?= base_url('finance/sales_invoices/readDeliverys') ?>' +'?customer_id=' + row.customer_id +'&division_number=' + row.division,
+                        url: '<?= base_url('finance/sales_invoices/readDeliveryUpdate') ?>' +'?customer_id=' + row.customer_id +'&division_number=' + row.division,
                         panelWidth: 500,
                         idField: 'delivery_note_no',
                         textField: 'delivery_note_no',
@@ -2167,14 +2179,60 @@
                         // pagination: true,
                         selectOnCheck: true,
                         checkOnSelect: true,
-                        onLoadSuccess: function(delivery_note_nos) {
-                            let cleanedDeliveryNotes = row.delivery_note_nos
-                                .split(',') // Pisahkan data berdasarkan koma
-                                .map(note => note.trim()) // Hapus spasi di awal dan akhir masing-masing note
-                                .join(','); // Gabungkan kembali dengan koma tanpa spasi tambahan
+                        onLoadSuccess: function(data) {
+                            // validasi mode form
+                            if (formMode === 'update' && row && row.delivery_note_nos) {
+                                // Siapkan delivery_note dari row yang akan diupdate
+                                let selectedDeliveryNotes = row.delivery_note_nos
+                                                                .split(',')
+                                                                .map(note => note.trim())
+                                                                .filter(note => note !== '');
 
-                            // Set nilai ke combogrid
-                            $("#delivery_note_no").combogrid('setValue', cleanedDeliveryNotes);
+                                // Dapatkan delivery_note datagrid dari combogrid
+                                let grid = $('#delivery_note_no').combogrid('grid'); 
+                                if (grid) { 
+                                    const rowsData = data.rows || data;  
+
+                                    // Checklist jika delivery_note dari row sama dengan combogrid
+                                    for (let i = 0; i < rowsData.length; i++) { 
+                                        let currentDeliveryNote = rowsData[i].delivery_note_no;
+                                        if (selectedDeliveryNotes.includes(currentDeliveryNote)) {
+                                            grid.datagrid('checkRow', i);
+                                        }
+                                    }
+                                } else {
+                                    console.warn("Grid instance for #delivery_note_no checklist not found.");
+                                }
+                                
+                            }
+                        },
+                        onCheck: function(index, rowData) {
+                            // --- otomatis ubah dg2 ketika checklist Delivery Notes ---
+                            let checkedDeliveryNoteNo = rowData.delivery_note_no;
+                            console.log(checkedDeliveryNoteNo);
+                            
+                            preview(); // refresh dg2 journal list
+                            
+                        },
+                        onUncheck: function(index, rowData) {
+                            // --- otomatis ubah dg2 ketika Un-checklist Delivery Notes ---
+                            let uncheckedDeliveryNoteNo = rowData.delivery_note_no;
+                            console.log("Unchecked " + uncheckedDeliveryNoteNo);
+
+                            // Dapatkan semua baris yang saat ini terceklis di combogrid
+                            let combogridGrid = $('#delivery_note_no').combogrid('grid');
+                            let checkedRows = combogridGrid.datagrid('getChecked');
+
+                            // Validasi pastikan minimal satu yang terceklis ---
+                            if (checkedRows.length === 0) {
+                                $.messager.alert('Warning', 'You must select at least one Delivery Note.', 'warning', function() {
+                                    combogridGrid.datagrid('checkRow', index); 
+                                });
+                                return;
+                            }
+
+                            preview(); // refresh dg2 journal list
+                            
                         },
                     });
 
@@ -2209,31 +2267,39 @@
                         }
                     });
 
-                    $("#payment_to").combogrid({
-                        url: '<?= base_url('finance/sales_invoices/readPayment') ?>',
-                        panelWidth: 450,
-                        idField: 'bank_name',
-                        textField: 'bank_name',
-                        mode: 'remote',
-                        prompt: "Choose Payment",
-                        columns: [
-                            [{
-                                field: 'no',
-                                title: 'No',
-                                width: 80
-                            }, {
-                                field: 'bank_name',
-                                title: 'Bank Name',
-                                width: 200,
-                                align: 'left'
-                            }, {
-                                field: 'bank_account',
-                                title: 'Bank Account',
-                                width: 150,
-                                align: 'left'
-                            }]
-                        ],
-                    });
+                    if (formMode === 'update') {
+                        $("#payment_to").combogrid({
+                            url: '<?= base_url('finance/sales_invoices/readPayment') ?>',
+                            panelWidth: 450,
+                            idField: 'bank_name',
+                            textField: 'bank_name',
+                            mode: 'remote',
+                            prompt: "Choose Payment",
+                            columns: [
+                                [{
+                                    field: 'no',
+                                    title: 'No',
+                                    width: 80
+                                }, {
+                                    field: 'bank_name',
+                                    title: 'Bank Name',
+                                    width: 200,
+                                    align: 'left'
+                                }, {
+                                    field: 'bank_account',
+                                    title: 'Bank Account',
+                                    width: 150,
+                                    align: 'left'
+                                }]
+                            ],
+                            onLoadSuccess: function(customer_address_id) {
+                                $("#payment_to").combogrid('setValue', row.payment_to);
+                            },
+                            onSelect: function(index, row) {
+                            }
+                        });
+                    }
+
 
                     $("#customer_address_id").combogrid({
                         url: '<?= base_url('finance/sales_invoices/readPlant?customer_id=') ?>' + row.customer_id,
@@ -3838,7 +3904,7 @@
     }
 
     function formatPriceDetail(nominal) {
-        return parseFloat(nominal).toLocaleString('en-US', {
+        return parseFloat(nominal).toLocaleString('id-ID', {
             minimumFractionDigits: 2,
             maximumFractionDigits: 2
         });

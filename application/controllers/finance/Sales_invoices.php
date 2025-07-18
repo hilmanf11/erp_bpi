@@ -207,6 +207,50 @@ class Sales_invoices extends CI_Controller
         echo json_encode($data_with_no);
     }
 
+    function readDeliveryUpdate()
+    {
+        $customer_id = $this->input->get('customer_id');
+        $division_number = $this->input->get('division_number');
+        $search_query_q = isset($_POST['q']) ? $_POST['q'] : ""; 
+        
+        $arrayDN = [];
+        if (!empty($search_query_q)) {
+            $arrayDN = array_map('trim', explode(',', $search_query_q));
+            $arrayDN = array_filter($arrayDN);
+        }
+
+        $filter_year = $this->input->get('filter_year');
+        if (empty($filter_year)) {
+            $filter_year = date('Y'); // Default ke tahun saat ini jika tidak disediakan
+        }
+
+        // Mulai membangun query menggunakan CodeIgniter Active Record
+        $this->db->select('a.delivery_note_no, a.delivery_note_date, b.plant');
+        $this->db->from('delivery_notes a');
+        $this->db->join('customer_address b', 'a.address_id = b.id', 'left');
+        $this->db->where('a.customer_id', $customer_id);
+        $this->db->where('a.division', $division_number);
+        $this->db->where("YEAR(a.delivery_note_date)", $filter_year); // Gunakan tahun dinamis
+        $this->db->where('a.trans_type', 'SALES');
+
+        if (!empty($arrayDN)) {
+            $this->db->where_in('a.delivery_note_no', $arrayDN);
+        }
+        $this->db->group_by('a.delivery_note_no'); 
+        $this->db->order_by('a.delivery_note_date ASC, a.delivery_note_no ASC');
+        $records = $this->db->get()->result(); 
+        
+        // Tambahkan nomor urut
+        $data_with_no = [];
+        $no = 1;
+        foreach ($records as $record) {
+            $record->no = $no++; // Tambahkan nomor urut
+            $data_with_no[] = $record;
+        }
+
+        echo json_encode($data_with_no);
+    }
+
     public function readFakturCode()
     {
         $id = $this->input->get('id');
