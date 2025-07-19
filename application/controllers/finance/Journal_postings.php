@@ -881,7 +881,7 @@ class Journal_postings extends CI_Controller
             $result = array_merge($result, ['rows' => $data], ["footer" => $footer]);
             echo json_encode($result);
         } elseif ($modul == "AP PAYMENT") {
-            $this->db->select('a.payment_no, b.payment_date, b.purchase_invoice, b.supplier_invoice, c.name as supplier_name, b.currency, a.description, a.account_number, a.account_name, a.debit, a.credit, a.flag, a.local_debit, a.local_credit');
+            $this->db->select('a.payment_no, b.payment_date, b.purchase_invoice, b.supplier_invoice, c.name as supplier_name, b.currency, a.description, a.account_number, a.account_name, a.debit, a.credit, a.flag, a.local_debit, a.local_credit, b.rate');
             $this->db->from('ap_payment_journals a');
             $this->db->join("(SELECT * FROM ap_payments GROUP BY payment_no) b", "b.payment_no = a.payment_no");
             $this->db->join("suppliers c", "b.supplier_id = c.id");
@@ -908,16 +908,20 @@ class Journal_postings extends CI_Controller
                 $debit = $journal['debit'];
                 $credit = $journal['credit'];
 
-                $transmonth = date('Y-m-01', strtotime('-1 month', strtotime($journal['payment_date'])));
-                $exchange = $this->crud->read('exchange_rates', [], ["start_date" => $transmonth, "currency_from" => $journal['currency'], "currency_to" => "IDR"]);
+                // $transmonth = date('Y-m-01', strtotime('-1 month', strtotime($journal['payment_date'])));
+                // $exchange = $this->crud->read('exchange_rates', [], ["start_date" => $transmonth, "currency_from" => $journal['currency'], "currency_to" => "IDR"]);
 
                 if ($journal['currency'] != "IDR") {
                     $original_debit = $debit;
                     $original_credit = $credit;
-                    $local_debit = $journal['local_debit'];
-                    $local_credit = $journal['local_credit'];
+                    // $local_debit = $journal['local_debit'];
+                    // $local_credit = $journal['local_credit'];
 
-                    $rates = @$exchange->middle;
+                    $local_debit = round($debit * $journal['rate'], 2);
+                    $local_credit = round($credit * $journal['rate'], 2);
+
+                    // $rates = @$exchange->middle;
+                    $rates = $journal['rate'];
                 } else {
                     $original_debit = $debit;
                     $original_credit = $credit;
@@ -961,7 +965,7 @@ class Journal_postings extends CI_Controller
             $result = array_merge($result, ['rows' => $data], ["footer" => $footer]);
             echo json_encode($result);
         } elseif ($modul == "AR RECEIPT") {
-            $this->db->select('a.receipt_no, b.receipt_date, b.sales_invoice, b.description, c.name as customer_name, b.currency, a.description, a.account_number, a.account_name, a.debit, a.credit, a.flag');
+            $this->db->select('a.receipt_no, b.receipt_date, b.sales_invoice, b.description, c.name as customer_name, b.currency, a.description, a.account_number, a.account_name, a.debit, a.credit, a.flag, b.rate');
             $this->db->from('ar_receipt_journals a');
             $this->db->join("(SELECT * FROM ar_receipts GROUP BY receipt_no) b", "b.receipt_no = a.receipt_no");
             $this->db->join("customers c", "b.customer_id = c.id");
@@ -988,16 +992,19 @@ class Journal_postings extends CI_Controller
                 $debit = $journal['debit'];
                 $credit = $journal['credit'];
 
-                $transmonth = date('Y-m-01', strtotime('-1 month', strtotime($journal['receipt_date'])));
-                $exchange = $this->crud->read('exchange_rates', [], ["start_date" => $transmonth, "currency_from" => $journal['currency'], "currency_to" => "IDR"]);
+                // $transmonth = date('Y-m-01', strtotime('-1 month', strtotime($journal['receipt_date'])));
+                // $exchange = $this->crud->read('exchange_rates', [], ["start_date" => $transmonth, "currency_from" => $journal['currency'], "currency_to" => "IDR"]);
 
                 if ($journal['currency'] != "IDR") {
                     $original_debit = $debit;
                     $original_credit = $credit;
-                    $local_debit = round($debit * @$exchange->middle, 2);
-                    $local_credit = round($credit * @$exchange->middle, 2);
+                    // $local_debit = round($debit * @$exchange->middle, 2);
+                    // $local_credit = round($credit * @$exchange->middle, 2);
+                    $local_debit = round($debit * $journal['rate'], 2);
+                    $local_credit = round($credit * $journal['rate'], 2);
 
-                    $rates = @$exchange->middle;
+                    // $rates = @$exchange->middle;
+                    $rates = $journal['rate'];
                 } else {
                     $original_debit = $debit;
                     $original_credit = $credit;
