@@ -113,6 +113,22 @@ class Purchase_invoices extends CI_Controller
         $records = $this->db->query($sql, array("%$post%"))->result_array();
         echo json_encode($records);
     }    
+    
+    public function readJournalType()
+    {
+        $id = $this->input->post('id');
+        $id   = base64_decode($id);
+        
+        $journalData = null;
+
+        if (!empty($id)) {
+            $query = $this->db->query('SELECT id, name FROM journal_types WHERE id = ?', [$id]);
+            if ($query->num_rows() > 0) {
+                $journalData = $query->row_array();
+            }
+        }
+        echo json_encode($journalData);
+    }
 
     public function readJournal($journal_type_id)
     {
@@ -587,6 +603,7 @@ class Purchase_invoices extends CI_Controller
                 a.invoice_no as status_invoice,
                 SUM(CASE WHEN a.account_type = 'DEBIT' THEN a.total ELSE -a.total END) as total_sub,
                 ((SUM(CASE WHEN a.account_type = 'DEBIT' THEN a.total ELSE -a.total END) + a.total_vat) - a.total_pph) as total_grand");
+            $this->db->select("'view' as details");
             $this->db->from('purchase_invoices a');
             $this->db->join('suppliers b', 'a.supplier_id = b.id');
             $this->db->join('item_categories c', 'a.category_id = c.id', 'left');
@@ -622,6 +639,7 @@ class Purchase_invoices extends CI_Controller
             $number = base64_decode($this->input->get('number'));
 
             $this->db->select('a.*');
+            $this->db->select("'view' as details");
             $this->db->from('purchase_invoices a');
             $this->db->join('suppliers b', 'a.supplier_id = b.id');
             $this->db->where('a.number', $number);
