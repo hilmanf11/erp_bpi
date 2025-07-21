@@ -811,6 +811,7 @@
         $('#dg2').datagrid('loadData', []);
         $('#frm_insert').form('clear');
         
+        $('#disc_pr').numberbox('setValue', 0); // initial discount 0
 
         $('#dg2').datagrid({
             url: '<?= base_url('finance/sales_invoices/reads/') ?>' + window.btoa(0), // clear datagrid
