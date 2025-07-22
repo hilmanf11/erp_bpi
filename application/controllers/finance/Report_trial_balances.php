@@ -30,9 +30,16 @@ class Report_trial_balances extends CI_Controller
         }
     }
 
-    public function getData(){
+    public function getData()
+    {
         $filter_from = $this->input->post('filter_from');
         $filter_to   = $this->input->post('filter_to');
+
+        // Validasi input tanggal
+        if (empty($filter_from) || empty($filter_to)) {
+            echo json_encode(['total' => 0, 'rows' => [], 'message' => 'Filter tanggal tidak boleh kosong.']);
+            return;
+        }
 
         $start = strtotime($filter_from);
         $finish = strtotime($filter_to);
@@ -41,123 +48,187 @@ class Report_trial_balances extends CI_Controller
         $period = date("Ym", strtotime($filter_from));
         $period_before = date("Ym", strtotime("-1 month", strtotime($filter_from)));
 
-        
+        $data = [];
+
         $this->db->select('*');
         $this->db->from('account_group_details');
-        // $this->db->where("number", "2104");
         $this->db->order_by('number', 'asc');
         $account_groups = $this->db->get()->result_array();
 
-        foreach ($account_groups as $account_group) {
+        if (empty($account_groups)) {
+            echo json_encode(['total' => 0, 'rows' => [], 'message' => 'Tidak ada grup akun ditemukan.']);
+            return;
+        }
+
+        foreach ($account_groups as $account_group)
+        {
+            // get semua akun COA yang relevan untuk grup ini
             $this->db->select('a.*');
             $this->db->from('account_coa a');
             $this->db->where('a.account_group_detail_id', $account_group['id']);
-            // $this->db->where('a.account_number', "3091100");
             $this->db->order_by('a.account_number', 'asc');
             $accounts = $this->db->get()->result_array();
 
-            $local_debit = 0;
-            $local_credit = 0;
-            $begin_debit = 0;
-            $begin_credit = 0;
-            $ending_debit = 0;
-            $ending_credit = 0;
-            $begin_balance = 0;
-            foreach ($accounts as $account) {
-                $this->db->select('account_number, account_name, 
-                    COALESCE(SUM(local_debit)) as local_debit,
-                    COALESCE(SUM(local_credit)) as local_credit');
+            // Jika tidak ada akun detail untuk grup ini, tambahkan baris total grup dengan nilai 0
+            if (empty($accounts)) {
+                $data[] = [
+                    "period"         => $period,
+                    "account_number" => $account_group['number'],
+                    "account_name"   => $account_group['name'],
+                    "begin_debit"    => 0,
+                    "begin_credit"   => 0,
+                    "local_debit"    => 0,
+                    "local_credit"   => 0,
+                    "ending_debit"   => 0,
+                    "ending_credit"  => 0,
+                    "header"         => 0,
+                ];
+                continue; // Lanjut ke grup account berikutnya
+            }
+
+            // Ekstrak semua account_number dari $accounts untuk digunakan dalam klausa IN
+            $account_numbers = array_column($accounts, 'account_number');
+            
+            $journal_mutations_map = [];
+            if (!empty($account_numbers)) {
+                $this->db->select('account_number,
+                                    COALESCE(SUM(local_debit), 0) as total_local_debit,
+                                    COALESCE(SUM(local_credit), 0) as total_local_credit');
                 $this->db->from('journal_postings');
-                $this->db->where('account_number', $account['account_number']);
-                $this->db->where("journal_date BETWEEN '$filter_from' and '$filter_to'");
+                $this->db->where_in('account_number', $account_numbers);
+                $this->db->where("journal_date BETWEEN '$filter_from' AND '$filter_to'");
                 $this->db->group_by('account_number');
-                $journal = $this->db->get()->row();
+                $journal_mutations = $this->db->get()->result_array();
 
-                $trial_balances = $this->crud->reads('trial_balances', [], ["account_number" => $account['account_number'], "period" => $period_before]);
-                if(count($trial_balances) > 0){
-                    $journal_bf = $this->crud->read('trial_balances', [], ["account_number" => $account['account_number'], "period" => $period_before]);
+                foreach ($journal_mutations as $journal_row) {
+                    $journal_mutations_map[$journal_row['account_number']] = [
+                        'local_debit' => $journal_row['total_local_debit'],
+                        'local_credit' => $journal_row['total_local_credit']
+                    ];
+                }
+            }
 
-                    if($journal_bf->header == 0){
-                        $begin_debit += $journal_bf->ending_debit;
-                        $begin_credit += $journal_bf->ending_credit;
-                    }
-                }else{
-                    $begin_debit += $account['local_debit'];
-                    $begin_credit += $account['local_kredit'];
+            // Ambil semua trial_balances untuk akun-akun ini pada period_before dalam satu query
+            $trial_balances_before_map = [];
+            if (!empty($account_numbers)) {
+                $this->db->select('account_number, begin_debit, begin_credit, ending_debit, ending_credit, header');
+                $this->db->from('trial_balances');
+                $this->db->where_in('account_number', $account_numbers);
+                $this->db->where('period', $period_before);
+                $trial_balances_before = $this->db->get()->result_array();
+
+                foreach ($trial_balances_before as $tb_row) {
+                    $trial_balances_before_map[$tb_row['account_number']] = $tb_row;
+                }
+            }
+
+            // --- Perhitungan Akumulasi untuk TOTAL GROUP (Header 0) ---
+            $local_debit_total_group = 0;
+            $local_credit_total_group = 0;
+            $begin_debit_total_group = 0;
+            $begin_credit_total_group = 0;
+
+            foreach ($accounts as $account) {
+                $journal_data = $journal_mutations_map[$account['account_number']] ?? ['local_debit' => 0, 'local_credit' => 0];
+                $trial_balance_bf_data = $trial_balances_before_map[$account['account_number']] ?? null;
+
+                $current_begin_debit = 0;
+                $current_begin_credit = 0;
+
+                if ($trial_balance_bf_data !== null) {
+                    // Jika ada data trial_balance sebelumnya
+                    $current_begin_debit = $trial_balance_bf_data['ending_debit'];
+                    $current_begin_credit = $trial_balance_bf_data['ending_credit'];
+                } else {
+                    // Jika tidak ada trial_balance sebelumnya, gunakan begin_balance dari account_coa (asumsi ini kolom awal di COA)
+                    // HATI-HATI: Pastikan 'local_debit' dan 'local_kredit' ada di tabel 'account_coa' jika digunakan sebagai saldo awal!
+                    $current_begin_debit = $account['local_debit'] ?? 0;
+                    $current_begin_credit = $account['local_kredit'] ?? 0;
                 }
 
-                $local_debit += @$journal->local_debit;
-                $local_credit += @$journal->local_credit;
+                $local_debit_total_group += $journal_data['local_debit'];
+                $local_credit_total_group += $journal_data['local_credit'];
+                $begin_debit_total_group += $current_begin_debit;
+                $begin_credit_total_group += $current_begin_credit;
             }
 
-            if(($begin_debit - $begin_credit) > 0){
-                $begin_debit = abs($begin_debit - $begin_credit);
-                $begin_credit = 0;
-            }else{
-                $begin_credit = abs($begin_debit - $begin_credit);
-                $begin_debit = 0;
+            // --- Perhitungan Ending Balance untuk Total Group (Header 0) ---
+            $final_begin_debit = 0;
+            $final_begin_credit = 0;
+
+            $net_begin_balance_group = $begin_debit_total_group - $begin_credit_total_group;
+            if ($net_begin_balance_group > 0) {
+                $final_begin_debit = abs($net_begin_balance_group);
+                $final_begin_credit = 0;
+            } else {
+                $final_begin_credit = abs($net_begin_balance_group);
+                $final_begin_debit = 0;
             }
 
-            $begin_balance = (($begin_debit + $local_debit) - ($begin_credit + $local_credit)); 
-            $account_group_no = $account_group['number'];
+            $begin_balance_group = ($final_begin_debit + $local_debit_total_group) - ($final_begin_credit + $local_credit_total_group);
 
-            if($begin_balance > 0){
-                $ending_debit = $begin_balance;
-                $ending_credit = 0;
-            }else{
-                $ending_debit = 0;
-                $ending_credit = abs($begin_balance);
+            $ending_debit_total_group = 0;
+            $ending_credit_total_group = 0;
+
+            if ($begin_balance_group > 0) {
+                $ending_debit_total_group = $begin_balance_group;
+                $ending_credit_total_group = 0;
+            } else {
+                $ending_debit_total_group = 0;
+                $ending_credit_total_group = abs($begin_balance_group);
             }
 
+            // Jika header 0, ending_debit/credit-nya adalah saldo awal untuk detail
+            // Jika header 1 (detail), ending_debit/credit-nya adalah saldo awal untuk detail
             $data[] = array(
                 "period" => $period,
                 "account_number" => $account_group['number'],
                 "account_name" => $account_group['name'],
-                "begin_debit" => $begin_debit,
-                "begin_credit" => $begin_credit,
-                "local_debit" => $local_debit,
-                "local_credit" => $local_credit,
-                "ending_debit" => $ending_debit,
-                "ending_credit" => $ending_credit,
+                "begin_debit" => $final_begin_debit,
+                "begin_credit" => $final_begin_credit,
+                "local_debit" => $local_debit_total_group,
+                "local_credit" => $local_credit_total_group,
+                "ending_debit" => $ending_debit_total_group,
+                "ending_credit" => $ending_credit_total_group,
                 "header" => 0,
             );
 
-            $journal_end_debit = 0;
-            $journal_end_credit = 0;
-            foreach ($accounts as $account) {
-                $this->db->select('account_number, account_name, 
-                    COALESCE(SUM(local_debit)) as local_debit,
-                    COALESCE(SUM(local_credit)) as local_credit');
-                $this->db->from('journal_postings');
-                $this->db->where('account_number', $account['account_number']);
-                $this->db->where("journal_date BETWEEN '$filter_from' and '$filter_to'");
-                $this->db->group_by('account_number');
-                $journal = $this->db->get()->row();
+            // Perhitungan untuk akun detail (Header 1)
+            foreach ($accounts as $account) 
+            {
+                $journal_data = $journal_mutations_map[$account['account_number']] ?? ['local_debit' => 0, 'local_credit' => 0];
+                $trial_balance_bf_data = $trial_balances_before_map[$account['account_number']] ?? null;
 
-                $trial_balances = $this->crud->reads('trial_balances', [], ["account_number" => $account['account_number'], "period" => $period_before]);
-                if(count($trial_balances) > 0){
-                    $journal_bf = $this->crud->read('trial_balances', [], ["account_number" => $account['account_number'], "period" => $period_before]);
+                $begin_balance_debit = 0;
+                $begin_balance_credit = 0;
 
-                    $begin_balance_credit = $journal_bf->ending_credit;
-                    $begin_balance_debit = $journal_bf->ending_debit;
-                }else{
-                    $begin_balance_debit = $account['local_debit'];
-                    $begin_balance_credit = $account['local_kredit'];
+                if ($trial_balance_bf_data !== null) {
+                    $begin_balance_credit = $trial_balance_bf_data['ending_credit'];
+                    $begin_balance_debit = $trial_balance_bf_data['ending_debit'];
+                } else {
+                    // HATI-HATI: Pastikan 'local_debit' dan 'local_kredit' ada di tabel 'account_coa' jika digunakan sebagai saldo awal!
+                    $begin_balance_debit = $account['local_debit'] ?? 0;
+                    $begin_balance_credit = $account['local_kredit'] ?? 0;
                 }
 
-                $journal_debit = @$journal->local_debit;
-                $journal_credit = @$journal->local_credit;
+                $journal_debit = $journal_data['local_debit'];
+                $journal_credit = $journal_data['local_credit'];
                 $account_no = $account['account_number'];
-                $begin_balance = (($begin_balance_debit + $journal_debit) - ($begin_balance_credit + $journal_credit));
 
-                if($begin_balance > 0){
-                    $journal_end_debit = abs($begin_balance);
+                $begin_balance_detail = (($begin_balance_debit + $journal_debit) - ($begin_balance_credit + $journal_credit));
+
+                $journal_end_debit = 0;
+                $journal_end_credit = 0;
+
+                if ($begin_balance_detail > 0) {
+                    $journal_end_debit = abs($begin_balance_detail);
                     $journal_end_credit = 0;
-                }else{
+                } else {
                     $journal_end_debit = 0;
-                    $journal_end_credit = abs($begin_balance);
+                    $journal_end_credit = abs($begin_balance_detail);
                 }
 
+                // Memastikan tidak ada duplikasi jika account_group['number'] sama dengan account['account_number']
                 if($account_group['number'] != $account['account_number']){
                     $data[] = array(
                         "period" => $period,
@@ -269,7 +340,7 @@ class Report_trial_balances extends CI_Controller
         }
 
         // Ambil mutasi (Transaction)
-        $this->db->select('a.account_number, b.account_group_detail_id, a.header,
+        $this->db->select('a.account_number, a.account_name, b.account_group_detail_id, a.header,
             SUM(a.local_debit) as total_local_debit, 
             SUM(a.local_credit) as total_local_credit');
         $this->db->from('trial_balances a');
@@ -287,9 +358,16 @@ class Report_trial_balances extends CI_Controller
             ];
 
             $groupId = $this->db->query("SELECT id FROM account_group_details WHERE number = '" . $row['account_number'] . "' ")->row();
+            if ($groupId !== null) {
+                $groupIdValue = $groupId->id;
+            } else {
+                $groupIdValue = '99999'; // no account group
+            }
+            
             $account_mapping[] = [
-                'group_id'       => !empty($row['account_group_detail_id']) ? $row['account_group_detail_id'] : $groupId->id,
+                'group_id'       => !empty($row['account_group_detail_id']) ? $row['account_group_detail_id'] : $groupIdValue,
                 'account_number' => $row['account_number'],
+                'account_name'   => $row['account_name'],
                 'header'         => $row['header'],
             ];
         }
