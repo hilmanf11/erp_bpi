@@ -367,6 +367,54 @@ class Purchase_invoices extends CI_Controller
         echo json_encode($records);
     }
 
+    public function readReceiptUpdate($type = "purchase")
+    {
+        $supplier_id = $this->input->get('supplier_id');
+        $item_category_id = $this->input->get('item_category_id');
+        $search_query_q = isset($_POST['q']) ? $_POST['q'] : ""; 
+
+        $arrayPOR = [];
+        if (!empty($search_query_q)) {
+            $arrayPOR = array_map('trim', explode(',', $search_query_q));
+            $arrayPOR = array_filter($arrayPOR);
+        }
+
+        $this->db->select('a.receipt_no, d.taxes, d.total_dp');
+        $this->db->from('purchase_order_receipts a');
+        $this->db->join('item_rm b', 'a.item_rm_id = b.id', 'join');
+        $this->db->join('item_categories c', 'b.item_category_id = c.id', 'join');
+        $this->db->join('purchase_orders d', 'a.po_no = d.po_no', 'join');
+
+        $this->db->where('a.supplier_id', $supplier_id);
+        $this->db->where('c.id', $item_category_id);
+        // $this->db->where('a.status', '0');
+
+        // Add condition for total_dp based on $type
+        if ($type == "purchase") {
+            $this->db->where('d.total_dp', 0);
+        } else {
+            $this->db->where('d.total_dp >', 0);
+        }
+
+        if (!empty($arrayPOR)) {
+            $this->db->where_in('a.receipt_no', $arrayPOR);
+        }
+        
+        $this->db->group_by('a.receipt_no, d.taxes, d.total_dp');
+        $this->db->order_by('a.created_date', 'DESC');
+        $records = $this->db->get()->result();
+
+        // Tambahkan nomor urut
+        $data_with_no = [];
+        $no = 1;
+        foreach ($records as $record) {
+            $record->no = $no++; // Tambahkan nomor urut
+            $data_with_no[] = $record;
+        }
+
+        echo json_encode($data_with_no);
+    }
+
     public function readPurchaseInvoice($item_category)
     {
         $data = $this->crud->query("SELECT DISTINCT `number` FROM purchase_invoices WHERE `status` = '0' and category_id = '$item_category' ORDER BY `number` ASC");
@@ -603,6 +651,7 @@ class Purchase_invoices extends CI_Controller
                 a.invoice_no as status_invoice,
                 SUM(CASE WHEN a.account_type = 'DEBIT' THEN a.total ELSE -a.total END) as total_sub,
                 ((SUM(CASE WHEN a.account_type = 'DEBIT' THEN a.total ELSE -a.total END) + a.total_vat) - a.total_pph) as total_grand");
+            $this->db->select('GROUP_CONCAT(DISTINCT REPLACE(a.por_no, " ", "") SEPARATOR ",") as por_numbers');
             $this->db->select("'view' as details");
             $this->db->from('purchase_invoices a');
             $this->db->join('suppliers b', 'a.supplier_id = b.id');
@@ -728,6 +777,42 @@ class Purchase_invoices extends CI_Controller
         $data = $this->input->post();
         $send = $this->crud->delete('purchase_invoices', $data);
         echo $send;
+    }
+
+    public function deleteByPOR() 
+    {
+        $data = $this->input->post();
+        $send = $this->crud->delete('purchase_invoices', $data);
+        echo $send;
+
+        if ($this->input->method() === 'post') 
+        {
+            $por_no = $this->input->post('por_no');
+
+            if ($data !== null) 
+            {
+                // check availability first 
+                $check_availability = $this->crud->read("purchase_invoices", [], ["por_no" => $por_no]);
+                if (!empty($check_availability)) {
+                    $this->db->where_in('por_no', $por_no);
+                    $result = $this->db->delete('purchase_invoices'); // Mengembalikan TRUE/FALSE
+                    echo json_encode($result);
+
+                    // if ($result) {
+                    //     $rows_affected = $this->db->affected_rows(); // lihat data yang telah dihapus
+                    //     echo json_encode(['success' => true, 'message' => "Data $rows_affected berhasil dihapus."]);
+                    // } else {
+                    //     echo json_encode(['success' => false, 'message' => 'Gagal menghapus data.']);
+                    // }
+                }
+            } else {
+                $this->output->set_status_header(400); // Bad Request
+                echo json_encode(['success' => false, 'message' => 'Parameter ID item tidak lengkap.']);
+            }
+        } else {
+            $this->output->set_status_header(405); // Method Not Allowed
+            echo json_encode(['success' => false, 'message' => 'Metode request tidak diizinkan.']);
+        }
     }
 
     public function deleteJournal()

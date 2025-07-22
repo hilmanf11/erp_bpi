@@ -578,7 +578,7 @@
                     </div>
                     <div class="fitem" id="type_selection_purchase">
                         <span style="width:35%; display:inline-block;">Purchase Order Receipt</span>
-                        <input style="width:60%;" required="" id="por_no" name="por_no" class="easyui-combobox">
+                        <input style="width:60%;" required="" id="por_no" name="por_no" class="easyui-combogrid">
                     </div>
                     <div class="fitem" id="type_selection_others">
                         <span style="width:35%; display:inline-block;">Purchase Order Misc</span>
@@ -925,6 +925,8 @@
         }
     }
 
+    let formMode = 'add'; // default
+
     //ADD DATA
     function add() {
         $('#dlg_insert').dialog('open');
@@ -959,7 +961,7 @@
         $("#trans_date").datebox('enable');
         //$("#category_id").combobox('enable');
         $("#supplier_id").combogrid('enable');
-        $("#por_no").combobox('enable');
+        $("#por_no").combogrid('enable');
         $("#po_no").combobox('enable');
         $("#account_purchase_name").textbox('setValue', "PURCHASE");
         $("#account_pay_name").textbox('setValue', "PAYABLE");
@@ -1684,11 +1686,15 @@
 
     //Edit Data
     function update() {
+        formMode = 'update';
         var row = $('#dg').datagrid('getSelected');
+        console.log("Data Loaded:",row);
         if (row) {
             if (row.status == 0) {
                 if (row.gl_no == null) {
                     $('#dlg_insert').dialog('open');
+                    $("#dlg_insert").window('setTitle', "Update " + row.number);
+                    
                     $('#frm_insert').form('load', row);
 
                     $("#type_selection_others").hide();
@@ -1703,9 +1709,9 @@
                     $("#trans_date").datebox('disable');
                     //$("#category_id").combobox('disable');
                     $("#supplier_id").combogrid('disable');
-                    $("#por_no").combobox('disable');
+                    // $("#por_no").combogrid('disable');
                     $("#po_no").combobox('disable');
-                    $("#preview").linkbutton('disable');
+                    // $("#preview").linkbutton('disable');
 
                     if (row.type == "purchase") {
                         $("#type_selection_purchase").show();
@@ -1755,6 +1761,120 @@
                                 ],
                                 onLoadSuccess: function(item_category_load) {
                                     $("#supplier_id").combogrid('setValue', row.supplier_id);
+                                },
+                            });
+
+                            //GET POR
+                            var receiptNos = row.por_numbers;
+                            if (receiptNos) {
+                                receiptNos = receiptNos.replace(/\s*,\s*/g, ',');
+                            }
+                            $("#por_no").combogrid('setValue', receiptNos);
+
+                            $("#por_no").combogrid({
+                                url: '<?= base_url('finance/purchase_invoices/readReceiptUpdate?supplier_id=') ?>' + row.supplier_id + "&item_category_id=" + item_category.id,
+                                panelWidth: 500,
+                                idField: 'receipt_no',
+                                textField: 'receipt_no',
+                                mode: 'remote',
+                                multiple: true,
+                                prompt: "Choose Purchase Order Receipts",
+                                columns: [
+                                    [ {
+                                        field: 'ck', // Kolom checkbox
+                                        checkbox: true, // Mengaktifkan checkbox
+                                    }, {
+                                        field: 'no',
+                                        title: 'No',
+                                        width: 20,
+                                        align: 'center'
+                                    }, {
+                                        field: 'receipt_no',
+                                        title: 'Receipt No',
+                                        width: 150,
+                                        align: 'left'
+                                    }]
+                                ],
+                                fitColumns: true,
+                                selectOnCheck: true,
+                                selectOnCheck: true,
+                                checkOnSelect: true,
+                                onLoadSuccess: function(data) {
+                                    if (row && row.por_numbers) {
+                                        let selectedDeliveryNotes = row.por_numbers
+                                                                        .split(',')
+                                                                        .map(note => note.trim())
+                                                                        .filter(note => note !== '');
+                                                                        
+                                        let grid = $('#por_no').combogrid('grid'); 
+                                        if (grid) { 
+                                            const rowsData = data.rows || data;  
+                                            
+                                            for (let i = 0; i < rowsData.length; i++) { 
+                                                let currentDeliveryNote = rowsData[i].receipt_no;
+                                                if (selectedDeliveryNotes.includes(currentDeliveryNote)) {
+                                                    grid.datagrid('checkRow', i);
+                                                }
+                                            }
+                                        } else {
+                                            console.warn("Grid instance for receipt_no checklist not found.");
+                                        }    
+                                    }
+
+                                },
+                                // onCheck: function(index, rowData) { // ---- COMMENT KARENA HARUS KLIK ULANG AddJournal
+                                //     // --- otomatis ubah dg2 ketika checklist ---
+                                //     let checkedPOR = rowData.delivery_note_no;
+                                //     // console.log(checkedPOR);
+                                //     preview(); // refresh dg2 journal list
+                                //     addJournal(); // refresh journal calculate
+                                // },
+                                onUncheck: function(index, rowData) {                                    
+                                    // Dapatkan semua baris yang saat ini terceklis di combogrid
+                                    let combogridGrid = $('#por_no').combogrid('grid');
+                                    let checkedRows = combogridGrid.datagrid('getChecked');
+                                    
+                                    // Validasi pastikan minimal satu yang terceklis
+                                    if (checkedRows.length === 0) {
+                                        $.messager.alert('Warning', 'You must select at least one data.', 'warning', function() {
+                                            combogridGrid.datagrid('checkRow', index); 
+                                            addJournal();
+                                        });
+                                        return;
+                                    }
+
+                                    // otomatis ubah dg2 ketika Un-checklist
+                                    let uncheckedPOR = rowData.receipt_no;
+                                    console.log("Unchecked " + uncheckedPOR);                                    
+
+                                    // delete from purchase_invoices by POR
+                                    $.messager.confirm('Confirm', 'Are you sure remove data from this POR?', function(r) {
+                                        if (r) {
+                                            $.ajax({
+                                                method: 'post',
+                                                url: '<?= base_url('finance/purchase_invoices/deleteByPOR') ?>',
+                                                data: {
+                                                    por_no: rowData.receipt_no,
+                                                },
+                                                dataType: "json",
+                                                success: function(result) {
+                                                    console.log("Delete on Update ", result);
+                                                    $.messager.alert("Success", result.message, 'success');                                                    
+                                                },
+                                                error: function(jqXHR, textStatus, errorThrown) {
+                                                    toastr.error(jqXHR.statusText);
+                                                    $.messager.alert("Error", jqXHR.statusText, 'error');                                                    
+                                                },
+                                                complete: function(data) {
+                                                    $('#dg').datagrid('reload');
+                                                }
+                                            });
+                                            
+                                            preview(); // refresh dg2 journal list
+                                            addJournal(); // refresh journal calculate
+                                        }
+                                    });
+                                    
                                 },
                             });
                         }
@@ -1807,7 +1927,7 @@
     }
 
     function preview() {
-        var por_no = $("#por_no").combobox('getText');
+        var por_no = $("#por_no").combogrid('getText');
         var po_no = $("#po_no").combobox('getValue');
         var trans_date = $("#trans_date").datebox('getValue');
         var invoice_no = $("#invoice_no").textbox('getValue');
@@ -2667,19 +2787,59 @@
                         });
 
                         if (type == "purchase") {
-                            $("#por_no").combobox({
+                            $("#por_no").combogrid({
                                 url: '<?= base_url('finance/purchase_invoices/readReceipt?supplier_id=') ?>' + row.id + "&item_category_id=" + item_category.id,
-                                valueField: 'receipt_no',
+                                panelWidth: 500,
+                                idField: 'receipt_no',
                                 textField: 'receipt_no',
+                                valueField: 'receipt_no',
+                                mode: 'remote',
                                 multiple: true,
                                 prompt: "Choose Purchase Order Receipts",
+                                columns: [
+                                    [ {
+                                        field: 'ck', // Kolom checkbox
+                                        checkbox: true, // Mengaktifkan checkbox
+                                    }, {
+                                        field: 'receipt_no',
+                                        title: 'Receipt No',
+                                        width: 150,
+                                        align: 'left'
+                                    }]
+                                ],
+                                fitColumns: true,
+                                selectOnCheck: true,
+                                checkOnSelect: true
                             });
                         } else if (type == "dp") {
-                            $("#por_no").combobox({
+                            $("#por_no").combogrid({
                                 url: '<?= base_url('finance/purchase_invoices/readReceipt/dp?supplier_id=') ?>' + row.id + "&item_category_id=" + item_category.id,
-                                valueField: 'receipt_no',
+                                panelWidth: 500,
+                                idField: 'receipt_no',
                                 textField: 'receipt_no',
+                                valueField: 'receipt_no',
+                                mode: 'remote',
+                                multiple: true,
                                 prompt: "Choose Purchase Order Receipts",
+                                columns: [
+                                    [ {
+                                        field: 'ck', // Kolom checkbox
+                                        checkbox: true, // Mengaktifkan checkbox
+                                    }, {
+                                        field: 'receipt_no',
+                                        title: 'Receipt No',
+                                        width: 150,
+                                        align: 'left'
+                                    }, {
+                                        field: 'total_dp',
+                                        title: 'DP',
+                                        width: 100,
+                                        align: 'left'
+                                    }]
+                                ],
+                                fitColumns: true,
+                                selectOnCheck: true,
+                                checkOnSelect: true,
                                 onSelect: function(row) {
                                     $("#total_dp").numberbox('setValue', row.total_dp);
                                 }
