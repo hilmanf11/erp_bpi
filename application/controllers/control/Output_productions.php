@@ -247,10 +247,14 @@ class Output_productions extends CI_Controller
         for ($i = 3; $i <= $total_row; $i++) {
             $datas[] = array(
                 //excel
-                'item_fg_id' => $data->val($i, 2),
-                'item_fg_sa_id' => $data->val($i, 3),
-                'process_assembly_id' => $data->val($i, 4),
-                'remark' => $data->val($i, 5),
+                'trans_date' => $data->val($i, 2),
+                'period' => $data->val($i, 3),
+                'shift' => $data->val($i, 4),
+                'item_number' => $data->val($i, 5),
+                'wo_no' => $data->val($i, 6),
+                'qty' => $data->val($i, 7),
+                'qty_wip' => $data->val($i, 8),
+                'remarks' => $data->val($i, 9),
             );
         }
         $datas['total'] = count($datas);
@@ -292,30 +296,67 @@ class Output_productions extends CI_Controller
     {
         if ($this->input->post()) {
             $data = $this->input->post('data');
-            $item_fg = $this->crud->read('item_fg', [], ["id" => $data['item_fg_id']]);
-            $item_fg_sa = $this->crud->read('item_fg', [], ["id" => $data['item_fg_sa_id']]);
-            $process_assembly = $this->crud->read('process_assembly', [], ["id" => $data['process_assembly_id']]);
-            $output_productions = $this->crud->read('output_productions', [], ["item_fg_id" => $data['item_fg_id'], "item_fg_sa_id" => $data['item_fg_sa_id'], "process_assembly_id" => $data['process_assembly_id']]);
 
-            if (empty(@$item_fg->id)) {
-                echo json_encode(array("title" => "Not Found", "message" => "Product ID" . $data['item_fg_id'] . " Not Found", "theme" => "error"));
-            } elseif (empty(@$item_fg_sa->id)) {
-                echo json_encode(array("title" => "Not Found", "message" => "Component ID" . $data['item_fg_sa_id'] . " Not Found", "theme" => "error"));
-            } elseif (empty(@$process_assembly->id)) {
-                echo json_encode(array("title" => "Not Found", "message" => "Process Assembly ID" . $data['process_assembly_id'] . " Not Found", "theme" => "error"));
-            } else {
-                $dataFinal = array(
-                    //field
-                    "item_fg_id" => $data['item_fg_id'],
-                    "item_fg_sa_id" => $data['item_fg_sa_id'],
-                    "process_assembly_id" => $data['process_assembly_id'],
-                    "remark" => $data['remark'],
-                );
-                if (empty(@$output_productions->id)) {
-                    $send   = $this->crud->create('output_productions', $dataFinal);
-                } else {
-                    $send = $this->crud->update('output_productions', ["id" => @$output_productions->id], $dataFinal);
+            $item_fg = $this->crud->read('item_fg', [], array("number" => $data['item_number']));
+            $send = $this->crud->query("
+                SELECT DISTINCT a.item_fg_id, a.workorder AS wo_no, a.period, b.number, b.name, a.lot_no, 'Supply Sheets' AS modul
+                FROM supply_sheets a 
+                JOIN item_fg b ON a.item_fg_id = b.id 
+                WHERE a.period = '{$data['period']}'
+
+                UNION
+
+                SELECT DISTINCT a.item_fg_id, a.wo_no, a.period, b.number, b.name, a.lot_no, 'Production Schedule' AS modul
+                FROM production_schedules a 
+                JOIN item_fg b ON a.item_fg_id = b.id 
+                WHERE a.period = '{$data['period']}' AND a.status_subcont = 'YES' AND a.subcont_type = 'Jasa'
+
+                ORDER BY modul, item_fg_id ASC
+            ");
+
+            $item_fg_ids = array_column($send, 'item_fg_id');
+
+            if (empty($item_fg) || empty($item_fg->id)) {
+                echo json_encode(array("title" => "Not Found","message" => "Product number " . $data['item_number'] . " NOT FOUND","theme" => "error"));
+                // return;
+            } elseif (!in_array($item_fg->id, $item_fg_ids)) {
+                echo json_encode(array("title" => "Not Found","message" => "Product number " . $data['item_number'] . " NOT FOUND IN PERIOD " . $data['period'],"theme" => "error"));
+                // return;
+            }else{
+                $lot_no = null;
+                foreach ($send as $row) {
+                    if ($row->item_fg_id == $item_fg->id) {
+                        $lot_no = $row->lot_no;
+                        break;
+                    }
                 }
+
+                // AUTONUMBER
+                $ymd = date("ymd");
+                $sql = $this->db->query("SELECT MAX(`number`) AS kode FROM output_productions WHERE `number` LIKE '%$ymd%'");
+                $row = $sql->row();
+                if ($row->kode == null) {
+                    $autonumber = "PRD-" . $ymd . "0001";
+                } else {
+                    $kode = substr($row->kode, -4);
+                    $autonumber = "PRD-" . $ymd . sprintf("%04s", $kode + 1);
+                }
+
+                $dataFinal = array(
+                    "number" => $autonumber,
+                    "item_fg_id" => $item_fg->id,
+                    "trans_date" => $data['trans_date'],
+                    "wo_no" => $data['wo_no'],
+                    "period" => $data['period'],
+                    "qty" => $data['qty'],
+                    "qty_wip" => $data['qty_wip'],
+                    "shift" => $data['shift'],
+                    "remarks" => $data['remarks'],
+                    "lot_no" => $lot_no,
+                    "type" => "Upload",
+                );
+
+                $send   = $this->crud->create('output_productions', $dataFinal);
                 echo $send;
             }
         }
