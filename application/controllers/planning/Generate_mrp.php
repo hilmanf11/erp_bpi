@@ -349,6 +349,14 @@ class Generate_mrp extends CI_Controller
 
             $this->db->query("DELETE FROM generate_mrp WHERE p_month = '$filter_month' and p_year = '$filter_year' and revision = '$revision' $where_del_part_no");
             
+            $this->db->select('max(revision) as revision');
+            $this->db->from('generate_mps_details');
+            $this->db->where('p_month', $filter_month);
+            $this->db->where('p_year', $filter_year);
+            $rev_mps = $this->db->get()->row();
+
+            $revision_mps = $rev_mps->revision;
+
             //Select Query
             $this->db->select("b.p_month, b.p_year, '$revision' as revision,
                 a.item_rm_id,
@@ -362,7 +370,8 @@ class Generate_mrp extends CI_Controller
             $this->db->join('item_rm c', 'a.item_rm_id = c.id');
             $this->db->where('b.p_month', $filter_month);
             $this->db->where('b.p_year', $filter_year);
-            $this->db->where('b.revision', 0);
+            $this->db->where('b.revision', $revision_mps);
+            // $this->db->where('b.revision', 0);
             // $this->db->where('product_no', 'ZYM024-081C');
             // $this->db->where('prod_plan >', 0);
             if($filter_product_family != ""){
@@ -395,12 +404,13 @@ class Generate_mrp extends CI_Controller
             $filter_product_family = base64_decode($this->input->get('filter_product_family'));
             $filter_part_no = base64_decode($this->input->get('filter_part_no'));
             $filter_cutoff = base64_decode($this->input->get('filter_cutoff'));
-            $month1 = date("Y-m-01", strtotime("-1 month", strtotime($filter_cutoff))); //merubah bulan cutoff menjadi tanggal 1 dari bulan yg sudah di kurangi 1
-            $month1_end = date("Y-m-t", strtotime("-1 month", strtotime($filter_cutoff)));
-            $month2 = date("Y-m-01", strtotime("-2 month", strtotime($filter_cutoff))); //merubah bulan cutoff menjadi tanggal 1 dari bulan yg sudah di kurangi 2
-            $month2_end = date("Y-m-t", strtotime("-2 month", strtotime($filter_cutoff)));
-            $month3 = date("Y-m-01", strtotime("-3 month", strtotime($filter_cutoff))); //merubah bulan cutoff menjadi tanggal 1 dari bulan yg sudah di kurangi 3
-            $month3_end = date("Y-m-t", strtotime("-3 month", strtotime($filter_cutoff)));
+            $month1_1 = date("Y-m-01", strtotime($filter_cutoff));
+            $month1 = date("Y-m-01", strtotime("-1 month", strtotime($filter_year."-".$filter_month."-01"))); //merubah bulan cutoff menjadi tanggal 1 dari bulan yg sudah di kurangi 1
+            $month1_end = date("Y-m-t", strtotime("-1 month", strtotime($filter_year."-".$filter_month."-01")));
+            $month2 = date("Y-m-01", strtotime("-2 month", strtotime($filter_year."-".$filter_month."-01"))); //merubah bulan cutoff menjadi tanggal 1 dari bulan yg sudah di kurangi 2
+            $month2_end = date("Y-m-t", strtotime("-2 month", strtotime($filter_year."-".$filter_month."-01")));
+            $month3 = date("Y-m-01", strtotime("-3 month", strtotime($filter_year."-".$filter_month."-01"))); //merubah bulan cutoff menjadi tanggal 1 dari bulan yg sudah di kurangi 3
+            $month3_end = date("Y-m-t", strtotime("-3 month", strtotime($filter_year."-".$filter_month."-01")));
             
             $month_3 = date("m", strtotime("-3 month", strtotime($filter_year."-".$filter_month."-01"))); // menggabungkan filter year dan month menjadi awal bulan,
             $year_3 = date("Y", strtotime("-3 month", strtotime($filter_year."-".$filter_month."-01")));  // kemudian dikurangi 3, 2, dan 1 bulan, dan diambil                                                                                             
@@ -434,7 +444,7 @@ class Generate_mrp extends CI_Controller
             $this->db->query("DELETE FROM generate_mrp_finals WHERE p_month = '$filter_month' and p_year = '$filter_year' and revision = '$filter_revision' $where_del_part_no");
 
             //Select Query
-            $this->db->select('a.item_rm_id, b.supplier_id, b.share_order,
+            $this->db->select('i.id as item_rm_id, b.supplier_id, b.share_order,
                 coalesce(m.safety_stock, 0) as safety_stock, 
                 coalesce(b.mpq, 0) as mpq, 
                 coalesce(b.moq, 0) as moq, 
@@ -446,20 +456,27 @@ class Generate_mrp extends CI_Controller
                 (coalesce(f.actual, 0) + coalesce(l.qty_out_transaction, 0)) as used_3,
                 (coalesce(f2.actual, 0) + coalesce(l2.qty_out_transaction, 0)) as used_2,
                 (coalesce(f3.actual, 0) + coalesce(l3.qty_out_transaction, 0)) as used_1');
-            $this->db->from('generate_mrp a');
-            $this->db->join('item_rm i', "a.item_rm_id = i.id");
-            $this->db->join('supplier_items b', "a.item_rm_id = b.item_rm_id and (b.mpq > 0 and b.moq > 0 and b.leadtime > 0 and b.share_order > 0)");
-            $this->db->join("(SELECT a.item_rm_id, (COALESCE(b.issued, 0) - SUM(a.total)) AS balance FROM (
+            $this->db->from('item_rm i');
+            // $this->db->join('generate_mrp a', "a.item_rm_id = i.id",'left');
+            //$this->db->join('supplier_items b', "i.id = b.item_rm_id and (b.mpq > 0 and b.moq > 0 and b.leadtime > 0 and b.share_order > 0)");
+            $this->db->join("( SELECT * FROM generate_mrp WHERE p_month = '$filter_month' AND p_year = '$filter_year' AND revision = '$filter_revision') a", "a.item_rm_id = i.id", 'left');
+            $this->db->join("(SELECT * FROM supplier_items WHERE mpq > 0 AND moq > 0 AND leadtime > 0 AND share_order > 0) b", "i.id = b.item_rm_id", "left");
+            
+            $this->db->join("(SELECT a.item_rm_id, ((COALESCE(b.issued, 0) + COALESCE(c.issued_non_supply_sheet, 0)) - SUM(a.total) - COALESCE(d.issued_crusher, 0)) AS balance FROM (
                     SELECT b.item_rm_id, a.item_fg_id, SUM(a.qty), b.composition, (SUM(a.qty) * b.composition) AS total
                     FROM production_schedules a
                     JOIN bom b ON a.item_fg_id = b.item_fg_id
-                    WHERE a.trans_date BETWEEN '$month1' AND '$filter_cutoff' 
+                    WHERE a.trans_date BETWEEN '$month1_1' AND '$filter_cutoff' AND (a.status_subcont = 'NO' OR (a.status_subcont = 'YES' AND a.subcont_type = 'Jasa'))
                     GROUP BY a.item_fg_id, b.item_rm_id) a
-                LEFT JOIN (SELECT item_rm_id, SUM(qty) AS issued FROM issued_material_details WHERE DATE_FORMAT(created_date, '%Y-%m-%d') BETWEEN '$month1' AND '$filter_cutoff' and request_no like '%SH%' GROUP BY item_rm_id) b ON a.item_rm_id = b.item_rm_id
-                JOIN item_rm c ON a.item_rm_id = c.id
-                JOIN item_familys d ON c.item_family_id = d.id
-                GROUP BY a.item_rm_id
-                ORDER BY c.item_family_id, c.id asc) d", "a.item_rm_id = d.item_rm_id", "left");
+                LEFT JOIN (SELECT item_rm_id, SUM(qty) AS issued FROM issued_material_details WHERE DATE_FORMAT(created_date, '%Y-%m-%d') BETWEEN '$month1_1' AND '$filter_cutoff' and request_no like '%SH%' GROUP BY item_rm_id) b ON a.item_rm_id = b.item_rm_id
+                LEFT JOIN (SELECT a.item_rm_id, SUM(a.qty) AS issued_non_supply_sheet 
+                    FROM issued_material_details a 
+                    LEFT JOIN supply_materials b ON a.request_no = b.request_no and a.item_rm_id = b.item_rm_id
+                    LEFT JOIN item_rm c ON b.item_rm_id = c.id
+                    WHERE DATE_FORMAT(a.created_date, '%Y-%m-%d') BETWEEN '$month1_1' AND '$filter_cutoff' and a.request_no like '%REQ%' AND c.item_family_id IN ('P01','P02','P06') AND b.type = 'Issued Production'
+                    GROUP BY a.item_rm_id) c ON a.item_rm_id = c.item_rm_id
+                LEFT JOIN (SELECT item_rm_id, SUM(qty) AS issued_crusher FROM issued_material_details WHERE DATE_FORMAT(created_date, '%Y-%m-%d') BETWEEN '$month1_1' AND '$filter_cutoff' and type like '%other%' GROUP BY item_rm_id) d ON a.item_rm_id = d.item_rm_id
+                GROUP BY a.item_rm_id) d", "i.id = d.item_rm_id", "left");
 
             // (CASE WHEN e.actual >= 0 THEN coalesce(e.actual, 0) ELSE 0 END) as qty_vendor,
             // $this->db->join("(SELECT z.id, SUM(z.begin_stock) AS actual FROM (
@@ -471,45 +488,47 @@ class Generate_mrp extends CI_Controller
             //     GROUP BY a.id, b.po_no) z
             //     GROUP BY z.id) e", 'a.item_rm_id = e.id', 'left');
 
-            // Used 1
+            // Used 3
             $this->db->join("(SELECT item_rm_id, COALESCE(SUM(qty), 0) AS actual
                 FROM issued_material_details
-                WHERE created_date between '$month1' and '$month1_end'
-                GROUP BY item_rm_id) f", 'a.item_rm_id = f.item_rm_id', 'left');
+                WHERE DATE_FORMAT(created_date, '%Y-%m-%d') between '$month1' and '$month1_end'
+                GROUP BY item_rm_id) f", 'i.id = f.item_rm_id', 'left');
             
             $this->db->join("(SELECT item_rm_id, SUM(qty) as qty_out_transaction
                 FROM transaction_rm
                 WHERE transaction_kind = 'OUT'
                 AND request_date BETWEEN '$month1' AND '$month1_end'
-                GROUP BY item_rm_id) l", 'a.item_rm_id = l.item_rm_id', 'left');
+                GROUP BY item_rm_id) l", 'i.id = l.item_rm_id', 'left');
             // Used 2
             $this->db->join("(SELECT item_rm_id, COALESCE(SUM(qty), 0) AS actual
                 FROM issued_material_details
-                WHERE created_date between '$month2' and '$month2_end'
-                GROUP BY item_rm_id) f2", 'a.item_rm_id = f2.item_rm_id', 'left');
+                WHERE DATE_FORMAT(created_date, '%Y-%m-%d') between '$month2' and '$month2_end'
+                GROUP BY item_rm_id) f2", 'i.id = f2.item_rm_id', 'left');
             
             $this->db->join("(SELECT item_rm_id, SUM(qty) as qty_out_transaction
                 FROM transaction_rm
                 WHERE transaction_kind = 'OUT'
                 AND request_date BETWEEN '$month2' AND '$month2_end'
-                GROUP BY item_rm_id) l2", 'a.item_rm_id = l2.item_rm_id', 'left');
-            // Used 3
+                GROUP BY item_rm_id) l2", 'i.id = l2.item_rm_id', 'left');
+            // Used 1
             $this->db->join("(SELECT item_rm_id, COALESCE(SUM(qty), 0) AS actual
                 FROM issued_material_details
-                WHERE created_date between '$month3' and '$month3_end'
-                GROUP BY item_rm_id) f3", 'a.item_rm_id = f3.item_rm_id', 'left');
+                WHERE DATE_FORMAT(created_date, '%Y-%m-%d') between '$month3' and '$month3_end'
+                GROUP BY item_rm_id) f3", 'i.id = f3.item_rm_id', 'left');
             
             $this->db->join("(SELECT item_rm_id, SUM(qty) as qty_out_transaction
                 FROM transaction_rm
                 WHERE transaction_kind = 'OUT'
                 AND request_date BETWEEN '$month3' AND '$month3_end'
-                GROUP BY item_rm_id) l3", 'a.item_rm_id = l3.item_rm_id', 'left');
+                GROUP BY item_rm_id) l3", 'i.id = l3.item_rm_id', 'left');
 
-            $this->db->join('suppliers h', 'b.supplier_id = h.id and h.status = 0');
+            $this->db->join('suppliers h', 'b.supplier_id = h.id and h.status = 0','left');
+
             $this->db->join("(SELECT a.item_rm_id, SUM(COALESCE(a.qty, 0)) - SUM(COALESCE(b.qty_receipt, 0)) AS qty_os
                 FROM (SELECT item_rm_id, po_no, SUM(qty) AS qty FROM purchase_orders WHERE STATUS = 0 AND po_date < '$filter_cutoff' GROUP BY item_rm_id, po_no) a
-                JOIN (SELECT item_rm_id, po_no, SUM(qty_receipt) AS qty_receipt FROM purchase_order_receipts GROUP BY item_rm_id, po_no) b ON a.item_rm_id = b.item_rm_id AND a.po_no = b.po_no
-                GROUP BY a.item_rm_id) j", "a.item_rm_id = j.item_rm_id", "left");
+                LEFT JOIN (SELECT item_rm_id, po_no, SUM(qty_receipt) AS qty_receipt FROM purchase_order_receipts WHERE receipt_date < '$filter_cutoff' GROUP BY item_rm_id, po_no) b ON a.item_rm_id = b.item_rm_id AND a.po_no = b.po_no
+                GROUP BY a.item_rm_id) j", "i.id = j.item_rm_id", "left");
+
             $this->db->join("(SELECT a.id, a.number, ((COALESCE(d.qty_scan_in, 0) + COALESCE(e.qty_os_rm, 0) + COALESCE(f.qty_trans_rm_in, 0) + COALESCE(g.return_qty, 0) + COALESCE(k.qty_scan_bpm, 0)) - (COALESCE(h.qty_issued, 0) + COALESCE(i.qty_trans_rm_out, 0))) AS begin_stock
                 FROM item_rm a
                 LEFT JOIN (SELECT b.item_rm_id, SUM(a.qty) AS qty_scan_in FROM scan_item_receipts a JOIN purchase_order_receipts b ON a.receipt_id = b.receipt_id WHERE b.receipt_date <= '$filter_cutoff' GROUP BY b.item_rm_id) d ON a.id = d.item_rm_id
@@ -519,22 +538,23 @@ class Generate_mrp extends CI_Controller
                 LEFT JOIN (SELECT item_rm_id, SUM(qty) AS qty_issued FROM issued_material_details WHERE DATE_FORMAT(created_date, '%Y-%m-%d') <= '$filter_cutoff' GROUP BY item_rm_id) h ON a.id = h.item_rm_id
                 LEFT JOIN (SELECT item_rm_id, SUM(qty) AS qty_trans_rm_out FROM transaction_rm WHERE request_date <= '$filter_cutoff' AND transaction_kind = 'OUT' GROUP BY item_rm_id) i ON a.id = i.item_rm_id
                 LEFT JOIN (SELECT item_rm_id, SUM(qty) AS qty_scan_bpm FROM scan_item_bpm WHERE DATE_FORMAT(request_date, '%Y-%m-%d') <= '$filter_cutoff' GROUP BY item_rm_id) k ON a.id = k.item_rm_id
-            ) k", "a.item_rm_id = k.id", 'left');
-            $this->db->join('safety_stock_rm m', "a.item_rm_id = m.item_rm_id",'left');
+            ) k", "i.id = k.id", 'left');
+            $this->db->join('safety_stock_rm m', "i.id = m.item_rm_id",'left');
 
             //$this->db->where('assy_no', 'ZYM024-081C');
-            $this->db->where('a.status', 0);
-            $this->db->where('a.p_month', $filter_month);
-            $this->db->where('a.p_year', $filter_year);
-            $this->db->where('a.revision', $filter_revision);
-            $this->db->where('b.share_order >', 0);
+            // $this->db->where('a.status', 0);
+            // $this->db->where('a.p_month', $filter_month);
+            // $this->db->where('a.p_year', $filter_year);
+            // $this->db->where('a.revision', $filter_revision);
+            $this->db->where_in('i.item_family_id', ['P01','P02','P06']);
+            // $this->db->where('b.share_order >', 0);
             if($filter_product_family != ""){
                 $this->db->where('i.item_family_id', $filter_product_family);
             }
             if($filter_part_no != ""){
-                $this->db->where('a.item_rm_id', $filter_part_no);
+                $this->db->where('i.id', $filter_part_no);
             }
-            $this->db->group_by('a.item_rm_id');
+            $this->db->group_by('i.id');
             $this->db->group_by('b.supplier_id');
             $this->db->order_by('i.number', 'asc');
             $generates = $this->db->get()->result_array();
@@ -543,7 +563,7 @@ class Generate_mrp extends CI_Controller
             // die;
 
             foreach ($generates as $generate) {
-                $this->db->select('item_rm_id, period, SUM(qty) as need');
+                $this->db->select('item_rm_id, period, COALESCE(SUM(qty),0) as need');
                 $this->db->from('generate_mrp');
                 $this->db->where('item_rm_id', $generate['item_rm_id']);
                 $this->db->where('p_month', $filter_month);
@@ -566,7 +586,7 @@ class Generate_mrp extends CI_Controller
                     //     $qty_wip = abs(round($supply));
                     // }
 
-                     if($generate['qty_wip'] > 0){
+                    if($generate['qty_wip'] > 0){
                         $qty_wip = $generate['qty_wip'];
                         $qty_supply = 0;
                     }else{
@@ -1347,9 +1367,9 @@ class Generate_mrp extends CI_Controller
                                         <td>".$record['leadtime']."</td>
                                         <td>".$record['mpq']."</td>
                                         <td>".$record['moq']."</td>
-                                        <td style='text-align:right;'>".round($record['qty_rm'])."</td>
-                                        <td style='text-align:right;'>".round($record['qty_wip'])."</td>
-                                        <td style='text-align:right;'>".round($record['qty_rm'] + $record['qty_wip'])."</td>
+                                        <td style='text-align:right;'>".number_format($record['qty_rm'],2)."</td>
+                                        <td style='text-align:right;'>".number_format($record['qty_wip'],2)."</td>
+                                        <td style='text-align:right;'>".number_format($record['qty_rm'] + $record['qty_wip'],2)."</td>
                                         <td style='text-align:right;'>".round($record['used_1'])."</td>
                                         <td style='text-align:right;'>".round($record['used_2'])."</td>
                                         <td style='text-align:right;'>".round($record['used_3'])."</td>
@@ -1357,17 +1377,17 @@ class Generate_mrp extends CI_Controller
                                         <td style='text-align:right;'>".round($record['os_po'])."</td>
                                         <td style='text-align:right;'>".round($record['qty_supply'])."</td>
                                         <td style='text-align:right;'>".round($record['qty_wo'])."</td>
-                                        <td style='text-align:right;'>".round($record['need_1'])."</td>
+                                        <td style='text-align:right;'>".number_format($record['need_1'],2)."</td>
                                         <td style='text-align:right;$style_1'>".round($record['balance_1'])."</td>
-                                        <td style='text-align:right;'>".round($record['need_2'])."</td>
+                                        <td style='text-align:right;'>".number_format($record['need_2'],2)."</td>
                                         <td style='text-align:right;$style_2'>".round($record['balance_2'])."</td>
-                                        <td style='text-align:right;'>".round($record['need_3'])."</td>
+                                        <td style='text-align:right;'>".number_format($record['need_3'],2)."</td>
                                         <td style='text-align:right;$style_3'>".round($record['balance_3'])."</td>
-                                        <td style='text-align:right;'>".round($record['need_4'])."</td>
+                                        <td style='text-align:right;'>".number_format($record['need_4'],2)."</td>
                                         <td style='text-align:right;$style_4'>".round($record['balance_4'])."</td>
-                                        <td style='text-align:right;'>".round($record['need_5'])."</td>
+                                        <td style='text-align:right;'>".number_format($record['need_5'],2)."</td>
                                         <td style='text-align:right;$style_5'>".round($record['balance_5'])."</td>
-                                        <td style='text-align:right;'>".round($record['need_6'])."</td>
+                                        <td style='text-align:right;'>".number_format($record['need_6'],2)."</td>
                                         <td style='text-align:right;$style_6'>".round($record['balance_6'])."</td>
                                         <td style='text-align:center;'>".$record['ito']."</td>
                                         <td style='text-align:center;'>".$record['share_order']."</td>
