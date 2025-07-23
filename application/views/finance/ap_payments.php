@@ -150,6 +150,10 @@
                         <span style="width:35%; display:inline-block;">Note</span>
                         <input style="width:60%;" id="note" name="note" class="easyui-textbox">
                     </div>
+                    <div class="fitem" hidden>
+                        <span style="width:35%; display:inline-block;">Rate</span>
+                        <input style="width:60%;" id="rate" name="rate" class="easyui-numberbox">
+                    </div>
                 </div>
             </fieldset>
         </div>
@@ -248,7 +252,7 @@
 
             <div style="float: left; width: 30%; border:4px solid green; padding:10px;" id="showExchange">
 
-                <p style="font-size: 16px !important; margin:0;">Rate USD to IDR : <b style="font-size: 16px !important;" id="exchange"></b></p>
+                <p style="font-size: 16px !important; margin:0;"><b style="font-size: 16px !important;" id="exchange"></b></p>
 
             </div>
 
@@ -509,220 +513,117 @@
 
 
     function addJournal() {
-
         var rows = $('#dg2').datagrid('getRows');
-
         var totalrows = rows.length;
 
-
-
         var rows2 = $('#dg3').datagrid('getRows');
-
         var totalrows2 = rows2.length;
-
         endEditing2();
 
-
-
         var payment_no = $("#payment_no").textbox('getValue');
-
         var journal_type = $("#journal_type").combobox('getValue');
-
         var bank_account = $("#bank_account").combogrid('getValue');
-
         var payment_date = $("#payment_date").datebox('getValue');
 
-
-
         if (journal_type != "" && bank_account != "") {
-
             if (totalrows > 0) {
-
                 var data_array = [];
-
                 var data_array2 = [];
-
                 var total_payment = 0;
-
                 var total_currency = 1;
-
                 var currency = "";
 
-
-
                 for (let i = 0; i < totalrows; i++) {
-
                     //if(rows[i].balance >= rows[i].payment){
-
                     var data = {
-
                         account_number: rows[i].account_number,
-
                         account_name: rows[i].account_name,
-
                         account_type: rows[i].account_type,
-
                         description: rows[i].supplier_invoice,
-
                         currency: rows[i].currency,
-
                         payment_date: payment_date,
-
                         payment: rows[i].payment
-
                     }
-
-
 
                     if (currency == rows[i].currency) {
-
                         total_currency += 1;
-
                         currency = rows[i].currency;
-
                     } else {
-
                         total_currency += 0;
-
                         currency = rows[i].currency;
-
                     }
-
-
 
                     if (rows[i].account_type == "DEBIT") {
-
                         total_payment += parseFloat(rows[i].payment);
-
                     } else if (rows[i].account_type == "CREDIT") {
-
                         total_payment -= parseFloat(rows[i].payment);
-
                     }
-
-
 
                     data_array.push(data);
 
                     // }else{
-
                     //     toastr.error("Balance must >= Payment, Please check again your data");
-
                     //     return false;
-
                     // }
-
                 }
-
-
 
                 for (let z = 0; z < totalrows2; z++) {
-
                     var data2 = {
-
                         account_number: rows2[z].account_number,
-
                         account_name: rows2[z].account_name,
-
                         flag: rows2[z].flag,
-
                     }
-
                     data_array2.push(data2);
-
                 }
-
-
 
                 $("#total_payment").numberbox('setValue', total_payment);
 
-
-
                 var jsonData = JSON.stringify(data_array);
-
                 var jsonData2 = JSON.stringify(data_array2);
 
-
-
                 if (totalrows == total_currency) {
-
                     if (currency != "IDR") {
-
                         $.ajax({
-
                             type: "post",
-
                             url: "<?= base_url('finance/ap_payments/readExchangeRate') ?>",
-
                             data: "payment_date=" + payment_date + "&currency=" + currency,
-
-                            dataType: "html",
-
+                            dataType: "json",
                             success: function(exchange) {
+                                console.log(exchange.label);
+                                console.log(exchange.amount);
 
-                                $("#exchange").html(exchange);
-
+                                $("#rate").numberbox('setValue', exchange.amount);
+                                $("#exchange").html(exchange.label);
                                 $("#showExchange").show();
-
                             }
-
                         });
-
                     }
 
-
-
                     $.ajax({
-
                         type: "POST",
-
                         url: "<?= base_url('finance/ap_payments/createJson') ?>",
-
                         data: {
-
                             jsonData: jsonData,
-
                             jsonData2: jsonData2,
-
                         },
-
                         success: function(response) {
-
                             addTable2('<?= base_url('finance/ap_payments/calculateJournal/') ?>' + window.btoa(journal_type) + "/" + window.btoa(bank_account));
 
-
-
                             setTimeout(function() {
-
                                 balance_journal();
-
                             }, 2000);
-
                         },
-
                     });
-
                 } else {
-
                     toastr.error("Please correct the currency is not the same");
-
                 }
-
             } else {
-
                 toastr.warning("please selections your data in table first");
-
             }
-
         } else {
-
             toastr.info("Please Select Journal Type & Bank Account");
-
         }
-
     }
-
-
 
     function addTable2(link = "") {
 
@@ -1313,6 +1214,16 @@
         if (rows.length > 0) {
             $.messager.confirm('Warning', 'Are you sure you want to delete this data?', function(r) {
                 if (r) {
+                    Swal.fire({
+                        title: 'Please Wait for Delete Data',
+                        showConfirmButton: false,
+                        allowOutsideClick: false,
+                        allowEscapeKey: false,
+                        didOpen: () => {
+                            Swal.showLoading();
+                        },
+                    });
+
                     for (var i = 0; i < rows.length; i++) {
                         var row = rows[i];
 
@@ -1328,17 +1239,7 @@
                         //             return false;
                         //         }
 
-                                if(row.gl_no == null) {
-                                    Swal.fire({
-                                        title: 'Please Wait for Delete Data',
-                                        showConfirmButton: false,
-                                        allowOutsideClick: false,
-                                        allowEscapeKey: false,
-                                        didOpen: () => {
-                                            Swal.showLoading();
-                                        },
-                                    });
-                                    
+                                if(row.gl_no == null){
                                     $.ajax({
                                         method: 'post',
                                         url: '<?= base_url('finance/ap_payments/delete') ?>',
@@ -1773,24 +1674,13 @@
 
 
 
-        let isSubmitting = false;
-
         //SAVE DATA
+
         $('#dlg_insert').dialog({
             buttons: [{
                 text: 'Save All',
                 iconCls: 'icon-ok',
                 handler: function() {
-                    if (isSubmitting) return; // cegah klik dobel
-                    
-                    isSubmitting = true;
-                    var btn = $(this);
-                    btn.linkbutton('disable');
-                    setTimeout(function() {
-                        isSubmitting = false;
-                        btn.linkbutton('enable');
-                    }, 5000);
-                    
                     var payment_type = $("#payment_type").combobox('getValue');
                     var payment_date = $("#payment_date").datebox('getValue');
                     var payment_no = $("#payment_no").textbox('getValue');
@@ -1801,6 +1691,7 @@
                     var cheque_no = $("#cheque_no").textbox('getValue');
                     var note = $("#note").textbox('getValue');
                     var total_payment = $("#total_payment").numberbox('getValue');
+                    var rate = $("#rate").numberbox('getValue');
 
                     var balance_debit = $("#balance_debit").numberbox('getValue');
                     var balance_credit = $("#balance_credit").numberbox('getValue');
@@ -1831,24 +1722,6 @@
 
                                     if (totalrows > 0) {
                                         requestData(totalrows, rows);
-                                        var modul = 'AP PAYMENT'
-                                        $.ajax({
-                                            method: 'post',
-                                            url: '<?= base_url('finance/journal_postings/datatablesTemp') ?>?journal_date=' + window.btoa(payment_date) +
-                                            "&modul=" + window.btoa(modul) +
-                                            "&company_id=" + window.btoa(supplier_id) +
-                                            "&document_no=" + window.btoa(payment_no),
-                                            data: {
-                                                journal_date: window.btoa(payment_date),
-                                                modul: window.btoa(modul),
-                                                company_id: window.btoa(supplier_id),
-                                                document_no: window.btoa(payment_no),
-                                            },
-                                            success: function(dataPosting) {
-                                                console.log(dataPosting);
-                                            }
-                                        });
-
                                         $('#dlg_insert').dialog('close');
 
                                         Swal.fire({
@@ -1913,6 +1786,7 @@
                                                             payment_by: payment_by,
                                                             cheque_no: cheque_no,
                                                             note: note,
+                                                            rate: rate,
                                                             total_payment: total_payment,
                                                             id: json[i].id,
                                                             purchase_invoice: json[i].purchase_invoice,
@@ -1932,117 +1806,13 @@
                                                                 Swal.close();
 
                                                                 Swal.fire({
-                                                                    title: "Add Posting Journal?",
-                                                                    text: result.message + ". Do you want to save the Posting Journal too?",
+                                                                    title: result.message,
                                                                     icon: result.theme,
-                                                                    confirmButtonText: 'Yes, Add to Journal!',
+                                                                    confirmButtonText: 'Ok',
                                                                     allowOutsideClick: false,
-                                                                    showCancelButton: true,
                                                                 }).then((result) => {
                                                                     if (result.isConfirmed) {
-                                                                        Swal.fire({
-                                                                            title: 'Please Wait for Saving Data',
-                                                                            showConfirmButton: false,
-                                                                            allowOutsideClick: false,
-                                                                            allowEscapeKey: false,
-                                                                            didOpen: () => {
-                                                                                Swal.showLoading();
-                                                                            },
-                                                                        });
-
-                                                                        // AUTO GENERATE POSTING JOURNALS
-                                                                        var modul = 'AP PAYMENT';
-                                                                        var journalDate = payment_date;
-                                                                        var companyId = supplier_id;
-                                                                        var documentNo = payment_no;
-                                                                        
-                                                                        $.ajax({
-                                                                            method: 'post',
-                                                                            url: '<?= base_url('finance/journal_postings/datatablesTemp') ?>?journal_date=' + window.btoa(journalDate) +
-                                                                            "&modul=" + window.btoa(modul) +
-                                                                            "&company_id=" + window.btoa(companyId) +
-                                                                            "&document_no=" + window.btoa(documentNo),
-                                                                            data: {
-                                                                                journal_date: window.btoa(journalDate),
-                                                                                modul: window.btoa(modul),
-                                                                                company_id: window.btoa(companyId),
-                                                                                document_no: window.btoa(documentNo),
-                                                                            },
-                                                                            dataType: "json",
-                                                                            success: function(dataPosting) {
-                                                                                // console.log(JSON.stringify(dataPosting));
-                                                                                $.ajax({
-                                                                                    type: "post",
-                                                                                    url: "<?= base_url('finance/journal_postings/number/') ?>" + window.btoa(journalDate),
-                                                                                    dataType: "html",
-                                                                                    success: function(noGL) {
-                                                                                        var nomorGL = noGL;
-                                                                                        var rowsData  = dataPosting.rows;
-                                                                                        var totalData = dataPosting.total;
-
-                                                                                        for (let no = 0; no < rowsData.length; no++) {
-                                                                                            // console.log(rowsData[no]);
-                                                                                            $.ajax({
-                                                                                                type: "post",
-                                                                                                url: '<?= base_url('finance/journal_postings/create') ?>',
-                                                                                                data: {
-                                                                                                    journal_date: journalDate,
-                                                                                                    modul: modul,
-                                                                                                    journal_type_id: journal_type_id,
-                                                                                                    number: nomorGL,
-                                                                                                    remarks: null,
-                                                                                                    trans_date: rowsData[no].trans_date,
-                                                                                                    document_no: rowsData[no].document_no,
-                                                                                                    invoice_no: rowsData[no].invoice_no,
-                                                                                                    company_name: rowsData[no].company_name,
-                                                                                                    account_number: rowsData[no].account_number,
-                                                                                                    account_name: rowsData[no].account_name,
-                                                                                                    description: rowsData[no].description,
-                                                                                                    currency: rowsData[no].currency,
-                                                                                                    original_debit: rowsData[no].original_debit,
-                                                                                                    original_credit: rowsData[no].original_credit,
-                                                                                                    rates: rowsData[no].rates,
-                                                                                                    local_debit: rowsData[no].local_debit,
-                                                                                                    local_credit: rowsData[no].local_credit
-                                                                                                },
-                                                                                                dataType: "json",
-                                                                                                success: function(responses) {
-                                                                                                    if (responses.theme == "success") {
-                                                                                                        console.log('Success auto-generate Posting Journals #' + no);
-                                                                                                    } else {
-                                                                                                        console.log('Failed! auto-generate Posting Journals #' + no);
-                                                                                                        console.log(responses);
-                                                                                                    }
-                                                                                                }
-                                                                                            });
-                                                                                        }
-
-                                                                                        Swal.fire({
-                                                                                            title: "Good Job",                                                                                title: "Success Generate Posting Journal",
-                                                                                            icon: "success",
-                                                                                            text: "Data Successfully created to Posting Journal with code: " + nomorGL,
-                                                                                            confirmButtonText: 'Done',
-                                                                                            allowOutsideClick: false,
-                                                                                        }).then(function(){ 
-                                                                                            window.location.reload();
-                                                                                        });
-                                                                                    }
-                                                                                });
-                                                                            }
-                                                                        });
-                                                                        // END - AUTO GENERATE POSTING JOURNAL
-                                                                        
-                                                                    } else {
-                                                                        // WITHOUT AUTO GENERATE POSTING JOURNAL
-                                                                        Swal.fire({
-                                                                            title: "Purchase Invoices",
-                                                                            icon: "info",
-                                                                            text: "Data Successfully saved without Posting Journal.",
-                                                                            confirmButtonText: 'Done',
-                                                                            allowOutsideClick: false,
-                                                                        }).then(function(){ 
-                                                                            window.location.reload();
-                                                                        });
+                                                                        window.location.reload();
                                                                     }
                                                                 });
                                                             }

@@ -53,26 +53,55 @@ class Ap_payments extends CI_Controller
         }
     }
 
+    // function readExchangeRate()
+    // {
+    //     $payment_date = $this->input->post('payment_date');
+    //     $currency = $this->input->post('currency');
+        
+    //     $search_date = date("d", strtotime($payment_date));
+    //     if($search_date == "31"){
+    //       $payment_date = date("Y-m-d", strtotime('-1 days', strtotime($payment_date)));
+    //     }
+        
+    //     $monthBf = date('Y-m-01', strtotime('-1 month', strtotime($payment_date)));
+    //     $exchange = $this->crud->read('exchange_rates', [], ["start_date" => $monthBf, "currency_from" => $currency, "currency_to" => "IDR"]);
+
+    //     if ($exchange) {
+    //         $amount = $exchange->middle;
+    //     } else {
+    //         $amount = 0;
+    //     }
+
+    //     echo "Rp. " . number_format($amount, 2);
+    // }
+
     function readExchangeRate()
     {
         $payment_date = $this->input->post('payment_date');
         $currency = $this->input->post('currency');
-        
-        $search_date = date("d", strtotime($payment_date));
-        if($search_date == "31"){
-          $payment_date = date("Y-m-d", strtotime('-1 days', strtotime($payment_date)));
-        }
-        
-        $monthBf = date('Y-m-01', strtotime('-1 month', strtotime($payment_date)));
-        $exchange = $this->crud->read('exchange_rates', [], ["start_date" => $monthBf, "currency_from" => $currency, "currency_to" => "IDR"]);
 
-        if ($exchange) {
-            $amount = $exchange->middle;
+        $this->db->select('middle, currency_from, currency_to');
+        $this->db->from('exchange_rates');
+        $this->db->where('currency_from', $currency);
+        $this->db->where('currency_to', 'IDR');
+        $this->db->where("'$payment_date' BETWEEN start_date AND end_date", null, false); // penting: raw SQL
+
+        $query = $this->db->get()->row();
+
+        if ($query) {
+            $amount = $query->middle;
+            $currency_from = $query->currency_from;
+            $currency_to = $query->currency_to;
         } else {
             $amount = 0;
+            $currency_from = '-';
+            $currency_to = '-';
         }
 
-        echo "Rp. " . number_format($amount, 2);
+        echo json_encode([
+            'amount' => $amount,
+            'label' => "Rate $currency_from to $currency_to: Rp. " . number_format($amount, 2)
+        ]);
     }
 
     public function calculateJournal($journal_type_id = "", $bank_account = "")
@@ -98,14 +127,22 @@ class Ap_payments extends CI_Controller
             $currency = $jsonData['currency'];
             $payment_date = $jsonData['payment_date'];
 
-            $search_date = date("d", strtotime($payment_date));
-            if($search_date == "31"){
-              $payment_date = date("Y-m-d", strtotime('-1 days', strtotime($payment_date)));
-            }
+            // $search_date = date("d", strtotime($payment_date));
+            // if($search_date == "31"){
+            //   $payment_date = date("Y-m-d", strtotime('-1 days', strtotime($payment_date)));
+            // }
 
-            $monthBf = date('Y-m-01', strtotime('-1 month', strtotime($payment_date)));
-            $exchange = $this->crud->read('exchange_rates', [], ["start_date" => $monthBf, "currency_from" => $currency, "currency_to" => "IDR"]);
+            // $monthBf = date('Y-m-01', strtotime('-1 month', strtotime($payment_date)));
+            // $exchange = $this->crud->read('exchange_rates', [], ["start_date" => $monthBf, "currency_from" => $currency, "currency_to" => "IDR"]);
 
+            $this->db->select('middle');
+            $this->db->from('exchange_rates');
+            $this->db->where('currency_from', $currency);
+            $this->db->where('currency_to', 'IDR');
+            $this->db->where("'$payment_date' BETWEEN start_date AND end_date", null, false); // penting: raw SQL
+
+            $exchange = $this->db->get()->row();
+            
             if ($currency != "IDR") {
                 if ($exchange) {
                     $amount = ($total * $exchange->middle);
@@ -320,6 +357,9 @@ class Ap_payments extends CI_Controller
         foreach ($records as $record) {
             $total_payment += $record['total'];
             $journal_type_id = $record['journal_type_id'];
+
+            // var_dump($journal_type_id);
+            // return;
             $number = $record['number'];
 
             $journal = $this->crud->query("SELECT a.*, a.flag, b.account_name FROM journal_setups a 
