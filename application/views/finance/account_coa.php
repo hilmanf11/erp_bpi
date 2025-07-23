@@ -136,7 +136,10 @@
         if (row) {
             $('#dlg_insert').dialog('open');
             $('#frm_insert').form('load', row);
-            $('#account_group_detail_id').combobox('disable');
+
+            // $('#account_group_detail_id').combobox('disable');
+            $('#account_group_detail_id').combobox('enable'); // sementara request Bu Nina
+
             url_save = '<?= base_url('finance/account_coa/update') ?>?id=' + btoa(row.id);
         } else {
             toastr.warning("Please select one of the data in the table first!", "Information");
@@ -211,13 +214,13 @@
         if (value == 'CLOSE') {
 
             return "<b style='color:red;'>NO</b>";
-            
+
         } else if (value == 'footer') {
-            
+
             return "";
-            
+
         } else {
-            
+
             return "<b style='color:green;'>YES</b>";
 
         }
@@ -229,13 +232,13 @@
         if (value == 'CLOSE') {
 
             return 'background-color:#FFC8C8;';
-            
+
         } else if (value == 'footer') {
-            
+
             return "";
-            
+
         } else {
-            
+
             return 'background-color:#C8FFCC;';
 
         }
@@ -305,13 +308,13 @@
             pageList: [20, 50, 100, 500, 1000],
             pageSize: 20,
             showFooter: true,
-            onLoadSuccess: function(data) {                
+            onLoadSuccess: function(data) {
                 var totalDebitOriginal = 0;
                 var totalCreditOriginal = 0;
                 var totalDebitLocal = 0;
                 var totalCreditLocal = 0;
 
-                for (var i=0; i<data.rows.length; i++) {
+                for (var i = 0; i < data.rows.length; i++) {
                     totalDebitOriginal += parseFloat(data.rows[i].original_debit, 0);
                     totalCreditOriginal += parseFloat(data.rows[i].original_kredit, 0);
                     totalDebitLocal += parseFloat(data.rows[i].local_debit, 0);
@@ -331,18 +334,26 @@
                 $(this).datagrid('reloadFooter', footerData);
             }
         }).datagrid('enableFilter', [{
-            field:'closing_journal',
-            type:'combobox',
-            options:{
-                data: [
-                    { value: '', text: 'All' }, 
-                    { value: 'OPEN', text: 'YES' }, 
-                    { value: 'CLOSE', text: 'NO' },
+            field: 'closing_journal',
+            type: 'combobox',
+            options: {
+                data: [{
+                        value: '',
+                        text: 'All'
+                    },
+                    {
+                        value: 'OPEN',
+                        text: 'YES'
+                    },
+                    {
+                        value: 'CLOSE',
+                        text: 'NO'
+                    },
                 ],
                 valueField: 'value',
                 textField: 'text',
                 panelHeight: 'auto',
-                onChange: function(newValue, oldValue){
+                onChange: function(newValue, oldValue) {
                     if (newValue == '') {
                         $('#dg').datagrid('removeFilterRule', 'closing_journal');
                     } else {
