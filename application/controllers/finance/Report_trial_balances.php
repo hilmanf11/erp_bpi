@@ -361,6 +361,7 @@ class Report_trial_balances extends CI_Controller
             if ($groupId !== null) {
                 $groupIdValue = $groupId->id;
             } else {
+                // data account ini di table account_coa tidak ada, tetapi ada di journal_postings
                 $groupIdValue = '99999'; // no account group
             }
             
@@ -378,17 +379,33 @@ class Report_trial_balances extends CI_Controller
         }
 
         usort($account_mapping, function($a, $b) {
-            $groupComparison = $a['group_id'] <=> $b['group_id'];   // Sort Prioritas 1: group_id (ascending alphabetical)
+            // urutkan group_id null (99999) menjadi di akhir
+            $special_group_id = '99999';
+
+            $is_a_special = ($a['group_id'] == $special_group_id);
+            $is_b_special = ($b['group_id'] == $special_group_id);
+
+            // Kasus 1: a adalah 99999, b bukan. a harus di akhir.
+            if ($is_a_special && !$is_b_special) {
+                return 1; // a datang setelah b
+            }
+            // Kasus 2: b adalah 99999, a bukan. b harus di akhir.
+            if (!$is_a_special && $is_b_special) {
+                return -1; // a datang sebelum b
+            }
+
+            // Kasus 3: Keduanya 99999, atau keduanya bukan 99999.
+            $groupComparison = $a['group_id'] <=> $b['group_id']; // Sort Prioritas 1: group_id (ascending)
             if ($groupComparison !== 0) {
                 return $groupComparison;
             }
 
-            $headerComparison = $a['header'] <=> $b['header'];      // Sort Prioritas 2: header (0 first, then 1 - ascending numerical)
+            $headerComparison = $a['header'] <=> $b['header'];     // Sort Prioritas 2: header (0 first, then 1 - ascending numerical)
             if ($headerComparison !== 0) {
                 return $headerComparison;
             }
 
-            return $a['account_number'] <=> $b['account_number'];   // Sort Prioritas 3: id (ascending numerical)
+            return $a['account_number'] <=> $b['account_number']; // Sort Prioritas 3: account_number (ascending numerical/alphabetical)
         });
 
         $trial_balances = [];
