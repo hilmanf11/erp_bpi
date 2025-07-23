@@ -3,6 +3,7 @@
     <thead>
         <tr>
             <th rowspan="2" field="ck" checkbox="true"></th>
+            <th rowspan="2" data-options="field:'details',width:90,align:'center', formatter:btnDetails">Detail</th>
             <th rowspan="2" data-options="field:'receipt_type',width:100,halign:'center'">Receipt Type</th>
             <th rowspan="2" data-options="field:'receipt_no',width:150,align:'center'">Receipt No</th>
             <th rowspan="2" data-options="field:'receipt_date',width:100,align:'center'">Receipt Date</th>
@@ -22,6 +23,51 @@
         </tr>
     </thead>
 </table>
+
+<style>
+    /* AI Style Form Inputs when disabled to see the value clearly */
+    input[disabled],
+    select[disabled],
+    textarea[disabled] {
+        background-color: white !important;
+        color: black !important;
+        -webkit-text-fill-color: black !important;
+        opacity: 1 !important;
+        cursor: not-allowed; /* Standard cursor for disabled elements */
+    }
+
+    .textbox.textbox-disabled .textbox-text,
+    .textbox.textbox-disabled
+    {
+        background-color: white !important;
+        color: black !important;
+        -webkit-text-fill-color: black !important;
+        opacity: 1 !important;
+        cursor: not-allowed;
+    }
+
+    .combo.combo-disabled .combo-text,
+    .combo.combo-disabled 
+    {
+        background-color: white !important;
+        color: black !important;
+        -webkit-text-fill-color: black !important;
+        opacity: 1 !important;
+        cursor: not-allowed;
+    }
+
+    .combo.combo-disabled .combo-arrow,
+    .datebox.textbox-disabled .textbox-addon {
+        background-color: white !important;
+        opacity: 1 !important;
+    }
+    
+    input[type="checkbox"][disabled],
+    input[type="radio"][disabled] {
+        opacity: 1 !important;
+        cursor: not-allowed;
+    }
+</style>
 
 <!-- FORM FILTER DATAGRID -->
 <div id="toolbar" style="height: 230px; padding: 10px;">
@@ -79,6 +125,178 @@
     <?= $button ?>
     <a href="javascript:void(0)" class="easyui-linkbutton" data-options="plain:true" onclick="excelDetail()"><i class="fa fa-file"></i> Export Excel Detail</a>
     <a href="javascript:void(0)" class="easyui-linkbutton" data-options="plain:true" onclick="excelJournal()"><i class="fa fa-file"></i> Export Excel Journal</a>
+</div>
+
+<!-- DETAIL -->
+<div id="dlg_detail" class="easyui-dialog" title="Detail" data-options="closed: true,modal:true" style="width: 99%; height: 600px; padding:10px; left: 5px; top: 5px;">
+    <form id="frm_detail" method="post" novalidate>
+        <div style="width: 100%; display: grid; grid-template-columns: auto auto auto; grid-gap: 5px; display: flex;">
+            <fieldset style="width:100%; border:1px solid #d0d0d0; margin-bottom: 10px; border-radius:4px;">
+                <legend><b>Form Data</b></legend>
+                <div style="width: 50%; float: left;">
+                    <div class="fitem">
+                        <span style="width:35%; display:inline-block;">Receipt Type</span>
+                        <input style="width:60%;" id="d_receipt_type" name="d_receipt_type" class="easyui-textbox">
+                    </div>
+                    <div class="fitem">
+                        <span style="width:35%; display:inline-block;">Receipt Date</span>
+                        <input style="width:60%;" id="d_receipt_date" name="d_receipt_date" class="easyui-datebox">
+                    </div>
+                    <div class="fitem">
+                        <span style="width:35%; display:inline-block;">Receipt No</span>
+                        <input style="width:60%;" id="d_receipt_no" name="d_receipt_no" class="easyui-textbox">
+                    </div>
+                    <div class="fitem">
+                        <span style="width:35%; display:inline-block;">Customer Name</span>
+                        <input style="width:60%;" id="d_customer_name" name="d_customer_name" class="easyui-textbox">
+                    </div>
+                    <div class="fitem">
+                        <span style="width:35%; display:inline-block;"></span>
+                        <a href="javascript:;" class="easyui-linkbutton" disabled><i class="fa fa-search"></i> Preview Data</a>
+                    </div>
+                </div>
+                <div style="width: 50%; float: left;">
+                    <div class="fitem" id="type_selection_purchase">
+                        <span style="width:35%; display:inline-block;">Sales Invoice No</span>
+                        <input style="width:60%;" id="d_sales_invoice" name="d_sales_invoice" class="easyui-textbox">
+                    </div>
+                    <div class="fitem">
+                        <span style="width:35%; display:inline-block;">Journal Type</span>
+                        <input style="width:60%;" name="d_journal_type" id="d_journal_type" class="easyui-textbox">
+                    </div>
+                    <div class="fitem" id="type_selection_purchase">
+                        <span style="width:35%; display:inline-block;">Bank Account</span>
+                        <input style="width:60%;" id="d_bank_account" name="d_bank_account" class="easyui-textbox">
+                    </div>
+                    <div class="fitem" hidden>
+                        <span style="width:35%; display:inline-block;">Bank code</span>
+                        <input style="width:60%;" id="d_bank_code" name="d_bank_code" class="easyui-textbox">
+                    </div>
+                    <div class="fitem">
+                        <span style="width:35%; display:inline-block;">Receipt By</span>
+                        <input style="width:60%;" id="d_receipt_by" name="d_receipt_by" class="easyui-textbox">
+                    </div>
+                    <div class="fitem" id="f_cheque_no">
+                        <span style="width:35%; display:inline-block;">Cheque No</span>
+                        <input style="width:60%;" id="d_cheque_no" name="d_cheque_no" class="easyui-textbox">
+                    </div>
+                    <div class="fitem">
+                        <span style="width:35%; display:inline-block;">Note</span>
+                        <input style="width:60%;" id="d_note" name="d_note" class="easyui-textbox">
+                    </div>
+                </div>
+            </fieldset>
+        </div>
+        <div id="toolbarDetail">
+            <a href="javascript:void(0)" class="easyui-linkbutton" data-options="plain:true" disabled> <i class="fa fa-plus"></i> Add</a>
+            <a href="javascript:void(0)" class="easyui-linkbutton" data-options="plain:true" disabled> <i class="fa fa-eye"></i> Find Down Payment</a>
+        </div>
+
+        <div id="toolbarDetailJournal">
+            <a href="javascript:void(0)" class="easyui-linkbutton" data-options="plain:true" disabled> <i class="fa fa-plus"></i> Add</a>
+            <a href="javascript:void(0)" class="easyui-linkbutton" data-options="plain:true" disabled> <i class="fa fa-times"></i> Remove</a>
+        </div>
+
+        <table id="dgDetail" class="easyui-datagrid" style="width:100%;" title="List AR Receipt" toolbar="#toolbarDetail" data-options="singleSelect: true" idField="sales_invoice">
+            <thead>
+                <tr>
+                    <th hidden data-options="field:'id',width:150, editor: {type: 'textbox'}">ID</th>
+                    <th data-options="field:'sales_invoice',width:200, editor: {type: 'textbox'}">Sales Invoice</th>
+                    <th data-options="field:'description',width:150, editor: {type: 'textbox'}">Description</th>
+                    <th data-options="field:'currency',align:'center',width:80, editor: {type: 'textbox'}">Currency</th>
+                    <th data-options="field:'amount',width:150, formatter:numberformat, align:'right', editor: {type: 'numberbox',options: {precision:2, readonly:true}}">Amount</th>
+                    <th data-options="field:'balance',width:150, formatter:numberformat, align:'right', editor: {type: 'numberbox',options: {precision:2, readonly:true}}">Balance</th>
+                    <th data-options="field:'receipt',width:150, formatter:numberformat, align:'right', editor: {type: 'numberbox',options: {precision:2}}">Receipt</th>
+                    <th data-options="field:'remarks',width:150, editor: {type: 'textbox'}">Remarks</th>
+                    <th data-options="field:'account_number',width:100, halign:'center', editor: {type: 'textbox'}">Account No</th>
+                    <th data-options="field:'account_name',width:150, editor: {type: 'textbox', options: {readonly: true}}">Account Name</th>
+                    <th data-options="field:'account_type',width:150, halign:'center', editor: {type: 'textbox'}">Debit/Credit</th>
+                </tr>
+            </thead>
+        </table>
+
+        <div style="width: 68%; float: left; margin-top:20px;">
+            <div style="float: left; width: 30%; ">
+                <a style="width: 90%; height: 50px; padding:10px;" class="easyui-linkbutton c2" disabled>Add to Journal</a>
+            </div>
+            <div style="float: left; width: 30%; border:4px solid green; padding:10px;" id="d_showExchange">
+                <p style="font-size: 16px !important; margin:0;">Rate USD to IDR : <b style="font-size: 16px !important;" id="d_exchange"></b></p>
+            </div>
+        </div>
+
+        <div style="width: 30%; display: grid; grid-template-columns: auto auto auto; grid-gap: 5px; display: flex; float: right; margin-top:20px;">
+            <fieldset style="width:100%; border:1px solid #d0d0d0; margin-bottom: 10px; border-radius:4px;">
+                <div style="width: 100%; float: left;">
+                    <div class="fitem">
+                        <b style="width:35%; display:inline-block;">Total Receipt</b>
+                        <input style="width:60%;" id="d_total_receipt" name="d_total_receipt" disabled class="easyui-numberbox" data-options="precision:2,groupSeparator:','">
+                    </div>
+                </div>
+            </fieldset>
+        </div>
+
+        <div style="width: 80%; float: left; margin-top:10px;">
+            <table id="dgDetailJournal" class="easyui-datagrid" title="Journal Lists" style="width: 100%;" data-options="singleSelect: true" toolbar="#toolbarDetailJournal">
+                <thead>
+                    <tr>
+                        <th rowspan="2" data-options="field:'account_number',halign:'center',width:100, editor: {
+                            type: 'combogrid',
+                            options: {
+                                url: '<?= base_url('finance/account_coa/reads') ?>',
+                                panelWidth: 320,
+                                idField: 'account_number',
+                                textField: 'account_number',
+                                mode: 'remote',
+                                fitColumns: true,
+                                prompt: 'Choose Account No',
+                                columns: [
+                                    [{
+                                        field: 'account_number',
+                                        title: 'Account No',
+                                        width: 100
+                                    }, {
+                                        field: 'account_name',
+                                        title: 'Account Name',
+                                        width: 200
+                                    }]
+                                ],
+                                onSelect: function(value, rows) {
+                                    var dg = $('#dgDetailJournal');
+                                    var row = dg.datagrid('getSelected');
+                                    var rowIndex = dg.datagrid('getRowIndex', row);
+                                    var ed = dg.datagrid('getEditor', {
+                                        index: rowIndex,
+                                        field: 'account_name'
+                                    });
+
+                                    $(ed.target).textbox('setValue', rows.account_name);
+                                }
+                            }
+                        }">Account No</th>
+                        <th rowspan="2" data-options="field:'account_name',halign:'center',width:200, editor: {type: 'textbox', options: {readonly: true}}">Account Name</th>
+                        <th rowspan="2" data-options="field:'description',halign:'center',width:200, editor: {type: 'textbox', options: {required: true}}">Description</th>
+                        <th colspan="2" data-options="field:'',width:150">Original Currency</th>
+                        <th colspan="2" data-options="field:'',width:150">Local Currency</th>
+                        <th rowspan="2" data-options="field:'flag',width:50,halign:'center',editor: {type: 'numberbox', options: {required: true}}">Index</th>
+                    </tr>
+                    <tr>
+                        <th data-options="field:'debit',width:120,halign:'center',align:'right',formatter:numberformat,editor: {type: 'numberbox', options: {required: true, precision:2}}">Debit</th>
+                        <th data-options="field:'credit',width:120,halign:'center',align:'right',formatter:numberformat,editor: {type: 'numberbox', options: {required: true, precision:2}}">Credit</th>
+                        <th data-options="field:'local_debit',width:120,halign:'center',align:'right',formatter:numberformat,editor: {type: 'numberbox', options: {required: true, precision:2}}">Debit</th>
+                        <th data-options="field:'local_credit',width:120,halign:'center',align:'right',formatter:numberformat,editor: {type: 'numberbox', options: {required: true, precision:2}}">Credit</th>
+                    </tr>
+                </thead>
+            </table>
+
+            <div class="fitem" style="padding: 10px 2px;">
+                <b style="width:48%; display:inline-block; padding-left: 50px;">BALANCE TOTAL</b>
+                <input style="width:11%;" id="d_balance_debit" name="d_balance_debit" readonly class="easyui-numberbox" data-options="precision:2,groupSeparator:'.', decimalSeparator:','">
+                <input style="width:11%;" id="d_balance_credit" name="d_balance_credit" readonly class="easyui-numberbox" data-options="precision:2,groupSeparator:'.', decimalSeparator:','">
+                <input style="width:11%;" id="d_local_balance_debit" name="d_local_balance_debit" readonly class="easyui-numberbox" data-options="precision:2,groupSeparator:'.', decimalSeparator:','">
+                <input style="width:11%;" id="d_local_balance_credit" name="d_local_balance_credit" readonly class="easyui-numberbox" data-options="precision:2,groupSeparator:'.', decimalSeparator:','">
+            </div>
+        </div>
+    </form>
 </div>
 
 <!-- DIALOG SAVE AND UPDATE -->
@@ -159,7 +377,7 @@
             <a href="javascript:void(0)" class="easyui-linkbutton" data-options="plain:true" onclick="removeit3()"><i class="fa fa-times"></i> Remove</a>
         </div>
 
-        <table id="dg2" class="easyui-datagrid" style="width:100%;" title="list AR Receipt" toolbar="#toolbar2" data-options="singleSelect: true" idField="sales_invoice">
+        <table id="dg2" class="easyui-datagrid" style="width:100%;" title="List AR Receipt" toolbar="#toolbar2" data-options="singleSelect: true" idField="sales_invoice">
             <thead>
                 <tr>
                     <th data-options="field:'delete',width:120, formatter:removebtn">Action</th>
@@ -319,14 +537,17 @@
 <!-- PDF -->
 <iframe id="printout" src="" style="width: 100%;" hidden></iframe>
 <script>
+    let formMode = 'add';
     //ADD DATA
     function add() {
         $('#dlg_insert').dialog('open');
         $('#dg2').datagrid('loadData', []);
+        $('#dg3').datagrid('loadData', []);
         $('#frm_insert').form('clear');
         $("#showExchange").hide();
-
+        
         var dg = $('#dg2').datagrid({
+            url: '<?= base_url('finance/ar_receipts/reads/') ?>' + window.btoa(1), // refresh dg2
             onBeforeEdit: function(index, row) {
                 row.editing = true;
                 $(this).datagrid('refreshRow', index);
@@ -340,7 +561,7 @@
                 $(this).datagrid('refreshRow', index);
             },
         });
-
+        
         $("#receipt_date").datebox('enable');
         $("#receipt_type").combobox('enable');
         $("#customer_id").combogrid('enable');
@@ -353,6 +574,11 @@
                 var bank_code = $("#bank_code").textbox('getValue');
                 number(val, bank_code);
             }
+        });
+
+        // refresh dg3 
+        $('#dg3').datagrid({
+            url: '<?= base_url('finance/ar_receipts/calculateJournal/') ?>' + window.btoa(1) + "/" + window.btoa(1), // refresh dg3
         });
     }
 
@@ -495,6 +721,16 @@
             $("#local_balance_credit").numberbox('setValue', local_credit);
         }
     }
+
+    $('#dlg_detail').dialog({
+        buttons: [{
+            text: 'Close',
+            iconCls: 'icon-ok',
+            handler: function() { 
+                $('#dlg_detail').dialog('close');
+            }
+        }]
+    });
 
     var editIndex = undefined;
 
@@ -663,6 +899,7 @@
 
     //Edit Data
     function update() {
+        formMode = 'update';
         var row = $('#dg').datagrid('getSelected');
         if (row) {
             if (row.status == 0) {
@@ -738,14 +975,16 @@
     // }
 
     function number(trans_date, bank_code) {
-        $.ajax({
-            type: "post",
-            url: "<?= base_url('finance/ar_receipts/number/') ?>" + window.btoa(trans_date) +"/"+ bank_code,
-            dataType: "html",
-            success: function(result) {
-                $("#receipt_no").textbox('setValue', result);
-            }
-        });
+        if (bank_code !== null) {
+            $.ajax({
+                type: "post",
+                url: "<?= base_url('finance/ar_receipts/number/') ?>" + window.btoa(trans_date) +"/"+ bank_code,
+                dataType: "html",
+                success: function(result) {
+                    $("#receipt_no").textbox('setValue', result);
+                }
+            });
+        }
     }
 
     var editIndex = undefined;
@@ -1659,6 +1898,120 @@
             }
         });
     });
+    
+    function btnDetails(val, row) {
+        var details = "viewDetails('" + row.receipt_no + "')";
+        return '<a class="btn btn-primary w-100" onClick="' + details + '" style="pointer-events: visible; opacity:1;"><i class="fa fa-eye"></i> View</a>';
+    }
+    
+    //Detail Data
+    function viewDetails(number) {        
+        $("#d_receipt_no").textbox('disable');
+        $("#d_receipt_no").textbox('setValue', number);
+        
+        formMode = 'detail';
+        var row = $('#dg').datagrid('getSelected');
+        console.log("Data Loaded: ",row);
+        if (row) {
+            $('#dlg_detail').dialog('open');
+            $("#dlg_detail").window('setTitle', "Detail of " + row.receipt_no);
+            
+            $('#frm_detail').form('load', row);
+            
+            // -- Disable all form input
+            $('#frm_detail').find('input, select, textarea').prop('disabled', true);
+            $('#frm_detail').find('.easyui-textbox').textbox('disable');
+            $('#frm_detail').find('.easyui-numberbox').numberbox('disable');
+            $('#frm_detail').find('.easyui-passwordbox').passwordbox('disable');
+            $('#frm_detail').find('.easyui-combobox').combobox('disable');
+            $('#frm_detail').find('.easyui-combogrid').combogrid('disable');
+            $('#frm_detail').find('.easyui-datebox').datebox('disable');
+            $('#frm_detail').find('.easyui-datetimebox').datetimebox('disable');
+            $('#frm_detail').find('input[type="checkbox"]').prop('disabled', true);
+            $('#frm_detail').find('input[type="radio"]').prop('disabled', true);
+            $('#frm_detail').find('textarea').prop('disabled', true);
+            
+            $("#d_receipt_type").textbox('setValue', row.receipt_type);
+            $("#d_receipt_date").datebox('setValue', row.receipt_date);
+            $("#d_customer_name").textbox('setValue', row.customer_name);
+            $("#d_sales_invoice").textbox('setValue', row.sales_invoice);
+            
+            $("#d_bank_account").textbox('setValue', row.bank_account);
+            $("#d_receipt_by").textbox('setValue', row.receipt_by);
+            $("#d_cheque_no").textbox('setValue', row.cheque_no);
+            $("#d_note").textbox('setValue', row.note);
+            
+            $("#d_total_receipt").textbox('setValue', row.total_receipt);
+            
+
+            $.ajax({
+                url: '<?= base_url('finance/purchase_invoices/readJournalType/') ?>',
+                type: 'POST',
+                dataType: 'json',
+                data: {
+                    id: window.btoa(row.journal_type_id)
+                },
+                success: function(response) {
+                    if (response && response.name) {
+                        $("#d_journal_type").textbox('setValue', response.name);
+                    } else {
+                        console.warn("Nama jurnal tidak ditemukan dalam respons atau format tidak sesuai:", response);
+                        $("#d_journal_type").textbox('setValue', '-');
+                    }
+                }
+            });
+                        
+            $('#dgDetail').datagrid({
+                url: '<?= base_url('finance/ar_receipts/reads/') ?>' + window.btoa(row.receipt_no),
+            });
+
+            $('#dgDetailJournal').datagrid({
+                url: '<?= base_url('finance/ar_receipts/readJournals/') ?>' + window.btoa(row.receipt_no) + "/" + window.btoa(row.journal_type_id) + "/" + window.btoa(row.bank_account),
+                onLoadSuccess: function(rowIndex, row) {
+                    var rows = $('#dgDetailJournal').datagrid('getRows');
+                    var totalrows = rows.length;
+                    
+                    if (totalrows > 0) {
+                        var debit = 0;
+                        var credit = 0;
+                        var local_debit = 0;
+                        var local_credit = 0;
+                        for (let i = 0; i < totalrows; i++) {
+                            debit += parseFloat(rows[i].debit);
+                            credit += parseFloat(rows[i].credit);
+                            local_debit += parseFloat(rows[i].local_debit);
+                            local_credit += parseFloat(rows[i].local_credit);
+                        }
+
+                        $("#d_balance_debit").numberbox('setValue', debit);
+                        $("#d_balance_credit").numberbox('setValue', credit);
+                        $("#d_local_balance_debit").numberbox('setValue', local_debit);
+                        $("#d_local_balance_credit").numberbox('setValue', local_credit);
+                    }
+                }
+            });
+
+            var totalrows = row.length;
+            if (row.currency != "IDR") {
+                $.ajax({
+                    type: "post",
+                    url: "<?= base_url('finance/ar_receipts/readExchangeRate') ?>",
+                    data: "receipt_date=" + row.receipt_date + "&currency=" + row.currency,
+                    dataType: "html",
+                    success: function(exchange) {
+                        $("#d_exchange").html(exchange);
+                        $("#d_showExchange").show();
+                    }
+                });
+            } else {
+                $("#d_showExchange").hide();
+            }
+
+        } else {
+            console.log("Click again to get Detail " + number);
+            // toastr.warning("Please select one of the data in the table first!", "Information");
+        }
+    }
 
     function priceformat(value, row) {
         if (row.currency == "USD") {

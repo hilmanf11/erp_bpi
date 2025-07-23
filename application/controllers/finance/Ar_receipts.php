@@ -52,6 +52,22 @@ class Ar_receipts extends CI_Controller
             echo json_encode($reads);
         }
     }
+    
+    public function readJournalType()
+    {
+        $id = $this->input->post('id');
+        $id   = base64_decode($id);
+        
+        $journalData = null;
+
+        if (!empty($id)) {
+            $query = $this->db->query('SELECT id, name FROM journal_types WHERE id = ?', [$id]);
+            if ($query->num_rows() > 0) {
+                $journalData = $query->row_array();
+            }
+        }
+        echo json_encode($journalData);
+    }
 
     public function readExchangeRate()
     {
@@ -265,6 +281,8 @@ class Ar_receipts extends CI_Controller
 
     public function number($trans_date, $bank_code)
     {
+        if (!empty($trans_date) && !empty($bank_code)) {
+
         $decoded_date = base64_decode($trans_date);
         $year = date("y", strtotime($decoded_date));
         $month = date("m", strtotime($decoded_date));
@@ -281,6 +299,11 @@ class Ar_receipts extends CI_Controller
             $autoID = sprintf("%03s", $urutan);
         }
         echo $autoID."/".$datenow;
+            
+        } else {
+            $this->output->set_status_header(400); // Bad Request
+            echo json_encode(['success' => false, 'message' => 'Transaction Date and Bank Code is required!']);
+        }
     }
 
     public function datatablesTemp()
@@ -298,6 +321,7 @@ class Ar_receipts extends CI_Controller
         $this->db->order_by('a.number', 'asc');
         $records = $this->db->get()->result_array();
 
+        $obj = [];
         $total_receipt = 0;
         foreach ($records as $record) {
             $total_receipt += $record['receipt'];
@@ -350,6 +374,7 @@ class Ar_receipts extends CI_Controller
             $result = array();
             //Select Query
             $this->db->select('a.*, c.number as gl_no, b.name as customer_name');
+            $this->db->select("'view' as details");
             $this->db->from('ar_receipts a');
             $this->db->join('customers b', 'a.customer_id = b.id');
             $this->db->join('journal_postings c', 'a.receipt_no = c.document_no', 'left');
@@ -375,6 +400,7 @@ class Ar_receipts extends CI_Controller
             $receipt_no = base64_decode($this->input->get('receipt_no'));
 
             $this->db->select('*');
+            $this->db->select("'view' as details");
             $this->db->from('ar_receipts');
             $this->db->where('receipt_no', $receipt_no);
             $this->db->order_by('status', 'ASC');
