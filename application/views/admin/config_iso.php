@@ -72,6 +72,14 @@
                     <span style="width:35%; display:inline-block;">Historical RM</span>
                     <input style="width:60%;" name="doc_historical_rm" value="<?= $config->doc_historical_rm ?>" class="easyui-textbox">
                 </div>
+                <div class="fitem">
+                    <span style="width:35%; display:inline-block;">RM Memo Pickup</span>
+                    <input style="width:60%;" name="doc_memo_pickup" value="<?= $config->doc_memo_pickup ?>" class="easyui-textbox">
+                </div>
+                <div class="fitem">
+                    <span style="width:35%; display:inline-block;">RM Memo Delivery</span>
+                    <input style="width:60%;" name="doc_memo_delivery" value="<?= $config->doc_memo_delivery ?>" class="easyui-textbox">
+                </div>
             </fieldset>
             <fieldset style="width:30%; border:1px solid #d0d0d0; margin-bottom: 10px; border-radius:4px; float: left;">
                 <legend><b>Form ISO</b></legend>
@@ -142,6 +150,14 @@
                 <div class="fitem">
                     <span style="width:35%; display:inline-block;">Historical RM</span>
                     <input style="width:60%;" name="form_historical_rm" value="<?= $config->form_historical_rm ?>" class="easyui-textbox">
+                </div>
+                <div class="fitem">
+                    <span style="width:35%; display:inline-block;">RM Memo Pickup</span>
+                    <input style="width:60%;" name="form_memo_pickup" value="<?= $config->form_memo_pickup ?>" class="easyui-textbox">
+                </div>
+                <div class="fitem">
+                    <span style="width:35%; display:inline-block;">RM Memo Delivery</span>
+                    <input style="width:60%;" name="form_memo_delivery" value="<?= $config->form_memo_delivery ?>" class="easyui-textbox">
                 </div>
             </fieldset>
         </div>
