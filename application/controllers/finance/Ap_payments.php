@@ -411,6 +411,7 @@ class Ap_payments extends CI_Controller
             //Select Query
             $this->db->select("a.*, d.number as gl_no, b.name as supplier_name, SUM(CASE WHEN a.account_type = 'DEBIT' THEN payment ELSE -payment END) as total_ap, 
             (CASE WHEN a.journal_type_id is null THEN c.journal_type_id ELSE a.journal_type_id END) as journal_type , GROUP_CONCAT(DISTINCT REPLACE(a.purchase_invoice, ' ', '') SEPARATOR ',') as purchase_invoices");
+            $this->db->select("'view' as details");
             $this->db->from('ap_payments a');
             $this->db->join('suppliers b', 'a.supplier_id = b.id');
             $this->db->join('purchase_invoices c', 'a.purchase_invoice = c.number', 'left');
@@ -439,6 +440,7 @@ class Ap_payments extends CI_Controller
             $payment_no = base64_decode($this->input->get('payment_no'));
 
             $this->db->select('*');
+            $this->db->select("'view' as details");
             $this->db->from('ap_payments');
             $this->db->where('payment_no', $payment_no);
             //$this->db->group_by('purchase_invoice');

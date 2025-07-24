@@ -3,6 +3,7 @@
     <thead>
         <tr>
             <th rowspan="2" field="ck" checkbox="true"></th>
+            <th rowspan="2" data-options="field:'details',width:90,align:'center', formatter:btnDetails">Detail</th>
             <th rowspan="2" data-options="field:'payment_type',width:100,halign:'center'">Payment Type</th>
             <th rowspan="2" data-options="field:'payment_no',width:150,align:'center'">Payment No</th>
             <th rowspan="2" data-options="field:'payment_date',width:100,align:'center'">Payment Date</th>
@@ -24,6 +25,50 @@
 </table>
 
 
+<style>
+    /* AI Style Form Inputs when disabled to see the value clearly */
+    input[disabled],
+    select[disabled],
+    textarea[disabled] {
+        background-color: white !important;
+        color: black !important;
+        -webkit-text-fill-color: black !important;
+        opacity: 1 !important;
+        cursor: not-allowed; /* Standard cursor for disabled elements */
+    }
+
+    .textbox.textbox-disabled .textbox-text,
+    .textbox.textbox-disabled
+    {
+        background-color: white !important;
+        color: black !important;
+        -webkit-text-fill-color: black !important;
+        opacity: 1 !important;
+        cursor: not-allowed;
+    }
+
+    .combo.combo-disabled .combo-text,
+    .combo.combo-disabled 
+    {
+        background-color: white !important;
+        color: black !important;
+        -webkit-text-fill-color: black !important;
+        opacity: 1 !important;
+        cursor: not-allowed;
+    }
+
+    .combo.combo-disabled .combo-arrow,
+    .datebox.textbox-disabled .textbox-addon {
+        background-color: white !important;
+        opacity: 1 !important;
+    }
+    
+    input[type="checkbox"][disabled],
+    input[type="radio"][disabled] {
+        opacity: 1 !important;
+        cursor: not-allowed;
+    }
+</style>
 
 <!-- FORM FILTER DATAGRID -->
 <div id="toolbar" style="height: 230px; padding: 10px;">
@@ -83,6 +128,148 @@
     <a href="javascript:void(0)" class="easyui-linkbutton" data-options="plain:true" onclick="excelJournal()"><i class="fa fa-file"></i> Export Excel Journal</a>
 </div>
 
+<!-- DETAIL -->
+<div id="dlg_detail" class="easyui-dialog" title="Detail" data-options="closed: true,modal:true" style="width: 99%; height: 600px; padding:10px; top: 5px; left: 5px;">
+    <form id="frm_detail" method="post" novalidate>
+        <div style="width: 100%; display: grid; grid-template-columns: auto auto auto; grid-gap: 5px; display: flex;">
+            <fieldset style="width:100%; border:1px solid #d0d0d0; margin-bottom: 10px; border-radius:4px;">
+                <legend><b>Form Data</b></legend>
+                <div style="width: 50%; float: left;">
+                    <div class="fitem">
+                        <span style="width:35%; display:inline-block;">Payment Type</span>
+                        <input style="width:60%;" id="d_payment_type" name="d_payment_type" required="" class="easyui-textbox">
+                    </div>
+                    <div class="fitem">
+                        <span style="width:35%; display:inline-block;">Payment Date</span>
+                        <input style="width:60%;" id="d_payment_date" name="d_payment_date" required="" class="easyui-datebox" data-options="formatter:myformatter,parser:myparser, editable:false">
+                    </div>
+                    <div class="fitem">
+                        <span style="width:35%; display:inline-block;">Payment No</span>
+                        <input style="width:60%;" readonly id="d_payment_no" name="d_payment_no" class="easyui-textbox" data-options="prompt:'Automatic From Payment Date'">
+                    </div>
+                    <div class="fitem">
+                        <span style="width:35%; display:inline-block;">Supplier Name</span>
+                        <input style="width:60%;" required="" id="d_supplier_name" name="d_supplier_name" class="easyui-textbox">
+                    </div>
+                    <div class="fitem">
+                        <span style="width:35%; display:inline-block;"></span>
+                        <a href="javascript:;" class="easyui-linkbutton" disabled"><i class="fa fa-search"></i> Preview Data</a>
+                    </div>
+                </div>
+                <div style="width: 50%; float: left;">
+                    <div class="fitem">
+                        <span style="width:35%; display:inline-block;">Purchase Invoice No</span>
+                        <input style="width:60%;" required="" id="d_purchase_invoice" name="d_purchase_invoice" class="easyui-textbox">
+                    </div>
+                    <div class="fitem">
+                        <span style="width:35%; display:inline-block;">Journal Type</span>
+                        <input style="width:60%;" required="" name="d_journal_type_id" id="d_journal_type" class="easyui-textbox">
+                    </div>
+                    <div class="fitem">
+                        <span style="width:35%; display:inline-block;">Bank Account</span>
+                        <input style="width:60%;" required="" id="d_bank_account" name="d_bank_account" class="easyui-textbox">
+                    </div>
+                    <div class="fitem" hidden>
+                        <span style="width:35%; display:inline-block;">Bank code</span>
+                        <input style="width:60%;" id="d_bank_code" name="d_bank_code" class="easyui-textbox">
+                    </div>
+                    <div class="fitem">
+                        <span style="width:35%; display:inline-block;">Payment By</span>
+                        <input style="width:60%;" id="d_payment_by" name="d_payment_by" class="easyui-textbox">
+                    </div>
+                    <div class="fitem" id="f_cheque_no">
+                        <span style="width:35%; display:inline-block;">Cheque No</span>
+                        <input style="width:60%;" id="d_cheque_no" name="d_cheque_no" class="easyui-textbox">
+                    </div>
+                    <div class="fitem">
+                        <span style="width:35%; display:inline-block;">Note</span>
+                        <input style="width:60%;" id="d_note" name="d_note" class="easyui-textbox">
+                    </div>
+                    <div class="fitem" hidden>
+                        <span style="width:35%; display:inline-block;">Rate</span>
+                        <input style="width:60%;" id="d_rate" name="d_rate" class="easyui-numberbox">
+                    </div>
+                </div>
+            </fieldset>
+        </div>
+        <div id="toolbarDetail">
+            <a href="javascript:void(0)" class="easyui-linkbutton" data-options="plain:true" disabled><i class="fa fa-plus"></i> Add</a>
+            <a href="javascript:void(0)" class="easyui-linkbutton" data-options="plain:true" disabled><i class="fa fa-eye"></i> Find Down Payment</a>
+        </div>
+
+        <div id="toolbarDetailJournal">
+            <a href="javascript:void(0)" class="easyui-linkbutton" data-options="plain:true" disabled><i class="fa fa-plus"></i> Add</a>
+            <a href="javascript:void(0)" class="easyui-linkbutton" data-options="plain:true" disabled><i class="fa fa-times"></i> Remove</a>
+        </div>
+
+        <table id="dgDetail" class="easyui-datagrid" style="width:100%;" title="AP Payment Lists" toolbar="#toolbarDetail" data-options="singleSelect: true" idField="purchase_invoice">
+            <thead>
+                <tr>
+                    <th hidden data-options="field:'id',width:150, editor: {type: 'textbox'}">ID</th>
+                    <th data-options="field:'purchase_invoice',width:150, editor: {type: 'textbox'}">Purchase Invoice</th>
+                    <th data-options="field:'supplier_invoice',width:150, editor: {type: 'textbox'}">Description</th>
+                    <th data-options="field:'currency',align:'center',width:80, editor: {type: 'textbox'}">Currency</th>
+                    <th data-options="field:'amount',width:150, formatter:numberformat, align:'right', editor: {type: 'numberbox',options: {precision:2}}">Amount</th>
+                    <th data-options="field:'balance',width:150, formatter:numberformat, align:'right', editor: {type: 'numberbox',options: {precision:2, readonly:true}}">Balance</th>
+                    <th data-options="field:'payment',width:150, formatter:numberformat, align:'right', editor: {type: 'numberbox',options: {precision:2}}">Payment</th>
+                    <th data-options="field:'remarks',width:100, editor: {type: 'textbox'}">Remarks</th>
+                    <th data-options="field:'account_number',width:100, halign:'center', editor: {type: 'textbox'}">Account No</th>
+                    <th data-options="field:'account_name',width:150, editor: {type: 'textbox', options: {readonly: true}}">Account Name</th>
+                    <th data-options="field:'account_type',width:120, halign:'center', editor: {type: 'textbox'}">Debit/Credit</th>
+                </tr>
+            </thead>
+        </table>
+
+        <div style="width: 68%; float: left; margin-top:20px;">
+            <div style="float: left; width: 30%; ">
+                <a style="width: 90%; height: 50px; padding:10px;" class="easyui-linkbutton c2" disabled>Add to Journal</a>
+            </div>
+            <div style="float: left; width: 30%; border:4px solid green; padding:10px;" id="d_showExchange">
+                <p style="font-size: 16px !important; margin:0;"><b style="font-size: 16px !important;" id="d_exchange"></b></p>
+            </div>
+        </div>
+
+        <div style="width: 30%; display: grid; grid-template-columns: auto auto auto; grid-gap: 5px; display: flex; float: right; margin-top:20px;">
+            <fieldset style="width:100%; border:1px solid #d0d0d0; margin-bottom: 10px; border-radius:4px;">
+                <div style="width: 100%; float: left;">
+                    <div class="fitem">
+                        <b style="width:35%; display:inline-block;">Total Payment</b>
+                        <input style="width:60%;" id="d_total_payment" name="d_total_payment" disabled class="easyui-numberbox" data-options="precision:2,groupSeparator:','">
+                    </div>
+                </div>
+            </fieldset>
+        </div>
+
+        <div style="width: 80%; float: left; margin-top:10px;">
+            <table id="dgDetailJournal" class="easyui-datagrid" title="Journal Lists" style="width: 100%;" data-options="singleSelect: true" toolbar="#toolbarDetailJournal">
+                <thead>
+                    <tr>
+                        <th rowspan="2" data-options="field:'account_number',halign:'center',width:100, editor: {type: 'textbox'}">Account No</th>
+                        <th rowspan="2" data-options="field:'account_name',halign:'center',width:200, editor: {type: 'textbox', options: {readonly: true}}">Account Name</th>
+                        <th rowspan="2" data-options="field:'description',halign:'center',width:200, editor: {type: 'textbox', options: {required: true}}">Description</th>
+                        <th colspan="2" data-options="field:'',width:150">Original Currency</th>
+                        <th colspan="2" data-options="field:'',width:150">Local Currency</th>
+                        <th rowspan="2" data-options="field:'flag',width:50,halign:'center',editor: {type: 'numberbox', options: {required: true}}">Index</th>
+                    </tr>
+                    <tr>
+                        <th data-options="field:'debit',width:120,halign:'center',align:'right',formatter:numberformat,editor: {type: 'numberbox', options: {required: true, precision:2}}">Debit</th>
+                        <th data-options="field:'credit',width:120,halign:'center',align:'right',formatter:numberformat,editor: {type: 'numberbox', options: {required: true, precision:2}}">Credit</th>
+                        <th data-options="field:'local_debit',width:120,halign:'center',align:'right',formatter:numberformat,editor: {type: 'numberbox', options: {required: true, precision:2}}">Debit</th>
+                        <th data-options="field:'local_credit',width:120,halign:'center',align:'right',formatter:numberformat,editor: {type: 'numberbox', options: {required: true, precision:2}}">Credit</th>
+                    </tr>
+                </thead>
+            </table>
+
+            <div class="fitem">
+                <b style="width:46%; display:inline-block; padding-left: 50px;">BALANCE TOTAL</b>
+                <input style="width:11%;" id="d_balance_debit" name="d_balance_debit" readonly class="easyui-numberbox" data-options="precision:2,groupSeparator:'.', decimalSeparator:','">
+                <input style="width:11%;" id="d_balance_credit" name="d_balance_credit" readonly class="easyui-numberbox" data-options="precision:2,groupSeparator:'.', decimalSeparator:','">
+                <input style="width:11%;" id="d_local_balance_debit" name="d_local_balance_debit" readonly class="easyui-numberbox" data-options="precision:2,groupSeparator:'.', decimalSeparator:','">
+                <input style="width:11%;" id="d_local_balance_credit" name="d_local_balance_credit" readonly class="easyui-numberbox" data-options="precision:2,groupSeparator:'.', decimalSeparator:','">
+            </div>
+        </div>
+    </form>
+</div>
 
 
 <!-- DIALOG SAVE AND UPDATE -->
@@ -2326,6 +2513,122 @@
                 }
             }
         });
+    });
+
+    
+    function btnDetails(val, row) {
+        var details = "viewDetails('" + row.payment_no + "')";
+        return '<a class="btn btn-primary w-100" onClick="' + details + '" style="pointer-events: visible; opacity:1;"><i class="fa fa-eye"></i> View</a>';
+    }
+    
+    //Detail Data
+    function viewDetails(number) {        
+        $("#d_receipt_no").textbox('disable');
+        $("#d_receipt_no").textbox('setValue', number);
+        
+        formMode = 'detail';
+        var row = $('#dg').datagrid('getSelected');
+        console.log("Data Loaded: ",row);
+        if (row) {
+            $('#dlg_detail').dialog('open');
+            $("#dlg_detail").window('setTitle', "Detail of " + row.payment_no);
+            
+            $('#frm_detail').form('load', row);
+            
+            // -- Disable all form input
+            $('#frm_detail').find('input, select, textarea').prop('disabled', true);
+            $('#frm_detail').find('.easyui-textbox').textbox('disable');
+            $('#frm_detail').find('.easyui-numberbox').numberbox('disable');
+            $('#frm_detail').find('.easyui-passwordbox').passwordbox('disable');
+            $('#frm_detail').find('.easyui-combobox').combobox('disable');
+            $('#frm_detail').find('.easyui-combogrid').combogrid('disable');
+            $('#frm_detail').find('.easyui-datebox').datebox('disable');
+            $('#frm_detail').find('.easyui-datetimebox').datetimebox('disable');
+            $('#frm_detail').find('input[type="checkbox"]').prop('disabled', true);
+            $('#frm_detail').find('input[type="radio"]').prop('disabled', true);
+            $('#frm_detail').find('textarea').prop('disabled', true);
+            
+            $("#d_payment_type").textbox('setValue', row.payment_type);
+            $("#d_payment_date").datebox('setValue', row.payment_date);
+            $("#d_payment_no").textbox('setValue', row.payment_no);
+            $("#d_supplier_name").textbox('setValue', row.supplier_name);
+
+            $("#d_purchase_invoice").textbox('setValue', row.purchase_invoice);
+            $("#d_journal_type").textbox('setValue', row.journal_type);
+            $("#d_bank_account").textbox('setValue', row.bank_account);
+            $("#d_payment_by").textbox('setValue', row.payment_by);
+            $("#d_cheque_no").textbox('setValue', row.cheque_no);
+            $("#d_note").textbox('setValue', row.note);
+
+            $("#d_total_payment").textbox('setValue', row.total_payment);
+        
+            $('#dgDetail').datagrid({
+                url: '<?= base_url('finance/ap_payments/reads/') ?>' + window.btoa(row.payment_no),
+            });
+            
+            $('#dgDetailJournal').datagrid({
+                url: '<?= base_url('finance/ap_payments/readJournals/') ?>' + window.btoa(row.payment_no) + "/" + window.btoa(row.journal_type) + "/" + window.btoa(row.bank_account),
+                singleSelect: true,
+                onLoadSuccess: function(rowIndex, row) {
+                    console.log("detail journal ", row);
+
+                    var rows = $('#dgDetailJournal').datagrid('getRows');
+                    var totalrows = rows.length;
+
+                    if (totalrows > 0) {
+                        var debit = 0;
+                        var credit = 0;
+                        var local_debit = 0;
+                        var local_credit = 0;
+                        for (let i = 0; i < totalrows; i++) {
+                            debit += parseFloat(rows[i].debit);
+                            credit += parseFloat(rows[i].credit);
+                            local_debit += parseFloat(rows[i].local_debit);
+                            local_credit += parseFloat(rows[i].local_credit);
+                        }
+
+                        $("#d_balance_debit").numberbox('setValue', debit);
+                        $("#d_balance_credit").numberbox('setValue', credit);
+                        $("#d_local_balance_debit").numberbox('setValue', local_debit);
+                        $("#d_local_balance_credit").numberbox('setValue', local_credit);
+                    }
+                }
+            });
+
+            var totalrows = row.length;
+            if (row.currency != "IDR") {
+                $.ajax({
+                    type: "post",
+                    url: "<?= base_url('finance/ap_payments/readExchangeRate') ?>",
+                    data: "payment_date=" + row.payment_date + "&currency=" + row.currency,
+                    dataType: "json",
+                    success: function(exchange) {
+                        console.log(exchange.label);
+                        console.log(exchange.amount);
+
+                        $("#d_rate").numberbox('setValue', exchange.amount);
+                        $("#d_exchange").html(exchange.label);
+                        $("#d_showExchange").show();
+                    }
+                });
+            } else {
+                $("#d_showExchange").hide();
+            }
+        
+        } else {
+            console.log("Click again to get Detail " + number);
+            // toastr.warning("Please select one of the data in the table first!", "Information");
+        }
+    }
+
+    $('#dlg_detail').dialog({
+        buttons: [{
+            text: 'Close',
+            iconCls: 'icon-ok',
+            handler: function() { 
+                $('#dlg_detail').dialog('close');
+            }
+        }]
     });
 
     function priceformat(value, row) {
