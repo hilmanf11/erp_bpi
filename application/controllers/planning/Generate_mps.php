@@ -97,9 +97,15 @@ class Generate_mps extends CI_Controller
             $period2 = $filter_year.$filter_month;
 
             $monthStart = strtotime($filter_year . "-" . $filter_month . "-01");
-            $monthName3 = date("Y-m", $monthStart);
+            $monthName_1 = date("Y-m", $monthStart);
+            $monthName_2 = date("Y-m", strtotime("+1 month", $monthStart));
+            $monthName_3 = date("Y-m", strtotime("+2 month", $monthStart));
+            $monthName_4 = date("Y-m", strtotime("+3 month", $monthStart));
+            $monthName_5 = date("Y-m", strtotime("+4 month", $monthStart));
+            $monthName_6 = date("Y-m", strtotime("+5 month", $monthStart));
             $cutoff_start = date("Y-m-d", strtotime("+1 day", strtotime($filter_cutoff)));
             $cutoff_end = date("Y-m-t", strtotime($filter_cutoff));
+            $lastDatePrevMonth = date("Y-m-t", strtotime("-1 month", $monthStart));
 
             //Configuration Planning
             $this->db->select('*');
@@ -127,7 +133,12 @@ class Generate_mps extends CI_Controller
                 COALESCE(h.shift_hour, 0) as shift_hour,
                 COALESCE(h.productcivity, 0) as productivity,
                 COALESCE(h.cavity_standard, 0) as cavity_standard,
-                (COALESCE(i.qty, 0) + COALESCE(k.qty, 0)) as qty_so');
+                (COALESCE(i.so_month_1, 0) + COALESCE(k.qty, 0)) as qty_so,
+                COALESCE(i.so_month_2, 0) as so_month_2,
+                COALESCE(i.so_month_3, 0) as so_month_3,
+                COALESCE(i.so_month_4, 0) as so_month_4,
+                COALESCE(i.so_month_5, 0) as so_month_5,
+                COALESCE(i.so_month_6, 0) as so_month_6');
             $this->db->from('item_fg a');
             $this->db->join('item_fg_subs b', "a.id = b.item_fg_sa_id", 'left');
             $this->db->join('stock_wip c', "a.id = c.item_fg_id and c.p_month = '$filter_month' and c.p_year = '$filter_year' and c.revision = '$filter_revision'", 'left');
@@ -146,31 +157,87 @@ class Generate_mps extends CI_Controller
                 SELECT b.id, b.number_customer, a.qty_so, COALESCE(c.qty_delivery, 0) AS qty_delivery, (a.qty_so - COALESCE(c.qty_delivery, 0)) AS qty_outstanding
                 FROM (SELECT *, SUM(qty) AS qty_so FROM sales_orders WHERE `status` = 0 AND sales_order_no != '' GROUP BY sales_order_no, item_fg_id) a
                 JOIN item_fg b ON a.item_fg_id = b.id
-                LEFT JOIN (SELECT sales_order_no, item_fg_id, SUM(qty) AS qty_delivery FROM delivery_notes WHERE delivery_note_date <= '$filter_cutoff' GROUP BY sales_order_no, item_fg_id) c ON a.sales_order_no = c.sales_order_no AND a.item_fg_id = c.item_fg_id
-                WHERE a.delivery_date <= '$filter_cutoff'
+                LEFT JOIN (SELECT sales_order_no, item_fg_id, SUM(qty) AS qty_delivery FROM delivery_notes WHERE delivery_note_date <= '$lastDatePrevMonth' GROUP BY sales_order_no, item_fg_id) c ON a.sales_order_no = c.sales_order_no AND a.item_fg_id = c.item_fg_id
+                WHERE a.delivery_date <= '$lastDatePrevMonth'
                 GROUP BY a.sales_order_no, a.item_fg_id) z
                 GROUP BY z.id) f", '(a.id = f.id or b.item_fg_id = f.id)', 'left');
-            $this->db->join("(SELECT
-                f.item_fg_id,
-                SUM(f.month_1) AS month_1,
-                SUM(f.month_2) AS month_2,
-                SUM(f.month_3) AS month_3,
-                SUM(f.month_4) AS month_4,
-                SUM(f.month_5) AS month_5,
-                SUM(f.month_6) AS month_6
-            FROM forecasts f
-            JOIN (SELECT item_fg_id, MAX(revision) AS latest_revision FROM forecasts WHERE p_year = '$filter_year' AND p_month = '$filter_month' GROUP BY item_fg_id) AS latest_revisions ON f.item_fg_id = latest_revisions.item_fg_id AND f.revision = latest_revisions.latest_revision
-            WHERE p_year = '$filter_year' AND p_month = '$filter_month'
+
+            $this->db->join("(SELECT f.item_fg_id, 
+                SUM(f.month_1) AS month_1, 
+                SUM(f.month_2) AS month_2, 
+                SUM(f.month_3) AS month_3, 
+                SUM(f.month_4) AS month_4, 
+                SUM(f.month_5) AS month_5, 
+                SUM(f.month_6) AS month_6 
+            FROM forecasts f 
+            JOIN ( SELECT customer_id, item_fg_id, MAX(revision) AS latest_revision 
+                   FROM forecasts 
+                   WHERE p_year = '$filter_year' AND p_month = '$filter_month' 
+                   GROUP BY customer_id, item_fg_id 
+            ) AS latest_revisions 
+                   ON f.customer_id = latest_revisions.customer_id 
+                   AND f.item_fg_id = latest_revisions.item_fg_id 
+                   AND f.revision = latest_revisions.latest_revision 
+            WHERE f.p_year = '$filter_year' AND f.p_month = '$filter_month' 
             GROUP BY f.item_fg_id) g ", '(a.id = g.item_fg_id or b.item_fg_id = g.item_fg_id)', 'left');
+
             $this->db->join("(SELECT DISTINCT a.item_fg_id, a.cycle_time, a.shift_hour, a.productcivity, b.cavity_standard, a.priority FROM menu_loadings a JOIN molds b ON a.mold_id = b.id WHERE a.priority = 1 GROUP BY a.item_fg_id) h ", 'a.id = h.item_fg_id', 'left');
-            $this->db->join("(SELECT z.id, SUM(z.qty_outstanding) AS qty FROM (
-                SELECT b.id, b.number_customer, a.qty_so, COALESCE(c.qty_delivery, 0) AS qty_delivery, (a.qty_so - COALESCE(c.qty_delivery, 0)) AS qty_outstanding
-                FROM (SELECT *, SUM(qty) AS qty_so FROM sales_orders WHERE `status` = 0 AND sales_order_no != '' GROUP BY sales_order_no, item_fg_id) a
-                JOIN item_fg b ON a.item_fg_id = b.id
-                LEFT JOIN (SELECT sales_order_no, item_fg_id, SUM(qty) AS qty_delivery FROM delivery_notes GROUP BY sales_order_no, item_fg_id) c ON a.sales_order_no = c.sales_order_no AND a.item_fg_id = c.item_fg_id
-                WHERE a.delivery_date like '%$monthName3%'
-                GROUP BY a.sales_order_no, a.item_fg_id) z
-                GROUP BY z.id) i", '(a.id = i.id or b.item_fg_id = i.id)', 'left');
+            
+            // $this->db->join("(SELECT z.id, SUM(z.qty_outstanding) AS qty FROM (
+            //     SELECT b.id, b.number_customer, a.qty_so, COALESCE(c.qty_delivery, 0) AS qty_delivery, (a.qty_so - COALESCE(c.qty_delivery, 0)) AS qty_outstanding
+            //     FROM (SELECT *, SUM(qty) AS qty_so FROM sales_orders WHERE `status` = 0 AND sales_order_no != '' GROUP BY sales_order_no, item_fg_id) a
+            //     JOIN item_fg b ON a.item_fg_id = b.id
+            //     LEFT JOIN (SELECT sales_order_no, item_fg_id, SUM(qty) AS qty_delivery FROM delivery_notes GROUP BY sales_order_no, item_fg_id) c ON a.sales_order_no = c.sales_order_no AND a.item_fg_id = c.item_fg_id
+            //     WHERE a.delivery_date like '%$monthName3%'
+            //     GROUP BY a.sales_order_no, a.item_fg_id) z
+            //     GROUP BY z.id) i", '(a.id = i.id or b.item_fg_id = i.id)', 'left');
+
+            $this->db->join("(SELECT a.id, 
+                COALESCE(b.qty_outstanding, 0) AS so_month_1, 
+                COALESCE(c.qty_outstanding, 0) AS so_month_2,
+                COALESCE(d.qty_outstanding, 0) AS so_month_3,
+                COALESCE(e.qty_outstanding, 0) AS so_month_4,
+                COALESCE(f.qty_outstanding, 0) AS so_month_5,
+                COALESCE(g.qty_outstanding, 0) AS so_month_6
+                FROM item_fg a
+                LEFT JOIN (SELECT b.id,SUM(a.qty_so - COALESCE(c.qty_delivery, 0)) AS qty_outstanding
+                    FROM (SELECT sales_order_no, item_fg_id, SUM(qty) AS qty_so, delivery_date FROM sales_orders WHERE status = 0 AND sales_order_no != '' GROUP BY sales_order_no, item_fg_id) a
+                    JOIN item_fg b ON a.item_fg_id = b.id
+                    LEFT JOIN (SELECT sales_order_no, item_fg_id, SUM(qty) AS qty_delivery FROM delivery_notes GROUP BY sales_order_no, item_fg_id) c ON a.sales_order_no = c.sales_order_no AND a.item_fg_id = c.item_fg_id
+                    WHERE a.delivery_date LIKE '%$monthName_1%'
+                    GROUP BY b.id) b ON a.id = b.id
+                LEFT JOIN (SELECT b.id,SUM(a.qty_so - COALESCE(c.qty_delivery, 0)) AS qty_outstanding
+                    FROM (SELECT sales_order_no, item_fg_id, SUM(qty) AS qty_so, delivery_date FROM sales_orders WHERE status = 0 AND sales_order_no != '' GROUP BY sales_order_no, item_fg_id) a
+                    JOIN item_fg b ON a.item_fg_id = b.id
+                    LEFT JOIN (SELECT sales_order_no, item_fg_id, SUM(qty) AS qty_delivery FROM delivery_notes GROUP BY sales_order_no, item_fg_id) c ON a.sales_order_no = c.sales_order_no AND a.item_fg_id = c.item_fg_id
+                    WHERE a.delivery_date LIKE '%$monthName_2%'
+                    GROUP BY b.id) c ON a.id = c.id
+                LEFT JOIN (SELECT b.id,SUM(a.qty_so - COALESCE(c.qty_delivery, 0)) AS qty_outstanding
+                    FROM (SELECT sales_order_no, item_fg_id, SUM(qty) AS qty_so, delivery_date FROM sales_orders WHERE status = 0 AND sales_order_no != '' GROUP BY sales_order_no, item_fg_id) a
+                    JOIN item_fg b ON a.item_fg_id = b.id
+                    LEFT JOIN (SELECT sales_order_no, item_fg_id, SUM(qty) AS qty_delivery FROM delivery_notes GROUP BY sales_order_no, item_fg_id) c ON a.sales_order_no = c.sales_order_no AND a.item_fg_id = c.item_fg_id
+                    WHERE a.delivery_date LIKE '%$monthName_3%'
+                    GROUP BY b.id) d ON a.id = d.id
+                LEFT JOIN (SELECT b.id,SUM(a.qty_so - COALESCE(c.qty_delivery, 0)) AS qty_outstanding
+                    FROM (SELECT sales_order_no, item_fg_id, SUM(qty) AS qty_so, delivery_date FROM sales_orders WHERE status = 0 AND sales_order_no != '' GROUP BY sales_order_no, item_fg_id) a
+                    JOIN item_fg b ON a.item_fg_id = b.id
+                    LEFT JOIN (SELECT sales_order_no, item_fg_id, SUM(qty) AS qty_delivery FROM delivery_notes GROUP BY sales_order_no, item_fg_id) c ON a.sales_order_no = c.sales_order_no AND a.item_fg_id = c.item_fg_id
+                    WHERE a.delivery_date LIKE '%$monthName_4%'
+                    GROUP BY b.id) e ON a.id = e.id
+                LEFT JOIN (SELECT b.id,SUM(a.qty_so - COALESCE(c.qty_delivery, 0)) AS qty_outstanding
+                    FROM (SELECT sales_order_no, item_fg_id, SUM(qty) AS qty_so, delivery_date FROM sales_orders WHERE status = 0 AND sales_order_no != '' GROUP BY sales_order_no, item_fg_id) a
+                    JOIN item_fg b ON a.item_fg_id = b.id
+                    LEFT JOIN (SELECT sales_order_no, item_fg_id, SUM(qty) AS qty_delivery FROM delivery_notes GROUP BY sales_order_no, item_fg_id) c ON a.sales_order_no = c.sales_order_no AND a.item_fg_id = c.item_fg_id
+                    WHERE a.delivery_date LIKE '%$monthName_5%'
+                    GROUP BY b.id) f ON a.id = f.id
+                LEFT JOIN (SELECT b.id,SUM(a.qty_so - COALESCE(c.qty_delivery, 0)) AS qty_outstanding
+                    FROM (SELECT sales_order_no, item_fg_id, SUM(qty) AS qty_so, delivery_date FROM sales_orders WHERE status = 0 AND sales_order_no != '' GROUP BY sales_order_no, item_fg_id) a
+                    JOIN item_fg b ON a.item_fg_id = b.id
+                    LEFT JOIN (SELECT sales_order_no, item_fg_id, SUM(qty) AS qty_delivery FROM delivery_notes GROUP BY sales_order_no, item_fg_id) c ON a.sales_order_no = c.sales_order_no AND a.item_fg_id = c.item_fg_id
+                    WHERE a.delivery_date LIKE '%$monthName_6%'
+                    GROUP BY b.id) g ON a.id = g.id
+                GROUP BY a.id) i", '(a.id = i.id or b.item_fg_id = i.id)', 'left');
+            
             $this->db->join("(SELECT z.id, SUM(z.qty_outstanding) AS qty FROM (
                 SELECT b.id, b.number_customer, a.qty_so, COALESCE(c.qty_delivery, 0) AS qty_delivery, (a.qty_so - COALESCE(c.qty_delivery, 0)) AS qty_outstanding
                 FROM (SELECT *, SUM(qty) AS qty_so FROM sales_orders WHERE `status` = 0 AND sales_order_no != '' GROUP BY sales_order_no, item_fg_id) a
@@ -224,6 +291,11 @@ class Generate_mps extends CI_Controller
                     "productivity" => $data['productivity'],
                     "cavity_standard" => $data['cavity_standard'],
                     "qty_so" => $data['qty_so'],
+                    "so_month_2" => $data['so_month_2'],
+                    "so_month_3" => $data['so_month_3'],
+                    "so_month_4" => $data['so_month_4'],
+                    "so_month_5" => $data['so_month_5'],
+                    "so_month_6" => $data['so_month_6'],
                     "safety_stock" => $data['safety_stock'],
                     "mpq" => $data['mpq']
                 );
@@ -563,7 +635,7 @@ class Generate_mps extends CI_Controller
                     $prodplan = ceil($prodplan / $mpq) * $mpq;
                 } else if ($i == 2) {
                     $beginBalance = (($prodPlan + $beginBalance) - $qtySoFc - $safetyStock);
-                    $soData = 0;
+                    $soData = @round($post['so_month_2']);
                     $forecastData = @round($post['month_2']);
                     if($soData > $forecastData){ $qtySoFc = $soData; }else{ $qtySoFc = $forecastData; }
                     $deliveryRate = @round($qtySoFc / $hkw);
@@ -576,7 +648,7 @@ class Generate_mps extends CI_Controller
                     $prodplan = ceil($prodplan / $mpq) * $mpq;
                 } elseif ($i == 3) {
                     $beginBalance = (($prodPlan + $beginBalance) - $qtySoFc - $safetyStock);
-                    $soData = 0;
+                    $soData = @round($post['so_month_3']);
                     $forecastData = @round($post['month_3']);
                     if($soData > $forecastData){ $qtySoFc = $soData; }else{ $qtySoFc = $forecastData; }
                     $deliveryRate = @round($qtySoFc / $hkw);
@@ -589,7 +661,7 @@ class Generate_mps extends CI_Controller
                     $prodplan = ceil($prodplan / $mpq) * $mpq;
                 } elseif ($i == 4) {
                     $beginBalance = (($prodPlan + $beginBalance) - $qtySoFc - $safetyStock);
-                    $soData = 0;
+                    $soData = @round($post['so_month_4']);
                     $forecastData = @round($post['month_4']);
                     if($soData > $forecastData){ $qtySoFc = $soData; }else{ $qtySoFc = $forecastData; }
                     $deliveryRate = @round($qtySoFc / $hkw);
@@ -602,7 +674,7 @@ class Generate_mps extends CI_Controller
                     $prodplan = ceil($prodplan / $mpq) * $mpq;
                 } elseif ($i == 5) {
                     $beginBalance = (($prodPlan + $beginBalance) - $qtySoFc - $safetyStock);
-                    $soData = 0;
+                    $soData = @round($post['so_month_5']);
                     $forecastData = @round($post['month_5']);
                     if($soData > $forecastData){ $qtySoFc = $soData; }else{ $qtySoFc = $forecastData; }
                     $deliveryRate = @round($qtySoFc / $hkw);
@@ -615,7 +687,7 @@ class Generate_mps extends CI_Controller
                     $prodplan = ceil($prodplan / $mpq) * $mpq;
                 } elseif ($i == 6) {
                     $beginBalance = (($prodPlan + $beginBalance) - $qtySoFc - $safetyStock);
-                    $soData = 0;
+                    $soData = @round($post['so_month_6']);
                     $forecastData = @round($post['month_6']);
                     if($soData > $forecastData){ $qtySoFc = $soData; }else{ $qtySoFc = $forecastData; }
                     $deliveryRate = @round($qtySoFc / $hkw);
