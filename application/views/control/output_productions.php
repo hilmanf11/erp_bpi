@@ -540,7 +540,7 @@
     }
     // DOWNLOAD
     function download_excel() {
-        window.location.assign('<?= base_url('template/tmp_sub_assy.xls') ?>');
+        window.location.assign('<?= base_url('template/tmp_output_productions.xls') ?>');
     }
 
     //FILTER DATA
