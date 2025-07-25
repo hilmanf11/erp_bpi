@@ -273,219 +273,24 @@
                     <th rowspan="2" data-options="field:'item_number',width:150,editor: {type: 'textbox', options: {required: true}}">Product No</th>
                     <th rowspan="2" data-options="field:'item_name',width:200,editor: {type: 'textbox', options: {required: true}}">Product Name</th>
                     <th rowspan="2" data-options="field:'supplier_product',width:200,editor: {type: 'textbox'}">Supplier Product</th>
-                    <th rowspan="2" data-options="field:'uom',align:'center',width:80, editor: {
-                        type: 'combobox',
-                        options: {
-                            url: '<?= base_url('master/uom/reads') ?>',
-                            editable:false,
-                            valueField: 'name',
-                            textField: 'name',
-                            prompt: 'Choose Uom'
-                        }}">UoM</th>
-
-                        <th rowspan="2" data-options="field:'qty',width:80, formatter:numberformat,editor: {
-                            type: 'numberbox', 
-                            options: {
-                                required: true,
-                                onChange: function(value) {
-                                    var dg = $('#dgDetail');
-                                    var row = dg.datagrid('getSelected');
-                                    var rowIndex = dg.datagrid('getRowIndex', row);
-
-                                    var ed = dg.datagrid('getEditor', {
-                                        index: rowIndex,
-                                        field: 'total'
-                                    });
-
-                                    var ed3 = dg.datagrid('getEditor', {
-                                        index: rowIndex,
-                                        field: 'total_local'
-                                    });
-
-                                    var ed4 = dg.datagrid('getEditor', {
-                                        index: rowIndex,
-                                        field: 'rate'
-                                    });
-
-                                    var ed2 = dg.datagrid('getEditor', {
-                                        index: rowIndex,
-                                        field: 'price'
-                                    });
-
-                                    var price = $(ed2.target).numberbox('getValue');
-                                    var rate = $(ed4.target).numberbox('getValue');
-                                    $(ed.target).textbox('setValue', (parseFloat(price) * parseFloat(value)));
-                                    $(ed3.target).textbox('setValue', (parseFloat(price) * parseFloat(value)) * parseFloat(rate));
-                                }
-                            }
-                        }">Qty</th>
+                    <th rowspan="2" data-options="field:'uom',align:'center',width:80, editor: {type: 'textbox'}">UoM</th>
+                    <th rowspan="2" data-options="field:'qty',width:80, formatter:numberformat, editor: {type: 'textbox'}">Qty</th>
 
                     <th colspan="3" data-options="field:'',align:'center'">Original Currency</th>
                     <th colspan="3" data-options="field:'',align:'center'">Local Currency</th>
-                    <th rowspan="2" data-options="field:'account_number',width:100, halign:'center', editor: {
-                        type: 'combogrid',
-                        options: {
-                            url: '<?= base_url('finance/account_coa/reads') ?>',
-                            panelWidth: 320,
-                            idField: 'account_number',
-                            textField: 'account_number',
-                            mode: 'remote', 
-                            fitColumns: true,
-                            prompt: 'Choose Account No',
-                            columns: [
-                                [{
-                                    field: 'account_number',
-                                    title: 'Account No',
-                                    width: 100
-                                }, {
-                                    field: 'account_name',
-                                    title: 'Account Name',
-                                    width: 200
-                                }, ]
-                            ],
-                            onSelect: function(value, rows) {
-                                var dg = $('#dg2');
-                                var row = dg.datagrid('getSelected');
-                                var rowIndex = dg.datagrid('getRowIndex', row);
-                                var ed = dg.datagrid('getEditor', {
-                                    index: rowIndex,
-                                    field: 'account_name'
-                                });
-
-                                $(ed.target).textbox('setValue', rows.account_name);
-                            }
-                        }}">Account No</th>
+                    <th rowspan="2" data-options="field:'account_number',width:100, halign:'center', editor: {type: 'textbox'}">Account No</th>
                     <th rowspan="2" data-options="field:'account_name',width:150, editor: {type: 'textbox', options: {readonly: true}}">Account Name</th>
-                    <th rowspan="2" data-options="field:'account_type',width:100, halign:'center', editor: {
-                    type: 'combobox',
-                    options: {
-                        data: [{
-                            'id':'DEBIT'
-                        },{
-                            'id':'CREDIT'
-                        }],
-                        valueField: 'id',
-                        textField: 'id',
-                        prompt: 'Choose Debit/Credit',
-                        panelHeight: 'auto'
-                    }}">Debit/Credit</th>
+                    <th rowspan="2" data-options="field:'account_type',width:100, halign:'center', editor: {type: 'textbox'}">Debit/Credit</th>
                 </tr>
                 <tr>
-                <th data-options="field:'currency',align:'center',width:80, editor: {
-                    type: 'combobox',
-                    options: {
-                        url: '<?= base_url('master/currencies/reads') ?>',
-                        editable:false,
-                        valueField: 'name',
-                        textField: 'name',
-                        prompt: 'Choose Currencies',
-                        onSelect: function(curr){
-                            var dg = $('#dg2');
-                            var row = dg.datagrid('getSelected');
-                            var rowIndex = dg.datagrid('getRowIndex', row);
-
-                            var ed = dg.datagrid('getEditor', {
-                                index: rowIndex,
-                                field: 'rate'
-                            });
-
-                            var ed2 = dg.datagrid('getEditor', {
-                                index: rowIndex,
-                                field: 'currency_local'
-                            });
-
-                            var trans_date = $('#trans_date').datebox('getValue');
-
-                            $.ajax({
-                                type: 'post',
-                                url: '<?= base_url('finance/purchase_invoices/readExchangeRates') ?>',
-                                data: {period: trans_date, currency: curr.number},
-                                dataType: 'json',
-                                success: function(exchange) {
-                                    var middle = 1;
-                                    var name = 'IDR';
-                                    if (exchange && exchange.length > 0 && exchange[0].middle) {
-                                        middle = exchange[0].middle;
-                                        name = exchange[0].currency_from;
-                                    } else {
-                                        toastr.error('Exchange Rate Data Not Found');
-                                    }
-                                    $(ed.target).numberbox('setValue', middle);
-                                    $(ed2.target).textbox('setValue', 'IDR');
-                                }
-                            });
-                        }
-                    }}">Currency</th>
-
-                    <th data-options="field:'price', width:80, halign:'center', align:'right', formatter:numberformat,editor: {type: 'numberbox', 
-                        options: {
-                            required: true,
-                            precision: 4,
-                            onChange: function(value) {
-                                var dg = $('#dg2');
-                                var row = dg.datagrid('getSelected');
-                                var rowIndex = dg.datagrid('getRowIndex', row);
-
-                                var ed = dg.datagrid('getEditor', {
-                                    index: rowIndex,
-                                    field: 'total'
-                                });
-
-                                var ed3 = dg.datagrid('getEditor', {
-                                    index: rowIndex,
-                                    field: 'total_local'
-                                });
-
-                                var ed4 = dg.datagrid('getEditor', {
-                                    index: rowIndex,
-                                    field: 'rate'
-                                });
-
-                                var ed2 = dg.datagrid('getEditor', {
-                                    index: rowIndex,
-                                    field: 'qty'
-                                });
-
-                                var qty = $(ed2.target).numberbox('getValue');
-                                var rate = $(ed4.target).numberbox('getValue');
-                                $(ed.target).textbox('setValue', (parseFloat(value) * parseFloat(qty)));
-                                $(ed3.target).textbox('setValue', (parseFloat(value) * parseFloat(qty)) * parseFloat(rate));
-                            }
-                        }}">Price</th>
-
+                    <th data-options="field:'currency',align:'center',width:80, editor: {type: 'textbox'}">Currency</th>
+                    <th data-options="field:'price', width:80, halign:'center', align:'right', formatter:numberformat, editor: {type: 'numberbox', options: {required: true, readonly: true, precision: 4}}">Price</th>
                     <th data-options="field:'total',width:120, formatter:numberformat, halign:'center', align:'right',editor: {type: 'numberbox', options: {required: true, readonly: true, precision: 4}}">Amount</th>
 
                     <!-- <th data-options="field:'rate',width:80, halign:'center',align:'right', formatter:numberformat,editor: {type: 'numberbox', options: {required: true, precision: 4}}">Rate</th> -->
-                    <th data-options="field:'rate',width:80, halign:'center',align:'right', formatter:numberformat,editor: {
-                        type: 'numberbox', 
-                        options: {
-                            required: true, 
-                            precision: 4,
-                            onChange: function(value) {
-                                var dg = $('#dg2');
-                                var row = dg.datagrid('getSelected');
-                                var rowIndex = dg.datagrid('getRowIndex', row);
-
-                                var edTotal = dg.datagrid('getEditor', {
-                                    index: rowIndex,
-                                    field: 'total'
-                                });
-
-                                var edTotalLocal = dg.datagrid('getEditor', {
-                                    index: rowIndex,
-                                    field: 'total_local'
-                                });
-
-                                var total = $(edTotal.target).numberbox('getValue');
-
-                                var totalLocal = parseFloat(total) * parseFloat(value);
-
-                                $(edTotalLocal.target).textbox('setValue', totalLocal);
-                            }
-                        }
-                    }">Rate</th>
+                    <th data-options="field:'rate',width:80, halign:'center',align:'right', formatter:numberformat, editor: {type: 'numberbox', options: {required: true, readonly: true, precision: 4}}">Rate</th>
                     <th data-options="field:'currency_local',width:80, editor: {type: 'textbox', options: {readonly: true}}">Currency</th>
-                    <th data-options="field:'total_local',width:120, formatter:numberformat, halign:'center', align:'right',editor: {type: 'numberbox', options: {required: true, readonly: true, precision: 4}}">Amount</th>
+                    <th data-options="field:'total_local',width:120, formatter:numberformat, halign:'center', align:'right', editor: {type: 'numberbox', options: {required: true, readonly: true, precision: 4}}">Amount</th>
                 </tr>
             </thead>
         </table>
@@ -915,6 +720,9 @@
 <!-- PDF -->
 <iframe id="printout" src="" style="width: 100%;" hidden></iframe>
 <script>
+    // Setting on/off FITUR AUTO POSTING JOURNAL => ubah ke TRUE jika ingin dinyalakan
+    let auto_posting_journal = true;
+
     function check_vat() {
         var check_vat = $("#check_vat").checkbox('options');
 
@@ -2465,124 +2273,148 @@
                                                     dataType: "json",
                                                     success: function(result) {
                                                         requestData(total, json, jml + 1, value);
-                                                        if (jml == total) {
-                                                            Swal.close();
-                                                            Swal.fire({
-                                                                title: "Add Posting Journal?",
-                                                                text: result.message + ". Do you want to save the Posting Journal too?",
-                                                                icon: result.theme,
-                                                                confirmButtonText: 'Yes, Add to Journal!',
-                                                                allowOutsideClick: false,
-                                                                showCancelButton: true,
-                                                            }).then((result) => {
-                                                                if (result.isConfirmed) {
-                                                                    Swal.fire({
-                                                                        title: 'Please Wait for Saving Data',
-                                                                        showConfirmButton: false,
-                                                                        allowOutsideClick: false,
-                                                                        allowEscapeKey: false,
-                                                                        didOpen: () => {
-                                                                            Swal.showLoading();
-                                                                        },
-                                                                    });
 
-                                                                    // AUTO GENERATE POSTING JOURNALS
-                                                                    var modul = 'PURCHASE INVOICING';
-                                                                    var journalDate = trans_date;
-                                                                    var companyId = $("#company_id").val();
-                                                                    var documentNo = $("#number").val();
-                                                                    
-                                                                    $.ajax({
-                                                                        method: 'post',
-                                                                        url: '<?= base_url('finance/journal_postings/datatablesTemp') ?>?journal_date=' + window.btoa(journalDate) +
-                                                                        "&modul=" + window.btoa(modul) +
-                                                                        "&company_id=" + window.btoa(companyId) +
-                                                                        "&document_no=" + window.btoa(documentNo),
-                                                                        data: {
-                                                                            journal_date: window.btoa(journalDate),
-                                                                            modul: window.btoa(modul),
-                                                                            company_id: window.btoa(companyId),
-                                                                            document_no: window.btoa(documentNo),
-                                                                        },
-                                                                        dataType: "json",
-                                                                        success: function(dataPosting) {
-                                                                            // console.log(JSON.stringify(dataPosting));
-                                                                            $.ajax({
-                                                                                type: "post",
-                                                                                url: "<?= base_url('finance/journal_postings/number/') ?>" + window.btoa(journalDate),
-                                                                                dataType: "html",
-                                                                                success: function(noGL) {
-                                                                                    var nomorGL = noGL;
-                                                                                    var rowsData  = dataPosting.rows;
-                                                                                    var totalData = dataPosting.total;
+                                                        if (auto_posting_journal !== true) { // -- setting on/off di awal <script>
+                                                            
+                                                            if (jml == total) {
+                                                                Swal.close();
+                                                                Swal.fire({
+                                                                    title: result.message,
+                                                                    icon: result.theme,
+                                                                    confirmButtonText: 'Ok',
+                                                                    allowOutsideClick: false,
+                                                                }).then((result) => {
+                                                                    if (result.isConfirmed) {
+                                                                        window.location.reload();
+                                                                    }
+                                                                });
 
-                                                                                    for (let no = 0; no < rowsData.length; no++) {
-                                                                                        // console.log(rowsData[no]);
-                                                                                        $.ajax({
-                                                                                            type: "post",
-                                                                                            url: '<?= base_url('finance/journal_postings/create') ?>',
-                                                                                            data: {
-                                                                                                journal_date: journalDate,
-                                                                                                modul: modul,
-                                                                                                journal_type_id: journal_type_id,
-                                                                                                number: nomorGL,
-                                                                                                remarks: null,
-                                                                                                trans_date: rowsData[no].trans_date,
-                                                                                                document_no: rowsData[no].document_no,
-                                                                                                invoice_no: rowsData[no].invoice_no,
-                                                                                                company_name: rowsData[no].company_name,
-                                                                                                account_number: rowsData[no].account_number,
-                                                                                                account_name: rowsData[no].account_name,
-                                                                                                description: rowsData[no].description,
-                                                                                                currency: rowsData[no].currency,
-                                                                                                original_debit: rowsData[no].original_debit,
-                                                                                                original_credit: rowsData[no].original_credit,
-                                                                                                rates: rowsData[no].rates,
-                                                                                                local_debit: rowsData[no].local_debit,
-                                                                                                local_credit: rowsData[no].local_credit
-                                                                                            },
-                                                                                            dataType: "json",
-                                                                                            success: function(responses) {
-                                                                                                if (responses.theme == "success") {
-                                                                                                    console.log('Success auto-generate Posting Journals #' + no);
-                                                                                                } else {
-                                                                                                    console.log('Failed! auto-generate Posting Journals #' + no);
-                                                                                                    console.log(responses);
+                                                                $('#dg').datagrid('reload');
+                                                            }
+
+                                                        } else {
+                                                            // ----- FITUR AUTO POSTING JOURNAL -----
+                                                            if (jml == total) { 
+                                                                Swal.close();
+                                                                Swal.fire({
+                                                                    title: "Add Posting Journal?",
+                                                                    text: result.message + ". Do you want to save the Posting Journal too?",
+                                                                    icon: result.theme,
+                                                                    confirmButtonText: 'Yes, Add to Journal!',
+                                                                    allowOutsideClick: false,
+                                                                    showCancelButton: true,
+                                                                }).then((result) => {
+                                                                    if (result.isConfirmed) {
+                                                                        Swal.fire({
+                                                                            title: 'Please Wait for Saving Data',
+                                                                            showConfirmButton: false,
+                                                                            allowOutsideClick: false,
+                                                                            allowEscapeKey: false,
+                                                                            didOpen: () => {
+                                                                                Swal.showLoading();
+                                                                            },
+                                                                        });
+
+                                                                        // AUTO GENERATE POSTING JOURNALS
+                                                                        var modul = 'PURCHASE INVOICING';
+                                                                        var journalDate = trans_date;
+                                                                        var companyId = $("#company_id").val();
+                                                                        var documentNo = $("#number").val();
+                                                                        
+                                                                        $.ajax({
+                                                                            method: 'post',
+                                                                            url: '<?= base_url('finance/journal_postings/datatablesTemp') ?>?journal_date=' + window.btoa(journalDate) +
+                                                                            "&modul=" + window.btoa(modul) +
+                                                                            "&company_id=" + window.btoa(companyId) +
+                                                                            "&document_no=" + window.btoa(documentNo),
+                                                                            data: {
+                                                                                journal_date: window.btoa(journalDate),
+                                                                                modul: window.btoa(modul),
+                                                                                company_id: window.btoa(companyId),
+                                                                                document_no: window.btoa(documentNo),
+                                                                            },
+                                                                            dataType: "json",
+                                                                            success: function(dataPosting) {
+                                                                                // console.log(JSON.stringify(dataPosting));
+                                                                                $.ajax({
+                                                                                    type: "post",
+                                                                                    url: "<?= base_url('finance/journal_postings/number/') ?>" + window.btoa(journalDate),
+                                                                                    dataType: "html",
+                                                                                    success: function(noGL) {
+                                                                                        var nomorGL = noGL;
+                                                                                        var rowsData  = dataPosting.rows;
+                                                                                        var totalData = dataPosting.total;
+
+                                                                                        for (let no = 0; no < rowsData.length; no++) {
+                                                                                            // console.log(rowsData[no]);
+                                                                                            $.ajax({
+                                                                                                type: "post",
+                                                                                                url: '<?= base_url('finance/journal_postings/create') ?>',
+                                                                                                data: {
+                                                                                                    journal_date: journalDate,
+                                                                                                    modul: modul,
+                                                                                                    journal_type_id: journal_type_id,
+                                                                                                    number: nomorGL,
+                                                                                                    remarks: null,
+                                                                                                    trans_date: rowsData[no].trans_date,
+                                                                                                    document_no: rowsData[no].document_no,
+                                                                                                    invoice_no: rowsData[no].invoice_no,
+                                                                                                    company_name: rowsData[no].company_name,
+                                                                                                    account_number: rowsData[no].account_number,
+                                                                                                    account_name: rowsData[no].account_name,
+                                                                                                    description: rowsData[no].description,
+                                                                                                    currency: rowsData[no].currency,
+                                                                                                    original_debit: rowsData[no].original_debit,
+                                                                                                    original_credit: rowsData[no].original_credit,
+                                                                                                    rates: rowsData[no].rates,
+                                                                                                    local_debit: rowsData[no].local_debit,
+                                                                                                    local_credit: rowsData[no].local_credit
+                                                                                                },
+                                                                                                dataType: "json",
+                                                                                                success: function(responses) {
+                                                                                                    if (responses.theme == "success") {
+                                                                                                        console.log('Success auto-generate Posting Journals #' + no);
+                                                                                                    } else {
+                                                                                                        console.log('Failed! auto-generate Posting Journals #' + no);
+                                                                                                        console.log(responses);
+                                                                                                    }
                                                                                                 }
-                                                                                            }
+                                                                                            });
+                                                                                        }
+
+                                                                                        Swal.fire({
+                                                                                            title: "Good Job",
+                                                                                            icon: "success",
+                                                                                            text: "Data Successfully created to Posting Journal with code: " + nomorGL,
+                                                                                            confirmButtonText: 'Done',
+                                                                                            allowOutsideClick: false,
+                                                                                        }).then(function(){ 
+                                                                                            window.location.reload();
                                                                                         });
                                                                                     }
+                                                                                });
+                                                                            }
+                                                                        });
+                                                                        // END - AUTO GENERATE POSTING JOURNAL
+                                                                    } else {
+                                                                        // WITHOUT AUTO GENERATE POSTING JOURNAL
+                                                                        Swal.fire({
+                                                                            title: "Purchase Invoices",
+                                                                            icon: "info",
+                                                                            text: "Data Successfully saved without Posting Journal.",
+                                                                            confirmButtonText: 'Done',
+                                                                            allowOutsideClick: false,
+                                                                        }).then(function(){ 
+                                                                            window.location.reload();
+                                                                        });
+                                                                    }
+                                                                });
 
-                                                                                    Swal.fire({
-                                                                                        title: "Good Job",
-                                                                                        icon: "success",
-                                                                                        text: "Data Successfully created to Posting Journal with code: " + nomorGL,
-                                                                                        confirmButtonText: 'Done',
-                                                                                        allowOutsideClick: false,
-                                                                                    }).then(function(){ 
-                                                                                        window.location.reload();
-                                                                                    });
-                                                                                }
-                                                                            });
-                                                                        }
-                                                                    });
-                                                                    // END - AUTO GENERATE POSTING JOURNAL
-                                                                } else {
-                                                                    // WITHOUT AUTO GENERATE POSTING JOURNAL
-                                                                    Swal.fire({
-                                                                        title: "Purchase Invoices",
-                                                                        icon: "info",
-                                                                        text: "Data Successfully saved without Posting Journal.",
-                                                                        confirmButtonText: 'Done',
-                                                                        allowOutsideClick: false,
-                                                                    }).then(function(){ 
-                                                                        window.location.reload();
-                                                                    });
-                                                                }
-                                                            });
-
-                                                            $('#dg').datagrid('reload');
+                                                                $('#dg').datagrid('reload');
+                                                            }
+                                                            // ----- END FITUR AUTO POSTING JOURNAL -----
                                                         }
+                                                        
                                                     }
                                                 });
                                             }

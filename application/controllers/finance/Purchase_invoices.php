@@ -712,21 +712,42 @@ class Purchase_invoices extends CI_Controller
             $post = $this->input->post();
             // $purchase_invoices = $this->crud->read('purchase_invoices', [], ["por_no" => $post['por_no'], "item_no" => $post['item_no'], "supplier_id" => $post['supplier_id'], "trans_date" => $post['trans_date']]);
 
-            if (@$post['id'] != "") {
+            if (!empty($post['id'])) {
                 $send = $this->crud->update('purchase_invoices', ["id" => $post['id']], $post);
                 echo $send;
+
             } else {
-                $send = $this->crud->create('purchase_invoices', $post);
-                if ($send) {
-                    if ($post['por_no'] != "-") {
-                        if ($post['type'] != "dp") {
-                            $update = $this->crud->update('purchase_order_receipts', ["receipt_no" => $post['por_no'], "po_no" => $post['po_no'], "item_rm_id" => $post['item_rm_id'], "supplier_id" => $post['supplier_id']], ["status" => 1]);
-                        }
+                // Check existing data mencegah double insert
+                $this->db->where('por_no', @$post['por_no']);
+                $this->db->where('po_no', @$post['po_no']);
+                $checkExisting = $this->db->get('purchase_invoices')->row();
+
+                if ($checkExisting) {
+                    // Jika data sudah ada, lakukan UPDATE pada record tersebut
+                    $invoice_id_to_update = $checkExisting->id;
+                    $this->db->update('purchase_invoices', $post, ["id" => $invoice_id_to_update]);
+                    
+                    if ($this->db->affected_rows() > 0) {
+                        echo json_encode(array("title" => "Good Job", "message" => "Data Updated Successfully", "theme" => "success"));
                     } else {
-                        $update = $this->crud->update('purchase_order_others', ["po_no" => $post['po_no'], "item_rm_id" => $post['item_rm_id'], "supplier_id" => $post['supplier_id']], ["status" => 1]);
+                        echo json_encode(array("title" => "Failed", "message" => "Failed to update data", "theme" => "failed"));
                     }
+                    
+                } else {
+                    // Kombinasi por_no dan po_no belum ada, lakukan CREATE record baru
+                    $send = $this->crud->create('purchase_invoices', $post);
+                    if ($send) {
+                        if ($post['por_no'] != "-") {
+                            if ($post['type'] != "dp") {
+                                $update = $this->crud->update('purchase_order_receipts', ["receipt_no" => $post['por_no'], "po_no" => $post['po_no'], "item_rm_id" => $post['item_rm_id'], "supplier_id" => $post['supplier_id']], ["status" => 1]);
+                            }
+                        } else {
+                            $update = $this->crud->update('purchase_order_others', ["po_no" => $post['po_no'], "item_rm_id" => $post['item_rm_id'], "supplier_id" => $post['supplier_id']], ["status" => 1]);
+                        }
+                    }
+                    echo $send;
+
                 }
-                echo $send;
             }
         } else {
             show_error("Cannot Process your request");
