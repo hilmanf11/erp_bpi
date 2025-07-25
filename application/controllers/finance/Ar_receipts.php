@@ -69,21 +69,50 @@ class Ar_receipts extends CI_Controller
         echo json_encode($journalData);
     }
 
-    public function readExchangeRate()
+    // public function readExchangeRate()
+    // {
+    //     $receipt_date = $this->input->post('receipt_date');
+    //     $currency = $this->input->post('currency');
+    //     $monthBf = date('Y-m-01', strtotime('-1 month', strtotime($receipt_date)));
+
+    //     $exchange = $this->crud->read('exchange_rates', [], ["start_date" => $monthBf, "currency_from" => $currency, "currency_to" => "IDR"]);
+
+    //     if ($exchange) {
+    //         $amount = $exchange->middle;
+    //     } else {
+    //         $amount = 0;
+    //     }
+
+    //     echo "Rp. " . number_format($amount, 2);
+    // }
+    
+    function readExchangeRate()
     {
         $receipt_date = $this->input->post('receipt_date');
         $currency = $this->input->post('currency');
-        $monthBf = date('Y-m-01', strtotime('-1 month', strtotime($receipt_date)));
 
-        $exchange = $this->crud->read('exchange_rates', [], ["start_date" => $monthBf, "currency_from" => $currency, "currency_to" => "IDR"]);
+        $this->db->select('middle, currency_from, currency_to');
+        $this->db->from('exchange_rates');
+        $this->db->where('currency_from', $currency);
+        $this->db->where('currency_to', 'IDR');
+        $this->db->where("'$receipt_date' BETWEEN start_date AND end_date", null, false); // penting: raw SQL
 
-        if ($exchange) {
-            $amount = $exchange->middle;
+        $query = $this->db->get()->row();
+
+        if ($query) {
+            $amount = $query->middle;
+            $currency_from = $query->currency_from;
+            $currency_to = $query->currency_to;
         } else {
             $amount = 0;
+            $currency_from = '-';
+            $currency_to = '-';
         }
 
-        echo "Rp. " . number_format($amount, 2);
+        echo json_encode([
+            'amount' => $amount,
+            'label' => "Rate $currency_from to $currency_to: Rp. " . number_format($amount, 2)
+        ]);
     }
 
     public function calculateJournal($journal_type_id = "", $bank_account = "")
@@ -115,8 +144,16 @@ class Ar_receipts extends CI_Controller
 
         foreach ($banks as $bank) {
             if ($currency != "IDR") {
-                $monthBf = date('Y-m-01', strtotime('-1 month', strtotime($receipt_date)));
-                $exchange = $this->crud->read('exchange_rates', [], ["start_date" => $monthBf, "currency_from" => $currency, "currency_to" => "IDR"]);
+                // $monthBf = date('Y-m-01', strtotime('-1 month', strtotime($receipt_date)));
+                // $exchange = $this->crud->read('exchange_rates', [], ["start_date" => $monthBf, "currency_from" => $currency, "currency_to" => "IDR"]);
+                
+                $this->db->select('middle');
+                $this->db->from('exchange_rates');
+                $this->db->where('currency_from', $currency);
+                $this->db->where('currency_to', 'IDR');
+                $this->db->where("'$receipt_date' BETWEEN start_date AND end_date", null, false); // penting: raw SQL
+
+                $exchange = $this->db->get()->row();
 
                 if ($exchange) {
                     $amount = ($grand_total * $exchange->middle);
@@ -149,9 +186,17 @@ class Ar_receipts extends CI_Controller
             $receipt_date = $jsonData['receipt_date'];
             $total = $jsonData["receipt"];
 
-            $monthBf = date('Y-m-01', strtotime('-1 month', strtotime($receipt_date)));
+            // $monthBf = date('Y-m-01', strtotime('-1 month', strtotime($receipt_date)));
 
-            $exchange = $this->crud->read('exchange_rates', [], ["start_date" => $monthBf, "currency_from" => $currency, "currency_to" => "IDR"]);
+            // $exchange = $this->crud->read('exchange_rates', [], ["start_date" => $monthBf, "currency_from" => $currency, "currency_to" => "IDR"]);
+            
+            $this->db->select('middle');
+            $this->db->from('exchange_rates');
+            $this->db->where('currency_from', $currency);
+            $this->db->where('currency_to', 'IDR');
+            $this->db->where("'$receipt_date' BETWEEN start_date AND end_date", null, false); // penting: raw SQL
+
+            $exchange = $this->db->get()->row();
 
             if ($currency != "IDR") {
                 if ($exchange) {
@@ -281,8 +326,6 @@ class Ar_receipts extends CI_Controller
 
     public function number($trans_date, $bank_code)
     {
-        if (!empty($trans_date) && !empty($bank_code)) {
-
         $decoded_date = base64_decode($trans_date);
         $year = date("y", strtotime($decoded_date));
         $month = date("m", strtotime($decoded_date));
@@ -299,11 +342,6 @@ class Ar_receipts extends CI_Controller
             $autoID = sprintf("%03s", $urutan);
         }
         echo $autoID."/".$datenow;
-            
-        } else {
-            $this->output->set_status_header(400); // Bad Request
-            echo json_encode(['success' => false, 'message' => 'Transaction Date and Bank Code is required!']);
-        }
     }
 
     public function datatablesTemp()
