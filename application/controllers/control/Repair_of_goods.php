@@ -106,6 +106,7 @@ class Repair_of_goods extends CI_Controller
             $filter_to = @base64_decode($get['filter_to']);
             $filter_document_no = @base64_decode($get['filter_document_no']);
             $filter_item_fg_id = @base64_decode($get['filter_item_fg_id']);
+            $filter_status = @base64_decode($get['filter_status']);
            
 
             $page = $this->input->post('page');
@@ -137,6 +138,7 @@ class Repair_of_goods extends CI_Controller
             }
             $this->db->like('a.document_no', $filter_document_no);
             $this->db->like('a.item_fg_id', $filter_item_fg_id);
+            $this->db->like('a.status', $filter_status);
             $this->db->group_by('a.document_no');
             $this->db->order_by('a.created_date', 'DESC');
             //Total Data
@@ -284,6 +286,7 @@ class Repair_of_goods extends CI_Controller
         $filter_to = @base64_decode($get['filter_to']);
         $filter_document_no = @base64_decode($get['filter_document_no']);
         $filter_item_fg_id = @base64_decode($get['filter_item_fg_id']);
+        $filter_status = @base64_decode($get['filter_status']);
 
         //Config
         $this->db->select('*');
@@ -299,6 +302,7 @@ class Repair_of_goods extends CI_Controller
         }
         $this->db->like('a.document_no', $filter_document_no);
         $this->db->like('a.item_fg_id', $filter_item_fg_id);
+        $this->db->like('a.status', $filter_status);
         $this->db->order_by('a.document_no', 'ASC');
         $records = $this->db->get()->result_array();
 
@@ -337,9 +341,16 @@ class Repair_of_goods extends CI_Controller
                 <th>Uom</th>
                 <th>Qty</th>
                 <th>Remarks</th>
+                <th>Status</th>
             </tr>';
         $no = 1;
         foreach ($records as $data) {
+            if($data['status'] == '1'){
+                $status = 'CLOSED';
+            }else{
+                $status = 'OPEN';
+            }
+
             $html .= '<tr>
                         <td>' . $no . '</td>
                          <td>' . $data['document_no'] . '</td>
@@ -349,6 +360,7 @@ class Repair_of_goods extends CI_Controller
                         <td>' . $data['uom'] . '</td>
                         <td>' . $data['qty'] . '</td>
                         <td>' . $data['remarks'] . '</td>
+                        <td>' . $status . '</td>
                     </tr>';
             $no++;
         }
