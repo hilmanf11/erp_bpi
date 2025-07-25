@@ -381,7 +381,7 @@
             <a href="javascript:void(0)" class="easyui-linkbutton" data-options="plain:true" onclick="removeit3()"><i class="fa fa-times"></i> Remove</a>
         </div>
 
-        <table id="dg2" class="easyui-datagrid" style="width:100%;" title="list AR Receipt" toolbar="#toolbar2" data-options="singleSelect: true" idField="sales_invoice">
+        <table id="dg2" class="easyui-datagrid" style="width:100%;" title="List AR Receipt" toolbar="#toolbar2" data-options="singleSelect: true" idField="sales_invoice">
             <thead>
                 <tr>
                     <th data-options="field:'delete',width:120, formatter:removebtn">Action</th>
@@ -1972,7 +1972,7 @@
             
 
             $.ajax({
-                url: '<?= base_url('finance/purchase_invoices/readJournalType/') ?>',
+                url: '<?= base_url('finance/ar_receipts/readJournalType/') ?>',
                 type: 'POST',
                 dataType: 'json',
                 data: {
