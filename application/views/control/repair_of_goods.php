@@ -23,9 +23,10 @@
 <!-- TOOLBAR DATAGRID -->
 <div id="toolbar" style="height: 230px; padding: 10px;">
     <!-- <div style="width: 100%; display: grid; grid-template-columns: auto auto auto; grid-gap: 5px; display: flex;"> -->
-    <div style="width: 50%;">
+    <div style="width: 100%;">
         <fieldset style="width: 100%; border:2px solid #d0d0d0; margin-bottom: 5px; margin-top: 5px; border-radius:4px;">
             <legend><b>Form Filter Data</b></legend>
+            <div style="float: left; width: 50%;">
                 <div class="fitem">
                     <span style="width:35%; display:inline-block;">Trans Date</span>
                     <input style="width:30%;" id="filter_from" value="<?= date("Y-m-01") ?>" data-options="formatter:myformatter,parser:myparser,editable:false" class="easyui-datebox">
@@ -42,6 +43,16 @@
                 <div class="fitem">
                     <span style="width:35%; display:inline-block;"></span>
                     <a href="javascript:;" class="easyui-linkbutton" onclick="filter()"><i class="fa fa-search"></i> Filter Data</a>
+                </div>
+            </div>
+            <div style="float: left; width: 50%;">
+                <div class="fitem">
+                    <span style="width:35%; display:inline-block;">Status</span>
+                    <select style="width:60%;" id="filter_status" class="easyui-combobox" panelHeight="auto">
+                        <option value="">Select All</option>
+                        <option value="0">OPEN</option>
+                        <option value="1">CLOSE</option>
+                    </select>
                 </div>
             </div>
         </fieldset>
@@ -359,11 +370,13 @@
         var filter_to = $("#filter_to").datebox('getValue');
         var filter_document_no = $("#filter_document_no").combobox('getValue');
         var filter_item_fg_id = $("#filter_item_fg_id").combogrid('getValue');
+        var filter_status = $("#filter_status").combobox('getValue');
 
         var url = "?filter_from=" + window.btoa(filter_from) +
             "&filter_to=" + window.btoa(filter_to) +
             "&filter_document_no=" + window.btoa(filter_document_no) +
-            "&filter_item_fg_id=" + window.btoa(filter_item_fg_id);
+            "&filter_item_fg_id=" + window.btoa(filter_item_fg_id) +
+            "&filter_status=" + window.btoa(filter_status);
 
         $('#dg').datagrid({
             url: '<?= base_url('control/repair_of_goods/datatables') ?>' + url
@@ -384,12 +397,13 @@
         var filter_to = $("#filter_to").datebox('getValue');
         var filter_document_no = $("#filter_document_no").combobox('getValue');
         var filter_item_fg_id = $("#filter_item_fg_id").combogrid('getValue');
-
+        var filter_status = $("#filter_status").combobox('getValue');
 
         var url = "?filter_from=" + window.btoa(filter_from) +
             "&filter_to=" + window.btoa(filter_to) +
             "&filter_document_no=" + window.btoa(filter_document_no) +
-            "&filter_item_fg_id=" + window.btoa(filter_item_fg_id);
+            "&filter_item_fg_id=" + window.btoa(filter_item_fg_id) +
+            "&filter_status=" + window.btoa(filter_status);
 
         window.location.assign('<?= base_url('control/repair_of_goods/print/excel') ?>' + url);
     }
