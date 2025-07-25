@@ -75,8 +75,14 @@ class Output_productions extends CI_Controller
         echo json_encode($send);
     }
 
-    //GET DATA
+    public function readMachine()
+    {
+        $post = isset($_POST['q']) ? $_POST['q'] : "";
+        $send = $this->crud->query("SELECT * FROM machines WHERE `status` = 0 and (number like '%$post%' or name like '%$post%')");
+        echo json_encode($send);
+    }
 
+    //GET DATA
     public function autonumber()
     {
         $ymd = date("ymd");
@@ -166,9 +172,10 @@ class Output_productions extends CI_Controller
             $number = base64_decode($this->input->get('number'));
             $filter_item_fg_id = base64_decode($this->input->get('item_fg_id'));
 
-            $this->db->select("a.*, b.number as item_fg_number, b.name as item_fg_name");
+            $this->db->select("a.*, b.number as item_fg_number, b.name as item_fg_name, a.machine_number");
             $this->db->from('output_productions a');
             $this->db->join('item_fg b', 'a.item_fg_id = b.id', 'left');
+            $this->db->join('machines c', 'a.machine_number = c.number', 'left');
             $this->db->where('a.number', $number);
             if ($filter_item_fg_id != "") {
                 $this->db->where('a.item_fg_id', $filter_item_fg_id);
@@ -254,7 +261,8 @@ class Output_productions extends CI_Controller
                 'wo_no' => $data->val($i, 6),
                 'qty' => $data->val($i, 7),
                 'qty_wip' => $data->val($i, 8),
-                'remarks' => $data->val($i, 9),
+                'machine_number' => $data->val($i, 9),
+                'remarks' => $data->val($i, 10),
             );
         }
         $datas['total'] = count($datas);
@@ -298,6 +306,7 @@ class Output_productions extends CI_Controller
             $data = $this->input->post('data');
 
             $item_fg = $this->crud->read('item_fg', [], array("number" => $data['item_number']));
+            $machines = $this->crud->read('machines', [], array("number" => $data['machine_number']));
             $send = $this->crud->query("
                 SELECT DISTINCT a.item_fg_id, a.workorder AS wo_no, a.period, b.number, b.name, a.lot_no, 'Supply Sheets' AS modul
                 FROM supply_sheets a 
@@ -319,6 +328,9 @@ class Output_productions extends CI_Controller
             if (empty($item_fg) || empty($item_fg->id)) {
                 echo json_encode(array("title" => "Not Found","message" => "Product number " . $data['item_number'] . " NOT FOUND","theme" => "error"));
                 // return;
+            } elseif (empty($machines)) {
+            echo json_encode(array("title" => "Not Found","message" => "Machine number " . $data['machine_number'] . " NOT FOUND IN MODUL MACHINE","theme" => "error"));
+            // return;
             } elseif (!in_array($item_fg->id, $item_fg_ids)) {
                 echo json_encode(array("title" => "Not Found","message" => "Product number " . $data['item_number'] . " NOT FOUND IN PERIOD " . $data['period'],"theme" => "error"));
                 // return;
@@ -353,6 +365,7 @@ class Output_productions extends CI_Controller
                     "shift" => $data['shift'],
                     "remarks" => $data['remarks'],
                     "lot_no" => $lot_no,
+                    "machine_number" => $data['machine_number'],
                     "type" => "Upload",
                 );
 
@@ -447,6 +460,7 @@ class Output_productions extends CI_Controller
                 <th>Work Order No</th>
                 <th>Qty</th>
                 <th>Qty WIP</th>
+                <th>Machine No</th>
                 <th>Remarks</th>
             </tr>';
         $no = 1;
@@ -464,6 +478,7 @@ class Output_productions extends CI_Controller
                     <td>' . $data['wo_no'] . '</td>
                     <td>' . $data['qty'] . '</td>
                     <td>' . $data['qty_wip'] . '</td>
+                    <td>' . $data['machine_number'] . '</td>
                     <td>' . $data['remarks'] . '</td>';
             $no++;
         }

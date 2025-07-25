@@ -323,6 +323,35 @@
                         }
                     }
                 }, {
+                    field: 'machine_number',
+                    width: 150,
+                    halign: 'center',
+                    title: "Machine No",
+                    editor: {
+                        type: 'combogrid',
+                        options: {
+                            url: '<?= base_url('control/output_productions/readMachine/'); ?>',
+                            required: true,
+                            panelWidth: 200,
+                            idField: 'number',
+                            textField: 'Machine Number',
+                            mode: 'remote',
+                            fitColumns: true,
+                            prompt: 'Choose Machine No',
+                            columns: [
+                                [{
+                                    field: 'number',
+                                    title: 'Machine No',
+                                    width: 150
+                                }, {
+                                    field: 'name',
+                                    title: 'Machine Name',
+                                    width: 200
+                                }]
+                            ],
+                        }
+                    }
+                }, {
                     field: 'remarks',
                     width: 200,
                     halign: 'center',
@@ -661,6 +690,12 @@
                             width: 80,
                             formatter: numberformat
                         }, {
+                            field: 'machine_number',
+                            title: 'Machine <br>Number',
+                            halign: 'center',
+                            align: 'right',
+                            width: 80,
+                        }, {
                             field: 'remarks',
                             title: 'Remarks',
                             width: 200,
@@ -708,6 +743,7 @@
                                 wo_no: rows[i].wo_no,
                                 lot_no: rows[i].lot_no,
                                 qty: rows[i].qty,
+                                machine_number: rows[i].machine_number,
                                 qty_wip: rows[i].qty_wip,
                                 remarks: rows[i].remarks
                             };
