@@ -920,11 +920,9 @@
         if (endEditing()) {
 
             $('#dg2').datagrid('appendRow', {
-
                 amount: '0',
-
                 balance: '0',
-
+                currency: 'IDR',
             });
 
             editIndex = $('#dg2').datagrid('getRows').length - 1;

@@ -757,6 +757,7 @@
         if (endEditing()) {
             $('#dg2').datagrid('appendRow', {
                 delete: '0',
+                currency: 'IDR',
             });
             editIndex = $('#dg2').datagrid('getRows').length - 1;
             $('#dg2').datagrid('selectRow', editIndex).datagrid('beginEdit', editIndex);

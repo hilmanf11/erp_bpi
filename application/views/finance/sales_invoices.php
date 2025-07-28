@@ -1938,7 +1938,8 @@
     function append() {
         if (endEditing()) {
             $('#dg2').datagrid('appendRow', {
-                "action": 0
+                "action": 0,
+                "currency": 'IDR',
             });
 
             editIndex = $('#dg2').datagrid('getRows').length - 1;
