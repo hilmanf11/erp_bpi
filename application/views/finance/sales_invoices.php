@@ -2200,10 +2200,6 @@
                         //     preview(); // refresh dg2 journal list
                         // },
                         onUncheck: function(index, rowData) {
-                            // --- otomatis ubah dg2 ketika Un-checklist Delivery Notes ---
-                            let uncheckedDeliveryNoteNo = rowData.delivery_note_no;
-                            console.log("Unchecked " + uncheckedDeliveryNoteNo);
-
                             // Dapatkan semua baris yang saat ini terceklis di combogrid
                             let combogridGrid = $('#delivery_note_no').combogrid('grid');
                             let checkedRows = combogridGrid.datagrid('getChecked');
@@ -2216,7 +2212,36 @@
                                 return;
                             }
 
-                            preview(); // refresh dg2 journal list
+                            // --- otomatis ubah dg2 ketika Un-checklist Delivery Notes ---
+                            let uncheckedDeliveryNoteNo = rowData.delivery_note_no;
+                            console.log("Unchecked " + uncheckedDeliveryNoteNo);
+
+                            $.messager.confirm('Confirm', 'Are you sure want to remove data from this POR?', function(r) {
+                                if (r) {
+                                    $.ajax({
+                                        method: 'post',
+                                        url: '<?= base_url('finance/sales_invoices/deleteOnUncheck') ?>',
+                                        data: {
+                                            delivery_note_no: uncheckedDeliveryNoteNo,
+                                        },
+                                        dataType: "json",
+                                        success: function(result) {
+                                            console.log("Delete on Uncheck ", result);
+                                            $.messager.alert("Success", result.message, 'success');                                                    
+                                        },
+                                        error: function(jqXHR, textStatus, errorThrown) {
+                                            toastr.error(jqXHR.statusText);
+                                            $.messager.alert("Error", jqXHR.statusText, 'error');                                                    
+                                        },
+                                        complete: function(data) {
+                                            $('#dg').datagrid('reload');
+                                        }
+                                    });
+
+                                    preview(); // refresh dg2 journal list
+                                    addJournal(); // refresh journal calculate
+                                }
+                            });
                             
                         },
                     });

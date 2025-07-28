@@ -769,6 +769,42 @@ class Sales_invoices extends CI_Controller
         $update = $this->db->update('delivery_notes', ["status" => "0"], ["delivery_note_no" => $data['delivery_note_no'], "item_fg_id"=> $data['item_fg_id']]);
         echo $send;
     }
+    
+    public function deleteOnUncheck() 
+    {
+        $data = $this->input->post();
+        $send = $this->crud->delete('sales_invoices', $data);
+        echo $send;
+
+        if ($this->input->method() === 'post') 
+        {
+            $delivery_note_no = $this->input->post('delivery_note_no');
+
+            if ($data !== null) 
+            {
+                // check availability first 
+                $check_availability = $this->crud->read("sales_invoices", [], ["delivery_note_no" => $delivery_note_no]);
+                if (!empty($check_availability)) {
+                    $this->db->where_in('delivery_note_no', $delivery_note_no);
+                    $result = $this->db->delete('sales_invoices'); // Mengembalikan TRUE/FALSE
+                    echo json_encode($result);
+
+                    // if ($result) {
+                    //     $rows_affected = $this->db->affected_rows(); // lihat data yang telah dihapus
+                    //     echo json_encode(['success' => true, 'message' => "Data $rows_affected berhasil dihapus."]);
+                    // } else {
+                    //     echo json_encode(['success' => false, 'message' => 'Gagal menghapus data.']);
+                    // }
+                }
+            } else {
+                $this->output->set_status_header(400); // Bad Request
+                echo json_encode(['success' => false, 'message' => 'Parameter ID item tidak lengkap.']);
+            }
+        } else {
+            $this->output->set_status_header(405); // Method Not Allowed
+            echo json_encode(['success' => false, 'message' => 'Metode request tidak diizinkan.']);
+        }
+    }
 
     public function deleteJournal()
     {
