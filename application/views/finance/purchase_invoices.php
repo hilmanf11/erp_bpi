@@ -1656,7 +1656,7 @@
                                     console.log("Unchecked " + uncheckedPOR);                                    
 
                                     // delete from purchase_invoices by POR
-                                    $.messager.confirm('Confirm', 'Are you sure remove data from this POR?', function(r) {
+                                    $.messager.confirm('Confirm', 'Are you sure want to remove data from this POR?', function(r) {
                                         if (r) {
                                             $.ajax({
                                                 method: 'post',
@@ -1666,8 +1666,9 @@
                                                 },
                                                 dataType: "json",
                                                 success: function(result) {
-                                                    console.log("Delete on Update ", result);
-                                                    $.messager.alert("Success", result.message, 'success');                                                    
+                                                    console.log("Delete on Uncheck ", result);
+                                                    toastr.success(result.message);
+                                                    $.messager.alert("Warning", "<b>Please click Preview Data and Add To Journal again before Save All</b>", 'warning');
                                                 },
                                                 error: function(jqXHR, textStatus, errorThrown) {
                                                     toastr.error(jqXHR.statusText);

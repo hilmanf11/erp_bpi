@@ -2227,7 +2227,8 @@
                                         dataType: "json",
                                         success: function(result) {
                                             console.log("Delete on Uncheck ", result);
-                                            $.messager.alert("Success", result.message, 'success');                                                    
+                                            toastr.success(result.message);
+                                            $.messager.alert("Warning", "<b>Please click Preview Data and Add To Journal again before Save All</b>", 'warning');
                                         },
                                         error: function(jqXHR, textStatus, errorThrown) {
                                             toastr.error(jqXHR.statusText);
