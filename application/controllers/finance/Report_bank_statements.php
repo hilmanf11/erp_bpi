@@ -43,6 +43,9 @@ class Report_bank_statements extends CI_Controller
         $filter_to = base64_decode($this->input->get("filter_to"));
         $filter_account = base64_decode($this->input->get("filter_account"));
         $filter_currency = base64_decode($this->input->get("filter_currency"));
+
+        $where_currency = !empty($filter_currency) ? "AND b.currency = '" . $filter_currency . "'" : "";
+        $where_currency_journal = !empty($filter_currency) ? "AND a.currency = '" . $filter_currency . "'" : "";
         
         $time_start = new DateTime($filter_from);
         $time_to = new DateTime($filter_to);
@@ -55,7 +58,8 @@ class Report_bank_statements extends CI_Controller
             FROM (SELECT a.*, b.currency
             FROM ar_receipt_journals a 
             JOIN ar_receipts b ON a.receipt_no = b.receipt_no 
-            WHERE b.receipt_date < '$filter_from' and a.account_number = '$filter_account' 
+            WHERE b.receipt_date < '$filter_from' and a.account_number = '$filter_account'
+            " . $where_currency . "
             GROUP BY a.receipt_no, a.account_number, a.description) z GROUP BY z.account_number");
 
         $ap_payment_begin = $this->crud->query("SELECT a.account_number, (SUM(a.local_debit) - SUM(a.local_credit)) as local_begin, (SUM(a.debit) - SUM(a.credit)) as original_begin
@@ -63,13 +67,16 @@ class Report_bank_statements extends CI_Controller
             SELECT a.*
             FROM ap_payment_journals a 
             JOIN ap_payments b ON a.payment_no = b.payment_no 
-            WHERE b.payment_date between '2023-01-01' and '$filter_from_1' and a.account_number = '$filter_account' GROUP BY a.account_number, b.payment_no) a
+            WHERE b.payment_date between '2023-01-01' and '$filter_from_1' and a.account_number = '$filter_account' 
+            " . $where_currency . "
+            GROUP BY a.account_number, b.payment_no) a
             GROUP BY a.account_number");
 
         $journal_posting_begin = $this->crud->query("SELECT a.account_number, (SUM(a.local_debit) - SUM(a.local_credit)) as local_begin 
             FROM journal_postings a 
             JOIN journal_revaluations b ON a.document_no = b.number and b.flag = 2
             WHERE a.invoice_no like '%CASHBANK%' and a.account_number = '$filter_account' and a.journal_date < '$filter_from' 
+            " . $where_currency_journal . "
             GROUP BY a.account_number");
 
         $datas = array();
@@ -88,6 +95,7 @@ class Report_bank_statements extends CI_Controller
                 JOIN ar_receipts b ON a.receipt_no = b.receipt_no 
                 LEFT JOIN journal_postings c ON b.receipt_no = c.document_no
                 WHERE b.receipt_date = '$trans_date' and a.account_number = '$filter_account' 
+                " . $where_currency . "
                 GROUP BY a.receipt_no, a.account_number, a.description");
 
             $ap_payments = $this->crud->query("SELECT a.*, a.description, b.currency, c.number as gl_no
@@ -95,11 +103,13 @@ class Report_bank_statements extends CI_Controller
                 JOIN ap_payments b ON a.payment_no = b.payment_no 
                 LEFT JOIN journal_postings c ON b.payment_no = c.document_no
                 WHERE b.payment_date = '$trans_date' and a.account_number = '$filter_account' 
+                " . $where_currency . "
                 GROUP BY a.payment_no, a.account_number");
 
             $journal_postings = $this->crud->query("SELECT a.*
                 FROM journal_postings a 
                 WHERE a.account_number = '$filter_account' and a.journal_date = '$trans_date'
+                " . $where_currency_journal .  "
                 GROUP BY a.number");
             
             foreach ($ar_receipts as $ar_receipt) {
@@ -274,11 +284,11 @@ class Report_bank_statements extends CI_Controller
                             <td></td>
                             <td style="text-align:right;font-weight:bold;"></td>
                             <td style="text-align:right;font-weight:bold;"></td>
-                            <td style="text-align:right;font-weight:bold;">' . number_format($opening_balance_original, 2) . '</td>
+                            <td style="text-align:right;font-weight:bold;">' . number_format($opening_balance_original, 2, ",", ".") . '</td>
                             <td style="text-align:right;font-weight:bold;"></td>
                             <td style="text-align:right;font-weight:bold;"></td>
                             <td style="text-align:right;font-weight:bold;"></td>
-                            <td style="text-align:right;font-weight:bold;">' . number_format($opening_balance_local, 2) . '</td>
+                            <td style="text-align:right;font-weight:bold;">' . number_format($opening_balance_local, 2, ",", ".") . '</td>
                         </tr>';
 
         $no = 1;
@@ -294,13 +304,13 @@ class Report_bank_statements extends CI_Controller
                             <td>' . $data['gl_no'] . '</td>
                             <td>' . $data['description'] . '</td>
                             <td>' . $data['currency'] . '</td>
-                            <td style="text-align:right;font-weight:bold;">' . number_format($data['original_debit'], 2) . '</td>
-                            <td style="text-align:right;font-weight:bold;">' . number_format($data['original_credit'], 2) . '</td>
-                            <td style="text-align:right;font-weight:bold;">' . number_format($data['original_balance'], 2) . '</td>
-                            <td style="text-align:right;font-weight:bold;">' . number_format($data['rate'], 2) . '</td>
-                            <td style="text-align:right;font-weight:bold;">' . number_format($data['local_debit'], 2) . '</td>
-                            <td style="text-align:right;font-weight:bold;">' . number_format($data['local_credit'], 2) . '</td>
-                            <td style="text-align:right;font-weight:bold;">' . number_format($data['local_balance'], 2) . '</td>
+                            <td style="text-align:right;font-weight:bold;">' . number_format($data['original_debit'], 2, ",", ".") . '</td>
+                            <td style="text-align:right;font-weight:bold;">' . number_format($data['original_credit'], 2, ",", ".") . '</td>
+                            <td style="text-align:right;font-weight:bold;">' . number_format($data['original_balance'], 2, ",", ".") . '</td>
+                            <td style="text-align:right;font-weight:bold;">' . number_format($data['rate'], 2, ",", ".") . '</td>
+                            <td style="text-align:right;font-weight:bold;">' . number_format($data['local_debit'], 2, ",", ".") . '</td>
+                            <td style="text-align:right;font-weight:bold;">' . number_format($data['local_credit'], 2, ",", ".") . '</td>
+                            <td style="text-align:right;font-weight:bold;">' . number_format($data['local_balance'], 2, ",", ".") . '</td>
                         </tr>';
             $no++;
             $grand_total_debit_original += $data['original_debit'];
@@ -311,12 +321,12 @@ class Report_bank_statements extends CI_Controller
 
         $html .= '  <tr style="background:#EBEBEB;">
                         <td colspan="6"><b>GRAND TOTAL</b></td>
-                        <td style="text-align:right;"><b>' . number_format(@$grand_total_debit_original, 2) . '</b></td>
-                        <td style="text-align:right;"><b>' . number_format(@$grand_total_credit_original, 2) . '</b></td>
+                        <td style="text-align:right;"><b>' . number_format(@$grand_total_debit_original, 2, ",", ".") . '</b></td>
+                        <td style="text-align:right;"><b>' . number_format(@$grand_total_credit_original, 2, ",", ".") . '</b></td>
                         <td style="text-align:right;"><b>-</b></td>
                         <td style="text-align:right;"><b>-</b></td>
-                        <td style="text-align:right;"><b>' . number_format($grand_total_debit_local, 2) . '</b></td>
-                        <td style="text-align:right;"><b>' . number_format($grand_total_credit_local, 2) . '</b></td>
+                        <td style="text-align:right;"><b>' . number_format($grand_total_debit_local, 2, ",", ".") . '</b></td>
+                        <td style="text-align:right;"><b>' . number_format($grand_total_credit_local, 2, ",", ".") . '</b></td>
                         <td style="text-align:right;"><b>-</b></td>
                     </tr>';
 

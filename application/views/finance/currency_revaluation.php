@@ -1,3 +1,5 @@
+<!-- sebelumnya Foreign_currencies -->
+
 <!-- TABLE DATAGRID -->
 <table id="dg" class="easyui-datagrid" style="width:100%;" toolbar="#toolbar">
     <thead>
@@ -78,7 +80,7 @@
     <?= $button ?>
 </div>
 
-<iframe id="printout" src="<?= base_url('finance/foreign_currencies/print') ?>" style="width: 100%;" hidden></iframe>
+<iframe id="printout" src="<?= base_url('finance/currency_revaluation/print') ?>" style="width: 100%;" hidden></iframe>
 
 <script>
     //ADD DATA
@@ -104,7 +106,7 @@
                     if (r) {
                         $.ajax({
                             type: "post",
-                            url: "<?= base_url('finance/foreign_currencies/getData') ?>",
+                            url: "<?= base_url('finance/currency_revaluation/getData') ?>",
                             data: "month=" + filter_month + "&year=" + filter_year + "&modul=" + filter_modul + "&filter_account=" + filter_account,
                             dataType: "json",
                             success: function(get) {
@@ -113,7 +115,7 @@
 
                                     $.ajax({
                                         type: "post",
-                                        url: "<?= base_url('finance/foreign_currencies/uploadclearFailed') ?>",
+                                        url: "<?= base_url('finance/currency_revaluation/uploadclearFailed') ?>",
                                     });
 
                                     function requestData(total, json, number = 1, value = 0, success = 1, failed = 1) {
@@ -127,7 +129,7 @@
 
                                             $.ajax({
                                                 type: "post",
-                                                url: '<?= base_url('finance/foreign_currencies/create') ?>',
+                                                url: '<?= base_url('finance/currency_revaluation/create') ?>',
                                                 data: json[i],
                                                 dataType: "json",
                                                 success: function(result) {
@@ -143,7 +145,7 @@
                                                         $.ajax({
                                                             type: "POST",
                                                             async: true,
-                                                            url: "<?= base_url('finance/foreign_currencies/uploadcreateFailed') ?>",
+                                                            url: "<?= base_url('finance/currency_revaluation/uploadcreateFailed') ?>",
                                                             data: {
                                                                 data: json[number - 1],
                                                                 message: result.message
@@ -182,7 +184,7 @@
     function doubleAdd(filter_month, filter_year, filter_modul, filter_account){
         $.ajax({
             type: "post",
-            url: "<?= base_url('finance/foreign_currencies/getData') ?>",
+            url: "<?= base_url('finance/currency_revaluation/getData') ?>",
             data: "month=" + filter_month + "&year=" + filter_year + "&modul=" + filter_modul + "&filter_account=" + filter_account + "&double=YES",
             dataType: "json",
             success: function(get) {
@@ -191,7 +193,7 @@
 
                     $.ajax({
                         type: "post",
-                        url: "<?= base_url('finance/foreign_currencies/uploadclearFailed') ?>",
+                        url: "<?= base_url('finance/currency_revaluation/uploadclearFailed') ?>",
                     });
 
                     function requestData(total, json, number = 1, value = 0, success = 1, failed = 1) {
@@ -205,7 +207,7 @@
 
                             $.ajax({
                                 type: "post",
-                                url: '<?= base_url('finance/foreign_currencies/create') ?>',
+                                url: '<?= base_url('finance/currency_revaluation/create') ?>',
                                 data: json[i],
                                 dataType: "json",
                                 success: function(result) {
@@ -221,7 +223,7 @@
                                         $.ajax({
                                             type: "POST",
                                             async: true,
-                                            url: "<?= base_url('finance/foreign_currencies/uploadcreateFailed') ?>",
+                                            url: "<?= base_url('finance/currency_revaluation/uploadcreateFailed') ?>",
                                             data: {
                                                 data: json[number - 1],
                                                 message: result.message
@@ -282,7 +284,7 @@
 
                                 $.ajax({
                                     method: 'post',
-                                    url: '<?= base_url('finance/foreign_currencies/delete') ?>',
+                                    url: '<?= base_url('finance/currency_revaluation/delete') ?>',
                                     data: {
                                         id: row.id
                                     },
@@ -319,11 +321,11 @@
             "&filter_modul=" + window.btoa(filter_modul);
 
         $('#dg').datagrid({
-            url: '<?= base_url('finance/foreign_currencies/datatables') ?>' + url
+            url: '<?= base_url('finance/currency_revaluation/datatables') ?>' + url
         });
 
         $("#printout").contents().find('html').html("<center><br><br><br><b style='font-size:20px;'>Please Wait...</b></center>");
-        $("#printout").attr('src', '<?= base_url('finance/foreign_currencies/print') ?>' + url);
+        $("#printout").attr('src', '<?= base_url('finance/currency_revaluation/print') ?>' + url);
     }
 
     //PRINT PDF
@@ -341,7 +343,7 @@
             "&filter_year=" + window.btoa(filter_year) +
             "&filter_modul=" + window.btoa(filter_modul);
 
-        window.location.assign('<?= base_url('finance/foreign_currencies/print/excel') ?>' + url);
+        window.location.assign('<?= base_url('finance/currency_revaluation/print/excel') ?>' + url);
     }
 
     //RELOAD
@@ -350,7 +352,7 @@
     }
 
     function downloadFailed() {
-        window.open('<?= base_url('finance/foreign_currencies/uploadDownloadFailed') ?>', '_blank');
+        window.open('<?= base_url('finance/currency_revaluation/uploadDownloadFailed') ?>', '_blank');
     }
 
     $(function() {
@@ -363,7 +365,7 @@
         });
 
         $('#filter_month').combobox({
-            url: '<?php echo base_url('finance/foreign_currencies/readMonths'); ?>',
+            url: '<?php echo base_url('finance/currency_revaluation/readMonths'); ?>',
             valueField: 'id',
             textField: 'name',
             prompt: 'Choose Month',
@@ -376,7 +378,7 @@
         });
 
         $('#filter_year').combobox({
-            url: '<?php echo base_url('finance/foreign_currencies/readYears'); ?>',
+            url: '<?php echo base_url('finance/currency_revaluation/readYears'); ?>',
             valueField: 'id',
             textField: 'name',
             prompt: 'Choose Year',

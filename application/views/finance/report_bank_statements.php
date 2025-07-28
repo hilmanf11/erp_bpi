@@ -20,7 +20,7 @@
                 </div>
                 <div class="fitem">
                     <span style="width:35%; display:inline-block;">Currency</span>
-                    <input style="width:30%;" id="filter_currency" class="easyui-combobox">
+                    <input style="width:auto;" id="filter_currency" class="easyui-combogrid">
                 </div>
             </div>
         </fieldset>
@@ -40,7 +40,7 @@
         var filter_from = $("#filter_from").datebox("getValue");
         var filter_to = $("#filter_to").datebox("getValue");
         var filter_account = $("#filter_account").combogrid("getValue");
-        var filter_currency = $("#filter_currency").combobox("getValue");
+        var filter_currency = $("#filter_currency").combogrid("getValue");
 
         var url = "?filter_from=" + window.btoa(filter_from) +
             "&filter_to=" + window.btoa(filter_to) +
@@ -59,7 +59,7 @@
         var filter_from = $("#filter_from").datebox("getValue");
         var filter_to = $("#filter_to").datebox("getValue");
         var filter_account = $("#filter_account").combogrid("getValue");
-        var filter_currency = $("#filter_currency").combobox("getValue");
+        var filter_currency = $("#filter_currency").combogrid("getValue");
 
         var url = "?filter_from=" + window.btoa(filter_from) +
             "&filter_to=" + window.btoa(filter_to) +
@@ -83,7 +83,7 @@
 
     $(function() {
         $('#filter_account').combogrid({
-            url: '<?= base_url('finance/account_coa/readBanks') ?>',
+            url: '<?= base_url('finance/account_banks/reads') ?>',
             panelWidth: 320,
             idField: 'account_number',
             textField: 'account_number',
@@ -96,18 +96,34 @@
                     title: 'Account No',
                     width: 100
                 }, {
-                    field: 'account_name',
-                    title: 'Account Name',
+                    field: 'bank_name',
+                    title: 'Bank Name',
                     width: 200
                 }, ]
             ],
         });
 
-        $("#filter_currency").combobox({
+        $("#filter_currency").combogrid({
             url: '<?= base_url('master/currencies/reads') ?>',
             valueField: 'number',
             textField: 'number',
             prompt: "Choose Currencies",
+            columns: [
+                [{
+                    field: 'name',
+                    title: 'ID',
+                    width: 40,
+                }, {
+                    field: 'description',
+                    title: 'Description',
+                    width: 120,
+                }, ]
+            ],
+            onSelect: function (index, row) {
+                if (row.name != null) {
+                    $("#filter_currency").combogrid('setValue', row.name);
+                }
+            }
         });
     });
 

@@ -1,8 +1,10 @@
 <?php
 date_default_timezone_set("Asia/Bangkok");
 defined('BASEPATH') or exit('No direct script access allowed');
-class Foreign_currencies extends CI_Controller
+
+class Currency_revaluation extends CI_Controller 
 {
+    // -- sebelumnya Foreign_currencies
     public function __construct()
     {
         parent::__construct();
@@ -24,7 +26,7 @@ class Foreign_currencies extends CI_Controller
             $data['menus_id'] = $this->id_menu();
             
             $this->load->view('template/header', $data);
-            $this->load->view('finance/foreign_currencies');
+            $this->load->view('finance/currency_revaluation');
         } else {
             redirect('error_access');
         }
