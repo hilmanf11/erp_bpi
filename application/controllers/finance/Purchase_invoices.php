@@ -754,6 +754,33 @@ class Purchase_invoices extends CI_Controller
         }
     }
 
+    public function createOld()
+    {
+        if ($this->input->post()) {
+            $post = $this->input->post();
+            // $purchase_invoices = $this->crud->read('purchase_invoices', [], ["por_no" => $post['por_no'], "item_no" => $post['item_no'], "supplier_id" => $post['supplier_id'], "trans_date" => $post['trans_date']]);
+
+            if (@$post['id'] != "") {
+                $send = $this->crud->update('purchase_invoices', ["id" => $post['id']], $post);
+                echo $send;
+            } else {
+                $send = $this->crud->create('purchase_invoices', $post);
+                if ($send) {
+                    if ($post['por_no'] != "-") {
+                        if ($post['type'] != "dp") {
+                            $update = $this->crud->update('purchase_order_receipts', ["receipt_no" => $post['por_no'], "po_no" => $post['po_no'], "item_rm_id" => $post['item_rm_id'], "supplier_id" => $post['supplier_id']], ["status" => 1]);
+                        }
+                    } else {
+                        $update = $this->crud->update('purchase_order_others', ["po_no" => $post['po_no'], "item_rm_id" => $post['item_rm_id'], "supplier_id" => $post['supplier_id']], ["status" => 1]);
+                    }
+                }
+                echo $send;
+            }
+        } else {
+            show_error("Cannot Process your request");
+        }
+    }
+
     public function createJson()
     {
         $jsonData = $this->input->post('jsonData');
