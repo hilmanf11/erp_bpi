@@ -1858,7 +1858,38 @@
 
         });
 
+        // Validasi: account_number tidak boleh null, undefined, atau string kosong setelah di-trim (Bu Nina)
+        function validateDatagrid(datagridSelector, listName) 
+        {
+            var dg = $(datagridSelector);
+            var allRows = dg.datagrid('getRows');
+            let nullAccountNumberRows = [];
+            let isValid = true;
 
+            if (allRows.length === 0) {
+                $.messager.alert("Error", "<b>Failed!</b> " + listName + " is required", 'error');
+                isValid = false;
+            } else {
+                for (var i = 0; i < allRows.length; i++) {
+                    var row = allRows[i];
+                    var accountNumber = row.account_number;
+
+                    if (accountNumber === null || accountNumber === undefined || String(accountNumber).trim() === '') {
+                        nullAccountNumberRows.push(i + 1);
+                    }
+                }
+
+                if (nullAccountNumberRows.length > 0) {
+                    isValid = false;
+                    var errorMessage = "<b>Failed! Account Number on " + listName + " cannot be empty for rows: " + nullAccountNumberRows.join(', ') + "!</b> <br><br>Please re-check the List and re-calculate Journal before Save All.";
+                    $.messager.alert("Error", errorMessage, 'error');
+                }
+            }
+            return isValid; // Mengembalikan true jika valid, false jika tidak
+        }
+
+        // default button Save All belum di klik
+        let isSubmitting = false; 
 
         //SAVE DATA
         $('#dlg_insert').dialog({
@@ -1866,6 +1897,35 @@
                 text: 'Save All',
                 iconCls: 'icon-ok',
                 handler: function() {
+
+                    // --- validasi account_number call function validateDatagrid ---
+                    var hasValidationError = false;
+                    if (!validateDatagrid('#dg2', "AP Payment Lists")) { // Validasi AP Payment Lists (#dg2)
+                        hasValidationError = true;
+                    }
+                    
+                    if (!hasValidationError && !validateDatagrid('#dg3', "Journal Lists")) { // Validasi Journal List (#dg3)
+                        hasValidationError = true;
+                    }
+                    
+                    if (hasValidationError) { // Jika ada error, maka hentikan eksekusi selanjutnya
+                        if (typeof isSubmitting !== 'undefined' && isSubmitting) {
+                            isSubmitting = false;
+                        }
+                        return;
+                    }
+                    // --- Lanjutkan proses jika tidak ada error validasi ---
+
+                    if (isSubmitting) return; // cegah klik dobel
+                    
+                    isSubmitting = true;
+                    var btn = $(this);
+                    btn.linkbutton('disable');
+                    setTimeout(function() {
+                        isSubmitting = false;
+                        btn.linkbutton('enable');
+                    }, 5000);
+
                     var payment_type = $("#payment_type").combobox('getValue');
                     var payment_date = $("#payment_date").datebox('getValue');
                     var payment_no = $("#payment_no").textbox('getValue');
