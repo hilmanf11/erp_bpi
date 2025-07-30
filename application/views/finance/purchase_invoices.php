@@ -1412,24 +1412,30 @@
                     field: 'id'
                 });
 
-                $.ajax({
-                    method: 'post',
-                    url: '<?= base_url('finance/purchase_invoices/deleteSingle') ?>',
-                    data: {
-                        id: row.id,
-                    },
-                    success: function(result) {
-                        var result = eval('(' + result + ')');
-                        toastr.success(result.message);
-                    },
-                    error: function(jqXHR, textStatus, errorThrown) {
-                        toastr.error(jqXHR.statusText);
-                        $.messager.alert("Error", jqXHR.statusText, 'error');
-                    },
-                    complete: function(data) {
-                        $('#dg').datagrid('reload');
-                    }
-                });
+                // ketika add hanya delete di datagrid
+                if (formMode === 'add') {                     
+                    toastr.success("Successfully deleted");
+
+                } else {
+                    $.ajax({
+                        method: 'post',
+                        url: '<?= base_url('finance/purchase_invoices/deleteSingle') ?>',
+                        data: {
+                            id: row.id,
+                        },
+                        success: function(result) {
+                            var result = eval('(' + result + ')');
+                            toastr.success(result.message);
+                        },
+                        error: function(jqXHR, textStatus, errorThrown) {
+                            toastr.error(jqXHR.statusText);
+                            $.messager.alert("Error", jqXHR.statusText, 'error');
+                        },
+                        complete: function(data) {
+                            $('#dg').datagrid('reload');
+                        }
+                    });
+                }
 
                 $('#dg2').datagrid('deleteRow', getRowIndex(target));
             }
@@ -2197,7 +2203,7 @@
                         return;
                     }
                     // --- Lanjutkan proses jika tidak ada error validasi ---
-
+                    
                     if (isSubmitting) return; // cegah klik dobel
                     
                     isSubmitting = true;
@@ -2833,6 +2839,7 @@
                 },
             });
             
+            $("#d_type").textbox('setValue', row.type);
             $("#d_supplier_name").textbox('setValue', row.supplier_name);
             $("#d_por_no").textbox('setValue', row.por_no);
             $("#d_po_no").textbox('setValue', row.po_no);
