@@ -721,7 +721,7 @@
 <iframe id="printout" src="" style="width: 100%;" hidden></iframe>
 <script>
     // Setting on/off FITUR AUTO POSTING JOURNAL => ubah ke TRUE jika ingin dinyalakan
-    let auto_posting_journal = true;
+    let auto_posting_journal = true; // actived on 2025-07-29 (request Bu Nina)
 
     function check_vat() {
         var check_vat = $("#check_vat").checkbox('options');
@@ -2839,7 +2839,7 @@
                 },
             });
             
-            $("#d_type").textbox('setValue', row.type);
+            $("#d_type").combobox('setValue', row.type);
             $("#d_supplier_name").textbox('setValue', row.supplier_name);
             $("#d_por_no").textbox('setValue', row.por_no);
             $("#d_po_no").textbox('setValue', row.po_no);
