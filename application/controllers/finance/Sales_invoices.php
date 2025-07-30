@@ -775,6 +775,7 @@ class Sales_invoices extends CI_Controller
         $data = $this->input->post();
         $send = $this->crud->delete('sales_invoices', $data);
         echo $send;
+        exit;
 
         if ($this->input->method() === 'post') 
         {
