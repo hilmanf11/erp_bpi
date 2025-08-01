@@ -24,6 +24,7 @@
             <th rowspan="2" data-options="field:'total',width:120,halign:'center',align:'right',formatter:numberformat">Total Price</th>
             <th rowspan="2" data-options="field:'status_price',width:120,halign:'center',formatter:statuspriceformat,styler:statuspriceStyle">Status Price</th>
             <th rowspan="2" data-options="field:'currency',width:80,align:'center'">Currency</th>
+            <th rowspan="2" data-options="field:'notes',width:80,align:'center'">Note</th>
             <th rowspan="2" data-options="field:'revision',width:80,align:'center'">Revision</th>
             <th rowspan="2" data-options="field:'remarks',width:100,halign:'center'">Remarks</th>
             <th colspan="4" data-options="field:'',width:100,halign:'center'"> Forecast</th>
@@ -106,6 +107,10 @@
             <div class="fitem">
                 <span style="width:35%; display:inline-block;">PR No</span>
                 <input style="width:60%;" name="request_no" id="request_no" required class="easyui-combobox">
+            </div>
+            <div class="fitem">
+                <span style="width:35%; display:inline-block;">Note</span>
+                <input style="width:60%;" name="notes" id="notes" class="easyui-textbox">
             </div>
             <div class="fitem">
                 <span style="width:35%; display:inline-block;"></span>
@@ -1093,6 +1098,7 @@
                 iconCls: 'icon-ok',
                 handler: function() {
                     var po_date = $("#po_date").datebox('getValue');
+                    var notes = $("#notes").textbox('getValue');
                     if (po_date == "") {
                         toastr.warning('Please select Po Date', 'Required');
                     } else {
@@ -1176,6 +1182,7 @@
                                                     '&type=' + type +
                                                     '&delivery_date=' + delivery_date +
                                                     '&remarks=' + remarks +
+                                                    '&notes=' + notes +
                                                     '&month_1=' + month_1 +
                                                     '&month_2=' + month_2 +
                                                     '&month_3=' + month_3 +

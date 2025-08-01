@@ -237,6 +237,7 @@ class Purchase_orders extends CI_Controller
                     a.income_total, 
                     a.disc_pr,
                     a.taxes, 
+                    a.notes,
                     a.discount_total,
                     h.total_status_complete,
                     i.total_status_open,
@@ -374,6 +375,7 @@ class Purchase_orders extends CI_Controller
                         "total_grand" => ($record['total_price'] + $record['total_vat']) - $record['total_dp'] - $record['income_total'] - $record['discount_total'],
                         "state" => "closed",
                         "category_code" => $record['category_code'],
+                        "notes" => $record['notes'],
                         "approved_to" => $approved_to,
                         "status_price" => $status_price,
                         "status_price_complete" => $record['status_price_complete'],
@@ -532,6 +534,7 @@ class Purchase_orders extends CI_Controller
                     "taxes" => $post['taxes'],
                     "type" => $post['type'],
                     "remarks" => $post['remarks'],
+                    "notes" => $post['notes'],
                     "month_1" => $post['month_1'],
                     "month_2" => $post['month_2'],
                     "month_3" => $post['month_3'],
@@ -579,6 +582,7 @@ class Purchase_orders extends CI_Controller
                         "taxes" => $post['taxes'],
                         "delivery_date" => $post['delivery_date'],
                         "remarks" => $post['remarks'],
+                        "notes" => $post['notes'],
                         "month_1" => $post['month_1'],
                         "month_2" => $post['month_2'],
                         "month_3" => $post['month_3'],
@@ -606,6 +610,7 @@ class Purchase_orders extends CI_Controller
                         "taxes" => $post['taxes'],
                         "delivery_date" => $post['delivery_date'],
                         "remarks" => $post['remarks'],
+                        "notes" => $post['notes'],
                         "month_1" => $post['month_1'],
                         "month_2" => $post['month_2'],
                         "month_3" => $post['month_3'],
@@ -759,7 +764,7 @@ class Purchase_orders extends CI_Controller
         
         
         //Config Page
-        $rows = 8;
+        $rows = 15;
         $page = ceil(count($purchase_orders_total) / $rows);
         //Generate QRcode
         $this->createQrcode($purchase_orders->po_no, "assets/image/qrcode/");
@@ -820,7 +825,7 @@ class Purchase_orders extends CI_Controller
             $this->db->where('a.deleted', 0);
             $this->db->where('a.po_no', base64_decode($po_no));
             $this->db->order_by('b.number', 'asc');
-            $this->db->limit(8, ($i * 8));
+            $this->db->limit(15, ($i * 15));
             $records = $this->db->get()->result_array();
 
             if ($purchase_orders->updated_date != null) {
@@ -985,7 +990,7 @@ class Purchase_orders extends CI_Controller
             }
             if (($i + 1) == $page) {
 
-                $this->db->select('a.remarks, b.number as item_number, b.name as item_name');
+                $this->db->select('a.item_rm_id, a.remarks, b.number as item_number, b.name as item_name');
                 $this->db->from('purchase_orders a');
                 $this->db->join('item_rm b', 'a.item_rm_id = b.id');
                 $this->db->where('a.deleted', 0);
@@ -1003,9 +1008,17 @@ class Purchase_orders extends CI_Controller
                 $note_content = []; // Menampung remarks yang valid
 
                 foreach ($remarks as $remark) {
-                    if (!empty($remark['remarks'])) {
-                        $note_content[] = $remark['item_number'] . " &nbsp; (" . $remark['remarks'] . ")";
+                   if (!empty($remark['remarks'])) { //berubah
+                        if (($record['category_id'] == 'C01' && $record['family_id'] == 'P27') || ($record['category_id'] == 'C07' && $record['family_id'] == 'P31')) {
+                            $note_content[] = $remark['item_rm_id'] . " &nbsp; (" . $remark['remarks'] . ")";
+                        }else{
+                            $note_content[] = $remark['item_number'] . " &nbsp; (" . $remark['remarks'] . ")";
+                        }
                     }
+                }
+
+                if (empty($note_content)) {
+                    $note_content[] = $record['notes'];
                 }
 
                 $html .= '  <tr>
