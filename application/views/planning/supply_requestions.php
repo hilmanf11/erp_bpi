@@ -12,6 +12,9 @@
             <th rowspan="2" data-options="field:'item_number',width:150,halign:'center'">Product No</th>
             <th rowspan="2" data-options="field:'item_name',width:150,halign:'center'">Product Name</th>
             <th rowspan="2" data-options="field:'uom',width:80,align:'center'">UoM</th>
+            <th rowspan="2" data-options="field:'qty_wo',width:80,halign:'center',align:'right',formatter:numberformatQpa">Qty WO</th>
+            <th rowspan="2" data-options="field:'qty_ng',width:80,halign:'center',align:'right',formatter:numberformatQpa">Qty NG</th>
+            <th rowspan="2" data-options="field:'shift',width:80,align:'center'">Shift</th>
             <th rowspan="2" data-options="field:'qty',width:80,halign:'center',align:'right',formatter:numberformatQpa">Qty</th>
             <th rowspan="2" data-options="field:'issued',width:80,halign:'center',align:'right',formatter:numberformatQpa">Issued</th>
             <th rowspan="2" data-options="field:'outstanding',width:80,halign:'center',align:'right',formatter:numberformatQpa">Outstanding</th>
@@ -112,20 +115,20 @@
                     <span style="width:35%; display:inline-block;">WP</span>
                     <input style="width:60%;" id="wp" required="" class="easyui-combobox">
                 </div> -->
-                <div class="fitem">
+                <!-- <div class="fitem">
                     <span style="width:35%; display:inline-block;">Type</span>
                     <select style="width:60%;" id="type" name="type" class="easyui-combobox" panelHeight="auto" required>
                         <option value="">Choose Type</option>
                         <option value="SCP">SCRAP</option>
                         <option value="PRG">PURGING</option>
                     </select>
-                </div>
+                </div> -->
                 <div class="fitem">
                     <span style="width:35%; display:inline-block;">Workorder</span>
                     <input style="width:60%;" name="workorder" id="workorder" class="easyui-combobox" required>
                 </div>
                 <div class="fitem">
-                    <span style="width:35%; display:inline-block;">Scarp No</span>
+                    <span style="width:35%; display:inline-block;">Document Ng</span>
                     <input style="width:60%;" name="document" id="document" class="easyui-combobox">
                 </div>
             </div>
@@ -157,7 +160,7 @@
 
 <script>
     //Add Data
-    function add() {
+    function add() { //berubah
         $('#dlg_insert').dialog('open');
         $('#dg2').datagrid('loadData', []);
         request_no();
@@ -167,16 +170,16 @@
             textField: 'period',
             prompt: "Choose Period",
             onSelect: function(rowPeriod) {
-                $("#type").combobox({
-                    onChange: function(type){
+                // $("#type").combobox({
+                //     onChange: function(type){
                         $("#workorder").combobox({
-                            url: "<?= base_url('planning/supply_requestions/readWorkorders/') ?>" + rowPeriod.period + "/" + type,
+                            url: "<?= base_url('planning/supply_requestions/readWorkorders/') ?>" + rowPeriod.period,
                             valueField: 'wo_no',
                             textField: 'wo_no',
                             prompt: 'Choose Workorder',
                             onSelect: function(row) {
                                 $("#document").combobox({
-                                    url: "<?= base_url('planning/supply_requestions/readScrapNo/') ?>" + btoa(row.wo_no),
+                                    url: "<?= base_url('planning/supply_requestions/readDocNo/') ?>" + btoa(row.wo_no),
                                     valueField: 'document',
                                     textField: 'document',
                                     prompt: 'Choose Document',
@@ -186,8 +189,8 @@
                                 });
                             }
                         });
-                    }
-                });
+                //     }
+                // });
             }
         });
 
@@ -223,27 +226,19 @@
         });
     }
     
-    function preview() {
+    function preview() {//berubah
         var workorder = $("#workorder").combobox('getValue');
-        var type = $("#type").combobox('getValue');
         var document = $("#document").combobox('getValue');
         console.log(workorder);
-        console.log(type);
 
         if (workorder == "") {
             toastr.info('Please completed your data');
         } else {
             var lastIndex;
             if (workorder != "") {
-                if (type === "SCP") {
-                    var dg = $('#dg2').datagrid({
-                        url: '<?= base_url('planning/supply_requestions/datatablesTemp') ?>?workorder=' + window.btoa(workorder) + '&type=' + window.btoa(type) + '&document=' + window.btoa(document),
-                    });
-                } else {
-                    var dg = $('#dg2').datagrid({
-                        url: '<?= base_url('planning/supply_requestions/datatablesTemp') ?>?workorder=' + window.btoa(workorder) + '&type=' + window.btoa(type),
-                    });
-                }
+                var dg = $('#dg2').datagrid({
+                    url: '<?= base_url('planning/supply_requestions/datatablesTemp') ?>?workorder=' + window.btoa(workorder) + '&document=' + window.btoa(document),
+                });
             } else {
                 toastr.info('Please completed your data');
             }
@@ -432,7 +427,7 @@
     $(function() {
         filter();
 
-        $('#dlg_insert').dialog({
+        $('#dlg_insert').dialog({ //berubah
             buttons: [{
                 text: 'Save All',
                 iconCls: 'icon-ok',
@@ -441,7 +436,6 @@
                     var request_date = $("#request_date").datebox('getValue');
                     var request_name = $("#request_name").textbox('getValue');
                     var period = $("#period").combobox('getValue');
-                    var type = $("#type").combobox('getValue');
                     var workorder = $("#workorder").combobox('getValue');
                     var document = $("#document").combobox('getValue');
 
@@ -463,7 +457,6 @@
                                         request_no: request_no,
                                         request_name: request_name,
                                         period: period,
-                                        type: type,
                                         workorder: workorder,
                                         document: document,
                                         item_rm_id: rows[i].item_rm_id,
