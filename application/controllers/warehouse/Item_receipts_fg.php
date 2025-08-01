@@ -375,6 +375,8 @@ class Item_receipts_fg extends CI_Controller
             $new_date = date('Y-m-d', strtotime('+1 month', strtotime($lock->lock_from)));
 
             $this->db->update('checksheets',["packing_date" => $new_date,"remarks" => "Adjust Packing Date"], ["number" => $checksheet_number]);
+            $this->db->update('new_barcode_fg',["packing_date" => $new_date,"remarks" => "Adjust Packing Date"], ["label_no" => $checksheet_label]);
+            $this->db->update('scan_item_receipts_fg',["packing_date" => $new_date], ["checksheet_label" => $checksheet_label]);
 
             echo json_encode([
                 "status" => true,

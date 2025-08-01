@@ -307,7 +307,8 @@
                                         url: "<?= base_url('warehouse/item_receipts_fg/checkPackingDateLocked') ?>",
                                         data: {
                                             packing_date: row.packing_date,
-                                            checksheet_number: row.checksheet_number
+                                            checksheet_number: row.checksheet_number,
+                                            checksheet_label: checksheet_label
                                         },
                                         dataType: "json",
                                         success: function(lockCheck) {
