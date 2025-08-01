@@ -1645,47 +1645,67 @@ class Report_history_transactions_fg extends CI_Controller
                 if ($filter_trans_type == '') {
 
                     // Ambil seluruh data untuk rentang tanggal dalam satu query per jenis transaksi
-                    $receipts = $this->crud->query("SELECT 
-                    a.document_no as wo_no, 
-                    '-' as checksheet_label, 
-                    SUM(a.qty) as qty, 
-                    c.name AS username, 
-                    e.packing_date AS trans_date, 
-                    'WIP RECEIPT' AS receipt_type
-                    FROM wip_receipts a
-                    LEFT JOIN checksheets e ON a.checksheet_number = e.number
-                    LEFT JOIN users c ON a.created_by = c.username
-                    WHERE e.item_fg_id = '$item_fg_id'
-                    AND DATE_FORMAT(e.packing_date, '%Y-%m-%d') BETWEEN '$filter_from' AND '$filter_to' AND a.status != 0
-                    GROUP BY a.document_no, a.item_fg_id");
+                    // $receipts = $this->crud->query("SELECT 
+                    // a.document_no as wo_no, 
+                    // '-' as checksheet_label, 
+                    // SUM(a.qty) as qty, 
+                    // c.name AS username, 
+                    // e.packing_date AS trans_date, 
+                    // 'WIP RECEIPT' AS receipt_type
+                    // FROM wip_receipts a
+                    // LEFT JOIN checksheets e ON a.checksheet_number = e.number
+                    // LEFT JOIN users c ON a.created_by = c.username
+                    // WHERE e.item_fg_id = '$item_fg_id'
+                    // AND DATE_FORMAT(e.packing_date, '%Y-%m-%d') BETWEEN '$filter_from' AND '$filter_to' AND a.status != 0
+                    // GROUP BY a.document_no, a.item_fg_id");
                     
-                    if (empty($receipts)) {
-                        $receipts = $this->crud->query("SELECT 
-                        COALESCE(f.checksheet_label,'-') as wo_no, 
-                        f.checksheet_label, 
-                        f.qty, 
-                        u.name AS username, 
-                        f.packing_date AS trans_date, 
-                        'NEW BARCODE FG' AS receipt_type
+                    // if (empty($receipts)) {
+                    //     $receipts = $this->crud->query("SELECT 
+                    //     COALESCE(f.checksheet_label,'-') as wo_no, 
+                    //     f.checksheet_label, 
+                    //     f.qty, 
+                    //     u.name AS username, 
+                    //     f.packing_date AS trans_date, 
+                    //     'NEW BARCODE FG' AS receipt_type
 
+                    //     FROM new_barcode_fg a
+                    //     LEFT JOIN scan_item_receipts_fg f ON a.label_no = f.checksheet_label AND a.item_fg_id = f.item_fg_id
+                    //     LEFT JOIN users u ON f.created_by = u.username
+                    //     WHERE a.item_fg_id = '$item_fg_id'
+                    //     AND DATE_FORMAT(a.packing_date, '%Y-%m-%d') BETWEEN '$filter_from' AND '$filter_to'");
+
+                    //     if (empty($receipts)) {
+                    //         $receipts = $this->crud->query("SELECT a.*, 
+                    //             u.name as username, 
+                    //             'RECEIPT FG' AS receipt_type, 
+                    //             a.document_no as wo_no, 
+                    //             '-' as checksheet_label
+                    //             FROM wip_receipts a
+                    //             LEFT JOIN users u ON a.created_by = u.username
+                    //             WHERE a.item_fg_id = '$item_fg_id' AND a.division = 'MTS'
+                    //             AND DATE_FORMAT(a.trans_date, '%Y-%m-%d') BETWEEN '$filter_from' and '$filter_to'");
+                    //     } 
+                    // }
+
+                    $receipts = $this->crud->query("SELECT f.*, c.name as username, e.packing_date as trans_date, 'RECEIPT FG' AS receipt_type
+                        FROM scan_item_receipts_fg f
+                        JOIN checksheets e ON e.number = f.checksheet_number
+                        LEFT JOIN users c ON f.created_by = c.username
+                        WHERE e.item_fg_id = '$item_fg_id' 
+                        and DATE_FORMAT(e.packing_date, '%Y-%m-%d') between '$filter_from' and '$filter_to'");
+
+                    $receiptsNB = $this->crud->query("SELECT f.*, u.name as username ,f.packing_date as trans_date,'NEW BARCODE FG' AS receipt_type
                         FROM new_barcode_fg a
                         LEFT JOIN scan_item_receipts_fg f ON a.label_no = f.checksheet_label AND a.item_fg_id = f.item_fg_id
                         LEFT JOIN users u ON f.created_by = u.username
-                        WHERE a.item_fg_id = '$item_fg_id'
-                        AND DATE_FORMAT(a.packing_date, '%Y-%m-%d') BETWEEN '$filter_from' AND '$filter_to'");
+                        WHERE a.item_fg_id = '$item_fg_id' 
+                        AND DATE_FORMAT(a.packing_date, '%Y-%m-%d') BETWEEN '$filter_from' and '$filter_to'");
 
-                        if (empty($receipts)) {
-                            $receipts = $this->crud->query("SELECT a.*, 
-                                u.name as username, 
-                                'RECEIPT FG' AS receipt_type, 
-                                a.document_no as wo_no, 
-                                '-' as checksheet_label
-                                FROM wip_receipts a
-                                LEFT JOIN users u ON a.created_by = u.username
-                                WHERE a.item_fg_id = '$item_fg_id' AND a.division = 'MTS'
-                                AND DATE_FORMAT(a.trans_date, '%Y-%m-%d') BETWEEN '$filter_from' and '$filter_to'");
-                        } 
-                    }
+                    $receiptsWIP = $this->crud->query("SELECT a.*, u.name as username, 'RECEIPT FG' AS receipt_type, a.document_no as checksheet_label
+                        FROM wip_receipts a
+                        LEFT JOIN users u ON a.created_by = u.username
+                        WHERE a.item_fg_id = '$item_fg_id' AND a.division = 'MTS'
+                        AND DATE_FORMAT(a.trans_date, '%Y-%m-%d') BETWEEN '$filter_from' and '$filter_to'");
 
                     $delivery_notes = $this->crud->query("SELECT a.*, d.name AS username, a.trans_type as dn_type
                     FROM delivery_notes a
@@ -1721,6 +1741,19 @@ class Report_history_transactions_fg extends CI_Controller
                     $all_data = [];
 
                     // Gabungkan data receipts
+                    // foreach ($receipts as $receipt) {
+                    // $all_data[] = [
+                    //     'type' => $receipt->receipt_type,
+                    //     'username' => $receipt->username,
+                    //     'date' => $receipt->trans_date,
+                    //     'wo_no' => $receipt->wo_no,
+                    //     'dn_type' => '-',
+                    //     'label' => $receipt->checksheet_label,
+                    //     'qty_in' => $receipt->qty,
+                    //     'qty_out' => 0,
+                    // ];
+                    // }
+
                     foreach ($receipts as $receipt) {
                     $all_data[] = [
                         'type' => $receipt->receipt_type,
@@ -1730,6 +1763,32 @@ class Report_history_transactions_fg extends CI_Controller
                         'dn_type' => '-',
                         'label' => $receipt->checksheet_label,
                         'qty_in' => $receipt->qty,
+                        'qty_out' => 0,
+                    ];
+                    }
+
+                    foreach ($receiptsNB as $receiptNB) {
+                    $all_data[] = [
+                        'type' => $receiptNB->receipt_type,
+                        'username' => $receiptNB->username,
+                        'date' => $receiptNB->trans_date,
+                        'wo_no' => $receiptNB->wo_no,
+                        'dn_type' => '-',
+                        'label' => $receiptNB->checksheet_label,
+                        'qty_in' => $receiptNB->qty,
+                        'qty_out' => 0,
+                    ];
+                    }
+
+                    foreach ($receiptsWIP as $receiptWIP) {
+                    $all_data[] = [
+                        'type' => $receiptWIP->receipt_type,
+                        'username' => $receiptWIP->username,
+                        'date' => $receiptWIP->trans_date,
+                        'wo_no' => $receiptWIP->wo_no,
+                        'dn_type' => '-',
+                        'label' => $receiptWIP->checksheet_label,
+                        'qty_in' => $receiptWIP->qty,
                         'qty_out' => 0,
                     ];
                     }
@@ -1810,33 +1869,40 @@ class Report_history_transactions_fg extends CI_Controller
                 if ($filter_trans_type == 'RECEIPT FG') {
 
                     //RECEIPT
-                    $receipts = $this->crud->query("SELECT 
-                        a.document_no as wo_no, 
-                        '-' as checksheet_label, 
-                        SUM(a.qty) as qty, 
-                        c.name AS username, 
-                        e.packing_date AS trans_date, 
-                        'WIP RECEIPT' AS receipt_type
+                    // $receipts = $this->crud->query("SELECT 
+                    //     a.document_no as wo_no, 
+                    //     '-' as checksheet_label, 
+                    //     SUM(a.qty) as qty, 
+                    //     c.name AS username, 
+                    //     e.packing_date AS trans_date, 
+                    //     'WIP RECEIPT' AS receipt_type
                       
-                        FROM wip_receipts a
-                        LEFT JOIN checksheets e ON a.checksheet_number = e.number
-                        LEFT JOIN users c ON a.created_by = c.username
-                        WHERE e.item_fg_id = '$item_fg_id'
-                        AND DATE_FORMAT(e.packing_date, '%Y-%m-%d') BETWEEN '$filter_from' AND '$filter_to' AND a.status != 0
-                        GROUP BY a.document_no, a.item_fg_id");
+                    //     FROM wip_receipts a
+                    //     LEFT JOIN checksheets e ON a.checksheet_number = e.number
+                    //     LEFT JOIN users c ON a.created_by = c.username
+                    //     WHERE e.item_fg_id = '$item_fg_id'
+                    //     AND DATE_FORMAT(e.packing_date, '%Y-%m-%d') BETWEEN '$filter_from' AND '$filter_to' AND a.status != 0
+                    //     GROUP BY a.document_no, a.item_fg_id");
 
-                    if (empty($receipts)) {
-                        $receipts = $this->crud->query("SELECT f.*, u.name as username ,f.packing_date as trans_date
-                            FROM new_barcode_fg a
-                            LEFT JOIN scan_item_receipts_fg f ON a.label_no = f.checksheet_label AND a.item_fg_id = f.item_fg_id
-                            LEFT JOIN users u ON f.created_by = u.username
-                            WHERE a.item_fg_id = '$item_fg_id' 
-                            AND DATE_FORMAT(a.packing_date, '%Y-%m-%d') BETWEEN '$filter_from' and '$filter_to'");
+                    // if (empty($receipts)) {
+                    //     $receipts = $this->crud->query("SELECT f.*, u.name as username ,f.packing_date as trans_date
+                    //         FROM new_barcode_fg a
+                    //         LEFT JOIN scan_item_receipts_fg f ON a.label_no = f.checksheet_label AND a.item_fg_id = f.item_fg_id
+                    //         LEFT JOIN users u ON f.created_by = u.username
+                    //         WHERE a.item_fg_id = '$item_fg_id' 
+                    //         AND DATE_FORMAT(a.packing_date, '%Y-%m-%d') BETWEEN '$filter_from' and '$filter_to'");
                         
-                        $receipt_type = 'NEW BARCODE FG';
-                    } else {
-                        $receipt_type = 'WIP RECEIPT';
-                    }
+                    //     $receipt_type = 'NEW BARCODE FG';
+                    // } else {
+                    //     $receipt_type = 'WIP RECEIPT';
+                    // }
+
+                    $receipts = $this->crud->query("SELECT f.*, c.name as username, e.packing_date as trans_date, 'RECEIPT FG' AS receipt_type
+                        FROM scan_item_receipts_fg f
+                        JOIN checksheets e ON e.number = f.checksheet_number
+                        LEFT JOIN users c ON f.created_by = c.username
+                        WHERE e.item_fg_id = '$item_fg_id' 
+                        and DATE_FORMAT(e.packing_date, '%Y-%m-%d') between '$filter_from' and '$filter_to'");
 
 
                     //RECEIPT
@@ -1848,7 +1914,7 @@ class Report_history_transactions_fg extends CI_Controller
                                         <td style="mso-number-format:\@;">' . $record->number . '</td>
                                         <td style="mso-number-format:\@;">' . $record->name . '</td>
                                         <td>' . $record->uom . '</td>
-                                        <td>' . $receipt_type . '</td>
+                                        <td>' . $receipt->receipt_type . '</td>
                                         <td>-</td> 
                                         <td>' . $receipt->username . '</td>
                                         <td>' . $receipt->wo_no  . '</td>
@@ -1866,23 +1932,30 @@ class Report_history_transactions_fg extends CI_Controller
                 if ($filter_trans_type == 'NEW BARCODE') {
 
                     //RECEIPT
-                    $receipts = $this->crud->query("SELECT 
-                    COALESCE(f.checksheet_label,'-') as wo_no, 
-                    f.checksheet_label, 
-                    f.qty, 
-                    u.name AS username, 
-                    f.packing_date AS trans_date, 
-                    'NEW BARCODE FG' AS receipt_type
+                    // $receipts = $this->crud->query("SELECT 
+                    // COALESCE(f.checksheet_label,'-') as wo_no, 
+                    // f.checksheet_label, 
+                    // f.qty, 
+                    // u.name AS username, 
+                    // f.packing_date AS trans_date, 
+                    // 'NEW BARCODE FG' AS receipt_type
 
-                    FROM new_barcode_fg a
-                    LEFT JOIN scan_item_receipts_fg f ON a.label_no = f.checksheet_label AND a.item_fg_id = f.item_fg_id
-                    LEFT JOIN users u ON f.created_by = u.username
-                    WHERE a.item_fg_id = '$item_fg_id'
-                    AND DATE_FORMAT(a.packing_date, '%Y-%m-%d') BETWEEN '$filter_from' AND '$filter_to'");
+                    // FROM new_barcode_fg a
+                    // LEFT JOIN scan_item_receipts_fg f ON a.label_no = f.checksheet_label AND a.item_fg_id = f.item_fg_id
+                    // LEFT JOIN users u ON f.created_by = u.username
+                    // WHERE a.item_fg_id = '$item_fg_id'
+                    // AND DATE_FORMAT(a.packing_date, '%Y-%m-%d') BETWEEN '$filter_from' AND '$filter_to'");
+
+                    $receiptsNB = $this->crud->query("SELECT f.*, u.name as username ,f.packing_date as trans_date,'NEW BARCODE FG' AS receipt_type
+                        FROM new_barcode_fg a
+                        LEFT JOIN scan_item_receipts_fg f ON a.label_no = f.checksheet_label AND a.item_fg_id = f.item_fg_id
+                        LEFT JOIN users u ON f.created_by = u.username
+                        WHERE a.item_fg_id = '$item_fg_id' 
+                        AND DATE_FORMAT(a.packing_date, '%Y-%m-%d') BETWEEN '$filter_from' and '$filter_to'");
                         
                     //RECEIPT
                     $nod = 1;
-                    foreach ($receipts as $receipt) {
+                    foreach ($receiptsNB as $receipt) {
                         $balance = ($begin + ($receipt->qty - $end_qty));
                         $html .= '  <tr>
                                         <td style="text-align:center">' . $nod . '</td>
