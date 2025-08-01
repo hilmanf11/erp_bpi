@@ -282,6 +282,28 @@ class Ap_payments extends CI_Controller
         echo json_encode($data);
     }
 
+    public function readInvoicesUpdate($supplier_id)
+    {
+        $date_now = date("Y-m-t");
+        $supplier_id = base64_decode($supplier_id);
+        $data = $this->crud->query("SELECT DISTINCT ap.purchase_invoice, jt.name as journal_type 
+            FROM ap_payments ap
+            LEFT JOIN journal_types jt ON ap.journal_type_id = jt.id
+            WHERE supplier_id = '$supplier_id' and ap.status = 0 
+            ORDER BY ap.purchase_invoice ASC
+        ");
+        
+        // Tambahkan nomor urut
+        $data_with_no = [];
+        $no = 1;
+        foreach ($data as $record) {
+            $record->no = $no++; // Tambahkan nomor urut
+            $data_with_no[] = $record;
+        }
+
+        echo json_encode($data_with_no);
+    }
+
     public function readDp()
     {
         $supplier_id = $this->input->post('supplier_id');
@@ -353,6 +375,7 @@ class Ap_payments extends CI_Controller
         $this->db->order_by('number', 'asc');
         $records = $this->db->get()->result_array();
 
+        $obj = [];
         $total_payment = 0;
         foreach ($records as $record) {
             $total_payment += $record['total'];
@@ -521,6 +544,43 @@ class Ap_payments extends CI_Controller
             echo $send;
         } else {
             show_error("Cannot Process your request");
+        }
+    }
+
+    public function deleteOnUncheck() 
+    {
+        $data = $this->input->post();
+        $send = $this->crud->delete('ap_payments', $data);
+        echo $send;
+        exit;
+
+        if ($this->input->method() === 'post') 
+        {
+            $purchase_invoice = $this->input->post('purchase_invoice');
+
+            if ($data !== null) 
+            {
+                // check availability first 
+                $check_availability = $this->crud->read("ap_payments", [], ["purchase_invoice" => $purchase_invoice]);
+                if (!empty($check_availability)) {
+                    $this->db->where_in('purchase_invoice', $purchase_invoice);
+                    $result = $this->db->delete('ap_payments'); // Mengembalikan TRUE/FALSE
+                    echo json_encode($result);
+
+                    // if ($result) {
+                    //     $rows_affected = $this->db->affected_rows(); // lihat data yang telah dihapus
+                    //     echo json_encode(['success' => true, 'message' => "Data $rows_affected berhasil dihapus."]);
+                    // } else {
+                    //     echo json_encode(['success' => false, 'message' => 'Gagal menghapus data.']);
+                    // }
+                }
+            } else {
+                $this->output->set_status_header(400); // Bad Request
+                echo json_encode(['success' => false, 'message' => 'Parameter ID item tidak lengkap.']);
+            }
+        } else {
+            $this->output->set_status_header(405); // Method Not Allowed
+            echo json_encode(['success' => false, 'message' => 'Metode request tidak diizinkan.']);
         }
     }
 

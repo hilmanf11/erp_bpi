@@ -290,6 +290,28 @@ class Ar_receipts extends CI_Controller
         echo json_encode($data);
     }
 
+    public function readInvoicesUpdate($customer_id)
+    {
+        $data = $this->crud->query("SELECT DISTINCT ar.sales_invoice, ar.journal_type_id, jt.name as journal_type  
+            FROM ar_receipts ar
+            LEFT JOIN journal_types jt ON ar.journal_type_id = jt.id
+            WHERE ar.customer_id = '$customer_id' 
+            ORDER BY ar.sales_invoice ASC
+        ");
+        // echo json_encode($data);
+
+        // Tambahkan nomor urut
+        $data_with_no = [];
+        $no = 1;
+        foreach ($data as $record) {
+            $record->no = $no++; // Tambahkan nomor urut
+            $record->journal_type = $record->journal_type ?? $record->journal_type_id;  // journal_type_id ada yg name langsung
+            $data_with_no[] = $record;
+        }
+
+        echo json_encode($data_with_no);
+    }
+
     public function readDp()
     {
         $customer_id = $this->input->post('customer_id');
@@ -412,6 +434,7 @@ class Ar_receipts extends CI_Controller
             $result = array();
             //Select Query
             $this->db->select('a.*, c.number as gl_no, b.name as customer_name');
+            $this->db->select("GROUP_CONCAT(DISTINCT REPLACE(a.sales_invoice, ' ', '') SEPARATOR ',') as sales_invoices");
             $this->db->select("'view' as details");
             $this->db->from('ar_receipts a');
             $this->db->join('customers b', 'a.customer_id = b.id');
@@ -528,6 +551,13 @@ class Ar_receipts extends CI_Controller
         $send = $this->crud->delete('ar_receipts', array("id" => $data['id']));
 
         $this->crud->update('ar_receipts', ["receipt_no" => $data['sales_invoice']], ["status_dp" => 0]);
+        echo $send;
+    }
+
+    public function deleteOnUncheck()
+    {
+        $data = $this->input->post();
+        $send = $this->crud->delete('ar_receipts', $data);
         echo $send;
     }
 

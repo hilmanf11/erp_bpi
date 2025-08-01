@@ -328,7 +328,8 @@
                     </div>
                     <div class="fitem">
                         <span style="width:35%; display:inline-block;"></span>
-                        <a href="javascript:;" class="easyui-linkbutton" onclick="preview()"><i class="fa fa-search"></i> Preview Data</a>
+                        <a href="javascript:;" class="easyui-linkbutton" onclick="preview()" id="btnPreview"><i class="fa fa-search"></i> Preview Data</a>
+                        <!-- <a href="javascript:;" class="easyui-linkbutton" onclick="previewUpdate()" id="btnPreviewUpdate" hidden><i class="fa fa-search"></i> Preview Data (Update)</a> -->
                     </div>
                 </div>
                 <div style="width: 50%; float: left;">
@@ -572,7 +573,7 @@
         $("#receipt_date").datebox('enable');
         $("#receipt_type").combobox('enable');
         $("#customer_id").combogrid('enable');
-        $("#sales_invoice").combobox('enable');
+        $("#sales_invoice").combogrid('enable');
         $("#receipt_by").combobox('setValue', "TRANSFER");
         $("#f_cheque_no").hide();
 
@@ -766,7 +767,7 @@
 
     function append_dp() {
         var customer_id = $("#customer_id").combobox('getValue');
-        var sales_invoice = $("#sales_invoice").combobox('getValue');
+        var sales_invoice = $("#sales_invoice").combogrid('getValue');
 
         if (endEditing()) {
             $.ajax({
@@ -904,10 +905,22 @@
         editIndex2 = undefined;
     }
 
+    function previewUpdate() {
+        var receipt_no = $('#receipt_no').textbox('getValue');
+        preview('<?= base_url('finance/ar_receipts/reads/') ?>' + window.btoa(receipt_no));
+    }
+
     //Edit Data
     function update() {
         formMode = 'update';
         var row = $('#dg').datagrid('getSelected');
+        console.log("Data Loaded:",row);
+
+        // hide button preview add, show button previewUpdate
+        // $("#btnPreview").prop('disabled', true);
+        // $("#btnPreview").hide();
+        $("#btnPreviewUpdate").removeAttr('hidden');
+
         if (row) {
             if (row.status == 0) {
                 if(row.gl_no == null){
@@ -917,7 +930,7 @@
                     $("#receipt_date").datebox('disable');
                     $("#receipt_type").combobox('disable');
                     $("#customer_id").combogrid('disable');
-                    $("#sales_invoice").combobox('disable');
+                    // $("#sales_invoice").combogrid('disable');
                     $("#showExchange").hide();
 
                     var receipt_by = $("#receipt_by").combobox('getValue');
@@ -937,17 +950,144 @@
                             $("#customer_id").combobox('setValue', row.customer_id);
                         },
                         onSelect: function(customer) {
-                            $("#sales_invoice").combobox({
-                                url: '<?= base_url('finance/ar_receipts/readInvoices/') ?>' + customer.id,
+
+                            $("#sales_invoice").combogrid({
+                                url: '<?= base_url('finance/ar_receipts/readInvoicesUpdate/') ?>' + customer.id,
                                 valueField: 'sales_invoice',
                                 textField: 'sales_invoice',
                                 multiple: true,
                                 prompt: "Choose Sales Invoice No",
-                                onLoadSuccess: function(load_invoice) {
-                                    $("#sales_invoice").combobox('setValue', row.sales_invoice);
+                                idField: 'sales_invoice',
+                                mode: 'remote',
+                                columns: [
+                                    [ {
+                                        field: 'ck', // Kolom checkbox
+                                        checkbox: true, // Mengaktifkan checkbox
+                                    }, {
+                                        field: 'no',
+                                        title: 'No',
+                                        width: 30
+                                    }, {
+                                        field: 'sales_invoice',
+                                        title: 'Sales Invoice No',
+                                        width: 150,
+                                        align: 'left'
+                                    }, {
+                                        field: 'journal_type',
+                                        title: 'Journal Type',
+                                        width: 150,
+                                        align: 'left'
+                                    } ]
+                                ],
+                                fitColumns: true, // Menyesuaikan kolom secara otomatis
+                                selectOnCheck: true, // Pilih baris ketika checkbox di-check
+                                checkOnSelect: true,
+                                onLoadSuccess: function(data) {
+                                    $("#sales_invoice").combogrid('setValue', row.sales_invoice);
+                                    
+                                    if (row && row.sales_invoices) {
+                                        // Siapkan delivery_note dari row yang akan diupdate
+                                        let selectedSI = row.sales_invoices
+                                        .split(',')
+                                        .map(note => note.trim())
+                                        .filter(note => note !== '');
+                                        
+                                        // Dapatkan delivery_note datagrid dari combogrid
+                                        let grid = $('#sales_invoice').combogrid('grid'); 
+                                        if (grid) { 
+                                            const rowsData = data.rows || data;  
+                                            
+                                            // Checklist jika delivery_note dari row sama dengan combogrid
+                                            for (let i = 0; i < rowsData.length; i++) { 
+                                                let currentSI = rowsData[i].sales_invoice;
+                                                if (selectedSI.includes(currentSI)) {
+                                                    grid.datagrid('checkRow', i);
+                                                }
+                                            }
+                                        } else {
+                                            console.warn("Grid instance for #sales_invoice checklist not found.");
+                                        }
+                                        
+                                    }
+                                    
                                     $("#journal_type").combobox('setValue', row.journal_type_id);
                                 },
+                                onCheck: function(index, rowData) { 
+                                    $("#journal_type").combobox('setValue', rowData.journal_type);
+                                },
+                                onUncheck: function(index, rowData) {                                    
+                                    // Dapatkan semua baris yang saat ini terceklis di combogrid
+                                    let combogridGrid = $('#sales_invoice').combogrid('grid');
+                                    let checkedRows = combogridGrid.datagrid('getChecked');
+
+                                    // Validasi pastikan minimal satu yang terceklis
+                                    if (checkedRows.length === 0) {
+                                        $.messager.alert('Warning', 'You must select at least one data.', 'warning', function() {
+                                            combogridGrid.datagrid('checkRow', index); 
+                                            addJournal();
+                                        });
+                                        return;
+                                    }
+
+                                    // otomatis ubah dg2 ketika Un-checklist
+                                    let uncheckedSI = rowData.sales_invoice;
+                                    console.log("Unchecked " + uncheckedSI);
+                                    
+                                    // Validasi Penghapusan data di #dg2 
+                                    var dg2 = $('#dg2');
+                                    var rowsInDg2 = dg2.datagrid('getRows');
+                                    let foundAndRemoved = false; // Flag 
+
+                                    for (let i = rowsInDg2.length - 1; i >= 0; i--) { // Iterasi dari belakang agar penghapusan tidak mengganggu indeks
+                                        const rowInDg2 = rowsInDg2[i];
+                                        const dataDg2 = String(rowInDg2.sales_invoice).trim();
+
+                                        if (dataDg2 === uncheckedSI) {
+                                            dg2.datagrid('deleteRow', i); // Hapus baris dari dg2
+                                            foundAndRemoved = true;
+                                            console.log(`Removed row with Purchase Invoice '${uncheckedSI}' from #dg2 at index ${i}`);
+                                        }
+                                    }
+
+                                    // Jika yang di un-checklist ada di #dg2
+                                    if (foundAndRemoved) {   
+                                        // delete confirmation
+                                        $.messager.confirm('Confirm', 'Are you sure want to remove this data?', function(r) {
+                                            if (r) {
+                                                $.ajax({
+                                                    method: 'post',
+                                                    url: '<?= base_url('finance/ar_receipts/deleteOnUncheck') ?>',
+                                                    data: {
+                                                        sales_invoice: rowData.sales_invoice,
+                                                    },
+                                                    dataType: "json",
+                                                    success: function(result) {
+                                                        console.log("Delete on Uncheck ", result);
+                                                        console.log("Delete message ", result.message);
+                                                        toastr.success(result.message);
+                                                        $.messager.alert("Warning", "<b>Please click Preview Data and Add To Journal again before Save All</b>", 'warning');
+                                                    },
+                                                    error: function(jqXHR, textStatus, errorThrown) {
+                                                        toastr.error(jqXHR.statusText);
+                                                        $.messager.alert("Error", jqXHR.statusText, 'error');                                                    
+                                                    },
+                                                    complete: function(data) {
+                                                        $('#dg').datagrid('reload');
+                                                    }
+                                                });
+
+                                                // preview('<?= base_url('finance/ar_receipts/reads/') ?>' + window.btoa(row.receipt_no));
+                                                // addTable2('<?= base_url('finance/ar_receipts/readJournals/') ?>' + window.btoa(row.receipt_no) + "/" + window.btoa(row.journal_type_id) + "/" + window.btoa(row.bank_account));
+                                                
+                                            }
+                                        });
+
+                                    } else {
+                                        console.log(`Purchase Invoice '${uncheckedSI}' not found in #dg2. No data removed.`);
+                                    }
+                                }
                             });
+                            
                         }
                     });
 
@@ -995,7 +1135,7 @@
     var editIndex = undefined;
 
     function preview(link = "") {
-        var sales_invoice = $("#sales_invoice").combobox('getText');
+        var sales_invoice = $("#sales_invoice").combogrid('getText');
 
         if (link == "") {
             var linked = '<?= base_url('finance/ar_receipts/datatablesTemp') ?>?sales_invoice=' + window.btoa(sales_invoice);
@@ -1870,7 +2010,7 @@
             onSelect: function(customer) {
                 var receipt_type = $("#receipt_type").combobox('getValue');
 
-                // $("#sales_invoice").combobox({
+                // $("#sales_invoice").combogrid({
                 //     url: '<?= base_url('finance/ar_receipts/readInvoiceType?customer_id=') ?>' + customer.id + "&receipt_type=" + receipt_type,
                 //     valueField: 'number',
                 //     textField: 'number',
@@ -1924,12 +2064,15 @@
                     checkOnSelect: true,
 
                     onSelect: function (index, row) {
-                        if (row.journal_type_id != null) {
-                            $("#journal_type").combobox('setValue', row.journal_type_id);
-                        } else {
-                            toastr.info("The journal type on the Sales Invoice is still empty");
-                            $("#journal_type").combobox('clear');
+                        if (formMode !== 'update') {
+                            if (row.journal_type_id != null) {
+                                $("#journal_type").combobox('setValue', row.journal_type_id);
+                            } else {
+                                toastr.info("The journal type on the Sales Invoice is still empty");
+                                $("#journal_type").combobox('clear');
+                            }
                         }
+                            
                     }
                 });
             }
