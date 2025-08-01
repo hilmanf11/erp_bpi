@@ -13,7 +13,15 @@ class Convertcurrency
             // Add other currencies as needed
         );
     
-        $words .= $this->numberToWords($amount) . " " . $currencyNames[$currency];
+        // Cek apakah kunci $currency ada di dalam array $currencyNames
+        if (isset($currencyNames[$currency])) {
+            $currencyWord = $currencyNames[$currency];
+        } else {
+            // Jika mata uang tidak ditemukan, gunakan nilai default atau tampilkan pesan error
+            $currencyWord = "Mata Uang Tidak Dikenal";
+        }
+    
+        $words .= $this->numberToWords($amount) . " " . $currencyWord;
     
         return $words;
     }
