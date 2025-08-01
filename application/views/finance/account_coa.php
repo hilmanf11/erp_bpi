@@ -394,32 +394,74 @@
             textField: 'name',
             prompt: 'Choose Currencies',
         });
+        
+        // default button Save All belum di klik
+        let isSubmitting = false;
+
         //SAVE DATA
         $('#dlg_insert').dialog({
             buttons: [{
                 text: 'Save',
                 iconCls: 'icon-ok',
                 handler: function() {
+
+                    if (isSubmitting) return; // cegah klik dobel
+                    
+                    isSubmitting = true;
+                    var btn = $(this);
+                    btn.linkbutton('disable');
+                    setTimeout(function() {
+                        isSubmitting = false;
+                        btn.linkbutton('enable');
+                    }, 8000);
+
                     $('#frm_insert').form('submit', {
                         url: url_save,
                         onSubmit: function() {
                             return $(this).form('validate');
                         },
                         success: function(result) {
-                            var result = eval('(' + result + ')');
-                            if (result.theme == "success") {
-                                toastr.success(result.message, result.title);
-                            } else {
-                                toastr.error(result.message, result.title);
-                            }
+                            let originalString = result;
 
-                            $('#dlg_insert').dialog('close');
-                            $('#dg').datagrid('reload');
+                            if (result && originalString.toLowerCase() === "success") {
+                                toastr.success("Data Saved Successfully", result);
+                                $('#dlg_insert').dialog('close');
+                                $('#dg').datagrid('reload');
+
+                            } else if (result && originalString.toLowerCase() === "duplicated") {
+                                toastr.error("Duplicated! Account Number/Name is already in use", result);
+                                btn.linkbutton('enable');
+
+                            } else if (result && originalString.toLowerCase() === "error") {
+                                toastr.error("Failed to Save Data", result);
+                                $('#dlg_insert').dialog('close');
+
+                            } else if (result && originalString.toLowerCase() === "failed") {
+                                toastr.error("Data not found", result);
+                                $('#dlg_insert').dialog('close');
+
+                            } else {
+                                toastr.error("Server returned an unexpected response format.", "Parsing Error");
+                            }
+                        },
+                        error: function(jqXHR, textStatus, errorThrown) {
+                            console.error("AJAX Error on form submit:", textStatus, errorThrown, jqXHR);
+                            
+                            // Ambil respons JSON dari jqXHR
+                            try {
+                                var response = JSON.parse(jqXHR.responseText);
+                                toastr.error(response.message, response.title);
+                            } catch (e) {
+                                // Jika respons bukan JSON, tampilkan pesan error generik
+                                console.error("Failed to parse error response JSON:", e);
+                                toastr.error('Failed to communicate with server. Invalid response.', 'Network Error');
+                            }
                         }
                     });
                 }
             }]
         });
+
         // UPLOAD DATA
         $('#dlg_upload').dialog({
             buttons: [{

@@ -15,6 +15,7 @@ class Account_coa extends CI_Controller
         //VALIDASI FORM
         $this->form_validation->set_rules('account_number', 'code', 'required|min_length[1]|max_length[20]|is_unique[account_coa.account_number]');
     }
+
     //HALAMAN UTAMA
     public function index()
     {
@@ -28,6 +29,7 @@ class Account_coa extends CI_Controller
             redirect('error_access');
         }
     }
+
     //GET DATA
     public function reads($account_group_detail_id = "")
     {
@@ -45,6 +47,69 @@ class Account_coa extends CI_Controller
 
     //GET DATATABLES
     public function datatables()
+    {
+        if ($this->input->post()) {
+            $filters = json_decode($this->input->post('filterRules'));
+            $page = $this->input->post('page');
+            $rows = $this->input->post('rows');
+            //Pagination 1-10
+            $page   = isset($page) ? intval($page) : 1;
+            $rows   = isset($rows) ? intval($rows) : 10;
+            $offset = ($page - 1) * $rows;
+            $result = array();
+
+            $this->db->select('account_coa.*, account_group_details.name as account_group_detail_name');
+            $this->db->select("GROUP_CONCAT(DISTINCT journal_types.module ORDER BY journal_types.module ASC SEPARATOR ', ') as module");
+            $this->db->select("DATE_FORMAT(account_coa.created_date, '%Y-%m-%d') as starting_from, 
+                (CASE WHEN account_coa.status = 0 THEN 'CLOSE'
+                ELSE 'OPEN' END) as closing_journal");
+            $this->db->from('account_coa');
+            $this->db->join('account_group_details', 'account_group_details.id = account_coa.account_group_detail_id', 'left');
+            $this->db->join('journal_types', 'journal_types.account_number = account_coa.account_number', 'left');
+            $this->db->where('account_coa.deleted', 0);
+
+            if (@count($filters) > 0) {
+                foreach ($filters as $filter) {
+                    if ($filter->field == 'account_group_detail_id') {
+                        $this->db->like('account_group_details.name', $filter->value);
+                    } elseif ($filter->field == 'module') {
+                        $this->db->like('journal_types.module', $filter->value); 
+                    } elseif ($filter->field == 'closing_journal') {
+                        $status = ($filter->value == 'CLOSE') ? 0 : 1;
+                        $this->db->like('account_coa.status', $status);
+                    } elseif ($filter->field == 'starting_from') {
+                        $this->db->group_start(); // Group OR conditions
+                        $this->db->like("DATE_FORMAT(account_coa.created_date, '%Y')", $filter->value);
+                        $this->db->or_like("DATE_FORMAT(account_coa.created_date, '%m')", $filter->value);
+                        $this->db->or_like("DATE_FORMAT(account_coa.created_date, '%d')", $filter->value);
+                        $this->db->group_end();
+                    } else {
+                        $this->db->like('account_coa.'.$filter->field, $filter->value);
+                    }
+                }
+            }
+            // Group berdasarkan primary key dari tabel utama (account_coa.id) untuk menghindari duplikasi
+            $this->db->group_by('account_coa.id'); 
+            $this->db->order_by('account_coa.account_number', 'asc');
+
+            //Total Data
+            $temp_db = clone $this->db; // Clone the DB object to get the total rows count without limit/offset
+            $totalRows = $temp_db->count_all_results('', false); // Pass false to not reset the query
+            //Limit 1 - 10
+            $this->db->limit($rows, $offset);
+            //Get Data Array
+            $records = $this->db->get()->result_array();
+            //Mapping Data
+            $result['total'] = $totalRows;
+            $result = array_merge($result, ['rows' => $records]);
+
+
+            // Menampilkan hasil dalam format JSON
+            echo json_encode($result);
+        }
+    }
+
+    public function datatablesOld()
     {
         if ($this->input->post()) {
             $filters = json_decode($this->input->post('filterRules'));
@@ -99,70 +164,58 @@ class Account_coa extends CI_Controller
             echo json_encode($result);
         }
     }
-    // //AUTO ID
-    // public function autoid()
-    // {
-    //     $sql = $this->db->query("SELECT max(`number`) as kode FROM account_coa");
-    //     $row = $sql->row();
-    //     $kode = substr($row->kode, 3);
-    //     $autoid = "AGD" . sprintf("%02s", $kode + 1);
-    //     echo $autoid;
-    // }
-    //CREATE DATA
-    // public function create()
-    // {
-    //     if ($this->input->post()) {
-    //         if ($this->form_validation->run() == TRUE) {
-    //             $post   = $this->input->post();
-    //             $send   = $this->crud->create('account_coa', $post);
-    //             echo $send;
-    //         } else {
-    //             show_error(validation_errors());
-    //         }
-    //     } else {
-    //         show_error("Cannot Process your request");
-    //     }
-    // }
 
-    public function checkExisting($field, $value) 
+    //AUTO ID
+    public function autoid()
     {
-        $check = $this->crud->read('account_coa', [], [$field => $value]);
-        return $check;
+        $sql = $this->db->query("SELECT max(`id`) as kode FROM account_coa");
+        $row = $sql->row();
+        $kode = substr($row->kode, 3);
+        $autoid = "AGD" . sprintf("%02s", $kode + 1);
+        echo $autoid;
     }
 
+    //CREATE DATA
     public function create()
     {
         if ($this->input->post()) {
-            $post   = $this->input->post();
+            $post = $this->input->post();
 
-            $check_number = $this->checkExisting("account_number", $post['account_number']);
-            $check_name   = $this->checkExisting("account_name", $post['account_name']);
-            $number_exists = !empty($check_number->account_number);
-            $name_exists   = !empty($check_name->account_name);
+            $account_number_new = $post['account_number'];
+            $account_name_new   = $post['account_name'];
 
+            $number_exists = $this->db->get_where('account_coa', ['account_number' => $account_number_new, 'deleted' => 0])->row();
+            $name_exists   = $this->db->get_where('account_coa', ['account_name' => $account_name_new, 'deleted' => 0])->row();            
+
+            // Check for duplicates
             if ($number_exists && $name_exists) {
-                echo json_encode(array(
-                    "title"   => "Duplicated",
-                    "message" => "Account No " . $check_number->account_number . " and Account Name " . $check_name->account_name . " are already in use.",
-                    "theme"   => "error"
-                ));
-            } elseif ($number_exists) {
-                echo json_encode(array(
-                    "title"   => "Duplicated",
-                    "message" => "Account No " . $check_number->account_number . " is already in use.",
-                    "theme"   => "error"
-                ));
-            } elseif ($name_exists) {
-                echo json_encode(array(
-                    "title"   => "Duplicated",
-                    "message" => "Account Name " . $check_name->account_name . " is already in use.",
-                    "theme"   => "error"
-                ));
-            } else {
-                $send   = $this->crud->create('account_coa', $post);
-                echo $send;
-            }
+                // echo json_encode(["title"   => "Duplicated", "message" => "Account No '" . $account_number_new . "' and Account Name '" . $account_name_new . "' are already in use.", "theme"   => "error"]);
+                echo 'Duplicated';
 
+            } elseif ($number_exists) {
+                // echo json_encode(["title"   => "Duplicated", "message" => "Account No '" . $account_number_new . "' is already in use.", "theme"   => "error"]);
+                echo 'Duplicated';
+
+            } elseif ($name_exists) {
+                // echo json_encode(["title"   => "Duplicated", "message" => "Account Name '" . $account_name_new . "' is already in use.", "theme"   => "error"]);
+                echo 'Duplicated';
+
+            } else {
+                // No duplications, proceed with creation
+                $send = $this->crud->create('account_coa', $post);
+                $create_result = json_decode($send);
+
+                if ($create_result->theme == 'success') { 
+                    // echo json_encode(["title"   => "Success", "message" => "Data created successfully.", "theme"   => "success"]);
+                    echo 'Success';
+
+                } else {
+                    // Gagal create karena alasan lain (misal query error, atau data tidak valid)
+                    // echo json_encode(["title"   => "Error", "message" => "Failed to create data. Please try again.", "theme"   => "error"]);
+                    echo 'Error';
+
+                }
+            }
         } else {
             show_error("Cannot Process your request");
         }
@@ -171,28 +224,45 @@ class Account_coa extends CI_Controller
     //UPDATE DATA
     public function update()
     {
-        if ($this->input->post()) {
+        header('Content-Type: application/json');
+        if ($this->input->post()) 
+        {
             $id   = base64_decode($this->input->get('id'));
             $post = $this->input->post();
 
-            $check_number = $this->checkExisting("account_number", $post['account_number']);
-            $check_name   = $this->checkExisting("account_name", $post['account_name']);
-            $number_exists = !empty($check_number->account_number);
-            $name_exists   = !empty($check_name->account_name);
+            if (isset($post['id'])) {
+                unset($post['id']);
+            }
 
-            if ($number_exists && $name_exists) {
-                echo json_encode(array(
-                    "title"   => "Duplicated",
-                    "message" => "Account No " . $check_number->account_number . " and Account Name " . $check_name->account_name . " are already in use.",
-                    "theme"   => "error"
-                ));
-            } else {
-                $send = $this->crud->update('account_coa', ["id" => $id], $post);
-                echo $send;
+            // Validasi Exist
+            $this->db->where('id =', $id);
+            $this->db->where('deleted', 0);
+            $dataExist = $this->db->get('account_coa')->row();
+
+            if ($dataExist) {
+                $update = $this->crud->update('account_coa', ["id" => $id], $post);
+                $update_result = json_decode($update);
+
+                if ($update_result->theme == 'success') {                    
+                    // echo json_encode(["title"   => "Success", "message" => "Data created successfully.", "theme"   => "success"]);
+                    echo 'Success';
+
+                } else {
+                    $this->output->set_status_header(400); // Bad Request
+                    // echo json_encode(['success' => false, 'message' => 'Failed to update data.', 'title' => 'Error', 'theme' => 'error']);
+                    echo 'Error';
+                }
+
+            } else {        
+                $this->output->set_status_header(400); // Bad Request
+                // echo json_encode(['success' => false, 'message' => 'Data not found.', 'title' => 'Error', 'theme' => 'error']);
+                echo 'Failed';
             }
 
         } else {
-            show_error("Cannot Process your request");
+            $this->output->set_status_header(405); // Method Not Allowed
+            // echo json_encode(['success' => false, 'message' => 'Method not allowed.', 'title' => 'Error', 'theme' => 'error']);
+            echo 'Error';
         }
     }
 
