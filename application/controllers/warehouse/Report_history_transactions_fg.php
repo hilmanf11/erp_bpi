@@ -28,6 +28,47 @@ class Report_history_transactions_fg extends CI_Controller
         }
     }
 
+    public function lsb_lock()
+    {
+        $filter_from = $this->input->post('filter_from');
+        $filter_to   = $this->input->post('filter_to');
+        $period      = date('Ym', strtotime($filter_from));
+
+        $this->db->where("('$filter_from' BETWEEN lock_from AND lock_to OR 
+                        '$filter_to' BETWEEN lock_from AND lock_to OR 
+                        lock_from BETWEEN '$filter_from' AND '$filter_to')");
+        $cek = $this->db->get('lsb_lock')->num_rows();
+
+        if ($cek > 0) {
+            echo json_encode([
+                "status"  => false,
+                "message" => "Period has been saved."
+            ]);
+            return;
+        }
+
+        // Simpan jika belum ada
+        $data = array(
+            "period"     => $period,
+            "lock_from"  => $filter_from,
+            "lock_to"    => $filter_to
+        );
+
+        $send = $this->crud->create('lsb_lock', $data);
+
+        if ($send) {
+            echo json_encode([
+                "status"  => true,
+                "message" => "Period saved successfully!: $period"
+            ]);
+        } else {
+            echo json_encode([
+                "status"  => false,
+                "message" => "Gagal menyimpan data. Silakan coba lagi."
+            ]);
+        }
+    }
+
     public function print($option = "")
     {
         if ($option == "excel") {

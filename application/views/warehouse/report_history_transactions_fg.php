@@ -50,6 +50,7 @@
     <?= $button ?>
     <a href="javascript:;" class="easyui-linkbutton" data-options="plain:true" onclick="excel_lsb()"><i class="fa fa-file"></i> Export LSB</a>
     <a href="javascript:;" class="easyui-linkbutton" data-options="plain:true" onclick="excel_detail_transaction()"><i class="fa fa-file"></i> Export Detail Transaction</a>
+    <a href="javascript:;" class="easyui-linkbutton" data-options="plain:true" onclick="lsb_lock()"><i class="fa fa-lock"></i> Lock LSB</a>
 </div>
 <div class="easyui-panel" title="Print Preview" style="width:100%;padding:10px;">
     <iframe id="printout" src="" style="width: 100%; height:500px; border: 0;"></iframe>
@@ -176,6 +177,50 @@
          setTimeout(function () {
             $("#loadingOverlay").hide();
         }, 3000); // Sesuaikan waktu jika perlu
+    }
+
+    function lsb_lock(){
+        var filter_from = $("#filter_from").datebox('getValue');
+        var filter_to = $("#filter_to").datebox('getValue');
+        if (filter_from == "" || filter_to =="") {
+            toastr.error("Please Input Filter From and to First!");
+        } else {
+            Swal.fire({
+                title: "Are you sure?",
+                text: "You want to Lock Lsb with this Date!",
+                icon: "warning",
+                showCancelButton: true,
+                confirmButtonColor: "#3085d6",
+                cancelButtonColor: "#d33",
+                confirmButtonText: "Yes",
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    $.ajax({
+                        method: 'post',
+                        url: '<?= base_url('warehouse/report_history_transactions_fg/lsb_lock') ?>',
+                        data: {
+                            filter_from: filter_from,
+                            filter_to: filter_to,
+                        },
+                        success: function(result) {
+                            var result = JSON.parse(result);
+                            if (result.status) {
+                                toastr.success(result.message);
+                            } else {
+                                toastr.warning(result.message);
+                            }
+                        },
+                        error: function(jqXHR, textStatus, errorThrown) {
+                            toastr.error(jqXHR.statusText);
+                            $.messager.alert("Error", jqXHR.statusText, 'error');
+                        },
+                        complete: function(data) {
+                            // $('#dg').treegrid('reload');
+                        }
+                    });
+                }
+            });
+        } 
     }
 
     $(function() {

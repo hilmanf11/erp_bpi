@@ -221,7 +221,7 @@ class Item_receipts_fg extends CI_Controller
             $document_no = $this->input->post('document_no');
             // $checksheet_number = $this->input->post('checksheet_number');
 
-            $this->db->select('f.checksheet_number, f.checksheet_label, c.so_number, b.wo_no, COALESCE(f.qty, 0) as qty, a.item_fg_id');
+            $this->db->select('f.checksheet_number, f.checksheet_label, c.so_number, b.wo_no, b.packing_date, COALESCE(f.qty, 0) as qty, a.item_fg_id');
             $this->db->from('wip_receipts a');
             $this->db->join('checksheets b', 'a.checksheet_number = b.number');
             $this->db->join('production_schedules c', 'b.wo_no = c.wo_no','left');
@@ -235,7 +235,7 @@ class Item_receipts_fg extends CI_Controller
             $records = $this->db->get()->result_array();
 
             if(!$records){
-                $this->db->select('f.checksheet_number, f.checksheet_label, c.so_number, b.wo_no, COALESCE(f.qty, 0) as qty, a.item_fg_id');
+                $this->db->select('f.checksheet_number, f.checksheet_label, c.so_number, b.wo_no, b.packing_date, COALESCE(f.qty, 0) as qty, a.item_fg_id');
                 $this->db->from('wip_receipts a');
                 $this->db->join('checksheets b', 'a.checksheet_number = b.number','left');
                 $this->db->join('production_schedules c', 'b.wo_no = c.wo_no','left');
@@ -360,6 +360,35 @@ class Item_receipts_fg extends CI_Controller
     //         show_error("Cannot Process your request");
     //     }
     // }
+
+    public function checkPackingDateLocked()
+    {
+        $packing_date = $this->input->post('packing_date');
+        $checksheet_number  = $this->input->post('checksheet_number');
+        // var_dump($checksheet_number);
+        // return;
+
+        $this->db->order_by('lock_from', 'DESC');
+        $lock = $this->db->get('lsb_lock')->row();
+
+        if ($lock) {
+            $new_date = date('Y-m-d', strtotime('+1 month', strtotime($lock->lock_from)));
+
+            $this->db->update('checksheets',["packing_date" => $new_date,"remarks" => "Adjust Packing Date"], ["number" => $checksheet_number]);
+
+            echo json_encode([
+                "status" => true,
+                "message" => "Packing date {$packing_date} will be adjust to {$new_date} because period lock {$lock->period}",
+                "new_date" => $new_date
+            ]);
+        } else {
+            echo json_encode([
+                "status" => false,
+                "message" => "Period Lock not found. Packing date will be same.",
+                "new_date" => $packing_date
+            ]);
+        }
+    }
 
     public function create()
     {

@@ -42,15 +42,14 @@
             <div class="fitem" style="padding:0 200px 0 200px;" hidden>
                 <input style="width:100%; height: 80px;" type="text" id="checksheet_number" name="checksheet_number" class="scan" placeholder="SCAN DOCUMENT NO HERE">
             </div>
-            <div class="fitem" id="document_no_wrapper" style="padding:0 200px 0 200px;">
+            <div class="fitem" style="padding:0 200px 0 200px;">
                 <input style="width:100%; height: 80px;" type="text" id="document_no" name="document_no" class="scan" placeholder="SCAN DOCUMENT NO HERE">
             </div>
-            <div class="fitem" id="checksheet_label_wrapper" style="padding:0 200px 0 200px;">
+            <div class="fitem" style="padding:0 200px 0 200px;">
                 <input style="width:100%; height: 80px;" type="text" id="checksheet_label" name="checksheet_label" class="scan" placeholder="SCAN LABEL HERE">
             </div>
             <div class="fitem" style="padding:0 200px 10px 200px;">
                 <a href="javascript:;" class="easyui-linkbutton" onclick="reload()"><i class="fa fa-rotate-right"></i> Reload</a>
-                <a href="javascript:;" class="easyui-linkbutton" id="btnToggle" onclick="toggleInput()"><i class="fa fa-rotate-right"></i> New Barcode</a>
             </div>
         </fieldset>
     </div>
@@ -88,64 +87,14 @@
         window.location.reload();
     }
 
-    // $(document).ready(function() {
-    //     $('#checksheet_label').hide(); // Hide input label saat halaman pertama kali load
+    $(document).ready(function() {
+        $('#checksheet_label').hide(); // Hide input label saat halaman pertama kali load
 
-    //     // Ketika document_no diubah, sembunyikan kembali scan label
-    //     $('#document_no').on('input', function() {
-    //         $('#checksheet_label').hide();
-    //     });
-    // });
-
-    let manualScanMode = false;
-
-    $(document).ready(function () {
-        $('#checksheet_label_wrapper').hide(); // Sembunyikan wrapper, bukan hanya input
-
-        $('#document_no').on('input', function () {
-            if (!manualScanMode && $(this).val().trim() !== '') {
-                $('#checksheet_label_wrapper').show();
-            }
+        // Ketika document_no diubah, sembunyikan kembali scan label
+        $('#document_no').on('input', function() {
+            $('#checksheet_label').hide();
         });
     });
-
-    function toggleInput() {
-        const btn = $('#btnToggle');
-
-        if (!manualScanMode) {
-            // Masuk manual mode
-            manualScanMode = true;
-            $('#document_no_wrapper').hide();
-            $('#checksheet_label_wrapper').show();
-            btn.html('<i class="fa fa-check"></i> WIP Receipt');
-        } else {
-            // Kembali ke normal mode
-            manualScanMode = false;
-            $('#document_no_wrapper').show();
-            $('#checksheet_label_wrapper').hide().find('input').val('');
-            btn.html('<i class="fa fa-rotate-right"></i> New Barcode');
-        }
-    }
-
-    // Tombol New Barcode → WIP Receipt
-    function toggleInput() {
-        const btn = $('#btnToggle');
-
-        if (!manualScanMode) {
-            // Masuk manual scan mode
-            manualScanMode = true;
-            $('#document_no').closest('.fitem').hide();
-            $('#checksheet_label').closest('.fitem').show();
-            btn.html('<i class="fa fa-check"></i> WIP Receipt');
-        } else {
-            // Kembali ke normal mode
-            manualScanMode = false;
-            $('#document_no').closest('.fitem').show();
-            $('#checksheet_label').val('').hide(); // Kosongkan dan hide
-            btn.html('<i class="fa fa-rotate-right"></i> New Barcode');
-        }
-    }
-
 
     $(function() {
         //Audio Config
@@ -268,6 +217,71 @@
         }
 
         //Scan Label
+        // $('#checksheet_label').keypress(function(e) {
+        //     if (e.which == 13) {
+        //         var checksheet_label = $(this).val();
+        //         var document_no = $("#document_no").val();
+
+        //         $.ajax({
+        //             type: "POST",
+        //             url: "<?= base_url('warehouse/item_receipts_fg/getChecksheetLabel') ?>",
+        //             data: "checksheet_label=" + checksheet_label + "&document_no=" + document_no,
+        //             dataType: "json",
+        //             success: function(json) {
+        //                 console.log(json);
+                        
+        //                 if (json.total > 0) {
+        //                     var row = json.rows;
+
+        //                     console.log(row);
+        //                     for (let i = 0; i < json.total; i++) {
+        //                         $.ajax({
+        //                             type: "POST",
+        //                             url: "<?= base_url('warehouse/item_receipts_fg/create') ?>",
+        //                             data: "checksheet_label=" + checksheet_label +
+        //                                 "&checksheet_number=" + row[i].checksheet_number +
+        //                                 "&item_fg_id=" + row[i].item_fg_id +
+        //                                 "&packing_date=" + row[i].packing_date +
+        //                                 "&type=" + row[i].type +
+        //                                 "&wo_no=" + row[i].wo_no +
+        //                                 "&qty=" + row[i].qty,
+        //                             dataType: "json",
+        //                             success: function(result) {
+        //                                 if (result.theme == "success") {
+        //                                     serialSuccess.play();
+        //                                     toastr.success(result.message, result.title);
+        //                                     $("#checksheet_label").val('');
+        //                                     $('#checksheet_label').focus();
+        //                                 } else {
+        //                                     if (result.title == "Not Scanned In" || result.title == "Not Registered") {
+        //                                         serialNotFound.play();
+        //                                     } else {
+        //                                         serialDuplicate.play();
+        //                                     }
+        //                                     toastr.error(result.message, result.title);
+        //                                     $("#checksheet_label").val('');
+        //                                     $('#checksheet_label').focus();
+        //                                 }
+        //                             }
+        //                         });
+        //                     }
+
+        //                     $('#dg').datagrid({
+        //                         url: '<?= base_url('warehouse/item_receipts_fg/getDocumentNo?document_no=') ?>' + document_no,
+        //                         rownumbers: true
+        //                     });
+                            
+        //                 } else {
+        //                     serialNotFound.play();
+        //                     toastr.warning("Label not found!");
+        //                     $("#checksheet_label").val('');
+        //                     $('#checksheet_label').focus();
+        //                 }
+        //             }
+        //         });
+        //     }
+        // });
+
         $('#checksheet_label').keypress(function(e) {
             if (e.which == 13) {
                 var checksheet_label = $(this).val();
@@ -276,57 +290,93 @@
                 $.ajax({
                     type: "POST",
                     url: "<?= base_url('warehouse/item_receipts_fg/getChecksheetLabel') ?>",
-                    data: "checksheet_label=" + checksheet_label + "&document_no=" + document_no,
+                    data: {
+                        checksheet_label: checksheet_label,
+                        document_no: document_no
+                    },
                     dataType: "json",
                     success: function(json) {
-                        console.log(json);
-                        
                         if (json.total > 0) {
-                            var row = json.rows;
+                            var rows = json.rows;
 
-                            console.log(row);
-                            for (let i = 0; i < json.total; i++) {
-                                $.ajax({
-                                    type: "POST",
-                                    url: "<?= base_url('warehouse/item_receipts_fg/create') ?>",
-                                    data: "checksheet_label=" + checksheet_label +
-                                        "&checksheet_number=" + row[i].checksheet_number +
-                                        "&item_fg_id=" + row[i].item_fg_id +
-                                        "&packing_date=" + row[i].packing_date +
-                                        "&type=" + row[i].type +
-                                        "&wo_no=" + row[i].wo_no +
-                                        "&qty=" + row[i].qty,
-                                    dataType: "json",
-                                    success: function(result) {
-                                        if (result.theme == "success") {
-                                            serialSuccess.play();
-                                            toastr.success(result.message, result.title);
-                                            $("#checksheet_label").val('');
-                                            $('#checksheet_label').focus();
-                                        } else {
-                                            if (result.title == "Not Scanned In" || result.title == "Not Registered") {
-                                                serialNotFound.play();
+                            for (let i = 0; i < rows.length; i++) {
+                                (function(row) {
+                                    // Cek apakah packing_date terkunci di lsb_lock
+                                    $.ajax({
+                                        type: "POST",
+                                        url: "<?= base_url('warehouse/item_receipts_fg/checkPackingDateLocked') ?>",
+                                        data: {
+                                            packing_date: row.packing_date,
+                                            checksheet_number: row.checksheet_number
+                                        },
+                                        dataType: "json",
+                                        success: function(lockCheck) {
+                                            let use_date = row.packing_date;
+
+                                            if (lockCheck.status) {
+                                                Swal.fire({
+                                                    title: "Locked Period",
+                                                    text: lockCheck.message + ". Do you want to proceed?",
+                                                    icon: "warning",
+                                                    showCancelButton: true,
+                                                    confirmButtonText: "Yes, continue",
+                                                    cancelButtonText: "Cancel"
+                                                }).then((result) => {
+                                                    if (result.isConfirmed) {
+                                                        use_date = lockCheck.new_date;
+                                                        sendCreate(row, use_date);
+                                                    } else {
+                                                        $("#checksheet_label").val('').focus();
+                                                    }
+                                                });
                                             } else {
-                                                serialDuplicate.play();
+                                                sendCreate(row, use_date);
                                             }
-                                            toastr.error(result.message, result.title);
-                                            $("#checksheet_label").val('');
-                                            $('#checksheet_label').focus();
                                         }
+                                    });
+
+                                    function sendCreate(row, packing_date) {
+                                        $.ajax({
+                                            type: "POST",
+                                            url: "<?= base_url('warehouse/item_receipts_fg/create') ?>",
+                                            data: {
+                                                checksheet_label: checksheet_label,
+                                                checksheet_number: row.checksheet_number,
+                                                item_fg_id: row.item_fg_id,
+                                                packing_date: packing_date,
+                                                type: row.type,
+                                                wo_no: row.wo_no,
+                                                qty: row.qty
+                                            },
+                                            dataType: "json",
+                                            success: function(result) {
+                                                if (result.theme === "success") {
+                                                    serialSuccess.play();
+                                                    toastr.success(result.message, result.title);
+                                                } else {
+                                                    if (result.title === "Not Scanned In" || result.title === "Not Registered") {
+                                                        serialNotFound.play();
+                                                    } else {
+                                                        serialDuplicate.play();
+                                                    }
+                                                    toastr.error(result.message, result.title);
+                                                }
+                                                $("#checksheet_label").val('').focus();
+                                            }
+                                        });
                                     }
-                                });
+                                })(rows[i]);
                             }
 
                             $('#dg').datagrid({
                                 url: '<?= base_url('warehouse/item_receipts_fg/getDocumentNo?document_no=') ?>' + document_no,
                                 rownumbers: true
                             });
-                            
+
                         } else {
                             serialNotFound.play();
                             toastr.warning("Label not found!");
-                            $("#checksheet_label").val('');
-                            $('#checksheet_label').focus();
+                            $("#checksheet_label").val('').focus();
                         }
                     }
                 });
@@ -373,5 +423,4 @@
             rownumbers: true
         }).datagrid('enableFilter');
     }
-
 </script>
