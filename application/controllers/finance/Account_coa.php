@@ -70,7 +70,7 @@ class Account_coa extends CI_Controller
 
             if (@count($filters) > 0) {
                 foreach ($filters as $filter) {
-                    if ($filter->field == 'account_group_detail_id') {
+                    if ($filter->field == 'account_group_detail_name') {
                         $this->db->like('account_group_details.name', $filter->value);
                     } elseif ($filter->field == 'module') {
                         $this->db->like('journal_types.module', $filter->value); 
@@ -240,18 +240,33 @@ class Account_coa extends CI_Controller
             $dataExist = $this->db->get('account_coa')->row();
 
             if ($dataExist) {
-                $update = $this->crud->update('account_coa', ["id" => $id], $post);
-                $update_result = json_decode($update);
 
-                if ($update_result->theme == 'success') {                    
-                    // echo json_encode(["title"   => "Success", "message" => "Data created successfully.", "theme"   => "success"]);
-                    echo 'Success';
+                // validasi Account CoA jika sudah digunakan pada tabel lain jangan dihapus (Bu Nina)
+                $pi_exists = $this->db->get_where('purchase_invoices', ['account_number' => $dataExist->account_number, 'deleted' => 0])->row();
+                $si_exists = $this->db->get_where('sales_invoices', ['account_number' => $dataExist->account_number, 'deleted' => 0])->row();
+                $ap_exists = $this->db->get_where('ap_payments', ['account_number' => $dataExist->account_number, 'deleted' => 0])->row();
+                $ar_exists = $this->db->get_where('ar_receipts', ['account_number' => $dataExist->account_number, 'deleted' => 0])->row();
+                $journal_exists = $this->db->get_where('journal_postings', ['account_number' => $dataExist->account_number, 'deleted' => 0])->row();
 
+                if ( !empty($pi_exists) || !empty($si_exists) || !empty($ap_exists) || !empty($ar_exists) || !empty($journal_exists) ) {
+                    // echo json_encode(["title" => "Error", "message" => "Data is already in use in another table", "theme" => "error"]); 
+                    echo 'Existed';
+                
                 } else {
-                    $this->output->set_status_header(400); // Bad Request
-                    // echo json_encode(['success' => false, 'message' => 'Failed to update data.', 'title' => 'Error', 'theme' => 'error']);
-                    echo 'Error';
+                    $update = $this->crud->update('account_coa', ["id" => $id], $post);
+                    $update_result = json_decode($update);
+
+                    if ($update_result->theme == 'success') {                    
+                        // echo json_encode(["title"   => "Success", "message" => "Data created successfully.", "theme"   => "success"]); // error parse
+                        echo 'Success';
+
+                    } else {
+                        $this->output->set_status_header(400); // Bad Request
+                        // echo json_encode(['success' => false, 'message' => 'Failed to update data.', 'title' => 'Error', 'theme' => 'error']);
+                        echo 'Error';
+                    }
                 }
+
 
             } else {        
                 $this->output->set_status_header(400); // Bad Request
@@ -269,10 +284,30 @@ class Account_coa extends CI_Controller
     //DELETE DATA
     public function delete()
     {
-        $data = $this->input->post();
-        $send = $this->crud->delete('account_coa', $data);
-        echo $send;
+        $post = $this->input->post();
+        $id   = $post['id'];
+
+        $account = $this->db->get_where('account_coa', ['id' => $id, 'deleted' => 0])->row();
+        
+        // validasi Account CoA jika sudah digunakan pada tabel lain jangan dihapus (Bu Nina)
+        $pi_exists = $this->db->get_where('purchase_invoices', ['account_number' => $account->account_number, 'deleted' => 0])->row();
+        $si_exists = $this->db->get_where('sales_invoices', ['account_number' => $account->account_number, 'deleted' => 0])->row();
+        $ap_exists = $this->db->get_where('ap_payments', ['account_number' => $account->account_number, 'deleted' => 0])->row();
+        $ar_exists = $this->db->get_where('ar_receipts', ['account_number' => $account->account_number, 'deleted' => 0])->row();
+        $journal_exists = $this->db->get_where('journal_postings', ['account_number' => $account->account_number, 'deleted' => 0])->row();
+
+        if ( !empty($pi_exists) || !empty($si_exists) || !empty($ap_exists) || !empty($ar_exists) || !empty($journal_exists) ) {
+            echo json_encode(["title" => "Error", "message" => "Data is already in use in another table", "theme" => "error"]);
+            
+        } elseif (!empty($account->original_debit) || !empty($account->original_credit) || !empty($account->local_debit) || !empty($account->local_credit)) {
+            echo json_encode(["title" => "Error", "message" => "Credit / Debit is not empty", "theme" => "error"]);
+            
+        } else {
+            $send = $this->crud->delete('account_coa', $post);
+            echo $send;
+        } 
     }
+
     //UPLOAD DATA
     public function upload()
     {

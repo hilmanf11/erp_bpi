@@ -3,7 +3,7 @@
     <thead>
         <tr>
             <th rowspan="2" field="ck" checkbox="true"></th>
-            <th rowspan="2" data-options="field:'account_group_detail_id',width:100,align:'left'">
+            <th rowspan="2" data-options="field:'account_group_detail_name',width:100,align:'left'">
                 <div style="text-align: center;">Category</div>
             </th>
             <th rowspan="2" data-options="field:'account_number',width:100,halign:'center'">Account Code</th>
@@ -145,6 +145,7 @@
             toastr.warning("Please select one of the data in the table first!", "Information");
         }
     }
+
     //DELETE DATA
     function deleted() {
         var rows = $('#dg').datagrid('getSelections');
@@ -159,8 +160,16 @@
                             data: {
                                 id: row.id
                             },
+                            dataType: 'json',
                             success: function(result) {
-                                var result = eval('(' + result + ')');
+                                console.log("Delete : ", result);
+
+                                if (result && result.theme == 'error') {
+                                    toastr.error(result.message, "Error");
+
+                                } else {
+                                    toastr.success(result.message, "Success");
+                                }
                             },
                             error: function(jqXHR, textStatus, errorThrown) {
                                 toastr.error(jqXHR.statusText);
@@ -434,6 +443,10 @@
 
                             } else if (result && originalString.toLowerCase() === "error") {
                                 toastr.error("Failed to Save Data", result);
+                                $('#dlg_insert').dialog('close');
+
+                            } else if (result && originalString.toLowerCase() === "existed") {
+                                toastr.error("Data is already in use in another table", 'Data ' + result);
                                 $('#dlg_insert').dialog('close');
 
                             } else if (result && originalString.toLowerCase() === "failed") {
