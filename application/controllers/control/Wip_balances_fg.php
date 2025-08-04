@@ -281,8 +281,8 @@ class Wip_balances_fg extends CI_Controller
             $html .= '<tr>
                             <td>' . $no . '</td>
                             <td>' . $data['item_fg_id'] . '</td>
-                            <td>' . $data['item_fg_number'] . '</td>
-                            <td>' . $data['item_fg_name'] . '</td>
+                            <td style="mso-number-format:\@;">' . $data['item_fg_number'] . '</td>
+                            <td style="mso-number-format:\@;">' . $data['item_fg_name'] . '</td>
                             <td>' . $data['trans_date'] . '</td>
                             <td>' . number_format($data['qty']) . '</td>
                         </tr>';
