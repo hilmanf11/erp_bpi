@@ -769,13 +769,12 @@ class Sales_invoices extends CI_Controller
         $update = $this->db->update('delivery_notes', ["status" => "0"], ["delivery_note_no" => $data['delivery_note_no'], "item_fg_id"=> $data['item_fg_id']]);
         echo $send;
     }
-    
+
     public function deleteOnUncheck() 
     {
         $data = $this->input->post();
         $send = $this->crud->delete('sales_invoices', $data);
         echo $send;
-        exit;
 
         if ($this->input->method() === 'post') 
         {
@@ -1321,10 +1320,10 @@ class Sales_invoices extends CI_Controller
             $this->db->join('sales_orders i', 'a.sales_order_no = i.sales_order_no', 'left');
             $this->db->join('sales_order_rm i2', 'a.sales_order_no = i2.sales_order_no', 'left');
             $this->db->join('customer_address b', 'COALESCE(i.customer_address_id, i2.customer_address_id) = b.id', 'left');
-            $this->db->join("(SELECT id, item_no, item_fg_id, SUM(qty) as qty, price FROM sales_invoices WHERE number = '$invoice_no' GROUP BY item_fg_id, item_no, price) h", "a.item_fg_id = h.item_fg_id ", "left");
+            $this->db->join("(SELECT id, item_no, item_fg_id, SUM(qty) as qty, price FROM sales_invoices WHERE number = '$invoice_no' GROUP BY item_fg_id, item_no, price) h", "(a.item_fg_id = h.item_fg_id OR (a.item_fg_id IS NULL AND a.item_no = h.item_no))","left");
             $this->db->where('a.deleted', 0);
             $this->db->where('a.number', $invoice_no);
-            $this->db->group_by('h.item_fg_id');
+            // $this->db->group_by('h.item_fg_id');
             $this->db->group_by('h.item_no');
             $this->db->group_by('h.price');
             $this->db->order_by('a.item_no', 'ASC');
