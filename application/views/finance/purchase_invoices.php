@@ -2203,7 +2203,7 @@
                         return;
                     }
                     // --- Lanjutkan proses jika tidak ada error validasi ---
-                    
+
                     if (isSubmitting) return; // cegah klik dobel
                     
                     isSubmitting = true;
@@ -3002,7 +3002,7 @@
         if (rows.length > 0) {
             // Extract the selected IDs and join them into a comma-separated string
             var ids = rows.map(function(row) {
-                return row.id;
+                return row.number;
             }).join(',');
 
             // Send the selected IDs to the exportAccurate function

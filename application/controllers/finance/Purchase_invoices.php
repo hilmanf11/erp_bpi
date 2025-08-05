@@ -114,7 +114,7 @@ class Purchase_invoices extends CI_Controller
         $records = $this->db->query($sql, array("%$post%"))->result_array();
         echo json_encode($records);
     }    
-    
+
     public function readJournalType()
     {
         $id = $this->input->post('id');
@@ -367,6 +367,7 @@ class Purchase_invoices extends CI_Controller
             ORDER BY a.created_date DESC");
         echo json_encode($records);
     }
+
 
     public function readReceiptUpdate($type = "purchase")
     {
@@ -688,7 +689,7 @@ class Purchase_invoices extends CI_Controller
         } else {
             $number = base64_decode($this->input->get('number'));
 
-            $this->db->select('a.*');
+            $this->db->select("a.*, 'datatbles' as origin");
             $this->db->select("'view' as details");
             $this->db->from('purchase_invoices a');
             $this->db->join('suppliers b', 'a.supplier_id = b.id');
@@ -834,7 +835,6 @@ class Purchase_invoices extends CI_Controller
         $data = $this->input->post();
         $send = $this->crud->delete('purchase_invoices', $data);
         echo $send;
-        exit;
 
         if ($this->input->method() === 'post') 
         {
@@ -1723,7 +1723,7 @@ class Purchase_invoices extends CI_Controller
         $this->db->from('purchase_invoices a');
         $this->db->join('suppliers b', 'a.supplier_id = b.id');
         $this->db->where('a.deleted', 0);
-        $this->db->where_in('a.id', $ids); // Use where_in to handle array of IDs
+        $this->db->where_in('a.number', $ids); // Use where_in to handle array of IDs
         $this->db->group_by('a.number'); // Group by invoice number to avoid duplicates
         $invoiceRecords = $this->db->get()->result_array();
     
@@ -1747,7 +1747,7 @@ class Purchase_invoices extends CI_Controller
             // Fetch items (OF rows) for this invoice
             $this->db->select('e.id as item_id, e.number as item_number, e.name as item_name, a.price, a.qty, a.total, a.discount, e.uom');
             $this->db->from('purchase_invoices a');
-            $this->db->join('item_rm e', 'a.item_rm_id = e.id');
+            $this->db->join('item_rm e', 'a.item_rm_id = e.id','left');
             $this->db->where('a.number', $invoice['invoice_number']); // Mengambil item untuk invoice tertentu
             $itemRecords = $this->db->get()->result_array();
 
