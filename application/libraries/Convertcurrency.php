@@ -18,7 +18,8 @@ class Convertcurrency
             $currencyWord = $currencyNames[$currency];
         } else {
             // Jika mata uang tidak ditemukan, gunakan nilai default atau tampilkan pesan error
-            $currencyWord = "Mata Uang Tidak Dikenal";
+            // $currencyWord = "Mata Uang Tidak Dikenal";
+            $currencyWord = " ";
         }
     
         $words .= $this->numberToWords($amount) . " " . $currencyWord;
