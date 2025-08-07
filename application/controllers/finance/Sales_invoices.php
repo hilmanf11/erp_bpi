@@ -1246,7 +1246,7 @@ class Sales_invoices extends CI_Controller
         die($html);
     }
 
-    public function print_commercial_sum($invoice_no)
+    public function print_commercial_sum2($invoice_no)//origin
     {
         $invoice_no = base64_decode($invoice_no);
         $sales_invoices = $this->crud->reads('sales_invoices', [], ["number" => $invoice_no]);
@@ -1642,6 +1642,314 @@ class Sales_invoices extends CI_Controller
         }
         $html .= '</div><script>window.print()</script>';
         die($html);
+    }
+
+    public function print_commercial_sum($invoice_no)
+    {
+        $invoice_no = base64_decode($invoice_no);
+
+        $summary_qty = $this->db->select('item_fg_id, 
+        item_no, 
+        item_name, 
+        uom, 
+        price, 
+        currency, 
+        SUM(qty) as qty_sum, 
+        total_invoice,
+        discount,
+        total_sub,
+        down_payment,
+        taxes,
+        disc_pr,
+        disc_dp')
+            ->from('sales_invoices')
+            ->where('number', $invoice_no)
+            ->group_by(['item_fg_id', 'item_no', 'item_name', 'uom', 'price', 'currency'])
+            ->get()
+            ->result_array();
+
+        $record = $this->db->select('a.*, 
+            COALESCE(f.bank_name, "") as bank_name, 
+            "PT. BANSHU PLASTIC INDONESIA" as account_name, 
+            COALESCE(f.bank_account, 0) as bank_account,
+            d.number as customer_number, 
+            d.name as customer_name,
+            d.type, 
+            b.address, 
+            b.address_billing, 
+            b.telp_billing,
+            b.telp,
+            COALESCE(i.currency,i2.currency) as currency,
+            g.origin,
+            g.sailing,
+            g.ship_by,
+            g.incoterm,
+            g.delivery_order_no,
+            g.trans_type')
+            ->from('sales_invoices a')
+            ->join('account_banks f', 'a.payment_to = f.bank_name', 'left')
+            ->join('customers d', 'a.customer_id = d.id', 'left')
+            ->join('sales_orders i', 'a.sales_order_no = i.sales_order_no', 'left')
+            ->join('sales_order_rm i2', 'a.sales_order_no = i2.sales_order_no', 'left')
+            ->join('customer_address b', 'COALESCE(i.customer_address_id, i2.customer_address_id) = b.id', 'left')
+            ->join('delivery_notes g', 'a.delivery_note_no = g.delivery_note_no and a.customer_order_no = g.customer_order_no', 'left')
+            ->where('a.deleted', 0)
+            ->where('a.number', $invoice_no)
+            ->limit(1)
+            ->get()
+            ->row_array();
+
+        $rows_per_page = 20;
+        $total_rows = count($summary_qty);
+        $total_pages = ceil($total_rows / $rows_per_page);
+
+        $this->createQrcode($invoice_no, "assets/image/qrcode/");
+
+        $config = $this->db->get('config')->row();
+        $config_iso = $this->db->get('config_iso')->row();
+
+        $html = $this->build_invoice_html($summary_qty, $record, $config, $config_iso, $total_pages, $rows_per_page);
+        $html .= '</div><script>window.print()</script>';
+        die($html);
+    }
+
+    private function build_invoice_html($summary_qty, $record, $config, $config_iso, $total_pages, $rows_per_page) {
+        $html = '<html><head><title>' . $record['number'] . '</title><link rel="icon" href="' . $config->favicon . '" type="image/png" sizes="16x16"></head>';
+        $html .= '<style>body {font-family: Arial, Helvetica, sans-serif;}#customers {border-collapse: collapse;width: 100%;font-size: 12px;}#customers td, #customers th {border: 1px solid black;padding: 2px;}#customers th {padding-top: 2px;padding-bottom: 2px;text-align: center;color: black;}@media screen {.print {display: none !important;}}@media print {.noprint {display: none !important;}}</style>';
+        $html .= '<body><div style="margin:20%;" class="noprint"><center><h1>Press CTRL + P for Print</h1><p>Display pages for 20 rows</p><p>Paper Size A4, Layout Landscape</p><p>Margin Default, Scale 98</p></center></div><div class="print">';
+
+        $grand_total = 0;
+
+        for ($i = 0; $i < $total_pages; $i++) {
+            $records = array_slice($summary_qty, $i * $rows_per_page, $rows_per_page);
+
+            $html .= '<table style="width:100%;">
+                <tr>
+                    <th width="10"><img src="' . $config->favicon . '" width="60" /></th>
+                    <td width="250" style="padding:10px;">
+                        <b style="font-size:14px;">' . $config->name . '</b><br>
+                        <span style="font-size:10px;">' . $config->address . '</span><br>
+                    </td>
+                    <th width="100" style="text-align:right;">
+                        <table style="width:100%; font-size:10px;">
+                            <tr>
+                                <td width="50" rowspan="4"><img src="' . base_url('assets/image/qrcode/' . $record['number'] . '.png') . '" width="60"/></td>
+                                <td width="60">Doc No</td>
+                                <td width="5">:</td>
+                                <td width="100">' . $config_iso->doc_sales_invoice . '</td>
+                            </tr>
+                            <tr>
+                                <td>Form</td>
+                                <td>:</td>
+                                <td>' . $config_iso->form_sales_invoice . '</td>
+                            </tr>
+                            <tr>
+                                <td>Print Date</td>
+                                <td>:</td>
+                                <td>' . date("Y-m-d H:i") . '</td>
+                            </tr>
+                            <tr>
+                                <td>Print By</td>
+                                <td>:</td>
+                                <td>' . $this->session->name . '</td>
+                            </tr>
+                        </table>
+                    </th>
+                </tr>
+            </table>';
+
+            $html .= '<div style="padding:10px;"><center><h3>INVOICE</h3></center>
+            <div style="float:left; width:60%;">
+                <table style="width:100%; font-size:12px; margin-bottom:10px;">
+                    <tr><td width="150">Customer Code</td><td width="10">:</td><td><b>' . $record['customer_number'] . '</b></td></tr>
+                    <tr><td>Customer Name</td><td>:</td><td><b>' . $record['customer_name'] . '</b></td></tr>
+                    <tr><td style="vertical-align:top;">Ship To</td><td style="vertical-align:top;">:</td><td><b>' . $record['address'] . '</b></td></tr>
+                    <tr><td style="vertical-align:top;">Bill To</td><td style="vertical-align:top;">:</td><td><b>' . $record['address_billing'] . '</b></td></tr>
+                    <tr><td>Telp</td><td>:</td><td><b>' . $record['telp'] . '</b></td></tr>
+                </table>
+            </div>
+            <div style="float:left; width:40%;">
+                <table style="width:100%; font-size:12px; margin-bottom:10px;">
+                    <tr><td width="100">Sales Invoice No</td><td width="10">:</td><td><b>' . $record['number'] . '</b></td></tr>
+                    <tr><td>Faktur No</td><td>:</td><td><b>' . $record['faktur_no'] . '</b></td></tr>
+                    <tr><td>Trans Type</td><td>:</td><td><b>' . $record['trans_type'] . '</b></td></tr>
+                    <tr><td>Ship By</td><td>:</td><td><b>' . $record['ship_by'] . '</b></td></tr>
+                    <tr><td>Delivery Date</td><td>:</td><td><b>' . date("d F Y", strtotime($record['trans_date'])) . '</b></td></tr>
+                    <tr><td>Payment Due</td><td>:</td><td><b>' . date("d F Y", strtotime($record['due_date'])) . '</b></td></tr>
+                </table>
+            </div>';
+
+            $html .= '<table id="customers">
+            <tr>
+                <th width="20">No</th>
+                <th>Product No</th>
+                <th>Product Name</th>
+                <th width="60">UoM</th>
+                <th width="60">Qty</th>
+                <th width="60">Currency</th>
+                <th width="60">Price</th>
+                <th width="60">Total</th>
+            </tr>';
+
+            $no = 1 + ($i * $rows_per_page);
+            $sub_total = 0;
+            foreach ($records as $row) {
+                $qty = $row['qty_sum'];
+                $total_invoice = $row['total_invoice'];
+                $discount = $row['discount'];
+                $sub_total = $row['total_sub'];
+                $down_payment = $row['down_payment'];
+                $dpp_total = (($record['total_sub'] - $record['down_payment']) * 11/12);
+                $vat_total = ($dpp_total * ($record['taxes']/100));
+                $disc_pr = ($record['disc_pr']);
+                $disc_dp = ($record['disc_dp']);
+                $sales_invoices = $this->db->query("SELECT * FROM sales_invoice_journals WHERE account_number IN ('170.110.00', '170.130.00') AND number = ?", [$record['number']])->result();
+                // var_dump($sales_invoices);
+                
+                if (!empty($sales_invoices)) {
+                    foreach ($sales_invoices as $invoice) {
+                        if ($invoice->account_number == "170.110.00" && $invoice->credit == "0" && $invoice->debit == "0" ) {
+                            $tax = "21 (5%)";
+                            $tax_total = 0;
+                            break;
+                        } elseif ($invoice->account_number == "170.110.00") {
+                            $tax = "21 (5%)";
+                            $tax_total = ($sub_total * (5/100));
+                            break;
+                        } elseif($invoice->account_number == "170.130.00") {
+                            $tax = "23 (2%)";
+                            $tax_total = ($sub_total * (2/100));
+                            break;
+                        } else{
+                            $tax = "";
+                            $tax_total = 0;
+                        }
+                    }
+                } else {
+                    $tax = "";
+                    $tax_total = 0;
+                }
+                
+                if($record['currency'] == 'IDR'){
+                    $format_no = 2;
+                }else{
+                    $format_no = 4;
+                }
+                
+                $grand_total = ((($sub_total - $down_payment) + $vat_total) - $tax_total);
+                
+                $format_no = $row['currency'] === 'IDR' ? 2 : 4;
+                $line_total = $row['price'] * $qty;
+                // $sub_total += $line_total;
+                $html .= '<tr>
+                    <td style="text-align:center">' . $no++ . '</td>
+                    <td>' . $row['item_no'] . '</td>
+                    <td>' . $row['item_name'] . '</td>
+                    <td style="text-align:center">' . $row['uom'] . '</td>
+                    <td style="text-align:right">' . number_format($qty, 0, ",", ".") . '</td>
+                    <td style="text-align:center">' . $row['currency'] . '</td>
+                    <td style="text-align:right">' . number_format($row['price'], $format_no, ",", ".") . '</td>
+                    <td style="text-align:right">' . number_format($line_total, $format_no, ",", ".") . '</td>
+                </tr>';
+            }
+
+            if ($i + 1 == $total_pages) {
+                $html .= '<tr>
+                            <td colspan="7" style="text-align:right"><b>Total Invoice</b></td>
+                            <td style="text-align:right"><b>' . number_format($total_invoice, $format_no, ",", ".") . '</b></td>
+                        </tr>';
+                $html .= '<tr>
+                            <td colspan="7" style="text-align:right"><b>Discount ('. number_format($disc_pr,0).' %)</b></td>
+                            <td style="text-align:right"><b>' . number_format($discount, $format_no, ",", ".") . '</b></td>
+                        </tr>';
+
+                $html .= '<tr>
+                            <td colspan="7" style="text-align:right"><b>Sub Total</b></td>
+                            <td style="text-align:right"><b>' . number_format($sub_total, $format_no, ",", ".") . '</b></td>
+                        </tr>';
+
+                $html .= '<tr>
+                            <td colspan="7" style="text-align:right"><b>Down Payment ('. number_format($disc_dp,0).' %)</b></td>
+                            <td style="text-align:right"><b>' . number_format($down_payment, $format_no, ",", ".") . '</b></td>
+                        </tr>';
+
+                $html .= '<tr>
+                            <td colspan="7" style="text-align:right"><b>DPP</b></td>
+                            <td style="text-align:right"><b>' . number_format($dpp_total, $format_no, ",", ".") . '</b></td>
+                        </tr>';
+
+                $html .= '<tr>
+                            <td colspan="7" style="text-align:right"><b>VAT ('. number_format($record['taxes'],0).' %)</b></td>
+                            <td style="text-align:right"><b>' . number_format($vat_total, $format_no, ",", ".") . '</b></td>
+                        </tr>';
+                
+                $html .= '<tr>
+                            <td colspan="7" style="text-align:right"><b>Income Tax '.$tax.'</b></td>
+                            <td style="text-align:right"><b>' . number_format($tax_total, $format_no, ",", ".") . '</b></td>
+                        </tr>';
+                $html .= '<tr>
+                            <td colspan="7" style="text-align:right"><b>Grand Total</b></td>
+                            <td style="text-align:right"><b>' . number_format($grand_total, $format_no, ",", ".") . '</b></td>
+                        </tr>';
+
+                $html .= '  <div style="position:fixed; bottom:0; width:98.7%;">
+                    <table id="customers" style="margin-top:10px; font-size:10px; border: 2px solid black;border-collapse: collapse;">
+                        <tr>
+                            <th width="400" style="text-align:left; vertical-align:top;" rowspan="4">
+                                Total Invoice Value in Words: <br><br>
+                                ' . $this->convertcurrency->convertCurrencyToWords($grand_total, $records[0]['currency']) . ' <br><br><br>
+                                Payment Information <br>
+                                Please transfer the Grand Total Amount to the following bank account: <br>
+                                <table style="width:100%; margin-top:10px; font-size:10px; border: none;">
+                                    <tr>
+                                        <td style="width:15%; text-align:left; border: none;"><b>Bank Name</td>
+                                        <td style="width:2%; text-align:left; border: none;"><b>:</td>
+                                        <td style="width:90%; text-align:left; border: none;"><b>' . $record['bank_name'] . '</td>
+                                    </tr>
+                                    <tr>
+                                        <td style="text-align:left; border: none;"><b>Account Name</td>
+                                        <td style="text-align:left; border: none;"><b>:</td>
+                                        <td style="text-align:left; border: none;"><b>' . $record['account_name'] . '</td>
+                                    </tr>
+                                    <tr>
+                                        <td style="text-align:left; border: none;"><b>Bank Account</td>
+                                        <td style="text-align:left; border: none;"><b>:</td>
+                                        <td style="text-align:left; border: none;"><b>' . $record['bank_account'] . '</td>
+                                    </tr>
+                                </table>
+                            </th>
+                        </tr>
+                    </table>
+                    <table id="customers" style="margin-top:10px; font-size:12px;"><br><br>
+                        <tr>
+                            <th width="420" style="text-align:left; vertical-align:top;" rowspan="4">
+                            Note. <br><br>
+                        </th>
+                        </tr>
+                        <tr>
+                            <th width="200" style="text-align:center;">AUTHORISED SIGNATURE</th>
+                        </tr>
+                        <tr>
+                            <th style="height:150px;"></th>
+                        </tr>
+                        <tr>
+                            <th style="height:20px; text-align:center;">Finance Dept</th>
+                        </tr>
+                    </table>
+                </div>';
+            } else {
+                $html .= '</table>';
+            }
+
+            $html .= '</div>';
+
+            if (($i + 1) != $total_pages) {
+                $html .= '<div style="page-break-after:always;"></div>';
+            }
+        }
+
+        $html .= '</div></body></html>';
+        return $html;
     }
 
     public function print_dn($invoice)
