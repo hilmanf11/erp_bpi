@@ -3,7 +3,7 @@
         <tr>
             <th rowspan="2" field="ck" checkbox="true"></th>
             <th rowspan="2" data-options="field:'number',width:150,halign:'center'" sortable="true">Checksheet ID</th>
-            <th rowspan="2" data-options="field:'wo_no',width:150,halign:'center'" sortable="true">WO/PO No</th>
+            <th rowspan="2" data-options="field:'wo_no',width:150,halign:'center'" sortable="true">WO/DOC No</th>
             <th rowspan="2" data-options="field:'division',width:80,halign:'center'" sortable="true">Division</th>
             <th rowspan="2" data-options="field:'trans_date',width:100,align:'center'" sortable="true">Trans Date</th>
             <!-- <th rowspan="2" data-options="field:'wp',width:80,align:'center'" sortable="true">WP</th> -->
@@ -30,6 +30,8 @@
             <th rowspan="2" data-options="field:'total_scan',width:80,align:'center',formatter:statusFormatScan,styler:statusStyleScan">Status<br>Label</th>
             <th rowspan="2" data-options="field:'document_no',width:160,align:'center'" sortable="true">WIP No</th>
             <th rowspan="2" data-options="field:'remarks',width:160,align:'left'" sortable="true">Remark</th>
+            <th rowspan="2" data-options="field:'status_subcont',width:100,align:'left'" sortable="true">Status Subcont</th>
+            <th rowspan="2" data-options="field:'subcont_type',width:100,align:'left'" sortable="true">Subcont Type</th>
             <th colspan="2" data-options="field:'',width:100,halign:'center'"> Created</th>
             <th colspan="2" data-options="field:'',width:100,halign:'center'"> Updated</th>
         </tr>
@@ -44,9 +46,9 @@
 <div id="toolbar" style="height: 230px; padding:10px;">
     <!-- <div style="width: 100%; display: grid; grid-template-columns: auto auto auto; grid-gap: 5px; display: flex;"> -->
     <div style="width: 100%;">
-        <fieldset style="width: 70%; border:2px solid #d0d0d0; margin-bottom: 5px; margin-top: 5px; border-radius:4px;">    
+        <fieldset style="width: 100%; border:2px solid #d0d0d0; margin-bottom: 5px; margin-top: 5px; border-radius:4px;">    
             <legend><b>Form Filter Data</b></legend>
-            <div style="width: 50%; float: left;">
+            <div style="width: 30%; float: left;">
                 <div class="fitem">
                     <span style="width:35%; display:inline-block;">Period</span>
                     <input style="width:30%;" id="filter_from" value="<?= date("Y-m-01") ?>" class="easyui-datebox" data-options="formatter:myformatter,parser:myparser, editable:false">
@@ -65,7 +67,7 @@
                     <a href="javascript:;" class="easyui-linkbutton" onclick="filter()"><i class="fa fa-search"></i> Filter Data</a>
                 </div>
             </div>
-            <div style="width: 50%; float: left;">
+            <div style="width: 30%; float: left;">
                 <div class="fitem">
                     <span style="width:35%; display:inline-block;">Checksheet</span>
                     <input style="width:60%;" id="filter_checksheet" class="easyui-combobox">
@@ -89,6 +91,24 @@
                         <option value="">Select All</option>
                         <option value="0">OPEN</option>
                         <option value="1">CLOSE</option>
+                    </select>
+                </div>
+            </div>
+            <div style="width: 30%; float: left;">
+                <div class="fitem">
+                    <span style="width:35%; display:inline-block;">Status Subcont</span>
+                    <select style="width:60%;" id="filter_status_subcont" class="easyui-combobox" panelHeight="auto">
+                        <option value="">Select All</option>
+                        <option value="YES">YES</option>
+                        <option value="NO">NO</option>
+                    </select>
+                </div>
+                <div class="fitem">
+                    <span style="width:35%; display:inline-block;">Subcont TYpe</span>
+                    <select style="width:60%;" id="filter_subcont_type" class="easyui-combobox" panelHeight="auto">
+                        <option value="">Select All</option>
+                        <option value="Jasa">Jasa</option>
+                        <option value="Finished Good">Finished Good</option>
                     </select>
                 </div>
             </div>
@@ -140,6 +160,14 @@
                     <input style="width:60%;" id="product_name" disabled class="easyui-textbox">
                 </div>
                 <div class="fitem">
+                    <span style="width:35%; display:inline-block;">Status Subcont</span>
+                    <input style="width:60%;" name="status_subcont" id="status_subcont" readonly class="easyui-textbox">
+                </div>
+                <div class="fitem">
+                    <span style="width:35%; display:inline-block;">Subcont Type</span>
+                    <input style="width:60%;" name="subcont_type" id="subcont_type" readonly class="easyui-textbox">
+                </div>
+                <div class="fitem">
                     <span style="width:35%; display:inline-block;">Division</span>
                     <input style="width:60%;" id="division" name="division" readonly="" class="easyui-textbox">
                 </div>
@@ -151,12 +179,12 @@
                     <span style="width:35%; display:inline-block;">Receipt Qty</span>
                     <input style="width:30%;" name="receipt" id="receipt"  required="" data-options="precision:'2'" class="easyui-numberbox">
                 </div>
+            </div>
+            <div style="float:left; width:50%;">
                 <div class="fitem">
                     <span style="width:35%; display:inline-block;">Accumulate</span>
                     <input style="width:30%;" name="accumulate" id="accumulate" readonly data-options="precision:'2'" class="easyui-numberbox">
                 </div>
-            </div>
-            <div style="float:left; width:50%;">
                 <div class="fitem">
                     <span style="width:35%; display:inline-block;">Balance Qty</span>
                     <input style="width:30%;" name="balance" id="balance"  readonly data-options="precision:'2'" class="easyui-numberbox">
@@ -203,7 +231,7 @@
                 </div>
                 <div class="fitem">
                 <span style="width:35%; display:inline-block;">Shift</span>
-                    <select style="width:60%;" name="shift" id="shift" required="" panelHeight="auto" class="easyui-combobox">
+                    <select style="width:60%;" name="shift" id="shift" required="" panelHeight="auto" class="easyui-combobox" editable="false">
                         <option value="1">1</option>
                         <option value="2">2</option>
                         <option value="3">3</option>
@@ -334,6 +362,8 @@
                             $("#wo_no").textbox('setValue', row.wo_no);
                             $("#balance").textbox('setValue', '0');
                             $("#division").textbox('setValue', row.division);
+                            $("#status_subcont").textbox('setValue', row.status_subcont);
+                            $("#subcont_type").textbox('setValue', row.subcont_type);
 
                             var wo_no = row.wo_no;
                             console.log(wo_no);
@@ -592,10 +622,14 @@
         var filter_shift = $("#filter_shift").combobox('getValue');
         var filter_item_fg_id = $("#filter_item_fg_id").combogrid('getValue');
         var filter_status = $("#filter_status").combobox('getValue');
+        var filter_status_subcont = $("#filter_status_subcont").combobox('getValue');
+        var filter_subcont_type = $("#filter_subcont_type").combobox('getValue');
+
 
         var url = "?filter_from=" + filter_from + "&filter_to=" + filter_to + 
         "&filter_wo_no=" + filter_wo_no + "&filter_checksheet=" + filter_checksheet + 
         "&filter_shift=" + filter_shift + "&filter_item_fg_id=" + filter_item_fg_id + 
+        "&filter_status_subcont=" + filter_status_subcont + "&filter_subcont_type=" + filter_subcont_type + 
         "&filter_division=" + filter_division + "&filter_status=" + filter_status;
 
         $('#dg').datagrid({
@@ -624,9 +658,13 @@
         var filter_shift = $("#filter_shift").combobox('getValue');
         var filter_item_fg_id = $("#filter_item_fg_id").combogrid('getValue');
         var filter_status = $("#filter_status").combobox('getValue');
+        var filter_status_subcont = $("#filter_status_subcont").combobox('getValue');
+        var filter_subcont_type = $("#filter_subcont_type").combobox('getValue');
+
 
         var url = "?filter_from=" + filter_from + "&filter_to=" + filter_to + 
         "&filter_wo_no=" + filter_wo_no + "&filter_checksheet=" + filter_checksheet + 
+        "&filter_status_subcont=" + filter_status_subcont + "&filter_subcont_type=" + filter_subcont_type + 
         "&filter_shift=" + filter_shift + "&filter_item_fg_id=" + filter_item_fg_id + 
         "&filter_division=" + filter_division + "&filter_status=" + filter_status;
         

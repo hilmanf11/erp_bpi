@@ -43,7 +43,7 @@ class Checksheets extends CI_Controller
             FROM repair_of_goods a
             JOIN item_fg b on a.item_fg_id = b.id 
             LEFT JOIN scan_repair_of_goods c on a.document_no = c.document_no 
-            WHERE a.status = 0 and b.number like '%$post%'
+            WHERE a.status_fc = 0 and b.number like '%$post%'
             GROUP BY a.document_no
             ORDER BY b.number DESC");
         echo json_encode($send);
@@ -75,7 +75,9 @@ class Checksheets extends CI_Controller
                         a.item_fg_id AS item_fg_id, 
                         a.item_fg_name AS product_name, 
                         b.number AS product_no,
-                        a.division as division
+                        a.division as division,
+                        b.status_subcont,
+                        b.subcont_type
                 FROM production_schedules a
                 JOIN item_fg b ON a.item_fg_id = b.id
                 WHERE a.status = 0 
@@ -93,7 +95,9 @@ class Checksheets extends CI_Controller
                         c.id AS item_fg_id, 
                         c.name AS product_name, 
                         COALESCE(c.number, '') AS product_no,
-                        '-' AS division
+                        '-' AS division,
+                        '-' AS status_subcont,
+                        '-' AS subcont_type
                 FROM purchase_order_receipts a
                 JOIN item_rm b ON a.item_rm_id = b.id
                 JOIN item_fg c ON b.number = c.number
@@ -259,6 +263,8 @@ class Checksheets extends CI_Controller
             $filter_item_fg_id = $this->input->get('filter_item_fg_id');
             $filter_division = $this->input->get('filter_division');
             $filter_status = $this->input->get('filter_status');
+            $filter_status_subcont = $this->input->get('filter_status_subcont');
+            $filter_subcont_type = $this->input->get('filter_subcont_type');
 
             $page = $this->input->post('page');
             $rows = $this->input->post('rows');
@@ -300,6 +306,14 @@ class Checksheets extends CI_Controller
             }
             if ($filter_item_fg_id != "") {
                 $this->db->where('a.item_fg_id', $filter_item_fg_id);
+            }
+
+            if ($filter_status_subcont != "") {
+                $this->db->where('a.status_subcont', $filter_status_subcont);
+            }
+
+            if ($filter_subcont_type != "") {
+                $this->db->where('a.subcont_type', $filter_subcont_type);
             }
             // $this->db->like('a.status', $filter_status);
             // $this->db->like('a.wo_no', $filter_wo_no);
@@ -391,10 +405,8 @@ class Checksheets extends CI_Controller
                     $send = $this->crud->create('checksheets', $post);
 
                     if ($post['accumulate'] == $post['qty']) {
-                        $update = $this->crud->update('production_schedules', [
-                            "wo_no" => $post['wo_no'],
-                            "item_fg_id" => $post['item_fg_id']
-                        ], ["status" => 1]);
+                        $update = $this->crud->update('production_schedules', ["wo_no" => $post['wo_no'],"item_fg_id" => $post['item_fg_id']], ["status" => 1]);
+                        $update2 = $this->crud->update('repair_of_goods', ["document_no" => $post['wo_no'],"item_fg_id" => $post['item_fg_id']], ["status_fc" => 1]);
                     }
 
                     echo json_encode([
@@ -1141,6 +1153,8 @@ class Checksheets extends CI_Controller
                     <th>Shift</th>
                     <th>Packing</th>
                     <th>Packing Qty</th>
+                    <th>Status Subcont</th>
+                    <th>Subcont Type</th>
                 </tr>';
         $no = 1;
         foreach ($records as $data) {
@@ -1165,6 +1179,8 @@ class Checksheets extends CI_Controller
                             <td>' . $data['shift'] . '</td>
                             <td>' . $data['packing'] . '</td>
                             <td>' . $data['packing_qty'] . '</td>
+                            <td>' . $data['status_subcont'] . '</td>
+                            <td>' . $data['subcont_type'] . '</td>
                         </tr>';
             $no++;
         }
