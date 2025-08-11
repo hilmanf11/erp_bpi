@@ -41,12 +41,24 @@
             </div>
         </fieldset>
     </form>
-    <span style="float: left; color:green;">SUCCESS : <b id="p_success2">0</b></span><span style="float: right; color:red;"> FAILED : <b id="p_failed2">0</b></span>
-    <div id="p_upload2" class="easyui-progressbar" style="width:100%; margin-top: 10px;"></div>
-    <center><b id="p_start2">0</b> Of <b id="p_finish2">0</b></center>
-    <div id="p_remarks2" title="Generating Process" class="easyui-panel" style="width:100%; height:200px; padding:10px; margin-top: 10px;">
-        <ul id="remarks">
-        </ul>
+    
+    <div style="margin-bottom:10px">
+        <div id="p_upload" class="easyui-progressbar" style="width:100%;"></div>
+        <div style="margin-top:5px; text-align: center;">
+            <span id="p_start">0</span> / <span id="p_finish">0</span>
+        </div>
+    </div>
+    
+    <hr>
+    
+    <div style="margin-bottom:10px;">
+        <p>
+            Berhasil: <span id="p_success" style="font-weight: bold; color: green;">0</span> | Gagal: <span id="p_failed" style="font-weight: bold; color: red;">0</span>
+        </p>
+    </div>
+
+    <div style="height: 100px; overflow-y: auto; border: 1px solid #ccc; padding: 5px; font-size: 12px;">
+        <div id="p_remarks"></div>
     </div>
 </div>
 
@@ -87,6 +99,7 @@
             }
         });
 
+        // UPLOAD DATA
         $('#dlg_upload').dialog({
             buttons: [{
                 text: 'List Failed',
@@ -97,76 +110,123 @@
                 text: 'Upload',
                 iconCls: 'icon-ok',
                 handler: function() {
-                    alert('upload');
+                    // Memastikan form valid sebelum submit
+                    if (!$('#frm_upload').form('validate')) {
+                        return;
+                    }
 
-                    // $('#frm_upload').form('submit', {
-                    //     url: '<?= base_url('finance/journal_postings/upload') ?>',
-                    //     onSubmit: function() {
-                    //         if ($(this).form('validate') == false) {
-                    //             return $(this).form('validate');
-                    //         } else {
-                    //             $.messager.progress({
-                    //                 title: 'Please Wait',
-                    //                 msg: 'Importing Excel to Database'
-                    //             });
-                    //         }
-                    //     },
-                    //     success: function(result) {
-                    //         $.messager.progress('close');
-                    //         //Clear File
-                    //         $.ajax({
-                    //             url: "<?= base_url('finance/journal_postings/uploadclearFailed') ?>"
-                    //         });
-                    //         var json = eval('(' + result + ')');
-                    //         requestData(json.total, json);
+                    $.messager.progress({
+                        title: 'Harap Tunggu',
+                        msg: 'Mengimpor Excel ke Database...'
+                    });
 
-                    //         function requestData(total, json, number = 1, value = 0, success = 1, failed = 1) {
-                    //             if (value < 100) {
-                    //                 value = Math.floor((number / total) * 100);
-                    //                 $('#p_upload2').progressbar('setValue', value);
-                    //                 $('#p_start2').html(number);
-                    //                 $('#p_finish2').html(total);
-                    //                 $.ajax({
-                    //                     type: "POST",
-                    //                     async: true,
-                    //                     url: "<?= base_url('finance/journal_postings/uploadCreate') ?>",
-                    //                     data: {
-                    //                         "data": json[number - 1]
-                    //                     },
-                    //                     cache: false,
-                    //                     dataType: "json",
-                    //                     success: function(result) {
-                    //                         if (result.theme == "success") {
-                    //                             $('#p_success2').html(success);
-                    //                             var title = "<b style='color: green;'>" + result.title + "</b> | " + result.message;
-                    //                             requestData(total, json, number + 1, value, success + 1, failed + 0);
-                    //                         } else {
-                    //                             $('#p_failed2').html(failed);
-                    //                             var title = "<b style='color: red;'>" + result.title + "</b> | " + result.message;
-                    //                             //Json Failed
-                    //                             $.ajax({
-                    //                                 type: "POST",
-                    //                                 async: true,
-                    //                                 url: "<?= base_url('finance/journal_postings/uploadcreateFailed') ?>",
-                    //                                 data: {
-                    //                                     data: json[number - 1],
-                    //                                     message: result.message
-                    //                                 },
-                    //                                 cache: false
-                    //                             });
-                    //                             requestData(total, json, number + 1, value, success + 0, failed + 1);
-                    //                         }
-                    //                         $("#p_remarks2").append(title + "<br>");
-                    //                     }
-                    //                 });
-                    //             }
-                    //         }
-                    //     }
-                    // });
+                    // Submit form upload
+                    $('#frm_upload').form('submit', {
+                        url: '<?= base_url('finance/report_bank_reconciliation/upload') ?>',
+                        queryParams: {
+                            filter_bank_account: $('#filter_bank_account').val()
+                        },
+                        success: function(result) {
+                            $.messager.progress('close');
+
+                            // Cek apakah string 'result' tidak kosong dan merupakan JSON
+                            if (result && result.trim().startsWith('{') && result.trim().endsWith('}')) {
+                                try {
+                                    var json = JSON.parse(result);
+                                } catch (e) {
+                                    console.error("Gagal parse JSON: ", e);
+                                    $.messager.alert('Error', 'Gagal memproses data dari server! Format data tidak valid. Silakan update atau ganti <b>browser</b> yang anda gunakan.', 'error');
+                                    return;
+                                }
+                            } else {
+                                // Jika respons kosong atau tidak valid, tampilkan pesan error yang jelas
+                                $.messager.alert('Error', 'Server mengembalikan respons tidak valid. Silakan update atau ganti <b>browser</b> yang anda gunakan.', 'error');
+                                console.error("Server response was empty or invalid JSON:", result);
+                                return;
+                            }
+
+                            // Validasi Bank Account di Excel dengan di dropdown
+                            if (json.title !== "Not Matched") {
+                                processData(json.bank, json.data, json.total);
+                            } else {
+                                $.messager.alert('Error', json.message, 'error');
+                            }
+                        },
+                        onLoadError: function() {
+                            $.messager.progress('close');
+                            $.messager.alert('Error', 'Gagal melakukan upload. Periksa koneksi atau coba lagi.', 'error');
+                        }
+                    });
                 }
             }]
         });
 
+        // Fungsi rekursif untuk memproses data satu per satu
+        function processData(bank, data, total, index = 0, successCount = 0, failedCount = 0) {
+            if (index >= total) {
+                // Proses selesai
+                $('#p_upload').progressbar('setValue', 100);
+                $.messager.alert('Info', 'Proses upload selesai.', 'info');
+                return;
+            }
+
+            // Hitung persentase progress
+            var progressValue = Math.floor(((index + 1) / total) * 100);
+            $('#p_upload').progressbar('setValue', progressValue);
+            $('#p_start').html(index + 1);
+            $('#p_finish').html(total);
+
+            $.ajax({
+                type: "POST",
+                async: true,
+                url: "<?= base_url('finance/report_bank_reconciliation/uploadCreate') ?>",
+                data: {
+                    "bank": bank,
+                    "data": data[index]
+                },
+                cache: false,
+                dataType: "json",
+                success: function(result) {
+                    var title;
+                    if (result.theme === "success") {
+                        successCount++;
+                        $('#p_success').html(successCount);
+                        title = `<b style='color: green;'>${result.title}</b> | ${result.message}`;
+                    } else {
+                        failedCount++;
+                        $('#p_failed').html(failedCount);
+                        title = `<b style='color: red;'>${result.title}</b> | ${result.message}`;
+                        
+                        $.ajax({
+                            type: "POST",
+                            async: true,
+                            url: "<?= base_url('finance/report_bank_reconciliation/uploadcreateFailed') ?>",
+                            data: {
+                                bank: bank,
+                                data: data[index],
+                                message: result.message
+                            },
+                            cache: false
+                        });
+                    }
+                    
+                    $("#p_remarks").append(title + "<br>");
+
+                    // Lanjutkan ke item berikutnya
+                    processData(bank, data, total, index + 1, successCount, failedCount);
+                },
+                error: function(xhr, status, error) {
+                    // Tangani error jika AJAX request gagal
+                    failedCount++;
+                    $('#p_failed').html(failedCount);
+                    var title = `<b style='color: red;'>Error</b> | Gagal mengirim data ke server.`;
+                    $("#p_remarks").append(title + "<br>");
+                    
+                    // Lanjutkan ke item berikutnya meskipun ada error
+                    processData(bank, data, total, index + 1, successCount, failedCount);
+                }
+            });
+        }
 
     });
 
@@ -209,21 +269,35 @@
         url = "?filter_from=" + window.btoa(filter_from) + "&filter_to=" + window.btoa(filter_to) + 
         "&filter_bank_account=" + window.btoa(filter_bank_account);
 
-        // Tampilkan overlay
-        $("#loadingOverlay").show();
+        if (filter_bank_account !== "") {
+            // Tampilkan overlay
+            $("#loadingOverlay").show();
 
-        // Unduh file
-        window.location.assign('<?= base_url('finance/report_bank_reconciliation/print/excel') ?>' + url);
+            // Unduh file
+            window.location.assign('<?= base_url('finance/report_bank_reconciliation/print/excel') ?>' + url);
 
-        // Sembunyikan overlay setelah beberapa saat
-        setTimeout(function () {
-            $("#loadingOverlay").hide();
-        }, 3000); // Sesuaikan waktu jika perlu
+            // Sembunyikan overlay setelah beberapa saat
+            setTimeout(function () {
+                $("#loadingOverlay").hide();
+            }, 3000); // Sesuaikan waktu jika perlu
+            
+        } else {
+            toastr.warning("Please select the Bank Account no!");
+            $.messager.alert("Warning", "Please choose the Bank Account first!", 'warning');
+        }
     }
 
     //UPLOAD DATA
     function upload() {
-        $('#dlg_upload').dialog('open');
+        var filter_bank_account = $("#filter_bank_account").combobox('getValue');
+
+        if (filter_bank_account !== "") {
+            $('#dlg_upload').dialog('open');
+            
+        } else {
+            toastr.warning("Please select the Bank Account no!");
+            $.messager.alert("Warning", "Please choose the Bank Account first!", 'warning');
+        }
     }
 
     //Format Datepicker

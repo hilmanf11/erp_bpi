@@ -30,6 +30,136 @@ class Report_bank_reconciliation extends CI_Controller
         }
     }
 
+    //UPLOAD DATA
+    public function upload()
+    {
+        ini_set('display_errors', 0);
+        ini_set('display_startup_errors', 0);
+        error_reporting(0);
+        
+        header('Content-Type: application/json');
+        
+        require_once 'assets/vendors/excel_reader_2025.php';
+        header('Content-Type: application/json');
+        
+        $target = basename($_FILES['file_upload']['name']);
+        move_uploaded_file($_FILES['file_upload']['tmp_name'], $target);
+        chmod($_FILES['file_upload']['name'], 0777);
+        $file = $_FILES['file_upload']['name'];
+        $data = new Spreadsheet_Excel_Reader($file, false);
+        $total_row = $data->rowcount($sheet_index = 0);
+        
+        $dataBank = [
+            'bank_account' => $data->val(3, 3),
+            'start_date'   => $data->val(4, 3),
+            'end_date'     => $data->val(5, 3),
+            'currency'     => $data->val(6, 3),
+        ];
+
+        // CHECK Bank Account No
+        $filter_bank_account = $this->input->post("filter_bank_account");
+        $account_banks = $this->crud->read('account_banks', [], ["account_number" => $filter_bank_account]);
+        if (!$account_banks || $account_banks->bank_account !== $dataBank['bank_account']) {
+            echo json_encode(["title" => "Not Matched", "message" => "Bank Account in Excel " . $bank['bank_account'] ." Is Not Match with the selected Account", "theme" => "error"]);
+            return;
+        }
+
+        $datas = [];
+        for ($i = 10; $i <= $total_row; $i++) {
+            $datas[] = [
+                'posting_date' => $data->val($i, 2),
+                'remark'       => $data->val($i, 3),
+                'credit'       => str_replace(',', '', $data->val($i, 4)),
+                'debit'        => str_replace(',', '', $data->val($i, 5))
+            ];
+        }
+
+        $payload = [
+            "bank"  => $dataBank,
+            "data"  => $datas,
+            "total" => count($datas),
+        ];
+        echo json_encode($payload);
+        
+        unlink($_FILES['file_upload']['name']);
+    }
+
+    public function uploadclearFailed()
+    {
+        @unlink('failed/bank_reconciliation.txt');
+    }
+
+    public function uploadcreateFailed()
+    {
+        if ($this->input->post()) {
+            $message = $this->input->post('message');
+            $textFailed = fopen('failed/bank_reconciliation.txt', 'a');
+            fwrite($textFailed, $message . "\n");
+            fclose($textFailed);
+        }
+    }
+
+    //UPLOAD DOWNLOAD FAILED
+    public function uploadDownloadFailed()
+    {
+        $file = "failed/bank_reconciliation.txt";
+        header('Content-Description: File Failed');
+        header('Content-Disposition: attachment; filename=' . basename($file));
+        header('Expires: 0');
+        header('Cache-Control: must-revalidate');
+        header('Pragma: public');
+        header('Content-Length: ' . @filesize($file));
+        header("Content-Type: text/plain");
+        @readfile($file);
+    }
+
+    //UPLOAD CREATE DATA
+    public function uploadCreate()
+    {
+        if ($this->input->post()) {
+            $bank = $this->input->post('bank');
+            $data = $this->input->post('data');
+
+            if (empty($bank['bank_account'])) {
+                echo json_encode(array("title" => "Error", "message" => "Bank Account is required!", "theme" => "error"));
+            } else {
+
+                $account_banks = $this->crud->read('account_banks', [], ["bank_account" => $bank['bank_account']]);
+                $bank_reconciliation = $this->crud->read('bank_reconciliation', [], ["bank_account" => $bank['bank_account'], "start_date" => $bank['start_date'], "end_date" => $bank['end_date'], "currency" => $bank['currency'], 
+                    "posting_date" => $data['posting_date'], "remark" => $data['remark']]);
+    
+                if (empty($account_banks->bank_account)) {
+                    echo json_encode(array("title" => "Not Found", "message" => "Bank Account Of " . $bank['bank_account'] ." Is Not Found", "theme" => "error"));
+                } 
+                elseif (!empty($bank_reconciliation)) {
+                    echo json_encode(array("title" => "Error", "message" => "Data in this Period is already uploaded before!", "theme" => "error"));
+                } 
+                else {
+    
+                    $dataFinal = [
+                        // Data Bank
+                        "account_bank_id" => $account_banks->id,
+                        "bank_account"    => $bank['bank_account'],
+                        "start_date"      => $bank['start_date'],
+                        "end_date"        => $bank['end_date'],
+                        "currency"        => $bank['currency'],
+                        // Data Transactions
+                        "source"          => "Bank",
+                        "posting_date"    => $data["posting_date"],
+                        "remark"          => $data["remark"],
+                        "credit"          => $data["credit"],
+                        "debit"           => $data["debit"],
+                    ];
+    
+                    $send   = $this->crud->create('bank_reconciliation', $dataFinal);
+                    echo $send;
+                }
+            }
+
+        }
+    }
+
+    //PRINT & EXCEL DATA
     public function print($option = "")
     {
         if ($option == "excel") {
@@ -48,6 +178,10 @@ class Report_bank_reconciliation extends CI_Controller
         }
         if (empty($filter_to) || !strtotime($filter_to)) {
             show_error('Invalid "filter_to" date parameter.');
+            return;
+        }
+        if (empty($filter_bank_account)) {
+            show_error('Bank Account is required.');
             return;
         }
 
@@ -137,6 +271,10 @@ class Report_bank_reconciliation extends CI_Controller
 
                     /* Aturan CSS khusus untuk print */
                     @media print {
+                        body {
+                            zoom: 90%;
+                        }
+
                         /* Memaksa warna latar belakang untuk muncul saat dicetak */
                         #customers th {
                             background-color: #4E73BE !important;
