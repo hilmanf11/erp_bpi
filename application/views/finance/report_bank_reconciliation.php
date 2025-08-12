@@ -10,8 +10,8 @@
                 <input style="width:28%;" id="filter_to" class="easyui-datebox" value="<?= date("Y-m-t") ?>" data-options="formatter:myformatter,parser:myparser, editable:false">
             </div>
             <div class="fitem">
-                <span style="width:35%; display:inline-block;">Bank Account</span>
-                <input style="width:60%;" id="filter_bank_account" name="filter_bank_account" class="easyui-combogrid">
+                <span style="width:35%; display:inline-block;">Bank Account Number</span>
+                <input style="width:60%;" id="filter_account_number" name="filter_account_number" class="easyui-combogrid">
             </div>
             <div class="fitem">
                 <span style="width:35%; display:inline-block;">Bank Name</span>
@@ -26,7 +26,8 @@
         </div>
 
     </fieldset>
-    <a href="javascript:;" class="easyui-linkbutton" style="padding: 5px;" onclick=""> Reconcile </a>
+    <!-- <a href="javascript:;" class="easyui-linkbutton" style="padding: 5px;" onclick="reconcile()"> Reconcile </a> -->
+    <a href="javascript:;" class="easyui-linkbutton" style="padding: 5px;" onclick="filter()"> Reconcile </a> <!-- bisa langsung di print -->
     <?= $button ?>
 </div>
 
@@ -73,7 +74,7 @@
 <script>
     $(function() {
 
-        $('#filter_bank_account').combogrid({
+        $('#filter_account_number').combogrid({
             url: '<?= base_url('finance/account_banks/reads') ?>',
             panelWidth: 320,
             idField: 'account_number',
@@ -89,6 +90,10 @@
                 }, {
                     field: 'bank_name',
                     title: 'Bank Name',
+                    width: 300
+                }, {
+                    field: 'bank_account',
+                    title: 'Bank Account No',
                     width: 200
                 }, ]
             ],
@@ -112,6 +117,7 @@
                 handler: function() {
                     // Memastikan form valid sebelum submit
                     if (!$('#frm_upload').form('validate')) {
+                        $.messager.alert('Error', 'File is required! Please choose file (.xls) before click Upload.', 'error');    
                         return;
                     }
 
@@ -124,10 +130,17 @@
                     $('#frm_upload').form('submit', {
                         url: '<?= base_url('finance/report_bank_reconciliation/upload') ?>',
                         queryParams: {
-                            filter_bank_account: $('#filter_bank_account').val()
+                            filter_account_number: $('#filter_account_number').val(),
+                            filter_from: $('#filter_from').val(),
+                            filter_to: $('#filter_to').val()
                         },
                         success: function(result) {
                             $.messager.progress('close');
+
+                            //Clear File
+                            $.ajax({
+                                url: "<?= base_url('finance/report_bank_reconciliation/uploadclearFailed') ?>"
+                            });
 
                             // Cek apakah string 'result' tidak kosong dan merupakan JSON
                             if (result && result.trim().startsWith('{') && result.trim().endsWith('}')) {
@@ -230,6 +243,66 @@
 
     });
 
+    // RECONCILE
+    function reconcile() {
+        Swal.fire({
+            title: 'Please Wait...',
+            showConfirmButton: false,
+            allowOutsideClick: false,
+            allowEscapeKey: false,
+            didOpen: () => {
+                Swal.showLoading();
+            },
+        });
+
+        $.ajax({
+            type: "POST",
+            async: true,
+            url: '<?= base_url('finance/report_bank_reconciliation/reconcile') ?>',
+            data: {
+                "filter_account_number": $('#filter_account_number').val(),
+                "filter_from": $('#filter_from').val(),
+                "filter_to": $('#filter_to').val()
+            },
+            cache: false,
+            success: function(result) {
+                Swal.close();
+                
+                $("#printout").contents().find('html').html("<center><br><br><br> " +result+ " </center>");
+
+                // try {
+                //     var json = JSON.parse(result);
+                // } catch (e) {
+                //     console.error("Gagal parse JSON: ", e);
+                //     console.log(result);
+                //     $.messager.alert('Error', 'Gagal memproses data dari server! Format data tidak valid. Silakan update atau ganti <b>browser</b> yang anda gunakan.', 'error');
+                //     return;
+                // }
+                    
+                // if (json.title !== "Error") {
+                        
+                //     $("#printout").contents().find('html').html("<center><br><br><br> " +result+ " </center>");
+                    
+                // } else {
+                //     var json = JSON.parse(result);
+                //     Swal.fire({
+                //             title: json.message,
+                //         icon: json.theme,
+                //         confirmButtonText: 'OK',
+                //         allowOutsideClick: false,
+                //     }).then(function() {
+                //         // window.location.reload();
+                //     });
+                // }
+            },
+            onLoadError: function() {
+                $.messager.progress('close');
+                $.messager.alert('Error', 'Gagal melakukan upload. Periksa koneksi atau coba lagi.', 'error');
+            }
+        });
+        
+    }
+
     //DOWNLOAD TEMPLATE UPLOAD
     function download_excel() {
         window.location.assign('<?= base_url('template/tmp_bank_reconciliation.xls') ?>');
@@ -246,12 +319,12 @@
     function filter() {
         var filter_from = $("#filter_from").datebox('getValue');
         var filter_to = $("#filter_to").datebox('getValue');
-        var filter_bank_account = $("#filter_bank_account").combobox('getValue');
+        var filter_account_number = $("#filter_account_number").combobox('getValue');
 
         url = "?filter_from=" + window.btoa(filter_from) + "&filter_to=" + window.btoa(filter_to) + 
-        "&filter_bank_account=" + window.btoa(filter_bank_account);
+        "&filter_account_number=" + window.btoa(filter_account_number);
         
-        if (filter_bank_account !== "") {
+        if (filter_account_number !== "") {
             $("#printout").contents().find('html').html("<center><br><br><br><b style='font-size:20px;'>Please Wait...</b></center>");
             $("#printout").attr('src', '<?= base_url('finance/report_bank_reconciliation/print') ?>' + url);
             
@@ -264,12 +337,12 @@
     function excel() {
         var filter_from = $("#filter_from").datebox('getValue');
         var filter_to = $("#filter_to").datebox('getValue');
-        var filter_bank_account = $("#filter_bank_account").combobox('getValue');
+        var filter_account_number = $("#filter_account_number").combobox('getValue');
 
         url = "?filter_from=" + window.btoa(filter_from) + "&filter_to=" + window.btoa(filter_to) + 
-        "&filter_bank_account=" + window.btoa(filter_bank_account);
+        "&filter_account_number=" + window.btoa(filter_account_number);
 
-        if (filter_bank_account !== "") {
+        if (filter_account_number !== "") {
             // Tampilkan overlay
             $("#loadingOverlay").show();
 
@@ -289,9 +362,9 @@
 
     //UPLOAD DATA
     function upload() {
-        var filter_bank_account = $("#filter_bank_account").combobox('getValue');
+        var filter_account_number = $("#filter_account_number").combobox('getValue');
 
-        if (filter_bank_account !== "") {
+        if (filter_account_number !== "") {
             $('#dlg_upload').dialog('open');
             
         } else {
