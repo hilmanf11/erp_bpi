@@ -625,7 +625,7 @@ class Report_bank_reconciliation extends CI_Controller
                                     <tr>
                                         <td>&nbsp;</td>
                                         <td width="50%">Opening Balance</td>
-                                        <td>' . number_format($dataBank->balance, 2, ",", ".") . '</td>
+                                        <td>' . $this->formatIDR($dataBank->balance) . '</td>
                                     </tr>
 
                                 </table>
@@ -645,26 +645,26 @@ class Report_bank_reconciliation extends CI_Controller
                                     <tbody>
                                         <tr>
                                             <td>Opening Balance</td>
-                                            <td>' . number_format($dataMutation['bank_summary']['open_ori_balance'], 2, ",", ".") . '</td> 
-                                            <td>' . number_format($dataJournal['journal_summary']['open_ori_balance'], 2, ",", ".") . '</td>
+                                            <td>' . $this->formatIDR($dataMutation['bank_summary']['open_ori_balance']) . '</td> 
+                                            <td>' . $this->formatIDR($dataJournal['journal_summary']['open_ori_balance']) . '</td>
                                             ' . $this->balanceDiff($dataMutation['bank_summary']['open_ori_balance'], $dataJournal['journal_summary']['open_ori_balance']) . ' 
                                         </tr>
                                         <tr>
                                             <td>Debit</td>
-                                            <td>' . number_format($dataMutation['bank_summary']['grand_ori_debit'], 2, ",", ".") . '</td>
-                                            <td>' . number_format($dataJournal['journal_summary']['grand_ori_debit'], 2, ",", ".") . '</td>
+                                            <td>' . $this->formatIDR($dataMutation['bank_summary']['grand_ori_debit']) . '</td>
+                                            <td>' . $this->formatIDR($dataJournal['journal_summary']['grand_ori_debit']) . '</td>
                                             ' . $this->balanceDiff($dataMutation['bank_summary']['grand_ori_debit'], $dataJournal['journal_summary']['grand_ori_debit']) . '  
                                         </tr>
                                         <tr>
                                             <td>Credit</td>
-                                            <td>' . number_format($dataMutation['bank_summary']['grand_ori_credit'], 2, ",", ".") . '</td> 
-                                            <td>' . number_format($dataJournal['journal_summary']['grand_ori_credit'], 2, ",", ".") . '</td>
+                                            <td>' . $this->formatIDR($dataMutation['bank_summary']['grand_ori_credit']) . '</td> 
+                                            <td>' . $this->formatIDR($dataJournal['journal_summary']['grand_ori_credit']) . '</td>
                                             ' . $this->balanceDiff($dataMutation['bank_summary']['grand_ori_credit'], $dataJournal['journal_summary']['grand_ori_credit']) . '  
                                         </tr>
                                         <tr>
                                             <td>Ending Balance</td>
-                                            <td>' . number_format($dataMutation['bank_summary']['ending_ori_balance'], 2, ",", ".") . '</td>
-                                            <td>' . number_format($dataJournal['journal_summary']['ending_ori_balance'], 2, ",", ".") . '</td>
+                                            <td>' . $this->formatIDR($dataMutation['bank_summary']['ending_ori_balance']) . '</td>
+                                            <td>' . $this->formatIDR($dataJournal['journal_summary']['ending_ori_balance']) . '</td>
                                             ' . $this->balanceDiff($dataMutation['bank_summary']['ending_ori_balance'], $dataJournal['journal_summary']['ending_ori_balance']) . ' 
                                         </tr>
                                     </tbody>
@@ -692,19 +692,23 @@ class Report_bank_reconciliation extends CI_Controller
                 <tbody>';
 
                 $no = 1;
-                
+
                 // MATCHED BANK X JOURNAL
                 if (!empty($result['matched_transactions'])) 
                 {
                     foreach ($result['matched_transactions'] as $matched) {
+                            
+                        // balance per row = opening balance + credit - debit
+                        // $balance_bank = $matched['bank_data']['balance'] + $matched['bank_data']['credit'] - $matched['bank_data']['debit'];
+                        
                         $html .= '<tr>
                                 <td rowspan="2">' . $no . '</td>
                                 <td> Bank </td>
                                 <td>' . $matched['bank_data']['posting_date'] . '</td>
                                 <td>' . $matched['bank_data']['remark'] . '</td>
-                                <td>' . $matched['bank_data']['debit'] . '</td>
-                                <td>' . $matched['bank_data']['credit'] . '</td>
-                                <td>' . $matched['bank_data']['balance'] . '</td>
+                                <td>' . $this->formatIDR($matched['bank_data']['debit']) . '</td>
+                                <td>' . $this->formatIDR($matched['bank_data']['credit']) . '</td>
+                                <td>' . $this->formatIDR($matched['bank_data']['balance']) . '</td>
                                 <td rowspan="2">' . $matched['bank_data']['result'] . '</td>
                                 <td rowspan="2">' . $this->statusRecheck($matched['journal_data']['status_recheck']) . '</td>
                             </tr>';                        
@@ -712,9 +716,9 @@ class Report_bank_reconciliation extends CI_Controller
                                 <td> ERP </td>
                                 <td>' . $matched['journal_data']['trans_date'] . '</td>
                                 <td>' . $matched['journal_data']['description'] . '</td>
-                                <td>' . $matched['journal_data']['original_debit'] . '</td>
-                                <td>' . $matched['journal_data']['original_credit'] . '</td>
-                                <td> - </td>
+                                <td>' . $this->formatIDR($matched['journal_data']['original_debit']) . '</td>
+                                <td>' . $this->formatIDR($matched['journal_data']['original_credit']) . '</td>
+                                <td>' . $this->formatIDR($matched['journal_data']['ori_balance']) . '</td>
                             </tr>';                        
                         $no++;
                     }
@@ -731,9 +735,9 @@ class Report_bank_reconciliation extends CI_Controller
                                 <td> Bank </td>
                                 <td>' . $rowBank['posting_date'] . '</td>
                                 <td>' . $rowBank['remark'] . '</td>
-                                <td>' . $rowBank['debit'] . '</td>
-                                <td>' . $rowBank['credit'] . '</td>
-                                <td> - </td>
+                                <td>' . $this->formatIDR($rowBank['debit']) . '</td>
+                                <td>' . $this->formatIDR($rowBank['credit']) . '</td>
+                                <td>' . $this->formatIDR($rowBank['balance']) . '</td>
                                 <td rowspan="2" style="color:red;">' . $rowBank['result'] . '</td>
                                 <td rowspan="2">' . $this->statusRecheck($rowBank['status_recheck']) . '</td>
                             </tr>';  
@@ -771,9 +775,9 @@ class Report_bank_reconciliation extends CI_Controller
                             <td> ERP </td>
                             <td>' . $rowJournal['trans_date'] . '</td>
                             <td>' . $rowJournal['description'] . '</td>
-                            <td>' . $rowJournal['original_debit'] . '</td>
-                            <td>' . $rowJournal['original_credit'] . '</td>
-                            <td> - </td>
+                            <td>' . $this->formatIDR($rowJournal['original_debit']) . '</td>
+                            <td>' . $this->formatIDR($rowJournal['original_credit']) . '</td>
+                            <td>' . $this->formatIDR($rowJournal['ori_balance']) . '</td>
                         </tr>';
                         $no++;
                     }
@@ -783,6 +787,11 @@ class Report_bank_reconciliation extends CI_Controller
         $html .= '</body></html>';
 
         echo $html;
+    }
+
+    function formatIDR($number) {
+        $formatted_number = number_format($number, 2, ',', '.');
+        return $formatted_number;
     }
 
     function balanceDiff($bank, $erp) {
