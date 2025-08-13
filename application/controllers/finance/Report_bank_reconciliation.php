@@ -647,25 +647,25 @@ class Report_bank_reconciliation extends CI_Controller
                                             <td>Opening Balance</td>
                                             <td>' . number_format($dataMutation['bank_summary']['open_ori_balance'], 2, ",", ".") . '</td> 
                                             <td>' . number_format($dataJournal['journal_summary']['open_ori_balance'], 2, ",", ".") . '</td>
-                                            <td> 0,00 </td> 
+                                            ' . $this->balanceDiff($dataMutation['bank_summary']['open_ori_balance'], $dataJournal['journal_summary']['open_ori_balance']) . ' 
                                         </tr>
                                         <tr>
                                             <td>Debit</td>
                                             <td>' . number_format($dataMutation['bank_summary']['grand_ori_debit'], 2, ",", ".") . '</td>
                                             <td>' . number_format($dataJournal['journal_summary']['grand_ori_debit'], 2, ",", ".") . '</td>
-                                            <td> 0,00 </td> 
+                                            ' . $this->balanceDiff($dataMutation['bank_summary']['grand_ori_debit'], $dataJournal['journal_summary']['grand_ori_debit']) . '  
                                         </tr>
                                         <tr>
                                             <td>Credit</td>
                                             <td>' . number_format($dataMutation['bank_summary']['grand_ori_credit'], 2, ",", ".") . '</td> 
                                             <td>' . number_format($dataJournal['journal_summary']['grand_ori_credit'], 2, ",", ".") . '</td>
-                                            <td> 0,00 </td> 
+                                            ' . $this->balanceDiff($dataMutation['bank_summary']['grand_ori_credit'], $dataJournal['journal_summary']['grand_ori_credit']) . '  
                                         </tr>
                                         <tr>
                                             <td>Ending Balance</td>
                                             <td>' . number_format($dataMutation['bank_summary']['ending_ori_balance'], 2, ",", ".") . '</td>
                                             <td>' . number_format($dataJournal['journal_summary']['ending_ori_balance'], 2, ",", ".") . '</td>
-                                            <td> 0,00 </td> 
+                                            ' . $this->balanceDiff($dataMutation['bank_summary']['ending_ori_balance'], $dataJournal['journal_summary']['ending_ori_balance']) . ' 
                                         </tr>
                                     </tbody>
                                 </table>
@@ -785,7 +785,7 @@ class Report_bank_reconciliation extends CI_Controller
         echo $html;
     }
 
-    function balanceDiff($erp, $bank) {
+    function balanceDiff($bank, $erp) {
         $calc = abs($erp - $bank);
         if ($calc > 0) {
             return '<td style="color:red; font-weight:bold;"> ' . number_format($calc, 2, ",", ".") . '</td>';
