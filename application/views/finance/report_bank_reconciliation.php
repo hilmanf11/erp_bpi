@@ -165,7 +165,7 @@
                             if (json.title !== "Not Matched") {
                                 processData(json.bank, json.data, json.total);
                             } else {
-                                toastr.error("Failed! Period in Excel Is Not Match with the selected Date");
+                                toastr.error("Failed! Bank Account in Excel Is Not Match with the selected Data");
                                 $.messager.alert('Error', json.message, 'error');
                             }
                         },
