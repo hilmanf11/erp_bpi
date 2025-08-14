@@ -159,9 +159,15 @@ class Report_bank_reconciliation extends CI_Controller
                         "credit"          => $data["credit"],
                         "debit"           => $data["debit"],
                     ];
-    
-                    $send   = $this->crud->create('bank_reconciliation', $dataFinal);
-                    echo $send;
+
+                    $send = $this->crud->create('bank_reconciliation', $dataFinal);
+
+                    // validasi posting_date mutasi berbeda dengan periode yang dipilih
+                    if ( date("Y-m", strtotime($dataFinal['start_date'])) !== date("Y-m", strtotime($dataFinal['posting_date'])) ) {
+                        echo json_encode(array("title" => "Caution!", "message" => "Data added, but the Posting Date doesn't match the Period Date!", "theme" => "warning"));
+                    } else {
+                        echo $send;
+                    }
                 }
             }
 

@@ -117,6 +117,7 @@
                 handler: function() {
                     // Memastikan form valid sebelum submit
                     if (!$('#frm_upload').form('validate')) {
+                        toastr.error("File is required! Please choose file (.xls) before click Upload.");
                         $.messager.alert('Error', 'File is required! Please choose file (.xls) before click Upload.', 'error');    
                         return;
                     }
@@ -162,6 +163,7 @@
                             if (json.title !== "Not Matched") {
                                 processData(json.bank, json.data, json.total);
                             } else {
+                                toastr.error("Failed! Period in Excel Is Not Match with the selected Date");
                                 $.messager.alert('Error', json.message, 'error');
                             }
                         },
@@ -206,21 +208,29 @@
                         $('#p_success').html(successCount);
                         title = `<b style='color: green;'>${result.title}</b> | ${result.message}`;
                     } else {
-                        failedCount++;
-                        $('#p_failed').html(failedCount);
-                        title = `<b style='color: red;'>${result.title}</b> | ${result.message}`;
-                        
-                        $.ajax({
-                            type: "POST",
-                            async: true,
-                            url: "<?= base_url('finance/report_bank_reconciliation/uploadcreateFailed') ?>",
-                            data: {
-                                bank: bank,
-                                data: data[index],
-                                message: result.message
-                            },
-                            cache: false
-                        });
+                        // warning berhasil insert tetapi periode berbeda dengan data excel
+                        if (result.theme === "warning") {
+                            successCount++;
+                            $('#p_success').html(successCount);
+                            title = `<b style='color: orange;'>${result.title}</b> | ${result.message}`;
+                            
+                        } else {
+                            failedCount++;
+                            $('#p_failed').html(failedCount);
+                            title = `<b style='color: red;'>${result.title}</b> | ${result.message}`;
+                            
+                            $.ajax({
+                                type: "POST",
+                                async: true,
+                                url: "<?= base_url('finance/report_bank_reconciliation/uploadcreateFailed') ?>",
+                                data: {
+                                    bank: bank,
+                                    data: data[index],
+                                    message: result.message
+                                },
+                                cache: false
+                            });
+                        } 
                     }
                     
                     $("#p_remarks").append(title + "<br>");
