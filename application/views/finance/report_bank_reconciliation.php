@@ -9,9 +9,13 @@
                 <input style="width:28%;" id="filter_from" class="easyui-datebox" value="<?= date("Y-m-01") ?>" data-options="formatter:myformatter,parser:myparser, editable:false"> To
                 <input style="width:28%;" id="filter_to" class="easyui-datebox" value="<?= date("Y-m-t") ?>" data-options="formatter:myformatter,parser:myparser, editable:false">
             </div>
+            <div class="fitem" hidden>
+                <span style="width:35%; display:inline-block;">Account Number</span>
+                <input style="width:60%;" id="filter_account_number" name="filter_account_number" class="easyui-textbox">
+            </div>
             <div class="fitem">
                 <span style="width:35%; display:inline-block;">Bank Account Number</span>
-                <input style="width:60%;" id="filter_account_number" name="filter_account_number" class="easyui-combogrid">
+                <input style="width:60%;" id="filter_bank_account" name="filter_bank_account" class="easyui-combogrid">
             </div>
             <div class="fitem">
                 <span style="width:35%; display:inline-block;">Bank Name</span>
@@ -74,20 +78,16 @@
 <script>
     $(function() {
 
-        $('#filter_account_number').combogrid({
+        $('#filter_bank_account').combogrid({
             url: '<?= base_url('finance/account_banks/reads') ?>',
             panelWidth: 320,
-            idField: 'account_number',
-            textField: 'account_number',
+            idField: 'bank_account',
+            textField: 'bank_account',
             mode: 'remote',
             fitColumns: true,
             prompt: 'Choose Account No',
             columns: [
                 [{
-                    field: 'account_number',
-                    title: 'Account No',
-                    width: 100
-                }, {
                     field: 'bank_name',
                     title: 'Bank Name',
                     width: 300
@@ -101,6 +101,7 @@
             onSelect: function(index, row) {
                 // console.log(row);
                 $("#filter_bank_name").textbox('setValue', row.bank_name);
+                $("#filter_account_number").textbox('setValue', row.account_number);
             }
         });
 
@@ -132,6 +133,7 @@
                         url: '<?= base_url('finance/report_bank_reconciliation/upload') ?>',
                         queryParams: {
                             filter_account_number: $('#filter_account_number').val(),
+                            filter_bank_account: $('#filter_bank_account').val(),
                             filter_from: $('#filter_from').val(),
                             filter_to: $('#filter_to').val()
                         },
@@ -271,6 +273,7 @@
             url: '<?= base_url('finance/report_bank_reconciliation/reconcile') ?>',
             data: {
                 "filter_account_number": $('#filter_account_number').val(),
+                "filter_bank_account": $('#filter_bank_account').val(),
                 "filter_from": $('#filter_from').val(),
                 "filter_to": $('#filter_to').val()
             },
@@ -315,7 +318,16 @@
 
     //DOWNLOAD TEMPLATE UPLOAD
     function download_excel() {
-        window.location.assign('<?= base_url('template/tmp_bank_reconciliation.xls') ?>');
+        var filter_account_number = $("#filter_account_number").textbox('getValue');
+        var filter_bank_account = $("#filter_bank_account").textbox('getValue');
+
+        if (filter_account_number !== "" || filter_bank_account !== "") {
+            window.location.assign('<?= base_url('template/tmp_bank_reconciliation.xls') ?>');
+            
+        } else {
+            toastr.warning("Please select the Bank Account no!");
+            $.messager.alert("Warning", "Please choose the Bank Account first!", 'warning');
+        }
     }
 
     function reload() {
@@ -329,7 +341,8 @@
     function filter() {
         var filter_from = $("#filter_from").datebox('getValue');
         var filter_to = $("#filter_to").datebox('getValue');
-        var filter_account_number = $("#filter_account_number").combobox('getValue');
+        var filter_bank_account = $("#filter_bank_account").combogrid('getValue');
+        var filter_account_number = $("#filter_account_number").textbox('getValue');
 
         url = "?filter_from=" + window.btoa(filter_from) + "&filter_to=" + window.btoa(filter_to) + 
         "&filter_account_number=" + window.btoa(filter_account_number);
@@ -347,7 +360,7 @@
     function excel() {
         var filter_from = $("#filter_from").datebox('getValue');
         var filter_to = $("#filter_to").datebox('getValue');
-        var filter_account_number = $("#filter_account_number").combobox('getValue');
+        var filter_account_number = $("#filter_account_number").textbox('getValue');
 
         url = "?filter_from=" + window.btoa(filter_from) + "&filter_to=" + window.btoa(filter_to) + 
         "&filter_account_number=" + window.btoa(filter_account_number);
@@ -372,9 +385,10 @@
 
     //UPLOAD DATA
     function upload() {
-        var filter_account_number = $("#filter_account_number").combobox('getValue');
+        var filter_account_number = $("#filter_account_number").textbox('getValue');
+        var filter_bank_account = $("#filter_bank_account").textbox('getValue');
 
-        if (filter_account_number !== "") {
+        if (filter_account_number !== "" || filter_bank_account !== "") {
             $('#dlg_upload').dialog('open');
             
         } else {

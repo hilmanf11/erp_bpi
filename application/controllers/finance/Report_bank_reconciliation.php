@@ -56,9 +56,11 @@ class Report_bank_reconciliation extends CI_Controller
             'currency'     => $data->val(6, 3),
         ];
 
-        $filter_account_number = $this->input->post("filter_account_number");
-        $filter_from = $this->input->post("filter_from");
-        $filter_to = $this->input->post("filter_to");
+        $filter_account_number = $this->input->post("filter_account_number") ?? null;
+        $filter_bank_account = $this->input->post("filter_bank_account") ?? null;
+        $filter_from = $this->input->post("filter_from") ?? null;
+        $filter_to = $this->input->post("filter_to") ?? null;
+        $filter_to = $this->input->post("filter_to") ?? null;
 
         // CHECK Date Period same as excel
         if (strtotime($filter_from) !== strtotime($dataBank['start_date']) && strtotime($filter_to) !== strtotime($dataBank['end_date']) ) {
@@ -68,8 +70,8 @@ class Report_bank_reconciliation extends CI_Controller
 
         // CHECK Bank Account Number same as excel
         $account_banks = $this->crud->read('account_banks', [], ["account_number" => $filter_account_number]);
-        if (!$account_banks || $account_banks->bank_account !== $dataBank['bank_account']) {
-            echo json_encode(["title" => "Not Matched", "message" => "Failed! Bank Account No in Excel " . $bank['bank_account'] ." Is Not Match with the selected Account", "theme" => "error"]);
+        if (!$account_banks || $account_banks->bank_account !== $dataBank['bank_account'] || $filter_bank_account !== $dataBank['bank_account']) {
+            echo json_encode(["title" => "Not Matched", "message" => "Failed! Bank Account ". $dataBank['bank_account'] ." inside the file is Not Match with the selected data", "theme" => "error"]);
             return;
         }
 
@@ -78,8 +80,8 @@ class Report_bank_reconciliation extends CI_Controller
             $datas[] = [
                 'posting_date' => date("Y-m-d H:i:s", strtotime($data->val($i, 2))),
                 'remark'       => htmlspecialchars($data->val($i, 3)),
-                'credit'       => str_replace(',', '', $data->val($i, 4)),
-                'debit'        => str_replace(',', '', $data->val($i, 5))
+                'debit'        => str_replace(',', '', $data->val($i, 4)),
+                'credit'       => str_replace(',', '', $data->val($i, 5))
             ];
         }
 
