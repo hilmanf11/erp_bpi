@@ -1372,7 +1372,10 @@ class Report_history_transactions extends CI_Controller
             COALESCE(k.qty,0) as adj_in_qty, 
 
             COALESCE(f.qty,0) as qty_issued,
-            COALESCE(j.qty,0) as qty_kanban,
+            COALESCE(f2.qty,0) as qty_issued_supply_sheet,
+            COALESCE(f3.qty,0) as qty_issued_non_supply_sheet,
+            COALESCE(j.qty,0) + COALESCE(f4.qty,0) as qty_kanban,
+            COALESCE(f5.qty,0) as qty_issued_material_request,
             COALESCE(m.qty,0) as adj_out_qty,
             COALESCE(n.qty,0) as bpb_qty, 
 
@@ -1394,6 +1397,10 @@ class Report_history_transactions extends CI_Controller
             LEFT JOIN scan_item_receipts e ON d.receipt_id = e.receipt_id
             LEFT JOIN item_family_subs l ON a.item_sub_family_id = l.id
             LEFT JOIN (SELECT item_rm_id, COALESCE(SUM(qty), 0) as qty FROM issued_material_details WHERE DATE_FORMAT(created_date, '%Y-%m-%d') between '$filter_from' and '$filter_to' GROUP BY item_rm_id) f ON a.id = f.item_rm_id
+            LEFT JOIN (SELECT item_rm_id, COALESCE(SUM(qty), 0) as qty FROM issued_material_details WHERE DATE_FORMAT(created_date, '%Y-%m-%d') between '$filter_from' and '$filter_to' and request_no like '%SH-%' GROUP BY item_rm_id) f2 ON a.id = f2.item_rm_id
+            LEFT JOIN (SELECT item_rm_id, COALESCE(SUM(qty), 0) as qty FROM issued_material_details WHERE DATE_FORMAT(created_date, '%Y-%m-%d') between '$filter_from' and '$filter_to' and request_no like '%REQ-%' GROUP BY item_rm_id) f3 ON a.id = f3.item_rm_id
+            LEFT JOIN (SELECT item_rm_id, COALESCE(SUM(qty), 0) as qty FROM issued_material_details WHERE DATE_FORMAT(created_date, '%Y-%m-%d') between '$filter_from' and '$filter_to' and `type` like '%WIP%' GROUP BY item_rm_id) f4 ON a.id = f4.item_rm_id
+            LEFT JOIN (SELECT item_rm_id, COALESCE(SUM(qty), 0) as qty FROM issued_material_details WHERE DATE_FORMAT(created_date, '%Y-%m-%d') between '$filter_from' and '$filter_to' and request_no like '%PRQ-%' GROUP BY item_rm_id) f5 ON a.id = f5.item_rm_id
 
             LEFT JOIN (SELECT item_rm_id, SUM(qty) AS qty_issued FROM issued_material_details WHERE DATE_FORMAT(created_date, '%Y-%m-%d') BETWEEN '$filter_from_minus1' AND '$filter_to_minus1' GROUP BY item_rm_id) h1 ON a.id = h1.item_rm_id
             LEFT JOIN (SELECT item_rm_id, SUM(qty) AS qty_trans_rm_out FROM transaction_rm WHERE request_date BETWEEN '$filter_from_minus1' AND '$filter_to_minus1' AND transaction_kind = 'OUT' GROUP BY item_rm_id) i1 ON a.id = i1.item_rm_id
@@ -1531,7 +1538,7 @@ class Report_history_transactions extends CI_Controller
                     Print By ' . $this->session->username . '  
                 </div>
                 <br><br><br>
-                <h3 style="margin:0;">LBS (RM)</h3>
+                <h3 style="margin:0;">LSB (RM)</h3>
                 <small>PERIOD : <b>' . $filter_from . '</b> To <b>' . $filter_to . '</b></small>
             </center>
             <br>
@@ -1551,7 +1558,7 @@ class Report_history_transactions extends CI_Controller
                     <th rowspan="2" width="100">Out</th>
                     <th rowspan="2" width="100">Ending<br>Stock</th>
                     <th colspan="3">IN</th>
-                    <th colspan="4">OUT</th>
+                    <th colspan="5">OUT</th>
                     <th rowspan="2" width="100">Total<br>In</th>
                     <th rowspan="2" width="100">Total<br>Out</th>
                     <th rowspan="2" width="100">Selisih Summary <br>VS Detail (IN)</th>
@@ -1564,6 +1571,7 @@ class Report_history_transactions extends CI_Controller
                     <th width="80">ADJ STO</th>
 
                     <th width="80">Supply Sheet</th>
+                    <th width="80">Material Request</th>
                     <th width="80">Kanban</th>
                     <th width="80">BPB</th>
                     <th width="80">ADJ STO</th>
@@ -1580,7 +1588,8 @@ class Report_history_transactions extends CI_Controller
         $totalBpmQty = 0;
         $totalAdjInQty = 0;
 
-        $totalQtyIssued = 0;
+        $totalQtyIssuedSupplySheet = 0;
+        $totalQtyIssuedMaterialRequest = 0;
         $totalQtyKanban = 0;
         $totalAdjOutQty = 0;
         $totalBpbQty = 0;
@@ -1653,15 +1662,16 @@ class Report_history_transactions extends CI_Controller
             $totalBpmQty += $record->bpm_qty;
             $totalAdjInQty += $record->adj_in_qty;
 
-            $totalQtyIssued += $record->qty_issued;
+            $totalQtyIssuedSupplySheet += $record->qty_issued_supply_sheet + $record->qty_issued_non_supply_sheet;
+            $totalQtyIssuedMaterialRequest += $record->qty_issued_material_request;
             $totalQtyKanban += $record->qty_kanban;
             $totalAdjOutQty += $record->adj_out_qty;
             $totalBpbQty += $record->bpb_qty;
 
             $totalQtyIn += ($record->receipt_qty + $record->bpm_qty + $record->adj_in_qty);
-            $totalQtyOut += ($record->qty_issued + $record->qty_kanban + $record->adj_out_qty + $record->bpb_qty);
+            $totalQtyOut += ($record->qty_issued_supply_sheet + $record->qty_issued_non_supply_sheet + $record->qty_issued_material_request + $record->qty_kanban + $record->adj_out_qty + $record->bpb_qty);
             $totalQtySelisihIn += (($record->receipt_qty + $record->bpm_qty + $record->adj_in_qty) - $record->qty_in);
-            $totalQtySelisihOut += (($record->qty_issued + $record->qty_kanban + $record->adj_out_qty + $record->bpb_qty) - $record->qty_out);
+            $totalQtySelisihOut += (($record->qty_issued_supply_sheet + $record->qty_issued_non_supply_sheet + $record->qty_issued_material_request + $record->qty_kanban + $record->adj_out_qty + $record->bpb_qty) - $record->qty_out);
 
             $total_sales_minus = $record->qty_out_minus1 + $record->qty_out_minus2 + $record->qty_out_minus3;
             $avg_sales_minus = ($total_sales_minus > 0) ? number_format($total_sales_minus / 3, 2) : '0.00';
@@ -1690,15 +1700,16 @@ class Report_history_transactions extends CI_Controller
                             <td style="text-align:right;">' . $record->bpm_qty . '</td>
                             <td style="text-align:right;">' . $record->adj_in_qty . '</td>
 
-                            <td style="text-align:right;">' . $record->qty_issued . '</td>
+                            <td style="text-align:right;">' . number_format($record->qty_issued_supply_sheet + $record->qty_issued_non_supply_sheet,2) . '</td>
+                            <td style="text-align:right;">' . $record->qty_issued_material_request . '</td>
                             <td style="text-align:right;">' . $record->qty_kanban . '</td>
                             <td style="text-align:right;">' . $record->bpb_qty . '</td>
                             <td style="text-align:right;">' . $record->adj_out_qty . '</td>
 
                             <td style="text-align:right;">' . number_format($record->receipt_qty + $record->bpm_qty + $record->adj_in_qty,2) . '</td>
-                            <td style="text-align:right;">' . number_format($record->qty_issued + $record->qty_kanban + $record->adj_out_qty + $record->bpb_qty,2) . '</td>
+                            <td style="text-align:right;">' . number_format($record->qty_issued_supply_sheet + $record->qty_issued_non_supply_sheet + $record->qty_issued_material_request + $record->qty_kanban + $record->adj_out_qty + $record->bpb_qty,2) . '</td>
                             <td style="text-align:right;">' . number_format(($record->receipt_qty + $record->bpm_qty + $record->adj_in_qty) - $record->qty_in, 2) . '</td>
-                            <td style="text-align:right;">' . number_format(($record->qty_issued + $record->qty_kanban + $record->adj_out_qty + $record->bpb_qty) - $record->qty_out, 2) . '</td>
+                            <td style="text-align:right;">' . number_format(($record->qty_issued_supply_sheet + $record->qty_issued_non_supply_sheet + $record->qty_issued_material_request + $record->qty_kanban + $record->adj_out_qty + $record->bpb_qty) - $record->qty_out, 2) . '</td>
 
                             <td style="text-align:right;">' . $stock_coverage . '</td>
                         </tr>';
@@ -1716,9 +1727,10 @@ class Report_history_transactions extends CI_Controller
             <td style="text-align:right;">' . number_format($totalBpmQty, 2) . '</td>
             <td style="text-align:right;">' . number_format($totalAdjInQty, 2) . '</td>
 
-            <td style="text-align:right;">' . number_format($totalQtyIssued, 2) . '</td>
+            <td style="text-align:right;">' . number_format($totalQtyIssuedSupplySheet, 2) . '</td>
+            <td style="text-align:right;">' . number_format($totalQtyIssuedMaterialRequest, 2) . '</td>
             <td style="text-align:right;">' . number_format($totalQtyKanban, 2) . '</td>
-             <td style="text-align:right;">' . number_format($totalBpbQty, 2) . '</td>
+            <td style="text-align:right;">'. number_format($totalBpbQty, 2) . '</td>
             <td style="text-align:right;">' . number_format($totalAdjOutQty, 2) . '</td>
            
             <td style="text-align:right;">' . number_format($totalQtyIn, 2) . '</td>
