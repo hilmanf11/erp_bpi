@@ -678,6 +678,82 @@ class Sales_invoices extends CI_Controller
 
     public function create()
     {
+        if (!$this->input->post()) {
+            show_error("Cannot Process your request! Method not allowed.");
+            return;
+        }
+
+        $jsonData = file_get_contents("php://input");
+        $post = json_decode($jsonData, true);
+
+        $sales_invoices = $post['dataSi'] ?? [];
+        $sales_invoice_journals = $post['dataJournal'] ?? [];
+
+        foreach ($sales_invoices as $sales_invoice) {
+
+            // Validasi DN ada atau Input manual
+            $existing_DN = $this->db->get_where('delivery_notes', [
+                    "delivery_note_no"  => $sales_invoice['delivery_note_no'], 
+                    "customer_order_no" => $sales_invoice['customer_order_no']
+                ])->row();
+
+            if (!empty($existing_DN)) {
+                $where_invoices = [
+                    "delivery_note_no"  => $sales_invoice['delivery_note_no'], 
+                    "sales_order_no"    => $sales_invoice['sales_order_no'],
+                    "customer_order_no" => $sales_invoice['customer_order_no'],
+                    "item_fg_id"        => $sales_invoice['item_fg_id'],
+                ];
+            } else {
+                $where_invoices = [
+                    "delivery_note_no"  => "MANUAL",
+                    "sales_order_no"    => "-",
+                    "customer_order_no" => "-",
+                    "number"            => $sales_invoice['number'] ?? null,
+                ];
+            }
+            $sales_invoices_read = $this->crud->read('sales_invoices', [], $where_invoices);
+
+            if (!empty($sales_invoice['id'])) {
+                $send = $this->db->update('sales_invoices', $sales_invoice, ["id" => $sales_invoice['id']]);
+                
+            } else {
+                if(!$sales_invoices_read) {
+
+                    $sales_invoice['delivery_note_no']  = "MANUAL";
+                    $sales_invoice['sales_order_no']    = "-";
+                    $sales_invoice['customer_order_no'] = "-";
+
+                    $send = $this->crud->createNotLog('sales_invoices', $sales_invoice);
+                    $this->db->update('delivery_notes',["status" => "1"], ["delivery_note_no" => $sales_invoice['delivery_note_no'], "customer_order_no" => $sales_invoice['customer_order_no']]);
+                } else {
+                    $send = $this->db->update('sales_invoices', $sales_invoice, $where_invoices);
+                }
+            }
+
+        }
+
+        foreach ($sales_invoice_journals as $sales_invoice_journal) {
+                $sales_invoice_journals_read = $this->crud->read('sales_invoice_journals', [], [
+                "number" => $sales_invoice_journal['number'], 
+                "account_number" => $sales_invoice_journal['account_number']
+            ]);
+
+            if (@$sales_invoice_journal['id'] != "") {
+                $send = $this->db->update('sales_invoice_journals', $sales_invoice_journal, ["number" => $sales_invoice_journal['number'], "account_number" => $sales_invoice_journal['account_number']]);
+            } else {
+                if(!$sales_invoice_journals_read){
+                    $send = $this->crud->createNotLog('sales_invoice_journals', $sales_invoice_journal);
+                } 
+            }
+        }
+
+        die($send);
+    
+    }
+
+    public function createOld() // Perbaikan Create/Update ketika Input DN Manual Error Create SI Loading
+    {
         if ($this->input->post()) {
             $jsonData = file_get_contents("php://input");
             $post = json_decode($jsonData, true);
@@ -689,7 +765,7 @@ class Sales_invoices extends CI_Controller
                     "delivery_note_no" => $sales_invoice['delivery_note_no'], 
                     "sales_order_no" => $sales_invoice['sales_order_no'],
                     "customer_order_no" => $sales_invoice['customer_order_no'],
-                    "item_fg_id" => $sales_invoice['item_fg_id']
+                    "item_fg_id" => $sales_invoice['item_fg_id'] ?? null,
                 ]);
 
                 if (!empty($sales_invoice['id'])) {

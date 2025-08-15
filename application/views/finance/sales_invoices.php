@@ -257,7 +257,7 @@
                     </div>
                     <div class="fitem">
                         <span style="width:35%; display:inline-block;">BC No</span>
-                        <input style="width:30%;" id="d_bc_no" name="d_bc_no" class="easyui-textbox" data-options="prompt:'Number Only'">
+                        <input style="width:30%;" id="d_bc_no" name="d_bc_no" class="easyui-textbox" >
                     </div>
                     <div class="fitem">
                         <span style="width:35%; display:inline-block;">Keterangan Tambahan</span>
@@ -2129,9 +2129,12 @@
                     // $("#preview").linkbutton('disable');
 
                     var deliveryNoteNo = row.delivery_note_nos;
-                    if (deliveryNoteNo) {
+                    console.log("DELIVERY NOTE ", deliveryNoteNo);
+
+                    if (deliveryNoteNo !== "" || deliveryNoteNo !== "MANUAL") {
                         deliveryNoteNo = deliveryNoteNo.replace(/\s*,\s*/g, ',');
-                    }
+                    } 
+
                     $("#delivery_note_no").combogrid('setValue', deliveryNoteNo);
                     
                     $("#delivery_note_no").combogrid({
@@ -2172,7 +2175,7 @@
                         selectOnCheck: true,
                         checkOnSelect: true,
                         onLoadSuccess: function(data) {
-                            if (row && row.delivery_note_nos) {
+                            if (row && row.delivery_note_nos && deliveryNoteNo !== "MANUAL") {
                                 // Siapkan delivery_note dari row yang akan diupdate
                                 let selectedDeliveryNotes = row.delivery_note_nos
                                                                 .split(',')
@@ -2195,6 +2198,8 @@
                                     console.warn("Grid instance for #delivery_note_no checklist not found.");
                                 }
                                 
+                            } else {
+                                $("#delivery_note_no").combogrid('setValue', deliveryNoteNo);
                             }
                         },
                         // onCheck: function(index, rowData) { // ---- COMMENT KARENA HARUS KLIK ULANG AddJournal
