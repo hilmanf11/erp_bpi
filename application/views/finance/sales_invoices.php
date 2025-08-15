@@ -2199,7 +2199,8 @@
                                 }
                                 
                             } else {
-                                $("#delivery_note_no").combogrid('setValue', deliveryNoteNo);
+                                if (deliveryNoteNo !== "" || deliveryNoteNo !== null) { $("#delivery_note_no").combogrid('setValue', deliveryNoteNo); }
+                                else { $("#delivery_note_no").combogrid('setValue', deliveryNoteNo); }
                             }
                         },
                         // onCheck: function(index, rowData) { // ---- COMMENT KARENA HARUS KLIK ULANG AddJournal

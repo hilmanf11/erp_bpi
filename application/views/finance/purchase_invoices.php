@@ -721,7 +721,7 @@
 <iframe id="printout" src="" style="width: 100%;" hidden></iframe>
 <script>
     // Setting on/off FITUR AUTO POSTING JOURNAL => ubah ke TRUE jika ingin dinyalakan
-    let auto_posting_journal = true; // actived on 2025-07-29 (request Bu Nina)
+    let auto_posting_journal = true;
 
     function check_vat() {
         var check_vat = $("#check_vat").checkbox('options');
@@ -1581,9 +1581,10 @@
 
                             //GET POR
                             var receiptNos = row.por_numbers;
-                            if (receiptNos) {
+                            if (receiptNos && receiptNos.includes(',')) {
                                 receiptNos = receiptNos.replace(/\s*,\s*/g, ',');
                             }
+
                             $("#por_no").combogrid('setValue', receiptNos);
 
                             $("#por_no").combogrid({
@@ -1615,7 +1616,7 @@
                                 selectOnCheck: true,
                                 checkOnSelect: true,
                                 onLoadSuccess: function(data) {
-                                    if (row && row.por_numbers) {
+                                    if (row && row.por_numbers && receiptNos.includes(',')) {
                                         let selectedDeliveryNotes = row.por_numbers
                                                                         .split(',')
                                                                         .map(note => note.trim())
@@ -1634,6 +1635,9 @@
                                         } else {
                                             console.warn("Grid instance for receipt_no checklist not found.");
                                         }    
+                                    } else {
+                                        if (receiptNos == "" || receiptNos == null) { $("#por_no").combogrid('setValue', "-"); }
+                                        else { $("#por_no").combogrid('setValue', receiptNos); }                                        
                                     }
 
                                 },
@@ -2203,7 +2207,7 @@
                         return;
                     }
                     // --- Lanjutkan proses jika tidak ada error validasi ---
-
+                    
                     if (isSubmitting) return; // cegah klik dobel
                     
                     isSubmitting = true;
