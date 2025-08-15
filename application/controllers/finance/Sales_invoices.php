@@ -706,7 +706,7 @@ class Sales_invoices extends CI_Controller
                 ];
             } else {
                 $where_invoices = [
-                    "delivery_note_no"  => "MANUAL",
+                    "delivery_note_no"  => "-",
                     "sales_order_no"    => "-",
                     "customer_order_no" => "-",
                     "number"            => $sales_invoice['number'] ?? null,
@@ -720,7 +720,7 @@ class Sales_invoices extends CI_Controller
             } else {
                 if(!$sales_invoices_read) {
 
-                    $sales_invoice['delivery_note_no']  = "MANUAL";
+                    $sales_invoice['delivery_note_no']  = "-";
                     $sales_invoice['sales_order_no']    = "-";
                     $sales_invoice['customer_order_no'] = "-";
 

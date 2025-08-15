@@ -2131,7 +2131,7 @@
                     var deliveryNoteNo = row.delivery_note_nos;
                     console.log("DELIVERY NOTE ", deliveryNoteNo);
 
-                    if (deliveryNoteNo !== "" || deliveryNoteNo !== "MANUAL") {
+                    if (deliveryNoteNo !== "" || deliveryNoteNo.includes(',')) {
                         deliveryNoteNo = deliveryNoteNo.replace(/\s*,\s*/g, ',');
                     } 
 
@@ -2175,7 +2175,7 @@
                         selectOnCheck: true,
                         checkOnSelect: true,
                         onLoadSuccess: function(data) {
-                            if (row && row.delivery_note_nos && deliveryNoteNo !== "MANUAL") {
+                            if (row && row.delivery_note_nos && deliveryNoteNo.includes(',')) {
                                 // Siapkan delivery_note dari row yang akan diupdate
                                 let selectedDeliveryNotes = row.delivery_note_nos
                                                                 .split(',')
