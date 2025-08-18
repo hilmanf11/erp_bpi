@@ -241,10 +241,10 @@ class Progress_wip extends CI_Controller
                         COALESCE((COALESCE(c.qty_actual,0)+COALESCE(d.qty_ng,0)+COALESCE(c2.qty_wip,0)),0) as total_production,
                         COALESCE(f.qty_subcont_jasa,0) as subconts_jasa,
                         COALESCE(j.qty_adj_in,0) as qty_adj_in,
-                        COALESCE(g.qty_in_checksheet,0) + COALESCE(ga.qty_in_no_checksheet,0) + COALESCE(gb.initial_in,0) + COALESCE(gc.qty_in_wip_receipt,0) as qty_rfg,
+                        COALESCE(g.qty_in_checksheet,0) + COALESCE(gb.initial_in,0) + COALESCE(gc.qty_in_wip_receipt,0) as qty_rfg,
                         COALESCE(h.qty_rfg_jasa,0) as rfg_jasa,
                         COALESCE(k.qty_adj_out,0) as qty_adj_out,
-                        COALESCE((COALESCE(i.begin_balance,0)) + COALESCE(c.qty_actual,0) + COALESCE(f.qty_subcont_jasa,0) +COALESCE(j.qty_adj_in,0) +COALESCE(c2.qty_wip,0) - COALESCE(g.qty_in_checksheet,0) - COALESCE(ga.qty_in_no_checksheet,0) - COALESCE(gb.initial_in,0) - COALESCE(gc.qty_in_wip_receipt,0) - COALESCE(h.qty_rfg_jasa,0)- COALESCE(k.qty_adj_out,0), 0) as ending_balance
+                        COALESCE((COALESCE(i.begin_balance,0)) + COALESCE(c.qty_actual,0) + COALESCE(f.qty_subcont_jasa,0) +COALESCE(j.qty_adj_in,0) +COALESCE(c2.qty_wip,0) - COALESCE(g.qty_in_checksheet,0) - COALESCE(gb.initial_in,0) - COALESCE(gc.qty_in_wip_receipt,0) - COALESCE(h.qty_rfg_jasa,0)- COALESCE(k.qty_adj_out,0), 0) as ending_balance
                         FROM item_fg a
                         LEFT JOIN (
                                     select aa.item_fg_id,sum(aa.qty_wo) as qty_wo FROM (
@@ -259,7 +259,7 @@ class Progress_wip extends CI_Controller
                         ) c2 on a.id = c2.item_fg_id
                         LEFT JOIN (
                                     select aa.item_fg_id,sum(aa.qty_product) as qty_ng FROM (
-                                            select distinct document,item_fg_id, qty_product FROM  item_ng where trans_date between '$filter_from' AND '$filter_to' AND shift like '%$filter_shift%'
+                                            select distinct document,item_fg_id, qty_product FROM  item_ng where trans_date between '$filter_from' AND '$filter_to' AND shift like '%$filter_shift%' AND created_by != 'PRD01'
                                     ) aa group by aa.item_fg_id
                         ) d on a.id = d.item_fg_id
                         LEFT JOIN (
@@ -314,6 +314,7 @@ class Progress_wip extends CI_Controller
                                     SELECT a.item_fg_id, SUM(a.qty) as initial_in
                                     FROM transaction_fg a
                                     WHERE a.transaction_kind = 'IN'
+                                    AND a.transaction_type = 'RECEIPT FG'
                                     AND a.request_date BETWEEN '$filter_from' AND '$filter_to' 
                                     GROUP BY a.item_fg_id
                         ) gb on a.id = gb.item_fg_id
@@ -345,7 +346,7 @@ class Progress_wip extends CI_Controller
                         ) k on a.id = k.item_fg_id
                         LEFT JOIN (
                                     SELECT a.id,
-                                        COALESCE(e.qty_balance_wip, 0) + COALESCE(c.qty_actual, 0) + COALESCE(f.qty_subcont_jasa, 0) + COALESCE(j.qty_adj_in, 0) - COALESCE(g.qty_in_checksheet, 0) - COALESCE(ga.qty_in_no_checksheet, 0) - COALESCE(gb.initial_in, 0) - COALESCE(gc.qty_in_wip_receipt, 0) - COALESCE(h.qty_rfg_jasa, 0) - COALESCE(k.qty_adj_out, 0) AS begin_balance
+                                        COALESCE(e.qty_balance_wip, 0) + COALESCE(c.qty_actual, 0) + COALESCE(c2.qty_wip, 0) + COALESCE(f.qty_subcont_jasa, 0) + COALESCE(j.qty_adj_in, 0) - COALESCE(g.qty_in_checksheet, 0) - COALESCE(gb.initial_in, 0) - COALESCE(gc.qty_in_wip_receipt, 0) - COALESCE(h.qty_rfg_jasa, 0) - COALESCE(k.qty_adj_out, 0) AS begin_balance
                                     FROM item_fg a
                                     -- qty_balance_wip pada 2025-04-30 (cutoff)
                                     LEFT JOIN (
@@ -363,6 +364,14 @@ class Progress_wip extends CI_Controller
                                         AND shift LIKE '%$filter_shift%'
                                         GROUP BY item_fg_id
                                     ) c ON a.id = c.item_fg_id
+
+                                    LEFT JOIN (
+                                        SELECT item_fg_id, SUM(qty_wip) AS qty_wip
+                                        FROM output_productions
+                                        WHERE trans_date >= '2025-05-01' AND trans_date < '$filter_from'
+                                        AND shift LIKE '%$filter_shift%'
+                                        GROUP BY item_fg_id
+                                    ) c2 ON a.id = c2.item_fg_id
 
                                     LEFT JOIN (
                                         SELECT aa.item_fg_id, SUM(aa.qty_wo) AS qty_subcont_jasa
@@ -422,6 +431,7 @@ class Progress_wip extends CI_Controller
                                         SELECT item_fg_id, SUM(qty) AS initial_in
                                         FROM transaction_fg
                                         WHERE transaction_kind = 'IN'
+                                        AND transaction_type = 'RECEIPT FG'
                                         AND request_date >= '2025-05-01'
                                         AND request_date < '$filter_from'
                                         GROUP BY item_fg_id
@@ -506,7 +516,7 @@ class Progress_wip extends CI_Controller
                     <th rowspan="2" colspan="2">Total WO Qty</th>
                     <th rowspan="2">Begin Balance</th>
                     <th colspan="2">Actual Production</th>
-                    <th rowspan="2">NG</th>
+                    <th rowspan="2">NG Process</th>
                     <th rowspan="2">Total Production</th>
                     <th rowspan="2">SubCont Jasa</th>
                     <th rowspan="2">ADJ IN</th>
@@ -579,7 +589,7 @@ class Progress_wip extends CI_Controller
 
                 $dataNgs = $this->crud->query("
                                                 select aa.trans_date,aa.document,aa.item_fg_id,sum(aa.qty_product) as qty_ng FROM (
-                                                        select distinct trans_date,document,item_fg_id, qty_product FROM item_ng where item_fg_id='$item_fg_id' and trans_date between '$filter_from' and '$filter_to' AND shift like '%$filter_shift%' AND document like '%$filter_workorder%'
+                                                        select distinct trans_date,document,item_fg_id, qty_product FROM item_ng where item_fg_id='$item_fg_id' and trans_date between '$filter_from' and '$filter_to' AND shift like '%$filter_shift%' AND document like '%$filter_workorder%' AND created_by != 'PRD01'
                                                 ) aa group by aa.document,aa.trans_date,aa.item_fg_id
                 ");
 
@@ -619,12 +629,12 @@ class Progress_wip extends CI_Controller
                                                 LEFT JOIN users c ON f.created_by = c.username
                                                 WHERE e.item_fg_id = '$item_fg_id'  and DATE_FORMAT(e.packing_date, '%Y-%m-%d') between '$filter_from' and '$filter_to' and e.status_subcont='NO' and e.shift like '%$filter_shift%' and f.wo_no like '%$filter_workorder%'");
 
-                $receiptsNB = $this->crud->query("
-                                                SELECT f.*, u.name as username ,f.packing_date as trans_date,'NEW BARCODE FG' AS receipt_type
-                                                FROM new_barcode_fg a
-                                                LEFT JOIN scan_item_receipts_fg f ON a.label_no = f.checksheet_label AND a.item_fg_id = f.item_fg_id
-                                                LEFT JOIN users u ON f.created_by = u.username
-                                                WHERE a.item_fg_id = '$item_fg_id'  AND DATE_FORMAT(a.packing_date, '%Y-%m-%d') BETWEEN '$filter_from' and '$filter_to' and f.wo_no like '%$filter_workorder%'");
+                // $receiptsNB = $this->crud->query("
+                //                                 SELECT f.*, u.name as username ,f.packing_date as trans_date,'NEW BARCODE FG' AS receipt_type
+                //                                 FROM new_barcode_fg a
+                //                                 LEFT JOIN scan_item_receipts_fg f ON a.label_no = f.checksheet_label AND a.item_fg_id = f.item_fg_id
+                //                                 LEFT JOIN users u ON f.created_by = u.username
+                //                                 WHERE a.item_fg_id = '$item_fg_id'  AND DATE_FORMAT(a.packing_date, '%Y-%m-%d') BETWEEN '$filter_from' and '$filter_to' and f.wo_no like '%$filter_workorder%'");
 
                 $receiptsWIP = $this->crud->query("
                                                 SELECT a.*, u.name as username, 'WIP RECEIPT FG' AS receipt_type, a.document_no as checksheet_label
@@ -635,7 +645,7 @@ class Progress_wip extends CI_Controller
                 $transFgs = $this->crud->query("
                                                 SELECT *
                                                 FROM transaction_fg a
-                                                WHERE a.transaction_kind = 'IN' AND a.item_fg_id = '$item_fg_id' AND a.request_date BETWEEN '$filter_from' and '$filter_to' and a.request_no like '%$filter_workorder%'");
+                                                WHERE a.transaction_kind = 'IN' AND a.transaction_type = 'RECEIPT FG' AND a.item_fg_id = '$item_fg_id' AND a.request_date BETWEEN '$filter_from' and '$filter_to' and a.request_no like '%$filter_workorder%'");
 
                 // Proses data berdasarkan tanggal
                 $all_data = [];
@@ -708,22 +718,22 @@ class Progress_wip extends CI_Controller
                     ];
                 }
 
-                foreach ($receiptsNB as $receiptNB) {
-                    $all_data[] = [
-                        'type' => $receiptNB->receipt_type,
-                        'date' => $receiptNB->trans_date,
-                        'wo_no' => $receiptNB->wo_no,
-                        'wo_qty' => $record->qty_wo,
-                        'actual_production' => 0,
-                        'qty_wip' => 0,
-                        'ng' => 0,
-                        'subconts_jasa' => 0,
-                        'qty_adj_in' => 0,
-                        'rfg' => $receiptNB->qty,
-                        'rfg_subconts_jasa' => 0,
-                        'qty_adj_out' => 0,
-                    ];
-                }
+                // foreach ($receiptsNB as $receiptNB) {
+                //     $all_data[] = [
+                //         'type' => $receiptNB->receipt_type,
+                //         'date' => $receiptNB->trans_date,
+                //         'wo_no' => $receiptNB->wo_no,
+                //         'wo_qty' => $record->qty_wo,
+                //         'actual_production' => 0,
+                //         'qty_wip' => 0,
+                //         'ng' => 0,
+                //         'subconts_jasa' => 0,
+                //         'qty_adj_in' => 0,
+                //         'rfg' => $receiptNB->qty,
+                //         'rfg_subconts_jasa' => 0,
+                //         'qty_adj_out' => 0,
+                //     ];
+                // }
 
                 foreach ($receiptsWIP as $receiptWIP) {
                     $all_data[] = [
@@ -946,7 +956,7 @@ class Progress_wip extends CI_Controller
 
                     $dataNgs = $this->crud->query("
                                                     select aa.trans_date,aa.document,aa.item_fg_id,sum(aa.qty_product) as qty_ng FROM (
-                                                            select distinct trans_date,document,item_fg_id, qty_product FROM item_ng where item_fg_id='$item_fg_id' and trans_date between '$filter_from' and '$filter_to' AND shift like '%$filter_shift%' AND document like '%$filter_workorder%'
+                                                            select distinct trans_date,document,item_fg_id, qty_product FROM item_ng where item_fg_id='$item_fg_id' and trans_date between '$filter_from' and '$filter_to' AND shift like '%$filter_shift%' AND document like '%$filter_workorder%' AND created_by != 'PRD01'
                                                     ) aa group by aa.document,aa.trans_date,aa.item_fg_id
                     ");
 
@@ -986,12 +996,12 @@ class Progress_wip extends CI_Controller
                                                     LEFT JOIN users c ON f.created_by = c.username
                                                     WHERE e.item_fg_id = '$item_fg_id'  and DATE_FORMAT(e.packing_date, '%Y-%m-%d') between '$filter_from' and '$filter_to' and e.status_subcont='NO' and e.shift like '%$filter_shift%' and f.wo_no like '%$filter_workorder%'");
 
-                    $receiptsNB = $this->crud->query("
-                                                    SELECT f.*, u.name as username ,f.packing_date as trans_date,'NEW BARCODE FG' AS receipt_type
-                                                    FROM new_barcode_fg a
-                                                    LEFT JOIN scan_item_receipts_fg f ON a.label_no = f.checksheet_label AND a.item_fg_id = f.item_fg_id
-                                                    LEFT JOIN users u ON f.created_by = u.username
-                                                    WHERE a.item_fg_id = '$item_fg_id'  AND DATE_FORMAT(a.packing_date, '%Y-%m-%d') BETWEEN '$filter_from' and '$filter_to' and f.wo_no like '%$filter_workorder%'");
+                    // $receiptsNB = $this->crud->query("
+                    //                                 SELECT f.*, u.name as username ,f.packing_date as trans_date,'NEW BARCODE FG' AS receipt_type
+                    //                                 FROM new_barcode_fg a
+                    //                                 LEFT JOIN scan_item_receipts_fg f ON a.label_no = f.checksheet_label AND a.item_fg_id = f.item_fg_id
+                    //                                 LEFT JOIN users u ON f.created_by = u.username
+                    //                                 WHERE a.item_fg_id = '$item_fg_id'  AND DATE_FORMAT(a.packing_date, '%Y-%m-%d') BETWEEN '$filter_from' and '$filter_to' and f.wo_no like '%$filter_workorder%'");
 
                     $receiptsWIP = $this->crud->query("
                                                     SELECT a.*, u.name as username, 'WIP RECEIPT FG' AS receipt_type, a.document_no as checksheet_label
@@ -1002,7 +1012,7 @@ class Progress_wip extends CI_Controller
                     $transFgs = $this->crud->query("
                                                     SELECT *
                                                     FROM transaction_fg a
-                                                    WHERE a.transaction_kind = 'IN' AND a.item_fg_id = '$item_fg_id' AND a.request_date BETWEEN '$filter_from' and '$filter_to' and a.request_no like '%$filter_workorder%'");
+                                                    WHERE a.transaction_kind = 'IN' AND a.transaction_type = 'RECEIPT FG' AND a.item_fg_id = '$item_fg_id' AND a.request_date BETWEEN '$filter_from' and '$filter_to' and a.request_no like '%$filter_workorder%'");
 
                     // Proses data berdasarkan tanggal
                     $all_data = [];
@@ -1075,22 +1085,22 @@ class Progress_wip extends CI_Controller
                         ];
                     }
 
-                    foreach ($receiptsNB as $receiptNB) {
-                        $all_data[] = [
-                            'type' => $receiptNB->receipt_type,
-                            'date' => $receiptNB->trans_date,
-                            'wo_no' => $receiptNB->wo_no,
-                            'wo_qty' => $record->qty_wo,
-                            'actual_production' => 0,
-                            'qty_wip' => 0,
-                            'ng' => 0,
-                            'subconts_jasa' => 0,
-                            'qty_adj_in' => 0,
-                            'rfg' => $receiptNB->qty,
-                            'rfg_subconts_jasa' => 0,
-                            'qty_adj_out' => 0,
-                        ];
-                    }
+                    // foreach ($receiptsNB as $receiptNB) {
+                    //     $all_data[] = [
+                    //         'type' => $receiptNB->receipt_type,
+                    //         'date' => $receiptNB->trans_date,
+                    //         'wo_no' => $receiptNB->wo_no,
+                    //         'wo_qty' => $record->qty_wo,
+                    //         'actual_production' => 0,
+                    //         'qty_wip' => 0,
+                    //         'ng' => 0,
+                    //         'subconts_jasa' => 0,
+                    //         'qty_adj_in' => 0,
+                    //         'rfg' => $receiptNB->qty,
+                    //         'rfg_subconts_jasa' => 0,
+                    //         'qty_adj_out' => 0,
+                    //     ];
+                    // }
 
                     foreach ($receiptsWIP as $receiptWIP) {
                         $all_data[] = [
@@ -1303,7 +1313,7 @@ class Progress_wip extends CI_Controller
 
                 $dataNgs = $this->crud->query("
                                                 select aa.trans_date,aa.document,aa.item_fg_id,sum(aa.qty_product) as qty_ng FROM (
-                                                        select distinct trans_date,document,item_fg_id, qty_product FROM item_ng where item_fg_id='$item_fg_id' and trans_date between '$filter_from' and '$filter_to' AND shift like '%$filter_shift%'
+                                                        select distinct trans_date,document,item_fg_id, qty_product FROM item_ng where item_fg_id='$item_fg_id' and trans_date between '$filter_from' and '$filter_to' AND shift like '%$filter_shift%' AND created_by != 'PRD01'
                                                 ) aa group by aa.document,aa.trans_date,aa.item_fg_id
                 ");
 
@@ -1352,12 +1362,12 @@ class Progress_wip extends CI_Controller
                     AND e.shift LIKE '%$filter_shift%'
                 ");
 
-                $receiptsNB = $this->crud->query("
-                                                SELECT f.*, u.name as username ,f.packing_date as trans_date,'NEW BARCODE FG' AS receipt_type
-                                                FROM new_barcode_fg a
-                                                LEFT JOIN scan_item_receipts_fg f ON a.label_no = f.checksheet_label AND a.item_fg_id = f.item_fg_id
-                                                LEFT JOIN users u ON f.created_by = u.username
-                                                WHERE a.item_fg_id = '$item_fg_id'  AND DATE_FORMAT(a.packing_date, '%Y-%m-%d') BETWEEN '$filter_from' and '$filter_to'");
+                // $receiptsNB = $this->crud->query("
+                //                                 SELECT f.*, u.name as username ,f.packing_date as trans_date,'NEW BARCODE FG' AS receipt_type
+                //                                 FROM new_barcode_fg a
+                //                                 LEFT JOIN scan_item_receipts_fg f ON a.label_no = f.checksheet_label AND a.item_fg_id = f.item_fg_id
+                //                                 LEFT JOIN users u ON f.created_by = u.username
+                //                                 WHERE a.item_fg_id = '$item_fg_id'  AND DATE_FORMAT(a.packing_date, '%Y-%m-%d') BETWEEN '$filter_from' and '$filter_to'");
 
                 $receiptsWIP = $this->crud->query("
                                                 SELECT a.*, u.name as username, 'WIP RECEIPT FG' AS receipt_type, a.document_no as checksheet_label
@@ -1368,7 +1378,7 @@ class Progress_wip extends CI_Controller
                 $transFgs = $this->crud->query("
                                                 SELECT *
                                                 FROM transaction_fg a
-                                                WHERE a.transaction_kind = 'IN' AND a.item_fg_id = '$item_fg_id' AND a.request_date BETWEEN '$filter_from' and '$filter_to'");
+                                                WHERE a.transaction_kind = 'IN' AND a.transaction_type = 'RECEIPT FG' AND a.item_fg_id = '$item_fg_id' AND a.request_date BETWEEN '$filter_from' and '$filter_to'");
 
                 // Proses data berdasarkan tanggal
                 $all_data = [];
@@ -1441,22 +1451,22 @@ class Progress_wip extends CI_Controller
                     ];
                 }
 
-                foreach ($receiptsNB as $receiptNB) {
-                    $all_data[] = [
-                        'type' => $receiptNB->receipt_type,
-                        'date' => $receiptNB->trans_date,
-                        'wo_no' => $receiptNB->wo_no,
-                        'wo_qty' => $record->qty_wo,
-                        'actual_production' => 0,
-                        'qty_wip' => 0,
-                        'ng' => 0,
-                        'subconts_jasa' => 0,
-                        'qty_adj_in' => 0,
-                        'rfg' => $receiptNB->qty,
-                        'rfg_subconts_jasa' => 0,
-                        'qty_adj_out' => 0,
-                    ];
-                }
+                // foreach ($receiptsNB as $receiptNB) {
+                //     $all_data[] = [
+                //         'type' => $receiptNB->receipt_type,
+                //         'date' => $receiptNB->trans_date,
+                //         'wo_no' => $receiptNB->wo_no,
+                //         'wo_qty' => $record->qty_wo,
+                //         'actual_production' => 0,
+                //         'qty_wip' => 0,
+                //         'ng' => 0,
+                //         'subconts_jasa' => 0,
+                //         'qty_adj_in' => 0,
+                //         'rfg' => $receiptNB->qty,
+                //         'rfg_subconts_jasa' => 0,
+                //         'qty_adj_out' => 0,
+                //     ];
+                // }
 
                 foreach ($receiptsWIP as $receiptWIP) {
                     $all_data[] = [
@@ -1616,7 +1626,7 @@ class Progress_wip extends CI_Controller
 
             $dataNgs = $this->crud->query("
                                             select aa.workorder,aa.trans_date,aa.document,aa.item_fg_id,sum(aa.qty_product) as qty_ng FROM (
-                                                    select distinct workorder,trans_date,document,item_fg_id, qty_product FROM item_ng where item_fg_id='$filter_items' and trans_date between '$filter_from' and '$filter_to' AND shift like '%$filter_shift%' AND workorder like '%$filter_workorder%'
+                                                    select distinct workorder,trans_date,document,item_fg_id, qty_product FROM item_ng where item_fg_id='$filter_items' and trans_date between '$filter_from' and '$filter_to' AND shift like '%$filter_shift%' AND workorder like '%$filter_workorder%' AND created_by != 'PRD01'
                                             ) aa group by aa.document,aa.trans_date,aa.item_fg_id
             ");
 
@@ -1658,12 +1668,12 @@ class Progress_wip extends CI_Controller
                                             LEFT JOIN users c ON f.created_by = c.username
                                             WHERE e.item_fg_id = '$filter_items' and DATE_FORMAT(e.packing_date, '%Y-%m-%d') between '$filter_from' and '$filter_to' and e.status_subcont='NO' and e.shift like '%$filter_shift%' and f.wo_no like '%$filter_workorder%'");
 
-            $receiptsNB = $this->crud->query("
-                                            SELECT f.*, u.name as username ,f.packing_date as trans_date,'NEW BARCODE FG' AS receipt_type
-                                            FROM new_barcode_fg a
-                                            LEFT JOIN scan_item_receipts_fg f ON a.label_no = f.checksheet_label AND a.item_fg_id = f.item_fg_id
-                                            LEFT JOIN users u ON f.created_by = u.username
-                                            WHERE a.item_fg_id = '$filter_items' AND DATE_FORMAT(a.packing_date, '%Y-%m-%d') BETWEEN '$filter_from' and '$filter_to' and f.wo_no like '%$filter_workorder%'");
+            // $receiptsNB = $this->crud->query("
+            //                                 SELECT f.*, u.name as username ,f.packing_date as trans_date,'NEW BARCODE FG' AS receipt_type
+            //                                 FROM new_barcode_fg a
+            //                                 LEFT JOIN scan_item_receipts_fg f ON a.label_no = f.checksheet_label AND a.item_fg_id = f.item_fg_id
+            //                                 LEFT JOIN users u ON f.created_by = u.username
+            //                                 WHERE a.item_fg_id = '$filter_items' AND DATE_FORMAT(a.packing_date, '%Y-%m-%d') BETWEEN '$filter_from' and '$filter_to' and f.wo_no like '%$filter_workorder%'");
 
             $receiptsWIP = $this->crud->query("
                                             SELECT a.*, u.name as username, 'WIP RECEIPT FG' AS receipt_type, a.document_no as checksheet_label
@@ -1674,7 +1684,7 @@ class Progress_wip extends CI_Controller
             $transFgs = $this->crud->query("
                                             SELECT *
                                             FROM transaction_fg a
-                                            WHERE a.transaction_kind = 'IN' AND a.item_fg_id = '$filter_items' AND a.request_date BETWEEN '$filter_from' and '$filter_to' and a.request_no like '%$filter_workorder%'");
+                                            WHERE a.transaction_kind = 'IN'  AND a.transaction_type = 'RECEIPT FG' AND a.item_fg_id = '$filter_items' AND a.request_date BETWEEN '$filter_from' and '$filter_to' and a.request_no like '%$filter_workorder%'");
 
             // ---------------------------------------------------------------------------------------------------------------------------------
             
@@ -1749,22 +1759,22 @@ class Progress_wip extends CI_Controller
                 ];
             }
 
-            foreach ($receiptsNB as $receiptNB) {
-                $all_data[] = [
-                    'period' => '',
-                    'date' => $receiptNB->trans_date,
-                    'wo_no' => $receiptNB->wo_no,
-                    // 'wo_qty' => $record->qty_wo,
-                    'actual_production' => 0,
-                    'qty_wip' => 0,
-                    'ng' => 0,
-                    'subconts_jasa' => 0,
-                    'qty_adj_in' => 0,
-                    'rfg' => $receiptNB->qty,
-                    'rfg_subconts_jasa' => 0,
-                    'qty_adj_out' => 0,
-                ];
-            }
+            // foreach ($receiptsNB as $receiptNB) {
+            //     $all_data[] = [
+            //         'period' => '',
+            //         'date' => $receiptNB->trans_date,
+            //         'wo_no' => $receiptNB->wo_no,
+            //         // 'wo_qty' => $record->qty_wo,
+            //         'actual_production' => 0,
+            //         'qty_wip' => 0,
+            //         'ng' => 0,
+            //         'subconts_jasa' => 0,
+            //         'qty_adj_in' => 0,
+            //         'rfg' => $receiptNB->qty,
+            //         'rfg_subconts_jasa' => 0,
+            //         'qty_adj_out' => 0,
+            //     ];
+            // }
 
             foreach ($receiptsWIP as $receiptWIP) {
                 $all_data[] = [
@@ -1893,7 +1903,7 @@ class Progress_wip extends CI_Controller
                         <th rowspan="2">UOM</th>
                         <th rowspan="2">WO Qty</th>
                         <th colspan="2">PRD QTY</th>
-                        <th rowspan="2">NG</th>
+                        <th rowspan="2">NG Process</th>
                         <th rowspan="2">TOTAL PRODUCTION</th>
                         <th rowspan="2">RFG QTY</th>
                         <th rowspan="2">TOT PRD - RFG</th>
@@ -2047,7 +2057,7 @@ class Progress_wip extends CI_Controller
 
             $dataNgs = $this->crud->query("
                                             select aa.workorder, aa.trans_date,aa.document,aa.item_fg_id,sum(aa.qty_product) as qty_ng FROM (
-                                                    select distinct workorder,trans_date,document,item_fg_id, qty_product FROM item_ng where item_fg_id='$filter_items' and trans_date between '$filter_from' and '$filter_to' AND shift like '%$filter_shift%'
+                                                    select distinct workorder,trans_date,document,item_fg_id, qty_product FROM item_ng where item_fg_id='$filter_items' and trans_date between '$filter_from' and '$filter_to' AND shift like '%$filter_shift%' AND created_by != 'PRD01'
                                             ) aa group by aa.document,aa.trans_date,aa.item_fg_id
             ");
 
@@ -2103,12 +2113,12 @@ class Progress_wip extends CI_Controller
             //     AND e.shift LIKE '%$filter_shift%'
             // ");
 
-            $receiptsNB = $this->crud->query("
-                                            SELECT f.*, u.name as username ,f.packing_date as trans_date,'NEW BARCODE FG' AS receipt_type
-                                            FROM new_barcode_fg a
-                                            LEFT JOIN scan_item_receipts_fg f ON a.label_no = f.checksheet_label AND a.item_fg_id = f.item_fg_id
-                                            LEFT JOIN users u ON f.created_by = u.username
-                                            WHERE a.item_fg_id = '$filter_items'  AND DATE_FORMAT(a.packing_date, '%Y-%m-%d') BETWEEN '$filter_from' and '$filter_to'");
+            // $receiptsNB = $this->crud->query("
+            //                                 SELECT f.*, u.name as username ,f.packing_date as trans_date,'NEW BARCODE FG' AS receipt_type
+            //                                 FROM new_barcode_fg a
+            //                                 LEFT JOIN scan_item_receipts_fg f ON a.label_no = f.checksheet_label AND a.item_fg_id = f.item_fg_id
+            //                                 LEFT JOIN users u ON f.created_by = u.username
+            //                                 WHERE a.item_fg_id = '$filter_items'  AND DATE_FORMAT(a.packing_date, '%Y-%m-%d') BETWEEN '$filter_from' and '$filter_to'");
 
             $receiptsWIP = $this->crud->query("
                                             SELECT a.*, u.name as username, 'WIP RECEIPT FG' AS receipt_type, a.document_no as checksheet_label
@@ -2119,7 +2129,7 @@ class Progress_wip extends CI_Controller
             $transFgs = $this->crud->query("
                                             SELECT *
                                             FROM transaction_fg a
-                                            WHERE a.transaction_kind = 'IN' AND a.item_fg_id = '$filter_items' AND a.request_date BETWEEN '$filter_from' and '$filter_to'");
+                                            WHERE a.transaction_kind = 'IN' AND a.transaction_type = 'RECEIPT FG' AND a.item_fg_id = '$filter_items' AND a.request_date BETWEEN '$filter_from' and '$filter_to'");
 
             // Proses data berdasarkan tanggal
             $all_data = [];
@@ -2192,22 +2202,22 @@ class Progress_wip extends CI_Controller
                 ];
             }
 
-            foreach ($receiptsNB as $receiptNB) {
-                $all_data[] = [
-                    'period' => '',
-                    'date' => $receiptNB->trans_date,
-                    'wo_no' => $receiptNB->wo_no,
-                    // 'wo_qty' => $record->qty_wo,
-                    'actual_production' => 0,
-                    'qty_wip' => 0,
-                    'ng' => 0,
-                    'subconts_jasa' => 0,
-                    'qty_adj_in' => 0,
-                    'rfg' => $receiptNB->qty,
-                    'rfg_subconts_jasa' => 0,
-                    'qty_adj_out' => 0,
-                ];
-            }
+            // foreach ($receiptsNB as $receiptNB) {
+            //     $all_data[] = [
+            //         'period' => '',
+            //         'date' => $receiptNB->trans_date,
+            //         'wo_no' => $receiptNB->wo_no,
+            //         // 'wo_qty' => $record->qty_wo,
+            //         'actual_production' => 0,
+            //         'qty_wip' => 0,
+            //         'ng' => 0,
+            //         'subconts_jasa' => 0,
+            //         'qty_adj_in' => 0,
+            //         'rfg' => $receiptNB->qty,
+            //         'rfg_subconts_jasa' => 0,
+            //         'qty_adj_out' => 0,
+            //     ];
+            // }
 
             foreach ($receiptsWIP as $receiptWIP) {
                 $all_data[] = [
@@ -2336,7 +2346,7 @@ class Progress_wip extends CI_Controller
                         <th rowspan="2">UOM</th>
                         <th rowspan="2">WO Qty</th>
                         <th colspan="2">PRD QTY</th>
-                        <th rowspan="2">NG</th>
+                        <th rowspan="2">NG Process</th>
                         <th rowspan="2">TOTAL PRODUCTION</th>
                         <th rowspan="2">RFG QTY</th>
                         <th rowspan="2">TOT PRD - RFG</th>
@@ -2489,7 +2499,7 @@ class Progress_wip extends CI_Controller
 
             $dataNgs = $this->crud->query("
                                             select aa.workorder,aa.trans_date,aa.document,aa.item_fg_id,sum(aa.qty_product) as qty_ng FROM (
-                                                    select distinct workorder,trans_date,document,item_fg_id, qty_product FROM item_ng where trans_date between '$filter_from' and '$filter_to' AND shift like '%$filter_shift%' AND workorder like '%$filter_workorder%'
+                                                    select distinct workorder,trans_date,document,item_fg_id, qty_product FROM item_ng where trans_date between '$filter_from' and '$filter_to' AND shift like '%$filter_shift%' AND workorder like '%$filter_workorder%' AND created_by != 'PRD01'
                                             ) aa group by aa.document,aa.trans_date,aa.item_fg_id
             ");
 
@@ -2529,12 +2539,12 @@ class Progress_wip extends CI_Controller
                                             LEFT JOIN users c ON f.created_by = c.username
                                             WHERE DATE_FORMAT(e.packing_date, '%Y-%m-%d') between '$filter_from' and '$filter_to' and e.status_subcont='NO' and e.shift like '%$filter_shift%' and f.wo_no like '%$filter_workorder%'");
 
-            $receiptsNB = $this->crud->query("
-                                            SELECT f.*, u.name as username ,f.packing_date as trans_date,'NEW BARCODE FG' AS receipt_type
-                                            FROM new_barcode_fg a
-                                            LEFT JOIN scan_item_receipts_fg f ON a.label_no = f.checksheet_label AND a.item_fg_id = f.item_fg_id
-                                            LEFT JOIN users u ON f.created_by = u.username
-                                            WHERE DATE_FORMAT(a.packing_date, '%Y-%m-%d') BETWEEN '$filter_from' and '$filter_to' and f.wo_no like '%$filter_workorder%'");
+            // $receiptsNB = $this->crud->query("
+            //                                 SELECT f.*, u.name as username ,f.packing_date as trans_date,'NEW BARCODE FG' AS receipt_type
+            //                                 FROM new_barcode_fg a
+            //                                 LEFT JOIN scan_item_receipts_fg f ON a.label_no = f.checksheet_label AND a.item_fg_id = f.item_fg_id
+            //                                 LEFT JOIN users u ON f.created_by = u.username
+            //                                 WHERE DATE_FORMAT(a.packing_date, '%Y-%m-%d') BETWEEN '$filter_from' and '$filter_to' and f.wo_no like '%$filter_workorder%'");
 
             $receiptsWIP = $this->crud->query("
                                             SELECT a.*, u.name as username, 'WIP RECEIPT FG' AS receipt_type, a.document_no as checksheet_label
@@ -2545,7 +2555,7 @@ class Progress_wip extends CI_Controller
             $transFgs = $this->crud->query("
                                             SELECT *
                                             FROM transaction_fg a
-                                            WHERE a.transaction_kind = 'IN' AND a.request_date BETWEEN '$filter_from' and '$filter_to' and a.request_no like '%$filter_workorder%'");
+                                            WHERE a.transaction_kind = 'IN'  AND a.transaction_type = 'RECEIPT FG' AND a.request_date BETWEEN '$filter_from' and '$filter_to' and a.request_no like '%$filter_workorder%'");
 
             // Proses data berdasarkan tanggal
             $all_data = [];
@@ -2618,22 +2628,22 @@ class Progress_wip extends CI_Controller
                 ];
             }
 
-            foreach ($receiptsNB as $receiptNB) {
-                $all_data[] = [
-                    'period' => '',
-                    'date' => $receiptNB->trans_date,
-                    'wo_no' => $receiptNB->wo_no,
-                    // 'wo_qty' => $record->qty_wo,
-                    'actual_production' => 0,
-                    'qty_wip' => 0,
-                    'ng' => 0,
-                    'subconts_jasa' => 0,
-                    'qty_adj_in' => 0,
-                    'rfg' => $receiptNB->qty,
-                    'rfg_subconts_jasa' => 0,
-                    'qty_adj_out' => 0,
-                ];
-            }
+            // foreach ($receiptsNB as $receiptNB) {
+            //     $all_data[] = [
+            //         'period' => '',
+            //         'date' => $receiptNB->trans_date,
+            //         'wo_no' => $receiptNB->wo_no,
+            //         // 'wo_qty' => $record->qty_wo,
+            //         'actual_production' => 0,
+            //         'qty_wip' => 0,
+            //         'ng' => 0,
+            //         'subconts_jasa' => 0,
+            //         'qty_adj_in' => 0,
+            //         'rfg' => $receiptNB->qty,
+            //         'rfg_subconts_jasa' => 0,
+            //         'qty_adj_out' => 0,
+            //     ];
+            // }
 
             foreach ($receiptsWIP as $receiptWIP) {
                 $all_data[] = [
@@ -2762,7 +2772,7 @@ class Progress_wip extends CI_Controller
                         <th rowspan="2">UOM</th>
                         <th rowspan="2">WO Qty</th>
                         <th colspan="2">PRD QTY</th>
-                        <th rowspan="2">NG</th>
+                        <th rowspan="2">NG Process</th>
                         <th rowspan="2">TOTAL PRODUCTION</th>
                         <th rowspan="2">RFG QTY</th>
                         <th rowspan="2">TOT PRD - RFG</th>
@@ -2948,7 +2958,7 @@ class Progress_wip extends CI_Controller
                             <th rowspan="2">UOM</th>
                             <th rowspan="2">WO Qty</th>
                             <th colspan="2">PRD QTY</th>
-                            <th rowspan="2">NG</th>
+                            <th rowspan="2">NG Process</th>
                             <th rowspan="2">TOTAL PRODUCTION</th>
                             <th rowspan="2">RFG QTY</th>
                             <th rowspan="2">TOT PRD - RFG</th>
@@ -2964,7 +2974,7 @@ class Progress_wip extends CI_Controller
 
                 $dataNgs = $this->crud->query("
                                                 select aa.workorder, aa.trans_date,aa.document,aa.item_fg_id,sum(aa.qty_product) as qty_ng FROM (
-                                                        select distinct workorder,trans_date,document,item_fg_id, qty_product FROM item_ng where item_fg_id='$itemId' and trans_date between '$filter_from' and '$filter_to' AND shift like '%$filter_shift%'
+                                                        select distinct workorder,trans_date,document,item_fg_id, qty_product FROM item_ng where item_fg_id='$itemId' and trans_date between '$filter_from' and '$filter_to' AND shift like '%$filter_shift%' AND created_by != 'PRD01'
                                                 ) aa group by aa.document,aa.trans_date,aa.item_fg_id
                 ");
 
@@ -3004,12 +3014,12 @@ class Progress_wip extends CI_Controller
                                                 LEFT JOIN users c ON f.created_by = c.username
                                                 WHERE e.item_fg_id = '$itemId'  and DATE_FORMAT(e.packing_date, '%Y-%m-%d') between '$filter_from' and '$filter_to' and e.status_subcont='NO' and e.shift like '%$filter_shift%'");
 
-                $receiptsNB = $this->crud->query("
-                                                SELECT f.*, u.name as username ,f.packing_date as trans_date,'NEW BARCODE FG' AS receipt_type
-                                                FROM new_barcode_fg a
-                                                LEFT JOIN scan_item_receipts_fg f ON a.label_no = f.checksheet_label AND a.item_fg_id = f.item_fg_id
-                                                LEFT JOIN users u ON f.created_by = u.username
-                                                WHERE a.item_fg_id = '$itemId'  AND DATE_FORMAT(a.packing_date, '%Y-%m-%d') BETWEEN '$filter_from' and '$filter_to'");
+                // $receiptsNB = $this->crud->query("
+                //                                 SELECT f.*, u.name as username ,f.packing_date as trans_date,'NEW BARCODE FG' AS receipt_type
+                //                                 FROM new_barcode_fg a
+                //                                 LEFT JOIN scan_item_receipts_fg f ON a.label_no = f.checksheet_label AND a.item_fg_id = f.item_fg_id
+                //                                 LEFT JOIN users u ON f.created_by = u.username
+                //                                 WHERE a.item_fg_id = '$itemId'  AND DATE_FORMAT(a.packing_date, '%Y-%m-%d') BETWEEN '$filter_from' and '$filter_to'");
 
                 $receiptsWIP = $this->crud->query("
                                                 SELECT a.*, u.name as username, 'WIP RECEIPT FG' AS receipt_type, a.document_no as checksheet_label
@@ -3020,7 +3030,7 @@ class Progress_wip extends CI_Controller
                 $transFgs = $this->crud->query("
                                                 SELECT *
                                                 FROM transaction_fg a
-                                                WHERE a.transaction_kind = 'IN' AND a.item_fg_id = '$itemId' AND a.request_date BETWEEN '$filter_from' and '$filter_to'");
+                                                WHERE a.transaction_kind = 'IN' AND a.transaction_type = 'RECEIPT FG' AND a.item_fg_id = '$itemId' AND a.request_date BETWEEN '$filter_from' and '$filter_to'");
 
                 // Proses data berdasarkan tanggal
                 $all_data = [];
@@ -3093,22 +3103,22 @@ class Progress_wip extends CI_Controller
                     ];
                 }
 
-                foreach ($receiptsNB as $receiptNB) {
-                    $all_data[] = [
-                        'period' => '',
-                        'date' => $receiptNB->trans_date,
-                        'wo_no' => $receiptNB->wo_no,
-                        // 'wo_qty' => $record->qty_wo,
-                        'actual_production' => 0,
-                        'qty_wip' => 0,
-                        'ng' => 0,
-                        'subconts_jasa' => 0,
-                        'qty_adj_in' => 0,
-                        'rfg' => $receiptNB->qty,
-                        'rfg_subconts_jasa' => 0,
-                        'qty_adj_out' => 0,
-                    ];
-                }
+                // foreach ($receiptsNB as $receiptNB) {
+                //     $all_data[] = [
+                //         'period' => '',
+                //         'date' => $receiptNB->trans_date,
+                //         'wo_no' => $receiptNB->wo_no,
+                //         // 'wo_qty' => $record->qty_wo,
+                //         'actual_production' => 0,
+                //         'qty_wip' => 0,
+                //         'ng' => 0,
+                //         'subconts_jasa' => 0,
+                //         'qty_adj_in' => 0,
+                //         'rfg' => $receiptNB->qty,
+                //         'rfg_subconts_jasa' => 0,
+                //         'qty_adj_out' => 0,
+                //     ];
+                // }
 
                 foreach ($receiptsWIP as $receiptWIP) {
                     $all_data[] = [
@@ -3334,7 +3344,7 @@ class Progress_wip extends CI_Controller
                             <th rowspan="2">UOM</th>
                             <th rowspan="2">WO Qty</th>
                             <th colspan="2">PRD QTY</th>
-                            <th rowspan="2">NG</th>
+                            <th rowspan="2">NG Process</th>
                             <th rowspan="2">TOTAL PRODUCTION</th>
                             <th rowspan="2">RFG QTY</th>
                             <th rowspan="2">TOT PRD - RFG</th>
@@ -3350,7 +3360,7 @@ class Progress_wip extends CI_Controller
 
                 $dataNgs = $this->crud->query("
                                                 select aa.workorder, aa.trans_date,aa.document,aa.item_fg_id,sum(aa.qty_product) as qty_ng FROM (
-                                                        select distinct workorder,trans_date,document,item_fg_id, qty_product FROM item_ng where item_fg_id='$itemId' and trans_date between '$filter_from' and '$filter_to' AND shift like '%$filter_shift%'
+                                                        select distinct workorder,trans_date,document,item_fg_id, qty_product FROM item_ng where item_fg_id='$itemId' and trans_date between '$filter_from' and '$filter_to' AND shift like '%$filter_shift%' AND created_by != 'PRD01'
                                                 ) aa group by aa.document,aa.trans_date,aa.item_fg_id
                 ");
 
@@ -3390,12 +3400,12 @@ class Progress_wip extends CI_Controller
                                                 LEFT JOIN users c ON f.created_by = c.username
                                                 WHERE e.item_fg_id = '$itemId'  and DATE_FORMAT(e.packing_date, '%Y-%m-%d') between '$filter_from' and '$filter_to' and e.status_subcont='NO' and e.shift like '%$filter_shift%'");
 
-                $receiptsNB = $this->crud->query("
-                                                SELECT f.*, u.name as username ,f.packing_date as trans_date,'NEW BARCODE FG' AS receipt_type
-                                                FROM new_barcode_fg a
-                                                LEFT JOIN scan_item_receipts_fg f ON a.label_no = f.checksheet_label AND a.item_fg_id = f.item_fg_id
-                                                LEFT JOIN users u ON f.created_by = u.username
-                                                WHERE a.item_fg_id = '$itemId'  AND DATE_FORMAT(a.packing_date, '%Y-%m-%d') BETWEEN '$filter_from' and '$filter_to'");
+                // $receiptsNB = $this->crud->query("
+                //                                 SELECT f.*, u.name as username ,f.packing_date as trans_date,'NEW BARCODE FG' AS receipt_type
+                //                                 FROM new_barcode_fg a
+                //                                 LEFT JOIN scan_item_receipts_fg f ON a.label_no = f.checksheet_label AND a.item_fg_id = f.item_fg_id
+                //                                 LEFT JOIN users u ON f.created_by = u.username
+                //                                 WHERE a.item_fg_id = '$itemId'  AND DATE_FORMAT(a.packing_date, '%Y-%m-%d') BETWEEN '$filter_from' and '$filter_to'");
 
                 $receiptsWIP = $this->crud->query("
                                                 SELECT a.*, u.name as username, 'WIP RECEIPT FG' AS receipt_type, a.document_no as checksheet_label
@@ -3406,7 +3416,7 @@ class Progress_wip extends CI_Controller
                 $transFgs = $this->crud->query("
                                                 SELECT *
                                                 FROM transaction_fg a
-                                                WHERE a.transaction_kind = 'IN' AND a.item_fg_id = '$itemId' AND a.request_date BETWEEN '$filter_from' and '$filter_to'");
+                                                WHERE a.transaction_kind = 'IN' AND a.transaction_type = 'RECEIPT FG' AND a.item_fg_id = '$itemId' AND a.request_date BETWEEN '$filter_from' and '$filter_to'");
 
                 // Proses data berdasarkan tanggal
                 $all_data = [];
@@ -3479,22 +3489,22 @@ class Progress_wip extends CI_Controller
                     ];
                 }
 
-                foreach ($receiptsNB as $receiptNB) {
-                    $all_data[] = [
-                        'period' => '',
-                        'date' => $receiptNB->trans_date,
-                        'wo_no' => $receiptNB->wo_no,
-                        // 'wo_qty' => $record->qty_wo,
-                        'actual_production' => 0,
-                        'qty_wip' => 0,
-                        'ng' => 0,
-                        'subconts_jasa' => 0,
-                        'qty_adj_in' => 0,
-                        'rfg' => $receiptNB->qty,
-                        'rfg_subconts_jasa' => 0,
-                        'qty_adj_out' => 0,
-                    ];
-                }
+                // foreach ($receiptsNB as $receiptNB) {
+                //     $all_data[] = [
+                //         'period' => '',
+                //         'date' => $receiptNB->trans_date,
+                //         'wo_no' => $receiptNB->wo_no,
+                //         // 'wo_qty' => $record->qty_wo,
+                //         'actual_production' => 0,
+                //         'qty_wip' => 0,
+                //         'ng' => 0,
+                //         'subconts_jasa' => 0,
+                //         'qty_adj_in' => 0,
+                //         'rfg' => $receiptNB->qty,
+                //         'rfg_subconts_jasa' => 0,
+                //         'qty_adj_out' => 0,
+                //     ];
+                // }
 
                 foreach ($receiptsWIP as $receiptWIP) {
                     $all_data[] = [
@@ -3713,7 +3723,7 @@ class Progress_wip extends CI_Controller
 
             $dataNgs = $this->crud->query("
                                             select aa.workorder, aa.trans_date,aa.document,aa.item_fg_id,sum(aa.qty_product) as qty_ng FROM (
-                                                    select distinct workorder,trans_date,document,item_fg_id, qty_product FROM item_ng where item_fg_id='$filter_items' and trans_date between '$filter_from' and '$filter_to' AND shift like '%$filter_shift%'
+                                                    select distinct workorder,trans_date,document,item_fg_id, qty_product FROM item_ng where item_fg_id='$filter_items' and trans_date between '$filter_from' and '$filter_to' AND shift like '%$filter_shift%' AND created_by != 'PRD01'
                                             ) aa group by aa.document,aa.trans_date,aa.item_fg_id
             ");
 
@@ -3753,12 +3763,12 @@ class Progress_wip extends CI_Controller
                                             LEFT JOIN users c ON f.created_by = c.username
                                             WHERE e.item_fg_id = '$filter_items'  and DATE_FORMAT(e.packing_date, '%Y-%m-%d') between '$filter_from' and '$filter_to' and e.status_subcont='NO' and e.shift like '%$filter_shift%'");
 
-            $receiptsNB = $this->crud->query("
-                                            SELECT f.*, u.name as username ,f.packing_date as trans_date,'NEW BARCODE FG' AS receipt_type
-                                            FROM new_barcode_fg a
-                                            LEFT JOIN scan_item_receipts_fg f ON a.label_no = f.checksheet_label AND a.item_fg_id = f.item_fg_id
-                                            LEFT JOIN users u ON f.created_by = u.username
-                                            WHERE a.item_fg_id = '$filter_items'  AND DATE_FORMAT(a.packing_date, '%Y-%m-%d') BETWEEN '$filter_from' and '$filter_to'");
+            // $receiptsNB = $this->crud->query("
+            //                                 SELECT f.*, u.name as username ,f.packing_date as trans_date,'NEW BARCODE FG' AS receipt_type
+            //                                 FROM new_barcode_fg a
+            //                                 LEFT JOIN scan_item_receipts_fg f ON a.label_no = f.checksheet_label AND a.item_fg_id = f.item_fg_id
+            //                                 LEFT JOIN users u ON f.created_by = u.username
+            //                                 WHERE a.item_fg_id = '$filter_items'  AND DATE_FORMAT(a.packing_date, '%Y-%m-%d') BETWEEN '$filter_from' and '$filter_to'");
 
             $receiptsWIP = $this->crud->query("
                                             SELECT a.*, u.name as username, 'WIP RECEIPT FG' AS receipt_type, a.document_no as checksheet_label
@@ -3769,7 +3779,7 @@ class Progress_wip extends CI_Controller
             $transFgs = $this->crud->query("
                                             SELECT *
                                             FROM transaction_fg a
-                                            WHERE a.transaction_kind = 'IN' AND a.item_fg_id = '$filter_items' AND a.request_date BETWEEN '$filter_from' and '$filter_to'");
+                                            WHERE a.transaction_kind = 'IN' AND a.transaction_type = 'RECEIPT FG' AND a.item_fg_id = '$filter_items' AND a.request_date BETWEEN '$filter_from' and '$filter_to'");
 
             // Proses data berdasarkan tanggal
             $all_data = [];
@@ -3842,22 +3852,22 @@ class Progress_wip extends CI_Controller
                 ];
             }
 
-            foreach ($receiptsNB as $receiptNB) {
-                $all_data[] = [
-                    'period' => '',
-                    'date' => $receiptNB->trans_date,
-                    'wo_no' => $receiptNB->wo_no,
-                    // 'wo_qty' => $record->qty_wo,
-                    'actual_production' => 0,
-                    'qty_wip' => 0,
-                    'ng' => 0,
-                    'subconts_jasa' => 0,
-                    'qty_adj_in' => 0,
-                    'rfg' => $receiptNB->qty,
-                    'rfg_subconts_jasa' => 0,
-                    'qty_adj_out' => 0,
-                ];
-            }
+            // foreach ($receiptsNB as $receiptNB) {
+            //     $all_data[] = [
+            //         'period' => '',
+            //         'date' => $receiptNB->trans_date,
+            //         'wo_no' => $receiptNB->wo_no,
+            //         // 'wo_qty' => $record->qty_wo,
+            //         'actual_production' => 0,
+            //         'qty_wip' => 0,
+            //         'ng' => 0,
+            //         'subconts_jasa' => 0,
+            //         'qty_adj_in' => 0,
+            //         'rfg' => $receiptNB->qty,
+            //         'rfg_subconts_jasa' => 0,
+            //         'qty_adj_out' => 0,
+            //     ];
+            // }
 
             foreach ($receiptsWIP as $receiptWIP) {
                 $all_data[] = [
@@ -3990,7 +4000,7 @@ class Progress_wip extends CI_Controller
                         <th rowspan="2">Uom</th>
                         <th rowspan="2">WO Qty</th>
                         <th colspan="2">ACTUAL PRODUCTION</th>
-                        <th rowspan="2">NG</th>
+                        <th rowspan="2">NG Process</th>
                         <th rowspan="2">TOTAL PRODUCTION</th>
                         <th rowspan="2">RFG QTY</th>
                         <th rowspan="2">TOT PRD - RFG</th>
@@ -4110,7 +4120,7 @@ class Progress_wip extends CI_Controller
 
             $dataNgs = $this->crud->query("
                                             select aa.workorder,aa.trans_date,aa.document,aa.item_fg_id,sum(aa.qty_product) as qty_ng FROM (
-                                                    select distinct workorder,trans_date,document,item_fg_id, qty_product FROM item_ng where trans_date between '$filter_from' and '$filter_to' AND shift like '%$filter_shift%' AND workorder like '%$filter_workorder%'
+                                                    select distinct workorder,trans_date,document,item_fg_id, qty_product FROM item_ng where trans_date between '$filter_from' and '$filter_to' AND shift like '%$filter_shift%' AND workorder like '%$filter_workorder%' AND created_by != 'PRD01'
                                             ) aa group by aa.document,aa.trans_date,aa.item_fg_id
             ");
 
@@ -4150,12 +4160,12 @@ class Progress_wip extends CI_Controller
                                             LEFT JOIN users c ON f.created_by = c.username
                                             WHERE DATE_FORMAT(e.packing_date, '%Y-%m-%d') between '$filter_from' and '$filter_to' and e.status_subcont='NO' and e.shift like '%$filter_shift%' and f.wo_no like '%$filter_workorder%'");
 
-            $receiptsNB = $this->crud->query("
-                                            SELECT f.*, u.name as username ,f.packing_date as trans_date,'NEW BARCODE FG' AS receipt_type
-                                            FROM new_barcode_fg a
-                                            LEFT JOIN scan_item_receipts_fg f ON a.label_no = f.checksheet_label AND a.item_fg_id = f.item_fg_id
-                                            LEFT JOIN users u ON f.created_by = u.username
-                                            WHERE DATE_FORMAT(a.packing_date, '%Y-%m-%d') BETWEEN '$filter_from' and '$filter_to' and f.wo_no like '%$filter_workorder%'");
+            // $receiptsNB = $this->crud->query("
+            //                                 SELECT f.*, u.name as username ,f.packing_date as trans_date,'NEW BARCODE FG' AS receipt_type
+            //                                 FROM new_barcode_fg a
+            //                                 LEFT JOIN scan_item_receipts_fg f ON a.label_no = f.checksheet_label AND a.item_fg_id = f.item_fg_id
+            //                                 LEFT JOIN users u ON f.created_by = u.username
+            //                                 WHERE DATE_FORMAT(a.packing_date, '%Y-%m-%d') BETWEEN '$filter_from' and '$filter_to' and f.wo_no like '%$filter_workorder%'");
 
             $receiptsWIP = $this->crud->query("
                                             SELECT a.*, u.name as username, 'WIP RECEIPT FG' AS receipt_type, a.document_no as checksheet_label
@@ -4166,7 +4176,7 @@ class Progress_wip extends CI_Controller
             $transFgs = $this->crud->query("
                                             SELECT *
                                             FROM transaction_fg a
-                                            WHERE a.transaction_kind = 'IN' AND a.request_date BETWEEN '$filter_from' and '$filter_to' and a.request_no like '%$filter_workorder%'");
+                                            WHERE a.transaction_kind = 'IN' AND a.transaction_type = 'RECEIPT FG' AND a.request_date BETWEEN '$filter_from' and '$filter_to' and a.request_no like '%$filter_workorder%'");
 
             // Proses data berdasarkan tanggal
             $all_data = [];
@@ -4239,22 +4249,22 @@ class Progress_wip extends CI_Controller
                 ];
             }
 
-            foreach ($receiptsNB as $receiptNB) {
-                $all_data[] = [
-                    'period' => '',
-                    'date' => $receiptNB->trans_date,
-                    'wo_no' => $receiptNB->wo_no,
-                    // 'wo_qty' => $record->qty_wo,
-                    'actual_production' => 0,
-                    'qty_wip' => 0,
-                    'ng' => 0,
-                    'subconts_jasa' => 0,
-                    'qty_adj_in' => 0,
-                    'rfg' => $receiptNB->qty,
-                    'rfg_subconts_jasa' => 0,
-                    'qty_adj_out' => 0,
-                ];
-            }
+            // foreach ($receiptsNB as $receiptNB) {
+            //     $all_data[] = [
+            //         'period' => '',
+            //         'date' => $receiptNB->trans_date,
+            //         'wo_no' => $receiptNB->wo_no,
+            //         // 'wo_qty' => $record->qty_wo,
+            //         'actual_production' => 0,
+            //         'qty_wip' => 0,
+            //         'ng' => 0,
+            //         'subconts_jasa' => 0,
+            //         'qty_adj_in' => 0,
+            //         'rfg' => $receiptNB->qty,
+            //         'rfg_subconts_jasa' => 0,
+            //         'qty_adj_out' => 0,
+            //     ];
+            // }
 
             foreach ($receiptsWIP as $receiptWIP) {
                 $all_data[] = [
@@ -4387,7 +4397,7 @@ class Progress_wip extends CI_Controller
                         <th rowspan="2">Uom</th>
                         <th rowspan="2">WO Qty</th>
                         <th colspan="2">ACTUAL PRODUCTION</th>
-                        <th rowspan="2">NG</th>
+                        <th rowspan="2">NG Process</th>
                         <th rowspan="2">TOTAL PRODUCTION</th>
                         <th rowspan="2">RFG QTY</th>
                         <th rowspan="2">TOT PRD - RFG</th>
@@ -4545,7 +4555,7 @@ class Progress_wip extends CI_Controller
                         <th rowspan="2">Uom</th>
                         <th rowspan="2">WO Qty</th>
                         <th colspan="2">ACTUAL PRODUCTION</th>
-                        <th rowspan="2">NG</th>
+                        <th rowspan="2">NG Process</th>
                         <th rowspan="2">TOTAL PRODUCTION</th>
                         <th rowspan="2">RFG QTY</th>
                         <th rowspan="2">TOT PRD - RFG</th>
@@ -4561,7 +4571,7 @@ class Progress_wip extends CI_Controller
 
                 $dataNgs = $this->crud->query("
                                                 select aa.workorder, aa.trans_date,aa.document,aa.item_fg_id,sum(aa.qty_product) as qty_ng FROM (
-                                                        select distinct workorder,trans_date,document,item_fg_id, qty_product FROM item_ng where item_fg_id='$itemId' and trans_date between '$filter_from' and '$filter_to' AND shift like '%$filter_shift%'
+                                                        select distinct workorder,trans_date,document,item_fg_id, qty_product FROM item_ng where item_fg_id='$itemId' and trans_date between '$filter_from' and '$filter_to' AND shift like '%$filter_shift%' AND created_by != 'PRD01'
                                                 ) aa group by aa.document,aa.trans_date,aa.item_fg_id
                 ");
 
@@ -4601,12 +4611,12 @@ class Progress_wip extends CI_Controller
                                                 LEFT JOIN users c ON f.created_by = c.username
                                                 WHERE e.item_fg_id = '$itemId'  and DATE_FORMAT(e.packing_date, '%Y-%m-%d') between '$filter_from' and '$filter_to' and e.status_subcont='NO' and e.shift like '%$filter_shift%'");
 
-                $receiptsNB = $this->crud->query("
-                                                SELECT f.*, u.name as username ,f.packing_date as trans_date,'NEW BARCODE FG' AS receipt_type
-                                                FROM new_barcode_fg a
-                                                LEFT JOIN scan_item_receipts_fg f ON a.label_no = f.checksheet_label AND a.item_fg_id = f.item_fg_id
-                                                LEFT JOIN users u ON f.created_by = u.username
-                                                WHERE a.item_fg_id = '$itemId'  AND DATE_FORMAT(a.packing_date, '%Y-%m-%d') BETWEEN '$filter_from' and '$filter_to'");
+                // $receiptsNB = $this->crud->query("
+                //                                 SELECT f.*, u.name as username ,f.packing_date as trans_date,'NEW BARCODE FG' AS receipt_type
+                //                                 FROM new_barcode_fg a
+                //                                 LEFT JOIN scan_item_receipts_fg f ON a.label_no = f.checksheet_label AND a.item_fg_id = f.item_fg_id
+                //                                 LEFT JOIN users u ON f.created_by = u.username
+                //                                 WHERE a.item_fg_id = '$itemId'  AND DATE_FORMAT(a.packing_date, '%Y-%m-%d') BETWEEN '$filter_from' and '$filter_to'");
 
                 $receiptsWIP = $this->crud->query("
                                                 SELECT a.*, u.name as username, 'WIP RECEIPT FG' AS receipt_type, a.document_no as checksheet_label
@@ -4617,7 +4627,7 @@ class Progress_wip extends CI_Controller
                 $transFgs = $this->crud->query("
                                                 SELECT *
                                                 FROM transaction_fg a
-                                                WHERE a.transaction_kind = 'IN' AND a.item_fg_id = '$itemId' AND a.request_date BETWEEN '$filter_from' and '$filter_to'");
+                                                WHERE a.transaction_kind = 'IN' AND a.transaction_type = 'RECEIPT FG' AND a.item_fg_id = '$itemId' AND a.request_date BETWEEN '$filter_from' and '$filter_to'");
 
                 // Proses data berdasarkan tanggal
                 $all_data = [];
@@ -4690,22 +4700,22 @@ class Progress_wip extends CI_Controller
                     ];
                 }
 
-                foreach ($receiptsNB as $receiptNB) {
-                    $all_data[] = [
-                        'period' => '',
-                        'date' => $receiptNB->trans_date,
-                        'wo_no' => $receiptNB->wo_no,
-                        // 'wo_qty' => $record->qty_wo,
-                        'actual_production' => 0,
-                        'qty_wip' => 0,
-                        'ng' => 0,
-                        'subconts_jasa' => 0,
-                        'qty_adj_in' => 0,
-                        'rfg' => $receiptNB->qty,
-                        'rfg_subconts_jasa' => 0,
-                        'qty_adj_out' => 0,
-                    ];
-                }
+                // foreach ($receiptsNB as $receiptNB) {
+                //     $all_data[] = [
+                //         'period' => '',
+                //         'date' => $receiptNB->trans_date,
+                //         'wo_no' => $receiptNB->wo_no,
+                //         // 'wo_qty' => $record->qty_wo,
+                //         'actual_production' => 0,
+                //         'qty_wip' => 0,
+                //         'ng' => 0,
+                //         'subconts_jasa' => 0,
+                //         'qty_adj_in' => 0,
+                //         'rfg' => $receiptNB->qty,
+                //         'rfg_subconts_jasa' => 0,
+                //         'qty_adj_out' => 0,
+                //     ];
+                // }
 
                 foreach ($receiptsWIP as $receiptWIP) {
                     $all_data[] = [
@@ -4941,7 +4951,7 @@ class Progress_wip extends CI_Controller
                             <th rowspan="2">UOM</th>
                             <th rowspan="2">WO Qty</th>
                             <th colspan="3">PRD QTY</th>
-                            <th rowspan="2">NG</th>
+                            <th rowspan="2">NG Process</th>
                             <th rowspan="2">RFG QTY</th>
                             <th rowspan="2">PROD QTY - RFG QTY</th>
                         </tr>
@@ -4956,7 +4966,7 @@ class Progress_wip extends CI_Controller
 
                 $dataNgs = $this->crud->query("
                                                 select aa.workorder, aa.trans_date,aa.document,aa.item_fg_id,sum(aa.qty_product) as qty_ng FROM (
-                                                        select distinct workorder,trans_date,document,item_fg_id, qty_product FROM item_ng where item_fg_id='$itemId' and trans_date between '$filter_from' and '$filter_to' AND shift like '%$filter_shift%'
+                                                        select distinct workorder,trans_date,document,item_fg_id, qty_product FROM item_ng where item_fg_id='$itemId' and trans_date between '$filter_from' and '$filter_to' AND shift like '%$filter_shift%' AND created_by != 'PRD01'
                                                 ) aa group by aa.document,aa.trans_date,aa.item_fg_id
                 ");
 
@@ -4996,12 +5006,12 @@ class Progress_wip extends CI_Controller
                                                 LEFT JOIN users c ON f.created_by = c.username
                                                 WHERE e.item_fg_id = '$itemId'  and DATE_FORMAT(e.packing_date, '%Y-%m-%d') between '$filter_from' and '$filter_to' and e.status_subcont='NO' and e.shift like '%$filter_shift%'");
 
-                $receiptsNB = $this->crud->query("
-                                                SELECT f.*, u.name as username ,f.packing_date as trans_date,'NEW BARCODE FG' AS receipt_type
-                                                FROM new_barcode_fg a
-                                                LEFT JOIN scan_item_receipts_fg f ON a.label_no = f.checksheet_label AND a.item_fg_id = f.item_fg_id
-                                                LEFT JOIN users u ON f.created_by = u.username
-                                                WHERE a.item_fg_id = '$itemId'  AND DATE_FORMAT(a.packing_date, '%Y-%m-%d') BETWEEN '$filter_from' and '$filter_to'");
+                // $receiptsNB = $this->crud->query("
+                //                                 SELECT f.*, u.name as username ,f.packing_date as trans_date,'NEW BARCODE FG' AS receipt_type
+                //                                 FROM new_barcode_fg a
+                //                                 LEFT JOIN scan_item_receipts_fg f ON a.label_no = f.checksheet_label AND a.item_fg_id = f.item_fg_id
+                //                                 LEFT JOIN users u ON f.created_by = u.username
+                //                                 WHERE a.item_fg_id = '$itemId'  AND DATE_FORMAT(a.packing_date, '%Y-%m-%d') BETWEEN '$filter_from' and '$filter_to'");
 
                 $receiptsWIP = $this->crud->query("
                                                 SELECT a.*, u.name as username, 'WIP RECEIPT FG' AS receipt_type, a.document_no as checksheet_label
@@ -5012,7 +5022,7 @@ class Progress_wip extends CI_Controller
                 $transFgs = $this->crud->query("
                                                 SELECT *
                                                 FROM transaction_fg a
-                                                WHERE a.transaction_kind = 'IN' AND a.item_fg_id = '$itemId' AND a.request_date BETWEEN '$filter_from' and '$filter_to'");
+                                                WHERE a.transaction_kind = 'IN' AND a.transaction_type = 'RECEIPT FG' AND a.item_fg_id = '$itemId' AND a.request_date BETWEEN '$filter_from' and '$filter_to'");
 
                 // Proses data berdasarkan tanggal
                 $all_data = [];
@@ -5085,22 +5095,22 @@ class Progress_wip extends CI_Controller
                     ];
                 }
 
-                foreach ($receiptsNB as $receiptNB) {
-                    $all_data[] = [
-                        'period' => '',
-                        'date' => $receiptNB->trans_date,
-                        'wo_no' => $receiptNB->wo_no,
-                        // 'wo_qty' => $record->qty_wo,
-                        'actual_production' => 0,
-                        'qty_wip' => 0,
-                        'ng' => 0,
-                        'subconts_jasa' => 0,
-                        'qty_adj_in' => 0,
-                        'rfg' => $receiptNB->qty,
-                        'rfg_subconts_jasa' => 0,
-                        'qty_adj_out' => 0,
-                    ];
-                }
+                // foreach ($receiptsNB as $receiptNB) {
+                //     $all_data[] = [
+                //         'period' => '',
+                //         'date' => $receiptNB->trans_date,
+                //         'wo_no' => $receiptNB->wo_no,
+                //         // 'wo_qty' => $record->qty_wo,
+                //         'actual_production' => 0,
+                //         'qty_wip' => 0,
+                //         'ng' => 0,
+                //         'subconts_jasa' => 0,
+                //         'qty_adj_in' => 0,
+                //         'rfg' => $receiptNB->qty,
+                //         'rfg_subconts_jasa' => 0,
+                //         'qty_adj_out' => 0,
+                //     ];
+                // }
 
                 foreach ($receiptsWIP as $receiptWIP) {
                     $all_data[] = [
