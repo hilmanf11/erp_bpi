@@ -134,18 +134,12 @@ class Report_bank_reconciliation extends CI_Controller
             if (empty($bank['bank_account'])) {
                 echo json_encode(array("title" => "Error", "message" => "Bank Account is required!", "theme" => "error"));
             } else {
-
+                // check available account_bank
                 $account_banks = $this->crud->read('account_banks', [], ["bank_account" => $bank['bank_account']]);
-                $bank_reconciliation = $this->crud->read('bank_reconciliation', [], ["bank_account" => $bank['bank_account'], "start_date" => $bank['start_date'], "end_date" => $bank['end_date'], "currency" => $bank['currency'], 
-                    "posting_date" => $data['posting_date'], "remark" => $data['remark']]);
     
                 if (empty($account_banks->bank_account)) {
                     echo json_encode(array("title" => "Not Found", "message" => "Bank Account Of " . $bank['bank_account'] ." Is Not Found", "theme" => "error"));
-                } 
-                elseif (!empty($bank_reconciliation)) {
-                    echo json_encode(array("title" => "Error", "message" => "Data in this Period is already uploaded before!", "theme" => "error"));
-                } 
-                else {
+                } else {
     
                     $dataFinal = [
                         // Data Bank
@@ -162,14 +156,32 @@ class Report_bank_reconciliation extends CI_Controller
                         "debit"           => $data["debit"],
                     ];
 
-                    $send = $this->crud->create('bank_reconciliation', $dataFinal);
+                    // check data sudah ada
+                    $where_reconciliation = [
+                        "bank_account" => $bank['bank_account'], 
+                        "start_date"   => $bank['start_date'], 
+                        "end_date"     => $bank['end_date'], 
+                        "currency"     => $bank['currency'], 
+                        "posting_date" => $data['posting_date'], 
+                        "remark"       => $data['remark']
+                    ];
+                    $bank_reconciliation = $this->crud->read('bank_reconciliation', [], $where_reconciliation);
+
+                    // validasi jika data sudah ada, maka update
+                    if (!empty($bank_reconciliation)) {
+                        $send = $this->crud->update('bank_reconciliation', $where_reconciliation, $dataFinal);
+                    } else {
+                        $send = $this->crud->create('bank_reconciliation', $dataFinal);
+                    }
+
+                    echo $send;
 
                     // validasi posting_date mutasi berbeda dengan periode yang dipilih
-                    if ( date("Y-m", strtotime($dataFinal['start_date'])) !== date("Y-m", strtotime($dataFinal['posting_date'])) ) {
-                        echo json_encode(array("title" => "Caution!", "message" => "Data added, but the Posting Date doesn't match the Period Date!", "theme" => "warning"));
-                    } else {
-                        echo $send;
-                    }
+                    // if ( date("Y-m", strtotime($dataFinal['start_date'])) !== date("Y-m", strtotime($dataFinal['posting_date'])) ) {
+                    //     echo json_encode(array("title" => "Caution!", "message" => "Data added, but the Trans Date does not same as Period Date!", "theme" => "warning"));
+                    // } else {
+                    //     echo $send;
+                    // }
                 }
             }
 
@@ -456,7 +468,7 @@ class Report_bank_reconciliation extends CI_Controller
 
         $filter_from = base64_decode($this->input->get("filter_from"));
         $filter_to   = base64_decode($this->input->get("filter_to"));
-        $filter_account_number   = base64_decode($this->input->get("filter_account_number"));        
+        $filter_account_number   = base64_decode($this->input->get("filter_account_number"));       
 
         if (empty($filter_from) || !strtotime($filter_from)) {
             show_error('Invalid "filter_from" date parameter.');
@@ -526,7 +538,8 @@ class Report_bank_reconciliation extends CI_Controller
 
                     $matched_transactions[] = [
                         'journal_data' => $journal_entry,
-                        'bank_data' => $bank_entry
+                        'bank_data' => $bank_entry,
+                        'posting_date' => $j_date // Tambahkan posting_date untuk sorting
                     ];
 
                     $matched_journal_ids[] = $journal_entry['id'];
@@ -539,6 +552,7 @@ class Report_bank_reconciliation extends CI_Controller
 
             if (!$is_matched) {
                 $bank_entry['result'] = "Not Matched";
+                $bank_entry['posting_date'] = date("Y-m-d", strtotime($bank_entry['posting_date'])); // Tambahkan posting_date
                 $unmatched_bank[] = $bank_entry;
             }
         }
@@ -547,28 +561,50 @@ class Report_bank_reconciliation extends CI_Controller
         foreach ($dataJournal['journal_transactions'] as $journal_entry) {
             if (!in_array($journal_entry['id'], $matched_journal_ids)) {
                 $journal_entry['result'] = "Not Matched";
+                $journal_entry['posting_date'] = date("Y-m-d", strtotime($journal_entry['trans_date'])); // Tambahkan posting_date
                 $unmatched_journal[] = $journal_entry;
             }
         }
 
-        $result = [
-            'success' => true,
-            'message' => 'Reconciliation data fetched successfully.',
-            'matched_transactions'        => $matched_transactions,
-            'unmatched_bank_transactions' => $unmatched_bank,
-            'unmatched_journal_postings'  => $unmatched_journal
-        ];
+        // Menggabungkan semua data ke dalam satu array untuk sort date A-Z (Bu Nina)
+        $all_transactions = [];
+        foreach ($matched_transactions as $matched) {
+            $all_transactions[] = [
+                'type' => 'matched',
+                'data' => $matched,
+                'sort_date' => $matched['posting_date']
+            ];
+        }
+        foreach ($unmatched_bank as $unmatched) {
+            $all_transactions[] = [
+                'type' => 'unmatched_bank',
+                'data' => $unmatched,
+                'sort_date' => $unmatched['posting_date']
+            ];
+        }
+        foreach ($unmatched_journal as $unmatched) {
+            $all_transactions[] = [
+                'type' => 'unmatched_journal',
+                'data' => $unmatched,
+                'sort_date' => $unmatched['posting_date']
+            ];
+        }
+
+        // Mengurutkan array berdasarkan 'sort_date' secara ascending (ASC)
+        usort($all_transactions, function($a, $b) {
+            return strtotime($a['sort_date']) - strtotime($b['sort_date']);
+        });
         
-        // PRINT 
+        // PRINT
         $html = "";
         $html .= '<html>
                 <head>
-                <title>Bank Reconciliation - <?php echo date("F Y", strtotime($filter_to)); ?></title>';
+                <title>Bank Reconciliation - '. date("F Y", strtotime($filter_to)).'</title>';
         $html .= $this->customTable();
         $html .= '</head><body>';
 
         $html .= '<div class="header-section clearfix">
-                <div id="print-header-container">
+                    <div id="print-header-container">
                         <header class="header-section">
                             <table width="100%">
                                 <tr>
@@ -591,20 +627,18 @@ class Report_bank_reconciliation extends CI_Controller
                                     <td width="40%" align="right">
                                         <div class="print-info">
                                             Print Date ' . date("d M Y H:i:s") . ' <br>
-                                            Print By ' .  htmlspecialchars($this->session->username) . '
+                                            Print By ' . htmlspecialchars($this->session->username) . '
                                         </div>
                                     </td>
-                                <tr>
-                            </table>                                
+                                </tr>
+                            </table>
                         </header>
-
                     </div>';
 
         $html .= '<div class="report-title">
                     <h3>BANK RECONCILIATION</h3>
                     </div>
                 <br>
-
                 <div class="two-panel-section">
                     <table width="100%" border="0">
                         <tr>
@@ -635,9 +669,7 @@ class Report_bank_reconciliation extends CI_Controller
                                         <td width="50%">Opening Balance</td>
                                         <td>' . $this->formatIDR($dataBank->balance) . '</td>
                                     </tr>
-
                                 </table>
-
                             </td>
                             <td>&nbsp;</td>
                             <td width="50%">
@@ -699,87 +731,65 @@ class Report_bank_reconciliation extends CI_Controller
                 </thead>
                 <tbody>';
 
-                $no = 1;
-
-                // MATCHED BANK X JOURNAL
-                if (!empty($result['matched_transactions'])) 
-                {
-                    foreach ($result['matched_transactions'] as $matched) {
-                            
-                        // balance per row = opening balance + credit - debit
-                        // $balance_bank = $matched['bank_data']['balance'] + $matched['bank_data']['credit'] - $matched['bank_data']['debit'];
-                        
-                        $html .= '<tr>
-                                <td rowspan="2">' . $no . '</td>
-                                <td> Bank </td>
-                                <td>' . $matched['bank_data']['posting_date'] . '</td>
-                                <td>' . $matched['bank_data']['remark'] . '</td>
-                                <td class="text-right">' . $this->formatIDR($matched['bank_data']['debit']) . '</td>
-                                <td class="text-right">' . $this->formatIDR($matched['bank_data']['credit']) . '</td>
-                                <td class="text-right">' . $this->formatIDR($matched['bank_data']['balance']) . '</td>
-                                <td rowspan="2" class="text-center">' . $matched['bank_data']['result'] . '</td>
-                                <td rowspan="2" class="text-center">' . $this->statusRecheck($matched['journal_data']['status_recheck']) . '</td>
-                            </tr>';                        
-                        $html .= '<tr>
-                                <td> ERP </td>
-                                <td>' . $matched['journal_data']['trans_date'] . '</td>
-                                <td>' . $matched['journal_data']['description'] . '</td>
-                                <td class="text-right">' . $this->formatIDR($matched['journal_data']['original_debit']) . '</td>
-                                <td class="text-right">' . $this->formatIDR($matched['journal_data']['original_credit']) . '</td>
-                                <td class="text-right">' . $this->formatIDR($matched['journal_data']['ori_balance']) . '</td>
-                            </tr>';                        
-                        $no++;
-                    }
-                    
-                }
-                
-                // NOT MATCHED BANK 
-                if (!empty($result['unmatched_bank_transactions'])) 
-                {
-                    foreach ($result['unmatched_bank_transactions'] as $rowBank) {
-                        // Bank
-                        $html .= '<tr>
-                                <td rowspan="2">' . $no . '</td>
-                                <td> Bank </td>
-                                <td>' . $rowBank['posting_date'] . '</td>
-                                <td>' . $rowBank['remark'] . '</td>
-                                <td class="text-right">' . $this->formatIDR($rowBank['debit']) . '</td>
-                                <td class="text-right">' . $this->formatIDR($rowBank['credit']) . '</td>
-                                <td class="text-right">' . $this->formatIDR($rowBank['balance']) . '</td>
-                                <td rowspan="2" class="text-center" style="color:red;">' . $rowBank['result'] . '</td>
-                                <td rowspan="2" class="text-center">' . $this->statusRecheck($rowBank['status_recheck']) . '</td>
-                            </tr>';  
-                        // NULL ERP
-                        $html .= '<tr>
-                                <td> ERP </td>
-                                <td></td>
-                                <td></td>
-                                <td></td>
-                                <td></td>
-                                <td></td>
-                            </tr>';   
-                        $no++;
-                    }
-                }
-
-                // NOT MATCHED JOURNAL
-                if (!empty($result['unmatched_journal_postings'])) 
-                {
-                    foreach ($result['unmatched_journal_postings'] as $rowJournal) {
-                        // NULL Bank
-                        $html .= '<tr>
-                                <td rowspan="2">' . $no . '</td>
-                                <td> Bank </td>
-                                <td></td>
-                                <td></td>
-                                <td></td>
-                                <td></td>
-                                <td></td>
-                                <td rowspan="2" class="text-center" style="color:red;"> ' . $rowJournal['result'] . ' </td>
-                                <td rowspan="2" class="text-center"> ' . $this->statusRecheck($rowJournal['status_recheck']) . ' </td>
-                            </tr>'; 
-                        // ERP
-                        $html .='<tr>
+        $no = 1;
+        // Loop melalui array yang sudah diurutkan
+        foreach ($all_transactions as $transaction) {
+            if ($transaction['type'] == 'matched') {
+                $matched = $transaction['data'];
+                $html .= '<tr>
+                            <td rowspan="2">' . $no . '</td>
+                            <td> Bank </td>
+                            <td>' . $matched['bank_data']['posting_date'] . '</td>
+                            <td>' . $matched['bank_data']['remark'] . '</td>
+                            <td class="text-right">' . $this->formatIDR($matched['bank_data']['debit']) . '</td>
+                            <td class="text-right">' . $this->formatIDR($matched['bank_data']['credit']) . '</td>
+                            <td class="text-right">' . $this->formatIDR($matched['bank_data']['balance']) . '</td>
+                            <td rowspan="2" class="text-center">' . $matched['bank_data']['result'] . '</td>
+                            <td rowspan="2" class="text-center">' . $this->statusRecheck($matched['journal_data']['status_recheck']) . '</td>
+                        </tr>';
+                $html .= '<tr>
+                            <td> ERP </td>
+                            <td>' . $matched['journal_data']['trans_date'] . '</td>
+                            <td>' . $matched['journal_data']['description'] . '</td>
+                            <td class="text-right">' . $this->formatIDR($matched['journal_data']['original_debit']) . '</td>
+                            <td class="text-right">' . $this->formatIDR($matched['journal_data']['original_credit']) . '</td>
+                            <td class="text-right">' . $this->formatIDR($matched['journal_data']['ori_balance']) . '</td>
+                        </tr>';
+            } elseif ($transaction['type'] == 'unmatched_bank') {
+                $rowBank = $transaction['data'];
+                $html .= '<tr>
+                            <td rowspan="2">' . $no . '</td>
+                            <td> Bank </td>
+                            <td>' . $rowBank['posting_date'] . '</td>
+                            <td>' . $rowBank['remark'] . '</td>
+                            <td class="text-right">' . $this->formatIDR($rowBank['debit']) . '</td>
+                            <td class="text-right">' . $this->formatIDR($rowBank['credit']) . '</td>
+                            <td class="text-right">' . $this->formatIDR($rowBank['balance']) . '</td>
+                            <td rowspan="2" class="text-center" style="color:red;">' . $rowBank['result'] . '</td>
+                            <td rowspan="2" class="text-center">' . $this->statusRecheck($rowBank['status_recheck']) . '</td>
+                        </tr>';
+                $html .= '<tr>
+                            <td> ERP </td>
+                            <td></td>
+                            <td></td>
+                            <td></td>
+                            <td></td>
+                            <td></td>
+                        </tr>';
+            } elseif ($transaction['type'] == 'unmatched_journal') {
+                $rowJournal = $transaction['data'];
+                $html .= '<tr>
+                            <td rowspan="2">' . $no . '</td>
+                            <td> Bank </td>
+                            <td></td>
+                            <td></td>
+                            <td></td>
+                            <td></td>
+                            <td></td>
+                            <td rowspan="2" class="text-center" style="color:red;"> ' . $rowJournal['result'] . ' </td>
+                            <td rowspan="2" class="text-center"> ' . $this->statusRecheck($rowJournal['status_recheck']) . ' </td>
+                        </tr>';
+                $html .='<tr>
                             <td> ERP </td>
                             <td>' . $rowJournal['trans_date'] . '</td>
                             <td>' . $rowJournal['description'] . '</td>
@@ -787,9 +797,9 @@ class Report_bank_reconciliation extends CI_Controller
                             <td class="text-right">' . $this->formatIDR($rowJournal['original_credit']) . '</td>
                             <td class="text-right">' . $this->formatIDR($rowJournal['ori_balance']) . '</td>
                         </tr>';
-                        $no++;
-                    }
-                }
+            }
+            $no++;
+        }
 
         $html .= '</tbody></table>';
         $html .= '</body></html>';

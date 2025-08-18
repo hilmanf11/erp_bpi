@@ -318,16 +318,7 @@
 
     //DOWNLOAD TEMPLATE UPLOAD
     function download_excel() {
-        var filter_account_number = $("#filter_account_number").textbox('getValue');
-        var filter_bank_account = $("#filter_bank_account").textbox('getValue');
-
-        if (filter_account_number !== "" || filter_bank_account !== "") {
-            window.location.assign('<?= base_url('template/tmp_bank_reconciliation.xls') ?>');
-            
-        } else {
-            toastr.warning("Please select the Bank Account no!");
-            $.messager.alert("Warning", "Please choose the Bank Account first!", 'warning');
-        }
+        window.location.assign('<?= base_url('template/tmp_bank_reconciliation.xls') ?>');
     }
 
     function reload() {

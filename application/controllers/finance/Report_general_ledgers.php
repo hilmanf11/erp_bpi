@@ -218,7 +218,7 @@ class Report_general_ledgers extends CI_Controller
             <table id="customers" style="margin-bottom:50px;">
             <tr>
                 <th rowspan="2" width="20">No</th>
-                <th rowspan="2">Voucher Date</th>
+                <th rowspan="2">Transaction Date</th>
                 <th rowspan="2">Voucher No</th>
                 <th rowspan="2">Account No</th>
                 <th rowspan="2">Account Name</th>
@@ -239,9 +239,10 @@ class Report_general_ledgers extends CI_Controller
 
             $this->db->select('*');
             $this->db->from('journal_postings');
-            $this->db->where("journal_date between '$filter_from' and '$filter_to'");
+            // $this->db->where("journal_date between '$filter_from' and '$filter_to'"); // ganti ke trans_date
+            $this->db->where("trans_date between '$filter_from' and '$filter_to'");
             $this->db->where("account_number", $filter_account_number);
-            $this->db->order_by('journal_date', 'asc');
+            $this->db->order_by('trans_date', 'asc');
             $this->db->order_by('document_no', 'asc');
             $this->db->order_by('account_number', 'asc');
             $journals = $this->db->get()->result_array();
@@ -252,7 +253,8 @@ class Report_general_ledgers extends CI_Controller
                 COALESCE(SUM(local_debit)) as local_debit,
                 COALESCE(SUM(local_credit)) as local_credit');
             $this->db->from('journal_postings');
-            $this->db->where("journal_date between '$filter_before' and '$filter_before_to'");
+            // $this->db->where("journal_date between '$filter_before' and '$filter_before_to'");
+            $this->db->where("trans_date between '$filter_before' and '$filter_before_to'");
             $this->db->where("account_number", $filter_account_number);
             $journal_bf = $this->db->get()->row();
 
@@ -399,7 +401,7 @@ class Report_general_ledgers extends CI_Controller
 
                 $html .= '<tr>
                             <td style="text-align:center">' . $no . '</td>
-                            <td>' . $journal['journal_date'] . '</td>
+                            <td>' . $journal['trans_date'] . '</td>
                             <td>' . $journal['number'] . '</td>
                             <td>' . $journal['account_number'] . '</td>
                             <td>' . $journal['account_name'] . '</td>
@@ -479,7 +481,7 @@ class Report_general_ledgers extends CI_Controller
     // get link detail transaksi GL
     function createLink($value, $idLink) 
     {
-        $base_url   = base_url('finance/journal_postings/print_voucher_GL/');
+        $base_url   = base_url('finance/journal_postings/print_voucher_gl/');
         $id_encoded = base64_encode($idLink);
         $url        = $base_url . $id_encoded;
 
