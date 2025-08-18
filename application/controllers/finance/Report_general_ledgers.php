@@ -169,6 +169,16 @@ class Report_general_ledgers extends CI_Controller
                     .bg-light-green { background-color: #CAFFB3; } /* Untuk baris kelompok akun */
                     .bg-grey { background-color: #E0E0E0; } /* Untuk grand total */
 
+                    .link-transaction {
+                        color: inherit;
+                        text-decoration: none;
+                    }
+                    .link-transaction:hover {
+                        color: inherit;
+                        font-weight: bolder;
+                        text-decoration: underline;
+                    }
+
                     .clearfix::after {
                         content: "";
                         clear: both;
@@ -381,7 +391,13 @@ class Report_general_ledgers extends CI_Controller
                     $local_style = "color:red;";
                 }
 
-                $html .= '  <tr>
+                // --- Link transaksi GL Posting Journal
+                $linked_ori_debit  = $this->createLink($journal['original_debit'], $journal['number']);
+                $linked_ori_credit = $this->createLink($journal['original_credit'], $journal['number']);
+                $linked_debit      = $this->createLink($journal['local_debit'], $journal['number']);
+                $linked_credit     = $this->createLink($journal['local_credit'], $journal['number']);
+
+                $html .= '<tr>
                             <td style="text-align:center">' . $no . '</td>
                             <td>' . $journal['journal_date'] . '</td>
                             <td>' . $journal['number'] . '</td>
@@ -389,13 +405,13 @@ class Report_general_ledgers extends CI_Controller
                             <td>' . $journal['account_name'] . '</td>
                             <td>' . $journal['description'] . '</td>
                             <td style="text-align:center;">' . $journal['currency'] . '</td>
-                            <td style="text-align:right;font-weight:bold;'.$ori_style.'">' . $this->formatIDR($ori_balance, 2) . '</td>
-                            <td style="text-align:right;font-weight:bold;color:green;">' . $this->formatIDR($journal['original_debit'], 2) . '</td>
-                            <td style="text-align:right;font-weight:bold;color:red;">' . $this->formatIDR(($journal['original_credit']), 2) . '</td>
+                            <td style="text-align:right;font-weight:bold;' . $ori_style . '">' . $this->formatIDR($ori_balance, 2) . '</td>
+                            <td style="text-align:right;font-weight:bold;color:green;">' . $linked_ori_debit . '</td>
+                            <td style="text-align:right;font-weight:bold;color:red;">' . $linked_ori_credit . '</td>
                             <td style="text-align:right;font-weight:bold;">' . $this->formatIDR($journal['rates'], 2) . '</td>
-                            <td style="text-align:right;font-weight:bold;'.$local_style.'">' . $this->formatIDR($local_balance, 2) . '</td>
-                            <td style="text-align:right;font-weight:bold;color:green;">' . $this->formatIDR($journal['local_debit'], 2) . '</td>
-                            <td style="text-align:right;font-weight:bold;color:red;">' . $this->formatIDR($journal['local_credit'], 2) . '</td>
+                            <td style="text-align:right;font-weight:bold;' . $local_style . '">' . $this->formatIDR($local_balance, 2) . '</td>
+                            <td style="text-align:right;font-weight:bold;color:green;">' . $linked_debit . '</td>
+                            <td style="text-align:right;font-weight:bold;color:red;">' . $linked_credit . '</td>
                         </tr>';
 
                 if(in_array($account_no[0], ["1","5"])){
@@ -458,6 +474,19 @@ class Report_general_ledgers extends CI_Controller
         
         $html .= '</body></html>';
         return $html;
+    }
+
+    // get link detail transaksi GL
+    function createLink($value, $idLink) 
+    {
+        $base_url   = base_url('finance/journal_postings/print_voucher_GL/');
+        $id_encoded = base64_encode($idLink);
+        $url        = $base_url . $id_encoded;
+
+        if ($value > 0) {
+            return '<a href="javascript:void(0)" onclick="window.open(\'' . $url . '\', \'_blank\', \'location=yes,height=600,width=1200,scrollbars=yes,status=yes\');" class="link-transaction">' . $this->formatIDR($value, 2) . '</a>';
+        }
+        return $this->formatIDR($value, 2);
     }
 
     function formatIDR($number, $decimal_places = 2) {
