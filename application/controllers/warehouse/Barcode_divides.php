@@ -105,6 +105,16 @@ class Barcode_divides extends CI_Controller
                             $this->db->where('a.label_divided', $label_no);
                             $this->db->group_by('a.label_divided');
                             $records = $this->db->get()->result_array();
+
+                            if (!$records) {
+                                $this->db->select('a.*, b.request_date as receipt_date, c.number, c.name');
+                                $this->db->from('bpm_labels a');
+                                $this->db->join('bpm b', 'a.request_id = b.request_id');
+                                $this->db->join('item_rm c', 'b.item_rm_id = c.id');
+                                $this->db->where('a.deleted', 0);
+                                $this->db->where('a.label_no', $label_no);
+                                $records = $this->db->get()->result_array();
+                            }
                         }
                     }
                 }
@@ -140,6 +150,7 @@ class Barcode_divides extends CI_Controller
                     $barcode_divides = $this->crud->read("barcode_divides", [], ["label_no" => $label]);
                     $barcode_divides2 = $this->crud->read("barcode_divides", [], ["label_divided" => $label]);
                     $checkLabel = $this->crud->read("purchase_order_labels", [], ["label_no" => $reff]);
+                    $bpm = $this->crud->read("bpm_labels", [], ["label_no" => $reff]);
 
                     if (!$checkLabel) {
                         $this->db->select('return_id as receipt_id');
@@ -162,16 +173,28 @@ class Barcode_divides extends CI_Controller
                             $qty = $post['bal'];
                             $type = "BALANCE";
                         }
-                        
+
+                        $reff = $checkLabel->receipt_id ?? 
+                                $barcode_divides2->reff ?? 
+                                $bpm->request_id ?? 
+                                $reff;
+
                         $arrLabel = [
-                            "reff" => !empty($checkLabel->receipt_id) ? $checkLabel->receipt_id : (!empty($barcode_divides2->reff) 
-                            ? $barcode_divides2->reff 
-                            : $reff),
+                            "reff" => $reff,
                             "label_no" => $post['label_no'],
                             "label_divided" => $label_divided,
                             "qty" => $qty,
                             "type" => $type,
                         ];
+                        
+                        // $arrLabel = [
+                        //     "reff" => !empty($checkLabel->receipt_id) ? $checkLabel->receipt_id : (!empty($barcode_divides2->reff) 
+                        //     ? $barcode_divides2->reff  : $reff) ,
+                        //     "label_no" => $post['label_no'],
+                        //     "label_divided" => $label_divided,
+                        //     "qty" => $qty,
+                        //     "type" => $type,
+                        // ];
                         if (!$barcode_divides) {
                             $send   = $this->crud->create('barcode_divides', $arrLabel);
                             $message = json_encode(array("title" => "Success", "message" => "Data Saved Successfully ", "theme" => "success"));
@@ -181,6 +204,7 @@ class Barcode_divides extends CI_Controller
                             $this->db->update('barcode_divides', ["status" => 1], ["label_divided" => $post['label_no']]);
                             $this->db->update('purchase_order_labels', ["status" => 1], ["label_no" => $post['label_no']]);
                             $this->db->update('new_barcode', ["status" => 1], ["label_no" => $post['label_no']]);
+                            $this->db->update('bpm_labels', ["status" => 1], ["label_no" => $post['label_no']]);
                         } else {
                             $message = json_encode(array("title" => "Available", "message" => "Barcode Divided has been created ", "theme" => "error"));
                         }
@@ -244,6 +268,20 @@ class Barcode_divides extends CI_Controller
                 $this->db->where('a.label_no', $label_no);
                 $this->db->group_by('a.label_divided');
                 $records = $this->db->get()->result_object();
+
+                if(!$records){
+                    $this->db->select('a.*, c.request_date as receipt_date, d.number, d.name, e.location, e.area');
+                    $this->db->from('barcode_divides a');
+                    $this->db->join('bpm_labels b', 'a.reff = b.request_id');
+                    $this->db->join('bpm c', 'b.request_id = c.request_id');
+                    $this->db->join('item_rm d', 'c.item_rm_id = d.id');
+                    $this->db->join('warehouse_location_items e', 'e.item_rm_id = d.id', 'left');
+                    $this->db->where('a.deleted', 0);
+                    $this->db->where('a.status', 0);
+                    $this->db->where('a.label_no', $label_no);
+                    $this->db->group_by('a.label_divided');
+                    $records = $this->db->get()->result_object();
+                }
             }
         }
 
