@@ -2276,184 +2276,7 @@ class Journal_postings extends CI_Controller
         die($html);
     }
 
-    // Show GL and Hyperlink each transaction (Report_general_ledgers)
-    public function print_voucher_gl($number)
-    {
-        $number = base64_decode($number);
-        $journal_total = $this->crud->reads('journal_postings', [], ["number" => $number]);
-
-        $config = $this->db->get('config')->row();
-        $config_iso = $this->db->get('config_iso')->row();
-        
-        // Generate QRcode
-        $this->createQrcode(@$number, "assets/image/qrcode/");
-        
-        $html = '<html>
-                    <head>
-                        <title>' . $number . '</title>
-                        <link rel="icon" href="' . $config->favicon . '" type="image/png" sizes="16x16">
-                        <style>
-                            /* CSS Anda... */
-                            body { font-family: Arial, Helvetica, sans-serif; }
-                            #customers { border-collapse: collapse; width: 100%; font-size: 12px; }
-                            #customers td, #customers th { border: 1px solid black; padding: 2px; }
-                            #customers th { padding-top: 2px; padding-bottom: 2px; text-align: center; color: black; }
-                            @media screen { .print { display: none !important; } }
-                            @media print { .noprint { display: none !important; } }
-                        </style>
-                    </head>
-                    <body>';
-
-        // Ambil data dalam satu kali query untuk efisiensi
-        $records = $this->db->select('a.*, b.name as journal_type_name')
-                            ->from('journal_postings a')
-                            ->join('journal_types b', 'a.journal_type_id = b.id')
-                            ->where('a.number', $number) 
-                            ->order_by('a.trans_date', 'ASC')
-                            ->get()
-                            ->result_array();
-
-        // Data header diambil dari record pertama
-        $first_record = @$records[0];
-
-        $html .= '<table style="width:100%;">
-                    <tr>
-                        <th width="10"><img src="' . $config->favicon . '" width="60" /></th>
-                        <td width="250" style="padding:10px;">
-                            <b style="font-size:14px;">' . $config->name . '</b><br>
-                            <span style="font-size:10px;">' . $config->address . '</span><br>
-                        </td>
-                        <td width="100" style="text-align:right;">
-                            <table style="width:100%; font-size:10px;">
-                                <tr>
-                                    <td width="50" rowspan="4"><img src="' . base_url('assets/image/qrcode/' . $number . '.png') . '" width="60"/></td>
-                                    <td width="60">Doc No</td><td width="5">:</td><td width="100">' . $config_iso->doc_general_ledger . '</td>
-                                </tr>
-                                <tr>
-                                    <td>Form</td><td>:</td><td>' . $config_iso->form_general_ledger . '</td>
-                                </tr>
-                                <tr>
-                                    <td>Print Date</td><td>:</td><td>' . date("Y-m-d H:i") . '</td>
-                                </tr>
-                                <tr>
-                                    <td>Print By</td><td>:</td><td>' . $this->session->name . '</td>
-                                </tr>
-                            </table>
-                        </td>
-                    </tr>
-                </table>
-                <div style="border: 1px solid black; width:100%;">
-                    <div style="padding:10px;">
-                        <center>
-                            <h3>GENERAL LEDGER VOUCHER</h3>
-                        </center>
-                        <div style="float:left; width:49%;"> 
-                            <table style="width:100%; font-size:12px; margin-bottom:10px;">
-                                <tr>
-                                    <td width="80">General Ledger No</td><td width="10">:</td><td><b>' . $number . '</b></td>
-                                </tr>
-                                <tr>
-                                    <td width="50">Journal Date</td><td width="10">:</td><td><b>' . @$first_record['journal_date'] . '</b></td>
-                                </tr>
-                                <tr>
-                                    <td width="50">Journal Type</td><td width="10">:</td><td><b>' . @$first_record['journal_type_name'] . '</b></td>
-                                </tr>
-                            </table>
-                        </div>
-                        <div style="float:left; width:50%;"> 
-                            <table style="width:100%; font-size:12px; margin-bottom:10px;">
-                                <tr>
-                                    <td width="80">Company Name</td><td width="10">:</td><td><b>' . @$first_record['company_name'] . '</b></td>
-                                </tr>
-                                <tr>
-                                    <td width="50">Modul</td><td width="10">:</td><td><b>' . @$first_record['modul'] . '</b></td>
-                                </tr>
-                            </table>
-                        </div>
-                        <table id="customers">
-                            <tr>
-                                <th rowspan="2">No</th>
-                                <th rowspan="2">Document No</th>
-                                <th rowspan="2">Account No</th>
-                                <th rowspan="2">Account Name</th>
-                                <th rowspan="2">Description</th>
-                                <th colspan="3">Original Currency</th>
-                                <th colspan="3">Local Currency</th>
-                            </tr>
-                            <tr>
-                                <th>Currency</th>
-                                <th>Debit</th>
-                                <th>Credit</th>
-                                <th>Rates</th>
-                                <th>Debit</th>
-                                <th>Credit</th>
-                            </tr>';
-        
-        $no = 1;
-        $total_ori_debit = 0;
-        $total_ori_credit = 0;
-        $total_local_debit = 0;
-        $total_local_credit = 0;
-        
-        foreach ($records as $record) {
-            $html .= '<tr>
-                            <td style="text-align:center">' . $no . '</td>
-                            <td>' . $record['document_no'] . '</td>
-                            <td>' . $record['account_number'] . '</td>
-                            <td>' . $record['account_name'] . '</td>
-                            <td>' . $record['description'] . '</td>
-                            <td>' . $record['currency'] . '</td>
-                            <td style="text-align:right;">' . @number_format($record['original_debit'], 2) . '</td>
-                            <td style="text-align:right;">' . @number_format($record['original_credit'], 2) . '</td>
-                            <td style="text-align:right;">' . @number_format($record['rates'], 2) . '</td>
-                            <td style="text-align:right;">' . @number_format($record['local_debit'], 2) . '</td>
-                            <td style="text-align:right;">' . @number_format($record['local_credit'], 2) . '</td>
-                        </tr>';
-            
-            // Menghitung total
-            $total_ori_debit += $record['original_debit'];
-            $total_ori_credit += $record['original_credit'];
-            $total_local_debit += $record['local_debit'];
-            $total_local_credit += $record['local_credit'];
-            $no++;
-        }
-
-        $html .= '<tr>
-                        <th style="text-align:right" colspan="6">SUB TOTAL</th>
-                        <th style="text-align:right;">' . @number_format($total_ori_debit, 2) . '</th>
-                        <th style="text-align:right;">' . @number_format($total_ori_credit, 2) . '</th>
-                        <th style="text-align:right;">-</th>
-                        <th style="text-align:right;">' . @number_format($total_local_debit, 2) . '</th>
-                        <th style="text-align:right;">' . @number_format($total_local_credit, 2) . '</th>
-                    </tr>
-                </table>
-                <br>
-                <table style="width:100%; font-size:12px;">
-                    <tr>
-                        <td style="text-align:center;">Prepared By</td>
-                        <td style="text-align:center;">Checked By</td>
-                        <td style="text-align:center;">Approved By</td>
-                    </tr>
-                    <tr>
-                        <td style="height:60px;"></td>
-                        <td style="height:60px;"></td>
-                        <td style="height:60px;"></td>
-                    </tr>
-                    <tr>
-                        <th style="height:20px; text-align:center;">' . $this->session->name . '<hr style="width:60%;margin-left:20%;">User Entry</th>
-                        <th style="height:20px; text-align:center;"><br><hr style="width:60%;margin-left:20%;">Accounting Manager</th>
-                        <th style="height:20px; text-align:center;"><br><hr style="width:60%;margin-left:20%;">Director</th>
-                    </tr>
-                </table>
-              </div>
-            </div>
-          </body>
-        </html>';
-        
-        // Output HTML
-        die($html);
-    }
-
+    // PRINT 
     public function print($option = "")
     {
         if ($option == "excel") {
@@ -2560,6 +2383,217 @@ class Journal_postings extends CI_Controller
         echo $html;
     }
 
+    // Show GL and Hyperlink each transaction (Report_general_ledgers)
+    public function print_voucher_gl($number)
+    {
+        $number = base64_decode($number);
+        $journal_total = $this->crud->reads('journal_postings', [], ["number" => $number]);
+
+        $config = $this->db->get('config')->row();
+        $config_iso = $this->db->get('config_iso')->row();
+        
+        // Generate QRcode
+        $this->createQrcode(@$number, "assets/image/qrcode/");
+        
+        $html = '<html>
+                    <head>
+                        <title>' . $number . '</title>
+                        <link rel="icon" href="' . $config->favicon . '" type="image/png" sizes="16x16">
+                        <style>
+                            /* CSS Anda... */
+                            body { font-family: Arial, Helvetica, sans-serif; }
+                            #customers { border-collapse: collapse; width: 100%; font-size: 12px; }
+                            #customers td, #customers th { border: 1px solid black; padding: 2px; }
+                            #customers th { padding-top: 2px; padding-bottom: 2px; text-align: center; color: black; }
+                            .link-transaction {
+                                color: inherit;
+                                text-decoration: none;
+                            }
+                            .link-transaction:hover {
+                                color: inherit;
+                                font-weight: bolder;
+                                text-decoration: underline;
+                            }
+                            @media screen { .print { display: none !important; } }
+                            @media print { .noprint { display: none !important; } }
+                        </style>
+                    </head>
+                    <body>';
+
+        // Ambil data dalam satu kali query untuk efisiensi
+        $records = $this->db->select('a.*, b.name as journal_type_name')
+                            ->from('journal_postings a')
+                            ->join('journal_types b', 'a.journal_type_id = b.id')
+                            ->where('a.number', $number) 
+                            ->order_by('a.trans_date', 'ASC')
+                            ->get()
+                            ->result_array();
+
+        // Data header diambil dari record pertama
+        $first_record = @$records[0];
+
+        $html .= '<table style="width:100%;">
+                    <tr>
+                        <th width="10"><img src="' . $config->favicon . '" width="60" /></th>
+                        <td width="250" style="padding:10px;">
+                            <b style="font-size:14px;">' . $config->name . '</b><br>
+                            <span style="font-size:10px;">' . $config->address . '</span><br>
+                        </td>
+                        <td width="100" style="text-align:right;">
+                            <table style="width:100%; font-size:10px;">
+                                <tr>
+                                    <td width="50" rowspan="4"><img src="' . base_url('assets/image/qrcode/' . $number . '.png') . '" width="60"/></td>
+                                    <td width="60">Doc No</td><td width="5">:</td><td width="100">' . $config_iso->doc_general_ledger . '</td>
+                                </tr>
+                                <tr>
+                                    <td>Form</td><td>:</td><td>' . $config_iso->form_general_ledger . '</td>
+                                </tr>
+                                <tr>
+                                    <td>Print Date</td><td>:</td><td>' . date("Y-m-d H:i") . '</td>
+                                </tr>
+                                <tr>
+                                    <td>Print By</td><td>:</td><td>' . $this->session->name . '</td>
+                                </tr>
+                            </table>
+                        </td>
+                    </tr>
+                </table>
+                <div style="border: 1px solid black; width:100%;">
+                    <div style="padding:10px;">
+                        <center>
+                            <h3>GENERAL LEDGER VOUCHER</h3>
+                        </center>
+                        <div style="float:left; width:49%;"> 
+                            <table style="width:100%; font-size:12px; margin-bottom:10px;">
+                                <tr>
+                                    <td width="80">General Ledger No</td><td width="10">:</td><td><b>' . $number . '</b></td>
+                                </tr>
+                                <tr>
+                                    <td width="50">Journal Date</td><td width="10">:</td><td><b>' . @$first_record['journal_date'] . '</b></td>
+                                </tr>
+                                <tr>
+                                    <td width="50">Journal Type</td><td width="10">:</td><td><b>' . @$first_record['journal_type_name'] . '</b></td>
+                                </tr>
+                            </table>
+                        </div>
+                        <div style="float:left; width:50%;"> 
+                            <table style="width:100%; font-size:12px; margin-bottom:10px;">
+                                <tr>
+                                    <td width="80">Company Name</td><td width="10">:</td><td><b>' . @$first_record['company_name'] . '</b></td>
+                                </tr>
+                                <tr>
+                                    <td width="50">Modul</td><td width="10">:</td><td><b>' . @$first_record['modul'] . '</b></td>
+                                </tr>
+                            </table>
+                        </div>
+                        <table id="customers">
+                            <tr>
+                                <th rowspan="2">No</th>
+                                <th rowspan="2">Document No</th>
+                                <th rowspan="2">Account No</th>
+                                <th rowspan="2">Account Name</th>
+                                <th rowspan="2">Description</th>
+                                <th colspan="3">Original Currency</th>
+                                <th colspan="3">Local Currency</th>
+                            </tr>
+                            <tr>
+                                <th>Currency</th>
+                                <th>Debit</th>
+                                <th>Credit</th>
+                                <th>Rates</th>
+                                <th>Debit</th>
+                                <th>Credit</th>
+                            </tr>';
+        
+        $no = 1;
+        $total_ori_debit = 0;
+        $total_ori_credit = 0;
+        $total_local_debit = 0;
+        $total_local_credit = 0;
+        
+        foreach ($records as $record) {
+            // --- Link transaksi GL Posting Journal
+            $linked_ori_debit  = $this->createLink($record['original_debit'], $record['document_no'], @$first_record['modul']);
+            $linked_ori_credit = $this->createLink($record['original_credit'], $record['document_no'], @$first_record['modul']);
+            $linked_debit      = $this->createLink($record['local_debit'], $record['document_no'], @$first_record['modul']);
+            $linked_credit     = $this->createLink($record['local_credit'], $record['document_no'], @$first_record['modul']);
+
+            $html .= '<tr>
+                        <td style="text-align:center">' . $no . '</td>
+                        <td>' . $record['document_no'] . '</td>
+                        <td>' . $record['account_number'] . '</td>
+                        <td>' . $record['account_name'] . '</td>
+                        <td>' . $record['description'] . '</td>
+                        <td>' . $record['currency'] . '</td>
+                        <td style="text-align:right;">' . $linked_ori_debit . '</td>
+                        <td style="text-align:right;">' . $linked_ori_credit . '</td>
+                        <td style="text-align:right;">' . @number_format($record['rates'], 2) . '</td>
+                        <td style="text-align:right;">' . $linked_debit . '</td>
+                        <td style="text-align:right;">' . $linked_credit . '</td>
+                    </tr>';
+            
+            // Menghitung total
+            $total_ori_debit += $record['original_debit'];
+            $total_ori_credit += $record['original_credit'];
+            $total_local_debit += $record['local_debit'];
+            $total_local_credit += $record['local_credit'];
+            $no++;
+        }
+
+        $html .= '<tr>
+                        <th style="text-align:right" colspan="6">SUB TOTAL</th>
+                        <th style="text-align:right;">' . @number_format($total_ori_debit, 2) . '</th>
+                        <th style="text-align:right;">' . @number_format($total_ori_credit, 2) . '</th>
+                        <th style="text-align:right;">-</th>
+                        <th style="text-align:right;">' . @number_format($total_local_debit, 2) . '</th>
+                        <th style="text-align:right;">' . @number_format($total_local_credit, 2) . '</th>
+                    </tr>
+                </table>
+                <br>
+                <table style="width:100%; font-size:12px;">
+                    <tr>
+                        <td style="text-align:center;">Prepared By</td>
+                        <td style="text-align:center;">Checked By</td>
+                        <td style="text-align:center;">Approved By</td>
+                    </tr>
+                    <tr>
+                        <td style="height:60px;"></td>
+                        <td style="height:60px;"></td>
+                        <td style="height:60px;"></td>
+                    </tr>
+                    <tr>
+                        <th style="height:20px; text-align:center;">' . $this->session->name . '<hr style="width:60%;margin-left:20%;">User Entry</th>
+                        <th style="height:20px; text-align:center;"><br><hr style="width:60%;margin-left:20%;">Accounting Manager</th>
+                        <th style="height:20px; text-align:center;"><br><hr style="width:60%;margin-left:20%;">Director</th>
+                    </tr>
+                </table>
+              </div>
+            </div>
+          </body>
+        </html>';
+        
+        // Output HTML
+        die($html);
+    }
+
+    // get link detail transaksi GL
+    function createLink($value, $idLink, $modul) 
+    {
+        if ($modul == "AP PAYMENT") {
+            $base_url   = base_url('finance/ap_payments/print_voucher_gl/');
+        } else {
+            $base_url   = base_url('finance/ar_receipts/print_voucher_gl/');
+        }
+
+        $id_encoded = base64_encode($idLink);
+        $url        = $base_url . $id_encoded;
+
+        if ($value > 0) {
+            return '<a href="javascript:void(0)" onclick="window.open(\'' . $url . '\', \'_blank\', \'location=yes,height=600,width=1200,scrollbars=yes,status=yes\');" class="link-transaction">' . $this->formatIDR($value, 2) . '</a>';
+        }
+        return $this->formatIDR($value, 2);
+    }
+    
     function formatIDR($number, $decimal_places = 2) {
         $formatted_number = number_format($number, $decimal_places, ',', '');
         return $formatted_number;

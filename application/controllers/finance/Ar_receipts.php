@@ -1297,4 +1297,341 @@ class Ar_receipts extends CI_Controller
         $html .= '</table></body></html>';
         echo $html;
     }
+
+    // Show GL and Hyperlink each transaction (Report_general_ledgers)
+    public function print_voucher_gl($receipt)
+    {
+        $receipt_no = base64_decode($receipt);
+        $this->db->select('a.*, b.name as customer_name');
+        $this->db->from('ar_receipts a');
+        $this->db->join('customers b', 'a.customer_id = b.id');
+        $this->db->like('a.receipt_no', $receipt_no);
+        $this->db->order_by('a.status', 'ASC');
+        $this->db->order_by('a.receipt_date', 'DESC');
+        $this->db->group_by('a.receipt_no');
+        $receipt_total = $this->db->get()->result_array();
+
+        $config = $this->db->get('config')->row();
+        $config_iso = $this->db->get('config_iso')->row();
+
+        //Config Page
+        $rows = 10;
+        $page = ceil(count($receipt_total) / $rows);
+        //Generate QRcode
+        // $this->createQrcode(@$receipt_no, "assets/image/qrcode/");
+        $html = '<html>
+                    <head>
+                        <title>' . $receipt_no . '</title>
+                        <link rel="icon" href="' . $config->favicon . '" type="image/png" sizes="16x16">
+                    </head>
+                    <style>
+                        body {
+                            font-family: Arial, Helvetica, sans-serif;
+                        }
+                        #customers {
+                            border-collapse: collapse;width: 100%;
+                            font-size: 12px;
+                        }
+                        #customers td, #customers th {
+                            border: 1px solid black;padding: 2px;
+                        }
+                        #customers th {
+                            padding-top: 2px;
+                            padding-bottom: 2px;
+                            text-align: center;color: black;
+                        }
+                        .link-transaction {
+                            color: inherit;
+                            text-decoration: none;
+                        }
+                        .link-transaction:hover {
+                            color: inherit;
+                            font-weight: bolder;
+                            text-decoration: underline;
+                        }
+                        @media screen {
+                            .print {
+                                display: none !important;
+                            }
+                        }
+                        @media print {
+                            .noprint {
+                                display: none !important;
+                            }
+                        }
+                    </style>
+                    <body>';
+        $no = 1;
+        $hal = 1;
+        $subtotal = 0;
+        for ($i = 0; $i < $page; $i++) {
+            $this->db->select('a.*, b.name as customer_name');
+            $this->db->from('ar_receipts a');
+            $this->db->join('customers b', 'a.customer_id = b.id');
+            $this->db->like('a.receipt_no', $receipt_no);
+            $this->db->order_by('a.status', 'ASC');
+            $this->db->order_by('a.receipt_date', 'DESC');
+            $this->db->limit(10, ($i * 10));
+            $records = $this->db->get()->result_array();
+
+            //Exchange Rate
+            $receipt_date = $records[0]['receipt_date'];
+            $currency = $records[0]['currency'];
+            $monthBf = date('Y-m-01', strtotime('-1 month', strtotime($receipt_date)));
+            $exchange = $this->crud->read('exchange_rates', [], ["start_date" => $monthBf, "currency_from" => $currency, "currency_to" => "IDR"]);
+
+            if ($exchange) {
+                $amount = $exchange->middle;
+                $hide = "";
+            } else {
+                $amount = 0;
+                $hide = "hidden";
+            }
+            // <td width="50" rowspan="4"><img src="' . base_url('assets/image/qrcode/' . $receipt_no . '.png') . '" width="60"/></td>
+            $exchangeName = "Rp. " . number_format($amount, 2);
+
+            $html .= '  <table style="width:100%;">
+                            <tr>
+                                <th width="10"><img src="' . $config->favicon . '" width="60" /></th>
+                                <td width="250" style="padding:10px;">
+                                    <b style="font-size:14px;">' . $config->name . '</b><br>
+                                    <span style="font-size:10px;">' . $config->address . '</span><br>
+                                </td>
+                                <td width="100" style="text-align:right;">
+                                    <table style="width:100%; font-size:10px;">
+                                        <tr>
+                                            
+                                            <td width="60">Doc No</td>
+                                            <td width="5">:</td>
+                                            <td width="100">' . @$config_iso->doc_ar_receipt . '</td>
+                                        </tr>
+                                        <tr>
+                                            <td>Form</td>
+                                            <td>:</td>
+                                            <td>' . @$config_iso->form_ar_receipt . '</td>
+                                        </tr>
+                                        <tr>
+                                            <td>Print Date</td>
+                                            <td>:</td>
+                                            <td>' . date("Y-m-d H:i") . '</td>
+                                        </tr>
+                                        <tr>
+                                            <td>Print By</td>
+                                            <td>:</td>
+                                            <td>' . $this->session->name . '</td>
+                                        </tr>
+                                    </table>
+                                </td>
+                            </tr>
+                        </table>
+                        <div style="border: 1px solid black; width:100%;">
+                            <div style="padding:10px;">
+                                <center>
+                                    <h3>RECEIPT VOUCHER</h3>
+                                </center>
+                                <div style="float:left; width:40%;"> 
+                                    <table style="width:100%; font-size:12px; margin-bottom:10px;">
+                                        <tr>
+                                            <td width="80">Receipt From</td>
+                                            <td width="10">:</td>
+                                            <td><b>' . @$records[0]['customer_name'] . '</b></td>
+                                        </tr>
+                                        <tr>
+                                            <td>Receipt By</td>
+                                            <td>:</td>
+                                            <td><b>' . @$records[0]['receipt_by'] . '</b></td>
+                                        </tr>
+                                    </table>
+                                </div>
+                                <div style="float:left; width:40%;"> 
+                                    <table style="width:100%; font-size:12px; margin-bottom:10px;">
+                                        <tr>
+                                            <td width="80">Receipt No</td>
+                                            <td width="10">:</td>
+                                            <td><b>' . @$records[0]['receipt_no'] . '</b></td>
+                                        </tr>
+                                        <tr>
+                                            <td>Receipt Date</td>
+                                            <td>:</td>
+                                            <td><b>' . @date("d F Y", strtotime(@$records[0]['receipt_date'])) . '</b></td>
+                                        </tr>
+                                        <tr>
+                                            <td>Bank Account</td>
+                                            <td>:</td>
+                                            <td><b>' . @$records[0]['bank_account'] . '</b></td>
+                                        </tr>
+                                    </table>
+                                </div>
+                                <div ' . $hide . ' style="float:left; width:15%; border:2px solid black; padding:10px; font-size:12px; margin-left:20px;"> 
+                                    <p style="margin:0;">Rate USD to IDR : <b>' . $exchangeName . '</b></p>
+                                </div>
+                                <table id="customers">
+                                    <tr>
+                                        <th>No</th>
+                                        <th>Sales Invoice No</th>
+                                        <th>Description</th>
+                                        <th>Currency</th>
+                                        <th>Amount</th>
+                                        <th>Balance</th>
+                                        <th>Receipt</th>
+                                        <th>Remarks</th>
+                                    </tr>';
+            $grand_total = 0;
+            foreach ($records as $record) 
+            {
+                if ($record['account_type'] == "DEBIT") {
+                    $grand_total -= $record['receipt'];
+                    $subtotal -= $record['receipt'];
+                } else {
+                    $grand_total += $record['receipt'];
+                    $subtotal += $record['receipt'];
+                }
+
+                // --- Link transaksi GL Posting Journal
+                $linked_balance = $this->createLink($record['balance'], $record['purchase_invoice']);
+                $linked_receipt = $this->createLink($record['receipt'], $record['purchase_invoice']);
+
+                $html .= '  <tr>
+                                <td style="text-align:center">' . $no . '</td>
+                                <td>' . $record['sales_invoice'] . '</td>
+                                <td>' . $record['description'] . '</td>
+                                <td>' . $record['currency'] . '</td>
+                                <td style="text-align:right;">' . @number_format(($record['amount']), 2) . '</td>
+                                <td style="text-align:right;">' . $linked_balance . '</td>
+                                <td style="text-align:right;">' . $linked_receipt . '</td>
+                                <td>' . $record['remarks'] . '</td>
+                            </tr>';
+                $no++;
+            }
+
+            if (($i + 1) == $page) {
+                $html_grand_total = '<tr>
+                                        <th style="text-align:right" colspan="6">GRAND TOTAL</th>
+                                        <th style="text-align:right;">' . @number_format($subtotal, 2) . '</th>
+                                        <td></td>
+                                    </tr>';
+            } else {
+                $html_grand_total = "";
+            }
+
+            $html .= '  <tr>
+                            <th style="text-align:right" colspan="6">SUB TOTAL</th>
+                            <th style="text-align:right;">' . @number_format($grand_total, 2) . '</th>
+                            <td></td>
+                        </tr>';
+
+            $html .= $html_grand_total;
+
+            if (($i + 1) != $page) {
+                $html .= '<div style="page-break-after:always;"></div>';
+            }
+
+            $hal++;
+        }
+
+        $html .= '  <table id="customers" style="margin-top:10px;">
+                        <tr>
+                            <th style="text-align:center;">Amount in Words</th>
+                            <td>' . $this->convertcurrency->convertCurrencyToWords($grand_total, $records[0]['currency']) . '</td>
+                        </tr>
+                    </table>
+                    <p style="font-size:12px;"><i>*This Receipt Voucher was prepared by ' . $config->name . '</i></p>
+                    <div style="width:100%; float:left; margin-bottom:20px;">
+                    <table id="customers" style="width:100%; font-size:12px;">
+                        <tr>
+                            <td rowspan="2" style="font-weight:bold;">Account No</td>
+                            <td rowspan="2" style="font-weight:bold;">Account Name</td>
+                            <td rowspan="2" style="font-weight:bold;">Description</td>
+                            <td colspan="2" style="font-weight:bold;">Original Currency</td>
+                            <td colspan="2" style="font-weight:bold;">Local Currency</td>
+                        </tr>
+                        <tr>
+                            <td style="font-weight:bold;">Debit</td>
+                            <td style="font-weight:bold;">Credit</td>
+                            <td style="font-weight:bold;">Debit</td>
+                            <td style="font-weight:bold;">Credit</td>
+                        </tr>';
+        $journals = $this->crud->query("SELECT a.*, b.account_name 
+        FROM ar_receipt_journals a 
+        JOIN account_coa b ON a.account_number = b.account_number
+        WHERE a.receipt_no = '$receipt_no' ORDER BY a.flag ASC");
+
+        $total_debit = 0;
+        $total_credit = 0;
+        $local_total_debit = 0;
+        $local_total_credit = 0;
+        foreach ($journals as $journal) 
+        {
+            $total_debit += $journal->debit;
+            $total_credit += $journal->credit;
+            $local_total_debit += $journal->local_debit;
+            $local_total_credit += $journal->local_credit;
+
+            $html .= '  <tr>
+                            <td>' . $journal->account_number . '</td>
+                            <td>' . $journal->account_name . '</td>
+                            <td>' . $journal->description . '</td>
+                            <td style="text-align:right;">' . number_format($journal->debit, 2) . '</td>
+                            <td style="text-align:right;">' . number_format($journal->credit, 2) . '</td>
+                            <td style="text-align:right;">' . number_format($journal->local_debit, 2) . '</td>
+                            <td style="text-align:right;">' . number_format($journal->local_credit, 2) . '</td>
+                        </tr>';
+        }
+
+        $html .= '      <tr>
+                            <td colspan="3"><b>BALANCE TOTAL</b></td>
+                            <td style="text-align:right;">' . @number_format($total_debit, 2) . '</td>
+                            <td style="text-align:right;">' . @number_format($total_credit, 2) . '</td>
+                            <td style="text-align:right;">' . @number_format($local_total_debit, 2) . '</td>
+                            <td style="text-align:right;">' . @number_format($local_total_credit, 2) . '</td>
+                        </tr>
+                    </table>
+                </div>';
+
+        $html .= '</table>
+            <br>
+            <table style="width:100%; font-size:12px;">
+                <tr>
+                    <td style="text-align:center;">Prepared By</td>
+                    <td style="text-align:center;">Checked By</td>
+                    <td style="text-align:center;">Checked By</td>
+                    <td style="text-align:center;">Approved By</td>
+                </tr>
+                <tr>
+                    <td style="height:60px;"></td>
+                    <td style="height:60px;"></td>
+                    <td style="height:60px;"></td>
+                    <td style="height:60px;"></td>
+                </tr>
+                <tr>
+                    <th style="height:20px; text-align:center;">' . $this->session->name . '<hr style="width:60%;margin-left:20%;">User Entry</th>
+                    <th style="height:20px; text-align:center;"><br><hr style="width:60%;margin-left:20%;">Assistant Manager</th>
+                    <th style="height:20px; text-align:center;"><br><hr style="width:60%;margin-left:20%;">Finance Accounting Manager</th>
+                    <th style="height:20px; text-align:center;"><br><hr style="width:60%;margin-left:20%;">Director</th>
+                </tr>
+            </table>
+            </div>
+        </div>';
+
+        $html .= "</div> </body>";
+        die($html);
+    }
+
+    // get link detail transaksi GL
+    function createLink($value, $idLink) 
+    {
+        $base_url   = base_url('finance/sales_invoices/print_invoicing_gl/');
+        $id_encoded = base64_encode($idLink);
+        $url        = $base_url . $id_encoded;
+
+        if ($value > 0) {
+            return '<a href="javascript:void(0)" onclick="window.open(\'' . $url . '\', \'_blank\', \'location=yes,height=600,width=1200,scrollbars=yes,status=yes\');" class="link-transaction">' . $this->formatIDR($value, 2) . '</a>';
+        }
+        return $this->formatIDR($value, 2);
+    }
+
+    function formatIDR($number, $decimal_places = 2) {
+        $formatted_number = number_format($number, $decimal_places, ',', '.');
+        return $formatted_number;
+    }
 }
