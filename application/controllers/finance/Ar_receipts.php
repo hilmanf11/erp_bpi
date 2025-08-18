@@ -1488,8 +1488,8 @@ class Ar_receipts extends CI_Controller
                 }
 
                 // --- Link transaksi GL Posting Journal
-                $linked_balance = $this->createLink($record['balance'], $record['purchase_invoice']);
-                $linked_receipt = $this->createLink($record['receipt'], $record['purchase_invoice']);
+                $linked_balance = $this->createLink($record['balance'], $record['sales_invoice']);
+                $linked_receipt = $this->createLink($record['receipt'], $record['sales_invoice']);
 
                 $html .= '  <tr>
                                 <td style="text-align:center">' . $no . '</td>
