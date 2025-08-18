@@ -307,6 +307,18 @@ class Output_productions extends CI_Controller
 
             $item_fg = $this->crud->read('item_fg', [], array("number" => $data['item_number']));
             $machines = $this->crud->read('machines', [], array("number" => $data['machine_number']));
+            $data_cek = array(
+                    "item_fg_id" => $item_fg->id,
+                    "trans_date" => $data['trans_date'],
+                    "wo_no" => $data['wo_no'],
+                    "period" => $data['period'],
+                    "qty" => $data['qty'],
+                    "qty_wip" => $data['qty_wip'],
+                    "shift" => $data['shift'],
+                    "remarks" => $data['remarks'],
+                    "machine_number" => $data['machine_number'],
+                );
+            $output_productions = $this->crud->read('output_productions', [], $data_cek);
             $send = $this->crud->query("
                 SELECT DISTINCT a.item_fg_id, a.workorder AS wo_no, a.period, b.number, b.name, a.lot_no, 'Supply Sheets' AS modul
                 FROM supply_sheets a 
@@ -331,6 +343,8 @@ class Output_productions extends CI_Controller
             } elseif (empty($machines)) {
             echo json_encode(array("title" => "Not Found","message" => "Machine number " . $data['machine_number'] . " NOT FOUND IN MODUL MACHINE","theme" => "error"));
             // return;
+            } elseif ($output_productions) {
+            echo json_encode(array("title" => "Duplicate","message" => "Duplicate Product number " . $data['item_number'] . " FOUND","theme" => "error"));
             } elseif (!in_array($item_fg->id, $item_fg_ids)) {
                 echo json_encode(array("title" => "Not Found","message" => "Product number " . $data['item_number'] . " NOT FOUND IN PERIOD " . $data['period'],"theme" => "error"));
                 // return;
