@@ -3408,6 +3408,10 @@ class Sales_invoices extends CI_Controller
             $user_3 = (object) ["name" => ""];
         }
         
+        if (empty($sales_invoices)) {
+            echo "<h3> Tidak terdapat Sales Invoice No : " . $invoice_no . " (AR Receipt Input Manual) </h3>";
+            return;
+        }
         
         if($sales_invoices->approved == 0){
             $users_input = '<img src="' . base_url('assets/image/qrcode/' . $this->session->name . '.png') . '" width="80"/>';
@@ -3478,16 +3482,7 @@ class Sales_invoices extends CI_Controller
                             }
                         }
                     </style>
-                    <body>
-                    <div style="margin:20%;" class="noprint">
-                        <center>
-                            <h1>Press CTRL + P for Print</h1>
-                            <p>Display pages for 10 rows</p>
-                            <p>Paper Size A5, Layout Landscape</p>
-                            <p>Margin Default, Scale 80</p>
-                        </center>
-                    </div>
-                    <div class="print">';
+                    <body>';
         $no = 1;
         $hal = 1;
         $grand_total = 0;
@@ -3771,9 +3766,8 @@ class Sales_invoices extends CI_Controller
                         <th style="height:20px; text-align:center;">'. $user_3->name .'<br><hr style="width:60%;margin-left:20%;">Director</th>
                     </tr>
                 </table>';
-        $html .= "<script>window.print()</script></body>";
+        $html .= "</body>";
         die($html);
     } 
-
 
 }
