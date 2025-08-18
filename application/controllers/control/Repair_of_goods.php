@@ -121,17 +121,26 @@ class Repair_of_goods extends CI_Controller
             d.total_status_open, 
             c.total_status_close, 
             COUNT(a.status) as total_status,
+            COUNT(a.status_fc) as total_status_fc,
             (CASE 
                 WHEN d.total_status_open = COUNT(a.status) THEN '0'
                 WHEN c.total_status_close = COUNT(a.status) THEN '1'
                 WHEN d.total_status_open >= 1 THEN '0'
                 WHEN c.total_status_close >= 1 THEN '1'
                 ELSE '0'
-            END) as status2");
+            END) as status2,
+            (CASE 
+                WHEN f.total_status_fc_open = COUNT(a.status_fc) THEN '0'
+                WHEN e.total_status_fc_close = COUNT(a.status_fc) THEN '1'
+                WHEN f.total_status_fc_open >= 1 THEN '0'
+                WHEN e.total_status_fc_close >= 1 THEN '1'
+                ELSE '0'
+            END) as status2_fc");
             $this->db->from('repair_of_goods a');
             $this->db->join('(SELECT document_no, COUNT(status) as total_status_close FROM repair_of_goods WHERE status = 1 GROUP BY document_no) c', 'a.document_no = c.document_no', 'left');
             $this->db->join('(SELECT document_no, COUNT(status) as total_status_open FROM repair_of_goods WHERE status = 0 GROUP BY document_no) d', 'a.document_no = d.document_no', 'left');
-
+            $this->db->join('(SELECT document_no, COUNT(status_fc) as total_status_fc_close FROM repair_of_goods WHERE status_fc = 1 GROUP BY document_no) e', 'a.document_no = e.document_no', 'left');
+            $this->db->join('(SELECT document_no, COUNT(status_fc) as total_status_fc_open FROM repair_of_goods WHERE status_fc = 0 GROUP BY document_no) f', 'a.document_no = f.document_no', 'left');
             if ($filter_from != "" && $filter_to != "") {
                 $this->db->where('trans_date >=', $filter_from);
                 $this->db->where('trans_date <=', $filter_to);
@@ -268,6 +277,8 @@ class Repair_of_goods extends CI_Controller
     public function delete()
     {
         $data = $this->input->post();
+        // var_dump($data);
+        // die;
         $send = $this->crud->delete('repair_of_goods', $data);
         echo $send;
     }
@@ -342,6 +353,7 @@ class Repair_of_goods extends CI_Controller
                 <th>Qty</th>
                 <th>Remarks</th>
                 <th>Status</th>
+                <th>Status FC</th>
             </tr>';
         $no = 1;
         foreach ($records as $data) {
@@ -351,9 +363,15 @@ class Repair_of_goods extends CI_Controller
                 $status = 'OPEN';
             }
 
+            if($data['status_fc'] == '1'){
+                $status_fc = 'CLOSED';
+            }else{
+                $status_fc = 'OPEN';
+            }
+
             $html .= '<tr>
                         <td>' . $no . '</td>
-                         <td>' . $data['document_no'] . '</td>
+                        <td>' . $data['document_no'] . '</td>
                         <td>' . $data['item_fg_id'] . '</td>
                         <td>' . $data['item_fg_number'] . '</td>
                         <td>' . $data['item_fg_name'] . '</td>
@@ -361,6 +379,7 @@ class Repair_of_goods extends CI_Controller
                         <td>' . $data['qty'] . '</td>
                         <td>' . $data['remarks'] . '</td>
                         <td>' . $status . '</td>
+                        <td>' . $status_fc . '</td>
                     </tr>';
             $no++;
         }

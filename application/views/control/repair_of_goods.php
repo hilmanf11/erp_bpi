@@ -5,6 +5,7 @@
             <th rowspan="2" field="ck" checkbox="true"></th>
             <th rowspan="2" data-options="field:'print',width:59,align:'center', formatter:btnPrint">Print</th>
             <th rowspan="2" data-options="field:'status2',width:80,align:'center', styler:cellStyler, formatter:cellFormatter">Status</th>
+            <th rowspan="2" data-options="field:'status2_fc',width:80,align:'center', styler:cellStyler, formatter:cellFormatter">Status FC</th>
             <th rowspan="2" data-options="field:'document_no',width:150,halign:'center'">Document No</th>
             <th rowspan="2" data-options="field:'trans_date',width:150,halign:'center'">Trans Date</th>
             <th rowspan="2" data-options="field:'remarks',width:80,align:'center'">Remarks</th>          
@@ -333,29 +334,34 @@
     }
 
     //DELETE DATA
-    function deleted() {
+     function deleted() {
         var rows = $('#dg').datagrid('getSelections');
         if (rows.length > 0) {
             $.messager.confirm('Warning', 'Are you sure you want to delete this data?', function(r) {
                 if (r) {
                     for (var i = 0; i < rows.length; i++) {
                         var row = rows[i];
-                        $.ajax({
-                            method: 'post',
-                            url: '<?= base_url('control/repair_of_goods/delete') ?>',
-                            data: {
-                                sales_order_no: row.sales_order_no
-                            },
-                            success: function(result) {
-                                var result = eval('(' + result + ')');
-                            },
-                            error: function(jqXHR, textStatus, errorThrown) {
-                                toastr.error(jqXHR.statusText);
-                            },
-                            complete: function(data) {
-                                $('#dg').datagrid('reload');
-                            }
-                        });
+                        console.log(row);
+                        if (row.status == "0") {
+                            $.ajax({
+                                method: 'post',
+                                url: '<?= base_url('control/repair_of_goods/delete') ?>',
+                                data: {
+                                    document_no: row.document_no
+                                },
+                                success: function(result) {
+                                    var result = eval('(' + result + ')');
+                                },
+                                error: function(jqXHR, textStatus, errorThrown) {
+                                    toastr.error(jqXHR.statusText);
+                                },
+                                complete: function(data) {
+                                    $('#dg').datagrid('reload');
+                                }
+                            });
+                        } else {
+                                toastr.error("You cannot delete this data, because it closed");
+                        }
                     }
                 }
             });
