@@ -60,7 +60,7 @@ class Report_bank_reconciliation extends CI_Controller
         $filter_bank_account = $this->input->post("filter_bank_account") ?? null;
         $filter_from = $this->input->post("filter_from") ?? null;
         $filter_to = $this->input->post("filter_to") ?? null;
-        $filter_to = $this->input->post("filter_to") ?? null;
+
 
         // CHECK Date Period same as excel
         if (strtotime($filter_from) !== strtotime($dataBank['start_date']) && strtotime($filter_to) !== strtotime($dataBank['end_date']) ) {
@@ -73,6 +73,34 @@ class Report_bank_reconciliation extends CI_Controller
         if (!$account_banks || $account_banks->bank_account !== $dataBank['bank_account'] || $filter_bank_account !== $dataBank['bank_account']) {
             echo json_encode(["title" => "Not Matched", "message" => "Failed! Bank Account ". $dataBank['bank_account'] ." inside the file is Not Match with the selected data", "theme" => "error"]);
             return;
+        }
+
+        // CHECK data reconciliation sudah ada
+        $this->db->select('*');
+        $this->db->from('bank_reconciliation');
+        $this->db->where('bank_account', $filter_bank_account);
+        $this->db->where('account_number', $filter_account_number);
+        $this->db->where("DATE_FORMAT(posting_date, '%Y-%m-%d') BETWEEN '$filter_from' AND '$filter_to'");
+        $this->db->where("start_date BETWEEN '$filter_from' AND '$filter_to'");
+        $this->db->where("end_date BETWEEN '$filter_from' AND '$filter_to'");
+        $reconciliation_exists = $this->db->get();
+        // jika data available : ketika diupload dgn template baru, data yang ada dihapus
+        if (!empty($reconciliation_exists)) 
+        {    
+            $this->db->where('bank_account', $filter_bank_account);
+            $this->db->where('account_number', $filter_account_number);
+            $this->db->where("DATE_FORMAT(posting_date, '%Y-%m-%d') BETWEEN '$filter_from' AND '$filter_to'");
+            $this->db->where("start_date BETWEEN '$filter_from' AND '$filter_to'");
+            $this->db->where("end_date BETWEEN '$filter_from' AND '$filter_to'");
+            $deletePeriod = $this->db->delete('bank_reconciliation');
+
+            if ($this->db->affected_rows() > 0) {
+                $deleteStatus = ["title" => "Good Job", "message" => "Data Updated Successfully", "theme" => "success"];
+                $dataBefore = $this->crud->read('bank_reconciliation', [], ['bank_account' => $filter_bank_account, 'account_number' => $filter_account_number, 'start_date' => $filter_from, 'end_date' => $filter_to]);
+                $this->crud->logs("Delete", json_encode($dataBefore), 'bank_reconciliation');
+            } else {
+                $deleteStatus = ["title" => "Info", "message" => "No changes detected, data remains the same.", "theme" => "info"];
+            }
         }
 
         $datas = [];
@@ -89,6 +117,7 @@ class Report_bank_reconciliation extends CI_Controller
             "bank"  => $dataBank,
             "data"  => $datas,
             "total" => count($datas),
+            "delete_existing" => $deleteStatus ?? null,
         ];
         echo json_encode($payload);
         
@@ -155,25 +184,9 @@ class Report_bank_reconciliation extends CI_Controller
                         "credit"          => $data["credit"],
                         "debit"           => $data["debit"],
                     ];
-
-                    // check data sudah ada
-                    $where_reconciliation = [
-                        "bank_account" => $bank['bank_account'], 
-                        "start_date"   => $bank['start_date'], 
-                        "end_date"     => $bank['end_date'], 
-                        "currency"     => $bank['currency'], 
-                        "posting_date" => $data['posting_date'], 
-                        "remark"       => $data['remark']
-                    ];
-                    $bank_reconciliation = $this->crud->read('bank_reconciliation', [], $where_reconciliation);
-
-                    // validasi jika data sudah ada, maka update
-                    if (!empty($bank_reconciliation)) {
-                        $send = $this->crud->update('bank_reconciliation', $where_reconciliation, $dataFinal);
-                    } else {
-                        $send = $this->crud->create('bank_reconciliation', $dataFinal);
-                    }
-
+                    
+                    // CREATE NEW 
+                    $send = $this->crud->create('bank_reconciliation', $dataFinal);
                     echo $send;
 
                     // validasi posting_date mutasi berbeda dengan periode yang dipilih
@@ -370,7 +383,7 @@ class Report_bank_reconciliation extends CI_Controller
 
         $this->db->select('*');
         $this->db->from('bank_reconciliation');
-        $this->db->where("posting_date between '$start_date' and '$end_date'");
+        $this->db->where("DATE_FORMAT(posting_date, '%Y-%m-%d') BETWEEN '$start_date' AND '$end_date'");
         $this->db->where("account_number", $filter_account_number);
         $this->db->order_by('posting_date', 'asc');
         $this->db->order_by('account_number', 'asc');
