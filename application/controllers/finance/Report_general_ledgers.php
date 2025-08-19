@@ -262,6 +262,10 @@ class Report_general_ledgers extends CI_Controller
             $this->db->from('account_coa');
             $this->db->where("account_number", $filter_account_number);
             $account_coa = $this->db->get()->row();
+            if (!$account_coa) {
+                echo "<h3 style='font-family:monospace;'> Account Number ". $filter_account_number. " is unavailable! </h3>";
+                return;
+            }
 
             $journal_ori_debit = @$journal_bf->original_debit;
             $journal_ori_credit = @$journal_bf->original_credit;

@@ -511,6 +511,16 @@ class Report_trial_balances extends CI_Controller
                     .bg-light-green { background-color: #CAFFB3; } /* Untuk baris kelompok akun */
                     .bg-grey { background-color: #EBEBEB; } /* Untuk grand total */
 
+                    .link-transaction {
+                        color: inherit;
+                        text-decoration: none;
+                    }
+                    .link-transaction:hover {
+                        color: inherit;
+                        font-weight: bolder;
+                        text-decoration: underline;
+                    }
+
                     .clearfix::after {
                         content: "";
                         clear: both;
@@ -594,17 +604,25 @@ class Report_trial_balances extends CI_Controller
                                     $grand_total_ending_debit += $trial_balance['ending_debit'];
                                     $grand_total_ending_credit += $trial_balance['ending_credit'];
                                 }
-                            
-        $html .= '<tr style="' . $row_class . '"> 
+
+                                // --- Link transaksi GL Posting Journal
+                                $linked_begin_debit   = $this->createLink($trial_balance['begin_debit'], $filter_from, $filter_to, $trial_balance['account_number'], $trial_balance['header']);
+                                $linked_begin_credit  = $this->createLink($trial_balance['begin_credit'], $filter_from, $filter_to, $trial_balance['account_number'], $trial_balance['header']);
+                                $linked_debit         = $this->createLink($trial_balance['local_debit'], $filter_from, $filter_to, $trial_balance['account_number'], $trial_balance['header']);
+                                $linked_credit        = $this->createLink($trial_balance['local_credit'], $filter_from, $filter_to, $trial_balance['account_number'], $trial_balance['header']);
+                                $linked_ending_debit  = $this->createLink($trial_balance['ending_debit'], $filter_from, $filter_to, $trial_balance['account_number'], $trial_balance['header']);
+                                $linked_ending_credit = $this->createLink($trial_balance['ending_credit'], $filter_from, $filter_to, $trial_balance['account_number'], $trial_balance['header']);
+                                
+                                $html .= '<tr style="' . $row_class . '"> 
                                     <td class="text-center">' . $no . '</td>
                                     <td>' . htmlspecialchars($trial_balance['account_number']) . '</td>
                                     <td>' . $trial_balance['account_name'] . '</td>
-                                    <td class="text-right">' . number_format($trial_balance['begin_debit'], 2, ',', '.') . '</td>
-                                    <td class="text-right">' . number_format($trial_balance['begin_credit'], 2, ',', '.') . '</td>
-                                    <td class="text-right">' . number_format($trial_balance['local_debit'], 2, ',', '.') . '</td>
-                                    <td class="text-right">' . number_format($trial_balance['local_credit'], 2, ',', '.') . '</td>
-                                    <td class="text-right">' . number_format($trial_balance['ending_debit'], 2, ',', '.') . '</td>
-                                    <td class="text-right">' . number_format($trial_balance['ending_credit'], 2, ',', '.') . '</td>
+                                    <td class="text-right">' . $linked_begin_debit . '</td>
+                                    <td class="text-right">' . $linked_begin_credit . '</td>
+                                    <td class="text-right">' . $linked_debit . '</td>
+                                    <td class="text-right">' . $linked_credit . '</td>
+                                    <td class="text-right">' . $linked_ending_debit . '</td>
+                                    <td class="text-right">' . $linked_ending_credit . '</td>
                                 </tr>';
                             
                                 $no++;
@@ -627,140 +645,26 @@ class Report_trial_balances extends CI_Controller
         echo $html;
     }
 
-    public function printOld($option = "")
+    // get link detail transaksi GL
+    function createLink($value, $filter_from, $filter_to, $filter_account, $is_header) 
     {
-        if ($option == "excel") {
-            $format  = date("Ymd");
-            header("Content-type: application/vnd-ms-excel");
-            header("Content-Disposition: attachment; filename=trial_balances_$format.xls");
-        }
-
-        $filter_from = base64_decode($this->input->get("filter_from"));
-        $filter_to = base64_decode($this->input->get("filter_to"));
-        $filter_before = date("Y-01-01", strtotime($filter_from));
-        $filter_before_to = date("Y-m-t", strtotime("-1 month", strtotime($filter_from)));
-        $period = date("Ym", strtotime($filter_from));
-        $period_to = date("Ym", strtotime($filter_to));
-
-        //Config
-        $this->db->select('*');
-        $this->db->from('config');
-        $config = $this->db->get()->row();
-
-        $this->db->select('account_number, account_name, header,
-            SUM(begin_debit) as begin_debit, 
-            SUM(begin_credit) as begin_credit, 
-            SUM(local_debit) as local_debit, 
-            SUM(local_credit) as local_credit,
-            SUM(ending_debit) as ending_debit,
-            SUM(ending_credit) as ending_credit');
-        $this->db->from('trial_balances');
-        $this->db->where('period >=', $period);
-        $this->db->where('period <=', $period_to);
-        $this->db->order_by('id', 'asc');
-        $this->db->group_by('account_number', 'asc');
-        $trial_balances = $this->db->get()->result_array();
-
-        $html = '<html><head><title>Print Data</title></head><style>body {font-family: Arial, Helvetica, sans-serif;}#customers {border-collapse: collapse;width: 100%;font-size: 12px;}#customers td, #customers th {border: 1px solid #ddd;padding: 2px;}#customers tr:nth-child(even){background-color: #f2f2f2;}#customers tr:hover {background-color: #ddd;}#customers th {padding-top: 2px;padding-bottom: 2px;text-align: center;color: black;}</style><body>
-            <center>
-                <div style="float: left; font-size: 12px; text-align: left;">
-                    <table style="width: 100%;">
-                        <tr>
-                            <td width="50" style="font-size: 12px; vertical-align: top; text-align: center; vertical-align:jus margin-right:10px;">
-                                <img src="' . $config->favicon . '" width="30">
-                            </td>
-                            <td style="font-size: 14px; text-align: left; margin:2px;">
-                                <b style="font-size:14px;">' . $config->name . '</b><br>
-                                <span style="font-size:10px;">' . $config->description . '</span><br>
-                            </td>
-                        </tr>
-                    </table>
-                </div>
-                <div style="float: right; font-size: 12px; text-align: right;">
-                    Print Date ' . date("d M Y H:i:s") . ' <br>
-                    Print By ' . $this->session->username . '  
-                </div>
-            </center>
-            <br><br><br><br>
-            <center>
-                <h3 style="margin:0;">TRIAL BALANCE</h3>
-                <small>PERIOD : <b>' . $filter_from . '</b> To <b>' . $filter_to . '</b></small>
-            </center>
-            <br><br>
+        if ($is_header !== "0") {
+            $from_encoded    = base64_encode($filter_from);
+            $to_encoded      = base64_encode($filter_to);
+            $account_encoded = base64_encode($filter_account);
+            $base_url        = base_url('finance/report_general_ledgers/print');
+            $url             = $base_url . '?filter_from=' . $from_encoded . '&filter_to=' . $to_encoded . '&filter_account=' . $account_encoded;
             
-            <table id="customers" border="1">
-            <tr>
-                <th rowspan="3" width="20">No</th>
-                <th rowspan="3">Account No</th>
-                <th rowspan="3">Account Name</th>
-                <th colspan="6">LOCAL CURRENCY</th>
-            </tr>
-            <tr>
-                <th colspan="2">Begin Balance</th>
-                <th colspan="2">Transaction</th>
-                <th colspan="2">End Balance</th>
-            </tr>
-            <tr>
-                <th>Debit</th>
-                <th>Credit</th>
-                <th>Debit</th>
-                <th>Credit</th>
-                <th>Debit</th>
-                <th>Credit</th>
-            </tr>';
-
-        $no = 1;
-        $grand_total_begin_debit = 0;
-        $grand_total_begin_credit = 0;
-        $grand_total_local_debit = 0;
-        $grand_total_local_credit = 0;
-        $grand_total_ending_debit = 0;
-        $grand_total_ending_credit = 0;
-        foreach ($trial_balances as $trial_balance) {
-            if($trial_balance['header'] == 0){
-                $style = 'style="background:#CAFFB3;"';
-                $font = 'font-weight:bold;';
-            }else{
-                $style = '';
-                $font = '';
+            if ($value > 0) {
+                return '<a href="javascript:void(0)" onclick="window.open(\'' . $url . '\', \'_blank\', \'location=yes,height=650,width=1500,scrollbars=yes,status=yes\');" class="link-transaction">' . $this->formatIDR($value, 2) . '</a>';
             }
-
-            $html .= '  <tr '.$style.'>
-                            <td style="'.$font.'">' . $no . '</td>
-                            <td style="'.$font.'">' . $trial_balance['account_number'] . '</td>
-                            <td style="'.$font.'">' . $trial_balance['account_name'] . '</td>
-                            <td style="text-align:right;'.$font.'">' . number_format($trial_balance['begin_debit'], 2, ',', '.') . '</td>
-                            <td style="text-align:right;'.$font.'">' . number_format($trial_balance['begin_credit'], 2, ',', '.') . '</td>
-                            <td style="text-align:right;'.$font.'">' . number_format($trial_balance['local_debit'], 2, ',', '.') . '</td>
-                            <td style="text-align:right;'.$font.'">' . number_format($trial_balance['local_credit'], 2, ',', '.') . '</td>
-                            <td style="text-align:right;'.$font.'">' . number_format($trial_balance['ending_debit'], 2, ',', '.') . '</td>
-                            <td style="text-align:right;'.$font.'">' . number_format($trial_balance['ending_credit'], 2, ',', '.') . '</td>
-                        </tr>';
-
-            if($trial_balance['header'] == 0){
-                $grand_total_begin_debit += $trial_balance['begin_debit'];
-                $grand_total_begin_credit += $trial_balance['begin_credit'];
-                $grand_total_local_debit += $trial_balance['local_debit'];
-                $grand_total_local_credit += $trial_balance['local_credit'];
-                $grand_total_ending_debit += $trial_balance['ending_debit'];
-                $grand_total_ending_credit += $trial_balance['ending_credit'];
-            }
-            $no++;
+            
         }
+        return $this->formatIDR($value, 2);
+    }
 
-        $html .= '  <tr style="background:#EBEBEB;">
-                        <td colspan="3"><b>GRAND TOTAL</b></td>
-                        <td style="text-align:right;"><b>' . number_format(@$grand_total_begin_debit, 2, ',', '.') . '</b></td>
-                        <td style="text-align:right;"><b>' . number_format(@$grand_total_begin_credit, 2, ',', '.') . '</b></td>
-                        <td style="text-align:right;"><b>' . number_format(@$grand_total_local_debit, 2, ',', '.') . '</b></td>
-                        <td style="text-align:right;"><b>' . number_format(@$grand_total_local_credit, 2, ',', '.') . '</b></td>
-                        <td style="text-align:right;"><b>' . number_format($grand_total_ending_debit, 2, ',', '.') . '</b></td>
-                        <td style="text-align:right;"><b>' . number_format($grand_total_ending_credit, 2, ',', '.') . '</b></td>
-                    </tr>';
-
-
-        
-        $html .= '</table></body></html>';
-        echo $html;
+    function formatIDR($number, $decimal_places = 2) {
+        $formatted_number = number_format($number, $decimal_places, ',', '.');
+        return $formatted_number;
     }
 }

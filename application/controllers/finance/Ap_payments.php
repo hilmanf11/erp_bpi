@@ -1861,12 +1861,16 @@ class Ap_payments extends CI_Controller
     // get link detail transaksi GL
     function createLink($value, $idLink) 
     {
-        $base_url   = base_url('finance/purchase_invoices/print_invoicing_gl/');
-        $id_encoded = base64_encode($idLink);
-        $url        = $base_url . $id_encoded;
-
-        if ($value > 0) {
-            return '<a href="javascript:void(0)" onclick="window.open(\'' . $url . '\', \'_blank\', \'location=yes,height=600,width=1200,scrollbars=yes,status=yes\');" class="link-transaction">' . $this->formatIDR($value, 2) . '</a>';
+        // validasi tidak input manual number PI
+        if (isset($idLink) && stripos($idLink, 'PI-') !== false)
+        {    
+            $base_url   = base_url('finance/purchase_invoices/print_invoicing_gl/');
+            $id_encoded = base64_encode($idLink);
+            $url        = $base_url . $id_encoded;
+            
+            if ($value > 0) {
+                return '<a href="javascript:void(0)" onclick="window.open(\'' . $url . '\', \'_blank\', \'location=yes,height=600,width=1200,scrollbars=yes,status=yes\');" class="link-transaction">' . $this->formatIDR($value, 2) . '</a>';
+            }
         }
         return $this->formatIDR($value, 2);
     }
