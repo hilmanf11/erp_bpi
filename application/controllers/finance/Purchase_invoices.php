@@ -915,334 +915,6 @@ class Purchase_invoices extends CI_Controller
         echo $send;
     }
 
-    public function print_invoicing($invoice)
-    {
-        $invoice_no = base64_decode($invoice);
-        $this->db->select('a.*, b.name as supplier_name');
-        $this->db->from('purchase_invoices a');
-        $this->db->join('suppliers b', 'a.supplier_id = b.id');
-        $this->db->like('a.number', $invoice_no);
-        $this->db->order_by('a.trans_date', 'DESC');
-        //$this->db->group_by('a.number');
-        $total_invoice = $this->db->get()->result_array();
-
-        $config = $this->db->get('config')->row();
-        $config_iso = $this->db->get('config_iso')->row();
-
-        //Config Page
-        $rows = 10;
-        $page = ceil(count($total_invoice) / $rows);
-        //Generate QRcode
-        $this->createQrcode(@$invoice_no, "assets/image/qrcode/");
-        $html = '<html>
-                    <head>
-                        <title>' . $invoice_no . '</title>
-                        <link rel="icon" href="' . $config->favicon . '" type="image/png" sizes="16x16">
-                    </head>
-                    <style>
-                        body {
-                            font-family: Arial, Helvetica, sans-serif;
-                        }
-                        #customers {
-                            border-collapse: collapse;width: 100%;
-                            font-size: 12px;
-                        }
-                        #customers td, #customers th {
-                            border: 1px solid black;padding: 2px;
-                        }
-                        #customers th {
-                            padding-top: 2px;
-                            padding-bottom: 2px;
-                            text-align: center;color: black;
-                        }
-                        @media screen {
-                            .print {
-                                display: none !important;
-                            }
-                        }
-            
-                        @media print {
-                            .noprint {
-                                display: none !important;
-                            }
-                        }
-                    </style>
-                    <body>
-                    <div style="margin:20%;" class="noprint">
-                        <center>
-                            <h1>Press CTRL + P for Print</h1>
-                            <p>Display pages for 8 rows</p>
-                            <p>Paper Size A5, Layout Landscape</p>
-                            <p>Margin Default, Scale 80</p>
-                        </center>
-                    </div>
-                    <div class="print">';
-        $no = 1;
-        $hal = 1;
-        $subtotal = 0;
-        $grand_total_all = 0;
-        for ($i = 0; $i < $page; $i++) {
-            $this->db->select('a.*, b.name as supplier_name, a.item_no as item_number, a.item_name, a.remarks');
-            $this->db->from('purchase_invoices a');
-            $this->db->join('suppliers b', 'a.supplier_id = b.id');
-            $this->db->like('a.number', $invoice_no);
-            $this->db->order_by('a.trans_date', 'DESC');
-            $this->db->limit(10, ($i * 10));
-            $records = $this->db->get()->result_array();
-
-            $html .= '<table style="width:100%;">
-                            <tr>
-                                <th width="10"><img src="' . $config->favicon . '" width="60" /></th>
-                                <td width="450" style="padding:10px;">
-                                    <b style="font-size:14px;">' . $config->name . '</b><br>
-                                    <span style="font-size:10px;">' . $config->address . '</span><br>
-                                </td>
-                                <td width="100" style="text-align:right;">
-                                    <table style="width:100%; font-size:10px;">
-                                        <tr>
-                                            <td width="50" rowspan="4"><img src="' . base_url('assets/image/qrcode/' . $invoice_no . '.png') . '" width="60"/></td>
-                                            <td width="60">Doc No</td>
-                                            <td width="5">:</td>
-                                            <td width="100">' . $config_iso->doc_purchase_invoice . '</td>
-                                        </tr>
-                                        <tr>
-                                            <td>Form</td>
-                                            <td>:</td>
-                                            <td>' . $config_iso->form_purchase_invoice . '</td>
-                                        </tr>
-                                        <tr>
-                                            <td>Print Date</td>
-                                            <td>:</td>
-                                            <td>' . date("Y-m-d H:i") . '</td>
-                                        </tr>
-                                        <tr>
-                                            <td>Print By</td>
-                                            <td>:</td>
-                                            <td>' . $this->session->name . '</td>
-                                        </tr>
-                                    </table>
-                                </td>
-                            </tr>
-                        </table>
-                        <div style="border: 1px solid black; width:100%;">
-                            <div style="padding:10px;">
-                                <center>
-                                    <h3><u style="padding:5px;">PURCHASE INVOICING</u></h3>
-                                </center>
-                                <div style="float:left; width:50%;"> 
-                                    <table style="width:100%; font-size:12px; margin-bottom:10px;">
-                                        <tr>
-                                            <td width="150">Supplier Name</td>
-                                            <td width="30">:</td>
-                                            <td><b>' . @$records[0]['supplier_name'] . '</b></td>
-                                        </tr>
-                                        <tr>
-                                            <td width="50">Supplier Invoice No</td>
-                                            <td width="10">:</td>
-                                            <td><b>' . @$records[0]['invoice_no'] . '</b></td>
-                                        </tr>
-                                        <tr>
-                                            <td width="50">Purchase Invoice No</td>
-                                            <td width="10">:</td>
-                                            <td><b>' . @$invoice_no . '</b></td>
-                                        </tr>
-                                    </table>
-                                </div>
-                                <div style="float:left; width:50%;"> 
-                                    <table style="width:100%; font-size:12px; margin-bottom:10px;">
-                                        <tr>
-                                            <td width="100">Date</td>
-                                            <td width="30">:</td>
-                                            <td><b>' . @date("d F Y", strtotime(@$records[0]['trans_date'])) . '</b></td>
-                                        </tr>
-                                        <tr>
-                                            <td width="100">Payment Term</td>
-                                            <td width="30">:</td>
-                                            <td><b>' . @$records[0]['payment_term'] . '</b></td>
-                                        </tr>
-                                        <tr>
-                                            <td width="100">Payment Due</td>
-                                            <td width="30">:</td>
-                                            <td><b>' . @date("d F Y", strtotime(@$records[0]['due_date'])) . '</b></td>
-                                        </tr>
-                                        <tr>
-                                            <td width="100">Remarks</td>
-                                            <td width="30">:</td>
-                                            <td><b>' . @$records[0]['remarks'] . '</b></td>
-                                        </tr>
-                                    </table>
-                                </div>
-                                <div style="width:100%; text-align: right; font-size:12px;">Page '.$hal.'/'.$page.'</div>
-                                <table id="customers">
-                                    <tr>
-                                        <th rowspan="2">No</th>
-                                        <th rowspan="2">POR No</th>
-                                        <th rowspan="2">PO No</th>
-                                        <th rowspan="2">Product No</th>
-                                        <th rowspan="2">Product Name</th>
-                                        <th rowspan="2">Uom</th>
-                                        <th rowspan="2">Qty</th>
-                                        <th colspan="3">Original Currency</th>
-                                        <th colspan="2">Local Currency</th>
-                                    </tr>
-                                    <tr>
-                                        <th>Currency</th>
-                                        <th>Unit Price</th>
-                                        <th>Amount</th>
-                                        <th>Currency</th>
-                                        <th>Amount</th>
-                                    </tr>';
-            $grand_total = 0;
-            $grand_total_local = 0;
-            foreach ($records as $record) {
-                $currency = $record['currency'];
-
-                $monthBf = date('Y-m-01', strtotime('-1 month', strtotime($record['trans_date'])));
-                $exchange = $this->crud->read('exchange_rates', [], ["start_date" => $monthBf, "currency_from" => $currency, "currency_to" => "IDR"]);
-
-                if ($currency != "IDR") {
-                    if ($exchange) {
-                        $price = $exchange->middle;
-                    } else {
-                        $price = 0;
-                    }
-                } else {
-                    $price = 1;
-                }
-                
-                $amount = ($record['total'] * $price);
-                if($record['account_type'] == "DEBIT"){
-                    $grand_total += $record['total'];
-                    $grand_total_all += $record['total'];
-                    $grand_total_local += $amount;
-                }else{
-                    $grand_total -= $record['total'];
-                    $grand_total_all -= $record['total'];
-                    $grand_total_local -= $amount;
-                }
-
-                $html .= '  <tr>
-                                <td style="text-align:center">' . $no . '</td>
-                                <td>' . $record['por_no'] . '</td>
-                                <td>' . $record['po_no'] . '</td>
-                                <td>' . $record['item_number'] . '</td>
-                                <td>' . $record['item_name'] . '</td>
-                                <td>' . $record['uom'] . '</td>
-                                <td style="text-align:right;">' . @number_format(($record['qty']), 2) . '</td>
-                                <td>' . $record['currency'] . '</td>
-                                <td style="text-align:right;">' . @number_format($record['price'], 2) . '</td>
-                                <td style="text-align:right;">' . @number_format($record['total'], 2) . '</td>
-                                <td>IDR</td>
-                                <td style="text-align:right;">' . @number_format($amount, 2) . '</td>
-                            </tr>';
-                $no++;
-            }
-
-            $html .= '  <tr>
-                            <th colspan="9" style="text-align:right">TOTAL</th>
-                            <th style="text-align:right">'.number_format($grand_total, 2).'</th>
-                            <th></th>
-                            <th style="text-align:right">'.number_format($grand_total_local, 2).'</th>
-                        </tr>
-                    </table>
-                </div>
-            </div>';
-
-            if (($i + 1) != $page) {
-                $html .= '<div style="page-break-after:always;"></div>';
-            }
-            
-            $hal++;
-        }
-
-        $journals = $this->crud->query("SELECT a.*, b.account_name 
-            FROM purchase_invoice_journals a 
-            JOIN account_coa b ON a.account_number = b.account_number
-            WHERE a.number = '$invoice_no' ORDER BY a.flag ASC");
-
-        $html .= '<br><br>
-                <div style="width:100%;">
-                    <div style="width:50%; float:left;">
-                        <table id="customers" style="width:100%; font-size:12px;">
-                            <tr>
-                                <td style="font-weight:bold;">Account No</td>
-                                <td style="font-weight:bold;">Account Name</td>
-                                <td style="font-weight:bold;">Debit</td>
-                                <td style="font-weight:bold;">Credit</td>
-                            </tr>';
-            $total_debit = 0;
-            $total_credit = 0;
-            foreach ($journals as $journal) {
-                $total_debit += $journal->debit;
-                $total_credit += $journal->credit;
-
-                $html .= '  <tr>
-                                <td>' . $journal->account_number . '</td>
-                                <td>' . $journal->account_name . '</td>
-                                <td style="text-align:right;">' . number_format($journal->debit, 2) . '</td>
-                                <td style="text-align:right;">' . number_format($journal->credit, 2) . '</td>
-                            </tr>';
-            }
-
-            $html .= '      <tr>
-                                <td colspan="2">Balance</td>
-                                <td style="text-align:right;">' . @number_format($total_debit, 2) . '</td>
-                                <td style="text-align:right;">' . @number_format($total_credit, 2) . '</td>
-                            </tr>
-                        </table>
-                    </div>
-                    <div style="width:30%; float:left;">
-                        &nbsp;
-                    </div>
-                    <div style="width:20%; float:left;">
-                        <table id="customers" style="width:100%; font-size:12px;">
-                            <tr>
-                                <td style="font-weight:bold;">Sub Total</td>
-                                <td style="font-weight:bold; text-align:right;">' . @number_format($grand_total_all, 2) . '</td>
-                            </tr>
-                             <tr>
-                                <td style="font-weight:bold;">DPP</td>
-                                <td style="font-weight:bold; text-align:right;">' . @number_format(@$records[0]['total_dpp'], 2) . '</td>
-                            </tr>
-                            <tr>
-                                <td style="font-weight:bold;">VAT</td>
-                                <td style="font-weight:bold; text-align:right;">' . @number_format(@$records[0]['total_vat'], 2) . '</td>
-                            </tr>
-                            <tr>
-                                <td style="font-weight:bold;">PPH</td>
-                                <td style="font-weight:bold; text-align:right;">' . @number_format(@$records[0]['total_pph'], 2) . '</td>
-                            </tr>
-                            <tr>
-                                <td style="font-weight:bold;">Grand Total</td>
-                                <td style="font-weight:bold; text-align:right;">' . @number_format(((@$grand_total_all + $records[0]['total_vat']) - $records[0]['total_pph']), 2) . '</td>
-                            </tr>
-                        </table>
-                    </div>
-                </div>
-                <table style="width:100%; margin-top: 150px; font-size:12px;">
-                    <tr>
-                        <td style="text-align:center; font-weight:bold;">Prepared By</td>
-                        <td style="text-align:center; font-weight:bold;">Checked By</td>
-                        <td style="text-align:center; font-weight:bold;">Approved By</td>
-                        <td style="text-align:center; font-weight:bold;">Approved By</td>
-                    </tr>
-                    <tr>
-                        <td style="height:60px;"></td>
-                        <td style="height:60px;"></td>
-                        <td style="height:60px;"></td>
-                        <td style="height:60px;"></td>
-                    </tr>
-                    <tr>
-                        <th style="height:20px; text-align:center;"><br><hr style="width:60%;margin-left:20%;">' . $this->session->name . '</th>
-                        <th style="height:20px; text-align:center;"><br><hr style="width:60%;margin-left:20%;">Purchasing</th>
-                        <th style="height:20px; text-align:center;"><br><hr style="width:60%;margin-left:20%;">Accounting Manager</th>
-                        <th style="height:20px; text-align:center;"><br><hr style="width:60%;margin-left:20%;">Director</th>
-                    </tr>
-                </table>';
-        $html .= "</div></div><script>window.print()</script></body>";
-        die($html);
-    }
-
     public function print($option = "")
     {
         if ($option == "excel") {
@@ -1817,8 +1489,7 @@ class Purchase_invoices extends CI_Controller
         ob_end_flush();
     }
 
-    // Show GL and Hyperlink each transaction (Report_general_ledgers)
-    public function print_invoicing_gl($invoice)
+    public function print_invoicing($invoice, $is_hyperlink = null) // is_hyperlink for Show GL and link each transaction (Report_general_ledgers)
     {
         $invoice_no = base64_decode($invoice);
         $this->db->select('a.*, b.name as supplier_name');
@@ -1871,6 +1542,20 @@ class Purchase_invoices extends CI_Controller
                         }
                     </style>
                     <body>';
+            
+        // Use Default HTML if not show GL and Hyperlink each transaction (Report_general_ledgers)
+        if (empty($is_hyperlink) && $is_hyperlink !== 'GL') {
+            $html .= '<div style="margin:20%;" class="noprint">
+                        <center>
+                            <h1>Press CTRL + P for Print</h1>
+                            <p>Display pages for 8 rows</p>
+                            <p>Paper Size A5, Layout Landscape</p>
+                            <p>Margin Default, Scale 80</p>
+                        </center>
+                    </div>
+                <div class="print">';
+        }
+        
         $no = 1;
         $hal = 1;
         $subtotal = 0;
@@ -2133,7 +1818,14 @@ class Purchase_invoices extends CI_Controller
                         <th style="height:20px; text-align:center;"><br><hr style="width:60%;margin-left:20%;">Director</th>
                     </tr>
                 </table>';
-        $html .= "</div> </body>";
+
+        if (empty($is_hyperlink) && $is_hyperlink !== 'GL') {
+            $html .= "</div></div><script>window.print()</script></body>";
+            
+        } else {
+            $html .= "</div> </body>";
+        }
+
         die($html);
     }
 }

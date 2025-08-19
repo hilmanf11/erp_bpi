@@ -1311,6 +1311,11 @@ class Ar_receipts extends CI_Controller
         $this->db->group_by('a.receipt_no');
         $receipt_total = $this->db->get()->result_array();
 
+        if (!$receipt_total) {
+            echo "<h3 style='font-family:monospace;'> AR Receipt ". $receipt_no. " is unavailable! </h3>";
+            return;
+        }
+
         $config = $this->db->get('config')->row();
         $config_iso = $this->db->get('config_iso')->row();
 
@@ -1623,9 +1628,9 @@ class Ar_receipts extends CI_Controller
         // validasi tidak input manual number SI
         if (isset($idLink) && stripos($idLink, 'SI-') !== false)
         { 
-            $base_url   = base_url('finance/sales_invoices/print_invoicing_gl/');
+            $base_url   = base_url('finance/sales_invoices/print_dn/');
             $id_encoded = base64_encode($idLink);
-            $url        = $base_url . $id_encoded;
+            $url        = $base_url . $id_encoded . "/GL";
             
             if ($value > 0) {
                 return '<a href="javascript:void(0)" onclick="window.open(\'' . $url . '\', \'_blank\', \'location=yes,height=600,width=1200,scrollbars=yes,status=yes\');" class="link-transaction">' . $this->formatIDR($value, 2) . '</a>';

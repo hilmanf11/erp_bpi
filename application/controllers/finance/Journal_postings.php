@@ -2579,14 +2579,34 @@ class Journal_postings extends CI_Controller
     // get link detail transaksi GL
     function createLink($value, $idLink, $modul) 
     {
-        if ($modul == "AP PAYMENT") {
-            $base_url   = base_url('finance/ap_payments/print_voucher_gl/');
-        } else {
-            $base_url   = base_url('finance/ar_receipts/print_voucher_gl/');
-        }
-
         $id_encoded = base64_encode($idLink);
-        $url        = $base_url . $id_encoded;
+        
+        if ($modul == "AP PAYMENT") 
+        {
+            // jika terdapat case GL ke PI
+            if (isset($idLink) && stripos($idLink, 'PI-') !== false)
+            {
+                $base_url   = base_url('finance/purchase_invoices/print_invoicing/');
+                $url        = $base_url . $id_encoded . "/GL";
+                
+            } else {
+                $base_url   = base_url('finance/ap_payments/print_voucher_gl/');
+                $url        = $base_url . $id_encoded;
+            }
+            
+        } else {
+            
+            // jika terdapat case GL ke SI
+            if (isset($idLink) && stripos($idLink, 'SI-') !== false)
+            { 
+                $base_url   = base_url('finance/sales_invoices/print_dn/');
+                $url        = $base_url . $id_encoded . "/GL";
+                
+            } else {
+                $base_url   = base_url('finance/ar_receipts/print_voucher_gl/');
+                $url        = $base_url . $id_encoded;
+            }
+        }
 
         if ($value > 0) {
             return '<a href="javascript:void(0)" onclick="window.open(\'' . $url . '\', \'_blank\', \'location=yes,height=600,width=1200,scrollbars=yes,status=yes\');" class="link-transaction">' . $this->formatIDR($value, 2) . '</a>';
@@ -2595,7 +2615,7 @@ class Journal_postings extends CI_Controller
     }
     
     function formatIDR($number, $decimal_places = 2) {
-        $formatted_number = number_format($number, $decimal_places, ',', '');
+        $formatted_number = @number_format($number, $decimal_places, ',', '');
         return $formatted_number;
     }
 }
