@@ -528,6 +528,7 @@ class Purchase_orders extends CI_Controller
                     "delivery_date" => $post['delivery_date'],
                     "qty" => $post['qty'],
                     "discount" => $post['discount'],
+                    "discount_nominal" => $post['discount_nominal'],
                     "price" => $post['price'],
                     "currency" => $post['currency'],
                     "total" => $post['total'],
@@ -570,12 +571,15 @@ class Purchase_orders extends CI_Controller
             $month_2 = @$purchaseOrder->month_2;
             $month_3 = @$purchaseOrder->month_3;
             $month_4 = @$purchaseOrder->month_4;
+            $discount = @$purchaseOrder->discount;
+            $discount_nominal = @$purchaseOrder->discount_nominal;
 
-            if($qty == $post['qty'] && $supplier_id == $post['supplier_id'] && $price == $post['price'] && $month_1 == $post['month_1'] && $month_2 == $post['month_2'] && $month_3 == $post['month_3'] && $month_4 == $post['month_4']){
+            if($qty == $post['qty'] && $supplier_id == $post['supplier_id'] && $price == $post['price'] && $month_1 == $post['month_1'] && $month_2 == $post['month_2'] && $month_3 == $post['month_3'] && $month_4 == $post['month_4'] && $discount == $post['discount'] && $discount_nominal == $post['discount_nominal']){
                 //Dokumentasi : update tidak meminta Approval
                         $purchase_orders = $this->db->update('purchase_orders',["supplier_id" => $post['supplier_id'],
                         "qty" => $post['qty'],
                         "discount" => $post['discount'],
+                        "discount_nominal" => $post['discount_nominal'],
                         "po_date" => $post['po_date'],
                         "price" => $post['price'],
                         "total" => $post['total'],

@@ -132,7 +132,7 @@
                     <div class="fitem">
                         <b style="width:35%; display:inline-block;">DISC %</b>
                         <input style="width:10%;" id="disc_pr" name="disc_pr" value="0" class="easyui-numberbox" data-options="precision:2">
-                        <input style="width:50%; text-align:right;" id="discount_total" name="discount_total" readonly class="easyui-numberbox" readonly value="0" data-options="precision:2,groupSeparator:','">
+                        <input style="width:50%; text-align:right;" id="discount_total" name="discount_total" class="easyui-numberbox" value="0" data-options="precision:2,groupSeparator:','">
                     </div>
                     <div class="fitem">
                         <b style="width:35%; display:inline-block;">DPP</b>
@@ -257,7 +257,7 @@
     function update() {
         var row = $('#dg').treegrid('getSelected');
         if (row) {
-            console.log(row);
+            console.log("Update :",row);
             if (row.datatable == "1") {
                 if (row.status_pi == "0" || row.status_pi == null ) {
                     $('#dlg_insert').dialog('open');
@@ -280,6 +280,7 @@
 
                     setTimeout(function() { 
                         $('#income_total').numberbox('setValue', row.income_total);
+                        $('#discount_total').numberbox('setValue', row.discount_total);
                     }, 1000);
 
                     preview('<?= base_url('purchase/purchase_orders/datatable_updates') ?>?po_no=' + btoa(row.po_no));
@@ -441,8 +442,22 @@
                                 title: "Disc %",
                                 editor: {
                                     type: 'numberbox',
+                                    options: {
+                                        precision: 2
+                                    }
                                 }
-                            }, {//10
+                             }, {//10
+                                field: 'discount_nominal',
+                                width: 80,
+                                halign: 'center',
+                                title: "Discount",
+                                editor: {
+                                    type: 'numberbox',
+                                    options: {
+                                        precision: 2
+                                    }
+                                }
+                            }, {//11
                                 field: 'price',
                                 width: 100,
                                 halign: 'center',
@@ -455,7 +470,7 @@
                                         readonly: true,
                                     }
                                 }
-                            }, {//11
+                            }, {//12
                                 field: 'total',
                                 width: 100,
                                 halign: 'center',
@@ -469,7 +484,7 @@
                                         precision: 2
                                     }
                                 }
-                            }, {//12
+                            }, {//13
                                 field: 'delivery_date',
                                 width: 120,
                                 halign: 'center',
@@ -483,7 +498,7 @@
                                         // required: true
                                     }
                                 }
-                            }, {//13
+                            }, {//14
                                 field: 'remarks',
                                 width: 200,
                                 halign: 'center',
@@ -491,7 +506,7 @@
                                 editor: {
                                     type: 'textbox'
                                 }
-                            }, {//14
+                            }, {//15
                                 field: 'month_1',
                                 width: 80,
                                 align: 'center',
@@ -502,7 +517,7 @@
                                         required: true,
                                     }
                                 }
-                            }, {//15
+                            }, {//16
                                 field: 'month_2',
                                 width: 80,
                                 align: 'center',
@@ -510,7 +525,7 @@
                                 editor: {
                                     type: 'numberbox',
                                 }
-                            }, {//16
+                            }, {//17
                                 field: 'month_3',
                                 width: 80,
                                 align: 'center',
@@ -518,7 +533,7 @@
                                 editor: {
                                     type: 'numberbox',
                                 }
-                            }, {//17
+                            }, {//18
                                 field: 'month_4',
                                 width: 80,
                                 align: 'center',
@@ -526,7 +541,7 @@
                                 editor: {
                                     type: 'numberbox',
                                 }
-                            },{//18
+                            },{//19
                                 field: 'item_rm_id',
                                 width: 150,
                                 hidden: true,
@@ -535,7 +550,7 @@
                                 editor: {
                                     type: 'textbox',
                                 }
-                            },{//19
+                            },{//20
                                 field: 'taxes',
                                 width: 150,
                                 hidden: true,
@@ -544,7 +559,7 @@
                                 editor: {
                                     type: 'textbox',
                                 }
-                            },{//20
+                            },{//21
                                 field: 'type',
                                 width: 150,
                                 // hidden: true,
@@ -569,29 +584,64 @@
                         },
                         onBeginEdit: function(rowIndex, row) {
                             var editors = $('#dg_request').datagrid('getEditors', rowIndex);
-                            var item_rm_id = $(editors[18].target).textbox('getValue');
+                            var item_rm_id = $(editors[19].target).textbox('getValue');
                             var supplier_id = $(editors[3].target);
                             var po_date = $("#po_date").datebox('getValue');
                             var total_sub = $("#total_sub").numberbox('getValue');
-                            var delivery_date = $(editors[12].target);
+                            var delivery_date = $(editors[13].target);
 
                             $(editors[7].target).numberbox({
                                 onChange: function() {
                                     var qty = $(editors[7].target).numberbox('getValue');
-                                    var discount = $(editors[9].target).numberbox('getValue');
-                                    var price = $(editors[10].target).numberbox('getValue');
-                                    var total = ((qty * price)-((qty * price)*(discount/100)));
-                                    editors[11].target.numberbox('setValue', total);
+                                    var discount_nominal = $(editors[10].target).numberbox('getValue');
+                                    var price = $(editors[11].target).numberbox('getValue');
+                                    var total = ((qty * price)-(discount_nominal));
+                                    editors[12].target.numberbox('setValue', total);
                                 }
                             });
 
+                            let isUpdatingFromPercent = false;
+                            let isUpdatingFromNominal = false;
+
                             $(editors[9].target).numberbox({
-                                onChange: function() {
-                                    var qty = $(editors[7].target).numberbox('getValue');
-                                    var discount = $(editors[9].target).numberbox('getValue');
-                                    var price = $(editors[10].target).numberbox('getValue');
-                                    var total = ((qty * price)-((qty * price)*(discount/100)));
-                                    editors[11].target.numberbox('setValue', total);
+                                onChange: function () {
+                                    if (isUpdatingFromNominal) return; // Hindari loop silang
+
+                                    isUpdatingFromPercent = true;
+
+                                    var qty = parseFloat($(editors[7].target).numberbox('getValue')) || 0;
+                                    var discount = parseFloat($(editors[9].target).numberbox('getValue')) || 0;
+                                    var price = parseFloat($(editors[11].target).numberbox('getValue')) || 0;
+
+                                    var sub_total = qty * price;
+                                    var discount_nominal = (discount / 100) * sub_total;
+                                    var total = sub_total - discount_nominal;
+
+                                    $(editors[10].target).numberbox('setValue', discount_nominal.toFixed(2));
+                                    $(editors[12].target).numberbox('setValue', total.toFixed(2));
+
+                                    isUpdatingFromPercent = false;
+                                }
+                            });
+
+                            $(editors[10].target).numberbox({
+                                onChange: function () {
+                                    if (isUpdatingFromPercent) return; // Hindari loop silang
+
+                                    isUpdatingFromNominal = true;
+
+                                    var qty = parseFloat($(editors[7].target).numberbox('getValue')) || 0;
+                                    var discount_nominal = parseFloat($(editors[10].target).numberbox('getValue')) || 0;
+                                    var price = parseFloat($(editors[11].target).numberbox('getValue')) || 0;
+
+                                    var sub_total = qty * price;
+                                    var disc_pr = sub_total > 0 ? (discount_nominal / sub_total) * 100 : 0;
+                                    var total = sub_total - discount_nominal;
+
+                                    $(editors[9].target).numberbox('setValue', disc_pr.toFixed(2));
+                                    $(editors[12].target).numberbox('setValue', total.toFixed(2));
+
+                                    isUpdatingFromNominal = false;
                                 }
                             });
 
@@ -657,16 +707,17 @@
                                 $(editors[6].target).textbox('setValue', supplier.moq);
                                 $(editors[8].target).textbox('setValue', supplier.currency);
                                 $(editors[9].target).textbox('setValue', 0);
-                                $(editors[10].target).textbox('setValue', supplier.price);
-                                $(editors[19].target).textbox('setValue', supplier.vat); // Tambahkan ini agar VAT juga diset
-                                $(editors[20].target).textbox('setValue', supplier.type); // Supplier Type
+                                $(editors[10].target).textbox('setValue', 0);
+                                $(editors[11].target).textbox('setValue', supplier.price);
+                                $(editors[20].target).textbox('setValue', supplier.vat); // Tambahkan ini agar VAT juga diset
+                                $(editors[21].target).textbox('setValue', supplier.type); // Supplier Type
                                 // Menghitung total harga setelah diskon
                                 var qty = parseFloat($(editors[7].target).textbox('getValue')) || 0;
-                                var price = parseFloat($(editors[10].target).textbox('getValue')) || 0;
+                                var price = parseFloat($(editors[11].target).textbox('getValue')) || 0;
                                 var discount = parseFloat($(editors[9].target).textbox('getValue')) || 0;
                                 var totalDiscountedPrice = (qty * price) - ((qty * price) * (discount / 100));
 
-                                $(editors[11].target).numberbox('setValue', totalDiscountedPrice);
+                                $(editors[12].target).numberbox('setValue', totalDiscountedPrice);
                             }
 
                             delivery_date.add(delivery_date).datebox({
@@ -701,35 +752,53 @@
                                 }
 
                                 $("#total_sub").numberbox('setValue', total_subs);
-                                calculateTotal(total_subs, 0, 0, 0, tax, type); 
-                                
+                                calculateTotal(total_subs, 0, 0, 0, 0, tax, type);
+
                                 $("#disc_pr").numberbox({
-                                    onChange: function() {
-                                        var disc_pr = $("#disc_pr").numberbox('getValue');
-                                        var income_tax = $("#income_tax").numberbox('getValue');
-                                        var total_dp = $("#total_dp").numberbox('getValue');
-                                        
-                                        calculateTotal(total_subs, disc_pr, income_tax, total_dp, tax, type);
+                                    onChange: function () {
+                                        if (ignoreChange) return;
+                                        lastChanged = 'disc_pr';
+
+                                        const disc_pr = parseFloat($(this).numberbox('getValue')) || 0;
+                                        const income_tax = parseFloat($("#income_tax").numberbox('getValue')) || 0;
+                                        const total_dp = parseFloat($("#total_dp").numberbox('getValue')) || 0;
+
+                                        calculateTotal(total_subs, disc_pr, null, income_tax, total_dp, tax, type);
+                                    }
+                                });
+
+                                $("#discount_total").numberbox({
+                                    onChange: function () {
+                                        if (ignoreChange) return;
+                                        lastChanged = 'discount_total';
+
+                                        const discount_total = parseFloat($(this).numberbox('getValue')) || 0;
+                                        const income_tax = parseFloat($("#income_tax").numberbox('getValue')) || 0;
+                                        const total_dp = parseFloat($("#total_dp").numberbox('getValue')) || 0;
+
+                                        calculateTotal(total_subs, null, discount_total, income_tax, total_dp, tax, type);
                                     }
                                 });
 
                                 $("#income_tax").numberbox({
-                                    onChange: function() {
-                                        var disc_pr = $("#disc_pr").numberbox('getValue');
-                                        var income_tax = $("#income_tax").numberbox('getValue');
-                                        var total_dp = $("#total_dp").numberbox('getValue');
-                                        
-                                        calculateTotal(total_subs, disc_pr, income_tax, total_dp, tax, type);
+                                    onChange: function () {
+                                        var disc_pr = parseFloat($("#disc_pr").numberbox('getValue')) || 0;
+                                        var discount_total = parseFloat($("#discount_total").numberbox('getValue')) || 0;
+                                        var income_tax = parseFloat($("#income_tax").numberbox('getValue')) || 0;
+                                        var total_dp = parseFloat($("#total_dp").numberbox('getValue')) || 0;
+
+                                        calculateTotal(total_subs, disc_pr, discount_total, income_tax, total_dp, tax, type);
                                     }
                                 });
 
                                 $("#total_dp").numberbox({
-                                    onChange: function() {
-                                        var disc_pr = $("#disc_pr").numberbox('getValue');
-                                        var income_tax = $("#income_tax").numberbox('getValue');
-                                        var total_dp = $("#total_dp").numberbox('getValue');
-                                        
-                                        calculateTotal(total_subs, disc_pr, income_tax, total_dp, tax, type);
+                                    onChange: function () {
+                                        var disc_pr = parseFloat($("#disc_pr").numberbox('getValue')) || 0;
+                                        var discount_total = parseFloat($("#discount_total").numberbox('getValue')) || 0;
+                                        var income_tax = parseFloat($("#income_tax").numberbox('getValue')) || 0;
+                                        var total_dp = parseFloat($("#total_dp").numberbox('getValue')) || 0;
+
+                                        calculateTotal(total_subs, disc_pr, discount_total, income_tax, total_dp, tax, type);
                                     }
                                 });
                                 
@@ -743,29 +812,39 @@
         }
     }
 
-    function calculateTotal(total_subs, disc_pr = 0, income_tax = 0, total_dp = 0, tax = 0, type="") {
-        var discount_total = (total_subs * (disc_pr / 100));
-        $("#discount_total").numberbox('setValue', discount_total);
+    let lastChanged = null;
+    let ignoreChange = false;
 
-        // var total_vat = Math.floor((total_subs - discount_total) * (tax / 100));
-        // $("#total_vat").numberbox('setValue', total_vat);
+    function calculateTotal(total_subs, disc_pr = 0, discount_total = null, income_tax = 0, total_dp = 0, tax = 0, type = "") {
+        ignoreChange = true;
 
-        if(type == "LOCAL"){
-            var total_dpp = parseFloat((total_subs - discount_total) * 11/12);
-        }else{
-            var total_dpp = parseFloat((total_subs - discount_total) * 0);
+        if (lastChanged === 'disc_pr') {
+            // User isi persen → hitung nominal
+            discount_total = (total_subs * (disc_pr / 100));
+            $("#discount_total").numberbox('setValue', discount_total.toFixed(2));
+        } else if (lastChanged === 'discount_total') {
+            // User isi nominal → hitung persen
+            disc_pr = (discount_total / total_subs) * 100;
+            $("#disc_pr").numberbox('setValue', disc_pr.toFixed(2));
+        } else {
+            // Default: hitung berdasarkan disc_pr
+            discount_total = (total_subs * (disc_pr / 100));
+            $("#discount_total").numberbox('setValue', discount_total.toFixed(2));
         }
-        
-        $("#total_dpp").numberbox('setValue', total_dpp);
 
-        var total_vat = parseFloat((total_dpp) * (tax / 100));
-        $("#total_vat").numberbox('setValue', total_vat);
+        $("#total_dpp").numberbox('setValue', type === "LOCAL" ? ((total_subs - discount_total) * 11 / 12).toFixed(2) : 0);
+        const total_dpp = parseFloat($("#total_dpp").numberbox('getValue')) || 0;
 
-        var income_total = parseFloat((total_subs - discount_total) * (income_tax / 100));
-        $("#income_total").numberbox('setValue', income_total);
+        const total_vat = total_dpp * (tax / 100);
+        $("#total_vat").numberbox('setValue', total_vat.toFixed(2));
 
-        var total_grand = parseFloat((total_subs - discount_total) + total_vat - income_total - total_dp);
-        $("#total_grand").numberbox('setValue', total_grand);
+        const income_total = ((total_subs - discount_total) * (income_tax / 100));
+        $("#income_total").numberbox('setValue', income_total.toFixed(2));
+
+        const total_grand = ((total_subs - discount_total) + total_vat - income_total - total_dp);
+        $("#total_grand").numberbox('setValue', total_grand.toFixed(2));
+
+        ignoreChange = false;
     }
 
     function getRowIndex(target) {
@@ -1128,6 +1207,7 @@
                                             var supplier_id = row.supplier_id;
                                             var qty = row.qty;
                                             var discount = row.discount;
+                                            var discount_nominal = row.discount_nominal;
                                             var price = row.price;
                                             var currency = row.currency;
                                             var total = row.total;
@@ -1175,6 +1255,7 @@
                                                     '&po_date=' + po_date +
                                                     '&qty=' + qty +
                                                     '&discount=' + discount +
+                                                    '&discount_nominal=' + discount_nominal +
                                                     '&price=' + price +
                                                     '&currency=' + currency +
                                                     '&total=' + total +
@@ -1404,30 +1485,71 @@
         }
     };
 
-    function calculateManually() {
-        // Ambil semua baris dari datagrid
-        var rows = $('#dg_request').datagrid('getRows');
-        var total_subs = 0; // Inisialisasi total_subs
+    // function calculateManually() {
+    //     // Ambil semua baris dari datagrid
+    //     var rows = $('#dg_request').datagrid('getRows');
+    //     var total_subs = 0; // Inisialisasi total_subs
 
-        // Iterasi setiap baris untuk menghitung total_subs
-        for (var i = 0; i < rows.length; i++) {
-            if (rows[i].total) { // Pastikan nilai rows[i].total ada
+    //     // Iterasi setiap baris untuk menghitung total_subs
+    //     for (var i = 0; i < rows.length; i++) {
+    //         if (rows[i].total) { // Pastikan nilai rows[i].total ada
+    //             total_subs += parseFloat(rows[i].total);
+    //         }
+    //     }
+
+    //     // Ambil nilai dari numberbox lain
+    //     var disc_pr = parseFloat($("#disc_pr").numberbox('getValue')) || 0;
+    //     var income_tax = parseFloat($("#income_tax").numberbox('getValue')) || 0;
+    //     var total_dp = parseFloat($("#total_dp").numberbox('getValue')) || 0;
+    //     var tax = parseFloat(rows[0]?.taxes || 0); // Gunakan optional chaining untuk menghindari error jika rows kosong
+    //     var type = rows[0].type ; 
+
+    //     // Set nilai ke #total_sub
+    //     $("#total_sub").numberbox('setValue', total_subs);
+
+    //     // Panggil fungsi calculateTotal dengan parameter yang diperoleh
+    //     calculateTotal(total_subs, disc_pr, income_tax, total_dp, tax, type);
+    // }
+
+    function calculateManually() {
+        const rows = $('#dg_request').datagrid('getRows');
+        let total_subs = 0;
+
+        for (let i = 0; i < rows.length; i++) {
+            if (rows[i].total) {
                 total_subs += parseFloat(rows[i].total);
             }
         }
 
-        // Ambil nilai dari numberbox lain
-        var disc_pr = parseFloat($("#disc_pr").numberbox('getValue')) || 0;
-        var income_tax = parseFloat($("#income_tax").numberbox('getValue')) || 0;
-        var total_dp = parseFloat($("#total_dp").numberbox('getValue')) || 0;
-        var tax = parseFloat(rows[0]?.taxes || 0); // Gunakan optional chaining untuk menghindari error jika rows kosong
-        var type = rows[0].type ; 
+        const disc_pr_raw = $("#disc_pr").numberbox('getValue');
+        const discount_total_raw = $("#discount_total").numberbox('getValue');
 
-        // Set nilai ke #total_sub
+        const disc_pr = parseFloat(disc_pr_raw) || 0;
+        const discount_total = parseFloat(discount_total_raw) || 0;
+        const income_tax = parseFloat($("#income_tax").numberbox('getValue')) || 0;
+        const total_dp = parseFloat($("#total_dp").numberbox('getValue')) || 0;
+        const tax = parseFloat(rows[0]?.taxes || 0);
+        const type = rows[0]?.type || "";
+
         $("#total_sub").numberbox('setValue', total_subs);
 
-        // Panggil fungsi calculateTotal dengan parameter yang diperoleh
-        calculateTotal(total_subs, disc_pr, income_tax, total_dp, tax, type);
-    }
+        // Penentuan lastChanged berdasarkan mana yang punya input
+        if (discount_total_raw !== "") {
+            lastChanged = 'discount_total';
+        } else if (disc_pr_raw !== "") {
+            lastChanged = 'disc_pr';
+        } else {
+            lastChanged = null; // tidak tentukan, biarkan default
+        }
 
+        calculateTotal(
+            total_subs,
+            lastChanged === 'disc_pr' ? disc_pr : null,
+            lastChanged === 'discount_total' ? discount_total : null,
+            income_tax,
+            total_dp,
+            tax,
+            type
+        );
+    }
 </script>
