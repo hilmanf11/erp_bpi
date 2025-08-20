@@ -1375,6 +1375,11 @@ class Purchase_invoices extends CI_Controller
                 $total_sub = $sum_total - $diskon_amount;
             }
 
+            // Total grand = (Sub Total + VAT) - PPH;
+            $vat_total = $data['total_vat'] ?? 0;
+            $pph_total = $data['total_pph'] ?? 0;
+            $calc_total_grand = ($total_sub + $vat_total) - $pph_total; 
+
             $html .= '  <tr>
                             <td style="text-align:center">' . $no . '</td>
                             <td>' . $data['number'] . '</td>
@@ -1386,7 +1391,7 @@ class Purchase_invoices extends CI_Controller
                             <td style="text-align:right;">' . number_format($total_sub, 4) . '</td>
                             <td style="text-align:right;">' . number_format($data['total_vat'], 4) . '</td>
                             <td style="text-align:right;">' . number_format($data['total_pph'], 4) . '</td>
-                            <td style="text-align:right;">' . number_format($data['total_grand'], 4) . '</td>
+                            <td style="text-align:right;">' . number_format($calc_total_grand, 4) . '</td>
                         </tr>';
             $html .= '  <tr>
                             <td colspan="11" style="background:#D1FFC6;"><b>DETAIL OF ' . $data['po_no'] . '</b></td>
