@@ -917,8 +917,14 @@ class Journal_postings extends CI_Controller
                     // $local_debit = $journal['local_debit'];
                     // $local_credit = $journal['local_credit'];
 
-                    $local_debit = round($debit * $journal['rate'], 2);
-                    $local_credit = round($credit * $journal['rate'], 2);
+                    if ($journal['account_number'] == "810.150.00") { // Gain (Loss) Sales Asset. 810.150.00 . Foreign Exchange A/P
+                        $local_debit = $journal['local_debit'];
+                        $local_credit = $journal['local_credit'];
+                        
+                    } else {
+                        $local_debit = round($journal['debit'] * $journal['rate'], 2);
+                        $local_credit = round($journal['credit'] * $journal['rate'], 2);
+                    }
 
                     // $rates = @$exchange->middle;
                     $rates = $journal['rate'];

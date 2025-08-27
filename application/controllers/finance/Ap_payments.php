@@ -258,7 +258,7 @@ class Ap_payments extends CI_Controller
                 "account_number" => "810.150.00",
                 "account_name" => "Gain (Loss) Sales Asset",
                 "account_type" => $account_type,
-                "rate" => "",
+                "rate" => $exchange_now,
                 "debit" => 0,
                 "credit" => 0,
                 "local_debit" => $local_debit,

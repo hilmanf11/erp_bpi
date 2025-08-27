@@ -296,7 +296,8 @@ class Purchase_invoices extends CI_Controller
                 $account_name = $jsonData["account_name"];
                 $account_type = $jsonData["account_type"];
                 $total = $jsonData["total"];
-                $total_local = $jsonData["total_idr"];
+                // $total_local = $jsonData["total_idr"];  // undefined
+                $total_local = $jsonData["total"];
 
                 if (isset($mergedData[$account_number])) {
                     // Jika nomor akun sudah ada dalam hasil penggabungan, tambahkan nilai total ke nomor akun tersebut
