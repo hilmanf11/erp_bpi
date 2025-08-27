@@ -96,7 +96,7 @@ class Exchange_rates extends CI_Controller
             $id   = base64_decode($this->input->get('id'));
             $post = $this->input->post();
             $exchange_rates = $this->crud->read('exchange_rates', [], ["start_date" => $post['start_date'],"end_date" => $post['end_date'], "currency_from" => $post['currency_from'], "currency_to" => $post['currency_to']]);
-            if(!$exchange_rates){
+            if($exchange_rates){
                 $send = $this->crud->update('exchange_rates', ["id" => $id], $post);
                 echo $send;
             }else{

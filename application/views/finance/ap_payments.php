@@ -145,7 +145,7 @@
                     </div>
                     <div class="fitem">
                         <span style="width:35%; display:inline-block;">Payment No</span>
-                        <input style="width:60%;" readonly id="d_payment_no" name="d_payment_no" class="easyui-textbox" data-options="prompt:'Automatic From Payment Date'">
+                        <input style="width:60%;" readonly id="d_payment_no" name="d_payment_no" class="easyui-textbox" data-options="prompt:'Automatic From Payment Date & Bank Code'">
                     </div>
                     <div class="fitem">
                         <span style="width:35%; display:inline-block;">Supplier Name</span>
@@ -293,7 +293,7 @@
                     </div>
                     <div class="fitem">
                         <span style="width:35%; display:inline-block;">Payment No</span>
-                        <input style="width:60%;" readonly id="payment_no" name="payment_no" class="easyui-textbox" data-options="prompt:'Automatic From Payment Date'">
+                        <input style="width:60%;" readonly id="payment_no" name="payment_no" class="easyui-textbox" data-options="prompt:'Automatic From Payment Date & Bank Code'">
                     </div>
                     <div class="fitem">
                         <span style="width:35%; display:inline-block;">Supplier Name</span>
@@ -360,6 +360,7 @@
                     <th data-options="field:'delete',width:120, formatter:removebtn">#</th>
                     <th hidden data-options="field:'id',width:150, editor: {type: 'textbox'}">ID</th>
                     <th data-options="field:'purchase_invoice',width:150, editor: {type: 'textbox'}">Purchase Invoice</th>
+                    <th data-options="field:'trans_date',width:150, editor: {type: 'textbox'}, hidden:true">Transaction Date</th>
                     <th data-options="field:'supplier_invoice',width:150, editor: {type: 'textbox'}">Description</th>
                     <th data-options="field:'currency',align:'center',width:80, editor: {
                         type: 'combobox',
@@ -372,6 +373,7 @@
                             panelHeight: 'auto',
                             required: true,
                         }}">Currency</th>
+                    <th data-options="field:'rate',width:120, formatter:numberformat, align:'right', editor: {type: 'numberbox',options: {precision:2}}">Payment Rate</th>
                     <th data-options="field:'amount',width:100, formatter:numberformat, align:'right', editor: {type: 'numberbox',options: {precision:2}}">Amount</th>
                     <th data-options="field:'balance',width:100, formatter:numberformat, align:'right', editor: {type: 'numberbox',options: {precision:2, readonly:true}}">Balance</th>
                     <th data-options="field:'payment',width:100, formatter:numberformat, align:'right', editor: {type: 'numberbox',options: {precision:2}}">Payment</th>
@@ -427,172 +429,91 @@
             </thead>
         </table>
 
-
-
         <div style="width: 68%; float: left; margin-top:20px;">
-
             <div style="float: left; width: 30%; ">
-
                 <a style="width: 90%; height: 50px; padding:10px;" class="easyui-linkbutton c2" onclick="addJournal()">Add to Journal</a>
-
             </div>
-
             <div style="float: left; width: 30%; border:4px solid green; padding:10px;" id="showExchange">
-
                 <p style="font-size: 16px !important; margin:0;"><b style="font-size: 16px !important;" id="exchange"></b></p>
-
             </div>
-
         </div>
 
-
-
         <div style="width: 30%; display: grid; grid-template-columns: auto auto auto; grid-gap: 5px; display: flex; float: right; margin-top:20px;">
-
             <fieldset style="width:100%; border:1px solid #d0d0d0; margin-bottom: 10px; border-radius:4px;">
-
                 <div style="width: 100%; float: left;">
-
                     <div class="fitem">
-
                         <b style="width:35%; display:inline-block;">Total Payment</b>
-
                         <input style="width:60%;" id="total_payment" name="total_payment" disabled class="easyui-numberbox" data-options="precision:2,groupSeparator:','">
-
                     </div>
-
                 </div>
-
             </fieldset>
-
         </div>
 
 
 
         <div style="width: 80%; float: left; margin-top:10px;">
-
             <table id="dg3" class="easyui-datagrid" title="Journal Lists" style="width: 100%;" data-options="singleSelect: true" toolbar="#toolbar3">
-
                 <thead>
-
                     <tr>
-
                         <th rowspan="2" data-options="field:'account_number',halign:'center',width:100, editor: {
-
                             type: 'combogrid',
-
                             options: {
-
                                 url: '<?= base_url('finance/account_coa/reads') ?>',
-
                                 panelWidth: 320,
-
                                 idField: 'account_number',
-
                                 textField: 'account_number',
-
                                 mode: 'remote',
-
                                 fitColumns: true,
-
                                 prompt: 'Choose Account No',
-
                                 columns: [
-
                                     [{
-
                                         field: 'account_number',
-
                                         title: 'Account No',
-
                                         width: 100
-
                                     }, {
-
                                         field: 'account_name',
-
                                         title: 'Account Name',
-
                                         width: 200
-
                                     }]
-
                                 ],
-
                                 onSelect: function(value, rows) {
-
                                     var dg = $('#dg3');
-
                                     var row = dg.datagrid('getSelected');
-
                                     var rowIndex = dg.datagrid('getRowIndex', row);
-
                                     var ed = dg.datagrid('getEditor', {
-
                                         index: rowIndex,
-
                                         field: 'account_name'
-
                                     });
 
-
-
                                     $(ed.target).textbox('setValue', rows.account_name);
-
                                 }
-
                             }
-
                         }">Account No</th>
-
                         <th rowspan="2" data-options="field:'account_name',halign:'center',width:200, editor: {type: 'textbox', options: {readonly: true}}">Account Name</th>
-
                         <th rowspan="2" data-options="field:'description',halign:'center',width:200, editor: {type: 'textbox', options: {required: true}}">Description</th>
-
+                        <th rowspan="2" data-options="field:'rate', halign:'center', align:'right', width:100, editor: {type: 'numberbox'}, styler: function(value){return 'font-weight:bold;';}">Rate</th>
                         <th colspan="2" data-options="field:'',width:150">Original Currency</th>
-
                         <th colspan="2" data-options="field:'',width:150">Local Currency</th>
-
                         <th rowspan="2" data-options="field:'flag',width:50,halign:'center',editor: {type: 'numberbox', options: {required: true}}">Index</th>
-
                     </tr>
-
                     <tr>
-
                         <th data-options="field:'debit',width:120,halign:'center',align:'right',formatter:numberformat,editor: {type: 'numberbox', options: {required: true, precision:2}}">Debit</th>
-
                         <th data-options="field:'credit',width:120,halign:'center',align:'right',formatter:numberformat,editor: {type: 'numberbox', options: {required: true, precision:2}}">Credit</th>
-
                         <th data-options="field:'local_debit',width:120,halign:'center',align:'right',formatter:numberformat,editor: {type: 'numberbox', options: {required: true, precision:2}}">Debit</th>
-
                         <th data-options="field:'local_credit',width:120,halign:'center',align:'right',formatter:numberformat,editor: {type: 'numberbox', options: {required: true, precision:2}}">Credit</th>
-
                     </tr>
-
                 </thead>
-
             </table>
 
-
-
             <div class="fitem">
-
                 <b style="width:46%; display:inline-block; padding-left: 50px;">BALANCE TOTAL</b>
-
                 <input style="width:11%;" id="balance_debit" name="balance_debit" readonly class="easyui-numberbox" data-options="precision:2,groupSeparator:'.', decimalSeparator:','">
-
                 <input style="width:11%;" id="balance_credit" name="balance_credit" readonly class="easyui-numberbox" data-options="precision:2,groupSeparator:'.', decimalSeparator:','">
-
                 <input style="width:11%;" id="local_balance_debit" name="local_balance_debit" readonly class="easyui-numberbox" data-options="precision:2,groupSeparator:'.', decimalSeparator:','">
-
                 <input style="width:11%;" id="local_balance_credit" name="local_balance_credit" readonly class="easyui-numberbox" data-options="precision:2,groupSeparator:'.', decimalSeparator:','">
-
             </div>
-
         </div>
-
     </form>
-
 </div>
 
 
@@ -631,76 +552,40 @@
     function add() {
 
         $('#dlg_insert').dialog('open');
-
         $('#dg2').datagrid('loadData', []);
-
         $('#dg3').datagrid('loadData', []);
-
         $("#showExchange").hide();
 
-
-
         var dg = $('#dg2').datagrid({
-
             onBeforeEdit: function(index, row) {
-
                 row.editing = true;
-
                 $(this).datagrid('refreshRow', index);
-
             },
-
             onAfterEdit: function(index, row) {
-
                 row.editing = false;
-
                 $(this).datagrid('refreshRow', index);
-
             },
-
             onCancelEdit: function(index, row) {
-
                 row.editing = false;
-
                 $(this).datagrid('refreshRow', index);
-
             },
-
         });
 
-
-
         $('#frm_insert').form('clear');
-
-
-
         $("#payment_date").datebox('enable');
-
         $("#payment_type").combobox('enable');
-
         $("#supplier_id").combogrid('enable');
-
         $("#purchase_invoice").combogrid('enable');
-
         $("#payment_by").combobox('setValue', "TRANSFER");
-
         $("#f_cheque_no").hide();
 
-
-
         $("#payment_date").datebox({
-
             onChange: function(val) {
                 var bank_code = $("#bank_code").textbox('getValue');
                 number(val, bank_code);
-
             }
-
         });
-
     }
-
-
 
     function addJournal() {
         var rows = $('#dg2').datagrid('getRows');
@@ -726,6 +611,7 @@
                 for (let i = 0; i < totalrows; i++) {
                     //if(rows[i].balance >= rows[i].payment){
                     var data = {
+                        trans_date: rows[i].trans_date,
                         account_number: rows[i].account_number,
                         account_name: rows[i].account_name,
                         account_type: rows[i].account_type,
@@ -816,111 +702,60 @@
     }
 
     function addTable2(link = "") {
-
         var lastIndex;
-
         var dg = $('#dg3').datagrid({
-
             url: link,
-
             singleSelect: true,
-
             onClickCell: onClickCell2,
-
             onBeginEdit: function(rowIndex, row) {
-
                 balance_journal();
-
             }
-
         });
-
     }
 
-
-
     function balance_journal() {
-
         var rows = $('#dg3').datagrid('getRows');
-
         var totalrows = rows.length;
-
         endEditing2();
 
-
-
         if (totalrows > 0) {
-
             var debit = 0;
-
             var credit = 0;
-
             var local_debit = 0;
-
             var local_credit = 0;
 
             for (let i = 0; i < totalrows; i++) {
-
                 debit += parseFloat(rows[i].debit);
-
                 credit += parseFloat(rows[i].credit);
-
                 local_debit += parseFloat(rows[i].local_debit);
-
                 local_credit += parseFloat(rows[i].local_credit);
-
             }
 
-
-
             $("#balance_debit").numberbox('setValue', debit);
-
             $("#balance_credit").numberbox('setValue', credit);
-
             $("#local_balance_debit").numberbox('setValue', local_debit);
-
             $("#local_balance_credit").numberbox('setValue', local_credit);
-
         }
-
     }
-
-
 
     var editIndex = undefined;
 
-
-
     function endEditing() {
-
         if (editIndex == undefined) {
-
             return true
-
         }
 
         if ($('#dg2').datagrid('validateRow', editIndex)) {
-
             $('#dg2').datagrid('endEdit', editIndex);
-
             editIndex = undefined;
-
             return true;
-
         } else {
-
             return false;
-
         }
-
     }
 
-
-
     function append() {
-
         if (endEditing()) {
-
             $('#dg2').datagrid('appendRow', {
                 amount: '0',
                 balance: '0',
@@ -930,134 +765,71 @@
             editIndex = $('#dg2').datagrid('getRows').length - 1;
 
             $('#dg2').datagrid('selectRow', editIndex).datagrid('beginEdit', editIndex);
-
         }
-
     }
 
-
-
     function append_dp() {
-
         var supplier_id = $("#supplier_id").combobox('getValue');
-
         var purchase_invoice = $("#purchase_invoice").combogrid('getValue');
 
-
-
         if (endEditing()) {
-
             $.ajax({
-
                 type: "post",
-
                 url: "<?= base_url('finance/ap_payments/readDp') ?>",
-
                 data: "supplier_id=" + supplier_id + "&purchase_invoice=" + purchase_invoice,
-
                 dataType: "json",
-
                 success: function(dp) {
-
                     if (parseInt(dp.length) > 0) {
-
                         toastr.success("Data Down Payment Added Success");
 
-
-
                         for (let i = 0; i < dp.length; i++) {
-
-
-
                             if(dp[i].amount == 0){
-
                                 var amount = dp[i].payment;
-
                             }else{
-
                                 var amount = dp[i].amount;
-
                             }
-
-
 
                             if(dp[i].balance == 0){
-
                                 var balance = dp[i].payment;
-
                             }else{
-
                                 var balance = (parseFloat(dp[i].balance) - parseFloat(dp[i].payment));
-
                             }
-
-
 
                             var payment = (parseFloat(dp[i].balance) - parseFloat(dp[i].payment));
 
-
-
                             $('#dg2').datagrid('appendRow', {
-
                                 purchase_invoice: dp[i].payment_no,
-
                                 supplier_invoice: dp[i].supplier_invoice,
-
                                 currency: dp[i].currency,
-
                                 amount: amount,
-
                                 balance: balance,
-
                                 payment: payment,
-
                                 remarks: dp[i].remarks,
-
                                 account_number: dp[i].account_number,
-
                                 account_name: dp[i].account_name,
-
                                 account_type: dp[i].account_type,
-
                             });
-
                         }
 
                     } else {
-
                         toastr.info("Data Down Payment Not Found");
-
                     }
 
                 }
 
             });
-
         }
-
     }
-
-
 
     function getRowIndex(target) {
-
         var tr = $(target).closest('tr.datagrid-row');
-
         return parseInt(tr.attr('datagrid-row-index'));
-
     }
-
-
 
     function editrow(target) {
-
         $('#dg2').datagrid('selectRow', getRowIndex(target));
-
         $('#dg2').datagrid('beginEdit', getRowIndex(target));
-
     }
-
-
 
     function deleterow(target) {
         $.messager.confirm('Confirm', 'Are you sure?', function(r) {
@@ -1096,121 +868,64 @@
         });
     }
 
-
-
     function saverow(target) {
-
         $('#dg2').datagrid('endEdit', getRowIndex(target));
-
     }
-
-
 
     function cancelrow(target) {
-
         $('#dg2').datagrid('cancelEdit', getRowIndex(target));
-
     }
 
-
-
     //DATAGRID JOURNAL
-
     var editIndex2 = undefined;
 
-
-
     function endEditing2() {
-
         if (editIndex2 == undefined) {
-
             return true
-
         }
 
         if ($('#dg3').datagrid('validateRow', editIndex2)) {
-
             $('#dg3').datagrid('endEdit', editIndex2);
-
             editIndex2 = undefined;
-
             return true;
-
         } else {
-
             return false;
-
         }
-
     }
-
-
 
     function onClickCell2(index, field) {
-
         if (editIndex2 != index) {
-
             if (endEditing2()) {
-
                 $('#dg3').datagrid('selectRow', index).datagrid('beginEdit', index);
-
                 editIndex2 = index;
-
             } else {
-
                 setTimeout(function() {
-
                     $('#dg3').datagrid('selectRow', editIndex2);
-
                 }, 0);
-
             }
-
         }
-
     }
 
-
-
     function append2() {
-
         if (endEditing2()) {
-
             $('#dg3').datagrid('appendRow', {
-
                 debit: '0',
-
                 credit: '0',
-
             });
 
             editIndex2 = $('#dg3').datagrid('getRows').length - 1;
-
             $('#dg3').datagrid('selectRow', editIndex2).datagrid('beginEdit', editIndex2);
-
         }
-
     }
-
-
 
     function removeit3() {
-
         if (editIndex2 == undefined) {
-
             return true;
-
         }
 
-
-
         $('#dg3').datagrid('cancelEdit', editIndex2).datagrid('deleteRow', editIndex2);
-
         editIndex2 = undefined;
-
     }
-
-
 
     //Edit Data
     function update() {
@@ -1416,9 +1131,7 @@
                 toastr.error("Cannot Update because payment status is closed");
             }
         } else {
-
             toastr.warning("Please select one of the data in the table first!", "Information");
-
         }
 
     }
@@ -1968,6 +1681,7 @@
             var dg = $(datagridSelector);
             var allRows = dg.datagrid('getRows');
             let nullAccountNumberRows = [];
+            let nullRateRows = [];
             let isValid = true;
 
             if (allRows.length === 0) {
@@ -1977,17 +1691,31 @@
                 for (var i = 0; i < allRows.length; i++) {
                     var row = allRows[i];
                     var accountNumber = row.account_number;
-
                     if (accountNumber === null || accountNumber === undefined || String(accountNumber).trim() === '') {
                         nullAccountNumberRows.push(i + 1);
                     }
+                    
+                    var exchangeRate = row.rate;
+                    console.log(exchangeRate);
+                    if (exchangeRate === null || exchangeRate === undefined || String(exchangeRate).trim() === '' || exchangeRate == 0) {
+                        nullRateRows.push(i + 1);
+                    }
                 }
 
+                // validasi : jika account_number=null maka tidak bisa save 
                 if (nullAccountNumberRows.length > 0) {
                     isValid = false;
                     var errorMessage = "<b>Failed! Account Number on " + listName + " cannot be empty for rows: " + nullAccountNumberRows.join(', ') + "!</b> <br><br>Please re-check the List and re-calculate Journal before Save All.";
                     $.messager.alert("Error", errorMessage, 'error');
                 }
+                
+                // validasi : dg2 jika rate=0 maka tidak bisa save 
+                if (nullRateRows.length > 0) {
+                    isValid = false;
+                    var errorMessage = "<b>Failed! Rate on " + listName + " cannot be '0,00' for rows: " + nullRateRows.join(', ') + "!</b> <br><br>Please check the exchange rate for this month.";
+                    $.messager.alert("Error", errorMessage, 'error');
+                }
+                
             }
             return isValid; // Mengembalikan true jika valid, false jika tidak
         }
@@ -2195,6 +1923,10 @@
                                                                             var journalDate = payment_date;
                                                                             var companyId = supplier_id;
                                                                             var documentNo = payment_no;
+
+                                                                            var trans_date = $("#payment_date").datebox('getValue');
+                                                                            var bank_code = $("#bank_code").textbox('getValue');
+
                                                                             $.ajax({
                                                                                 method: 'post',
                                                                                 url: '<?= base_url('finance/journal_postings/datatablesTemp') ?>?journal_date=' + window.btoa(journalDate) +
@@ -2212,7 +1944,8 @@
                                                                                     // console.log(JSON.stringify(dataPosting));
                                                                                     $.ajax({
                                                                                         type: "post",
-                                                                                        url: "<?= base_url('finance/journal_postings/number/') ?>" + window.btoa(journalDate),
+                                                                                        // url: "<?= base_url('finance/journal_postings/number/') ?>" + window.btoa(journalDate),
+                                                                                        url: "<?= base_url('finance/ap_payments/number/') ?>" + window.btoa(trans_date) +"/"+ bank_code,
                                                                                         dataType: "html",
                                                                                         success: function(noGL) {
                                                                                             var nomorGL = noGL;
@@ -2309,164 +2042,90 @@
             }]
         });
 
-
-
         //Upload Data
-
         $('#dlg_upload').dialog({
-
             buttons: [{
-
                 text: 'List Failed',
-
                 handler: function() {
-
                     window.open('<?= base_url('finance/ap_payments/uploadDownloadFailed') ?>', '_blank');
-
                 }
-
             }, {
-
                 text: 'Upload',
-
                 iconCls: 'icon-ok',
-
                 handler: function() {
-
                     $('#frm_upload').form('submit', {
-
                         url: '<?= base_url('finance/ap_payments/upload') ?>',
-
                         onSubmit: function() {
-
                             if ($(this).form('validate') == false) {
-
                                 return $(this).form('validate');
-
                             } else {
-
                                 $.messager.progress({
-
                                     title: 'Please Wait',
-
                                     msg: 'Importing Excel to Database'
-
                                 });
-
                             }
-
                         },
-
                         success: function(result) {
-
                             $.messager.progress('close');
 
                             //Clear File
-
                             $.ajax({
-
                                 url: "<?= base_url('finance/ap_payments/uploadclearFailed') ?>"
-
                             });
-
                             var json = eval('(' + result + ')');
-
                             requestData(json.total, json);
 
-
-
                             function requestData(total, json, number = 1, value = 0, success = 1, failed = 1) {
-
                                 if (value < 100) {
-
                                     value = Math.floor((number / total) * 100);
-
                                     $('#p_upload').progressbar('setValue', value);
-
                                     $('#p_start').html(number);
-
                                     $('#p_finish').html(total);
 
-
-
                                     $.ajax({
-
                                         type: "POST",
-
                                         async: true,
-
                                         url: "<?= base_url('finance/ap_payments/uploadCreate') ?>",
-
                                         data: {
-
                                             "data": json[number - 1]
-
                                         },
-
                                         cache: false,
-
                                         dataType: "json",
-
                                         success: function(result) {
 
                                             if (result.theme == "success") {
-
                                                 $('#p_success').html(success);
-
                                                 var title = "<b style='color: green;'>" + result.title + "</b> | " + result.message;
 
                                                 requestData(total, json, number + 1, value, success + 1, failed + 0);
 
                                             } else {
-
                                                 $('#p_failed').html(failed);
-
                                                 var title = "<b style='color: red;'>" + result.title + "</b> | " + result.message;
 
                                                 //Json Failed
-
                                                 $.ajax({
-
                                                     type: "POST",
-
                                                     async: true,
-
                                                     url: "<?= base_url('finance/ap_payments/uploadcreateFailed') ?>",
-
                                                     data: {
-
                                                         data: json[number - 1],
-
                                                         message: result.message
-
                                                     },
-
                                                     cache: false
-
                                                 });
 
                                                 requestData(total, json, number + 1, value, success + 0, failed + 1);
-
                                             }
-
                                             $("#p_remarks").append(title + "<br>");
-
                                         }
-
                                     });
-
                                 }
-
                             }
-
                         }
-
                     });
-
                 }
-
             }]
-
         });
 
         $("#filter_supplier").combobox({

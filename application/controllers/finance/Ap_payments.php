@@ -104,6 +104,23 @@ class Ap_payments extends CI_Controller
         ]);
     }
 
+    function getExchange($currency, $date) 
+    {
+        $this->db->select('*');
+        $this->db->from('exchange_rates');
+        $this->db->where('currency_from', $currency);
+        $this->db->where('currency_to', 'IDR');
+        $this->db->where("'$date' BETWEEN start_date AND end_date", null, false); // penting: raw SQL
+        $exchange = $this->db->get()->row();
+
+        if (!empty($exchange)) {
+            $rate = $exchange->middle;
+        } else {
+            $rate = 0;
+        }
+        return $rate;
+    }
+
     public function calculateJournal($journal_type_id = "", $bank_account = "")
     {
         $journal_type_id = base64_decode($journal_type_id);
@@ -126,6 +143,7 @@ class Ap_payments extends CI_Controller
             $total = $jsonData["payment"];
             $currency = $jsonData['currency'];
             $payment_date = $jsonData['payment_date'];
+            $trans_date = $jsonData['trans_date'];
 
             // $search_date = date("d", strtotime($payment_date));
             // if($search_date == "31"){
@@ -135,17 +153,12 @@ class Ap_payments extends CI_Controller
             // $monthBf = date('Y-m-01', strtotime('-1 month', strtotime($payment_date)));
             // $exchange = $this->crud->read('exchange_rates', [], ["start_date" => $monthBf, "currency_from" => $currency, "currency_to" => "IDR"]);
 
-            $this->db->select('middle');
-            $this->db->from('exchange_rates');
-            $this->db->where('currency_from', $currency);
-            $this->db->where('currency_to', 'IDR');
-            $this->db->where("'$payment_date' BETWEEN start_date AND end_date", null, false); // penting: raw SQL
-
-            $exchange = $this->db->get()->row();
+            // RATE by trans_date PI
+            $exchange = $this->getExchange($currency, $trans_date);
             
             if ($currency != "IDR") {
                 if ($exchange) {
-                    $amount = ($total * $exchange->middle);
+                    $amount = ($total * $exchange);
                 } else {
                     $amount = 0;
                 }
@@ -174,6 +187,7 @@ class Ap_payments extends CI_Controller
                         "account_name" => $account_name,
                         "account_type" => $account_type,
                         "description" => $description,
+                        "rate" => $exchange,
                         "debit" => $total,
                         "credit" => 0,
                         "local_debit" => round($amount, 2),
@@ -188,6 +202,7 @@ class Ap_payments extends CI_Controller
                         "account_name" => $account_name,
                         "account_type" => $account_type,
                         "description" => $description,
+                        "rate" => $exchange,
                         "debit" => 0,
                         "credit" => $total,
                         "local_debit" => 0,
@@ -202,27 +217,54 @@ class Ap_payments extends CI_Controller
         }
 
         $arr = array_values($mergedData);
-
-        foreach ($banks as $bank) {
-            if ($currency != "IDR") {
-                if ($exchange) {
-                    $amount = ($grand_total * $exchange->middle);
-                } else {
-                    $amount = 0;
-                }
+        
+        if ($currency != "IDR") {
+            $exchange_now = $this->getExchange($currency, $payment_date); // Rate based on payment_date saat ini
+            if ($exchange_now) {
+                $amount = ($grand_total * $exchange_now);
             } else {
-                $amount = $grand_total;
+                $amount = 0;
             }
-
+        } else {
+            $amount = $grand_total;
+        }
+        
+        foreach ($banks as $bank) {
             $arr[] = array(
                 "account_number" => $bank->account_number,
                 "account_name" => $bank->account_name,
+                "rate" => $exchange_now,
                 "debit" => "0.00",
                 "credit" => $grand_total,
                 "local_debit" => 0,
                 "local_credit" => round($amount, 2),
                 "flag" => $flag,
             );
+        }
+
+        // Gain (Loss) Sales Asset. 810.150.00 . Foreign Exchange A/P
+        if ($currency != "IDR") {
+            $total_idr = $grand_total * $exchange;
+            $total_idr_now = $grand_total * $exchange_now;
+            $gain_loss = abs($total_idr - $total_idr_now);
+
+            $account_type = ($total_idr_now > $total_idr) ? "DEBIT" : "CREDIT";
+            
+            // Tentukan nilai debit dan kredit berdasarkan account_type
+            $local_debit = ($account_type == "DEBIT") ? $gain_loss : 0;
+            $local_credit = ($account_type == "CREDIT") ? $gain_loss : 0;
+
+            $arr[] = [
+                "account_number" => "810.150.00",
+                "account_name" => "Gain (Loss) Sales Asset",
+                "account_type" => $account_type,
+                "rate" => "",
+                "debit" => 0,
+                "credit" => 0,
+                "local_debit" => $local_debit,
+                "local_credit" => $local_credit,
+                "flag" => $flag + 1,
+            ];
         }
 
         echo json_encode($arr);
@@ -338,27 +380,117 @@ class Ap_payments extends CI_Controller
     //     echo $datenow . "-" . $autoID;
     // }
 
-    public function number($trans_date, $bank_code)
+    public function number($trans_date, $bank_code = null)
     {
-        $decoded_date = base64_decode($trans_date);
-        $year = date("y", strtotime($decoded_date));
-        $month = date("m", strtotime($decoded_date));
-        // $bank_code = base64_decode($bank_code);
-        $datenow    = $bank_code."/".$month."-".$year."/"."K";
-        $sqlGetID   = $this->db->query("SELECT max(`payment_no`) as kode FROM ap_payments WHERE `payment_no` like '%$datenow%'");
-        $rowID      = $sqlGetID->row();
-        $kode       = $rowID->kode;
-        if ($kode == NULL) {
-            $autoID = sprintf("%03s", $kode + 1);
-        } else {
-            $urutan = (int) substr($kode, 0, 3);
-            $urutan++;
-            $autoID = sprintf("%03s", $urutan);
+        if (!empty($trans_date) && !empty($bank_code)) {
+            $decoded_date = base64_decode($trans_date);
+            $year = date("y", strtotime($decoded_date));
+            $month = date("m", strtotime($decoded_date));
+            // $bank_code = base64_decode($bank_code);
+            $datenow    = $bank_code."/".$month."-".$year."/"."K";
+            $sqlGetID   = $this->db->query("SELECT max(`payment_no`) as kode FROM ap_payments WHERE `payment_no` like '%$datenow%'");
+            $rowID      = $sqlGetID->row();
+            $kode       = $rowID->kode;
+            if ($kode == NULL) {
+                $autoID = sprintf("%03s", $kode + 1);
+            } else {
+                $urutan = (int) substr($kode, 0, 3);
+                $urutan++;
+                $autoID = sprintf("%03s", $urutan);
+            }
+            echo $autoID."/".$datenow;
         }
-        echo $autoID."/".$datenow;
+        echo ""; // if trans_date or bank_code is not choosed
     }
 
     public function datatablesTemp()
+    {
+        $purchase_invoice = base64_decode($this->input->get('purchase_invoice'));
+        $purchase_invoice_ex = explode(",", $purchase_invoice);
+
+        $this->db->select("number, journal_type_id, invoice_no, currency, (SUM(CASE WHEN account_type = 'DEBIT' THEN total ELSE -total END) + total_vat - total_pph) as total");
+        $this->db->select("trans_date, account_number");
+        $this->db->from('purchase_invoices');
+        $this->db->where('deleted', 0);
+        $this->db->where('status', 0);
+        $this->db->where_in('number', $purchase_invoice_ex);
+        $this->db->group_by('number');
+        $this->db->order_by('number', 'asc');
+        $records = $this->db->get()->result_array();
+
+        $obj = [];
+        $total_payment = 0;
+        foreach ($records as $record) {
+            $total_payment += $record['total'];
+            $journal_type_id = $record['journal_type_id'];
+            $number = $record['number'];
+
+            $account_number = null;
+            $account_name   = null;
+
+            // -- Journal Setups
+            $this->db->select('a.*, b.account_name, b.account_number');
+            $this->db->from('journal_setups a');
+            $this->db->join('account_coa b', 'a.account_number = b.account_number', 'LEFT');
+            $this->db->where('a.journal_type_id', $journal_type_id);
+            $this->db->where('a.ap_payment', 'YES');
+            $journal_setup = $this->db->get()->row();
+            if (!empty($journal_setup)) {
+                $account_number = $journal_setup->account_number;
+                $account_name   = $journal_setup->account_name;
+            } else {
+                // -- Tidak ada setting account di journal_setups
+                $this->db->select('*');
+                $this->db->from('account_coa');
+                $this->db->where('account_number', $record['account_number']);
+                $get_account = $this->db->get()->row();
+
+                $account_number = $get_account->account_number;
+                $account_name   = $get_account->account_name;
+            }
+
+            // -- Exchange Rate by trans_date PI
+            $exchange_rate = 0;
+            if ($record['currency'] == "IDR") {
+                $exchange_rate = number_format(1, 2);
+            } else {
+                $this->db->select('middle, currency_from, currency_to');
+                $this->db->from('exchange_rates');
+                $this->db->where('currency_from', $record['currency']);
+                $this->db->where('currency_to', 'IDR');
+                $this->db->where("'".$record['trans_date']."' BETWEEN start_date AND end_date", null, false);
+                $get_rate = $this->db->get()->row();
+
+                if ($get_rate) {
+                    $exchange_rate = $get_rate->middle;
+                } else {
+                    $exchange_rate = number_format(0, 2);
+                }
+            }
+
+            $ap_payment = $this->crud->query("SELECT purchase_invoice, SUM(payment) as payment FROM ap_payments WHERE purchase_invoice = '$number' GROUP BY purchase_invoice, account_number ORDER BY payment DESC");
+
+            $obj[] = array(
+                "trans_date"       => $record['trans_date'],
+                "purchase_invoice" => $record['number'],
+                "supplier_invoice" => $record['invoice_no'],
+                "currency"         => $record['currency'],
+                "rate"             => $exchange_rate,
+                "amount"           => $record['total'],
+                "balance"          => ($record['total'] - @$ap_payment[0]->payment),
+                "payment"          => ($record['total'] - @$ap_payment[0]->payment),
+                "account_number"   => $account_number,
+                "account_name"     => $account_name,
+                "account_type"     => "DEBIT",
+            );
+        }
+
+        $arr['rows'] = @$obj;
+        $arr['total_payment'] = round($total_payment, 2);
+        die(json_encode($arr));
+    }
+
+    public function datatablesTempOld()
     {
         $purchase_invoice = base64_decode($this->input->get('purchase_invoice'));
         $purchase_invoice_ex = explode(",", $purchase_invoice);
