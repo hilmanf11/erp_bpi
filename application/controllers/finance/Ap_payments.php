@@ -246,7 +246,7 @@ class Ap_payments extends CI_Controller
         if ($currency != "IDR") {
             $total_idr = $grand_total * $exchange;
             $total_idr_now = $grand_total * $exchange_now;
-            $gain_loss = abs($total_idr - $total_idr_now);
+            $gain_loss = abs($total_idr_now - $total_idr); // Formula Gain/Loss = Total Nilai Bank - Total Nilai PI
 
             $account_type = ($total_idr_now > $total_idr) ? "DEBIT" : "CREDIT";
             
@@ -254,9 +254,10 @@ class Ap_payments extends CI_Controller
             $local_debit = ($account_type == "DEBIT") ? $gain_loss : 0;
             $local_credit = ($account_type == "CREDIT") ? $gain_loss : 0;
 
+            $account_gain_loss = $this->db->select('*')->from('account_coa')->where('account_number', '810.150.00')->get()->row();
             $arr[] = [
                 "account_number" => "810.150.00",
-                "account_name" => "Gain (Loss) Sales Asset",
+                "account_name" => $account_gain_loss->account_name ?? "Gain (Loss) Sales Asset",
                 "account_type" => $account_type,
                 "rate" => $exchange_now,
                 "debit" => 0,

@@ -352,6 +352,7 @@
         <div id="toolbar3">
             <a href="javascript:void(0)" class="easyui-linkbutton" data-options="plain:true" onclick="append2()"><i class="fa fa-plus"></i> Add</a>
             <a href="javascript:void(0)" class="easyui-linkbutton" data-options="plain:true" onclick="removeit3()"><i class="fa fa-times"></i> Remove</a>
+            <a href="javascript:void(0)" class="easyui-linkbutton" data-options="plain:true" onclick="saveEditing()" id="saveEdit" hidden><i class="fa fa-check"></i> Save</a>
         </div>
 
         <table id="dg2" class="easyui-datagrid" style="width:100%;" title="AP Payment Lists" toolbar="#toolbar2" data-options="singleSelect: true" idField="purchase_invoice">
@@ -490,8 +491,8 @@
                             }
                         }">Account No</th>
                         <th rowspan="2" data-options="field:'account_name',halign:'center',width:200, editor: {type: 'textbox', options: {readonly: true}}">Account Name</th>
-                        <th rowspan="2" data-options="field:'description',halign:'center',width:200, editor: {type: 'textbox', options: {required: true}}">Description</th>
-                        <th rowspan="2" data-options="field:'rate', halign:'center', align:'right', width:100, editor: {type: 'numberbox'}, styler: function(value){return 'font-weight:bold;';}">Rate</th>
+                        <th rowspan="2" data-options="field:'description',halign:'center',width:200, editor: {type: 'textbox', options: {required: false}}">Description</th>
+                        <th rowspan="2" data-options="field:'rate', halign:'center', align:'right', formatter:numberformat, width:100, editor: {type: 'numberbox'}">Rate</th>
                         <th colspan="2" data-options="field:'',width:150">Original Currency</th>
                         <th colspan="2" data-options="field:'',width:150">Local Currency</th>
                         <th rowspan="2" data-options="field:'flag',width:50,halign:'center',editor: {type: 'numberbox', options: {required: true}}">Index</th>
@@ -707,10 +708,97 @@
             url: link,
             singleSelect: true,
             onClickCell: onClickCell2,
+            onEndEdit: function(index, row, changes) {
+                // Cek apakah kolom 'rate' yang baru saja diedit
+                if (changes.rate !== undefined) {
+                    var newRate = parseFloat(changes.rate);
+                    if (!isNaN(newRate)) {
+                        var originalDebit = parseFloat(row.debit);
+                        var originalCredit = parseFloat(row.credit);
+
+                        // Lakukan perhitungan untuk Local Currency
+                        var localDebit = originalDebit * newRate;
+                        var localCredit = originalCredit * newRate;
+
+                        $('#dg3').datagrid('updateRow', {
+                            index: index,
+                            row: {
+                                local_debit: localDebit,
+                                local_credit: localCredit
+                            }
+                        });
+
+                        // Panggil fungsi baru untuk mengkalkulasi ulang Gain (Loss)
+                        recalculateGainLossAndTotals(newRate);
+                        
+                    } else {
+                        // Opsional: Jika input bukan angka, kembalikan nilai ke 0 atau 1
+                        $('#dg3').datagrid('updateRow', {
+                            index: index,
+                            row: {
+                                rate: 0
+                            }
+                        });
+                    }
+                }
+
+                balance_journal();
+            },
             onBeginEdit: function(rowIndex, row) {
                 balance_journal();
             }
         });
+    }
+
+    // Gain (Loss) Sales Asset. 810.150.00 . Foreign Exchange A/P
+    function recalculateGainLossAndTotals(newRate) 
+    {
+        var rows = $('#dg3').datagrid('getRows');
+        var totalLocalDebit = 0;
+        var totalLocalCredit = 0;
+        var gainLossRowIndex = -1;
+
+        // Iterasi semua baris untuk menjumlahkan total lokal dan menemukan baris Gain (Loss)
+        for (var i = 0; i < rows.length; i++) {
+            // Ambil nilai debit/kredit lokal yang sudah ada
+            var debit = parseFloat(rows[i].local_debit);
+            var credit = parseFloat(rows[i].local_credit);
+            
+            // Cek apakah ini baris Gain (Loss)
+            if (rows[i].account_number === '810.150.00') {
+                gainLossRowIndex = i;
+            } else {
+                // Tambahkan ke total jika bukan baris Gain (Loss)
+                totalLocalDebit += debit;
+                totalLocalCredit += credit;
+            }
+        }
+        
+        // Hitung selisih dan tentukan apakah itu debit atau kredit
+        var difference = totalLocalDebit - totalLocalCredit;
+        var gainLossDebit = 0;
+        var gainLossCredit = 0;
+        
+        if (difference > 0) {
+            // Jika Debit lebih besar dari Credit, selisih adalah 'Loss' (Local Credit)
+            gainLossCredit = Math.abs(difference);
+        } else if (difference < 0) {
+            // Jika Credit lebih besar dari Debit, selisih adalah 'Gain' (Local Debit)
+            gainLossDebit = Math.abs(difference);
+        }
+
+        if (gainLossRowIndex !== -1) {
+            $('#dg3').datagrid('updateRow', {
+                index: gainLossRowIndex,
+                row: {
+                    rate: newRate,
+                    local_debit: gainLossDebit,
+                    local_credit: gainLossCredit
+                }
+            });
+        }
+
+        balance_journal();
     }
 
     function balance_journal() {
@@ -894,6 +982,9 @@
     }
 
     function onClickCell2(index, field) {
+        $('#saveEdit').removeAttr('hidden');
+        $('#saveEdit').show();
+
         if (editIndex2 != index) {
             if (endEditing2()) {
                 $('#dg3').datagrid('selectRow', index).datagrid('beginEdit', index);
@@ -925,6 +1016,25 @@
 
         $('#dg3').datagrid('cancelEdit', editIndex2).datagrid('deleteRow', editIndex2);
         editIndex2 = undefined;
+    }
+
+    function saveEditing() {
+        if (editIndex2 == undefined) {
+            return true
+        }
+        
+        if ($('#dg3').datagrid('validateRow', editIndex2)) {
+
+            $('#dg3').datagrid('endEdit', editIndex2);
+            $('#saveEdit').hide();
+
+            editIndex2 = undefined;
+            return true;
+        } else {
+            return false;
+        }
+
+        balance_journal();
     }
 
     //Edit Data
@@ -1696,7 +1806,6 @@
                     }
                     
                     var exchangeRate = row.rate;
-                    console.log(exchangeRate);
                     if (exchangeRate === null || exchangeRate === undefined || String(exchangeRate).trim() === '' || exchangeRate == 0) {
                         nullRateRows.push(i + 1);
                     }
