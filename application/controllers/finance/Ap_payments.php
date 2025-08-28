@@ -226,6 +226,7 @@ class Ap_payments extends CI_Controller
                 $amount = 0;
             }
         } else {
+            $exchange_now = 1;
             $amount = $grand_total;
         }
         
