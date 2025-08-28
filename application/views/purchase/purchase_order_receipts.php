@@ -462,28 +462,80 @@
         }, 3000); // Sesuaikan waktu jika perlu
     }
 
+    // function print_receiving_note() {
+    //     var receipt_no = $("#filter_receipt_no").combobox('getValue');
+    //     if (receipt_no == "") {
+    //         toastr.warning("Please select Receipt No!", "Information");
+    //     } else {
+    //         $.ajax({
+    //             type: "post",
+    //             url: "<?= base_url('purchase/purchase_order_receipts/checkLabel/') ?>" + window.btoa(receipt_no),
+    //             dataType: "json",
+    //             success: function (response) {
+    //                 console.log(response);
+    //                 if (response.category === 'C01') {
+    //                     if (response.qty_label == response.label_no) {
+    //                         window.open("<?= base_url('purchase/purchase_order_receipts/print_receiving/') ?>" + window.btoa(receipt_no), "_blank");
+    //                     } else {
+    //                         toastr.error("The labels haven't been scanned yet for category RM");
+    //                     }
+    //                 } else {
+    //                     window.open("<?= base_url('purchase/purchase_order_receipts/print_receiving/') ?>" + window.btoa(receipt_no), "_blank");
+    //                 }
+    //             }
+    //         });            
+    //     }
+    // }
+
     function print_receiving_note() {
         var receipt_no = $("#filter_receipt_no").combobox('getValue');
         if (receipt_no == "") {
             toastr.warning("Please select Receipt No!", "Information");
         } else {
+            // Step 1: cek label dulu
             $.ajax({
                 type: "post",
                 url: "<?= base_url('purchase/purchase_order_receipts/checkLabel/') ?>" + window.btoa(receipt_no),
                 dataType: "json",
                 success: function (response) {
                     console.log(response);
+
+                    // kalau kategori RM (C01) harus dicek dulu labelnya
                     if (response.category === 'C01') {
                         if (response.qty_label == response.label_no) {
-                            window.open("<?= base_url('purchase/purchase_order_receipts/print_receiving/') ?>" + window.btoa(receipt_no), "_blank");
+                            // Step 2: cek item setelah label ok
+                            $.ajax({
+                                type: "post",
+                                url: "<?= base_url('purchase/purchase_order_receipts/checkItems/') ?>" + window.btoa(receipt_no),
+                                dataType: "json",
+                                success: function (res) {
+                                    // Step 3: apapun hasilnya (status diupdate/tidak), tetap cetak
+                                    window.open("<?= base_url('purchase/purchase_order_receipts/print_receiving/') ?>" + window.btoa(receipt_no), "_blank");
+                                },
+                                error: function() {
+                                    // kalau error checkItems tetap lanjut cetak
+                                    window.open("<?= base_url('purchase/purchase_order_receipts/print_receiving/') ?>" + window.btoa(receipt_no), "_blank");
+                                }
+                            });
                         } else {
                             toastr.error("The labels haven't been scanned yet for category RM");
                         }
                     } else {
-                        window.open("<?= base_url('purchase/purchase_order_receipts/print_receiving/') ?>" + window.btoa(receipt_no), "_blank");
+                        // kalau kategori bukan C01, langsung cek item
+                        $.ajax({
+                            type: "post",
+                            url: "<?= base_url('purchase/purchase_order_receipts/checkItems/') ?>" + window.btoa(receipt_no),
+                            dataType: "json",
+                            success: function (res) {
+                                window.open("<?= base_url('purchase/purchase_order_receipts/print_receiving/') ?>" + window.btoa(receipt_no), "_blank");
+                            },
+                            error: function() {
+                                window.open("<?= base_url('purchase/purchase_order_receipts/print_receiving/') ?>" + window.btoa(receipt_no), "_blank");
+                            }
+                        });
                     }
                 }
-            });            
+            });
         }
     }
 

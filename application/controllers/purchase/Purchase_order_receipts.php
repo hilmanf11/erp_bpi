@@ -168,6 +168,31 @@ class Purchase_order_receipts extends CI_Controller
         return $receipt_no . "-" . $autoID;
     }
 
+    public function checkItems($receipt_no_encoded)
+    {
+        $receipt_no = base64_decode($receipt_no_encoded);
+
+        $targetItems = ['BPIRM-CP06240001', 'BPIRM-CP06240002'];
+
+        // cek apakah ada item_rm_id target
+        $this->db->where('receipt_no', $receipt_no);
+        $this->db->where_in('item_rm_id', $targetItems);
+        $query = $this->db->get('purchase_order_receipts');
+
+        $updated = false;
+        if ($query->num_rows() > 0) {
+            // update langsung
+            $this->db->where('receipt_no', $receipt_no);
+            $this->db->update('purchase_order_receipts', ['status' => 1]);
+            $updated = true;
+        }
+
+        echo json_encode([
+            'success' => true,
+            'updated' => $updated
+        ]);
+    }
+
     public function checkLabel($receipt_no){
         $receipt_no = base64_decode($receipt_no);
         $sqlReceipt = $this->db->query("SELECT sum(qty_label) as qty_label FROM purchase_order_receipts WHERE receipt_no ='$receipt_no'");
@@ -217,7 +242,7 @@ class Purchase_order_receipts extends CI_Controller
             $id = $_POST['id'];
             if ($id === "0") {
                 $this->db->select('a.po_no, a.receipt_no, a.receipt_date, a.awb_no, a.awb_date, a.bc_kind, a.bc_document, a.bc_aju, a.bc_date, b.number as supplier_id, a.lotno, 
-                b.name as supplier_name, a.total_receipt as qty_receipt, a.total_label as qty_label, a.status, e.number as category_code, f.division, a.print, g.number as invoice_no');
+                b.name as supplier_name, a.total_receipt as qty_receipt, a.total_label as qty_label, a.status, e.number as category_code, f.division, a.print, g.number as invoice_no, COUNT(a.status) as total_status, i.total_status_open,h.total_status_close');
                 $this->db->from('(SELECT *, sum(qty_label) as total_label, sum(qty_receipt) as total_receipt FROM purchase_order_receipts GROUP BY receipt_no ORDER BY status asc) a');
                 $this->db->join('suppliers b', 'a.supplier_id = b.id');
                 $this->db->join('purchase_orders c', 'a.po_no = c.po_no and a.item_rm_id = c.item_rm_id');
@@ -225,6 +250,8 @@ class Purchase_order_receipts extends CI_Controller
                 $this->db->join('item_categories e', 'd.item_category_id = e.id','left');
                 $this->db->join('purchase_requests f', 'c.request_no = f.request_no','left');
                 $this->db->join('purchase_invoices g', 'a.receipt_no = g.por_no','left');
+                $this->db->join('(SELECT receipt_no, COUNT(status) as total_status_close FROM purchase_order_receipts WHERE status = 1 GROUP BY receipt_no) h', 'a.receipt_no = h.receipt_no', 'left');
+                $this->db->join('(SELECT receipt_no, COUNT(status) as total_status_open FROM purchase_order_receipts WHERE status = 0 GROUP BY receipt_no) i', 'a.receipt_no = i.receipt_no', 'left');
                 $this->db->where('a.deleted', 0);
                 if ($filter_from != "" and $filter_to != "") {
                     $this->db->where('a.receipt_date >=', $filter_from);
@@ -272,6 +299,18 @@ class Purchase_order_receipts extends CI_Controller
                     $receipt_no = $record['receipt_no'];
                     $purchase_order_label = $this->crud->query("SELECT receipt_id, SUM(`status`) as total_scan FROM purchase_order_labels WHERE receipt_id like '%$receipt_no%'");
 
+                    if ($record['total_status'] == $record['total_status_open']) {
+                        $status = "0";
+                    } elseif ($record['total_status'] == $record['total_status_close']) {
+                        $status = "1";
+                    } elseif ($record['total_status_open'] >= 1) {
+                        $status = "0";
+                    } elseif ($record['total_status_close'] >= 1) {
+                        $status = "1";
+                    } else {
+                        $status = "0";
+                    }
+
                     $arr[] = array(
                         "id" => $record['receipt_no'],
                         "po_no" => $record['po_no'],
@@ -291,7 +330,7 @@ class Purchase_order_receipts extends CI_Controller
                         "division" => $record['division'],
                         "qty_label" => $record['qty_label'],
                         "total_scan" => $purchase_order_label[0]->total_scan,
-                        "status" => $record['status'],
+                        "status" => $status,
                         "print" => $record['print'],
                         "state" => "closed",
                     );
