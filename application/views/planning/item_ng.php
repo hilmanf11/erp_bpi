@@ -95,6 +95,17 @@
                     <input style="width:60%;" name="process" id="process" class="easyui-combogrid" required>
                 </div>
                 <div class="fitem">
+                    <span style="width:35%; display:inline-block;">Kind of NG</span>
+                        <select style="width:60%;" name="kind" id="kind" required="" panelHeight="auto" class="easyui-combobox">
+                            <option value="Ng Process Production">NG Process Production</option>
+                            <option value="Ng Setting">NG Setting</option>
+                            <option value="First Setting">First Setting</option>
+                            <!-- <option value="ng_start_setting">NG Start Setting</option>
+                            <option value="ng_purging">NG Purging</option> -->
+                            <option value="Ng for Req Material">Ng for Req Material</option>
+                        </select>
+                </div>
+                <div class="fitem">
                     <span style="width:35%; display:inline-block;">NG Type</span>
                     <input style="width:60%;" id="type" name="type" class="easyui-combobox" required>
                 </div>
@@ -196,8 +207,27 @@
     </form>
 </div>
 
-<!-- PDF -->
+<!-- Upload -->
+<div id="dlg_upload" class="easyui-dialog" title="Upload Data" data-options="closed: true,modal:true" style="width: 500px; padding:10px; top: 20px;">
+    <form id="frm_upload" method="post" enctype="multipart/form-data" novalidate>
+        <fieldset style="width:100%; border:1px solid #d0d0d0; margin-bottom: 10px; border-radius:4px; float: left;">
+            <legend><b>Form Data</b></legend>
+            <div class="fitem">
+                <span style="width:35%; display:inline-block;">File Upload</span>
+                <input name="file_upload" style="width: 60%;" required="" accept=".xls" id="file_excel" class="easyui-filebox">
+            </div>
+        </fieldset>
+    </form>
+    <span style="float: left; color:green;">SUCCESS : <b id="p_success">0</b></span><span style="float: right; color:red;"> FAILED : <b id="p_failed">0</b></span>
+    <div id="p_upload" class="easyui-progressbar" style="width:100%; margin-top: 10px;"></div>
+    <center><b id="p_start">0</b> Of <b id="p_finish">0</b></center>
+    <div id="p_remarks" title="History Upload" class="easyui-panel" style="width:100%; height:200px; padding:10px; margin-top: 10px;">
+        <ul id="remarks">
+        </ul>
+    </div>
+</div>
 
+<!-- PDF -->
 <iframe id="printout" src="<?= base_url('planning/item_ng/print') ?>" style="width: 100%;" hidden></iframe>
 
 <script>
@@ -642,7 +672,8 @@
                             method: 'post',
                             url: '<?= base_url('planning/item_ng/delete') ?>',
                             data: {
-                                id: row.id
+                                id: row.id,
+                                document: row.document
                             },
                             success: function(result) {
                                 var result = eval('(' + result + ')');
@@ -691,6 +722,15 @@
 
         $("#printout").attr('src', '<?= base_url('planning/item_ng/print') ?>' + url);
 
+    }
+
+    // UPLOAD DATA
+    function upload() {
+        $('#dlg_upload').dialog('open');
+    }
+    // DOWNLOAD
+    function download_excel() {
+        window.location.assign('<?= base_url('template/tmp_item_ng.xls') ?>');
     }
 
     function pdf() {
@@ -1035,83 +1075,74 @@
             ],
         });
 
-        $("#item_fg_number").combogrid({
-            url: "<?= base_url('planning/item_ng/readWorkorders/') ?>",
-            panelWidth: 550,
-            idField: 'product_no',
-            textField: 'product_no',
-            mode: 'remote',
-            fitColumns: true,
-            prompt: "Choose Product No",
-            columns: [
-                [{
-                    field: 'period',
-                    title: 'Period',
-                    width: 150
-                }, {
-                    field: 'lot_no',
-                    title: 'Lot No',
-                    width: 100,
-                    align: 'left'
-                }, {
-                    field: 'wo_no',
-                    title: 'Wo No',
-                    width: 100,
-                    align: 'left'
-                }, {
-                    field: 'product_no',
-                    title: 'Product No',
-                    width: 200,
-                    align: 'left'
-                }]
-            ],
-            onSelect: function(val, row) {
-                // addTable(row.wo_no);
-                $("#period").textbox('setValue', row.period);
-                $("#item_fg_id").textbox('setValue', row.item_fg_id);
-                $("#workorder").textbox('setValue', row.wo_no);
-                $("#qty_sh").numberbox('setValue', row.qty);
+        $(document).ready(function(){
+            loadWorkorders();
 
-                var wo_no = row.wo_no;
-                var item_fg_id = row.item_fg_id
-
-                $.ajax({
-                    url: '<?= base_url("planning/item_ng/checkWo_no/") ?>' + window.btoa(wo_no) + '/' + window.btoa(item_fg_id), 
-                    method: 'GET',
-                    dataType: 'json',
-                    success: function(data) {
-                        console.log(data);
-                        accumulateAjax = data[0].qty;
-                        $("#accumulate_sh").textbox('setValue', data[0].qty);
-                    }
-                });
-
-                $('#qty_product').numberbox({
-                    onChange: function(value) {
-                        if(value != ""){
-                            var qty = $("#qty_sh").numberbox("getValue");
-                            var receipt = $("#qty_product").numberbox('getValue');
-
-                            var calculate = parseInt(receipt) + parseInt(accumulateAjax);
-                            var result = parseInt(qty) - parseInt(calculate);
-
-                            var balance = $("#balance_sh").numberbox('setValue', result);
-                            var accumulate_total = $("#accumulate_sh").numberbox('setValue', calculate);
-
-                            // if (result < 0) {
-                            //     toastr.warning("Balance minus, please correct your Qty!");
-                            //     $("#qty_product").numberbox('setValue', 0);
-                            //     $("#accumulate_sh").numberbox('setValue', accumulateAjax);
-                            // } else {
-                            //     return result;
-                            // }
-                        }else{
-                            $("#qty_product").numberbox('setValue', 0);
-                        }
-                    }
-                });
-            }
+            $("#kind").combobox({
+                onChange: function(newVal, oldVal){
+                    loadWorkorders();
+                }
+            });
         });
+
+        function loadWorkorders() {
+            var kind = $("#kind").combobox('getValue');
+
+            $("#item_fg_number").combogrid({
+                url: "<?= base_url('planning/item_ng/readWorkorders/') ?>?kind=" + kind,
+                panelWidth: 550,
+                idField: 'product_no',
+                textField: 'product_no',
+                mode: 'remote',
+                fitColumns: true,
+                prompt: "Choose Product No",
+                columns: [[
+                    { field: 'period', title: 'Period', width: 150 },
+                    { field: 'lot_no', title: 'Lot No', width: 100, align: 'left' },
+                    { field: 'wo_no', title: 'Wo No', width: 100, align: 'left' },
+                    { field: 'product_no', title: 'Product No', width: 200, align: 'left' }
+                ]],
+                onSelect: function(val, row) {
+                    $("#period").textbox('setValue', row.period);
+                    $("#item_fg_id").textbox('setValue', row.item_fg_id);
+                    $("#workorder").textbox('setValue', row.wo_no);
+                    $("#qty_sh").numberbox('setValue', row.qty);
+
+                    var wo_no = row.wo_no;
+                    var item_fg_id = row.item_fg_id;
+
+                    $.ajax({
+                        url: '<?= base_url("planning/item_ng/checkWo_no/") ?>' + window.btoa(wo_no) + '/' + window.btoa(item_fg_id), 
+                        method: 'GET',
+                        data: { kind: kind },   // ikut kirim kind juga
+                        dataType: 'json',
+                        success: function(data) {
+                            console.log(data);
+                            accumulateAjax = data[0].qty;
+                            $("#accumulate_sh").textbox('setValue', data[0].qty);
+                        }
+                    });
+
+                    $('#qty_product').numberbox({
+                        onChange: function(value) {
+                            if(value != ""){
+                                var qty = $("#qty_sh").numberbox("getValue");
+                                var receipt = $("#qty_product").numberbox('getValue');
+
+                                var calculate = parseInt(receipt) + parseInt(accumulateAjax);
+                                var result = parseInt(qty) - parseInt(calculate);
+
+                                $("#balance_sh").numberbox('setValue', result);
+                                $("#accumulate_sh").numberbox('setValue', calculate);
+                            }else{
+                                $("#qty_product").numberbox('setValue', 0);
+                            }
+                        }
+                    });
+                }
+            });
+        }
+
 
         $("#process").combogrid({
             url: '<?= base_url('master/item_process/reads') ?>',
@@ -1133,6 +1164,86 @@
                 }]
             ],
         });
+    });
+
+    // UPLOAD DATA
+    $('#dlg_upload').dialog({
+        buttons: [{
+            text: 'List Failed',
+            handler: function() {
+                window.open('<?= base_url('planning/item_ng/uploadDownloadFailed') ?>', '_blank');
+            }
+        }, {
+            text: 'Upload',
+            iconCls: 'icon-ok',
+            handler: function() {
+                $('#frm_upload').form('submit', {
+                    url: '<?= base_url('planning/item_ng/upload') ?>',
+                    onSubmit: function() {
+                        if ($(this).form('validate') == false) {
+                            return $(this).form('validate');
+                        } else {
+                            $.messager.progress({
+                                title: 'Please Wait',
+                                msg: 'Importing Excel to Database'
+                            });
+                        }
+                    },
+                    success: function(result) {
+                        $.messager.progress('close');
+                        //Clear File
+                        $.ajax({
+                            url: "<?= base_url('planning/item_ng/uploadclearFailed') ?>"
+                        });
+                        var json = eval('(' + result + ')');
+                        requestData(json.total, json);
+
+                        function requestData(total, json, number = 1, value = 0, success = 1, failed = 1) {
+                            if (value < 100) {
+                                value = Math.floor((number / total) * 100);
+                                $('#p_upload').progressbar('setValue', value);
+                                $('#p_start').html(number);
+                                $('#p_finish').html(total);
+
+                                $.ajax({
+                                    type: "POST",
+                                    async: true,
+                                    url: "<?= base_url('planning/item_ng/uploadCreate') ?>",
+                                    data: {
+                                        "data": json[number - 1]
+                                    },
+                                    cache: false,
+                                    dataType: "json",
+                                    success: function(result) {
+                                        if (result.theme == "success") {
+                                            $('#p_success').html(success);
+                                            var title = "<b style='color: green;'>" + result.title + "</b> | " + result.message;
+                                            requestData(total, json, number + 1, value, success + 1, failed + 0);
+                                        } else {
+                                            $('#p_failed').html(failed);
+                                            var title = "<b style='color: red;'>" + result.title + "</b> | " + result.message;
+                                            //Json Failed
+                                            $.ajax({
+                                                type: "POST",
+                                                async: true,
+                                                url: "<?= base_url('planning/item_ng/uploadcreateFailed') ?>",
+                                                data: {
+                                                    data: json[number - 1],
+                                                    message: result.message
+                                                },
+                                                cache: false
+                                            });
+                                            requestData(total, json, number + 1, value, success + 0, failed + 1);
+                                        }
+                                        $("#p_remarks").append(title + "<br>");
+                                    }
+                                });
+                            }
+                        }
+                    }
+                });
+            }
+        }]
     });
 
     //Format Datepicker

@@ -45,36 +45,21 @@ class Item_ng extends CI_Controller
         echo json_encode($send);
     }
 
-
     public function item_ng_no($trans_date)
-
     {
-
         $trans_date = base64_decode($trans_date);
-
         $year       = date("Y", strtotime($trans_date));
-
         $datenow    = date("ymd", strtotime($trans_date));
-
         $sqlGetID   = $this->db->query("SELECT MAX(SUBSTR(document, -4, 4)) as kode FROM item_ng WHERE trans_date like '%$year%'");
-
         $rowID      = $sqlGetID->row();
-
         $kode       = $rowID->kode;
-
         if ($kode == NULL) {
-
             $autoID = sprintf("%04s", $kode + 1);
         } else {
-
             $urutan = (int) $kode;
-
             $urutan++;
-
             $autoID = sprintf("%04s", $urutan);
         }
-
-
 
         echo "NG-" . $datenow . "-" . $autoID;
     }
@@ -92,23 +77,54 @@ class Item_ng extends CI_Controller
     public function readWorkorders()
     {
         $post = isset($_POST['q']) ? $_POST['q'] : "";
-        $send = $this->crud->query("SELECT DISTINCT 
-                a.wo_no AS wo_no, 
-                a.period AS period, 
-                a.qty AS qty, 
-                a.lot_no as lot_no, 
-                a.item_fg_id AS item_fg_id, 
-                a.item_fg_name AS product_name, 
-                b.number AS product_no,
-                a.division as division,
-                b.status_subcont,
-                b.subcont_type
-        FROM production_schedules a
-        JOIN item_fg b ON a.item_fg_id = b.id
-        WHERE a.status = 0 
-        AND a.wo_no != '' 
-        AND b.number LIKE '%$post%' or a.lot_no LIKE '%$post%' or a.wo_no LIKE '%$post%' or a.period LIKE '%$post%' 
-        ORDER BY b.number DESC");
+        $kind = $this->input->get('kind');
+        if($kind == 'Ng for Req Material'){
+            $send = $this->crud->query("
+                SELECT DISTINCT 
+                    a.wo_no AS wo_no, 
+                    a.period AS period, 
+                    a.qty AS qty, 
+                    a.lot_no as lot_no, 
+                    a.item_fg_id AS item_fg_id, 
+                    a.item_fg_name AS product_name, 
+                    b.number AS product_no,
+                    a.division as division,
+                    b.status_subcont,
+                    b.subcont_type
+                FROM production_schedules a
+                JOIN item_fg b ON a.item_fg_id = b.id
+                WHERE a.status = 0 
+                AND a.wo_no != '' 
+                AND (b.number LIKE '%$post%' 
+                    OR a.lot_no LIKE '%$post%' 
+                    OR a.wo_no LIKE '%$post%' 
+                    OR a.period LIKE '%$post%')
+                ORDER BY b.number DESC
+            ");
+        } else {
+            $send = $this->crud->query("
+                SELECT DISTINCT 
+                    a.wo_no AS wo_no, 
+                    a.period AS period, 
+                    a.qty AS qty, 
+                    a.lot_no as lot_no, 
+                    a.item_fg_id AS item_fg_id, 
+                    a.item_fg_name AS product_name, 
+                    b.number AS product_no,
+                    a.division as division,
+                    b.status_subcont,
+                    b.subcont_type
+                FROM production_schedules a
+                JOIN item_fg b ON a.item_fg_id = b.id
+                WHERE a.wo_no != '' 
+                AND (b.number LIKE '%$post%' 
+                    OR a.lot_no LIKE '%$post%' 
+                    OR a.wo_no LIKE '%$post%' 
+                    OR a.period LIKE '%$post%')
+                ORDER BY b.number DESC
+            ");
+        }
+
         echo json_encode($send);
     }
 
@@ -376,7 +392,7 @@ class Item_ng extends CI_Controller
             ]);
         }
 
-        @$send = $this->crud->delete('item_ng', ["id" => $data['id']]);
+        @$send = $this->crud->delete('item_ng', ["document" => $data['document']]);
         echo $send;
     }
 
@@ -387,6 +403,209 @@ class Item_ng extends CI_Controller
         echo $send;
     }
 
+    //UPLOAD DATA
+    // public function upload()
+    // {
+    //     error_reporting(0);
+    //     require_once 'assets/vendors/excel_reader2.php';
+    //     $target = basename($_FILES['file_upload']['name']);
+    //     move_uploaded_file($_FILES['file_upload']['tmp_name'], $target);
+    //     chmod($_FILES['file_upload']['name'], 0777);
+    //     $file = $_FILES['file_upload']['name'];
+    //     $data = new Spreadsheet_Excel_Reader($file, false);
+    //     $total_row = $data->rowcount($sheet_index = 0);
+    //     for ($i = 3; $i <= $total_row; $i++) {
+    //         $datas[] = array(
+    //             //excel
+    //             'trans_date' => $data->val($i, 2),
+    //             'process' => $data->val($i, 3),
+    //             'kind' => $data->val($i, 4),
+    //             'type' => $data->val($i, 5),
+    //             'workorder' => $data->val($i, 6),
+    //             'item_number' => $data->val($i, 7),
+    //             'qty_product' => $data->val($i, 8),
+    //             'shift' => $data->val($i, 9)
+    //         );
+    //     }
+    //     $datas['total'] = count($datas);
+    //     echo json_encode($datas);
+    //     unlink($_FILES['file_upload']['name']);
+    // }
+
+    public function upload()
+    {
+        error_reporting(0);
+        require_once 'assets/vendors/excel_reader2.php';
+        $target = basename($_FILES['file_upload']['name']);
+        move_uploaded_file($_FILES['file_upload']['tmp_name'], $target);
+        chmod($_FILES['file_upload']['name'], 0777);
+        $file = $_FILES['file_upload']['name'];
+        $data = new Spreadsheet_Excel_Reader($file, false);
+        $total_row = $data->rowcount($sheet_index = 0);
+
+        $datas = [];
+
+        for ($i = 3; $i <= $total_row; $i++) {
+            // buat key unik untuk grouping (gabungan beberapa field penting)
+            $key = $data->val($i, 2) . '|' . 
+                $data->val($i, 3) . '|' . 
+                $data->val($i, 4) . '|' . 
+                $data->val($i, 5) . '|' . 
+                $data->val($i, 6) . '|' . 
+                $data->val($i, 7) . '|' . 
+                $data->val($i, 9);
+
+            if (isset($datas[$key])) {
+                $datas[$key]['qty_product'] += (float)$data->val($i, 8);
+            } else {
+                $datas[$key] = [
+                    'trans_date'  => $data->val($i, 2),
+                    'process'     => $data->val($i, 3),
+                    'kind'        => $data->val($i, 4),
+                    'type_code'   => $data->val($i, 5),
+                    'workorder'   => $data->val($i, 6),
+                    'item_number' => $data->val($i, 7),
+                    'qty_product' => (float)$data->val($i, 8),
+                    'shift'       => $data->val($i, 9),
+                ];
+            }
+        }
+
+        // ubah associative array menjadi numerik array
+        $result = array_values($datas);
+        $result['total'] = count($result);
+
+        echo json_encode($result);
+        unlink($_FILES['file_upload']['name']);
+    }
+
+    public function uploadclearFailed()
+    {
+        @unlink('failed/item_ng.txt');
+    }
+    public function uploadcreateFailed()
+    {
+        if ($this->input->post()) {
+            $message = $this->input->post('message');
+            $textFailed = fopen('failed/item_ng.txt', 'a');
+            fwrite($textFailed, $message . "\n");
+            fclose($textFailed);
+        }
+    }
+    //UPLOAD DOWNLOAD FAILED
+    public function uploadDownloadFailed()
+    {
+        $file = "failed/item_ng.txt";
+        header('Content-Description: File Failed');
+        header('Content-Disposition: attachment; filename=' . basename($file));
+        header('Expires: 0');
+        header('Cache-Control: must-revalidate');
+        header('Pragma: public');
+        header('Content-Length: ' . @filesize($file));
+        header("Content-Type: text/plain");
+        @readfile($file);
+    }
+    //UPLOAD CREATE DATA
+    public function uploadcreate()
+    {
+        if ($this->input->post()) {
+            $data = $this->input->post('data');
+
+            $production_schedule = $this->crud->read('production_schedules',[],array("wo_no" => $data['workorder']));
+            $item_fg = $this->crud->read('item_fg',[],array("number" => $data['item_number']));
+            $types = [];
+            if (!empty($data['type_code'])) {
+                $codes = array_map('trim', explode(',', $data['type_code']));
+                $master_ngs = $this->db->where_in('code', $codes)->get('master_ng')->result();
+
+                foreach ($master_ngs as $ng) {
+                    $types[] = $ng->name;
+                }
+            }
+
+            $type_name = implode(', ', $types);
+
+            $accumulate_sh = $this->db->query("SELECT COALESCE(SUM(qty_product),0) as qty FROM item_ng WHERE workorder = '{$data['workorder']}' AND item_fg_id = '{$item_fg->id}' AND no_urut = 1")->row();
+            $accumulate_qty = !empty($accumulate_sh) ? $accumulate_sh->qty : 0;
+
+            // ambil records supply_sheets
+            $this->db->select("
+                a.item_fg_id, 
+                a.item_rm_id,
+                b.id, 
+                b.number, 
+                b.name, 
+                b.uom, 
+                COALESCE(d.scrap, 0) as scrap, 
+                ROUND({$production_schedule->qty} * COALESCE(c.composition, 1), 4) as qty, 
+                ROUND({$data['qty_product']} * COALESCE(c.composition, 1), 4) as ng,
+                a.period
+            ");
+            $this->db->from('supply_sheets a');
+            $this->db->join('item_rm b', 'a.item_rm_id = b.id');
+            $this->db->join('bom c', 'a.item_rm_id = c.item_rm_id and a.item_fg_id = c.item_fg_id','left');
+            $this->db->join('(SELECT item_rm_id, wo_no, SUM(qty) as scrap 
+                            FROM scraps 
+                            GROUP BY item_rm_id, wo_no) d', 
+                            'a.item_rm_id = d.item_rm_id AND a.workorder = d.wo_no', 'left');
+            $this->db->where('a.workorder', $data['workorder']);
+            $this->db->where('b.status', 0);
+            $this->db->order_by('b.number', 'asc');
+            $records = $this->db->get()->result_array();
+
+            
+            if (!$production_schedule || empty($production_schedule->id)) {
+                echo json_encode(array("title" => "Not Found","message" => "Workorder " . $data['workorder'] . " NOT FOUND","theme" => "error"));
+                // return;
+            } elseif ($data['kind'] === 'Ng for Req Material' && $production_schedule->status == 1) {
+                echo json_encode(["title"   => "Invalid","message" => "Workorder " . $data['workorder'] . " Already CLOSE, Cannot input Ng for Req Material","theme"   => "error"]);
+                //return;
+            }else{
+
+                // generate autonumber (satu nomor untuk semua row dalam upload ini)
+                $trans_date = $data['trans_date'];
+                $year       = date("Y", strtotime($trans_date));
+                $datenow    = date("ymd", strtotime($trans_date));
+                $sqlGetID   = $this->db->query("
+                    SELECT MAX(RIGHT(document,4)) as kode 
+                    FROM item_ng 
+                    WHERE YEAR(trans_date) = '$year'
+                ");
+                $rowID = $sqlGetID->row();
+                $kode  = $rowID->kode;
+
+                $urutan = ($kode == NULL) ? 1 : ((int) $kode + 1);
+                $autoID = sprintf("%04s", $urutan);
+                $autonumber = "NG-" . $datenow . "-" . $autoID;
+
+                // insert ke item_ng
+                foreach ($records as $row) {
+                    $dataFinal = array(
+                        "item_fg_id"    => $row['item_fg_id'],
+                        "item_rm_id"    => $row['item_rm_id'],
+                        "trans_date"    => $data['trans_date'],
+                        "document"      => $autonumber,
+                        "departement"   => 'PRODUCTION',
+                        "process"       => $data['process'],
+                        "type"          => $type_name,
+                        "workorder"     => $data['workorder'],
+                        "period"        => $row['period'],
+                        "stock"         => $row['qty'],
+                        "qty"           => $row['ng'],
+                        "qty_sh"        => $production_schedule->qty,
+                        "qty_product"   => $data['qty_product'],
+                        "accumulate_sh" => $accumulate_qty,
+                        "uom"           => $row['uom'],
+                        "kind"          => $data['kind'],
+                        "shift"         => $data['shift'],
+                    );
+                    $send = $this->crud->create('item_ng', $dataFinal);
+                }
+
+                echo $send;
+            }
+        }
+    }
 
     public function print($option = "")
     {
