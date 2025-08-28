@@ -1815,6 +1815,7 @@
                                                                 account_number: rows2[z].account_number,
                                                                 account_name: rows2[z].account_name,
                                                                 description: rows2[z].description,
+                                                                exchange_rate: rows2[z].exchange_rate || 1,
                                                                 debit: rows2[z].debit,
                                                                 credit: rows2[z].credit,
                                                                 local_debit: rows2[z].local_debit,

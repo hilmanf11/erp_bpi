@@ -881,7 +881,9 @@ class Journal_postings extends CI_Controller
             $result = array_merge($result, ['rows' => $data], ["footer" => $footer]);
             echo json_encode($result);
         } elseif ($modul == "AP PAYMENT") {
+
             $this->db->select('a.payment_no, b.payment_date, b.purchase_invoice, b.supplier_invoice, c.name as supplier_name, b.currency, a.description, a.account_number, a.account_name, a.debit, a.credit, a.flag, a.local_debit, a.local_credit, b.rate');
+            $this->db->select('a.exchange_rate');
             $this->db->from('ap_payment_journals a');
             $this->db->join("(SELECT * FROM ap_payments GROUP BY payment_no) b", "b.payment_no = a.payment_no");
             $this->db->join("suppliers c", "b.supplier_id = c.id");
@@ -901,40 +903,28 @@ class Journal_postings extends CI_Controller
             $grand_local_credit = 0;
 
             $data = array();
+            $gainLossData = null;
+
             foreach ($journals as $journal) {
                 $number = $journal['payment_no'];
                 $account_number = $journal['account_number'];
                 $account_name = $journal['account_name'];
-                $debit = $journal['debit'];
-                $credit = $journal['credit'];
-
-                // $transmonth = date('Y-m-01', strtotime('-1 month', strtotime($journal['payment_date'])));
-                // $exchange = $this->crud->read('exchange_rates', [], ["start_date" => $transmonth, "currency_from" => $journal['currency'], "currency_to" => "IDR"]);
-
-                if ($journal['currency'] != "IDR") {
-                    $original_debit = $debit;
-                    $original_credit = $credit;
-                    // $local_debit = $journal['local_debit'];
-                    // $local_credit = $journal['local_credit'];
-
-                    if ($journal['account_number'] == "810.150.00") { // Gain (Loss) Sales Asset. 810.150.00 . Foreign Exchange A/P
-                        $local_debit = $journal['local_debit'];
-                        $local_credit = $journal['local_credit'];
-                        
-                    } else {
-                        $local_debit = round($journal['debit'] * $journal['rate'], 2);
-                        $local_credit = round($journal['credit'] * $journal['rate'], 2);
+                $original_debit = (float)$journal['debit'];
+                $original_credit = (float)$journal['credit'];
+                $local_debit = 0;
+                $local_credit = 0;
+                
+                // Tentukan nilai local debit/credit
+                if ($journal['currency'] !== "IDR") {
+                    if ($journal['account_number'] === "810.150.00") {
+                        $gainLossData = $journal;
+                        continue;
                     }
-
-                    // $rates = @$exchange->middle;
-                    $rates = $journal['rate'];
+                    $local_debit = round($original_debit * $journal['exchange_rate'], 2);
+                    $local_credit = round($original_credit * $journal['exchange_rate'], 2);
                 } else {
-                    $original_debit = $debit;
-                    $original_credit = $credit;
-                    $local_debit = $journal['local_debit'];
-                    $local_credit = $journal['local_credit'];
-
-                    $rates = 1;
+                    $local_debit = (float)$journal['local_debit'];
+                    $local_credit = (float)$journal['local_credit'];
                 }
 
                 $data[] = array(
@@ -949,7 +939,7 @@ class Journal_postings extends CI_Controller
                     "currency" => $journal['currency'],
                     "original_debit" => $original_debit,
                     "original_credit" => $original_credit,
-                    "rates" => $rates,
+                    "rates" => $journal['exchange_rate'] ?? 0,
                     "local_debit" => $local_debit,
                     "local_credit" => $local_credit,
                 );
@@ -958,6 +948,42 @@ class Journal_postings extends CI_Controller
                 $grand_original_credit += $original_credit;
                 $grand_local_debit += $local_debit;
                 $grand_local_credit += $local_credit;
+            }
+
+            // Gain (Loss) Sales Asset. 810.150.00 . Foreign Exchange A/P 
+            if ($journal['currency'] !== "IDR") {
+                if ($grand_local_debit !== $grand_local_credit) {
+                    $difference = $grand_local_debit - $grand_local_credit;
+                    $gainLossDebit = 0;
+                    $gainLossCredit = 0;
+                    
+                    if ($difference > 0) {
+                        $gainLossCredit = abs($difference);
+                    } else if ($difference < 0) {
+                        $gainLossDebit = abs($difference);
+                    }
+
+                    $data[] = array(
+                        "trans_date" => $gainLossData['payment_date'],
+                        "document_no" => $number,
+                        "invoice_no" => $gainLossData['purchase_invoice'],
+                        "company_name" => $gainLossData['supplier_name'],
+                        "modul" => $modul,
+                        "account_number" => "810.150.00",
+                        "account_name" => "Gain (Loss) Sales Asset",
+                        "description" => "Foreign Exchange A/P",
+                        "currency" => "IDR", // Selalu IDR
+                        "original_debit" => 0,
+                        "original_credit" => 0,
+                        "rates" => 0, // Nilai rates bisa 0
+                        "local_debit" => $gainLossDebit,
+                        "local_credit" => $gainLossCredit,
+                    );
+                    
+                    // Tambahkan nilai Gain (Loss) ke grand total
+                    $grand_local_debit += $gainLossDebit;
+                    $grand_local_credit += $gainLossCredit;
+                }
             }
 
             $footer[] = array(
@@ -970,6 +996,7 @@ class Journal_postings extends CI_Controller
             $result['total'] = count($data);
             $result = array_merge($result, ['rows' => $data], ["footer" => $footer]);
             echo json_encode($result);
+
         } elseif ($modul == "AR RECEIPT") {
             $this->db->select('a.receipt_no, b.receipt_date, b.sales_invoice, b.description, c.name as customer_name, b.currency, a.description, a.account_number, a.account_name, a.debit, a.credit, a.flag, b.rate');
             $this->db->from('ar_receipt_journals a');
