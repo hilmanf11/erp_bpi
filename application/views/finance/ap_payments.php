@@ -209,6 +209,7 @@
                     <th data-options="field:'purchase_invoice',width:150, editor: {type: 'textbox'}">Purchase Invoice</th>
                     <th data-options="field:'supplier_invoice',width:150, editor: {type: 'textbox'}">Description</th>
                     <th data-options="field:'currency',align:'center',width:80, editor: {type: 'textbox'}">Currency</th>
+                    <th data-options="field:'rate',width:120, formatter:numberformat, align:'right', editor: {type: 'numberbox',options: {precision:2}}">Payment Rate</th>
                     <th data-options="field:'amount',width:150, formatter:numberformat, align:'right', editor: {type: 'numberbox',options: {precision:2}}">Amount</th>
                     <th data-options="field:'balance',width:150, formatter:numberformat, align:'right', editor: {type: 'numberbox',options: {precision:2, readonly:true}}">Balance</th>
                     <th data-options="field:'payment',width:150, formatter:numberformat, align:'right', editor: {type: 'numberbox',options: {precision:2}}">Payment</th>
@@ -247,6 +248,7 @@
                         <th rowspan="2" data-options="field:'account_number',halign:'center',width:100, editor: {type: 'textbox'}">Account No</th>
                         <th rowspan="2" data-options="field:'account_name',halign:'center',width:200, editor: {type: 'textbox', options: {readonly: true}}">Account Name</th>
                         <th rowspan="2" data-options="field:'description',halign:'center',width:200, editor: {type: 'textbox', options: {required: true}}">Description</th>
+                        <th rowspan="2" data-options="field:'exchange_rate', halign:'center', align:'right', formatter:numberformat, width:100, editor: {type: 'numberbox'}">Rate</th>
                         <th colspan="2" data-options="field:'',width:150">Original Currency</th>
                         <th colspan="2" data-options="field:'',width:150">Local Currency</th>
                         <th rowspan="2" data-options="field:'flag',width:50,halign:'center',editor: {type: 'numberbox', options: {required: true}}">Index</th>
@@ -352,7 +354,6 @@
         <div id="toolbar3">
             <a href="javascript:void(0)" class="easyui-linkbutton" data-options="plain:true" onclick="append2()"><i class="fa fa-plus"></i> Add</a>
             <a href="javascript:void(0)" class="easyui-linkbutton" data-options="plain:true" onclick="removeit3()"><i class="fa fa-times"></i> Remove</a>
-            <a href="javascript:void(0)" class="easyui-linkbutton" data-options="plain:true" onclick="saveEditing()" id="saveEdit" hidden><i class="fa fa-check"></i> Save</a>
         </div>
 
         <table id="dg2" class="easyui-datagrid" style="width:100%;" title="AP Payment Lists" toolbar="#toolbar2" data-options="singleSelect: true" idField="purchase_invoice">
@@ -492,7 +493,54 @@
                         }">Account No</th>
                         <th rowspan="2" data-options="field:'account_name',halign:'center',width:200, editor: {type: 'textbox', options: {readonly: true}}">Account Name</th>
                         <th rowspan="2" data-options="field:'description',halign:'center',width:200, editor: {type: 'textbox', options: {required: false}}">Description</th>
-                        <th rowspan="2" data-options="field:'rate', halign:'center', align:'right', formatter:numberformat, width:100, editor: {type: 'numberbox'}">Rate</th>
+                        <th rowspan="2" data-options="field:'exchange_rate', halign:'center', align:'right', formatter:numberformat, width:100, editor: {
+                            type: 'numberbox',
+                            options: {
+                                onChange: function(value, oldValue) {
+                                    var dg = $(this).closest('.datagrid-view').find('table.datagrid-f');
+                                    var row = dg.datagrid('getSelected');
+                                    var rowIndex = dg.datagrid('getRowIndex', row);
+                                    
+                                    if (row) {
+                                        var originalDebit = parseFloat(row.debit) || 0;
+                                        var originalCredit = parseFloat(row.credit) || 0;
+                                        var newRate = parseFloat(value);
+                                        
+                                        if (!isNaN(newRate)) {
+                                            var localDebit = originalDebit * newRate;
+                                            var localCredit = originalCredit * newRate;
+                                            
+                                            var edLocalDebit = dg.datagrid('getEditor', {
+                                                index: rowIndex,
+                                                field: 'local_debit'
+                                            });
+                                            var edLocalCredit = dg.datagrid('getEditor', {
+                                                index: rowIndex,
+                                                field: 'local_credit'
+                                            });
+                                            
+                                            // Pastikan editor diperbarui
+                                            if (edLocalDebit) {
+                                                $(edLocalDebit.target).numberbox('setValue', localDebit);
+                                            }
+                                            if (edLocalCredit) {
+                                                $(edLocalCredit.target).numberbox('setValue', localCredit);
+                                            }
+                                            
+                                            // Perbarui objek baris yang ada di datagrid dengan nilai baru
+                                            var rows = dg.datagrid('getRows');
+                                            rows[rowIndex].local_debit = localDebit;
+                                            rows[rowIndex].local_credit = localCredit;
+                                            
+                                            // Hitung ulang Gain Loss dan Total
+                                            recalculateGainLossAndTotals();
+                                            balance_journal();
+                                        }
+                                    }
+                                }
+                            }
+                        }">Rate</th>
+                        
                         <th colspan="2" data-options="field:'',width:150">Original Currency</th>
                         <th colspan="2" data-options="field:'',width:150">Local Currency</th>
                         <th rowspan="2" data-options="field:'flag',width:50,halign:'center',editor: {type: 'numberbox', options: {required: true}}">Index</th>
@@ -708,42 +756,6 @@
             url: link,
             singleSelect: true,
             onClickCell: onClickCell2,
-            onEndEdit: function(index, row, changes) {
-                // Cek apakah kolom 'rate' yang baru saja diedit
-                if (changes.rate !== undefined) {
-                    var newRate = parseFloat(changes.rate);
-                    if (!isNaN(newRate)) {
-                        var originalDebit = parseFloat(row.debit);
-                        var originalCredit = parseFloat(row.credit);
-
-                        // Lakukan perhitungan untuk Local Currency
-                        var localDebit = originalDebit * newRate;
-                        var localCredit = originalCredit * newRate;
-
-                        $('#dg3').datagrid('updateRow', {
-                            index: index,
-                            row: {
-                                local_debit: localDebit,
-                                local_credit: localCredit
-                            }
-                        });
-
-                        // Panggil fungsi baru untuk mengkalkulasi ulang Gain (Loss)
-                        recalculateGainLossAndTotals(newRate);
-                        
-                    } else {
-                        // Opsional: Jika input bukan angka, kembalikan nilai ke 0 atau 1
-                        $('#dg3').datagrid('updateRow', {
-                            index: index,
-                            row: {
-                                rate: 0
-                            }
-                        });
-                    }
-                }
-
-                balance_journal();
-            },
             onBeginEdit: function(rowIndex, row) {
                 balance_journal();
             }
@@ -751,7 +763,7 @@
     }
 
     // Gain (Loss) Sales Asset. 810.150.00 . Foreign Exchange A/P
-    function recalculateGainLossAndTotals(newRate) 
+    function recalculateGainLossAndTotals() 
     {
         var rows = $('#dg3').datagrid('getRows');
         var totalLocalDebit = 0;
@@ -791,7 +803,6 @@
             $('#dg3').datagrid('updateRow', {
                 index: gainLossRowIndex,
                 row: {
-                    rate: newRate,
                     local_debit: gainLossDebit,
                     local_credit: gainLossCredit
                 }
@@ -1016,25 +1027,6 @@
 
         $('#dg3').datagrid('cancelEdit', editIndex2).datagrid('deleteRow', editIndex2);
         editIndex2 = undefined;
-    }
-
-    function saveEditing() {
-        if (editIndex2 == undefined) {
-            return true
-        }
-        
-        if ($('#dg3').datagrid('validateRow', editIndex2)) {
-
-            $('#dg3').datagrid('endEdit', editIndex2);
-            $('#saveEdit').hide();
-
-            editIndex2 = undefined;
-            return true;
-        } else {
-            return false;
-        }
-
-        balance_journal();
     }
 
     //Edit Data
@@ -1548,241 +1540,125 @@
 
 
     //Upload Data
-
     function upload() {
-
         $('#dlg_upload').dialog('open');
-
     }
-
-
 
     function download_excel() {
-
         window.location.assign('<?= base_url('template/tmp_ap_payments.xls') ?>');
-
     }
 
-
-
     //Format Datepicker
-
     function myformatter(date) {
-
         var y = date.getFullYear();
-
         var m = date.getMonth() + 1;
-
         var d = date.getDate();
-
         return y + '-' + (m < 10 ? ('0' + m) : m) + '-' + (d < 10 ? ('0' + d) : d);
-
     }
 
-
-
     //Format Datepicker
-
     function myparser(s) {
-
         if (!s) return new Date();
-
         var ss = (s.split('-'));
-
         var y = parseInt(ss[0], 10);
-
         var m = parseInt(ss[1], 10);
-
         var d = parseInt(ss[2], 10);
 
         if (!isNaN(y) && !isNaN(m) && !isNaN(d)) {
-
             return new Date(y, m - 1, d);
-
         } else {
-
             return new Date();
-
         }
-
     }
 
-
-
     $(function() {
-
         //SETTING DATAGRID EASYUI
-
         $('#dg').datagrid({
-
             url: '<?= base_url('finance/ap_payments/datatables') ?>',
-
             pagination: true,
-
             rownumbers: true,
-
             fit: true,
-
             view: detailview,
-
             detailFormatter: function(index, row) {
-
                 return '<div style="padding:2px;position:relative;"><table class="ddv" title="Detail Of ' + row.payment_no + '"></table></div>';
-
             },
-
             onExpandRow: function(index, row) {
-
                 var ddv = $(this).datagrid('getRowDetail', index).find('table.ddv');
-
                 ddv.datagrid({
-
                     url: '<?= base_url('finance/ap_payments/datatables/details?payment_no=') ?>' + window.btoa(row.payment_no),
-
                     singleSelect: true,
-
                     rownumbers: true,
-
                     columns: [
-
                         [{
-
                             field: 'purchase_invoice',
-
                             title: 'Purchase Invoice',
-
                             halign: 'center',
-
                             width: 150
-
                         }, {
-
                             field: 'supplier_invoice',
-
                             title: 'Supplier Invoice',
-
                             halign: 'center',
-
                             width: 150
-
                         }, {
-
                             field: 'bank_account',
-
                             title: 'Bank Account',
-
                             halign: 'center',
-
                             width: 150
-
                         }, {
-
                             field: 'currency',
-
                             title: 'Currency',
-
                             align: 'center',
-
                             width: 80
-
                         }, {
-
                             field: 'amount',
-
                             title: 'Amount',
-
                             width: 100,
-
                             halign: 'center',
-
                             align: 'right',
-
                             formatter: numberformat
-
                         }, {
-
                             field: 'balance',
-
                             title: 'Balance',
-
                             width: 100,
-
                             halign: 'center',
-
                             align: 'right',
-
                             formatter: numberformat
-
                         }, {
-
                             field: 'payment',
-
                             title: 'Payment',
-
                             width: 100,
-
                             halign: 'center',
-
                             align: 'right',
-
                             formatter: numberformat
-
                         }, {
-
                             field: 'remarks',
-
                             title: 'Remarks',
-
                             halign: 'center',
-
                             width: 200
-
                         }, {
-
                             field: 'account_number',
-
                             title: 'Account No',
-
                             halign: 'center',
-
                             width: 150
-
                         }, {
-
                             field: 'account_type',
-
                             title: 'Debt/Credit',
-
                             align: 'center',
-
                             width: 80
-
                         }]
-
                     ],
-
                     onResize: function() {
-
                         $('#dg').datagrid('fixDetailRowHeight', index);
-
                     },
-
                     onLoadSuccess: function() {
-
                         setTimeout(function() {
-
                             $('#dg').datagrid('fixDetailRowHeight', index);
-
                         }, 0);
-
                     }
-
                 });
 
                 $('#dg').datagrid('fixDetailRowHeight', index);
-
             }
-
         });
 
         // Validasi: account_number tidak boleh null, undefined, atau string kosong setelah di-trim (Bu Nina)
@@ -1805,9 +1681,11 @@
                         nullAccountNumberRows.push(i + 1);
                     }
                     
-                    var exchangeRate = row.rate;
-                    if (exchangeRate === null || exchangeRate === undefined || String(exchangeRate).trim() === '' || exchangeRate == 0) {
-                        nullRateRows.push(i + 1);
+                    if (accountNumber === null && accountNumber !== "810.150.00") {
+                        var exchangeRate = row.exchange_rate;
+                        if (exchangeRate === null || exchangeRate === undefined || String(exchangeRate).trim() === '' || exchangeRate == 0) {
+                            nullRateRows.push(i + 1);
+                        }
                     }
                 }
 
@@ -1821,7 +1699,7 @@
                 // validasi : dg2 jika rate=0 maka tidak bisa save 
                 if (nullRateRows.length > 0) {
                     isValid = false;
-                    var errorMessage = "<b>Failed! Rate on " + listName + " cannot be '0,00' for rows: " + nullRateRows.join(', ') + "!</b> <br><br>Please check the exchange rate for this month.";
+                    var errorMessage = "<b>Failed! Exchange-Rate on " + listName + " cannot be '0,00' for rows: " + nullRateRows.join(', ') + "!</b> <br><br>Please check the exchange rate for this month.";
                     $.messager.alert("Error", errorMessage, 'error');
                 }
                 
@@ -2603,6 +2481,7 @@
     }
 
     function numberformat(value, row) {
+        if (value !== "-") {        
         const formatter = new Intl.NumberFormat('id-ID', {
             minimumFractionDigits: 2
         });
@@ -2612,6 +2491,8 @@
         } else {
             return "<b>0,00</b>";
         }
+        }
+        return "";
     }
 
     function statusformat(value, row) {
