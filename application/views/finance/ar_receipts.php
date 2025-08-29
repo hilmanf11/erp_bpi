@@ -204,6 +204,7 @@
                     <th data-options="field:'sales_invoice',width:200, editor: {type: 'textbox'}">Sales Invoice</th>
                     <th data-options="field:'description',width:150, editor: {type: 'textbox'}">Description</th>
                     <th data-options="field:'currency',align:'center',width:80, editor: {type: 'textbox'}">Currency</th>
+                    <th data-options="field:'rate',width:120, formatter:numberformat, align:'right', editor: {type: 'numberbox',options: {precision:2}}"> <div style="text-align:center;">Payment Rate</div> </th>
                     <th data-options="field:'amount',width:150, formatter:numberformat, align:'right', editor: {type: 'numberbox',options: {precision:2, readonly:true}}">Amount</th>
                     <th data-options="field:'balance',width:150, formatter:numberformat, align:'right', editor: {type: 'numberbox',options: {precision:2, readonly:true}}">Balance</th>
                     <th data-options="field:'receipt',width:150, formatter:numberformat, align:'right', editor: {type: 'numberbox',options: {precision:2}}">Receipt</th>
@@ -275,6 +276,7 @@
                         }">Account No</th>
                         <th rowspan="2" data-options="field:'account_name',halign:'center',width:200, editor: {type: 'textbox', options: {readonly: true}}">Account Name</th>
                         <th rowspan="2" data-options="field:'description',halign:'center',width:200, editor: {type: 'textbox', options: {required: true}}">Description</th>
+                        <th rowspan="2" data-options="field:'exchange_rate', halign:'center', align:'right', formatter:numberformat, width:100, editor: {type: 'numberbox'}">Rate</th>
                         <th colspan="2" data-options="field:'',width:150">Original Currency</th>
                         <th colspan="2" data-options="field:'',width:150">Local Currency</th>
                         <th rowspan="2" data-options="field:'flag',width:50,halign:'center',editor: {type: 'numberbox', options: {required: true}}">Index</th>
@@ -388,6 +390,7 @@
                     <th data-options="field:'delete',width:120, formatter:removebtn">Action</th>
                     <th hidden data-options="field:'id',width:150, editor: {type: 'textbox'}">ID</th>
                     <th data-options="field:'sales_invoice',width:150, editor: {type: 'textbox'}">Sales Invoice</th>
+                    <th data-options="field:'trans_date',width:150, editor: {type: 'textbox'}, hidden:true">Transaction Date</th>
                     <th data-options="field:'description',width:150, editor: {type: 'textbox'}">Description</th>
                     <th data-options="field:'currency',align:'center',width:80, editor: {
                         type: 'combobox',
@@ -400,6 +403,7 @@
                             panelHeight: 'auto',
                             required: true,
                         }}">Currency</th>
+                    <th data-options="field:'rate',width:120, formatter:numberformat, align:'right', editor: {type: 'numberbox',options: {precision:2}}"> <div style="text-align:center;">Payment Rate</div> </th>
                     <th data-options="field:'amount',width:100, formatter:numberformat, align:'right', editor: {type: 'numberbox',options: {precision:2, readonly:true}}">Amount</th>
                     <th data-options="field:'balance',width:100, formatter:numberformat, align:'right', editor: {type: 'numberbox',options: {precision:2, readonly:true}}">Balance</th>
                     <th data-options="field:'receipt',width:100, formatter:numberformat, align:'right', editor: {type: 'numberbox',options: {precision:2}}">Receipt</th>
@@ -515,6 +519,54 @@
                         }">Account No</th>
                         <th rowspan="2" data-options="field:'account_name',halign:'center',width:200, editor: {type: 'textbox', options: {readonly: true}}">Account Name</th>
                         <th rowspan="2" data-options="field:'description',halign:'center',width:200, editor: {type: 'textbox', options: {required: true}}">Description</th>
+                        <th rowspan="2" data-options="field:'exchange_rate', halign:'center', align:'right', formatter:numberformat, width:100, editor: {
+                            type: 'numberbox',
+                            options: {
+                                onChange: function(value, oldValue) {
+                                    var dg = $(this).closest('.datagrid-view').find('table.datagrid-f');
+                                    var row = dg.datagrid('getSelected');
+                                    var rowIndex = dg.datagrid('getRowIndex', row);
+                                    
+                                    if (row) {
+                                        var originalDebit = parseFloat(row.debit) || 0;
+                                        var originalCredit = parseFloat(row.credit) || 0;
+                                        var newRate = parseFloat(value);
+                                        
+                                        if (!isNaN(newRate)) {
+                                            var localDebit = originalDebit * newRate;
+                                            var localCredit = originalCredit * newRate;
+                                            
+                                            var edLocalDebit = dg.datagrid('getEditor', {
+                                                index: rowIndex,
+                                                field: 'local_debit'
+                                            });
+                                            var edLocalCredit = dg.datagrid('getEditor', {
+                                                index: rowIndex,
+                                                field: 'local_credit'
+                                            });
+                                            
+                                            // Pastikan editor diperbarui
+                                            if (edLocalDebit) {
+                                                $(edLocalDebit.target).numberbox('setValue', localDebit);
+                                            }
+                                            if (edLocalCredit) {
+                                                $(edLocalCredit.target).numberbox('setValue', localCredit);
+                                            }
+                                            
+                                            // Perbarui objek baris yang ada di datagrid dengan nilai baru
+                                            var rows = dg.datagrid('getRows');
+                                            rows[rowIndex].local_debit = localDebit;
+                                            rows[rowIndex].local_credit = localCredit;
+                                            
+                                            // Hitung ulang Gain Loss dan Total
+                                            recalculateGainLossAndTotals();
+                                            balance_journal();
+                                        }
+                                    }
+                                }
+                            }
+                        }">Rate</th>
+
                         <th colspan="2" data-options="field:'',width:150">Original Currency</th>
                         <th colspan="2" data-options="field:'',width:150">Local Currency</th>
                         <th rowspan="2" data-options="field:'flag',width:50,halign:'center',editor: {type: 'numberbox', options: {required: true}}">Index</th>
@@ -608,6 +660,7 @@
 
                 for (let i = 0; i < totalrows; i++) {
                     var data = {
+                        trans_date: rows[i].trans_date,
                         account_number: rows[i].account_number,
                         account_name: rows[i].account_name,
                         account_type: rows[i].account_type,
@@ -703,6 +756,56 @@
                 balance_journal();
             }
         });
+    }
+
+    // Gain (Loss) 810.140.00 . Foreign Exchange A/P
+    function recalculateGainLossAndTotals() 
+    {
+        var rows = $('#dg3').datagrid('getRows');
+        var totalLocalDebit = 0;
+        var totalLocalCredit = 0;
+        var gainLossRowIndex = -1;
+
+        // Iterasi semua baris untuk menjumlahkan total lokal dan menemukan baris Gain (Loss)
+        for (var i = 0; i < rows.length; i++) {
+            // Ambil nilai debit/kredit lokal yang sudah ada
+            var debit = parseFloat(rows[i].local_debit);
+            var credit = parseFloat(rows[i].local_credit);
+            
+            // Cek apakah ini baris Gain (Loss)
+            if (rows[i].account_number === '810.140.00') {
+                gainLossRowIndex = i;
+            } else {
+                // Tambahkan ke total jika bukan baris Gain (Loss)
+                totalLocalDebit += debit;
+                totalLocalCredit += credit;
+            }
+        }
+        
+        // Hitung selisih dan tentukan apakah itu debit atau kredit
+        var difference = totalLocalDebit - totalLocalCredit;
+        var gainLossDebit = 0;
+        var gainLossCredit = 0;
+        
+        if (difference > 0) {
+            // Jika Debit lebih besar dari Credit, selisih adalah 'Loss' (Local Credit)
+            gainLossCredit = Math.abs(difference);
+        } else if (difference < 0) {
+            // Jika Credit lebih besar dari Debit, selisih adalah 'Gain' (Local Debit)
+            gainLossDebit = Math.abs(difference);
+        }
+
+        if (gainLossRowIndex !== -1) {
+            $('#dg3').datagrid('updateRow', {
+                index: gainLossRowIndex,
+                row: {
+                    local_debit: gainLossDebit,
+                    local_credit: gainLossCredit
+                }
+            });
+        }
+
+        balance_journal();
     }
 
     function balance_journal() {
@@ -927,7 +1030,7 @@
                     $('#dlg_insert').dialog('open');
                     $('#frm_insert').form('load', row);
 
-                    $("#receipt_date").datebox('disable');
+                    // $("#receipt_date").datebox('disable'); // request Bu Nina bisa ubah tanggal ketika update
                     $("#receipt_type").combobox('disable');
                     $("#customer_id").combogrid('disable');
                     // $("#sales_invoice").combogrid('disable');
@@ -1618,6 +1721,7 @@
                                                                 account_number: rows2[z].account_number,
                                                                 account_name: rows2[z].account_name,
                                                                 description: rows2[z].description,
+                                                                exchange_rate: rows2[z].exchange_rate || 1,
                                                                 debit: rows2[z].debit,
                                                                 credit: rows2[z].credit,
                                                                 local_debit: rows2[z].local_debit,
@@ -2279,10 +2383,18 @@
     }
 
     function numberformat(value, row) {
+        if (value !== "-") {        
         const formatter = new Intl.NumberFormat('id-ID', {
             minimumFractionDigits: 2
         });
-        return "<b>" + formatter.format(value) + "</b>";
+
+        if (value >= 0) {
+            return "<b>" + formatter.format(value) + "</b>";
+        } else {
+            return "<b>0,00</b>";
+        }
+        }
+        return "";
     }
 
     function statusformat(value, row) {
