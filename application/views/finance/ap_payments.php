@@ -1365,6 +1365,7 @@
                                         }
                                     });
                                 }else{
+                                    Swal.close();
                                     toastr.error("Cannot Delete because this AP Payment has been created in Posting Journal");
                                 }
                         //     }
@@ -1760,6 +1761,9 @@
                     var balance_debit = $("#balance_debit").numberbox('getValue');
                     var balance_credit = $("#balance_credit").numberbox('getValue');
 
+                    var local_balance_debit = $("#local_balance_debit").numberbox('getValue');
+                    var local_balance_credit = $("#local_balance_credit").numberbox('getValue');
+
                     // $.ajax({
                     //     type: "post",
                     //     url: "<?= base_url('closing/locks/checkLock') ?>",
@@ -1771,7 +1775,7 @@
                     //             return false;
                     //         }
 
-                            if (parseFloat(balance_debit) == parseFloat(balance_credit)) {
+                            if ( parseFloat(balance_debit) == parseFloat(balance_credit) && parseFloat(local_balance_debit) == parseFloat(local_balance_credit) ) {
                                 //if (parseFloat(balance_debit) == parseFloat(total_payment)) {
                                 if (purchase_invoice == "" || bank_account == "" || payment_date == "" || payment_by == "") {
                                     toastr.error("please complete your input data");
@@ -2022,7 +2026,7 @@
                                 //     toastr.error("Balance Debit Cannot match on Grand Total");
                                 // }
                             } else {
-                                toastr.error("Balance Debit Cannot match on Balance Credit");
+                                toastr.error("Balance Debit and Balance Credit is not match!");
                             }
                     //     }
                     // });

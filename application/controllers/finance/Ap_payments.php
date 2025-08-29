@@ -137,13 +137,13 @@ class Ap_payments extends CI_Controller
         $mergedData = array();
         foreach ($jsonDatas as $jsonData) {
             $account_number = $jsonData["account_number"];
-            $account_name = $jsonData["account_name"];
-            $account_type = $jsonData["account_type"];
-            $description = $jsonData["description"];
-            $total = $jsonData["payment"];
-            $currency = $jsonData['currency'];
-            $payment_date = $jsonData['payment_date'];
-            $trans_date = $jsonData['trans_date'];
+            $account_name   = $jsonData["account_name"];
+            $account_type   = $jsonData["account_type"];
+            $description    = $jsonData["description"];
+            $total          = $jsonData["payment"];
+            $currency       = $jsonData['currency'];
+            $payment_date   = $jsonData['payment_date'];
+            $trans_date     = $jsonData['trans_date'];
 
             // $search_date = date("d", strtotime($payment_date));
             // if($search_date == "31"){
@@ -153,10 +153,10 @@ class Ap_payments extends CI_Controller
             // $monthBf = date('Y-m-01', strtotime('-1 month', strtotime($payment_date)));
             // $exchange = $this->crud->read('exchange_rates', [], ["start_date" => $monthBf, "currency_from" => $currency, "currency_to" => "IDR"]);
 
-            // RATE by trans_date PI
-            $exchange = $this->getExchange($currency, $trans_date);
-            
             if ($currency != "IDR") {
+                // RATE by trans_date PI
+                $exchange = $this->getExchange($currency, $trans_date);
+
                 if ($exchange) {
                     $amount = ($total * $exchange);
                 } else {
@@ -487,7 +487,7 @@ class Ap_payments extends CI_Controller
             );
         }
 
-        $arr['rows'] = @$obj;
+        $arr['rows'] = $obj;
         $arr['total_payment'] = round($total_payment, 2);
         die(json_encode($arr));
     }
