@@ -25,6 +25,7 @@
     <thead>
         <tr>
             <th rowspan="2" data-options="field:'number_customer',width:150,halign:'center'">Product Customer</th>
+            <th rowspan="2" data-options="field:'hs_code',width:150,halign:'center'">HS Code</th>
             <th rowspan="2" data-options="field:'alias',width:150,halign:'center'">Product Alias</th>
             <th rowspan="2" data-options="field:'total_mold',width:50,align:'center'">Total <br>Mold</th>
             <th rowspan="2" data-options="field:'process',width:80,align:'center'">Process <br>Type</th>
@@ -167,6 +168,10 @@
                 <div class="fitem">
                     <span style="width:35%; display:inline-block;">Leadtime (Day)</span>
                     <input style="width:60%;" name="leadtime" id="leadtime" class="easyui-numberbox">
+                </div>
+                <div class="fitem">
+                    <span style="width:35%; display:inline-block;">HS Code</span>
+                    <input style="width:60%;" name="hs_code" id="hs_code" class="easyui-numberbox" data-options="prompt:'HS Code INSW'">
                 </div>
             </div>
             <div style="float:left; width:33%;">

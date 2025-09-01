@@ -192,27 +192,28 @@ class item_fg extends CI_Controller
                 'name' => $data->val($i, 3),
                 'number_customer' => $data->val($i, 4),
                 'alias' => $data->val($i, 5),
-                'process' => $data->val($i, 6),
-                'division_id' => $data->val($i, 7),
-                'type' => $data->val($i, 8),
-                'item_family_name' => $data->val($i, 9),
-                'control_id' => $data->val($i, 10),
-                'boxs' => $data->val($i, 11),
-                'lot' => $data->val($i, 12),
-                'polybag' => $data->val($i, 13),
-                'box_label' => $data->val($i, 14),
-                'ng_ration' => $data->val($i, 15),
-                'is_no' => $data->val($i, 16),
-                'weight' => $data->val($i, 17),
-                'color' => $data->val($i, 18),
-                'leadtime' => $data->val($i, 19),
-                'mpq' => $data->val($i, 20),
-                'moq' => $data->val($i, 21),
-                'uom' => $data->val($i, 22),
-                'qty_box' => $data->val($i, 23),
-                'box_sub' => $data->val($i, 24),
-                'logo' => $data->val($i, 25),
-                'status' => $data->val($i, 26)
+                'hs_code' => $data->val($i, 6),
+                'process' => $data->val($i, 7),
+                'division_id' => $data->val($i, 8),
+                'type' => $data->val($i, 9),
+                'item_family_name' => $data->val($i, 10),
+                'control_id' => $data->val($i, 11),
+                'boxs' => $data->val($i, 12),
+                'lot' => $data->val($i, 13),
+                'polybag' => $data->val($i, 14),
+                'box_label' => $data->val($i, 15),
+                'ng_ration' => $data->val($i, 16),
+                'is_no' => $data->val($i, 17),
+                'weight' => $data->val($i, 18),
+                'color' => $data->val($i, 19),
+                'leadtime' => $data->val($i, 20),
+                'mpq' => $data->val($i, 21),
+                'moq' => $data->val($i, 22),
+                'uom' => $data->val($i, 23),
+                'qty_box' => $data->val($i, 24),
+                'box_sub' => $data->val($i, 25),
+                'logo' => $data->val($i, 26),
+                'status' => $data->val($i, 27),
             );
         }
         $datas['total'] = count($datas);
@@ -281,6 +282,7 @@ class item_fg extends CI_Controller
                     "name" => $data['name'],
                     "number_customer" => $data['number_customer'],
                     "alias"=> $data['alias'],
+                    "hs_code" => $data['hs_code'],
                     "process" => $data['process'],
                     "division_id" => $data['division_id'],
                     "type" => $data['type'],
@@ -361,6 +363,7 @@ class item_fg extends CI_Controller
             <tr>
                 <th width="20">No</th>
                 <th>Product ID</th>
+                <th>HS Code</th>
                 <th>Product No.</th>
                 <th>Product Name</th>
                 <th>Total Mold</th>
@@ -395,6 +398,7 @@ class item_fg extends CI_Controller
             $html .= '<tr>
                         <td>' . $no . '</td>
                         <td>' . $data['id'] . '</td>
+                        <td>' . $data['hs_code'] . '</td>
                         <td style="mso-number-format:\@;">' . $data['number'] . '</td>
                         <td style="mso-number-format:\@;">' . $data['name'] . '</td>
                         <td>' . $data['total_mold'] . '</td>
