@@ -209,7 +209,7 @@
                     <th data-options="field:'purchase_invoice',width:150, editor: {type: 'textbox'}">Purchase Invoice</th>
                     <th data-options="field:'supplier_invoice',width:150, editor: {type: 'textbox'}">Description</th>
                     <th data-options="field:'currency',align:'center',width:80, editor: {type: 'textbox'}">Currency</th>
-                    <th data-options="field:'rate',width:120, formatter:numberformat, align:'right', editor: {type: 'numberbox',options: {precision:2}}">Payment Rate</th>
+                    <th data-options="field:'rate',width:120, formatter:numberformat, align:'right', editor: {type: 'numberbox',options: {precision:2}}"> <div style="text-align:center;">Payment Rate</div> </th>
                     <th data-options="field:'amount',width:150, formatter:numberformat, align:'right', editor: {type: 'numberbox',options: {precision:2}}">Amount</th>
                     <th data-options="field:'balance',width:150, formatter:numberformat, align:'right', editor: {type: 'numberbox',options: {precision:2, readonly:true}}">Balance</th>
                     <th data-options="field:'payment',width:150, formatter:numberformat, align:'right', editor: {type: 'numberbox',options: {precision:2}}">Payment</th>
@@ -375,7 +375,7 @@
                             panelHeight: 'auto',
                             required: true,
                         }}">Currency</th>
-                    <th data-options="field:'rate',width:120, formatter:numberformat, align:'right', editor: {type: 'numberbox',options: {precision:2}}">Payment Rate</th>
+                    <th data-options="field:'rate',width:120, formatter:numberformat, align:'right', editor: {type: 'numberbox',options: {precision:2}}"> <div style="text-align:center;">Payment Rate</div> </th>
                     <th data-options="field:'amount',width:100, formatter:numberformat, align:'right', editor: {type: 'numberbox',options: {precision:2}}">Amount</th>
                     <th data-options="field:'balance',width:100, formatter:numberformat, align:'right', editor: {type: 'numberbox',options: {precision:2, readonly:true}}">Balance</th>
                     <th data-options="field:'payment',width:100, formatter:numberformat, align:'right', editor: {type: 'numberbox',options: {precision:2}}">Payment</th>
@@ -1047,7 +1047,9 @@
                     $('#frm_insert').form('load', row);
 
                     $("#total_payment").numberbox('setValue', row.total_ap);
-                    $("#payment_date").datebox('disable');
+
+                    // $("#payment_date").datebox('disable'); // request Bu Nina bisa ubah tanggal ketika update
+                    
                     $("#payment_type").combobox('disable');
                     $("#supplier_id").combogrid('disable');
                     // $("#purchase_invoice").combogrid('disable');

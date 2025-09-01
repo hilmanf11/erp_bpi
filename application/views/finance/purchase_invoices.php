@@ -1521,7 +1521,8 @@
                     $("#type").combobox({
                         readonly: true
                     });
-                    $("#trans_date").datebox('disable');
+                    
+                    // $("#trans_date").datebox('disable'); // request Bu Nina bisa ubah tanggal saat update
                     //$("#category_id").combobox('disable');
                     $("#supplier_id").combogrid('disable');
                     // $("#por_no").combogrid('disable');

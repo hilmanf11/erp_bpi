@@ -2115,6 +2115,8 @@
                     $("#trans_date").datebox('disable');
                     $("#number").textbox('disable');
 
+                    $("#trans_date").datebox('enable'); // request Bu Nina bisa ubah tanggal ketika update
+
                     // $("#customer_id").combobox('disable');
                     // $("#delivery_note_no").combobox('disable');
 

@@ -1031,6 +1031,7 @@
                     $('#frm_insert').form('load', row);
 
                     // $("#receipt_date").datebox('disable'); // request Bu Nina bisa ubah tanggal ketika update
+                    
                     $("#receipt_type").combobox('disable');
                     $("#customer_id").combogrid('disable');
                     // $("#sales_invoice").combogrid('disable');
