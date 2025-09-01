@@ -221,7 +221,7 @@
                 <a style="width: 90%; height: 50px; padding:10px;" class="easyui-linkbutton c2" disabled>Add to Journal</a>
             </div>
             <div style="float: left; width: 30%; border:4px solid green; padding:10px;" id="d_showExchange">
-                <p style="font-size: 16px !important; margin:0;">Rate USD to IDR : <b style="font-size: 16px !important;" id="d_exchange"></b></p>
+                <p style="font-size: 16px !important; margin:0;"><b style="font-size: 16px !important;" id="d_exchange"></b></p>
             </div>
         </div>
 
@@ -1667,6 +1667,9 @@
                     var balance_debit = $("#balance_debit").numberbox('getValue');
                     var balance_credit = $("#balance_credit").numberbox('getValue');
 
+                    var local_balance_debit = $("#local_balance_debit").numberbox('getValue');
+                    var local_balance_credit = $("#local_balance_credit").numberbox('getValue');
+
                     // $.ajax({
                     //     type: "post",
                     //     url: "<?= base_url('closing/locks/checkLock') ?>",
@@ -1678,7 +1681,7 @@
                     //             return false;
                     //         }
 
-                            if (parseFloat(balance_debit) == parseFloat(balance_credit)) {
+                            if (parseFloat(balance_debit) == parseFloat(balance_credit)  && parseFloat(local_balance_debit) == parseFloat(local_balance_credit)) {
                                 if (sales_invoice == "" || bank_account == "" || receipt_date == "" || receipt_by == "" || journal_type_id == "") {
                                     toastr.error("please complete your input data");
                                 } else {
@@ -2019,8 +2022,9 @@
                                     //     }
                                     // });
                                 }
+
                             } else {
-                                toastr.error("Balance Debit Cannot match on Balance Credit");
+                                toastr.error("Balance Debit and Balance Credit is not match!");
                             }
                     //     }
                     // });
@@ -2322,9 +2326,13 @@
                     type: "post",
                     url: "<?= base_url('finance/ar_receipts/readExchangeRate') ?>",
                     data: "receipt_date=" + row.receipt_date + "&currency=" + row.currency,
-                    dataType: "html",
+                    dataType: "json",
                     success: function(exchange) {
-                        $("#d_exchange").html(exchange);
+                        console.log(exchange.label);
+                        console.log(exchange.amount);
+
+                        $("#d_rate").numberbox('setValue', exchange.amount);
+                        $("#d_exchange").html(exchange.label);
                         $("#d_showExchange").show();
                     }
                 });
