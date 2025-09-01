@@ -73,7 +73,7 @@
     <a href="javascript:void(0)" class="easyui-linkbutton" data-options="plain:true" onclick="$('#dlg_help').dialog('open');"><i class="fa fa-info"></i> Help</a>
 </div>
 <!-- DIALOG SAVE AND UPDATE -->
-<div id="dlg_insert" class="easyui-dialog" title="Add New" data-options="closed: true,modal:true" style="width: 95%; height: 500px; padding:10px; top: 10px; left: 10px;">
+<div id="dlg_insert" class="easyui-dialog" title="Add New" data-options="closed: true,modal:true" style="width: 95%; height: 550px; padding:10px; top: 10px; left: 10px;">
     <form id="frm_insert" method="post" novalidate enctype="multipart/form-data">
         <fieldset style="width:100%; border:1px solid #d0d0d0; margin-bottom: 10px; border-radius:4px; float: left;">
             <legend><b>Form Data</b></legend>
@@ -81,7 +81,11 @@
             <div style="float:left; width:33%;">
                 <div class="fitem">
                     <span style="width:35%; display:inline-block;">Product ID</span>
-                    <input style="width:60%;" name="id" id="id" required="" class="easyui-textbox" readonly>
+                    <input style="width:60%;" name="id" id="id" required="" class="easyui-textbox" data-options="prompt:'Automatic based on Division'" readonly>
+                </div>
+                <div class="fitem">
+                    <span style="width:35%; display:inline-block;">HS Code</span>
+                    <input style="width:60%;" name="hs_code" id="hs_code" class="easyui-numberbox" data-options="prompt:'HS Code INSW'">
                 </div>
                 <div class="fitem">
                     <span style="width:35%; display:inline-block;">Product No.</span>
@@ -170,11 +174,21 @@
                     <input style="width:60%;" name="leadtime" id="leadtime" class="easyui-numberbox">
                 </div>
                 <div class="fitem">
-                    <span style="width:35%; display:inline-block;">HS Code</span>
-                    <input style="width:60%;" name="hs_code" id="hs_code" class="easyui-numberbox" data-options="prompt:'HS Code INSW'">
+                    <span style="width:35%; display:inline-block;">Status Subcont</span>
+                    <select style="width:60%;" name="status_subcont" id="status_subcont" required panelHeight="auto" class="easyui-combobox">
+                        <option value="YES">YES</option>
+                        <option value="NO">NO</option>
+                    </select>
                 </div>
             </div>
             <div style="float:left; width:33%;">
+                <div class="fitem">
+                    <span style="width:35%; display:inline-block;">Subcont Type</span>
+                    <select style="width:60%;" name="subcont_type" id="subcont_type" panelHeight="auto" class="easyui-combobox">
+                        <option value="Jasa">Jasa</option>
+                        <option value="Finished Good">Finished Good</option>
+                    </select>
+                </div>
                 <div class="fitem">
                     <span style="width:35%; display:inline-block;">MPQ</span>
                     <input style="width:60%;" name="mpq" id="mpq" class="easyui-numberbox">
@@ -248,6 +262,17 @@
 <!-- PDF -->
 <iframe id="printout" src="<?= base_url('master/item_fg/print') ?>" style="width: 100%;" hidden></iframe>
 <script>
+    $.extend($.fn.validatebox.methods, {
+        required: function(jq, required){
+            return jq.each(function(){
+                var opts = $(this).validatebox('options');
+                opts.required = required !== undefined ? required : true;
+                $(this).validatebox('validate');
+            });
+        }
+    });
+
+
     //ADD DATA
     function add() {
         $('#dlg_insert').dialog('open');
@@ -381,6 +406,16 @@
                 }
             }]
         });
+    });
+
+    $('#status_subcont').combobox({
+        onChange: function(value) {
+            if (value === 'YES') {
+                $('#subcont_type').combobox('required');
+            } else {
+                $('#subcont_type').combobox('required', false);
+            }
+        }
     });
 
     $('#process').combobox({

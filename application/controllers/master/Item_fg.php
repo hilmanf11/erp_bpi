@@ -388,9 +388,12 @@ class item_fg extends CI_Controller
                 <th>Qty/Box</th>
                 <th>Qty/Sub Box</th>
                 <th>Uom</th>
+                <th>Default Packing</th>
                 <th>Min</th>
                 <th>Max</th>
                 <th>Logo</th>
+                <th>Status Subcont</th>
+                <th>Subcont Type</th>
                 <th>Status</th>
             </tr>';
         $no = 1;
@@ -423,9 +426,12 @@ class item_fg extends CI_Controller
                         <td>' . $data['qty_box'] . '</td>
                         <td>' . $data['box_sub'] . '</td>
                         <td>' . $data['uom'] . '</td>
+                        <td>' . $data['default_packing'] . '</td>
                         <td>' . $data['min'] . '</td>
                         <td>' . $data['max'] . '</td>
                         <td>' . $data['logo'] . '</td>
+                        <td>' . $data['status_subcont'] . '</td>
+                        <td>' . $data['subcont_type'] . '</td>
                         <td>' . $data['status'] . '</td>
                     </tr>';
             $no++;
