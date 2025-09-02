@@ -874,7 +874,7 @@
             url_save = '<?= base_url('sales/sales_orders/create') ?>';
             $.ajax({
                 type: "post",
-                url: "<?= base_url('sales/sales_orders/getTaxes/') ?>" + row.customer_id,
+                url: "<?= base_url('sales/sales_orders/getTaxes/') ?>" + row.customer_id +'/'+ window.btoa(row.plant),
                 dataType: "json", 
                 success: function(result) {
                     if(result.success) {
@@ -1649,7 +1649,8 @@
         });
 
         if (!row) {
-            alert('Product ID is missing or invalid.');
+            //alert('Product ID is missing or invalid.');
+            toastr.error("Product ID is missing or invalid.");
             return;
         }
 

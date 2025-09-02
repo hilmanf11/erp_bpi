@@ -126,10 +126,10 @@ class Sales_orders extends CI_Controller
         echo json_encode($send);
     }
 
-    public function getTaxes($customer_id)
+    public function getTaxes($customer_id, $plant)
     {
-        // Ambil nilai taxes dari database
-        $send = $this->crud->query("SELECT DISTINCT taxes FROM customers WHERE id = '$customer_id'");
+        $plants = base64_decode($plant);
+        $send = $this->crud->query("SELECT DISTINCT taxes_plant as taxes FROM customer_address WHERE customer_id = '$customer_id' and plant = '$plants'");
 
         // Asumsikan bahwa $send adalah array, kita kembalikan objek pertama jika ada hasil
         if ($send) {
