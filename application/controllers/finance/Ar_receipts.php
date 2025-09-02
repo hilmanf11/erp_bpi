@@ -147,20 +147,20 @@ class Ar_receipts extends CI_Controller
         $grand_local_debit = 0;
         $total_receipt_local_now = 0;
         
-        // Hitung total di awal untuk baris bank dan gain/loss
-        foreach ($jsonDatas as $journal) {
-            $currency = $journal['currency'] ?? 'IDR';
-            $receipt_original = (float)($journal['receipt'] ?? 0);
-            $receipt_date = $journal['receipt_date'] ?? date('Y-m-d');
-            $trans_date = $journal['trans_date'] ?? date('Y-m-d');
-            $account_type = $journal["account_type"] ?? "";
+        // Hitung total di awal 
+        foreach ($jsonDatas as $jsonData) {
+            $currency         = $jsonData['currency'];
+            $receipt_original = (float)($jsonData['receipt'] ?? 0);
+            $receipt_date     = $jsonData['receipt_date'] ?? date('Y-m-d');
+            $trans_date       = $jsonData['trans_date'] ?? date('Y-m-d');
+            $account_type     = $jsonData["account_type"] ?? "";
 
-            // Hitung total pada kurs transaksi untuk semua baris
-            $exchange_trans_date = ($currency !== 'IDR') ? ($this->getExchange($currency, $trans_date) ?? 0) : 1;
+            // Hitung total pada kurs transaksi
+            $exchange = ($currency !== 'IDR') ? ($this->getExchange($currency, $trans_date) ?? 0) : 1;
             if ($account_type == "DEBIT") {
-                $grand_local_debit += round($receipt_original * $exchange_trans_date, 2);
+                $grand_local_debit += round($receipt_original * $exchange, 2);
             } else {
-                $grand_local_credit += round($receipt_original * $exchange_trans_date, 2);
+                $grand_local_credit += round($receipt_original * $exchange, 2);
             }
 
             // Hitung total penerimaan di bank pada kurs saat ini
@@ -171,43 +171,42 @@ class Ar_receipts extends CI_Controller
         $arr = [];
         $flag = 1;
 
-        // 1. Tambahkan Baris Bank (flag = 1)
+        // Bank (flag = 1) di AR Receipt
         foreach ($banks as $bank) {
             $arr[] = [
                 "account_number" => $bank->account_number,
-                "account_name" => $bank->account_name,
-                "description" => "Receipt Bank",
-                "currency" => "IDR",
-                "exchange_rate" => $exchange_receipt_date,
-                "debit" => $receipt_original,
-                "credit" => 0,
-                "local_debit" => $total_receipt_local_now,
-                "local_credit" => 0,
-                "flag" => $flag,
+                "account_name"   => $bank->account_name,
+                "description"    => "Receipt Bank",
+                "currency"       => "IDR",
+                "exchange_rate"  => $exchange_receipt_date,
+                "debit"          => $receipt_original,
+                "credit"         => 0,
+                "local_debit"    => $total_receipt_local_now,
+                "local_credit"   => 0,
+                "flag"           => $flag,
             ];
         }
         $flag++;
 
-        // ---
-        // 2. Tambahkan Baris Transaksi (flag = 2, 3, ...)
+        // Transactions (flag = 2, 3, ... dst)
         $mergedData = array();
         foreach ($jsonDatas as $journal) {
             $account_number = $journal["account_number"];
             $account_name = $journal["account_name"];
-            $currency = $journal['currency'] ?? 'IDR';
+            $currency = $journal['currency'];
             $receipt_original = (float)($journal['receipt'] ?? 0);
             $trans_date = $journal['trans_date'] ?? date('Y-m-d');
             $description = $journal['description'] ?? "N/A";
             $account_type = $journal["account_type"] ?? "";
 
-            $debit_original = ($account_type == "DEBIT") ? $receipt_original : 0;
+            $debit_original  = ($account_type == "DEBIT") ? $receipt_original : 0;
             $credit_original = ($account_type == "CREDIT") ? $receipt_original : 0;
 
             $exchange_trans_date = ($currency !== 'IDR') ? ($this->getExchange($currency, $trans_date) ?? 0) : 1;
-            $local_debit = round($debit_original * $exchange_trans_date, 2);
+            $local_debit  = round($debit_original * $exchange_trans_date, 2);
             $local_credit = round($credit_original * $exchange_trans_date, 2);
             
-            // Menggabungkan entri dengan nomor akun yang sama
+            // Menggabungkan account_number yang sama
             if (isset($mergedData[$account_number])) {
                 $mergedData[$account_number]['debit'] += $debit_original;
                 $mergedData[$account_number]['credit'] += $credit_original;
@@ -216,14 +215,14 @@ class Ar_receipts extends CI_Controller
             } else {
                 $mergedData[$account_number] = [
                     "account_number" => $account_number,
-                    "account_name" => $account_name,
-                    "description" => $description,
-                    "currency" => $currency,
-                    "exchange_rate" => $exchange_trans_date,
-                    "debit" => $debit_original,
-                    "credit" => $credit_original,
-                    "local_debit" => $local_debit,
-                    "local_credit" => $local_credit,
+                    "account_name"   => $account_name,
+                    "description"    => $description,
+                    "currency"       => $currency,
+                    "exchange_rate"  => $exchange_trans_date,
+                    "debit"          => $debit_original,
+                    "credit"         => $credit_original,
+                    "local_debit"    => $local_debit,
+                    "local_credit"   => $local_credit,
                 ];
             }
         }
@@ -235,33 +234,35 @@ class Ar_receipts extends CI_Controller
         }
         
         // Gain (Loss) Sales Asset. 810.140.00 . Foreign Exchange A/R
-        $final_local_debit = array_sum(array_column($arr, 'local_debit'));
+        $final_local_debit  = array_sum(array_column($arr, 'local_debit'));
         $final_local_credit = array_sum(array_column($arr, 'local_credit'));
         $difference = round($final_local_debit - $final_local_credit, 2);
         
-        $gainLossDebit = 0;
+        $gainLossDebit  = 0;
         $gainLossCredit = 0;
         
-        if (abs($difference) > 0.01) { 
-            if ($difference > 0) {
-                $gainLossCredit = abs($difference);
-            } else {
-                $gainLossDebit = abs($difference);
-            }
-
-            $account_gain_loss = $this->db->select('*')->from('account_coa')->where('account_number', '810.140.00')->get()->row();
-            $arr[] = [
-                "account_number" => "810.140.00",
-                "account_name" => $account_gain_loss->account_name ?? "Gain (Loss) Sales Asset",
-                "description" => "Foreign Exchange A/R",
-                "currency" => "IDR",
-                "exchange_rate" => "-",
-                "debit" => 0,
-                "credit" => 0,
-                "local_debit" => $gainLossDebit,
-                "local_credit" => $gainLossCredit,
-                "flag" => $flag,
-            ];
+        if ($currency !== "IDR") {
+            if (abs($difference) > 0.01) { 
+                if ($difference > 0) {
+                    $gainLossCredit = abs($difference);
+                } else {
+                    $gainLossDebit = abs($difference);
+                }
+                
+                $account_gain_loss = $this->db->select('*')->from('account_coa')->where('account_number', '810.140.00')->get()->row();
+                    $arr[] = [
+                    "account_number" => "810.140.00",
+                    "account_name"   => $account_gain_loss->account_name ?? "Gain (Loss) Sales Asset",
+                    "description"    => "",
+                    "currency"       => "IDR",
+                    "exchange_rate"  => "-",
+                    "debit"          => 0,
+                    "credit"         => 0,
+                    "local_debit"    => $gainLossDebit,
+                    "local_credit"   => $gainLossCredit,
+                    "flag"           => $flag,
+                ];
+            }   
         }
         
         echo json_encode($arr);

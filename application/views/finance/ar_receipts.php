@@ -1591,6 +1591,7 @@
             var dg = $(datagridSelector);
             var allRows = dg.datagrid('getRows');
             let nullAccountNumberRows = [];
+            let nullRateRows = [];
             let isValid = true;
 
             if (allRows.length === 0) {
@@ -1604,11 +1605,22 @@
                     if (accountNumber === null || accountNumber === undefined || String(accountNumber).trim() === '') {
                         nullAccountNumberRows.push(i + 1);
                     }
+                    
+                    // validasi : jika rate=0 maka tidak bisa save kecuali account Gain/Loss 810.140.00
+                    if (row.rate === 0 || row.exchange_rate === 0 && row.account_number !== "810.140.00") {
+                        nullRateRows.push(i + 1);
+                    }
                 }
 
                 if (nullAccountNumberRows.length > 0) {
                     isValid = false;
                     var errorMessage = "<b>Failed! Account Number on " + listName + " cannot be empty for rows: " + nullAccountNumberRows.join(', ') + "!</b> <br><br>Please re-check the List and re-calculate Journal before Save All.";
+                    $.messager.alert("Error", errorMessage, 'error');
+                }
+
+                if (nullRateRows.length > 0) {
+                    isValid = false;
+                    var errorMessage = "<b>Failed! Exchange-Rate on " + listName + " cannot be '0,00' for rows: " + nullRateRows.join(', ') + "!</b> <br><br>Please check the exchange rate for this month.";
                     $.messager.alert("Error", errorMessage, 'error');
                 }
             }
@@ -1725,7 +1737,7 @@
                                                                 account_number: rows2[z].account_number,
                                                                 account_name: rows2[z].account_name,
                                                                 description: rows2[z].description,
-                                                                exchange_rate: rows2[z].exchange_rate || 1,
+                                                                exchange_rate: rows2[z].exchange_rate || 0,
                                                                 debit: rows2[z].debit,
                                                                 credit: rows2[z].credit,
                                                                 local_debit: rows2[z].local_debit,

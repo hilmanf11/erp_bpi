@@ -128,6 +128,145 @@ class Ap_payments extends CI_Controller
 
         $banks = $this->crud->query("SELECT a.*, b.account_name FROM account_banks a 
             JOIN account_coa b ON a.account_number = b.account_number 
+            WHERE a.bank_account = '{$bank_account}'");
+
+        $jsonDatas = json_decode(file_get_contents("json/ap_payments.json"), true);
+        
+        $grand_total = 0;
+        $grand_local_credit = 0;
+        $grand_local_debit = 0;
+        $total_payment_local_now = 0;
+
+        foreach ($jsonDatas as $jsonData) {
+            $currency         = $jsonData['currency'];
+            $payment_original = $jsonData["payment"] ?? 0;
+            $payment_date     = $jsonData['payment_date'];
+            $trans_date       = $jsonData['trans_date'];
+            $account_type     = $jsonData["account_type"] ?? "";
+            
+            // Hitung total pada kurs transaksi
+            $exchange = ($currency !== 'IDR') ? ($this->getExchange($currency, $trans_date) ?? 0) : 1; 
+            if ($account_type == "DEBIT") {
+                $grand_local_debit +=  round($payment_original * $exchange, 2);
+                
+            } elseif ($account_type == "CREDIT") {
+                $grand_local_credit += round($payment_original * $exchange, 2);
+            }
+
+            $grand_total += $payment_original;
+            
+            // Hitung total penerimaan di bank pada kurs saat ini 
+            $exchange_payment_date = ($currency !== 'IDR') ? ($this->getExchange($currency, $payment_date) ?? 0) : 1;
+            $total_payment_local_now += round($payment_original * $exchange_payment_date, 2);
+        }
+        
+        $arr = [];
+        $flag = 1;
+        
+        $mergedData = array();
+        foreach ($jsonDatas as $journal) {
+            $account_number   = $journal['account_number'];
+            $account_name     = $journal['account_name'];
+            $currency         = $journal['currency'];
+            $payment_original = $journal['payment'];
+            $trans_date       = $journal['trans_date'];
+            $description      = $journal['description'];
+            $account_type     = $journal['account_type'];
+            
+            $debit_original  = ($account_type == "DEBIT") ? $payment_original : 0;
+            $credit_original = ($account_type == "CREDIT") ? $payment_original : 0;
+
+            $exchange_trans_date = ($currency !== 'IDR') ? ($this->getExchange($currency, $trans_date) ?? 0) : 1;
+            $local_debit  = round($debit_original * $exchange_trans_date, 2); 
+            $local_credit = round($credit_original * $exchange_trans_date, 2); 
+            
+            // Menggabungkan account_number yang sama
+            if (isset($mergedData[$account_number])) {
+                $mergedData[$account_number]["exchange_rate"] = $exchange_trans_date;
+                $mergedData[$account_number]["debit"] += $debit_original;
+                $mergedData[$account_number]["credit"] += $credit_original;
+                $mergedData[$account_number]["local_debit"] += $local_debit;
+                $mergedData[$account_number]["local_credit"] += $local_credit;
+                
+            } else {
+                $mergedData[$account_number] = [
+                    "account_number" => $account_number,
+                    "account_name"   => $account_name,
+                    "description"    => $description,
+                    "currency"       => $currency,
+                    "exchange_rate"  => $exchange_trans_date,
+                    "debit"          => $debit_original,
+                    "credit"         => $credit_original,
+                    "local_debit"    => $local_debit,
+                    "local_credit"   => $local_credit,
+                ];
+            }
+        }
+        
+        foreach (array_values($mergedData) as $item) {
+            $item['flag'] = $flag;
+            $arr[] = $item;
+            $flag++;
+        }
+
+        foreach ($banks as $bank) {
+            $arr[] = array(
+                "account_number" => $bank->account_number,
+                "account_name"   => $bank->account_name,
+                "currency"       => "IDR",
+                "exchange_rate"  => $exchange_payment_date,
+                "debit"          => "0.00",
+                "credit"         => $grand_total,
+                "local_debit"    => 0,
+                "local_credit"   => round($total_payment_local_now, 2),
+                "flag"           => $flag,
+            );
+        }
+        $flag++;
+
+        // Gain (Loss) Sales Asset. 810.150.00 . Foreign Exchange A/P
+        $final_local_debit  = array_sum(array_column($arr, 'local_debit'));
+        $final_local_credit = array_sum(array_column($arr, 'local_credit'));
+        $difference = round($final_local_debit - $final_local_credit, 2);
+
+        $gainLossDebit  = 0;
+        $gainLossCredit = 0;
+
+        if ($currency !== "IDR") {
+            if (abs($difference) > 0.01) {
+                if ($difference > 0) {
+                    $gainLossCredit = abs($difference);
+                } else {
+                    $gainLossDebit = abs($difference);
+                }
+
+                $account_gain_loss = $this->db->select('*')->from('account_coa')->where('account_number', '810.150.00')->get()->row();
+                    $arr[] = [
+                    "account_number" => "810.150.00",
+                    "account_name"   => $account_gain_loss->account_name ?? "Gain (Loss) Sales Asset",
+                    "description"    => "",
+                    "currency"       => "IDR",
+                    "exchange_rate"  => "-",
+                    "debit"          => 0,
+                    "credit"         => 0,
+                    "local_debit"    => $gainLossDebit,
+                    "local_credit"   => $gainLossCredit,
+                    "flag"           => $flag,
+                ];
+            }
+        }
+
+        echo json_encode($arr);
+    }
+    
+    // -- belum menggunakan rate
+    public function calculateJournalOld($journal_type_id = "", $bank_account = "")
+    {
+        $journal_type_id = base64_decode($journal_type_id);
+        $bank_account = base64_decode($bank_account);
+
+        $banks = $this->crud->query("SELECT a.*, b.account_name FROM account_banks a 
+            JOIN account_coa b ON a.account_number = b.account_number 
             WHERE a.bank_account = '$bank_account'");
 
         $jsonDatas = json_decode(file_get_contents("json/ap_payments.json"), true);
@@ -137,13 +276,12 @@ class Ap_payments extends CI_Controller
         $mergedData = array();
         foreach ($jsonDatas as $jsonData) {
             $account_number = $jsonData["account_number"];
-            $account_name   = $jsonData["account_name"];
-            $account_type   = $jsonData["account_type"];
-            $description    = $jsonData["description"];
-            $total          = $jsonData["payment"];
-            $currency       = $jsonData['currency'];
-            $payment_date   = $jsonData['payment_date'];
-            $trans_date     = $jsonData['trans_date'];
+            $account_name = $jsonData["account_name"];
+            $account_type = $jsonData["account_type"];
+            $description = $jsonData["description"];
+            $total = $jsonData["payment"];
+            $currency = $jsonData['currency'];
+            $payment_date = $jsonData['payment_date'];
 
             // $search_date = date("d", strtotime($payment_date));
             // if($search_date == "31"){
@@ -153,12 +291,17 @@ class Ap_payments extends CI_Controller
             // $monthBf = date('Y-m-01', strtotime('-1 month', strtotime($payment_date)));
             // $exchange = $this->crud->read('exchange_rates', [], ["start_date" => $monthBf, "currency_from" => $currency, "currency_to" => "IDR"]);
 
-            if ($currency != "IDR") {
-                // RATE by trans_date PI
-                $exchange = $this->getExchange($currency, $trans_date);
+            $this->db->select('middle');
+            $this->db->from('exchange_rates');
+            $this->db->where('currency_from', $currency);
+            $this->db->where('currency_to', 'IDR');
+            $this->db->where("'$payment_date' BETWEEN start_date AND end_date", null, false); // penting: raw SQL
 
+            $exchange = $this->db->get()->row();
+            
+            if ($currency != "IDR") {
                 if ($exchange) {
-                    $amount = ($total * $exchange);
+                    $amount = ($total * $exchange->middle);
                 } else {
                     $amount = 0;
                 }
@@ -187,7 +330,6 @@ class Ap_payments extends CI_Controller
                         "account_name" => $account_name,
                         "account_type" => $account_type,
                         "description" => $description,
-                        "exchange_rate" => $exchange,
                         "debit" => $total,
                         "credit" => 0,
                         "local_debit" => round($amount, 2),
@@ -202,7 +344,6 @@ class Ap_payments extends CI_Controller
                         "account_name" => $account_name,
                         "account_type" => $account_type,
                         "description" => $description,
-                        "exchange_rate" => $exchange,
                         "debit" => 0,
                         "credit" => $total,
                         "local_debit" => 0,
@@ -217,56 +358,27 @@ class Ap_payments extends CI_Controller
         }
 
         $arr = array_values($mergedData);
-        
-        if ($currency != "IDR") {
-            $exchange_now = $this->getExchange($currency, $payment_date); // Rate based on payment_date saat ini
-            if ($exchange_now) {
-                $amount = ($grand_total * $exchange_now);
-            } else {
-                $amount = 0;
-            }
-        } else {
-            $exchange_now = 1;
-            $amount = $grand_total;
-        }
-        
+
         foreach ($banks as $bank) {
+            if ($currency != "IDR") {
+                if ($exchange) {
+                    $amount = ($grand_total * $exchange->middle);
+                } else {
+                    $amount = 0;
+                }
+            } else {
+                $amount = $grand_total;
+            }
+
             $arr[] = array(
                 "account_number" => $bank->account_number,
                 "account_name" => $bank->account_name,
-                "exchange_rate" => $exchange_now,
                 "debit" => "0.00",
                 "credit" => $grand_total,
                 "local_debit" => 0,
                 "local_credit" => round($amount, 2),
                 "flag" => $flag,
             );
-        }
-
-        // Gain (Loss) Sales Asset. 810.150.00 . Foreign Exchange A/P
-        if ($currency != "IDR") {
-            $total_idr = $grand_total * $exchange;
-            $total_idr_now = $grand_total * $exchange_now;
-            $gain_loss = abs($total_idr_now - $total_idr); // Formula Gain/Loss = Total Nilai Bank - Total Nilai PI
-
-            $account_type = ($total_idr_now > $total_idr) ? "DEBIT" : "CREDIT";
-            
-            // Tentukan nilai debit dan kredit berdasarkan account_type
-            $local_debit = ($account_type == "DEBIT") ? $gain_loss : 0;
-            $local_credit = ($account_type == "CREDIT") ? $gain_loss : 0;
-
-            $account_gain_loss = $this->db->select('*')->from('account_coa')->where('account_number', '810.150.00')->get()->row();
-            $arr[] = [
-                "account_number" => "810.150.00",
-                "account_name" => $account_gain_loss->account_name ?? "Gain (Loss) Sales Asset",
-                "account_type" => $account_type,
-                "exchange_rate" => "-", // $exchange_now, 
-                "debit" => 0,
-                "credit" => 0,
-                "local_debit" => $local_debit,
-                "local_credit" => $local_credit,
-                "flag" => $flag + 1,
-            ];
         }
 
         echo json_encode($arr);
