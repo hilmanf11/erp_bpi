@@ -33,6 +33,7 @@ class Delivery_notes extends CI_Controller
         $dn_number = base64_decode($this->input->get('delivery_note_no'));
 
         $this->db->select('a.*, b.id as item_fg_id, b.name as item_name, b.number as item_number, b.uom, b.weight');
+        $this->db->select('b.hs_code');
         $this->db->from('delivery_notes a');
         $this->db->join('item_fg b', 'a.item_fg_id = b.id', 'left');
         $this->db->join('item_boxs c', 'b.boxs = c.name', 'left');
@@ -67,6 +68,7 @@ class Delivery_notes extends CI_Controller
             ELSE 1
             END) as status_delivery,
             b.uom");
+        $this->db->select('b.hs_code');
         $this->db->from('delivery_orders a');
         $this->db->join('item_fg b', 'a.item_fg_id = b.id');
         $this->db->join('sales_orders c', 'a.sales_order_no = c.sales_order_no','left');
@@ -484,6 +486,7 @@ class Delivery_notes extends CI_Controller
             $this->db->select('a.*, b.number as item_fg_number, b.name as item_fg_name ,
             COALESCE(a.sales_order_no, a.sales_order_no_rm) as sales_order_number, 
             COALESCE(e.number, g.number) as sales_invoice_no');
+            $this->db->select('b.hs_code');
             $this->db->from('delivery_notes a');
             $this->db->join('item_fg b', 'a.item_fg_id = b.id');
             $this->db->join('sales_orders c', 'a.sales_order_no = c.sales_order_no and a.item_fg_id = c.item_fg_id and a.customer_id = c.customer_id','left');
@@ -508,6 +511,7 @@ class Delivery_notes extends CI_Controller
             $delivery_note_no = base64_decode($this->input->get('delivery_note_no'));
 
             $this->db->select('a.*, b.number as item_fg_number, b.name as item_fg_name, a.address_id');
+            $this->db->select('b.hs_code');
             $this->db->from('delivery_notes a');
             $this->db->join('item_fg b', 'a.item_fg_id = b.id');
             $this->db->join('customer_address d', 'a.address_id = d.id');
@@ -763,6 +767,7 @@ class Delivery_notes extends CI_Controller
             a.customer_order_no, a.delivery_note_date, a.trans_type, 
             a.delivery_note_no, f.address, a.origin, a.sailing, a.ship_by, a.incoterm, a.police_no, f.address_billing, f.telp, 
             a.created_date as created_date, a.note, a.sales_order_no, a.uom, a.remarks, a.qty, a.division, f.contact_person');
+            $this->db->select('b.hs_code');
             $this->db->from('delivery_notes a');
             $this->db->join('item_fg b', 'a.item_fg_id = b.id');
             $this->db->join('customers c', 'a.customer_id = c.id');
@@ -827,6 +832,12 @@ class Delivery_notes extends CI_Controller
                             <td width="100">Country Of Origin</td>
                             <td width="5">:</td>
                             <td>' . @$records[0]['origin'] . '</td>
+                        </tr>
+                        </tr>
+                            <tr>
+                            <td width="100">HS Code (INSW)</td>
+                            <td width="5">:</td>
+                            <td>' . @$records[0]['hs_code'] . '</td>
                         </tr>
                         <tr>
                             <td width="150">Sailing On Or About to</td>
@@ -1000,6 +1011,7 @@ class Delivery_notes extends CI_Controller
         $this->db->select("a.*, b.name as customer_name, d.address as shipping_address,
         h.number as item_fg_number, h.name as item_fg_name ,
         (CASE WHEN a.sales_order_no is null THEN a.sales_order_no_rm ELSE a.sales_order_no END) as sales_order_no");
+        $this->db->select('h.hs_code');
         $this->db->from('delivery_notes a');
         $this->db->join('customers b', 'a.customer_id = b.id');
         $this->db->join('customer_address d', 'a.address_id = d.id','left');
@@ -1088,6 +1100,7 @@ class Delivery_notes extends CI_Controller
                 <th>Delivery Note Date</th>
                 <th>Delivery Order No</th>
                 <th>Product ID</th>
+                <th>HS Code</th>
                 <th>Product No</th>
                 <th>Product Name</th>
                 <th>Sales Order No</th>
@@ -1110,6 +1123,7 @@ class Delivery_notes extends CI_Controller
                         <td>' . $data['delivery_note_date'] . '</td>
                         <td>' . $data['delivery_order_no'] . '</td>
                         <td>' . $data['item_fg_id'] . '</td>
+                        <td>' . $data['hs_code'] . '</td>
                         <td style="mso-number-format:\@;">' . $data['item_fg_number'] . '</td>
                         <td style="mso-number-format:\@;">' . $data['item_fg_name'] . '</td>
                         <td>' . $data['sales_order_no'] . '</td>
