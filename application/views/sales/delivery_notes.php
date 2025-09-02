@@ -218,7 +218,7 @@
                     <th data-options="field:'sales_order_no',width:150,halign:'center'">Sales <br>Order No</th>
                     <th data-options="field:'customer_order_no',width:150,halign:'center'">Customer <br>Order No</th>
                     <th data-options="field:'uom',width:80,halign:'center'">Uom</th>
-                    <th data-options="field:'trans_type',width:80,halign:'center'">Trans<br>Type</th>
+                    <th data-options="field:'trans_type',width:80,halign:'center'">Trans <br>Type</th>
                     <th data-options="field:'qty',width:80,editor:{type:'numberbox', options:{readonly:true}},halign:'center'">Qty</th>
                     <th data-options="field:'remarks',width:150,editor:{type:'textbox'},halign:'center'">Remark</th>
                     <th data-options="field:'njo_number',width:100,halign:'center'">NJO <br>Number</th>
@@ -366,20 +366,42 @@
                 $('#delivery_order_no').textbox('setValue', row.delivery_order_no);
                 $('#origin').combobox('setValue', row.origin);
                 $('#police_no').combobox('setValue', row.police_no);
-            }, 300);
+            }, 1000);
 
-            // $('#division').combobox({
-            //     url: '<?= base_url('sales/delivery_notes/readDivision/') ?>' + row.customer_id,
-            //     valueField: 'division',
-            //     textField: 'division',
-            //     panelHeight:'auto',
-            //     prompt: 'Choose Division.',
-            //     onLoadSuccess: function(data) {
-            //         if (data.length > 0) {
-            //             $('#division').combobox('setValue', row.division);
-            //         }
-            //     }
-            // });
+            $('#division').combobox({
+                url: '<?= base_url('sales/delivery_notes/readDivision/') ?>' + row.customer_id,
+                valueField: 'division',
+                textField: 'division',
+                panelHeight:'auto',
+                prompt: 'Choose Division.',
+                onLoadSuccess: function(data) {
+                    if (data.length > 0) {
+                        $('#division').combobox('setValue', row.division);
+                    }
+
+                    $('#address_id').combobox({
+                        url: '<?= base_url('sales/delivery_notes/readShipping/') ?>' + row.customer_id + "/" + btoa(data.division), 
+                        valueField: 'id',
+                        textField: 'address_name',
+                        panelHeight:'auto',
+                        prompt: 'Choose Address.',
+                        onLoadSuccess: function(customer_address) {
+                            $('#delivery_order_no').combobox({
+                                url: '<?= base_url('sales/delivery_notes/readDo/') ?>' + row.customer_id + "/" + btoa(data.division) + "/" + btoa(customer_address.id),
+                                valueField: 'delivery_order_no',
+                                textField: 'delivery_order_no',
+                                multiple: true,
+                                prompt: 'Choose DO No.',
+                                // onLoadSuccess: function(data) {
+                                //     if (data.length === 0) {
+                                //         toastr.warning('Delivery Order No empty, Please Scan DO in Shipping Order', 'Required');
+                                //     }
+                                // }
+                            });
+                        }
+                    });
+                }
+            });
             
             $("#delivery_note_date").datebox('disable');
             $("#delivery_note_no").textbox('disable');

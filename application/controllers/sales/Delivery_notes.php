@@ -762,7 +762,7 @@ class Delivery_notes extends CI_Controller
             $this->db->select('b.id as item_id, b.number as item_fg_number, b.name as item_fg_name, c.name as customer_name, 
             a.customer_order_no, a.delivery_note_date, a.trans_type, 
             a.delivery_note_no, f.address, a.origin, a.sailing, a.ship_by, a.incoterm, a.police_no, f.address_billing, f.telp, 
-            a.created_date as created_date, a.note, a.sales_order_no, a.uom, a.remarks, a.qty, a.division');
+            a.created_date as created_date, a.note, a.sales_order_no, a.uom, a.remarks, a.qty, a.division, f.contact_person');
             $this->db->from('delivery_notes a');
             $this->db->join('item_fg b', 'a.item_fg_id = b.id');
             $this->db->join('customers c', 'a.customer_id = c.id');
@@ -836,7 +836,7 @@ class Delivery_notes extends CI_Controller
                         <tr>
                             <td width="100">Attention</td>
                             <td width="5">:</td>
-                            <td>' . "-" . '</td>
+                            <td>' . @$records[0]['contact_person'] . '</td>
                         </tr>
                         <tr>
                             <td width="100">Phone No.</td>
@@ -906,7 +906,7 @@ class Delivery_notes extends CI_Controller
 
                 if($record['sales_order_no'] == NULL){
                     $product = $record['item_id'];
-                    $name = "Tyas Nurhayati";
+                    $name = "Indraswari Syahri";
                 }elseif($record['division'] == 'MTS'){
                     $product = $record['item_fg_number'];
                     $name = "Silvia Indah";
