@@ -235,6 +235,7 @@ class Delivery_orders extends CI_Controller
                 COALESCE(g.qty, 0) as accum_qty_do,
                 COALESCE(g.qty, 0) as accum_qty_do,
                 COALESCE((x.begin_stock - c.qty_del),0) as stock_bal');
+            $this->db->select('d.hs_code');
             $this->db->from('sales_orders b');
             $this->db->join('sales_order_deliveries a', 'a.sales_order_no = b.sales_order_no and a.item_fg_id = b.item_fg_id and a.customer_id = b.customer_id');
             $this->db->join('delivery_orders c', 'b.sales_order_no = c.sales_order_no and b.item_fg_id = c.item_fg_id and b.customer_id = c.customer_id and a.trans_date = c.delivery_date', 'left');
@@ -294,6 +295,7 @@ class Delivery_orders extends CI_Controller
                 COALESCE(SUM(e.qty), 0) as stock,
                 COALESCE(g.qty, 0) as accum_qty_do,
                 COALESCE((e.qty - c.qty_del),0) as stock_bal');
+            $this->db->select('d.hs_code');
             $this->db->from('sales_order_rm b');
             $this->db->join('sales_order_delivery_rm a', 'a.sales_order_no = b.sales_order_no and a.item_fg_id = b.item_fg_id and a.customer_id = b.customer_id');
             $this->db->join('delivery_orders c', 'b.sales_order_no = c.sales_order_no and b.item_fg_id = c.item_fg_id and b.customer_id = c.customer_id and a.trans_date = c.delivery_date', 'left');
@@ -414,6 +416,7 @@ class Delivery_orders extends CI_Controller
 
             $this->db->select('a.*, b.number as item_fg_number, b.name as item_fg_name, 
             (CASE WHEN a.sales_order_no is null THEN a.sales_order_no_rm ELSE a.sales_order_no END) as sales_order_number');
+            $this->db->select('b.hs_code');
             $this->db->from('delivery_orders a');
             $this->db->join('item_fg b', 'a.item_fg_id = b.id');
             $this->db->where('a.delivery_order_no', $delivery_order_no);
@@ -435,6 +438,7 @@ class Delivery_orders extends CI_Controller
             g.qty as accum_qty_do,
             b.number as item_fg_number, 
             b.name as item_fg_name');
+            $this->db->select('b.hs_code');
             $this->db->from('delivery_orders a');
             $this->db->join('item_fg b', 'a.item_fg_id = b.id');
             $this->db->join("(SELECT sales_order_no, item_fg_id, COALESCE(SUM(qty_del),0) as qty FROM delivery_orders WHERE delivery_order_no != '$delivery_order_no' GROUP BY sales_order_no, item_fg_id) g", 'a.sales_order_no = g.sales_order_no and a.item_fg_id = g.item_fg_id','left');
@@ -894,6 +898,7 @@ class Delivery_orders extends CI_Controller
         $no = 1;
         for ($i = 0; $i < $page; $i++) {
             $this->db->select('a.*, b.number as item_fg_number, b.name as item_fg_name, c.name as customer_name');
+            $this->db->select('b.hs_code');
             $this->db->from('delivery_orders a');
             $this->db->join('item_fg b', 'a.item_fg_id = b.id');
             $this->db->join('customers c', 'a.customer_id = c.id');
@@ -962,6 +967,7 @@ class Delivery_orders extends CI_Controller
                                     <tr>
                                         <th width="20">No</th>
                                         <th>Product ID</th>
+                                        <th>HS Code (INSW)</th>
                                         <th>Product No</th>
                                         <th>Product Name</th>
                                         <th>UoM</th>
@@ -973,6 +979,7 @@ class Delivery_orders extends CI_Controller
                 $html .= '  <tr>
                                 <td style="text-align:center">' . $no . '</td>
                                 <td>' . $record['item_fg_id'] . '</td>
+                                <td>' . $record['hs_code'] . '</td>
                                 <td>' . $record['item_fg_number'] . '</td>
                                 <td>' . $record['item_fg_name'] . '</td>
                                 <td>' . $record['uom'] . '</td>
@@ -1043,6 +1050,7 @@ class Delivery_orders extends CI_Controller
         $this->db->from('config');
         $config = $this->db->get()->row();
         $this->db->select("a.*, b.name as customer_name, c.number as item_fg_number, c.name as item_fg_name");
+        $this->db->select('c.hs_code');
         $this->db->from('delivery_orders a');
         $this->db->join('customers b', 'a.customer_id = b.id');
         $this->db->join('item_fg c', 'a.item_fg_id = c.id');
@@ -1124,6 +1132,7 @@ class Delivery_orders extends CI_Controller
                 <th>Customer Order No</th>
                 <th>Remarks</th>
                 <th>Product ID</th>
+                <th>HS Code (INSW)</th>
                 <th>Product No</th>
                 <th>Product Name</th>
                 <th>Uom</th>
@@ -1157,6 +1166,7 @@ class Delivery_orders extends CI_Controller
                         <td>' . $data['customer_order_no'] . '</td>
                         <td>' . $data['remarks'] . '</td>
                         <td>' . $data['item_fg_id'] . '</td>
+                        <td>' . $data['hs_code'] . '</td>
                         <td style="mso-number-format:\@;">' . $data['item_fg_number'] . '</td>
                         <td style="mso-number-format:\@;">' . $data['item_fg_name'] . '</td>
                         <td>' . $data['uom'] . '</td>

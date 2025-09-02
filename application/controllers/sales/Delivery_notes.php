@@ -833,12 +833,6 @@ class Delivery_notes extends CI_Controller
                             <td width="5">:</td>
                             <td>' . @$records[0]['origin'] . '</td>
                         </tr>
-                        </tr>
-                            <tr>
-                            <td width="100">HS Code (INSW)</td>
-                            <td width="5">:</td>
-                            <td>' . @$records[0]['hs_code'] . '</td>
-                        </tr>
                         <tr>
                             <td width="150">Sailing On Or About to</td>
                             <td width="5">:</td>
@@ -904,6 +898,7 @@ class Delivery_notes extends CI_Controller
                     <tr>
                         <th width="20">No</th>
                         <th>Product No</th>
+                        <th>HS Code (INSW)</th>
                         <th>Product Name</th>
                         <th>UoM</th>
                         <th width="60">Qty</th>
@@ -929,6 +924,7 @@ class Delivery_notes extends CI_Controller
                 $html .= '  <tr>
                                 <td style="text-align:center">' . $no . '</td>
                                 <td>' . $product . '</td>
+                                <td>' . $record['hs_code'] . '</td>
                                 <td>' . $record['item_fg_name'] . '</td>
                                 <td>' . $record['uom'] . '</td>
                                 <td style="text-align:right">' . number_format($record['qty'], 2, ",", ".") . '</td>
@@ -939,7 +935,7 @@ class Delivery_notes extends CI_Controller
                 $no++;
             }
             $html .= '<tr>
-            <td colspan="4" style="text-align:right; font-weight:bold;">Total</td>
+            <td colspan="5" style="text-align:right; font-weight:bold;">Total</td>
             <td style="text-align:right; font-weight:bold;">' . number_format($total_qty, 2, ",", ".") . '</td>
             <td colspan="2"></td>
           </tr>';

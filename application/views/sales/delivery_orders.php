@@ -523,6 +523,11 @@
                             halign: 'center',
                             width: 200
                         }, {
+                            field: 'hs_code',
+                            title: 'HS Code',
+                            halign: 'center',
+                            width: 150
+                        }, {
                             field: 'item_fg_number',
                             title: 'Product No.',
                             halign: 'center',
