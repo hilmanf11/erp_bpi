@@ -1120,11 +1120,19 @@ class Purchase_orders extends CI_Controller
             <table style="width:100%; font-size:12px; margin-top:20px;">
                 <tr>
                     <td width="20">1.</td>
-                    <td>Please sign, stamp & reply email to : mcl@banshuplastic.com. Maximum one day after PO received.</td>
+                    <td>Please sign, stamp & reply email to : mcl@banshuplastic.com.</td>
+                </tr>
+                <tr>
+                    <td width="20"></td>
+                    <td>Maximum one day after PO received.</td>
                 </tr>
                 <tr>
                     <td>2.</td>
-                    <td>Please mention the Purchase Order Number in the Shipping & Billing Document.</td>
+                    <td>Please mention the Purchase Order Number in the </td>
+                </tr>
+                <tr>
+                    <td></td>
+                    <td>Shipping & Billing Document.</td>
                 </tr>
                 <tr>
                     <td>3.</td>
