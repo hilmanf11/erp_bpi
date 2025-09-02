@@ -1,7 +1,7 @@
 <?php
 date_default_timezone_set("Asia/Bangkok");
 defined('BASEPATH') or exit('No direct script access allowed');
-class Fixeds extends CI_Controller
+class Fixed_assets extends CI_Controller
 {
     public function __construct()
     {
@@ -34,7 +34,7 @@ class Fixeds extends CI_Controller
             }
 
             $this->load->view('template/header', $data);
-            $this->load->view('finance/fixeds');
+            $this->load->view('finance/fixed_assets');
         } else {
             redirect('error_access');
         }

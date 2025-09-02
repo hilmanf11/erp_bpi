@@ -210,17 +210,17 @@
 </div>
 
 <!-- PDF -->
-<iframe id="printout" src="<?= base_url('finance/fixeds/print') ?>" style="width: 100%;" hidden></iframe>
+<iframe id="printout" src="<?= base_url('finance/fixed_assets/print') ?>" style="width: 100%;" hidden></iframe>
 <script>
     //Add Data
     function add() {
         $('#dlg_insert').dialog('open');
-        url_save = '<?= base_url('finance/fixeds/create') ?>';
+        url_save = '<?= base_url('finance/fixed_assets/create') ?>';
         $('#frm_insert').form('clear');
 
         //GET PURCHASE INVOICING
         $('#purchase_invoice_number').combogrid({
-            url: '<?= base_url('finance/fixeds/readPi') ?>',
+            url: '<?= base_url('finance/fixed_assets/readPi') ?>',
             panelWidth: 300,
             idField: 'number',
             textField: 'number',
@@ -240,7 +240,7 @@
             ],
             onSelect: function(val, row) {
                 $('#number').combogrid({
-                    url: '<?= base_url('finance/fixeds/readProductPi/') ?>' + window.btoa(row.number),
+                    url: '<?= base_url('finance/fixed_assets/readProductPi/') ?>' + window.btoa(row.number),
                     panelWidth: 400,
                     idField: 'item_no',
                     textField: 'item_no',
@@ -261,7 +261,7 @@
                     onSelect: function(val2, row2) {
                         $.ajax({
                             type: "post",
-                            url: "<?= base_url('finance/fixeds/readExchangeRates') ?>",
+                            url: "<?= base_url('finance/fixed_assets/readExchangeRates') ?>",
                             data: "trans_date=" + row2.trans_date + "&currency=" + row2.currency,
                             dataType: "json",
                             success: function(exchange) {
@@ -292,7 +292,7 @@
         if (row) {
             $('#dlg_insert').dialog('open');
             $('#frm_insert').form('load', row);
-            url_save = '<?= base_url('finance/fixeds/update') ?>?id=' + btoa(row.id);
+            url_save = '<?= base_url('finance/fixed_assets/update') ?>?id=' + btoa(row.id);
         } else {
             toastr.warning("Please select one of the data in the table first!", "Information");
         }
@@ -330,7 +330,7 @@
 
                                 $.ajax({
                                     method: 'post',
-                                    url: '<?= base_url('finance/fixeds/delete') ?>',
+                                    url: '<?= base_url('finance/fixed_assets/delete') ?>',
                                     data: {
                                         id: row.id
                                     },
@@ -380,11 +380,11 @@
             "&filter_supplier=" + window.btoa(filter_supplier);
 
         $('#dg').datagrid({
-            url: '<?= base_url('finance/fixeds/datatables') ?>' + url
+            url: '<?= base_url('finance/fixed_assets/datatables') ?>' + url
         });
 
         $("#printout").contents().find('html').html("<center><br><br><br><b style='font-size:20px;'>Please Wait...</b></center>");
-        $("#printout").attr('src', '<?= base_url('finance/fixeds/print') ?>' + url);
+        $("#printout").attr('src', '<?= base_url('finance/fixed_assets/print') ?>' + url);
     }
 
     //Upload Data
@@ -417,7 +417,7 @@
             "&filter_purchase_invoice_number=" + window.btoa(filter_purchase_invoice_number) +
             "&filter_supplier=" + window.btoa(filter_supplier);
 
-        window.location.assign('<?= base_url('finance/fixeds/print/excel') ?>' + url);
+        window.location.assign('<?= base_url('finance/fixed_assets/print/excel') ?>' + url);
     }
 
     function reload() {
@@ -425,7 +425,7 @@
     }
     $(function() {
         $('#dg').datagrid({
-            url: '<?= base_url('finance/fixeds/datatables') ?>',
+            url: '<?= base_url('finance/fixed_assets/datatables') ?>',
             pagination: true,
             clientPaging: false,
             remoteFilter: true,
@@ -490,14 +490,14 @@
             buttons: [{
                 text: 'List Failed',
                 handler: function() {
-                    window.open('<?= base_url('finance/fixeds/uploadDownloadFailed') ?>', '_blank');
+                    window.open('<?= base_url('finance/fixed_assets/uploadDownloadFailed') ?>', '_blank');
                 }
             }, {
                 text: 'Upload',
                 iconCls: 'icon-ok',
                 handler: function() {
                     $('#frm_upload').form('submit', {
-                        url: '<?= base_url('finance/fixeds/upload') ?>',
+                        url: '<?= base_url('finance/fixed_assets/upload') ?>',
                         onSubmit: function() {
                             if ($(this).form('validate') == false) {
                                 return $(this).form('validate');
@@ -512,7 +512,7 @@
                             $.messager.progress('close');
                             //Clear File
                             $.ajax({
-                                url: "<?= base_url('finance/fixeds/uploadclearFailed') ?>"
+                                url: "<?= base_url('finance/fixed_assets/uploadclearFailed') ?>"
                             });
                             var json = eval('(' + result + ')');
                             requestData(json.total, json);
@@ -526,7 +526,7 @@
                                     $.ajax({
                                         type: "POST",
                                         async: true,
-                                        url: "<?= base_url('finance/fixeds/uploadCreate') ?>",
+                                        url: "<?= base_url('finance/fixed_assets/uploadCreate') ?>",
                                         data: {
                                             "data": json[number - 1]
                                         },
@@ -544,7 +544,7 @@
                                                 $.ajax({
                                                     type: "POST",
                                                     async: true,
-                                                    url: "<?= base_url('finance/fixeds/uploadcreateFailed') ?>",
+                                                    url: "<?= base_url('finance/fixed_assets/uploadcreateFailed') ?>",
                                                     data: {
                                                         data: json[number - 1],
                                                         message: result.message
@@ -584,7 +584,7 @@
             }],
             onSelect: function(category) {
                 $("#filter_number").combogrid({
-                    url: '<?= base_url('finance/fixeds/readNumber/') ?>' + btoa(category.number),
+                    url: '<?= base_url('finance/fixed_assets/readNumber/') ?>' + btoa(category.number),
                     panelWidth: 450,
                     idField: 'number',
                     textField: 'number',
@@ -613,7 +613,7 @@
         });
 
         $("#filter_purchase_invoice_number").combobox({
-            url: '<?= base_url('finance/fixeds/readPurchaseInvoiceNumber') ?>',
+            url: '<?= base_url('finance/fixed_assets/readPurchaseInvoiceNumber') ?>',
             valueField: 'purchase_invoice_number',
             textField: 'purchase_invoice_number',
             prompt: "Choose Purchase Invoice",
@@ -626,7 +626,7 @@
         });
 
         $("#filter_supplier").combobox({
-            url: '<?= base_url('finance/fixeds/readSupplier') ?>',
+            url: '<?= base_url('finance/fixed_assets/readSupplier') ?>',
             valueField: 'supplier_name',
             textField: 'supplier_name',
             prompt: "Choose Supplier",
@@ -649,7 +649,7 @@
 
                     $.ajax({
                         type: "post",
-                        url: "<?= base_url('finance/fixeds/readExpired/') ?>" + (parseInt(val) * 12) + "/" + btoa(trans_date),
+                        url: "<?= base_url('finance/fixed_assets/readExpired/') ?>" + (parseInt(val) * 12) + "/" + btoa(trans_date),
                         dataType: "html",
                         success: function (response) {
                             $("#expired_date").datebox('setValue', response);
