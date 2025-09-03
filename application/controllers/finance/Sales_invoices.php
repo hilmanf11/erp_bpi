@@ -543,10 +543,12 @@ class Sales_invoices extends CI_Controller
         // $this->db->order_by('a.delivery_note_no', 'asc');
         // $records = $this->db->get()->result_array();
 
-
+        // nomor SO tidak di COALESCE(d.sales_order_no, d.sales_order_no_rm) as sales_order_no,
+        
         $this->db->select('a.delivery_note_no, 
-            a.customer_order_no, 
-            COALESCE(d.sales_order_no, d.sales_order_no) as sales_order_no, 
+            a.customer_order_no,  
+            d.sales_order_no,
+            d.sales_order_no_rm,
             a.item_fg_id, 
             b.number as item_number, 
             b.name as item_name, 
@@ -565,7 +567,7 @@ class Sales_invoices extends CI_Controller
         $this->db->join('delivery_notes a', 'a.delivery_order_no = d.delivery_order_no and a.item_fg_id = d.item_fg_id');
         $this->db->join('customers e', 'a.customer_id = e.id');
         $this->db->join('sales_orders g', 'd.sales_order_no = g.sales_order_no and a.customer_id = g.customer_id and a.item_fg_id = g.item_fg_id and a.customer_order_no = g.customer_order_no', 'left');
-        $this->db->join('sales_order_rm g2', 'd.sales_order_no = g2.sales_order_no and a.customer_id = g2.customer_id and a.item_fg_id = g2.item_fg_id and a.customer_order_no = g2.customer_order_no', 'left');
+        $this->db->join('sales_order_rm g2', 'd.sales_order_no_rm = g2.sales_order_no and a.customer_id = g2.customer_id and a.item_fg_id = g2.item_fg_id and a.customer_order_no = g2.customer_order_no', 'left');
         $this->db->join('item_familys h', 'b.type = h.number', 'left');
         $this->db->join('account_coa i', 'h.account_number = i.account_number', 'left');
         $this->db->join('sales_invoices j', 'a.delivery_note_no = j.delivery_note_no and a.item_fg_id = j.item_fg_id', 'left');
@@ -582,11 +584,16 @@ class Sales_invoices extends CI_Controller
         foreach ($records as $record) {
             $total_sub += $record['total'];
 
-            $sales_order_no = $record['sales_order_no'];
             $qty = $record['qty'];
 
             $price = 0;
             $amount = 0;
+
+            if (!empty($record['sales_order_no'])) {
+                $sales_order_no = $record['sales_order_no'];
+            } else {
+                $sales_order_no = $record['sales_order_no_rm'];
+            }
 
             // get price and amount by sales_order_no or sales_order_no_rm
             $sales_fg = $this->db->select('sales_order_no, price')->from('sales_orders')->where('sales_order_no', $sales_order_no)->get()->row();
@@ -605,7 +612,7 @@ class Sales_invoices extends CI_Controller
             $obj[] = array(
                 "id" => $record['si_id'],
                 "delivery_note_no" => $record['delivery_note_no'],
-                "sales_order_no" => $record['sales_order_no'],
+                "sales_order_no" => $sales_order_no,
                 "customer_order_no" => $record['customer_order_no'],
                 "item_fg_id" => $record['item_fg_id'],
                 "item_no" => $record['item_number'],
