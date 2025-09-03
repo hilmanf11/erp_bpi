@@ -546,7 +546,7 @@ class Sales_invoices extends CI_Controller
 
         $this->db->select('a.delivery_note_no, 
             a.customer_order_no, 
-            COALESCE(d.sales_order_no, d.sales_order_no_rm) as sales_order_no, 
+            COALESCE(d.sales_order_no, d.sales_order_no) as sales_order_no, 
             a.item_fg_id, 
             b.number as item_number, 
             b.name as item_name, 
@@ -555,8 +555,8 @@ class Sales_invoices extends CI_Controller
             e.account_name,
             c.currency, 
             d.qty_del as qty, 
-            COALESCE(g.price, g2.price) as price, 
-            (d.qty_del * COALESCE(g.price, g2.price)) as total, 
+            (CASE WHEN g.price IS NOT NULL THEN g.price ELSE g2.price END) as price,
+            (d.qty_del * (CASE WHEN g.price IS NOT NULL THEN g.price ELSE g2.price END)) as total,
             j.id as si_id');
             // Dokumentasi : Perubahan pengambilan Currency menjadi ke Customer_items
         $this->db->from('delivery_orders d');
@@ -565,7 +565,7 @@ class Sales_invoices extends CI_Controller
         $this->db->join('delivery_notes a', 'a.delivery_order_no = d.delivery_order_no and a.item_fg_id = d.item_fg_id');
         $this->db->join('customers e', 'a.customer_id = e.id');
         $this->db->join('sales_orders g', 'd.sales_order_no = g.sales_order_no and a.customer_id = g.customer_id and a.item_fg_id = g.item_fg_id and a.customer_order_no = g.customer_order_no', 'left');
-        $this->db->join('sales_order_rm g2', 'd.sales_order_no_rm = g2.sales_order_no and a.customer_id = g2.customer_id and a.item_fg_id = g2.item_fg_id and a.customer_order_no = g2.customer_order_no', 'left');
+        $this->db->join('sales_order_rm g2', 'd.sales_order_no = g2.sales_order_no and a.customer_id = g2.customer_id and a.item_fg_id = g2.item_fg_id and a.customer_order_no = g2.customer_order_no', 'left');
         $this->db->join('item_familys h', 'b.type = h.number', 'left');
         $this->db->join('account_coa i', 'h.account_number = i.account_number', 'left');
         $this->db->join('sales_invoices j', 'a.delivery_note_no = j.delivery_note_no and a.item_fg_id = j.item_fg_id', 'left');
@@ -581,6 +581,27 @@ class Sales_invoices extends CI_Controller
         $total_sub = 0;
         foreach ($records as $record) {
             $total_sub += $record['total'];
+
+            $sales_order_no = $record['sales_order_no'];
+            $qty = $record['qty'];
+
+            $price = 0;
+            $amount = 0;
+
+            // get price and amount by sales_order_no or sales_order_no_rm
+            $sales_fg = $this->db->select('sales_order_no, price')->from('sales_orders')->where('sales_order_no', $sales_order_no)->get()->row();
+            $sales_rm = $this->db->select('sales_order_no, price')->from('sales_order_rm')->where('sales_order_no', $sales_order_no)->get()->row();
+            if ($sales_fg) {
+                $price  = $sales_fg->price;
+                $amount = $price * $qty;
+            } elseif ($sales_rm) {
+                $price  = $sales_rm->price;
+                $amount = $price * $qty;
+            } else {
+                $price  = 0;
+                $amount = 0;
+            }
+            
             $obj[] = array(
                 "id" => $record['si_id'],
                 "delivery_note_no" => $record['delivery_note_no'],
@@ -592,8 +613,8 @@ class Sales_invoices extends CI_Controller
                 "uom" => $record['uom'],
                 "currency" => $record['currency'],
                 "qty" => $record['qty'],
-                "price" => $record['price'],
-                "total" => $record['total'],
+                "price" => $record['price'] ?? $price,
+                "total" => $record['total'] ?? $amount,
                 "account_number" => $record['account_number'],
                 "account_name" => $record['account_name'],
                 "account_type" => "CREDIT",
