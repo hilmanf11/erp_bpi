@@ -3170,235 +3170,142 @@ class Sales_invoices extends CI_Controller
         ob_end_flush();
     }
 
+    // eCoretax Format XML
     public function export_ecoretax($si_no)
     {
         $si_nos = explode(',', base64_decode($si_no));
-        require 'assets/vendors/phpspreadsheet/vendor/autoload.php';
-        $spreadsheet = new Spreadsheet();
-        ob_end_clean();
-
-        // var_dump($si_nos);
-        // die;
-
-        // **Sheet 1 - Faktur**
-        $sheet1 = $spreadsheet->getActiveSheet();
-        $sheet1->setTitle('Faktur');
-
+        
         $config = $this->db->select('*')->from('config')->get()->row();
         
-        $this->db->select('a.faktur_code, 
-        a.fp_pengganti, 
-        b.npwp as cust_npwp, 
-        a.faktur_no, 
-        a.trans_date, 
-        a.keterangan_tambahan, 
-        a.cap_fasilitas, 
-        a.bc_no, 
-        b.name as cust_name, 
-        c.address, c.email,
-        a.number as invoice_number, 
-        a.total_vat, 
-        a.total_sub, 
-        c.telp, 
-        b.type as customer_type');
-        $this->db->from('sales_invoices a');
-        $this->db->join('customers b', 'a.customer_id = b.id');
-        $this->db->join('customer_address c', 'b.id = c.customer_id');
-        $this->db->where('a.deleted', 0);
-        $this->db->where_in('a.number', $si_nos);
-        $this->db->group_by('a.number');
-        $this->db->order_by('a.number','ASC');
-        $faktur = $this->db->get()->result_array();
+        // Query Get Faktur
+        $faktur_query = $this->db->select('a.faktur_code, 
+            a.fp_pengganti, 
+            b.npwp as cust_npwp, 
+            a.faktur_no, 
+            a.trans_date, 
+            a.keterangan_tambahan, 
+            a.cap_fasilitas, 
+            a.bc_no, 
+            b.name as cust_name, 
+            c.address, c.email,
+            a.number as invoice_number, 
+            a.total_vat, 
+            a.total_sub, 
+            c.telp, 
+            b.type as customer_type')
+            ->from('sales_invoices a')
+            ->join('customers b', 'a.customer_id = b.id')
+            ->join('customer_address c', 'b.id = c.customer_id')
+            ->where('a.deleted', 0)
+            ->where_in('a.number', $si_nos)
+            ->group_by('a.number')
+            ->order_by('a.number', 'ASC')
+            ->get()->result_array();
 
-        $this->db->select('e.number as item_number, 
-        e.name as item_name, 
-        a.price, 
-        a.number as si_no,
-        a.qty, 
-        a.total, 
-        a.total_discount, 
-        a.taxes, 
-        f.description as uom');
-        $this->db->select('e.hs_code');
-        $this->db->from('sales_invoices a');
-        $this->db->join('item_fg e', 'a.item_fg_id = e.id');
-        $this->db->join('uom f', 'e.uom = f.name','left');
-        $this->db->where_in('a.number', $si_nos);
-        $this->db->order_by('a.number','ASC');
-        $detailfaktur = $this->db->get()->result_array();
-
-        $sheet1->setCellValue('A1', 'NPWP Penjual');
-        $sheet1->setCellValueExplicit('C1', $config->npwp, DataType::TYPE_STRING);
-        $sheet1->setCellValue('A3', 'Baris');
-        $sheet1->setCellValue('B3', 'Tanggal Faktur');
-        $sheet1->setCellValue('C3', 'Jenis Faktur');
-        $sheet1->setCellValue('D3', 'Kode Transaksi');
-        $sheet1->setCellValue('E3', 'Keterangan Tambahan');
-        $sheet1->setCellValue('F3', 'Period Dok Pendukung');
-        $sheet1->setCellValue('G3', 'Dokumen Pendukung');
-        $sheet1->setCellValue('H3', 'Referensi');
-        $sheet1->setCellValue('I3', 'Cap Fasilitas');
-        $sheet1->setCellValue('J3', 'ID TKU Penjual'); 
-        $sheet1->setCellValue('K3', 'NPWP/NIK Pembeli');
-        $sheet1->setCellValue('L3', 'Jenis ID Pembeli');
-        $sheet1->setCellValue('M3', 'Negara Pembeli');
-        $sheet1->setCellValue('N3', 'Nomor Dokumen Pembeli');
-        $sheet1->setCellValue('O3', 'Nama Pembeli');
-        $sheet1->setCellValue('P3', 'Alamat Pembeli');
-        $sheet1->setCellValue('Q3', 'Email Pembeli');
-        $sheet1->setCellValue('R3', 'ID TKU Pembeli');
-
-        $sheet1->mergeCells('A1:B1');
-        $sheet1->getStyle('A1:Q3')->getFont()->setBold(true);
-
-        $row = 4; 
-        $number = 1;
-        foreach ($faktur as $data) {
-            $negara_pembeli = ($data['customer_type'] == "LOCAL") ? "IDN" : "";
-            $sheet1->setCellValue('A' . $row, $number);
-            $date = DateTime::createFromFormat('Y-m-d', $data['trans_date']);
-            $excelDate = \PhpOffice\PhpSpreadsheet\Shared\Date::PHPToExcel($date->getTimestamp());
-            $sheet1->setCellValue('B' . $row, $excelDate);
-            $sheet1->getStyle('B' . $row)->getNumberFormat()->setFormatCode('DD/MM/YYYY');
-            $sheet1->setCellValue('C' . $row, "Normal");
-            $sheet1->setCellValue('D' . $row, $data['faktur_code']);
-            $sheet1->setCellValue('E' . $row, $data['keterangan_tambahan']);
-            
-            // period dok pendukung = diambil berdasarkan bulan dan tahun, misal 09 Sept 2025, maka 092025
-            $currentDate = date('Y-m-d');
-            $excelDate = \PhpOffice\PhpSpreadsheet\Shared\Date::PHPToExcel(strtotime($currentDate));
-            $sheet1->setCellValue('F' . $row, $excelDate);
-            $sheet1->getStyle('F' . $row)->getNumberFormat()->setFormatCode('MMYYYY');
-
-            $sheet1->setCellValue('G' . $row, $data['bc_no']);
-            $sheet1->setCellValue('H' . $row, $data['invoice_number']);
-            $sheet1->setCellValue('I' . $row, $data['cap_fasilitas']);
-            $sheet1->setCellValue('J' . $row, $config->npwp);
-            $sheet1->setCellValueExplicit('K' . $row, $data['cust_npwp'], DataType::TYPE_STRING);
-            $sheet1->setCellValue('L' . $row, "TIN");
-            $sheet1->setCellValue('M' . $row, $negara_pembeli);
-            $sheet1->setCellValue('N' . $row, "-");
-            $sheet1->setCellValue('O' . $row, $data['cust_name']);
-            $sheet1->setCellValue('P' . $row, $data['address']);
-            $sheet1->setCellValue('Q' . $row, $data['email']);
-            $sheet1->setCellValueExplicit('R' . $row, $data['cust_npwp'], DataType::TYPE_STRING);
-            $row++;
-            $number++;
+        // Query Detail Faktur
+        $detailfaktur_query = $this->db->select('e.number as item_number, 
+            e.name as item_name, 
+            a.price, 
+            a.number as si_no,
+            a.qty, 
+            a.total, 
+            a.total_discount, 
+            a.taxes, 
+            f.description as uom,
+            e.hs_code')
+            ->from('sales_invoices a')
+            ->join('item_fg e', 'a.item_fg_id = e.id')
+            ->join('uom f', 'e.uom = f.name', 'left')
+            ->where_in('a.number', $si_nos)
+            ->order_by('a.number', 'ASC')
+            ->get()->result_array();
+        
+        // Group Detail Faktur by Invoice Number
+        $groupedDetails = [];
+        foreach ($detailfaktur_query as $detail) {
+            $groupedDetails[$detail['si_no']][] = $detail;
         }
 
-        foreach (range('A', 'Q') as $columnID) {
-            $sheet1->getColumnDimension($columnID)->setAutoSize(true);
-        }
+        // Build XML Structure
+        $xml = new SimpleXMLElement('<TaxInvoicingeCoretax xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"></TaxInvoicingeCoretax>');
+        
+        foreach ($faktur_query as $faktur) 
+        {
+            $fakturNode = $xml->addChild('faktur');
+            $fakturNode->addChild('npwp_penjual', $config->npwp);
+            $fakturNode->addChild('jenis_faktur', 'Normal');
+            $fakturNode->addChild('tanggal_faktur', $faktur['trans_date']);
+            $fakturNode->addChild('kode_transaksi', $faktur['faktur_code']);
+            $fakturNode->addChild('keterangan_tambahan', $faktur['keterangan_tambahan']);
+            $fakturNode->addChild('period_dok_pendukung', date('mY', strtotime($faktur['trans_date'])));
+            $fakturNode->addChild('dokumen_pendukung', $faktur['bc_no']);
+            $fakturNode->addChild('referensi', $faktur['invoice_number']);
+            $fakturNode->addChild('cap_fasilitas', $faktur['cap_fasilitas']);
+            $fakturNode->addChild('npwp_pembeli', $faktur['cust_npwp']);
+            $fakturNode->addChild('jenis_id_pembeli', 'TIN');
+            $fakturNode->addChild('negara_pembeli', ($faktur['customer_type'] == "LOCAL") ? "IDN" : "");
+            $fakturNode->addChild('nomor_dokumen_pembeli', '-');
+            $fakturNode->addChild('nama_pembeli', $faktur['cust_name']);
+            $fakturNode->addChild('alamat_pembeli', $faktur['address']);
+            $fakturNode->addChild('email_pembeli', $faktur['email']);
 
-        $sheet1->setCellValue('A' . $row, 'END');
+            // Ambil detail yang relevan dari array yang sudah dikelompokkan
+            if (isset($groupedDetails[$faktur['invoice_number']])) {
+                $detailNode = $fakturNode->addChild('detail_faktur');
+                $no = 1; // nomor urut untuk detail per faktur
+                
+                foreach ($groupedDetails[$faktur['invoice_number']] as $detail) 
+                {
+                    $itemNode = $detailNode->addChild('item');
+                    
+                    // Setting UOM
+                    $uom = "UM.0033";
+                    if ($detail['uom'] == "Kilogram") $uom = "UM.0003";
+                    if ($detail['uom'] == "Gram") $uom = "UM.0004";
+                    if ($detail['uom'] == "Liter") $uom = "UM.0007";
+                    if ($detail['uom'] == "Meter") $uom = "UM.0013";
+                    if ($detail['uom'] == "Lusin") $uom = "UM.0017";
+                    if ($detail['uom'] == "Unit") $uom = "UM.0018";
+                    if ($detail['uom'] == "Set") $uom = "UM.0019";
+                    if ($detail['uom'] == "Lembar") $uom = "UM.0020";
+                    if ($detail['uom'] == "Piece") $uom = "UM.0021";
 
-        // **Sheet 2 - DetailFaktur**
-        $sheet2 = $spreadsheet->createSheet();
-        $sheet2->setTitle('DetailFaktur');
-        $spreadsheet->setActiveSheetIndex(1);
-
-        // Header DetailFaktur
-        $sheet2->setCellValue('A1', 'Baris');
-        $sheet2->setCellValue('B1', 'Barang/Jasa');
-        $sheet2->setCellValue('C1', 'Kode Barang Jasa');
-        $sheet2->setCellValue('D1', 'Nama Barang/Jasa');
-        $sheet2->setCellValue('E1', 'HS Code (INSW)');
-        $sheet2->setCellValue('F1', 'Nama Satuan Ukur');
-        $sheet2->setCellValue('G1', 'Harga Satuan');
-        $sheet2->setCellValue('H1', 'Jumlah Barang Jasa');
-        $sheet2->setCellValue('I1', 'Total Diskon');
-        $sheet2->setCellValue('J1', 'DPP');
-        $sheet2->setCellValue('K1', 'DPP Nilai Lain');
-        $sheet2->setCellValue('L1', 'Tarif PPN');
-        $sheet2->setCellValue('M1', 'PPN');
-        $sheet2->setCellValue('N1', 'Tarif PPnBM');
-        $sheet2->setCellValue('O1', 'PPnBM');
-
-        $row2 = 2; 
-        $number2 = 0;
-        $previous_si_no = "";
-        foreach ($detailfaktur as $data2) {
-
-            if ($previous_si_no !== $data2['si_no']) {
-                $number2++;
+                    $itemNode->addChild('baris', $no++);
+                    $itemNode->addChild('barang_jasa', 'A');
+                    $itemNode->addChild('kode_barang_jasa', '000000');
+                    $itemNode->addChild('nama_barang_jasa', $detail['item_number']);
+                    $itemNode->addChild('hs_code', $detail['hs_code']);
+                    $itemNode->addChild('nama_satuan_ukur', $uom);
+                    $itemNode->addChild('harga_satuan', round($detail['price'], 2));
+                    $itemNode->addChild('jumlah_barang_jasa', round($detail['qty'], 2));
+                    $itemNode->addChild('total_diskon', round($detail['total_discount'], 2));
+                    $itemNode->addChild('dpp', round($detail['total'] - $detail['total_discount'], 2));
+                    $itemNode->addChild('dpp_nilai_lain', round(11/12 * ($detail['total'] - $detail['total_discount']), 2));
+                    $itemNode->addChild('tarif_ppn', round($detail['taxes'], 2));
+                    $itemNode->addChild('ppn', round((11/12 * ($detail['total'] - $detail['total_discount'])) * ($detail['taxes']/100), 2));
+                    $itemNode->addChild('tarif_ppnbm', 0);
+                    $itemNode->addChild('ppnbm', 0);
+                }
             }
-
-            if($data2['uom'] == "Kilogram"){
-                $uom = "UM.0003";
-            }elseif($data2['uom'] == "Gram"){
-                $uom = "UM.0004";
-            }elseif($data2['uom'] == "Liter"){
-                $uom = "UM.0007";
-            }elseif($data2['uom'] == "Meter"){
-                $uom = "UM.0013";
-            }elseif($data2['uom'] == "Lusin"){
-                $uom = "UM.0017";
-            }elseif($data2['uom'] == "Unit"){
-                $uom = "UM.0018";
-            }elseif($data2['uom'] == "Set"){
-                $uom = "UM.0019";
-            }elseif($data2['uom'] == "Lembar"){
-                $uom = "UM.0020";
-            }elseif($data2['uom'] == "Piece"){
-                $uom = "UM.0021";
-            }else{
-                $uom = "UM.0033";
-            }
-
-            $sheet2->setCellValue('A' . $row2, $number2);
-            $sheet2->setCellValue('B' . $row2, "A");
-            $sheet2->setCellValue('C' . $row2, "000000");
-            $sheet2->setCellValue('D' . $row2, $data2['item_number']);
-            $sheet2->setCellValue('E' . $row2, $data2['hs_code']);
-            $sheet2->setCellValue('F' . $row2, $uom);
-            $sheet2->setCellValue('G' . $row2, $data2['price']);
-            $sheet2->setCellValue('H' . $row2, $data2['qty']);
-            $sheet2->setCellValue('I' . $row2, $data2['total_discount']);
-            $sheet2->setCellValue('J' . $row2, round($data2['total'] - $data2['total_discount']));
-            $sheet2->setCellValue('K' . $row2, round(11/12 * ($data2['total'] - $data2['total_discount'])));
-            $sheet2->setCellValue('L' . $row2, $data2['taxes']);
-            $sheet2->setCellValue('M' . $row2, round((11/12 * ($data2['total'] - $data2['total_discount'])) * ($data2['taxes']/100)));
-            $sheet2->setCellValue('N' . $row2, 0);
-            $sheet2->setCellValue('O' . $row2, (0*(11/12 * ($data2['total'] - $data2['total_discount']))) / 100);
-
-            $sheet2->getStyle('I' . $row2)->getNumberFormat()->setFormatCode('0.00');
-            $sheet2->getStyle('J' . $row2)->getNumberFormat()->setFormatCode('0.00');
-            $sheet2->getStyle('K' . $row2)->getNumberFormat()->setFormatCode('0.00');
-            $sheet2->getStyle('M' . $row2)->getNumberFormat()->setFormatCode('0.00');
-            $sheet2->getStyle('O' . $row2)->getNumberFormat()->setFormatCode('0.00');
-
-            
-            $previous_si_no = $data2['si_no'];
-            $row2++;
-            // $number2++;
         }
 
-        foreach (range('A', 'N') as $columnID2) {
-            $sheet2->getColumnDimension($columnID2)->setAutoSize(true);
-        }
-
-        $sheet2->setCellValue('A' . $row2, 'END');
-
-        // Kembali ke Sheet Faktur
-        $spreadsheet->setActiveSheetIndex(0);
-
-        // **Simpan dan Download**
-        $writer = new Xlsx($spreadsheet);
-        $filename = 'tax_invoicing_ecoretax.xlsx';
-
-        // Header untuk download
-        header('Content-Type: application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
-        header('Content-Disposition: attachment;filename="' . $filename . '"');
-        header('Cache-Control: max-age=0');
-        header('Cache-Control: max-age=1');
+        // Filename
+        $timestamp = date('Ymd_His');
+        $filename  = 'tax_invoicing_ecoretax_' . $timestamp . '.xml';
+        
+        // Output format XML
+        header('Content-Description: File Transfer');
+        header('Content-Type: application/xml');
+        header('Content-Disposition: attachment; filename="' . $filename . '"');
+        header('Cache-Control: public, max-age=0, must-revalidate');
         header('Pragma: public');
         header('Expires: 0');
-
-        // Output ke browser
-        $writer->save('php://output');
+        
+        echo $xml->asXML();
         exit();
     }
 
+    // eCoretax Format Excel / CSV
     public function export_ecoretax_backup($si_no){
         $si_nos = explode(',', base64_decode($si_no));
         require 'assets/vendors/phpspreadsheet/vendor/autoload.php';
