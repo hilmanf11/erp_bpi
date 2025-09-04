@@ -197,61 +197,19 @@ class Fixed_assets extends CI_Controller
         echo json_encode($send);
     }
 
-    //GET LIST DATA
-    public function datatables()
+    //GET LIST DATA (untuk datatable dan print)
+    function getFixedAssets($filter_list, $page = null, $rows = null) 
     {
-        // Periksa apakah request adalah POST. Jika bukan maka return error
-        if (!$this->input->post()) {
-            show_error("Cannot Process your request");
-        }
-
-        $page = $this->input->post('page') ?? 1;
-        $rows = $this->input->post('rows') ?? 10;
-        $offset = ($page - 1) * $rows;
-
-        $filter_from = base64_decode($this->input->get('filter_from')) ?? null;
-        $filter_to = base64_decode($this->input->get('filter_to')) ?? null;
-        $filter_number = base64_decode($this->input->get('filter_number')) ?? null;
-        $filter_category = base64_decode($this->input->get('filter_category')) ?? null;
-        $filter_estimate = base64_decode($this->input->get('filter_estimate')) ?? null;
-        $filter_purchase_invoice_number = base64_decode($this->input->get('filter_purchase_invoice_number')) ?? null;
-        $filter_supplier = base64_decode($this->input->get('filter_supplier')) ?? null;
-
-        $filter_period_from = $filter_from ? date("Y-m", strtotime($filter_from)) : null;
-        $filter_period_to = $filter_to ? date("Y-m", strtotime($filter_to)) : null;
-
-        // Query Builder untuk menghitung total data
-        $this->db->from('asset_fixeds a');
+        $filter_from        = $filter_list["filter_from"];
+        $filter_to          = $filter_list["filter_to"];
+        $filter_number      = $filter_list["filter_number"];
+        $filter_category    = $filter_list["filter_category"];
+        $filter_estimate    = $filter_list["filter_estimate"];
+        $filter_purchase_invoice_number = $filter_list["filter_purchase_invoice_number"];
+        $filter_supplier    = $filter_list["filter_supplier"];
+        $filter_period_from = $filter_list["filter_period_from"];
+        $filter_period_to   = $filter_list["filter_period_to"];
         
-        // Menambahkan kondisi WHERE
-        if ($filter_from && $filter_to) {
-            $this->db->where('a.trans_date >=', $filter_from);
-            $this->db->where('a.trans_date <=', $filter_to);
-        }
-        if (!empty($filter_category)) {
-            // $this->db->where('a.asset_category_number', $filter_category);
-            $this->db->where('a.item_family_id', $filter_category);
-        }
-        if (!empty($filter_number)) {
-            $this->db->like('a.number', $filter_number);
-        }
-        if (!empty($filter_estimate)) {
-            $this->db->like('a.estimate_year', $filter_estimate);
-        }
-        if (!empty($filter_purchase_invoice_number)) {
-            $this->db->like('a.purchase_invoice_number', $filter_purchase_invoice_number);
-        }
-        if (!empty($filter_supplier)) {
-            $this->db->like('a.supplier_name', $filter_supplier);
-        }
-
-        // Hitung total data sebelum limit dan offset
-        $totalRows = $this->db->count_all_results();
-        
-        // Reset Query Builder setelah menghitung total
-        $this->db->reset_query();
-
-        // Query Builder untuk mengambil data
         $this->db->select("a.*, 
             COALESCE(b.name, f.name) as asset_category_name, 
             COALESCE(b.type, coa.account_name) as asset_category_type,
@@ -288,10 +246,85 @@ class Fixed_assets extends CI_Controller
         if (!empty($filter_supplier)) {
             $this->db->like('a.supplier_name', $filter_supplier);
         }
-
         $this->db->group_by('a.number');
-        $this->db->limit($rows, $offset);
+        
+        if (!empty($page) && !empty($rows)) {            
+            $offset = ($page - 1) * $rows;
+            $this->db->limit($rows, $offset);
+        }
+
         $records = $this->db->get()->result_array();
+        
+        return $records;
+    }
+
+    //GET DATATABLE 
+    public function datatables()
+    {
+        if (!$this->input->post()) {
+            show_error("Cannot Process your request");
+        }
+
+        $page = $this->input->post('page') ?? 1;
+        $rows = $this->input->post('rows') ?? 10;
+        $offset = ($page - 1) * $rows;
+
+        $filter_from = base64_decode($this->input->get('filter_from')) ?? null;
+        $filter_to = base64_decode($this->input->get('filter_to')) ?? null;
+        $filter_number = base64_decode($this->input->get('filter_number')) ?? null;
+        $filter_category = base64_decode($this->input->get('filter_category')) ?? null;
+        $filter_estimate = base64_decode($this->input->get('filter_estimate')) ?? null;
+        $filter_purchase_invoice_number = base64_decode($this->input->get('filter_purchase_invoice_number')) ?? null;
+        $filter_supplier = base64_decode($this->input->get('filter_supplier')) ?? null;
+
+        $filter_period_from = $filter_from ? date("Y-m", strtotime($filter_from)) : null;
+        $filter_period_to = $filter_to ? date("Y-m", strtotime($filter_to)) : null;
+
+        $filter_list = [
+            "filter_from"                    => $filter_from,
+            "filter_to"                      => $filter_to,
+            "filter_number"                  => $filter_number,
+            "filter_category"                => $filter_category,
+            "filter_estimate"                => $filter_estimate,
+            "filter_purchase_invoice_number" => $filter_purchase_invoice_number,
+            "filter_supplier"                => $filter_supplier,
+            "filter_period_from"             => $filter_period_from,
+            "filter_period_to"               => $filter_period_to,
+        ];
+
+        // Query Builder untuk menghitung total data
+        $this->db->from('asset_fixeds a');
+        
+        // Menambahkan kondisi WHERE
+        if ($filter_from && $filter_to) {
+            $this->db->where('a.trans_date >=', $filter_from);
+            $this->db->where('a.trans_date <=', $filter_to);
+        }
+        if (!empty($filter_category)) {
+            // $this->db->where('a.asset_category_number', $filter_category);
+            $this->db->where('a.item_family_id', $filter_category);
+        }
+        if (!empty($filter_number)) {
+            $this->db->like('a.number', $filter_number);
+        }
+        if (!empty($filter_estimate)) {
+            $this->db->like('a.estimate_year', $filter_estimate);
+        }
+        if (!empty($filter_purchase_invoice_number)) {
+            $this->db->like('a.purchase_invoice_number', $filter_purchase_invoice_number);
+        }
+        if (!empty($filter_supplier)) {
+            $this->db->like('a.supplier_name', $filter_supplier);
+        }
+
+        // Hitung total data sebelum limit dan offset
+        $totalRows = $this->db->count_all_results();
+        
+        // Reset Query Builder setelah menghitung total
+        $this->db->reset_query();
+
+        // Query Builder untuk mengambil data
+        $records = $this->getFixedAssets($filter_list, $page, $rows);
 
         $result = [
             'total' => $totalRows,
@@ -522,47 +555,37 @@ class Fixed_assets extends CI_Controller
         $this->db->from('config');
         $config = $this->db->get()->row();
 
-        $filter_from = base64_decode($this->input->get('filter_from'));
-        $filter_to = base64_decode($this->input->get('filter_to'));
-        $filter_number = base64_decode($this->input->get('filter_number'));
-        $filter_category = base64_decode($this->input->get('filter_category'));
-        $filter_estimate = base64_decode($this->input->get('filter_estimate'));
-        $filter_purchase_invoice_number = base64_decode($this->input->get('filter_purchase_invoice_number'));
-        $filter_supplier = base64_decode($this->input->get('filter_supplier'));
+        $filter_from = base64_decode($this->input->get('filter_from')) ?? null;
+        $filter_to = base64_decode($this->input->get('filter_to')) ?? null;
+        $filter_number = base64_decode($this->input->get('filter_number')) ?? null;
+        $filter_category = base64_decode($this->input->get('filter_category')) ?? null;
+        $filter_estimate = base64_decode($this->input->get('filter_estimate')) ?? null;
+        $filter_purchase_invoice_number = base64_decode($this->input->get('filter_purchase_invoice_number')) ?? null;
+        $filter_supplier = base64_decode($this->input->get('filter_supplier')) ?? null;
 
-        $filter_period_from = date("Y-m", strtotime($filter_from));
-        $filter_period_to = date("Y-m", strtotime($filter_to));
+        $filter_period_from = $filter_from ? date("Y-m", strtotime($filter_from)) : null;
+        $filter_period_to = $filter_to ? date("Y-m", strtotime($filter_to)) : null;
+
+        $filter_list = [
+            "filter_from"                    => $filter_from,
+            "filter_to"                      => $filter_to,
+            "filter_number"                  => $filter_number,
+            "filter_category"                => $filter_category,
+            "filter_estimate"                => $filter_estimate,
+            "filter_purchase_invoice_number" => $filter_purchase_invoice_number,
+            "filter_supplier"                => $filter_supplier,
+            "filter_period_from"             => $filter_period_from,
+            "filter_period_to"               => $filter_period_to,
+        ];
+
+        if (!empty($filter_from) && !empty($filter_to)) {
+            $period = '<small>Period '.$filter_from.' to '.$filter_to.'</small>';
+        } else {
+            $period = "";
+        }
 
         //Select Query
-        $this->db->select("a.*, 
-        b.name as asset_category_name, 
-        b.type as asset_category_type, 
-        PERIOD_DIFF(DATE_FORMAT('$filter_to', '%Y%m'), DATE_FORMAT(trans_date, '%Y%m')) AS qty_month, 
-        (COALESCE(c.depreciation_acc, 0) + a.depreciation_accumulate) as depreciation_acc,
-        (a.cost - (c.depreciation_acc + a.depreciation_accumulate)) as book_value,
-        (CASE WHEN (a.cost - (c.depreciation_acc + a.depreciation_accumulate)) > 0 THEN 0 ELSE 1 END) as status_expired");
-        $this->db->from('asset_fixeds a');
-        $this->db->join('asset_categories b', 'a.asset_category_number = b.number');
-        $this->db->join("(SELECT asset_no, SUM(debit) as depreciation_acc FROM asset_journals WHERE periode BETWEEN '$filter_period_from' and '$filter_period_to' GROUP BY asset_no) c", 'a.number = c.asset_no', 'left');
-        $this->db->where('a.trans_date >=', $filter_from);
-        $this->db->where('a.trans_date <=', $filter_to);
-        if($filter_category != ""){
-            $this->db->where('a.asset_category_number', $filter_category);
-        }
-        if($filter_number != ""){
-            $this->db->where('a.number', $filter_number);
-        }
-        if($filter_estimate != ""){
-            $this->db->where('a.estimate_year', $filter_estimate);
-        }
-        if($filter_purchase_invoice_number != ""){
-            $this->db->where('a.purchase_invoice_number', $filter_purchase_invoice_number);
-        }
-        if($filter_supplier != ""){
-            $this->db->where('a.supplier_name', $filter_supplier);
-        }
-        $this->db->group_by('a.number');
-        $records = $this->db->get()->result_array();
+        $records = $this->getFixedAssets($filter_list, null, null);
 
         $html = '<html><head><title>Print Data</title></head><style>body {font-family: Arial, Helvetica, sans-serif;}#customers {border-collapse: collapse;width: 100%;font-size: 12px;}#customers td, #customers th {border: 1px solid black;padding: 2px;}#customers tr:nth-child(even){background-color: #f2f2f2;}#customers tr:hover {background-color: black;}#customers th {padding-top: 2px;padding-bottom: 2px;text-align: center;color: black;}</style><body>
             <center>
@@ -585,9 +608,7 @@ class Fixed_assets extends CI_Controller
                 </div>
                 <br>
                 <br>
-                <h3 style="margin:0;">ASSET FIXED</h3>
-                <small>Period '.$filter_from.' to '.$filter_to.'</small>
-            </center>
+                <h3 style="margin:0;">FIXED ASSETS</h3>' . $period . '</center>
             <br>
             
             <table id="customers" border="1">
