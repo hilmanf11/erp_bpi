@@ -55,7 +55,11 @@ class Journal_types extends CI_Controller
             $this->db->join('account_coa b', 'a.account_number = b.account_number', 'left');
             if (@count($filters) > 0) {
                 foreach ($filters as $filter) {
-                    $this->db->like($filter->field, $filter->value);
+                    if ($filter->field == "account_number") {
+                        $this->db->like("a.account_number", $filter->value);
+                    } else {
+                        $this->db->like($filter->field, $filter->value);
+                    }
                 }
             }
             //Total Data
