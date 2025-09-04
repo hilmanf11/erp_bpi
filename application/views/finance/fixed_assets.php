@@ -111,9 +111,13 @@
                     <span style="width:35%; display:inline-block;">Asset Name</span>
                     <input style="width:60%;" name="name" id="name" readonly class="easyui-textbox">
                 </div>
+                <div class="fitem" hidden>
+                    <span style="width:35%; display:inline-block;">Asset Category Code</span>
+                    <input style="width:60%;" name="asset_category_number" id="asset_category_number" required="" class="easyui-textbox" readonly>
+                </div>
                 <div class="fitem">
                     <span style="width:35%; display:inline-block;">Asset Category</span>
-                    <input style="width:60%;" name="asset_category_number" id="asset_category_number" required="" class="easyui-combobox">
+                    <input style="width:60%;" name="asset_category_name" id="asset_category_name" required="" class="easyui-textbox" readonly>
                 </div>
                 <div class="fitem">
                     <span style="width:35%; display:inline-block;">Purchase Date</span>
@@ -217,73 +221,10 @@
         $('#dlg_insert').dialog('open');
         url_save = '<?= base_url('finance/fixed_assets/create') ?>';
         $('#frm_insert').form('clear');
+       
+        // Depreciation Method : auto fill = Straightline
+        $('#method').textbox('setValue', 'Straightline');
 
-        //GET PURCHASE INVOICING
-        $('#purchase_invoice_number').combogrid({
-            url: '<?= base_url('finance/fixed_assets/readPi') ?>',
-            panelWidth: 300,
-            idField: 'number',
-            textField: 'number',
-            mode: 'remote',
-            fitColumns: true,
-            prompt: "Choose Purchase Invoice",
-            columns: [
-                [{
-                    field: 'number',
-                    title: 'Purchase Invoice',
-                    width: 120
-                }, {
-                    field: 'name',
-                    title: 'Product Family',
-                    width: 150
-                }, ]
-            ],
-            onSelect: function(val, row) {
-                $('#number').combogrid({
-                    url: '<?= base_url('finance/fixed_assets/readProductPi/') ?>' + window.btoa(row.number),
-                    panelWidth: 400,
-                    idField: 'item_no',
-                    textField: 'item_no',
-                    mode: 'remote',
-                    fitColumns: true,
-                    prompt: "Choose Asset No",
-                    columns: [
-                        [{
-                            field: 'item_no',
-                            title: 'Asset No',
-                            width: 200
-                        }, {
-                            field: 'item_name',
-                            title: 'Asset Name',
-                            width: 150
-                        }, ]
-                    ],
-                    onSelect: function(val2, row2) {
-                        $.ajax({
-                            type: "post",
-                            url: "<?= base_url('finance/fixed_assets/readExchangeRates') ?>",
-                            data: "trans_date=" + row2.trans_date + "&currency=" + row2.currency,
-                            dataType: "json",
-                            success: function(exchange) {
-                                if (exchange.length > 0) {
-                                    $("#cost").numberbox('setValue', parseFloat(row2.price * parseFloat(exchange[0].middle)));
-                                    $("#total").numberbox('setValue', (parseFloat(row2.qty) * parseFloat(row2.price * parseFloat(exchange[0].middle))));
-                                } else {
-                                    $("#cost").numberbox('setValue', row2.price);
-                                    $("#total").numberbox('setValue', (parseFloat(row2.qty) * parseFloat(row2.price)));
-                                }
-                            }
-                        });
-
-                        $("#name").textbox('setValue', row2.item_name);
-                        $("#trans_date").datebox('setValue', row2.trans_date);
-                        $("#supplier_name").textbox('setValue', row2.supplier_name);
-                        $("#qty").numberbox('setValue', row2.qty);
-                        $("#currency").textbox('setValue', "IDR");
-                    }
-                });
-            }
-        });
     }
 
     //Edit Data
@@ -294,7 +235,8 @@
             $('#frm_insert').form('load', row);
             url_save = '<?= base_url('finance/fixed_assets/update') ?>?id=' + btoa(row.id);
         } else {
-            toastr.warning("Please select one of the data in the table first!", "Information");
+            // toastr.warning("Please select one of the data in the table first!", "Information");
+            $.messager.alert('Information', "Please select one of the data in the table first!", 'warning');
         }
     }
 
@@ -358,7 +300,8 @@
                 }
             });
         } else {
-            toastr.warning("Please select one of the data in the table first!", "Information");
+            // toastr.warning("Please select one of the data in the table first!", "Information");
+            $.messager.alert('Information', "Please select one of the data in the table first!", 'warning');
         }
     }
 
@@ -423,13 +366,124 @@
     function reload() {
         window.location.reload();
     }
+
+    // Windows Ready
     $(function() {
+        // Load List of Fixed Assets
         $('#dg').datagrid({
             url: '<?= base_url('finance/fixed_assets/datatables') ?>',
             pagination: true,
             clientPaging: false,
             remoteFilter: true,
             rownumbers: true
+        });
+
+        //GET PURCHASE INVOICING
+        $('#purchase_invoice_number').combogrid({
+            url: '<?= base_url('finance/fixed_assets/readPi') ?>',
+            panelWidth: 450,
+            idField: 'number',
+            textField: 'number',
+            mode: 'remote',
+            fitColumns: true,
+            prompt: "Choose Purchase Invoice",
+            columns: [
+                [{
+                    field: 'no',
+                    title: 'No',
+                    width: 30
+                }, {
+                    field: 'number',
+                    title: 'Purchase Invoice',
+                    width: 120
+                }, {
+                    field: 'name',
+                    title: 'Account Name',
+                    width: 150
+                }, ]
+            ],
+            onSelect: function(val, row) {
+                // Setelah memilih purchase invoice, muat data produk/item yang terkait
+                $('#number').combogrid({
+                    url: '<?= base_url('finance/fixed_assets/readProductPi/') ?>' + window.btoa(row.number),
+                    panelWidth: 400,
+                    idField: 'item_no',
+                    textField: 'item_no',
+                    mode: 'remote',
+                    fitColumns: true,
+                    prompt: "Choose Asset No",
+                    columns: [
+                        [{
+                            field: 'item_no',
+                            title: 'Asset No',
+                            width: 200
+                        }, {
+                            field: 'item_name',
+                            title: 'Asset Name',
+                            width: 150
+                        }, ]
+                    ],
+                    // Fungsi onSelect untuk item aset
+                    onSelect: function(val2, row2) {
+                        // Get Asset Category
+                        $.ajax({
+                            type: "post",
+                            url: "<?= base_url('finance/fixed_assets/readAssetCategory/') ?>" + window.btoa(row2.item_rm_id),
+                            dataType: "json",
+                            success: function(assetCategory) {
+                                $("#asset_category_number").textbox('setValue', assetCategory.item_family_id);
+                                $("#asset_category_name").textbox('setValue', assetCategory.family_name);
+                            }
+                        });
+
+                        // Cek mata uang dan hitung total
+                        if (row2.currency === 'IDR') {
+                            $("#cost").numberbox('setValue', row2.price);
+                            $("#total").numberbox('setValue', (parseFloat(row2.qty) * parseFloat(row2.price)));
+                        } else {
+                            // Jika bukan IDR, lakukan panggilan AJAX untuk mendapatkan kurs
+                            $.ajax({
+                                type: "post",
+                                url: "<?= base_url('finance/fixed_assets/readExchangeRates') ?>",
+                                data: "trans_date=" + row2.trans_date + "&currency=" + row2.currency,
+                                dataType: "json",
+                                success: function(exchange) {
+                                    // if (exchange.length > 0) {
+                                    //     $("#cost").numberbox('setValue', parseFloat(row2.price * parseFloat(exchange[0].middle)));
+                                    //     $("#total").numberbox('setValue', (parseFloat(row2.qty) * parseFloat(row2.price * parseFloat(exchange[0].middle))));
+                                    // } else {
+                                    //     $("#cost").numberbox('setValue', row2.price);
+                                    //     $("#total").numberbox('setValue', (parseFloat(row2.qty) * parseFloat(row2.price)));
+                                    // }
+                                    
+                                    // Pastikan data exchange ada sebelum diakses
+                                    if (exchange && exchange.length > 0 && exchange[0].middle) {
+                                        const rate = parseFloat(exchange[0].middle);
+                                        $("#cost").numberbox('setValue', parseFloat(row2.price * rate));
+                                        $("#total").numberbox('setValue', (parseFloat(row2.qty) * parseFloat(row2.price * rate)));
+                                    } else {
+                                        // Fallback jika data kurs tidak ditemukan
+                                        $("#cost").numberbox('setValue', row2.price);
+                                        $("#total").numberbox('setValue', (parseFloat(row2.qty) * parseFloat(row2.price)));
+                                        $.messager.alert('Warning', 'Exchange rate not found. Using original price.', 'warning');
+                                    }
+                                },
+                                error: function() {
+                                    $.messager.alert('Error', 'Failed to load exchange rates.', 'error');
+                                    $("#cost").numberbox('setValue', row2.price);
+                                    $("#total").numberbox('setValue', (parseFloat(row2.qty) * parseFloat(row2.price)));
+                                }
+                            });
+                        }
+
+                        $("#name").textbox('setValue', row2.item_name);
+                        $("#trans_date").datebox('setValue', row2.trans_date);
+                        $("#supplier_name").textbox('setValue', row2.supplier_name);
+                        $("#qty").numberbox('setValue', row2.qty);
+                        $("#currency").textbox('setValue', row2.currency); // Gunakan currency yang asli
+                    }
+                });
+            }
         });
 
         //Save Data
@@ -440,16 +494,17 @@
                 handler: function() {
                     var trans_date = $("#trans_date").datebox('getValue');
 
-                    $.ajax({
-                        type: "post",
-                        url: "<?= base_url('closing/locks/checkLock') ?>",
-                        data: "period=" + trans_date + "&menus_id=<?= $menus_id ?>",
-                        dataType: "json",
-                        success: function (lock) {
-                            if(lock.total > 0){
-                                toastr.error("This period is not active by Accounting");
-                                return false;
-                            }
+                    // --- CHECK LOCK SETTING OFF
+                    // $.ajax({
+                    //     type: "post",
+                    //     url: "<?= base_url('closing/locks/checkLock') ?>",
+                    //     data: "period=" + trans_date + "&menus_id=<?= $menus_id ?>",
+                    //     dataType: "json",
+                    //     success: function (lock) {
+                    //         if(lock.total > 0){
+                    //             toastr.error("This period is not active by Accounting");
+                    //             return false;
+                    //         }
 
                             $('#frm_insert').form('submit', {
                                 url: url_save,
@@ -470,8 +525,20 @@
                                 success: function(result) {
                                     Swal.close();
                                     var result = eval('(' + result + ')');
+                                    
                                     if (result.theme == "success") {
                                         toastr.success(result.message, result.title);
+                                        Swal.fire({
+                                            title: result.message,
+                                            icon: result.theme,
+                                            confirmButtonText: 'Ok',
+                                            allowOutsideClick: false,
+                                        }).then((result) => {
+                                            if (result.isConfirmed) {
+                                                window.location.reload();
+                                            }
+                                        });
+
                                     } else {
                                         toastr.error(result.message, result.title);
                                     }
@@ -479,8 +546,8 @@
                                     $('#dg').datagrid('reload');
                                 }
                             });
-                        }
-                    });
+                    // } }); // -- CHECK LOCK SETTING OFF
+
                 }
             }]
         });
@@ -562,13 +629,6 @@
                     });
                 }
             }]
-        });
-
-        $("#asset_category_number").combobox({
-            url: '<?= base_url('finance/categories/reads') ?>',
-            valueField: 'number',
-            textField: 'name',
-            prompt: "Choose Category",
         });
 
         $("#filter_category").combobox({

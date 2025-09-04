@@ -43,44 +43,77 @@ class Fixed_assets extends CI_Controller
     //GET DATA
     public function readPi()
     {
-        $post = isset($_POST['q']) ? $_POST['q'] : "";
-        $send = $this->crud->query("SELECT DISTINCT a.number, b.name
-            FROM purchase_invoices a 
-            JOIN item_familys b ON a.family_id = b.id
-            JOIN account_statements d ON a.account_number = d.account_number
-            -- JOIN asset_fixeds c ON a.item_no != c.number AND a.number != c.purchase_invoice_number
-            WHERE d.name = 'Fixed assets-cost' AND a.number LIKE '%$post%'
-            ORDER BY a.number asc");
+        $post = $this->input->post('q');
+        $post = !empty($post) ? $post : "";
 
-        $finals = array();
-        $item = array();
-        foreach ($send as $row) {
-            $number = $row->number;
-            $invoices = $this->crud->query("SELECT a.*
-                FROM purchase_invoices a 
-                JOIN account_statements d ON a.account_number = d.account_number
-                WHERE d.name = 'Fixed assets-cost' AND a.number = '$number' 
-                ORDER BY a.item_no asc");
+        $this->db->distinct('a.number');
+        $this->db->select('a.number, b.account_name');
+        $this->db->from('purchase_invoices a');
+        $this->db->join('account_coa b', 'a.account_number = b.account_number');
+        $this->db->join('account_group_details c', 'b.account_group_detail_id = c.id');
+        $this->db->join('asset_fixeds d', 'a.number = d.purchase_invoice_number AND a.item_no = d.number', 'left');
+        $this->db->where("c.name LIKE '%Fixed Asset%'");
+        $this->db->where('d.number IS NULL');
+        $this->db->like('a.number', $post);
+        $this->db->order_by('a.number', 'asc');
+        $data = $this->db->get()->result_array();
 
-            foreach ($invoices as $invoice) {
-                $item_no = $invoice->item_no;
-                $fixed = $this->crud->query("SELECT distinct `number` FROM asset_fixeds WHERE `number` like '%$item_no%' and purchase_invoice_number = '$number'");
+        $no = 1;
+        $result = [];
+        foreach ($data as $row) {
+            $result[] = [
+                'no'     => $no,
+                'number' => $row['number'],
+                'name'   => $row['account_name']
+            ];
+            $no++;
+        }
+        echo json_encode($result);
+    }
 
-                if(empty($fixed)){
-                    $item[] = array("item_no" => $item_no);
-                }
-            }
+    // GET ASSET CATEGORY : Auto based on product family
+    public function readAssetCategory($id) 
+    {
+        if (empty($id)) {
+            echo json_encode(null); 
+            return;
+        }
 
-            if(!empty($item)){
-                array_push($finals, $row);
-            }
-        }  
+        $item_rm_id = base64_decode($id);
 
-        echo json_encode($finals);
+        $this->db->select('a.item_rm_id, b.item_family_id, c.name as family_name');
+        $this->db->from('purchase_invoices a');
+        $this->db->join('item_rm b', 'a.item_rm_id = b.id');
+        $this->db->join('item_familys c', 'b.item_family_id = c.id');
+        $this->db->where('a.item_rm_id', $item_rm_id);
+        $this->db->order_by('a.number', 'asc');
+        $data = $this->db->get()->row();
+
+        echo json_encode($data);
     }
 
     //GET FIXED
-    public function readProductPi($number)
+    public function readProductPi($si_no_encoded)
+    {
+        if (!empty($si_no_encoded)) {
+            $si_no = base64_decode($si_no_encoded);
+            
+            $this->db->select('a.item_rm_id, a.item_no, a.item_name, a.qty, a.price, a.trans_date, a.currency, b.name as supplier_name');
+            $this->db->from('purchase_invoices a');
+            $this->db->join('suppliers b', 'a.supplier_id = b.id');
+            $this->db->join('asset_fixeds c', 'a.number = c.purchase_invoice_number AND a.item_no = c.number', 'left');
+            $this->db->where('a.number', $si_no);
+            $this->db->where('c.number IS NULL'); // Hanya ambil item yang belum menjadi aset tetap
+            $this->db->order_by('a.item_no', 'asc');
+            
+            $data = $this->db->get()->result_array();
+            
+            echo json_encode($data);   
+        }
+        return "";
+    }
+
+    public function readProductPi_backup($number)
     {
         $number = base64_decode($number);
         $post = isset($_POST['q']) ? $_POST['q'] : "";
@@ -91,7 +124,7 @@ class Fixed_assets extends CI_Controller
             JOIN suppliers c ON a.supplier_id = c.id
             JOIN account_statements d ON a.account_number = d.account_number
             WHERE b.number != '002'
-            AND d.name = 'Fixed assets-cost'
+            AND d.name = 'Fixed Asset'
             AND a.number = '$number'
             AND a.item_no LIKE '%$post%' GROUP BY a.item_no ORDER BY a.item_no ASC");
 
@@ -148,6 +181,111 @@ class Fixed_assets extends CI_Controller
 
     //GET DATATABLES
     public function datatables()
+    {
+        // Periksa apakah request adalah POST. Ini adalah validasi dasar yang baik.
+        if (!$this->input->post()) {
+            return;
+        }
+
+        // Mengambil parameter dari POST dan GET
+        $page = $this->input->post('page') ?? 1;
+        $rows = $this->input->post('rows') ?? 10;
+        $offset = ($page - 1) * $rows;
+
+        // Menggunakan operator null coalescing (??) untuk menangani nilai default lebih singkat.
+        $filter_from = base64_decode($this->input->get('filter_from')) ?? null;
+        $filter_to = base64_decode($this->input->get('filter_to')) ?? null;
+        $filter_number = base64_decode($this->input->get('filter_number')) ?? null;
+        $filter_category = base64_decode($this->input->get('filter_category')) ?? null;
+        $filter_estimate = base64_decode($this->input->get('filter_estimate')) ?? null;
+        $filter_purchase_invoice_number = base64_decode($this->input->get('filter_purchase_invoice_number')) ?? null;
+        $filter_supplier = base64_decode($this->input->get('filter_supplier')) ?? null;
+
+        // Menghindari perhitungan yang tidak perlu jika tanggal tidak ada
+        $filter_period_from = $filter_from ? date("Y-m", strtotime($filter_from)) : null;
+        $filter_period_to = $filter_to ? date("Y-m", strtotime($filter_to)) : null;
+
+        // Query Builder untuk menghitung total data
+        $this->db->from('asset_fixeds a');
+        $this->db->join('asset_categories b', 'a.asset_category_number = b.number', 'left');
+        
+        // Menambahkan kondisi WHERE
+        if ($filter_from && $filter_to) {
+            $this->db->where('a.trans_date >=', $filter_from);
+            $this->db->where('a.trans_date <=', $filter_to);
+        }
+        if (!empty($filter_category)) {
+            $this->db->where('a.asset_category_number', $filter_category);
+        }
+        // Menggunakan if(!empty()) untuk filter like
+        if (!empty($filter_number)) {
+            $this->db->like('a.number', $filter_number);
+        }
+        if (!empty($filter_estimate)) {
+            $this->db->like('a.estimate_year', $filter_estimate);
+        }
+        if (!empty($filter_purchase_invoice_number)) {
+            $this->db->like('a.purchase_invoice_number', $filter_purchase_invoice_number);
+        }
+        if (!empty($filter_supplier)) {
+            $this->db->like('a.supplier_name', $filter_supplier);
+        }
+
+        // Hitung total data sebelum limit dan offset
+        $totalRows = $this->db->count_all_results();
+        
+        // Reset Query Builder setelah menghitung total
+        $this->db->reset_query();
+
+        // Query Builder untuk mengambil data
+        $this->db->select("a.*, 
+            COALESCE(b.name, f.name) as asset_category_name, 
+            b.type as asset_category_type,
+            PERIOD_DIFF(DATE_FORMAT('$filter_to', '%Y%m'), DATE_FORMAT(a.trans_date, '%Y%m')) AS qty_month, 
+            (COALESCE(c.depreciation_acc, 0) + a.depreciation_accumulate) as depreciation_acc,
+            (a.cost - (COALESCE(c.depreciation_acc, 0) + a.depreciation_accumulate)) as book_value,
+            (CASE WHEN (a.cost - (COALESCE(c.depreciation_acc, 0) + a.depreciation_accumulate)) > 0 THEN 0 ELSE 1 END) as status_expired");
+        $this->db->from('asset_fixeds a');
+        $this->db->join('asset_categories b', 'a.asset_category_number = b.number', 'left');
+        $this->db->join("(SELECT asset_no, SUM(debit) as depreciation_acc FROM asset_journals WHERE periode BETWEEN '$filter_period_from' and '$filter_period_to' GROUP BY asset_no) c", 'a.number = c.asset_no', 'left');
+        $this->db->join('purchase_invoices d', 'a.purchase_invoice_number = d.number');
+        $this->db->join('item_rm e', 'd.item_rm_id = e.id');
+        $this->db->join('item_familys f', 'e.item_family_id = f.id', 'left');
+        
+        // Kondisi WHERE yang sama
+        if ($filter_from && $filter_to) {
+            $this->db->where('a.trans_date >=', $filter_from);
+            $this->db->where('a.trans_date <=', $filter_to);
+        }
+        if (!empty($filter_category)) {
+            $this->db->where('a.asset_category_number', $filter_category);
+        }
+        if (!empty($filter_number)) {
+            $this->db->like('a.number', $filter_number);
+        }
+        if (!empty($filter_estimate)) {
+            $this->db->like('a.estimate_year', $filter_estimate);
+        }
+        if (!empty($filter_purchase_invoice_number)) {
+            $this->db->like('a.purchase_invoice_number', $filter_purchase_invoice_number);
+        }
+        if (!empty($filter_supplier)) {
+            $this->db->like('a.supplier_name', $filter_supplier);
+        }
+
+        $this->db->group_by('a.number');
+        $this->db->limit($rows, $offset);
+        $records = $this->db->get()->result_array();
+
+        $result = [
+            'total' => $totalRows,
+            'rows'  => $records
+        ];
+        
+        echo json_encode($result);
+    }
+
+    public function datatables_backup()
     {
         if ($this->input->post()) {
             $page = $this->input->post('page');
