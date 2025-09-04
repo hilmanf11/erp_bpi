@@ -9,7 +9,7 @@
     <thead>
         <tr>
             <th rowspan="2" data-options="field:'asset_category_name',width:200,halign:'center'">Asset Category</th>
-            <th rowspan="2" data-options="field:'asset_category_type',width:120,halign:'center'">Asset Type</th>
+            <th rowspan="2" data-options="field:'asset_category_type',width:200,halign:'center'">Asset Type</th>
             <th rowspan="2" data-options="field:'purchase_invoice_number',width:150,halign:'center'">Purchase Invoice No</th>
             <th rowspan="2" data-options="field:'supplier_name',width:200,halign:'center'">Supplier Name</th>
             <th rowspan="2" data-options="field:'trans_date',width:100,align:'center'">Purchase Date</th>
@@ -90,6 +90,24 @@
             </div>
         </fieldset>
         <?= $button ?>
+        <a href="javascript:void(0)" class="easyui-linkbutton" data-options="plain:true" onclick="$('#dlg_help').dialog('open');"><i class="fa fa-info"></i> Help</a>
+    </div>
+</div>
+
+<div id="dlg_help" class="easyui-dialog" title="About Menu" data-options="closed: true,modal:true" style="width: 800px; height: 500px; left: 10px; top: 20px;">
+    <div class="easyui-accordion" style="width:100%; height: 100%;">
+        <div title="RELATIONS" style="padding: 20px;">
+            <ul>
+                <li>Get data from Modul Purchase Invoicing and <b>Account Category = Fixed Asset</b></li>
+                <li><b>Asset Type = Account Name</b> (Master Data > Accounting & Finance > Chart of Account)</li>
+                <li><b>Asset Category = Product Family</b> (Master Data > Accounting & Finance > Item Family)</li>
+            </ul>
+        </div>
+        <div title="CONDITIONS" style="padding: 20px;">
+            <ul>
+                <li><b>Depreciation = Asset Cost/Economic month</b> </li>
+            </ul>
+        </div>
     </div>
 </div>
 
@@ -113,7 +131,7 @@
                 </div>
                 <div class="fitem" hidden>
                     <span style="width:35%; display:inline-block;">Asset Category Code</span>
-                    <input style="width:60%;" name="asset_category_number" id="asset_category_number" required="" class="easyui-textbox" readonly>
+                    <input style="width:60%;" name="item_family_id" id="item_family_id" required="" class="easyui-textbox" readonly>
                 </div>
                 <div class="fitem">
                     <span style="width:35%; display:inline-block;">Asset Category</span>
@@ -431,7 +449,7 @@
                             url: "<?= base_url('finance/fixed_assets/readAssetCategory/') ?>" + window.btoa(row2.item_rm_id),
                             dataType: "json",
                             success: function(assetCategory) {
-                                $("#asset_category_number").textbox('setValue', assetCategory.item_family_id);
+                                $("#item_family_id").textbox('setValue', assetCategory.item_family_id);
                                 $("#asset_category_name").textbox('setValue', assetCategory.family_name);
                             }
                         });
@@ -632,7 +650,7 @@
         });
 
         $("#filter_category").combobox({
-            url: '<?= base_url('finance/categories/reads') ?>',
+            url: '<?= base_url('finance/fixed_assets/readAssetCategories') ?>',
             valueField: 'number',
             textField: 'name',
             prompt: "Choose Category",
@@ -670,6 +688,34 @@
                     ],
                 });
             }
+        });
+
+        // Dropdown Asset No
+        $("#filter_number").combogrid({
+            url: '<?= base_url('finance/fixed_assets/readNumber') ?>',
+            panelWidth: 450,
+            idField: 'number',
+            textField: 'number',
+            mode: 'remote',
+            fitColumns: true,
+            prompt: "Choose Asset No",
+            icons: [{
+                iconCls: 'icon-clear',
+                handler: function(e) {
+                    $(e.data.target).combogrid('clear').combogrid('textbox').focus();
+                }
+            }],
+            columns: [
+                [{
+                    field: 'number',
+                    title: 'Asset No',
+                    width: 150
+                }, {
+                    field: 'name',
+                    title: 'Asset Name',
+                    width: 250
+                }, ]
+            ],
         });
 
         $("#filter_purchase_invoice_number").combobox({

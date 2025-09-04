@@ -92,7 +92,18 @@ class Fixed_assets extends CI_Controller
         echo json_encode($data);
     }
 
-    //GET FIXED
+    // GET DROPDOWN ASSET CATEGORIES (PRODUCT FAMILIES)
+    function readAssetCategories() 
+    {    
+        $this->db->select("a.id as number, a.name as name");
+        $this->db->from('item_familys a');
+        $this->db->join('asset_fixeds b', 'b.item_family_id = a.id');
+        // $this->db->order_by('a.account_number', 'asc');
+        $data = $this->db->get()->result();
+        echo json_encode($data);
+    }
+
+    //GET LIST PRODUCTS / ASSETS
     public function readProductPi($si_no_encoded)
     {
         if (!empty($si_no_encoded)) {
@@ -112,7 +123,6 @@ class Fixed_assets extends CI_Controller
         }
         return "";
     }
-
     public function readProductPi_backup($number)
     {
         $number = base64_decode($number);
@@ -159,11 +169,19 @@ class Fixed_assets extends CI_Controller
     }
 
     //GET FILTER DATA
-    public function readNumber($asset_category_number)
+    public function readNumber()
     {
         $post = isset($_POST['q']) ? $_POST['q'] : "";
-        $asset_category_number = base64_decode($asset_category_number);
-        $send = $this->crud->query("SELECT DISTINCT `number`, `name` FROM asset_fixeds WHERE asset_category_number = '$asset_category_number' and (`number` like '%$post%' or name like '%$post%')");
+        $asset_category_number = isset($_POST['category_id']) ? $_POST['category_id'] : "";
+
+        $this->db->distinct('number');
+        $this->db->select("number, name");
+        $this->db->from('asset_fixeds'); 
+        $this->db->where("(`number` like '%$post%' or name like '%$post%')");
+        if (!empty($asset_category_number)) {
+            $this->db->where("(asset_category_number = '$asset_category_number' OR item_family_id = '$asset_category_number')");
+        }
+        $send = $this->db->get()->result_array();
         echo json_encode($send);
     }
 
@@ -179,20 +197,18 @@ class Fixed_assets extends CI_Controller
         echo json_encode($send);
     }
 
-    //GET DATATABLES
+    //GET LIST DATA
     public function datatables()
     {
-        // Periksa apakah request adalah POST. Ini adalah validasi dasar yang baik.
+        // Periksa apakah request adalah POST. Jika bukan maka return error
         if (!$this->input->post()) {
-            return;
+            show_error("Cannot Process your request");
         }
 
-        // Mengambil parameter dari POST dan GET
         $page = $this->input->post('page') ?? 1;
         $rows = $this->input->post('rows') ?? 10;
         $offset = ($page - 1) * $rows;
 
-        // Menggunakan operator null coalescing (??) untuk menangani nilai default lebih singkat.
         $filter_from = base64_decode($this->input->get('filter_from')) ?? null;
         $filter_to = base64_decode($this->input->get('filter_to')) ?? null;
         $filter_number = base64_decode($this->input->get('filter_number')) ?? null;
@@ -201,13 +217,11 @@ class Fixed_assets extends CI_Controller
         $filter_purchase_invoice_number = base64_decode($this->input->get('filter_purchase_invoice_number')) ?? null;
         $filter_supplier = base64_decode($this->input->get('filter_supplier')) ?? null;
 
-        // Menghindari perhitungan yang tidak perlu jika tanggal tidak ada
         $filter_period_from = $filter_from ? date("Y-m", strtotime($filter_from)) : null;
         $filter_period_to = $filter_to ? date("Y-m", strtotime($filter_to)) : null;
 
         // Query Builder untuk menghitung total data
         $this->db->from('asset_fixeds a');
-        $this->db->join('asset_categories b', 'a.asset_category_number = b.number', 'left');
         
         // Menambahkan kondisi WHERE
         if ($filter_from && $filter_to) {
@@ -215,9 +229,9 @@ class Fixed_assets extends CI_Controller
             $this->db->where('a.trans_date <=', $filter_to);
         }
         if (!empty($filter_category)) {
-            $this->db->where('a.asset_category_number', $filter_category);
+            // $this->db->where('a.asset_category_number', $filter_category);
+            $this->db->where('a.item_family_id', $filter_category);
         }
-        // Menggunakan if(!empty()) untuk filter like
         if (!empty($filter_number)) {
             $this->db->like('a.number', $filter_number);
         }
@@ -240,7 +254,7 @@ class Fixed_assets extends CI_Controller
         // Query Builder untuk mengambil data
         $this->db->select("a.*, 
             COALESCE(b.name, f.name) as asset_category_name, 
-            b.type as asset_category_type,
+            COALESCE(b.type, coa.account_name) as asset_category_type,
             PERIOD_DIFF(DATE_FORMAT('$filter_to', '%Y%m'), DATE_FORMAT(a.trans_date, '%Y%m')) AS qty_month, 
             (COALESCE(c.depreciation_acc, 0) + a.depreciation_accumulate) as depreciation_acc,
             (a.cost - (COALESCE(c.depreciation_acc, 0) + a.depreciation_accumulate)) as book_value,
@@ -250,7 +264,8 @@ class Fixed_assets extends CI_Controller
         $this->db->join("(SELECT asset_no, SUM(debit) as depreciation_acc FROM asset_journals WHERE periode BETWEEN '$filter_period_from' and '$filter_period_to' GROUP BY asset_no) c", 'a.number = c.asset_no', 'left');
         $this->db->join('purchase_invoices d', 'a.purchase_invoice_number = d.number');
         $this->db->join('item_rm e', 'd.item_rm_id = e.id');
-        $this->db->join('item_familys f', 'e.item_family_id = f.id', 'left');
+        $this->db->join('item_familys f', 'e.item_family_id = f.id'); // Product Family 
+        $this->db->join('account_coa coa', 'd.account_number = coa.account_number'); // Account with Category=Fixed Asset
         
         // Kondisi WHERE yang sama
         if ($filter_from && $filter_to) {
@@ -258,7 +273,8 @@ class Fixed_assets extends CI_Controller
             $this->db->where('a.trans_date <=', $filter_to);
         }
         if (!empty($filter_category)) {
-            $this->db->where('a.asset_category_number', $filter_category);
+            // $this->db->where('a.asset_category_number', $filter_category);
+            $this->db->where('a.item_family_id', $filter_category);
         }
         if (!empty($filter_number)) {
             $this->db->like('a.number', $filter_number);
@@ -283,64 +299,6 @@ class Fixed_assets extends CI_Controller
         ];
         
         echo json_encode($result);
-    }
-
-    public function datatables_backup()
-    {
-        if ($this->input->post()) {
-            $page = $this->input->post('page');
-            $rows = $this->input->post('rows');
-
-            //Pagination 1-10
-            $page   = isset($page) ? intval($page) : 1;
-            $rows   = isset($rows) ? intval($rows) : 10;
-            $offset = ($page - 1) * $rows;
-            $result = array();
-
-            $filter_from = base64_decode($this->input->get('filter_from'));
-            $filter_to = base64_decode($this->input->get('filter_to'));
-            $filter_number = base64_decode($this->input->get('filter_number'));
-            $filter_category = base64_decode($this->input->get('filter_category'));
-            $filter_estimate = base64_decode($this->input->get('filter_estimate'));
-            $filter_purchase_invoice_number = base64_decode($this->input->get('filter_purchase_invoice_number'));
-            $filter_supplier = base64_decode($this->input->get('filter_supplier'));
-
-            $filter_period_from = date("Y-m", strtotime($filter_from));
-            $filter_period_to = date("Y-m", strtotime($filter_to));
-
-            //Select Query
-            $this->db->select("a.*, 
-                b.name as asset_category_name, 
-                b.type as asset_category_type, 
-                PERIOD_DIFF(DATE_FORMAT('$filter_to', '%Y%m'), DATE_FORMAT(trans_date, '%Y%m')) AS qty_month, 
-                (COALESCE(c.depreciation_acc, 0) + a.depreciation_accumulate) as depreciation_acc,
-                (a.cost - (COALESCE(c.depreciation_acc, 0) + a.depreciation_accumulate)) as book_value,
-                (CASE WHEN (a.cost - (COALESCE(c.depreciation_acc, 0) + a.depreciation_accumulate)) > 0 THEN 0 ELSE 1 END) as status_expired");
-            $this->db->from('asset_fixeds a');
-            $this->db->join('asset_categories b', 'a.asset_category_number = b.number');
-            $this->db->join("(SELECT asset_no, SUM(debit) as depreciation_acc FROM asset_journals WHERE periode BETWEEN '$filter_period_from' and '$filter_period_to' GROUP BY asset_no) c", 'a.number = c.asset_no', 'left');
-            $this->db->where('a.trans_date >=', $filter_from);
-            $this->db->where('a.trans_date <=', $filter_to);
-            if($filter_category != ""){
-                $this->db->where('a.asset_category_number', $filter_category);
-            }
-            $this->db->like('a.number', $filter_number);
-            $this->db->like('a.estimate_year', $filter_estimate);
-            $this->db->like('a.purchase_invoice_number', $filter_purchase_invoice_number);
-            $this->db->like('a.supplier_name', $filter_supplier);
-            $this->db->group_by('a.number');
-
-            //Total Data
-            $totalRows = $this->db->count_all_results('', false);
-            //Limit 1 - 10
-            $this->db->limit($rows, $offset);
-            //Get Data Array
-            $records = $this->db->get()->result_array();
-            //Mapping Data
-            $result['total'] = $totalRows;
-            $result = array_merge($result, ['rows' => $records]);
-            echo json_encode($result);
-        }
     }
 
     public function numberId($number)
@@ -386,7 +344,8 @@ class Fixed_assets extends CI_Controller
                 }
 
                 $data = array(
-                    "asset_category_number" => $post['asset_category_number'],
+                    "item_family_id" => $post['item_family_id'],
+                    "asset_category_number" => $post['asset_category_number'] ?? null,
                     "purchase_invoice_number" => $post['purchase_invoice_number'],
                     "supplier_name" => $post['supplier_name'],
                     "number" => $number,
@@ -421,6 +380,7 @@ class Fixed_assets extends CI_Controller
         if ($this->input->post()) {
             $id   = base64_decode($this->input->get('id'));
             $post = $this->input->post();
+            unset($post['asset_category_name']);
             $send = $this->crud->update('asset_fixeds', ["id" => $id], $post);
             echo $send;
         } else {
