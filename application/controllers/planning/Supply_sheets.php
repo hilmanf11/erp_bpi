@@ -327,7 +327,7 @@ class Supply_sheets extends CI_Controller
             } elseif ($record['total_status_close'] >= 1) {
                 $status = "1";
             } else {
-                $status = "0";
+                $status = "1";
             }
 
             // Simpan data ke array hasil akhir
