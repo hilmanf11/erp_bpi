@@ -98,23 +98,22 @@ class Fixed_assets extends CI_Controller
         $this->db->select("a.id as number, a.name as name");
         $this->db->from('item_familys a');
         $this->db->join('asset_fixeds b', 'b.item_family_id = a.id');
-        // $this->db->order_by('a.account_number', 'asc');
         $data = $this->db->get()->result();
         echo json_encode($data);
     }
 
     //GET LIST PRODUCTS / ASSETS
-    public function readProductPi($si_no_encoded)
+    public function readProductPi($number)
     {
-        if (!empty($si_no_encoded)) {
-            $si_no = base64_decode($si_no_encoded);
+        if (!empty($number)) {
+            $purchase_invoice_no = base64_decode($number);
             
             $this->db->select('a.item_rm_id, a.item_no, a.item_name, a.qty, a.price, a.trans_date, a.currency, b.name as supplier_name');
             $this->db->from('purchase_invoices a');
             $this->db->join('suppliers b', 'a.supplier_id = b.id');
             $this->db->join('asset_fixeds c', 'a.number = c.purchase_invoice_number AND a.item_no = c.number', 'left');
-            $this->db->where('a.number', $si_no);
-            $this->db->where('c.number IS NULL'); // Hanya ambil item yang belum menjadi aset tetap
+            $this->db->where('a.number', $purchase_invoice_no);
+            $this->db->where('c.number IS NULL'); // Hanya ambil item yang belum menjadi asset
             $this->db->order_by('a.item_no', 'asc');
             
             $data = $this->db->get()->result_array();
@@ -123,31 +122,27 @@ class Fixed_assets extends CI_Controller
         }
         return "";
     }
-    public function readProductPi_backup($number)
+
+    //GET department : auto fill based on purchase request (Bu Nina)
+    public function readProductDepartment()
     {
-        $number = base64_decode($number);
-        $post = isset($_POST['q']) ? $_POST['q'] : "";
-
-        $send = $this->crud->query("SELECT a.*, c.name as supplier_name
-            FROM purchase_invoices a 
-            JOIN item_familys b ON a.family_id = b.id 
-            JOIN suppliers c ON a.supplier_id = c.id
-            JOIN account_statements d ON a.account_number = d.account_number
-            WHERE b.number != '002'
-            AND d.name = 'Fixed Asset'
-            AND a.number = '$number'
-            AND a.item_no LIKE '%$post%' GROUP BY a.item_no ORDER BY a.item_no ASC");
-
-        $finals = array();
-        foreach ($send as $row) {
-            $item_no = $row->item_no;
-            $send = $this->crud->query("SELECT distinct `number` FROM asset_fixeds WHERE `number` like '%$item_no%' and purchase_invoice_number = '$number'");
-            if(empty($send)){
-                array_push($finals, $row);
-            }
-        }        
-
-        echo json_encode($finals);
+        if (!empty($this->input->get())) {
+            $purchase_invoice_no = base64_decode($this->input->get('number'));
+            $item_rm_id = base64_decode($this->input->get('item'));
+            
+            $this->db->select('c.number, a.request_no, a.po_no, b.item_rm_id, b.department');
+            $this->db->from('purchase_orders a');
+            $this->db->join('purchase_requests b', 'a.request_no = b.request_no');
+            $this->db->join('purchase_invoices c', 'a.po_no = c.po_no');
+            $this->db->where('b.department IS NOT NULL');
+            $this->db->where('c.number', $purchase_invoice_no);
+            $this->db->where('b.item_rm_id', $item_rm_id);
+            $this->db->order_by('c.number', 'asc');
+            $data = $this->db->get()->row();
+            
+            echo json_encode($data);
+        }
+        return "";
     }
 
     public function readExchangeRates()
@@ -336,6 +331,7 @@ class Fixed_assets extends CI_Controller
 
     public function numberId($number)
     {
+        $datenow    = "";
         $sqlGetID   = $this->db->query("SELECT max(`number`) as kode FROM asset_fixeds WHERE `number` like '%$number%'");
         $rowID      = $sqlGetID->row();
         $kode       = $rowID->kode;
@@ -377,25 +373,27 @@ class Fixed_assets extends CI_Controller
                 }
 
                 $data = array(
-                    "item_family_id" => $post['item_family_id'],
-                    "asset_category_number" => $post['asset_category_number'] ?? null,
+                    "item_family_id"          => $post['item_family_id'],
+                    "asset_category_number"   => $post['asset_category_number'] ?? null,
                     "purchase_invoice_number" => $post['purchase_invoice_number'],
-                    "supplier_name" => $post['supplier_name'],
-                    "number" => $number,
-                    "name" => $post['name'],
-                    "trans_date" => $post['trans_date'],
-                    "qty" => 1,
-                    "currency" => $post['currency'],
-                    "cost" => $post['cost'],
-                    "estimate_month" => $post['estimate_month'],
-                    "expired_date" => $post['expired_date'],
-                    "estimate_year" => $post['estimate_year'],
-                    "depreciation" => $post['depreciation'],
-                    "remarks" => $post['remarks'],
-                    "method" => $post['method'],
-                    "departement" => $post['departement'],
-                    "location" => $post['location'],
-                    "total" => $post['total'],
+                    "supplier_name"           => $post['supplier_name'],
+                    "number"                  => $number,
+                    "name"                    => $post['name'],
+                    "trans_date"              => $post['trans_date'],
+                    "qty"                     => 1,
+                    "currency"                => $post['currency'],
+                    "cost"                    => $post['cost'],
+                    "estimate_month"          => $post['estimate_month'],
+                    "expired_date"            => $post['expired_date'],
+                    "estimate_year"           => $post['estimate_year'],
+                    "depreciation"            => $post['depreciation'],
+                    "remarks"                 => $post['remarks'],
+                    "method"                  => $post['method'],
+                    "previous_department"     => $post['previous_department'],
+                    "previous_location"       => $post['previous_location'],
+                    "department"              => $post['department'],
+                    "location"                => $post['location'],
+                    "total"                   => $post['total'],
                 );
 
                 $send   = $this->crud->create('asset_fixeds', $data);
@@ -455,7 +453,7 @@ class Fixed_assets extends CI_Controller
                 'depreciation_accumulate' => $data->val($i, 12),
                 'remarks' => $data->val($i, 13),
                 'method' => $data->val($i, 14),
-                'departement' => $data->val($i, 15),
+                'department' => $data->val($i, 15),
                 'location' => $data->val($i, 16)
             );
         }
@@ -531,7 +529,7 @@ class Fixed_assets extends CI_Controller
                     "depreciation_accumulate" => $data['depreciation_accumulate'],
                     "remarks" => $data['remarks'],
                     "method" => $data['method'],
-                    "departement" => $data['departement'],
+                    "department" => $data['department'],
                     "location" => $data['location'],
                     "total" => ($data['qty'] * $data['cost']),
                 );
@@ -630,7 +628,7 @@ class Fixed_assets extends CI_Controller
                 <th>Depreciation Accumulation</th>
                 <th>Book Value</th>
                 <th>Depreciation<br>Method</th>
-                <th>Departement</th>
+                <th>department</th>
                 <th>Location</th>
                 <th>Status</th>
             </tr>';
@@ -659,7 +657,7 @@ class Fixed_assets extends CI_Controller
                         <td>' . $data['depreciation_acc'] . '</td>
                         <td>' . $data['book_value'] . '</td>
                         <td>' . $data['method'] . '</td>
-                        <td>' . $data['departement'] . '</td>
+                        <td>' . $data['department'] . '</td>
                         <td>' . $data['location'] . '</td>
                         <td>' . $status . '</td>
                     </tr>';

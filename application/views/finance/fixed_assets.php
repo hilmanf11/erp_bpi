@@ -21,8 +21,10 @@
             <th rowspan="2" data-options="field:'depreciation_acc',width:100,halign:'center',align:'right', formatter:priceformat">Accumulation<br>Depreciation</th>
             <th rowspan="2" data-options="field:'book_value',width:100,halign:'center',align:'right', formatter:priceformat">Book<br>Value</th>
             <th rowspan="2" data-options="field:'method',width:100,halign:'center'">Depreciation<br>Method</th>
-            <th rowspan="2" data-options="field:'departement',width:100,halign:'center'">Departement</th>
-            <th rowspan="2" data-options="field:'location',width:100,halign:'center'">Location</th>
+            <th rowspan="2" data-options="field:'department',width:100,halign:'center'">Current Department</th>
+            <th rowspan="2" data-options="field:'location',width:100,halign:'center'">Current Location</th>
+            <th rowspan="2" data-options="field:'previous_department',width:150,halign:'center'">Previous Department</th>
+            <th rowspan="2" data-options="field:'previous_location',width:150,halign:'center'">Previous Location</th>
             <th rowspan="2" data-options="field:'status_expired',width:100,align:'center',formatter:statusformat,styler:statusStyle">Status</th>
             <th colspan="2" data-options="field:'',width:100,halign:'center'"> Created</th>
             <th colspan="2" data-options="field:'',width:100,halign:'center'"> Updated</th>
@@ -182,18 +184,18 @@
                         <input style="width:50%;" name="method" id="method" class="easyui-textbox">
                     </div>
                     <div class="fitem">
-                        <span style="width:45%; display:inline-block;">Previous Departement</span>
-                        <input style="width:50%;" id="previous_departement" readonly class="easyui-textbox">
+                        <span style="width:45%; display:inline-block;">Previous Department</span>
+                        <input style="width:50%;" readonly name="previous_department" id="previous_department" class="easyui-textbox">
                     </div>
                     <div class="fitem">
                         <span style="width:45%; display:inline-block;">Previous Location</span>
-                        <input style="width:50%;" id="previous_location" readonly class="easyui-textbox">
+                        <input style="width:50%;" readonly name="previous_location" id="previous_location" class="easyui-textbox">
                     </div>
                 </div>
                 <div style="width: 50%; float: left;">
                     <div class="fitem">
-                        <span style="width:45%; display:inline-block;">Current Departement</span>
-                        <input style="width:50%;" name="departement" id="departement" class="easyui-textbox">
+                        <span style="width:45%; display:inline-block;">Current Department</span>
+                        <input style="width:50%;" name="department" id="department" class="easyui-textbox">
                     </div>
                     <div class="fitem">
                         <span style="width:45%; display:inline-block;">Current Location</span>
@@ -250,6 +252,7 @@
         var row = $('#dg').datagrid('getSelected');
         if (row) {
             $('#dlg_insert').dialog('open');
+            $("#dlg_insert").window('setTitle', "Update Data");
             $('#frm_insert').form('load', row);
             url_save = '<?= base_url('finance/fixed_assets/update') ?>?id=' + btoa(row.id);
         } else {
@@ -451,6 +454,17 @@
                             success: function(assetCategory) {
                                 $("#item_family_id").textbox('setValue', assetCategory.item_family_id);
                                 $("#asset_category_name").textbox('setValue', assetCategory.family_name);
+                            }
+                        });
+
+                        // Get Department 
+                        $.ajax({
+                            type: "post",
+                            url: "<?= base_url('finance/fixed_assets/readProductDepartment?number=') ?>" + window.btoa(row.number) + "&item=" + window.btoa(row2.item_rm_id),
+                            dataType: "json",
+                            success: function(productDep) {
+                                $("#previous_department").textbox('setValue', productDep.department);
+                                $("#department").textbox('setValue', productDep.department);
                             }
                         });
 
