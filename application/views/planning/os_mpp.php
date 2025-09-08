@@ -4,13 +4,13 @@
         <tr>
             <th rowspan="2" field="ck" checkbox="true"></th>
             <!-- <th rowspan="2" data-options="field:'p_month',width:50,align:'center'">Month</th>
-            <th rowspan="2" data-options="field:'p_year',width:50,align:'center'">Year</th>
-            <th rowspan="2" data-options="field:'revision',width:50,align:'center'">Rev</th> -->
+            <th rowspan="2" data-options="field:'p_year',width:50,align:'center'">Year</th>-->
             <th rowspan="2" data-options="field:'document_no',width:120,halign:'center'">Document No.</th>
             <th rowspan="2" data-options="field:'customer_name',width:250,halign:'center'">Customer Name</th>
             <th rowspan="2" data-options="field:'item_fg_number',width:150,halign:'center'">Product No.</th>
             <th rowspan="2" data-options="field:'item_fg_name',width:200,halign:'center'">Product Name</th>
             <th rowspan="2" data-options="field:'qty',width:80,halign:'center',formatter:numberFormat">Quantity</th>
+            <th rowspan="2" data-options="field:'revision',width:50,align:'center'">Rev</th>
             <th colspan="2" data-options="field:'',width:100,halign:'center'"> Created</th>
             <th colspan="2" data-options="field:'',width:100,halign:'center'"> Updated</th>
         </tr>
@@ -373,6 +373,34 @@
                 }],
             });
         }
+    });
+
+    $('#filter_item_fg_id').combogrid({
+        url: '<?= base_url('master/item_fg/reads/') ?>',
+        panelWidth: 420,
+        idField: 'id',
+        textField: 'number',
+        mode: 'remote',
+        fitColumns: true,
+        prompt: "Select Product No",
+        icons: [{
+            iconCls: 'icon-clear',
+            handler: function(e) {
+                $(e.data.target).combogrid('clear').combogrid('textbox').focus();
+            }
+        }],
+
+        columns: [
+            [{
+                field: 'number',
+                title: 'Product No',
+                width: 100
+            }, {
+                field: 'name',
+                title: 'Product Name',
+                width: 200
+            }, ]
+        ]
     });
 
     $('#filter_period_month').combobox({
