@@ -254,6 +254,11 @@
             $('#dlg_insert').dialog('open');
             $("#dlg_insert").window('setTitle', "Update Data");
             $('#frm_insert').form('load', row);
+
+            $('#purchase_invoice_number').combogrid('readonly', true);
+            $('#number').combogrid('readonly', true);
+            $('#name').textbox('readonly', true);
+            
             url_save = '<?= base_url('finance/fixed_assets/update') ?>?id=' + btoa(row.id);
         } else {
             // toastr.warning("Please select one of the data in the table first!", "Information");

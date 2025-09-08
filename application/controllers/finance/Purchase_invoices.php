@@ -369,7 +369,6 @@ class Purchase_invoices extends CI_Controller
         echo json_encode($records);
     }
 
-
     public function readReceiptUpdate($type = "purchase")
     {
         $supplier_id = $this->input->get('supplier_id');
@@ -709,7 +708,160 @@ class Purchase_invoices extends CI_Controller
         echo json_encode($result);
     }
 
-    public function create()
+    // insert ke table asset_fixeds
+    function autoFixedAsset($number) 
+    {
+        $pi_number = base64_decode($number);
+        $readPI = $this->db->select('*')->from('purchase_invoices')->where('number', $pi_number)->get()->row();
+        
+        if (empty($readPI)) {
+            return null; // Mengembalikan null jika data tidak ditemukan
+        } else {
+
+            $readItemFamily = $this->db->select('b.id as item_id, c.id as item_family_id, c.name as item_family_name')->from('item_rm b')->join('item_familys c', 'b.item_family_id = c.id')->where('b.id', $readPI->item_rm_id)->get()->row();
+            $item_family_id = $readItemFamily->item_family_id ?? null;
+            
+            $readSupplier  = $this->db->select('id, name as supplier_name')->from('suppliers')->where('id', $readPI->supplier_id)->get()->row();
+            $supplier_name = $readSupplier->supplier_name;
+
+            $this->db->select('c.number, a.request_no, a.po_no, b.item_rm_id, b.department');
+            $this->db->from('purchase_orders a');
+            $this->db->join('purchase_requests b', 'a.request_no = b.request_no');
+            $this->db->join('purchase_invoices c', 'a.po_no = c.po_no');
+            $this->db->where('b.department IS NOT NULL');
+            $this->db->where('c.number', $pi_number);
+            $this->db->where('b.item_rm_id', $readPI->item_rm_id);
+            $this->db->order_by('c.number', 'asc');
+            $readDepartment = $this->db->get()->row();                
+            $previous_department = $readDepartment->department;
+            $department = $readDepartment->department;
+            
+            // Set default value and Calculate Depreciation
+            $method = "Straightline"; // default
+            $remark = "Auto-create Fixed Asset via PI";
+            $estimate_year = 3; // default
+            $estimate_month = $estimate_year * 12;
+            $trans_date = $readPI->trans_date;
+            $cost = $readPI->price;
+            $depreciation = ($cost / ($estimate_year * 12));
+            $expired_date =  date("Y-m-d", strtotime("+" . $estimate_month . ' months', strtotime($trans_date)));
+
+            // multiple insert qty > 1
+            for ($i = 0; $i < $readPI->qty; $i++) {
+                if ($readPI->qty > 1) {
+                    $asset_no = $readPI->item_no;
+                    $sqlGetID = $this->db->query("SELECT max(`number`) as kode FROM asset_fixeds WHERE `number` like '%$asset_no%'");
+                    $rowID = $sqlGetID->row();
+                    $kode = $rowID->kode;
+
+                    if ($kode == NULL) {
+                        $number = $readPI->item_no . sprintf("%03d", ($i + 1));
+                    } else {
+                        $urutan = (int) substr($kode, -3);
+                        $urutan++;
+                        $number = $readPI->item_no . sprintf("%03s", $urutan);
+                    }
+                } else {
+                    $number = $readPI->item_no;
+                }
+
+                $data = [
+                    "purchase_invoice_number" => $pi_number,
+                    "number"                  => $number,
+                    "name"                    => $readPI->item_name,
+                    "item_family_id"          => $item_family_id,
+                    "asset_category_number"   => null,
+                    "trans_date"              => $trans_date,
+                    "supplier_name"           => $supplier_name,
+                    "qty"                     => 1,
+                    "cost"                    => floatval($cost),
+                    "currency"                => $readPI->currency,
+                    "estimate_year"           => $estimate_year,
+                    "estimate_month"          => $estimate_month,
+                    "expired_date"            => $expired_date,
+                    "depreciation"            => floatval($depreciation),
+                    "remarks"                 => $remark,
+                    "method"                  => $method,
+                    "previous_department"     => $previous_department ?? null,
+                    "previous_location"       => null,
+                    "department"              => $department ?? null,
+                    "location"                => null,
+                    "total"                   => floatval($readPI->total),
+                ];
+
+                $this->crud->create('asset_fixeds', $data);
+            }
+
+            // echo json_encode($data); // test result postman
+        }
+    }
+
+    public function create() 
+    {
+        $post = $this->input->post();
+        if (!$post) {
+            show_error("Cannot Process your request");
+            return;
+        }
+
+        // Jika ada ID, lakukan UPDATE secara langsung
+        if (!empty($post['id'])) {
+            $send = $this->crud->update('purchase_invoices', ["id" => $post['id']], $post);
+            echo $send;
+            return;
+        }
+        
+        // Jika tidak ada ID, maka CREATE atau UPDATE berdasarkan kombinasi por_no, po_no, dan item_no
+        $condition = [
+            "por_no"  => $post['por_no'] ?? null,
+            "po_no"   => $post['po_no'] ?? null,
+            "item_no" => $post['item_no'] ?? null
+        ];
+        
+        $checkExisting = $this->db->get_where('purchase_invoices', $condition)->row();
+        if ($checkExisting) {
+            // Jika data sudah ada, lakukan UPDATE
+            $update = $this->crud->update('purchase_invoices', ["id" => $checkExisting->id], $post);
+            echo json_encode($update);
+            
+        } else {
+            // Jika data belum ada, lakukan CREATE
+            $send = $this->crud->create('purchase_invoices', $post);
+
+            // Logika tambahan untuk update status di POR
+            if ($send) {
+                if (($post['por_no'] ?? null) != "-") {
+                    if (($post['type'] ?? null) != "dp") {
+                        $this->crud->update('purchase_order_receipts', 
+                            ["receipt_no" => $post['por_no'], "po_no" => $post['po_no'], "item_rm_id" => $post['item_rm_id'], "supplier_id" => $post['supplier_id']], 
+                            ["status" => 1]);
+                    }
+                } else {
+                    $this->crud->update('purchase_order_others', 
+                        ["po_no" => $post['po_no'], "item_rm_id" => $post['item_rm_id'], "supplier_id" => $post['supplier_id']], 
+                        ["status" => 1]);
+                }
+            }
+
+            // --- Auto insert to fixed asset if item CATEGORY = FIXED ASSET
+            $this->db->select('account_coa.account_number, account_coa.account_name, account_group_details.name as account_group_detail_name');
+            $this->db->from('account_coa');
+            $this->db->join('account_group_details', 'account_group_details.id = account_coa.account_group_detail_id', 'left');
+            $this->db->where('account_coa.deleted', 0);
+            $this->db->where('account_coa.account_number', $post['account_number']);
+            $checkAccount = $this->db->get()->row_array();
+
+            // Validasi jika nama grup "Fixed Asset", maka lakukan INSERT
+            if ($checkAccount && stripos($checkAccount['account_group_detail_name'], 'Fixed Asset') !== false) {
+                $pi_number = base64_encode($post['number']);
+                $insert_fixed_asset = $this->autoFixedAsset($pi_number);
+            }
+
+            echo $send;
+        }
+    }
+
+    public function create_backup()
     {
         if ($this->input->post()) {
             $post = $this->input->post();
@@ -769,33 +921,6 @@ class Purchase_invoices extends CI_Controller
                     echo $send;
 
                 }
-            }
-        } else {
-            show_error("Cannot Process your request");
-        }
-    }
-
-    public function createOld() // terjadi redudansi data ketika update
-    {
-        if ($this->input->post()) {
-            $post = $this->input->post();
-            // $purchase_invoices = $this->crud->read('purchase_invoices', [], ["por_no" => $post['por_no'], "item_no" => $post['item_no'], "supplier_id" => $post['supplier_id'], "trans_date" => $post['trans_date']]);
-
-            if (@$post['id'] != "") {
-                $send = $this->crud->update('purchase_invoices', ["id" => $post['id']], $post);
-                echo $send;
-            } else {
-                $send = $this->crud->create('purchase_invoices', $post);
-                if ($send) {
-                    if ($post['por_no'] != "-") {
-                        if ($post['type'] != "dp") {
-                            $update = $this->crud->update('purchase_order_receipts', ["receipt_no" => $post['por_no'], "po_no" => $post['po_no'], "item_rm_id" => $post['item_rm_id'], "supplier_id" => $post['supplier_id']], ["status" => 1]);
-                        }
-                    } else {
-                        $update = $this->crud->update('purchase_order_others', ["po_no" => $post['po_no'], "item_rm_id" => $post['item_rm_id'], "supplier_id" => $post['supplier_id']], ["status" => 1]);
-                    }
-                }
-                echo $send;
             }
         } else {
             show_error("Cannot Process your request");
