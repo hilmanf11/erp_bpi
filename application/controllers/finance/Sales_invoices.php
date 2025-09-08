@@ -2769,6 +2769,12 @@ class Sales_invoices extends CI_Controller
                         </tr>';
             $nod = 1;
             foreach ($details as $detail) {
+                if($detail['currency'] == 'IDR'){
+                    $decimal_no = 2;
+                }else{
+                    $decimal_no = 4;
+                }
+
                 $html .= '  <tr>
                                 <td style="text-align:center">' . $nod . '</td>
                                 <td>' . $detail['item_no'] . '</td>
@@ -2776,12 +2782,14 @@ class Sales_invoices extends CI_Controller
                                 <td style="text-align:right">' . number_format($detail['qty'], 2, ',', '.') . '</td>
                                 <td>' . $detail['uom'] . '</td>
                                 <td>' . $detail['currency'] . '</td>
-                                <td style="text-align:right">' . number_format($detail['price'], 2, ',', '.') . '</td>
+                                <td style="text-align:right">' . number_format($detail['price'], $decimal_no, '.', ',') . '</td>
                                 <td style="text-align:right">' . number_format(($detail['price'] * $detail['qty']), 2, ",", ".") . '</td>
 
                             </tr>';
                 $nod++;
             }
+            $html .= '<tr><td colspan="8"></td></tr>'; // separator
+
             $no++;
         }
         $html .= '</table></body></html>';
