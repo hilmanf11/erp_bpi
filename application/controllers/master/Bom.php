@@ -43,7 +43,7 @@ class Bom extends CI_Controller
         FROM item_rm a 
         JOIN item_familys b ON a.item_family_id = b.id 
         JOIN item_categories c ON a.item_category_id = c.id 
-        WHERE a.status = 0 AND (a.item_category_id = 'C01' or (a.item_category_id = 'C09' AND a.item_family_id = 'P23')) 
+        WHERE a.status = 0 AND (a.item_category_id = 'C01' or (a.item_category_id = 'C09' AND a.item_family_id = 'P23')) AND (a.number like '%$post%' or a.name like '$post') 
         AND (a.number LIKE '%$post%' OR a.name LIKE '%$post%')
         ORDER BY a.number ASC");
         $item_fg = $this->crud->query("SELECT * FROM item_fg WHERE `type` = 'SA' AND status = 0 AND (number like '%$post%' or name like '$post')");
@@ -123,7 +123,7 @@ class Bom extends CI_Controller
             $offset = ($page - 1) * $rows;
             $result = array();
             //Select Query
-            $this->db->select('b.id as item_fg_id, b.number as item_fg_number, b.name as item_fg_name, a.created_by, a.created_date, a.updated_by, a.updated_date');
+            $this->db->select('b.id as item_fg_id, b.number as item_fg_number, b.name as item_fg_name');
             $this->db->from('bom a');
             $this->db->join('item_fg b', 'a.item_fg_id = b.id');
             $this->db->like('a.item_fg_id', $filter_item_fg_id);
