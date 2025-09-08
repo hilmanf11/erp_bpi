@@ -2000,41 +2000,46 @@ class Sales_invoices extends CI_Controller
             }
 
             if ($i + 1 == $total_pages) {
+                $column = 7;
+                if ($showHsCode) {
+                    $column = 8;
+                }
+
                 $html .= '<tr>
-                            <td colspan="7" style="text-align:right"><b>Total Invoice</b></td>
+                            <td colspan="'.$column.'" style="text-align:right"><b>Total Invoice</b></td>
                             <td style="text-align:right"><b>' . number_format($total_invoice, $format_no, ",", ".") . '</b></td>
                         </tr>';
                 $html .= '<tr>
-                            <td colspan="7" style="text-align:right"><b>Discount ('. number_format($disc_pr,0).' %)</b></td>
+                            <td colspan="'.$column.'" style="text-align:right"><b>Discount ('. number_format($disc_pr,0).' %)</b></td>
                             <td style="text-align:right"><b>' . number_format($discount, $format_no, ",", ".") . '</b></td>
                         </tr>';
 
                 $html .= '<tr>
-                            <td colspan="7" style="text-align:right"><b>Sub Total</b></td>
+                            <td colspan="'.$column.'" style="text-align:right"><b>Sub Total</b></td>
                             <td style="text-align:right"><b>' . number_format($sub_total, $format_no, ",", ".") . '</b></td>
                         </tr>';
 
                 $html .= '<tr>
-                            <td colspan="7" style="text-align:right"><b>Down Payment ('. number_format($disc_dp,0).' %)</b></td>
+                            <td colspan="'.$column.'" style="text-align:right"><b>Down Payment ('. number_format($disc_dp,0).' %)</b></td>
                             <td style="text-align:right"><b>' . number_format($down_payment, $format_no, ",", ".") . '</b></td>
                         </tr>';
 
                 $html .= '<tr>
-                            <td colspan="7" style="text-align:right"><b>DPP</b></td>
+                            <td colspan="'.$column.'" style="text-align:right"><b>DPP</b></td>
                             <td style="text-align:right"><b>' . number_format($dpp_total, $format_no, ",", ".") . '</b></td>
                         </tr>';
 
                 $html .= '<tr>
-                            <td colspan="7" style="text-align:right"><b>VAT ('. number_format($record['taxes'],0).' %)</b></td>
+                            <td colspan="'.$column.'" style="text-align:right"><b>VAT ('. number_format($record['taxes'],0).' %)</b></td>
                             <td style="text-align:right"><b>' . number_format($vat_total, $format_no, ",", ".") . '</b></td>
                         </tr>';
                 
                 $html .= '<tr>
-                            <td colspan="7" style="text-align:right"><b>Income Tax '.$tax.'</b></td>
+                            <td colspan="'.$column.'" style="text-align:right"><b>Income Tax '.$tax.'</b></td>
                             <td style="text-align:right"><b>' . number_format($tax_total, $format_no, ",", ".") . '</b></td>
                         </tr>';
                 $html .= '<tr>
-                            <td colspan="7" style="text-align:right"><b>Grand Total</b></td>
+                            <td colspan="'.$column.'" style="text-align:right"><b>Grand Total</b></td>
                             <td style="text-align:right"><b>' . number_format($grand_total, $format_no, ",", ".") . '</b></td>
                         </tr>';
 
