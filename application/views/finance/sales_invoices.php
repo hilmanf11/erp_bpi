@@ -3038,6 +3038,11 @@
                             halign: 'center',
                             width: 300
                         }, {
+                            field: 'hs_code',
+                            title: 'HS Code',
+                            halign: 'center',
+                            width: 120
+                        }, {
                             field: 'qty',
                             title: 'Qty',
                             width: 100,

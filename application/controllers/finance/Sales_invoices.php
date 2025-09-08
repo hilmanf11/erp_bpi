@@ -687,9 +687,11 @@ class Sales_invoices extends CI_Controller
             $number = base64_decode($this->input->get('number'));
 
             $this->db->select('a.*');
+            $this->db->select('c.hs_code');
             $this->db->select("'view' as details");
             $this->db->from('sales_invoices a');
             $this->db->join('customers b', 'a.customer_id = b.id');
+            $this->db->join('item_fg c', 'c.id = a.item_fg_id', 'left');
             $this->db->where('a.number', $number);
             $this->db->order_by('a.status', 'ASC');
             $this->db->order_by('a.trans_date', 'DESC');
@@ -1013,6 +1015,7 @@ class Sales_invoices extends CI_Controller
                 COALESCE(f.bank_name, "") as bank_name,
                 "PT. BANSHU PLASTIC INDONESIA" as account_name,
                 COALESCE(f.bank_account, 0) as bank_account');
+            $this->db->select('fg.hs_code');
             $this->db->from('sales_invoices a');
             $this->db->join('customers d', 'a.customer_id = d.id', 'left');
             $this->db->join('delivery_notes g', 'a.delivery_note_no = g.delivery_note_no and a.customer_order_no = g.customer_order_no', 'left');
@@ -1020,6 +1023,7 @@ class Sales_invoices extends CI_Controller
             $this->db->join('sales_orders h', 'a.sales_order_no = h.sales_order_no', 'left');
             $this->db->join('sales_order_rm h2', 'a.sales_order_no = h2.sales_order_no', 'left');
             $this->db->join('customer_address b', 'COALESCE(h.customer_address_id, h2.customer_address_id) = b.id', 'left');
+            $this->db->join('item_fg fg', 'fg.id = a.item_fg_id', 'left');
             $this->db->where('a.deleted', 0);
             $this->db->where('a.number', $invoice_no);
             $this->db->group_by('a.id');
@@ -1152,18 +1156,28 @@ class Sales_invoices extends CI_Controller
                                         </tr>
                                     </table>
                                 </div>
-                                <table id="customers">
-                                    <tr>
-                                        <th width="20">No</th>
-                                        <th>Sales Order No</th>
-                                        <th>Product No</th>
-                                        <th>Product Name</th>
-                                        <th width="60">UoM</th>
-                                        <th width="60">Qty</th>
-                                        <th width="60">Currency</th>
-                                        <th width="60">Price</th>
-                                        <th width="60">Total</th>
-                                    </tr>';
+                                <table id="customers">'; 
+            
+            // Kolom HS Code ditampilkan pada printout invoice jika faktur_code = 070 saja (Bu Nina)
+            $showHsCode = (stripos($records[0]['faktur_code'], "07") !== false);
+
+            $html .= '<tr>';
+            $html .= '<th width="20">No</th>';
+            $html .= '<th>Sales Order No</th>';
+            $html .= '<th>Product No</th>';
+            $html .= '<th>Product Name</th>';
+
+            if ($showHsCode) {
+                $html .= '<th width="60">HS Code</th>';
+            }
+
+            $html .= '<th width="60">UoM</th>';
+            $html .= '<th width="60">Qty</th>';
+            $html .= '<th width="60">Currency</th>';
+            $html .= '<th width="60">Price</th>';
+            $html .= '<th width="60">Total</th>';
+            $html .= '</tr>';
+
             $sub_total = 0;
             $vat_total = 0;
             $dpp_total = 0;
@@ -1178,7 +1192,8 @@ class Sales_invoices extends CI_Controller
             //     $delivery_notes_string = implode(',', $delivery_notess);
             // }
 
-            foreach ($records as $record) {
+            foreach ($records as $record) 
+            {
                 if ($record['customer_order_no'] == "") {
                     $sales_order_no = $record['sales_order_no'];
                 } else {
@@ -1235,57 +1250,68 @@ class Sales_invoices extends CI_Controller
                 //     $content = "";
                 // }
 
-                $html .= '  <tr>
-                                <td style="text-align:center">' . $no . '</td>
-                                <td><span style="font-size:10px;">' . $sales_order_no . '</span></td>
-                                <td style="font-size:10px;">' . $record['item_no'] . '</td>
-                                <td><span style="font-size:10px;">' . $record['item_name'] . '</span></td>
-                                <td style="text-align:center;"><span style="font-size:10px;">' . $record['uom'] . '</span></td>
-                                <td style="text-align:right">' . number_format($record['qty'], 0, ",", ".") . '</td>
-                                <td style="text-align:center;"><span style="font-size:10px;">' . $record['currency'] . '</span></td>
-                                <td style="text-align:right">' . number_format($record['price'], $format_no, ",", ".") . '</td>
-                                <td style="text-align:right">' . number_format(($record['price'] * $record['qty']), $format_no, ",", ".") . '</td>
-                            </tr>';
+                $html .= '<tr>';
+                $html .= '<td style="text-align:center">' . $no . '</td>';
+                $html .= '<td><span style="font-size:10px;">' . $sales_order_no . '</span></td>';
+                $html .= '<td style="font-size:10px;">' . $record['item_no'] . '</td>';
+                $html .= '<td><span style="font-size:10px;">' . $record['item_name'] . '</span></td>';
+                
+                if ($showHsCode) {
+                    $html .= '<td style="text-align:center;"><span style="font-size:10px;">' . $record['hs_code'] . '</span></td>';
+                }
+
+                $html .= '<td style="text-align:center;"><span style="font-size:10px;">' . $record['uom'] . '</span></td>';
+                $html .= '<td style="text-align:right">' . number_format($record['qty'], 0, ",", ".") . '</td>';
+                $html .= '<td style="text-align:center;"><span style="font-size:10px;">' . $record['currency'] . '</span></td>';
+                $html .= '<td style="text-align:right">' . number_format($record['price'], $format_no, ",", ".") . '</td>';
+                $html .= '<td style="text-align:right">' . number_format(($record['price'] * $record['qty']), $format_no, ",", ".") . '</td>';
+                $html .= '</tr>';
+
                 $no++;
             }
 
             if (($i + 1) == $page) {
+                $column = 8;
+                if ($showHsCode) {
+                    $column = 9;
+                }
+
                 $html .= '<tr>
-                            <td colspan="8" style="text-align:right"><b>Total Invoice</b></td>
+                            <td colspan="'.$column.'" style="text-align:right"><b>Total Invoice</b></td>
                             <td style="text-align:right"><b>' . number_format($total_invoice, $format_no, ",", ".") . '</b></td>
                         </tr>';
 
                 $html .= '<tr>
-                            <td colspan="8" style="text-align:right"><b>Discount ('. number_format($disc_pr,0).' %)</b></td>
+                            <td colspan="'.$column.'" style="text-align:right"><b>Discount ('. number_format($disc_pr,0).' %)</b></td>
                             <td style="text-align:right"><b>' . number_format($discount, $format_no, ",", ".") . '</b></td>
                         </tr>';
 
                 $html .= '<tr>
-                            <td colspan="8" style="text-align:right"><b>Sub Total</b></td>
+                            <td colspan="'.$column.'" style="text-align:right"><b>Sub Total</b></td>
                             <td style="text-align:right"><b>' . number_format($sub_total, $format_no, ",", ".") . '</b></td>
                         </tr>';
 
                 $html .= '<tr>
-                        <td colspan="8" style="text-align:right"><b>Down Payment ('. number_format($disc_dp,0).' %)</b></td>
+                        <td colspan="'.$column.'" style="text-align:right"><b>Down Payment ('. number_format($disc_dp,0).' %)</b></td>
                         <td style="text-align:right"><b>' . number_format($down_payment, $format_no, ",", ".") . '</b></td>
                     </tr>';
 
                 $html .= '<tr>
-                            <td colspan="8" style="text-align:right"><b>DPP</b></td>
+                            <td colspan="'.$column.'" style="text-align:right"><b>DPP</b></td>
                             <td style="text-align:right"><b>' . number_format($dpp_total, $format_no, ",", ".") . '</b></td>
                         </tr>';
 
                 $html .= '<tr>
-                            <td colspan="8" style="text-align:right"><b>VAT ('. number_format($record['taxes'],0).' %)</b></td>
+                            <td colspan="'.$column.'" style="text-align:right"><b>VAT ('. number_format($record['taxes'],0).' %)</b></td>
                             <td style="text-align:right"><b>' . number_format($vat_total, $format_no, ",", ".") . '</b></td>
                         </tr>';
                 
                 $html .= '<tr>
-                            <td colspan="8" style="text-align:right"><b>Income Tax '.$tax.'</b></td>
+                            <td colspan="'.$column.'" style="text-align:right"><b>Income Tax '.$tax.'</b></td>
                             <td style="text-align:right"><b>' . number_format($tax_total, $format_no, ",", ".") . '</b></td>
                         </tr>';
                 $html .= '<tr>
-                            <td colspan="8" style="text-align:right"><b>Grand Total</b></td>
+                            <td colspan="'.$column.'" style="text-align:right"><b>Grand Total</b></td>
                             <td style="text-align:right"><b>' . number_format($grand_total, $format_no, ",", ".") . '</b></td>
                         </tr>';
 
@@ -1752,22 +1778,24 @@ class Sales_invoices extends CI_Controller
     {
         $invoice_no = base64_decode($invoice_no);
 
-        $summary_qty = $this->db->select('item_fg_id, 
-        item_no, 
-        item_name, 
-        uom, 
-        price, 
-        currency, 
-        SUM(qty) as qty_sum, 
-        total_invoice,
-        discount,
-        total_sub,
-        down_payment,
-        taxes,
-        disc_pr,
-        disc_dp')
-            ->from('sales_invoices')
-            ->where('number', $invoice_no)
+        $summary_qty = $this->db->select('a.item_fg_id, 
+        fg.hs_code,
+        a.item_no, 
+        a.item_name, 
+        a.uom, 
+        a.price, 
+        a.currency, 
+        SUM(a.qty) as qty_sum, 
+        a.total_invoice,
+        a.discount,
+        a.total_sub,
+        a.down_payment,
+        a.taxes,
+        a.disc_pr,
+        a.disc_dp')
+            ->from('sales_invoices a')
+            ->join('item_fg fg', 'fg.id = a.item_fg_id', 'left')
+            ->where('a.number', $invoice_no)
             ->group_by(['item_fg_id', 'item_no', 'item_name', 'uom', 'price', 'currency'])
             ->get()
             ->result_array();
@@ -1883,17 +1911,25 @@ class Sales_invoices extends CI_Controller
                 </table>
             </div>';
 
-            $html .= '<table id="customers">
-            <tr>
-                <th width="20">No</th>
-                <th>Product No</th>
-                <th>Product Name</th>
-                <th width="60">UoM</th>
-                <th width="60">Qty</th>
-                <th width="60">Currency</th>
-                <th width="60">Price</th>
-                <th width="60">Total</th>
-            </tr>';
+            // Kolom HS Code ditampilkan pada printout invoice jika faktur_code = 070 saja (Bu Nina)
+            $showHsCode = (stripos($record['faktur_code'], "07") !== false);
+
+            $html .= '<table id="customers">';
+            $html .= '<tr>';
+            $html .= '<th width="20">No</th>';
+            $html .= '<th>Product No</th>';
+            $html .= '<th>Product Name</th>';
+            
+            if ($showHsCode) {
+                $html .= '<th width="60">HS Code</th>';
+            }
+
+            $html .= '<th width="60">UoM</th>';
+            $html .= '<th width="60">Qty</th>';
+            $html .= '<th width="60">Currency</th>';
+            $html .= '<th width="60">Price</th>';
+            $html .= '<th width="60">Total</th>';
+            $html .= '</tr>';
 
             $no = 1 + ($i * $rows_per_page);
             $sub_total = 0;
@@ -1945,16 +1981,22 @@ class Sales_invoices extends CI_Controller
                 $format_no = $row['currency'] === 'IDR' ? 2 : 4;
                 $line_total = $row['price'] * $qty;
                 // $sub_total += $line_total;
-                $html .= '<tr>
-                    <td style="text-align:center">' . $no++ . '</td>
-                    <td>' . $row['item_no'] . '</td>
-                    <td>' . $row['item_name'] . '</td>
-                    <td style="text-align:center">' . $row['uom'] . '</td>
-                    <td style="text-align:right">' . number_format($qty, 0, ",", ".") . '</td>
-                    <td style="text-align:center">' . $row['currency'] . '</td>
-                    <td style="text-align:right">' . number_format($row['price'], $format_no, ",", ".") . '</td>
-                    <td style="text-align:right">' . number_format($line_total, $format_no, ",", ".") . '</td>
-                </tr>';
+                
+                $html .= '<tr>';
+                $html .= '<td style="text-align:center">' . $no++ . '</td>';
+                $html .= '<td>' . $row['item_no'] . '</td>';
+                $html .= '<td>' . $row['item_name'] . '</td>';
+                
+                if ($showHsCode) {
+                    $html .= '<td style="text-align:center;"><span style="font-size:10px;">' . $row['hs_code'] . '</span></td>';
+                }
+
+                $html .= '<td style="text-align:center">' . $row['uom'] . '</td>';
+                $html .= '<td style="text-align:right">' . number_format($qty, 0, ",", ".") . '</td>';
+                $html .= '<td style="text-align:center">' . $row['currency'] . '</td>';
+                $html .= '<td style="text-align:right">' . number_format($row['price'], $format_no, ",", ".") . '</td>';
+                $html .= '<td style="text-align:right">' . number_format($line_total, $format_no, ",", ".") . '</td>';
+                $html .= '</tr>';
             }
 
             if ($i + 1 == $total_pages) {
