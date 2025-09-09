@@ -712,84 +712,104 @@ class Purchase_invoices extends CI_Controller
     function autoFixedAsset($number) 
     {
         $pi_number = base64_decode($number);
-        $readPI = $this->db->select('*')->from('purchase_invoices')->where('number', $pi_number)->get()->row();
-        
+        $readPI = $this->db->select('*')->from('purchase_invoices')->where('number', $pi_number)->get()->result_array();
+    
         if (empty($readPI)) {
             return null; // Mengembalikan null jika data tidak ditemukan
         } else {
-
-            $readItemFamily = $this->db->select('b.id as item_id, c.id as item_family_id, c.name as item_family_name')->from('item_rm b')->join('item_familys c', 'b.item_family_id = c.id')->where('b.id', $readPI->item_rm_id)->get()->row();
-            $item_family_id = $readItemFamily->item_family_id ?? null;
             
-            $readSupplier  = $this->db->select('id, name as supplier_name')->from('suppliers')->where('id', $readPI->supplier_id)->get()->row();
-            $supplier_name = $readSupplier->supplier_name;
+            // Validasi Jika Currency bukan IDR tetapi rate=1, maka tidak dapat insert Fixed Asset
+            $main_pi = $this->db->select('currency, rate')->from('purchase_invoices')->where('number', $pi_number)->get()->row();
+            if ($main_pi->currency !== "IDR" && $main_pi->rate == "1") {
+                return null; // Hentikan proses jika validasi gagal
+            } else {
+                
+                // Get Item di dalam PI (jika terdapat item > 1)
+                foreach ($readPI as $item) 
+                {
+                    $readItemFamily = $this->db->select('b.id as item_id, c.id as item_family_id, c.name as item_family_name, c.useful_life_of_asset_year')->from('item_rm b')->join('item_familys c', 'b.item_family_id = c.id')->where('b.id', $item['item_rm_id'])->get()->row();
+                    $item_family_id = $readItemFamily->item_family_id ?? null;
+                    $estimate_year  = $readItemFamily->useful_life_of_asset_year ?? 0;
+                    
+                    $readSupplier  = $this->db->select('id, name as supplier_name')->from('suppliers')->where('id', $item['supplier_id'])->get()->row();
+                    $supplier_name = $readSupplier->supplier_name;
 
-            $this->db->select('c.number, a.request_no, a.po_no, b.item_rm_id, b.department');
-            $this->db->from('purchase_orders a');
-            $this->db->join('purchase_requests b', 'a.request_no = b.request_no');
-            $this->db->join('purchase_invoices c', 'a.po_no = c.po_no');
-            $this->db->where('b.department IS NOT NULL');
-            $this->db->where('c.number', $pi_number);
-            $this->db->where('b.item_rm_id', $readPI->item_rm_id);
-            $this->db->order_by('c.number', 'asc');
-            $readDepartment = $this->db->get()->row();                
-            $previous_department = $readDepartment->department;
-            $department = $readDepartment->department;
-            
-            // Set default value and Calculate Depreciation
-            $method = "Straightline"; // default
-            $remark = "Auto-create Fixed Asset via PI";
-            $estimate_year = 3; // default
-            $estimate_month = $estimate_year * 12;
-            $trans_date = $readPI->trans_date;
-            $cost = $readPI->price;
-            $depreciation = ($cost / ($estimate_year * 12));
-            $expired_date =  date("Y-m-d", strtotime("+" . $estimate_month . ' months', strtotime($trans_date)));
+                    $this->db->select('c.number, a.request_no, a.po_no, b.item_rm_id, b.department');
+                    $this->db->from('purchase_orders a');
+                    $this->db->join('purchase_requests b', 'a.request_no = b.request_no');
+                    $this->db->join('purchase_invoices c', 'a.po_no = c.po_no');
+                    $this->db->where('b.department IS NOT NULL');
+                    $this->db->where('c.number', $pi_number);
+                    $this->db->where('b.item_rm_id', $item['item_rm_id']);
+                    $this->db->order_by('c.number', 'asc');
+                    $readDepartment = $this->db->get()->row();                
+                    $previous_department = $readDepartment->department;
+                    $department = $readDepartment->department;
+                    
+                    // Set default value and calculate depreciation
+                    $method         = "Straightline"; 
+                    $remark         = "Auto-create Fixed Asset via Purchase Invoices";
+                    $trans_date     = $item['trans_date'];
+                    $item_name      = $item['item_name'];
+                    $currency       = $item['currency'];
+                    $total          = $item['total'];
 
-            // multiple insert qty > 1
-            for ($i = 0; $i < $readPI->qty; $i++) {
-                if ($readPI->qty > 1) {
-                    $asset_no = $readPI->item_no;
-                    $sqlGetID = $this->db->query("SELECT max(`number`) as kode FROM asset_fixeds WHERE `number` like '%$asset_no%'");
-                    $rowID = $sqlGetID->row();
-                    $kode = $rowID->kode;
-
-                    if ($kode == NULL) {
-                        $number = $readPI->item_no . sprintf("%03d", ($i + 1));
-                    } else {
-                        $urutan = (int) substr($kode, -3);
-                        $urutan++;
-                        $number = $readPI->item_no . sprintf("%03s", $urutan);
+                    $estimate_month = $estimate_year * 12;
+                    $expired_date   = date("Y-m-d", strtotime("+" . $estimate_month . ' months', strtotime($item['trans_date'])));
+                    $cost           = $item['price'];
+        
+                    $depreciation = 0;
+                    if ($estimate_year != "0" && $estimate_month != "0") {
+                        $depreciation = ($cost / $estimate_month);
                     }
-                } else {
-                    $number = $readPI->item_no;
+
+                    // multiple insert qty > 1
+                    for ($i = 0; $i < $item['qty']; $i++) {
+                        if ($item['qty'] > 1) {
+                            $asset_no = $item['item_no'];
+                            $sqlGetID = $this->db->query("SELECT max(`number`) as kode FROM asset_fixeds WHERE `number` like '%$asset_no%'");
+                            $rowID = $sqlGetID->row();
+                            $kode = $rowID->kode;
+
+                            if ($kode == NULL) {
+                                $number = $item['item_no'] . sprintf("%03d", ($i + 1));
+                            } else {
+                                $urutan = (int) substr($kode, -3);
+                                $urutan++;
+                                $number = $item['item_no'] . sprintf("%03s", $urutan);
+                            }
+                        } else {
+                            $number = $item['item_no'];
+                        }
+
+                        $data = [
+                            "purchase_invoice_number" => $pi_number,
+                            "number"                  => $number,
+                            "name"                    => $item_name,
+                            "item_family_id"          => $item_family_id,
+                            "asset_category_number"   => null,
+                            "trans_date"              => $trans_date,
+                            "supplier_name"           => $supplier_name,
+                            "qty"                     => 1,
+                            "cost"                    => floatval($cost),
+                            "currency"                => $currency,
+                            "estimate_year"           => $estimate_year,
+                            "estimate_month"          => $estimate_month,
+                            "expired_date"            => $expired_date,
+                            "depreciation"            => floatval($depreciation),
+                            "remarks"                 => $remark,
+                            "method"                  => $method,
+                            "previous_department"     => $previous_department ?? null,
+                            "previous_location"       => null,
+                            "department"              => $department ?? null,
+                            "location"                => null,
+                            "total"                   => floatval($total),
+                        ];
+
+                        $this->crud->create('asset_fixeds', $data);
+                    }
                 }
-
-                $data = [
-                    "purchase_invoice_number" => $pi_number,
-                    "number"                  => $number,
-                    "name"                    => $readPI->item_name,
-                    "item_family_id"          => $item_family_id,
-                    "asset_category_number"   => null,
-                    "trans_date"              => $trans_date,
-                    "supplier_name"           => $supplier_name,
-                    "qty"                     => 1,
-                    "cost"                    => floatval($cost),
-                    "currency"                => $readPI->currency,
-                    "estimate_year"           => $estimate_year,
-                    "estimate_month"          => $estimate_month,
-                    "expired_date"            => $expired_date,
-                    "depreciation"            => floatval($depreciation),
-                    "remarks"                 => $remark,
-                    "method"                  => $method,
-                    "previous_department"     => $previous_department ?? null,
-                    "previous_location"       => null,
-                    "department"              => $department ?? null,
-                    "location"                => null,
-                    "total"                   => floatval($readPI->total),
-                ];
-
-                $this->crud->create('asset_fixeds', $data);
+                
             }
 
             // echo json_encode($data); // test result postman

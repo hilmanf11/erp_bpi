@@ -6,6 +6,7 @@
             <th rowspan="2" data-options="field:'id',width:80,align:'center'">ID</th>
             <th rowspan="2" data-options="field:'number',width:80,halign:'center'">Code</th>
             <th rowspan="2" data-options="field:'name',width:150,halign:'center'">Name</th>
+            <th rowspan="2" data-options="field:'useful_life_of_asset_year',width:130,halign:'center'">Useful Life of Asset <br> (Year)</th>
             <th rowspan="2" data-options="field:'item_category_name',width:150,halign:'center'">Category</th>
             <th rowspan="2" data-options="field:'item_division_name',width:100,halign:'center'">Division</th>
             <th rowspan="2" data-options="field:'account_number',width:100,halign:'center'">Account No</th>
@@ -58,6 +59,10 @@
             <div class="fitem">
                 <span style="width:35%; display:inline-block;">Account Name</span>
                 <input style="width:60%;" name="account_name" id="account_name" class="easyui-textbox">
+            </div>
+            <div class="fitem">
+                <span style="width:35%; display:inline-block;">Useful Life of Asset</span>
+                <input style="width:60%;" name="useful_life_of_asset_year" id="useful_life_of_asset_year" class="easyui-numberbox" data-options="prompt:'Count Year (Int)'">
             </div>
             <div class="fitem">
                 <span style="width:35%; display:inline-block;">Description</span>
