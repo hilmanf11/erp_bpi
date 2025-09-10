@@ -89,8 +89,41 @@ class Exchange_rates extends CI_Controller
             show_error("Cannot Process your request");
         }
     }
+
     //UPDATE DATA
     public function update()
+    {
+        if (!$this->input->post()) {
+            show_error("Cannot Process your request");
+            return;
+        }
+        $post = $this->input->post();
+
+        $id = base64_decode($this->input->get('id'));
+        if (empty($id)) {
+            show_error("Invalid ID provided.");
+            return;
+        }        
+
+        // validasi duplikasi, kecuali untuk data dengan ID yang sama
+        $checkCondition = [
+            "start_date"    => $post['start_date'],
+            "end_date"      => $post['end_date'],
+            "currency_from" => $post['currency_from'],
+            "currency_to"   => $post['currency_to']
+        ];
+        $this->db->where($checkCondition);
+        $this->db->where('id !=', $id);
+        $isDuplicate = $this->db->get('exchange_rates')->row();
+
+        if ($isDuplicate) {
+            show_error("Duplicate Data");
+        } else {
+            $send = $this->crud->update('exchange_rates', ["id" => $id], $post);
+            echo $send;
+        }
+    }
+    public function update_backup()
     {
         if ($this->input->post()) {
             $id   = base64_decode($this->input->get('id'));
@@ -107,6 +140,7 @@ class Exchange_rates extends CI_Controller
             show_error("Cannot Process your request");
         }
     }
+
     //DELETE DATA
     public function delete()
     {
