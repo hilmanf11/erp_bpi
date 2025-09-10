@@ -2337,6 +2337,21 @@
                                                     success: function(result) {
                                                         requestData(total, json, jml + 1, value);
 
+                                                        // ----- FITUR AUTO-CREATE FIXED ASSET -----
+                                                        if (jml == total) { // make-sure insert hanya dipanggil sekali / saat total sesuai
+                                                            var pi_number = $("#number").val();
+                                                            $.ajax({
+                                                                method: 'post',
+                                                                url: '<?= base_url('finance/purchase_invoices/autoFixedAsset/') ?>' + window.btoa(pi_number),
+                                                                success: function(response_fixed_asset) {
+                                                                    console.log('Fixed Asset process finished.', response_fixed_asset);
+                                                                },
+                                                                error: function(xhr, status, error) {
+                                                                    console.error('Error in autoFixedAsset:', error);
+                                                                }
+                                                            });
+                                                        }
+
                                                         if (auto_posting_journal !== true) { // -- setting on/off di awal <script>
                                                             
                                                             if (jml == total) {
@@ -2510,8 +2525,9 @@
 
                                         $('#dg').datagrid('reload');
                                         $('#dlg_insert').dialog('close');
+                                    
                                     } else {
-                                        toastr.warning("please selections your data in table first");
+                                        toastr.warning("please select your data in table first");
                                     }
                                 }
                             });
