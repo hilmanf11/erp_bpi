@@ -795,7 +795,7 @@ class Sales_invoices extends CI_Controller
                     "delivery_note_no" => $sales_invoice['delivery_note_no'], 
                     "sales_order_no" => $sales_invoice['sales_order_no'],
                     "customer_order_no" => $sales_invoice['customer_order_no'],
-                    "item_fg_id" => $sales_invoice['item_fg_id'] ?? null,
+                    "item_fg_id" => $sales_invoice['item_fg_id'],
                 ]);
 
                 if (!empty($sales_invoice['id'])) {
@@ -3310,36 +3310,44 @@ class Sales_invoices extends CI_Controller
         }
 
         // Build XML Structure
-        $xml = new SimpleXMLElement('<TaxInvoicingeCoretax xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"></TaxInvoicingeCoretax>');
-        
+        $xml = new SimpleXMLElement('<TaxInvoiceBulk xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="TaxInvoice.xsd"></TaxInvoiceBulk>');
+        $xml->addChild('TIN', '00' . $config->npwp);
+        $listFakturNode = $xml->addChild('ListOfTaxInvoice');
+
         foreach ($faktur_query as $faktur) 
         {
-            $fakturNode = $xml->addChild('faktur');
-            $fakturNode->addChild('npwp_penjual', $config->npwp);
-            $fakturNode->addChild('jenis_faktur', 'Normal');
-            $fakturNode->addChild('tanggal_faktur', $faktur['trans_date']);
-            $fakturNode->addChild('kode_transaksi', $faktur['faktur_code']);
-            $fakturNode->addChild('keterangan_tambahan', $faktur['keterangan_tambahan']);
-            $fakturNode->addChild('period_dok_pendukung', date('mY', strtotime($faktur['trans_date'])));
-            $fakturNode->addChild('dokumen_pendukung', $faktur['bc_no']);
-            $fakturNode->addChild('referensi', $faktur['invoice_number']);
-            $fakturNode->addChild('cap_fasilitas', $faktur['cap_fasilitas']);
-            $fakturNode->addChild('npwp_pembeli', $faktur['cust_npwp']);
-            $fakturNode->addChild('jenis_id_pembeli', 'TIN');
-            $fakturNode->addChild('negara_pembeli', ($faktur['customer_type'] == "LOCAL") ? "IDN" : "");
-            $fakturNode->addChild('nomor_dokumen_pembeli', '-');
-            $fakturNode->addChild('nama_pembeli', $faktur['cust_name']);
-            $fakturNode->addChild('alamat_pembeli', $faktur['address']);
-            $fakturNode->addChild('email_pembeli', $faktur['email']);
+            $fakturNode = $listFakturNode->addChild('TaxInvoice');
+            
+            // Perbarui nama tag utama
+            $fakturNode->addChild('TaxInvoiceDate', $faktur['trans_date']);
+            $fakturNode->addChild('TaxInvoiceOpt', 'Normal');
+            $fakturNode->addChild('TrxCode', $faktur['faktur_code']);
+            $fakturNode->addChild('AddInfo', $faktur['keterangan_tambahan']);
+            $fakturNode->addChild('CustomDoc', $faktur['invoice_number']);
+            $fakturNode->addChild('CustomDocMonthYear', date('mY', strtotime($faktur['trans_date'])));
+            $fakturNode->addChild('RefDesc', $faktur['invoice_number']);
+            $fakturNode->addChild('FacilityStamp', $faktur['cap_fasilitas']);
 
+            // NPWP dan ID Penjual
+            $fakturNode->addChild('SellerIDTKU', '00' . $config->npwp . '000000');
+            
+            // Informasi Pembeli
+            $fakturNode->addChild('BuyerTin', '00' . $faktur['cust_npwp']);
+            $fakturNode->addChild('BuyerDocument', 'TIN');
+            $fakturNode->addChild('BuyerCountry', ($faktur['customer_type'] == "LOCAL") ? "IDN" : "");
+            $fakturNode->addChild('BuyerDocumentNumber', '-');
+            $fakturNode->addChild('BuyerName', $faktur['cust_name']);
+            $fakturNode->addChild('BuyerAdress', $faktur['address']);
+            $fakturNode->addChild('BuyerEmail', $faktur['email']);
+            $fakturNode->addChild('BuyerIDTKU', '00' . $faktur['cust_npwp'] . '000000');
+            
             // Ambil detail yang relevan dari array yang sudah dikelompokkan
             if (isset($groupedDetails[$faktur['invoice_number']])) {
-                $detailNode = $fakturNode->addChild('detail_faktur');
-                $no = 1; // nomor urut untuk detail per faktur
+                $detailNode = $fakturNode->addChild('ListOfGoodService');
                 
                 foreach ($groupedDetails[$faktur['invoice_number']] as $detail) 
                 {
-                    $itemNode = $detailNode->addChild('item');
+                    $itemNode = $detailNode->addChild('GoodService');
                     
                     // Setting UOM
                     $uom = "UM.0033";
@@ -3353,21 +3361,20 @@ class Sales_invoices extends CI_Controller
                     if ($detail['uom'] == "Lembar") $uom = "UM.0020";
                     if ($detail['uom'] == "Piece") $uom = "UM.0021";
 
-                    $itemNode->addChild('baris', $no++);
-                    $itemNode->addChild('barang_jasa', 'A');
-                    $itemNode->addChild('kode_barang_jasa', '000000');
-                    $itemNode->addChild('nama_barang_jasa', $detail['item_number']);
-                    $itemNode->addChild('hs_code', $detail['hs_code']);
-                    $itemNode->addChild('nama_satuan_ukur', $uom);
-                    $itemNode->addChild('harga_satuan', round($detail['price'], 2));
-                    $itemNode->addChild('jumlah_barang_jasa', round($detail['qty'], 2));
-                    $itemNode->addChild('total_diskon', round($detail['total_discount'], 2));
-                    $itemNode->addChild('dpp', round($detail['total'] - $detail['total_discount'], 2));
-                    $itemNode->addChild('dpp_nilai_lain', round(11/12 * ($detail['total'] - $detail['total_discount']), 2));
-                    $itemNode->addChild('tarif_ppn', round($detail['taxes'], 2));
-                    $itemNode->addChild('ppn', round((11/12 * ($detail['total'] - $detail['total_discount'])) * ($detail['taxes']/100), 2));
-                    $itemNode->addChild('tarif_ppnbm', 0);
-                    $itemNode->addChild('ppnbm', 0);
+                    // Perbarui nama tag detail item
+                    $itemNode->addChild('Opt', 'A');
+                    $itemNode->addChild('Code', '000000');
+                    $itemNode->addChild('Name', $detail['item_number']);
+                    $itemNode->addChild('Unit', $uom);
+                    $itemNode->addChild('Price', round($detail['price'], 2));
+                    $itemNode->addChild('Qty', round($detail['qty'], 2));
+                    $itemNode->addChild('TotalDiscount', round($detail['total_discount'], 2));
+                    $itemNode->addChild('TaxBase', round($detail['total'] - $detail['total_discount'], 2));
+                    $itemNode->addChild('OtherTaxBase', round(11/12 * ($detail['total'] - $detail['total_discount']), 2));
+                    $itemNode->addChild('VATRate', round($detail['taxes'], 2));
+                    $itemNode->addChild('VAT', round((11/12 * ($detail['total'] - $detail['total_discount'])) * ($detail['taxes']/100), 2));
+                    $itemNode->addChild('STLGRate', 0);
+                    $itemNode->addChild('STLG', 0);
                 }
             }
         }

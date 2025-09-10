@@ -42,6 +42,8 @@
             <th rowspan="2" data-options="field:'weight',width:100,align:'center'">Weight (gram)</th>
             <th rowspan="2" data-options="field:'color',width:100,halign:'center'">Color</th>
             <th rowspan="2" data-options="field:'leadtime',width:80,align:'center'">Lead Time <br>(Day)</th>
+            <th rowspan="2" data-options="field:'status_subcont',width:80,align:'center'">Status <br> Subcont</th>
+            <th rowspan="2" data-options="field:'subcont_type',width:100,align:'center'">Subcont <br> Type</th>
             <th rowspan="2" data-options="field:'mpq',width:50,align:'center'">MPQ</th>
             <th rowspan="2" data-options="field:'moq',width:50,align:'center'">MOQ</th>
             <th rowspan="2" data-options="field:'uom',width:50,align:'center'">UoM</th>

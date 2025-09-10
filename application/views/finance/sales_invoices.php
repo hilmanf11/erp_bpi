@@ -257,7 +257,7 @@
                     </div>
                     <div class="fitem">
                         <span style="width:35%; display:inline-block;">BC No</span>
-                        <input style="width:30%;" id="d_bc_no" name="d_bc_no" class="easyui-textbox" >
+                        <input style="width:30%;" id="d_bc_no" name="d_bc_no" class="easyui-textbox" data-options="prompt:'Number Only'">
                     </div>
                     <div class="fitem">
                         <span style="width:35%; display:inline-block;">Keterangan Tambahan</span>
