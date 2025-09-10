@@ -2378,7 +2378,7 @@
                                                                 Swal.fire({
                                                                     title: "Add Posting Journal?",
                                                                     text: result.message + ". Do you want to save the Posting Journal too?",
-                                                                    icon: result.theme,
+                                                                    icon: (result.theme || "success"),
                                                                     confirmButtonText: 'Yes, Add to Journal!',
                                                                     allowOutsideClick: false,
                                                                     showCancelButton: true,

@@ -747,7 +747,7 @@ class Purchase_invoices extends CI_Controller
                     $this->db->join('purchase_requests b', 'a.request_no = b.request_no');
                     $this->db->join('purchase_invoices c', 'a.po_no = c.po_no');
                     $this->db->where('b.department IS NOT NULL');
-                    $this->db->where('c.number', $pi_number);
+                    $this->db->where('c.number', $item['number']);
                     $this->db->where('b.item_rm_id', $item['item_rm_id']);
                     $this->db->order_by('c.number', 'asc');
                     $readDepartment      = $this->db->get()->row();                
@@ -798,63 +798,89 @@ class Purchase_invoices extends CI_Controller
                                 $depreciation = ($cost_local / $estimate_month);
                             }
 
-                            // multiple insert qty > 1
-                            for ($i = 0; $i < $item['qty']; $i++) {
-                                if ($item['qty'] > 1) {
-                                    $asset_no = $item['item_no'];
-                                    $sqlGetID = $this->db->query("SELECT max(`number`) as kode FROM asset_fixeds WHERE `number` like '%$asset_no%'");
-                                    $rowID = $sqlGetID->row();
-                                    $kode = $rowID->kode;
+                            // Check asset yang sudah di-insert sebelumnya
+                            $checkCondition = [
+                                'purchase_invoice_number' => $pi_number,
+                                'item_rm_id'              => $item['item_rm_id'],
+                                'trans_date'              => $item['trans_date'],
+                                'cost'                    => floatval($cost_local),
+                                'total'                   => floatval($total_local)
+                            ];
+                            $this->db->select('*');
+                            $this->db->from('asset_fixeds');
+                            $this->db->where($checkCondition);
+                            $this->db->like('number', $item['item_no'], 'after');
+                            $existingAssets = $this->db->get()->result();
 
-                                    if ($kode == NULL) {
-                                        $number = $item['item_no'] . sprintf("%03d", ($i + 1));
-                                    } else {
-                                        $urutan = (int) substr($kode, -3);
-                                        $urutan++;
-                                        $number = $item['item_no'] . sprintf("%03s", $urutan);
-                                    }
-                                } else {
-                                    $number = $item['item_no'];
+                            // UPDATE jika asset sudah ada
+                            if ($existingAssets) {                               
+                                foreach ($existingAssets as $existingAsset) {
+                                    $data = [
+                                        'name'                    => $item['item_name'],
+                                        'item_family_id'          => $item_family_id,
+                                        'supplier_name'           => $supplier_name,
+                                        'qty'                     => 1, // Pastikan qty adalah 1 untuk setiap aset
+                                        'cost'                    => $cost_local,
+                                        'currency'                => $currency,
+                                        'estimate_year'           => $estimate_year,
+                                        'estimate_month'          => $estimate_month,
+                                        'expired_date'            => $expired_date,
+                                        'depreciation'            => $depreciation,
+                                        'remarks'                 => "Auto-update Fixed Asset via Purchase Invoices",
+                                        'method'                  => $method,
+                                        'previous_department'     => $previous_department,
+                                        'department'              => $department,
+                                        'total'                   => $total_local,
+                                    ];
+                                    $result[] = $this->crud->update('asset_fixeds', ['id' => $existingAsset->id], $data); 
                                 }
+                            } 
+                            else 
+                            {
+                                // AUTO-INSERT multiple qty > 1
+                                for ($i = 0; $i < $item['qty']; $i++) {
+                                    if ($item['qty'] > 1) {
+                                        $asset_no = $item['item_no'];
+                                        $sqlGetID = $this->db->query("SELECT max(`number`) as kode FROM asset_fixeds WHERE `number` like '%$asset_no%'");
+                                        $rowID = $sqlGetID->row();
+                                        $kode = $rowID->kode;
 
-                                // Validasi Asset sudah di-insert sebelumnya
-                                $checkCondition = [
-                                    'purchase_invoice_number' => $pi_number,
-                                    "item_rm_id"              => $item['item_rm_id'],
-                                    'trans_date'              => $item['trans_date'],
-                                    'cost'                    => floatval($cost_local),
-                                    'total'                   => floatval($total_local)
-                                ];
-                                $existingAsset = $this->db->get_where('asset_fixeds', $checkCondition)->row();
+                                        if ($kode == NULL) {
+                                            $number = $item['item_no'] . sprintf("%03d", ($i + 1));
+                                        } else {
+                                            $urutan = (int) substr($kode, -3);
+                                            $urutan++;
+                                            $number = $item['item_no'] . sprintf("%03s", $urutan);
+                                        }
+                                    } else {
+                                        $number = $item['item_no'];
+                                    }                                
 
-                                $data = [
-                                    "purchase_invoice_number" => $item['number'] ?? $pi_number,
-                                    "item_rm_id"              => $item['item_rm_id'],
-                                    "number"                  => $number,
-                                    "name"                    => $item_name,
-                                    "item_family_id"          => $item_family_id,
-                                    "asset_category_number"   => null,
-                                    "trans_date"              => $trans_date,
-                                    "supplier_name"           => $supplier_name,
-                                    "qty"                     => 1,
-                                    "cost"                    => floatval($cost_local),
-                                    "currency"                => $currency,
-                                    "estimate_year"           => $estimate_year,
-                                    "estimate_month"          => $estimate_month,
-                                    "expired_date"            => $expired_date,
-                                    "depreciation"            => floatval($depreciation),
-                                    "remarks"                 => $remark,
-                                    "method"                  => $method,
-                                    "previous_department"     => $previous_department ?? null,
-                                    "previous_location"       => null,
-                                    "department"              => $department ?? null,
-                                    "location"                => null,
-                                    "total"                   => floatval($total_local),
-                                ];
-                                
-                                if ($existingAsset) {
-                                    $result[] = $this->crud->update('asset_fixeds', ["id" => $existingAsset->id], $data); // UPDATE jika asset sudah ada
-                                } else {
+                                    $data = [
+                                        "purchase_invoice_number" => $item['number'],
+                                        "item_rm_id"              => $item['item_rm_id'],
+                                        "number"                  => $number,
+                                        "name"                    => $item_name,
+                                        "item_family_id"          => $item_family_id,
+                                        "asset_category_number"   => null,
+                                        "trans_date"              => $trans_date,
+                                        "supplier_name"           => $supplier_name,
+                                        "qty"                     => 1,
+                                        "cost"                    => floatval($cost_local),
+                                        "currency"                => $currency,
+                                        "estimate_year"           => $estimate_year,
+                                        "estimate_month"          => $estimate_month,
+                                        "expired_date"            => $expired_date,
+                                        "depreciation"            => floatval($depreciation),
+                                        "remarks"                 => $remark,
+                                        "method"                  => $method,
+                                        "previous_department"     => $previous_department ?? null,
+                                        "previous_location"       => null,
+                                        "department"              => $department ?? null,
+                                        "location"                => null,
+                                        "total"                   => floatval($total_local),
+                                    ];
+                                    
                                     $result[] = $this->crud->create('asset_fixeds', $data);
                                 }
                             }
@@ -870,58 +896,7 @@ class Purchase_invoices extends CI_Controller
         }
     }
 
-    public function create() 
-    {
-        $post = $this->input->post();
-        if (!$post) {
-            show_error("Cannot Process your request");
-            return;
-        }
-
-        // Jika ada ID, lakukan UPDATE secara langsung
-        if (!empty($post['id'])) {
-            $send = $this->crud->update('purchase_invoices', ["id" => $post['id']], $post);
-            echo $send;
-            return;
-        }
-        
-        // Jika tidak ada ID, maka CREATE atau UPDATE berdasarkan kombinasi por_no, po_no, dan item_no
-        $condition = [
-            "por_no"  => $post['por_no'] ?? null,
-            "po_no"   => $post['po_no'] ?? null,
-            "item_no" => $post['item_no'] ?? null
-        ];
-        
-        $checkExisting = $this->db->get_where('purchase_invoices', $condition)->row();
-        if ($checkExisting) {
-            // Jika data sudah ada, lakukan UPDATE
-            $update = $this->crud->update('purchase_invoices', ["id" => $checkExisting->id], $post);
-            echo json_encode($update);
-            
-        } else {
-            // Jika data belum ada, lakukan CREATE
-            $send = $this->crud->create('purchase_invoices', $post);
-
-            // Logika tambahan untuk update status di POR
-            if ($send) {
-                if (($post['por_no'] ?? null) != "-") {
-                    if (($post['type'] ?? null) != "dp") {
-                        $this->crud->update('purchase_order_receipts', 
-                            ["receipt_no" => $post['por_no'], "po_no" => $post['po_no'], "item_rm_id" => $post['item_rm_id'], "supplier_id" => $post['supplier_id']], 
-                            ["status" => 1]);
-                    }
-                } else {
-                    $this->crud->update('purchase_order_others', 
-                        ["po_no" => $post['po_no'], "item_rm_id" => $post['item_rm_id'], "supplier_id" => $post['supplier_id']], 
-                        ["status" => 1]);
-                }
-            }
-
-            echo $send;
-        }
-    }
-
-    public function create_backup()
+    public function create()
     {
         if ($this->input->post()) {
             $post = $this->input->post();
