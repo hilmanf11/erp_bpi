@@ -484,15 +484,8 @@
                                 url: "<?= base_url('finance/fixed_assets/readExchangeRates') ?>",
                                 data: "trans_date=" + row2.trans_date + "&currency=" + row2.currency,
                                 dataType: "json",
-                                success: function(exchange) {
-                                    // if (exchange.length > 0) {
-                                    //     $("#cost").numberbox('setValue', parseFloat(row2.price * parseFloat(exchange[0].middle)));
-                                    //     $("#total").numberbox('setValue', (parseFloat(row2.qty) * parseFloat(row2.price * parseFloat(exchange[0].middle))));
-                                    // } else {
-                                    //     $("#cost").numberbox('setValue', row2.price);
-                                    //     $("#total").numberbox('setValue', (parseFloat(row2.qty) * parseFloat(row2.price)));
-                                    // }
-                                    
+                                success: function(exchange) 
+                                {
                                     // Pastikan data exchange ada sebelum diakses
                                     if (exchange && exchange.length > 0 && exchange[0].middle) {
                                         const rate = parseFloat(exchange[0].middle);
@@ -500,15 +493,39 @@
                                         $("#total").numberbox('setValue', (parseFloat(row2.qty) * parseFloat(row2.price * rate)));
                                     } else {
                                         // Fallback jika data kurs tidak ditemukan
-                                        $("#cost").numberbox('setValue', row2.price);
-                                        $("#total").numberbox('setValue', (parseFloat(row2.qty) * parseFloat(row2.price)));
-                                        $.messager.alert('Warning', 'Exchange rate not found. Using original price.', 'warning');
+                                        // $("#cost").numberbox('setValue', row2.price);
+                                        // $("#total").numberbox('setValue', (parseFloat(row2.qty) * parseFloat(row2.price)));
+                                        // $.messager.alert('Warning', 'Exchange rate not found. Using original price.', 'warning');
+
+                                        $('#dlg_insert').dialog('close');                                       
+                                        Swal.fire({
+                                            title: "Exchange rate not found for the transaction date! Cannot save the Fixed Asset.",
+                                            icon: "error",
+                                            confirmButtonText: 'Ok',
+                                            allowOutsideClick: false,
+                                        }).then((result) => {
+                                            if (result.isConfirmed) {
+                                                window.location.reload();
+                                            }
+                                        });
                                     }
                                 },
                                 error: function() {
-                                    $.messager.alert('Error', 'Failed to load exchange rates.', 'error');
-                                    $("#cost").numberbox('setValue', row2.price);
-                                    $("#total").numberbox('setValue', (parseFloat(row2.qty) * parseFloat(row2.price)));
+                                    // $.messager.alert('Error', 'Failed to load exchange rates.', 'error');
+                                    // $("#cost").numberbox('setValue', row2.price);
+                                    // $("#total").numberbox('setValue', (parseFloat(row2.qty) * parseFloat(row2.price)));
+                                    
+                                    $('#dlg_insert').dialog('close');
+                                    Swal.fire({
+                                        title: "Failed to load exchange rates. Cannot save the Fixed Asset.",
+                                        icon: "error",
+                                        confirmButtonText: 'Ok',
+                                        allowOutsideClick: false,
+                                    }).then((result) => {
+                                        if (result.isConfirmed) {
+                                            window.location.reload();
+                                        }
+                                    });
                                 }
                             });
                         }

@@ -2343,6 +2343,7 @@
                                                             $.ajax({
                                                                 method: 'post',
                                                                 url: '<?= base_url('finance/purchase_invoices/autoFixedAsset/') ?>' + window.btoa(pi_number),
+                                                                dataType: 'json',
                                                                 success: function(response_fixed_asset) {
                                                                     console.log('Fixed Asset process finished.', response_fixed_asset);
                                                                 },
