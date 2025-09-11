@@ -497,6 +497,7 @@ class Delivery_notes extends CI_Controller
             // $this->db->order_by('b.number', 'ASC');
             $this->db->group_by('a.delivery_note_no');
             $this->db->group_by('a.item_fg_id');
+            $this->db->group_by('a.customer_order_no');
             $this->db->order_by('a.delivery_order_no');
             $records = $this->db->get()->result_array();
 
