@@ -378,7 +378,6 @@ class Customer_items extends CI_Controller
 
         $this->db->select('a.*, b.number as customer_number, 
         b.name as customer_name, 
-        b.currency, 
         c.number as item_fg_number, 
         c.name as item_fg_name, 
         c.number_customer as item_fg_customer,
