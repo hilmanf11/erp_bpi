@@ -315,7 +315,6 @@ class Output_productions extends CI_Controller
                     "qty" => $data['qty'],
                     "qty_wip" => $data['qty_wip'],
                     "shift" => $data['shift'],
-                    "remarks" => $data['remarks'],
                     "machine_number" => $data['machine_number'],
                 );
             $output_productions = $this->crud->read('output_productions', [], $data_cek);
@@ -323,14 +322,14 @@ class Output_productions extends CI_Controller
                 SELECT DISTINCT a.item_fg_id, a.workorder AS wo_no, a.period, b.number, b.name, a.lot_no, 'Supply Sheets' AS modul
                 FROM supply_sheets a 
                 JOIN item_fg b ON a.item_fg_id = b.id 
-                WHERE a.period = '{$data['period']}'
+                WHERE a.period = '{$data['period']}' AND a.workorder = '{$data['wo_no']}'
 
                 UNION
 
                 SELECT DISTINCT a.item_fg_id, a.wo_no, a.period, b.number, b.name, a.lot_no, 'Production Schedule' AS modul
                 FROM production_schedules a 
                 JOIN item_fg b ON a.item_fg_id = b.id 
-                WHERE a.period = '{$data['period']}' AND a.status_subcont = 'YES' AND a.subcont_type = 'Jasa'
+                WHERE a.period = '{$data['period']}' AND a.status_subcont = 'YES' AND a.subcont_type = 'Jasa' AND a.wo_no = '{$data['wo_no']}'
 
                 ORDER BY modul, item_fg_id ASC
             ");
@@ -341,10 +340,10 @@ class Output_productions extends CI_Controller
                 echo json_encode(array("title" => "Not Found","message" => "Product number " . $data['item_number'] . " NOT FOUND","theme" => "error"));
                 // return;
             } elseif (empty($machines)) {
-            echo json_encode(array("title" => "Not Found","message" => "Machine number " . $data['machine_number'] . " NOT FOUND IN MODUL MACHINE","theme" => "error"));
+                echo json_encode(array("title" => "Not Found","message" => "Machine number " . $data['machine_number'] . " NOT FOUND IN MODUL MACHINE","theme" => "error"));
             // return;
             } elseif ($output_productions) {
-            echo json_encode(array("title" => "Duplicate","message" => "Duplicate Product number " . $data['item_number'] . " FOUND","theme" => "error"));
+                echo json_encode(array("title" => "Duplicate","message" => "Duplicate Product number " . $data['item_number'] . " FOUND","theme" => "error"));
             } elseif (!in_array($item_fg->id, $item_fg_ids)) {
                 echo json_encode(array("title" => "Not Found","message" => "Product number " . $data['item_number'] . " NOT FOUND IN PERIOD " . $data['period'],"theme" => "error"));
                 // return;
