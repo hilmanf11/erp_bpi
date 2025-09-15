@@ -250,6 +250,130 @@ class Purchase_invoices extends CI_Controller
     public function calculateJournal()
     {
         $journals = json_decode(file_get_contents("json/purchase_invoice_journals.json"), true);
+        $jsonDatas = json_decode(file_get_contents("json/purchase_invoices.json"), true);
+        $arr = [];
+
+        // Jika purchase_invoice_journals.json TIDAK KOSONG
+        if (!empty($journals)) {
+            // Mengubah jsonDatas menjadi peta (map) agar mudah diakses
+            $aggregatedData = [];
+            foreach ($jsonDatas as $data) {
+                $account_number = $data['account_number'];
+                $account_type = $data['account_type'];
+                
+                if (!isset($aggregatedData[$account_number])) {
+                    $aggregatedData[$account_number] = [
+                        'debit' => 0,
+                        'credit' => 0,
+                        'local_debit' => 0,
+                        'local_credit' => 0
+                    ];
+                }
+                
+                if ($account_type == "DEBIT") {
+                    $aggregatedData[$account_number]['debit'] += $data['total'];
+                    $aggregatedData[$account_number]['local_debit'] += $data['total_idr'] ?? $data['total'];
+                } elseif ($account_type == "CREDIT") {
+                    $aggregatedData[$account_number]['credit'] += $data['total'];
+                    $aggregatedData[$account_number]['local_credit'] += $data['total_idr'] ?? $data['total'];
+                }
+            }
+
+            // Loop melalui jurnal dan gabungkan dengan data yang sudah dihitung
+            foreach ($journals as $journal) {
+                $account_number = $journal['account_number'];
+                $total_debit = $aggregatedData[$account_number]['debit'] ?? 0;
+                $total_credit = $aggregatedData[$account_number]['credit'] ?? 0;
+                $local_debit = $aggregatedData[$account_number]['local_debit'] ?? 0;
+                $local_credit = $aggregatedData[$account_number]['local_credit'] ?? 0;
+
+                $final_debit = max($total_debit, $journal['debit'] ?? 0);
+                $final_credit = max($total_credit, $journal['credit'] ?? 0);
+                $final_local_debit = max($local_debit, $journal['local_debit'] ?? 0);
+                $final_local_credit = max($local_credit, $journal['local_credit'] ?? 0);
+                
+                $arr[] = [
+                    "account_number" => $journal['account_number'],
+                    "account_name" => $journal['account_name'],
+                    "debit" => round($final_debit, 2),
+                    "credit" => round($final_credit, 2),
+                    "local_debit" => round($final_local_debit, 2),
+                    "local_credit" => round($final_local_credit, 2),
+                    "flag" => $journal['flag'],
+                ];
+            }
+        } else {
+            // Jika purchase_invoice_journals.json kosong
+            $mergedData = [];
+            foreach ($jsonDatas as $jsonData) {
+                $account_number = $jsonData["account_number"];
+                $account_name = $jsonData["account_name"];
+                $account_type = $jsonData["account_type"];
+                
+                if (!isset($mergedData[$account_number])) {
+                    $mergedData[$account_number] = [
+                        "account_number" => $account_number,
+                        "account_name" => $account_name,
+                        "debit" => 0,
+                        "credit" => 0,
+                        "local_debit" => 0,
+                        "local_credit" => 0,
+                        "flag" => 0,
+                    ];
+                }
+
+                if ($account_type == "DEBIT") {
+                    $mergedData[$account_number]["debit"] += $jsonData["total"];
+                    $mergedData[$account_number]["local_debit"] += $jsonData["total_idr"] ?? $jsonData["total"];
+                } elseif ($account_type == "CREDIT") {
+                    $mergedData[$account_number]["credit"] += $jsonData["total"];
+                    $mergedData[$account_number]["local_credit"] += $jsonData["total_idr"] ?? $jsonData["total"];
+                }
+            }
+            
+            // Account VAT IN otomatis muncul di Journal List Ketika Add To Journal walau tidak ada setup journal. Posisinya di DEBIT.
+            $vatIn = $this->db->select('account_number, account_name')->from('account_coa')->where('account_number', '170.170.00')->get()->row_array();
+            if ($vatIn) {
+                $mergedData[$vatIn['account_number']] = [
+                    "account_number" => $vatIn['account_number'],
+                    "account_name" => $vatIn['account_name'],
+                    "debit" => 0,
+                    "credit" => 0,
+                    "local_debit" => 0,
+                    "local_credit" => 0,
+                    "flag" => 0,
+                ];
+            }
+
+            $thirdParties = $this->db->select('account_number, account_name')->from('account_coa')->where('account_number', '210.120.00')->get()->row_array();
+            if ($thirdParties) {
+                $mergedData[$thirdParties['account_number']] = [
+                    "account_number" => $thirdParties['account_number'],
+                    "account_name" => $thirdParties['account_name'],
+                    "debit" => 0,
+                    "credit" => 0,
+                    "local_debit" => 0,
+                    "local_credit" => 0,
+                    "flag" => 0,
+                ];
+            }
+
+            // Mengisi flag setelah penggabungan data selesai
+            $flag = 1;
+            foreach ($mergedData as &$data) {
+                $data['flag'] = $flag++;
+            }
+            unset($data);
+
+            $arr = array_values($mergedData);
+        }
+        
+        echo json_encode($arr);
+    }
+
+    public function calculateJournal_backup()
+    {
+        $journals = json_decode(file_get_contents("json/purchase_invoice_journals.json"), true);
         if (count($journals) > 0) {
             foreach ($journals as $journal) {
                 $jsonDatas = json_decode(file_get_contents("json/purchase_invoices.json"), true);
