@@ -1543,6 +1543,206 @@ class Purchase_invoices extends CI_Controller
     public function print($option = "")
     {
         if ($option == "excel") {
+            $format = date("Ymd");
+            header("Content-type: application/vnd-ms-excel");
+            header("Content-Disposition: attachment; filename=purchase_invoices_$format.xls");
+        }
+
+        $filters = [
+            'type' => base64_decode($this->input->get('filter_type')),
+            'trans_date_from' => base64_decode($this->input->get('filter_trans_date_from')),
+            'trans_date_to' => base64_decode($this->input->get('filter_trans_date_to')),
+            'due_date_from' => base64_decode($this->input->get('filter_due_date_from')),
+            'due_date_to' => base64_decode($this->input->get('filter_due_date_to')),
+            'category_id' => base64_decode($this->input->get('filter_category_id')),
+            'purchase_invoice' => base64_decode($this->input->get('filter_purchase_invoice')),
+            'purchase_receipt' => base64_decode($this->input->get('filter_purchase_receipt')),
+            'purchase_order' => base64_decode($this->input->get('filter_purchase_order')),
+            'supplier' => base64_decode($this->input->get('filter_supplier')),
+            'status_supplier' => base64_decode($this->input->get('filter_status_supplier')),
+            'invoice_no' => base64_decode($this->input->get('filter_invoice_no')),
+            'status' => base64_decode($this->input->get('filter_status'))
+        ];
+
+        // Config
+        $config = $this->db->get('config')->row();
+        $username = $this->session->username;
+        $name = $this->session->name;
+
+        $this->db->select('a.*, b.name as supplier_name');
+        $this->db->from('purchase_invoices a');
+        $this->db->join('suppliers b', 'a.supplier_id = b.id');
+
+        if ($filters['type'] == "PID") {
+            $this->db->where("a.trans_date BETWEEN '{$filters['trans_date_from']}' AND '{$filters['trans_date_to']}'");
+        } elseif ($filters['type'] == "PAY") {
+            $this->db->where("a.due_date BETWEEN '{$filters['due_date_from']}' AND '{$filters['due_date_to']}'");
+        }
+        if (!empty($filters['category_id'])) $this->db->like('a.category_id', $filters['category_id']);
+        if (!empty($filters['purchase_invoice'])) $this->db->like('a.number', $filters['purchase_invoice']);
+        if (!empty($filters['purchase_receipt'])) $this->db->like('a.por_no', $filters['purchase_receipt']);
+        if (!empty($filters['purchase_order'])) $this->db->like('a.po_no', $filters['purchase_order']);
+        if (!empty($filters['supplier'])) $this->db->like('a.supplier_id', $filters['supplier']);
+        if (!empty($filters['invoice_no'])) {
+            $this->db->like('a.invoice_no', $filters['invoice_no']);
+        } else {
+            if (!empty($filters['status_supplier'])) $this->db->like('a.invoice_no', $filters['status_supplier']);
+        }
+        if (!empty($filters['status'])) $this->db->like('a.status', $filters['status']);
+        $this->db->order_by('a.status', 'ASC');
+        $this->db->order_by('a.trans_date', 'DESC');
+        $records_raw = $this->db->get()->result_array();
+
+        // Group data per nomor invoice dan hitung total di PHP
+        $grouped_records = [];
+        foreach ($records_raw as $row) {
+            $invoice_number = $row['number'];
+            if (!isset($grouped_records[$invoice_number])) {
+                $grouped_records[$invoice_number] = [
+                    'main_data' => $row,
+                    'details' => [],
+                    'total_sub' => 0,
+                    'diskon' => 0,
+                    'total_vat' => $row['total_vat'] ?? 0,
+                    'total_pph' => $row['total_pph'] ?? 0,
+                ];
+            }
+
+            // Akumulasi subtotal dan diskon secara terpisah
+            if (stripos($row['item_name'], 'DISKON') !== false) {
+                $grouped_records[$invoice_number]['diskon'] += (float)$row['total'];
+            } else {
+                $grouped_records[$invoice_number]['total_sub'] += (float)$row['total'];
+            }
+
+            $grouped_records[$invoice_number]['details'][] = $row;
+        }
+
+        // 6. Bangun string HTML
+        $html = '<html><head><title>Print Data</title></head><style>body {font-family: Arial, Helvetica, sans-serif;}#customers {border-collapse: collapse;width: 100%;font-size: 12px;}#customers td, #customers th {border: 1px solid #ddd;padding: 2px;}#customers tr:nth-child(even){background-color: #f2f2f2;}#customers tr:hover {background-color: #ddd;}#customers th {padding-top: 2px;padding-bottom: 2px;text-align: center;color: black;}</style><body>
+        <center>
+            <div style="float: left; font-size: 12px; text-align: left;">
+                <table style="width: 100%;">
+                    <tr>
+                        <td width="50" style="font-size: 12px; vertical-align: top; text-align: center; vertical-align:jus margin-right:10px;">
+                            <img src="' . html_escape($config->favicon ?? '') . '" width="30">
+                        </td>
+                        <td style="font-size: 14px; text-align: left; margin:2px;">
+                            <b>' . html_escape($config->name ?? '') . '</b><br>
+                            <small>REPORT PURCHASE INVOICING</small><br>
+                        </td>
+                    </tr>
+                </table>
+            </div>
+            <div style="float: right; font-size: 12px; text-align: right;">
+                Print Date ' . date("d M Y H:i:s") . ' <br>
+                Print By ' . html_escape($username) . '  
+            </div>
+        </center>
+        <br><br><br><br>
+        <table id="customers" border="1">
+            <tr>
+                <th width="20">No</th>
+                <th>Purchase Invoice No</th>
+                <th>Invoice No</th>
+                <th>Supplier Name</th>
+                <th>Trans Date</th>
+                <th>Due Date</th>
+                <th>Payment Term</th>
+                <th>Sub Total</th>
+                <th>VAT</th>
+                <th>PPH 23</th>
+                <th>Grand Total</th>
+            </tr>';
+        
+        $no = 1;
+        foreach ($grouped_records as $record) {
+            $main_data = $record['main_data'];
+            $details = $record['details'];
+            $total_sub = $record['total_sub'];
+            $total_vat = $record['total_vat'];
+            $total_pph = $record['total_pph'];
+            $diskon_amount = $record['diskon'];
+            
+            $final_sub_total = $total_sub + $diskon_amount; // Diskon dihitung sebagai nilai negatif
+
+            $calc_total_grand = ($final_sub_total + $total_vat) - $total_pph;
+
+            $html .= '<tr>
+                <td style="text-align:center">' . $no++ . '</td>
+                <td>' . html_escape($main_data['number']) . '</td>
+                <td>' . html_escape($main_data['invoice_no']) . '</td>
+                <td>' . html_escape($main_data['supplier_name']) . '</td>
+                <td>' . html_escape($main_data['trans_date']) . '</td>
+                <td>' . html_escape($main_data['due_date']) . '</td>
+                <td>' . html_escape($main_data['payment_term']) . '</td>
+                <td style="text-align:right;">' . number_format($final_sub_total, 4) . '</td>
+                <td style="text-align:right;">' . number_format($total_vat, 4) . '</td>
+                <td style="text-align:right;">' . number_format($total_pph, 4) . '</td>
+                <td style="text-align:right;">' . number_format($calc_total_grand, 4) . '</td>
+            </tr>';
+
+            $html .= '<tr>
+                <td colspan="11" style="background:#D1FFC6;"><b>DETAIL OF ' . html_escape($main_data['po_no']) . '</b></td>
+            </tr>
+            <tr>
+                <th width="20"></th>
+                <th>POR No</th>
+                <th>PO No</th>
+                <th>Created By</th>
+                <th>Product No</th>
+                <th>Product Name</th>
+                <th>Qty</th>
+                <th>UoM</th>
+                <th>Currency</th>
+                <th>Unit Price</th>
+                <th>Amount</th>
+            </tr>';
+
+            foreach ($details as $detail) {
+                $html .= '<tr>
+                    <td></td>
+                    <td>' . html_escape($detail['por_no']) . '</td>
+                    <td>' . html_escape($detail['po_no']) . '</td>
+                    <td >' . html_escape($detail['created_by']) . '</td>
+                    <td>' . html_escape($detail['item_no']) . '</td>
+                    <td>' . html_escape($detail['item_name']) . '</td>
+                    <td style="text-align:right">' . number_format($detail['qty'], 2) . '</td>
+                    <td>' . html_escape($detail['uom']) . '</td>
+                    <td>' . html_escape($detail['currency']) . '</td>
+                    <td style="text-align:right">' . number_format($detail['price'], 2) . '</td>
+                    <td style="text-align:right">' . number_format($detail['total'], 4) . '</td>
+                </tr>';
+            }
+
+            $html .= '<tr><td colspan="11"> </td></tr>';
+        }
+
+        $html .= '</table>';
+        $html .= '<table id="customers" style="margin-top:20px; width:50%;">
+            <tr>
+                <th width="200" style="text-align:center;">Approval By</th>
+                <th width="200" style="text-align:center;">Dept Manager</th>
+                <th width="200" style="text-align:center;">Created By</th>
+            </tr>
+            <tr>
+                <th style="height:80px;"></th>
+                <th style="height:80px;"></th>
+                <th style="height:80px;"></th>
+            </tr>
+            <tr>
+                <th style="height:20px; text-align:center;"></th>
+                <th style="height:20px; text-align:center;"></th>
+                <th style="height:20px; text-align:center;">' . html_escape($name) . '</th>
+            </tr>
+        </table></body></html>';
+
+        echo $html;
+    }
+
+    public function print_bug($option = "") // bug pada subtotal dan grand total
+    {
+        if ($option == "excel") {
             $format  = date("Ymd");
             header("Content-type: application/vnd-ms-excel");
             header("Content-Disposition: attachment; filename=purchase_invoices_$format.xls");
