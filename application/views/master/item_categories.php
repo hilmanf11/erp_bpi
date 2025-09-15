@@ -7,6 +7,7 @@
             <th rowspan="2" data-options="field:'number',width:80,halign:'center'">Code</th>
             <th rowspan="2" data-options="field:'name',width:200,halign:'center'">Name</th>
             <th rowspan="2" data-options="field:'description',width:150,halign:'center'">Description</th>
+            <th rowspan="2" data-options="field:'status',width:70,halign:'center',align:'center',formatter: statusformat, styler:statusStyle">Status</th>
             <th colspan="2" data-options="field:'',width:100,halign:'center'"> Created</th>
             <th colspan="2" data-options="field:'',width:100,halign:'center'"> Updated</th>
         </tr>
@@ -42,6 +43,22 @@
             <div class="fitem">
                 <span style="width:35%; display:inline-block;">Description</span>
                 <input style="width:60%;" name="description" id="description" class="easyui-textbox">
+            </div>
+            <div class="fitem">
+                <span style="width:35%; display:inline-block;">Status</span>
+                <select class="easyui-combobox" name="status" id="status" style="width:60%;" data-options="
+                    prompt:'<Active/Inactive>',
+                    valueField: 'value',
+                    textField: 'text',
+                    data: [{
+                        text: 'Active',
+                        value: '0'
+                    },{
+                        text: 'Inactive',
+                        value: '1'
+                    }]
+                ">
+                </select>
             </div>
         </fieldset>
     </form>
@@ -158,4 +175,24 @@
             }]
         });
     });
+    
+    function statusformat(value, row) {
+        // active=0 / inactive=1
+        if (value == '1') {
+            return "<b style='color:red;'>INACTIVE</b>";
+        } else if (value == 'footer') {
+            return "";
+        } else {
+            return "<b style='color:green;'>ACTIVE</b>";
+        }
+    }
+    function statusStyle(value, row, index) {
+        if (value == '1') {
+            return 'background-color:#FFC8C8;';
+        } else if (value == 'footer') {
+            return "";
+        } else {
+            return 'background-color:#C8FFCC;';
+        }
+    }
 </script>
