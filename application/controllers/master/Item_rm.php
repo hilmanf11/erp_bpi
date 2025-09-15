@@ -199,7 +199,8 @@ class Item_rm extends CI_Controller
                 'diameter' => $data->val($i, 15),
                 'description' => $data->val($i, 16),
                 'supply' => $data->val($i, 17),
-                'status' => $data->val($i, 18)
+                'status' => $data->val($i, 18),
+                'action' => $data->val($i, 19),
             );
         }
         $datas['total'] = count($datas);
@@ -232,8 +233,98 @@ class Item_rm extends CI_Controller
         header("Content-Type: text/plain");
         @readfile($file);
     }
+
     //UPLOAD CREATE DATA
     public function uploadcreate()
+    {
+        if ($this->input->post()) {
+            $data = $this->input->post('data');
+
+            //Cek Process Number          //table       //field        //field excel
+            $item_rm = $this->crud->read('item_rm', [], ["number" => $data['number']]);
+            $category = $this->crud->read('item_categories', [], ["id" => $data['item_category_id']]);
+            $product_family = $this->crud->read('item_familys', [], ["id" => $data['item_family_id']]);
+            $product_family_sub = $this->crud->read('item_family_subs', [], ["id" => $data['item_sub_family_id']]);
+
+            // Validate required data first.
+            if (empty($category)) {
+                echo json_encode(["title" => "Not Found", "message" => "Category " . $data['item_category_id'] . " Not Found", "theme" => "error"]);
+                return;
+            }
+            if (empty($product_family)) {
+                echo json_encode(["title" => "Not Found", "message" => "Product Family " . $data['item_family_id'] . " Not Found", "theme" => "error"]);
+                return;
+            }
+            if (strtolower($data['action']) !== 'update' && !empty($item_rm)) {
+                echo json_encode(["title" => "Duplicated", "message" => " Product No. " . $data['number'] . " is Duplicate Data", "theme" => "error"]);
+                return;
+            }
+            
+            // Prepare data for create/update.
+            $kind = @$product_family_sub->kind;
+            $density = @$product_family_sub->density;
+
+            if ($kind == "TUBE") {
+                $volume = 3.14 * pow($data['diameter'] / 2, 2) * $data['length'];
+            } else {
+                $volume = $data['length'] * $data['width'] * $data['thickness'];
+            }
+
+            $weightGr = $density * $volume;
+            $weightKg = $weightGr / 1000000;
+            
+            // Define data
+            $dataFinal = [
+                "number" => $data['number'],
+                "name" => $data['name'],
+                "uom" => $data['uom'],
+                "division" => $data['division'],
+                "item_category_id" => $data['item_category_id'],
+                "item_family_id" => $data['item_family_id'],
+                "color" => $data['color'],
+                "item_sub_family_id" => $data['item_sub_family_id'],
+                "account_number" => $data['account_number'],
+                "account_name" => $data['account_name'],
+                "kind" => $kind,
+                "length" => $data['length'],
+                "width" => $data['width'],
+                "thickness" => $data['thickness'],
+                "diameter" => $data['diameter'],
+                "density" => $density,
+                "volume" => $volume,
+                "weight_gr" => $weightGr,
+                "weight_kg" => $weightKg,
+                "description" => $data['description'],
+                "supply" => $data['supply'],
+                "status" => $data['status'],
+            ];
+
+            // Validasi ACTION : UPDATE or NEW
+            if (strtolower($data['action']) === 'update') {
+                $send = $this->crud->update('item_rm', ["id" => $item_rm->id], $dataFinal);
+                echo $send;
+            } else {
+                // AUTOID 
+                $month = date('my');
+                $combine = @$category->number . "-" . @$product_family->number;
+                $format = "BPI" . $combine . $month;
+                
+                $this->db->select_max('id', 'max_id');
+                $this->db->like('id', $format, 'after');
+                $query = $this->db->get('item_rm');
+                $row = $query->row();
+                
+                $kode = ($row->max_id) ? substr($row->max_id, -4) : 0;
+                $autoid = $format . sprintf("%04s", $kode + 1);
+
+                $dataFinal['id'] = $autoid;
+                $send = $this->crud->create('item_rm', $dataFinal);
+                echo $send;
+            }
+        }
+    }
+    
+    public function uploadcreate_backup()
     {
         if ($this->input->post()) {
             $data = $this->input->post('data');
