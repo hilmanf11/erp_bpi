@@ -264,10 +264,15 @@ class Item_rm extends CI_Controller
             $kind = @$product_family_sub->kind;
             $density = @$product_family_sub->density;
 
+            $length = isset($data['length']) && is_numeric($data['length']) ? (float)$data['length'] : 0;
+            $width = isset($data['width']) && is_numeric($data['width']) ? (float)$data['width'] : 0;
+            $thickness = isset($data['thickness']) && is_numeric($data['thickness']) ? (float)$data['thickness'] : 0;
+            $diameter = isset($data['diameter']) && is_numeric($data['diameter']) ? (float)$data['diameter'] : 0;
+
             if ($kind == "TUBE") {
-                $volume = 3.14 * pow($data['diameter'] / 2, 2) * $data['length'];
+                $volume = 3.14 * ($diameter/2) * ($diameter/2) * $length;
             } else {
-                $volume = $data['length'] * $data['width'] * $data['thickness'];
+                $volume = $length * $width * $thickness;
             }
 
             $weightGr = $density * $volume;
