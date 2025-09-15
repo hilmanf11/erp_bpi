@@ -3311,7 +3311,7 @@ class Sales_invoices extends CI_Controller
 
         // Build XML Structure
         $xml = new SimpleXMLElement('<TaxInvoiceBulk xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="TaxInvoice.xsd"></TaxInvoiceBulk>');
-        $xml->addChild('TIN', '00' . $config->npwp);
+        $xml->addChild('TIN', $config->npwp);
         $listFakturNode = $xml->addChild('ListOfTaxInvoice');
 
         foreach ($faktur_query as $faktur) 
@@ -3329,17 +3329,17 @@ class Sales_invoices extends CI_Controller
             $fakturNode->addChild('FacilityStamp', $faktur['cap_fasilitas']);
 
             // NPWP dan ID Penjual
-            $fakturNode->addChild('SellerIDTKU', '00' . $config->npwp . '000000');
+            $fakturNode->addChild('SellerIDTKU', $config->npwp);
             
             // Informasi Pembeli
-            $fakturNode->addChild('BuyerTin', '00' . $faktur['cust_npwp']);
+            $fakturNode->addChild('BuyerTin', $faktur['cust_npwp']);
             $fakturNode->addChild('BuyerDocument', 'TIN');
             $fakturNode->addChild('BuyerCountry', ($faktur['customer_type'] == "LOCAL") ? "IDN" : "");
             $fakturNode->addChild('BuyerDocumentNumber', '-');
             $fakturNode->addChild('BuyerName', $faktur['cust_name']);
             $fakturNode->addChild('BuyerAdress', $faktur['address']);
             $fakturNode->addChild('BuyerEmail', $faktur['email']);
-            $fakturNode->addChild('BuyerIDTKU', '00' . $faktur['cust_npwp'] . '000000');
+            $fakturNode->addChild('BuyerIDTKU', $faktur['cust_npwp']);
             
             // Ambil detail yang relevan dari array yang sudah dikelompokkan
             if (isset($groupedDetails[$faktur['invoice_number']])) {
