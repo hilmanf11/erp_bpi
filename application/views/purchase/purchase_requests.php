@@ -180,7 +180,7 @@
         $("#expected_date").combobox('enable');
 
         $("#item_category_id").combobox({
-            url: '<?= base_url('master/item_categories/readsnotfg') ?>',
+            url: '<?= base_url('purchase/purchase_requests/readsnotfg/') ?>',
             valueField: 'id',
             textField: 'name',
             prompt: "Select Categories",
@@ -200,7 +200,7 @@
                 });
 
                 $("#item_family_id").combobox({
-                    url: '<?= base_url('master/item_familys/reads/') ?>' + category.id,
+                    url: '<?= base_url('purchase/purchase_requests/readFamily/') ?>' + category.id,
                     valueField: 'id',
                     textField: 'name',
                     multiple:true,
@@ -567,14 +567,14 @@
                     console.log(row);
 
                     $("#item_category_id").combobox({
-                        url: '<?= base_url('master/item_categories/readsnotfg') ?>',
+                        url: '<?= base_url('purchase/purchase_requests/readsnotfg/') ?>',
                         valueField: 'id',
                         textField: 'name',
                         prompt: "Select Categories",
                         onSelect: function(category) {
                             $("#category_number").textbox('setValue', category.number);
                             // $("#item_family_id").combobox({
-                            //     url: '<?= base_url('master/item_familys/reads/') ?>' + category.id,
+                            //     url: '<?= base_url('purchase/purchase_requests/readFamily/') ?>' + category.id,
                             //     valueField: 'id',
                             //     textField: 'name',
                             //     multiple:true,
@@ -586,7 +586,7 @@
                             // });
 
                             $("#item_family_id").combobox({
-                                url: '<?= base_url('master/item_familys/reads/') ?>' + category.id,
+                                url: '<?= base_url('purchase/purchase_requests/readFamily/') ?>' + category.id,
                                 valueField: 'id',
                                 textField: 'name',
                                 multiple:true,
@@ -987,7 +987,7 @@
         });
 
         $("#filter_category_id").combobox({
-            url: '<?= base_url('master/item_categories/readsnotfg') ?>',
+            url: '<?= base_url('purchase/purchase_requests/readsnotfg/') ?>',
             valueField: 'id',
             textField: 'name',
             prompt: "Select Categories"
@@ -995,13 +995,13 @@
 
         //Get Customer
         $("#filter_category_id").combobox({
-            url: '<?= base_url('master/item_categories/readsnotfg') ?>',
+            url: '<?= base_url('purchase/purchase_requests/readsnotfg/') ?>',
             valueField: 'id',
             textField: 'name',
             prompt: "Select Categories",
             onSelect: function(category) {
                 $('#filter_item_familys').combogrid({
-                    url: '<?= base_url('master/item_familys/reads/') ?>' + category.id,
+                    url: '<?= base_url('purchase/purchase_requests/readFamily/') ?>' + category.id,
                     panelWidth: 420,
                     idField: 'id',
                     textField: 'name',

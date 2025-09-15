@@ -199,6 +199,13 @@ class Purchase_requests extends CI_Controller
         echo json_encode($records);
     }
 
+    public function readsnotfg()
+    {
+        $post = isset($_POST['q']) ? $_POST['q'] : "";
+        $send = $this->crud->query("SELECT * FROM item_categories WHERE name LIKE '%$post%'AND number != 'FG' AND status = '0' ");
+        echo json_encode($send);
+    }
+
     public function readCategoryno()
     {
         $request_no = $this->input->get('request_no');
@@ -236,6 +243,13 @@ class Purchase_requests extends CI_Controller
             echo $requestno;
         }
         
+    }
+
+    public function readFamily($item_category_id)
+    {
+        $post = isset($_POST['q']) ? $_POST['q'] : "";
+        $send = $this->crud->reads('item_familys', ["name" => $post],["item_category_id" => $item_category_id, "status" => 0]);
+        echo json_encode($send);
     }
 
     public function datatables()
