@@ -608,6 +608,7 @@ class Purchase_orders extends CI_Controller
                     [   "supplier_id" => $post['supplier_id'],
                         "qty" => $post['qty'],
                         "discount" => $post['discount'],
+                        "discount_nominal" => $post['discount_nominal'],
                         "po_date" => $post['po_date'],
                         "price" => $post['price'],
                         "total" => $post['total'],
@@ -942,6 +943,7 @@ class Purchase_orders extends CI_Controller
                                         
                                         <th rowspan="2" width="50" style="text-align:center;">Unit<br>Price</th>
                                         <th rowspan="2" width="50" style="text-align:center;">Currency</th>
+                                        <th rowspan="2" width="50" style="text-align:center;">Discount</th>
                                         <th rowspan="2" width="50" style="text-align:center;">Amount</th>
                                         <th rowspan="2" width="80" style="text-align:center;">Delivery<br>Date</th>
                                         <th colspan="4" width="80" style="text-align:center;">Forecast</th>
@@ -982,6 +984,7 @@ class Purchase_orders extends CI_Controller
                                 
                                 <td style="text-align:right;">' . number_format($record['price'], 2) . '</td>
                                 <td style="text-align:center;">' . $record['currency'] . '</td>
+                                <td style="text-align:center;">' . $record['discount_nominal'] . '</td>
                                 <td style="text-align:right;">' . number_format($record['total'], 2) . '</td>
                                 <td style="text-align:center;">' . $record['delivery_date'] . '</td>
                                 <td style="text-align:center;">' . $record['month_1'] . '</td>
