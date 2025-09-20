@@ -266,10 +266,15 @@ class Issued_materials extends CI_Controller
             $totalRows = $this->db->count_all_results('', false);
             $records = $this->db->get()->result_array();
             if (!$records) {
-                $this->db->select('a.label_divided as label_no, COALESCE(b.item_rm_id,c.item_rm_id) as item_rm_id, a.qty, b.price, b.currency');
+                $this->db->select('a.label_divided as label_no,
+                COALESCE(b.item_rm_id, c.item_rm_id, d.item_rm_id) as item_rm_id,
+                a.qty, 
+                b.price, 
+                b.currency');
                 $this->db->from('barcode_divides a');
                 $this->db->join('purchase_order_receipts b', 'a.reff = b.receipt_id','left');
                 $this->db->join('new_barcode c', 'a.reff = c.label_no','left');
+                $this->db->join('bpm d', 'a.reff = d.request_id','left');
                 $this->db->where('a.label_divided', $receipt_id);
                 $totalRows = $this->db->count_all_results('', false);
                 $records = $this->db->get()->result_array();
@@ -639,14 +644,15 @@ class Issued_materials extends CI_Controller
                 } elseif ($barcode_divides) {
                     if ($issued_materials) {
 
-                        $purchase_order_receipts = $this->crud->read("purchase_order_receipts", [], ["receipt_id" => $barcode_divides->reff]);
-                        $checkItems = $this->crud->query("SELECT a.receipt_date, c.label_divided, c.label_no, a.receipt_id, b.receipt_id, d.label_no
-                        FROM purchase_order_receipts a
-                        LEFT JOIN purchase_order_labels b ON a.receipt_id = b.receipt_id
-                        LEFT JOIN barcode_divides c ON b.label_no = c.label_no and c.type = 'SUPPLY'
-                        LEFT JOIN issued_material_details d ON a.item_rm_id = d.item_rm_id and (b.label_no = d.label_no or c.label_divided = d.label_no)
-                        WHERE a.item_rm_id = '$purchase_order_receipts->item_rm_id' and a.receipt_date < '$purchase_order_receipts->receipt_date' AND c.status = 0 AND d.label_no is null
-                        ORDER BY receipt_date ASC");
+                        // for FIFO
+                        // $purchase_order_receipts = $this->crud->read("purchase_order_receipts", [], ["receipt_id" => $barcode_divides->reff]);
+                        // $checkItems = $this->crud->query("SELECT a.receipt_date, c.label_divided, c.label_no, a.receipt_id, b.receipt_id, d.label_no
+                        // FROM purchase_order_receipts a
+                        // LEFT JOIN purchase_order_labels b ON a.receipt_id = b.receipt_id
+                        // LEFT JOIN barcode_divides c ON b.label_no = c.label_no and c.type = 'SUPPLY'
+                        // LEFT JOIN issued_material_details d ON a.item_rm_id = d.item_rm_id and (b.label_no = d.label_no or c.label_divided = d.label_no)
+                        // WHERE a.item_rm_id = '$purchase_order_receipts->item_rm_id' and a.receipt_date < '$purchase_order_receipts->receipt_date' AND c.status = 0 AND d.label_no is null
+                        // ORDER BY receipt_date ASC");
 
                         if (round($totalSupplyQty + $postQty + $crusherQty + $peletizingQty) <= round($issuedQty)) {
                             // if (count($checkItems) <= 0) {
@@ -692,8 +698,8 @@ class Issued_materials extends CI_Controller
                     }
                 } else if ($bpm_labels) {
                     if (round($totalSupplyQty + $postQty + $crusherQty + $peletizingQty) <= round($issuedQty)) {
-                        $send   = $this->crud->create('issued_material_details', $post);//belum di tambahkan perubahan status
-                        // $update = $this->crud->update('new_barcode', ["label_no" => $post['label_no']], ["status" => 1]);
+                        $send   = $this->crud->create('issued_material_details', $post);
+                        $update = $this->crud->update('bpm_labels', ["label_no" => $post['label_no']], ["status_issued" => 1]);
 
                         if(round($totalSupplyQty + $postQty + $crusherQty + $peletizingQty) == round($issuedQty)){
                             if($supply_sheets){
