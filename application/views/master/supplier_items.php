@@ -35,7 +35,7 @@
             <th rowspan="2" data-options="field:'weight_kg',width:100,halign:'center'">Convertion %</th>
             <th rowspan="2" data-options="field:'suppliers_currency',width:100,halign:'center'">Currency</th>
             <th rowspan="2" data-options="field:'calculate',width:100,halign:'center'">Calculate <br>MPQ</th>
-            <th rowspan="2" data-options="field:'status',width:100,align:'center', styler:cellStyler, formatter:cellFormatter">Status</th>
+            <th rowspan="2" data-options="field:'status_item',width:100,align:'center', styler:cellStyler, formatter:cellFormatter">Status</th>
             <th colspan="2" data-options="field:'',width:100,halign:'center'"> Created</th>
             <th colspan="2" data-options="field:'',width:100,halign:'center'"> Updated</th>
         </tr>
@@ -107,7 +107,7 @@
                 </div>
                 <div class="fitem">
                     <span style="width:35%; display:inline-block;">Maker</span>
-                    <input style="width:60%;" name="maker" id="maker" class="easyui-textbox">
+                    <input style="width:60%;" name="maker" id="maker" class="easyui-combobox">
                 </div>
                 <div class="fitem">
                     <span style="width:35%; display:inline-block;">Supplier Product</span>
@@ -302,8 +302,15 @@
                     width: 150,
                     halign: 'center',
                     title: "Maker",
-                    editor: {
-                        type: 'textbox'
+                     editor: {
+                        type: 'combobox',
+                        options: {
+                            url: '<?= base_url('master/makers/reads') ?>',
+                            valueField: 'name',
+                            textField: 'name',
+                            prompt: 'Choose Makers',
+                            editable:false,
+                        }
                     }
                 }, {
                     field: 'item_supplier',
@@ -969,6 +976,14 @@
                 $(e.data.target).combogrid('clear').combogrid('textbox').focus();
             }
         }],
+    });
+
+    $('#maker').combobox({
+        url: '<?= base_url('master/makers/reads'); ?>',
+        valueField: 'name',
+        textField: 'name',
+        panelHeight: 'panelHeight',
+        prompt: 'Choose Makers',
     });
 
     //CELLSTYLE STATUS
