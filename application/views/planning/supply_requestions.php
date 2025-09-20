@@ -143,7 +143,13 @@
                     <th data-options="field:'item_rm_id',width:150">Product id</th>
                     <th data-options="field:'number',width:150">Product No</th>
                     <th data-options="field:'name',width:100">Product Name</th>
-                    <th data-options="field:'qty',width:100,editor: {type: 'numberbox', options: {required: true}}">Qty</th>
+                    <!-- <th data-options="field:'qty',width:100,editor: {type: 'numberbox', options: {required: true}}">Qty</th> -->
+                    <th data-options="field:'qty',width:100,
+                        editor:{type:'numberbox',options:{required:true,precision:2}},
+                        formatter:function(value,row){
+                            if(value==null) return '0.00';
+                            return parseFloat(value).toFixed(2);
+                        }">Qty</th>
                     <!-- <th data-options="field:'balance',width:100,formatter:balanceFormatter">Balance</th> -->
                     <th data-options="field:'balance',width:100">Balance Wip</th>
                     <th data-options="field:'warehouse',width:100">Warehouse</th>

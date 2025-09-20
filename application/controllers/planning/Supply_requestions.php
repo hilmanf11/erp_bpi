@@ -123,30 +123,23 @@ class Supply_requestions extends CI_Controller
         $id = 1;
         $obj = []; 
         foreach ($records as $record) {
-            // Ambil nilai mpq
-            $mpq = $record['mpq'];
+            $mpq = (float) $record['mpq'];
             $calculate = $record['calculate'];
+            $qty_val = (float) $record['qty'];
+            $qty_purging = (float) $record['qty_purging'];
 
-            // var_dump($record['shoot_weight']);
-            // var_dump($record['qty']);
-            // var_dump($qty);
-            // var_dump($record['mpq']);
-            // var_dump($record['qty_purging']);
-            // die;
-    
-            // Pastikan qty adalah kelipatan mpq
             if ($calculate == "NO") {
-                $qty = $record['qty'] + $record['qty_purging'];
-            }else{
-                $qty = ceil(($record['qty'] + $record['qty_purging']) / $mpq) * $mpq;
+                $qty = $qty_val + $qty_purging;
+            } else {
+                $qty = ceil(($qty_val + $qty_purging) / $mpq) * $mpq;
             }
-    
+
             $obj[] = array(
                 "no_id" => $id,
                 "item_rm_id" => $record['id'],
                 "number" => $record['number'],
                 "name" => $record['name'],
-                "qty" => number_format($qty, 4), 
+                "qty" => number_format($qty, 4, '.', ''),
                 "uom" => $record['uom']
             );
             $id++;
@@ -264,7 +257,6 @@ class Supply_requestions extends CI_Controller
                         "total_status" => $record['total_status'],
                         "total_status_open" => $record['total_status_open'],
                         "total_status_close" => $record['total_status_close'],
-                        "qty" => $record['qty'],
                         "qty_wo" => $record['qty_wo'],
                         "qty_ng" => $record['qty_ng'],
                         "shift" => $record['shift'],
@@ -735,7 +727,12 @@ class Supply_requestions extends CI_Controller
         $this->db->select('*');
         $this->db->from('config');
         $config = $this->db->get()->row();
-        $this->db->select('a.*, b.number as item_number, 
+        $this->db->select('a.workorder,
+        a.request_no, 
+        a.request_date,
+        a.request_name,
+        a.qty,
+        b.number as item_number, 
         b.name as item_name, 
         b.uom, 
         e.number as item_fg_number, 
@@ -753,8 +750,11 @@ class Supply_requestions extends CI_Controller
         if ($filter_request_no != "") {
             $this->db->where('a.request_no', $filter_request_no);
         }
+        $this->db->group_by('a.request_no');
+        $this->db->group_by('a.item_rm_id');
         $this->db->order_by('a.request_no', 'DESC');
         $records = $this->db->get()->result_array();
+        
         $html = '<html><head><title>Print Data</title></head><style>body {font-family: Arial, Helvetica, sans-serif;}#customers {border-collapse: collapse;width: 100%;font-size: 12px;}#customers td, #customers th {border: 1px solid #ddd;padding: 2px;}#customers tr:nth-child(even){background-color: #f2f2f2;}#customers tr:hover {background-color: #ddd;}#customers th {padding-top: 2px;padding-bottom: 2px;text-align: left;color: black;}</style><body>
             <center>
                 <div style="float: left; font-size: 12px; text-align: left;">
