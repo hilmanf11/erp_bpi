@@ -245,7 +245,8 @@ class Item_rm extends CI_Controller
             $item_rm = $this->crud->read('item_rm', [], ["number" => $data['number']]);
             $category = $this->crud->read('item_categories', [], ["id" => $data['item_category_id']]);
             $product_family = $this->crud->read('item_familys', [], ["id" => $data['item_family_id']]);
-            $product_family_sub = $this->crud->read('item_family_subs', [], ["id" => $data['item_sub_family_id']]);
+            // $product_family_sub = $this->crud->read('item_family_subs', [], ["id" => $data['item_sub_family_id']]);
+            $product_family_sub = $this->db->select('*')->from('item_family_subs')->where('id', $data['item_sub_family_id'])->get()->row();
 
             // Validate required data first.
             if (empty($category)) {
@@ -262,8 +263,8 @@ class Item_rm extends CI_Controller
             }
             
             // Prepare data for create/update.
-            $kind = @$product_family_sub->kind;
-            $density = @$product_family_sub->density;
+            $kind = $product_family_sub->kind ?? null;
+            $density = $product_family_sub->density ?? null;
 
             $length = isset($data['length']) && is_numeric($data['length']) ? (float)$data['length'] : 0;
             $width = isset($data['width']) && is_numeric($data['width']) ? (float)$data['width'] : 0;
@@ -307,8 +308,13 @@ class Item_rm extends CI_Controller
 
             // Validasi ACTION : UPDATE or NEW
             if (strtolower($data['action']) === 'update') {
-                $send = $this->crud->update('item_rm', ["id" => $item_rm->id], $dataFinal);
+                if (!empty($item_rm->id)) {
+                    $send = $this->crud->update('item_rm', ["id" => $item_rm->id], $dataFinal);
+                } else {
+                    $send = $this->crud->update('item_rm', ["number" => $data['number']], $dataFinal);
+                }
                 echo $send;
+
             } else {
                 // AUTOID 
                 $month = date('my');
@@ -412,8 +418,14 @@ class Item_rm extends CI_Controller
     {
         if ($option == "excel") {
             $format  = date("Ymd");
-            header('Content-Type: application/vnd.ms-excel');
-            header("Content-Disposition: attachment; filename=item_rm_$format.xls");
+            // header('Content-Type: application/vnd.ms-excel');
+            // header("Content-Disposition: attachment; filename=item_rm_$format.xls");
+
+            // export with special characters and symbol : perbaiki jg output excel dr modul Master Item ketika ada symbol ˚ atau symbol lainnya hasilnya disamakan dgn data gridnya (Bu Nina)
+            header('Content-Type: application/vnd.ms-excel; charset=UTF-8');
+            header("Content-Disposition: attachment; filename=item_rm_$format.xls");            
+            echo "\xEF\xBB\xBF";
+            echo '<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />';
         }
         //Config
         $this->db->select('*');
