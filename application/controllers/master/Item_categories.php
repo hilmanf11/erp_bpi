@@ -40,7 +40,7 @@ class Item_categories extends CI_Controller
     public function readsnotfg()
     {
         $post = isset($_POST['q']) ? $_POST['q'] : "";
-        $send = $this->crud->query("SELECT * FROM item_categories WHERE name LIKE '%$post%'AND number != 'FG'");
+        $send = $this->crud->query("SELECT * FROM item_categories WHERE name LIKE '%$post%'AND number != 'FG' AND `status` = '0'");
         // $send = $this->crud->reads('item_categories', ["name" => $post]);
         echo json_encode($send);
     }

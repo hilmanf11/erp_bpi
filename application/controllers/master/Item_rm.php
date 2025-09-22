@@ -60,6 +60,7 @@ class Item_rm extends CI_Controller
         $this->db->join('item_categories b','a.item_category_id = b.id');
         $this->db->join('divisions c','a.division_id = c.id','left');
         $this->db->where('a.item_category_id', $categoryId);
+        $this->db->where('a.status', 0);
         $records = $this->db->get()->result_array();
 
         echo json_encode($records);
