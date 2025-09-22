@@ -238,15 +238,23 @@ class Item_rm extends CI_Controller
     //UPLOAD CREATE DATA
     public function uploadcreate()
     {
-        if ($this->input->post()) {
+        if (!$this->input->post()) {
+            echo json_encode(["title" => "Error", "message" => "Invalid request. No data received.", "theme" => "error"]);
+            return;
+        }
+
+        try {
             $data = $this->input->post('data');
+            if (empty($data)) {
+                echo json_encode(["title" => "Not Found", "message" => "Input data is empty.", "theme" => "error"]);
+                return;
+            }
 
             //Cek Process Number          //table       //field        //field excel
             $item_rm = $this->crud->read('item_rm', [], ["number" => $data['number']]);
             $category = $this->crud->read('item_categories', [], ["id" => $data['item_category_id']]);
             $product_family = $this->crud->read('item_familys', [], ["id" => $data['item_family_id']]);
-            // $product_family_sub = $this->crud->read('item_family_subs', [], ["id" => $data['item_sub_family_id']]);
-            $product_family_sub = $this->db->select('*')->from('item_family_subs')->where('id', $data['item_sub_family_id'])->get()->row();
+            $product_family_sub = $this->crud->read('item_family_subs', [], ["id" => $data['item_sub_family_id']]);
 
             // Validate required data first.
             if (empty($category)) {
@@ -264,7 +272,7 @@ class Item_rm extends CI_Controller
             
             // Prepare data for create/update.
             $kind = $product_family_sub->kind ?? null;
-            $density = $product_family_sub->density ?? null;
+            $density = $product_family_sub->density ?? 0;
 
             $length = isset($data['length']) && is_numeric($data['length']) ? (float)$data['length'] : 0;
             $width = isset($data['width']) && is_numeric($data['width']) ? (float)$data['width'] : 0;
@@ -308,10 +316,10 @@ class Item_rm extends CI_Controller
 
             // Validasi ACTION : UPDATE or NEW
             if (strtolower($data['action']) === 'update') {
-                if (!empty($item_rm->id)) {
+                if (empty($item_rm)) {
+                    $send = json_encode(["title" => "Error", "message" => "Item with Part No: " . $data['number'] . " not found for update. Please check data (special chars and symbols)", "theme" => "error"]);
+                } else {                    
                     $send = $this->crud->update('item_rm', ["id" => $item_rm->id], $dataFinal);
-                } else {
-                    $send = $this->crud->update('item_rm', ["number" => $data['number']], $dataFinal);
                 }
                 echo $send;
 
@@ -333,7 +341,10 @@ class Item_rm extends CI_Controller
                 $send = $this->crud->create('item_rm', $dataFinal);
                 echo $send;
             }
-        }
+        
+        } catch (Exception $e) {
+            echo json_encode(["title" => "Error", "Message: " => $e->getMessage(), "theme" => "error"]);
+        }        
     }
     
     public function uploadcreate_backup()
