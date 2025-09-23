@@ -551,6 +551,18 @@
                 var formData = new FormData($('#frm_upload')[0]);
 
                 $.ajax({
+                    url: '<?= base_url('master/item_rm/uploadclearFailed') ?>',
+                    type: 'POST',
+                    async: false, // Penting: pastikan proses selesai sebelum lanjut
+                    success: function() {
+                        console.log('Previous failed records cleared successfully.');
+                    },
+                    error: function() {
+                        console.error('Failed to clear previous failed records.');
+                    }
+                });
+
+                $.ajax({
                     url: '<?= base_url('master/item_rm/upload') ?>',
                     type: 'POST',
                     data: formData,
