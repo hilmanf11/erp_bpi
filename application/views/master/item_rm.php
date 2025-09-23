@@ -537,74 +537,168 @@
             text: 'Upload',
             iconCls: 'icon-ok',
             handler: function() {
-                $('#frm_upload').form('submit', {
+                // Validasi form dan tampilkan progress
+                if (!$('#frm_upload').form('validate')) {
+                    return;
+                }
+
+                $.messager.progress({
+                    title: 'Please Wait',
+                    msg: 'Importing Excel to Database'
+                });
+
+                // Gunakan FormData untuk mengirim data formulir dan file (pengganti eval() tidak works di Chrome)
+                var formData = new FormData($('#frm_upload')[0]);
+
+                $.ajax({
                     url: '<?= base_url('master/item_rm/upload') ?>',
-                    onSubmit: function() {
-                        if ($(this).form('validate') == false) {
-                            return $(this).form('validate');
-                        } else {
-                            $.messager.progress({
-                                title: 'Please Wait',
-                                msg: 'Importing Excel to Database'
-                            });
-                        }
-                    },
-                    success: function(result) {
+                    type: 'POST',
+                    data: formData,
+                    dataType: 'json',
+                    processData: false, // Penting: Jangan memproses data
+                    contentType: false, // Penting: Biarkan jQuery mengatur Content-Type
+                    success: function(json) {
                         $.messager.progress('close');
-                        //Clear File
-                        $.ajax({
-                            url: "<?= base_url('master/item_rm/uploadclearFailed') ?>"
-                        });
-                        var json = eval('(' + result + ')');
-                        requestData(json.total, json);
-
-                        function requestData(total, json, number = 1, value = 0, success = 1, failed = 1) {
-                            if (value < 100) {
-                                value = Math.floor((number / total) * 100);
-                                $('#p_upload').progressbar('setValue', value);
-                                $('#p_start').html(number);
-                                $('#p_finish').html(total);
-
-                                $.ajax({
-                                    type: "POST",
-                                    async: true,
-                                    url: "<?= base_url('master/item_rm/uploadCreate') ?>",
-                                    data: {
-                                        "data": json[number - 1]
-                                    },
-                                    cache: false,
-                                    dataType: "json",
-                                    success: function(result) {
-                                        if (result.theme == "success") {
-                                            $('#p_success').html(success);
-                                            var title = "<b style='color: green;'>" + result.title + "</b> | " + result.message;
-                                            requestData(total, json, number + 1, value, success + 1, failed + 0);
-                                        } else {
-                                            $('#p_failed').html(failed);
-                                            var title = "<b style='color: red;'>" + result.title + "</b> | " + result.message;
-                                            //Json Failed
-                                            $.ajax({
-                                                type: "POST",
-                                                async: true,
-                                                url: "<?= base_url('master/item_rm/uploadcreateFailed') ?>",
-                                                data: {
-                                                    data: json[number - 1],
-                                                    message: result.message
-                                                },
-                                                cache: false
-                                            });
-                                            requestData(total, json, number + 1, value, success + 0, failed + 1);
-                                        }
-                                        $("#p_remarks").append(title + "<br>");
-                                    }
-                                });
-                            }
-                        }
+                        requestData(json.total, json.data);
+                    },
+                    error: function(xhr, status, error) {
+                        $.messager.progress('close');
+                        console.error('AJAX Error:', error);
+                        $.messager.alert('Error', 'Invalid JSON response from server. Change browser or contact admin.', 'error');
                     }
                 });
+
+                // Lanjutkan dengan fungsi rekursi seperti sebelumnya (di dalam success handler)
+                function requestData(total, data_array, number = 1, success = 0, failed = 0) {
+                    if (number > total) {
+                        $.messager.alert('Upload Finished', `Import process completed.<br>Successful: ${success}<br>Failed: ${failed}`, 'info');
+                        $('#dg').datagrid('reload');
+                        return;
+                    }
+
+                    let value = Math.floor((number / total) * 100);
+                    $('#p_upload').progressbar('setValue', value);
+                    $('#p_start').html(number);
+                    $('#p_finish').html(total);
+                    $('#p_success').html(success);
+                    $('#p_failed').html(failed);
+                    
+                    $.ajax({
+                        type: "POST",
+                        url: "<?= base_url('master/item_rm/uploadCreate') ?>",
+                        data: { "data": data_array[number - 1] },
+                        dataType: "json",
+                        success: function(result_item_create) {
+                            let title = '';
+                            if (result_item_create.theme === "success") {
+                                title = `<b style='color: green;'>${result_item_create.title}</b> | ${result_item_create.message}`;
+                                success++;
+                            } else {
+                                title = `<b style='color: red;'>${result_item_create.title}</b> | ${result_item_create.message}`;
+                                failed++;
+                                
+                                $.ajax({
+                                    type: "POST",
+                                    url: "<?= base_url('master/item_rm/uploadcreateFailed') ?>",
+                                    data: { data: data_array[number - 1], message: result_item_create.message },
+                                    cache: false
+                                });
+                            }
+                            
+                            $("#p_remarks").append(title + "<br>");
+                            requestData(total, data_array, number + 1, success, failed);
+                        },
+                        error: function(xhr, status, error) {
+                            console.error('AJAX Error:', error);
+                            failed++;
+                            $("#p_remarks").append(`<b style='color: red;'>Error</b> | Failed to process item: ${error}<br>`);
+                            requestData(total, data_array, number + 1, success, failed);
+                        }
+                    });
+                }
             }
         }]
     });
+
+    // UPLOAD DATA BACKUP (error eval() di Chrome)
+    // $('#dlg_upload').dialog({
+    //     buttons: [{
+    //         text: 'List Failed',
+    //         handler: function() {
+    //             window.open('<?= base_url('master/item_rm/uploadDownloadFailed') ?>', '_blank');
+    //         }
+    //     }, {
+    //         text: 'Upload',
+    //         iconCls: 'icon-ok',
+    //         handler: function() {
+    //             $('#frm_upload').form('submit', {
+    //                 url: '<?= base_url('master/item_rm/upload') ?>',
+    //                 onSubmit: function() {
+    //                     if ($(this).form('validate') == false) {
+    //                         return $(this).form('validate');
+    //                     } else {
+    //                         $.messager.progress({
+    //                             title: 'Please Wait',
+    //                             msg: 'Importing Excel to Database'
+    //                         });
+    //                     }
+    //                 },
+    //                 success: function(result) {
+    //                     $.messager.progress('close');
+    //                     //Clear File
+    //                     $.ajax({
+    //                         url: "<?= base_url('master/item_rm/uploadclearFailed') ?>"
+    //                     });
+    //                     var json = eval('(' + result + ')');
+    //                     requestData(json.total, json);
+
+    //                     function requestData(total, json, number = 1, value = 0, success = 1, failed = 1) {
+    //                         if (value < 100) {
+    //                             value = Math.floor((number / total) * 100);
+    //                             $('#p_upload').progressbar('setValue', value);
+    //                             $('#p_start').html(number);
+    //                             $('#p_finish').html(total);
+
+    //                             $.ajax({
+    //                                 type: "POST",
+    //                                 async: true,
+    //                                 url: "<?= base_url('master/item_rm/uploadCreate') ?>",
+    //                                 data: {
+    //                                     "data": json[number - 1]
+    //                                 },
+    //                                 cache: false,
+    //                                 dataType: "json",
+    //                                 success: function(result) {
+    //                                     if (result.theme == "success") {
+    //                                         $('#p_success').html(success);
+    //                                         var title = "<b style='color: green;'>" + result.title + "</b> | " + result.message;
+    //                                         requestData(total, json, number + 1, value, success + 1, failed + 0);
+    //                                     } else {
+    //                                         $('#p_failed').html(failed);
+    //                                         var title = "<b style='color: red;'>" + result.title + "</b> | " + result.message;
+    //                                         //Json Failed
+    //                                         $.ajax({
+    //                                             type: "POST",
+    //                                             async: true,
+    //                                             url: "<?= base_url('master/item_rm/uploadcreateFailed') ?>",
+    //                                             data: {
+    //                                                 data: json[number - 1],
+    //                                                 message: result.message
+    //                                             },
+    //                                             cache: false
+    //                                         });
+    //                                         requestData(total, json, number + 1, value, success + 0, failed + 1);
+    //                                     }
+    //                                     $("#p_remarks").append(title + "<br>");
+    //                                 }
+    //                             });
+    //                         }
+    //                     }
+    //                 }
+    //             });
+    //         }
+    //     }]
+    // });
 
     $('#length').numberbox({ 
         onChange: function(value) {

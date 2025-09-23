@@ -170,8 +170,72 @@ class Item_rm extends CI_Controller
         $send = $this->crud->delete('item_rm', $data);
         echo $send;
     }
+
     //UPLOAD DATA
     public function upload()
+    {
+        header('Content-Type: application/json');
+
+        error_reporting(0);
+        require_once 'assets/vendors/excel_reader2.php';
+
+        try {
+            $target = basename($_FILES['file_upload']['name']);
+            
+            // Use a more robust check for file upload success
+            if (!move_uploaded_file($_FILES['file_upload']['tmp_name'], $target)) {
+                throw new Exception("Failed to upload file.");
+            }
+            
+            chmod($target, 0777);
+            $file = $target;
+            $data = new Spreadsheet_Excel_Reader($file, false);
+            $total_row = $data->rowcount($sheet_index = 0);
+            $datas = [];
+
+            for ($i = 3; $i <= $total_row; $i++) {
+                $datas[] = [
+                    'number' => $data->val($i, 2),
+                    'name' => $data->val($i, 3),
+                    'uom' => $data->val($i, 4),
+                    'division' => $data->val($i, 5),
+                    'item_category_id' => $data->val($i, 6),
+                    'item_family_id' => $data->val($i, 7),
+                    'color' => $data->val($i, 8),
+                    'item_sub_family_id' => $data->val($i, 9),
+                    'account_number' => $data->val($i, 10),
+                    'account_name' => $data->val($i, 11),
+                    'length' => $data->val($i, 12),
+                    'width' => $data->val($i, 13),
+                    'thickness' => $data->val($i, 14),
+                    'diameter' => $data->val($i, 15),
+                    'description' => $data->val($i, 16),
+                    'supply' => $data->val($i, 17),
+                    'status' => $data->val($i, 18),
+                    'action' => $data->val($i, 19),
+                ];
+            }
+            
+            $response = [
+                'total' => count($datas),
+                'data' => $datas
+            ];
+            
+            echo json_encode($response);
+
+        } catch (Exception $e) {
+            // Handle upload errors gracefully
+            http_response_code(500); // Set HTTP status code for server error
+            echo json_encode(['error' => $e->getMessage()]);
+        } finally {
+            // Ensure the temporary file is deleted even if an error occurs
+            if (isset($target) && file_exists($target)) {
+                unlink($target);
+            }
+        }
+    }
+
+    public function upload_backup() // error json in Google Chrome (excel_reader2.php) works in Edge
     {
         error_reporting(0);
         require_once 'assets/vendors/excel_reader2.php';
