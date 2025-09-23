@@ -76,14 +76,25 @@ class Checksheets extends CI_Controller
                         a.item_fg_name AS product_name, 
                         b.number AS product_no,
                         a.division as division,
-                        b.status_subcont,
-                        b.subcont_type
+                        a.status_subcont,
+                        a.subcont_type
                 FROM production_schedules a
                 JOIN item_fg b ON a.item_fg_id = b.id
+                LEFT JOIN supply_sheets c ON a.wo_no = c.workorder
                 WHERE a.status = 0 
                 AND a.wo_no != '' 
                 AND b.type !='SA'
-                AND b.number LIKE '%$post%' or a.lot_no LIKE '%$post%' or a.wo_no LIKE '%$post%' or a.period LIKE '%$post%' 
+                AND a.status_subcont ='NO'
+                AND (
+                    (a.division = 'INJ' AND (c.workorder IS NOT NULL OR c.status != 0))
+                    OR (a.division <> 'INJ')
+                )
+                AND (
+                        b.number LIKE '%$post%' 
+                        OR a.lot_no LIKE '%$post%' 
+                        OR a.wo_no LIKE '%$post%' 
+                        OR a.period LIKE '%$post%'
+                    )
                 ORDER BY b.number DESC";
 
         // Query kedua: mengambil data dari purchase_order_receipts
