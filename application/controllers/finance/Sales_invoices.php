@@ -1157,7 +1157,7 @@ class Sales_invoices extends CI_Controller
                                     </table>
                                 </div>
                                 <table id="customers">'; 
-            
+
             // Kolom HS Code ditampilkan pada printout invoice jika faktur_code = 070 saja (Bu Nina)
             $showHsCode = (stripos($records[0]['faktur_code'], "07") !== false);
 
@@ -3286,7 +3286,7 @@ class Sales_invoices extends CI_Controller
             ->get()->result_array();
 
         // Query Detail Faktur
-        $detailfaktur_query = $this->db->select('e.number as item_number, 
+        $detailfaktur_query = $this->db->select('e.number as item_number, e.name as item_name,
             e.name as item_name, 
             a.price, 
             a.number as si_no,
@@ -3309,9 +3309,24 @@ class Sales_invoices extends CI_Controller
             $groupedDetails[$detail['si_no']][] = $detail;
         }
 
+        // Set NPWP and IDTKU
+        $npwp = preg_replace('/\D/', '', $config->npwp);
+        $first_two_digits = substr($npwp, 0, 2);
+        if (strlen($npwp) < 16 && $first_two_digits !== '00') { // Validasi jika NPWP tidak dimulai dengan '00' atau '0'
+            $first_digit = substr($npwp, 0, 1);
+            if ($first_digit !== '0') {
+                $npwp_seller = '00' . $npwp;
+            } else {
+                $npwp_seller = '0' . $npwp;
+            }
+        } else {
+            $npwp_seller = $npwp;
+        }
+        $idtku_seller = str_pad($npwp_seller, 22, '0', STR_PAD_RIGHT);
+
         // Build XML Structure
         $xml = new SimpleXMLElement('<TaxInvoiceBulk xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="TaxInvoice.xsd"></TaxInvoiceBulk>');
-        $xml->addChild('TIN', $config->npwp);
+        $xml->addChild('TIN', $npwp_seller);
         $listFakturNode = $xml->addChild('ListOfTaxInvoice');
 
         foreach ($faktur_query as $faktur) 
@@ -3329,17 +3344,32 @@ class Sales_invoices extends CI_Controller
             $fakturNode->addChild('FacilityStamp', $faktur['cap_fasilitas']);
 
             // NPWP dan ID Penjual
-            $fakturNode->addChild('SellerIDTKU', $config->npwp);
+            $fakturNode->addChild('SellerIDTKU', $idtku_seller);
+
+            // NPWP Pembeli
+            $npwp_buyer = preg_replace('/\D/', '', $faktur['cust_npwp']);
+            $first_two_digits_buyer = substr($npwp_buyer, 0, 2);
+            if (strlen($npwp_buyer) < 16 && $first_two_digits_buyer !== '00') { // Validasi jika NPWP tidak dimulai dengan '00' atau '0'
+                $first_digit = substr($npwp_buyer, 0, 1);
+                if ($first_digit !== '0') {
+                    $tin_buyer = '00' . $npwp_buyer;
+                } else {
+                    $tin_buyer = '0' . $npwp_buyer;
+                }
+            } else {
+                $tin_buyer = $npwp_buyer;
+            }
+            $idtku_buyer = str_pad($tin_buyer, 22, '0', STR_PAD_RIGHT);
             
             // Informasi Pembeli
-            $fakturNode->addChild('BuyerTin', $faktur['cust_npwp']);
+            $fakturNode->addChild('BuyerTin', $tin_buyer);
             $fakturNode->addChild('BuyerDocument', 'TIN');
             $fakturNode->addChild('BuyerCountry', ($faktur['customer_type'] == "LOCAL") ? "IDN" : "");
             $fakturNode->addChild('BuyerDocumentNumber', '-');
             $fakturNode->addChild('BuyerName', $faktur['cust_name']);
             $fakturNode->addChild('BuyerAdress', $faktur['address']);
             $fakturNode->addChild('BuyerEmail', $faktur['email']);
-            $fakturNode->addChild('BuyerIDTKU', $faktur['cust_npwp']);
+            $fakturNode->addChild('BuyerIDTKU', $idtku_buyer);
             
             // Ambil detail yang relevan dari array yang sudah dikelompokkan
             if (isset($groupedDetails[$faktur['invoice_number']])) {
@@ -3348,6 +3378,9 @@ class Sales_invoices extends CI_Controller
                 foreach ($groupedDetails[$faktur['invoice_number']] as $detail) 
                 {
                     $itemNode = $detailNode->addChild('GoodService');
+
+                    // Setting HS Code
+                    $hs_code = !empty($detail['hs_code']) ? "/".$detail['hs_code'] : "";
                     
                     // Setting UOM
                     $uom = "UM.0033";
@@ -3364,7 +3397,7 @@ class Sales_invoices extends CI_Controller
                     // Perbarui nama tag detail item
                     $itemNode->addChild('Opt', 'A');
                     $itemNode->addChild('Code', '000000');
-                    $itemNode->addChild('Name', $detail['item_number']);
+                    $itemNode->addChild('Name', $detail['item_name'] . $hs_code);
                     $itemNode->addChild('Unit', $uom);
                     $itemNode->addChild('Price', round($detail['price'], 2));
                     $itemNode->addChild('Qty', round($detail['qty'], 2));
