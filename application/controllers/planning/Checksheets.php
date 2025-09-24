@@ -86,9 +86,10 @@ class Checksheets extends CI_Controller
                 AND b.type !='SA'
                 AND a.status_subcont ='NO'
                 AND (
-                    (a.division = 'INJ' AND (c.workorder IS NOT NULL OR c.status != 0))
-                    OR (a.division <> 'INJ')
-                )
+                        a.division = 'MTS'
+                        OR (a.division = 'INJ' AND a.status_subcont = 'YES')
+                        OR (a.division = 'INJ' AND a.status_subcont = 'NO' AND c.status = 1)
+                    )
                 AND (
                         b.number LIKE '%$post%' 
                         OR a.lot_no LIKE '%$post%' 
