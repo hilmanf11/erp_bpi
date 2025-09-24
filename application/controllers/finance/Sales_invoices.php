@@ -3380,7 +3380,8 @@ class Sales_invoices extends CI_Controller
                     $itemNode = $detailNode->addChild('GoodService');
 
                     // Setting HS Code
-                    $hs_code = !empty($detail['hs_code']) ? "/".$detail['hs_code'] : "";
+                    $hs_code = !empty($detail['hs_code']) ? $detail['hs_code'] . "00" : "000000"; // 2 digit 00 default (Bu Nina)
+                    $hs_code_item = !empty($detail['hs_code']) ? "/".$hs_code : "";
                     
                     // Setting UOM
                     $uom = "UM.0033";
@@ -3396,8 +3397,8 @@ class Sales_invoices extends CI_Controller
 
                     // Perbarui nama tag detail item
                     $itemNode->addChild('Opt', 'A');
-                    $itemNode->addChild('Code', '000000');
-                    $itemNode->addChild('Name', $detail['item_name'] . $hs_code);
+                    $itemNode->addChild('Code', $hs_code);
+                    $itemNode->addChild('Name', $detail['item_name'] . $hs_code_item);
                     $itemNode->addChild('Unit', $uom);
                     $itemNode->addChild('Price', round($detail['price'], 2));
                     $itemNode->addChild('Qty', round($detail['qty'], 2));
