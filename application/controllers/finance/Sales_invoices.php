@@ -3380,7 +3380,7 @@ class Sales_invoices extends CI_Controller
                     $itemNode = $detailNode->addChild('GoodService');
 
                     // Setting HS Code
-                    $hs_code = !empty($detail['hs_code']) ? $detail['hs_code'] . "00" : "000000"; // 2 digit 00 default (Bu Nina)
+                    $hs_code = !empty($detail['hs_code']) ? $detail['hs_code'] : "000000";
                     $hs_code_item = !empty($detail['hs_code']) ? "/".$hs_code : "";
                     
                     // Setting UOM
