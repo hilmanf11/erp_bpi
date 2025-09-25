@@ -550,7 +550,7 @@ class Sales_invoices extends CI_Controller
         // $records = $this->db->get()->result_array();
 
         // nomor SO tidak di COALESCE(d.sales_order_no, d.sales_order_no_rm) as sales_order_no,
-        
+
         $this->db->select('a.delivery_note_no, 
             a.customer_order_no,  
             d.sales_order_no,
@@ -724,46 +724,49 @@ class Sales_invoices extends CI_Controller
         $jsonData = file_get_contents("php://input");
         $post = json_decode($jsonData, true);
 
-        $sales_invoices = $post['dataSi'] ?? [];
-        $sales_invoice_journals = $post['dataJournal'] ?? [];
+        $sales_invoices = $post['dataSi'];
+        $sales_invoice_journals = $post['dataJournal'];
 
         foreach ($sales_invoices as $sales_invoice) {
-
-            // Validasi DN ada atau Input manual
-            $existing_DN = $this->db->get_where('delivery_notes', [
-                    "delivery_note_no"  => $sales_invoice['delivery_note_no'], 
-                    "customer_order_no" => $sales_invoice['customer_order_no']
-                ])->row();
-
-            if (!empty($existing_DN)) {
+            $dn_no = $sales_invoice['delivery_note_no'] ?? null;
+            $co_no = $sales_invoice['customer_order_no'] ?? null;
+            $so_no = $sales_invoice['sales_order_no'] ?? null;
+            $item_id = $sales_invoice['item_fg_id'] ?? null;
+            
+            // --- Jika DN input manual ---
+            $is_manual_entry = ($dn_no === "-");            
+            if ($is_manual_entry) {
                 $where_invoices = [
-                    "delivery_note_no"  => $sales_invoice['delivery_note_no'], 
-                    "sales_order_no"    => $sales_invoice['sales_order_no'],
-                    "customer_order_no" => $sales_invoice['customer_order_no'],
-                    "item_fg_id"        => $sales_invoice['item_fg_id'],
+                    "number"            => $sales_invoice['number'] ?? null,
+                    "delivery_note_no"  => $dn_no,
+                    "sales_order_no"    => $so_no,
+                    "customer_order_no" => $co_no,
+                    "item_fg_id"        => $item_id,
                 ];
             } else {
                 $where_invoices = [
-                    "delivery_note_no"  => "-",
-                    "sales_order_no"    => "-",
-                    "customer_order_no" => "-",
-                    "number"            => $sales_invoice['number'] ?? null,
+                    "delivery_note_no"  => $dn_no,
+                    "sales_order_no"    => $so_no,
+                    "customer_order_no" => $co_no,
+                    "item_fg_id"        => $item_id,
                 ];
             }
+            
             $sales_invoices_read = $this->crud->read('sales_invoices', [], $where_invoices);
 
             if (!empty($sales_invoice['id'])) {
                 $send = $this->db->update('sales_invoices', $sales_invoice, ["id" => $sales_invoice['id']]);
-                
             } else {
-                if(!$sales_invoices_read) {
-
-                    $sales_invoice['delivery_note_no']  = "-";
-                    $sales_invoice['sales_order_no']    = "-";
-                    $sales_invoice['customer_order_no'] = "-";
-
+                if (!$sales_invoices_read) {
                     $send = $this->crud->createNotLog('sales_invoices', $sales_invoice);
-                    $this->db->update('delivery_notes',["status" => "1"], ["delivery_note_no" => $sales_invoice['delivery_note_no'], "customer_order_no" => $sales_invoice['customer_order_no']]);
+                    
+                    // Update delivery_notes hanya jika bukan entri manual
+                    if (!$is_manual_entry) {
+                        $this->db->update('delivery_notes', ["status" => "1"], [
+                            "delivery_note_no" => $dn_no,
+                            "customer_order_no" => $co_no
+                        ]);
+                    }
                 } else {
                     $send = $this->db->update('sales_invoices', $sales_invoice, $where_invoices);
                 }
@@ -787,7 +790,6 @@ class Sales_invoices extends CI_Controller
         }
 
         die($send);
-    
     }
 
     public function createOld() // Perbaikan Create/Update ketika Input DN Manual Error Create SI Loading
@@ -1164,7 +1166,7 @@ class Sales_invoices extends CI_Controller
                                         </tr>
                                     </table>
                                 </div>
-                                <table id="customers">'; 
+                                <table id="customers">';
 
             // Kolom HS Code ditampilkan pada printout invoice jika faktur_code = 070 saja (Bu Nina)
             $showHsCode = (stripos($records[0]['faktur_code'], "07") !== false);
@@ -1200,7 +1202,7 @@ class Sales_invoices extends CI_Controller
             //     $delivery_notes_string = implode(',', $delivery_notess);
             // }
 
-            foreach ($records as $record) 
+            foreach ($records as $record)
             {
                 if ($record['customer_order_no'] == "") {
                     $sales_order_no = $record['sales_order_no'];
@@ -2213,7 +2215,7 @@ class Sales_invoices extends CI_Controller
                         }
                     </style>
                     <body>';
-            
+
                 // Use Default HTML if not show GL and Hyperlink each transaction (Report_general_ledgers)
                 if (empty($is_hyperlink) && $is_hyperlink !== 'GL') {
                     $html .= '<div style="margin:20%;" class="noprint">
@@ -2510,7 +2512,7 @@ class Sales_invoices extends CI_Controller
                         <th style="height:20px; text-align:center;">'. $user_3->name .'<br><hr style="width:60%;margin-left:20%;">Director</th>
                     </tr>
                 </table>';
-
+        
         if (empty($is_hyperlink) && $is_hyperlink !== 'GL') {
             $html .= "<script>window.print()</script></body>";
         } else {
@@ -3704,5 +3706,4 @@ class Sales_invoices extends CI_Controller
         $writer->save('php://output');
         exit();
     }
-
 }
