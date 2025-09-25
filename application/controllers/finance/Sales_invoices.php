@@ -3330,7 +3330,7 @@ class Sales_invoices extends CI_Controller
 
         // Query Detail Faktur
         $detailfaktur_query = $this->db->select('e.number as item_number, e.name as item_name,
-            e.name as item_name, 
+            e.id as item_no, 
             a.price, 
             a.number as si_no,
             a.qty, 
@@ -3413,13 +3413,28 @@ class Sales_invoices extends CI_Controller
             $fakturNode->addChild('BuyerAdress', $faktur['address']);
             $fakturNode->addChild('BuyerEmail', $faktur['email']);
             $fakturNode->addChild('BuyerIDTKU', $idtku_buyer);
-            
+
             // Ambil detail yang relevan dari array yang sudah dikelompokkan
             if (isset($groupedDetails[$faktur['invoice_number']])) {
                 $detailNode = $fakturNode->addChild('ListOfGoodService');
-                
-                foreach ($groupedDetails[$faktur['invoice_number']] as $detail) 
-                {
+
+                // Jika ada Product Name yang sama, maka dijadikan satu, qtynya dijumlahkan. (Bu Nina)
+                $mergedItems = [];
+                foreach ($groupedDetails[$faktur['invoice_number']] as $detail) {
+                    $key = $detail['item_name'];
+                    // $key = $detail['item_no'];
+                    
+                    if (isset($mergedItems[$key])) {
+                        // Jika item sudah ada, jumlahkan qty dan totalnya
+                        $mergedItems[$key]['qty'] += $detail['qty'];
+                        $mergedItems[$key]['total'] += $detail['total'];
+                    } else {
+                        // Jika item belum ada, tambahkan ke array
+                        $mergedItems[$key] = $detail;
+                    }
+                }
+
+                foreach ($mergedItems as $detail) {
                     $itemNode = $detailNode->addChild('GoodService');
 
                     // Setting HS Code
@@ -3438,16 +3453,16 @@ class Sales_invoices extends CI_Controller
                     if ($detail['uom'] == "Lembar") $uom = "UM.0020";
                     if ($detail['uom'] == "Piece") $uom = "UM.0021";
 
-                    // Perbarui nama tag detail item
+                    // Perbarui tag dengan nilai yang sudah digabungkan
                     $itemNode->addChild('Opt', 'A');
                     $itemNode->addChild('Code', $hs_code);
                     $itemNode->addChild('Name', $detail['item_name'] . $hs_code_item);
                     $itemNode->addChild('Unit', $uom);
                     $itemNode->addChild('Price', round($detail['price'], 2));
-                    $itemNode->addChild('Qty', round($detail['qty'], 2));
+                    $itemNode->addChild('Qty', round($detail['qty'], 2)); // Gunakan qty yang sudah dijumlahkan
                     $itemNode->addChild('TotalDiscount', round($detail['total_discount'], 2));
-                    $itemNode->addChild('TaxBase', round($detail['total'] - $detail['total_discount'], 2));
-                    $itemNode->addChild('OtherTaxBase', round(11/12 * ($detail['total'] - $detail['total_discount']), 2));
+                    $itemNode->addChild('TaxBase', round($detail['total'] - $detail['total_discount'], 2)); // Gunakan total yang sudah dijumlahkan
+                    $itemNode->addChild('OtherTaxBase', round(11/12 * ($detail['total'] - $detail['total_discount']), 2)); // Gunakan total yang sudah dijumlahkan
                     $itemNode->addChild('VATRate', round($detail['taxes'], 2));
                     $itemNode->addChild('VAT', round((11/12 * ($detail['total'] - $detail['total_discount'])) * ($detail['taxes']/100), 2));
                     $itemNode->addChild('STLGRate', 0);
