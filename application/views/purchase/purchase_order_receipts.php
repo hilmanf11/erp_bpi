@@ -358,7 +358,7 @@
         }
     }
 
-    //Delete Data
+   //Delete Data
     function deleted() {
         var rows = $('#dg').treegrid('getSelections');
         if (rows.length > 0) {
@@ -371,24 +371,43 @@
                         } else {
                             $.ajax({
                                 method: 'post',
-                                url: '<?= base_url('purchase/purchase_order_receipts/delete') ?>',
+                                url: '<?= base_url('purchase/purchase_order_receipts/checkReceipt') ?>',
                                 data: {
-                                    id: row.purchase_order_receipts_id,
-                                    receipt_id: row.id,
-                                    po_no: row.po_no,
-                                    item_rm_id: row.item_rm_id,
-                                    qty_receipt: row.qty_receipt
+                                    receipt_id: row.id
                                 },
                                 success: function(result) {
                                     var result = eval('(' + result + ')');
-                                    readReceiptNo();
+                                    if (result.status === 'error') {
+                                        toastr.error(result.message);
+                                    } else {
+                                        $.ajax({
+                                            method: 'post',
+                                            url: '<?= base_url('purchase/purchase_order_receipts/delete') ?>',
+                                            data: {
+                                                id: row.purchase_order_receipts_id,
+                                                receipt_id: row.id,
+                                                po_no: row.po_no,
+                                                item_rm_id: row.item_rm_id,
+                                                qty_receipt: row.qty_receipt
+                                            },
+                                            success: function(result) {
+                                                var result = eval('(' + result + ')');
+                                                toastr.success("Data berhasil dihapus");
+                                                readReceiptNo();
+                                            },
+                                            error: function(jqXHR, textStatus, errorThrown) {
+                                                toastr.error(jqXHR.statusText);
+                                                $.messager.alert("Error", jqXHR.statusText, 'error');
+                                            },
+                                            complete: function() {
+                                                $('#dg').treegrid('reload');
+                                            }
+                                        });
+                                    }
                                 },
                                 error: function(jqXHR, textStatus, errorThrown) {
                                     toastr.error(jqXHR.statusText);
                                     $.messager.alert("Error", jqXHR.statusText, 'error');
-                                },
-                                complete: function(data) {
-                                    $('#dg').treegrid('reload');
                                 }
                             });
                         }
@@ -492,7 +511,6 @@
         if (receipt_no == "") {
             toastr.warning("Please select Receipt No!", "Information");
         } else {
-            // Step 1: cek label dulu
             $.ajax({
                 type: "post",
                 url: "<?= base_url('purchase/purchase_order_receipts/checkLabel/') ?>" + window.btoa(receipt_no),
@@ -500,20 +518,16 @@
                 success: function (response) {
                     console.log(response);
 
-                    // kalau kategori RM (C01) harus dicek dulu labelnya
                     if (response.category === 'C01') {
                         if (response.qty_label == response.label_no) {
-                            // Step 2: cek item setelah label ok
                             $.ajax({
                                 type: "post",
                                 url: "<?= base_url('purchase/purchase_order_receipts/checkItems/') ?>" + window.btoa(receipt_no),
                                 dataType: "json",
                                 success: function (res) {
-                                    // Step 3: apapun hasilnya (status diupdate/tidak), tetap cetak
                                     window.open("<?= base_url('purchase/purchase_order_receipts/print_receiving/') ?>" + window.btoa(receipt_no), "_blank");
                                 },
                                 error: function() {
-                                    // kalau error checkItems tetap lanjut cetak
                                     window.open("<?= base_url('purchase/purchase_order_receipts/print_receiving/') ?>" + window.btoa(receipt_no), "_blank");
                                 }
                             });
@@ -521,7 +535,6 @@
                             toastr.error("The labels haven't been scanned yet for category RM");
                         }
                     } else {
-                        // kalau kategori bukan C01, langsung cek item
                         $.ajax({
                             type: "post",
                             url: "<?= base_url('purchase/purchase_order_receipts/checkItems/') ?>" + window.btoa(receipt_no),
@@ -735,37 +748,41 @@
                                                             },
                                                             dataType: "json",
                                                             success: function(result) {
+                                                                if (result.status === false) {
+                                                                    Swal.fire({
+                                                                        title: result.message,
+                                                                        icon: result.theme,
+                                                                        confirmButtonText: 'Ok',
+                                                                        allowOutsideClick: false,
+                                                                    });
+                                                                    return;
+                                                                }
                                                                 Swal.fire({
                                                                     title: result.message,
                                                                     icon: result.theme,
                                                                     confirmButtonText: 'Ok',
                                                                     allowOutsideClick: false,
-                                                                }).then((result) => {
-                                                                    if (result.isConfirmed) {
+                                                                }).then((res) => {
+                                                                    if (res.isConfirmed) {
                                                                         Swal.fire({
                                                                             title: "Do you want to print the barcode?",
                                                                             showDenyButton: true,
                                                                             confirmButtonText: "Yes",
                                                                             denyButtonText: "No"
-                                                                        }).then((result) => {
-                                                                            if (result.isConfirmed) {
+                                                                        }).then((res) => {
+                                                                            if (res.isConfirmed) {
                                                                                 var qty_receipt = row ? row.qty_receipt : 0;
                                                                                 var qty_label = row ? row.qty_label : 0;
-
                                                                                 var po = {
                                                                                     receipt_no: receipt_number,
                                                                                     qty_receipt: qty_receipt,
                                                                                     qty_label: qty_label
                                                                                 };
-
                                                                                 window.location.reload();
                                                                                 print_po(po);
-                                                                            } else if (result.isDenied) {
-                                                                                Swal.fire("You can print QR Code in Datagrid", "", "info").then((result) => {
-                                                                                    if (result.isConfirmed) {
-                                                                                        window.location.reload();
-                                                                                    }
-                                                                                });
+                                                                            } else if (res.isDenied) {
+                                                                                Swal.fire("You can print QR Code in Datagrid", "", "info")
+                                                                                    .then(() => window.location.reload());
                                                                             }
                                                                         });
                                                                     }

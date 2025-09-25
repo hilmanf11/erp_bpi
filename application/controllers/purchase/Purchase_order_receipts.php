@@ -15,7 +15,6 @@ class Purchase_order_receipts extends CI_Controller
         //Validasi Form
         $this->form_validation->set_rules('item_rm_id', 'Product No', 'required|min_length[1]|max_length[50]');
     }
-    
     public function index()
     {
         if (empty($this->session->username)) {
@@ -217,6 +216,27 @@ class Purchase_order_receipts extends CI_Controller
         echo json_encode(["qty_label" => $rowReceipt->qty_label, "label_no" => $label_no, "category" => $rowCategory->category_id]);
     }
 
+    public function checkReceipt() {
+        $receipt_id = $this->input->post('receipt_id');
+
+        $sqlScan = $this->db->query("SELECT COUNT(*) as cnt FROM scan_item_receipts WHERE receipt_id = ?", [$receipt_id]);
+        $exists_scan = $sqlScan->row()->cnt;
+
+        $sqlIssue = $this->db->query("SELECT COUNT(*) as cnt FROM issued_material_details WHERE label_no LIKE ? ", [$receipt_id.'%']);
+        $exists_issue = $sqlIssue->row()->cnt;
+
+        if ($exists_scan > 0 || $exists_issue > 0) {
+            echo json_encode([
+                'status' => 'error',
+                'message' => 'Receipt Id cannot be Delete, Because this receipt already use for Transaction.'
+            ]);
+        } else {
+            echo json_encode([
+                'status' => 'ok'
+            ]);
+        }
+    }
+
     public function datatables()
     {
         if ($this->input->post()) {
@@ -242,7 +262,7 @@ class Purchase_order_receipts extends CI_Controller
             $id = $_POST['id'];
             if ($id === "0") {
                 $this->db->select('a.po_no, a.receipt_no, a.receipt_date, a.awb_no, a.awb_date, a.bc_kind, a.bc_document, a.bc_aju, a.bc_date, b.number as supplier_id, a.lotno, 
-                b.name as supplier_name, a.total_receipt as qty_receipt, a.total_label as qty_label, a.status, e.number as category_code, f.division, a.print, g.number as invoice_no, COUNT(a.status) as total_status, i.total_status_open,h.total_status_close');
+                b.name as supplier_name, a.total_receipt as qty_receipt, a.total_label as qty_label, a.status, e.number as category_code, f.division, a.print, g.number as invoice_no');
                 $this->db->from('(SELECT *, sum(qty_label) as total_label, sum(qty_receipt) as total_receipt FROM purchase_order_receipts GROUP BY receipt_no ORDER BY status asc) a');
                 $this->db->join('suppliers b', 'a.supplier_id = b.id');
                 $this->db->join('purchase_orders c', 'a.po_no = c.po_no and a.item_rm_id = c.item_rm_id');
@@ -250,8 +270,6 @@ class Purchase_order_receipts extends CI_Controller
                 $this->db->join('item_categories e', 'd.item_category_id = e.id','left');
                 $this->db->join('purchase_requests f', 'c.request_no = f.request_no','left');
                 $this->db->join('purchase_invoices g', 'a.receipt_no = g.por_no','left');
-                $this->db->join('(SELECT receipt_no, COUNT(status) as total_status_close FROM purchase_order_receipts WHERE status = 1 GROUP BY receipt_no) h', 'a.receipt_no = h.receipt_no', 'left');
-                $this->db->join('(SELECT receipt_no, COUNT(status) as total_status_open FROM purchase_order_receipts WHERE status = 0 GROUP BY receipt_no) i', 'a.receipt_no = i.receipt_no', 'left');
                 $this->db->where('a.deleted', 0);
                 if ($filter_from != "" and $filter_to != "") {
                     $this->db->where('a.receipt_date >=', $filter_from);
@@ -299,18 +317,6 @@ class Purchase_order_receipts extends CI_Controller
                     $receipt_no = $record['receipt_no'];
                     $purchase_order_label = $this->crud->query("SELECT receipt_id, SUM(`status`) as total_scan FROM purchase_order_labels WHERE receipt_id like '%$receipt_no%'");
 
-                    if ($record['total_status'] == $record['total_status_open']) {
-                        $status = "0";
-                    } elseif ($record['total_status'] == $record['total_status_close']) {
-                        $status = "1";
-                    } elseif ($record['total_status_open'] >= 1) {
-                        $status = "0";
-                    } elseif ($record['total_status_close'] >= 1) {
-                        $status = "1";
-                    } else {
-                        $status = "0";
-                    }
-
                     $arr[] = array(
                         "id" => $record['receipt_no'],
                         "po_no" => $record['po_no'],
@@ -330,7 +336,7 @@ class Purchase_order_receipts extends CI_Controller
                         "division" => $record['division'],
                         "qty_label" => $record['qty_label'],
                         "total_scan" => $purchase_order_label[0]->total_scan,
-                        "status" => $status,
+                        "status" => $record['status'],
                         "print" => $record['print'],
                         "state" => "closed",
                     );
@@ -407,21 +413,30 @@ class Purchase_order_receipts extends CI_Controller
     public function create()
     {
         if ($this->input->post()) {
-            if ($this->form_validation->run() == TRUE) {
-                $post   = $this->input->post();
-                $send   = $this->crud->create('purchase_order_receipts', array_merge($post, ["receipt_id" => $this->receipt_id($post['receipt_no'])]));
-                if ($post['qty_os'] > $post['qty_receipt']) {
-                    $status = 0;
-                } else {
-                    $status = 1;
-                }
-                $this->db->where('po_no', $post['po_no']);
-                $this->db->where('item_rm_id', $post['item_rm_id']);
-                $this->db->update("purchase_orders", ["status" => $status]);
-                echo $send;
-            } else {
-                show_error(validation_errors());
+            $post   = $this->input->post();
+            $por    = $this->crud->read('purchase_order_receipts', [], ["item_rm_id" => $post['item_rm_id'],"supplier_id" => $post['supplier_id'],"bc_document" => $post['bc_document'],"bc_date" => $post['bc_date'],"qty_receipt" => $post['qty_receipt']]);
+
+           if (!empty($por)) {
+                echo json_encode([
+                    "status"  => false,
+                    "theme"   => "error",
+                    "message" => "Duplicate data found!,Please Check your Doc No and Doc Date."
+                ]);
+                return;
             }
+
+            if ($post['qty_os'] > $post['qty_receipt']) {
+                $status = 0;
+            } else {
+                $status = 1;
+            }
+
+            $send   = $this->crud->create('purchase_order_receipts', array_merge($post, ["receipt_id" => $this->receipt_id($post['receipt_no'])]));
+
+            $this->db->where('po_no', $post['po_no']);
+            $this->db->where('item_rm_id', $post['item_rm_id']);
+            $this->db->update("purchase_orders", ["status" => $status]);
+            echo $send;
         } else {
             show_error("Cannot Process your request");
         }
