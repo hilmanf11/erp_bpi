@@ -3996,6 +3996,9 @@
             $("#d_total_sub").textbox('setValue', formatPriceDetail(row.total_sub));
             $("#d_total_vat").textbox('setValue', formatPriceDetail(row.total_vat));
             
+            $("#d_down_payment").textbox('setValue', formatPriceDetail(row.down_payment));
+            $("#d_disc_dp").textbox('setValue', formatPriceDetail(row.disc_dp));
+
             
             var d_total_dpp = parseFloat((row.total_sub) * 11/12);
             $("#d_total_dpp").textbox('setValue', formatPriceDetail(d_total_dpp));
