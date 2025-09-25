@@ -130,6 +130,10 @@
                     <option value="1">CLOSE</option>
                 </select>
             </div>
+            <div class="fitem">
+                <span style="width:35%; display:inline-block;">Faktur No</span>
+                <input style="width:60%;" name="filter_faktur_no" id="filter_faktur_no" class="easyui-combobox">
+            </div>
         </div>
     </fieldset>
     <?= $button ?>
@@ -2787,6 +2791,7 @@
         var filter_sales_invoice = $("#filter_sales_invoice").combobox('getValue');
         var filter_delivery_note_no = $("#filter_delivery_note_no").combobox('getValue');
         var filter_customer = $("#filter_customer").combobox('getValue');
+        var filter_faktur_no = $("#filter_faktur_no").combobox('getValue');
         var filter_status = $("#filter_status").combobox('getValue');
 
         var url = "?filter_type=" + window.btoa(filter_type) +
@@ -2797,6 +2802,7 @@
             "&filter_sales_invoice=" + window.btoa(filter_sales_invoice) +
             "&filter_delivery_note_no=" + window.btoa(filter_delivery_note_no) +
             "&filter_customer=" + window.btoa(filter_customer) +
+            "&filter_faktur_no=" + window.btoa(filter_faktur_no) +
             "&filter_status=" + window.btoa(filter_status);
 
         $('#dg').datagrid({
@@ -2822,6 +2828,7 @@
         var filter_sales_invoice = $("#filter_sales_invoice").combobox('getValue');
         var filter_delivery_note_no = $("#filter_delivery_note_no").combobox('getValue');
         var filter_customer = $("#filter_customer").combobox('getValue');
+        var filter_faktur_no = $("#filter_faktur_no").combobox('getValue');
         var filter_status = $("#filter_status").combobox('getValue');
 
         var url = "?filter_type=" + window.btoa(filter_type) +
@@ -2832,6 +2839,7 @@
             "&filter_sales_invoice=" + window.btoa(filter_sales_invoice) +
             "&filter_delivery_note_no=" + window.btoa(filter_delivery_note_no) +
             "&filter_customer=" + window.btoa(filter_customer) +
+            "&filter_faktur_no=" + window.btoa(filter_faktur_no) +
             "&filter_status=" + window.btoa(filter_status);
 
         window.location.assign('<?= base_url('finance/sales_invoices/print/excel') ?>' + url);
@@ -2846,6 +2854,7 @@
         var filter_sales_invoice = $("#filter_sales_invoice").combobox('getValue');
         var filter_delivery_note_no = $("#filter_delivery_note_no").combobox('getValue');
         var filter_customer = $("#filter_customer").combobox('getValue');
+        var filter_faktur_no = $("#filter_faktur_no").combobox('getValue');
         var filter_status = $("#filter_status").combobox('getValue');
 
         var url = "?filter_type=" + window.btoa(filter_type) +
@@ -2856,6 +2865,7 @@
             "&filter_sales_invoice=" + window.btoa(filter_sales_invoice) +
             "&filter_delivery_note_no=" + window.btoa(filter_delivery_note_no) +
             "&filter_customer=" + window.btoa(filter_customer) +
+            "&filter_faktur_no=" + window.btoa(filter_faktur_no) +
             "&filter_status=" + window.btoa(filter_status);
 
         window.location.assign('<?= base_url('finance/sales_invoices/print_summary/excel') ?>' + url);
@@ -2870,6 +2880,7 @@
         var filter_sales_invoice = $("#filter_sales_invoice").combobox('getValue');
         var filter_delivery_note_no = $("#filter_delivery_note_no").combobox('getValue');
         var filter_customer = $("#filter_customer").combobox('getValue');
+        var filter_faktur_no = $("#filter_faktur_no").combobox('getValue');
         var filter_status = $("#filter_status").combobox('getValue');
 
         var url = "?filter_type=" + window.btoa(filter_type) +
@@ -2880,6 +2891,7 @@
             "&filter_sales_invoice=" + window.btoa(filter_sales_invoice) +
             "&filter_delivery_note_no=" + window.btoa(filter_delivery_note_no) +
             "&filter_customer=" + window.btoa(filter_customer) +
+            "&filter_faktur_no=" + window.btoa(filter_faktur_no) +
             "&filter_status=" + window.btoa(filter_status);
 
         window.location.assign('<?= base_url('finance/sales_invoices/printDetail/excel') ?>' + url);
@@ -2894,6 +2906,7 @@
         var filter_sales_invoice = $("#filter_sales_invoice").combobox('getValue');
         var filter_delivery_note_no = $("#filter_delivery_note_no").combobox('getValue');
         var filter_customer = $("#filter_customer").combobox('getValue');
+        var filter_faktur_no = $("#filter_faktur_no").combobox('getValue');
         var filter_status = $("#filter_status").combobox('getValue');
 
         var url = "?filter_type=" + window.btoa(filter_type) +
@@ -2904,6 +2917,7 @@
             "&filter_sales_invoice=" + window.btoa(filter_sales_invoice) +
             "&filter_delivery_note_no=" + window.btoa(filter_delivery_note_no) +
             "&filter_customer=" + window.btoa(filter_customer) +
+            "&filter_faktur_no=" + window.btoa(filter_faktur_no) +
             "&filter_status=" + window.btoa(filter_status);
 
         window.location.assign('<?= base_url('finance/sales_invoices/printJournal/excel') ?>' + url);
@@ -3545,6 +3559,19 @@
             valueField: 'number',
             textField: 'number',
             prompt: "Choose Sales Invoice No",
+            icons: [{
+                iconCls: 'icon-clear',
+                handler: function(e) {
+                    $(e.data.target).combobox('clear').combobox('textbox').focus();
+                }
+            }],
+        });
+
+        $("#filter_faktur_no").combobox({
+            url: '<?= base_url('finance/sales_invoices/readFakturNo') ?>',
+            valueField: 'faktur_no',
+            textField: 'faktur_no',
+            prompt: "Choose Faktur No",
             icons: [{
                 iconCls: 'icon-clear',
                 handler: function(e) {

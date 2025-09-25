@@ -278,6 +278,12 @@ class Sales_invoices extends CI_Controller
         echo json_encode($data);
     }
 
+    public function readFakturNo()
+    {
+        $data = $this->crud->query("SELECT DISTINCT faktur_no FROM sales_invoices WHERE status = '0' ORDER BY faktur_no ASC");
+        echo json_encode($data);
+    }
+
     public function readDeliveryNote()
     {
         $data = $this->crud->query("SELECT DISTINCT `delivery_note_no` FROM sales_invoices WHERE `status` = '0' ORDER BY `delivery_note_no` ASC");
@@ -643,6 +649,7 @@ class Sales_invoices extends CI_Controller
         $filter_sales_invoice = base64_decode($this->input->get('filter_sales_invoice'));
         $filter_delivery_note_no = base64_decode($this->input->get('filter_delivery_note_no'));
         $filter_customer = base64_decode($this->input->get('filter_customer'));
+        $filter_faktur_no = base64_decode($this->input->get('filter_faktur_no'));
         $filter_status = base64_decode($this->input->get('filter_status'));
 
         $date_from = date("Y-m-01");
@@ -675,6 +682,7 @@ class Sales_invoices extends CI_Controller
             $this->db->like('a.number', $filter_sales_invoice);
             $this->db->like('a.delivery_note_no', $filter_delivery_note_no);
             $this->db->like('a.customer_id', $filter_customer);
+            $this->db->like('a.faktur_no', $filter_faktur_no);
             $this->db->like('a.status', $filter_status);
             $this->db->order_by('a.status', 'ASC');
             $this->db->order_by('a.trans_date', 'DESC');
@@ -2528,7 +2536,12 @@ class Sales_invoices extends CI_Controller
         $filter_sales_invoice = base64_decode($this->input->get('filter_sales_invoice'));
         $filter_delivery_note_no = base64_decode($this->input->get('filter_delivery_note_no'));
         $filter_customer = base64_decode($this->input->get('filter_customer'));
+        $filter_faktur_no = base64_decode($this->input->get('filter_faktur_no'));
         $filter_status = base64_decode($this->input->get('filter_status'));
+
+        // if no filter_type, then get data per this month same as datatables()
+        $date_from = date("Y-m-01");
+        $date_to = date("Y-m-t");
 
         //Config
         $this->db->select('*');
@@ -2542,10 +2555,13 @@ class Sales_invoices extends CI_Controller
             $this->db->where("a.trans_date between '$filter_trans_date_from' and '$filter_trans_date_to'");
         } elseif ($filter_type == "PAY") {
             $this->db->where("a.due_date between '$filter_due_date_from' and '$filter_due_date_to'");
+        } else {
+            $this->db->where("a.trans_date between '$date_from' and '$date_to'");
         }
         $this->db->like('a.number', $filter_sales_invoice);
         $this->db->like('a.delivery_note_no', $filter_delivery_note_no);
         $this->db->like('a.customer_id', $filter_customer);
+        $this->db->like('a.faktur_no', $filter_faktur_no);
         $this->db->like('a.status', $filter_status);
         $this->db->order_by('a.status', 'ASC');
         $this->db->order_by('a.trans_date', 'DESC');
@@ -2671,7 +2687,12 @@ class Sales_invoices extends CI_Controller
         $filter_sales_invoice = base64_decode($this->input->get('filter_sales_invoice'));
         $filter_delivery_note_no = base64_decode($this->input->get('filter_delivery_note_no'));
         $filter_customer = base64_decode($this->input->get('filter_customer'));
+        $filter_faktur_no = base64_decode($this->input->get('filter_faktur_no'));
         $filter_status = base64_decode($this->input->get('filter_status'));
+
+        // if no filter_type, then get data per this month same as datatables()
+        $date_from = date("Y-m-01");
+        $date_to = date("Y-m-t");
 
         //Config
         $this->db->select('*');
@@ -2685,10 +2706,13 @@ class Sales_invoices extends CI_Controller
             $this->db->where("a.trans_date between '$filter_trans_date_from' and '$filter_trans_date_to'");
         } elseif ($filter_type == "PAY") {
             $this->db->where("a.due_date between '$filter_due_date_from' and '$filter_due_date_to'");
+        } else {
+            $this->db->where("a.trans_date between '$date_from' and '$date_to'");
         }
         $this->db->like('a.number', $filter_sales_invoice);
         $this->db->like('a.delivery_note_no', $filter_delivery_note_no);
         $this->db->like('a.customer_id', $filter_customer);
+        $this->db->like('a.faktur_no', $filter_faktur_no);
         $this->db->like('a.status', $filter_status);
         $this->db->order_by('a.status', 'ASC');
         $this->db->order_by('a.trans_date', 'DESC');
@@ -2812,7 +2836,12 @@ class Sales_invoices extends CI_Controller
         $filter_sales_invoice = base64_decode($this->input->get('filter_sales_invoice'));
         $filter_delivery_note_no = base64_decode($this->input->get('filter_delivery_note_no'));
         $filter_customer = base64_decode($this->input->get('filter_customer'));
+        $filter_faktur_no = base64_decode($this->input->get('filter_faktur_no'));
         $filter_status = base64_decode($this->input->get('filter_status'));
+
+        // if no filter_type, then get data per this month same as datatables()
+        $date_from = date("Y-m-01");
+        $date_to = date("Y-m-t");
 
         if ($filter_type == "PID") {
             $periode =  $filter_trans_date_from . ' to ' . $filter_trans_date_to;
@@ -2820,6 +2849,9 @@ class Sales_invoices extends CI_Controller
         } elseif ($filter_type == "PAY") {
             $period_due =  $filter_due_date_from . ' to ' . $filter_due_date_to;
             $periode =  "-";
+        } else {
+            $periode =  $date_from . ' to ' . $date_to;
+            $period_due =  "-";
         }
 
         //Config
@@ -2837,10 +2869,13 @@ class Sales_invoices extends CI_Controller
             $this->db->where("a.trans_date between '$filter_trans_date_from' and '$filter_trans_date_to'");
         } elseif ($filter_type == "PAY") {
             $this->db->where("a.due_date between '$filter_due_date_from' and '$filter_due_date_to'");
+        } else {
+            $this->db->where("a.trans_date between '$date_from' and '$date_to'");
         }
         $this->db->like('a.number', $filter_sales_invoice);
         $this->db->like('a.delivery_note_no', $filter_delivery_note_no);
         $this->db->like('a.customer_id', $filter_customer);
+        $this->db->like('a.faktur_no', $filter_faktur_no);
         $this->db->like('a.status', $filter_status);
         $this->db->order_by('a.status', 'ASC');
         $this->db->order_by('a.customer_id', 'ASC');
@@ -2967,7 +3002,12 @@ class Sales_invoices extends CI_Controller
         $filter_sales_invoice = base64_decode($this->input->get('filter_sales_invoice'));
         $filter_delivery_note_no = base64_decode($this->input->get('filter_delivery_note_no'));
         $filter_customer = base64_decode($this->input->get('filter_customer'));
+        $filter_faktur_no = base64_decode($this->input->get('filter_faktur_no'));
         $filter_status = base64_decode($this->input->get('filter_status'));
+
+        // if no filter_type, then get data per this month same as datatables()
+        $date_from = date("Y-m-01");
+        $date_to = date("Y-m-t");
 
         if ($filter_type == "PID") {
             $periode =  $filter_trans_date_from . ' to ' . $filter_trans_date_to;
@@ -2976,7 +3016,7 @@ class Sales_invoices extends CI_Controller
             $period_due =  $filter_due_date_from . ' to ' . $filter_due_date_to;
             $periode =  "-";
         } else {
-            $periode =  "-";
+            $periode =  $date_from . ' to ' . $date_to;
             $period_due =  "-";
         }
 
@@ -2995,10 +3035,13 @@ class Sales_invoices extends CI_Controller
             $this->db->where("b.trans_date between '$filter_trans_date_from' and '$filter_trans_date_to'");
         } elseif ($filter_type == "PAY") {
             $this->db->where("b.due_date between '$filter_due_date_from' and '$filter_due_date_to'");
+        } else {
+            $this->db->where("b.trans_date between '$date_from' and '$date_to'");
         }
         $this->db->like('b.number', $filter_sales_invoice);
         $this->db->like('b.delivery_note_no', $filter_delivery_note_no);
         $this->db->like('b.customer_id', $filter_customer);
+        $this->db->like('b.faktur_no', $filter_faktur_no);
         $this->db->like('b.status', $filter_status);
         $this->db->group_by('a.number');
         $this->db->group_by('a.account_number');
