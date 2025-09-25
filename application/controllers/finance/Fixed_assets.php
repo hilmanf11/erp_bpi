@@ -30,7 +30,7 @@ class Fixed_assets extends CI_Controller
                 $data['filter_from'] = $row->trans_date;
             } else { 
                 // Jika data tidak ditemukan, beri nilai default
-                $data['filter_from'] = null; // Atau nilai default seperti 'N/A', tanggal tertentu, dsb.
+                $data['filter_from'] = date('Y-m-1');
             }
 
             $this->load->view('template/header', $data);
@@ -72,7 +72,7 @@ class Fixed_assets extends CI_Controller
     }
 
     // GET ASSET CATEGORY : Auto based on product family
-    public function readAssetCategory($id) 
+    public function readAssetFamily($id) 
     {
         if (empty($id)) {
             echo json_encode(null); 
@@ -82,6 +82,7 @@ class Fixed_assets extends CI_Controller
         $item_rm_id = base64_decode($id);
 
         $this->db->select('a.item_rm_id, b.item_family_id, c.name as family_name');
+        $this->db->select('c.useful_life_of_asset_year as asset_year');
         $this->db->from('purchase_invoices a');
         $this->db->join('item_rm b', 'a.item_rm_id = b.id');
         $this->db->join('item_familys c', 'b.item_family_id = c.id');

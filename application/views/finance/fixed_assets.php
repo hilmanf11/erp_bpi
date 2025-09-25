@@ -8,7 +8,7 @@
     </thead>
     <thead>
         <tr>
-            <th rowspan="2" data-options="field:'asset_category_name',width:200,halign:'center'">Asset Category</th>
+            <th rowspan="2" data-options="field:'asset_category_name',width:200,halign:'center'">Asset Family</th>
             <th rowspan="2" data-options="field:'asset_category_type',width:200,halign:'center'">Asset Type</th>
             <th rowspan="2" data-options="field:'purchase_invoice_number',width:150,halign:'center'">Purchase Invoice No</th>
             <th rowspan="2" data-options="field:'supplier_name',width:200,halign:'center'">Supplier Name</th>
@@ -52,7 +52,7 @@
                     <input style="width:28%;" id="filter_to" value="<?= date("Y-m-t") ?>" class="easyui-datebox" data-options="formatter:myformatter,parser:myparser, editable:false">
                 </div>
                 <div class="fitem">
-                    <span style="width:35%; display:inline-block;">Asset Category</span>
+                    <span style="width:35%; display:inline-block;">Asset Family</span>
                     <input style="width:60%;" id="filter_category" class="easyui-combobox">
                 </div>
                 <div class="fitem">
@@ -102,7 +102,7 @@
             <ul>
                 <li>Get data from Modul Purchase Invoicing and <b>Account Category = Fixed Asset</b></li>
                 <li><b>Asset Type = Account Name</b> (Master Data > Accounting & Finance > Chart of Account)</li>
-                <li><b>Asset Category = Product Family</b> (Master Data > Accounting & Finance > Item Family)</li>
+                <li><b>Asset Family = Product Family</b> (Master Data > Accounting & Finance > Item Family)</li>
             </ul>
         </div>
         <div title="CONDITIONS" style="padding: 20px;">
@@ -132,11 +132,11 @@
                     <input style="width:60%;" name="name" id="name" readonly class="easyui-textbox">
                 </div>
                 <div class="fitem" hidden>
-                    <span style="width:35%; display:inline-block;">Asset Category Code</span>
+                    <span style="width:35%; display:inline-block;">Asset Family Code</span>
                     <input style="width:60%;" name="item_family_id" id="item_family_id" required="" class="easyui-textbox" readonly>
                 </div>
                 <div class="fitem">
-                    <span style="width:35%; display:inline-block;">Asset Category</span>
+                    <span style="width:35%; display:inline-block;">Asset Family</span>
                     <input style="width:60%;" name="asset_category_name" id="asset_category_name" required="" class="easyui-textbox" readonly>
                 </div>
                 <div class="fitem">
@@ -451,14 +451,15 @@
                     ],
                     // Fungsi onSelect untuk item aset
                     onSelect: function(val2, row2) {
-                        // Get Asset Category
+                        // Get Asset Family
                         $.ajax({
                             type: "post",
-                            url: "<?= base_url('finance/fixed_assets/readAssetCategory/') ?>" + window.btoa(row2.item_rm_id),
+                            url: "<?= base_url('finance/fixed_assets/readAssetFamily/') ?>" + window.btoa(row2.item_rm_id),
                             dataType: "json",
                             success: function(assetCategory) {
                                 $("#item_family_id").textbox('setValue', assetCategory.item_family_id);
                                 $("#asset_category_name").textbox('setValue', assetCategory.family_name);
+                                $("#estimate_year").textbox('setValue', assetCategory.asset_year);
                             }
                         });
 
@@ -535,6 +536,31 @@
                         $("#supplier_name").textbox('setValue', row2.supplier_name);
                         $("#qty").numberbox('setValue', row2.qty);
                         $("#currency").textbox('setValue', row2.currency); // Gunakan currency yang asli
+
+                        $("#estimate_year").numberbox({
+                            onChange: function(val) {
+                                var cost = $("#cost").numberbox('getValue');
+                                var trans_date = row2.trans_date;
+
+                                if(trans_date != ""){
+                                    $("#estimate_month").numberbox('setValue', (parseInt(val) * 12));
+                                    $("#depreciation").numberbox('setValue', (cost / (parseInt(val) * 12)));
+
+                                    $.ajax({
+                                        type: "post",
+                                        url: "<?= base_url('finance/fixed_assets/readExpired/') ?>" + (parseInt(val) * 12) + "/" + btoa(trans_date),
+                                        dataType: "html",
+                                        success: function (response) {
+                                            $("#expired_date").datebox('setValue', response);
+                                        }
+                                    });
+                                }else{
+                                    toastr.error("Please Select Purchase Date First");
+                                    $("#estimate_year").numberbox('clear');
+                                }
+                            }
+                        });
+
                     }
                 });
             }
@@ -689,7 +715,7 @@
             url: '<?= base_url('finance/fixed_assets/readAssetCategories') ?>',
             valueField: 'number',
             textField: 'name',
-            prompt: "Choose Category",
+            prompt: "Choose Family",
             icons: [{
                 iconCls: 'icon-clear',
                 handler: function(e) {
@@ -780,29 +806,6 @@
             }],
         });
 
-        $("#estimate_year").numberbox({
-            onChange: function(val) {
-                var cost = $("#cost").numberbox('getValue');
-                var trans_date = $("#trans_date").datebox('getValue');
-
-                if(trans_date != ""){
-                    $("#estimate_month").numberbox('setValue', (parseInt(val) * 12));
-                    $("#depreciation").numberbox('setValue', (cost / (parseInt(val) * 12)));
-
-                    $.ajax({
-                        type: "post",
-                        url: "<?= base_url('finance/fixed_assets/readExpired/') ?>" + (parseInt(val) * 12) + "/" + btoa(trans_date),
-                        dataType: "html",
-                        success: function (response) {
-                            $("#expired_date").datebox('setValue', response);
-                        }
-                    });
-                }else{
-                    toastr.error("Please Select Purchase Date First");
-                    $("#estimate_year").numberbox('clear');
-                }
-            }
-        })
     });
 
     //Format Datepicker
