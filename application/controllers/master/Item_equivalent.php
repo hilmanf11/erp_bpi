@@ -42,7 +42,7 @@ class Item_equivalent extends CI_Controller
        $this->db->select('*');
        $this->db->from('item_rm');
        $this->db->where('item_category_id', 'C01');
-       $this->db->where('number', $post);
+       $this->db->like('number', $post);
        $this->db->group_by('id');
        $this->db->order_by('number', 'ASC');
        $records = $this->db->get()->result_array();
@@ -58,7 +58,7 @@ class Item_equivalent extends CI_Controller
        $this->db->from('item_rm');
        $this->db->where('item_category_id', 'C01');
        $this->db->where('division', $division);
-       $this->db->where('number', $post);
+       $this->db->like('number', $post);
        $this->db->group_by('id');
        $this->db->order_by('number', 'ASC');
        $records = $this->db->get()->result_array();
