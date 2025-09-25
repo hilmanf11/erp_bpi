@@ -83,11 +83,10 @@ class Checksheets extends CI_Controller
                 LEFT JOIN supply_sheets c ON a.wo_no = c.workorder
                 WHERE a.status = 0 
                 AND a.wo_no != '' 
-                AND b.type !='SA'
-                AND a.status_subcont ='NO'
                 AND (
                         a.division = 'MTS'
                         OR (a.division = 'INJ' AND a.status_subcont = 'YES')
+                        OR (a.division = 'INJ' AND a.status_subcont = 'NO')
                         OR (a.division = 'INJ' AND a.status_subcont = 'NO' AND c.status = 1)
                     )
                 AND (
