@@ -5,6 +5,7 @@
             <th rowspan="2" field="ck" checkbox="true"></th>
             <th rowspan="2" data-options="field:'details',width:90,align:'center', formatter:btnDetails">Detail</th>
             <th rowspan="2" data-options="field:'number',width:150,halign:'center'">Sales Invoice No</th>
+            <th rowspan="2" data-options="field:'faktur_no',width:150,align:'center'">Faktur No</th>
             <th rowspan="2" data-options="field:'status',width:100,align:'center',formatter:statusformat,styler:statusStyle">Receipt<br>Status</th>
             <th rowspan="2" data-options="field:'gl_no',width:100,align:'center'">GL NO</th>
             <th rowspan="2" data-options="field:'trans_date',width:100,align:'center'">Trans Date</th>
@@ -257,7 +258,7 @@
                     </div>
                     <div class="fitem">
                         <span style="width:35%; display:inline-block;">BC No</span>
-                        <input style="width:30%;" id="d_bc_no" name="d_bc_no" class="easyui-textbox" data-options="prompt:'Number Only'">
+                        <input style="width:30%;" id="d_bc_no" name="d_bc_no" class="easyui-textbox" >
                     </div>
                     <div class="fitem">
                         <span style="width:35%; display:inline-block;">Keterangan Tambahan</span>
