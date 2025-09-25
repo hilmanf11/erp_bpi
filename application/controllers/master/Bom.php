@@ -126,8 +126,13 @@ class Bom extends CI_Controller
             $this->db->select('b.id as item_fg_id, b.number as item_fg_number, b.name as item_fg_name');
             $this->db->from('bom a');
             $this->db->join('item_fg b', 'a.item_fg_id = b.id');
-            $this->db->like('a.item_fg_id', $filter_item_fg_id);
-            $this->db->like('a.item_rm_id', $filter_item_rm_id);
+            if (!empty($filter_item_fg_id)) {
+                $this->db->where('a.item_fg_id', $filter_item_fg_id);
+            }
+
+            if (!empty($filter_item_rm_id)) {
+                $this->db->where('a.item_rm_id', $filter_item_rm_id);
+            }
             $this->db->group_by('b.number');
             $this->db->order_by('a.created_date', 'DESC');
             // $this->db->order_by('b.number', 'ASC');
