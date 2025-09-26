@@ -8,6 +8,7 @@
     </thead>
     <thead>
         <tr>
+            <th rowspan="2" data-options="field:'item_rm_id',width:200,align:'center',hidden:true">Item RM ID</th>
             <th rowspan="2" data-options="field:'asset_category_name',width:200,halign:'center'">Asset Family</th>
             <th rowspan="2" data-options="field:'asset_category_type',width:200,halign:'center'">Asset Type</th>
             <th rowspan="2" data-options="field:'purchase_invoice_number',width:150,halign:'center'">Purchase Invoice No</th>
@@ -124,12 +125,16 @@
                     <input style="width:60%;" name="purchase_invoice_number" id="purchase_invoice_number" required="" class="easyui-combogrid">
                 </div>
                 <div class="fitem">
-                    <span style="width:35%; display:inline-block;">Asset No</span>
-                    <input style="width:60%;" name="number" id="number" required="" class="easyui-combogrid">
+                    <span style="width:35%; display:inline-block;">Asset Name</span>
+                    <input style="width:60%;" name="name" id="name" required="" class="easyui-combogrid">
+                </div>
+                <div class="fitem" hidden>
+                    <span style="width:35%; display:inline-block;">Item RM ID</span>
+                    <input style="width:60%;" name="item_rm_id" id="item_rm_id" readonly class="easyui-textbox">
                 </div>
                 <div class="fitem">
-                    <span style="width:35%; display:inline-block;">Asset Name</span>
-                    <input style="width:60%;" name="name" id="name" readonly class="easyui-textbox">
+                    <span style="width:35%; display:inline-block;">Asset No</span>
+                    <input style="width:60%;" name="number" id="number" readonly class="easyui-textbox">
                 </div>
                 <div class="fitem" hidden>
                     <span style="width:35%; display:inline-block;">Asset Family Code</span>
@@ -239,6 +244,10 @@
     //Add Data
     function add() {
         $('#dlg_insert').dialog('open');
+        $("#dlg_insert").window('setTitle', "Add New Data");
+        $('#purchase_invoice_number').combogrid('readonly', false);
+        $('#name').combogrid('readonly', false);
+
         url_save = '<?= base_url('finance/fixed_assets/create') ?>';
         $('#frm_insert').form('clear');
        
@@ -256,8 +265,8 @@
             $('#frm_insert').form('load', row);
 
             $('#purchase_invoice_number').combogrid('readonly', true);
-            $('#number').combogrid('readonly', true);
-            $('#name').textbox('readonly', true);
+            $('#number').textbox('readonly', true);
+            $('#name').combogrid('readonly', true);
             
             url_save = '<?= base_url('finance/fixed_assets/update') ?>?id=' + btoa(row.id);
         } else {
@@ -430,14 +439,14 @@
             ],
             onSelect: function(val, row) {
                 // Setelah memilih purchase invoice, muat data produk/item yang terkait
-                $('#number').combogrid({
+                $('#name').combogrid({
                     url: '<?= base_url('finance/fixed_assets/readProductPi/') ?>' + window.btoa(row.number),
                     panelWidth: 400,
                     idField: 'item_no',
                     textField: 'item_no',
                     mode: 'remote',
                     fitColumns: true,
-                    prompt: "Choose Asset No",
+                    prompt: "Choose Asset",
                     columns: [
                         [{
                             field: 'item_no',
@@ -460,6 +469,16 @@
                                 $("#item_family_id").textbox('setValue', assetCategory.item_family_id);
                                 $("#asset_category_name").textbox('setValue', assetCategory.family_name);
                                 $("#estimate_year").textbox('setValue', assetCategory.asset_year);
+                            }
+                        });
+
+                        // Get Asset No
+                        $.ajax({
+                            type: "post",
+                            url: "<?= base_url('finance/fixed_assets/getAssetNo/') ?>" + window.btoa(row.number) + "/" + window.btoa(row2.item_rm_id),
+                            dataType: "json",
+                            success: function(assetNo) {
+                                $("#number").textbox('setValue', assetNo);
                             }
                         });
 
@@ -532,6 +551,7 @@
                         }
 
                         $("#name").textbox('setValue', row2.item_name);
+                        $("#item_rm_id").textbox('setValue', row2.item_rm_id);
                         $("#trans_date").datebox('setValue', row2.trans_date);
                         $("#supplier_name").textbox('setValue', row2.supplier_name);
                         $("#qty").numberbox('setValue', row2.qty);

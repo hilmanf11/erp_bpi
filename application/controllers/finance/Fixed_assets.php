@@ -51,9 +51,10 @@ class Fixed_assets extends CI_Controller
         $this->db->from('purchase_invoices a');
         $this->db->join('account_coa b', 'a.account_number = b.account_number');
         $this->db->join('account_group_details c', 'b.account_group_detail_id = c.id');
-        $this->db->join('asset_fixeds d', 'a.number = d.purchase_invoice_number AND a.item_no = d.number', 'left');
+        $this->db->join('asset_fixeds d', 'a.number = d.purchase_invoice_number AND a.item_rm_id = d.item_rm_id', 'left');
         $this->db->where("c.name LIKE '%Fixed Asset%'");
-        $this->db->where('d.number IS NULL');
+        $this->db->where('d.purchase_invoice_number IS NULL');
+        $this->db->where('d.item_rm_id IS NULL');
         $this->db->like('a.number', $post);
         $this->db->order_by('a.number', 'asc');
         $data = $this->db->get()->result_array();
@@ -114,7 +115,7 @@ class Fixed_assets extends CI_Controller
             $this->db->join('suppliers b', 'a.supplier_id = b.id');
             $this->db->join('asset_fixeds c', 'a.number = c.purchase_invoice_number AND a.item_no = c.number', 'left');
             $this->db->where('a.number', $purchase_invoice_no);
-            $this->db->where('c.number IS NULL'); // Hanya ambil item yang belum menjadi asset
+            $this->db->where('c.item_rm_id IS NULL'); // Hanya ambil item yang belum menjadi asset
             $this->db->order_by('a.item_no', 'asc');
             
             $data = $this->db->get()->result_array();
@@ -122,6 +123,59 @@ class Fixed_assets extends CI_Controller
             echo json_encode($data);   
         }
         return "";
+    }
+
+    // GET AUTO-INCREMENT ASSET NO
+    public function getAssetNo($number, $item_id)
+    {
+        $pi_number = base64_decode($number);
+        $item_rm_id = base64_decode($item_id);
+
+        // Pastikan data purchase invoice ditemukan
+        $readPI = $this->db->select('number, item_rm_id, trans_date, YEAR(trans_date) as trans_year, MONTH(trans_date) as trans_month')
+            ->from('purchase_invoices')
+            ->where('number', $pi_number)
+            ->where('item_rm_id', $item_rm_id)
+            ->get()->row();
+
+        if (empty($readPI)) {
+            echo json_encode(["message" => "Purchase Invoice not found!"]);
+        }
+
+        $trans_year = $readPI->trans_year;
+        // Format bulan menjadi 2 digit (misalnya, 09 untuk September)
+        $trans_month = str_pad($readPI->trans_month, 2, '0', STR_PAD_LEFT);
+
+        // Dapatkan kode family
+        $this->db->select('PRODUCT.name as item_name, FAMILY.name family_name, FAMILY.number as code');
+        $this->db->from('item_rm PRODUCT');
+        $this->db->join('item_familys FAMILY', 'PRODUCT.item_family_id = FAMILY.id');
+        $this->db->where('PRODUCT.id', $item_rm_id);
+        $getFamily = $this->db->get()->row();
+        
+        // Pastikan family ditemukan
+        if (empty($getFamily)) {
+            echo json_encode(["message" => "Product Family not found!"]);
+        }
+        
+        // Tentukan prefix nomor aset
+        $asset_prefix = $getFamily->code . "-" . $trans_year . "-" . $trans_month . "-";
+        
+        // Ambil nomor aset terbesar sekali sebelum loop
+        $this->db->select_max('number', 'kode');
+        $this->db->like('number', $asset_prefix, 'after');
+        $sqlGetID = $this->db->get('asset_fixeds')->row();
+        
+        $urutan = 0;
+        if ($sqlGetID && $sqlGetID->kode) {
+            $urutan = (int) substr($sqlGetID->kode, -5);
+        }
+        
+        // Tambahkan increment
+        $urutan++;
+        $asset_number = $asset_prefix . sprintf("%05d", $urutan);
+
+        echo json_encode($asset_number);
     }
 
     //GET department : auto fill based on purchase request (Bu Nina)
@@ -354,23 +408,57 @@ class Fixed_assets extends CI_Controller
         if ($this->input->post()) {
             $post = $this->input->post();
             $send = "[]";
+
+            $pi_number  = $post['purchase_invoice_number'];
+            $item_rm_id = $post['item_rm_id'];
+
+            $readPI = $this->db->select('item_rm_id, trans_date, qty, YEAR(trans_date) as trans_year, MONTH(trans_date) as trans_month')
+            ->from('purchase_invoices')
+            ->where('number', $pi_number)
+            ->where('item_rm_id', $item_rm_id)
+            ->get()->row();
+
+            if (empty($readPI)) {
+                show_error("Cannot Process your request! Purchase Invoice not found!");
+            }
+
+            $trans_year = $readPI->trans_year;
+            $trans_month = str_pad($readPI->trans_month, 2, '0', STR_PAD_LEFT);
+            $qty = $post['qty'] ?? $readPI->qty;
+
+            $this->db->select('PRODUCT.name as item_name, FAMILY.name as family_name, FAMILY.number as code');
+            $this->db->from('item_rm PRODUCT');
+            $this->db->join('item_familys FAMILY', 'PRODUCT.item_family_id = FAMILY.id');
+            $this->db->where('PRODUCT.id', $item_rm_id);
+            $getFamily = $this->db->get()->row();
+            
+            if (empty($getFamily)) {
+                show_error("Cannot Process your request! Item Family not found!");
+            }
+        
+            $asset_prefix = $getFamily->code . "." . $trans_year . "." . $trans_month . ".";
+            
+            // Ambil nomor aset terbesar sekali sebelum loop
+            $this->db->select_max('number', 'kode');
+            $this->db->like('number', $asset_prefix, 'after');
+            $sqlGetID = $this->db->get('asset_fixeds')->row();
+            
+            $urutan = 0;
+            if ($sqlGetID && $sqlGetID->kode) {
+                $urutan = (int) substr($sqlGetID->kode, -5);
+            }
+
             for ($i = 0; $i < $post['qty']; $i++) {
 
                 if ($post['qty'] > 1) {
-                    $asset_no = $post['number'];
-                    $sqlGetID = $this->db->query("SELECT max(`number`) as kode FROM asset_fixeds WHERE `number` like '%$asset_no%'");
-                    $rowID = $sqlGetID->row();
-                    $kode = $rowID->kode;
-
-                    if ($kode == NULL) {
-                        $number = $post['number'] . sprintf("%03d", ($i + 1));
-                    } else {
-                        $urutan = (int) substr($kode, -3);
+                    if ($sqlGetID->kode == NULL) {
+                        $asset_number = $asset_prefix . sprintf("%05d", ($i + 1));
+                    } else {                        
                         $urutan++;
-                        $number = $post['number'] . sprintf("%03s", $urutan);
+                        $asset_number = $asset_prefix . sprintf("%05d", $urutan);
                     }
                 } else {
-                    $number = $post['number'];
+                    $asset_number = $post['number'];
                 }
 
                 $data = array(
@@ -378,7 +466,8 @@ class Fixed_assets extends CI_Controller
                     "asset_category_number"   => $post['asset_category_number'] ?? null,
                     "purchase_invoice_number" => $post['purchase_invoice_number'],
                     "supplier_name"           => $post['supplier_name'],
-                    "number"                  => $number,
+                    "item_rm_id"              => $post['item_rm_id'],
+                    "number"                  => $asset_number,
                     "name"                    => $post['name'],
                     "trans_date"              => $post['trans_date'],
                     "qty"                     => 1,
