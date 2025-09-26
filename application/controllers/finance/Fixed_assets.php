@@ -113,7 +113,7 @@ class Fixed_assets extends CI_Controller
             $this->db->select('a.item_rm_id, a.item_no, a.item_name, a.qty, a.price, a.trans_date, a.currency, b.name as supplier_name');
             $this->db->from('purchase_invoices a');
             $this->db->join('suppliers b', 'a.supplier_id = b.id');
-            $this->db->join('asset_fixeds c', 'a.number = c.purchase_invoice_number AND a.item_no = c.number', 'left');
+            $this->db->join('asset_fixeds c', 'a.number = c.purchase_invoice_number AND a.item_rm_id = c.item_rm_id', 'left');
             $this->db->where('a.number', $purchase_invoice_no);
             $this->db->where('c.item_rm_id IS NULL'); // Hanya ambil item yang belum menjadi asset
             $this->db->order_by('a.item_no', 'asc');
@@ -159,7 +159,7 @@ class Fixed_assets extends CI_Controller
         }
         
         // Tentukan prefix nomor aset
-        $asset_prefix = $getFamily->code . "-" . $trans_year . "-" . $trans_month . "-";
+        $asset_prefix = $getFamily->code . "." . $trans_year . "." . $trans_month . ".";
         
         // Ambil nomor aset terbesar sekali sebelum loop
         $this->db->select_max('number', 'kode');
@@ -424,7 +424,6 @@ class Fixed_assets extends CI_Controller
 
             $trans_year = $readPI->trans_year;
             $trans_month = str_pad($readPI->trans_month, 2, '0', STR_PAD_LEFT);
-            $qty = $post['qty'] ?? $readPI->qty;
 
             $this->db->select('PRODUCT.name as item_name, FAMILY.name as family_name, FAMILY.number as code');
             $this->db->from('item_rm PRODUCT');

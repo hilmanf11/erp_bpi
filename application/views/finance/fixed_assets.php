@@ -826,6 +826,30 @@
             }],
         });
 
+        $("#estimate_year").numberbox({
+            onChange: function(val) {
+                var cost = $("#cost").numberbox('getValue');
+                var trans_date = $("#trans_date").datebox('getValue');
+
+                if(trans_date != ""){
+                    $("#estimate_month").numberbox('setValue', (parseInt(val) * 12));
+                    $("#depreciation").numberbox('setValue', (cost / (parseInt(val) * 12)));
+
+                    $.ajax({
+                        type: "post",
+                        url: "<?= base_url('finance/fixed_assets/readExpired/') ?>" + (parseInt(val) * 12) + "/" + btoa(trans_date),
+                        dataType: "html",
+                        success: function (response) {
+                            $("#expired_date").datebox('setValue', response);
+                        }
+                    });
+                }else{
+                    toastr.error("Please Select Purchase Date First");
+                    $("#estimate_year").numberbox('clear');
+                }
+            }
+        });
+
     });
 
     //Format Datepicker
