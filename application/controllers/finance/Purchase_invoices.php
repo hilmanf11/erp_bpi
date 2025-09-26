@@ -840,7 +840,7 @@ class Purchase_invoices extends CI_Controller
     {
         $pi_number = base64_decode($number);
         $main_pi = $this->db->select('account_number, currency, rate')->from('purchase_invoices')->where('number', $pi_number)->get()->row();
-        $getAllPI  = $this->db->select('*')->from('purchase_invoices')->where('number', $pi_number)->get()->result_array();
+        $getAllPI  = $this->db->select('*, YEAR(trans_date) as trans_year, MONTH(trans_date) as trans_month')->from('purchase_invoices')->where('number', $pi_number)->get()->result_array();
 
         // Auto-insert to fixed asset jika CATEGORY = FIXED ASSET
         $this->db->select('account_coa.account_number, account_coa.account_name, account_group_details.name as account_group_detail_name');
@@ -859,8 +859,13 @@ class Purchase_invoices extends CI_Controller
                 // Get Item di dalam PI (jika terdapat item > 1)
                 foreach ($getAllPI as $item) 
                 {
-                    $readItemFamily = $this->db->select('b.id as item_id, c.id as item_family_id, c.name as item_family_name, c.useful_life_of_asset_year')->from('item_rm b')->join('item_familys c', 'b.item_family_id = c.id')->where('b.id', $item['item_rm_id'])->get()->row();
+                    $readItemFamily = $this->db->select('b.id as item_id, c.id as item_family_id, c.number as code, c.name as item_family_name, c.useful_life_of_asset_year')
+                        ->from('item_rm b')
+                        ->join('item_familys c', 'b.item_family_id = c.id')
+                        ->where('b.id', $item['item_rm_id'])
+                        ->get()->row();
                     $item_family_id = $readItemFamily->item_family_id ?? null;
+                    $family_code    = $readItemFamily->code ?? "UNDEFINED";
                     $estimate_year  = $readItemFamily->useful_life_of_asset_year ?? 0;
                     
                     $readSupplier  = $this->db->select('id, name as supplier_name')->from('suppliers')->where('id', $item['supplier_id'])->get()->row();
@@ -961,29 +966,39 @@ class Purchase_invoices extends CI_Controller
                             } 
                             else 
                             {
+                                // ASSET NO
+                                $trans_year = $item['trans_year'];
+                                $trans_month = str_pad($item['trans_month'], 2, '0', STR_PAD_LEFT);
+                                $asset_prefix = $family_code . "." . $trans_year . "." . $trans_month . ".";
+            
+                                // Ambil nomor aset terbesar sekali sebelum loop
+                                $this->db->select_max('number', 'kode');
+                                $this->db->like('number', $asset_prefix, 'after');
+                                $sqlGetID = $this->db->get('asset_fixeds')->row();
+                                
+                                $urutan = 0;
+                                if ($sqlGetID && $sqlGetID->kode) {
+                                    $urutan = (int) substr($sqlGetID->kode, -5);
+                                }
+
                                 // AUTO-INSERT multiple qty > 1
                                 for ($i = 0; $i < $item['qty']; $i++) {
                                     if ($item['qty'] > 1) {
-                                        $asset_no = $item['item_no'];
-                                        $sqlGetID = $this->db->query("SELECT max(`number`) as kode FROM asset_fixeds WHERE `number` like '%$asset_no%'");
-                                        $rowID = $sqlGetID->row();
-                                        $kode = $rowID->kode;
-
-                                        if ($kode == NULL) {
-                                            $number = $item['item_no'] . sprintf("%03d", ($i + 1));
-                                        } else {
-                                            $urutan = (int) substr($kode, -3);
+                                        if ($sqlGetID->kode == NULL) {
+                                            $asset_number = $asset_prefix . sprintf("%05d", ($i + 1));
+                                        } else {                        
                                             $urutan++;
-                                            $number = $item['item_no'] . sprintf("%03s", $urutan);
+                                            $asset_number = $asset_prefix . sprintf("%05d", $urutan);
                                         }
                                     } else {
-                                        $number = $item['item_no'];
-                                    }                                
+                                        $urutan++;
+                                        $asset_number = $asset_prefix . sprintf("%05d", $urutan);
+                                    }
 
                                     $data = [
                                         "purchase_invoice_number" => $item['number'],
                                         "item_rm_id"              => $item['item_rm_id'],
-                                        "number"                  => $number,
+                                        "number"                  => $asset_number,
                                         "name"                    => $item_name,
                                         "item_family_id"          => $item_family_id,
                                         "asset_category_number"   => null,
