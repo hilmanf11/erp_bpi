@@ -322,11 +322,15 @@ class Report_history_transactions extends CI_Controller
             (COALESCE(h.qty_issued, 0) + COALESCE(i.qty_trans_rm_out, 0)) AS qty_out,
             (COALESCE(h1.qty_issued, 0) + COALESCE(i1.qty_trans_rm_out, 0)) AS qty_out_minus1,
             (COALESCE(h2.qty_issued, 0) + COALESCE(i2.qty_trans_rm_out, 0)) AS qty_out_minus2,
-            (COALESCE(h3.qty_issued, 0) + COALESCE(i3.qty_trans_rm_out, 0)) AS qty_out_minus3
+            (COALESCE(h3.qty_issued, 0) + COALESCE(i3.qty_trans_rm_out, 0)) AS qty_out_minus3,
+            (COALESCE(begin_whs.begin_bpi, 0) + COALESCE(y.in_bpi,0) - COALESCE(y.out_bpi,0) + COALESCE(d_bpi.qty_scan_in_bpi, 0)) AS qty_bpi,
+            (COALESCE(begin_whs.begin_plant1, 0)  + COALESCE(y.in_plant1,0) - COALESCE(y.out_plant1,0) + COALESCE(d_plant1.qty_scan_in_plant1, 0)) AS qty_plant1
         FROM item_rm a
         JOIN item_familys b ON a.item_family_id = b.id AND b.number != 'FG'
         JOIN item_categories c ON a.item_category_id = c.id
         LEFT JOIN (SELECT b.item_rm_id, SUM(a.qty) AS qty_scan_in FROM scan_item_receipts a JOIN purchase_order_receipts b ON a.receipt_id = b.receipt_id WHERE b.receipt_date BETWEEN '$filter_from' AND '$filter_to' GROUP BY b.item_rm_id) d ON a.id = d.item_rm_id
+        LEFT JOIN (SELECT b.item_rm_id, SUM(a.qty) AS qty_scan_in_bpi FROM scan_item_receipts a JOIN purchase_order_receipts b ON a.receipt_id = b.receipt_id WHERE b.receipt_date BETWEEN '$filter_from' AND '$filter_to' AND a.plant = 'BPI' GROUP BY b.item_rm_id) d_bpi ON a.id = d_bpi.item_rm_id
+        LEFT JOIN (SELECT b.item_rm_id, SUM(a.qty) AS qty_scan_in_plant1 FROM scan_item_receipts a JOIN purchase_order_receipts b ON a.receipt_id = b.receipt_id WHERE b.receipt_date BETWEEN '$filter_from' AND '$filter_to' AND a.plant = 'PLANT 1' GROUP BY b.item_rm_id) d_plant1 ON a.id = d_plant1.item_rm_id
         LEFT JOIN (SELECT item_rm_id, SUM(qty) AS qty_os_rm FROM os_rm WHERE trans_date BETWEEN '$filter_from' AND '$filter_to' GROUP BY item_rm_id) e ON a.id = e.item_rm_id
         LEFT JOIN (SELECT item_rm_id, SUM(qty) AS qty_trans_rm_in FROM transaction_rm WHERE request_date BETWEEN '$filter_from' AND '$filter_to' AND transaction_kind = 'IN' GROUP BY item_rm_id) f ON a.id = f.item_rm_id
         LEFT JOIN (SELECT a.item_rm_id, SUM(c.qty) as return_qty FROM return_materials a JOIN return_material_labels b ON a.return_id = b.return_id JOIN scan_item_receipts c ON a.return_id = c.receipt_id AND b.label_no = c.label_no WHERE a.return_date BETWEEN '$filter_from' AND '$filter_to' GROUP BY a.item_rm_id) g ON a.id = g.item_rm_id
@@ -339,7 +343,6 @@ class Report_history_transactions extends CI_Controller
         LEFT JOIN (SELECT item_rm_id, SUM(qty) AS qty_trans_rm_out FROM transaction_rm WHERE request_date BETWEEN '$filter_from_minus2' AND '$filter_to_minus2' AND transaction_kind = 'OUT' GROUP BY item_rm_id) i2 ON a.id = i2.item_rm_id
         LEFT JOIN (SELECT item_rm_id, SUM(qty) AS qty_issued FROM issued_material_details WHERE DATE_FORMAT(created_date, '%Y-%m-%d') BETWEEN '$filter_from_minus3' AND '$filter_to_minus3' GROUP BY item_rm_id) h3 ON a.id = h3.item_rm_id
         LEFT JOIN (SELECT item_rm_id, SUM(qty) AS qty_trans_rm_out FROM transaction_rm WHERE request_date BETWEEN '$filter_from_minus3' AND '$filter_to_minus3' AND transaction_kind = 'OUT' GROUP BY item_rm_id) i3 ON a.id = i3.item_rm_id
-
         LEFT JOIN (SELECT item_rm_id, SUM(qty) AS qty_scan_bpm FROM scan_item_bpm WHERE DATE_FORMAT(request_date, '%Y-%m-%d') BETWEEN '$filter_from' AND '$filter_to' GROUP BY item_rm_id) k ON a.id = k.item_rm_id
 
         LEFT JOIN (SELECT a.id, a.number, ((COALESCE(b.qty_scan_in, 0) + COALESCE(c.qty_os_rm, 0) + COALESCE(d.qty_trans_rm_in, 0) + COALESCE(e.return_qty, 0) + COALESCE(h.qty_scan_bpm, 0)) - (COALESCE(f.qty_issued, 0) + COALESCE(g.qty_trans_rm_out, 0))) AS begin_stock
@@ -352,6 +355,81 @@ class Report_history_transactions extends CI_Controller
                         LEFT JOIN (SELECT item_rm_id, SUM(qty) AS qty_trans_rm_out FROM transaction_rm WHERE request_date < '$filter_from' AND transaction_kind = 'OUT' GROUP BY item_rm_id) g ON a.id = g.item_rm_id
                         LEFT JOIN (SELECT item_rm_id, SUM(qty) AS qty_scan_bpm FROM scan_item_bpm WHERE DATE_FORMAT(request_date, '%Y-%m-%d') < '$filter_from' GROUP BY item_rm_id) h ON a.id = h.item_rm_id
                     ) j ON a.id = j.id
+
+        LEFT JOIN (SELECT a.item_rm_id,
+                            CASE WHEN a.transfer_from = 'BPI' THEN a.qty_from ELSE 0 END + CASE WHEN a.transfer_to = 'BPI' THEN a.qty_to ELSE 0 END AS qty_bpi,
+                            CASE WHEN a.transfer_from = 'PLANT 1' THEN a.qty_from ELSE 0 END + CASE WHEN a.transfer_to = 'PLANT 1' THEN a.qty_to ELSE 0 END AS qty_plant1
+                        FROM upload_stock_whs_tf a
+                        WHERE a.trans_date = '2025-09-19'
+                    ) x ON a.id = x.item_rm_id
+        LEFT JOIN (
+            SELECT 
+                item_rm_id,
+                SUM(CASE WHEN transfer_to   = 'BPI'    THEN qty ELSE 0 END) AS in_bpi,
+                SUM(CASE WHEN transfer_from = 'BPI'    THEN qty ELSE 0 END) AS out_bpi,
+                SUM(CASE WHEN transfer_to   = 'PLANT 1' THEN qty ELSE 0 END) AS in_plant1,
+                SUM(CASE WHEN transfer_from = 'PLANT 1' THEN qty ELSE 0 END) AS out_plant1
+            FROM scan_rm_transfer
+           	WHERE DATE_FORMAT(transaction_date, '%Y-%m-%d') BETWEEN '$filter_from'
+           	AND '$filter_to'
+            GROUP BY item_rm_id
+        ) y ON a.id = y.item_rm_id
+        LEFT JOIN (
+            SELECT 
+                base.item_rm_id,
+                COALESCE(base.qty_bpi,0)
+                + COALESCE(rcv_bpi.qty_in,0)
+                + COALESCE(trf_bpi.in_bpi,0)
+                - COALESCE(trf_bpi.out_bpi,0) AS begin_bpi,
+                COALESCE(base.qty_plant1,0)
+                + COALESCE(rcv_plant1.qty_in,0)
+                + COALESCE(trf_plant1.in_plant1,0)
+                - COALESCE(trf_plant1.out_plant1,0) AS begin_plant1
+            FROM (
+                SELECT a.item_rm_id,
+                       SUM(CASE WHEN a.transfer_from = 'BPI' THEN a.qty_from ELSE 0 END + CASE WHEN a.transfer_to = 'BPI' THEN a.qty_to ELSE 0 END) AS qty_bpi,
+                       SUM(CASE WHEN a.transfer_from = 'PLANT 1' THEN a.qty_from ELSE 0 END + CASE WHEN a.transfer_to = 'PLANT 1' THEN a.qty_to ELSE 0 END) AS qty_plant1
+                FROM upload_stock_whs_tf a
+                WHERE a.trans_date = '2025-09-19'
+                GROUP BY a.item_rm_id
+            ) base
+            LEFT JOIN (
+                SELECT b.item_rm_id, SUM(a.qty) AS qty_in
+                FROM scan_item_receipts a
+                JOIN purchase_order_receipts b ON a.receipt_id = b.receipt_id
+                WHERE a.plant = 'BPI' 
+                  AND b.receipt_date >= '2025-09-18' 
+                  AND b.receipt_date < '$filter_from'
+                GROUP BY b.item_rm_id
+            ) rcv_bpi ON base.item_rm_id = rcv_bpi.item_rm_id
+            LEFT JOIN (
+                SELECT b.item_rm_id, SUM(a.qty) AS qty_in
+                FROM scan_item_receipts a
+                JOIN purchase_order_receipts b ON a.receipt_id = b.receipt_id
+                WHERE a.plant = 'PLANT 1' 
+                  AND b.receipt_date >= '2025-09-18' 
+                  AND b.receipt_date < '$filter_from'
+                GROUP BY b.item_rm_id
+            ) rcv_plant1 ON base.item_rm_id = rcv_plant1.item_rm_id
+            LEFT JOIN (
+                SELECT item_rm_id,
+                       SUM(CASE WHEN transfer_to = 'BPI' THEN qty ELSE 0 END) AS in_bpi,
+                       SUM(CASE WHEN transfer_from = 'BPI' THEN qty ELSE 0 END) AS out_bpi
+                FROM scan_rm_transfer
+                WHERE transaction_date >= '2025-09-18'
+                  AND transaction_date < '$filter_from'
+                GROUP BY item_rm_id
+            ) trf_bpi ON base.item_rm_id = trf_bpi.item_rm_id
+            LEFT JOIN (
+                SELECT item_rm_id,
+                       SUM(CASE WHEN transfer_to = 'PLANT 1' THEN qty ELSE 0 END) AS in_plant1,
+                       SUM(CASE WHEN transfer_from = 'PLANT 1' THEN qty ELSE 0 END) AS out_plant1
+                FROM scan_rm_transfer
+                WHERE transaction_date >= '2025-09-18'
+                  AND transaction_date < '$filter_from'
+                GROUP BY item_rm_id
+            ) trf_plant1 ON base.item_rm_id = trf_plant1.item_rm_id
+        ) begin_whs ON a.id = begin_whs.item_rm_id
 
         WHERE c.id LIKE '%$filter_item_category%'
         AND b.number LIKE '%$filter_item_family%'
@@ -426,6 +504,8 @@ class Report_history_transactions extends CI_Controller
                     <th width="100">In</th>
                     <th width="100">Out</th>
                     <th width="100">Ending Stock</th>
+                    <th width="100">Stock Plant BPI</th>
+                    <th width="100">Stock Plant 1</th>
                     <th width="100">ITO<br>(MONTH)</th>
                 </tr>
              </thead>';
@@ -435,6 +515,8 @@ class Report_history_transactions extends CI_Controller
         $totalBeginStock = 0;
         $totalIn = 0;
         $totalOut = 0;
+        $totalBpi = 0;
+        $totalPlant1 = 0;
         $totalEndingStock = 0;
         $totalIto = 0;
 
@@ -444,6 +526,8 @@ class Report_history_transactions extends CI_Controller
             $totalBeginStock += @$record->begin_stock;
             $totalIn += $record->qty_in;
             $totalOut += $record->qty_out;
+            $totalBpi += $record->qty_bpi;
+            $totalPlant1 += $record->qty_plant1;
             $totalEndingStock += @(@$record->begin_stock + $record->qty_in) - $record->qty_out;
 
             $total_sales_minus = $record->qty_out_minus1 + $record->qty_out_minus2 + $record->qty_out_minus3;
@@ -467,6 +551,8 @@ class Report_history_transactions extends CI_Controller
                             <td style="text-align:right;">' . number_format($record->qty_in, 2) . '</td>
                             <td style="text-align:right;">' . number_format($record->qty_out, 2) . '</td>
                             <td style="text-align:right;">' . number_format((@$record->begin_stock + $record->qty_in) - $record->qty_out, 2) . '</td>
+                            <td style="text-align:right;">' . number_format($record->qty_bpi, 2) . '</td>
+                            <td style="text-align:right;">' . number_format($record->qty_plant1, 2) . '</td>
                             <td style="text-align:right;">' . $stock_coverage . '</td>
                         </tr>';
 
@@ -531,7 +617,7 @@ class Report_history_transactions extends CI_Controller
                         WHERE a.item_rm_id = '$item_rm_id' 
                         and DATE_FORMAT(a.created_date, '%Y-%m-%d') between '$filter_from' and '$filter_to'
                         
-                        UNION
+                        UNION ALL
 
                         SELECT 
                             a.created_by, 
@@ -546,7 +632,7 @@ class Report_history_transactions extends CI_Controller
                         WHERE a.item_rm_id = '$item_rm_id' 
                         and DATE_FORMAT(a.created_date, '%Y-%m-%d') between '$filter_from' and '$filter_to'
                         
-                        UNION
+                        UNION ALL
                         
                         SELECT 
                             a.created_by, 
@@ -562,7 +648,7 @@ class Report_history_transactions extends CI_Controller
                         WHERE a.item_rm_id = '$item_rm_id' 
                         and DATE_FORMAT(a.created_date, '%Y-%m-%d') between '$filter_from' and '$filter_to'
                         
-                        UNION
+                        UNION ALL
 
                         SELECT 
                             a.created_by, 
@@ -576,7 +662,7 @@ class Report_history_transactions extends CI_Controller
                         WHERE a.item_rm_id = '$item_rm_id' 
                         and DATE_FORMAT(a.created_date, '%Y-%m-%d') between '$filter_from' and '$filter_to'
                         
-                        UNION
+                        UNION ALL
                         
                         SELECT 
                             a.created_by, 
@@ -1310,6 +1396,8 @@ class Report_history_transactions extends CI_Controller
             <td style="text-align:right;">' . number_format($totalIn, 2) . '</td>
             <td style="text-align:right;">' . number_format($totalOut, 2) . '</td>
             <td style="text-align:right;">' . number_format($totalEndingStock, 2) . '</td>
+            <td style="text-align:right;">' . number_format($totalBpi, 2) . '</td>
+            <td style="text-align:right;">' . number_format($totalPlant1, 2) . '</td>
             <td style="text-align:right;">-</td>
         </tr>
         </tbody>';
@@ -1366,16 +1454,16 @@ class Report_history_transactions extends CI_Controller
             a.uom,
             c.name as category_name, 
             COALESCE(0,0) as begin_stock,
-
             COALESCE(SUM(e.qty),0) as receipt_qty, 
             COALESCE(i.qty,0) + COALESCE(o.qty_bpm_scan,0) as bpm_qty, 
             COALESCE(k.qty,0) as adj_in_qty, 
-
             COALESCE(f.qty,0) as qty_issued,
             COALESCE(f2.qty,0) as qty_issued_supply_sheet,
             COALESCE(f3.qty,0) as qty_issued_non_supply_sheet,
-            COALESCE(j.qty,0) + COALESCE(f4.qty,0) as qty_kanban,
+            COALESCE(j.qty,0) + COALESCE(f4.qty,0) + COALESCE(f3.qty,0) as qty_kanban,
             COALESCE(f5.qty,0) as qty_issued_material_request,
+            COALESCE(f6.qty,0) as qty_issued_non_supply_sheet_SJ,
+            COALESCE(f7.qty,0) as qty_issued_non_supply_sheet_SP,
             COALESCE(m.qty,0) as adj_out_qty,
             COALESCE(n.qty,0) as bpb_qty, 
 
@@ -1383,24 +1471,15 @@ class Report_history_transactions extends CI_Controller
             (COALESCE(h2.qty_issued, 0) + COALESCE(i2.qty_trans_rm_out, 0)) AS qty_out_minus2,
             (COALESCE(h3.qty_issued, 0) + COALESCE(i3.qty_trans_rm_out, 0)) AS qty_out_minus3,
 
-            (COALESCE(SUM(e.qty),0) + COALESCE(g.return_qty, 0) + COALESCE(h.qty_stock_rm, 0) + COALESCE(i.qty, 0) + COALESCE(k.qty, 0) + COALESCE(o.qty_bpm_scan, 0)) as qty_in,
+            (COALESCE(SUM(e.qty),0) + COALESCE(h.qty_stock_rm, 0) + COALESCE(i.qty, 0) + COALESCE(k.qty, 0) + COALESCE(o.qty_bpm_scan, 0)) as qty_in,
             (COALESCE(f.qty,0) + COALESCE(j.qty, 0) + COALESCE(m.qty, 0)+ COALESCE(n.qty, 0)) as qty_out
-    
-
-            -- (COALESCE(SUM(e.qty), 0) + COALESCE(g.return_qty, 0) + COALESCE(h.qty_stock_rm, 0) + COALESCE(SUM(CASE WHEN i.transaction_kind = 'IN' THEN i.qty ELSE 0 END), 0)) as qty_in,
-            -- (COALESCE(f.qty, 0) + COALESCE(SUM(CASE WHEN i.transaction_kind = 'OUT' THEN i.qty ELSE 0 END), 0)) as qty_out
 
             FROM item_rm a 
             JOIN item_familys b ON a.item_family_id = b.id and b.number != 'FG'
             JOIN item_categories c ON a.item_category_id = c.id
             LEFT JOIN purchase_order_receipts d ON a.id = d.item_rm_id and d.receipt_date between '$filter_from' and '$filter_to'
-            LEFT JOIN scan_item_receipts e ON d.receipt_id = e.receipt_id
             LEFT JOIN item_family_subs l ON a.item_sub_family_id = l.id
             LEFT JOIN (SELECT item_rm_id, COALESCE(SUM(qty), 0) as qty FROM issued_material_details WHERE DATE_FORMAT(created_date, '%Y-%m-%d') between '$filter_from' and '$filter_to' GROUP BY item_rm_id) f ON a.id = f.item_rm_id
-            LEFT JOIN (SELECT item_rm_id, COALESCE(SUM(qty), 0) as qty FROM issued_material_details WHERE DATE_FORMAT(created_date, '%Y-%m-%d') between '$filter_from' and '$filter_to' and request_no like '%SH-%' GROUP BY item_rm_id) f2 ON a.id = f2.item_rm_id
-            LEFT JOIN (SELECT item_rm_id, COALESCE(SUM(qty), 0) as qty FROM issued_material_details WHERE DATE_FORMAT(created_date, '%Y-%m-%d') between '$filter_from' and '$filter_to' and request_no like '%REQ-%' GROUP BY item_rm_id) f3 ON a.id = f3.item_rm_id
-            LEFT JOIN (SELECT item_rm_id, COALESCE(SUM(qty), 0) as qty FROM issued_material_details WHERE DATE_FORMAT(created_date, '%Y-%m-%d') between '$filter_from' and '$filter_to' and `type` like '%WIP%' GROUP BY item_rm_id) f4 ON a.id = f4.item_rm_id
-            LEFT JOIN (SELECT item_rm_id, COALESCE(SUM(qty), 0) as qty FROM issued_material_details WHERE DATE_FORMAT(created_date, '%Y-%m-%d') between '$filter_from' and '$filter_to' and request_no like '%PRQ-%' GROUP BY item_rm_id) f5 ON a.id = f5.item_rm_id
 
             LEFT JOIN (SELECT item_rm_id, SUM(qty) AS qty_issued FROM issued_material_details WHERE DATE_FORMAT(created_date, '%Y-%m-%d') BETWEEN '$filter_from_minus1' AND '$filter_to_minus1' GROUP BY item_rm_id) h1 ON a.id = h1.item_rm_id
             LEFT JOIN (SELECT item_rm_id, SUM(qty) AS qty_trans_rm_out FROM transaction_rm WHERE request_date BETWEEN '$filter_from_minus1' AND '$filter_to_minus1' AND transaction_kind = 'OUT' GROUP BY item_rm_id) i1 ON a.id = i1.item_rm_id
@@ -1408,59 +1487,75 @@ class Report_history_transactions extends CI_Controller
             LEFT JOIN (SELECT item_rm_id, SUM(qty) AS qty_trans_rm_out FROM transaction_rm WHERE request_date BETWEEN '$filter_from_minus2' AND '$filter_to_minus2' AND transaction_kind = 'OUT' GROUP BY item_rm_id) i2 ON a.id = i2.item_rm_id
             LEFT JOIN (SELECT item_rm_id, SUM(qty) AS qty_issued FROM issued_material_details WHERE DATE_FORMAT(created_date, '%Y-%m-%d') BETWEEN '$filter_from_minus3' AND '$filter_to_minus3' GROUP BY item_rm_id) h3 ON a.id = h3.item_rm_id
             LEFT JOIN (SELECT item_rm_id, SUM(qty) AS qty_trans_rm_out FROM transaction_rm WHERE request_date BETWEEN '$filter_from_minus3' AND '$filter_to_minus3' AND transaction_kind = 'OUT' GROUP BY item_rm_id) i3 ON a.id = i3.item_rm_id
-
-            LEFT JOIN (SELECT a.item_rm_id, SUM(c.qty) as return_qty
-                FROM return_materials a 
-                JOIN return_material_labels b ON a.return_id = b.return_id
-                JOIN scan_item_receipts c ON a.return_id = c.receipt_id and b.label_no = c.label_no
-                WHERE a.return_date between '$filter_from' and '$filter_to'
-                GROUP BY a.item_rm_id) g ON a.id = g.item_rm_id
             
-            LEFT JOIN (SELECT a.item_rm_id, SUM(a.qty) as qty_stock_rm
-                FROM os_rm a
-                JOIN item_rm b ON a.item_rm_id = b.id
-                WHERE a.trans_date between '$filter_from' and '$filter_to'
-                GROUP BY a.item_rm_id) h ON a.id = h.item_rm_id
+            LEFT JOIN (SELECT item_rm_id, SUM(qty) AS qty_stock_rm FROM os_rm WHERE trans_date >= '$filter_from' AND trans_date < DATE_ADD('$filter_to', INTERVAL 1 DAY) GROUP BY item_rm_id) h ON a.id = h.item_rm_id            
 
-            LEFT JOIN (SELECT a.item_rm_id, SUM(a.qty) as qty_bpm_scan
-                FROM scan_item_bpm a
-                JOIN item_rm b ON a.item_rm_id = b.id
-                WHERE a.request_date between '$filter_from' and '$filter_to'
-                GROUP BY a.item_rm_id) o ON a.id = o.item_rm_id
-
-            -- IN TRANSACTION di mulai dari sini----------------------- 
+            LEFT JOIN scan_item_receipts e ON d.receipt_id = e.receipt_id
 
             LEFT JOIN (
                 SELECT a.item_rm_id, a.transaction_kind, a.transaction_type,SUM(a.qty) AS qty
                 FROM transaction_rm a
                 JOIN item_rm b ON a.item_rm_id = b.id
-                WHERE a.request_date BETWEEN '$filter_from' AND '$filter_to' AND a.transaction_type = 'BPM'
+                WHERE a.request_date >= '$filter_from' AND a.request_date < DATE_ADD('$filter_to', INTERVAL 1 DAY) AND a.transaction_type = 'BPM'
                 GROUP BY a.item_rm_id, a.transaction_kind
             ) i ON a.id = i.item_rm_id
 
+            LEFT JOIN (SELECT a.item_rm_id, SUM(a.qty) as qty_bpm_scan
+                FROM scan_item_bpm a
+                JOIN item_rm b ON a.item_rm_id = b.id
+                WHERE a.request_date >= '$filter_from' AND a.request_date < DATE_ADD('$filter_to', INTERVAL 1 DAY)
+                GROUP BY a.item_rm_id) o ON a.id = o.item_rm_id
+
             LEFT JOIN (
                 SELECT a.item_rm_id, a.transaction_kind, a.transaction_type, SUM(a.qty) AS qty
                 FROM transaction_rm a
                 JOIN item_rm b ON a.item_rm_id = b.id
-                WHERE a.request_date BETWEEN '$filter_from' AND '$filter_to' AND a.transaction_type = 'ADJ IN STO'
+                WHERE a.request_date >= '$filter_from' AND a.request_date < DATE_ADD('$filter_to', INTERVAL 1 DAY) AND a.transaction_type = 'ADJ IN STO'
                 GROUP BY a.item_rm_id, a.transaction_kind
             ) k ON a.id = k.item_rm_id
 
-            -- OUT TRANSACTION di mulai dari sini-----------------------
+            LEFT JOIN (SELECT item_rm_id, COALESCE(SUM(qty), 0) as qty FROM issued_material_details WHERE created_date >= '$filter_from' AND created_date < DATE_ADD('$filter_to', INTERVAL 1 DAY) and request_no like '%SH-%' GROUP BY item_rm_id) f2 ON a.id = f2.item_rm_id
+            
+            LEFT JOIN (SELECT item_rm_id, COALESCE(SUM(qty), 0) as qty FROM issued_material_details WHERE created_date >= '$filter_from' AND created_date < DATE_ADD('$filter_to', INTERVAL 1 DAY) and request_no like '%PRQ-%' GROUP BY item_rm_id) f5 ON a.id = f5.item_rm_id
 
+            LEFT JOIN (SELECT item_rm_id, COALESCE(SUM(qty), 0) as qty FROM issued_material_details WHERE created_date >= '$filter_from' AND created_date < DATE_ADD('$filter_to', INTERVAL 1 DAY) and `type` like '%WIP%' GROUP BY item_rm_id) f4 ON a.id = f4.item_rm_id
             LEFT JOIN (
-                SELECT a.item_rm_id, a.transaction_kind, a.transaction_type, SUM(a.qty) AS qty
-                FROM transaction_rm a
-                JOIN item_rm b ON a.item_rm_id = b.id
-                WHERE a.request_date BETWEEN '$filter_from' AND '$filter_to' and a.transaction_type = 'KANBAN WO'
-                GROUP BY a.item_rm_id, a.transaction_kind
-            ) j ON a.id = j.item_rm_id
+                SELECT a.item_rm_id, COALESCE(SUM(a.qty), 0) as qty 
+                FROM issued_material_details a
+                JOIN supply_materials b ON a.request_no = b.request_no and a.item_rm_id = b.item_rm_id
+                WHERE a.created_date >= '$filter_from' AND a.created_date < DATE_ADD('$filter_to', INTERVAL 1 DAY) and a.request_no like '%REQ-%' AND b.type = 'Issued Production'
+                GROUP BY a.item_rm_id
+            ) f3 ON a.id = f3.item_rm_id
         
             LEFT JOIN (
                 SELECT a.item_rm_id, a.transaction_kind, a.transaction_type, SUM(a.qty) AS qty
                 FROM transaction_rm a
                 JOIN item_rm b ON a.item_rm_id = b.id
-                WHERE a.request_date BETWEEN '$filter_from' AND '$filter_to' and a.transaction_type = 'ADJ OUT STO'
+                WHERE a.request_date >= '$filter_from' AND a.request_date < DATE_ADD('$filter_to', INTERVAL 1 DAY) and a.transaction_type = 'KANBAN WO'
+                GROUP BY a.item_rm_id, a.transaction_kind
+            ) j ON a.id = j.item_rm_id
+
+            LEFT JOIN (
+                SELECT a.item_rm_id, COALESCE(SUM(a.qty), 0) as qty 
+                FROM issued_material_details a
+                JOIN supply_materials b ON a.request_no = b.request_no and a.item_rm_id = b.item_rm_id
+                WHERE a.created_date >= '$filter_from' AND a.created_date < DATE_ADD('$filter_to', INTERVAL 1 DAY) and a.request_no like '%REQ-%' AND b.type = 'Issued Subcont'
+                GROUP BY a.item_rm_id
+            ) f6 ON a.id = f6.item_rm_id
+
+            LEFT JOIN (
+                SELECT a.item_rm_id, COALESCE(SUM(a.qty), 0) as qty 
+                FROM issued_material_details a
+                JOIN supply_materials b ON a.request_no = b.request_no and a.item_rm_id = b.item_rm_id
+                WHERE a.created_date >= '$filter_from' AND a.created_date < DATE_ADD('$filter_to', INTERVAL 1 DAY) and a.request_no like '%REQ-%' AND b.type = 'Issued Customer'
+                GROUP BY a.item_rm_id
+            ) f7 ON a.id = f7.item_rm_id
+
+            LEFT JOIN (
+                SELECT a.item_rm_id, a.transaction_kind, a.transaction_type, SUM(a.qty) AS qty
+                FROM transaction_rm a
+                JOIN item_rm b ON a.item_rm_id = b.id
+                WHERE a.request_date >= '$filter_from' AND a.request_date < DATE_ADD('$filter_to', INTERVAL 1 DAY) and a.transaction_type = 'ADJ OUT STO'
                 GROUP BY a.item_rm_id, a.transaction_kind
             ) m ON a.id = m.item_rm_id
 
@@ -1468,55 +1563,16 @@ class Report_history_transactions extends CI_Controller
                 SELECT a.item_rm_id, a.transaction_kind, a.transaction_type, SUM(a.qty) AS qty
                 FROM transaction_rm a
                 JOIN item_rm b ON a.item_rm_id = b.id
-                WHERE a.request_date BETWEEN '$filter_from' AND '$filter_to' and a.transaction_type = 'BPB'
+                WHERE a.request_date >= '$filter_from' AND a.request_date < DATE_ADD('$filter_to', INTERVAL 1 DAY) and a.transaction_type = 'BPB'
                 GROUP BY a.item_rm_id, a.transaction_kind
             ) n ON a.id = n.item_rm_id
         
-        WHERE c.id like '%$filter_item_category%' and b.number like '%$filter_item_family%' and a.id like '%$filter_items%' and a.division like '%$filter_division%' 
+        WHERE c.id LIKE '%$filter_item_category%' 
+        AND b.number LIKE '%$filter_item_family%' 
+        AND a.id LIKE '%$filter_items%' 
+        AND a.division LIKE '%$filter_division%' 
         GROUP BY a.id
         ORDER BY c.name DESC, b.name DESC, a.number");
-
-        // $query_main = "SELECT 
-        //     a.id,
-        //     a.number, 
-        //     a.name, 
-        //     a.division, 
-        //     b.name as prodfam, 
-        //     a.uom,
-        //     c.name as category_name,
-        //     COALESCE(j.begin_stock) AS begin_stock,
-        //     (COALESCE(d.qty_scan_in, 0) + COALESCE(e.qty_os_rm, 0) + COALESCE(f.qty_trans_rm_in, 0) + COALESCE(g.return_qty, 0)) AS qty_in,
-        //     (COALESCE(h.qty_issued, 0) + COALESCE(i.qty_trans_rm_out, 0)) AS qty_out
-        // FROM item_rm a
-        // JOIN item_familys b ON a.item_family_id = b.id AND b.number != 'FG'
-        // JOIN item_categories c ON a.item_category_id = c.id
-        // LEFT JOIN (SELECT b.item_rm_id, SUM(a.qty) AS qty_scan_in FROM scan_item_receipts a JOIN purchase_order_receipts b ON a.receipt_id = b.receipt_id WHERE b.receipt_date BETWEEN '$filter_from' AND '$filter_to' GROUP BY b.item_rm_id) d ON a.id = d.item_rm_id
-        // LEFT JOIN (SELECT item_rm_id, SUM(qty) AS qty_os_rm FROM os_rm WHERE trans_date BETWEEN '$filter_from' AND '$filter_to' GROUP BY item_rm_id) e ON a.id = e.item_rm_id
-        // LEFT JOIN (SELECT item_rm_id, SUM(qty) AS qty_trans_rm_in FROM transaction_rm WHERE request_date BETWEEN '$filter_from' AND '$filter_to' AND transaction_kind = 'IN' GROUP BY item_rm_id) f ON a.id = f.item_rm_id
-        // LEFT JOIN (SELECT a.item_rm_id, SUM(c.qty) as return_qty FROM return_materials a JOIN return_material_labels b ON a.return_id = b.return_id JOIN scan_item_receipts c ON a.return_id = c.receipt_id AND b.label_no = c.label_no WHERE a.return_date BETWEEN '$filter_from' AND '$filter_to' GROUP BY a.item_rm_id) g ON a.id = g.item_rm_id
-        // LEFT JOIN (SELECT item_rm_id, SUM(qty) AS qty_issued FROM issued_material_details WHERE created_date BETWEEN '$filter_from' AND '$filter_to' GROUP BY item_rm_id) h ON a.id = h.item_rm_id
-        // LEFT JOIN (SELECT item_rm_id, SUM(qty) AS qty_trans_rm_out FROM transaction_rm WHERE request_date BETWEEN '$filter_from' AND '$filter_to' AND transaction_kind = 'OUT' GROUP BY item_rm_id) i ON a.id = i.item_rm_id
-
-        // LEFT JOIN (SELECT a.id, a.number, ((COALESCE(b.qty_scan_in, 0) + COALESCE(c.qty_os_rm, 0) + COALESCE(d.qty_trans_rm_in, 0) + COALESCE(e.return_qty, 0)) - (COALESCE(f.qty_issued, 0) + COALESCE(g.qty_trans_rm_out, 0))) AS begin_stock
-        //             FROM item_rm a
-        //             LEFT JOIN (SELECT b.item_rm_id, SUM(a.qty) AS qty_scan_in FROM scan_item_receipts a JOIN purchase_order_receipts b ON a.receipt_id = b.receipt_id WHERE b.receipt_date < '$filter_from'  GROUP BY b.item_rm_id) b ON a.id = b.item_rm_id
-        //             LEFT JOIN (SELECT item_rm_id, SUM(qty) AS qty_os_rm FROM os_rm WHERE trans_date < '$filter_from' GROUP BY item_rm_id) c ON a.id = c.item_rm_id
-        //             LEFT JOIN (SELECT item_rm_id, SUM(qty) AS qty_trans_rm_in FROM transaction_rm WHERE request_date < '$filter_from' AND transaction_kind = 'IN' GROUP BY item_rm_id) d ON a.id = d.item_rm_id
-        //             LEFT JOIN (SELECT a.item_rm_id, SUM(c.qty) as return_qty FROM return_materials a JOIN return_material_labels b ON a.return_id = b.return_id JOIN scan_item_receipts c ON a.return_id = c.receipt_id AND b.label_no = c.label_no WHERE a.return_date < '$filter_from' GROUP BY a.item_rm_id) e ON a.id = e.item_rm_id
-        //             LEFT JOIN (SELECT item_rm_id, SUM(qty) AS qty_issued FROM issued_material_details WHERE created_date < '$filter_from' GROUP BY item_rm_id) f ON a.id = f.item_rm_id
-        //             LEFT JOIN (SELECT item_rm_id, SUM(qty) AS qty_trans_rm_out FROM transaction_rm WHERE request_date < '$filter_from' AND transaction_kind = 'OUT' GROUP BY item_rm_id) g ON a.id = g.item_rm_id
-        //         ) j ON a.id = j.id
-
-        // WHERE c.id LIKE '%$filter_item_category%'
-        // AND b.number LIKE '%$filter_item_family%'
-        // AND a.id LIKE '%$filter_items%'
-        // AND a.division LIKE '%$filter_division%'
-        // GROUP BY a.id
-        // ORDER BY c.name DESC, b.name DESC, a.number";
-
-        // Eksekusi query
-        // $records = $this->crud->query($query_main);
-
 
         $html = '<html><head><title>Print Data</title></head><style>body {font-family: Arial, Helvetica, sans-serif;}#customers {border-collapse: collapse;width: 100%;font-size: 12px;}#customers td, #customers th {border: 1px solid #ddd;padding: 2px;}#customers tr:nth-child(even){background-color: #f2f2f2;}#customers tr:hover {background-color: #ddd;}#customers th {padding-top: 2px;padding-bottom: 2px;text-align: center;color: black;}</style><body>
             <center>
@@ -1558,7 +1614,7 @@ class Report_history_transactions extends CI_Controller
                     <th rowspan="2" width="100">Out</th>
                     <th rowspan="2" width="100">Ending<br>Stock</th>
                     <th colspan="3">IN</th>
-                    <th colspan="5">OUT</th>
+                    <th colspan="7">OUT</th>
                     <th rowspan="2" width="100">Total<br>In</th>
                     <th rowspan="2" width="100">Total<br>Out</th>
                     <th rowspan="2" width="100">Selisih Summary <br>VS Detail (IN)</th>
@@ -1572,7 +1628,9 @@ class Report_history_transactions extends CI_Controller
 
                     <th width="80">Supply Sheet</th>
                     <th width="80">Material Request</th>
-                    <th width="80">Kanban</th>
+                    <th width="80">Kanban PRD</th>
+                    <th width="80">Kanban Subcont Jasa</th>
+                    <th width="80">Kanban Subcont Product</th>
                     <th width="80">BPB</th>
                     <th width="80">ADJ STO</th>
                 </tr>';
@@ -1591,6 +1649,8 @@ class Report_history_transactions extends CI_Controller
         $totalQtyIssuedSupplySheet = 0;
         $totalQtyIssuedMaterialRequest = 0;
         $totalQtyKanban = 0;
+        $totalQtyKanbanSJ = 0;
+        $totalQtyKanbanSP = 0;
         $totalAdjOutQty = 0;
         $totalBpbQty = 0;
 
@@ -1605,27 +1665,13 @@ class Report_history_transactions extends CI_Controller
 
             $item_rm_id = $record->id;
             //Item Receipts
-            $itemReceipts = $this->crud->query("SELECT
-                    a.id,(COALESCE(SUM(e.qty),0) + COALESCE(g.return_qty, 0) + COALESCE(h.qty_stock_rm, 0) + COALESCE(i.qty, 0) + COALESCE(o.qty_bpm_scan, 0)) - (COALESCE(f.qty,0) + COALESCE(j.qty, 0)) as begin_stock   
+            $itemReceipts = $this->crud->query("SELECT a.id,(COALESCE(SUM(e.qty),0) + COALESCE(h.qty_stock_rm, 0) + COALESCE(i.qty, 0) + COALESCE(o.qty_bpm_scan, 0)) - (COALESCE(f.qty,0) + COALESCE(j.qty, 0)) as begin_stock   
                 FROM item_rm a 
                 JOIN item_familys b ON a.item_family_id = b.id and b.number != '006'
-                LEFT JOIN purchase_order_receipts d ON a.id = d.item_rm_id and d.receipt_date < '$filter_from'
-                LEFT JOIN scan_item_receipts e ON d.receipt_id = e.receipt_id
+                LEFT JOIN (SELECT b.item_rm_id, SUM(a.qty) AS qty FROM scan_item_receipts a JOIN purchase_order_receipts b ON a.receipt_id = b.receipt_id WHERE b.receipt_date < '$filter_from'  GROUP BY b.item_rm_id) e ON a.id = e.item_rm_id
                 LEFT JOIN (SELECT item_rm_id, COALESCE(SUM(qty), 0) as qty FROM issued_material_details WHERE DATE_FORMAT(created_date, '%Y-%m-%d') < '$filter_from' GROUP BY item_rm_id) f ON a.id = f.item_rm_id
-                
-                LEFT JOIN (SELECT a.item_rm_id, SUM(c.qty) as return_qty
-                    FROM return_materials a 
-                    JOIN return_material_labels b ON a.return_id = b.return_id
-                    JOIN scan_item_receipts c ON a.return_id = c.receipt_id and b.label_no = c.label_no
-                    WHERE a.return_date < '$filter_from'
-                    GROUP BY a.item_rm_id) g ON a.id = g.item_rm_id
-                    
-                LEFT JOIN (SELECT a.item_rm_id, SUM(a.qty) as qty_stock_rm
-                    FROM os_rm a
-                    JOIN item_rm b ON a.item_rm_id = b.id
-                    WHERE a.trans_date < '$filter_from'
-                    GROUP BY a.item_rm_id) h ON a.id = h.item_rm_id
-
+                LEFT JOIN (SELECT item_rm_id, SUM(qty) AS qty_stock_rm FROM os_rm WHERE trans_date < '$filter_from' GROUP BY item_rm_id) h ON a.id = h.item_rm_id            
+              
                 LEFT JOIN (SELECT a.item_rm_id, SUM(a.qty) as qty_bpm_scan
                     FROM scan_item_bpm a
                     JOIN item_rm b ON a.item_rm_id = b.id
@@ -1662,16 +1708,18 @@ class Report_history_transactions extends CI_Controller
             $totalBpmQty += $record->bpm_qty;
             $totalAdjInQty += $record->adj_in_qty;
 
-            $totalQtyIssuedSupplySheet += $record->qty_issued_supply_sheet + $record->qty_issued_non_supply_sheet;
+            $totalQtyIssuedSupplySheet += $record->qty_issued_supply_sheet;
             $totalQtyIssuedMaterialRequest += $record->qty_issued_material_request;
             $totalQtyKanban += $record->qty_kanban;
+            $totalQtyKanbanSJ += $record->qty_issued_non_supply_sheet_SJ;
+            $totalQtyKanbanSP += $record->qty_issued_non_supply_sheet_SP;
             $totalAdjOutQty += $record->adj_out_qty;
             $totalBpbQty += $record->bpb_qty;
 
             $totalQtyIn += ($record->receipt_qty + $record->bpm_qty + $record->adj_in_qty);
-            $totalQtyOut += ($record->qty_issued_supply_sheet + $record->qty_issued_non_supply_sheet + $record->qty_issued_material_request + $record->qty_kanban + $record->adj_out_qty + $record->bpb_qty);
+            $totalQtyOut += ($record->qty_issued_supply_sheet + $record->qty_issued_material_request + $record->qty_kanban + $record->qty_issued_non_supply_sheet_SJ + $record->qty_issued_non_supply_sheet_SP + $record->adj_out_qty + $record->bpb_qty);
             $totalQtySelisihIn += (($record->receipt_qty + $record->bpm_qty + $record->adj_in_qty) - $record->qty_in);
-            $totalQtySelisihOut += (($record->qty_issued_supply_sheet + $record->qty_issued_non_supply_sheet + $record->qty_issued_material_request + $record->qty_kanban + $record->adj_out_qty + $record->bpb_qty) - $record->qty_out);
+            $totalQtySelisihOut += (($record->qty_issued_supply_sheet + $record->qty_issued_material_request + $record->qty_kanban + $record->qty_issued_non_supply_sheet_SJ + $record->qty_issued_non_supply_sheet_SP + $record->adj_out_qty + $record->bpb_qty) - $record->qty_out);
 
             $total_sales_minus = $record->qty_out_minus1 + $record->qty_out_minus2 + $record->qty_out_minus3;
             $avg_sales_minus = ($total_sales_minus > 0) ? number_format($total_sales_minus / 3, 2) : '0.00';
@@ -1700,16 +1748,18 @@ class Report_history_transactions extends CI_Controller
                             <td style="text-align:right;">' . $record->bpm_qty . '</td>
                             <td style="text-align:right;">' . $record->adj_in_qty . '</td>
 
-                            <td style="text-align:right;">' . number_format($record->qty_issued_supply_sheet + $record->qty_issued_non_supply_sheet,2) . '</td>
+                            <td style="text-align:right;">' . number_format($record->qty_issued_supply_sheet,2) . '</td>
                             <td style="text-align:right;">' . $record->qty_issued_material_request . '</td>
                             <td style="text-align:right;">' . $record->qty_kanban . '</td>
+                            <td style="text-align:right;">' . $record->qty_issued_non_supply_sheet_SJ . '</td>
+                            <td style="text-align:right;">' . $record->qty_issued_non_supply_sheet_SP . '</td>
                             <td style="text-align:right;">' . $record->bpb_qty . '</td>
                             <td style="text-align:right;">' . $record->adj_out_qty . '</td>
 
                             <td style="text-align:right;">' . number_format($record->receipt_qty + $record->bpm_qty + $record->adj_in_qty,2) . '</td>
-                            <td style="text-align:right;">' . number_format($record->qty_issued_supply_sheet + $record->qty_issued_non_supply_sheet + $record->qty_issued_material_request + $record->qty_kanban + $record->adj_out_qty + $record->bpb_qty,2) . '</td>
+                            <td style="text-align:right;">' . number_format($record->qty_issued_supply_sheet + $record->qty_issued_material_request + $record->qty_kanban + $record->qty_issued_non_supply_sheet_SJ + $record->qty_issued_non_supply_sheet_SP + $record->adj_out_qty + $record->bpb_qty,2) . '</td>
                             <td style="text-align:right;">' . number_format(($record->receipt_qty + $record->bpm_qty + $record->adj_in_qty) - $record->qty_in, 2) . '</td>
-                            <td style="text-align:right;">' . number_format(($record->qty_issued_supply_sheet + $record->qty_issued_non_supply_sheet + $record->qty_issued_material_request + $record->qty_kanban + $record->adj_out_qty + $record->bpb_qty) - $record->qty_out, 2) . '</td>
+                            <td style="text-align:right;">' . number_format(($record->qty_issued_supply_sheet + $record->qty_issued_material_request + $record->qty_kanban + $record->qty_issued_non_supply_sheet_SJ + $record->qty_issued_non_supply_sheet_SP + $record->adj_out_qty + $record->bpb_qty) - $record->qty_out, 2) . '</td>
 
                             <td style="text-align:right;">' . $stock_coverage . '</td>
                         </tr>';
@@ -1730,7 +1780,9 @@ class Report_history_transactions extends CI_Controller
             <td style="text-align:right;">' . number_format($totalQtyIssuedSupplySheet, 2) . '</td>
             <td style="text-align:right;">' . number_format($totalQtyIssuedMaterialRequest, 2) . '</td>
             <td style="text-align:right;">' . number_format($totalQtyKanban, 2) . '</td>
-            <td style="text-align:right;">'. number_format($totalBpbQty, 2) . '</td>
+            <td style="text-align:right;">' . number_format($totalQtyKanbanSJ, 2) . '</td>
+            <td style="text-align:right;">' . number_format($totalQtyKanbanSP, 2) . '</td>
+            <td style="text-align:right;">' . number_format($totalBpbQty, 2) . '</td>
             <td style="text-align:right;">' . number_format($totalAdjOutQty, 2) . '</td>
            
             <td style="text-align:right;">' . number_format($totalQtyIn, 2) . '</td>
