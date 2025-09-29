@@ -76,7 +76,7 @@ class Delivery_notes extends CI_Controller
         $this->db->where('a.deleted', 0);
         $this->db->where('a.qty_del !=', 0);
         $this->db->where_in('a.delivery_order_no', $delivery_order_no);
-        $this->db->group_by(array('a.delivery_order_no', 'b.id'));
+        $this->db->group_by(array('a.delivery_order_no', 'COALESCE(a.sales_order_no, a.sales_order_no_rm)', 'b.id'));
     
         $this->db->order_by('a.delivery_order_no', 'ASC');
         $this->db->order_by('b.id', 'ASC');
