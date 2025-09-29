@@ -31,7 +31,7 @@ class item_fg extends CI_Controller
     public function reads()
     {
         $post = isset($_POST['q']) ? $_POST['q'] : "";
-        $send = $this->crud->query("SELECT * FROM item_fg WHERE number like '%$post%' or number_customer like '%$post%' or name like '%$post%'");
+        $send = $this->crud->query("SELECT * FROM item_fg WHERE status = '0' AND number like '%$post%' or number_customer like '%$post%' or name like '%$post%'");
         echo json_encode($send);
     }
 
