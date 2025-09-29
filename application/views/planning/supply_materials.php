@@ -73,6 +73,7 @@
                         <option value="">Choose All</option>
                         <option value="Issued Production">Issued Production</option>
                         <option value="Issued Customer">Issued Customer</option>
+                        <option value="Issued Subcont">Issued Subcont</option>
                     </select>
                 </div>
                 <div class="fitem">
@@ -732,7 +733,8 @@
     $('#type').combobox({
         data: [
             { name: 'Issued Production' },
-            { name: 'Issued Customer' }
+            { name: 'Issued Customer' },
+            { name: 'Issued Subcont' }
         ],
         valueField: 'name',
         textField: 'name',
