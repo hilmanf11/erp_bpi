@@ -117,7 +117,7 @@
                 </div>
             </div>
         </fieldset>
-        <table id="dg2" class="easyui-datagrid" style="width:100%;" title="Add Transaction RM" toolbar="#toolbar2" data-options="singleSelect: true">
+        <table id="dg2" class="easyui-datagrid" style="width:100%;" title="Add Transaction FG" toolbar="#toolbar2" data-options="singleSelect: true">
         </table>
     </form>
 </div>

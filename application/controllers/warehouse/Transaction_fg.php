@@ -59,7 +59,7 @@ class Transaction_fg extends CI_Controller
         $post = isset($_POST['q']) ? $_POST['q'] : "";
         $records = $this->crud->query("SELECT id, number, name, uom 
         FROM item_fg 
-        WHERE `number` like '%$post%' or `name` like '$post'
+        WHERE status = '0' AND `number` like '%$post%' or `name` like '$post'
         ORDER BY `number` ASC");
         echo json_encode($records);
     }
