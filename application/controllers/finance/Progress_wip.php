@@ -238,13 +238,14 @@ class Progress_wip extends CI_Controller
                         COALESCE(c.qty_actual,0) as qty_actual,
                         COALESCE(c2.qty_wip,0) as qty_wip,
                         COALESCE(d.qty_ng,0) as qty_ng,
+                        COALESCE(ng_map.qty_ng,0) as qty_ng_sa,
                         COALESCE((COALESCE(c.qty_actual,0)+COALESCE(d.qty_ng,0)+COALESCE(c2.qty_wip,0)),0) as total_production,
                         COALESCE(f.qty_subcont_jasa,0) as subconts_jasa,
                         COALESCE(j.qty_adj_in,0) as qty_adj_in,
                         COALESCE(g.qty_in_checksheet,0) + COALESCE(gb.initial_in,0) + COALESCE(gc.qty_in_wip_receipt,0) as qty_rfg,
                         COALESCE(h.qty_rfg_jasa,0) as rfg_jasa,
                         COALESCE(k.qty_adj_out,0) as qty_adj_out,
-                        COALESCE((COALESCE(i.begin_balance,0)) + COALESCE(c.qty_actual,0) + COALESCE(f.qty_subcont_jasa,0) +COALESCE(j.qty_adj_in,0) +COALESCE(c2.qty_wip,0) - COALESCE(g.qty_in_checksheet,0) - COALESCE(gb.initial_in,0) - COALESCE(gc.qty_in_wip_receipt,0) - COALESCE(h.qty_rfg_jasa,0)- COALESCE(k.qty_adj_out,0), 0) as ending_balance
+                        COALESCE((COALESCE(i.begin_balance,0)) + COALESCE(c.qty_actual,0) + COALESCE(f.qty_subcont_jasa,0) +COALESCE(j.qty_adj_in,0) +COALESCE(c2.qty_wip,0) - COALESCE(ng_map.qty_ng,0) - COALESCE(g.qty_in_checksheet,0) - COALESCE(gb.initial_in,0) - COALESCE(gc.qty_in_wip_receipt,0) - COALESCE(h.qty_rfg_jasa,0)- COALESCE(k.qty_adj_out,0), 0) as ending_balance
                         FROM item_fg a
                         LEFT JOIN (
                                     select aa.item_fg_id,sum(aa.qty_wo) as qty_wo FROM (
@@ -262,6 +263,26 @@ class Progress_wip extends CI_Controller
                                             select distinct document,item_fg_id, qty_product FROM  item_ng where trans_date between '$filter_from' AND '$filter_to' AND shift like '%$filter_shift%' AND created_by != 'PRD01'
                                     ) aa group by aa.item_fg_id
                         ) d on a.id = d.item_fg_id
+                        LEFT JOIN (
+                            SELECT 
+                                subs.item_fg_sa_id AS item_fg_id,
+                                SUM(d.qty_ng) AS qty_ng
+                            FROM (
+                                SELECT 
+                                    aa.item_fg_id, 
+                                    SUM(aa.qty_product) AS qty_ng
+                                FROM (
+                                    SELECT DISTINCT document, item_fg_id, qty_product 
+                                    FROM item_ng 
+                                    WHERE trans_date BETWEEN '$filter_from' AND '$filter_to'
+                                    AND shift LIKE '%$filter_shift%'
+                                    AND created_by != 'PRD01'
+                                ) aa 
+                                GROUP BY aa.item_fg_id
+                            ) d
+                            JOIN item_fg_subs subs ON d.item_fg_id = subs.item_fg_id
+                            GROUP BY subs.item_fg_sa_id
+                        ) ng_map ON a.id = ng_map.item_fg_id
                         LEFT JOIN (
                                     select item_fg_id,sum(qty) as qty_balance_wip FROM wip_balances_fg where trans_date between '$filter_from' AND '$filter_to' group by item_fg_id
                         ) e on a.id = e.item_fg_id
@@ -346,7 +367,7 @@ class Progress_wip extends CI_Controller
                         ) k on a.id = k.item_fg_id
                         LEFT JOIN (
                                     SELECT a.id,
-                                        COALESCE(e.qty_balance_wip, 0) + COALESCE(c.qty_actual, 0) + COALESCE(c2.qty_wip, 0) + COALESCE(f.qty_subcont_jasa, 0) + COALESCE(j.qty_adj_in, 0) - COALESCE(g.qty_in_checksheet, 0) - COALESCE(gb.initial_in, 0) - COALESCE(gc.qty_in_wip_receipt, 0) - COALESCE(h.qty_rfg_jasa, 0) - COALESCE(k.qty_adj_out, 0) AS begin_balance
+                                        COALESCE(e.qty_balance_wip, 0) + COALESCE(c.qty_actual, 0) + COALESCE(c2.qty_wip, 0) + COALESCE(f.qty_subcont_jasa, 0) + COALESCE(j.qty_adj_in, 0) - COALESCE(ng_map.qty_ng,0) - COALESCE(g.qty_in_checksheet, 0) - COALESCE(gb.initial_in, 0) - COALESCE(gc.qty_in_wip_receipt, 0) - COALESCE(h.qty_rfg_jasa, 0) - COALESCE(k.qty_adj_out, 0) AS begin_balance
                                     FROM item_fg a
                                     -- qty_balance_wip pada 2025-04-30 (cutoff)
                                     LEFT JOIN (
@@ -419,6 +440,27 @@ class Progress_wip extends CI_Controller
                                     ) g ON a.id = g.item_fg_id
 
                                     LEFT JOIN (
+                                        SELECT 
+                                            subs.item_fg_sa_id AS item_fg_id,
+                                            SUM(d.qty_ng) AS qty_ng
+                                        FROM (
+                                            SELECT 
+                                                aa.item_fg_id, 
+                                                SUM(aa.qty_product) AS qty_ng
+                                            FROM (
+                                                SELECT DISTINCT document, item_fg_id, qty_product 
+                                                FROM item_ng 
+                                                WHERE trans_date >= '2025-05-01' AND trans_date < '$filter_from'
+                                                AND shift LIKE '%$filter_shift%'
+                                                AND created_by != 'PRD01'
+                                            ) aa 
+                                            GROUP BY aa.item_fg_id
+                                        ) d
+                                        JOIN item_fg_subs subs ON d.item_fg_id = subs.item_fg_id
+                                        GROUP BY subs.item_fg_sa_id
+                                    ) ng_map ON a.id = ng_map.item_fg_id
+
+                                    LEFT JOIN (
                                         SELECT item_fg_id, SUM(qty) AS qty_in_no_checksheet
                                         FROM scan_item_receipts_fg
                                         WHERE type = 'NBFG'
@@ -475,7 +517,7 @@ class Progress_wip extends CI_Controller
                                         GROUP BY item_fg_id
                                     ) k ON a.id = k.item_fg_id
                                 ) i ON a.id = i.id
-                        WHERE a.type != 'RM' $filter_items AND a.division_id LIKE '%$filter_division%' AND a.status = 0
+                        WHERE a.type != 'RM' $filter_items AND a.division_id LIKE '%$filter_division%' AND a.status = 0  AND a.id != 'BPIFG-INJ08240009'
                         ORDER BY a.number
         ";
 
@@ -520,6 +562,7 @@ class Progress_wip extends CI_Controller
                     <th rowspan="2">Total Production</th>
                     <th rowspan="2">SubCont Jasa</th>
                     <th rowspan="2">ADJ IN</th>
+                    <th rowspan="2">NG ASSY</th>
                     <th rowspan="2">RFG</th>
                     <th rowspan="2">RFG SubCont Jasa</th>
                     <th rowspan="2">ADJ OUT</th>
@@ -544,6 +587,7 @@ class Progress_wip extends CI_Controller
                             <td style="text-align:right;">' . number_format($record->total_production, 2) . '</td>
                             <td style="text-align:right;">' . number_format($record->subconts_jasa, 2) . '</td>
                             <td style="text-align:right;">' . number_format($record->qty_adj_in, 2) . '</td>
+                            <td style="text-align:right;">' . number_format($record->qty_ng_sa, 2) . '</td>
                             <td style="text-align:right;">' . number_format($record->qty_rfg, 2) . '</td>
                             <td style="text-align:right;">' . number_format($record->rfg_jasa, 2) . '</td>
                             <td style="text-align:right;">' . number_format($record->qty_adj_out, 2) . '</td>
