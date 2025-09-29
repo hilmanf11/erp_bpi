@@ -125,7 +125,7 @@ class Item_fg_subs extends CI_Controller
         if ($this->input->post()) {
             $get = $this->input->get();
             $filter_item_fg_id = @base64_decode($get['filter_item_fg_id']);
-            $item_fg_sa_id = @base64_decode($get['item_fg_sa_id']);
+            $filter_item_fg_sa_id = @base64_decode($get['filter_item_fg_sa_id']);
 
             $page = $this->input->post('page');
             $rows = $this->input->post('rows');
@@ -141,7 +141,7 @@ class Item_fg_subs extends CI_Controller
             $this->db->join('process_assembly c', 'a.process_assembly_id = c.id');
             $this->db->join('divisions d', 'b.division_id = d.id');
             $this->db->like('a.item_fg_id', $filter_item_fg_id);
-            $this->db->like('a.item_fg_sa_id', $item_fg_sa_id);
+            $this->db->like('a.item_fg_sa_id', $filter_item_fg_sa_id);
             $this->db->group_by('a.item_fg_id, a.process_assembly_id');
             $this->db->order_by('a.created_date', 'DESC');
             // $this->db->order_by('b.number', 'ASC');
