@@ -452,22 +452,26 @@
                 if (r) {
                     for (var i = 0; i < rows.length; i++) {
                         var row = rows[i];
-                        $.ajax({
-                            method: 'post',
-                            url: '<?= base_url('sales/delivery_orders/delete') ?>',
-                            data: {
-                                delivery_order_no: row.delivery_order_no
-                            },
-                            success: function(result) {
-                                var result = eval('(' + result + ')');
-                            },
-                            error: function(jqXHR, textStatus, errorThrown) {
-                                toastr.error(jqXHR.statusText);
-                            },
-                            complete: function(data) {
-                                $('#dg').datagrid('reload');
-                            }
-                        });
+                        if (row.status == "0") {
+                            $.ajax({
+                                method: 'post',
+                                url: '<?= base_url('sales/delivery_orders/delete') ?>',
+                                data: {
+                                    delivery_order_no: row.delivery_order_no
+                                },
+                                success: function(result) {
+                                    var result = eval('(' + result + ')');
+                                },
+                                error: function(jqXHR, textStatus, errorThrown) {
+                                    toastr.error(jqXHR.statusText);
+                                },
+                                complete: function(data) {
+                                    $('#dg').datagrid('reload');
+                                }
+                            });
+                        } else {
+                            toastr.error("You cannot Delete this data, because status is closed");
+                        }
                     }
                 }
             });
