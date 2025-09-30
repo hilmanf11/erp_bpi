@@ -1286,7 +1286,7 @@ class Purchase_invoices extends CI_Controller
                     'uom'               => trim($data->val($i, 16)),
                     'qty'               => trim($data->val($i, 17)),
                     'currency'          => trim($data->val($i, 18)),
-                    'unit_price'        => trim($data->val($i, 19)),
+                    'price'             => trim($data->val($i, 19)),
                     'rate'              => trim($data->val($i, 20)),
                     'account_number'    => trim($data->val($i, 21)),
                     'account_type'      => trim($data->val($i, 22)),
@@ -1351,6 +1351,7 @@ class Purchase_invoices extends CI_Controller
         try {
             $data = $this->input->post('data');
             if (empty($data)) {
+                $this->db->trans_rollback();
                 echo json_encode(["title" => "Not Found", "message" => "Input data is empty.", "theme" => "error"]);
                 return;
             }
@@ -1396,6 +1397,13 @@ class Purchase_invoices extends CI_Controller
                 return;
             }
 
+            $check_por = $this->db->like('receipt_no', $data['por_no'])->get('purchase_order_receipts')->row();
+            if (!empty($check_por) && $check_por->status == "1") {
+                $this->db->trans_rollback();
+                echo json_encode(["title" => "Caution", "message" => $data['por_no'] . " has been processed previously. (Closed)", "theme" => "warning"]);
+                return;
+            }
+
             // Prepare data
             $trans_date = $data['trans_date'];
             $supplier_id = $get_supplier->id;
@@ -1405,26 +1413,27 @@ class Purchase_invoices extends CI_Controller
             $due_date = date('Y-m-d', strtotime('+' . $payment_term . ' days', strtotime($trans_date)));
 
             // PI number
-            $number = $data["number"];
-            if (empty($number)) {
+            if (empty($data["number"]) || $data["number"] == "-") {
                 $datenow = "PI-" . date("Ymd", strtotime($trans_date));
                 $sqlGetID = $this->db->select_max('number', 'kode')->like('number', $datenow, 'after')->get('purchase_invoices')->row();
                 $urutan = ($sqlGetID && $sqlGetID->kode) ? (int) substr($sqlGetID->kode, -4) : 0;
                 $urutan++;
                 $autoID = sprintf("%04s", $urutan);
                 $number = $datenow . "-" . $autoID;
+                $data["number"] = $number;
+            } else {
+                $number = $data["number"];
             }
 
-            // --- Supplier invoice number
+            // Supplier invoice number
             $invoice_no = $data["invoice_no"];
             if (empty($invoice_no)) {
                 $invoice_no = ($data['type'] == "dp") ? "INVWDP-" . time() : "INVTMP-" . time();
             }
 
-            $where_por = ["receipt_no" => $data['por_no'], "po_no" => $data['po_no'], "status" => "0"];
-            $records = $this->db->select('*')->from('purchase_order_receipts')->where($where_por)->get()->result_array();
-            
-            if (!empty($records) && $data['por_no'] !== "-") {
+            // Get data PI dari POR atau data mentah
+            $records = [];
+            if (!empty($data["por_no"]) && $data["por_no"] !== "-") {
                 // Jika POR ada
                 $por_no = $data['por_no'];
 
@@ -1443,141 +1452,234 @@ class Purchase_invoices extends CI_Controller
                 $this->db->order_by('a.receipt_no', 'asc');
                 $records = $this->db->get()->result_array();
 
-                $all_data_final = [];
-                $total_sub_all = 0;
-                $total_discount_all = 0;
-
-                foreach ($records as $record) {
-                    $price = (float)($record['price'] ?? 0);
-                    $qty = (float)($record['qty'] ?? 0);
-                    $discount_rate = (float)($record['discount'] ?? 0);
-                    $rate = (float)($record['rate'] ?? 1);
-
-                    $subtotal_item = $price * $qty;
-                    $discount_item = $subtotal_item * ($discount_rate / 100);
-                    $total_item = $subtotal_item - $discount_item;
-                    $total_idr_item = $total_item * $rate;
-
-                    $total_sub_all += $subtotal_item;
-                    $total_discount_all += $discount_item;
-
-                    $data_per_item = [
-                        "supplier_id" => $supplier_id, "journal_type_id" => $journal_type_id, "category_id" => $data["category_id"],
-                        "item_rm_id" => $record['item_rm_id'] ?? "-", "number" => $number, "supplier_product" => $record["supplier_product"],
-                        "trans_date" => $trans_date, "due_date" => $due_date, "invoice_no" => $invoice_no, "payment_term" => $payment_term,
-                        "currency" => $record['currency'] ?? $data["currency"], "rate" => $rate, "po_no" => $record["po_no"], "por_no" => $record["por_no"],
-                        "item_no" => $record['item_number'] ?? "-", "item_name" => $record['item_name'] ?? "-", "qty" => $qty,
-                        "uom" => $record['uom'] ?? "-", "price" => $price, "discount" => $discount_rate, "total" => $total_item,
-                        "total_idr" => $total_idr_item, "account_number" => $record['account_number'] ?? $data["account_number"],
-                        "account_type" => $data["account_type"] ?? null, "status" => 0,
-                    ];
-                    $all_data_final[] = $data_per_item;
+                if (empty($records)) {
+                    $records[] = $data;
                 }
-
-                // Calculate DPP, VAT, Third Parties, etc
-                $total_dpp = round($total_sub_all * (11/12), 2);
-                $total_vat = round($total_dpp * ($vat_rate_supplier / 100), 2);
-                $total_pph = 0;
-                if (isset($data['pph_23']) && $data['pph_23'] == 'yes') {
-                    $total_pph = round($total_dpp * (2/100), 2);
-                }
-                $grand_total = (($total_dpp - $total_discount_all) + $total_vat) - $total_pph;
-
-                // assign to variable
-                foreach ($all_data_final as &$item) {
-                    $item["total_discount"] = $total_discount_all;
-                    $item["total_vat"] = $total_vat;
-                    $item["total_dpp"] = $total_dpp;
-                    $item["total_pph"] = $total_pph;
-                    $item["total_dp"] = 0;
-                    $item["taxes"] = $vat_rate_supplier;
-                    $item["pph"] = ($total_pph > 0) ? 2 : 0;
-                    
-                    $send = $this->crud->create('purchase_invoices', $item);
-                }
-                unset($item);
-
-                // Mapping PI Journals
-                $grouped_journals = [];
-                foreach ($all_data_final as $row) {
-                    $account_number = $row['account_number'];
-                    $check_account = $this->db->select('account_name')->from('account_coa')->where('account_number', $account_number)->get()->row();
-                    
-                    if (!isset($grouped_journals[$account_number])) {
-                        $grouped_journals[$account_number] = ["number" => $data['number'], "account_number" => $account_number, "account_name" => $check_account->account_name ?? 'N/A', "debit" => 0, "credit" => 0, "flag" => null];
-                    }
-                    if (strtolower($row["account_type"]) === "debit") {
-                        $grouped_journals[$account_number]["debit"] += $row['total'];
-                    } elseif (strtolower($row["account_type"]) === "credit") {
-                        $grouped_journals[$account_number]["credit"] += $row['total'];
-                    }
-                }
-
-                $vatIn = $this->db->select('account_number, account_name')->from('account_coa')->where('account_number', '170.170.00')->get()->row_array();
-                if ($vatIn && $total_vat > 0) {
-                    $account_number = $vatIn['account_number'];
-                    if (!isset($grouped_journals[$account_number])) {
-                        $grouped_journals[$account_number] = ["number" => $data['number'], "account_number" => $account_number, "account_name" => $vatIn['account_name'], "debit" => 0, "credit" => 0, "flag" => null];
-                    }
-                    $grouped_journals[$account_number]["debit"] += $total_vat;
-                }
-
-                $thirdParties = $this->db->select('account_number, account_name')->from('account_coa')->where('account_number', '210.120.00')->get()->row_array();
-                if ($thirdParties) {
-                    $account_number = $thirdParties['account_number'];
-                    if (!isset($grouped_journals[$account_number])) {
-                        $grouped_journals[$account_number] = ["number" => $data['number'], "account_number" => $account_number, "account_name" => $thirdParties['account_name'], "debit" => 0, "credit" => 0, "flag" => null];
-                    }
-                    $grouped_journals[$account_number]["credit"] += $grand_total;
-                }
-
-                if ($total_pph > 0) {
-                    $pph23 = $this->db->select('account_number, account_name')->from('account_coa')->where('account_number', '210.110.10')->get()->row_array();
-                    if ($pph23) {
-                        $account_number = $pph23['account_number'];
-                        if (!isset($grouped_journals[$account_number])) {
-                            $grouped_journals[$account_number] = ["number" => $data['number'], "account_number" => $account_number, "account_name" => $pph23['account_name'], "debit" => 0, "credit" => 0, "flag" => null];
-                        }
-                        $grouped_journals[$account_number]["credit"] += $total_pph;
-                    }
-                }
-                
-                $data_journals = [];
-                $flag = 1;
-                foreach ($grouped_journals as $journal) {
-                    $journal["flag"] = $flag++;
-                    $data_journals[] = $journal;
-                }
-                
-                // Insert Journals
-                foreach ($data_journals as $row) {
-                    $this->crud->create('purchase_invoice_journals', $row);
-                }
-
-                // Update status POR/PO Others
-                $records_to_update = $this->db->select('*')->from('purchase_order_receipts')->where_in('receipt_no', $data['por_no'])->get()->result_array();
-                foreach ($records_to_update as $record) {
-                    if ($record['receipt_no'] !== "-") {
-                        if ($data['type'] !== "dp") {
-                            $update = $this->crud->update('purchase_order_receipts', ["receipt_no" => $record['receipt_no'], "po_no" => $record['po_no'], "item_rm_id" => $record['item_rm_id'], "supplier_id" => $supplier_id], ["status" => 1]);
-                        }
-                    } else {
-                        $update = $this->crud->update('purchase_order_others', ["po_no" => $record['po_no'], "item_rm_id" => $record['item_rm_id'], "supplier_id" => $supplier_id], ["status" => 1]);
-                        
-                    }
-                }
-                
-                // Jika semua operasi sukses, commit transaksi
-                if ($this->db->trans_status() === false) {
-                    echo json_encode(["title" => "Error", "message" => "Failed to insert Data! Error database", "theme" => "error"]);
-                }
-                $this->db->trans_commit();
-                
-                echo $send;
 
             } else {
-                // Jika POR tidak ada atau diisi '-' tetap insert Purchase Invoice
+                // Jika POR tidak ada atau Jika POR = "-", maka gunakan data dari input
+                $records[] = $data;
+            }
+            
+            // Get Supplier Product
+            $this->db->select('rm.number, s.item_supplier, s.item_rm_id, s.price, s.currency');
+            $this->db->from('supplier_items s');
+            $this->db->join('item_rm rm', 's.item_rm_id = rm.id');
+            $this->db->where('s.supplier_id', $data['supplier_id']);
+            $this->db->like('rm.number', $data['item_no']);
+            $this->db->where('rm.status', "0");
+            $supplier_product = $this->db->get()->row();
 
+            $all_data_final = [];
+            $total_sub_all = 0;
+            $total_discount_all = 0;
+
+            foreach ($records as $record) {
+                $price = (float)($record['price'] ?? $supplier_product->price ?? 0);
+                $qty = (float)($record['qty'] ?? 0);
+                $discount_rate = (float)($record['discount'] ?? 0);
+
+                // Get Rate
+                $currency = $record['currency'];
+                $monthBf = date('Y-m-01', strtotime('-1 month', strtotime($trans_date)));
+                $exchange = $this->crud->read('exchange_rates', [], ["start_date" => $monthBf, "currency_from" => $currency, "currency_to" => "IDR"]);
+
+                if ($currency != "IDR") {
+                    if ($exchange) {
+                        $rate = $exchange->middle;
+                    } else {
+                        $rate = (float)($record['rate'] ?? 1);
+                    }
+                } else {
+                    $rate = 1;
+                }
+
+                $subtotal_item = $price * $qty;
+                $discount_item = $subtotal_item * ($discount_rate / 100);
+                $total_item = $subtotal_item - $discount_item;
+                $total_idr_item = $total_item * $rate;
+
+                $total_sub_all += $subtotal_item;
+                $total_discount_all += $discount_item;
+
+                $data_per_item = [
+                    "supplier_id"       => $supplier_id,
+                    "journal_type_id"   => $journal_type_id,
+                    "category_id"       => $data["category_id"],
+                    "item_rm_id"        => $record['item_rm_id'] ?? $supplier_product->item_rm_id ?? "-",
+                    "number"            => $number,
+                    "supplier_product"  => $record["supplier_product"] ?? $supplier_product->item_supplier ?? "-",
+                    "trans_date"        => $trans_date,
+                    "due_date"          => $due_date,
+                    "invoice_no"        => $invoice_no,
+                    "payment_term"      => $payment_term,
+                    "currency"          => $record['currency'] ?? $data["currency"],
+                    "rate"              => $rate,
+                    "po_no"             => $record["po_no"] ?? "-",
+                    "por_no"            => $record["por_no"] ?? "-",
+                    "item_no"           => $record['item_number'] ?? $data['item_no'] ?? "-",
+                    "item_name"         => $record['item_name'] ?? $data['item_name'] ?? "-",
+                    "qty"               => $qty,
+                    "uom"               => $record['uom'] ?? $data['uom'] ?? "-",
+                    "price"             => $price,
+                    "discount"          => $discount_rate,
+                    "total"             => $total_item,
+                    "total_idr"         => $total_idr_item,
+                    "faktur_no"         => $data["faktur_no"] ?? null,
+                    "account_number"    => $record['account_number'] ?? $data["account_number"],
+                    "account_type"      => $data["account_type"],
+                    "type"              => $data["type"] ?? null,
+                    "remarks"           => $data["remarks"] ?? "PI via Upload",
+                    "status"            => 0,
+                ];
+                $all_data_final[] = $data_per_item;
+            }
+
+            // Calculate DPP, VAT, Third Parties, etc
+            $total_dpp = round($total_sub_all * (11/12), 2);
+            $total_vat = round($total_dpp * ($vat_rate_supplier / 100), 2);
+            $total_pph = 0;
+            if (isset($data['pph_23']) && $data['pph_23'] == 'yes') { // Get PPH masih dari excel bukan dari Journal Setups
+                $total_pph = round($total_dpp * (2/100), 2);
+            }
+            $grand_total = (($total_dpp - $total_discount_all) + $total_vat) - $total_pph;
+
+            // assign to variable
+            foreach ($all_data_final as &$item) {
+                $item["total_discount"] = $total_discount_all;
+                $item["total_vat"] = $total_vat;
+                $item["total_dpp"] = $total_dpp;
+                $item["total_pph"] = $total_pph;
+                $item["total_dp"]  = 0;
+                $item["taxes"]     = $vat_rate_supplier;
+                $item["pph"]       = ($total_pph > 0) ? 2 : 0;
+
+                $send = $this->crud->create('purchase_invoices', $item);
+            }
+            unset($item);
+
+            // Update status POR/PO Others
+            $records_to_update = $this->db->select('*')->from('purchase_order_receipts')->where_in('receipt_no', $data['por_no'])->get()->result_array();
+            foreach ($records_to_update as $record) {
+                if ($record['receipt_no'] !== "-") {
+                    if ($data['type'] !== "dp") {
+                        $update = $this->crud->update('purchase_order_receipts', ["receipt_no" => $record['receipt_no'], "po_no" => $record['po_no'], "item_rm_id" => $record['item_rm_id'], "supplier_id" => $supplier_id], ["status" => 1]);
+                    }
+                } else {
+                    $update = $this->crud->update('purchase_order_others', ["po_no" => $record['po_no'], "item_rm_id" => $record['item_rm_id'], "supplier_id" => $supplier_id], ["status" => 1]);
+                    
+                }
+            }
+
+            // Mapping PI Journals
+            $grouped_journals = [];
+            foreach ($all_data_final as $row) {
+                $account_number = $row['account_number'];
+                $account_name = $row['account_name'] ?? ($this->db->select('account_name')->from('account_coa')->where('account_number', $account_number)->get()->row()->account_name ?? 'N/A');
+                
+                if (!isset($grouped_journals[$account_number])) {
+                    $grouped_journals[$account_number] = [
+                        "number" => $data['number'], 
+                        "account_number" => $account_number, 
+                        "account_name" => $account_name, 
+                        "debit" => 0, 
+                        "credit" => 0, 
+                        "flag" => null
+                    ];
+                }
+                
+                if (strtolower($row["account_type"]) === "debit") {
+                    $grouped_journals[$account_number]["debit"] += $row['total'];
+                } elseif (strtolower($row["account_type"]) === "credit") {
+                    $grouped_journals[$account_number]["credit"] += $row['total'];
+                }
+            }
+
+            $vatIn = $this->db->select('account_number, account_name')->from('account_coa')->where('account_number', '170.170.00')->get()->row_array();
+            if ($vatIn && $total_vat > 0) {
+                $account_number = $vatIn['account_number'];
+                if (!isset($grouped_journals[$account_number])) {
+                    $grouped_journals[$account_number] = ["number" => $data['number'], "account_number" => $account_number, "account_name" => $vatIn['account_name'], "debit" => 0, "credit" => 0, "flag" => null];
+                }
+                $grouped_journals[$account_number]["debit"] += $total_vat;
+            }
+
+            $thirdParties = $this->db->select('account_number, account_name')->from('account_coa')->where('account_number', '210.120.00')->get()->row_array();
+            if ($thirdParties) {
+                $account_number = $thirdParties['account_number'];
+                if (!isset($grouped_journals[$account_number])) {
+                    $grouped_journals[$account_number] = ["number" => $data['number'], "account_number" => $account_number, "account_name" => $thirdParties['account_name'], "debit" => 0, "credit" => 0, "flag" => null];
+                }
+                $grouped_journals[$account_number]["credit"] += $grand_total;
+            }
+
+            if ($total_pph > 0) {
+                $pph23 = $this->db->select('account_number, account_name')->from('account_coa')->where('account_number', '210.110.10')->get()->row_array();
+                if ($pph23) {
+                    $account_number = $pph23['account_number'];
+                    if (!isset($grouped_journals[$account_number])) {
+                        $grouped_journals[$account_number] = ["number" => $data['number'], "account_number" => $account_number, "account_name" => $pph23['account_name'], "debit" => 0, "credit" => 0, "flag" => null];
+                    }
+                    $grouped_journals[$account_number]["credit"] += $total_pph;
+                }
+            }
+            
+            $data_journals = [];
+            $flag = 1;
+            foreach ($grouped_journals as $journal) {
+                $journal["flag"] = $flag++;
+                $data_journals[] = $journal;
+            }
+            
+            // Insert or Update Journals
+            foreach ($data_journals as $journal_row) {
+                $unique_condition = [
+                    "number"         => $journal_row['number'],
+                    "account_number" => $journal_row['account_number'],
+                    "flag"           => $journal_row['flag']
+                ];
+
+                $existing_journal = $this->crud->read('purchase_invoice_journals', [], $unique_condition);
+                if (!empty($existing_journal)) {
+                    // Ambil data pertama dari hasil query
+                    $existing_data = $existing_journal;
+                    
+                    // Ambil nilai debit dan credit yang sudah ada (pastikan tipe data numerik)
+                    $existing_debit  = (float) $existing_data->debit;
+                    $existing_credit = (float) $existing_data->credit;
+                    
+                    // Ambil nilai price baru (pastikan tipe data numerik)
+                    $new_debit      = (float) $journal_row['debit'];
+                    $updated_debit  = $existing_debit + $new_debit;
+                    $update_data    = ['debit' => $updated_debit];
+
+                    $new_credit     = (float) $journal_row['credit'];
+                    $updated_credit = $existing_credit + $new_credit;
+                    $update_data    = ['credit' => $updated_credit];
+                    
+                    // Lakukan UPDATE dengan data yang sudah dijumlahkan
+                    $sendjournal = $this->db->where($unique_condition)->update('purchase_invoice_journals', $update_data); 
+                } else {
+                    // Jika data belum ada, lakukan INSERT (CREATE)
+                    $sendjournal = $this->crud->create('purchase_invoice_journals', $journal_row);
+                }
+            }
+            
+            // Jika semua operasi sukses, commit transaksi
+            if ($this->db->trans_status() === false) {
+                $this->db->trans_rollback();
+                echo json_encode(["title" => "Error", "message" => "Failed to insert Data! Error database", "theme" => "error"]);
+                return;
+            }
+
+            // $this->db->trans_commit();
+            // echo $send;
+            if (!empty($send)) {
+                $this->db->trans_commit();
+                echo $send;
+            } else {
+                $this->db->trans_rollback();
+                echo json_encode(["title" => "Error", "message" => "Failed to insert Data!", "theme" => "error"]);
             }
 
         } catch (Exception $e) {

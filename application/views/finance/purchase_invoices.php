@@ -3143,15 +3143,22 @@
                                 title = `<b style='color: green;'>${result_item_create.title}</b> | ${result_item_create.message}`;
                                 success++;
                             } else {
-                                title = `<b style='color: red;'>${result_item_create.title}</b> | ${result_item_create.message}`;
-                                failed++;
-                                
-                                $.ajax({
-                                    type: "POST",
-                                    url: "<?= base_url('finance/purchase_invoices/uploadcreateFailed') ?>",
-                                    data: { data: data_array[number - 1], message: result_item_create.message },
-                                    cache: false
-                                });
+                                // warning
+                                if (result_item_create.theme === "warning") {
+                                    title = `<b style='color: orange;'>${result_item_create.title}</b> | ${result_item_create.message}`;
+                                    success++;
+                                } else {
+                                    // error
+                                    title = `<b style='color: red;'>${result_item_create.title}</b> | ${result_item_create.message}`;
+                                    failed++;
+                                    
+                                    $.ajax({
+                                        type: "POST",
+                                        url: "<?= base_url('finance/purchase_invoices/uploadcreateFailed') ?>",
+                                        data: { data: data_array[number - 1], message: result_item_create.message },
+                                        cache: false
+                                    });
+                                }
                             }
                             
                             $("#p_remarks").append(title + "<br>");
