@@ -1242,6 +1242,352 @@ class Purchase_invoices extends CI_Controller
         echo $send;
     }
 
+
+    // ---------- UPLOAD FUNCTIONS ------------
+    //UPLOAD DATA
+    public function upload()
+    {
+        header('Content-Type: application/json');
+
+        error_reporting(0);
+        require_once 'assets/vendors/excel_reader2.php';
+
+        try {
+            $target = basename($_FILES['file_upload']['name']);
+            
+            // Use a more robust check for file upload success
+            if (!move_uploaded_file($_FILES['file_upload']['tmp_name'], $target)) {
+                throw new Exception("Failed to upload file.");
+            }
+            
+            chmod($target, 0777);
+            $file = $target;
+            $data = new Spreadsheet_Excel_Reader($file, false);
+            $total_row = $data->rowcount($sheet_index = 0);
+            $datas = [];
+
+            for ($i = 4; $i <= $total_row; $i++) {
+                $datas[] = [
+                    //excel
+                    'number'            => trim($data->val($i, 2)),
+                    'invoice_no'        => trim($data->val($i, 3)),
+                    'faktur_no'         => trim($data->val($i, 4)),
+                    'supplier_id'       => trim($data->val($i, 5)),
+                    'type'              => trim($data->val($i, 6)),
+                    'trans_date'        => trim($data->val($i, 7)),
+                    'category_id'       => trim($data->val($i, 8)),
+                    'journal_type_code' => trim($data->val($i, 9)),
+                    'payment_term'      => trim($data->val($i, 10)),
+                    'remarks'           => trim($data->val($i, 11)),
+                    'por_no'            => trim($data->val($i, 12)),
+                    'po_no'             => trim($data->val($i, 13)),
+                    'item_no'           => trim($data->val($i, 14)),
+                    'item_name'         => trim($data->val($i, 15)),
+                    'uom'               => trim($data->val($i, 16)),
+                    'qty'               => trim($data->val($i, 17)),
+                    'currency'          => trim($data->val($i, 18)),
+                    'unit_price'        => trim($data->val($i, 19)),
+                    'rate'              => trim($data->val($i, 20)),
+                    'account_number'    => trim($data->val($i, 21)),
+                    'account_type'      => trim($data->val($i, 22)),
+                ];
+            }
+            
+            $response = [
+                'total' => count($datas),
+                'data' => $datas
+            ];
+            
+            echo json_encode($response);
+
+        } catch (Exception $e) {
+            // Handle upload errors gracefully
+            http_response_code(500); // Set HTTP status code for server error
+            echo json_encode(['error' => $e->getMessage()]);
+        } finally {
+            // Ensure the temporary file is deleted even if an error occurs
+            if (isset($target) && file_exists($target)) {
+                unlink($target);
+            }
+        }
+    }
+
+    public function uploadclearFailed()
+    {
+        @unlink('failed/item_fg.txt');
+    }
+    public function uploadcreateFailed()
+    {
+        if ($this->input->post()) {
+            $message = $this->input->post('message');
+            $textFailed = fopen('failed/item_fg.txt', 'a');
+            fwrite($textFailed, $message . "\n");
+            fclose($textFailed);
+        }
+    }
+    //UPLOAD DOWNLOAD FAILED
+    public function uploadDownloadFailed()
+    {
+        $file = "failed/item_fg.txt";
+        header('Content-Description: File Failed');
+        header('Content-Disposition: attachment; filename=' . basename($file));
+        header('Expires: 0');
+        header('Cache-Control: must-revalidate');
+        header('Pragma: public');
+        header('Content-Length: ' . @filesize($file));
+        header("Content-Type: text/plain");
+        @readfile($file);
+    }
+
+    //UPLOAD CREATE DATA
+    public function uploadCreate()
+    {
+        if (!$this->input->post()) {
+            echo json_encode(["title" => "Error", "message" => "Invalid request. No data received.", "theme" => "error"]);
+            return;
+        }
+
+        $this->db->trans_begin();
+        try {
+            $data = $this->input->post('data');
+            if (empty($data)) {
+                echo json_encode(["title" => "Not Found", "message" => "Input data is empty.", "theme" => "error"]);
+                return;
+            }
+
+            // Validate required data first.
+            $get_supplier = $this->crud->read('suppliers', [], ["id" => $data['supplier_id']]);
+            if (empty($data['supplier_id']) || empty($get_supplier)) {
+                echo json_encode(["title" => "Not Found", "message" => "Supplier ID: " . $data['supplier_id'] . " is Not Found", "theme" => "error"]);
+                return;
+            }
+
+            if (empty($data['type']) && (strtoupper($data['type']) !== "PURCHASE" || strtoupper($data['type']) !== "OTHER")) {
+                echo json_encode(["title" => "Not Found", "message" => "Purchase Invoice Type must be PURCHASE or OTHER", "theme" => "error"]);
+                return;
+            }
+            
+            $is_valid_date = ($d = DateTime::createFromFormat('Y-m-d', $data['trans_date'])) && $d->format('Y-m-d') === $data['trans_date'];
+            if (empty($data['trans_date']) || !$is_valid_date) {
+                echo json_encode(["title" => "Not Found", "message" => "Date format must be 'YYYY-MM-DD'", "theme" => "error"]);
+                return;
+            }
+
+            $get_category = $this->crud->read('item_categories', [], ["id" => $data['category_id']]);
+            if (empty($data['category_id']) || empty($get_category)) {
+                echo json_encode(["title" => "Not Found", "message" => "Category ID: " . $data['category_id'] . " is Not Found", "theme" => "error"]);
+                return;
+            }
+
+            $get_journal_type = $this->crud->read('journal_types', [], ["number" => $data['journal_type_code']]);
+            if (empty($data['journal_type_code']) || empty($get_journal_type)) {
+                echo json_encode(["title" => "Not Found", "message" => "Journal Type Code is Not Match", "theme" => "error"]);
+                return;
+            }
+
+            $get_account_coa = $this->crud->read('account_coa', [], ["account_number" => $data['account_number']]);
+            if (empty($data['account_number']) || empty($get_account_coa)) {
+                echo json_encode(["title" => "Not Found", "message" => "Account Number : " . $data['account_number'] . " is Not Found", "theme" => "error"]);
+                return;
+            }
+
+            if (empty($data['account_type']) && (strtoupper($data['account_type']) !== "DEBIT" || strtoupper($data['account_type']) !== "CREDIT")) {
+                echo json_encode(["title" => "Not Found", "message" => "Account Type must be DEBIT or CREDIT", "theme" => "error"]);
+                return;
+            }
+
+            // Prepare data
+            $trans_date = $data['trans_date'];
+            $supplier_id = $get_supplier->id;
+            $journal_type_id = $get_journal_type->id;
+            $payment_term = $get_supplier->payment_term ?? $data["payment_term"];
+            $vat_rate_supplier = $get_supplier->vat ?? 0;
+            $due_date = date('Y-m-d', strtotime('+' . $payment_term . ' days', strtotime($trans_date)));
+
+            // PI number
+            $number = $data["number"];
+            if (empty($number)) {
+                $datenow = "PI-" . date("Ymd", strtotime($trans_date));
+                $sqlGetID = $this->db->select_max('number', 'kode')->like('number', $datenow, 'after')->get('purchase_invoices')->row();
+                $urutan = ($sqlGetID && $sqlGetID->kode) ? (int) substr($sqlGetID->kode, -4) : 0;
+                $urutan++;
+                $autoID = sprintf("%04s", $urutan);
+                $number = $datenow . "-" . $autoID;
+            }
+
+            // --- Supplier invoice number
+            $invoice_no = $data["invoice_no"];
+            if (empty($invoice_no)) {
+                $invoice_no = ($data['type'] == "dp") ? "INVWDP-" . time() : "INVTMP-" . time();
+            }
+
+            $where_por = ["receipt_no" => $data['por_no'], "po_no" => $data['po_no'], "status" => "0"];
+            $records = $this->db->select('*')->from('purchase_order_receipts')->where($where_por)->get()->result_array();
+            
+            if (!empty($records) && $data['por_no'] !== "-") {
+                // Jika POR ada
+                $por_no = $data['por_no'];
+
+                $this->db->select("a.receipt_no as por_no, a.po_no, c.id as item_rm_id, c.number as item_number, c.name as item_name, c.uom, b.currency, e.item_supplier as supplier_product,
+                    a.qty_receipt as qty, f.price, f.discount, h.account_number, i.account_name, COALESCE(g.middle,1) as rate");
+                $this->db->from('purchase_order_receipts a');
+                $this->db->join('suppliers b', 'a.supplier_id = b.id');
+                $this->db->join('item_rm c', 'a.item_rm_id = c.id');
+                $this->db->join('supplier_items e', 'b.id = e.supplier_id and c.id = e.item_rm_id', 'left');
+                $this->db->join('purchase_orders f', 'a.po_no = f.po_no and b.id = f.supplier_id and c.id = f.item_rm_id', 'left');
+                $this->db->join('exchange_rates g', "g.start_date <= '{$trans_date}' AND g.end_date >= '{$trans_date}' AND g.currency_from = b.currency",'left');
+                $this->db->join('item_familys h', "c.item_family_id = h.id", 'left');
+                $this->db->join('account_coa i', "h.account_number = i.account_number", 'left');
+                $this->db->where('a.deleted', 0);
+                $this->db->where_in('a.receipt_no', $por_no);
+                $this->db->order_by('a.receipt_no', 'asc');
+                $records = $this->db->get()->result_array();
+
+                $all_data_final = [];
+                $total_sub_all = 0;
+                $total_discount_all = 0;
+
+                foreach ($records as $record) {
+                    $price = (float)($record['price'] ?? 0);
+                    $qty = (float)($record['qty'] ?? 0);
+                    $discount_rate = (float)($record['discount'] ?? 0);
+                    $rate = (float)($record['rate'] ?? 1);
+
+                    $subtotal_item = $price * $qty;
+                    $discount_item = $subtotal_item * ($discount_rate / 100);
+                    $total_item = $subtotal_item - $discount_item;
+                    $total_idr_item = $total_item * $rate;
+
+                    $total_sub_all += $subtotal_item;
+                    $total_discount_all += $discount_item;
+
+                    $data_per_item = [
+                        "supplier_id" => $supplier_id, "journal_type_id" => $journal_type_id, "category_id" => $data["category_id"],
+                        "item_rm_id" => $record['item_rm_id'] ?? "-", "number" => $number, "supplier_product" => $record["supplier_product"],
+                        "trans_date" => $trans_date, "due_date" => $due_date, "invoice_no" => $invoice_no, "payment_term" => $payment_term,
+                        "currency" => $record['currency'] ?? $data["currency"], "rate" => $rate, "po_no" => $record["po_no"], "por_no" => $record["por_no"],
+                        "item_no" => $record['item_number'] ?? "-", "item_name" => $record['item_name'] ?? "-", "qty" => $qty,
+                        "uom" => $record['uom'] ?? "-", "price" => $price, "discount" => $discount_rate, "total" => $total_item,
+                        "total_idr" => $total_idr_item, "account_number" => $record['account_number'] ?? $data["account_number"],
+                        "account_type" => $data["account_type"] ?? null, "status" => 0,
+                    ];
+                    $all_data_final[] = $data_per_item;
+                }
+
+                // Calculate DPP, VAT, Third Parties, etc
+                $total_dpp = round($total_sub_all * (11/12), 2);
+                $total_vat = round($total_dpp * ($vat_rate_supplier / 100), 2);
+                $total_pph = 0;
+                if (isset($data['pph_23']) && $data['pph_23'] == 'yes') {
+                    $total_pph = round($total_dpp * (2/100), 2);
+                }
+                $grand_total = (($total_dpp - $total_discount_all) + $total_vat) - $total_pph;
+
+                // assign to variable
+                foreach ($all_data_final as &$item) {
+                    $item["total_discount"] = $total_discount_all;
+                    $item["total_vat"] = $total_vat;
+                    $item["total_dpp"] = $total_dpp;
+                    $item["total_pph"] = $total_pph;
+                    $item["total_dp"] = 0;
+                    $item["taxes"] = $vat_rate_supplier;
+                    $item["pph"] = ($total_pph > 0) ? 2 : 0;
+                    
+                    $send = $this->crud->create('purchase_invoices', $item);
+                }
+                unset($item);
+
+                // Mapping PI Journals
+                $grouped_journals = [];
+                foreach ($all_data_final as $row) {
+                    $account_number = $row['account_number'];
+                    $check_account = $this->db->select('account_name')->from('account_coa')->where('account_number', $account_number)->get()->row();
+                    
+                    if (!isset($grouped_journals[$account_number])) {
+                        $grouped_journals[$account_number] = ["number" => $data['number'], "account_number" => $account_number, "account_name" => $check_account->account_name ?? 'N/A', "debit" => 0, "credit" => 0, "flag" => null];
+                    }
+                    if (strtolower($row["account_type"]) === "debit") {
+                        $grouped_journals[$account_number]["debit"] += $row['total'];
+                    } elseif (strtolower($row["account_type"]) === "credit") {
+                        $grouped_journals[$account_number]["credit"] += $row['total'];
+                    }
+                }
+
+                $vatIn = $this->db->select('account_number, account_name')->from('account_coa')->where('account_number', '170.170.00')->get()->row_array();
+                if ($vatIn && $total_vat > 0) {
+                    $account_number = $vatIn['account_number'];
+                    if (!isset($grouped_journals[$account_number])) {
+                        $grouped_journals[$account_number] = ["number" => $data['number'], "account_number" => $account_number, "account_name" => $vatIn['account_name'], "debit" => 0, "credit" => 0, "flag" => null];
+                    }
+                    $grouped_journals[$account_number]["debit"] += $total_vat;
+                }
+
+                $thirdParties = $this->db->select('account_number, account_name')->from('account_coa')->where('account_number', '210.120.00')->get()->row_array();
+                if ($thirdParties) {
+                    $account_number = $thirdParties['account_number'];
+                    if (!isset($grouped_journals[$account_number])) {
+                        $grouped_journals[$account_number] = ["number" => $data['number'], "account_number" => $account_number, "account_name" => $thirdParties['account_name'], "debit" => 0, "credit" => 0, "flag" => null];
+                    }
+                    $grouped_journals[$account_number]["credit"] += $grand_total;
+                }
+
+                if ($total_pph > 0) {
+                    $pph23 = $this->db->select('account_number, account_name')->from('account_coa')->where('account_number', '210.110.10')->get()->row_array();
+                    if ($pph23) {
+                        $account_number = $pph23['account_number'];
+                        if (!isset($grouped_journals[$account_number])) {
+                            $grouped_journals[$account_number] = ["number" => $data['number'], "account_number" => $account_number, "account_name" => $pph23['account_name'], "debit" => 0, "credit" => 0, "flag" => null];
+                        }
+                        $grouped_journals[$account_number]["credit"] += $total_pph;
+                    }
+                }
+                
+                $data_journals = [];
+                $flag = 1;
+                foreach ($grouped_journals as $journal) {
+                    $journal["flag"] = $flag++;
+                    $data_journals[] = $journal;
+                }
+                
+                // Insert Journals
+                foreach ($data_journals as $row) {
+                    $this->crud->create('purchase_invoice_journals', $row);
+                }
+
+                // Update status POR/PO Others
+                $records_to_update = $this->db->select('*')->from('purchase_order_receipts')->where_in('receipt_no', $data['por_no'])->get()->result_array();
+                foreach ($records_to_update as $record) {
+                    if ($record['receipt_no'] !== "-") {
+                        if ($data['type'] !== "dp") {
+                            $update = $this->crud->update('purchase_order_receipts', ["receipt_no" => $record['receipt_no'], "po_no" => $record['po_no'], "item_rm_id" => $record['item_rm_id'], "supplier_id" => $supplier_id], ["status" => 1]);
+                        }
+                    } else {
+                        $update = $this->crud->update('purchase_order_others', ["po_no" => $record['po_no'], "item_rm_id" => $record['item_rm_id'], "supplier_id" => $supplier_id], ["status" => 1]);
+                        
+                    }
+                }
+                
+                // Jika semua operasi sukses, commit transaksi
+                if ($this->db->trans_status() === false) {
+                    echo json_encode(["title" => "Error", "message" => "Failed to insert Data! Error database", "theme" => "error"]);
+                }
+                $this->db->trans_commit();
+                
+                echo $send;
+
+            } else {
+                // Jika POR tidak ada atau diisi '-' tetap insert Purchase Invoice
+
+            }
+
+        } catch (Exception $e) {
+            // Jika ada kesalahan, rollback transaksi dan kirim respons error
+            $this->db->trans_rollback();
+            echo json_encode(["title" => "Error", "message" => $e->getMessage(), "theme" => "error"]);
+        }
+    }
+    
+    // ------- PRINT FUNCTIONS ---------
     public function print_invoicing($invoice, $is_hyperlink = null) // is_hyperlink for Show GL and link each transaction (Report_general_ledgers)
     {
         $invoice_no = base64_decode($invoice);

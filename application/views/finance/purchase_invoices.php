@@ -717,6 +717,26 @@
     </form>
 </div>
 
+<!-- Upload -->
+<div id="dlg_upload" class="easyui-dialog" title="Upload Data" data-options="closed: true,modal:true" style="width: 500px; padding:10px; top: 20px;">
+    <form id="frm_upload" method="post" enctype="multipart/form-data" novalidate>
+        <fieldset style="width:100%; border:1px solid #d0d0d0; margin-bottom: 10px; border-radius:4px; float: left;">
+            <legend><b>Form Data</b></legend>
+            <div class="fitem">
+                <span style="width:35%; display:inline-block;">File Upload</span>
+                <input name="file_upload" style="width: 60%;" required="" accept=".xls" id="file_excel" class="easyui-filebox">
+            </div>
+        </fieldset>
+    </form>
+    <span style="float: left; color:green;">SUCCESS : <b id="p_success">0</b></span><span style="float: right; color:red;"> FAILED : <b id="p_failed">0</b></span>
+    <div id="p_upload" class="easyui-progressbar" style="width:100%; margin-top: 10px;"></div>
+    <center><b id="p_start">0</b> Of <b id="p_finish">0</b></center>
+    <div id="p_remarks" title="History Upload" class="easyui-panel" style="width:100%; height:200px; padding:10px; margin-top: 10px;">
+        <ul id="remarks">
+        </ul>
+    </div>
+</div>
+
 <!-- PDF -->
 <iframe id="printout" src="" style="width: 100%;" hidden></iframe>
 <script>
@@ -1897,6 +1917,15 @@
         $("#printout").attr('src', '<?= base_url('finance/purchase_invoices/print') ?>' + url);
     }
 
+    // UPLOAD DATA
+    function upload() {
+        $('#dlg_upload').dialog('open');
+    }
+    // DOWNLOAD
+    function download_excel() {
+        window.location.assign('<?= base_url('template/tmp_purchase_invoices.xls') ?>');
+    }
+
     //PRINT PDF
     function pdf() {
         $("#printout").get(0).contentWindow.print();
@@ -3033,4 +3062,110 @@
             toastr.warning("Please select one or more data in the table first!", "Information");
         }
     }
+
+    // UPLOAD DATA
+    $('#dlg_upload').dialog({
+        buttons: [{
+            text: 'List Failed',
+            handler: function() {
+                window.open('<?= base_url('finance/purchase_invoices/uploadDownloadFailed') ?>', '_blank');
+            }
+        }, {
+            text: 'Upload',
+            iconCls: 'icon-ok',
+            handler: function() {
+                // Validasi form dan tampilkan progress
+                if (!$('#frm_upload').form('validate')) {
+                    return;
+                }
+
+                $.messager.progress({
+                    title: 'Please Wait',
+                    msg: 'Importing Excel to Database'
+                });
+
+                // Gunakan FormData untuk mengirim data formulir dan file (pengganti eval() tidak works di Chrome)
+                var formData = new FormData($('#frm_upload')[0]);
+
+                $.ajax({
+                    url: '<?= base_url('finance/purchase_invoices/uploadclearFailed') ?>',
+                    type: 'POST',
+                    async: false, // Penting: pastikan proses selesai sebelum lanjut
+                    success: function() {
+                        console.log('Previous failed records cleared successfully.');
+                    },
+                    error: function() {
+                        console.error('Failed to clear previous failed records.');
+                    }
+                });
+
+                $.ajax({
+                    url: '<?= base_url('finance/purchase_invoices/upload') ?>',
+                    type: 'POST',
+                    data: formData,
+                    dataType: 'json',
+                    processData: false, // Penting: Jangan memproses data
+                    contentType: false, // Penting: Biarkan jQuery mengatur Content-Type
+                    success: function(json) {
+                        $.messager.progress('close');
+                        requestData(json.total, json.data);
+                    },
+                    error: function(xhr, status, error) {
+                        $.messager.progress('close');
+                        console.error('AJAX Error:', error);
+                        $.messager.alert('Error', 'Invalid JSON response from server. Change browser or contact admin.', 'error');
+                    }
+                });
+
+                // Lanjutkan dengan fungsi rekursi seperti sebelumnya (di dalam success handler)
+                function requestData(total, data_array, number = 1, success = 0, failed = 0) {
+                    if (number > total) {
+                        $.messager.alert('Upload Finished', `Import process completed.<br>Successful: ${success}<br>Failed: ${failed}`, 'info');
+                        $('#dg').datagrid('reload');
+                        return;
+                    }
+
+                    let value = Math.floor((number / total) * 100);
+                    $('#p_upload').progressbar('setValue', value);
+                    $('#p_start').html(number);
+                    $('#p_finish').html(total);
+                    $('#p_success').html(success);
+                    $('#p_failed').html(failed);
+                    
+                    $.ajax({
+                        type: "POST",
+                        url: "<?= base_url('finance/purchase_invoices/uploadCreate') ?>",
+                        data: { "data": data_array[number - 1] },
+                        dataType: "json",
+                        success: function(result_item_create) {
+                            let title = '';
+                            if (result_item_create.theme === "success") {
+                                title = `<b style='color: green;'>${result_item_create.title}</b> | ${result_item_create.message}`;
+                                success++;
+                            } else {
+                                title = `<b style='color: red;'>${result_item_create.title}</b> | ${result_item_create.message}`;
+                                failed++;
+                                
+                                $.ajax({
+                                    type: "POST",
+                                    url: "<?= base_url('finance/purchase_invoices/uploadcreateFailed') ?>",
+                                    data: { data: data_array[number - 1], message: result_item_create.message },
+                                    cache: false
+                                });
+                            }
+                            
+                            $("#p_remarks").append(title + "<br>");
+                            requestData(total, data_array, number + 1, success, failed);
+                        },
+                        error: function(xhr, status, error) {
+                            console.error('AJAX Error:', error);
+                            failed++;
+                            $("#p_remarks").append(`<b style='color: red;'>Error</b> | Failed to process item: ${error}<br>`);
+                            requestData(total, data_array, number + 1, success, failed);
+                        }
+                    });
+                }
+            }
+        }]
+    });
 </script>
