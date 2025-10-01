@@ -3,9 +3,8 @@
     <thead>
         <tr>
             <th rowspan="2" field="ck" checkbox="true"></th>
-            <th rowspan="2" data-options="field:'account_group_detail_name',width:100,align:'left'">
-                <div style="text-align: center;">Category</div>
-            </th>
+            <th rowspan="2" data-options="field:'account_group_detail_id',width:100,align:'left',halign:'center',hidden:true">Category ID</th>
+            <th rowspan="2" data-options="field:'account_group_detail_name',width:100,align:'left',halign:'center'">Category</th>
             <th rowspan="2" data-options="field:'account_number',width:100,halign:'center'">Account Code</th>
             <th rowspan="2" data-options="field:'account_name',width:250,halign:'center'">Account Name</th>
             <th rowspan="2" data-options="field:'closing_journal',width:80,halign:'center',align:'center',formatter: statusformat, styler:statusStyle">Closing<br>Journal</th>
@@ -41,8 +40,13 @@
             <legend><b>Form Data</b></legend>
             <div class="fitem">
                 <span style="width:35%; display:inline-block;">Category</span>
-                <input style="width:50%;" name="account_group_detail_id" id="account_group_detail_id" required="" class="easyui-combobox">
+                <input style="width:50%;" name="account_group_detail_name" id="account_group_detail_name" required="" class="easyui-combobox">
             </div>
+            <div class="fitem" hidden>
+                <span style="width:35%; display:inline-block;">Category ID</span>
+                <input style="width:50%;" name="account_group_detail_id" id="account_group_detail_id" required="" class="easyui-textbox">
+            </div>
+
             <div class="fitem">
                 <span style="width:35%; display:inline-block;">Account Code</span>
                 <input style="width:50%;" name="account_number" id="account_number" required="" class="easyui-textbox">
@@ -186,8 +190,7 @@
             $('#frm_insert').form('load', row);
 
             // $('#account_group_detail_id').combobox('disable');
-            $('#account_group_detail_id').combobox('enable'); // sementara request Bu Nina
-            $('#account_group_detail_id').combobox('setValue', row.account_group_detail_name);
+            $('#account_group_detail_name').combobox('enable');
 
             url_save = '<?= base_url('finance/account_coa/update') ?>?id=' + btoa(row.id);
         } else {
@@ -440,11 +443,15 @@
             },
         }]);
 
-        $('#account_group_detail_id').combobox({
+        $('#account_group_detail_name').combobox({
             url: '<?= base_url('finance/account_group_details/reads') ?>', // URL to your PHP script
             valueField: 'id',
             textField: 'name',
             prompt: 'Choose Category',
+            onSelect: function(row) {
+                $("#account_group_detail_name").combobox("setValue", row.name);
+                $("#account_group_detail_id").textbox("setValue", row.id);
+            }
         });
 
         $('#status').combobox({

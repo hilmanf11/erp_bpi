@@ -90,8 +90,9 @@ class Account_coa extends CI_Controller
                 account_coa.status,
                 account_coa.starting_date,
                 account_coa.ap_ar_other,
+                account_group_details.id as account_group_detail_id,
                 account_group_details.name as account_group_detail_name,
-                (CASE WHEN account_coa.status = 0 THEN 'CLOSE' ELSE 'OPEN' END) as closing_journal
+                (CASE WHEN account_coa.status = 0 THEN 'OPEN' ELSE 'CLOSE' END) as closing_journal
             ");
             $this->db->from('account_coa');
             $this->db->join('account_group_details', 'account_group_details.id = account_coa.account_group_detail_id', 'left');
@@ -272,6 +273,7 @@ class Account_coa extends CI_Controller
     {
         if ($this->input->post()) {
             $post = $this->input->post();
+            unset($post['account_group_detail_name']);
 
             $account_number_new = $post['account_number'];
             $account_name_new   = $post['account_name'];
@@ -321,6 +323,7 @@ class Account_coa extends CI_Controller
         {
             $id   = base64_decode($this->input->get('id'));
             $post = $this->input->post();
+            unset($post['account_group_detail_name']);
 
             if (isset($post['id'])) {
                 unset($post['id']);
@@ -460,6 +463,33 @@ class Account_coa extends CI_Controller
         }
     }
 
+    public function uploadclearFailed()
+    {
+        @unlink('failed/account_coa.txt');
+    }
+    public function uploadcreateFailed()
+    {
+        if ($this->input->post()) {
+            $message = $this->input->post('message');
+            $textFailed = fopen('failed/account_coa.txt', 'a');
+            fwrite($textFailed, $message . "\n");
+            fclose($textFailed);
+        }
+    }
+    //UPLOAD DOWNLOAD FAILED
+    public function uploadDownloadFailed()
+    {
+        $file = "failed/account_coa.txt";
+        header('Content-Description: File Failed');
+        header('Content-Disposition: attachment; filename=' . basename($file));
+        header('Expires: 0');
+        header('Cache-Control: must-revalidate');
+        header('Pragma: public');
+        header('Content-Length: ' . @filesize($file));
+        header("Content-Type: text/plain");
+        @readfile($file);
+    }
+
 
     //PRINT & EXCEL DATA
     public function print($option = "")
@@ -576,8 +606,8 @@ class Account_coa extends CI_Controller
     {
         // Logic to fetch statuses from the database or any other source
         $statuses = array(
-            array('value' => 1, 'label' => 'Yes'),
-            array('value' => 0, 'label' => 'No'),
+            array('value' => 0, 'label' => 'Yes'),
+            array('value' => 1, 'label' => 'No'),
         );
 
         // Output the statuses as JSON
