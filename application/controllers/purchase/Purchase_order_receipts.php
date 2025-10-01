@@ -356,7 +356,8 @@ class Purchase_order_receipts extends CI_Controller
                     d.name as item_family_name, 
                     b.currency, 
                     f.number as category_code, 
-                    e.uom_default as uom,
+                    e.uom_default,
+                    e.uom_inventory,
                     e.mpq,
                     sum(g.status) as total_scan');
                 $this->db->from('purchase_order_receipts a');
@@ -391,7 +392,8 @@ class Purchase_order_receipts extends CI_Controller
             a.qty as qty_po, 
             c.mpq, 
             a.supplier_id, 
-            b.uom,
+            c.uom_default,
+            c.uom_inventory,
             c.weight_kg as convertion,
             (a.qty - (CASE WHEN e.qty_os2 is null THEN 0 ELSE e.qty_os2 END)) as qty_os,
             (a.qty - (CASE WHEN e.qty_os2 is null THEN 0 ELSE e.qty_os2 END)) as qty_receipt,

@@ -13,7 +13,8 @@
             <th rowspan="2" data-options="field:'item_number',width:170,halign:'center'">Part No</th>
             <th rowspan="2" data-options="field:'item_name',width:150,halign:'center'">Part Name</th>
             <th rowspan="2" data-options="field:'category_name',width:150,halign:'center'">Part Family</th>
-            <th rowspan="2" data-options="field:'uom',width:80,align:'center'">UoM</th>
+            <th rowspan="2" data-options="field:'uom_default',width:80,align:'center'">UOM PO</th>
+            <th rowspan="2" data-options="field:'uom_inventory',width:100,align:'center'">UOM Inventory</th>
             <th rowspan="2" data-options="field:'qty',width:80,halign:'center',align:'right'">Total Qty</th>
             <th rowspan="2" data-options="field:'remarks',width:100,halign:'center'">Remarks</th>
             <th rowspan="2" data-options="field:'attachment',width:80,align:'center',formatter: btnDetails">Attachment</th>
@@ -307,12 +308,18 @@
 
                                 var ed5 = dg.datagrid('getEditor', {
                                     index: rowIndex,
-                                    field: 'uom'
+                                    field: 'uom_default'
+                                });
+
+                                 var ed6 = dg.datagrid('getEditor', {
+                                    index: rowIndex,
+                                    field: 'uom_inventory'
                                 });
 
                                 $(ed.target).textbox('setValue', row.id);
                                 $(ed2.target).textbox('setValue', row.item_name);
-                                $(ed5.target).textbox('setValue', row.uom);
+                                $(ed5.target).textbox('setValue', row.uom_default);
+                                $(ed6.target).textbox('setValue', row.uom_inventory);
 
                                 $.ajax({
                                     type: "post",
@@ -371,10 +378,18 @@
                         }
                     }
                 }, {
-                    field: 'uom',
+                    field: 'uom_default',
                     width: 80,
                     halign: 'center',
-                    title: "Uom",
+                    title: "Uom PO",
+                    editor: {
+                        type: 'textbox',
+                    }
+                }, {
+                    field: 'uom_inventory',
+                    width: 100,
+                    halign: 'center',
+                    title: "Uom Inventory",
                     editor: {
                         type: 'textbox',
                     }

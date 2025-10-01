@@ -16,7 +16,8 @@
             <th rowspan="2" data-options="field:'item_number',width:150,halign:'center'">Product No</th>
             <th rowspan="2" data-options="field:'item_name',width:200,halign:'center'">Product Name</th>
             <th rowspan="2" data-options="field:'qty_receipt',width:80,halign:'center',align:'right',formatter:numberformat">Qty</th>
-            <th rowspan="2" data-options="field:'uom',width:80,halign:'center',align:'center'">UoM</th>
+            <th rowspan="2" data-options="field:'uom_default',width:80,align:'center'">UOM PO</th>
+            <th rowspan="2" data-options="field:'uom_inventory',width:100,align:'center'">UOM Inventory</th>
             <th rowspan="2" data-options="field:'currency',width:80,halign:'center',align:'center'">Currency</th>
             <th rowspan="2" data-options="field:'mpq',width:80,halign:'center',align:'right'">MPQ</th>
             <th rowspan="2" data-options="field:'qty_label',width:80,halign:'center',align:'right'">Qty <br> Label</th>
@@ -178,11 +179,12 @@
                     <th data-options="field:'item_rm_id',width:150">Product ID</th>
                     <th data-options="field:'item_number',width:150">Product No</th>
                     <th data-options="field:'item_name',width:200">Product Name</th>
-                    <th data-options="field:'uom',width:80">UoM</th>
+                    <th data-options="field:'uom_default',width:80">UOM PO</th>
                     <th data-options="field:'qty_po',width:80,editor:{type:'numberbox', options:{readonly:true}}">PO</th>
                     <th data-options="field:'qty_os',width:80,editor:{type:'numberbox', options:{readonly:true}}">OS PO</th>
                     <th data-options="field:'qty_receipt',width:80,editor:{type:'numberbox',options:{precision:2}}">Receipt</th>
                     <th data-options="field:'mpq',width:80,editor:{type:'numberbox', options:{readonly:true, precision:2}}">MPQ</th>
+                    <th data-options="field:'uom_inventory',width:100">UOM Inventory</th>
                     <th data-options="field:'convertion',width:80,editor:{type:'numberbox', options:{readonly:true, precision:2}}">Convertion</th>
                     <th data-options="field:'qty_convertion',width:100,editor:{type:'numberbox', options:{readonly:true, precision:2}}">Qty Convertion</th>
                     <th data-options="field:'qty_label',width:80,editor:{type:'numberbox', options:{readonly:true}}">Label</th>
