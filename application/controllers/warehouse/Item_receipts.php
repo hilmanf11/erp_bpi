@@ -25,6 +25,13 @@ class Item_receipts extends CI_Controller
             redirect('error_access');
         }
     }
+
+    public function readArea()
+    {
+        $data = $this->crud->query("SELECT DISTINCT area FROM warehouse_locations WHERE `status` = '0' ORDER BY area ASC");
+        echo json_encode($data);
+    }
+
     public function getPoReceipt()
     {
         if ($this->input->post()) {
@@ -74,7 +81,7 @@ class Item_receipts extends CI_Controller
         $date = date("Y-m-d");
         $purchase_order_label = $this->crud->read('purchase_order_labels', [], ["label_no" => base64_decode($label_no)]);
         //Select Query
-        $this->db->select('a.label_no, b.receipt_no, b.bc_kind, b.bc_document, b.bc_date, b.po_no, d.number as item_number, d.name as item_name, d.uom, a.qty, a.created_by, a.created_date');
+        $this->db->select('a.label_no, b.receipt_no, b.bc_kind, b.bc_document, b.bc_date, b.po_no, d.number as item_number, d.name as item_name, d.uom, a.qty, a.created_by, a.created_date, a.plant');
         $this->db->from('scan_item_receipts a');
         $this->db->join('purchase_order_receipts b', 'a.receipt_id = b.receipt_id and a.receipt_no = b.receipt_no and a.po_no = b.po_no');
         $this->db->join('purchase_order_labels c', 'a.label_no = c.label_no');
@@ -139,6 +146,7 @@ class Item_receipts extends CI_Controller
                     $dataFinal = array(
                         //field
                         "label_no" => $post['label_no'],
+                        "plant" => $post['plant'],
                         "receipt_no" => $post['receipt_no'],
                         "receipt_id" => $post['receipt_id'],
                         "po_no" => $post['po_no'],
@@ -147,7 +155,7 @@ class Item_receipts extends CI_Controller
                         "qty" => $post['qty'],
                     );
 
-                    $send   = $this->crud->create('scan_item_receipts', $dataFinal);
+                    $send   = $this->crud->createNotLog('scan_item_receipts', $dataFinal);
                     if ($send) {
                         $update   = $this->crud->update('purchase_order_labels', ["label_no" => $post['label_no']], ["status" => 1]);
                         $update   = $this->crud->update('return_material_labels', ["label_no" => $post['label_no']], ["status" => 1]);
@@ -158,6 +166,7 @@ class Item_receipts extends CI_Controller
                                 //field
                                 "request_no" => $post['bc_document'],
                                 "label_no" => $post['label_no'],
+                                "plant" => $post['plant'],
                                 "item_rm_id" => $post['item_rm_id'],
                                 "qty" => $post['qty'],
                                 "type"=> 'WIP',

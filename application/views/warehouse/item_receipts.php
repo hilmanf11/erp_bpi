@@ -14,6 +14,7 @@
     <thead>
         <tr>
             <th rowspan="2" data-options="field:'label_no',halign:'center',width:200">Serial No</th>
+            <th rowspan="2" data-options="field:'plant',width:140,halign:'center'">Plant</th><!-- berubah -->
             <th rowspan="2" data-options="field:'receipt_no',width:140,halign:'center'">Receipt No</th>
             <th rowspan="2" data-options="field:'bc_kind',width:80,halign:'center'">BC Kind</th>
             <th rowspan="2" data-options="field:'bc_document',width:100,halign:'center'">Doc. No</th>
@@ -31,18 +32,22 @@
         </tr>
     </thead>
 </table>
-<div id="toolbar" style="height: 210px;">
+<div id="toolbar" style="height: 250px;"><!-- berubah -->
     <!-- <div style="width: 100%; display: grid; grid-template-columns: auto auto auto; grid-gap: 5px; display: flex;"> -->
     <div style="width: 100%; padding: 10px;">
         <fieldset style="width: 100%; border:2px solid #d0d0d0; margin-bottom: 5px; margin-top: 5px; border-radius:4px;">
             <legend><b>Form Scan Barcode</b></legend>
-            <div class="fitem" style="padding:0 200px 0 200px;">
+            <div class="fitem" style="padding:10 200px 0 200px;">
                 <span style="display:inline-block;">Trans Date : <b><?= date("d F Y") ?></b> | Receive By : <b><?= $this->session->name ?></b></span>
             </div>
-            <div class="fitem" style="padding:0 200px 0 200px;">
+            <div class="fitem" style="padding:10 200px 0 200px;">
+                <span style="width:10%; display:inline-block;">Plant</span>
+                <input style="width:13%;" id="plant" id="plant" required ="true" class="easyui-combobox">
+            </div>
+            <div class="fitem" style="padding:10 200px 0 200px;">
                 <input style="width:100%; height: 80px;" type="text" id="label_no" name="label_no" class="scan" placeholder="SCAN LABEL HERE">
             </div>
-            <div class="fitem" style="padding:0 200px 10px 200px;">
+            <div class="fitem" style="padding:10 200px 10px 200px;">
                 <a href="javascript:;" class="easyui-linkbutton" onclick="reload()"><i class="fa fa-rotate-right"></i> Reload</a>
             </div>
         </fieldset>
@@ -71,7 +76,13 @@
         $('#label_no').keypress(function(e) {
             if (e.which == 13) {
                 var label_no = $("#label_no").val();
+                var plant = $('#plant').combobox('getValue');
                 console.log(label_no);
+
+                if(plant == ""){
+                    toastr.warning("Please Choose Plant!");
+                    return;
+                }
                 $.ajax({
                     type: "POST",
                     url: "<?= base_url('warehouse/item_receipts/getPoReceipt') ?>",
@@ -85,6 +96,7 @@
                                     type: "POST",
                                     url: "<?= base_url('warehouse/item_receipts/create') ?>",
                                     data: "label_no=" + label_no +
+                                        "&plant=" + plant +
                                         "&receipt_no=" + row[i].receipt_no +
                                         "&receipt_id=" + row[i].receipt_id +
                                         "&po_no=" + row[i].po_no +
@@ -132,4 +144,18 @@
         });
         return "<b>" + formatter.format(value) + "</b>";
     } 
+
+    $('#plant').combobox({
+        url: '<?= base_url('warehouse/item_receipts/readArea/'); ?>',
+        valueField: 'area',
+        textField: 'area',
+        prompt: 'Choose Plant',
+        panelHeight: 'auto',
+        icons: [{
+            iconCls: 'icon-clear',
+            handler: function(e) {
+                $(e.data.target).combobox('clear').combobox('textbox').focus();
+            }
+        }],
+    });
 </script>
