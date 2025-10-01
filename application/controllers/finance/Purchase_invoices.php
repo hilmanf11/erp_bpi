@@ -1340,7 +1340,326 @@ class Purchase_invoices extends CI_Controller
     }
 
     //UPLOAD CREATE DATA
-    public function uploadCreate()
+    public function uploadcreate()
+    {
+        if ($this->input->post()) {
+            $data = $this->input->post('data');
+
+            $purchase_invoices = $this->crud->read('purchase_invoices', ["number" => $data['number'], "item_no" => $data['item_no'], "po_no" => $data['po_no'], "invoice_no" => $data['invoice_no']]);
+            $supplier     = $this->crud->read('suppliers', ["id" => $data['supplier_id']]);
+            $category     = $this->crud->read('item_categories', ["id" => $data['category_id']]);
+            $journal_type = $this->crud->read('journal_types', ["number" => $data['journal_type_code']]);
+            $account_coa  = $this->crud->read('account_coa', ["account_number" => $data['account_number']]);
+            $item_rm      = $this->crud->read('item_rm', ["number" => $data['item_no']]);
+            $valid_date   = ($d = DateTime::createFromFormat('Y-m-d', $data['trans_date'])) && $d->format('Y-m-d') === $data['trans_date'];          
+            
+            // Validate required data
+            if (empty($data['type']) && (strtoupper($data['type']) !== "PURCHASE" || strtoupper($data['type']) !== "OTHER")) {
+                echo json_encode(["title" => "Error", "message" => "Type must be PURCHASE or OTHER", "theme" => "error"]);
+                
+            } elseif (empty($data['account_type']) && (strtoupper($data['account_type']) !== "DEBIT" || strtoupper($data['account_type']) !== "CREDIT")) {
+                echo json_encode(["title" => "Error", "message" => "Account Type must be DEBIT or CREDIT", "theme" => "error"]);
+                
+            } elseif (empty($data['trans_date']) || !$valid_date) {
+                echo json_encode(["title" => "Error", "message" => "Date format must be 'YYYY-MM-DD'", "theme" => "error"]);
+                
+            } elseif (empty($supplier->id)) {
+                echo json_encode(["title" => "Not Found", "message" => "Supplier Code " . $data['supplier_id'] . " is Not Found", "theme" => "error"]);
+                
+            } elseif (empty($category->id)) {
+                echo json_encode(["title" => "Not Found", "message" => "Category ID " . $data['account_number'] . " is Not Found", "theme" => "error"]);
+                
+            } elseif (empty($account_coa->id)) {
+                echo json_encode(["title" => "Not Found", "message" => "Account COA " . $data['account_number'] . " is Not Found", "theme" => "error"]);
+            
+            } elseif (empty($journal_type->id)) {
+                echo json_encode(["title" => "Not Found", "message" => "Journal Type " . $data['journal_type_code'] . " is Not Found", "theme" => "error"]);
+                
+            } elseif (!empty($purchase_invoices)) {
+                echo json_encode(["title" => "Duplicated", "message" => "Purchase Invoice No " . $data['number'] . " & Product No " . $data['item_no'] . " & PO No " . $data['po_no'] . " has been processed previously.", "theme" => "error"]);
+                
+            } else {
+                // Get PI number
+                if (empty($data["number"]) || $data["number"] == "-") {
+                    $datenow = "PI-" . date("Ymd", strtotime($data["trans_date"]));
+                    $sqlGetID = $this->db->select_max('number', 'kode')->like('number', $datenow, 'after')->get('purchase_invoices')->row();
+                    $urutan = ($sqlGetID && $sqlGetID->kode) ? (int) substr($sqlGetID->kode, -4) : 0;
+                    $urutan++;
+                    $autoID = sprintf("%04s", $urutan);
+                    $number = $datenow . "-" . $autoID;
+                    $data["number"] = $number;
+                } else {
+                    $number = $data["number"];
+                }
+                
+                // Get Supplier invoice number
+                $invoice_no = $data["invoice_no"];
+                if (empty($invoice_no)) {
+                    $invoice_no = ($data['type'] == "dp") ? "INVWDP-" . time() : "INVTMP-" . time();
+                }
+                
+                // Get Rate
+                $currency = $data['currency'];
+                $monthBf = date('Y-m-01', strtotime('-1 month', strtotime($data["trans_date"])));
+                $exchange = $this->crud->read('exchange_rates', [], ["start_date" => $monthBf, "currency_from" => $currency, "currency_to" => "IDR"]);
+                if ($currency != "IDR") {
+                    if ($exchange) {
+                        $rate = $exchange->middle;
+                    } else {
+                        $rate = (float)($data['rate'] ?? 1);
+                    }
+                } else {
+                    $rate = 1;
+                }
+                
+                // Get Supplier Product
+                $item_rm_id       = $item_rm->id ?? "";
+                $supplier_product = $this->crud->read('supplier_items', ["supplier_id" => $data['supplier_id'], "item_rm_id" => $item_rm_id]);
+
+                // Prepare data
+                $trans_date     = $data['trans_date'];
+                $payment_term   = $supplier->payment_term ?? $data["payment_term"];
+                $vat_rate       = $supplier->vat ?? 0;
+                $due_date       = date('Y-m-d', strtotime('+' . $supplier->payment_term . ' days', strtotime($data['trans_date'])));
+                $price          = (float)($data['price'] ?? $supplier_product->price ?? 0);
+                $qty            = (float)($data['qty'] ?? 0);
+                $discount_rate  = (float)($data['discount'] ?? 0);
+                $subtotal_item  = (float)$price * $qty;
+                $discount       = (float)$subtotal_item * ($discount_rate / 100);
+                $total          = (float)$subtotal_item - $discount;
+                $total_idr      = (float)$total * $rate;
+
+                $dataFinal = [
+                    "supplier_id"       => $supplier->id,
+                    "journal_type_id"   => $journal_type->id,
+                    "category_id"       => $category->id,
+                    "number"            => $number,
+                    "supplier_product"  => $supplier_product->item_supplier ?? "-",
+                    "trans_date"        => $trans_date,
+                    "due_date"          => $due_date,
+                    "invoice_no"        => $invoice_no,
+                    "payment_term"      => $payment_term,
+                    "currency"          => $data['currency'] ?? "IDR",
+                    "type"              => $data["type"],
+                    "po_no"             => $data["po_no"] ?? "-",
+                    "por_no"            => $data["por_no"] ?? "-",
+                    "item_rm_id"        => $item_rm_id ?? "-",
+                    "item_no"           => $item_rm->number ?? "-",
+                    "item_name"         => $item_rm->name ?? "-",
+                    "uom"               => $item_rm->uom ?? "-",
+                    "qty"               => $qty,
+                    "price"             => $price,
+                    "discount"          => $discount,
+                    "rate"              => $rate,
+                    "total"             => $total,
+                    "total_idr"         => $total_idr,
+                    "faktur_no"         => $data["faktur_no"] ?? null,
+                    "account_number"    => $data['account_number'],
+                    "account_type"      => $data["account_type"],
+                    "remarks"           => $data["remarks"] ?? "PI via Upload",
+                    "taxes"             => $vat_rate,
+                    "pph"               => 0,
+                    "total_discount"    => 0,
+                    "total_vat"         => 0,
+                    "total_dpp"         => 0,
+                    "total_pph"         => 0,
+                    "total_dp"          => 0,
+                    "status"            => 0,
+                    "upload"            => "YES",
+                    "upload_date"       => date('Y-m-d'),
+                ];
+                
+
+                // CREATE (INSERT)
+                $send = $this->crud->create('purchase_invoices', $dataFinal);
+                if ($send) {
+                    echo $send;
+                } else {
+                    echo json_encode(["title" => "Error", "message" => "Failed to create invoice " . $data['number'], "theme" => "error"]);
+                }
+            }
+        } else {
+            // Kirim respon error jika bukan dari metode POST
+            echo json_encode(["title" => "Error", "message" => "Invalid request method", "theme" => "error"]);
+        }
+    }
+
+    // UPLOAD GET JOURNAL
+    public function uploadGetJournal()
+    {
+        $this->db->select('a.*, b.account_name');
+        $this->db->from('purchase_invoices a');
+        $this->db->join('account_coa b', 'a.account_number = b.account_number');
+        $this->db->where('a.upload', "YES");
+        $this->db->where('a.upload_date', date("Y-m-d"));
+        $records = $this->db->get()->result_array();
+
+        // Array untuk menyimpan hasil akhir
+        $journal_setup_map = [];
+        $allJournals = [];
+        $groupedInvoices = [];
+        
+        // Konversi Journal Setup ke dalam array asosiatif untuk akses cepat
+        $journal_setups = $this->db->get_where('journal_setups')->result_array();
+        foreach ($journal_setups as $setup) {
+            $journal_setup_map[$setup['journal_type_id']][$setup['account_number']] = $setup;
+        }
+
+        // Kelompokkan invoice berdasarkan nomor unik (number)
+        foreach ($records as $record) {
+            $number = $record['number'];
+            if (!isset($groupedInvoices[$number])) {
+                $groupedInvoices[$number] = [
+                    'main_record' => $record,
+                    'items' => []
+                ];
+            }
+            $groupedInvoices[$number]['items'][] = $record;
+        }
+
+        // Proses setiap grup invoice
+        foreach ($groupedInvoices as $number => $group) {
+            $main_record = $group['main_record'];
+            $items       = $group['items'];
+            $rate        = (float) $main_record['rate'];
+            $journal_type_id = $main_record['journal_type_id'];
+
+            $mergedData = [];
+            $grandTotal = 0;
+
+            // Hitung total dari semua item
+            foreach ($items as $item) {
+                $total = (float) $item['total'];
+                $grandTotal += $total;
+
+                if (isset($mergedData[$item['account_number']])) {
+                    $mergedData[$item['account_number']]['debit'] += ($item['account_type'] == "DEBIT" ? $total : 0);
+                    $mergedData[$item['account_number']]['credit'] += ($item['account_type'] == "CREDIT" ? $total : 0);
+                    $mergedData[$item['account_number']]['flag'] = 1; // Menambahkan flag pada data yang sudah ada
+                } else {
+                    $mergedData[$item['account_number']] = [
+                        "number"         => $number,
+                        "account_number" => $item['account_number'],
+                        "account_name"   => $item['account_name'],
+                        "debit"          => ($item['account_type'] == "DEBIT" ? $total : 0),
+                        "credit"         => ($item['account_type'] == "CREDIT" ? $total : 0),
+                        "flag"           => 1, // Menambahkan flag pada data baru
+                    ];
+                }
+            }
+
+            // Perhitungan DPP, VAT, PPH, dan TRADE PAYABLE
+            $subTotal = $grandTotal;
+            $totalDpp = round($subTotal * (11/12), 2);
+            $vatRate  = $main_record['taxes'] ?? 0;
+            $pphTotal = 0;
+            $discount = $main_record['discount'] ?? 0;
+            $vatTotal = round($totalDpp * ($vatRate / 100), 2);
+            $totalTrade = (($subTotal - $discount) + $vatTotal) - $pphTotal;
+            // $totalTrade = (($totalDpp - $discount) + $vatTotal) - $pphTotal; // tidak balance dengan totalDpp
+            
+            $journalVatIn = $this->db->select('account_number, account_name')->from('account_coa')->where('account_number', '170.170.00')->get()->row_array();
+            $journalTrade = $this->db->select('account_number, account_name')->from('account_coa')->where('account_number', '210.120.00')->get()->row_array();
+            // $journalPph   = $journal_setup_map[$journal_type_id]['210.130.00'];
+
+            // Tambahkan jurnal VAT
+            if ($journalVatIn) {
+                $debit  = $vatTotal;
+                $credit = 0;
+                $mergedData[$journalVatIn['account_number']] = [
+                    "number"         => $number,
+                    "account_number" => $journalVatIn['account_number'],
+                    "account_name"   => $journalVatIn['account_name'],
+                    "debit"          => $debit,
+                    "credit"         => $credit,
+                    "flag"           => null,
+                ];
+            }            
+
+            // Hitung dan tambahkan jurnal TRADE PAYABLE
+            if ($journalTrade) {
+                $debit  = 0;
+                $credit = $totalTrade ?? 0;
+                $mergedData[$journalTrade['account_number']] = [
+                    "number"         => $number,
+                    "account_number" => $journalTrade['account_number'],
+                    "account_name"   => $journalTrade['account_name'],
+                    "debit"          => $debit,
+                    "credit"         => $credit,
+                    "flag"           => null,
+                ];
+            }
+
+            // Hitung dan tambahkan jurnal PPH (belum di setting dari excel uplad)
+            // if (isset($data['pph_23']) && $data['pph_23'] == 'yes') { // Get PPH masih dari excel bukan dari Journal Setups
+            //     $pphTotal = round($totalDpp * (2/100), 2);
+            // }
+            // if ($journalPph) {
+            //     $pphRate = 0;
+            //     switch ($journalPph['account_number']) {
+            //         case "210.130.00": $pphRate = 0.02; break; // PPH 2%
+            //     }
+            //     $pphTotal = $subTotal * $pphRate;
+
+            //     $debit = ($journalPph['status'] == "DEBIT") ? $pphTotal : 0;
+            //     $credit = ($journalPph['status'] == "CREDIT") ? $pphTotal : 0;
+            //     $mergedData[$journalPph['account_number']] = [
+            //         "number"         => $number,
+            //         "account_number" => $journalPph['account_number'],
+            //         "account_name"   => $journalPph['account_name'],
+            //         "debit"          => $debit,
+            //         "credit"         => $credit,
+            //     ];
+            // }
+
+            // Update total VAT dan PPH
+            $this->db->update('purchase_invoices', ["total_vat" => $vatTotal, "total_pph" => $pphTotal], ["number" => $number]);
+
+            // Tambahkan hasil jurnal ke array utama
+            foreach (array_values($mergedData) as $journalEntry) {
+                $allJournals[] = $journalEntry;
+            }
+        }
+
+        $flag_counter = 1;
+        foreach ($allJournals as &$journal) {
+            $journal['flag'] = $flag_counter++;
+        }
+        unset($journal);
+
+        // Respons JSON untuk JavaScript
+        $result = [
+            'total' => count($allJournals),
+            'data'  => $allJournals
+        ];
+
+        echo json_encode($result);
+    }
+
+    public function uploadCreateJournal()
+    {
+        if ($this->input->post()) {
+            $post = $this->input->post('data');
+            $purchase_invoice_journals = $this->crud->read('purchase_invoice_journals', [], ["number" => $post['number'], "account_number" => $post['account_number']]);
+
+            if (@$purchase_invoice_journals->id != "") {
+                // update error foreign key constraint debit credit
+                // $send = $this->crud->update('purchase_invoice_journals', ["number" => $post['number'], "account_number" => $post['account_number']], $post);
+                
+                // delete existing then re-create 
+                $this->crud->delete('purchase_invoice_journals', $post);
+                $send = $this->crud->create('purchase_invoice_journals', $post);
+                echo $send;
+            } else {
+                $send = $this->crud->create('purchase_invoice_journals', $post);
+                echo $send;
+            }
+        } else {
+            show_error("Cannot Process your request");
+        }
+    }
+    
+    public function uploadCreate_backup()
     {
         if (!$this->input->post()) {
             echo json_encode(["title" => "Error", "message" => "Invalid request. No data received.", "theme" => "error"]);
