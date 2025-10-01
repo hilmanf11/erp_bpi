@@ -67,7 +67,7 @@
             
             <div class="fitem">
                 <span style="width:35%; display:inline-block;">Starting Date</span>
-                <input style="width:30%;" id="starting_from" required="" class="easyui-datebox" data-options="prompt:'Start Date',formatter:myformatter,parser:myparser, editable:false">
+                <input style="width:30%;" name="starting_date" id="starting_date" required="" class="easyui-datebox" data-options="prompt:'Start Date',formatter:myformatter,parser:myparser, editable:false">
             </div>
         </fieldset>
 
@@ -160,14 +160,14 @@
             }
         });
 
-        $('#starting_from').datebox({
+        $('#starting_date').datebox({
             formatter: myformatter,
             parser: myparser,
             prompt: 'Start Date',
             editable: false
         });
         var defaultDate = '<?= date("Y-01-01") ?>';
-        $('#starting_from').datebox('setValue', defaultDate);
+        $('#starting_date').datebox('setValue', defaultDate);
 
         $('#period_closing_journal').datebox({
             formatter: myformatter,
@@ -187,6 +187,7 @@
 
             // $('#account_group_detail_id').combobox('disable');
             $('#account_group_detail_id').combobox('enable'); // sementara request Bu Nina
+            $('#account_group_detail_id').combobox('setValue', row.account_group_detail_name);
 
             url_save = '<?= base_url('finance/account_coa/update') ?>?id=' + btoa(row.id);
         } else {
