@@ -137,12 +137,27 @@ class Supplier_items extends CI_Controller
             $offset = ($page - 1) * $rows;
             $result = array();
             //Select Query
-            $this->db->select('a.*,
+            $this->db->select('a.id,
+            a.supplier_id,
+            a.item_rm_id,
+            a.maker,
+            a.item_supplier,
+            a.mpq,
+            a.moq,
+            a.share_order,
+            a.leadtime,
+            a.price,
+            a.valid_date,
+            a.safety_stock,
+            a.uom_default,
+            c.uom as uom_inventory,
+            c.weight_kg,
+            a.calculate,
             b.number as supplier_number, 
             b.name as supplier_name, 
             b.currency as suppliers_currency, 
             b.type, 
-            b.status, 
+            c.status as status_item, 
             c.number as item_rm_number, 
             c.name as item_rm_name, 
             c.item_family_id as item_rm_family, 
@@ -257,8 +272,28 @@ class Supplier_items extends CI_Controller
         if ($this->input->post()) {
             $id   = base64_decode($this->input->get('id'));
             $post = $this->input->post();
-            $send = $this->crud->update('supplier_items', ["id" => $id], $post);
-            $send2 = $this->crud->create('supplier_item_histories', $post);
+
+            $dataFinal = array(
+                //field
+                "supplier_id" => $post['supplier_id'],
+                "item_rm_id" => $post['item_rm_id'],
+                "maker" => $post['maker'],
+                "item_supplier" => $post['item_supplier'],
+                "mpq" => $post['mpq'],
+                "moq" => $post['moq'],
+                "share_order" => $post['share_order'],
+                "leadtime" => $post['leadtime'],
+                "price" => $post['price'],
+                "valid_date" => $post['valid_date'],
+                "safety_stock" => $post['safety_stock'],
+                "uom_default" => $post['uom_default'],
+                "uom_inventory" => $post['uom_inventory'],
+                "weight_kg" => $post['weight_kg'],
+                "calculate" => $post['calculate'],
+            );
+
+            $send = $this->crud->update('supplier_items', ["id" => $id], $dataFinal);
+            $send2 = $this->crud->create('supplier_item_histories', $dataFinal);
            
             echo $send;
         } else {

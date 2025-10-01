@@ -97,6 +97,10 @@
         <fieldset style="width:100%; border:1px solid #d0d0d0; margin-bottom: 10px; border-radius:4px; float: left;">
             <legend><b>Form Data</b></legend>
             <div style="float:left; width:50%;">
+                <div class="fitem" hidden>
+                    <span style="width:35%; display:inline-block;">ID</span>
+                    <input style="width:30%;" name="id" id="id" class="easyui-textbox" readonly>
+                </div>
                 <div class="fitem">
                     <span style="width:35%; display:inline-block;">Supplier ID</span>
                     <input style="width:30%;" name="supplier_id" id="supplier_id" class="easyui-textbox" readonly>
@@ -145,7 +149,7 @@
                 </div>
                 <div class="fitem">
                     <span style="width:35%; display:inline-block;">Uom Default</span>
-                    <input style="width:60%;" name="uom_default" id="uom_default" class="easyui-textbox">
+                    <input style="width:60%;" name="uom_default" id="uom_default" class="easyui-combobox">
                 </div>
                 <div class="fitem">
                     <span style="width:35%; display:inline-block;">Uom Inventory</span>
@@ -984,6 +988,13 @@
         textField: 'name',
         panelHeight: 'panelHeight',
         prompt: 'Choose Makers',
+    });
+
+    $('#uom_default').combobox({
+        url:'<?= base_url('master/uom/reads'); ?>',
+        valueField:'name',
+        textField:'name',
+        prompt: 'Choose Unit of Measure',
     });
 
     //CELLSTYLE STATUS
