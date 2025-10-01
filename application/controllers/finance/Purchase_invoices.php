@@ -1314,13 +1314,13 @@ class Purchase_invoices extends CI_Controller
 
     public function uploadclearFailed()
     {
-        @unlink('failed/item_fg.txt');
+        @unlink('failed/purchase_invoices.txt');
     }
     public function uploadcreateFailed()
     {
         if ($this->input->post()) {
             $message = $this->input->post('message');
-            $textFailed = fopen('failed/item_fg.txt', 'a');
+            $textFailed = fopen('failed/purchase_invoices.txt', 'a');
             fwrite($textFailed, $message . "\n");
             fclose($textFailed);
         }
@@ -1328,7 +1328,7 @@ class Purchase_invoices extends CI_Controller
     //UPLOAD DOWNLOAD FAILED
     public function uploadDownloadFailed()
     {
-        $file = "failed/item_fg.txt";
+        $file = "failed/purchase_invoices.txt";
         header('Content-Description: File Failed');
         header('Content-Disposition: attachment; filename=' . basename($file));
         header('Expires: 0');
