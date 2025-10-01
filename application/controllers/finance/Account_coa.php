@@ -48,6 +48,98 @@ class Account_coa extends CI_Controller
     //GET DATATABLES
     public function datatables()
     {
+        ob_start();
+        header('Content-Type: application/json');
+
+        if ($this->input->post()) {
+            $filters = json_decode($this->input->post('filterRules'), true); // Jadikan array asosiatif
+            $page = (int)$this->input->post('page');
+            $rows = (int)$this->input->post('rows');
+            $offset = ($page > 0) ? ($page - 1) * $rows : 0;
+            
+            // Get data dengan GROUP BY untuk total count yang akurat
+            $this->db->select('account_coa.id'); // Hanya ambil ID untuk total count
+            $this->db->from('account_coa');
+            $this->db->join('account_group_details', 'account_group_details.id = account_coa.account_group_detail_id', 'left');
+            $this->db->join('journal_types', 'journal_types.account_number = account_coa.account_number', 'left');
+            $this->db->where('account_coa.deleted', 0);
+            
+            // Library filter 
+            if (!empty($filters)) {
+                $this->applyFilters($filters);
+            }
+
+            $this->db->group_by('account_coa.id');
+            $totalRowsQuery = $this->db->get();
+            $totalRows = $totalRowsQuery ? $totalRowsQuery->num_rows() : 0;
+            
+            $this->db->select("
+                account_coa.id,
+                account_coa.account_number,
+                account_coa.account_name,
+                account_coa.original_currency,
+                account_coa.original_debit,
+                account_coa.original_kredit,
+                account_coa.local_currency,
+                account_coa.local_debit,
+                account_coa.local_kredit,
+                account_coa.created_by,
+                account_coa.created_date,
+                account_coa.updated_by,
+                account_coa.updated_date,
+                account_coa.status,
+                account_coa.starting_date,
+                account_coa.ap_ar_other,
+                account_group_details.name as account_group_detail_name,
+                (CASE WHEN account_coa.status = 0 THEN 'CLOSE' ELSE 'OPEN' END) as closing_journal
+            ");
+            $this->db->from('account_coa');
+            $this->db->join('account_group_details', 'account_group_details.id = account_coa.account_group_detail_id', 'left');
+            $this->db->join('journal_types', 'journal_types.account_number = account_coa.account_number', 'left');
+            $this->db->where('account_coa.deleted', 0);
+            
+            // Terapkan filter lagi ke query data
+            if (!empty($filters)) {
+                $this->applyFilters($filters);
+            }
+
+            $this->db->group_by('account_coa.id');
+            $this->db->order_by('account_coa.account_number', 'asc');
+            $this->db->limit($rows, $offset);
+
+            $records = $this->db->get()->result_array();
+            
+            // Bersihkan buffer dan kirim respons JSON
+            ob_clean();
+            echo json_encode([
+                'total' => $totalRows,
+                'rows' => $records
+            ]);
+            ob_end_flush();
+        }
+    }
+
+    private function applyFilters($filters) {
+        foreach ($filters as $filter) {
+            $field = strtolower($filter['field']);
+            $value = $filter['value'];
+
+            if ($field == 'account_group_detail_name') {
+                $this->db->like('account_group_details.name', $value);
+            } elseif ($field == 'module') {
+                $this->db->like('journal_types.module', $value); 
+            } elseif ($field == 'closing_journal') {
+                $status = (strtoupper($value) == 'CLOSE') ? 0 : 1;
+                $this->db->like('account_coa.status', $status);
+            } elseif ($field == 'starting_date') {
+                $this->db->like('DATE_FORMAT(account_coa.starting_date, "%Y-%m-%d")', $value);
+            } else {
+                $this->db->like('account_coa.' . $field, $value);
+            }
+        }
+    }
+    public function datatables_backup()
+    {
         if ($this->input->post()) {
             $filters = json_decode($this->input->post('filterRules'));
             $page = $this->input->post('page');
@@ -299,7 +391,7 @@ class Account_coa extends CI_Controller
         if ( !empty($pi_exists) || !empty($si_exists) || !empty($ap_exists) || !empty($ar_exists) || !empty($journal_exists) ) {
             echo json_encode(["title" => "Error", "message" => "Data is already in use in another table", "theme" => "error"]);
             
-        } elseif (!empty($account->original_debit) || !empty($account->original_credit) || !empty($account->local_debit) || !empty($account->local_credit)) {
+        } elseif ($account->original_debit > 0 || $account->original_kredit > 0 || $account->local_debit > 0 || $account->local_kredit > 0) {
             echo json_encode(["title" => "Error", "message" => "Credit / Debit is not empty", "theme" => "error"]);
             
         } else {

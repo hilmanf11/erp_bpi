@@ -8,9 +8,9 @@
             </th>
             <th rowspan="2" data-options="field:'account_number',width:100,halign:'center'">Account Code</th>
             <th rowspan="2" data-options="field:'account_name',width:250,halign:'center'">Account Name</th>
-            <th rowspan="2" data-options="field:'closing_journal',width:70,halign:'center',align:'center',formatter: statusformat, styler:statusStyle">Closing<br>Journal</th>
-            <th rowspan="2" data-options="field:'module',width:120,halign:'center',align:'center'">AP / AR<br>Other</th>
-            <th rowspan="2" data-options="field:'starting_from',width:100,halign:'center',align:'center'">Starting From</th>
+            <th rowspan="2" data-options="field:'closing_journal',width:80,halign:'center',align:'center',formatter: statusformat, styler:statusStyle">Closing<br>Journal</th>
+            <th rowspan="2" data-options="field:'ap_ar_other',width:120,halign:'center',align:'center',formatter:otherFormatter">AP / AR<br>Other</th>
+            <th rowspan="2" data-options="field:'starting_date',width:100,halign:'center',align:'center'">Starting From</th>
             <th colspan="3" data-options="field:'',width:150,halign:'center'"> Original Currency</th>
             <th colspan="3" data-options="field:'',width:150,halign:'center'"> Local Currency</th>
             <th colspan="2" data-options="field:'',width:100,halign:'center'"> Created</th>
@@ -41,7 +41,7 @@
             <legend><b>Form Data</b></legend>
             <div class="fitem">
                 <span style="width:35%; display:inline-block;">Category</span>
-                <input style="width:250px;" name="account_group_detail_id" id="account_group_detail_id" required="" class="easyui-combobox">
+                <input style="width:50%;" name="account_group_detail_id" id="account_group_detail_id" required="" class="easyui-combobox">
             </div>
             <div class="fitem">
                 <span style="width:35%; display:inline-block;">Account Code</span>
@@ -52,10 +52,25 @@
                 <input style="width:50%;" name="account_name" id="account_name" required="" class="easyui-textbox">
             </div>
             <div class="fitem">
-                <span style="width:35%; display:inline-block;">Status</span>
-                <input style="width:25%;" name="status" id="status" required="" class="easyui-combobox">
+                <span style="width:35%; display:inline-block;">Status Closing Journal</span>
+                <input style="width:30%;" name="status" id="status" required="" class="easyui-combobox">
+            </div>
+            
+            <div class="fitem">
+                <span style="width:35%; display:inline-block;">AP / AR Other</span>
+                <select style="width:30%;" name="ap_ar_other" id="ap_ar_other" required="" class="easyui-combobox">
+                    <option value="AP PAYMENT">AP PAYMENT</option>
+                    <option value="AR RECEIPT">AR RECEIPT</option>
+                    <option value="BOTH">BOTH</option>
+                </select>
+            </div>
+            
+            <div class="fitem">
+                <span style="width:35%; display:inline-block;">Starting Date</span>
+                <input style="width:30%;" id="starting_from" required="" class="easyui-datebox" data-options="prompt:'Start Date',formatter:myformatter,parser:myparser, editable:false">
             </div>
         </fieldset>
+
         <div style="width:50%; float: left; box-sizing: border-box; margin-bottom: 10px;">
             <fieldset style="border:1px solid #d0d0d0; border-radius: 4px; margin-bottom: 10px;">
                 <legend><b>Origial Currency</b></legend>
@@ -65,11 +80,11 @@
                 </div>
                 <div class="fitem">
                     <span style="width:35%; display:inline-block;">Debit</span>
-                    <input style="width:60%;" name="original_debit" id="original_debit" class="easyui-numberbox">
+                    <input style="width:60%;" name="original_debit" id="original_debit" class="easyui-numberbox" data-options="prompt:'0.00',precision:2,decimalSeparator:'.'">
                 </div>
                 <div class="fitem">
                     <span style="width:35%; display:inline-block;">Credit</span>
-                    <input style="width:60%;" name="original_kredit" id="original_kredit" class="easyui-numberbox">
+                    <input style="width:60%;" name="original_kredit" id="original_kredit" class="easyui-numberbox" data-options="prompt:'0.00',precision:2,decimalSeparator:'.'">
                 </div>
             </fieldset>
         </div>
@@ -82,16 +97,17 @@
                 </div>
                 <div class="fitem">
                     <span style="width:35%; display:inline-block;">Debit</span>
-                    <input style="width:60%;" name="local_debit" id="local_debit" class="easyui-numberbox">
+                    <input style="width:60%;" name="local_debit" id="local_debit" class="easyui-numberbox" data-options="prompt:'0.00',precision:2,decimalSeparator:'.'">
                 </div>
                 <div class="fitem">
                     <span style="width:35%; display:inline-block;">Credit</span>
-                    <input style="width:60%;" name="local_kredit" id="local_kredit" class="easyui-numberbox">
+                    <input style="width:60%;" name="local_kredit" id="local_kredit" class="easyui-numberbox" data-options="prompt:'0.00',precision:2,decimalSeparator:'.'">
                 </div>
             </fieldset>
         </div>
     </form>
 </div>
+
 <!-- Upload -->
 <div id="dlg_upload" class="easyui-dialog" title="Upload Data" data-options="closed: true,modal:true" style="width: 500px; padding:10px; top: 20px;">
     <form id="frm_upload" method="post" enctype="multipart/form-data" novalidate>
@@ -129,6 +145,38 @@
                 $('#number').textbox('setValue', response);
             }
         });
+
+        // Set Default Values (Bu Nina)
+        $("#original_currency").combobox('setValue', 'IDR');
+        $("#local_currency").combobox('setValue', 'IDR');
+        $("#ap_ar_other").combobox('setValue', 'BOTH');
+        
+        $('#status').combobox({
+            url: '<?= base_url('finance/account_coa/get_statuses') ?>',
+            valueField: 'value',
+            textField: 'label',
+            onLoadSuccess: function() {
+                $('#status').combobox('setValue', '1');
+            }
+        });
+
+        $('#starting_from').datebox({
+            formatter: myformatter,
+            parser: myparser,
+            prompt: 'Start Date',
+            editable: false
+        });
+        var defaultDate = '<?= date("Y-01-01") ?>';
+        $('#starting_from').datebox('setValue', defaultDate);
+
+        $('#period_closing_journal').datebox({
+            formatter: myformatter,
+            parser: myparser,
+            prompt: 'Start Date',
+            editable: false
+        });
+        var defaultPeriod = '<?= date("Y-m-01") ?>';
+        $('#period_closing_journal').datebox('setValue', defaultPeriod);
     }
     //EDIT DATA
     function update() {
@@ -219,39 +267,23 @@
     }
 
     function statusformat(value, row) {
-
         if (value == 'CLOSE') {
-
-            return "<b style='color:red;'>NO</b>";
-
+            return "<b style='color:red;'>CLOSED</b>";
         } else if (value == 'footer') {
-
             return "";
-
         } else {
-
-            return "<b style='color:green;'>YES</b>";
-
+            return "<b style='color:green;'>OPEN</b>";
         }
-
     }
 
     function statusStyle(value, row, index) {
-
         if (value == 'CLOSE') {
-
             return 'background-color:#FFC8C8;';
-
         } else if (value == 'footer') {
-
             return "";
-
         } else {
-
             return 'background-color:#C8FFCC;';
-
         }
-
     }
 
     function priceformatlocal(value, row) {
@@ -305,7 +337,37 @@
     function reload() {
         window.location.reload();
     }
-    $(function() {
+
+    //Format Datepicker
+    function myformatter(date) {
+        var y = date.getFullYear();
+        var m = date.getMonth() + 1;
+        var d = date.getDate();
+        return y + '-' + (m < 10 ? ('0' + m) : m) + '-' + (d < 10 ? ('0' + d) : d);
+    }
+
+    //Format Datepicker
+    function myparser(s) {
+        if (!s) return new Date();
+        var ss = (s.split('-'));
+        var y = parseInt(ss[0], 10);
+        var m = parseInt(ss[1], 10);
+        var d = parseInt(ss[2], 10);
+        if (!isNaN(y) && !isNaN(m) && !isNaN(d)) {
+            return new Date(y, m - 1, d);
+        } else {
+            return new Date();
+        }
+    }
+
+    function otherFormatter(value, row, index) {
+        if (!value) {
+            return "-";
+        }
+        return value;
+    }
+
+    $(function() {                
         //SETTING DATAGRID EASYUI
         $('#dg').datagrid({
             url: '<?= base_url('finance/account_coa/datatables') ?>',
