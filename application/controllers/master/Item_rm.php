@@ -41,8 +41,13 @@ class Item_rm extends CI_Controller
        $post = isset($_POST['q']) ? $_POST['q'] : "";
        $item_family_id = explode(",", $this->input->get('item_family_id'));
        
-       $this->db->select('a.*,a.number as item_number, a.name as item_name');//c.specification
+       $this->db->select('a.*,
+       a.number as item_number, 
+       a.name as item_name,
+       b.uom_default,
+       b.uom_inventory');//c.specification
        $this->db->from('item_rm a');
+       $this->db->join('supplier_items b','a.id = b.item_rm_id','LEFT');
        $this->db->where_in('a.item_family_id', $item_family_id);
        $this->db->where('a.status', 0);
        $this->db->like('a.number', $post);

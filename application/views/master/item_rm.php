@@ -218,15 +218,21 @@
             $('#id').textbox('setValue', row.id);
         }, 500);
 
-        $('#item_sub_family_id').combobox({
-            url:'<?= base_url('master/item_family_subs/reads_number/'); ?>',
-            valueField:'id',
-            textField:'number',
-            prompt: 'Choose Sub Product Family',
-            onLoadSuccess: function(){
-                $('#item_sub_family_id').combobox('setValue',row.item_sub_family_id);
-            },
-        });
+        // $('#item_sub_family_id').combobox({
+        //     url:'<?= base_url('master/item_family_subs/reads_number/'); ?>',
+        //     valueField:'id',
+        //     textField:'number',
+        //     prompt: 'Choose Sub Product Family',
+        //     onLoadSuccess: function(){
+        //         if (row.item_sub_family_id) {
+        //             $('#item_sub_family_id').combobox('setValue', row.item_sub_family_id);
+        //         }
+        //     },
+        //     onSelect: function (family_sub) {
+        //         $('#kind').textbox('setValue', family_sub.kind);
+        //         $('#density').textbox('setValue', family_sub.density);
+        //     }
+        // });
 
         $('#item_category_id').combobox({
             url: '<?= base_url('master/item_categories/readsnotfg'); ?>',
@@ -301,6 +307,7 @@
             toastr.warning("Please select one of the data in the table first!", "Information");
         }
     }
+
     //DELETE DATA
     function deleted() {
         var rows = $('#dg').datagrid('getSelections');
@@ -725,6 +732,7 @@
     });
 
     $('#width').numberbox({ 
+        precision: 2,
         onChange: function(value) {
             calculateVolume();
         }
@@ -742,6 +750,10 @@
         }
     });
 
+    $('#weight_kg').numberbox({ 
+        precision: 3
+    });
+
     function calculateVolume() {
         // Ambil nilai input
         var kind = document.getElementById("kind").value;
@@ -750,6 +762,8 @@
         var thickness = parseFloat(document.getElementById("thickness").value) || 0;
         var diameter = parseFloat(document.getElementById("diameter").value) || 0;
         var density = parseFloat(document.getElementById("density").value) || 0;
+
+        console.log(density);
         
         var volume = 0;
         var weightGr = 0;
@@ -767,6 +781,6 @@
         // Set nilai ke input
         $('#volume').numberbox('setValue', volume);
         $('#weight_gr').numberbox('setValue', weightGr);
-        $('#weight_kg').numberbox('setValue', weightKg.toFixed(2));
+        $('#weight_kg').numberbox('setValue', weightKg);
     }
 </script>
