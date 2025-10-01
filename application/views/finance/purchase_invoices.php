@@ -3195,7 +3195,7 @@
     // Fungsi untuk proses upload kedua (jurnal)
     function processUpload2(total, data, index = 0) {
         if (index >= total) {
-            $.messager.alert('Success', 'Semua proses upload dan calculate selesai.', 'info');
+            $.messager.alert('Upload Finished', 'All upload and calculation processes are complete.', 'info');
             // Clear file
             $.get("<?= base_url('finance/purchase_invoices/uploadclearFailed') ?>");
             return;
