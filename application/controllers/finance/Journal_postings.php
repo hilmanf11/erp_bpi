@@ -2445,15 +2445,25 @@ class Journal_postings extends CI_Controller
                     <td style="vertical-align:middle;">' . $data['account_number'] . '</td>
                     <td style="vertical-align:middle;">' . $data['account_name'] . '</td>
                     <td style="text-align:center; vertical-align:middle;">' . $data['currency'] . '</td>
-                    <td style="text-align:right; vertical-align:middle;">' . $this->formatIDR($data['original_debit'], 4) . '</td>
-                    <td style="text-align:right; vertical-align:middle;">' . $this->formatIDR($data['original_credit'], 4) . '</td>
-                    <td style="text-align:center; vertical-align:middle;">' . $this->formatIDR($data['rates'], 2) . '</td>
-                    <td style="text-align:right; vertical-align:middle;">' . $this->formatIDR($data['local_debit'], 4) . '</td>
-                    <td style="text-align:right; vertical-align:middle;">' . $this->formatIDR($data['local_credit'], 4) . '</td>';
+                    <td style="text-align:right; vertical-align:middle;">' . $this->formatNominal($data['original_debit'], $data['currency']) . '</td>
+                    <td style="text-align:right; vertical-align:middle;">' . $this->formatNominal($data['original_credit'], $data['currency']) . '</td>
+                    <td style="text-align:center; vertical-align:middle;">' . $this->formatNominal($data['rates'], $data['currency']) . '</td>
+                    <td style="text-align:right; vertical-align:middle;">' . $this->formatNominal($data['local_debit'], $data['currency']) . '</td>
+                    <td style="text-align:right; vertical-align:middle;">' . $this->formatNominal($data['local_credit'], $data['currency']) . '</td>';
             $no++;
         }
         $html .= '</table></body></html>';
         echo $html;
+    }
+
+    private function formatNominal($value, $currency) 
+    {
+        if (!is_numeric($value)) {
+            return $value;
+        }
+        
+        $decimal = ($currency === "IDR") ? 2 : 4;    
+        return number_format($value, $decimal, ",", ".");
     }
 
     // Show GL and Hyperlink each transaction (Report_general_ledgers)
