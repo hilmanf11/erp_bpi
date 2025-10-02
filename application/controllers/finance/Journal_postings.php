@@ -2650,41 +2650,37 @@ class Journal_postings extends CI_Controller
     }
 
     // get link detail transaksi GL
-    function createLink($value, $idLink, $modul) 
+    function createLink($value, $invoice, $modul)
     {
-        $id_encoded = base64_encode($idLink);
+        if (!isset($invoice) || !is_string($invoice) || empty($invoice)) {
+            return $this->formatIDR($value, 2);
+        }
         
-        if ($modul == "AP PAYMENT") 
-        {
-            // jika terdapat case GL ke PI
-            if (isset($idLink) && stripos($idLink, 'PI-') !== false)
-            {
-                $base_url   = base_url('finance/purchase_invoices/print_invoicing/');
-                $url        = $base_url . $id_encoded . "/GL";
-                
-            } else {
-                $base_url   = base_url('finance/ap_payments/print_voucher_gl/');
-                $url        = $base_url . $id_encoded;
-            }
-            
+        $base_url = '';
+        $id_encoded = base64_encode($invoice);
+        
+        // Validasi base_url berdasarkan jenis invoice
+        if ($modul == "AP PAYMENT") {
+            $base_url = base_url('finance/ap_payments/print_voucher_gl/');
+        } elseif ($modul == "AR RECEIPT") {
+            $base_url   = base_url('finance/ar_receipts/print_voucher_gl/');
+        } elseif (stripos($invoice, 'PI-') !== false) {
+            $base_url = base_url('finance/purchase_invoices/print_invoicing/');
+        } elseif (stripos($invoice, 'SI-') !== false) {
+            $base_url = base_url('finance/sales_invoices/print_dn/');
         } else {
-            
-            // jika terdapat case GL ke SI
-            if (isset($idLink) && stripos($idLink, 'SI-') !== false)
-            { 
-                $base_url   = base_url('finance/sales_invoices/print_dn/');
-                $url        = $base_url . $id_encoded . "/GL";
-                
-            } else {
-                $base_url   = base_url('finance/ar_receipts/print_voucher_gl/');
-                $url        = $base_url . $id_encoded;
-            }
+            // Jika tidak ada jenis invoice yang cocok, kembalikan formatIDR default
+            return $this->formatIDR($value, 2);
         }
-
-        if ($value > 0) {
-            return '<a href="javascript:void(0)" onclick="window.open(\'' . $url . '\', \'_blank\', \'location=yes,height=600,width=1200,scrollbars=yes,status=yes\');" class="link-transaction">' . $this->formatIDR($value, 2) . '</a>';
+        
+        // Jika nilai $value kurang dari atau sama dengan 0, kembalikan formatIDR default
+        if ($value <= 0) {
+            return $this->formatIDR($value, 2);
         }
-        return $this->formatIDR($value, 2);
+        
+        $url = $base_url . $id_encoded . "/GL";
+        
+        return '<a href="javascript:void(0)" onclick="window.open(\'' . $url . '\', \'_blank\', \'location=yes,height=600,width=1200,scrollbars=yes,status=yes\');" class="link-transaction">' . $this->formatIDR($value, 2) . '</a>';
     }
     
     function formatIDR($number, $decimal_places = 2) {
