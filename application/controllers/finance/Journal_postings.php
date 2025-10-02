@@ -1783,13 +1783,19 @@ class Journal_postings extends CI_Controller
                 SUM(a.local_debit) as local_debit, 
                 SUM(a.local_credit) as local_credit');
             $this->db->from('journal_postings a');
-            $this->db->join('journal_types b', 'a.journal_type_id = b.id');
+            $this->db->join('journal_types b', 'a.journal_type_id = b.id', 'left');
             if ($filter_from != "" && $filter_to != "") {
                 $this->db->where("a.journal_date BETWEEN '$filter_from' and '$filter_to'");
             }
-            $this->db->like('a.journal_type_id', $filter_journal_type);
-            $this->db->like('a.modul', $filter_modul);
-            $this->db->like('a.number', $filter_voucher);
+            if ($filter_journal_type != "") {
+                $this->db->like('a.journal_type_id', $filter_journal_type);
+            }
+            if ($filter_modul != "") {
+                $this->db->like('a.modul', $filter_modul);
+            }
+            if ($filter_voucher != "") {
+                $this->db->like('a.number', $filter_voucher);
+            }
             $this->db->group_by('a.number');
             $this->db->order_by('a.journal_date', 'asc');
 
