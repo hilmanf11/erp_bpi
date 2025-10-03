@@ -30,7 +30,181 @@ class Report_trial_balances extends CI_Controller
         }
     }
 
+    private function split_balance($balance) 
+    {
+        return [
+            'debit' => $balance >= 0 ? $balance : 0,
+            'credit' => $balance < 0 ? abs($balance) : 0,
+        ];
+    }
+
     public function getData()
+    {
+        // Ambil input tanggal dari request POST
+        $filter_from = $this->input->post('filter_from');
+        $filter_to   = $this->input->post('filter_to');
+
+        // Validasi input tanggal
+        if (empty($filter_from) || empty($filter_to)) {
+            echo json_encode([
+                'total' => 0,
+                'rows' => [],
+                'message' => 'Filter tanggal tidak boleh kosong.'
+            ]);
+            return;
+        }
+
+        $date_from = new DateTime($filter_from);
+        $period = $date_from->format("Ym");
+        $is_january = ($date_from->format('m') === '01');
+        $data = [];
+
+        // --- Ambil Data Master: Grup Akun & Akun COA ---
+        $this->db->select('*');
+        $this->db->from('account_group_details');
+        $this->db->order_by('number', 'asc');
+        $account_groups = $this->db->get()->result_array();
+
+        $this->db->select('a.*');
+        $this->db->from('account_coa a');
+        $this->db->order_by('a.account_number', 'asc');
+        $accounts_coa = $this->db->get()->result_array();
+        
+        if (empty($account_groups)) {
+            echo json_encode(['total' => 0, 'rows' => [], 'message' => 'Tidak ada grup akun ditemukan.']);
+            return;
+        }
+        
+        $accounts_by_group = [];
+        foreach ($accounts_coa as $account) {
+            $accounts_by_group[$account['account_group_detail_id']][] = $account;
+        }
+        $all_account_numbers = array_column($accounts_coa, 'account_number');
+        
+        // --- Ambil Mutasi Jurnal untuk Periode Laporan ---
+        $journal_mutations_map = [];
+        if (!empty($all_account_numbers)) {
+            $this->db->select('account_number, SUM(local_debit) as total_debit, SUM(local_credit) as total_credit');
+            $this->db->from('journal_postings');
+            $this->db->where_in('account_number', $all_account_numbers);
+            $this->db->where("journal_date BETWEEN '$filter_from' AND '$filter_to'");
+            $this->db->group_by('account_number');
+            $journal_mutations = $this->db->get()->result_array();
+
+            foreach ($journal_mutations as $journal_row) {
+                $journal_mutations_map[$journal_row['account_number']] = [
+                    'local_debit' => (float)$journal_row['total_debit'],
+                    'local_credit' => (float)$journal_row['total_credit']
+                ];
+            }
+        }
+        
+        // --- Tentukan Saldo Awal (Begin Balance) ---
+        $begin_balance_map = [];
+        if ($is_january) {
+            foreach ($accounts_coa as $account) {
+                $begin_balance_map[$account['account_number']] = [
+                    'debit' => $account['local_debit'],
+                    'credit' => $account['local_kredit']
+                ];
+            }
+        } else {
+            $period_before = (clone $date_from)->modify('-1 month')->format('Ym');
+            $this->db->select('account_number, ending_debit, ending_credit');
+            $this->db->from('trial_balances');
+            $this->db->where('period', $period_before);
+            $prev_month_balances = $this->db->get()->result_array();
+            
+            $prev_month_balance_map = array_column($prev_month_balances, null, 'account_number');
+
+            foreach ($accounts_coa as $account) {
+                $prev_data = $prev_month_balance_map[$account['account_number']] ?? null;
+                if ($prev_data) {
+                    $begin_balance_map[$account['account_number']] = [
+                        'debit' => $prev_data['ending_debit'],
+                        'credit' => $prev_data['ending_credit']
+                    ];
+                } else {
+                    $begin_balance_map[$account['account_number']] = [
+                        'debit' => $account['local_debit'],
+                        'credit' => $account['local_kredit']
+                    ];
+                }
+            }
+        }
+
+        // --- Proses Data dan Hitung Saldo Akhir ---
+        foreach ($account_groups as $account_group) {
+            $accounts = $accounts_by_group[$account_group['id']] ?? [];
+
+            $local_debit_total_group = 0;
+            $local_credit_total_group = 0;
+            $begin_debit_total_group = 0;
+            $begin_credit_total_group = 0;
+
+            foreach ($accounts as $account) {
+                $account_number = $account['account_number'];
+                $journal_data_current = $journal_mutations_map[$account_number] ?? ['local_debit' => 0, 'local_credit' => 0];
+                $begin_data = $begin_balance_map[$account_number] ?? ['debit' => 0, 'credit' => 0];
+
+                $begin_debit = (float)$begin_data['debit'];
+                $begin_credit = (float)$begin_data['credit'];
+
+                // Perhitungan saldo akhir menggunakan nilai debit dan kredit terpisah
+                $ending_balance = ($begin_debit + $journal_data_current['local_debit']) - ($begin_credit + $journal_data_current['local_credit']);
+                $ending_split = $this->split_balance($ending_balance);
+                
+                $data[] = [
+                    "period"         => $period,
+                    "account_number" => $account_number,
+                    "account_name"   => $account['account_name'],
+                    "begin_debit"    => $begin_debit,
+                    "begin_credit"   => $begin_credit,
+                    "local_debit"    => $journal_data_current['local_debit'],
+                    "local_credit"   => $journal_data_current['local_credit'],
+                    "ending_debit"   => $ending_split['debit'],
+                    "ending_credit"  => $ending_split['credit'],
+                    "header"         => 1,
+                ];
+
+                // Akumulasi untuk total grup
+                $local_debit_total_group += $journal_data_current['local_debit'];
+                $local_credit_total_group += $journal_data_current['local_credit'];
+                $begin_debit_total_group += $begin_debit;
+                $begin_credit_total_group += $begin_credit;
+            }
+
+            // Perhitungan saldo akhir untuk total grup
+            $ending_balance_group = ($begin_debit_total_group + $local_debit_total_group) - ($begin_credit_total_group + $local_credit_total_group);
+            $ending_split_group = $this->split_balance($ending_balance_group);
+            
+            // Tambahkan baris total grup (header 0)
+            $data[] = [
+                "period"         => $period,
+                "account_number" => $account_group['number'],
+                "account_name"   => $account_group['name'],
+                "begin_debit"    => $begin_debit_total_group,
+                "begin_credit"   => $begin_credit_total_group,
+                "local_debit"    => $local_debit_total_group,
+                "local_credit"   => $local_credit_total_group,
+                "ending_debit"   => $ending_split_group['debit'],
+                "ending_credit"  => $ending_split_group['credit'],
+                "header"         => 0,
+            ];
+        }
+
+        // Urutkan data berdasarkan account_number
+        usort($data, function($a, $b) {
+            return strcmp($a['account_number'], $b['account_number']);
+        });
+
+        // Kirim hasil sebagai JSON
+        $result['total'] = count($data);
+        $result['rows'] = $data;
+        echo json_encode($result);
+    }
+
+    public function getData_backup() // Bug nominal is not valid or balance
     {
         $filter_from = $this->input->post('filter_from');
         $filter_to   = $this->input->post('filter_to');
@@ -613,16 +787,25 @@ class Report_trial_balances extends CI_Controller
                                 $linked_ending_debit  = $this->createLink($trial_balance['ending_debit'], $filter_from, $filter_to, $trial_balance['account_number'], $trial_balance['header']);
                                 $linked_ending_credit = $this->createLink($trial_balance['ending_credit'], $filter_from, $filter_to, $trial_balance['account_number'], $trial_balance['header']);
                                 
+                                if ($option == "excel") {
+                                    $linked_begin_debit   = number_format($trial_balance['begin_debit'], 2, ",", ".");
+                                    $linked_begin_credit  = number_format($trial_balance['begin_credit'], 2, ",", ".");
+                                    $linked_debit         = number_format($trial_balance['local_debit'], 2, ",", ".");
+                                    $linked_credit        = number_format($trial_balance['local_credit'], 2, ",", ".");
+                                    $linked_ending_debit  = number_format($trial_balance['ending_debit'], 2, ",", ".");
+                                    $linked_ending_credit = number_format($trial_balance['ending_credit'], 2, ",", ".");
+                                }
+
                                 $html .= '<tr style="' . $row_class . '"> 
                                     <td class="text-center">' . $no . '</td>
                                     <td>' . htmlspecialchars($trial_balance['account_number']) . '</td>
                                     <td>' . $trial_balance['account_name'] . '</td>
-                                    <td class="text-right">' . $linked_begin_debit . '</td>
-                                    <td class="text-right">' . $linked_begin_credit . '</td>
-                                    <td class="text-right">' . $linked_debit . '</td>
-                                    <td class="text-right">' . $linked_credit . '</td>
-                                    <td class="text-right">' . $linked_ending_debit . '</td>
-                                    <td class="text-right">' . $linked_ending_credit . '</td>
+                                    <td style="text-decoration:none;" class="text-right">' . $linked_begin_debit . '</td>
+                                    <td style="text-decoration:none;" class="text-right">' . $linked_begin_credit . '</td>
+                                    <td style="text-decoration:none;" class="text-right">' . $linked_debit . '</td>
+                                    <td style="text-decoration:none;" class="text-right">' . $linked_credit . '</td>
+                                    <td style="text-decoration:none;" class="text-right">' . $linked_ending_debit . '</td>
+                                    <td style="text-decoration:none;" class="text-right">' . $linked_ending_credit . '</td>
                                 </tr>';
                             
                                 $no++;
@@ -655,10 +838,9 @@ class Report_trial_balances extends CI_Controller
             $base_url        = base_url('finance/report_general_ledgers/print');
             $url             = $base_url . '?filter_from=' . $from_encoded . '&filter_to=' . $to_encoded . '&filter_account=' . $account_encoded;
             
-            if ($value > 0) {
+            // if ($value > 0) { // walau 0 tetap bisa lihat GL
                 return '<a href="javascript:void(0)" onclick="window.open(\'' . $url . '\', \'_blank\', \'location=yes,height=650,width=1500,scrollbars=yes,status=yes\');" class="link-transaction">' . $this->formatIDR($value, 2) . '</a>';
-            }
-            
+            // }
         }
         return $this->formatIDR($value, 2);
     }
