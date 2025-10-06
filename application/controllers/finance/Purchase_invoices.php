@@ -1345,7 +1345,7 @@ class Purchase_invoices extends CI_Controller
         if ($this->input->post()) {
             $data = $this->input->post('data');
 
-            $purchase_invoices = $this->crud->read('purchase_invoices', ["number" => $data['number'], "item_no" => $data['item_no'], "po_no" => $data['po_no'], "invoice_no" => $data['invoice_no']]);
+            $purchase_invoices = $this->crud->read('purchase_invoices', ["number" => $data['number'], "po_no" => $data['po_no'], "invoice_no" => $data['invoice_no']]);
             $supplier     = $this->crud->read('suppliers', ["id" => $data['supplier_id']]);
             $category     = $this->crud->read('item_categories', ["id" => $data['category_id']]);
             $journal_type = $this->crud->read('journal_types', ["number" => $data['journal_type_code']]);
@@ -1354,10 +1354,10 @@ class Purchase_invoices extends CI_Controller
             $valid_date   = ($d = DateTime::createFromFormat('Y-m-d', $data['trans_date'])) && $d->format('Y-m-d') === $data['trans_date'];          
             
             // Validate required data
-            if (empty($data['type']) && (strtoupper($data['type']) !== "PURCHASE" || strtoupper($data['type']) !== "OTHER")) {
+            if (empty($data['type']) || (strtoupper($data['type']) !== "PURCHASE" && strtoupper($data['type']) !== "OTHER")) {
                 echo json_encode(["title" => "Error", "message" => "Type must be PURCHASE or OTHER", "theme" => "error"]);
                 
-            } elseif (empty($data['account_type']) && (strtoupper($data['account_type']) !== "DEBIT" || strtoupper($data['account_type']) !== "CREDIT")) {
+            } elseif (empty($data['account_type']) || (strtoupper($data['account_type']) !== "DEBIT" && strtoupper($data['account_type']) !== "CREDIT")) {
                 echo json_encode(["title" => "Error", "message" => "Account Type must be DEBIT or CREDIT", "theme" => "error"]);
                 
             } elseif (empty($data['trans_date']) || !$valid_date) {
@@ -1375,8 +1375,8 @@ class Purchase_invoices extends CI_Controller
             } elseif (empty($journal_type->id)) {
                 echo json_encode(["title" => "Not Found", "message" => "Journal Type " . $data['journal_type_code'] . " is Not Found", "theme" => "error"]);
                 
-            } elseif (!empty($purchase_invoices)) {
-                echo json_encode(["title" => "Duplicated", "message" => "Purchase Invoice No " . $data['number'] . " & Product No " . $data['item_no'] . " & PO No " . $data['po_no'] . " has been processed previously.", "theme" => "error"]);
+            } elseif (!empty($purchase_invoices) && $data["por_no"] !== "-" && $data["po_no"] !== "-") {
+                echo json_encode(["title" => "Duplicated", "message" => "Purchase Invoice No " . $data['number'] . " & PO No " . $data['po_no'] . " has been processed previously.", "theme" => "error"]);
                 
             } else {
                 // Get PI number
@@ -1441,14 +1441,14 @@ class Purchase_invoices extends CI_Controller
                     "payment_term"      => $payment_term,
                     "currency"          => $data['currency'] ?? "IDR",
                     "type"              => $data["type"],
-                    "po_no"             => $data["po_no"] ?? "-",
-                    "por_no"            => $data["por_no"] ?? "-",
+                    "po_no"             => $data["po_no"] ?? $data["po_no"],
+                    "por_no"            => $data["por_no"] ?? $data["por_no"],
                     "item_rm_id"        => $item_rm_id ?? "-",
-                    "item_no"           => $item_rm->number ?? "-",
-                    "item_name"         => $item_rm->name ?? "-",
-                    "uom"               => $item_rm->uom ?? "-",
-                    "qty"               => $qty,
-                    "price"             => $price,
+                    "item_no"           => $item_rm->number ?? $data["item_no"],
+                    "item_name"         => $item_rm->name ?? $data["item_name"],
+                    "uom"               => $item_rm->uom ?? $data["uom"],
+                    "qty"               => $qty ?? $data["qty"],
+                    "price"             => $price ?? $data["price"],
                     "discount"          => $discount,
                     "rate"              => $rate,
                     "total"             => $total,
@@ -1550,12 +1550,12 @@ class Purchase_invoices extends CI_Controller
 
             // Perhitungan DPP, VAT, PPH, dan TRADE PAYABLE
             $subTotal = $grandTotal;
-            $totalDpp = round($subTotal * (11/12), 2);
+            $totalDpp = (float) ($subTotal * (11/12));
             $vatRate  = $main_record['taxes'] ?? 0;
             $pphTotal = 0;
             $discount = $main_record['discount'] ?? 0;
-            $vatTotal = round($totalDpp * ($vatRate / 100), 2);
-            $totalTrade = (($subTotal - $discount) + $vatTotal) - $pphTotal;
+            $vatTotal = (float) ($totalDpp * ($vatRate / 100));
+            $totalTrade = (float) ((($subTotal - $discount) + $vatTotal) - $pphTotal);
             // $totalTrade = (($totalDpp - $discount) + $vatTotal) - $pphTotal; // tidak balance dengan totalDpp
             
             $journalVatIn = $this->db->select('account_number, account_name')->from('account_coa')->where('account_number', '170.170.00')->get()->row_array();
@@ -1613,6 +1613,7 @@ class Purchase_invoices extends CI_Controller
             // }
 
             // Update total VAT dan PPH
+            // tidak pake model crud->update karena baru create (tanpa log update)
             $this->db->update('purchase_invoices', ["total_vat" => $vatTotal, "total_pph" => $pphTotal], ["number" => $number]);
 
             // Tambahkan hasil jurnal ke array utama

@@ -735,8 +735,8 @@
     <b>CALCULATE JOURNAL</b>
     <div id="p_upload2" class="easyui-progressbar" style="width:100%; margin-top: 10px;"></div>
     <center><b id="p_start2">0</b> Of <b id="p_finish2">0</b></center>
-    <div id="p_remarks" title="History Upload" class="easyui-panel" style="width:100%; height:200px; padding:10px; margin-top: 10px;">
-        <ul id="remarks">
+    <div id="p_remarks_upload" title="History Upload" class="easyui-panel" style="width:100%; height:200px; padding:10px; margin-top: 10px;">
+        <ul id="remarks_upload">
         </ul>
     </div>
 </div>
@@ -755,7 +755,7 @@
     <div id="p_upload" class="easyui-progressbar" style="width:100%; margin-top: 10px;"></div>
     <center><b id="p_start">0</b> Of <b id="p_finish">0</b></center>
     <div id="p_remarks" title="History Upload" class="easyui-panel" style="width:100%; height:200px; padding:10px; margin-top: 10px;">
-        <ul id="remarks">
+        <ul id="ul_remarks">
         </ul>
     </div>
 </div>
@@ -3162,14 +3162,14 @@
                         message: response.message
                     });
                 }
-                $("#p_remarks").append(title + "<br>");
+                $("#p_remarks_upload").append(title + "<br>");
 
                 // Lanjutkan rekursi untuk item berikutnya
                 processUpload(total, data, index + 1);
             },
             error: function(xhr, status, error) {
                 let errorMessage = `Gagal mengupload data nomor ${number}. Status: ${status}, Error: ${error}`;
-                $("#p_remarks").append(`<b style='color: red;'>Error</b> | ${errorMessage}<br>`);
+                $("#p_remarks_upload").append(`<b style='color: red;'>Error</b> | ${errorMessage}<br>`);
                 // Lanjutkan rekursi meskipun ada error
                 processUpload(total, data, index + 1);
             }
@@ -3222,13 +3222,13 @@
                 } else {
                     title = `<b style='color: red;'>${response.title}</b> | Journal: ${response.message}`;
                 }
-                $("#p_remarks").append(title + "<br>");
+                $("#p_remarks_upload").append(title + "<br>");
 
                 processUpload2(total, data, index + 1);
             },
             error: function(xhr, status, error) {
                 let errorMessage = `Gagal mengupload jurnal nomor ${number}. Status: ${status}, Error: ${error}`;
-                $("#p_remarks").append(`<b style='color: red;'>Error</b> | ${errorMessage}<br>`);
+                $("#p_remarks_upload").append(`<b style='color: red;'>Error</b> | ${errorMessage}<br>`);
                 processUpload2(total, data, index + 1);
             }
         });
@@ -3331,13 +3331,13 @@
                                 }
                             }
                             
-                            $("#p_remarks").append(title + "<br>");
+                            $("#p_remarks_upload").append(title + "<br>");
                             requestData(total, data_array, number + 1, success, failed);
                         },
                         error: function(xhr, status, error) {
                             console.error('AJAX Error:', error);
                             failed++;
-                            $("#p_remarks").append(`<b style='color: red;'>Error</b> | Failed to process item: ${error}<br>`);
+                            $("#p_remarks_upload").append(`<b style='color: red;'>Error</b> | Failed to process item: ${error}<br>`);
                             requestData(total, data_array, number + 1, success, failed);
                         }
                     });
