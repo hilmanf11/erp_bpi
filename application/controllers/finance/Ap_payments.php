@@ -526,7 +526,7 @@ class Ap_payments extends CI_Controller
         $this->db->select("trans_date, account_number");
         $this->db->from('purchase_invoices');
         $this->db->where('deleted', 0);
-        $this->db->where('status', 0);
+        // $this->db->where('status', 0); // tidak tampil saat update
         $this->db->where_in('number', $purchase_invoice_ex);
         $this->db->group_by('number');
         $this->db->order_by('number', 'asc');
@@ -559,8 +559,13 @@ class Ap_payments extends CI_Controller
                 $this->db->where('account_number', $record['account_number']);
                 $get_account = $this->db->get()->row();
 
-                $account_number = $get_account->account_number;
-                $account_name   = $get_account->account_name;
+                if (!empty($get_account)) {
+                    $account_number = $get_account->account_number;
+                    $account_name   = $get_account->account_name;
+                } else {
+                    $account_number = $record['account_number'];
+                    $account_name   = "";
+                }
             }
 
             // -- Exchange Rate by trans_date PI
@@ -582,7 +587,7 @@ class Ap_payments extends CI_Controller
                 }
             }
 
-            $ap_payment = $this->crud->query("SELECT purchase_invoice, SUM(payment) as payment FROM ap_payments WHERE purchase_invoice = '$number' GROUP BY purchase_invoice, account_number ORDER BY payment DESC");
+            // $ap_payment = $this->crud->query("SELECT purchase_invoice, SUM(payment) as payment FROM ap_payments WHERE purchase_invoice = '$number' GROUP BY purchase_invoice, account_number ORDER BY payment DESC");
 
             $obj[] = array(
                 "trans_date"       => $record['trans_date'],
@@ -591,8 +596,10 @@ class Ap_payments extends CI_Controller
                 "currency"         => $record['currency'],
                 "rate"             => $exchange_rate,
                 "amount"           => $record['total'],
-                "balance"          => ($record['total'] - @$ap_payment[0]->payment),
-                "payment"          => ($record['total'] - @$ap_payment[0]->payment),
+                // "balance"          => ($record['total'] - @$ap_payment[0]->payment), // bug jadi 0 saat update
+                // "payment"          => ($record['total'] - @$ap_payment[0]->payment), // bug jadi 0 saat update
+                "balance"          => $record['total'],
+                "payment"          => $record['total'],
                 "account_number"   => $account_number,
                 "account_name"     => $account_name,
                 "account_type"     => "DEBIT",
@@ -728,6 +735,7 @@ class Ap_payments extends CI_Controller
         echo json_encode($result);
     }
 
+    // CREATE DATA
     public function create()
     {
         if ($this->input->post()) {
@@ -782,7 +790,30 @@ class Ap_payments extends CI_Controller
         }
     }
 
+    //UPDATE DATA
     public function update()
+    {
+        header('Content-Type: application/json');
+        if ($this->input->post()) 
+        {
+            $post = $this->input->post();
+
+            // Validasi Exist
+            $ap_exists = $this->db->get_where('ap_payments', ['payment_no' => $post['payment_no'], 'purchase_invoice' => $post['purchase_invoice']])->row();
+
+            if ($ap_exists) {
+                $update = $this->crud->update('ap_payments', ['payment_no' => $post['payment_no'], 'purchase_invoice' => $post['purchase_invoice']], $post);
+                echo $update;
+            } else {
+                echo json_encode(['success' => false, 'message' => 'AP Payment Not Found.', 'title' => 'Error', 'theme' => 'error']);
+            }
+
+        } else {
+            echo json_encode(['success' => false, 'message' => 'Method not allowed.', 'title' => 'Error', 'theme' => 'error']);
+        }
+    }
+
+    public function update_backup()
     {
         if ($this->input->post()) {
             $post = $this->input->post();
@@ -866,39 +897,65 @@ class Ap_payments extends CI_Controller
 
     public function upload()
     {
+        header('Content-Type: application/json');
+
         error_reporting(0);
         require_once 'assets/vendors/excel_reader2.php';
-        $target = basename($_FILES['file_upload']['name']);
-        move_uploaded_file($_FILES['file_upload']['tmp_name'], $target);
-        chmod($_FILES['file_upload']['name'], 0777);
-        $file = $_FILES['file_upload']['name'];
-        $data = new Spreadsheet_Excel_Reader($file, false);
-        $total_row = $data->rowcount($sheet_index = 0);
 
-        for ($i = 3; $i <= $total_row; $i++) {
-            $datas[] = array(
-                'supplier_code' => $data->val($i, 2),
-                'payment_type' => $data->val($i, 3),
-                'payment_date' => $data->val($i, 4),
-                'payment_by' => $data->val($i, 5),
-                'note' => $data->val($i, 6),
-                'journal_number' => $data->val($i, 7),
-                'bank_account' => $data->val($i, 8),
-                'purchase_invoice' => $data->val($i, 9),
-                'supplier_invoice' => $data->val($i, 10),
-                'currency' => $data->val($i, 11),
-                'amount' => $data->val($i, 12),
-                'balance' => $data->val($i, 13),
-                'payment' => $data->val($i, 14),
-                'remark' => $data->val($i, 15),
-                'account_number' => $data->val($i, 16),
-                'account_type' => $data->val($i, 17),
-            );
+        try {
+            $target = basename($_FILES['file_upload']['name']);
+
+            if (!move_uploaded_file($_FILES['file_upload']['tmp_name'], $target)) {
+                echo json_encode(["title" => "Error", "message" => "Failed to upload file.", "theme" => "error"]);
+                return;    
+            }
+
+            chmod($target, 0777);
+            $file = $target;
+            $data = new Spreadsheet_Excel_Reader($file, false);
+            $total_row = $data->rowcount($sheet_index = 0);
+            $datas = [];
+
+            for ($i = 4; $i <= $total_row; $i++) {
+                $datas[] = array(
+                    'payment_no'       => trim($data->val($i, 2)),
+                    'supplier_code'    => trim($data->val($i, 3)),
+                    'payment_type'     => trim($data->val($i, 4)),
+                    'payment_date'     => trim($data->val($i, 5)),
+                    'journal_number'   => trim($data->val($i, 6)),
+                    'bank_account'     => trim($data->val($i, 7)),
+                    'note'             => trim($data->val($i, 8)),
+                    'purchase_invoice' => trim($data->val($i, 9)),
+                    'supplier_invoice' => trim($data->val($i, 10)),
+                    'currency'         => trim($data->val($i, 11)),
+                    'amount'           => trim($data->val($i, 12)),
+                    'balance'          => trim($data->val($i, 13)),
+                    'payment'          => trim($data->val($i, 14)),
+                    'remark'           => trim($data->val($i, 15)),
+                    'account_number'   => trim($data->val($i, 16)),
+                    'account_type'     => trim($data->val($i, 17)),
+                );
+            }
+
+            $response = [
+                'total' => count($datas),
+                'data'  => $datas
+            ];
+
+            echo json_encode($response);
+
+            unlink($_FILES['file_upload']['name']);
+        
+        } catch (Exception $e) {
+            // Handle upload errors gracefully
+            http_response_code(500); // Set HTTP status code for server error
+            echo json_encode(['error' => $e->getMessage()]);
+        } finally {
+            // Ensure the temporary file is deleted even if an error occurs
+            if (isset($target) && file_exists($target)) {
+                unlink($target);
+            }
         }
-        $datas['total'] = count($datas);
-        echo json_encode($datas);
-
-        unlink($_FILES['file_upload']['name']);
     }
 
     public function uploadclearFailed()
@@ -929,7 +986,252 @@ class Ap_payments extends CI_Controller
         @readfile($file);
     }
 
+    //UPLOAD CREATE DATA
     public function uploadcreate()
+    {
+        if (!$this->input->post()) {
+            echo json_encode(["title" => "Error", "message" => "Invalid request method", "theme" => "error"]);
+            return;
+        }
+        
+        $data = $this->input->post('data');
+
+        $ap_payment    = $this->crud->read('ap_payments', [], ["purchase_invoice" => $data['purchase_invoice'], "payment_no" => $data['payment_no']]);
+        $supplier      = $this->crud->read('suppliers', ["id" => $data['supplier_code']]);
+        $account_coa   = $this->crud->read('account_coa', ["account_number" => $data['account_number']]);
+        $journal_types = $this->crud->read('journal_types', ["number" => $data['journal_number']]);
+        $purchase_data = $this->crud->read('purchase_invoices', [], ["number" => $data['purchase_invoice'], "account_number" => $data['account_number']]);
+
+        // Validate required data
+        if (empty($data['payment_type']) || (strtoupper($data['payment_type']) !== "PURCHASE" && strtoupper($data['payment_type']) !== "OTHER")) {
+            echo json_encode(["title" => "Error", "message" => "Type must be PURCHASE or OTHER", "theme" => "error"]);
+        
+        } elseif (empty($data['account_type']) || (strtoupper($data['account_type']) !== "DEBIT" && strtoupper($data['account_type']) !== "CREDIT")) {
+            echo json_encode(["title" => "Error", "message" => "Account Type must be DEBIT or CREDIT", "theme" => "error"]);
+            
+        } elseif (empty($supplier)) {
+            echo json_encode(["title" => "Not Found", "message" => "Supplier No " . $data['supplier_code'] . " Not Found", "theme" => "error"]);
+        
+        } elseif (empty($journal_types)) {
+            echo json_encode(["title" => "Not Found", "message" => "Journal Type Code " . $data['journal_number'] . " Not Found", "theme" => "error"]);
+            
+        } elseif (empty($account_coa)) {
+            echo json_encode(["title" => "Not Found", "message" => "Account COA " . $data['account_number'] . " Not Found", "theme" => "error"]);
+        
+        } elseif (!empty($ap_payment) && !empty($purchase_data) && $purchase_data->status == "1") {
+            echo json_encode(["title" => "Duplicated", "message" => "Purchase Invoice No. " . $data['purchase_invoice'] . " & Payment No. " . $data['payment_no'] . " has been processed previously (Closed)", "theme" => "error"]);
+        
+        } else {
+                
+            // Get AP Payment number
+            $payment_no_from_excel = $data['payment_no'] ?? '-';
+            $existing_payment = null;
+            if ($payment_no_from_excel !== '-') {
+                $existing_payment = $this->crud->read('ap_payments', [], ["payment_no" => $payment_no_from_excel]);
+            }
+            
+            if (empty($payment_no_from_excel) || $payment_no_from_excel === '-') {
+                // KONDISI 1: Jika data dari excel kosong atau '-', buat nomor baru.
+                $datenow = "AP-" . date("Ymd", strtotime($data['payment_date']));
+                $this->db->select_max('payment_no', 'kode');
+                $this->db->like('payment_no', $datenow, 'after');
+                $result = $this->db->get('ap_payments')->row();
+                
+                $last_number = (int) substr($result->kode, -4);
+                $next_number = $last_number + 1;
+                $autoID = sprintf("%04s", $next_number);
+                $payment_no = $datenow . "-" . $autoID;
+
+            } elseif (!empty($existing_payment)) {
+                // KONDISI 2: Jika number dari excel ada di database, gunakan yang sudah ada.
+                $payment_no = $existing_payment->payment_no;
+
+            } else {
+                // KONDISI 3: Jika number dari excel tidak kosong dan tidak ada di database, gunakan nilai dari excel.
+                $payment_no = $payment_no_from_excel;
+            }
+
+            // Get Rate
+            $currency  = $data['currency'];
+            $date_rate = $data['payment_date'];
+            $monthBf   = date('Y-m-01', strtotime('-1 month', strtotime($date_rate)));
+            $exchange  = $this->crud->read('exchange_rates', [], ["start_date" => $monthBf, "currency_from" => $currency, "currency_to" => "IDR"]);
+            if ($currency != "IDR") {
+                if ($exchange) {
+                    $rate = $exchange->middle;
+                } else {
+                    $rate = (float)($data['rate'] ?? 1);
+                }
+            } else {
+                $rate = 1;
+            }
+
+            // Payment Method tidak ada di excel
+            $payment_by = !empty($data['bank_account']) ? 'TRANSFER' : 'CASH';
+
+            // Prepare Data
+            $post = [
+                "supplier_id"       => $supplier->id,
+                "journal_type_id"   => $journal_types->id,
+                "payment_type"      => $data['payment_type'] ?? null,
+                "payment_date"      => $data['payment_date'] ?? null,
+                "payment_no"        => $payment_no,
+                "payment_by"        => $payment_by,
+                "bank_account"      => $data['bank_account'] ?? null,
+                "cheque_no"         => $data['cheque_no'] ?? null,
+                "purchase_invoice"  => $data['purchase_invoice'] ?? null,
+                "supplier_invoice"  => $data['supplier_invoice'] ?? null,
+                "currency"          => $data['currency'] ?? null,
+                "amount"            => (float)($data['amount'] ?? 0),
+                "balance"           => (float)($data['balance'] ?? 0),
+                "payment"           => (float)($data['payment'] ?? 0),
+                "total_payment"     => (float)($data['payment'] ?? 0),
+                "remarks"           => $data['remark'] ?? null,
+                "note"              => $data['note'] ?? null,
+                "rate"              => $rate ?? null,
+                "account_number"    => $data['account_number'] ?? null,
+                "account_type"      => $data['account_type'] ?? null,
+                "status_dp"         => $data['status_dp'] ?? 0,
+                "status"            => $data['status'] ?? 0,
+                "upload"            => "YES",
+                "upload_date"       => date('Y-m-d'),
+            ];
+
+            // CREATE (INSERT)
+            $send = $this->crud->create('ap_payments', $post);
+            if ($send) {
+                // update status purchase to closed
+                if ($post['amount'] == $post['payment']) {
+                    $this->crud->update('purchase_invoices', ["number" => $post['purchase_invoice'], "account_number" => $post['account_number']], ["status" => "1"]);
+                }
+
+                if ($post['balance'] == $post['payment']) {
+                    $this->crud->update('ap_payments', ["payment_no" => $post['purchase_invoice']], ["status_dp" => 1]);
+                }
+
+                // send response to frontend
+                echo $send;
+            } else {
+                echo json_encode(["title" => "Error", "message" => "Failed to create AP payment", "theme" => "error"]);
+            }
+        }
+    }
+
+    // UPLOAD GET JOURNAL (AP)
+    public function uploadGetJournal()
+    {
+        $this->db->select('a.*, b.account_name');
+        $this->db->from('ap_payments a');
+        $this->db->join('account_coa b', 'a.account_number = b.account_number');
+        $this->db->where('a.upload', "YES");
+        $this->db->where('a.upload_date', date("Y-m-d"));
+        $records = $this->db->get()->result_array();
+
+        $accountMapping = [];
+        foreach ($records as $account) {
+            $accountMapping[$account['account_number']] = $account;
+        }
+
+        $allJournals = [];
+        $total_debit = 0;
+        $total_credit = 0;
+        $grand_total = 0;
+        $grand_total_local = 0;
+
+        foreach ($records as $record) {
+            $payment_no      = $record['payment_no'];
+            $payment_amount  = (float) ($record['payment'] ?? 0);
+            $account_number  = $record['account_number'];
+            $bank_account    = $record['bank_account'];
+
+            $mergedData = [];
+            if (isset($accountMapping[$account_number])) {
+                $accountData  = $accountMapping[$account_number];
+                $debit  = (float) ($accountData['account_type'] == 'DEBIT') ? $payment_amount : 0;
+                $credit = (float) ($accountData['account_type'] == 'CREDIT') ? $payment_amount : 0;
+                
+                $mergedData[$account_number] = [
+                    'payment_no'     => $payment_no,
+                    'account_number' => $record['account_number'],
+                    'account_name'   => $record['account_name'],
+                    'description'    => $record['supplier_invoice'],
+                    'exchange_rate'  => $record['rate'],
+                    'debit'          => $debit,
+                    'credit'         => $credit,
+                    'local_debit'    => $debit * $record['rate'],
+                    'local_credit'   => $credit * $record['rate'],
+                ];
+
+            }
+
+            $total_debit  += $debit;
+            $total_credit += $credit;
+            $grand_total = (float) ($total_debit - $total_credit);
+            $grand_total_local = (float) (($total_debit * $record['rate']) - ($total_credit * $record['rate']));
+            
+            foreach (array_values($mergedData) as $journalEntry) {
+                $allJournals[] = $journalEntry;
+            }
+        }
+
+        // Update total in ap_payment
+        $this->crud->update('ap_payments', ["purchase_invoice" => $records[0]['purchase_invoice']], ["total_payment" => $grand_total]);
+
+        $getBank = $this->db->select('a.*, b.account_name')
+                ->from('account_banks a')
+                ->join('account_coa b', 'a.account_number = b.account_number')
+                ->where('bank_account', $bank_account)->get()->row();
+
+        if (isset($getBank)) {
+            $allJournals[] = [
+                'payment_no'     => $payment_no,
+                'account_number' => $getBank->account_number,
+                'account_name'   => $getBank->account_name,
+                'debit'          => 0,
+                'credit'         => $grand_total,
+                'local_debit'    => 0,
+                'local_credit'   => $grand_total_local,
+            ];
+        }
+
+        $flag_counter = 1;
+        foreach ($allJournals as &$journal) {
+            $journal['flag'] = $flag_counter++;
+        }
+        unset($journal);
+
+        $result = [
+            'total' => count($allJournals),
+            'data'  => $allJournals
+        ];
+
+        echo json_encode($result);
+    }
+
+    public function uploadCreateJournal()
+    {
+        if ($this->input->post()) {
+            $post = $this->input->post('data');
+            $ap_payment_journals = $this->crud->read('ap_payment_journals', [], ["payment_no" => $post['payment_no'], "account_number" => $post['account_number']]);
+
+            if (@$ap_payment_journals->id != "") {
+                // update error foreign key constraint debit credit
+                // $send = $this->crud->update('ap_payment_journals', ["number" => $post['number'], "account_number" => $post['account_number']], $post);
+                
+                // delete existing then re-create 
+                $this->crud->delete('ap_payment_journals', $post);
+                $send = $this->crud->create('ap_payment_journals', $post);
+                echo $send;
+            } else {
+                $send = $this->crud->create('ap_payment_journals', $post);
+                echo $send;
+            }
+        } else {
+            show_error("Cannot Process your request");
+        }
+    }
+
+    public function uploadcreate_existing()
     {
         if ($this->input->post()) {
             $data = $this->input->post('data');
@@ -1387,6 +1689,10 @@ class Ap_payments extends CI_Controller
             $format  = date("Ymd");
             header("Content-type: application/vnd-ms-excel");
             header("Content-Disposition: attachment; filename=ap_payment_$format.xls");
+
+            // Tambahkan Byte Order Mark (BOM) untuk membantu Excel mengenali encoding
+            echo "\xEF\xBB\xBF";
+            echo '<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />';
         }
 
         $filter_payment_type  = base64_decode($this->input->get('filter_payment_type'));
@@ -1471,7 +1777,7 @@ class Ap_payments extends CI_Controller
                             <td colspan="2">' . $data['payment_no'] . '</td>
                             <td>' . $data['payment_date'] . '</td>
                             <td>' . $data['supplier_name'] . '</td>
-                            <td>' . $data['bank_account'] . '</td>
+                            <td style="mso-number-format:\@;">' . $data['bank_account'] . '</td>
                             <td>' . $data['payment_by'] . '</td>
                             <td colspan="2">' . $data['note'] . '</td>
                         </tr>';
@@ -1496,13 +1802,14 @@ class Ap_payments extends CI_Controller
                                 <td>' . $detail['purchase_invoice'] . '</td>
                                 <td>' . $detail['supplier_invoice'] . '</td>
                                 <td>' . $detail['currency'] . '</td>
-                                <td style="text-align:right">' . number_format($detail['amount'], 2) . '</td>
-                                <td style="text-align:right">' . number_format($detail['balance'], 2) . '</td>
-                                <td style="text-align:right">' . number_format($detail['payment'], 2)  . '</td>
+                                <td style="text-align:right">' . number_format($detail['amount'], 2, ",", ".") . '</td>
+                                <td style="text-align:right">' . number_format($detail['balance'], 2, ",", ".") . '</td>
+                                <td style="text-align:right">' . number_format($detail['payment'], 2, ",", ".")  . '</td>
                                 <td>' . $detail['remarks'] . '</td>
                                 <td>' . $detail['account_number'] . '</td>
                                 <td>' . $detail['account_type'] . '</td>
                             </tr>';
+                            '<tr colspan="10" style="border:none;"> &nbsp; </tr>';
             }
             $no++;
         }
