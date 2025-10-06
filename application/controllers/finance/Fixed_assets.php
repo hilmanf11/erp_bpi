@@ -516,40 +516,67 @@ class Fixed_assets extends CI_Controller
         echo $send;
     }
 
+    // PREPARE UPLOAD DATA
     public function upload()
     {
+        header('Content-Type: application/json');
+
         error_reporting(0);
-        require_once 'finance/vendors/excel_reader2.php';
-        $target = basename($_FILES['file_upload']['name']);
-        move_uploaded_file($_FILES['file_upload']['tmp_name'], $target);
-        chmod($_FILES['file_upload']['name'], 0777);
-        $file = $_FILES['file_upload']['name'];
-        $data = new Spreadsheet_Excel_Reader($file, false);
-        $total_row = $data->rowcount($sheet_index = 0);
+        require_once 'assets/vendors/excel_reader2.php';
 
-        for ($i = 3; $i <= $total_row; $i++) {
-            $datas[] = array(
-                'purchase_invoice_number' => $data->val($i, 2),
-                'number' => $data->val($i, 3),
-                'name' => $data->val($i, 4),
-                'asset_category_number' => $data->val($i, 5),
-                'trans_date' => $data->val($i, 6),
-                'supplier_name' => $data->val($i, 7),
-                'qty' => $data->val($i, 8),
-                'currency' => $data->val($i, 9),
-                'cost' => $data->val($i, 10),
-                'estimate_year' => $data->val($i, 11),
-                'depreciation_accumulate' => $data->val($i, 12),
-                'remarks' => $data->val($i, 13),
-                'method' => $data->val($i, 14),
-                'department' => $data->val($i, 15),
-                'location' => $data->val($i, 16)
-            );
+        try {
+            $target = basename($_FILES['file_upload']['name']);
+
+            if (!move_uploaded_file($_FILES['file_upload']['tmp_name'], $target)) {
+                echo json_encode(["title" => "Error", "message" => "Failed to upload file.", "theme" => "error"]);
+                return;    
+            }
+
+            chmod($_FILES['file_upload']['name'], 0777);
+            $file = $_FILES['file_upload']['name'];
+            $data = new Spreadsheet_Excel_Reader($file, false);
+            $total_row = $data->rowcount($sheet_index = 0);
+
+            for ($i = 3; $i <= $total_row; $i++) {
+                $datas[] = array(
+                    'purchase_invoice_number' => $data->val($i, 2),
+                    'number'                  => $data->val($i, 3),
+                    'name'                    => $data->val($i, 4),
+                    'asset_category_number'   => $data->val($i, 5),
+                    'trans_date'              => $data->val($i, 6),
+                    'supplier_name'           => $data->val($i, 7),
+                    'qty'                     => $data->val($i, 8),
+                    'currency'                => $data->val($i, 9),
+                    'cost'                    => $data->val($i, 10),
+                    'usage_date'              => $data->val($i, 11),
+                    'estimate_year'           => $data->val($i, 12),
+                    'depreciation_accumulate' => $data->val($i, 13),
+                    'remarks'                 => $data->val($i, 14),
+                    'method'                  => $data->val($i, 15),
+                    'department'              => $data->val($i, 16),
+                    'location'                => $data->val($i, 17)
+                );
+            }
+
+            $response = [
+                'total' => count($datas),
+                'data'  => $datas
+            ];
+            
+            echo json_encode($response);
+
+            unlink($_FILES['file_upload']['name']);
+
+        } catch (Exception $e) {
+            // Handle upload errors gracefully
+            http_response_code(500); // Set HTTP status code for server error
+            echo json_encode(['error' => $e->getMessage()]);
+        } finally {
+            // Ensure the temporary file is deleted even if an error occurs
+            if (isset($target) && file_exists($target)) {
+                unlink($target);
+            }
         }
-
-        $datas['total'] = count($datas);
-        echo json_encode($datas);
-        unlink($_FILES['file_upload']['name']);
     }
 
     public function uploadclearFailed()

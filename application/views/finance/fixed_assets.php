@@ -666,6 +666,120 @@
                     $('#frm_upload').form('submit', {
                         url: '<?= base_url('finance/fixed_assets/upload') ?>',
                         onSubmit: function() {
+                            // Periksa validasi form secara langsung.
+                            if (!$(this).form('validate')) {
+                                return false;
+                            }
+                            $.messager.progress({
+                                title: 'Please Wait',
+                                msg: 'Importing Excel to Database'
+                            });
+                            // Kembalikan true untuk melanjutkan submit form.
+                            return true;
+                        },
+                        success: function(result) {
+                            $.messager.progress('close');
+
+                            // Gunakan JSON.parse() untuk parsing yang lebih aman.
+                            try {
+                                const response = JSON.parse(result);
+                                
+                                // Periksa apakah respons memiliki format yang diharapkan
+                                if (response.data && response.total !== undefined) {
+                                    // Panggil fungsi proses data yang baru
+                                    processUploadData(response.data);
+                                } else {
+                                    $.messager.alert('Error', 'Invalid data format from server.', 'error');
+                                }
+                            } catch (e) {
+                                $.messager.alert('Error', 'Invalid JSON response from server.', 'error');
+                            }
+                        }
+                    });
+                }
+            }]
+        });
+        // Fungsi terpisah untuk memproses data
+        function processUploadData(dataToUpload) {
+            const totalItems = dataToUpload.length;
+            let successfulCount = 0;
+            let failedCount = 0;
+
+            const processItem = (index) => {
+                if (index >= totalItems) {
+                    // Semua item sudah diproses, tampilkan hasil akhir
+                    const message = `Upload complete. Successful: ${successfulCount}, Failed: ${failedCount}`;
+                    $.messager.alert('Info', message, 'info');
+                    return;
+                }
+
+                const currentData = dataToUpload[index];
+                const progressValue = Math.floor(((index + 1) / totalItems) * 100);
+
+                // Perbarui progress bar dan status
+                $('#p_upload').progressbar('setValue', progressValue);
+                $('#p_start').html(index + 1);
+                $('#p_finish').html(totalItems);
+
+                $.ajax({
+                    type: "POST",
+                    url: "<?= base_url('finance/fixed_assets/uploadCreate') ?>",
+                    data: { "data": currentData },
+                    dataType: "json",
+                    success: function(result) {
+                        let title;
+                        if (result.theme === "success") {
+                            successfulCount++;
+                            $('#p_success').html(successfulCount);
+                            title = `<b style='color: green;'>${result.title}</b> | ${result.message}`;
+                        } else {
+                            failedCount++;
+                            $('#p_failed').html(failedCount);
+                            title = `<b style='color: red;'>${result.title}</b> | ${result.message}`;
+                            
+                            // Simpan data gagal
+                            $.ajax({
+                                type: "POST",
+                                url: "<?= base_url('finance/fixed_assets/uploadcreateFailed') ?>",
+                                data: {
+                                    data: currentData,
+                                    message: result.message
+                                },
+                                cache: false
+                            });
+                        }
+                        $("#p_remarks").append(title + "<br>");
+                        // Panggil rekursi untuk item berikutnya
+                        processItem(index + 1);
+                    },
+                    error: function() {
+                        failedCount++;
+                        $('#p_failed').html(failedCount);
+                        const title = "<b style='color: red;'>Error</b> | Failed to process item.";
+                        $("#p_remarks").append(title + "<br>");
+                        // Lanjutkan ke item berikutnya meskipun gagal
+                        processItem(index + 1);
+                    }
+                });
+            };
+            
+            // Mulai proses
+            processItem(0);
+        }
+
+        $('#dlg_upload_backup').dialog({
+            buttons: [{
+                text: 'List Failed',
+                handler: function() {
+                    window.open('<?= base_url('finance/fixed_assets/uploadDownloadFailed') ?>', '_blank');
+                }
+            }, {
+                text: 'Upload',
+                iconCls: 'icon-ok',
+                handler: function() {
+                    $('#frm_upload').form('submit', {
+                        url: '<?= base_url('finance/fixed_assets/upload') ?>',
+                        onSubmit: function() {
                             if ($(this).form('validate') == false) {
                                 return $(this).form('validate');
                             } else {
