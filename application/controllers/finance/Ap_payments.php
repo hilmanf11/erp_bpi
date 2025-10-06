@@ -1809,7 +1809,6 @@ class Ap_payments extends CI_Controller
                                 <td>' . $detail['account_number'] . '</td>
                                 <td>' . $detail['account_type'] . '</td>
                             </tr>';
-                            '<tr colspan="10" style="border:none;"> &nbsp; </tr>';
             }
             $no++;
         }
