@@ -592,6 +592,61 @@
                 text: 'Save',
                 iconCls: 'icon-ok',
                 handler: function() {
+                    // Langsung memproses submit form tanpa cek Lock Accounting
+                    $('#frm_insert').form('submit', {
+                        url: url_save,
+                        onSubmit: function() {
+                            // Hentikan submit jika validasi form easyUI gagal
+                            if (!$(this).form('validate')) {
+                                return false;
+                            }
+                            
+                            $.messager.progress({
+                                title: 'Please Wait',
+                                msg: 'Saving data to database...'
+                            });
+                        },
+                        success: function(result) {
+                            $.messager.progress('close');
+                            $('#dlg_insert').dialog('close');
+
+                            try {
+                                // Gunakan JSON.parse() untuk parsing yang lebih aman
+                                const jsonResult = JSON.parse(result);
+
+                                if (jsonResult.theme === "success") {
+                                    toastr.success(jsonResult.message, jsonResult.title);
+                                    
+                                    $.messager.alert(jsonResult.title, jsonResult.message, 'info', function() {
+                                        window.location.reload();
+                                    });
+                                } else {
+                                    toastr.error(jsonResult.message, jsonResult.title);
+                                    $.messager.alert(jsonResult.title, jsonResult.message, 'error');
+                                }
+                            } catch (e) {
+                                toastr.error("Invalid JSON response from server.", "Error");
+                                $.messager.alert('Error', "Invalid JSON response from server.", 'error');
+                            }
+
+                            $('#dg').datagrid('reload');
+                        },
+                        error: function() {
+                            // Tutup loading progress dan tampilkan pesan error
+                            $.messager.progress('close');
+                            toastr.error("An error occurred while saving the data.", "Error");
+                            $.messager.alert('Error', "An error occurred while saving the data.", 'error');
+                        }
+                    });
+                }
+            }]
+        });
+
+        $('#dlg_insert_backup').dialog({
+            buttons: [{
+                text: 'Save',
+                iconCls: 'icon-ok',
+                handler: function() {
                     var trans_date = $("#trans_date").datebox('getValue');
 
                     // --- CHECK LOCK SETTING OFF

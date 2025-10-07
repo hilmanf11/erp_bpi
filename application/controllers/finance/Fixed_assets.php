@@ -271,7 +271,7 @@ class Fixed_assets extends CI_Controller
         $this->db->join('asset_categories b', 'a.asset_category_number = b.number', 'left');
         $this->db->join("(SELECT asset_no, SUM(debit) as depreciation_acc FROM asset_journals WHERE periode BETWEEN '$filter_period_from' and '$filter_period_to' GROUP BY asset_no) c", 'a.number = c.asset_no', 'left');
         $this->db->join('purchase_invoices d', 'a.purchase_invoice_number = d.number');
-        $this->db->join('item_rm e', 'd.item_rm_id = e.id');
+        $this->db->join('item_rm e', 'd.item_rm_id = e.id', 'left');
         $this->db->join('item_familys f', 'e.item_family_id = f.id'); // Product Family 
         $this->db->join('account_coa coa', 'd.account_number = coa.account_number'); // Account with Category=Fixed Asset
         
@@ -404,6 +404,121 @@ class Fixed_assets extends CI_Controller
 
     //CREATE DATA
     public function create()
+    {
+        // Pastikan respons selalu dalam format JSON
+        header('Content-Type: application/json');
+
+        if (!$this->input->post()) {
+            echo json_encode([
+                "title"   => "Error",
+                "message" => "Invalid request method.",
+                "theme"   => "error"
+            ]);
+            return;
+        }
+
+        $post = $this->input->post();
+
+        $pi_number  = $post['purchase_invoice_number'];
+        $item_rm_id = $post['item_rm_id'];
+
+        // Cek data Purchase Invoice dan Item Family dalam satu blok
+        $readPI = $this->db->select('item_rm_id, trans_date, qty, YEAR(trans_date) as trans_year, MONTH(trans_date) as trans_month')
+            ->from('purchase_invoices')
+            ->where('number', $pi_number)
+            ->where('item_rm_id', $item_rm_id)
+            ->get()->row();
+            
+        $this->db->select('PRODUCT.name as item_name, FAMILY.name as family_name, FAMILY.number as code');
+        $this->db->from('item_rm PRODUCT');
+        $this->db->join('item_familys FAMILY', 'PRODUCT.item_family_id = FAMILY.id');
+        $this->db->where('PRODUCT.id', $item_rm_id);
+        $getFamily = $this->db->get()->row();
+
+        if (empty($readPI) || empty($getFamily)) {
+            echo json_encode([
+                "title"   => "Error",
+                "message" => "Cannot Process your request! Purchase Invoice or Item Family not found.",
+                "theme"   => "error"
+            ]);
+            return;
+        }
+
+        $trans_year  = $readPI->trans_year;
+        $trans_month = str_pad($readPI->trans_month, 2, '0', STR_PAD_LEFT);
+        $asset_prefix = $getFamily->code . "." . $trans_year . "." . $trans_month . ".";
+
+        // Get Asset No.
+        $this->db->select_max('number', 'kode');
+        $this->db->like('number', $asset_prefix, 'after');
+        $last_asset = $this->db->get('asset_fixeds')->row();
+        
+        $urutan = 0;
+        if ($last_asset && $last_asset->kode) {
+            $urutan = (int) substr($last_asset->kode, -5);
+        }
+
+        $success_count = 0;
+        $total_qty = (int)($post['qty'] ?? 0);
+
+        for ($i = 0; $i < $total_qty; $i++) {
+            // Tentukan nomor aset yang benar
+            if ($total_qty > 1) {
+                $urutan++;
+                $asset_number = $asset_prefix . sprintf("%05d", $urutan);
+            } else {
+                // Gunakan nomor dari POST jika kuantitas hanya 1
+                $asset_number = $post['number'];
+            }
+
+            $data_to_insert = [
+                "item_family_id"          => $post['item_family_id'],
+                "asset_category_number"   => $post['asset_category_number'] ?? null,
+                "purchase_invoice_number" => $post['purchase_invoice_number'],
+                "supplier_name"           => $post['supplier_name'],
+                "item_rm_id"              => $post['item_rm_id'],
+                "number"                  => $asset_number,
+                "name"                    => $post['name'],
+                "trans_date"              => $post['trans_date'],
+                "qty"                     => 1, // Kuantitas selalu 1 per aset
+                "currency"                => $post['currency'],
+                "cost"                    => $post['cost'],
+                "estimate_month"          => $post['estimate_month'],
+                "expired_date"            => $post['expired_date'],
+                "estimate_year"           => $post['estimate_year'],
+                "depreciation"            => $post['depreciation'],
+                "remarks"                 => $post['remarks'],
+                "method"                  => $post['method'],
+                "previous_department"     => $post['previous_department'],
+                "previous_location"       => $post['previous_location'],
+                "department"              => $post['department'],
+                "location"                => $post['location'],
+                "total"                   => $post['total'],
+            ];
+
+            $send = $this->crud->create('asset_fixeds', $data_to_insert);
+            if ($send) {
+                $success_count++;
+            }
+        }
+
+        // Kirim respons JSON yang sesuai dengan hasil loop
+        if ($success_count == $total_qty) {
+            echo json_encode([
+                "title"   => "Success",
+                "message" => "Successfully save data.",
+                "theme"   => "success"
+            ]);
+        } else {
+            echo json_encode([
+                "title"   => "Error",
+                "message" => "Failed to create all fixed assets. Only " . $success_count . " of " . $total_qty . " were created.",
+                "theme"   => "error"
+            ]);
+        }
+    }
+
+    public function create_backup()
     {
         if ($this->input->post()) {
             $post = $this->input->post();
@@ -613,13 +728,18 @@ class Fixed_assets extends CI_Controller
             $data       = $this->input->post('data');
 
             //Cek Process Number
-            $asset_categories = $this->crud->read('asset_categories', [], ["number" => $data['asset_category_number']]);
+            $asset_categories = $this->crud->read('item_familys', [], ["number" => $data['asset_category_number']]);
             $asset_fixeds = $this->crud->read('asset_fixeds', [], ["number" => $data['number']]);
 
             if (empty($asset_categories->id)) {
                 echo json_encode(array("title" => "Not Found", "message" => "Asset Category No " . $data['asset_category_number'] . " Not Found", "theme" => "error"));
+            
             } elseif (!empty($asset_fixeds->id)) {
                 echo json_encode(array("title" => "Duplicate", "message" => "Asset  No " . $data['number'] . " Duplicated", "theme" => "error"));
+            
+            } elseif (!empty($data['cost']) && !is_numeric($data['cost'])) {
+                echo json_encode(array("title" => "Error", "message" => "Cost " . $data['number'] . " must be numeric", "theme" => "error"));
+            
             } else {
                 
                 if(($data['estimate_year'] * 12) > 0){
