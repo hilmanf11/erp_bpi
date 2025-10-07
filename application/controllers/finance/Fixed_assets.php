@@ -264,7 +264,7 @@ class Fixed_assets extends CI_Controller
         $filter_period_to   = $filter_list["filter_period_to"];
         
         $this->db->select("a.*, 
-            COALESCE(b.name, f.name) as asset_category_name, 
+            COALESCE(b.name, f.name) as asset_family_name,
             COALESCE(b.type, coa.account_name) as asset_category_type,
             PERIOD_DIFF(DATE_FORMAT('$filter_to', '%Y%m'), DATE_FORMAT(a.trans_date, '%Y%m')) AS qty_month, 
             (COALESCE(c.depreciation_acc, 0) + a.depreciation_accumulate) as depreciation_acc,
@@ -273,10 +273,8 @@ class Fixed_assets extends CI_Controller
         $this->db->from('asset_fixeds a');
         $this->db->join('asset_categories b', 'a.asset_category_number = b.number', 'left');
         $this->db->join("(SELECT asset_no, SUM(debit) as depreciation_acc FROM asset_journals WHERE periode BETWEEN '$filter_period_from' and '$filter_period_to' GROUP BY asset_no) c", 'a.number = c.asset_no', 'left');
-        $this->db->join('purchase_invoices d', 'a.purchase_invoice_number = d.number');
-        $this->db->join('item_rm e', 'd.item_rm_id = e.id', 'left');
-        $this->db->join('item_familys f', 'e.item_family_id = f.id'); // Product Family 
-        $this->db->join('account_coa coa', 'd.account_number = coa.account_number'); // Account with Category=Fixed Asset
+        $this->db->join('item_familys f', 'a.item_family_id = f.id'); // Product Family
+        $this->db->join('account_coa coa', 'f.account_number = coa.account_number', 'left'); // Product Category by Product Family
         
         // Kondisi WHERE yang sama
         if ($filter_from && $filter_to) {
@@ -299,6 +297,7 @@ class Fixed_assets extends CI_Controller
         if (!empty($filter_supplier)) {
             $this->db->like('a.supplier_name', $filter_supplier);
         }
+        $this->db->order_by('a.trans_date', 'desc');
         $this->db->group_by('a.number');
         
         if (!empty($page) && !empty($rows)) {            
@@ -656,24 +655,25 @@ class Fixed_assets extends CI_Controller
             $total_row = $data->rowcount($sheet_index = 0);
 
             for ($i = 3; $i <= $total_row; $i++) {
-                $datas[] = array(
-                    'purchase_invoice_number' => $data->val($i, 2),
-                    'number'                  => $data->val($i, 3),
-                    'name'                    => $data->val($i, 4),
-                    'asset_category_number'   => $data->val($i, 5),
-                    'trans_date'              => $data->val($i, 6),
-                    'supplier_name'           => $data->val($i, 7),
-                    'qty'                     => $data->val($i, 8),
-                    'currency'                => $data->val($i, 9),
-                    'cost'                    => $data->val($i, 10),
-                    'usage_date'              => $data->val($i, 11),
-                    'estimate_year'           => $data->val($i, 12),
-                    'depreciation_accumulate' => $data->val($i, 13),
-                    'remarks'                 => $data->val($i, 14),
-                    'method'                  => $data->val($i, 15),
-                    'department'              => $data->val($i, 16),
-                    'location'                => $data->val($i, 17)
-                );
+                // [^\x20-\x7E] menghapus semua karakter UTF-8 
+                $datas[] = [
+                    'purchase_invoice_number' => preg_replace('/[^\x20-\x7E]/', '', $data->val($i, 2)),
+                    'number'                  => preg_replace('/[^\x20-\x7E]/', '', $data->val($i, 3)),
+                    'name'                    => preg_replace('/[^\x20-\x7E]/', '', $data->val($i, 4)),
+                    'asset_category_number'   => preg_replace('/[^\x20-\x7E]/', '', $data->val($i, 5)),
+                    'trans_date'              => preg_replace('/[^\x20-\x7E]/', '', $data->val($i, 6)),
+                    'supplier_name'           => preg_replace('/[^\x20-\x7E]/', '', $data->val($i, 7)),
+                    'qty'                     => preg_replace('/[^\x20-\x7E]/', '', $data->val($i, 8)),
+                    'currency'                => preg_replace('/[^\x20-\x7E]/', '', $data->val($i, 9)),
+                    'cost'                    => preg_replace('/[^\x20-\x7E]/', '', $data->val($i, 10)),
+                    'usage_date'              => preg_replace('/[^\x20-\x7E]/', '', $data->val($i, 11)),
+                    'estimate_year'           => preg_replace('/[^\x20-\x7E]/', '', $data->val($i, 12)),
+                    'depreciation_accumulate' => preg_replace('/[^\x20-\x7E]/', '', $data->val($i, 13)),
+                    'remarks'                 => preg_replace('/[^\x20-\x7E]/', '', $data->val($i, 14)),
+                    'method'                  => preg_replace('/[^\x20-\x7E]/', '', $data->val($i, 15)),
+                    'department'              => preg_replace('/[^\x20-\x7E]/', '', $data->val($i, 16)),
+                    'location'                => preg_replace('/[^\x20-\x7E]/', '', $data->val($i, 17)),
+                ];
             }
 
             $response = [
@@ -732,13 +732,15 @@ class Fixed_assets extends CI_Controller
 
             //Cek Process Number
             $asset_categories = $this->crud->read('item_familys', [], ["number" => $data['asset_category_number']]);
-            $asset_fixeds = $this->crud->read('asset_fixeds', [], ["number" => $data['number']]);
+            $asset_fixeds     = $this->crud->read('asset_fixeds', [], ["number" => $data['number']]);
+            $purchase_invoice = $this->crud->read('purchase_invoices', [], ['number' => $data['purchase_invoice_number']]);
+            $item_rm          = $this->db->select('id, number, name')->from('item_rm')->like('number', $data['name'])->or_like('name', $data['name'])->get()->row();
 
             if (empty($asset_categories->id)) {
                 echo json_encode(array("title" => "Not Found", "message" => "Asset Category No " . $data['asset_category_number'] . " Not Found", "theme" => "error"));
             
             } elseif (!empty($asset_fixeds->id)) {
-                echo json_encode(array("title" => "Duplicate", "message" => "Asset  No " . $data['number'] . " Duplicated", "theme" => "error"));
+                echo json_encode(array("title" => "Duplicate", "message" => "Asset No " . $data['number'] . " Duplicated", "theme" => "error"));
             
             } elseif (!empty($data['cost']) && !is_numeric($data['cost'])) {
                 echo json_encode(array("title" => "Error", "message" => "Cost " . $data['number'] . " must be numeric", "theme" => "error"));
@@ -751,27 +753,40 @@ class Fixed_assets extends CI_Controller
                     $estimate_month = 1;
                 }
 
-                $dataFinal = array(
-                    "asset_category_number" => $data['asset_category_number'],
-                    "purchase_invoice_number" => $data['purchase_invoice_number'],
-                    "supplier_name" => $data['supplier_name'],
-                    "number" => $data['number'],
-                    "name" => $data['name'],
-                    "trans_date" => $data['trans_date'],
-                    "qty" => $data['qty'],
-                    "currency" => $data['currency'],
-                    "cost" => $data['cost'],
-                    "expired_date" => date("Y-m-d", strtotime("+" . ($data['estimate_year'] * 12) . ' months', strtotime($data['trans_date']))),
-                    "estimate_year" => $data['estimate_year'],
-                    "estimate_month" => ($data['estimate_year'] * 12),
-                    "depreciation" => ($data['cost'] / $estimate_month),
-                    "depreciation_accumulate" => $data['depreciation_accumulate'],
-                    "remarks" => $data['remarks'],
-                    "method" => $data['method'],
-                    "department" => $data['department'],
-                    "location" => $data['location'],
-                    "total" => ($data['qty'] * $data['cost']),
-                );
+                if (!empty($purchase_invoice)) {
+                    $item_rm_id = $purchase_invoice->item_rm_id;
+                } elseif (!empty($item_rm)) {
+                    $item_rm_id = $item_rm->id;
+                } else {
+                    $item_rm_id = "";
+                }
+
+                $dataFinal = [
+                    "asset_category_number"   => null,
+                    "item_family_id"          => $asset_categories->id ?? $data['asset_category_number'],
+                    "purchase_invoice_number" => $purchase_invoice->number ?? $data['purchase_invoice_number'],
+                    "supplier_name"           => $data['supplier_name'],
+                    "item_rm_id"              => $item_rm_id,
+                    "number"                  => $data['number'],
+                    "name"                    => $data['name'],
+                    "trans_date"              => $data['trans_date'],
+                    "usage_date"              => $data['usage_date'],
+                    "qty"                     => $data['qty'],
+                    "currency"                => $data['currency'],
+                    "cost"                    => $data['cost'],
+                    "estimate_month"          => ($data['estimate_year'] * 12),
+                    "estimate_year"           => $data['estimate_year'],
+                    "expired_date"            => date("Y-m-d", strtotime("+" . ($data['estimate_year'] * 12) . ' months', strtotime($data['trans_date']))),
+                    "depreciation"            => ($data['cost'] / $estimate_month),
+                    "depreciation_accumulate" => $data['depreciation_accumulate'], 
+                    "remarks"                 => $data['remarks'],
+                    "method"                  => $data['method'],
+                    "previous_department"     => $data['department'],
+                    "previous_location"       => $data['location'],
+                    "department"              => $data['department'],
+                    "location"                => $data['location'],
+                    "total"                   => ($data['qty'] * $data['cost']),
+                ];
 
                 $send   = $this->crud->create('asset_fixeds', $dataFinal);
                 echo $send;

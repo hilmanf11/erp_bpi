@@ -2,18 +2,19 @@
     <thead frozen="true">
         <tr>
             <th field="ck" checkbox="true"></th>
-            <th data-options="field:'number',width:200,halign:'center'">Asset No</th>
-            <th data-options="field:'name',width:200,halign:'center'">Asset Name</th>
+            <th data-options="field:'number',width:150,halign:'center'">Asset No</th>
+            <th data-options="field:'name',width:350,halign:'center',resizable:true">Asset Name</th>
         </tr>
     </thead>
     <thead>
         <tr>
             <th rowspan="2" data-options="field:'item_rm_id',width:200,align:'center',hidden:true">Item RM ID</th>
-            <th rowspan="2" data-options="field:'asset_category_name',width:200,halign:'center'">Asset Family</th>
+            <th rowspan="2" data-options="field:'asset_family_name',width:200,halign:'center'">Asset Family</th>
             <th rowspan="2" data-options="field:'asset_category_type',width:200,halign:'center'">Asset Type</th>
             <th rowspan="2" data-options="field:'purchase_invoice_number',width:150,halign:'center'">Purchase Invoice No</th>
             <th rowspan="2" data-options="field:'supplier_name',width:200,halign:'center'">Supplier Name</th>
             <th rowspan="2" data-options="field:'trans_date',width:100,align:'center'">Purchase Date</th>
+            <th rowspan="2" data-options="field:'usage_date',width:100,align:'center'">Usage Date</th>
             <th rowspan="2" data-options="field:'qty',width:80,halign:'center',align:'right'">Qty</th>
             <th rowspan="2" data-options="field:'cost',width:100,halign:'center',align:'right', formatter:priceformat">Cost</th>
             <th colspan="2" data-options="field:'',width:100,align:'center'">Estimated</th>
@@ -142,7 +143,7 @@
                 </div>
                 <div class="fitem">
                     <span style="width:35%; display:inline-block;">Asset Family</span>
-                    <input style="width:60%;" name="asset_category_name" id="asset_category_name" required="" class="easyui-textbox" readonly>
+                    <input style="width:60%;" name="asset_family_name" id="asset_family_name" required="" class="easyui-textbox" readonly>
                 </div>
                 <div class="fitem">
                     <span style="width:35%; display:inline-block;">Purchase Date</span>
@@ -467,7 +468,7 @@
                             dataType: "json",
                             success: function(assetCategory) {
                                 $("#item_family_id").textbox('setValue', assetCategory.item_family_id);
-                                $("#asset_category_name").textbox('setValue', assetCategory.family_name);
+                                $("#asset_family_name").textbox('setValue', assetCategory.family_name);
                                 $("#estimate_year").textbox('setValue', assetCategory.asset_year);
                             }
                         });
