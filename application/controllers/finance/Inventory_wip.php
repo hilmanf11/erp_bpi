@@ -249,14 +249,17 @@ class Inventory_wip extends CI_Controller
                         COALESCE(b.qty_wo,0) as qty_wo,
                         COALESCE(i.begin_balance,0) as begin_balance,
                         COALESCE(c.qty_actual,0) as qty_actual,
+                        COALESCE(c2.qty_wip,0) as qty_wip,
+                        COALESCE(j2.qty_adj_in,0) as qty_adj_in,
                         COALESCE(d.qty_ng,0) as qty_ng,
                         COALESCE((COALESCE(c.qty_actual,0)+COALESCE(d.qty_ng,0)),0) as total_production,
                         COALESCE(f.qty_subcont_jasa,0) as subconts_jasa,
-                        COALESCE(g.qty_rfg,0) as rfg,
+                        COALESCE(g.qty_in_checksheet,0) + COALESCE(gb.initial_in,0) + COALESCE(gc.qty_in_wip_receipt,0) as rfg,
                         COALESCE(h.qty_rfg_jasa,0) as rfg_jasa,
-                        COALESCE(c.qty_actual,0) + COALESCE(f.qty_subcont_jasa,0) as qty_in,
-                        COALESCE(g.qty_rfg,0) + COALESCE(h.qty_rfg_jasa,0) as qty_out,
-                        COALESCE((COALESCE(i.begin_balance,0)) + COALESCE(c.qty_actual,0) + COALESCE(f.qty_subcont_jasa,0) - COALESCE(g.qty_rfg,0) - COALESCE(h.qty_rfg_jasa,0), 0) as ending_balance
+                        COALESCE(c.qty_actual,0) + COALESCE(f.qty_subcont_jasa,0) + COALESCE(c2.qty_wip,0) + COALESCE(j2.qty_adj_in,0) as qty_in,
+                        COALESCE(ng_map.qty_ng,0) + COALESCE(g.qty_in_checksheet,0) + COALESCE(gb.initial_in,0) + COALESCE(gc.qty_in_wip_receipt,0) + COALESCE(h.qty_rfg_jasa,0) + COALESCE(k2.qty_adj_out,0) as qty_out,
+                        COALESCE((COALESCE(i.begin_balance,0)) + COALESCE(c.qty_actual,0) + COALESCE(f.qty_subcont_jasa,0) + COALESCE(j2.qty_adj_in,0) + COALESCE(c2.qty_wip,0) - 
+                               COALESCE(ng_map.qty_ng,0) - COALESCE(g.qty_in_checksheet,0) + COALESCE(gb.initial_in,0) + COALESCE(gc.qty_in_wip_receipt,0) + COALESCE(h.qty_rfg_jasa,0) + COALESCE(k2.qty_adj_out,0), 0) as ending_balance
                         FROM item_fg a
                         LEFT JOIN (
                                     select aa.item_fg_id,sum(aa.qty_wo) as qty_wo FROM (
@@ -267,10 +270,33 @@ class Inventory_wip extends CI_Controller
                                     select item_fg_id, sum(qty) as qty_actual FROM output_productions where trans_date between '$filter_from' AND '$filter_to'  AND shift like '%$filter_shift%' group by item_fg_id
                         ) c on a.id = c.item_fg_id
                         LEFT JOIN (
+                                    select item_fg_id, sum(qty_wip) as qty_wip FROM output_productions where trans_date between '$filter_from' AND '$filter_to'  AND shift like '%$filter_shift%' group by item_fg_id
+                        ) c2 on a.id = c2.item_fg_id
+                        LEFT JOIN (
                                     select aa.item_fg_id,sum(aa.qty_product) as qty_ng FROM (
                                             select distinct item_fg_id, qty_product FROM  item_ng where trans_date between '$filter_from' AND '$filter_to' AND shift like '%$filter_shift%'
                                     ) aa group by aa.item_fg_id
                         ) d on a.id = d.item_fg_id
+                        LEFT JOIN (
+                            SELECT 
+                                subs.item_fg_sa_id AS item_fg_id,
+                                SUM(d.qty_ng) AS qty_ng
+                            FROM (
+                                SELECT 
+                                    aa.item_fg_id, 
+                                    SUM(aa.qty_product) AS qty_ng
+                                FROM (
+                                    SELECT DISTINCT document, item_fg_id, qty_product 
+                                    FROM item_ng 
+                                    WHERE trans_date BETWEEN '$filter_from' AND '$filter_to'
+                                    AND shift LIKE '%$filter_shift%'
+                                    AND created_by != 'PRD01'
+                                ) aa 
+                                GROUP BY aa.item_fg_id
+                            ) d
+                            JOIN item_fg_subs subs ON d.item_fg_id = subs.item_fg_id
+                            GROUP BY subs.item_fg_sa_id
+                        ) ng_map ON a.id = ng_map.item_fg_id
                         LEFT JOIN (
                                     select item_fg_id,sum(qty) as qty_balance_wip FROM wip_balances_fg where trans_date between '$filter_from' AND '$filter_to' group by item_fg_id
                         ) e on a.id = e.item_fg_id
@@ -283,68 +309,231 @@ class Inventory_wip extends CI_Controller
                                     ) aa group by aa.item_fg_id
                         ) f on a.id = f.item_fg_id
                         LEFT JOIN (
-                                    select aa.item_fg_id,sum(aa.receipt) as qty_rfg 
-                                    FROM checksheets aa 
-                                    JOIN item_fg ab on aa.item_fg_id = ab.id
-                                    where aa.trans_date between '$filter_from' AND '$filter_to' and ab.status_subcont='NO'
-                                    GROUP BY aa.item_fg_id
+                            SELECT 
+                                main.id AS item_fg_id,
+                                SUM(main.qty_rfg) AS qty_in_checksheet
+                            FROM (
+                                SELECT 
+                                    b.item_fg_id AS id,
+                                    SUM(a.qty) AS qty_rfg
+                                FROM scan_item_receipts_fg a
+                                JOIN checksheets b ON b.number = a.checksheet_number
+                                WHERE DATE_FORMAT(b.packing_date, '%Y-%m-%d') BETWEEN '$filter_from' AND '$filter_to' 
+                                    AND b.status_subcont='NO' 
+                                    AND b.shift LIKE '%$filter_shift%'
+                                GROUP BY b.item_fg_id
+
+                                UNION ALL
+
+                                SELECT 
+                                    sub.item_fg_sa_id AS id,
+                                    SUM(a.qty) AS qty_rfg
+                                FROM scan_item_receipts_fg a
+                                JOIN checksheets b ON b.number = a.checksheet_number
+                                JOIN item_fg_subs sub ON sub.item_fg_id = b.item_fg_id
+                                WHERE DATE_FORMAT(b.packing_date, '%Y-%m-%d') BETWEEN '$filter_from' AND '$filter_to' 
+                                    AND b.status_subcont='NO' 
+                                    AND b.shift LIKE '%$filter_shift%'
+                                GROUP BY sub.item_fg_sa_id
+                            ) main
+                            GROUP BY main.id
                         ) g on a.id = g.item_fg_id
                         LEFT JOIN (
-                                    select aa.item_fg_id,sum(aa.receipt) as qty_rfg_jasa 
-                                    FROM checksheets aa 
-                                    JOIN item_fg ab on aa.item_fg_id = ab.id
-                                    where aa.trans_date between '$filter_from' AND '$filter_to' and ab.status_subcont='YES' AND ab.subcont_type='Jasa'
-                                    GROUP BY aa.item_fg_id
+                                    SELECT a.item_fg_id, SUM(a.qty) as qty_in_no_checksheet
+                                    FROM scan_item_receipts_fg a
+                                    WHERE a.type = 'NBFG'
+                                    AND a.packing_date BETWEEN '$filter_from' AND '$filter_to' 
+                                    GROUP BY a.item_fg_id
+                        ) ga on a.id = ga.item_fg_id
+                        LEFT JOIN (
+                                    SELECT a.item_fg_id, SUM(a.qty) as initial_in
+                                    FROM transaction_fg a
+                                    WHERE a.transaction_kind = 'IN'
+                                    AND a.transaction_type = 'RECEIPT FG'
+                                    AND a.request_date BETWEEN '$filter_from' AND '$filter_to' 
+                                    GROUP BY a.item_fg_id
+                        ) gb on a.id = gb.item_fg_id
+                        LEFT JOIN (
+                                    SELECT a.item_fg_id, SUM(a.qty) as qty_in_wip_receipt
+                                    FROM wip_receipts a
+                                    WHERE a.division = 'MTS'
+                                    AND a.trans_date BETWEEN '$filter_from' AND '$filter_to' 
+                                    GROUP BY a.item_fg_id
+                        ) gc on a.id = gc.item_fg_id
+                        LEFT JOIN (
+                                    select aa.item_fg_id,sum(aa.qty) as qty_rfg_jasa 
+                                    FROM scan_item_receipts_fg aa 
+                                    JOIN checksheets ab on aa.checksheet_number = ab.number
+                                    where ab.packing_date between '$filter_from' AND '$filter_to' and ab.subcont_type='Jasa' and ab.shift like '%$filter_shift%'
+                                    GROUP BY ab.item_fg_id
                         ) h on a.id = h.item_fg_id
                         LEFT JOIN (
-                                    select a.id,
-                                    case 
-                                        when e.item_fg_id is not null then COALESCE(e.qty_balance_wip,0) else 
-                                            COALESCE(COALESCE(e.qty_balance_wip,0) + COALESCE(c.qty_actual,0) + COALESCE(f.qty_subcont_jasa,0) - COALESCE(g.qty_rfg,0) - COALESCE(h.qty_rfg_jasa,0), 0)
-                                    end as begin_balance
+                                    select a.item_fg_id,sum(a.qty) as qty_adj_in 
+                                    FROM wip_adjustment_fg a
+                                    where a.request_date between '$filter_from' AND '$filter_to' and a.transaction_type='ADJ IN'
+                                    GROUP BY a.item_fg_id
+                        ) j2 on a.id = j2.item_fg_id
+                        LEFT JOIN (
+                                    select a.item_fg_id,sum(a.qty) as qty_adj_out 
+                                    FROM wip_adjustment_fg a
+                                    where a.request_date between '$filter_from' AND '$filter_to' and a.transaction_type='ADJ OUT'
+                                    GROUP BY a.item_fg_id
+                        ) k2 on a.id = k2.item_fg_id
+                        LEFT JOIN (
+                                    SELECT a.id,
+                                        COALESCE(e.qty_balance_wip, 0) + COALESCE(c.qty_actual, 0)  + COALESCE(c2.qty_wip, 0) + COALESCE(f.qty_subcont_jasa, 0) + COALESCE(j.qty_adj_in, 0) - COALESCE(ng_map.qty_ng,0) - COALESCE(g.qty_in_checksheet, 0) - COALESCE(gb.initial_in, 0) - COALESCE(gc.qty_in_wip_receipt, 0) - COALESCE(h.qty_rfg_jasa, 0) - COALESCE(k.qty_adj_out, 0) AS begin_balance
                                     FROM item_fg a
+                                    -- qty_balance_wip pada 2025-04-30 (cutoff)
                                     LEFT JOIN (
-                                                select aa.item_fg_id,sum(aa.qty_wo) as qty_wo FROM (
-                                                        select distinct item_fg_id, workorder, period, qty_wo FROM  supply_sheets where request_date < '$filter_from' 
-                                                ) aa group by aa.item_fg_id
-                                    ) b on a.id = b.item_fg_id
+                                        SELECT item_fg_id, SUM(qty) AS qty_balance_wip
+                                        FROM wip_balances_fg
+                                        WHERE trans_date = '2025-04-30'
+                                        GROUP BY item_fg_id
+                                    ) e ON a.id = e.item_fg_id
+
+                                    -- Transaksi setelah cutoff_date sampai < filter_from
                                     LEFT JOIN (
-                                                select item_fg_id, sum(qty) as qty_actual FROM output_productions where trans_date < '$filter_from'  AND shift like '%$filter_shift%' group by item_fg_id
-                                    ) c on a.id = c.item_fg_id
+                                        SELECT item_fg_id, SUM(qty) AS qty_actual
+                                        FROM output_productions
+                                        WHERE trans_date >= '2025-05-01' AND trans_date < '$filter_from'
+                                        AND shift LIKE '%$filter_shift%'
+                                        GROUP BY item_fg_id
+                                    ) c ON a.id = c.item_fg_id
+
                                     LEFT JOIN (
-                                                select aa.item_fg_id,sum(aa.qty_product) as qty_ng FROM (
-                                                        select distinct item_fg_id, qty_product FROM  item_ng where trans_date < '$filter_from' AND shift like '%$filter_shift%'
-                                                ) aa group by aa.item_fg_id
-                                    ) d on a.id = d.item_fg_id
+                                        SELECT item_fg_id, SUM(qty_wip) AS qty_wip
+                                        FROM output_productions
+                                        WHERE trans_date >= '2025-05-01' AND trans_date < '$filter_from'
+                                        AND shift LIKE '%$filter_shift%'
+                                        GROUP BY item_fg_id
+                                    ) c2 ON a.id = c2.item_fg_id
+
                                     LEFT JOIN (
-                                                select item_fg_id,sum(qty) as qty_balance_wip FROM wip_balances_fg where trans_date < '$filter_from' group by item_fg_id
-                                    ) e on a.id = e.item_fg_id
+                                        SELECT aa.item_fg_id, SUM(aa.qty_wo) AS qty_subcont_jasa
+                                        FROM (
+                                            SELECT DISTINCT ax.item_fg_id, ax.workorder, ax.period, ax.qty_wo
+                                            FROM supply_sheets ax
+                                            JOIN item_fg ay ON ax.item_fg_id = ay.id
+                                            WHERE ax.request_date >= '2025-05-01' AND ax.request_date < '$filter_from'
+                                            AND ay.status_subcont = 'YES' AND ay.subcont_type = 'Jasa'
+                                        ) aa
+                                        GROUP BY aa.item_fg_id
+                                    ) f ON a.id = f.item_fg_id
+
                                     LEFT JOIN (
-                                                select aa.item_fg_id,sum(aa.qty_wo) as qty_subcont_jasa FROM (
-                                                        select distinct ax.item_fg_id, ax.workorder, ax.period, ax.qty_wo 
-                                                        FROM  supply_sheets ax 
-                                                        join item_fg ay on ax.item_fg_id=ay.id 
-                                                        where ax.request_date < '$filter_from' and ay.status_subcont='YES' and ay.subcont_type='Jasa'
-                                                ) aa group by aa.item_fg_id
-                                    ) f on a.id = f.item_fg_id
+                                        SELECT 
+                                            main.id AS item_fg_id,
+                                            SUM(main.qty_rfg) AS qty_in_checksheet
+                                        FROM (
+                                            SELECT 
+                                                b.item_fg_id AS id,
+                                                SUM(a.qty) AS qty_rfg
+                                            FROM scan_item_receipts_fg a
+                                            JOIN checksheets b ON b.number = a.checksheet_number
+                                            WHERE DATE_FORMAT(b.packing_date, '%Y-%m-%d') >= '2025-05-01'
+                                            AND DATE_FORMAT(b.packing_date, '%Y-%m-%d') < '$filter_from'
+                                            AND b.status_subcont = 'NO'
+                                            AND b.shift LIKE '%$filter_shift%'
+                                            GROUP BY b.item_fg_id
+
+                                            UNION ALL
+
+                                            SELECT 
+                                                sub.item_fg_sa_id AS id,
+                                                SUM(a.qty) AS qty_rfg
+                                            FROM scan_item_receipts_fg a
+                                            JOIN checksheets b ON b.number = a.checksheet_number
+                                            JOIN item_fg_subs sub ON sub.item_fg_id = b.item_fg_id
+                                            WHERE DATE_FORMAT(b.packing_date, '%Y-%m-%d') >= '2025-05-01'
+                                            AND DATE_FORMAT(b.packing_date, '%Y-%m-%d') < '$filter_from'
+                                            AND b.status_subcont = 'NO'
+                                            AND b.shift LIKE '%$filter_shift%'
+                                            GROUP BY sub.item_fg_sa_id
+                                        ) main
+                                        GROUP BY main.id
+                                    ) g ON a.id = g.item_fg_id
+
                                     LEFT JOIN (
-                                                select aa.item_fg_id,sum(aa.receipt) as qty_rfg 
-                                                FROM checksheets aa 
-                                                JOIN item_fg ab on aa.item_fg_id = ab.id
-                                                where aa.trans_date < '$filter_from' and ab.status_subcont='NO'
-                                                GROUP BY aa.item_fg_id
-                                    ) g on a.id = g.item_fg_id
+                                        SELECT 
+                                            subs.item_fg_sa_id AS item_fg_id,
+                                            SUM(d.qty_ng) AS qty_ng
+                                        FROM (
+                                            SELECT 
+                                                aa.item_fg_id, 
+                                                SUM(aa.qty_product) AS qty_ng
+                                            FROM (
+                                                SELECT DISTINCT document, item_fg_id, qty_product 
+                                                FROM item_ng 
+                                                WHERE trans_date >= '2025-05-01' AND trans_date < '$filter_from'
+                                                AND shift LIKE '%$filter_shift%'
+                                                AND created_by != 'PRD01'
+                                            ) aa 
+                                            GROUP BY aa.item_fg_id
+                                        ) d
+                                        JOIN item_fg_subs subs ON d.item_fg_id = subs.item_fg_id
+                                        GROUP BY subs.item_fg_sa_id
+                                    ) ng_map ON a.id = ng_map.item_fg_id
+
                                     LEFT JOIN (
-                                                select aa.item_fg_id,sum(aa.receipt) as qty_rfg_jasa 
-                                                FROM checksheets aa 
-                                                JOIN item_fg ab on aa.item_fg_id = ab.id
-                                                where aa.trans_date < '$filter_from' and ab.status_subcont='YES' AND ab.subcont_type='Jasa'
-                                                GROUP BY aa.item_fg_id
-                                    ) h on a.id = h.item_fg_id
-                        ) i on a.id = i.id
+                                        SELECT item_fg_id, SUM(qty) AS qty_in_no_checksheet
+                                        FROM scan_item_receipts_fg
+                                        WHERE type = 'NBFG'
+                                        AND packing_date >= '2025-05-01'
+                                        AND packing_date < '$filter_from'
+                                        GROUP BY item_fg_id
+                                    ) ga ON a.id = ga.item_fg_id
+
+                                    LEFT JOIN (
+                                        SELECT item_fg_id, SUM(qty) AS initial_in
+                                        FROM transaction_fg
+                                        WHERE transaction_kind = 'IN'
+                                        AND transaction_type = 'RECEIPT FG'
+                                        AND request_date >= '2025-05-01'
+                                        AND request_date < '$filter_from'
+                                        GROUP BY item_fg_id
+                                    ) gb ON a.id = gb.item_fg_id
+
+                                    LEFT JOIN (
+                                        SELECT item_fg_id, SUM(qty) AS qty_in_wip_receipt
+                                        FROM wip_receipts
+                                        WHERE division = 'MTS'
+                                        AND trans_date >= '2025-05-01'
+                                        AND trans_date < '$filter_from'
+                                        GROUP BY item_fg_id
+                                    ) gc ON a.id = gc.item_fg_id
+
+                                    LEFT JOIN (
+                                        SELECT ab.item_fg_id, SUM(aa.qty) AS qty_rfg_jasa
+                                        FROM scan_item_receipts_fg aa
+                                        JOIN checksheets ab ON aa.checksheet_number = ab.number
+                                        WHERE ab.packing_date >= '2025-05-01'
+                                        AND ab.packing_date < '$filter_from'
+                                        AND ab.subcont_type = 'Jasa'
+                                        AND ab.shift LIKE '%$filter_shift%'
+                                        GROUP BY ab.item_fg_id
+                                    ) h ON a.id = h.item_fg_id
+
+                                    LEFT JOIN (
+                                        SELECT item_fg_id, SUM(qty) AS qty_adj_in
+                                        FROM wip_adjustment_fg
+                                        WHERE request_date >= '2025-05-01'
+                                        AND request_date < '$filter_from'
+                                        AND transaction_type = 'ADJ IN'
+                                        GROUP BY item_fg_id
+                                    ) j ON a.id = j.item_fg_id
+
+                                    LEFT JOIN (
+                                        SELECT item_fg_id, SUM(qty) AS qty_adj_out
+                                        FROM wip_adjustment_fg
+                                        WHERE request_date >= '2025-05-01'
+                                        AND request_date < '$filter_from'
+                                        AND transaction_type = 'ADJ OUT'
+                                        GROUP BY item_fg_id
+                                    ) k ON a.id = k.item_fg_id
+                        ) i ON a.id = i.id
                         LEFT JOIN divisions j on a.division_id = j.id
                         LEFT JOIN (SELECT item_fg_id, currency, price from standard_price_fg where '$filter_from' >= `start_date` and '$filter_to' <= `end_date`) k on a.id = k.item_fg_id
-                        WHERE a.id LIKE '%$filter_items%' AND a.division_id LIKE '%$filter_division%'
+                        WHERE a.type != 'RM' and a.id LIKE '%$filter_items%' AND a.division_id LIKE '%$filter_division%' AND a.status = 0 AND a.id != 'BPIFG-INJ08240009'
                         ORDER BY a.number
         ";
 
@@ -533,6 +722,7 @@ class Inventory_wip extends CI_Controller
                     }
                 }
 
+                //IN--------------------------------
                 $dataActualProductions = $this->crud->query("select * FROM output_productions where item_fg_id='$item_fg_id' and trans_date between '$filter_from' and '$filter_to'  AND shift like '%$filter_shift%'");
 
                 $dataSubcontsJasas = $this->crud->query("
@@ -544,25 +734,65 @@ class Inventory_wip extends CI_Controller
                                                 ) aa group by aa.workorder,aa.request_date,aa.item_fg_id
                 ");
 
-                $dataRfgs = $this->crud->query("
-                                                select aa.trans_date,aa.wo_no, aa.item_fg_id,sum(aa.receipt) as qty_rfg 
-                                                FROM checksheets aa 
-                                                JOIN item_fg ab on aa.item_fg_id = ab.id
-                                                where aa.item_fg_id='$item_fg_id' and aa.trans_date between '$filter_from' and '$filter_to' and ab.status_subcont='NO'
-                                                GROUP BY aa.trans_date,aa.wo_no,aa.item_fg_id
+                $dataAdjIns = $this->crud->query("
+                                                select *
+                                                FROM wip_adjustment_fg a
+                                                where a.item_fg_id='$item_fg_id' and a.request_date between '$filter_from' AND '$filter_to' and a.transaction_type='ADJ IN'
+                ");
+                //----------------------------------
+
+                //OUT-------------------------------
+                $receipts = $this->crud->query("
+                                                SELECT f.*, c.name as username, e.packing_date as trans_date, 'RECEIPT FG' AS receipt_type
+                                                FROM scan_item_receipts_fg f
+                                                JOIN checksheets e ON e.number = f.checksheet_number
+                                                LEFT JOIN users c ON f.created_by = c.username
+                                                WHERE (
+                                                    e.item_fg_id = '$item_fg_id'
+                                                    OR e.item_fg_id IN (
+                                                        SELECT item_fg_id FROM item_fg_subs WHERE item_fg_sa_id = '$item_fg_id'
+                                                    )
+                                                )
+                                                AND DATE_FORMAT(e.packing_date, '%Y-%m-%d') BETWEEN '$filter_from' AND '$filter_to'
+                                                AND e.status_subcont = 'NO'
+                                                AND e.shift LIKE '%$filter_shift%'
+                                            ");
+                
+                // $receiptsNB = $this->crud->query("
+                //                                 SELECT f.*, u.name as username ,f.packing_date as trans_date,'NEW BARCODE FG' AS receipt_type
+                //                                 FROM new_barcode_fg a
+                //                                 LEFT JOIN scan_item_receipts_fg f ON a.label_no = f.checksheet_label AND a.item_fg_id = f.item_fg_id
+                //                                 LEFT JOIN users u ON f.created_by = u.username
+                //                                 WHERE a.item_fg_id = '$item_fg_id'  AND DATE_FORMAT(a.packing_date, '%Y-%m-%d') BETWEEN '$filter_from' and '$filter_to'");
+
+                $receiptsWIP = $this->crud->query("
+                                                SELECT a.*, u.name as username, 'WIP RECEIPT FG' AS receipt_type, a.document_no as checksheet_label
+                                                FROM wip_receipts a
+                                                LEFT JOIN users u ON a.created_by = u.username
+                                                WHERE a.item_fg_id = '$item_fg_id' AND a.division = 'MTS' AND DATE_FORMAT(a.trans_date, '%Y-%m-%d') BETWEEN '$filter_from' and '$filter_to'");
+                $transFgs = $this->crud->query("
+                                                SELECT *
+                                                FROM transaction_fg a
+                                                WHERE a.transaction_kind = 'IN'  AND a.transaction_type = 'RECEIPT FG' AND a.item_fg_id = '$item_fg_id' AND a.request_date BETWEEN '$filter_from' and '$filter_to'");
+                
+                $dataRfgSubcontsJasas = $this->crud->query("
+                                                select ab.packing_date as trans_date,ab.wo_no, ab.item_fg_id,sum(aa.qty) as qty_rfg 
+                                                FROM scan_item_receipts_fg aa 
+                                                JOIN checksheets ab on aa.checksheet_number = ab.number
+                                                where aa.item_fg_id='$item_fg_id' and ab.packing_date between '$filter_from' and '$filter_to' and ab.status_subcont='YES' AND ab.subcont_type='Jasa' and ab.shift like '%$filter_shift%'
+                                                GROUP BY ab.packing_date,ab.wo_no,ab.item_fg_id
                 ");
 
-                $dataRfgSubcontsJasas = $this->crud->query("
-                                                select aa.trans_date,aa.wo_no, aa.item_fg_id,sum(aa.receipt) as qty_rfg 
-                                                FROM checksheets aa 
-                                                JOIN item_fg ab on aa.item_fg_id = ab.id
-                                                where aa.item_fg_id='$item_fg_id' and aa.trans_date between '$filter_from' and '$filter_to' and ab.status_subcont='YES' AND ab.subcont_type='Jasa'
-                                                GROUP BY aa.trans_date,aa.wo_no,aa.item_fg_id
+                $dataAdjOuts = $this->crud->query("
+                                                select *
+                                                FROM wip_adjustment_fg a
+                                                where a.item_fg_id='$item_fg_id' and a.request_date between '$filter_from' AND '$filter_to' and a.transaction_type='ADJ OUT'
                 ");
+
 
                 // Proses data berdasarkan tanggal
                 $all_data = [];
-
+                //IN--------------------------------
                 foreach ($dataActualProductions as $actualProduction) {
                     $all_data[] = [
                         'type' => 'ACTUAL PRODUCTION',
@@ -583,13 +813,66 @@ class Inventory_wip extends CI_Controller
                     ];
                 }
 
-                foreach ($dataRfgs  as $dataRfg) {
+                foreach ($dataActualProductions as $actualProduction) {
                     $all_data[] = [
-                        'type' => 'RFG',
-                        'date' => $dataRfg->trans_date,
-                        'wo_no' => $dataRfg->wo_no,
+                        'type' => 'ACTUAL PRODUCTION WIP',
+                        'date' => $actualProduction->trans_date,
+                        'wo_no' => $actualProduction->wo_no,
+                        'qty_in' => $actualProduction->qty_wip,
+                        'qty_out' => 0,
+                    ];
+                }
+
+                
+                foreach ($dataAdjIns as $dataAdjIn) {
+                    $all_data[] = [
+                        'type' => $dataAdjIn->transaction_type,
+                        'date' => $dataAdjIn->request_date,
+                        'wo_no' => $dataAdjIn->request_no,
+                        'qty_in' => $dataAdjIn->qty,
+                        'qty_out' => 0,
+                    ];
+                }
+                //------------------------------------------------
+
+                //OUT---------------------------------------------
+                foreach ($receipts  as $receipt) {
+                    $all_data[] = [
+                        'type' => $receipt->receipt_type,
+                        'date' => $receipt->trans_date,
+                        'wo_no' => $receipt->wo_no,
                         'qty_in' => 0,
-                        'qty_out' => $dataRfg->qty_rfg,
+                        'qty_out' => $receipt->qty,
+                    ];
+                }
+
+                // foreach ($receiptsNB as $receiptNB) {
+                //     $all_data[] = [
+                //         'type' => $receiptNB->receipt_type,
+                //         'date' => $receiptNB->trans_date,
+                //         'wo_no' => $receiptNB->wo_no,
+                //         'qty_in' => 0,
+                //         'qty_out' => $receiptNB->qty,
+                //     ];
+                // }
+
+                foreach ($receiptsWIP as $receiptWIP) {
+                    $all_data[] = [
+                        'type' => $receiptWIP->receipt_type,
+                        'date' => $receiptWIP->trans_date,
+                        'wo_no' => $receiptWIP->wo_no,
+                        'qty_in' => 0,
+                        'qty_out' => $receiptWIP->qty,
+                    ];
+                }
+
+                foreach ($transFgs as $transFg) {
+                    $all_data[] = [
+                        'type' => 'TRANSACTION FG',
+                        'date' => $transFg->request_date,
+                        'wo_no' => $transFg->request_no,
+                        'qty_in' => 0,
+                        'qty_out' => $transFgs->qty,
                     ];
                 }
 
@@ -600,6 +883,16 @@ class Inventory_wip extends CI_Controller
                         'wo_no' => $dataRfgSubcontsJasa->wo_no,
                         'qty_in' => 0,
                         'qty_out' => $dataRfgSubcontsJasa->qty_rfg,
+                    ];
+                }
+
+                foreach ($dataAdjOuts as $dataAdjOut) {
+                    $all_data[] = [
+                        'type' => $dataAdjOut->transaction_type,
+                        'date' => $dataAdjOut->request_date,
+                        'wo_no' => $dataAdjOut->request_no,
+                        'qty_in' => 0,
+                        'qty_out' => $dataAdjOut->qty,
                     ];
                 }
 
