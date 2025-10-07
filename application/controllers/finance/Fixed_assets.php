@@ -113,8 +113,11 @@ class Fixed_assets extends CI_Controller
             $this->db->select('a.item_rm_id, a.item_no, a.item_name, a.qty, a.price, a.trans_date, a.currency, b.name as supplier_name');
             $this->db->from('purchase_invoices a');
             $this->db->join('suppliers b', 'a.supplier_id = b.id');
+            $this->db->join('account_coa coa', 'coa.account_number = a.account_number');
+            $this->db->join('account_group_details d', 'd.id = coa.account_group_detail_id');
             $this->db->join('asset_fixeds c', 'a.number = c.purchase_invoice_number AND a.item_rm_id = c.item_rm_id', 'left');
             $this->db->where('a.number', $purchase_invoice_no);
+            $this->db->where('d.name', 'Fixed Asset', 'both'); // Hanya ambil item FIXED ASSET
             $this->db->where('c.item_rm_id IS NULL'); // Hanya ambil item yang belum menjadi asset
             $this->db->order_by('a.item_no', 'asc');
             
