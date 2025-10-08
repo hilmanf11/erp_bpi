@@ -3,23 +3,26 @@
         <tr>
             <th field="ck" checkbox="true"></th>
             <th data-options="field:'number',width:150,halign:'center'">Asset No</th>
-            <th data-options="field:'name',width:350,halign:'center',resizable:true">Asset Name</th>
+            <th data-options="field:'name',width:250,halign:'center',resizable:true">Asset Name</th>
         </tr>
     </thead>
     <thead>
         <tr>
             <th rowspan="2" data-options="field:'item_rm_id',width:200,align:'center',hidden:true">Item RM ID</th>
             <th rowspan="2" data-options="field:'asset_family_name',width:200,halign:'center'">Asset Family</th>
-            <th rowspan="2" data-options="field:'asset_category_type',width:200,halign:'center'">Asset Type</th>
+            <th rowspan="2" data-options="field:'account_number',width:120,align:'center',halign:'center'">Account Number</th>
+            <!-- <th rowspan="2" data-options="field:'asset_category_type',width:200,halign:'center'">Asset Type</th> -->
             <th rowspan="2" data-options="field:'purchase_invoice_number',width:150,halign:'center'">Purchase Invoice No</th>
+            <th rowspan="2" data-options="field:'posting_no',width:150,halign:'center'">Posting No.</th>
             <th rowspan="2" data-options="field:'supplier_name',width:200,halign:'center'">Supplier Name</th>
-            <th rowspan="2" data-options="field:'trans_date',width:100,align:'center'">Purchase Date</th>
-            <th rowspan="2" data-options="field:'usage_date',width:100,align:'center'">Usage Date</th>
+            <th rowspan="2" data-options="field:'trans_date',width:130,align:'center'">Purchase Date</th>
+            <th rowspan="2" data-options="field:'usage_date',width:130,align:'center'">Usage Date</th>
             <th rowspan="2" data-options="field:'qty',width:80,halign:'center',align:'right'">Qty</th>
+            <th rowspan="2" data-options="field:'uom',width:80,halign:'center',align:'right'">UoM</th>
             <th rowspan="2" data-options="field:'cost',width:100,halign:'center',align:'right', formatter:priceformat">Cost</th>
             <th colspan="2" data-options="field:'',width:100,align:'center'">Estimated</th>
-            <th rowspan="2" data-options="field:'expired_date',width:100,align:'center'">Expired Date</th>
-            <th rowspan="2" data-options="field:'depreciation',width:100,halign:'center',align:'right', formatter:priceformat">Depreciation</th>
+            <th rowspan="2" data-options="field:'expired_date',width:120,align:'center'">Expired Date</th>
+            <th rowspan="2" data-options="field:'depreciation',width:150,halign:'center',align:'right', formatter:priceformat">Depreciation/Month</th>
             <th rowspan="2" data-options="field:'depreciation_acc',width:100,halign:'center',align:'right', formatter:priceformat">Accumulation<br>Depreciation</th>
             <th rowspan="2" data-options="field:'book_value',width:100,halign:'center',align:'right', formatter:priceformat">Book<br>Value</th>
             <th rowspan="2" data-options="field:'method',width:100,halign:'center'">Depreciation<br>Method</th>
@@ -41,6 +44,18 @@
         </tr>
     </thead>
 </table>
+
+<style>
+    .easyui-textbox.textbox-readonly input.textbox-text {
+        cursor: not-allowed;
+    }
+    .easyui-numberbox.textbox-readonly input.textbox-text {
+        cursor: not-allowed;
+    }
+    .textbox-readonly .textbox-text {
+        cursor: not-allowed;
+    }
+</style>
 
 <div id="toolbar" style="height: 225px;">
     <!-- <div style="width: 100%; display: grid; grid-template-columns: auto auto auto; grid-gap: 5px; display: flex;"> -->
@@ -67,6 +82,11 @@
                 </div>
             </div>
             <div style="width: 50%; float: left;">
+                <div class="fitem">
+                    <span style="width:35%; display:inline-block;">Financial Period</span>
+                    <input style="width:28%;" id="filter_financial_period_from" value="<?= $filter_from ?>" class="easyui-datebox" data-options="formatter:myformatter,parser:myparser, editable:false"> To
+                    <input style="width:28%;" id="filter_financial_period_to" value="<?= date("Y-m-t") ?>" class="easyui-datebox" data-options="formatter:myformatter,parser:myparser, editable:false">
+                </div>
                 <div class="fitem">
                     <span style="width:35%; display:inline-block;">Estimate Economic</span>
                     <select style="width:60%;" id="filter_estimate" panelHeight="auto" class="easyui-combobox">
@@ -147,7 +167,11 @@
                 </div>
                 <div class="fitem">
                     <span style="width:35%; display:inline-block;">Purchase Date</span>
-                    <input style="width:60%;" name="trans_date" id="trans_date" class="easyui-datebox" data-options="formatter:myformatter,parser:myparser, editable:false">
+                    <input style="width:60%;" name="trans_date" id="trans_date" readonly class="easyui-datebox" data-options="formatter:myformatter,parser:myparser, editable:false">
+                </div>
+                <div class="fitem">
+                    <span style="width:35%; display:inline-block;">Usage Date</span>
+                    <input style="width:60%;" name="usage_date" id="usage_date" class="easyui-datebox" data-options="formatter:myformatter,parser:myparser, editable:false">
                 </div>
                 <div class="fitem">
                     <span style="width:35%; display:inline-block;">Supplier</span>
@@ -156,6 +180,7 @@
                 <div class="fitem">
                     <span style="width:35%; display:inline-block;">Qty</span>
                     <input style="width:30%;" name="qty" id="qty" readonly class="easyui-numberbox">
+                    <input style="width:30%;" name="uom" id="uom" readonly class="easyui-textbox" data-options="prompt:'UoM'">
                 </div>
                 <div class="fitem">
                     <span style="width:35%; display:inline-block;">Asset Cost</span>
@@ -174,7 +199,7 @@
                     <input style="width:60%;" name="expired_date" id="expired_date" class="easyui-datebox" required readonly data-options="formatter:myformatter,parser:myparser, editable:false">
                 </div>
                 <div class="fitem">
-                    <span style="width:35%; display:inline-block;">Depreciation</span>
+                    <span style="width:35%; display:inline-block;">Depreciation/Month</span>
                     <input style="width:40%;" name="depreciation" id="depreciation" readonly required class="easyui-numberbox" data-options="groupSeparator:'.',decimalSeparator:','">
                 </div>
                 <div class="fitem">
@@ -191,11 +216,11 @@
                     </div>
                     <div class="fitem">
                         <span style="width:45%; display:inline-block;">Previous Department</span>
-                        <input style="width:50%;" readonly name="previous_department" id="previous_department" class="easyui-textbox">
+                        <input style="width:50%;" name="previous_department" id="previous_department" class="easyui-textbox">
                     </div>
                     <div class="fitem">
                         <span style="width:45%; display:inline-block;">Previous Location</span>
-                        <input style="width:50%;" readonly name="previous_location" id="previous_location" class="easyui-textbox">
+                        <input style="width:50%;" name="previous_location" id="previous_location" class="easyui-textbox">
                     </div>
                 </div>
                 <div style="width: 50%; float: left;">
@@ -344,6 +369,8 @@
     function filter() {
         var filter_from = $("#filter_from").datebox('getValue');
         var filter_to = $("#filter_to").datebox('getValue');
+        var filter_financial_period_from = $("#filter_financial_period_from").datebox('getValue');
+        var filter_financial_period_to = $("#filter_financial_period_to").datebox('getValue');
         var filter_number = $("#filter_number").combobox('getValue');
         var filter_category = $("#filter_category").combobox('getValue');
         var filter_estimate = $("#filter_estimate").combobox('getValue');
@@ -382,6 +409,8 @@
     function excel() {
         var filter_from = $("#filter_from").datebox('getValue');
         var filter_to = $("#filter_to").datebox('getValue');
+        var filter_financial_period_from = $("#filter_financial_period_from").datebox('getValue');
+        var filter_financial_period_to = $("#filter_financial_period_to").datebox('getValue');
         var filter_number = $("#filter_number").combobox('getValue');
         var filter_category = $("#filter_category").combobox('getValue');
         var filter_estimate = $("#filter_estimate").combobox('getValue');
@@ -412,7 +441,105 @@
             clientPaging: false,
             remoteFilter: true,
             rownumbers: true
-        });
+        }).datagrid('enableFilter', [
+            {
+                field: 'status_expired',
+                type: 'combobox',
+                options: {
+                    data: [{
+                            value: '',
+                            text: 'All'
+                        },
+                        {
+                            value: '0',
+                            text: 'ACTIVE'
+                        },
+                        {
+                            value: '1',
+                            text: 'EXPIRED'
+                        },
+                    ],
+                    valueField: 'value',
+                    textField: 'text',
+                    panelHeight: 'auto',
+                    onChange: function(newValue, oldValue) {
+                        if (newValue == '') {
+                            $('#dg').datagrid('removeFilterRule', 'status_expired');
+                        } else {
+                            $('#dg').datagrid('addFilterRule', {
+                                field: 'status_expired',
+                                op: 'contains',
+                                value: newValue
+                            });
+                        }
+                        $('#dg').datagrid('doFilter');
+                    }
+                },
+            },
+            {
+                field: 'trans_date',
+                type: 'datebox',
+                options: {
+                    prompt: 'Purchase Date',
+                    formatter: myformatter,
+                    parser: myparser,
+                    onChange: function(newValue) {
+                        if (newValue) {
+                            $('#dg').datagrid('addFilterRule', {
+                                field: 'trans_date',
+                                op: 'equal',
+                                value: newValue
+                            });
+                        } else {
+                            $('#dg').datagrid('removeFilterRule', 'trans_date');
+                        }
+                        $('#dg').datagrid('doFilter');
+                    }
+                }
+            },
+            {
+                field: 'usage_date',
+                type: 'datebox',
+                options: {
+                    prompt: 'Usage Date',
+                    formatter: myformatter,
+                    parser: myparser,
+                    onChange: function(newValue) {
+                        if (newValue) {
+                            $('#dg').datagrid('addFilterRule', {
+                                field: 'usage_date',
+                                op: 'equal',
+                                value: newValue
+                            });
+                        } else {
+                            $('#dg').datagrid('removeFilterRule', 'usage_date');
+                        }
+                        $('#dg').datagrid('doFilter');
+                    }
+                }
+            },
+            {
+                field: 'expired_date',
+                type: 'datebox',
+                options: {
+                    prompt: 'Expired Date',
+                    formatter: myformatter,
+                    parser: myparser,
+                    onChange: function(newValue) {
+                        if (newValue) {
+                            $('#dg').datagrid('addFilterRule', {
+                                field: 'expired_date',
+                                op: 'equal',
+                                value: newValue
+                            });
+                        } else {
+                            $('#dg').datagrid('removeFilterRule', 'expired_date');
+                        }
+                        $('#dg').datagrid('doFilter');
+                    }
+                }
+            }
+        ]);
 
         //GET PURCHASE INVOICING
         $('#purchase_invoice_number').combogrid({
@@ -489,7 +616,6 @@
                             url: "<?= base_url('finance/fixed_assets/readProductDepartment?number=') ?>" + window.btoa(row.number) + "&item=" + window.btoa(row2.item_rm_id),
                             dataType: "json",
                             success: function(productDep) {
-                                $("#previous_department").textbox('setValue', productDep.department);
                                 $("#department").textbox('setValue', productDep.department);
                             }
                         });
@@ -554,9 +680,12 @@
                         $("#name").textbox('setValue', row2.item_name);
                         $("#item_rm_id").textbox('setValue', row2.item_rm_id);
                         $("#trans_date").datebox('setValue', row2.trans_date);
+                        $("#usage_date").datebox('setValue', row2.trans_date);
                         $("#supplier_name").textbox('setValue', row2.supplier_name);
                         $("#qty").numberbox('setValue', row2.qty);
-                        $("#currency").textbox('setValue', row2.currency); // Gunakan currency yang asli
+                        $("#uom").textbox('setValue', row2.uom);
+                        // $("#currency").textbox('setValue', row2.currency); // Gunakan currency yang asli
+                        $("#currency").textbox('setValue', 'IDR'); // default local currency
 
                         $("#estimate_year").numberbox({
                             onChange: function(val) {

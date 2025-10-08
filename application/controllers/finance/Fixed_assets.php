@@ -25,13 +25,15 @@ class Fixed_assets extends CI_Controller
 
             $row = $this->crud->read("asset_fixeds", [], [], "1", "trans_date", "asc");
 
-            if ($row) { 
-                // Jika data ditemukan, gunakan trans_date
-                $data['filter_from'] = $row->trans_date;
-            } else { 
-                // Jika data tidak ditemukan, beri nilai default
-                $data['filter_from'] = date('Y-m-1');
-            }
+            $data['filter_from'] = date('Y-m-1');
+
+            // if ($row) { 
+            //     // Jika data ditemukan, gunakan trans_date
+            //     $data['filter_from'] = $row->trans_date; // loading data big latency
+            // } else { 
+            //     // Jika data tidak ditemukan, beri nilai default
+            //     $data['filter_from'] = date('Y-m-1');
+            // }
 
             $this->load->view('template/header', $data);
             $this->load->view('finance/fixed_assets');
@@ -110,7 +112,15 @@ class Fixed_assets extends CI_Controller
         if (!empty($number)) {
             $purchase_invoice_no = base64_decode($number);
             
-            $this->db->select('a.item_rm_id, a.item_no, a.item_name, a.qty, a.price, a.trans_date, a.currency, b.name as supplier_name');
+            $this->db->select('a.item_rm_id, 
+                a.item_no,
+                a.item_name,
+                a.qty,
+                a.uom,
+                a.price,
+                a.trans_date,
+                a.currency,
+                b.name as supplier_name');
             $this->db->from('purchase_invoices a');
             $this->db->join('suppliers b', 'a.supplier_id = b.id');
             $this->db->join('account_coa coa', 'coa.account_number = a.account_number');
@@ -253,8 +263,11 @@ class Fixed_assets extends CI_Controller
     //GET LIST DATA (untuk datatable dan print)
     function getFixedAssets($filter_list, $page = null, $rows = null) 
     {
+        $filters            = $filter_list["filters"];
         $filter_from        = $filter_list["filter_from"];
         $filter_to          = $filter_list["filter_to"];
+        $filter_financial_period_from = $filter_list["filter_financial_period_from"];
+        $filter_financial_period_to   = $filter_list["filter_financial_period_to"];
         $filter_number      = $filter_list["filter_number"];
         $filter_category    = $filter_list["filter_category"];
         $filter_estimate    = $filter_list["filter_estimate"];
@@ -265,6 +278,9 @@ class Fixed_assets extends CI_Controller
         
         $this->db->select("a.*, 
             COALESCE(b.name, f.name) as asset_family_name,
+            coa.account_number,
+            coa.account_name,
+            jp.number as posting_no,
             COALESCE(b.type, coa.account_name) as asset_category_type,
             PERIOD_DIFF(DATE_FORMAT('$filter_to', '%Y%m'), DATE_FORMAT(a.trans_date, '%Y%m')) AS qty_month, 
             (COALESCE(c.depreciation_acc, 0) + a.depreciation_accumulate) as depreciation_acc,
@@ -275,11 +291,20 @@ class Fixed_assets extends CI_Controller
         $this->db->join("(SELECT asset_no, SUM(debit) as depreciation_acc FROM asset_journals WHERE periode BETWEEN '$filter_period_from' and '$filter_period_to' GROUP BY asset_no) c", 'a.number = c.asset_no', 'left');
         $this->db->join('item_familys f', 'a.item_family_id = f.id'); // Product Family
         $this->db->join('account_coa coa', 'f.account_number = coa.account_number', 'left'); // Product Category by Product Family
+        $this->db->join('journal_postings jp', 'a.purchase_invoice_number = jp.document_no', 'left');
+
+        if (!empty($filters)) {
+            $this->applyFilters($filters); // Library filter 
+        }
         
-        // Kondisi WHERE yang sama
+        // Kondisi WHERE
         if ($filter_from && $filter_to) {
             $this->db->where('a.trans_date >=', $filter_from);
             $this->db->where('a.trans_date <=', $filter_to);
+        }
+        if ($filter_financial_period_from && $filter_financial_period_to) {
+            $this->db->where('a.usage_date >=', $filter_financial_period_from);
+            $this->db->where('a.usage_date <=', $filter_financial_period_to);
         }
         if (!empty($filter_category)) {
             // $this->db->where('a.asset_category_number', $filter_category);
@@ -309,6 +334,39 @@ class Fixed_assets extends CI_Controller
         
         return $records;
     }
+    // Filter keyword per kolom dari tabel datagrid view
+    private function applyFilters($filters) {
+        foreach ($filters as $filter) {
+            $field = strtolower($filter['field']);
+            $value = $filter['value'];
+
+            if ($field == 'number') {
+                $this->db->like('a.number', $value);
+
+            } elseif ($field == 'name') {
+                $this->db->like('a.number', $value);
+
+            } elseif ($field == 'asset_family_name') {
+                $this->db->like('COALESCE(b.name, f.name)', $value);
+
+            } elseif ($field == 'account_number') {
+                $this->db->like('coa.account_number', $value);
+
+            } elseif ($field == 'posting_no') {
+                $this->db->like('jp.number', $value);
+
+            } elseif ($field == 'status_expired') {
+                $status = (strtoupper($value) == 'EXPIRED') ? 0 : 1;
+                $this->db->like('(CASE WHEN (a.cost - (COALESCE(c.depreciation_acc, 0) + a.depreciation_accumulate)) > 0 THEN 0 ELSE 1 END)', $status);
+
+            } elseif ($field == 'trans_date') {
+                $this->db->like('DATE_FORMAT(a.trans_date, "%Y-%m-%d")', $value);
+
+            } else {
+                $this->db->like('a.' . $field, $value);
+            }
+        }
+    }
 
     //GET DATATABLE 
     public function datatables()
@@ -321,8 +379,11 @@ class Fixed_assets extends CI_Controller
         $rows = $this->input->post('rows') ?? 10;
         $offset = ($page - 1) * $rows;
 
+        $filters = json_decode($this->input->post('filterRules'), true); // Filter keyword per kolom dari tabel datagrid view 
         $filter_from = base64_decode($this->input->get('filter_from')) ?? null;
         $filter_to = base64_decode($this->input->get('filter_to')) ?? null;
+        $filter_financial_period_from = base64_decode($this->input->get('filter_financial_period_from')) ?? null;
+        $filter_financial_period_to = base64_decode($this->input->get('filter_financial_period_to')) ?? null;
         $filter_number = base64_decode($this->input->get('filter_number')) ?? null;
         $filter_category = base64_decode($this->input->get('filter_category')) ?? null;
         $filter_estimate = base64_decode($this->input->get('filter_estimate')) ?? null;
@@ -333,8 +394,11 @@ class Fixed_assets extends CI_Controller
         $filter_period_to = $filter_to ? date("Y-m", strtotime($filter_to)) : null;
 
         $filter_list = [
+            "filters"                        => $filters,
             "filter_from"                    => $filter_from,
             "filter_to"                      => $filter_to,
+            "filter_financial_period_from"   => $filter_financial_period_from,
+            "filter_financial_period_to"     => $filter_financial_period_to,
             "filter_number"                  => $filter_number,
             "filter_category"                => $filter_category,
             "filter_estimate"                => $filter_estimate,
@@ -462,7 +526,42 @@ class Fixed_assets extends CI_Controller
 
         $success_count = 0;
         $total_qty = (int)($post['qty'] ?? 0);
+        
+        // jika UOM=METER qty tetap tidak looping
+        if (strtoupper($post['uom']) === "MTR" || strtolower($post['uom']) === "Meter") {
+            $asset_number = $post['number'];
+            $data_to_insert = [
+                "item_family_id"          => $post['item_family_id'],
+                "asset_category_number"   => $post['asset_category_number'] ?? null,
+                "purchase_invoice_number" => $post['purchase_invoice_number'],
+                "supplier_name"           => $post['supplier_name'],
+                "item_rm_id"              => $post['item_rm_id'],
+                "number"                  => $asset_number,
+                "name"                    => $post['name'],
+                "trans_date"              => $post['trans_date'],
+                "usage_date"              => $post['usage_date'] ?? $post['trans_date'],
+                "qty"                     => $post['qty'], // Kuantitas sesuai qty dari PI
+                "uom"                     => $post['uom'],
+                "currency"                => $post['currency'],
+                "cost"                    => $post['cost'],
+                "estimate_month"          => $post['estimate_month'],
+                "expired_date"            => $post['expired_date'],
+                "estimate_year"           => $post['estimate_year'],
+                "depreciation"            => $post['depreciation'],
+                "remarks"                 => $post['remarks'],
+                "method"                  => $post['method'],
+                "previous_department"     => $post['previous_department'],
+                "previous_location"       => $post['previous_location'],
+                "department"              => $post['department'],
+                "location"                => $post['location'],
+                "total"                   => $post['total'],
+            ];
 
+            $send = $this->crud->create('asset_fixeds', $data_to_insert);
+            echo $send;
+
+        } else {
+        // UOM selain MTR
         for ($i = 0; $i < $total_qty; $i++) {
             // Tentukan nomor aset yang benar
             if ($total_qty > 1) {
@@ -482,7 +581,9 @@ class Fixed_assets extends CI_Controller
                 "number"                  => $asset_number,
                 "name"                    => $post['name'],
                 "trans_date"              => $post['trans_date'],
+                "usage_date"              => $post['usage_date'] ?? $post['trans_date'],
                 "qty"                     => 1, // Kuantitas selalu 1 per aset
+                "uom"                     => $post['uom'],
                 "currency"                => $post['currency'],
                 "cost"                    => $post['cost'],
                 "estimate_month"          => $post['estimate_month'],
@@ -509,14 +610,18 @@ class Fixed_assets extends CI_Controller
             echo json_encode([
                 "title"   => "Success",
                 "message" => "Successfully save data.",
+                "response"=> $send,
                 "theme"   => "success"
             ]);
         } else {
             echo json_encode([
                 "title"   => "Error",
                 "message" => "Failed to create all fixed assets. Only " . $success_count . " of " . $total_qty . " were created.",
+                "response"=> $send,
                 "theme"   => "error"
             ]);
+        }
+
         }
     }
 
@@ -618,6 +723,8 @@ class Fixed_assets extends CI_Controller
             $id   = base64_decode($this->input->get('id'));
             $post = $this->input->post();
             unset($post['asset_category_name']);
+            unset($post['asset_family_name']);
+
             $send = $this->crud->update('asset_fixeds', ["id" => $id], $post);
             echo $send;
         } else {
@@ -646,7 +753,7 @@ class Fixed_assets extends CI_Controller
 
             if (!move_uploaded_file($_FILES['file_upload']['tmp_name'], $target)) {
                 echo json_encode(["title" => "Error", "message" => "Failed to upload file.", "theme" => "error"]);
-                return;    
+                return;
             }
 
             chmod($_FILES['file_upload']['name'], 0777);
@@ -664,15 +771,16 @@ class Fixed_assets extends CI_Controller
                     'trans_date'              => preg_replace('/[^\x20-\x7E]/', '', $data->val($i, 6)),
                     'supplier_name'           => preg_replace('/[^\x20-\x7E]/', '', $data->val($i, 7)),
                     'qty'                     => preg_replace('/[^\x20-\x7E]/', '', $data->val($i, 8)),
-                    'currency'                => preg_replace('/[^\x20-\x7E]/', '', $data->val($i, 9)),
-                    'cost'                    => preg_replace('/[^\x20-\x7E]/', '', $data->val($i, 10)),
-                    'usage_date'              => preg_replace('/[^\x20-\x7E]/', '', $data->val($i, 11)),
-                    'estimate_year'           => preg_replace('/[^\x20-\x7E]/', '', $data->val($i, 12)),
-                    'depreciation_accumulate' => preg_replace('/[^\x20-\x7E]/', '', $data->val($i, 13)),
-                    'remarks'                 => preg_replace('/[^\x20-\x7E]/', '', $data->val($i, 14)),
-                    'method'                  => preg_replace('/[^\x20-\x7E]/', '', $data->val($i, 15)),
-                    'department'              => preg_replace('/[^\x20-\x7E]/', '', $data->val($i, 16)),
-                    'location'                => preg_replace('/[^\x20-\x7E]/', '', $data->val($i, 17)),
+                    'uom'                     => preg_replace('/[^\x20-\x7E]/', '', $data->val($i, 9)),
+                    'currency'                => preg_replace('/[^\x20-\x7E]/', '', $data->val($i, 10)),
+                    'cost'                    => preg_replace('/[^\x20-\x7E]/', '', $data->val($i, 11)),
+                    'usage_date'              => preg_replace('/[^\x20-\x7E]/', '', $data->val($i, 12)),
+                    'estimate_year'           => preg_replace('/[^\x20-\x7E]/', '', $data->val($i, 13)),
+                    'depreciation_accumulate' => preg_replace('/[^\x20-\x7E]/', '', $data->val($i, 14)),
+                    'remarks'                 => preg_replace('/[^\x20-\x7E]/', '', $data->val($i, 15)),
+                    'method'                  => preg_replace('/[^\x20-\x7E]/', '', $data->val($i, 16)),
+                    'department'              => preg_replace('/[^\x20-\x7E]/', '', $data->val($i, 17)),
+                    'location'                => preg_replace('/[^\x20-\x7E]/', '', $data->val($i, 18)),
                 ];
             }
 
@@ -688,7 +796,7 @@ class Fixed_assets extends CI_Controller
         } catch (Exception $e) {
             // Handle upload errors gracefully
             http_response_code(500); // Set HTTP status code for server error
-            echo json_encode(['error' => $e->getMessage()]);
+            echo json_encode(["title" => "Error", "message" => "Error upload file! " . $e->getMessage(), "theme" => "error"]);
         } finally {
             // Ensure the temporary file is deleted even if an error occurs
             if (isset($target) && file_exists($target)) {
@@ -772,6 +880,7 @@ class Fixed_assets extends CI_Controller
                     "trans_date"              => $data['trans_date'],
                     "usage_date"              => $data['usage_date'],
                     "qty"                     => $data['qty'],
+                    "uom"                     => $data['uom'],
                     "currency"                => $data['currency'],
                     "cost"                    => $data['cost'],
                     "estimate_month"          => ($data['estimate_year'] * 12),
@@ -902,7 +1011,9 @@ class Fixed_assets extends CI_Controller
                         <td>' . $data['purchase_invoice_number'] . '</td>
                         <td>' . $data['supplier_name'] . '</td>
                         <td>' . $data['trans_date'] . '</td>
+                        <td>' . $data['usage_date'] . '</td>
                         <td>' . $data['qty'] . '</td>
+                        <td>' . $data['uom'] . '</td>
                         <td>' . $data['cost'] . '</td>
                         <td>' . $data['estimate_year'] . '</td>
                         <td>' . $data['estimate_month'] . '</td>
