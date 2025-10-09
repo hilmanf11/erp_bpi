@@ -591,6 +591,30 @@
     </form>
 </div>
 
+<!-- Upload -->
+<div id="dlg_upload" class="easyui-dialog" title="Upload Data" data-options="closed: true,modal:true" style="width: 500px; padding:10px; top: 20px;">
+    <form id="frm_upload" method="post" enctype="multipart/form-data" novalidate>
+        <fieldset style="width:100%; border:1px solid #d0d0d0; margin-bottom: 10px; border-radius:4px; float: left;">
+            <legend><b>Form Data</b></legend>
+            <div class="fitem">
+                <span style="width:35%; display:inline-block;">File Upload</span>
+                <input name="file_upload" style="width: 60%;" required="" accept=".xls" id="file_excel" class="easyui-filebox">
+            </div>
+        </fieldset>
+    </form>
+    <span style="float: left; color:green;">SUCCESS : <b id="p_success">0</b></span><span style="float: right; color:red;"> FAILED : <b id="p_failed">0</b></span>
+    <div id="p_upload" class="easyui-progressbar" style="width:100%; margin-top: 10px;"></div>
+    <center><b id="p_start">0</b> Of <b id="p_finish">0</b></center>
+    
+    <b>CALCULATE JOURNAL</b>
+    <div id="p_upload2" class="easyui-progressbar" style="width:100%; margin-top: 10px;"></div>
+    <center><b id="p_start2">0</b> Of <b id="p_finish2">0</b></center>
+    <div id="p_remarks" title="History Upload" class="easyui-panel" style="width:100%; height:200px; padding:10px; margin-top: 10px;">
+        <ul id="ul_remarks">
+        </ul>
+    </div>
+</div>
+
 <!-- PDF -->
 <iframe id="printout" src="" style="width: 100%;" hidden></iframe>
 <script>
@@ -1247,11 +1271,17 @@
             var linked = link;
         }
 
+        // validasi get datatablesTemp
+        var url_preview = linked;
+        if (formMode == "update") {
+            url_preview = '<?= base_url('finance/ar_receipts/datatablesTemp/update') ?>?sales_invoice=' + window.btoa(sales_invoice);
+        }
+
         if (sales_invoice == "") {
             toastr.info('Please select Sales Invoice');
         } else {
             var dg = $('#dg2').datagrid({
-                url: linked,
+                url: url_preview,
                 onClickRow: function(rowIndex) {
                     if (editIndex != rowIndex) {
                         $(this).datagrid('endEdit', editIndex);
@@ -1463,6 +1493,16 @@
     //RELOAD
     function reload() {
         window.location.reload();
+    }
+
+    //Upload Form
+    function upload() {
+        $('#dlg_upload').dialog('open');
+    }
+
+    //Download Template
+    function download_excel() {
+        window.location.assign('<?= base_url('template/tmp_ar_receipts.xls') ?>');
     }
 
     //Format Datepicker
@@ -2044,6 +2084,157 @@
                 }
             }]
         });
+
+        // UPLOAD DATA
+        $('#dlg_upload').dialog({ 
+            buttons: [{
+                text: 'List Failed',
+                handler: function() {
+                    window.open('<?= base_url('finance/ar_receipts/uploadDownloadFailed') ?>', '_blank');
+                }
+            }, {
+                text: 'Upload',
+                iconCls: 'icon-ok',
+                handler: function() {
+                    $('#frm_upload').form('submit', {
+                        url: '<?= base_url('finance/ar_receipts/upload') ?>',
+                        onSubmit: function() {
+                            if (!$(this).form('validate')) {
+                                return false; // Langsung kembalikan false jika validasi gagal
+                            }
+                            $.messager.progress({
+                                title: 'Please Wait',
+                                msg: 'Importing Excel to Database'
+                            });
+                            return true; // Lanjutkan proses submit
+                        },
+                        success: function(result) {
+                            $.messager.progress('close');
+
+                            // Periksa hasil JSON dari server dengan cara yang lebih aman
+                            try {
+                                var json = JSON.parse(result);
+                                // Mulai proses upload berurutan
+                                processUpload(json.total, json.data);
+                            } catch (e) {
+                                $.messager.alert('Error', 'Invalid JSON response from server.', 'error');
+                            }
+                        }
+                    });
+                }
+            }]
+        });
+
+        // Gunakan fungsi terpisah yang lebih bersih untuk proses rekursif
+        function processUpload(total, data, index = 0) {
+            // Kondisi berhenti rekursi: jika semua data sudah diproses
+            if (index >= total) {
+                // Proses upload 1 selesai, mulai proses upload 2
+                getJournalAndProcess();
+                return; // Hentikan fungsi
+            }
+
+            let number = index + 1;
+            let value = Math.floor((number / total) * 100);
+            let itemData = data[index];
+            
+            // Perbarui progress bar
+            $('#p_upload').progressbar('setValue', value);
+            $('#p_start').html(number);
+            $('#p_finish').html(total);
+
+            // Kirim data satu per satu
+            $.ajax({
+                type: "POST",
+                url: "<?= base_url('finance/ar_receipts/uploadCreate') ?>",
+                data: { "data": itemData },
+                dataType: "json",
+                success: function(response) {
+                    let title;
+                    if (response.theme === "success") {
+                        title = `<b style='color: green;'>${response.title}</b> | Invoice: ${response.message}`;
+                    } else {
+                        title = `<b style='color: red;'>${response.title}</b> | Invoice: ${response.message}`;
+                        // Kirim data gagal ke server (tanpa 'async: true' yang tidak diperlukan)
+                        $.post("<?= base_url('finance/ar_receipts/uploadcreateFailed') ?>", {
+                            data: itemData,
+                            message: response.message
+                        });
+                    }
+                    $("#p_remarks").append(title + "<br>");
+
+                    // Lanjutkan rekursi untuk item berikutnya
+                    processUpload(total, data, index + 1);
+                },
+                error: function(xhr, status, error) {
+                    let salesInvoice = data[index].sales_invoice;
+                    let errorMessage = `Failed to upload! Sales Invoice No. ${salesInvoice}. Status: ${status}, Error: ${error}`;
+                    $("#p_remarks").append(`<b style='color: red;'>Error</b> | ${errorMessage}<br>`);
+                    // Lanjutkan rekursi meskipun ada error
+                    processUpload(total, data, index + 1);
+                }
+            });
+        }
+
+        // Fungsi untuk mendapatkan jurnal dan memulai proses kedua
+        function getJournalAndProcess() {
+            $.ajax({
+                type: "POST",
+                url: "<?= base_url('finance/ar_receipts/uploadGetJournal') ?>",
+                dataType: "json",
+                success: function(journal) {
+                    console.log("Data journal: ", journal);
+                    processUpload2(journal.total, journal.data);
+                },
+                error: function(xhr, status, error) {
+                    $.messager.alert('Error', 'Failed to get journal data. Please check server.', 'error');
+                }
+            });
+        }
+
+        // Fungsi untuk proses upload kedua (jurnal)
+        function processUpload2(total, data, index = 0) {
+            if (index >= total) {
+                $.messager.alert('Upload Finished', 'All upload and calculation processes are complete.', 'info');
+                // Clear file
+                $.get("<?= base_url('finance/ar_receipts/uploadclearFailed') ?>");
+                return;
+            }
+
+            let number = index + 1;
+            let value = Math.floor((number / total) * 100);
+            let itemData = data[index];
+            
+            // Perbarui progress bar kedua
+            $('#p_upload2').progressbar('setValue', value);
+            $('#p_start2').html(number);
+            $('#p_finish2').html(total);
+
+            $.ajax({
+                type: "POST",
+                url: "<?= base_url('finance/ar_receipts/uploadCreateJournal') ?>",
+                data: { "data": itemData },
+                dataType: "json",
+                success: function(response) {
+                    let title;
+                    if (response.theme === "success") {
+                        title = `<b style='color: green;'>${response.title}</b> | Journal: ${response.message}`;
+                    } else {
+                        title = `<b style='color: red;'>${response.title}</b> | Journal: ${response.message}`;
+                    }
+                    $("#p_remarks").append(title + "<br>");
+
+                    processUpload2(total, data, index + 1);
+                },
+                error: function(xhr, status, error) {
+                    let receiptNo = data[index].receipt_no;
+                    let accountNo = data[index].account_number;
+                    let errorMessage = `Failed to upload Journal! Receipt No. ${receiptNo} & Account No. ${accountNo}. Status: ${status}, Error: ${error}`;
+                    $("#p_remarks").append(`<b style='color: red;'>Error</b> | ${errorMessage}<br>`);
+                    processUpload2(total, data, index + 1);
+                }
+            });
+        }
 
         $("#filter_customer").combobox({
             url: '<?= base_url('master/customers/reads') ?>',

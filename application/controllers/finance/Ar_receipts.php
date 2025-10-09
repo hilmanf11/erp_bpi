@@ -145,6 +145,7 @@ class Ar_receipts extends CI_Controller
 
         $grand_local_credit = 0;
         $grand_local_debit = 0;
+        $total_receipt_original = 0;
         $total_receipt_local_now = 0;
         
         // Hitung total di awal 
@@ -164,8 +165,9 @@ class Ar_receipts extends CI_Controller
             }
 
             // Hitung total penerimaan di bank pada kurs saat ini
-            $exchange_receipt_date = ($currency !== 'IDR') ? ($this->getExchange($currency, $receipt_date) ?? 0) : 1;
-            $total_receipt_local_now += round($receipt_original * $exchange_receipt_date, 2);
+            $exchange_rate = ($currency !== 'IDR') ? ($this->getExchange($currency, $receipt_date) ?? 0) : 1;
+            $total_receipt_original += $receipt_original;
+            $total_receipt_local_now += round($receipt_original * $exchange_rate, 2);
         }
 
         $arr = [];
@@ -178,8 +180,8 @@ class Ar_receipts extends CI_Controller
                 "account_name"   => $bank->account_name,
                 "description"    => "Receipt Bank",
                 "currency"       => "IDR",
-                "exchange_rate"  => $exchange_receipt_date,
-                "debit"          => $receipt_original,
+                "exchange_rate"  => $exchange_rate,
+                "debit"          => $total_receipt_original,
                 "credit"         => 0,
                 "local_debit"    => $total_receipt_local_now,
                 "local_credit"   => 0,
@@ -523,7 +525,7 @@ class Ar_receipts extends CI_Controller
         echo ""; // if trans_date or bank_code is not choosed
     }
 
-    public function datatablesTemp()
+    public function datatablesTemp($formMode = "")
     {
         $sales_invoice = base64_decode($this->input->get('sales_invoice'));
         $sales_invoice_ex = explode(",", $sales_invoice);
@@ -532,7 +534,9 @@ class Ar_receipts extends CI_Controller
         $this->db->from('sales_invoices a');
         $this->db->join('ar_receipts b', 'a.number = b.sales_invoice', 'left');
         $this->db->where('a.deleted', 0);
-        $this->db->where('a.status', 0);
+        if ($formMode !== "update") {
+            $this->db->where('a.status', 0); // data tidak muncul saat form update()
+        }
         $this->db->where_in('a.number', $sales_invoice_ex);
         $this->db->group_by('a.number');
         $this->db->order_by('a.number', 'asc');
@@ -787,6 +791,385 @@ class Ar_receipts extends CI_Controller
         echo $send;
     }
 
+
+    // ---------- UPLOAD FUNCTIONS ------------
+    //UPLOAD DATA
+    public function upload()
+    {
+        header('Content-Type: application/json');
+
+        error_reporting(0);
+        require_once 'assets/vendors/excel_reader2.php';
+
+        try {
+            $target = basename($_FILES['file_upload']['name']);
+            
+            // Use a more robust check for file upload success
+            if (!move_uploaded_file($_FILES['file_upload']['tmp_name'], $target)) {
+                echo json_encode(["title" => "Error", "message" => "Failed to upload file.", "theme" => "error"]);
+                return;
+            }
+            
+            chmod($target, 0777);
+            $file = $target;
+            $data = new Spreadsheet_Excel_Reader($file, false);
+            $total_row = $data->rowcount($sheet_index = 0);
+            $datas = [];
+
+            for ($i = 4; $i <= $total_row; $i++) {
+                $datas[] = array(
+                    'receipt_no'       => preg_replace('/[^\x20-\x7E]/', '', $data->val($i, 2)),
+                    'customer_id'      => preg_replace('/[^\x20-\x7E]/', '', $data->val($i, 3)),
+                    'receipt_type'     => preg_replace('/[^\x20-\x7E]/', '', $data->val($i, 4)),
+                    'receipt_date'     => preg_replace('/[^\x20-\x7E]/', '', $data->val($i, 5)),
+                    'journal_number'   => preg_replace('/[^\x20-\x7E]/', '', $data->val($i, 6)),
+                    'bank_account'     => preg_replace('/[^\x20-\x7E]/', '', $data->val($i, 7)),
+                    'note'             => preg_replace('/[^\x20-\x7E]/', '', $data->val($i, 8)),
+                    'sales_invoice'    => preg_replace('/[^\x20-\x7E]/', '', $data->val($i, 9)),
+                    'description'      => preg_replace('/[^\x20-\x7E]/', '', $data->val($i, 10)),
+                    'currency'         => preg_replace('/[^\x20-\x7E]/', '', $data->val($i, 11)),
+                    'amount'           => preg_replace('/[^\x20-\x7E]/', '', $data->val($i, 12)),
+                    'balance'          => preg_replace('/[^\x20-\x7E]/', '', $data->val($i, 13)),
+                    'receipt'          => preg_replace('/[^\x20-\x7E]/', '', $data->val($i, 14)),
+                    'remark'           => preg_replace('/[^\x20-\x7E]/', '', $data->val($i, 15)),
+                    'account_number'   => preg_replace('/[^\x20-\x7E]/', '', $data->val($i, 16)),
+                    'account_type'     => preg_replace('/[^\x20-\x7E]/', '', $data->val($i, 17)),
+                );
+            }
+            
+            $response = [
+                'total' => count($datas),
+                'data'  => $datas
+            ];
+            
+            echo json_encode($response);
+
+        } catch (Exception $e) {
+            // Handle upload errors gracefully
+            http_response_code(500); // Set HTTP status code for server error
+            echo json_encode(["title" => "Error", "message" => "Error upload file! " . $e->getMessage(), "theme" => "error"]);
+        } finally {
+            // Ensure the temporary file is deleted even if an error occurs
+            if (isset($target) && file_exists($target)) {
+                unlink($target);
+            }
+        }
+    }
+
+    public function uploadclearFailed()
+    {
+        @unlink('failed/ar_receipts_failed.txt');
+    }
+    public function uploadcreateFailed()
+    {
+        if ($this->input->post()) {
+            $message = $this->input->post('message');
+            $textFailed = fopen('failed/ar_receipts_failed.txt', 'a');
+            fwrite($textFailed, $message . "\n");
+            fclose($textFailed);
+        }
+    }
+    public function uploadDownloadFailed()
+    {
+        $file = "failed/ar_receipts_failed.txt";
+        header('Content-Description: File Failed');
+        header('Content-Disposition: attachment; filename=' . basename($file));
+        header('Expires: 0');
+        header('Cache-Control: must-revalidate');
+        header('Pragma: public');
+        header('Content-Length: ' . @filesize($file));
+        header("Content-Type: text/plain");
+        @readfile($file);
+    }
+
+    //UPLOAD CREATE DATA
+    public function uploadcreate()
+    {
+        if (!$this->input->post()) {
+            echo json_encode(["title" => "Error", "message" => "Invalid request method", "theme" => "error"]);
+            return;
+        }
+        
+        $data = $this->input->post('data');
+
+        $ar_receipt    = $this->crud->read('ar_receipts', [], ["sales_invoice" => $data['sales_invoice'], "receipt_no" => $data['receipt_no']]);
+        $customers     = $this->crud->read('customers', ["id" => $data['customer_id']]);
+        $account_coa   = $this->crud->read('account_coa', ["account_number" => $data['account_number']]);
+        $journal_types = $this->crud->read('journal_types', ["number" => $data['journal_number']]);
+        $sales_invoice = $this->crud->read('sales_invoices', [], ["number" => $data['sales_invoice'], "account_number" => $data['account_number']]);
+        $account_banks = $this->db->select('*')->from('account_banks')->like('bank_account', trim($data['bank_account']), 'both')->get()->row();
+
+        // Validate required data
+        if (empty($data['receipt_type']) || (strtoupper($data['receipt_type']) !== "SALES" && strtoupper($data['receipt_type']) !== "OTHER")) {
+            echo json_encode(["title" => "Error", "message" => "Type must be SALES or OTHER", "theme" => "error"]);
+        
+        } elseif (empty($data['account_type']) || (strtoupper($data['account_type']) !== "DEBIT" && strtoupper($data['account_type']) !== "CREDIT")) {
+            echo json_encode(["title" => "Error", "message" => "Account Type must be DEBIT or CREDIT", "theme" => "error"]);
+            
+        } elseif (empty($customers)) {
+            echo json_encode(["title" => "Not Found", "message" => "Customer No " . $data['customer_id'] . " Not Found", "theme" => "error"]);
+        
+        } elseif (empty($journal_types)) {
+            echo json_encode(["title" => "Not Found", "message" => "Journal Type Code " . $data['journal_number'] . " Not Found", "theme" => "error"]);
+            
+        } elseif (empty($account_coa)) {
+            echo json_encode(["title" => "Not Found", "message" => "Account COA " . $data['account_number'] . " Not Found", "theme" => "error"]);
+        
+        } elseif (empty($account_banks)) {
+            echo json_encode(["title" => "Not Found", "message" => "Bank Account No. " . $data['bank_account'] . " Not Found", "theme" => "error"]);
+            
+        } elseif (!empty($ar_receipt) && !empty($sales_invoice) && $sales_invoice->status == "1") {
+            echo json_encode(["title" => "Duplicated", "message" => "Sales Invoice No. " . $data['sales_invoice'] . " & Receipt No. " . $data['receipt_no'] . " has been processed previously (Closed)", "theme" => "error"]);
+            
+        } else {
+            // Get AR Receipt number
+            $receipt_no_from_excel = $data['receipt_no'] ?? '-';
+            $existing_receipt = null;
+            if ($receipt_no_from_excel !== '-') {
+                $existing_receipt = $this->crud->read('ar_receipts', [], ["receipt_no" => $receipt_no_from_excel]);
+            }
+            
+            if (empty($receipt_no_from_excel) || $receipt_no_from_excel === '-') {
+                // KONDISI 1: Jika data dari excel kosong atau '-', buat nomor baru.
+                $bank_code    = $account_banks->bank_code ?? $data['bank_account'];
+                $receipt_date = $data['receipt_date'];                
+                $year  = date("y", strtotime($receipt_date));
+                $month = date("m", strtotime($receipt_date));
+
+                $number_prefix = $bank_code . "/" . $month . "-" . $year . "/M";
+
+                $this->db->select_max('receipt_no', 'kode');
+                $this->db->like('receipt_no', $number_prefix, 'both');
+                $query = $this->db->get('ar_receipts');
+                $rowID = $query->row();
+                $kode = $rowID->kode;
+                
+                if ($kode == NULL) {
+                    $autoID = sprintf("%03s", $kode + 1);
+                } else {
+                    $urutan = (int) substr($kode, 0, 3);
+                    $urutan++;
+                    $autoID = sprintf("%03s", $urutan);
+                }
+                
+                $receipt_no = $autoID . "/" . $number_prefix;
+
+            } elseif (!empty($existing_receipt)) {
+                // KONDISI 2: Jika number dari excel ada di database, gunakan yang sudah ada.
+                $receipt_no = $existing_receipt->receipt_no;
+
+            } else {
+                // KONDISI 3: Jika number dari excel tidak kosong dan tidak ada di database, gunakan nilai dari excel.
+                $receipt_no = $receipt_no_from_excel;
+            }
+
+            // Get Rate
+            $currency  = $data['currency'];
+            $date_rate = $data['receipt_date'];
+            $monthBf   = date('Y-m-01', strtotime('-1 month', strtotime($date_rate)));
+            $exchange  = $this->crud->read('exchange_rates', [], ["start_date" => $monthBf, "currency_from" => $currency, "currency_to" => "IDR"]);
+            if ($currency != "IDR") {
+                if ($exchange) {
+                    $rate = $exchange->middle;
+                } else {
+                    $rate = (float)($data['rate'] ?? 1);
+                }
+            } else {
+                $rate = 1;
+            }
+
+            // Receipt Method tidak ada di excel
+            $receipt_by = !empty($data['bank_account']) ? 'TRANSFER' : 'CASH';
+
+            if (!empty($data['description'])) {
+                $description = $data['description'];
+            } elseif (!empty($sales_invoice->customer_order_no)) {
+                $description = $sales_invoice->customer_order_no;
+            } else {
+                $description = null;
+            }
+
+            // Prepare Data
+            $post = [
+                "customer_id"       => $customers->id,
+                "journal_type_id"   => $journal_types->id,
+                "receipt_type"      => $data['receipt_type'] ?? null,
+                "receipt_date"      => $data['receipt_date'] ?? null,
+                "receipt_no"        => $receipt_no,
+                "receipt_by"        => $receipt_by,
+                "bank_account"      => $data['bank_account'] ?? null,
+                "cheque_no"         => $data['cheque_no'] ?? null,
+                "sales_invoice"     => $data['sales_invoice'] ?? null,
+                "description"       => $description,
+                "so_number"         => $data['so_number'] ?? null,
+                "currency"          => $data['currency'] ?? null,
+                "amount"            => (float)($data['amount'] ?? 0),
+                "balance"           => (float)($data['balance'] ?? 0),
+                "receipt"           => (float)($data['receipt'] ?? 0),
+                "total_receipt"     => (float)($data['receipt'] ?? 0),
+                "remarks"           => $data['remark'] ?? null,
+                "note"              => $data['note'] ?? null,
+                "rate"              => $rate ?? null,
+                "account_number"    => $data['account_number'] ?? null,
+                "account_type"      => $data['account_type'] ?? null,
+                "status_dp"         => $data['status_dp'] ?? 0,
+                "status"            => $data['status'] ?? 0,
+                "upload"            => "YES",
+                "upload_date"       => date('Y-m-d'),
+            ];
+
+            // echo json_encode($post);
+
+            // CREATE (INSERT)
+            $send = $this->crud->create('ar_receipts', $post);
+            if ($send) {
+                // update status sales to closed
+                if ($post['amount'] == $post['receipt']) {
+                    $this->crud->update('sales_invoices', ["number" => $post['sales_invoice'], "account_number" => $post['account_number']], ["status" => "1"]);
+                }
+
+                if ($post['balance'] == $post['receipt']) {
+                    $this->crud->update('ar_receipts', ["receipt_no" => $post['sales_invoice']], ["status_dp" => 1]);
+                }
+
+                // send response to frontend
+                echo $send;
+            } else {
+                echo json_encode(["title" => "Error", "message" => "Failed to create AR Receipt", "theme" => "error"]);
+            }
+
+        }
+    }
+
+    // UPLOAD GET JOURNAL (AR)
+    public function uploadGetJournal()
+    {
+        $this->db->select('a.*, b.account_name');
+        $this->db->from('ar_receipts a');
+        $this->db->join('account_coa b', 'a.account_number = b.account_number');
+        $this->db->where('a.upload', "YES");
+        $this->db->where('a.upload_date', date("Y-m-d"));
+        $records = $this->db->get()->result_array();
+
+        // Kelompokkan data berdasarkan receipt_no
+        $groupedReceipts = [];
+        foreach ($records as $record) {
+            $receipt_no = $record['receipt_no'];
+            if (!isset($groupedReceipts[$receipt_no])) {
+                $groupedReceipts[$receipt_no] = [
+                    'main_record' => $record,
+                    'items' => []
+                ];
+            }
+            $groupedReceipts[$receipt_no]['items'][] = $record;
+        }
+
+        $allJournals = [];
+
+        // Proses setiap grup receipt 
+        foreach ($groupedReceipts as $receipt_no => $group) {
+            $main_record = $group['main_record'];
+            $items = $group['items'];
+
+            $grand_total = 0;
+            $grand_total_local = 0;
+            $merged_accounts = [];
+
+            // Hitung total untuk setiap receipt_no dan gabungkan entri yang sama
+            foreach ($items as $item) {
+                $receipt_amount = (float)($item['receipt'] ?? 0);
+                $account_number = $item['account_number'];
+                $rate = (float)($item['rate'] ?? 1);
+                
+                // Logika Debit/Kredit (Penerimaan AR)
+                $debit = 0;
+                $credit = $receipt_amount; // AR dikredit
+                
+                // Akumulasi total
+                $grand_total += $receipt_amount;
+                $grand_total_local += $receipt_amount * $rate;
+                
+                // Gabungkan entri jurnal yang memiliki nomor akun sama
+                if (!isset($merged_accounts[$account_number])) {
+                    $merged_accounts[$account_number] = [
+                        'receipt_no' => $receipt_no,
+                        'account_number' => $account_number,
+                        'account_name' => $item['account_name'],
+                        'description' => $item['description'],
+                        'exchange_rate' => $rate,
+                        'debit' => 0,
+                        'credit' => 0,
+                        'local_debit' => 0,
+                        'local_credit' => 0,
+                    ];
+                }
+                $merged_accounts[$account_number]['credit'] += $credit;
+                $merged_accounts[$account_number]['local_credit'] += $credit * $rate;
+            }
+
+            // Buat entri jurnal untuk Akun Bank (DEBIT)
+            $getBank = $this->db->select('a.*, b.account_name')
+                ->from('account_banks a')
+                ->join('account_coa b', 'a.account_number = b.account_number')
+                ->where('bank_account', $main_record['bank_account'])->get()->row();
+
+            $bank_entry = [
+                'receipt_no'     => $receipt_no,
+                'account_number' => $getBank->account_number ?? null,
+                'account_name'   => $getBank->account_name ?? $main_record['bank_account'],
+                'debit'          => $grand_total,
+                'credit'         => 0,
+                'description'    => "Receipt Bank",
+                'exchange_rate'  => (float)($main_record['rate'] ?? 1),
+                'local_debit'    => $grand_total_local,
+                'local_credit'   => 0,
+                'flag'           => 1, // Lebih awal Receipt Bank 
+            ];
+            
+            // Gabungkan entri bank dengan entri akun lainnya
+            $allJournals[] = $bank_entry;
+            foreach (array_values($merged_accounts) as $journal) {
+                $allJournals[] = $journal;
+            }
+            
+            // Update total receipt di database 
+            $this->crud->update('ar_receipts', ["receipt_no" => $receipt_no], ["total_receipt" => $grand_total]);
+        }
+
+        $flag_counter = 1;
+        foreach ($allJournals as &$journal) {
+            $journal['flag'] = $flag_counter++;
+        }
+        unset($journal);
+
+        $result = [
+            'total' => count($allJournals),
+            'data'  => $allJournals
+        ];
+
+        echo json_encode($result);
+    }
+
+    public function uploadCreateJournal()
+    {
+        if ($this->input->post()) {
+            $post = $this->input->post('data');
+            $ar_receipt_journals = $this->crud->read('ar_receipt_journals', [], ["receipt_no" => $post['receipt_no'], "account_number" => $post['account_number'], "debit" => $post['debit'], "credit" => $post['credit']]);
+
+            if (@$ar_receipt_journals->id != "") {
+                $send = $this->crud->update('ar_receipt_journals', ["receipt_no" => $post['receipt_no'], "account_number" => $post['account_number'], "debit" => $post['debit'], "credit" => $post['credit']], $post);
+                echo $send;
+            } else {
+                $send = $this->crud->create('ar_receipt_journals', $post);
+                echo $send;
+            }
+        } else {
+            show_error("Cannot Process your request");
+        }
+    }
+
+
+    // ------- PRINT FUNCTIONS ---------
     public function print_voucher($receipt)
     {
         $receipt_no = base64_decode($receipt);
@@ -1190,7 +1573,7 @@ class Ar_receipts extends CI_Controller
                             <td colspan="2">' . $data['receipt_no'] . '</td>
                             <td>' . $data['receipt_date'] . '</td>
                             <td>' . $data['customer_name'] . '</td>
-                            <td>' . $data['bank_account'] . '</td>
+                            <td style="mso-number-format:\@;">' . $data['bank_account'] . '</td>
                             <td>' . $data['receipt_by'] . '</td>
                             <td colspan="2">' . $data['note'] . '</td>
                         </tr>';
@@ -1215,9 +1598,9 @@ class Ar_receipts extends CI_Controller
                                 <td>' . $detail['sales_invoice'] . '</td>
                                 <td>' . $detail['description'] . '</td>
                                 <td>' . $detail['currency'] . '</td>
-                                <td style="text-align:right">' . number_format($detail['amount'], 2) . '</td>
-                                <td style="text-align:right">' . number_format($detail['balance'], 2) . '</td>
-                                <td style="text-align:right">' . number_format($detail['receipt'], 2)  . '</td>
+                                <td style="text-align:right">' . number_format($detail['amount'], 2, ",", ".") . '</td>
+                                <td style="text-align:right">' . number_format($detail['balance'], 2, ",", ".") . '</td>
+                                <td style="text-align:right">' . number_format($detail['receipt'], 2, ",", ".")  . '</td>
                                 <td>' . $detail['remarks'] . '</td>
                                 <td>' . $detail['account_number'] . '</td>
                                 <td>' . $detail['account_type'] . '</td>
