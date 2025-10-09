@@ -41,6 +41,7 @@
             <th rowspan="2" data-options="field:'weight_gr',width:100,halign:'center'">Weight (GR)</th>
             <th rowspan="2" data-options="field:'weight_kg',width:100,halign:'center'">Weight (KG)</th>
             <th rowspan="2" data-options="field:'description',width:150,halign:'center'">Description</th>
+            <th rowspan="2" data-options="field:'size',width:80,halign:'center'">Size</th>
             <th rowspan="2" data-options="field:'supply',width:80,halign:'center', styler:cellStyler, formatter:cellFormatterSup">Supply</th>
             <th rowspan="2" data-options="field:'status',width:80,halign:'center', styler:cellStyler, formatter:cellFormatter">Status</th>
             <th colspan="2" data-options="field:'',width:100,halign:'center'"> Created</th>
@@ -161,6 +162,13 @@
                 <div class="fitem">
                     <span style="width:35%; display:inline-block;">Weight (KG)</span>
                     <input style="width:60%;" name="weight_kg" id="weight_kg"  precision="2" class="easyui-numberbox">
+                </div>
+                <div class="fitem">
+                    <span style="width:35%; display:inline-block;">Size</span>
+                    <select style="width:60%;" name="size" id="size" required="" panelHeight="auto" class="easyui-combobox">
+                        <option value="NO">NO</option>
+                        <option value="YES">YES</option>
+                    </select>
                 </div>
                 <div class="fitem">
                     <span style="width:35%; display:inline-block;">Status</span>
