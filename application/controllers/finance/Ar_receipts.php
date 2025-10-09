@@ -1107,6 +1107,8 @@ class Ar_receipts extends CI_Controller
                 $merged_accounts[$account_number]['local_credit'] += $credit * $rate;
             }
 
+            $flag_counter = 1;
+
             // Buat entri jurnal untuk Akun Bank (DEBIT)
             $getBank = $this->db->select('a.*, b.account_name')
                 ->from('account_banks a')
@@ -1123,24 +1125,21 @@ class Ar_receipts extends CI_Controller
                 'exchange_rate'  => (float)($main_record['rate'] ?? 1),
                 'local_debit'    => $grand_total_local,
                 'local_credit'   => 0,
-                'flag'           => 1, // Lebih awal Receipt Bank 
+                'flag'           => $flag_counter++, // Bank Entry selalu flag = 1
             ];
             
-            // Gabungkan entri bank dengan entri akun lainnya
+            // Tambahkan entri bank ke array jurnal
             $allJournals[] = $bank_entry;
+
+            // Tambahkan entri akun lainnya dengan flag berurutan setelah bank entry
             foreach (array_values($merged_accounts) as $journal) {
+                $journal['flag'] = $flag_counter++;
                 $allJournals[] = $journal;
             }
             
             // Update total receipt di database 
             $this->crud->update('ar_receipts', ["receipt_no" => $receipt_no], ["total_receipt" => $grand_total]);
         }
-
-        $flag_counter = 1;
-        foreach ($allJournals as &$journal) {
-            $journal['flag'] = $flag_counter++;
-        }
-        unset($journal);
 
         $result = [
             'total' => count($allJournals),

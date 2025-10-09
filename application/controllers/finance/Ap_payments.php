@@ -1001,6 +1001,7 @@ class Ap_payments extends CI_Controller
         $account_coa   = $this->crud->read('account_coa', ["account_number" => $data['account_number']]);
         $journal_types = $this->crud->read('journal_types', ["number" => $data['journal_number']]);
         $purchase_data = $this->crud->read('purchase_invoices', [], ["number" => $data['purchase_invoice'], "account_number" => $data['account_number']]);
+        $account_banks = $this->db->select('*')->from('account_banks')->like('bank_account', trim($data['bank_account']), 'both')->get()->row();
 
         // Validate required data
         if (empty($data['payment_type']) || (strtoupper($data['payment_type']) !== "PURCHASE" && strtoupper($data['payment_type']) !== "OTHER")) {
@@ -1018,6 +1019,9 @@ class Ap_payments extends CI_Controller
         } elseif (empty($account_coa)) {
             echo json_encode(["title" => "Not Found", "message" => "Account COA " . $data['account_number'] . " Not Found", "theme" => "error"]);
         
+        } elseif (empty($account_banks)) {
+            echo json_encode(["title" => "Not Found", "message" => "Bank Account No. " . $data['bank_account'] . " Not Found", "theme" => "error"]);
+        
         } elseif (!empty($ap_payment) && !empty($purchase_data) && $purchase_data->status == "1") {
             echo json_encode(["title" => "Duplicated", "message" => "Purchase Invoice No. " . $data['purchase_invoice'] . " & Payment No. " . $data['payment_no'] . " has been processed previously (Closed)", "theme" => "error"]);
         
@@ -1032,15 +1036,23 @@ class Ap_payments extends CI_Controller
             
             if (empty($payment_no_from_excel) || $payment_no_from_excel === '-') {
                 // KONDISI 1: Jika data dari excel kosong atau '-', buat nomor baru.
-                $datenow = "AP-" . date("Ymd", strtotime($data['payment_date']));
-                $this->db->select_max('payment_no', 'kode');
-                $this->db->like('payment_no', $datenow, 'after');
-                $result = $this->db->get('ap_payments')->row();
-                
-                $last_number = (int) substr($result->kode, -4);
-                $next_number = $last_number + 1;
-                $autoID = sprintf("%04s", $next_number);
-                $payment_no = $datenow . "-" . $autoID;
+                $trans_date = $data['payment_date'];
+                $year = date("y", strtotime($trans_date));
+                $month = date("m", strtotime($trans_date));
+                $bank_code  = $account_banks->bank_code ?? $data['bank_account'];
+
+                $datenow    = $bank_code."/".$month."-".$year."/"."K";
+                $sqlGetID   = $this->db->query("SELECT max(`payment_no`) as kode FROM ap_payments WHERE `payment_no` like '%$datenow%'");
+                $rowID      = $sqlGetID->row();
+                $kode       = $rowID->kode;
+                if ($kode == NULL) {
+                    $autoID = sprintf("%03s", $kode + 1);
+                } else {
+                    $urutan = (int) substr($kode, 0, 3);
+                    $urutan++;
+                    $autoID = sprintf("%03s", $urutan);
+                }
+                $payment_no = $autoID."/".$datenow;
 
             } elseif (!empty($existing_payment)) {
                 // KONDISI 2: Jika number dari excel ada di database, gunakan yang sudah ada.
@@ -1127,78 +1139,95 @@ class Ap_payments extends CI_Controller
         $this->db->where('a.upload_date', date("Y-m-d"));
         $records = $this->db->get()->result_array();
 
-        $accountMapping = [];
-        foreach ($records as $account) {
-            $accountMapping[$account['account_number']] = $account;
+        // Kelompokkan data berdasarkan payment_no
+        $groupedPayments = [];
+        foreach ($records as $record) {
+            $payment_no = $record['payment_no'];
+            if (!isset($groupedPayments[$payment_no])) {
+                $groupedPayments[$payment_no] = [
+                    'main_record' => $record,
+                    'items' => []
+                ];
+            }
+            $groupedPayments[$payment_no]['items'][] = $record;
         }
 
         $allJournals = [];
-        $total_debit = 0;
-        $total_credit = 0;
-        $grand_total = 0;
-        $grand_total_local = 0;
 
-        foreach ($records as $record) {
-            $payment_no      = $record['payment_no'];
-            $payment_amount  = (float) ($record['payment'] ?? 0);
-            $account_number  = $record['account_number'];
-            $bank_account    = $record['bank_account'];
+        // Proses setiap grup pembayaran 
+        foreach ($groupedPayments as $payment_no => $group) {
+            $main_record = $group['main_record'];
+            $items = $group['items'];
 
-            $mergedData = [];
-            if (isset($accountMapping[$account_number])) {
-                $accountData  = $accountMapping[$account_number];
-                $debit  = (float) ($accountData['account_type'] == 'DEBIT') ? $payment_amount : 0;
-                $credit = (float) ($accountData['account_type'] == 'CREDIT') ? $payment_amount : 0;
+            $grand_total = 0;
+            $grand_total_local = 0;
+            $merged_accounts = [];
+
+            // Hitung total untuk setiap payment_no dan gabungkan entri yang sama
+            foreach ($items as $item) {
+                $payment_amount = (float)($item['payment'] ?? 0);
+                $account_number = $item['account_number'];
+                $rate = (float)($item['rate'] ?? 1);
                 
-                $mergedData[$account_number] = [
-                    'payment_no'     => $payment_no,
-                    'account_number' => $record['account_number'],
-                    'account_name'   => $record['account_name'],
-                    'description'    => $record['supplier_invoice'],
-                    'exchange_rate'  => $record['rate'],
-                    'debit'          => $debit,
-                    'credit'         => $credit,
-                    'local_debit'    => $debit * $record['rate'],
-                    'local_credit'   => $credit * $record['rate'],
-                ];
-
+                // Logika Debit/Kredit (Pembayaran AP)
+                $debit = $payment_amount; // AP didebit
+                $credit = 0;
+                
+                // Akumulasi total
+                $grand_total += $payment_amount;
+                $grand_total_local += $payment_amount * $rate;
+                
+                // Gabungkan entri jurnal yang memiliki nomor akun sama
+                if (!isset($merged_accounts[$account_number])) {
+                    $merged_accounts[$account_number] = [
+                        'payment_no' => $payment_no,
+                        'account_number' => $account_number,
+                        'account_name' => $item['account_name'],
+                        'description' => $item['supplier_invoice'],
+                        'exchange_rate' => $rate,
+                        'debit' => 0,
+                        'credit' => 0,
+                        'local_debit' => 0,
+                        'local_credit' => 0,
+                    ];
+                }
+                $merged_accounts[$account_number]['debit'] += $debit;
+                $merged_accounts[$account_number]['local_debit'] += $debit * $rate;
             }
 
-            $total_debit  += $debit;
-            $total_credit += $credit;
-            $grand_total = (float) ($total_debit - $total_credit);
-            $grand_total_local = (float) (($total_debit * $record['rate']) - ($total_credit * $record['rate']));
+            $flag_counter = 1;
             
-            foreach (array_values($mergedData) as $journalEntry) {
-                $allJournals[] = $journalEntry;
+            // Tambahkan entri akun lainnya dengan flag berurutan setelah bank entry
+            foreach (array_values($merged_accounts) as $journal) {
+                $journal['flag'] = $flag_counter++;
+                $allJournals[] = $journal;
             }
-        }
 
-        // Update total in ap_payment
-        $this->crud->update('ap_payments', ["purchase_invoice" => $records[0]['purchase_invoice']], ["total_payment" => $grand_total]);
-
-        $getBank = $this->db->select('a.*, b.account_name')
+            // Buat entri jurnal untuk Akun Bank (KREDIT)
+            $getBank = $this->db->select('a.*, b.account_name')
                 ->from('account_banks a')
                 ->join('account_coa b', 'a.account_number = b.account_number')
-                ->where('bank_account', $bank_account)->get()->row();
+                ->where('bank_account', $main_record['bank_account'])->get()->row();
 
-        if (isset($getBank)) {
-            $allJournals[] = [
+            $bank_entry = [
                 'payment_no'     => $payment_no,
-                'account_number' => $getBank->account_number,
-                'account_name'   => $getBank->account_name,
+                'account_number' => $getBank->account_number ?? null,
+                'account_name'   => $getBank->account_name ?? $main_record['bank_account'],
+                'description'    => 'Payment to Bank',
+                'exchange_rate'  => (float)($main_record['rate'] ?? 1),
                 'debit'          => 0,
                 'credit'         => $grand_total,
                 'local_debit'    => 0,
                 'local_credit'   => $grand_total_local,
+                'flag'           => $flag_counter++,
             ];
-        }
 
-        $flag_counter = 1;
-        foreach ($allJournals as &$journal) {
-            $journal['flag'] = $flag_counter++;
+            // Gabungkan entri bank dengan entri akun lainnya
+            $allJournals[] = $bank_entry;
+
+            // Update total payment di database
+            $this->crud->update('ap_payments', ["payment_no" => $payment_no], ["total_payment" => $grand_total]);
         }
-        unset($journal);
 
         $result = [
             'total' => count($allJournals),

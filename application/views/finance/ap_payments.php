@@ -5,7 +5,7 @@
             <th rowspan="2" field="ck" checkbox="true"></th>
             <th rowspan="2" data-options="field:'details',width:90,align:'center', formatter:btnDetails">Detail</th>
             <th rowspan="2" data-options="field:'payment_type',width:100,halign:'center'">Payment Type</th>
-            <th rowspan="2" data-options="field:'payment_no',width:150,align:'center'">Payment No</th>
+            <th rowspan="2" data-options="field:'payment_no',width:170,align:'center'">Payment No</th>
             <th rowspan="2" data-options="field:'payment_date',width:100,align:'center'">Payment Date</th>
             <th rowspan="2" data-options="field:'supplier_name',width:250,halign:'center'">Supplier Name</th>
             <th rowspan="2" data-options="field:'bank_account',width:150,halign:'center'">Bank Account</th>

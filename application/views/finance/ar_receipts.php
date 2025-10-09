@@ -5,7 +5,7 @@
             <th rowspan="2" field="ck" checkbox="true"></th>
             <th rowspan="2" data-options="field:'details',width:90,align:'center', formatter:btnDetails">Detail</th>
             <th rowspan="2" data-options="field:'receipt_type',width:100,halign:'center'">Receipt Type</th>
-            <th rowspan="2" data-options="field:'receipt_no',width:150,align:'center'">Receipt No</th>
+            <th rowspan="2" data-options="field:'receipt_no',width:170,align:'center'">Receipt No</th>
             <th rowspan="2" data-options="field:'receipt_date',width:100,align:'center'">Receipt Date</th>
             <th rowspan="2" data-options="field:'customer_name',width:250,halign:'center'">Customer Name</th>
             <th rowspan="2" data-options="field:'bank_account',width:150,halign:'center'">Bank Account</th>
