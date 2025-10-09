@@ -446,6 +446,8 @@
                             $("#lot_no").textbox('setValue', row.lot_no);
                             $("#balance").textbox('setValue', '0');
                             $("#division").textbox('setValue', row.division);
+                            $("#status_subcont").textbox('setValue', row.status_subcont);
+                            $("#subcont_type").textbox('setValue', row.subcont_type);
                           
                             var wo_no = row.wo_no;
                             console.log(wo_no);

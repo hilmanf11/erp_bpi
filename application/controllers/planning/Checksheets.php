@@ -36,16 +36,69 @@ class Checksheets extends CI_Controller
         echo json_encode($send);
     }
 
-    public function readRepairNo()
+    public function readRepairNo()//berubah
     {
         $post = isset($_POST['q']) ? $_POST['q'] : "";
-        $send = $this->crud->query("SELECT a.document_no as wo_no, '-' as `period`, b.name as product_name , b.number as product_no, c.lot_no, b.id as item_fg_id, a.qty, a.division
+        $send = $this->crud->query("SELECT 
+                a.document_no AS wo_no,
+                '-' AS period,
+                b.name AS product_name,
+                b.number AS product_no,
+                b.status_subcont,
+                b.subcont_type,
+                c.lot_no,
+                b.id AS item_fg_id,
+                a.qty,
+                a.division
             FROM repair_of_goods a
-            JOIN item_fg b on a.item_fg_id = b.id 
-            LEFT JOIN scan_repair_of_goods c on a.document_no = c.document_no 
-            WHERE a.status_fc = 0 and b.number like '%$post%'
-            GROUP BY a.document_no
-            ORDER BY b.number DESC");
+            JOIN item_fg b 
+                ON a.item_fg_id = b.id
+            LEFT JOIN scan_repair_of_goods c ON a.document_no = c.document_no AND a.item_fg_id = c.item_fg_id
+            WHERE a.status_fc = 0
+            AND (
+                    b.number LIKE '%$post%' 
+                    OR a.document_no LIKE '%$post%' 
+                )
+
+            UNION ALL
+
+            SELECT 
+                a.document_no AS wo_no,
+                '-' AS period,
+                eq_fg.name AS product_name,
+                eq_fg.number AS product_no,
+                b.status_subcont,
+                b.subcont_type,
+                c.lot_no,
+                eq_fg.id AS item_fg_id,
+                a.qty,
+                a.division
+            FROM repair_of_goods a
+            JOIN item_fg b 
+                ON a.item_fg_id = b.id
+            JOIN item_equivalents_fg eq 
+                ON eq.item_fg_id = a.item_fg_id
+            JOIN item_fg eq_fg 
+                ON eq.item_fg_id_equivalent = eq_fg.id
+            LEFT JOIN scan_repair_of_goods c ON a.document_no = c.document_no AND a.item_fg_id = c.item_fg_id
+            WHERE a.status_fc = 0
+            AND (
+                    b.number LIKE '%$post%' 
+                    OR a.document_no LIKE '%$post%' 
+                )
+            AND EXISTS (
+                    SELECT 1
+                    FROM repair_of_goods a2
+                    JOIN item_fg b2 ON a2.item_fg_id = b2.id
+                    WHERE a2.status_fc = 0
+                    AND a2.document_no = a.document_no
+                    AND (
+                            b2.number LIKE '%$post%' 
+                            OR a2.document_no LIKE '%$post%'
+                        )
+                )
+            ORDER BY product_no DESC
+        ");
         echo json_encode($send);
     }
 
@@ -81,14 +134,24 @@ class Checksheets extends CI_Controller
                 FROM production_schedules a
                 JOIN item_fg b ON a.item_fg_id = b.id
                 LEFT JOIN supply_sheets c ON a.wo_no = c.workorder
+                LEFT JOIN item_fg_subs d ON a.item_fg_id = d.item_fg_id
                 WHERE a.status = 0 
-                AND a.wo_no != '' 
+                AND a.wo_no != ''
                 AND (
-                        a.division = 'MTS'
-                        OR (a.division = 'INJ' AND a.status_subcont = 'YES')
-                        OR (a.division = 'INJ' AND a.status_subcont = 'NO')
-                        OR (a.division = 'INJ' AND a.status_subcont = 'NO' AND c.status = 1)
+                    a.division = 'MTS'
+                    OR (a.division = 'INJ' AND a.status_subcont = 'YES')
+                    OR (
+                        a.division = 'INJ' 
+                        AND a.status_subcont = 'NO' 
+                        AND c.status = 1 
+                        AND d.item_fg_id IS NULL
                     )
+                    OR (
+                        a.division = 'INJ' 
+                        AND a.status_subcont = 'NO' 
+                        AND d.item_fg_id IS NOT NULL
+                    )
+                )
                 AND (
                         b.number LIKE '%$post%' 
                         OR a.lot_no LIKE '%$post%' 
@@ -389,10 +452,24 @@ class Checksheets extends CI_Controller
     //     }
     // }
 
-    public function create()
+    public function create()//berubah
     {
         if ($this->input->post()) {
             $post = $this->input->post();
+            $item_fg_id_posted = $post['item_fg_id'];
+            $doc_no            = $post['wo_no'];
+
+            $parent = $this->db->select('eq.item_fg_id')
+                ->from('item_equivalents_fg eq')
+                ->where('eq.item_fg_id_equivalent', $item_fg_id_posted)
+                ->get()
+                ->row();
+
+            if ($parent) {
+                $item_fg_id_for_update = $parent->item_fg_id;
+            } else {
+                $item_fg_id_for_update = $item_fg_id_posted;
+            }
 
             if ($post['receipt'] > 0) {
                 // Cek duplikat berdasarkan data WO, tanggal, shift & accumulate
@@ -417,7 +494,7 @@ class Checksheets extends CI_Controller
 
                     if ($post['accumulate'] == $post['qty']) {
                         $update = $this->crud->update('production_schedules', ["wo_no" => $post['wo_no'],"item_fg_id" => $post['item_fg_id']], ["status" => 1]);
-                        $update2 = $this->crud->update('repair_of_goods', ["document_no" => $post['wo_no'],"item_fg_id" => $post['item_fg_id']], ["status_fc" => 1]);
+                        $update2 = $this->crud->update('repair_of_goods', ["document_no" => $post['wo_no'],"item_fg_id" => $item_fg_id_for_update], ["status_fc" => 1]);
                     }
 
                     echo json_encode([
@@ -521,11 +598,28 @@ class Checksheets extends CI_Controller
         }
     }
 
-    public function delete()
+    public function delete()//berubah
     {
         $data = $this->input->post();
+
+        $item_fg_id_posted = $data['item_fg_id'];
+
+        $parent = $this->db->select('eq.item_fg_id')
+            ->from('item_equivalents_fg eq')
+            ->where('eq.item_fg_id_equivalent', $item_fg_id_posted)
+            ->get()
+            ->row();
+
+        if ($parent) {
+            $item_fg_id_for_update = $parent->item_fg_id;
+        } else {
+            $item_fg_id_for_update = $item_fg_id_posted;
+        }
+
+
         $send = $this->crud->delete('checksheets', ["id" => $data['id']]);
         $update = $this->crud->update('production_schedules', ["wo_no" => $data['wo_no'], "item_fg_id" => $data['item_fg_id']], ["status" => 0]);
+        $update2 = $this->crud->update('repair_of_goods', ["document_no" => $data['wo_no'],"item_fg_id" => $item_fg_id_for_update], ["status_fc" => 0]);
         $delete = $this->crud->delete('wip_receipts', ["item_fg_id" => $data['item_fg_id'],"checksheet_number" => $data['number']]);
         echo $send;
     }
