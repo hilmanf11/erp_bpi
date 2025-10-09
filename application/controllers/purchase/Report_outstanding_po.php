@@ -98,6 +98,9 @@ class Report_outstanding_po extends CI_Controller
         $filter_to = base64_decode($this->input->get("filter_to"));
         $filter_display = $this->input->get("filter_display");
         $filter_supplier = $this->input->get("filter_supplier");
+        $filter_item_category = $this->input->get("filter_item_category");
+        $filter_division = $this->input->get("filter_division");
+        $filter_product_family = $this->input->get("filter_product_family");
         $filter_product_no = $this->input->get("filter_product_no");
         $filter_status = $this->input->get("filter_status");
         $filter_purchase_order = base64_decode($this->input->get("filter_purchase_order"));
@@ -120,12 +123,15 @@ class Report_outstanding_po extends CI_Controller
         $this->db->join('suppliers b', 'a.supplier_id = b.id');
         $this->db->join('item_rm c', 'a.item_rm_id = c.id');       
         $this->db->join('(SELECT po_no, COUNT(status) as total_status_complete FROM purchase_orders WHERE status = 2 GROUP BY po_no) h', 'a.po_no = h.po_no', 'left');
-        $this->db->join('(SELECT po_no, item_rm_id, SUM(qty_receipt) as qty_receipt FROM purchase_order_receipts GROUP BY po_no, item_rm_id) d', 'a.po_no = d.po_no AND a.item_rm_id = d.item_rm_id', 'left');        
+        $this->db->join('(SELECT po_no, item_rm_id, SUM(qty_receipt2) as qty_receipt FROM purchase_order_receipts GROUP BY po_no, item_rm_id) d', 'a.po_no = d.po_no AND a.item_rm_id = d.item_rm_id', 'left');        
         $this->db->where('a.deleted', 0);
         $this->db->where("a.po_date between '$filter_from' and '$filter_to'");
         $this->db->like('a.supplier_id', $filter_supplier);
         $this->db->like('a.item_rm_id', $filter_product_no);
+        $this->db->like('c.item_category_id', $filter_item_category);
         $this->db->like('a.po_no', $filter_purchase_order);
+        $this->db->like('c.division', $filter_division);
+        $this->db->like('c.item_family_id', $filter_product_family);
         $this->db->like('a.status', $filter_status);
         $this->db->order_by('a.status', 'ASC');
         $this->db->group_by('a.po_no');
@@ -183,28 +189,28 @@ class Report_outstanding_po extends CI_Controller
             if($filter_product_no != "" && $filter_purchase_order != ""){
                 $receipt = $this->crud->query("SELECT a.po_no, SUM(b.qty_receipt) as qty_receipt 
                 from purchase_orders a 
-                JOIN (SELECT SUM(qty_receipt) as qty_receipt, po_no, item_rm_id 
+                JOIN (SELECT SUM(qty_receipt2) as qty_receipt, po_no, item_rm_id 
                 FROM purchase_order_receipts 
                 GROUP BY po_no, item_rm_id) b ON a.po_no = b.po_no and a.item_rm_id = b.item_rm_id 
                 WHERE a.po_no = '$po_no' and a.item_rm_id = '$item_rm_id' and a.status like '%$filter_status%'");
             }elseif($filter_purchase_order != ""){
                 $receipt = $this->crud->query("SELECT a.po_no, b.qty_receipt 
                 from purchase_orders a 
-                JOIN (SELECT po_no, item_rm_id, SUM(qty_receipt) as qty_receipt 
+                JOIN (SELECT po_no, item_rm_id, SUM(qty_receipt2) as qty_receipt 
                 FROM purchase_order_receipts 
                 GROUP BY po_no, item_rm_id) b ON a.po_no = b.po_no and a.item_rm_id = b.item_rm_id 
                 WHERE a.po_no = '$po_no' and a.status like '%$filter_status%'");
             }elseif($filter_product_no != ""){
                 $receipt = $this->crud->query("SELECT a.po_no, SUM(b.qty_receipt) as qty_receipt 
                 from purchase_orders a 
-                JOIN (SELECT SUM(qty_receipt) as qty_receipt, po_no, item_rm_id 
+                JOIN (SELECT SUM(qty_receipt2) as qty_receipt, po_no, item_rm_id 
                 FROM purchase_order_receipts 
                 GROUP BY po_no, item_rm_id) b ON a.po_no = b.po_no and a.item_rm_id = b.item_rm_id 
                 WHERE a.po_no = '$po_no' and a.item_rm_id = '$item_rm_id' and a.status like '%$filter_status%'");
             }else{
                 $receipt = $this->crud->query("SELECT a.po_no, SUM(b.qty_receipt) as qty_receipt 
                 from purchase_orders a 
-                JOIN (SELECT SUM(qty_receipt) as qty_receipt, po_no, item_rm_id 
+                JOIN (SELECT SUM(qty_receipt2) as qty_receipt, po_no, item_rm_id 
                 FROM purchase_order_receipts 
                 GROUP BY po_no, item_rm_id) b ON a.po_no = b.po_no and a.item_rm_id = b.item_rm_id 
                 WHERE a.po_no = '$po_no' and a.status like '%$filter_status%'");
@@ -273,7 +279,7 @@ class Report_outstanding_po extends CI_Controller
                 $this->db->from('purchase_orders a');
                 $this->db->join('suppliers b', 'a.supplier_id = b.id');
                 $this->db->join('item_rm c', 'a.item_rm_id = c.id');
-                $this->db->join('(SELECT po_no, item_rm_id, SUM(qty_receipt) as qty_receipt FROM purchase_order_receipts GROUP BY po_no, item_rm_id) d', 'a.po_no = d.po_no AND a.item_rm_id = d.item_rm_id', 'left');        
+                $this->db->join('(SELECT po_no, item_rm_id, SUM(qty_receipt2) as qty_receipt FROM purchase_order_receipts GROUP BY po_no, item_rm_id) d', 'a.po_no = d.po_no AND a.item_rm_id = d.item_rm_id', 'left');        
                 $this->db->where('a.deleted', 0);
                 $this->db->where("a.po_date between '$filter_from' and '$filter_to'");
                 $this->db->where('a.po_no', $po_no);
@@ -329,7 +335,7 @@ class Report_outstanding_po extends CI_Controller
                         $os_qty = $detail['qty_po'];
                         $details2 = $this->crud->reads("purchase_order_receipts", [], ["item_rm_id" => $item_rm_id, "po_no" => $data['po_no']]);
                         foreach ($details2 as $detail2) {
-                            $os_qty -= $detail2->qty_receipt;
+                            $os_qty -= $detail2->qty_receipt2;
 
                             $html .= '  <tr>
                                             <td></td>
@@ -339,7 +345,7 @@ class Report_outstanding_po extends CI_Controller
                                             <td>' . $detail2->receipt_no . '</td>
                                             <td>' . $detail2->receipt_date . '</td>
                                             <td style="text-align:right">' . number_format($detail2->qty_po, 2) . '</td>
-                                            <td style="text-align:right">' . number_format($detail2->qty_receipt, 2) . '</td>
+                                            <td style="text-align:right">' . number_format($detail2->qty_receipt2, 2) . '</td>
                                             <td style="text-align:right">' . number_format($os_qty, 2) . '</td>
                                             <td>' . $detail2->created_by . '</td>
                                         </tr>';   
