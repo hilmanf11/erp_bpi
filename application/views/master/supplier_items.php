@@ -153,7 +153,7 @@
                 </div>
                 <div class="fitem">
                     <span style="width:35%; display:inline-block;">Uom Inventory</span>
-                    <input style="width:60%;" name="uom_inventory" id="uom_inventory" class="easyui-textbox">
+                    <input style="width:60%;" name="uom_inventory" id="uom_inventory" class="easyui-combobox">
                 </div>
                 <div class="fitem">
                     <span style="width:35%; display:inline-block;">Convertion %</span>
@@ -991,6 +991,13 @@
     });
 
     $('#uom_default').combobox({
+        url:'<?= base_url('master/uom/reads'); ?>',
+        valueField:'name',
+        textField:'name',
+        prompt: 'Choose Unit of Measure',
+    });
+
+    $('#uom_inventory').combobox({
         url:'<?= base_url('master/uom/reads'); ?>',
         valueField:'name',
         textField:'name',

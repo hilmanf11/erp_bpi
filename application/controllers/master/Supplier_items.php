@@ -150,7 +150,7 @@ class Supplier_items extends CI_Controller
             a.valid_date,
             a.safety_stock,
             a.uom_default,
-            c.uom as uom_inventory,
+            a.uom_inventory,
             c.weight_kg,
             a.calculate,
             b.number as supplier_number, 
