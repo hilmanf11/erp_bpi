@@ -288,6 +288,133 @@ class Transaction_rm extends CI_Controller
         echo $send;
     }
 
+    public function readSpec()
+    {
+        if ($this->input->post()) {
+            $item_rm_id = $this->input->post('item_rm_id');
+            $trans_date = @$this->input->post('trans_date');
+            $trans_type = @$this->input->post('trans_type');
+
+            $date = ($trans_date == "") ? date("Y-m-d") : $trans_date;
+
+            if($trans_type == 'BPB'){
+                $records = $this->crud->query("
+                    SELECT 
+                        a.id AS item_rm_id,
+                        a.number,
+                        spec_data.specification,
+
+                        (
+                            COALESCE(scan_in.qty_scan_in, 0)
+                            + COALESCE(os.qty_os_rm, 0)
+                            + COALESCE(trans_in.qty_trans_rm_in, 0)
+                            + COALESCE(ret.return_qty, 0)
+                            + COALESCE(bpm.qty_scan_bpm, 0)
+                            - COALESCE(issued.qty_issued, 0)
+                            - COALESCE(trans_out.qty_trans_rm_out, 0)
+                        ) AS begin_stock
+
+                    FROM item_rm a
+
+                    LEFT JOIN (
+                        SELECT item_rm_id, specification
+                        FROM (
+                            SELECT item_rm_id, specification
+                            FROM purchase_order_receipts
+                            WHERE receipt_date <= '$date'
+                            UNION
+                            SELECT item_rm_id, specification
+                            FROM transaction_rm
+                            WHERE request_date <= '$date'
+                        ) spec
+                        GROUP BY item_rm_id, specification
+                    ) spec_data ON spec_data.item_rm_id = a.id
+
+                    LEFT JOIN (
+                        SELECT b.item_rm_id, b.specification, SUM(a.qty) AS qty_scan_in
+                        FROM scan_item_receipts a
+                        JOIN purchase_order_receipts b ON a.receipt_id = b.receipt_id
+                        WHERE b.receipt_date <= '$date'
+                        GROUP BY b.item_rm_id, b.specification
+                    ) scan_in ON scan_in.item_rm_id = a.id AND scan_in.specification = spec_data.specification
+
+                    LEFT JOIN (
+                        SELECT item_rm_id, SUM(qty) AS qty_os_rm
+                        FROM os_rm
+                        WHERE trans_date <= '$date'
+                        GROUP BY item_rm_id
+                    ) os ON os.item_rm_id = a.id
+
+                    LEFT JOIN (
+                        SELECT item_rm_id, specification, SUM(qty) AS qty_trans_rm_in
+                        FROM transaction_rm
+                        WHERE request_date <= '$date' AND transaction_kind = 'IN'
+                        GROUP BY item_rm_id, specification
+                    ) trans_in ON trans_in.item_rm_id = a.id AND trans_in.specification = spec_data.specification
+
+                    LEFT JOIN (
+                        SELECT a.item_rm_id, SUM(c.qty) as return_qty
+                        FROM return_materials a
+                        JOIN return_material_labels b ON a.return_id = b.return_id
+                        JOIN scan_item_receipts c ON a.return_id = c.receipt_id AND b.label_no = c.label_no
+                        WHERE a.return_date <= '$date'
+                        GROUP BY a.item_rm_id
+                    ) ret ON ret.item_rm_id = a.id
+
+                    LEFT JOIN (
+                        SELECT item_rm_id, SUM(qty) AS qty_scan_bpm
+                        FROM scan_item_bpm
+                        WHERE DATE_FORMAT(request_date, '%Y-%m-%d') <= '$date'
+                        GROUP BY item_rm_id
+                    ) bpm ON bpm.item_rm_id = a.id
+
+                    LEFT JOIN (
+                        SELECT item_rm_id, SUM(qty) AS qty_issued
+                        FROM issued_material_details
+                        WHERE created_date <= '$date'
+                        GROUP BY item_rm_id
+                    ) issued ON issued.item_rm_id = a.id
+
+                    LEFT JOIN (
+                        SELECT item_rm_id, specification, SUM(qty) AS qty_trans_rm_out
+                        FROM transaction_rm
+                        WHERE request_date <= '$date' AND transaction_kind = 'OUT'
+                        GROUP BY item_rm_id, specification
+                    ) trans_out ON trans_out.item_rm_id = a.id AND trans_out.specification = spec_data.specification
+
+                    WHERE a.id = '$item_rm_id'
+                    GROUP BY a.id, a.number, spec_data.specification
+                    HAVING begin_stock > 0
+                    ORDER BY a.number
+                ");
+            }else{
+                $records = $this->crud->query("SELECT spec_data.specification
+                    FROM item_rm a
+                    LEFT JOIN (
+                        SELECT item_rm_id, specification
+                        FROM (
+                            SELECT item_rm_id, specification
+                            FROM purchase_order_receipts
+                            WHERE receipt_date <= '$date'
+                            UNION
+                            SELECT item_rm_id, specification
+                            FROM transaction_rm
+                            WHERE request_date <= '$date'
+                        ) specs
+                        GROUP BY item_rm_id, specification
+                    ) spec_data ON spec_data.item_rm_id = a.id
+                    WHERE a.id = '$item_rm_id'
+                    GROUP BY a.id, a.number, spec_data.specification
+                    ORDER BY a.number
+                ");
+            }
+
+            
+
+            echo json_encode($records);
+        }
+    }
+
     public function print($option = "")
     {
         if ($option == "excel") {

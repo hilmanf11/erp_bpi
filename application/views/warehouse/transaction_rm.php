@@ -83,7 +83,7 @@
     <a href="javascript:void(0)" class="easyui-linkbutton" data-options="plain:true" onclick="removeit()"><i class="fa fa-times"></i> Remove</a>
 </div>
 <!-- Insert & Update -->
-<div id="dlg_insert" class="easyui-dialog" title="Add New" data-options="closed: true,modal:true" style="width: 800px; height: 600px; padding:10px; top: 20px;">
+<div id="dlg_insert" class="easyui-dialog" title="Add New" data-options="closed: true,modal:true" style="width: 1000px; height: 600px; padding:10px; top: 20px;">
     <form id="frm_insert" method="post" novalidate>
         <fieldset style="width:100%; border:1px solid #d0d0d0; margin-bottom: 10px; border-radius:4px; float: left;">
             <legend><b>Form Data</b></legend>
@@ -93,15 +93,19 @@
                     <input style="width:60%;" name="request_date" id="request_date" value="<?= date("Y-m-d") ?>" required="" class="easyui-datebox" data-options="formatter:myformatter,parser:myparser, editable:false">
                 </div>
                 <div class="fitem">
+                    <span style="width:35%; display:inline-block;">Cut Off</span>
+                    <input style="width:60%;" id="cutoff" class="easyui-datebox" value="<?= date("Y-m-d") ?>" data-options="formatter:myformatter,parser:myparser, editable:false">
+                </div>
+                <div class="fitem">
                     <span style="width:35%; display:inline-block;">Request No</span>
                     <input style="width:60%;" name="request_no" id="request_no" readonly class="easyui-textbox">
                 </div>
+            </div>
+            <div style="width: 50%; float: left;">
                 <div class="fitem">
                     <span style="width:35%; display:inline-block;">Request Name</span>
                     <input style="width:60%;" name="request_name" id="request_name" value="<?= $this->session->name ?>" readonly class="easyui-textbox">
                 </div>
-            </div>
-            <div style="width: 50%; float: left;">
                 <div class="fitem">
                     <span style="width:35%; display:inline-block;">Transaction Type</span>
                     <input style="width:60%;" name="transaction_id" id="transaction_id" class="easyui-combobox">
@@ -224,10 +228,16 @@
                                     index: rowIndex,
                                     field: 'stock'
                                 });
+                                var edSpec = dg.datagrid('getEditor', {
+                                    index: rowIndex,
+                                    field: 'specification'
+                                });
 
                                 var item_rm_id = $(ed.target).textbox('setValue', rows.id);
                                 var item_name = $(ed2.target).textbox('setValue', rows.name);
                                 var uom = $(ed3.target).textbox('setValue', rows.uom);
+                                var cutoffDate = $('#cutoff').datebox('getValue');
+                                var trans_type = $('#transaction_type').textbox('getValue');
 
                                 $.ajax({
                                     type: "post",
@@ -238,13 +248,32 @@
                                         $(ed4.target).numberbox('setValue', stockWarehouse[0].end_stock);
                                     }
                                 });
+
+                                if (edSpec) {
+                                    var combo = $(edSpec.target);
+                                    combo.combobox('clear');
+
+                                    // Ganti jadi ajax POST
+                                    $.ajax({
+                                        type: "POST",
+                                        url: "<?= base_url('warehouse/transaction_rm/readSpec') ?>",
+                                        data: { item_rm_id: rows.id,
+                                                trans_date: cutoffDate,
+                                                trans_type: trans_type
+                                         },
+                                        dataType: "json",
+                                        success: function (response) {
+                                            combo.combobox('loadData', response);
+                                        }
+                                    });
+                                }
                             }
                         }
                     }
                 }, {
                     field: 'item_rm_id',
                     width: 150,
-                    // hidden: true,
+                    hidden: true,
                     halign: 'center',
                     title: "ID",
                     editor: {
@@ -265,6 +294,20 @@
                         }
                     }
                 }, {
+                    field: 'specification',
+                    width: 200,
+                    halign: 'center',
+                    title: "Specification",
+                    editor: {
+                        type: 'combobox',
+                        options: {
+                            valueField: 'specification',
+                            textField: 'specification',
+                            mode: 'remote',
+                            prompt: 'Choose Specification'
+                        }
+                    }
+                }, {
                     field: 'qty',
                     width: 80,
                     halign: 'center',
@@ -273,7 +316,7 @@
                         type: 'numberbox',
                         options: {
                             required: true,
-                            precision: 2
+                            precision: 4
                         }
                     }
                 }, 
@@ -365,17 +408,16 @@
                 
                 $("#transaction_id").combobox({
                     url: '<?= base_url('warehouse/transaction_rm/readType/') ?>',
-                    valueField: 'id',  // Menyimpan ID saat update
-                    textField: 'type',  // Menampilkan 'transaction_type'
+                    valueField: 'id',
+                    textField: 'type',
                     prompt: "Choose Type",
                     onLoadSuccess: function(data){
                         if (data.length > 0) {
-                            // Set combobox dengan ID yang sesuai dari row.transaction_id
+                         
                             $("#transaction_id").combobox('setValue', row.transaction_id);
                         }
                     },
                     onSelect: function(record) {
-                        // Update textbox ketika user memilih di combobox
                         $("#transaction_type").textbox('setValue', record.type);
                         $("#transaction_kind").textbox('setValue', record.kind);
                     }
@@ -545,6 +587,7 @@
                                         // wp: wp,
                                         // workorder: workorder,
                                         item_rm_id: rows[i].item_rm_id,
+                                        specification: rows[i].specification,
                                         qty: rows[i].qty
                                     },
                                     dataType: "json",
