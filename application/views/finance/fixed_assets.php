@@ -201,6 +201,7 @@
                 <div class="fitem">
                     <span style="width:35%; display:inline-block;">Depreciation/Month</span>
                     <input style="width:40%;" name="depreciation" id="depreciation" readonly required class="easyui-numberbox" data-options="groupSeparator:'.',decimalSeparator:','">
+                    &nbsp; <a href="javascript:;" class="easyui-linkbutton" onclick="calculateDepreciation()">Calculate</a>
                 </div>
                 <div class="fitem">
                     <span style="width:35%; display:inline-block;">Remarks</span>
@@ -430,6 +431,22 @@
 
     function reload() {
         window.location.reload();
+    }
+
+    // Hitung ulang depreciation
+    function calculateDepreciation() {
+        var cost = $("#cost").numberbox('getValue');
+        var trans_date = $("#trans_date").numberbox('getValue');
+        var estimate_year = $("#estimate_year").numberbox('getValue');
+
+        if (estimate_year == "0") {
+            toastr.error("Estimate Year cannot be zero (0)");
+        } else {
+            if(trans_date != ""){
+                $("#estimate_month").numberbox('setValue', (parseInt(estimate_year) * 12));
+                $("#depreciation").numberbox('setValue', (cost / (parseInt(estimate_year) * 12)));
+            }
+        }
     }
 
     // Windows Ready

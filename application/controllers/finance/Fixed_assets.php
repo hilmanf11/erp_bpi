@@ -20,13 +20,9 @@ class Fixed_assets extends CI_Controller
         } elseif ($this->checkuserAccess($this->id_menu()) > 0) {
             $data['button'] = $this->getbutton($this->id_menu());
             $data['menus_id'] = $this->id_menu();
-
-            $row = $this->crud->read("asset_fixeds", [], [], "1", "trans_date", "asc");
-
-            $row = $this->crud->read("asset_fixeds", [], [], "1", "trans_date", "asc");
-
-            $data['filter_from'] = date('Y-m-1');
-
+            
+            // loading data big latency
+            // $row = $this->crud->read("asset_fixeds", [], [], "1", "trans_date", "asc");
             // if ($row) { 
             //     // Jika data ditemukan, gunakan trans_date
             //     $data['filter_from'] = $row->trans_date; // loading data big latency
@@ -34,6 +30,8 @@ class Fixed_assets extends CI_Controller
             //     // Jika data tidak ditemukan, beri nilai default
             //     $data['filter_from'] = date('Y-m-1');
             // }
+            
+            $data['filter_from'] = date('Y-m-1');
 
             $this->load->view('template/header', $data);
             $this->load->view('finance/fixed_assets');
@@ -340,11 +338,8 @@ class Fixed_assets extends CI_Controller
             $field = strtolower($filter['field']);
             $value = $filter['value'];
 
-            if ($field == 'number') {
-                $this->db->like('a.number', $value);
-
-            } elseif ($field == 'name') {
-                $this->db->like('a.number', $value);
+            if ($field == 'status_expired') {
+                $this->db->like('(CASE WHEN (a.cost - (COALESCE(c.depreciation_acc, 0) + a.depreciation_accumulate)) > 0 THEN 0 ELSE 1 END)', $value);
 
             } elseif ($field == 'asset_family_name') {
                 $this->db->like('COALESCE(b.name, f.name)', $value);
@@ -836,7 +831,7 @@ class Fixed_assets extends CI_Controller
     public function uploadcreate()
     {
         if ($this->input->post()) {
-            $data       = $this->input->post('data');
+            $data = $this->input->post('data');
 
             //Cek Process Number
             $asset_categories = $this->crud->read('item_familys', [], ["number" => $data['asset_category_number']]);
@@ -890,8 +885,8 @@ class Fixed_assets extends CI_Controller
                     "depreciation_accumulate" => $data['depreciation_accumulate'], 
                     "remarks"                 => $data['remarks'],
                     "method"                  => $data['method'],
-                    "previous_department"     => $data['department'],
-                    "previous_location"       => $data['location'],
+                    "previous_department"     => null,
+                    "previous_location"       => null,
                     "department"              => $data['department'],
                     "location"                => $data['location'],
                     "total"                   => ($data['qty'] * $data['cost']),
@@ -916,6 +911,9 @@ class Fixed_assets extends CI_Controller
         $this->db->from('config');
         $config = $this->db->get()->row();
 
+        $filters = json_decode($this->input->post('filterRules'), true); // Filter keyword per kolom dari tabel datagrid view 
+        $filter_financial_period_from = base64_decode($this->input->get('filter_financial_period_from')) ?? null;
+        $filter_financial_period_to = base64_decode($this->input->get('filter_financial_period_to')) ?? null;
         $filter_from = base64_decode($this->input->get('filter_from')) ?? null;
         $filter_to = base64_decode($this->input->get('filter_to')) ?? null;
         $filter_number = base64_decode($this->input->get('filter_number')) ?? null;
@@ -928,8 +926,11 @@ class Fixed_assets extends CI_Controller
         $filter_period_to = $filter_to ? date("Y-m", strtotime($filter_to)) : null;
 
         $filter_list = [
+            "filters"                        => $filters,
             "filter_from"                    => $filter_from,
             "filter_to"                      => $filter_to,
+            "filter_financial_period_from"   => $filter_financial_period_from,
+            "filter_financial_period_to"     => $filter_financial_period_to,
             "filter_number"                  => $filter_number,
             "filter_category"                => $filter_category,
             "filter_estimate"                => $filter_estimate,
