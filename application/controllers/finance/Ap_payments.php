@@ -934,6 +934,7 @@ class Ap_payments extends CI_Controller
                     'remark'           => trim($data->val($i, 15)),
                     'account_number'   => trim($data->val($i, 16)),
                     'account_type'     => trim($data->val($i, 17)),
+                    'action'           => trim($data->val($i, 18)),
                 );
             }
 
@@ -1002,14 +1003,40 @@ class Ap_payments extends CI_Controller
         $journal_types = $this->crud->read('journal_types', ["number" => $data['journal_number']]);
         $purchase_data = $this->crud->read('purchase_invoices', [], ["number" => $data['purchase_invoice'], "account_number" => $data['account_number']]);
         $account_banks = $this->db->select('*')->from('account_banks')->like('bank_account', trim($data['bank_account']), 'both')->get()->row();
+        
+        // Tambahkan validasi jika Payment No. sudah ada dari insert via Form bukan via upload (Bu Nina)
+        $this->db->select('*');
+        $this->db->from('ap_payments');
+        $this->db->where('payment_no', $data['payment_no']);
+        $this->db->where('upload', null);
+        $this->db->where('upload_date', null);
+        $ap_payment_manual = $this->db->get()->result();
+        
+        $trans_date = $data['payment_date'];
+        $valid_date = ($d = DateTime::createFromFormat('Y-m-d', $trans_date)) && $d->format('Y-m-d') === $trans_date;
 
         // Validate required data
-        if (empty($data['payment_type']) || (strtoupper($data['payment_type']) !== "PURCHASE" && strtoupper($data['payment_type']) !== "OTHER")) {
+        if (!empty($ap_payment_manual)) {
+            echo json_encode(["title" => "Duplicated", "message" => "Payment No " . $data['payment_no'] . " is already exists. Please provide a unique number.", "theme" => "error"]);
+        
+        } elseif (empty($data['action']) || (strtolower($data['action']) !== "new" && strtolower($data['action']) !== "update")) {
+            echo json_encode(["title" => "Error", "message" => "ACTION must be NEW or UPDATE", "theme" => "error"]);
+        
+        } elseif (strtolower($data['action']) !== 'update' && !empty($ap_payment) && strtoupper($ap_payment->upload) === "YES") {
+            echo json_encode(["title" => "Duplicated", "message" => "Action=NEW and Payment No. " . $data['payment_no'] . " is Duplicate Data", "theme" => "error"]);
+        
+        } elseif (!empty($purchase_data) && $purchase_data->status == "1") {
+            echo json_encode(["title" => "Duplicated", "message" => "Purchase Invoice No. " . $data['purchase_invoice'] . " has been processed previously (Closed)", "theme" => "error"]);
+        
+        } elseif (empty($data['payment_type']) || (strtoupper($data['payment_type']) !== "PURCHASE" && strtoupper($data['payment_type']) !== "OTHER")) {
             echo json_encode(["title" => "Error", "message" => "Type must be PURCHASE or OTHER", "theme" => "error"]);
         
         } elseif (empty($data['account_type']) || (strtoupper($data['account_type']) !== "DEBIT" && strtoupper($data['account_type']) !== "CREDIT")) {
             echo json_encode(["title" => "Error", "message" => "Account Type must be DEBIT or CREDIT", "theme" => "error"]);
-            
+        
+        } elseif (empty($trans_date) || !$valid_date) {
+            echo json_encode(["title" => "Error", "message" => "Date format must be 'YYYY-MM-DD'", "theme" => "error"]);
+        
         } elseif (empty($supplier)) {
             echo json_encode(["title" => "Not Found", "message" => "Supplier No " . $data['supplier_code'] . " Not Found", "theme" => "error"]);
         
@@ -1021,9 +1048,6 @@ class Ap_payments extends CI_Controller
         
         } elseif (empty($account_banks)) {
             echo json_encode(["title" => "Not Found", "message" => "Bank Account No. " . $data['bank_account'] . " Not Found", "theme" => "error"]);
-        
-        } elseif (!empty($ap_payment) && !empty($purchase_data) && $purchase_data->status == "1") {
-            echo json_encode(["title" => "Duplicated", "message" => "Purchase Invoice No. " . $data['purchase_invoice'] . " & Payment No. " . $data['payment_no'] . " has been processed previously (Closed)", "theme" => "error"]);
         
         } else {
                 
@@ -1243,7 +1267,7 @@ class Ap_payments extends CI_Controller
             $post = $this->input->post('data');
             $ap_payment_journals = $this->crud->read('ap_payment_journals', [], ["payment_no" => $post['payment_no'], "account_number" => $post['account_number']]);
 
-            if (@$ap_payment_journals->id != "") {
+            if (!empty($ap_payment_journals)) {
                 // update error foreign key constraint debit credit
                 // $send = $this->crud->update('ap_payment_journals', ["number" => $post['number'], "account_number" => $post['account_number']], $post);
                 
