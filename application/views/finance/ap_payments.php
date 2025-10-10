@@ -2098,69 +2098,69 @@
             }]
         });
 
-    // Gunakan fungsi terpisah yang lebih bersih untuk proses rekursif
-    function processUpload(total, data) {
-        let successfulCount = 0;
-        let failedCount = 0;
-        
-        // Fungsi rekursif yang baru
-        const processItem = (index) => { // sama seperti processItem(index){}
-            // Kondisi berhenti rekursi: jika semua data sudah diproses
-            if (index >= total) {
-                // Proses upload 1 selesai, mulai proses upload 2
-                getJournalAndProcess();
-                return; // Hentikan fungsi
-            }
-
-            let number = index + 1;
-            let value = Math.floor((number / total) * 100);
-            let itemData = data[index];
+        // Gunakan fungsi terpisah yang lebih bersih untuk proses rekursif
+        function processUpload(total, data) {
+            let successfulCount = 0;
+            let failedCount = 0;
             
-            // Perbarui progress bar
-            $('#p_upload').progressbar('setValue', value);
-            $('#p_start').html(number);
-            $('#p_finish').html(total);
-
-            // Kirim data satu per satu
-            $.ajax({
-                type: "POST",
-                url: "<?= base_url('finance/ap_payments/uploadCreate') ?>",
-                data: { "data": itemData },
-                dataType: "json",
-                success: function(response) {
-                    let title;
-                    if (response.theme === "success") {
-                        successfulCount++;
-                        $('#p_success').html(successfulCount);
-                        title = `<b style='color: green;'>${response.title}</b> | Invoice: ${response.message}`;
-                    } else {
-                        failedCount++;
-                        $('#p_failed').html(failedCount);
-                        title = `<b style='color: red;'>${response.title}</b> | Invoice: ${response.message}`;
-                        // Kirim data gagal ke server (tanpa 'async: true' yang tidak diperlukan)
-                        $.post("<?= base_url('finance/ap_payments/uploadcreateFailed') ?>", {
-                            data: itemData,
-                            message: response.message
-                        });
-                    }
-                    $("#p_remarks").append(title + "<br>");
-
-                    // Lanjutkan rekursi untuk item berikutnya
-                    processItem(index + 1);
-                },
-                error: function(xhr, status, error) {
-                    failedCount++;
-                    let errorMessage = `Failed to upload on row #${number}. Status: ${status}, Error: ${error}`;
-                    $("#p_remarks").append(`<b style='color: red;'>Error</b> | ${errorMessage}<br>`);
-                    // Lanjutkan rekursi meskipun ada error
-                    processItem(index + 1);
+            // Fungsi rekursif yang baru
+            const processItem = (index) => { // sama seperti processItem(index){}
+                // Kondisi berhenti rekursi: jika semua data sudah diproses
+                if (index >= total) {
+                    // Proses upload 1 selesai, mulai proses upload 2
+                    getJournalAndProcess();
+                    return; // Hentikan fungsi
                 }
-            });
-        };
-        
-        // Panggil fungsi rekursif pertama kali untuk memulai
-        processItem(0);
-    }
+
+                let number = index + 1;
+                let value = Math.floor((number / total) * 100);
+                let itemData = data[index];
+                
+                // Perbarui progress bar
+                $('#p_upload').progressbar('setValue', value);
+                $('#p_start').html(number);
+                $('#p_finish').html(total);
+
+                // Kirim data satu per satu
+                $.ajax({
+                    type: "POST",
+                    url: "<?= base_url('finance/ap_payments/uploadCreate') ?>",
+                    data: { "data": itemData },
+                    dataType: "json",
+                    success: function(response) {
+                        let title;
+                        if (response.theme === "success") {
+                            successfulCount++;
+                            $('#p_success').html(successfulCount);
+                            title = `<b style='color: green;'>${response.title}</b> | Invoice: ${response.message}`;
+                        } else {
+                            failedCount++;
+                            $('#p_failed').html(failedCount);
+                            title = `<b style='color: red;'>${response.title}</b> | Invoice: ${response.message}`;
+                            // Kirim data gagal ke server (tanpa 'async: true' yang tidak diperlukan)
+                            $.post("<?= base_url('finance/ap_payments/uploadcreateFailed') ?>", {
+                                data: itemData,
+                                message: response.message
+                            });
+                        }
+                        $("#p_remarks").append(title + "<br>");
+
+                        // Lanjutkan rekursi untuk item berikutnya
+                        processItem(index + 1);
+                    },
+                    error: function(xhr, status, error) {
+                        failedCount++;
+                        let errorMessage = `Failed to upload on row #${number}. Status: ${status}, Error: ${error}`;
+                        $("#p_remarks").append(`<b style='color: red;'>Error</b> | ${errorMessage}<br>`);
+                        // Lanjutkan rekursi meskipun ada error
+                        processItem(index + 1);
+                    }
+                });
+            };
+            
+            // Panggil fungsi rekursif pertama kali untuk memulai
+            processItem(0);
+        }
 
         // Fungsi untuk mendapatkan jurnal dan memulai proses kedua
         function getJournalAndProcess() {

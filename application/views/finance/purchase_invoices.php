@@ -3081,7 +3081,7 @@
             handler: function() {
                 // Clear file
                 $.get("<?= base_url('finance/purchase_invoices/uploadclearFailed') ?>");
-                
+
                 $('#frm_upload').form('submit', {
                     url: '<?= base_url('finance/purchase_invoices/upload') ?>',
                     onSubmit: function() {
