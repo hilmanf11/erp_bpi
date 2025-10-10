@@ -804,6 +804,31 @@
     </form>
 </div>
 
+<!-- Upload -->
+<div id="dlg_upload" class="easyui-dialog" title="Upload Data" data-options="closed: true,modal:true" style="width: 500px; padding:10px; top: 20px;">
+    <form id="frm_upload" method="post" enctype="multipart/form-data" novalidate>
+        <fieldset style="width:100%; border:1px solid #d0d0d0; margin-bottom: 10px; border-radius:4px; float: left;">
+            <legend><b>Form Data</b></legend>
+            <div class="fitem">
+                <span style="width:35%; display:inline-block;">File Upload</span>
+                <input name="file_upload" style="width: 60%;" required="" accept=".xls" id="file_excel" class="easyui-filebox">
+            </div>
+        </fieldset>
+    </form>
+    <span style="float: left; color:green;">SUCCESS : <b id="p_success">0</b></span><span style="float: right; color:red;"> FAILED : <b id="p_failed">0</b></span>
+    <div id="p_upload" class="easyui-progressbar" style="width:100%; margin-top: 10px;"></div>
+    <center><b id="p_start">0</b> Of <b id="p_finish">0</b></center>
+    
+    <div><b>CALCULATE JOURNAL</b></div>
+    <span style="float: left; color:green;">SUCCESS : <b id="p_success_journal">0</b></span><span style="float: right; color:red;"> FAILED : <b id="p_failed_journal">0</b></span>
+    <div id="p_upload2" class="easyui-progressbar" style="width:100%; margin-top: 10px;"></div>
+    <center><b id="p_start2">0</b> Of <b id="p_finish2">0</b></center>
+    <div id="p_remarks_upload" title="History Upload" class="easyui-panel" style="width:100%; height:200px; padding:10px; margin-top: 10px;">
+        <ul id="remarks_upload">
+        </ul>
+    </div>
+</div>
+
 <!-- PDF -->
 <iframe id="printout" src="" style="width: 100%;" hidden></iframe>
 <script>
@@ -2813,6 +2838,15 @@
         $("#printout").attr('src', '<?= base_url('finance/sales_invoices/print') ?>' + url);
     }
 
+    // UPLOAD DATA
+    function upload() {
+        $('#dlg_upload').dialog('open');
+    }
+    // DOWNLOAD
+    function download_excel() {
+        window.location.assign('<?= base_url('template/tmp_sales_invoices.xls') ?>');
+    }
+
     //PRINT PDF
     function pdf() {
         $("#printout").get(0).contentWindow.print();
@@ -4181,4 +4215,177 @@
             toastr.warning("Please select one or more data in the table first!", "Information");
         }
     }
+
+    // UPLOAD DATA
+    $('#dlg_upload').dialog({
+        buttons: [{
+            text: 'List Failed',
+            handler: function() {
+                window.open('<?= base_url('finance/sales_invoices/uploadDownloadFailed') ?>', '_blank');
+            }
+        }, {
+            text: 'Upload',
+            iconCls: 'icon-ok',
+            handler: function() {
+                // Clear file
+                $.get("<?= base_url('finance/sales_invoices/uploadclearFailed') ?>");
+                
+                $('#frm_upload').form('submit', {
+                    url: '<?= base_url('finance/sales_invoices/upload') ?>',
+                    onSubmit: function() {
+                        if (!$(this).form('validate')) {
+                            return false; // Langsung kembalikan false jika validasi gagal
+                        }
+                        $.messager.progress({
+                            title: 'Please Wait',
+                            msg: 'Importing Excel to Database'
+                        });
+                        return true; // Lanjutkan proses submit
+                    },
+                    success: function(result) {
+                        $.messager.progress('close');
+
+                        // Periksa hasil JSON dari server dengan cara yang lebih aman
+                        try {
+                            var json = JSON.parse(result);
+                            // Mulai proses upload berurutan
+                            processUpload(json.total, json.data);
+                        } catch (e) {
+                            $.messager.alert('Error', 'Invalid JSON response from server.', 'error');
+                        }
+                    }
+                });
+            }
+        }]
+    });
+
+    // Gunakan fungsi terpisah yang lebih bersih untuk proses rekursif
+    function processUpload(total, data) {
+        let successfulCount = 0;
+        let failedCount = 0;
+        
+        // Fungsi rekursif yang baru
+        const processItem = (index) => { // sama seperti processItem(index){}
+            // Kondisi berhenti rekursi: jika semua data sudah diproses
+            if (index >= total) {
+                // Proses upload 1 selesai, mulai proses upload 2
+                getJournalAndProcess();
+                return; // Hentikan fungsi
+            }
+
+            let number = index + 1;
+            let value = Math.floor((number / total) * 100);
+            let itemData = data[index];
+            
+            // Perbarui progress bar
+            $('#p_upload').progressbar('setValue', value);
+            $('#p_start').html(number);
+            $('#p_finish').html(total);
+
+            // Kirim data satu per satu
+            $.ajax({
+                type: "POST",
+                url: "<?= base_url('finance/sales_invoices/uploadCreate') ?>",
+                data: { "data": itemData },
+                dataType: "json",
+                success: function(response) {
+                    let title;
+                    if (response.theme === "success") {
+                        successfulCount++;
+                        $('#p_success').html(successfulCount);
+                        title = `<b style='color: green;'>${response.title}</b> | Invoice: ${response.message}`;
+                    } else {
+                        failedCount++;
+                        $('#p_failed').html(failedCount);
+                        title = `<b style='color: red;'>${response.title}</b> | Invoice: ${response.message}`;
+                        // Kirim data gagal ke server (tanpa 'async: true' yang tidak diperlukan)
+                        $.post("<?= base_url('finance/sales_invoices/uploadcreateFailed') ?>", {
+                            data: itemData,
+                            message: response.message
+                        });
+                    }
+                    $("#p_remarks_upload").append(title + "<br>");
+
+                    // Lanjutkan rekursi untuk item berikutnya
+                    processItem(index + 1);
+                },
+                error: function(xhr, status, error) {
+                    failedCount++;
+                    let errorMessage = `Failed to upload on row #${number}. Status: ${status}, Error: ${error}`;
+                    $("#p_remarks_upload").append(`<b style='color: red;'>Error</b> | ${errorMessage}<br>`);
+                    // Lanjutkan rekursi meskipun ada error
+                    processItem(index + 1);
+                }
+            });
+        };
+
+        // Panggil fungsi rekursif pertama kali untuk memulai
+        processItem(0);
+    }
+
+    // Fungsi untuk mendapatkan jurnal dan memulai proses kedua
+    function getJournalAndProcess() {
+        $.ajax({
+            type: "POST",
+            url: "<?= base_url('finance/sales_invoices/uploadGetJournal') ?>",
+            dataType: "json",
+            success: function(journal) {
+                // console.log("Data journal: ", journal);
+                let successfulJournalCount = 0;
+                let failedJournalCount = 0;
+                processUpload2(journal.total, journal.data, 0, successfulJournalCount, failedJournalCount);
+            },
+            error: function(xhr, status, error) {
+                $.messager.alert('Error', 'Failed to get journal data. Please check server.', 'error');
+            }
+        });
+    }
+
+    // Fungsi untuk proses upload kedua (jurnal)
+    function processUpload2(total, data, index = 0, successfulJournalCount = 0, failedJournalCount = 0) {
+        if (index >= total) {
+            $.messager.alert('Upload Finished', 'All upload and calculation processes are complete.', 'info');
+            return;
+        }
+
+        let number = index + 1;
+        let value = Math.floor((number / total) * 100);
+        let itemData = data[index];
+        
+        // Perbarui progress bar kedua
+        $('#p_upload2').progressbar('setValue', value);
+        $('#p_start2').html(number);
+        $('#p_finish2').html(total);
+
+        $.ajax({
+            type: "POST",
+            url: "<?= base_url('finance/sales_invoices/uploadCreateJournal') ?>",
+            data: { "data": itemData },
+            dataType: "json",
+            success: function(response) {
+                let title;
+                if (response.theme === "success") {
+                    successfulJournalCount++;
+                    $('#p_success_journal').html(successfulJournalCount);
+                    title = `<b style='color: green;'>${response.title}</b> | Journal: ${response.message}`;
+                } else {
+                    failedJournalCount++;
+                    $('#p_failed_journal').html(failedJournalCount);
+                    title = `<b style='color: red;'>${response.title}</b> | Journal: ${response.message}`;
+                }
+                $("#p_remarks_upload").append(title + "<br>");
+
+                processUpload2(total, data, index + 1, successfulJournalCount, failedJournalCount);
+            },
+            error: function(xhr, status, error) {
+                failedJournalCount++; // Tambahkan 1 ke counter gagal
+                let invoiceNo = data[index].number;
+                let accountNo = data[index].account_number;
+                let errorMessage = `Failed to upload Journal! Invoice No. ${invoiceNo} & Account No. ${accountNo}. Status: ${status}, Error: ${error}`;
+                $("#p_remarks_upload").append(`<b style='color: red;'>Error</b> | ${errorMessage}<br>`);
+                processUpload2(total, data, index + 1, successfulJournalCount, failedJournalCount);
+            }
+        });
+    }
+    // END UPLOAD
 </script>

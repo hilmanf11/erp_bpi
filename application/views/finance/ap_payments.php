@@ -582,7 +582,8 @@
     <div id="p_upload" class="easyui-progressbar" style="width:100%; margin-top: 10px;"></div>
     <center><b id="p_start">0</b> Of <b id="p_finish">0</b></center>
     
-    <b>CALCULATE JOURNAL</b>
+    <div><b>CALCULATE JOURNAL</b></div>
+    <span style="float: left; color:green;">SUCCESS : <b id="p_success_journal">0</b></span><span style="float: right; color:red;"> FAILED : <b id="p_failed_journal">0</b></span>
     <div id="p_upload2" class="easyui-progressbar" style="width:100%; margin-top: 10px;"></div>
     <center><b id="p_start2">0</b> Of <b id="p_finish2">0</b></center>
     <div id="p_remarks" title="History Upload" class="easyui-panel" style="width:100%; height:200px; padding:10px; margin-top: 10px;">
@@ -2065,6 +2066,9 @@
                 text: 'Upload',
                 iconCls: 'icon-ok',
                 handler: function() {
+                    // Clear file
+                    $.get("<?= base_url('finance/ap_payments/uploadclearFailed') ?>");
+                    
                     $('#frm_upload').form('submit', {
                         url: '<?= base_url('finance/ap_payments/upload') ?>',
                         onSubmit: function() {
@@ -2094,8 +2098,13 @@
             }]
         });
 
-        // Gunakan fungsi terpisah yang lebih bersih untuk proses rekursif
-        function processUpload(total, data, index = 0) {
+    // Gunakan fungsi terpisah yang lebih bersih untuk proses rekursif
+    function processUpload(total, data) {
+        let successfulCount = 0;
+        let failedCount = 0;
+        
+        // Fungsi rekursif yang baru
+        const processItem = (index) => { // sama seperti processItem(index){}
             // Kondisi berhenti rekursi: jika semua data sudah diproses
             if (index >= total) {
                 // Proses upload 1 selesai, mulai proses upload 2
@@ -2121,8 +2130,12 @@
                 success: function(response) {
                     let title;
                     if (response.theme === "success") {
+                        successfulCount++;
+                        $('#p_success').html(successfulCount);
                         title = `<b style='color: green;'>${response.title}</b> | Invoice: ${response.message}`;
                     } else {
+                        failedCount++;
+                        $('#p_failed').html(failedCount);
                         title = `<b style='color: red;'>${response.title}</b> | Invoice: ${response.message}`;
                         // Kirim data gagal ke server (tanpa 'async: true' yang tidak diperlukan)
                         $.post("<?= base_url('finance/ap_payments/uploadcreateFailed') ?>", {
@@ -2133,16 +2146,21 @@
                     $("#p_remarks").append(title + "<br>");
 
                     // Lanjutkan rekursi untuk item berikutnya
-                    processUpload(total, data, index + 1);
+                    processItem(index + 1);
                 },
                 error: function(xhr, status, error) {
-                    let errorMessage = `Gagal mengupload data nomor ${number}. Status: ${status}, Error: ${error}`;
+                    failedCount++;
+                    let errorMessage = `Failed to upload on row #${number}. Status: ${status}, Error: ${error}`;
                     $("#p_remarks").append(`<b style='color: red;'>Error</b> | ${errorMessage}<br>`);
                     // Lanjutkan rekursi meskipun ada error
-                    processUpload(total, data, index + 1);
+                    processItem(index + 1);
                 }
             });
-        }
+        };
+        
+        // Panggil fungsi rekursif pertama kali untuk memulai
+        processItem(0);
+    }
 
         // Fungsi untuk mendapatkan jurnal dan memulai proses kedua
         function getJournalAndProcess() {
@@ -2151,8 +2169,10 @@
                 url: "<?= base_url('finance/ap_payments/uploadGetJournal') ?>",
                 dataType: "json",
                 success: function(journal) {
-                    console.log("Data journal: ", journal);
-                    processUpload2(journal.total, journal.data);
+                    // console.log("Data journal: ", journal);
+                    let successfulJournalCount = 0;
+                    let failedJournalCount = 0;
+                    processUpload2(journal.total, journal.data, 0, successfulJournalCount, failedJournalCount);
                 },
                 error: function(xhr, status, error) {
                     $.messager.alert('Error', 'Failed to get journal data. Please check server.', 'error');
@@ -2161,11 +2181,9 @@
         }
 
         // Fungsi untuk proses upload kedua (jurnal)
-        function processUpload2(total, data, index = 0) {
+        function processUpload2(total, data, index = 0, successfulJournalCount = 0, failedJournalCount = 0) {
             if (index >= total) {
                 $.messager.alert('Upload Finished', 'All upload and calculation processes are complete.', 'info');
-                // Clear file
-                $.get("<?= base_url('finance/ap_payments/uploadclearFailed') ?>");
                 return;
             }
 
@@ -2186,18 +2204,25 @@
                 success: function(response) {
                     let title;
                     if (response.theme === "success") {
+                        successfulJournalCount++;
+                        $('#p_success_journal').html(successfulJournalCount);
                         title = `<b style='color: green;'>${response.title}</b> | Journal: ${response.message}`;
                     } else {
+                        failedJournalCount++;
+                        $('#p_failed_journal').html(failedJournalCount);
                         title = `<b style='color: red;'>${response.title}</b> | Journal: ${response.message}`;
                     }
                     $("#p_remarks").append(title + "<br>");
 
-                    processUpload2(total, data, index + 1);
+                    processUpload2(total, data, index + 1, successfulJournalCount, failedJournalCount);
                 },
                 error: function(xhr, status, error) {
-                    let errorMessage = `Gagal mengupload jurnal nomor ${number}. Status: ${status}, Error: ${error}`;
+                    failedJournalCount++; // Tambahkan 1 ke counter gagal
+                    let paymentNo = data[index].payment_no;
+                    let accountNo = data[index].account_number;
+                    let errorMessage = `Failed to upload Journal! Payment No. ${paymentNo} & Account No. ${accountNo}. Status: ${status}, Error: ${error}`;
                     $("#p_remarks").append(`<b style='color: red;'>Error</b> | ${errorMessage}<br>`);
-                    processUpload2(total, data, index + 1);
+                    processUpload2(total, data, index + 1, successfulJournalCount, failedJournalCount);
                 }
             });
         }
@@ -2286,6 +2311,7 @@
                 }
             }]
         });
+        // END UPLOAD
 
         $("#filter_supplier").combobox({
             url: '<?= base_url('master/suppliers/reads') ?>',
