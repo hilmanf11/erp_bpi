@@ -271,8 +271,6 @@ class Fixed_assets extends CI_Controller
         $filter_estimate    = $filter_list["filter_estimate"];
         $filter_purchase_invoice_number = $filter_list["filter_purchase_invoice_number"];
         $filter_supplier    = $filter_list["filter_supplier"];
-        $filter_period_from = $filter_list["filter_period_from"];
-        $filter_period_to   = $filter_list["filter_period_to"];
         
         $this->db->select("a.*, 
             COALESCE(b.name, f.name) as asset_family_name,
@@ -286,7 +284,7 @@ class Fixed_assets extends CI_Controller
             (CASE WHEN (a.cost - (COALESCE(c.depreciation_acc, 0) + a.depreciation_accumulate)) > 0 THEN 0 ELSE 1 END) as status_expired");
         $this->db->from('asset_fixeds a');
         $this->db->join('asset_categories b', 'a.asset_category_number = b.number', 'left');
-        $this->db->join("(SELECT asset_no, SUM(debit) as depreciation_acc FROM asset_journals WHERE periode BETWEEN '$filter_period_from' and '$filter_period_to' GROUP BY asset_no) c", 'a.number = c.asset_no', 'left');
+        $this->db->join("(SELECT asset_no, SUM(debit) as depreciation_acc FROM asset_journals WHERE periode BETWEEN '$filter_financial_period_from' and '$filter_financial_period_to' GROUP BY asset_no) c", 'a.number = c.asset_no', 'left');
         $this->db->join('item_familys f', 'a.item_family_id = f.id'); // Product Family
         $this->db->join('account_coa coa', 'f.account_number = coa.account_number', 'left'); // Product Category by Product Family
         $this->db->join('journal_postings jp', 'a.purchase_invoice_number = jp.document_no', 'left');
@@ -385,9 +383,6 @@ class Fixed_assets extends CI_Controller
         $filter_purchase_invoice_number = base64_decode($this->input->get('filter_purchase_invoice_number')) ?? null;
         $filter_supplier = base64_decode($this->input->get('filter_supplier')) ?? null;
 
-        $filter_period_from = $filter_from ? date("Y-m", strtotime($filter_from)) : null;
-        $filter_period_to = $filter_to ? date("Y-m", strtotime($filter_to)) : null;
-
         $filter_list = [
             "filters"                        => $filters,
             "filter_from"                    => $filter_from,
@@ -399,8 +394,6 @@ class Fixed_assets extends CI_Controller
             "filter_estimate"                => $filter_estimate,
             "filter_purchase_invoice_number" => $filter_purchase_invoice_number,
             "filter_supplier"                => $filter_supplier,
-            "filter_period_from"             => $filter_period_from,
-            "filter_period_to"               => $filter_period_to,
         ];
 
         // Query Builder untuk menghitung total data
@@ -922,9 +915,6 @@ class Fixed_assets extends CI_Controller
         $filter_purchase_invoice_number = base64_decode($this->input->get('filter_purchase_invoice_number')) ?? null;
         $filter_supplier = base64_decode($this->input->get('filter_supplier')) ?? null;
 
-        $filter_period_from = $filter_from ? date("Y-m", strtotime($filter_from)) : null;
-        $filter_period_to = $filter_to ? date("Y-m", strtotime($filter_to)) : null;
-
         $filter_list = [
             "filters"                        => $filters,
             "filter_from"                    => $filter_from,
@@ -936,8 +926,6 @@ class Fixed_assets extends CI_Controller
             "filter_estimate"                => $filter_estimate,
             "filter_purchase_invoice_number" => $filter_purchase_invoice_number,
             "filter_supplier"                => $filter_supplier,
-            "filter_period_from"             => $filter_period_from,
-            "filter_period_to"               => $filter_period_to,
         ];
 
         if (!empty($filter_from) && !empty($filter_to)) {
@@ -978,12 +966,13 @@ class Fixed_assets extends CI_Controller
                 <th width="20">No</th>
                 <th>Asset No</th>
                 <th>Asset Name</th>
-                <th>Asset Category</th>
-                <th>Asset Type</th>
+                <th>Asset Family</th>
                 <th>Purchase Invoice</th>
                 <th>Supplier</th>
                 <th>Purchase Date</th>
+                <th>Usage Date</th>
                 <th>Qty</th>
+                <th>UoM</th>
                 <th>Cost</th>
                 <th>EST. <br>Year</th>
                 <th>EST. <br>Month</th>
@@ -992,8 +981,8 @@ class Fixed_assets extends CI_Controller
                 <th>Depreciation Accumulation</th>
                 <th>Book Value</th>
                 <th>Depreciation<br>Method</th>
-                <th>department</th>
-                <th>Location</th>
+                <th>Current Department</th>
+                <th>Current Location</th>
                 <th>Status</th>
             </tr>';
         $no = 1;
@@ -1007,8 +996,7 @@ class Fixed_assets extends CI_Controller
                         <td style="text-align:center">' . $no . '</td>
                         <td>' . $data['number'] . '</td>
                         <td>' . $data['name'] . '</td>
-                        <td>' . $data['asset_category_name'] . '</td>
-                        <td>' . $data['asset_category_type'] . '</td>
+                        <td>' . $data['asset_family_name'] . '</td>
                         <td>' . $data['purchase_invoice_number'] . '</td>
                         <td>' . $data['supplier_name'] . '</td>
                         <td>' . $data['trans_date'] . '</td>
