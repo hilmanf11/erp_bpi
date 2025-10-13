@@ -1376,10 +1376,10 @@ class Purchase_invoices extends CI_Controller
             } elseif (strtolower($data['action']) !== 'update' && !empty($purchase_invoices) && strtoupper($purchase_invoices->upload) === "YES") {
                 echo json_encode(["title" => "Duplicated", "message" => "Action=NEW and Purchase Invoice No. " . $data['number'] . " is Duplicate Data", "theme" => "error"]);
             
-            } elseif (!empty($purchase_invoices) && $purchase_invoices->status == "1") {
+            } elseif (!empty($purchase_invoices) && $purchase_invoices->status == "1" && strtolower($data['action']) !== 'update') {
                 echo json_encode(["title" => "Duplicated", "message" => "Purchase Invoice No. " . $data['number'] . " has been processed previously (Closed)", "theme" => "error"]);
             
-            } elseif ($data['por_no'] !== "-" && !empty($purchase_receipts) && $purchase_receipts->status == "1") {
+            } elseif ($data['por_no'] !== "-" && !empty($purchase_receipts) && $purchase_receipts->status == "1" && strtolower($data['action']) !== 'update') {
                 echo json_encode(["title" => "Duplicated", "message" => "Purchase Order Receipt No. " . $data['por_no'] . " has been processed previously (Closed)", "theme" => "error"]);
             
             } elseif (empty($data['type']) || (strtoupper($data['type']) !== "PURCHASE" && strtoupper($data['type']) !== "OTHER")) {
@@ -1503,7 +1503,8 @@ class Purchase_invoices extends CI_Controller
                     $send = $this->crud->create('purchase_invoices', $dataFinal);
                 } else {
                     if (!empty($purchase_invoices)) {
-                        $send = $this->crud->update('purchase_invoices', ["number" => $dataFinal['number']], $dataFinal);
+                        $whereParams = ["number" => $dataFinal["number"], "account_number" => $dataFinal["account_number"], "por_no" => $dataFinal["por_no"], "po_no" => $dataFinal["po_no"], "item_rm_id" => $purchase_invoices->item_rm_id];
+                        $send = $this->crud->update('purchase_invoices', $whereParams, $dataFinal);
                     } else {
                         $send = $this->crud->create('purchase_invoices', $dataFinal);
                     }

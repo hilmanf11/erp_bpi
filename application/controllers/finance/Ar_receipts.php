@@ -924,7 +924,7 @@ class Ar_receipts extends CI_Controller
         } elseif (empty($sales_invoice) && ($data['sales_invoice'] !== "-" && !empty($data['sales_invoice']))) {
             echo json_encode(["title" => "Not Found", "message" => "Sales Invoice No. " . $data['sales_invoice'] . " & Account Number " . $data['account_number'] . " Not Found", "theme" => "error"]);
         
-        } elseif (!empty($sales_invoice) && $sales_invoice->status === "1") {
+        } elseif (!empty($sales_invoice) && $sales_invoice->status === "1" && strtolower($data['action']) !== 'update') {
             echo json_encode(["title" => "Duplicated", "message" => "Sales Invoice No. " . $data['sales_invoice'] . " has been processed previously (Closed)", "theme" => "error"]);
         
         } elseif (empty($data['receipt_type']) || (strtoupper($data['receipt_type']) !== "SALES" && strtoupper($data['receipt_type']) !== "OTHER")) {
@@ -1048,7 +1048,17 @@ class Ar_receipts extends CI_Controller
             // echo json_encode($post);
 
             // CREATE (INSERT)
-            $send = $this->crud->create('ar_receipts', $post);
+            if (strtoupper($data['action'] === "NEW")) {
+                $send = $this->crud->create('ar_receipts', $post);
+            } else {
+                if (!empty($ar_receipt)) {
+                    $whereParams = ["receipt_no" => $receipt_no, "sales_invoice" => $post['sales_invoice'], "account_number" => $post["account_number"]];
+                    $send = $this->crud->update('ar_receipts', $whereParams, $post);
+                } else {
+                    $send = $this->crud->create('ar_receipts', $post);
+                }
+            }
+            
             if ($send) {
                 if (!empty($post['sales_invoice'])) {
                     // update status sales invoice to closed

@@ -1028,7 +1028,7 @@ class Ap_payments extends CI_Controller
         } elseif (empty($purchase_data) && ($data['purchase_invoice'] !== "-" && !empty($data['purchase_invoice']))) {
             echo json_encode(["title" => "Not Found", "message" => "Purchase Invoice No. " . $data['purchase_invoice'] . " & Account Number " . $data['account_number'] . " Not Found", "theme" => "error"]);
         
-        } elseif (!empty($purchase_data) && $purchase_data->status == "1") {
+        } elseif (!empty($purchase_data) && $purchase_data->status == "1" && strtolower($data['action']) !== 'update') {
             echo json_encode(["title" => "Duplicated", "message" => "Purchase Invoice No. " . $data['purchase_invoice'] . " has been processed previously (Closed)", "theme" => "error"]);
         
         } elseif (empty($data['payment_type']) || (strtoupper($data['payment_type']) !== "PURCHASE" && strtoupper($data['payment_type']) !== "OTHER")) {
@@ -1137,7 +1137,17 @@ class Ap_payments extends CI_Controller
             ];
 
             // CREATE (INSERT)
-            $send = $this->crud->create('ap_payments', $post);
+            if (strtoupper($data['action'] === "NEW")) {
+                $send = $this->crud->create('ap_payments', $post);
+            } else {
+                if (!empty($ap_payment)) {
+                    $whereParams = ["payment_no" => $post['payment_no'], "purchase_invoice" => $post["purchase_invoice"], "account_number" => $post['account_number']];
+                    $send = $this->crud->update('ap_payments', $whereParams, $post);
+                } else {
+                    $send = $this->crud->create('ap_payments', $post);
+                }
+            }
+            
             if ($send) {
                 if (!empty($post['purchase_invoice'])) {
                     // update status purchase to closed
