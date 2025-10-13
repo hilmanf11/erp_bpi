@@ -970,6 +970,468 @@ class Sales_invoices extends CI_Controller
         ]);
     }
 
+
+    // ---------- UPLOAD FUNCTIONS ------------
+    //UPLOAD DATA
+    public function upload()
+    {
+        header('Content-Type: application/json');
+
+        error_reporting(0);
+        require_once 'assets/vendors/excel_reader2.php';
+
+        try {
+            $target = basename($_FILES['file_upload']['name']);
+            
+            // Use a more robust check for file upload success
+            if (!move_uploaded_file($_FILES['file_upload']['tmp_name'], $target)) {
+                echo json_encode(["title" => "Error", "message" => "Failed to upload file.", "theme" => "error"]);
+                return;
+            }
+            
+            chmod($target, 0777);
+            $file = $target;
+            $data = new Spreadsheet_Excel_Reader($file, false);
+            $total_row = $data->rowcount($sheet_index = 0);
+            $datas = [];
+
+            for ($i = 4; $i <= $total_row; $i++) {
+                $datas[] = [
+                    //excel
+                    'number'              => preg_replace('/[^\x20-\x7E]/', '', $data->val($i, 2)),
+                    'customer_id'         => preg_replace('/[^\x20-\x7E]/', '', $data->val($i, 3)),
+                    'division_id'         => preg_replace('/[^\x20-\x7E]/', '', $data->val($i, 4)),
+                    'trans_date'          => preg_replace('/[^\x20-\x7E]/', '', $data->val($i, 5)),
+                    'journal_type_code'   => preg_replace('/[^\x20-\x7E]/', '', $data->val($i, 6)),
+                    'faktur_code'         => preg_replace('/[^\x20-\x7E]/', '', $data->val($i, 7)),
+                    'faktur_no'           => preg_replace('/[^\x20-\x7E]/', '', $data->val($i, 8)),
+                    'bc_no'               => preg_replace('/[^\x20-\x7E]/', '', $data->val($i, 9)),
+                    'payment_term'        => preg_replace('/[^\x20-\x7E]/', '', $data->val($i, 10)),
+                    'keterangan_tambahan' => preg_replace('/[^\x20-\x7E]/', '', $data->val($i, 11)),
+                    'cap_fasilitas'       => preg_replace('/[^\x20-\x7E]/', '', $data->val($i, 12)),
+                    'payment_to'          => preg_replace('/[^\x20-\x7E]/', '', $data->val($i, 13)),
+                    'remarks'             => preg_replace('/[^\x20-\x7E]/', '', $data->val($i, 14)),
+                    'delivery_note_no'    => preg_replace('/[^\x20-\x7E]/', '', $data->val($i, 15)),
+                    'sales_order_no'      => preg_replace('/[^\x20-\x7E]/', '', $data->val($i, 16)),
+                    'customer_order_no'   => preg_replace('/[^\x20-\x7E]/', '', $data->val($i, 17)),
+                    'item_no'             => preg_replace('/[^\x20-\x7E]/', '', $data->val($i, 18)),
+                    'item_name'           => preg_replace('/[^\x20-\x7E]/', '', $data->val($i, 19)),
+                    'qty'                 => preg_replace('/[^\x20-\x7E]/', '', $data->val($i, 20)),
+                    'uom'                 => preg_replace('/[^\x20-\x7E]/', '', $data->val($i, 21)),
+                    'currency'            => preg_replace('/[^\x20-\x7E]/', '', $data->val($i, 22)),
+                    'price'               => preg_replace('/[^\x20-\x7E]/', '', $data->val($i, 23)),
+                    'account_number'      => preg_replace('/[^\x20-\x7E]/', '', $data->val($i, 24)),
+                    'account_type'        => preg_replace('/[^\x20-\x7E]/', '', $data->val($i, 25)),
+                    'action'              => preg_replace('/[^\x20-\x7E]/', '', $data->val($i, 26)),
+                ];
+            }
+            
+            $response = [
+                'total' => count($datas),
+                'data' => $datas
+            ];
+            
+            echo json_encode($response);
+
+        } catch (Exception $e) {
+            // Handle upload errors gracefully
+            http_response_code(500); // Set HTTP status code for server error
+            echo json_encode(["title" => "Error", "message" => "Error upload file! " . $e->getMessage(), "theme" => "error"]);
+        } finally {
+            // Ensure the temporary file is deleted even if an error occurs
+            if (isset($target) && file_exists($target)) {
+                unlink($target);
+            }
+        }
+    }
+    
+    public function uploadclearFailed()
+    {
+        @unlink('failed/sales_invoices.txt');
+    }
+    public function uploadcreateFailed()
+    {
+        if ($this->input->post()) {
+            $message = $this->input->post('message');
+            $textFailed = fopen('failed/sales_invoices.txt', 'a');
+            fwrite($textFailed, $message . "\n");
+            fclose($textFailed);
+        }
+    }
+    //UPLOAD DOWNLOAD FAILED
+    public function uploadDownloadFailed()
+    {
+        $file = "failed/sales_invoices.txt";
+        header('Content-Description: File Failed');
+        header('Content-Disposition: attachment; filename=' . basename($file));
+        header('Expires: 0');
+        header('Cache-Control: must-revalidate');
+        header('Pragma: public');
+        header('Content-Length: ' . @filesize($file));
+        header("Content-Type: text/plain");
+        @readfile($file);
+    }
+
+    //UPLOAD CREATE DATA
+    public function uploadcreate()
+    {
+        if (!$this->input->post()) {
+            echo json_encode(["title" => "Error", "message" => "Invalid request method", "theme" => "error"]);
+            return;
+        }
+        
+        $data = $this->input->post('data');
+
+        $customers      = $this->crud->read('customers', ["id" => $data['customer_id']]);
+        $journal_types  = $this->crud->read('journal_types', ["number" => $data['journal_type_code']]);
+        $account_coa    = $this->crud->read('account_coa', ["account_number" => $data['account_number']]);
+        $divisions      = $this->crud->read('divisions', ["id" => $data['division_id']]);
+        $account_banks  = $this->db->select('*')->from('account_banks')->like('bank_account', trim($data['payment_to']), 'both')->get()->row();
+        $item_fg        = $this->db->select('*')->from('item_fg')->like('division_id', $data['division_id'])->like('number', $data['item_no'], 'both')->get()->row();
+        $item_fg_id     = !empty($item_fg) ? $item_fg->id : "";
+        $sales_invoices = $this->db->select('*')->from('sales_invoices')->where('number', $data['number'])->where('account_number', $data['account_number'])->like('delivery_note_no', $data['delivery_note_no'])->like('sales_order_no', $data['sales_order_no'])->like('price', $data['price'])->like('item_fg_id', $item_fg_id, 'both')->get()->row();
+        $delivery_notes = $this->db->select('*')->from('delivery_notes')->where('delivery_note_no', $data['delivery_note_no'])->like('sales_order_no', $data['sales_order_no'])->get()->row();
+
+        // Tambahkan validasi jika Sales Invoice No. sudah ada dari insert via Form bukan via upload (Bu Nina)
+        $this->db->select('*');
+        $this->db->from('sales_invoices');
+        $this->db->where('number', $data['number']);
+        $this->db->where('upload', null);
+        $this->db->where('upload_date', null);
+        $invoice_manual = $this->db->get()->result();
+        
+        $trans_date = $data['trans_date'];
+        $valid_date = ($d = DateTime::createFromFormat('Y-m-d', $trans_date)) && $d->format('Y-m-d') === $trans_date;
+        
+        // Validate required data
+        if (!empty($invoice_manual)) {
+            echo json_encode(["title" => "Duplicated", "message" => "Sales Invoice No " . $data['number'] . " is already exists. Please provide a unique number.", "theme" => "error"]);
+        
+        } elseif (empty($data['action']) || (strtolower($data['action']) !== "new" && strtolower($data['action']) !== "update")) {
+            echo json_encode(["title" => "Error", "message" => "ACTION must be NEW or UPDATE", "theme" => "error"]);
+        
+        } elseif (strtolower($data['action']) !== 'update' && !empty($sales_invoices) && strtoupper($sales_invoices->upload) === "YES") {
+            echo json_encode(["title" => "Duplicated", "message" => "Action=NEW and Sales Invoice No. " . $data['number'] . " is Duplicate Data", "theme" => "error"]);
+        
+        } elseif (!empty($sales_invoices) && $sales_invoices->status == "1" && strtolower($data['action']) !== 'update') {
+            echo json_encode(["title" => "Duplicated", "message" => "Sales Invoice No. " . $data['number'] . " has been processed previously (Closed)", "theme" => "error"]);
+        
+        } elseif ($data['delivery_note_no'] !== "-" && !empty($delivery_notes) && $delivery_notes->status == "1" && strtolower($data['action']) !== 'update') {
+            echo json_encode(["title" => "Duplicated", "message" => "Delivery Note No. " . $data['delivery_note_no'] . " has been processed previously (Closed)", "theme" => "error"]);
+        
+        } elseif (empty($data['account_type']) || (strtoupper($data['account_type']) !== "DEBIT" && strtoupper($data['account_type']) !== "CREDIT")) {
+            echo json_encode(["title" => "Error", "message" => "Account Type must be DEBIT or CREDIT", "theme" => "error"]);
+        
+        } elseif (empty($trans_date) || !$valid_date) {
+            echo json_encode(["title" => "Error", "message" => "Date format must be 'YYYY-MM-DD'", "theme" => "error"]);
+        
+        } elseif (empty($data['faktur_no']) || strlen($data['faktur_no']) !== 17) {
+            echo json_encode(["title" => "Error", "message" =>  "Faktur No. must be exactly 17 characters long!", "theme" => "error"]);
+        
+        } elseif (empty($customers)) {
+            echo json_encode(["title" => "Not Found", "message" => "Customer No " . $data['customer_id'] . " Not Found", "theme" => "error"]);
+        
+        } elseif (empty($journal_types)) {
+            echo json_encode(["title" => "Not Found", "message" => "Journal Type Code " . $data['journal_number'] . " Not Found", "theme" => "error"]);
+        
+        } elseif (empty($account_coa)) {
+            echo json_encode(["title" => "Not Found", "message" => "Account COA " . $data['account_number'] . " Not Found", "theme" => "error"]);
+        
+        } elseif (empty($divisions)) {
+            echo json_encode(["title" => "Not Found", "message" => "Division ID " . $data['division_id'] . " Not Found", "theme" => "error"]);
+        
+        } elseif (empty($account_banks)) {
+            echo json_encode(["title" => "Not Found", "message" => "Bank Account No. " . $data['bank_account'] . " Not Found", "theme" => "error"]);
+        
+        } else {
+            // Get SI number
+            $number_from_excel = $data['number'] ?? '-';
+            $existing_data = null;
+            if ($number_from_excel !== '-') {
+                $existing_data = $this->crud->read('sales_invoices', [], ["number" => $number_from_excel]);
+            }
+            
+            if (empty($number_from_excel) || $number_from_excel === '-') {
+                // KONDISI 1: Jika data dari excel kosong atau '-', buat nomor baru.
+                $customer_code = $customers->code;
+                $datenow    = "SI-" . $customer_code . date("Ym", strtotime(base64_decode($trans_date)));
+                $sqlGetID   = $this->db->query("SELECT max(`number`) as kode FROM sales_invoices WHERE `number` like '%$datenow%'");
+                $rowID      = $sqlGetID->row();
+                $kode       = $rowID->kode;
+                if ($kode == NULL) {
+                    $autoID = sprintf("%04s", $kode + 1);
+                } else {
+                    $urutan = (int) substr($kode, -4);
+                    $urutan++;
+                    $autoID = sprintf("%04s", $urutan);
+                }
+                
+                $number = $datenow . "-" . $autoID;
+
+            } elseif (!empty($existing_data)) {
+                // KONDISI 2: Jika number dari excel ada di database, gunakan yang sudah ada.
+                $number = $existing_data->number;
+
+            } else {
+                // KONDISI 3: Jika number dari excel tidak kosong dan tidak ada di database, gunakan nilai dari excel.
+                $number = $number_from_excel;
+            }
+
+            // Get Rate
+            $currency = $data['currency'];
+            $monthBf = date('Y-m-01', strtotime('-1 month', strtotime($data["trans_date"])));
+            $exchange = $this->crud->read('exchange_rates', [], ["start_date" => $monthBf, "currency_from" => $currency, "currency_to" => "IDR"]);
+            if ($currency != "IDR") {
+                if ($exchange) {
+                    $rate = $exchange->middle;
+                } else {
+                    $rate = (float)($data['rate'] ?? 1);
+                }
+            } else {
+                $rate = 1;
+            }
+
+            // Prepare data
+            $payment_term   = $customers->payment_term ?? $data["payment_term"];
+            $vat_rate       = $customers->taxes ?? 0;
+            $due_date       = date('Y-m-d', strtotime('+' . $customers->payment_term . ' days', strtotime($data['trans_date'])));
+            $payment_to     = $account_banks->bank_name ?? $data["payment_to"];
+            $price          = (float)($data['price'] ?? 0);
+            $qty            = (float)($data['qty'] ?? 0);
+            $discount_rate  = (float)($data['discount'] ?? 0);
+            $subtotal_item  = (float)$price * $qty;
+            $discount       = (float)$subtotal_item * ($discount_rate / 100);
+            $total          = (float)$subtotal_item - $discount;
+            $total_idr      = (float)$total * $rate;
+
+            $faktur_no      = $data['faktur_no'];
+            $faktur_code    = $data['faktur_code'] ?? "01";
+            $fp_pengganti   = "00"; // default
+            $kode_trans     = $faktur_code . $fp_pengganti;
+            $nomor_urut     = substr($data['faktur_no'], 6);
+
+            $dataFinal = [
+                "customer_id"           => $customers->id,
+                "item_fg_id"            => $item_fg_id ?? null,
+                "journal_type_id"       => $journal_types->id,
+                "number"                => $number,
+                "division"              => $divisions->id,
+                "trans_date"            => $trans_date ?? $data['trans_date'],
+                "due_date"              => $due_date,
+                "taxes"                 => $vat_rate,
+                "payment_term"          => $payment_term,
+                "payment_to"            => $payment_to,
+                "currency"              => $data['currency'] ?? "IDR",
+                "remarks"               => $data["remarks"] ?? "PI via Upload",
+                "fp_pengganti"          => $fp_pengganti,
+                "faktur_no"             => $faktur_no ?? null,
+                "faktur_code"           => $faktur_code ?? null,
+                "kode_trans"            => $kode_trans ?? null,
+                "kode_cabang"           => $data['kode_cabang'] ?? null,
+                "tahun_pemeriksaan"     => date('y'),
+                "country_name"          => $customers->country_name ?? null,
+                "bc1"                   => null,
+                "bc2"                   => null,
+                "bc3"                   => null,
+                "bc4"                   => date('Y'),
+                "bc_no"                 => $data['bc_no'] ?? null,
+                "keterangan_tambahan"   => $data['keterangan_tambahan'] ?? null,
+                "cap_fasilitas"         => $data['cap_fasilitas'] ?? null,
+                "no_urut"               => $nomor_urut ?? null,
+                "sales_order_no"        => $data['sales_order_no'],
+                "delivery_note_no"      => $data['delivery_note_no'],
+                "customer_order_no"     => $data['customer_order_no'],
+                "item_no"               => $data['item_no'],
+                "item_name"             => $item_fg->name ?? $data['item_name'],
+                "qty"                   => $qty ?? $data["qty"],
+                "uom"                   => $item_fg->uom ?? $data["uom"],
+                "price"                 => $price ?? $data["price"],
+                "discount"              => $discount,
+                "account_number"        => $data['account_number'],
+                "account_type"          => $data['account_type'],
+                "disc_pr"               => 0,
+                "disc_dp"               => 0,
+                "down_payment"          => 0,
+                "total_sub"             => 0,
+                "total_invoice"         => 0,
+                "total_discount"        => 0,
+                "total_vat"             => 0,
+                "total_pph"             => 0,
+                "total_grand"           => 0,
+                "total"                 => $total ?? $data['total'],
+                "total_local"           => $total_idr,
+                "upload"                => "YES",
+                "upload_date"           => date("Y-m-d"),
+            ];
+
+
+            // CREATE (INSERT)
+            if (strtoupper($data['action']) === "NEW") {
+                $send = $this->crud->create('sales_invoices', $dataFinal);
+            } else {
+                if (!empty($sales_invoices)) {
+                    $whereParams = ["number" => $dataFinal["number"], "account_number" => $dataFinal["account_number"], "delivery_note_no" => $dataFinal["delivery_note_no"], "sales_order_no" => $dataFinal["sales_order_no"], "item_fg_id" => $sales_invoices->item_fg_id];
+                    $send = $this->crud->update('sales_invoices', $whereParams, $dataFinal);
+                } else {
+                    $send = $this->crud->create('sales_invoices', $dataFinal);
+                }
+            }
+
+            if ($send) {
+                echo $send;
+            } else {
+                echo json_encode(["title" => "Error", "message" => "Failed to create invoice " . $data['number'], "theme" => "error"]);
+            }
+        }
+    }
+
+    public function uploadGetJournal()
+    {
+        $this->db->select('a.*, b.account_name');
+        $this->db->from('sales_invoices a');
+        $this->db->join('account_coa b', 'a.account_number = b.account_number');
+        $this->db->where('a.upload', "YES");
+        $this->db->where('a.upload_date', date("Y-m-d"));
+        $records = $this->db->get()->result_array();
+        
+        // Array untuk menyimpan hasil akhir
+        $journal_setup_map = [];
+        $allJournals = [];
+        $groupedInvoices = [];
+        
+        // Konversi Journal Setup ke dalam array asosiatif untuk akses cepat
+        $this->db->select('journal_setups.*, account_coa.account_name');
+        $this->db->from('journal_setups');
+        $this->db->join('account_coa', 'journal_setups.account_number = account_coa.account_number');
+        $journal_setups = $this->db->get()->result_array();
+        foreach ($journal_setups as $setup) {
+            $journal_setup_map[$setup['journal_type_id']][$setup['account_number']] = $setup;
+        }
+
+        // Kelompokkan data berdasarkan nomor invoice
+        foreach ($records as $record) {
+            $number = $record['number'];
+            if (!isset($groupedInvoices[$number])) {
+                $groupedInvoices[$number] = [
+                    'main_record' => $record,
+                    'items' => []
+                ];
+            }
+            $groupedInvoices[$number]['items'][] = $record;
+        }
+
+        // Proses setiap grup invoice
+        foreach ($groupedInvoices as $number => $group) {
+            $main_record = $group['main_record'];
+            $items = $group['items'];
+            $rate = (float)($main_record['rate'] ?? 1);
+            $journal_type_id = $main_record['journal_type_id'];
+
+            $mergedData = [];
+            $subTotal = 0;
+
+            // Hitung total dari semua item dan gabungkan entri
+            foreach ($items as $item) {
+                $total = (float)($item['total'] ?? 0);
+                $total_idr = (float)($item['total2'] ?? 0);
+                $subTotal += $total;
+
+                if (isset($mergedData[$item['account_number']])) {
+                    $mergedData[$item['account_number']]['debit'] += ($item['account_type'] == "DEBIT" ? $total : 0);
+                    $mergedData[$item['account_number']]['credit'] += ($item['account_type'] == "CREDIT" ? $total : 0);
+                } else {
+                    $mergedData[$item['account_number']] = [
+                        "number"         => $number,
+                        "account_number" => $item['account_number'],
+                        "account_name"   => $item['account_name'],
+                        "debit"          => ($item['account_type'] == "DEBIT" ? $total : 0),
+                        "credit"         => ($item['account_type'] == "CREDIT" ? $total : 0),
+                    ];
+                }
+            }
+
+            // Perhitungan VAT (Pajak)
+            $vatRate = (float)($main_record['taxes'] ?? 0) / 100;
+            $vatTotal = $subTotal * $vatRate;
+            $arrTotal = $subTotal + $vatTotal;
+            $localTotal = $arrTotal * $rate;
+            
+            // Jurnal untuk Akun Third Parties (Others) => Di DEBIT
+            $journalSetupAR = $journal_setup_map[$journal_type_id]['140.220.00'] ?? null;
+            if ($journalSetupAR) {
+                $debitAR = ($journalSetupAR['status'] == "DEBIT") ? $arrTotal : 0;
+                $creditAR = ($journalSetupAR['status'] == "CREDIT") ? $arrTotal : 0;
+                
+                $mergedData[$journalSetupAR['account_number']] = [
+                    "number"         => $number,
+                    "account_number" => $journalSetupAR['account_number'],
+                    "account_name"   => $journalSetupAR['account_name'],
+                    "debit"          => $debitAR,
+                    "credit"         => $creditAR,
+                ];
+            }
+
+            // Jurnal untuk Akun VAT (Pajak) => Di CREDIT
+            $journalSetupVAT = $journal_setup_map[$journal_type_id]['250.160.00'] ?? null;
+            if ($journalSetupVAT) {
+                $debitVAT = ($journalSetupVAT['status'] == "DEBIT") ? $vatTotal : 0;
+                $creditVAT = ($journalSetupVAT['status'] == "CREDIT") ? $vatTotal : 0;
+                
+                $mergedData[$journalSetupVAT['account_number']] = [
+                    "number"         => $number,
+                    "account_number" => $journalSetupVAT['account_number'],
+                    "account_name"   => $journalSetupVAT['account_name'],
+                    "debit"          => $debitVAT,
+                    "credit"         => $creditVAT,
+                ];
+            }
+
+            // Update total di tabel sales_invoices
+            $this->db->update('sales_invoices', [
+                "total_sub" => $subTotal,
+                "total_vat" => $vatTotal,
+                "total_pph" => 0, // PPH not calculated
+                "total_grand" => $arrTotal,
+                "total_local" => $localTotal
+            ], ["number" => $number]);
+
+            // Tambahkan hasil jurnal ke array utama
+            $flag_counter = 1;
+            foreach (array_values($mergedData) as $journalEntry) {
+                $journalEntry['flag'] = $flag_counter++;
+                $allJournals[] = $journalEntry;
+            }
+        }
+
+        // Respons JSON untuk JavaScript
+        $result = [
+            'total' => count($allJournals),
+            'data'  => $allJournals
+        ];
+
+        echo json_encode($result);
+    }
+
+    public function uploadCreateJournal()
+    {
+        if ($this->input->post()) {
+            $post = $this->input->post('data');
+            $sales_invoice_journals = $this->crud->read('sales_invoice_journals', [], ["number" => $post['number'], "account_number" => $post['account_number']]);
+
+            if (@$sales_invoice_journals->id != "") {
+                $send = $this->crud->update('sales_invoice_journals', ["number" => $post['number'], "account_number" => $post['account_number']], $post);
+                echo $send;
+            } else {
+                $send = $this->crud->create('sales_invoice_journals', $post);
+                echo $send;
+            }
+        } else {
+            show_error("Cannot Process your request");
+        }
+    }
+
+
+    // ------- PRINT FUNCTIONS ---------
     public function print_commercial($invoice_no)
     {
         $invoice_no = base64_decode($invoice_no);
