@@ -834,6 +834,7 @@ class Ar_receipts extends CI_Controller
                     'remark'           => preg_replace('/[^\x20-\x7E]/', '', $data->val($i, 15)),
                     'account_number'   => preg_replace('/[^\x20-\x7E]/', '', $data->val($i, 16)),
                     'account_type'     => preg_replace('/[^\x20-\x7E]/', '', $data->val($i, 17)),
+                    'action'           => preg_replace('/[^\x20-\x7E]/', '', $data->val($i, 18)),
                 );
             }
             
@@ -899,13 +900,42 @@ class Ar_receipts extends CI_Controller
         $sales_invoice = $this->crud->read('sales_invoices', [], ["number" => $data['sales_invoice'], "account_number" => $data['account_number']]);
         $account_banks = $this->db->select('*')->from('account_banks')->like('bank_account', trim($data['bank_account']), 'both')->get()->row();
 
+        // Tambahkan validasi jika Receipt No. sudah ada dari insert via Form bukan via upload (Bu Nina)
+        $this->db->select('*');
+        $this->db->from('ar_receipts');
+        $this->db->where('receipt_no', $data['receipt_no']);
+        $this->db->where('upload', null);
+        $this->db->where('upload_date', null);
+        $ar_receipt_manual = $this->db->get()->result();
+        
+        $trans_date = $data['receipt_date'];
+        $valid_date = ($d = DateTime::createFromFormat('Y-m-d', $trans_date)) && $d->format('Y-m-d') === $trans_date;
+
         // Validate required data
-        if (empty($data['receipt_type']) || (strtoupper($data['receipt_type']) !== "SALES" && strtoupper($data['receipt_type']) !== "OTHER")) {
+        if (!empty($ar_receipt_manual)) {
+            echo json_encode(["title" => "Duplicated", "message" => "Receipt No " . $data['receipt_no'] . " is already exists. Please provide a unique number.", "theme" => "error"]);
+        
+        } elseif (empty($data['action']) || (strtolower($data['action']) !== "new" && strtolower($data['action']) !== "update")) {
+            echo json_encode(["title" => "Error", "message" => "ACTION must be NEW or UPDATE", "theme" => "error"]);
+            
+        } elseif (strtolower($data['action']) !== 'update' && !empty($ar_receipt) && strtoupper($ar_receipt->upload) === "YES") {
+            echo json_encode(["title" => "Duplicated", "message" => "Action=NEW and Receipt No. " . $data['receipt_no'] . " is Duplicate Data", "theme" => "error"]);
+        
+        } elseif (empty($sales_invoice) && ($data['sales_invoice'] !== "-" && !empty($data['sales_invoice']))) {
+            echo json_encode(["title" => "Not Found", "message" => "Sales Invoice No. " . $data['sales_invoice'] . " & Account Number " . $data['account_number'] . " Not Found", "theme" => "error"]);
+        
+        } elseif (!empty($sales_invoice) && $sales_invoice->status === "1") {
+            echo json_encode(["title" => "Duplicated", "message" => "Sales Invoice No. " . $data['sales_invoice'] . " has been processed previously (Closed)", "theme" => "error"]);
+        
+        } elseif (empty($data['receipt_type']) || (strtoupper($data['receipt_type']) !== "SALES" && strtoupper($data['receipt_type']) !== "OTHER")) {
             echo json_encode(["title" => "Error", "message" => "Type must be SALES or OTHER", "theme" => "error"]);
         
         } elseif (empty($data['account_type']) || (strtoupper($data['account_type']) !== "DEBIT" && strtoupper($data['account_type']) !== "CREDIT")) {
             echo json_encode(["title" => "Error", "message" => "Account Type must be DEBIT or CREDIT", "theme" => "error"]);
-            
+                    
+        } elseif (empty($trans_date) || !$valid_date) {
+            echo json_encode(["title" => "Error", "message" => "Date format must be 'YYYY-MM-DD'", "theme" => "error"]);
+        
         } elseif (empty($customers)) {
             echo json_encode(["title" => "Not Found", "message" => "Customer No " . $data['customer_id'] . " Not Found", "theme" => "error"]);
         
@@ -917,9 +947,6 @@ class Ar_receipts extends CI_Controller
         
         } elseif (empty($account_banks)) {
             echo json_encode(["title" => "Not Found", "message" => "Bank Account No. " . $data['bank_account'] . " Not Found", "theme" => "error"]);
-            
-        } elseif (!empty($ar_receipt) && !empty($sales_invoice) && $sales_invoice->status == "1") {
-            echo json_encode(["title" => "Duplicated", "message" => "Sales Invoice No. " . $data['sales_invoice'] . " & Receipt No. " . $data['receipt_no'] . " has been processed previously (Closed)", "theme" => "error"]);
             
         } else {
             // Get AR Receipt number
@@ -1023,15 +1050,16 @@ class Ar_receipts extends CI_Controller
             // CREATE (INSERT)
             $send = $this->crud->create('ar_receipts', $post);
             if ($send) {
-                // update status sales to closed
-                if ($post['amount'] == $post['receipt']) {
-                    $this->crud->update('sales_invoices', ["number" => $post['sales_invoice'], "account_number" => $post['account_number']], ["status" => "1"]);
-                }
+                if (!empty($post['sales_invoice'])) {
+                    // update status sales invoice to closed
+                    if ($post['amount'] == $post['receipt']) {
+                        $this->crud->update('sales_invoices', ["number" => $post['sales_invoice']], ["status" => 1]);
+                    }
 
-                if ($post['balance'] == $post['receipt']) {
-                    $this->crud->update('ar_receipts', ["receipt_no" => $post['sales_invoice']], ["status_dp" => 1]);
+                    if ($post['balance'] == $post['receipt']) {
+                        $this->crud->update('ar_receipts', ["receipt_no" => $post['sales_invoice']], ["status_dp" => 1]);
+                    }
                 }
-
                 // send response to frontend
                 echo $send;
             } else {
@@ -1155,7 +1183,7 @@ class Ar_receipts extends CI_Controller
             $post = $this->input->post('data');
             $ar_receipt_journals = $this->crud->read('ar_receipt_journals', [], ["receipt_no" => $post['receipt_no'], "account_number" => $post['account_number'], "debit" => $post['debit'], "credit" => $post['credit']]);
 
-            if (@$ar_receipt_journals->id != "") {
+            if (!empty($ar_receipt_journals)) {
                 $send = $this->crud->update('ar_receipt_journals', ["receipt_no" => $post['receipt_no'], "account_number" => $post['account_number'], "debit" => $post['debit'], "credit" => $post['credit']], $post);
                 echo $send;
             } else {

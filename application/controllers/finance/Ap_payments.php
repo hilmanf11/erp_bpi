@@ -918,23 +918,23 @@ class Ap_payments extends CI_Controller
 
             for ($i = 4; $i <= $total_row; $i++) {
                 $datas[] = array(
-                    'payment_no'       => trim($data->val($i, 2)),
-                    'supplier_code'    => trim($data->val($i, 3)),
-                    'payment_type'     => trim($data->val($i, 4)),
-                    'payment_date'     => trim($data->val($i, 5)),
-                    'journal_number'   => trim($data->val($i, 6)),
-                    'bank_account'     => trim($data->val($i, 7)),
-                    'note'             => trim($data->val($i, 8)),
-                    'purchase_invoice' => trim($data->val($i, 9)),
-                    'supplier_invoice' => trim($data->val($i, 10)),
-                    'currency'         => trim($data->val($i, 11)),
-                    'amount'           => trim($data->val($i, 12)),
-                    'balance'          => trim($data->val($i, 13)),
-                    'payment'          => trim($data->val($i, 14)),
-                    'remark'           => trim($data->val($i, 15)),
-                    'account_number'   => trim($data->val($i, 16)),
-                    'account_type'     => trim($data->val($i, 17)),
-                    'action'           => trim($data->val($i, 18)),
+                    'payment_no'       => preg_replace('/[^\x20-\x7E]/', '', $data->val($i, 2)),
+                    'supplier_code'    => preg_replace('/[^\x20-\x7E]/', '', $data->val($i, 3)),
+                    'payment_type'     => preg_replace('/[^\x20-\x7E]/', '', $data->val($i, 4)),
+                    'payment_date'     => preg_replace('/[^\x20-\x7E]/', '', $data->val($i, 5)),
+                    'journal_number'   => preg_replace('/[^\x20-\x7E]/', '', $data->val($i, 6)),
+                    'bank_account'     => preg_replace('/[^\x20-\x7E]/', '', $data->val($i, 7)),
+                    'note'             => preg_replace('/[^\x20-\x7E]/', '', $data->val($i, 8)),
+                    'purchase_invoice' => preg_replace('/[^\x20-\x7E]/', '', $data->val($i, 9)),
+                    'supplier_invoice' => preg_replace('/[^\x20-\x7E]/', '', $data->val($i, 10)),
+                    'currency'         => preg_replace('/[^\x20-\x7E]/', '', $data->val($i, 11)),
+                    'amount'           => preg_replace('/[^\x20-\x7E]/', '', $data->val($i, 12)),
+                    'balance'          => preg_replace('/[^\x20-\x7E]/', '', $data->val($i, 13)),
+                    'payment'          => preg_replace('/[^\x20-\x7E]/', '', $data->val($i, 14)),
+                    'remark'           => preg_replace('/[^\x20-\x7E]/', '', $data->val($i, 15)),
+                    'account_number'   => preg_replace('/[^\x20-\x7E]/', '', $data->val($i, 16)),
+                    'account_type'     => preg_replace('/[^\x20-\x7E]/', '', $data->val($i, 17)),
+                    'action'           => preg_replace('/[^\x20-\x7E]/', '', $data->val($i, 18)),
                 );
             }
 
@@ -1024,6 +1024,9 @@ class Ap_payments extends CI_Controller
         
         } elseif (strtolower($data['action']) !== 'update' && !empty($ap_payment) && strtoupper($ap_payment->upload) === "YES") {
             echo json_encode(["title" => "Duplicated", "message" => "Action=NEW and Payment No. " . $data['payment_no'] . " is Duplicate Data", "theme" => "error"]);
+        
+        } elseif (empty($purchase_data) && ($data['purchase_invoice'] !== "-" && !empty($data['purchase_invoice']))) {
+            echo json_encode(["title" => "Not Found", "message" => "Purchase Invoice No. " . $data['purchase_invoice'] . " & Account Number " . $data['account_number'] . " Not Found", "theme" => "error"]);
         
         } elseif (!empty($purchase_data) && $purchase_data->status == "1") {
             echo json_encode(["title" => "Duplicated", "message" => "Purchase Invoice No. " . $data['purchase_invoice'] . " has been processed previously (Closed)", "theme" => "error"]);
@@ -1136,13 +1139,15 @@ class Ap_payments extends CI_Controller
             // CREATE (INSERT)
             $send = $this->crud->create('ap_payments', $post);
             if ($send) {
-                // update status purchase to closed
-                if ($post['amount'] == $post['payment']) {
-                    $this->crud->update('purchase_invoices', ["number" => $post['purchase_invoice'], "account_number" => $post['account_number']], ["status" => "1"]);
-                }
+                if (!empty($post['purchase_invoice'])) {
+                    // update status purchase to closed
+                    if ($post['amount'] == $post['payment']) {
+                        $this->crud->update('purchase_invoices', ["number" => $post['purchase_invoice'], "account_number" => $post['account_number']], ["status" => "1"]);
+                    }
 
-                if ($post['balance'] == $post['payment']) {
-                    $this->crud->update('ap_payments', ["payment_no" => $post['purchase_invoice']], ["status_dp" => 1]);
+                    if ($post['balance'] == $post['payment']) {
+                        $this->crud->update('ap_payments', ["payment_no" => $post['purchase_invoice']], ["status_dp" => 1]);
+                    }
                 }
 
                 // send response to frontend
