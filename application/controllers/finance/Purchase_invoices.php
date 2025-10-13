@@ -1283,13 +1283,14 @@ class Purchase_invoices extends CI_Controller
                     'po_no'             => trim($data->val($i, 13)),
                     'item_no'           => trim($data->val($i, 14)),
                     'item_name'         => trim($data->val($i, 15)),
-                    'uom'               => trim($data->val($i, 16)),
-                    'qty'               => trim($data->val($i, 17)),
+                    'qty'               => trim($data->val($i, 16)),
+                    'uom'               => trim($data->val($i, 17)),
                     'currency'          => trim($data->val($i, 18)),
                     'price'             => trim($data->val($i, 19)),
                     'rate'              => trim($data->val($i, 20)),
                     'account_number'    => trim($data->val($i, 21)),
                     'account_type'      => trim($data->val($i, 22)),
+                    'action'            => trim($data->val($i, 23)),
                 ];
             }
             
@@ -1345,22 +1346,49 @@ class Purchase_invoices extends CI_Controller
         if ($this->input->post()) {
             $data = $this->input->post('data');
 
-            $purchase_invoices = $this->crud->read('purchase_invoices', ["number" => $data['number'], "po_no" => $data['po_no'], "invoice_no" => $data['invoice_no']]);
             $supplier     = $this->crud->read('suppliers', ["id" => $data['supplier_id']]);
             $category     = $this->crud->read('item_categories', ["id" => $data['category_id']]);
             $journal_type = $this->crud->read('journal_types', ["number" => $data['journal_type_code']]);
             $account_coa  = $this->crud->read('account_coa', ["account_number" => $data['account_number']]);
             $item_rm      = $this->crud->read('item_rm', ["number" => $data['item_no']]);
-            $valid_date   = ($d = DateTime::createFromFormat('Y-m-d', $data['trans_date'])) && $d->format('Y-m-d') === $data['trans_date'];          
+            $item_rm_id   = !empty($item_rm) ? $item_rm->id : "";
+            $purchase_invoices = $this->db->select('*')->from('purchase_invoices')->where('number', $data['number'])->where('po_no', $data['po_no'])->where('account_number', $data['account_number'])->like('price', $data['price'])->like('item_rm_id', $item_rm_id, 'both')->get()->row();
+            $purchase_receipts = $this->db->select('*')->from('purchase_order_receipts')->where('receipt_no', $data['por_no'])->where('po_no', $data['po_no'])->where('supplier_id', $data['supplier_id'])->like('item_rm_id', $item_rm_id, 'both')->get()->row();
+            
+            // Tambahkan validasi jika Purchase Invoice No. sudah ada dari insert via Form bukan via upload (Bu Nina)
+            $this->db->select('*');
+            $this->db->from('purchase_invoices');
+            $this->db->where('number', $data['number']);
+            $this->db->where('upload', null);
+            $this->db->where('upload_date', null);
+            $invoice_manual = $this->db->get()->result();
+            
+            $trans_date = $data['trans_date'];
+            $valid_date = ($d = DateTime::createFromFormat('Y-m-d', $trans_date)) && $d->format('Y-m-d') === $trans_date;
             
             // Validate required data
-            if (empty($data['type']) || (strtoupper($data['type']) !== "PURCHASE" && strtoupper($data['type']) !== "OTHER")) {
+            if (!empty($invoice_manual)) {
+                echo json_encode(["title" => "Duplicated", "message" => "Purchase Invoice No " . $data['number'] . " is already exists. Please provide a unique number.", "theme" => "error"]);
+            
+            } elseif (empty($data['action']) || (strtolower($data['action']) !== "new" && strtolower($data['action']) !== "update")) {
+                echo json_encode(["title" => "Error", "message" => "ACTION must be NEW or UPDATE", "theme" => "error"]);
+            
+            } elseif (strtolower($data['action']) !== 'update' && !empty($purchase_invoices) && strtoupper($purchase_invoices->upload) === "YES") {
+                echo json_encode(["title" => "Duplicated", "message" => "Action=NEW and Purchase Invoice No. " . $data['number'] . " is Duplicate Data", "theme" => "error"]);
+            
+            } elseif (!empty($purchase_invoices) && $purchase_invoices->status == "1") {
+                echo json_encode(["title" => "Duplicated", "message" => "Purchase Invoice No. " . $data['number'] . " has been processed previously (Closed)", "theme" => "error"]);
+            
+            } elseif ($data['por_no'] !== "-" && !empty($purchase_receipts) && $purchase_receipts->status == "1") {
+                echo json_encode(["title" => "Duplicated", "message" => "Purchase Order Receipt No. " . $data['por_no'] . " has been processed previously (Closed)", "theme" => "error"]);
+            
+            } elseif (empty($data['type']) || (strtoupper($data['type']) !== "PURCHASE" && strtoupper($data['type']) !== "OTHER")) {
                 echo json_encode(["title" => "Error", "message" => "Type must be PURCHASE or OTHER", "theme" => "error"]);
                 
             } elseif (empty($data['account_type']) || (strtoupper($data['account_type']) !== "DEBIT" && strtoupper($data['account_type']) !== "CREDIT")) {
                 echo json_encode(["title" => "Error", "message" => "Account Type must be DEBIT or CREDIT", "theme" => "error"]);
                 
-            } elseif (empty($data['trans_date']) || !$valid_date) {
+            } elseif (empty($trans_date) || !$valid_date) {
                 echo json_encode(["title" => "Error", "message" => "Date format must be 'YYYY-MM-DD'", "theme" => "error"]);
                 
             } elseif (empty($supplier->id)) {
@@ -1376,7 +1404,7 @@ class Purchase_invoices extends CI_Controller
                 echo json_encode(["title" => "Not Found", "message" => "Journal Type " . $data['journal_type_code'] . " is Not Found", "theme" => "error"]);
                 
             } elseif (!empty($purchase_invoices) && $data["por_no"] !== "-" && $data["po_no"] !== "-") {
-                echo json_encode(["title" => "Duplicated", "message" => "Purchase Invoice No " . $data['number'] . " & PO No " . $data['po_no'] . " has been processed previously.", "theme" => "error"]);
+                echo json_encode(["title" => "Duplicated", "message" => "Purchase Invoice No. " . $data['number'] . " & Receipt No. " . $data['por_no'] . " & PO No. " . $data['po_no'] . " has been processed previously (Closed)", "theme" => "error"]);
                 
             } else {
                 // Get PI number
@@ -1471,7 +1499,16 @@ class Purchase_invoices extends CI_Controller
                 
 
                 // CREATE (INSERT)
-                $send = $this->crud->create('purchase_invoices', $dataFinal);
+                if (strtoupper($data['action']) === "NEW") {
+                    $send = $this->crud->create('purchase_invoices', $dataFinal);
+                } else {
+                    if (!empty($purchase_invoices)) {
+                        $send = $this->crud->update('purchase_invoices', ["number" => $dataFinal['number']], $dataFinal);
+                    } else {
+                        $send = $this->crud->create('purchase_invoices', $dataFinal);
+                    }
+                }
+
                 if ($send) {
                     echo $send;
                 } else {

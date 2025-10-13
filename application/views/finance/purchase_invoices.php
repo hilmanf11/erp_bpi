@@ -2833,19 +2833,36 @@
         });
     });
     
+
+    // DETAILS
     function btnDetails(val, row) {
+        return `<a class="btn btn-primary w-100 btn-details" data-id="${row.id}" data-number="${row.number || ''}" style="pointer-events: visible; opacity:1;">
+                    <i class="fa fa-eye"></i> View
+                </a>`;
+    }
+    // Tambahkan event listener setelah tombol dirender
+    $(document).on('click', '.btn-details', function () {
+        var id = $(this).data('id');
+        var number = $(this).data('number');
+        details(id, number);
+    });
+
+    function btnDetails_backup(val, row) {
         var details = "viewDetails('" + row.number + "')";
         return '<a class="btn btn-primary w-100" onClick="' + details + '" style="pointer-events: visible; opacity:1;"><i class="fa fa-eye"></i> View</a>';
     }
     
     //Detail Data
-    function viewDetails(number) {        
+    function details(id, number) {
+        console.log("Number: ", number);
+    
+        // function viewDetails(number) {        
         $("#d_number").textbox('disable');
         $("#d_number").textbox('setValue', number);
 
         formMode = 'detail';
         var row = $('#dg').datagrid('getSelected');
-        console.log("Data Loaded:",row);
+        // console.log("Data Loaded:",row);
         if (row) {
             $('#dlg_detail').dialog('open');
             $("#dlg_detail").window('setTitle', "Detail of " + row.number);
