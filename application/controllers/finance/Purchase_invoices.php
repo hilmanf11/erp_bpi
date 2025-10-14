@@ -1256,7 +1256,8 @@ class Purchase_invoices extends CI_Controller
             
             // Use a more robust check for file upload success
             if (!move_uploaded_file($_FILES['file_upload']['tmp_name'], $target)) {
-                throw new Exception("Failed to upload file.");
+                echo json_encode(["title" => "Error", "message" => "Failed to upload file.", "theme" => "error"]);
+                return;
             }
             
             chmod($target, 0777);
@@ -1303,7 +1304,7 @@ class Purchase_invoices extends CI_Controller
         } catch (Exception $e) {
             // Handle upload errors gracefully
             http_response_code(500); // Set HTTP status code for server error
-            echo json_encode(['error' => $e->getMessage()]);
+            echo json_encode(["title" => "Error", "message" => "Error upload file! " . $e->getMessage(), "theme" => "error"]);
         } finally {
             // Ensure the temporary file is deleted even if an error occurs
             if (isset($target) && file_exists($target)) {

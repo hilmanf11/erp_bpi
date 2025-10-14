@@ -494,27 +494,24 @@ class Ap_payments extends CI_Controller
     //     echo $datenow . "-" . $autoID;
     // }
 
-    public function number($trans_date, $bank_code = null)
+    public function number($trans_date, $bank_code)
     {
-        if (!empty($trans_date) && !empty($bank_code)) {
-            $decoded_date = base64_decode($trans_date);
-            $year = date("y", strtotime($decoded_date));
-            $month = date("m", strtotime($decoded_date));
-            // $bank_code = base64_decode($bank_code);
-            $datenow    = $bank_code."/".$month."-".$year."/"."K";
-            $sqlGetID   = $this->db->query("SELECT max(`payment_no`) as kode FROM ap_payments WHERE `payment_no` like '%$datenow%'");
-            $rowID      = $sqlGetID->row();
-            $kode       = $rowID->kode;
-            if ($kode == NULL) {
-                $autoID = sprintf("%03s", $kode + 1);
-            } else {
-                $urutan = (int) substr($kode, 0, 3);
-                $urutan++;
-                $autoID = sprintf("%03s", $urutan);
-            }
-            echo $autoID."/".$datenow;
+        $decoded_date = base64_decode($trans_date);
+        $year = date("y", strtotime($decoded_date));
+        $month = date("m", strtotime($decoded_date));
+        // $bank_code = base64_decode($bank_code);
+        $datenow    = $bank_code."/".$month."-".$year."/"."K";
+        $sqlGetID   = $this->db->query("SELECT max(`payment_no`) as kode FROM ap_payments WHERE `payment_no` like '%$datenow%'");
+        $rowID      = $sqlGetID->row();
+        $kode       = $rowID->kode;
+        if ($kode == NULL) {
+            $autoID = sprintf("%03s", $kode + 1);
+        } else {
+            $urutan = (int) substr($kode, 0, 3);
+            $urutan++;
+            $autoID = sprintf("%03s", $urutan);
         }
-        echo ""; // if trans_date or bank_code is not choosed
+        echo $autoID."/".$datenow;
     }
 
     public function datatablesTemp()
@@ -895,6 +892,9 @@ class Ap_payments extends CI_Controller
         echo $send;
     }
 
+
+    // ---------- UPLOAD FUNCTIONS ------------
+    //UPLOAD DATA
     public function upload()
     {
         header('Content-Type: application/json');
@@ -907,7 +907,7 @@ class Ap_payments extends CI_Controller
 
             if (!move_uploaded_file($_FILES['file_upload']['tmp_name'], $target)) {
                 echo json_encode(["title" => "Error", "message" => "Failed to upload file.", "theme" => "error"]);
-                return;    
+                return;
             }
 
             chmod($target, 0777);
@@ -950,7 +950,7 @@ class Ap_payments extends CI_Controller
         } catch (Exception $e) {
             // Handle upload errors gracefully
             http_response_code(500); // Set HTTP status code for server error
-            echo json_encode(['error' => $e->getMessage()]);
+            echo json_encode(["title" => "Error", "message" => "Error upload file! " . $e->getMessage(), "theme" => "error"]);
         } finally {
             // Ensure the temporary file is deleted even if an error occurs
             if (isset($target) && file_exists($target)) {
@@ -1411,6 +1411,8 @@ class Ap_payments extends CI_Controller
         }
     }
 
+
+    // ------- PRINT FUNCTIONS ---------
     public function print_voucher($payment)
     {
         $payment_no = base64_decode($payment);
