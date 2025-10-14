@@ -26,10 +26,10 @@
             <th rowspan="2" data-options="field:'depreciation_acc',width:100,halign:'center',align:'right', formatter:priceformat">Accumulation<br>Depreciation</th>
             <th rowspan="2" data-options="field:'book_value',width:100,halign:'center',align:'right', formatter:priceformat">Book<br>Value</th>
             <th rowspan="2" data-options="field:'method',width:100,halign:'center'">Depreciation<br>Method</th>
-            <th rowspan="2" data-options="field:'department',width:100,halign:'center'">Current Department</th>
-            <th rowspan="2" data-options="field:'location',width:100,halign:'center'">Current Location</th>
-            <th rowspan="2" data-options="field:'previous_department',width:150,halign:'center'">Previous Department</th>
-            <th rowspan="2" data-options="field:'previous_location',width:150,halign:'center'">Previous Location</th>
+            <th rowspan="2" data-options="field:'department',width:120,halign:'center'">Current <br>Department</th>
+            <th rowspan="2" data-options="field:'location',width:120,halign:'center'">Current <br>Location</th>
+            <th rowspan="2" data-options="field:'previous_department',width:120,halign:'center'">Previous <br>Department</th>
+            <th rowspan="2" data-options="field:'previous_location',width:120,halign:'center'">Previous <br>Location</th>
             <th rowspan="2" data-options="field:'status_expired',width:100,align:'center',formatter:statusformat,styler:statusStyle">Status</th>
             <th colspan="2" data-options="field:'',width:100,halign:'center'"> Created</th>
             <th colspan="2" data-options="field:'',width:100,halign:'center'"> Updated</th>

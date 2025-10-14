@@ -271,20 +271,22 @@ class Fixed_assets extends CI_Controller
         $filter_estimate    = $filter_list["filter_estimate"];
         $filter_purchase_invoice_number = $filter_list["filter_purchase_invoice_number"];
         $filter_supplier    = $filter_list["filter_supplier"];
+
+        $period_expired = !empty($filter_to) ? $filter_to : date('Y-m-d');
         
         $this->db->select("a.*, 
             COALESCE(b.name, f.name) as asset_family_name,
             coa.account_number,
             coa.account_name,
             jp.number as posting_no,
-            COALESCE(b.type, coa.account_name) as asset_category_type,
-            PERIOD_DIFF(DATE_FORMAT('$filter_to', '%Y%m'), DATE_FORMAT(a.trans_date, '%Y%m')) AS qty_month, 
-            (COALESCE(c.depreciation_acc, 0) + a.depreciation_accumulate) as depreciation_acc,
-            (a.cost - (COALESCE(c.depreciation_acc, 0) + a.depreciation_accumulate)) as book_value,
-            (CASE WHEN (a.cost - (COALESCE(c.depreciation_acc, 0) + a.depreciation_accumulate)) > 0 THEN 0 ELSE 1 END) as status_expired");
+            COALESCE(b.type, coa.account_name) as asset_category_type");
+        $this->db->select("PERIOD_DIFF(DATE_FORMAT('$filter_to', '%Y%m'), DATE_FORMAT(a.trans_date, '%Y%m')) + 1 AS qty_month"); // -- Menghitung jumlah bulan sejak tanggal transaksi
+        $this->db->select("(a.depreciation * (PERIOD_DIFF(DATE_FORMAT('$filter_to', '%Y%m'), DATE_FORMAT(a.trans_date, '%Y%m')) + 1)) as depreciation_acc"); // -- Mengalikan nominal depresiasi dengan jumlah bulan yang dihitung
+        $this->db->select("(a.cost - (a.depreciation * (PERIOD_DIFF(DATE_FORMAT('$filter_to', '%Y%m'), DATE_FORMAT(a.trans_date, '%Y%m')) + 1))) as book_value"); // -- Menghitung nilai pembukuan dengan akumulasi depresiasi yang baru
+        $this->db->select("(CASE WHEN (a.cost - (a.depreciation * (PERIOD_DIFF(DATE_FORMAT('$period_expired', '%Y%m'), DATE_FORMAT(a.trans_date, '%Y%m')) + 1))) > 0 THEN 0 ELSE 1 END) as status_expired"); // -- Menentukan status expired
         $this->db->from('asset_fixeds a');
         $this->db->join('asset_categories b', 'a.asset_category_number = b.number', 'left');
-        $this->db->join("(SELECT asset_no, SUM(debit) as depreciation_acc FROM asset_journals WHERE periode BETWEEN '$filter_financial_period_from' and '$filter_financial_period_to' GROUP BY asset_no) c", 'a.number = c.asset_no', 'left');
+        // $this->db->join("(SELECT asset_no, SUM(debit) as depreciation_acc FROM asset_journals WHERE periode BETWEEN '$filter_financial_period_from' and '$filter_financial_period_to' GROUP BY asset_no) c", 'a.number = c.asset_no', 'left');
         $this->db->join('item_familys f', 'a.item_family_id = f.id'); // Product Family
         $this->db->join('account_coa coa', 'f.account_number = coa.account_number', 'left'); // Product Category by Product Family
         $this->db->join('journal_postings jp', 'a.purchase_invoice_number = jp.document_no', 'left');
