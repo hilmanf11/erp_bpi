@@ -1125,9 +1125,6 @@ class Sales_invoices extends CI_Controller
         } elseif (empty($trans_date) || !$valid_date) {
             echo json_encode(["title" => "Error", "message" => "Date format must be 'YYYY-MM-DD'", "theme" => "error"]);
         
-        } elseif (empty($data['faktur_no']) || strlen($data['faktur_no']) !== 17) {
-            echo json_encode(["title" => "Error", "message" =>  "Faktur No. must be exactly 17 characters long!", "theme" => "error"]);
-        
         } elseif (empty($customers)) {
             echo json_encode(["title" => "Not Found", "message" => "Customer No " . $data['customer_id'] . " Not Found", "theme" => "error"]);
         
@@ -1204,11 +1201,11 @@ class Sales_invoices extends CI_Controller
             $total          = (float)$subtotal_item - $discount;
             $total_idr      = (float)$total * $rate;
 
-            $faktur_no      = $data['faktur_no'];
+            $faktur_no      = $data['faktur_no'] ?? null;
             $faktur_code    = $data['faktur_code'] ?? "01";
             $fp_pengganti   = "00"; // default
             $kode_trans     = $faktur_code . $fp_pengganti;
-            $nomor_urut     = substr($data['faktur_no'], 6);
+            $nomor_urut     = !empty($data['faktur_no']) ? substr($data['faktur_no'], 6) : null;
 
             $dataFinal = [
                 "customer_id"           => $customers->id,
@@ -1392,6 +1389,7 @@ class Sales_invoices extends CI_Controller
                 "total_vat" => $vatTotal,
                 "total_pph" => 0, // PPH not calculated
                 "total_grand" => $arrTotal,
+                "total_invoice" => $arrTotal,
                 "total_local" => $localTotal
             ], ["number" => $number]);
 
