@@ -24,7 +24,7 @@
             <div style="width: 50%; float: left;">
                 <div class="fitem" hidden>
                     <span style="width:35%; display:inline-block;">Currency</span>
-                    <input style="width:60%;" id="filter_currency" class="easyui-combobox">
+                    <input style="width:60%;" id="filter_currency" class="easyui-combogrid">
                 </div>
                 <div class="fitem" hidden>
                     <span style="width:35%; display:inline-block;">Payment</span>
@@ -56,7 +56,7 @@
         var filter_from = $("#filter_from").datebox("getValue");
         var filter_to = $("#filter_to").datebox("getValue");
         var filter_customer = $("#filter_customer").combobox("getValue");
-        var filter_currency = $("#filter_currency").combobox("getValue");
+        var filter_currency = $("#filter_currency").combogrid("getValue");
         var filter_status = $("#filter_status").combobox("getValue");
         var filter_display = $("#filter_display").combobox("getValue");
         var filter_sales_invoice = $("#filter_sales_invoice").combobox("getValue");
@@ -81,7 +81,7 @@
         var filter_from = $("#filter_from").datebox("getValue");
         var filter_to = $("#filter_to").datebox("getValue");
         var filter_customer = $("#filter_customer").combobox("getValue");
-        var filter_currency = $("#filter_currency").combobox("getValue");
+        var filter_currency = $("#filter_currency").combogrid("getValue");
         var filter_status = $("#filter_status").combobox("getValue");
         var filter_display = $("#filter_display").combobox("getValue");
         var filter_sales_invoice = $("#filter_sales_invoice").combobox("getValue");
@@ -122,7 +122,7 @@
             }],
             onSelect: function(row){
                 $("#filter_sales_invoice").combobox({
-                    url: '<?php echo base_url('finance/report_ar/readSi/'); ?>' + row.id,
+                    url: '<?php echo base_url('finance/report_ar/readSi/'); ?>' + window.btoa(row.id),
                     valueField: 'number',
                     textField: 'number',
                     prompt: 'Choose Sales Invoice',
@@ -136,19 +136,36 @@
             }
         });
 
-        $('#filter_currency').combobox({
-            url: '<?php echo base_url('master/currencies/reads'); ?>',
+        $("#filter_currency").combogrid({
+            url: '<?= base_url('master/currencies/reads') ?>',
             valueField: 'number',
-            textField: 'name',
-            prompt: 'Choose Currency',
+            textField: 'number',
+            prompt: "Choose Currencies",
             icons: [{
                 iconCls: 'icon-clear',
                 handler: function(e) {
-                    $(e.data.target).combobox('clear').combobox('textbox').focus();
+                    $(e.data.target).combogrid('clear').combogrid('textbox').focus();
                 }
             }],
+            columns: [
+                [{
+                    field: 'name',
+                    title: 'ID',
+                    width: 40,
+                }, {
+                    field: 'description',
+                    title: 'Description',
+                    width: 120,
+                }, ]
+            ],
+            onSelect: function (index, row) {
+                if (row.name != null) {
+                    $("#filter_currency").combogrid('setValue', row.name);
+                }
+            }
         });
     });
+
     //Format Datepicker
     function myformatter(date) {
         var y = date.getFullYear();

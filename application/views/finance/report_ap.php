@@ -22,7 +22,7 @@
                 </div>
             </div>
             <div style="width: 50%; float: left;">
-                <div class="fitem">
+                <div class="fitem" hidden>
                     <span style="width:35%; display:inline-block;">Currency</span>
                     <input style="width:60%;" id="filter_currency" class="easyui-combogrid">
                 </div>
