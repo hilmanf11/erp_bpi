@@ -12,7 +12,7 @@ class Report_ap extends CI_Controller
         $this->load->library('session');
         $this->load->model('crud');
         //Validasi Form
-        $this->form_validation->set_rules('item_id', 'Product No', 'required|min_length[1]|max_length[50]');
+        // $this->form_validation->set_rules('payment_no', 'Payment No', 'required|min_length[1]|max_length[50]');
     }
 
     public function index()
