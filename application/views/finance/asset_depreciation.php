@@ -146,16 +146,15 @@
 
             Swal.update({
                 title: 'Processing Data',
-                html: `Processing <b id="p_start">1</b> of <b id="p_finish">${total}</b>...<br><br>
-                    <div style="width: 80%; margin: 0 auto;"><div id="p_upload" class="easyui-progressbar" style="width: 100%;"></div></div><br>
-                    <b style='color: green;'>Success: <span id="p_success">0</span></b> | 
-                    <b style='color: red;'>Failed: <span id="p_failed">0</span></b><br><br>
-                    <div style="max-height: 200px; overflow-y: auto; border: 1px solid #ccc; padding: 5px;" id="p_remarks"></div>`,
+                html: `Processing <b id="p_start_swal">1</b> of <b id="p_finish_swal">${total}</b>...<br><br>
+                    <div style="width: 80%; margin: 0 auto;"><div id="p_upload_swal" class="easyui-progressbar" style="width: 100%;"></div></div><br>
+                    <div style="max-height: 200px; overflow-y: auto; border: 1px solid #fff; padding: 5px;" id="p_remarks_swal"></div>`,
                 allowOutsideClick: false
             });
 
             // Inisialisasi progressbar
             $('#p_upload').progressbar();
+            $('#p_upload_swal').progressbar();
 
             for (let i = 0; i < total; i++) {
                 let itemData = json[i];
@@ -163,7 +162,10 @@
 
                 // Perbarui UI progressbar
                 $('#p_upload').progressbar('setValue', value);
+                $('#p_upload_swal').progressbar('setValue', value);
+
                 $('#p_start').html(i + 1);
+                $('#p_start_swal').html(i + 1);
 
                 let message_title = '';
 

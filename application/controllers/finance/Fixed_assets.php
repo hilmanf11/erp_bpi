@@ -100,6 +100,7 @@ class Fixed_assets extends CI_Controller
         $this->db->select("a.id as number, a.name as name");
         $this->db->from('item_familys a');
         $this->db->join('asset_fixeds b', 'b.item_family_id = a.id');
+        $this->db->group_by('a.id');
         $data = $this->db->get()->result();
         echo json_encode($data);
     }
@@ -286,7 +287,7 @@ class Fixed_assets extends CI_Controller
         $this->db->select("(CASE WHEN (a.cost - (a.depreciation * (PERIOD_DIFF(DATE_FORMAT('$period_expired', '%Y%m'), DATE_FORMAT(a.trans_date, '%Y%m')) + 1))) > 0 THEN 0 ELSE 1 END) as status_expired"); // -- Menentukan status expired
         $this->db->from('asset_fixeds a');
         $this->db->join('asset_categories b', 'a.asset_category_number = b.number', 'left');
-        // $this->db->join("(SELECT asset_no, SUM(debit) as depreciation_acc FROM asset_journals WHERE periode BETWEEN '$filter_financial_period_from' and '$filter_financial_period_to' GROUP BY asset_no) c", 'a.number = c.asset_no', 'left');
+        // $this->db->join("(SELECT asset_no, SUM(debit) as depreciation_acc FROM asset_journals WHERE periode BETWEEN '$filter_from' and '$filter_to' GROUP BY asset_no) c", 'a.number = c.asset_no', 'left');
         $this->db->join('item_familys f', 'a.item_family_id = f.id'); // Product Family
         $this->db->join('account_coa coa', 'f.account_number = coa.account_number', 'left'); // Product Category by Product Family
         $this->db->join('journal_postings jp', 'a.purchase_invoice_number = jp.document_no', 'left');
