@@ -67,7 +67,7 @@
     }
     $(function() {
         $('#filter_month').combobox({
-            url: '<?php echo base_url('finance/foreign_currencies/readMonths'); ?>',
+            url: '<?php echo base_url('finance/report_cogs/readMonths'); ?>',
             valueField: 'id',
             textField: 'name',
             prompt: 'Choose Month',
@@ -80,7 +80,7 @@
         });
 
         $('#filter_year').combobox({
-            url: '<?php echo base_url('finance/foreign_currencies/readYears'); ?>',
+            url: '<?php echo base_url('finance/report_cogs/readYears'); ?>',
             valueField: 'id',
             textField: 'name',
             prompt: 'Choose Year',

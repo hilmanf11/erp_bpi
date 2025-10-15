@@ -12,7 +12,7 @@ class Report_cogs extends CI_Controller
         $this->load->library('session');
         $this->load->model('crud');
         //Validasi Form
-        $this->form_validation->set_rules('item_id', 'Product No', 'required|min_length[1]|max_length[50]');
+        $this->form_validation->set_rules('item_fg_id', 'Product No', 'required|min_length[1]|max_length[50]');
     }
 
     public function index()
@@ -26,6 +26,27 @@ class Report_cogs extends CI_Controller
         } else {
             redirect('error_access');
         }
+    }
+
+    public function readMonths()
+    {
+        $months = array('01' => 'January', '02' => 'February', '03' => 'March', '04' => 'April', '05' => 'May', '06' => 'June', '07' => 'July', '08' => 'August', '09' => 'September', '10' => 'October', '11' => 'November', '12' => 'December');
+        foreach ($months as $key => $value) {
+            $arr[] = array("id" => $key, "name" => $value);
+        }
+
+        echo json_encode($arr);
+    }
+
+    public function readYears()
+    {
+        $tahun_before = date('Y', strtotime('-10 year', strtotime(date('Y'))));
+        $tahun_next = date('Y', strtotime('+1 year', strtotime(date('Y'))));
+        for ($i = $tahun_next; $i >= $tahun_before; $i--) {
+            $arr[] = array("id" => $i, "name" => $i);
+        }
+
+        echo json_encode($arr);
     }
 
     public function print($option = "")
@@ -49,7 +70,7 @@ class Report_cogs extends CI_Controller
             a.number as sales_invoice_no, 
             b.name as customer_name,
             a.trans_date,
-            a.dn_number,
+            a.delivery_note_no,
             c.number as product_no,
             c.name as product_name,
             a.uom,
@@ -65,23 +86,112 @@ class Report_cogs extends CI_Controller
             g.account_name');
         $this->db->from('sales_invoices a');
         $this->db->join('customers b', 'a.customer_id = b.id');
-        $this->db->join('items c', 'a.item_id = c.id');
-        $this->db->join("(SELECT rates, document_no, number FROM journal_postings WHERE account_number = '4111002' GROUP BY document_no, number) d", "a.number = d.document_no");
-        $this->db->join("(SELECT item_id, document_no, trans_type, SUM(amount) as amount, SUM(direct_material) as direct_material, SUM(direct_labor) as direct_labor, SUM(direct_foh) as direct_foh FROM inventory_fg WHERE trans_type = 'DELIVERY NOTE' GROUP BY document_no, item_id) e", "a.item_id = e.item_id and a.dn_number = e.document_no");
-        $this->db->join("(SELECT item_id, number, trans_type, SUM(qty) as qty FROM delivery_notes GROUP BY item_id, number) f", 'a.dn_number = f.number and a.item_id = f.item_id');
+        $this->db->join('item_fg c', 'a.item_fg_id = c.id');
+        $this->db->join("(SELECT rates, document_no, number FROM journal_postings GROUP BY document_no, number) d", "a.number = d.document_no");
+        $this->db->join("(SELECT item_fg_id, delivery_note_no, trans_type, SUM(qty) as qty FROM delivery_notes GROUP BY item_fg_id) f", 'a.delivery_note_no = f.delivery_note_no AND a.item_fg_id = f.item_fg_id');
+        $this->db->join("(SELECT item_fg_id, document_no, trans_type, SUM(amount) as amount, SUM(direct_material) as direct_material, SUM(direct_labor) as direct_labor, SUM(direct_foh) as direct_foh FROM inventory_fg WHERE trans_type = 'DELIVERY NOTE' GROUP BY document_no, item_fg_id) e", "a.item_fg_id = e.item_fg_id and a.delivery_note_no = e.document_no", 'left');
         $this->db->join('account_coa g', 'a.account_number = g.account_number');
         $this->db->where('f.trans_type', 'SALES');
         $this->db->like("a.trans_date", $filter_year."-".$filter_month);
         $this->db->like("a.customer_id", $filter_customer);
-        $this->db->group_by('a.item_id');
-        $this->db->group_by('a.dn_number');
+        $this->db->group_by('a.item_fg_id');
+        $this->db->group_by('a.delivery_note_no');
         $this->db->group_by('a.number');
         $this->db->order_by('a.number', 'asc');
         $invoices = $this->db->get()->result_array();
 
-        $html = '<html><head><title>Print Data</title></head><style>body {font-family: Arial, Helvetica, sans-serif;}#customers {border-collapse: collapse;width: 100%;font-size: 12px;}#customers td, #customers th {border: 1px solid #ddd;padding: 2px;}#customers tr:nth-child(even){background-color: #f2f2f2;}#customers tr:hover {background-color: #ddd;}#customers th {padding-top: 2px;padding-bottom: 2px;text-align: center;color: black;}</style><body>
-        <div style="width:200%;">
-            <center>
+        $html = '<html><head><title>Print Data</title></head>
+                <style>
+                    body {
+                        font-family: Arial, Helvetica, sans-serif;
+                        margin: 20px;
+                        overflow: scroll;
+                    }
+                    .header-section {
+                        margin-bottom: 20px;
+                    }
+                    .company-info {
+                        float: left;
+                        width: 60%;
+                        font-size: 12px;
+                        text-align: left;
+                    }
+                    .print-info {
+                        float: right;
+                        width: 38%;
+                        font-size: 12px;
+                        text-align: right;
+                    }
+                    .company-logo {
+                        vertical-align: top;
+                        padding-right: 10px;
+                    }
+                    .company-details b {
+                        font-size: 14px;
+                    }
+                    .company-details span {
+                        font-size: 10px;
+                    }
+                    .report-title {
+                        text-align: center;
+                        margin-top: 20px;
+                        margin-bottom: 20px;
+                    }
+                    .report-title h3 {
+                        margin: 0;
+                        font-size: 18px;
+                    }
+                    .report-title small {
+                        font-size: 12px;
+                    }
+                    #customers {
+                        border-collapse: collapse;
+                        width: 100%;
+                        font-size: 13px; 
+                        margin-top: 15px;
+                    }
+                    #customers th,
+                    #customers td {
+                        border: 1px solid #ddd;
+                        padding: 4px 8px; 
+                    }
+                    #customers th {
+                        background-color: #f0f0f0;
+                        text-align: center;
+                        color: black;
+                        font-weight: bold;
+                    }
+                    #customers tr:nth-child(even) {
+                        background-color: #f9f9f9;
+                    }
+                    #customers tr:hover {
+                        background-color: #f1f1f1;
+                    }
+                    .text-right { text-align: right; }
+                    .text-center { text-align: center; }
+                    .font-bold { font-weight: bold; }
+                    .bg-light-green { background-color: #CAFFB3; } /* Untuk baris kelompok akun */
+                    .bg-grey { background-color: #EBEBEB; } /* Untuk grand total */
+
+                    .link-transaction {
+                        color: inherit;
+                        text-decoration: none;
+                    }
+                    .link-transaction:hover {
+                        color: inherit;
+                        font-weight: bolder;
+                        text-decoration: underline;
+                    }
+
+                    .clearfix::after {
+                        content: "";
+                        clear: both;
+                        display: table;
+                    }
+                </style>    
+            <body>
+            <div style="width:200%;">
+                <center>
                 <div style="float: left; font-size: 12px; text-align: left;">
                     <table style="width: 100%;">
                         <tr>
@@ -187,7 +297,7 @@ class Report_cogs extends CI_Controller
                             <td>'.$invoice['sales_invoice_no'].'</td>
                             <td>'.$invoice['customer_name'].'</td>
                             <td>'.$invoice['trans_date'].'</td>
-                            <td>'.$invoice['dn_number'].'</td>
+                            <td>'.$invoice['delivery_note_no'].'</td>
                             <td>'.$invoice['product_no'].'</td>
                             <td>'.$invoice['product_name'].'</td>
                             <td style="text-align:center;">' . $invoice['uom'] . '</td>
