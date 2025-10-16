@@ -174,6 +174,8 @@ class Report_ar extends CI_Controller
                 $this->db->select("a.trans_date, a.due_date, a.sales_order_no as document_no, a.number as sales_invoice, c.account_number, c.number as voucher_no, a.currency, c.original_debit, c.original_credit, c.local_debit, c.local_credit, c.rates");
                 $this->db->from('sales_invoices a');
                 $this->db->join("($subquery_journal_postings) c", 'a.number = c.document_no');
+                $this->db->join("account_coa coa", 'a.account_number = coa.account_number');
+                $this->db->where('coa.report_ar', 1); // Account Number Report AR=1 TRUE
                 $this->db->where('a.trans_date >=', $filter_from);
                 $this->db->where('a.trans_date <=', $filter_to);
                 $this->db->where('a.customer_id', $customer_id);
@@ -186,6 +188,8 @@ class Report_ar extends CI_Controller
                 $this->db->select("a.receipt_date as trans_date, '-' as due_date, a.sales_invoice, a.receipt_no as document_no, c.account_number, c.number as voucher_no, a.currency, c.original_debit, c.original_credit, c.local_debit, c.local_credit, c.rates");
                 $this->db->from('ar_receipts a');
                 $this->db->join("($subquery_journal_postings) c", 'a.receipt_no = c.document_no');
+                $this->db->join("account_coa coa", 'a.account_number = coa.account_number');
+                $this->db->where('coa.report_ar', 1); // Account Number Report AR=1 TRUE
                 $this->db->where('a.receipt_date >=', $filter_from);
                 $this->db->where('a.receipt_date <=', $filter_to);
                 $this->db->where('a.customer_id', $customer_id);
@@ -198,13 +202,16 @@ class Report_ar extends CI_Controller
                 // Bagian 3: Query dari journal_postings
                 $this->db->select("a.journal_date as trans_date, '-' as due_date, a.invoice_no as sales_invoice, a.document_no, a.account_number, a.number as voucher_no, a.currency, SUM(a.original_debit) as original_debit, SUM(a.original_credit) as original_credit, SUM(a.local_debit) as local_debit, SUM(a.local_credit) as local_credit, a.rates");
                 $this->db->from('journal_postings a');
+                $this->db->join("account_coa coa", 'a.account_number = coa.account_number');
+                $this->db->where('coa.report_ar', 1); // Account Number Report AR=1 TRUE
                 $this->db->where('a.journal_date >=', $filter_from);
                 $this->db->where('a.journal_date <=', $filter_to);
+                $this->db->where_in('a.modul', array('CURRENCY REVALUATION','ADJUSTMENT'));
                 $this->db->like('a.description', $customer_name, 'both');
                 if (!empty($filter_currency)) {
                     $this->db->where('a.currency', $filter_currency);
                 }
-                // $this->db->where_in('a.modul', array('CURRENCY REVALUATION','ADJUSTMENT'));
+                // $this->db->group_by('a.number, a.document_no'); // di-comment agar tampil detail begin_balance untuk penjelasan grand_total
                 $query3 = $this->db->get_compiled_select();
 
                 // Menggabungkan semua query menggunakan UNION ALL
@@ -235,9 +242,11 @@ class Report_ar extends CI_Controller
                 $local_credit = 0;
                 $local_balance = 0;
 
-                $this->db->select('COALESCE(SUM(local_debit) + SUM(local_credit), 0) as local_pi, COALESCE(SUM(original_debit) + SUM(original_credit), 0) as original_pi');
+                $this->db->select('COALESCE(SUM(b.local_debit) + SUM(b.local_credit), 0) as local_pi, COALESCE(SUM(b.original_debit) + SUM(b.original_credit), 0) as original_pi');
                 $this->db->from('(SELECT DISTINCT customer_id, number, trans_date FROM sales_invoices) a');
                 $this->db->join("journal_postings b", "a.number = b.document_no");
+                $this->db->join("account_coa coa", 'b.account_number = coa.account_number');
+                $this->db->where('coa.report_ar', 1); // Account Number Report AR=1 TRUE
                 $this->db->where('a.customer_id', $customer_id);
                 $this->db->where('a.trans_date <', $filter_from);
                 if (!empty($filter_currency)) {
@@ -247,6 +256,8 @@ class Report_ar extends CI_Controller
 
                 $this->db->select('COALESCE(SUM(a.local_credit) - SUM(a.local_debit), 0) as local_re, COALESCE(SUM(a.original_credit) - SUM(a.original_debit), 0) as original_re');
                 $this->db->from('journal_postings a');
+                $this->db->join("account_coa coa", 'a.account_number = coa.account_number');
+                $this->db->where('coa.report_ar', 1); // Account Number Report AR=1 TRUE
                 $this->db->where("a.journal_date <", $filter_from);
                 $this->db->where_in("a.modul", array('CURRENCY REVALUATION'));
                 $this->db->like("a.description", $customer_name, 'both');
@@ -255,9 +266,11 @@ class Report_ar extends CI_Controller
                 }
                 $revaluation_begin = $this->db->get()->row();
                 
-                $this->db->select('COALESCE(SUM(local_debit) + SUM(local_credit), 0) as local_ar, COALESCE(SUM(original_debit) + SUM(original_credit), 0) as original_ar');
+                $this->db->select('COALESCE(SUM(b.local_debit) + SUM(b.local_credit), 0) as local_ar, COALESCE(SUM(b.original_debit) + SUM(b.original_credit), 0) as original_ar');
                 $this->db->from('(SELECT DISTINCT customer_id, receipt_no, receipt_date FROM ar_receipts) a');
                 $this->db->join("journal_postings b", "a.receipt_no = b.document_no");
+                $this->db->join("account_coa coa", 'b.account_number = coa.account_number');
+                $this->db->where('coa.report_ar', 1); // Account Number Report AR=1 TRUE
                 $this->db->where('a.customer_id', $customer_id);
                 $this->db->where('a.receipt_date <', $filter_from);
                 if (!empty($filter_currency)) {
@@ -280,10 +293,7 @@ class Report_ar extends CI_Controller
                 }
 
                 if(count($sales_invoices) > 0){
-                    $detail .= '  <tr style="background: #ffffffff; font-weight:bold;">
-                                    <td colspan="16">' . strtoupper($customer_name) . '</td>
-                                </tr>
-                                <tr style="background: #DEE2FF; font-weight:bold;">
+                    $detail .= '<tr style="background: #DEE2FF; font-weight:bold;">
                                     <td colspan="11">BEGINING BALANCE</td>
                                     <td style="text-align:right;">'.number_format(@$begin_balance, $digit, ".", "").'</td>
                                     <td colspan="3"></td>
@@ -365,7 +375,7 @@ class Report_ar extends CI_Controller
                 }
 
                 // tetap tampil Customer dengan begin_balance=0 yang memiliki transaksi => agar sama antara Summary dengan Detail
-                if($begin_balance_local >= 0 && count($sales_invoices) > 0)
+                if(count($sales_invoices) > 0 && $begin_balance_local >= 0)
                 {
                     if($begin_balance >= 0){
                         $balance_original = number_format($begin_balance, 2, ".", "");

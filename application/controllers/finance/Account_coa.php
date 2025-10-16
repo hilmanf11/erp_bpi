@@ -90,6 +90,8 @@ class Account_coa extends CI_Controller
                 account_coa.status,
                 account_coa.starting_date,
                 account_coa.ap_ar_other,
+                account_coa.report_ap,
+                account_coa.report_ar,
                 account_group_details.id as account_group_detail_id,
                 account_group_details.name as account_group_detail_name,
                 (CASE WHEN account_coa.status = 0 THEN 'OPEN' ELSE 'CLOSE' END) as closing_journal
@@ -373,6 +375,31 @@ class Account_coa extends CI_Controller
             $this->output->set_status_header(405); // Method Not Allowed
             // echo json_encode(['success' => false, 'message' => 'Method not allowed.', 'title' => 'Error', 'theme' => 'error']);
             echo 'Error';
+        }
+    }
+
+    // Update status Report AP & Report AR
+    public function report_update()
+    {
+        header('Content-Type: application/json');
+        if (!$this->input->post()) {
+            echo json_encode(["title" => "Error", "message" => "Invalid request method", "theme" => "error"]);
+            return;
+        }
+
+        $id    = $this->input->post('id');
+        $type  = $this->input->post('type');
+        $value = $this->input->post('value');
+        $field = (strtolower($type) !== "ap") ? "report_ap" : "report_ar";
+
+        // Buat array data yang akan di-update secara dinamis
+        $dataToUpdate = [$field => $value];
+        
+        $send = $this->crud->update('account_coa', ["id" => $id], $dataToUpdate);
+        if ($send) {
+            echo $send;
+        } else {
+            echo json_encode(["title" => "Error", "message" => "Failed to update report status.", "theme" => "error"]);
         }
     }
 

@@ -8,7 +8,8 @@
             <th rowspan="2" data-options="field:'account_number',width:100,halign:'center'">Account Code</th>
             <th rowspan="2" data-options="field:'account_name',width:250,halign:'center'">Account Name</th>
             <th rowspan="2" data-options="field:'closing_journal',width:80,halign:'center',align:'center',formatter: statusformat, styler:statusStyle">Closing<br>Journal</th>
-            <th rowspan="2" data-options="field:'ap_ar_other',width:120,halign:'center',align:'center',formatter:otherFormatter">AP / AR<br>Other</th>
+            <th rowspan="2" data-options="field:'ap_ar_other',width:100,halign:'center',align:'center',formatter:otherFormatter">AP / AR<br>Other</th>
+            <th colspan="2" data-options="field:'',width:100,halign:'center'"> Report </th>
             <th rowspan="2" data-options="field:'starting_date',width:100,halign:'center',align:'center'">Starting From</th>
             <th colspan="3" data-options="field:'',width:150,halign:'center'"> Original Currency</th>
             <th colspan="3" data-options="field:'',width:150,halign:'center'"> Local Currency</th>
@@ -16,6 +17,8 @@
             <th colspan="2" data-options="field:'',width:100,halign:'center'"> Updated</th>
         </tr>
         <tr>
+            <th data-options="field:'report_ap',width:80,halign:'center',align:'center',formatter: reportAP">AP Report</th>
+            <th data-options="field:'report_ar',width:80,halign:'center',align:'center',formatter: reportAR">AR Report</th>
             <th data-options="field:'original_currency',width:100,align:'center'">Currency</th>
             <th data-options="field:'original_debit',width:150,halign:'center',align:'right',formatter: priceformat">Debit</th>
             <th data-options="field:'original_kredit',width:150,halign:'center',align:'right',formatter: priceformat">Credit</th>
@@ -62,7 +65,7 @@
             
             <div class="fitem">
                 <span style="width:35%; display:inline-block;">AP / AR Other</span>
-                <select style="width:30%;" name="ap_ar_other" id="ap_ar_other" required="" class="easyui-combobox">
+                <select style="width:30%;" name="ap_ar_other" id="ap_ar_other" class="easyui-combobox">
                     <option value="AP PAYMENT">AP PAYMENT</option>
                     <option value="AR RECEIPT">AR RECEIPT</option>
                     <option value="BOTH">BOTH</option>
@@ -367,9 +370,59 @@
     function otherFormatter(value, row, index) {
         if (!value) {
             return "-";
+        } else if (value == 'footer') {
+            return "";
         }
         return value;
     }
+
+    // --- Fungsi Update reportAP dan reportAR
+    function reportAP(value, row) {
+        return createReportCheckbox(value, row, 'ap');
+    }
+    function reportAR(value, row) {
+        return createReportCheckbox(value, row, 'ar');
+    }
+    function createReportCheckbox(value, row, type) {
+        // Tentukan ID unik untuk setiap checkbox
+        const checkboxId = `report_${type}_${row.id}`;
+        const action = `save_report_status('${row.id}', '${type}', this)`; // 'this' merujuk pada elemen yang diklik
+
+        // Tentukan apakah checkbox harus dicentang atau tidak
+        const isChecked = value === '1' ? 'checked' : '';
+
+        if (value === 'footer') {
+            return "";
+        } else {
+            return `<input type="checkbox" id="${checkboxId}" value="1" onclick="${action}" ${isChecked}>`;
+        }
+    }
+    function save_report_status(id, type, element) {
+        // Data yang akan dikirim ke server
+        const isChecked = element.checked ? "1" : "0";
+        let postData = {
+            id: id,
+            [type]: isChecked
+        };
+        
+        $.ajax({
+            url: '<?= base_url('finance/account_coa/report_update/') ?>?id=' + window.btoa(id),
+            type: 'post',
+            dataType: 'json',
+            data: postData, 
+            success: function(result) {
+                if (result.theme === "success") {
+                    toastr.success(result.message, result.title);
+                } else {
+                    toastr.error(result.message, result.title);
+                }
+            },
+            error: function(jqXHR, textStatus, errorThrown) {
+                toastr.error(jqXHR.statusText);
+            }
+        });
+    }
+
 
     $(function() {                
         //SETTING DATAGRID EASYUI
@@ -398,6 +451,9 @@
 
                 let footerData = [{
                     closing_journal: 'footer',
+                    ap_ar_other: 'footer',
+                    report_ap: 'footer',
+                    report_ar: 'footer',
                     original_currency: '<b>Grand Total</b>',
                     original_debit: totalDebitOriginal,
                     original_kredit: totalCreditOriginal,
@@ -440,8 +496,76 @@
                     }
                     $('#dg').datagrid('doFilter');
                 }
+            }},
+            {
+                field: 'report_ap',
+                type: 'combobox',
+                options: {
+                    data: [{
+                            value: '',
+                            text: 'All'
+                        },
+                        {
+                            value: '0',
+                            text: 'NO'
+                        },
+                        {
+                            value: '1',
+                            text: 'YES'
+                        },
+                    ],
+                    valueField: 'value',
+                    textField: 'text',
+                    panelHeight: 'auto',
+                    onChange: function(newValue, oldValue) {
+                        if (newValue == '') {
+                            $('#dg').datagrid('removeFilterRule', 'report_ap');
+                        } else {
+                            $('#dg').datagrid('addFilterRule', {
+                                field: 'report_ap',
+                                op: 'contains',
+                                value: newValue
+                            });
+                        }
+                        $('#dg').datagrid('doFilter');
+                    }
+                },
             },
-        }]);
+            {
+                field: 'report_ar',
+                type: 'combobox',
+                options: {
+                    data: [{
+                            value: '',
+                            text: 'All'
+                        },
+                        {
+                            value: '0',
+                            text: 'NO'
+                        },
+                        {
+                            value: '1',
+                            text: 'YES'
+                        },
+                    ],
+                    valueField: 'value',
+                    textField: 'text',
+                    panelHeight: 'auto',
+                    onChange: function(newValue, oldValue) {
+                        if (newValue == '') {
+                            $('#dg').datagrid('removeFilterRule', 'report_ar');
+                        } else {
+                            $('#dg').datagrid('addFilterRule', {
+                                field: 'report_ar',
+                                op: 'contains',
+                                value: newValue
+                            });
+                        }
+                        $('#dg').datagrid('doFilter');
+                    }
+                },
+            },
+        ]);
 
         $('#account_group_detail_name').combobox({
             url: '<?= base_url('finance/account_group_details/reads') ?>', // URL to your PHP script

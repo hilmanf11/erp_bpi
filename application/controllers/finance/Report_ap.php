@@ -167,6 +167,8 @@ class Report_ap extends CI_Controller
                 $this->db->select("a.trans_date, a.due_date, a.invoice_no, a.number as document_no, c.account_number, c.number as voucher_no, a.currency, c.original_debit, c.original_credit, c.local_debit, c.local_credit, c.rates");
                 $this->db->from('purchase_invoices a');
                 $this->db->join("($subquery_journal_postings) c", 'a.number = c.document_no');
+                $this->db->join("account_coa coa", 'a.account_number = coa.account_number');
+                $this->db->where('coa.report_ap', 1); // Account Number Report AP=1 TRUE
                 $this->db->where('a.trans_date >=', $filter_from);
                 $this->db->where('a.trans_date <=', $filter_to);
                 $this->db->where('a.supplier_id', $supplier_id);
@@ -179,6 +181,8 @@ class Report_ap extends CI_Controller
                 $this->db->select("a.payment_date as trans_date, '-' as due_date, CONCAT(a.purchase_invoice, ' | ', a.supplier_invoice) as invoice_no, a.payment_no as document_no, c.account_number, c.number as voucher_no, a.currency, c.original_debit, c.original_credit, c.local_debit, c.local_credit, c.rates");
                 $this->db->from('ap_payments a');
                 $this->db->join("($subquery_journal_postings) c", 'a.payment_no = c.document_no');
+                $this->db->join("account_coa coa", 'a.account_number = coa.account_number');
+                $this->db->where('coa.report_ap', 1); // Account Number Report AP=1 TRUE
                 $this->db->where('a.payment_date >=', $filter_from);
                 $this->db->where('a.payment_date <=', $filter_to);
                 $this->db->where('a.supplier_id', $supplier_id);
@@ -191,13 +195,16 @@ class Report_ap extends CI_Controller
                 // Bagian 3: Query dari journal_postings
                 $this->db->select("a.journal_date as trans_date, '-' as due_date, a.invoice_no, a.document_no, a.account_number, a.number as voucher_no, a.currency, SUM(a.original_debit) as original_debit, SUM(a.original_credit) as original_credit, SUM(a.local_debit) as local_debit, SUM(a.local_credit) as local_credit, a.rates");
                 $this->db->from('journal_postings a');
+                $this->db->join("account_coa coa", 'a.account_number = coa.account_number');
+                $this->db->where('coa.report_ap', 1); // Account Number Report AP=1 TRUE
                 $this->db->where('a.journal_date >=', $filter_from);
                 $this->db->where('a.journal_date <=', $filter_to);
+                $this->db->where_in('a.modul', array('CURRENCY REVALUATION','ADJUSTMENT'));
                 $this->db->like('a.company_name', $supplier_name, 'both');
                 if (!empty($filter_currency)) {
                     $this->db->where('a.currency', $filter_currency);
                 }
-                $this->db->group_by('a.number, a.document_no');
+                // $this->db->group_by('a.number, a.document_no'); // di-comment agar tampil detail begin_balance untuk penjelasan grand_total
                 $query3 = $this->db->get_compiled_select();
 
                 // Menggabungkan semua query menggunakan UNION
@@ -228,9 +235,11 @@ class Report_ap extends CI_Controller
                 $local_credit = 0;
                 $local_balance = 0;
 
-                $this->db->select('COALESCE(SUM(local_debit) + SUM(local_credit), 0) as local_pi, COALESCE(SUM(original_debit) + SUM(original_credit), 0) as original_pi');
+                $this->db->select('COALESCE(SUM(b.local_debit) + SUM(b.local_credit), 0) as local_pi, COALESCE(SUM(b.original_debit) + SUM(b.original_credit), 0) as original_pi');
                 $this->db->from('(SELECT DISTINCT supplier_id, number, trans_date FROM purchase_invoices) a');
                 $this->db->join("journal_postings b", "a.number = b.document_no");
+                $this->db->join("account_coa coa", 'b.account_number = coa.account_number');
+                $this->db->where('coa.report_ap', 1); // Account Number Report AP=1 TRUE
                 $this->db->where('a.supplier_id', $supplier_id);
                 $this->db->where('a.trans_date <', $filter_from);
                 if (!empty($filter_currency)) {
@@ -240,6 +249,8 @@ class Report_ap extends CI_Controller
 
                 $this->db->select('COALESCE(SUM(a.local_credit) - SUM(a.local_debit), 0) as local_re, COALESCE(SUM(a.original_credit) - SUM(a.original_debit), 0) as original_re');
                 $this->db->from('journal_postings a');
+                $this->db->join("account_coa coa", 'a.account_number = coa.account_number');
+                $this->db->where('coa.report_ap', 1); // Account Number Report AP=1 TRUE
                 $this->db->where("a.journal_date <", $filter_from);
                 $this->db->where_in("a.modul", array('CURRENCY REVALUATION','ADJUSTMENT'));
                 $this->db->like("a.company_name", $supplier_name);
@@ -248,9 +259,11 @@ class Report_ap extends CI_Controller
                 }
                 $revaluation_begin = $this->db->get()->row();
                 
-                $this->db->select('COALESCE(SUM(local_debit) + SUM(local_credit), 0) as local_ap, COALESCE(SUM(original_debit) + SUM(original_credit), 0) as original_ap');
+                $this->db->select('COALESCE(SUM(b.local_debit) + SUM(b.local_credit), 0) as local_ap, COALESCE(SUM(b.original_debit) + SUM(b.original_credit), 0) as original_ap');
                 $this->db->from('(SELECT DISTINCT supplier_id, payment_no, payment_date FROM ap_payments) a');
                 $this->db->join("journal_postings b", "a.payment_no = b.document_no");
+                $this->db->join("account_coa coa", 'b.account_number = coa.account_number');
+                $this->db->where('coa.report_ap', 1); // Account Number Report AP=1 TRUE
                 $this->db->where('a.supplier_id', $supplier_id);
                 $this->db->where('a.payment_date <', $filter_from);
                 if (!empty($filter_currency)) {
@@ -271,10 +284,7 @@ class Report_ap extends CI_Controller
                 }
 
                 if(count($purchase_invoices) > 0){
-                    $detail .= '  <tr style="background: #ffffffff; font-weight:bold;">
-                                    <td colspan="16">' . strtoupper($supplier_name) . '</td>
-                                </tr>
-                                <tr style="background: #DEE2FF; font-weight:bold;">
+                    $detail .= '<tr style="background: #DEE2FF; font-weight:bold;">
                                     <td colspan="11">BEGINING BALANCE</td>
                                     <td style="text-align:right;">'.number_format(@$begin_balance, 2, ".", "").'</td>
                                     <td colspan="3"></td>
@@ -363,7 +373,7 @@ class Report_ap extends CI_Controller
                 }
 
                 // tetap tampil Supplier dengan begin_balance=0 yang memiliki transaksi => agar sama antara Summary dengan Detail
-                if($begin_balance_local >= 0 && count($purchase_invoices) > 0)
+                if(count($purchase_invoices) > 0 && $begin_balance_local >= 0)
                 {
                     if($begin_balance >= 0){
                         $balance_original = number_format($begin_balance, 2, ".", "");
