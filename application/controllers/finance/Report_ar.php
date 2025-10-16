@@ -228,6 +228,7 @@ class Report_ar extends CI_Controller
                         SUM(a.local_credit) AS local_credit,
                         a.rates
                     FROM ($full_query) a
+                    WHERE a.document_no IS NOT NULL AND a.document_no != ''
                     GROUP BY
                         a.trans_date, a.due_date, a.sales_invoice, a.document_no,
                         a.account_number, a.voucher_no, a.currency, a.rates
@@ -375,7 +376,7 @@ class Report_ar extends CI_Controller
                 }
 
                 // tetap tampil Customer dengan begin_balance=0 yang memiliki transaksi => agar sama antara Summary dengan Detail
-                if(count($sales_invoices) > 0 && $begin_balance_local >= 0)
+                if(count($sales_invoices) > 0)
                 {
                     if($begin_balance >= 0){
                         $balance_original = number_format($begin_balance, 2, ".", "");
