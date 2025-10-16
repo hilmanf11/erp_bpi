@@ -402,7 +402,8 @@
         const isChecked = element.checked ? "1" : "0";
         let postData = {
             id: id,
-            [type]: isChecked
+            field: "report_" + type,
+            status: isChecked
         };
         
         $.ajax({
@@ -474,11 +475,11 @@
                     },
                     {
                         value: 'OPEN',
-                        text: 'YES'
+                        text: 'OPEN'
                     },
                     {
                         value: 'CLOSE',
-                        text: 'NO'
+                        text: 'CLOSED'
                     },
                 ],
                 valueField: 'value',

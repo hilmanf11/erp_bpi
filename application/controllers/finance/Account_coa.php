@@ -132,7 +132,7 @@ class Account_coa extends CI_Controller
             } elseif ($field == 'module') {
                 $this->db->like('journal_types.module', $value); 
             } elseif ($field == 'closing_journal') {
-                $status = (strtoupper($value) == 'CLOSE') ? 0 : 1;
+                $status = (strtoupper($value) == 'CLOSE') ? 1 : 0; // OPEN=0 & CLOSE=1
                 $this->db->like('account_coa.status', $status);
             } elseif ($field == 'starting_date') {
                 $this->db->like('DATE_FORMAT(account_coa.starting_date, "%Y-%m-%d")', $value);
@@ -141,6 +141,7 @@ class Account_coa extends CI_Controller
             }
         }
     }
+
     public function datatables_backup()
     {
         if ($this->input->post()) {
@@ -387,14 +388,13 @@ class Account_coa extends CI_Controller
             return;
         }
 
-        $id    = $this->input->post('id');
-        $type  = $this->input->post('type');
-        $value = $this->input->post('value');
-        $field = (strtolower($type) !== "ap") ? "report_ap" : "report_ar";
+        $id     = $this->input->post('id');
+        $field  = $this->input->post('field');
+        $status = $this->input->post('status');
 
         // Buat array data yang akan di-update secara dinamis
-        $dataToUpdate = [$field => $value];
-        
+        $dataToUpdate = [$field => $status];
+
         $send = $this->crud->update('account_coa', ["id" => $id], $dataToUpdate);
         if ($send) {
             echo $send;
