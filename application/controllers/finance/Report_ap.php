@@ -276,9 +276,9 @@ class Report_ap extends CI_Controller
                                 </tr>
                                 <tr style="background: #DEE2FF; font-weight:bold;">
                                     <td colspan="11">BEGINING BALANCE</td>
-                                    <td style="text-align:right;">'.number_format(@$begin_balance, 2, ",", ".").'</td>
+                                    <td style="text-align:right;">'.number_format(@$begin_balance, 2, ".", "").'</td>
                                     <td colspan="3"></td>
-                                    <td style="text-align:right;">'.number_format(@$begin_balance_local, 2, ",", ".").'</td>
+                                    <td style="text-align:right;">'.number_format(@$begin_balance_local, 2, ".", "").'</td>
                                 </tr>';
                 }
 
@@ -293,15 +293,15 @@ class Report_ap extends CI_Controller
                     }
 
                     if((@$begin_balance - $original_debit2 + $original_credit2) >= 0){
-                        $balance_original = number_format(@$begin_balance - $original_debit2 + $original_credit2, 2, ",", ".");
+                        $balance_original = number_format(@$begin_balance - $original_debit2 + $original_credit2, 2, ".", "");
                     }else{
-                        $balance_original = "<span style='color:red;'>(".number_format(abs(@$begin_balance - $original_debit2 + $original_credit2), 2, ",", ".").")</span>";
+                        $balance_original = "<span style='color:red;'>(".number_format(abs(@$begin_balance - $original_debit2 + $original_credit2), 2, ".", "").")</span>";
                     }
 
                     if((@$begin_balance_local - $purchase_invoice['local_debit'] + $purchase_invoice['local_credit']) >= 0){
-                        $balance_local = number_format(@$begin_balance_local - $purchase_invoice['local_debit'] + $purchase_invoice['local_credit'], 2, ",", ".");
+                        $balance_local = number_format(@$begin_balance_local - $purchase_invoice['local_debit'] + $purchase_invoice['local_credit'], 2, ".", "");
                     }else{
-                        $balance_local = "<span style='color:red;'>(".number_format(abs(@$begin_balance_local - $purchase_invoice['local_debit'] + $purchase_invoice['local_credit']), 2, ",", ".").")</span>";
+                        $balance_local = "<span style='color:red;'>(".number_format(abs(@$begin_balance_local - $purchase_invoice['local_debit'] + $purchase_invoice['local_credit']), 2, ".", "").")</span>";
                     }
 
                     $detail .= '  <tr>
@@ -314,12 +314,12 @@ class Report_ap extends CI_Controller
                                     <td>'.$purchase_invoice['voucher_no'].'</td>
                                     <td>'.$purchase_invoice['account_number'].'</td>
                                     <td>'.$purchase_invoice['currency'].'</td>
-                                    <td style="text-align:right;">'.number_format($original_debit2, 2, ",", ".").'</td>
-                                    <td style="text-align:right;">'.number_format($original_credit2, 2, ",", ".").'</td>
+                                    <td style="text-align:right;">'.number_format($original_debit2, 2, ".", "").'</td>
+                                    <td style="text-align:right;">'.number_format($original_credit2, 2, ".", "").'</td>
                                     <td style="text-align:right;">'.$balance_original.'</td>
-                                    <td style="text-align:right;">'.number_format($purchase_invoice['rates'], 2, ",", ".").'</td>
-                                    <td style="text-align:right;">'.number_format($purchase_invoice['local_debit'], 2, ",", ".").'</td>
-                                    <td style="text-align:right;">'.number_format($purchase_invoice['local_credit'], 2, ",", ".").'</td>
+                                    <td style="text-align:right;">'.number_format($purchase_invoice['rates'], 2, ".", "").'</td>
+                                    <td style="text-align:right;">'.number_format($purchase_invoice['local_debit'], 2, ".", "").'</td>
+                                    <td style="text-align:right;">'.number_format($purchase_invoice['local_credit'], 2, ".", "").'</td>
                                     <td style="text-align:right;">'.$balance_local.'</td>
                                 </tr>';
 
@@ -336,25 +336,25 @@ class Report_ap extends CI_Controller
                 
                 if(count($purchase_invoices) > 0){
                     if($begin_balance >= 0){
-                        $balance_original = number_format($begin_balance, 2, ",", ".");
+                        $balance_original = number_format($begin_balance, 2, ".", "");
                     }else{
-                        $balance_original = "<span style='color:red;'>(".number_format(abs($begin_balance), 2, ",", ".").")</span>";
+                        $balance_original = "<span style='color:red;'>(".number_format(abs($begin_balance), 2, ".", "").")</span>";
                     }
 
                     if($begin_balance_local >= 0){
-                        $balance_local = number_format(@$begin_balance_local, 2, ",", ".");
+                        $balance_local = number_format(@$begin_balance_local, 2, ".", "");
                     }else{
-                        $balance_local = "<span style='color:red;'>(".number_format(abs(@$begin_balance_local), 2, ",", ".").")</span>";
+                        $balance_local = "<span style='color:red;'>(".number_format(abs(@$begin_balance_local), 2, ".", "").")</span>";
                     }
 
                     $detail .= '  <tr style="background: #E5E5E5; font-weight:bold;">
                                     <td colspan="9">SUB TOTAL</td>
-                                    <td style="text-align:right;">'.number_format($original_debit, 2, ",", ".").'</td>
-                                    <td style="text-align:right;">'.number_format($original_credit, 2, ",", ".").'</td>
+                                    <td style="text-align:right;">'.number_format($original_debit, 2, ".", "").'</td>
+                                    <td style="text-align:right;">'.number_format($original_credit, 2, ".", "").'</td>
                                     <td style="text-align:right;">'.$balance_original.'</td>
                                     <td></td>
-                                    <td style="text-align:right;">'.number_format($local_debit, 2, ",", ".").'</td>
-                                    <td style="text-align:right;">'.number_format($local_credit, 2, ",", ".").'</td>
+                                    <td style="text-align:right;">'.number_format($local_debit, 2, ".", "").'</td>
+                                    <td style="text-align:right;">'.number_format($local_credit, 2, ".", "").'</td>
                                     <td style="text-align:right;">'.$balance_local.'</td>
                                 </tr>
                                 <tr>
@@ -366,15 +366,15 @@ class Report_ap extends CI_Controller
                 if($begin_balance_local >= 0 && count($purchase_invoices) > 0)
                 {
                     if($begin_balance >= 0){
-                        $balance_original = number_format($begin_balance, 2, ",", ".");
+                        $balance_original = number_format($begin_balance, 2, ".", "");
                     }else{
-                        $balance_original = "<span style='color:red;'>(".number_format(abs($begin_balance), 2, ",", ".").")</span>";
+                        $balance_original = "<span style='color:red;'>(".number_format(abs($begin_balance), 2, ".", "").")</span>";
                     }
 
                     if($begin_balance_local >= 0){
-                        $balance_local = number_format(@$begin_balance_local, 2, ",", ".");
+                        $balance_local = number_format(@$begin_balance_local, 2, ".", "");
                     }else{
-                        $balance_local = "<span style='color:red;'>(".number_format(abs(@$begin_balance_local), 2, ",", ".").")</span>";
+                        $balance_local = "<span style='color:red;'>(".number_format(abs(@$begin_balance_local), 2, ".", "").")</span>";
                     }
 
                     $summary .= '   <tr>
@@ -397,19 +397,19 @@ class Report_ap extends CI_Controller
 
             $detail .= '  <tr style="background: #C3FFB4; font-weight:bold;">
                             <td colspan="9">GRAND TOTAL</td>
-                            <td style="text-align:right;">'.number_format($grand_original_debit, 2, ",", ".").'</td>
-                            <td style="text-align:right;">'.number_format($grand_original_credit, 2, ",", ".").'</td>
-                            <td style="text-align:right;">'.number_format($grand_original_balance, 2, ",", ".").'</td>
+                            <td style="text-align:right;">'.number_format($grand_original_debit, 2, ".", "").'</td>
+                            <td style="text-align:right;">'.number_format($grand_original_credit, 2, ".", "").'</td>
+                            <td style="text-align:right;">'.number_format($grand_original_balance, 2, ".", "").'</td>
                             <td></td>
-                            <td style="text-align:right;">'.number_format($grand_local_debit, 2, ",", ".").'</td>
-                            <td style="text-align:right;">'.number_format($grand_local_credit, 2, ",", ".").'</td>
-                            <td style="text-align:right;">'.number_format($grand_local_balance, 2, ",", ".").'</td>
+                            <td style="text-align:right;">'.number_format($grand_local_debit, 2, ".", "").'</td>
+                            <td style="text-align:right;">'.number_format($grand_local_credit, 2, ".", "").'</td>
+                            <td style="text-align:right;">'.number_format($grand_local_balance, 2, ".", "").'</td>
                         </tr>';
 
             $summary .= '   <tr style="font-weight:bold;">
                                 <td colspan="3">GRAND TOTAL</td>
-                                <td style="text-align:right;">'.number_format($grand_original_balance, 2, ",", ".").'</td>
-                                <td style="text-align:right;">'.number_format($grand_local_balance, 2, ",", ".").'</td>
+                                <td style="text-align:right;">'.number_format($grand_original_balance, 2, ".", "").'</td>
+                                <td style="text-align:right;">'.number_format($grand_local_balance, 2, ".", "").'</td>
                             </tr>';
 
         $htmlend = '</table></body></html>';
