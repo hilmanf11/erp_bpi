@@ -23,7 +23,7 @@
             <th colspan="2" data-options="field:'',width:100,align:'center'">Estimated</th>
             <th rowspan="2" data-options="field:'expired_date',width:120,align:'center'">Expired Date</th>
             <th rowspan="2" data-options="field:'depreciation',width:150,halign:'center',align:'right', formatter:priceformat">Depreciation/Month</th>
-            <th rowspan="2" data-options="field:'depreciation_acc',width:100,halign:'center',align:'right', formatter:priceformat">Accumulation<br>Depreciation</th>
+            <th rowspan="2" data-options="field:'depreciation_total',width:100,halign:'center',align:'right', formatter:priceformat">Accumulation<br>Depreciation</th>
             <th rowspan="2" data-options="field:'book_value',width:100,halign:'center',align:'right', formatter:priceformat">Book<br>Value</th>
             <th rowspan="2" data-options="field:'method',width:100,halign:'center'">Depreciation<br>Method</th>
             <th rowspan="2" data-options="field:'department',width:120,halign:'center'">Current <br>Department</th>
@@ -468,11 +468,11 @@
                             text: 'All'
                         },
                         {
-                            value: '0',
+                            value: 'ACTIVE',
                             text: 'ACTIVE'
                         },
                         {
-                            value: '1',
+                            value: 'EXPIRED',
                             text: 'EXPIRED'
                         },
                     ],
@@ -1190,7 +1190,7 @@
     }
 
     function statusformat(value, row) {
-        if (value == 0) {
+        if (value == "ACTIVE") {
             return "<b style='color:green;'>ACTIVE</b>";
         } else if (value == 1) {
             return "<b style='color:red;'>EXPIRED</b>";
@@ -1198,7 +1198,7 @@
     }
 
     function statusStyle(value, row, index) {
-        if (value == 0) {
+        if (value == "ACTIVE") {
             return 'background-color:#C8FFCC;';
         } else if (value == 1) {
             return 'background-color:#FFC8C8;';

@@ -275,6 +275,7 @@ class Fixed_assets extends CI_Controller
 
         $period_expired = !empty($filter_to) ? $filter_to : date('Y-m-d');
         
+        /** -- manual calculate depreciation_accumulation without relation to asset_journals
         $this->db->select("a.*, 
             COALESCE(b.name, f.name) as asset_family_name,
             coa.account_number,
@@ -291,6 +292,42 @@ class Fixed_assets extends CI_Controller
         $this->db->join('item_familys f', 'a.item_family_id = f.id'); // Product Family
         $this->db->join('account_coa coa', 'f.account_number = coa.account_number', 'left'); // Product Category by Product Family
         $this->db->join('journal_postings jp', 'a.purchase_invoice_number = jp.document_no', 'left');
+         * 
+         */
+
+        // -- Fix Query : Hitung accumulation depreciation hasil upload + accumulation depreciation dari generate asset_journals (Bu Nina)
+        $this->db->select("a.*, 
+            COALESCE(b.name, f.name) as asset_family_name,
+            coa.account_number,
+            coa.account_name,
+            jp.number as posting_no,
+            COALESCE(b.type, coa.account_name) as asset_category_type");
+        // -- Menghitung jumlah bulan sejak tanggal transaksi
+        $this->db->select("PERIOD_DIFF(DATE_FORMAT('$filter_to', '%Y%m'), DATE_FORMAT(a.trans_date, '%Y%m')) + 1 AS qty_month");
+        // -- Menghitung Akumulasi Depresiasi yang harusnya terjadi (Logika Sederhana: Depresiasi * Bulanan)
+        $this->db->select("(a.depreciation * (PERIOD_DIFF(DATE_FORMAT('$filter_to', '%Y%m'), DATE_FORMAT(a.trans_date, '%Y%m')) + 1)) as calculated_depreciation");
+        // -- Akumulasi Depresiasi Total (Nilai di tabel utama + Jurnal hingga DATE_TO)
+        $this->db->select("COALESCE(a.depreciation_accumulate, 0) + COALESCE(c.depreciation_accum_journal, 0) AS depreciation_total");
+        // -- Book Value (Cost - Akumulasi Total)
+        $this->db->select("(a.cost - (COALESCE(a.depreciation_accumulate, 0) + COALESCE(c.depreciation_accum_journal, 0))) AS book_value");
+        // -- Status Expired
+        $this->db->select("(CASE WHEN (a.cost - (COALESCE(a.depreciation_accumulate, 0) + COALESCE(c.depreciation_accum_journal, 0))) > 0 THEN 'ACTIVE' ELSE 'EXPIRED' END) as status_expired");
+        $this->db->from("asset_fixeds a");
+        $this->db->join("asset_categories b", "a.item_family_id = b.number", "left");
+        $this->db->join("(
+            SELECT 
+            asset_no, 
+            SUM(debit) AS depreciation_accum_journal 
+            FROM 
+            asset_journals 
+            WHERE periode BETWEEN DATE_FORMAT('$filter_from', '%Y%m') AND DATE_FORMAT('$filter_to', '%Y%m')
+            OR trans_date <= '$filter_to'
+            GROUP BY 
+            asset_no
+            ) c", "a.number = c.asset_no", "left"); // -- FILTER WHERE trans_date <= PENTING: Hanya jurnal yang terjadi pada atau sebelum tanggal filter
+        $this->db->join("item_familys f", "a.item_family_id = f.id");
+        $this->db->join("account_coa coa", "f.account_number = coa.account_number", "left");
+        $this->db->join("journal_postings jp", "a.purchase_invoice_number = jp.document_no", "left");
 
         if (!empty($filters)) {
             $this->applyFilters($filters); // Library filter 
@@ -340,7 +377,7 @@ class Fixed_assets extends CI_Controller
             $value = $filter['value'];
 
             if ($field == 'status_expired') {
-                $this->db->like('(CASE WHEN (a.cost - (COALESCE(c.depreciation_acc, 0) + a.depreciation_accumulate)) > 0 THEN 0 ELSE 1 END)', $value);
+                $this->db->like("(CASE WHEN (a.cost - (COALESCE(a.depreciation_accumulate, 0) + COALESCE(c.depreciation_accum_journal, 0))) > 0 THEN 'ACTIVE' ELSE 'EXPIRED' END)", $value);
 
             } elseif ($field == 'asset_family_name') {
                 $this->db->like('COALESCE(b.name, f.name)', $value);
@@ -350,10 +387,6 @@ class Fixed_assets extends CI_Controller
 
             } elseif ($field == 'posting_no') {
                 $this->db->like('jp.number', $value);
-
-            } elseif ($field == 'status_expired') {
-                $status = (strtoupper($value) == 'EXPIRED') ? 0 : 1;
-                $this->db->like('(CASE WHEN (a.cost - (COALESCE(c.depreciation_acc, 0) + a.depreciation_accumulate)) > 0 THEN 0 ELSE 1 END)', $status);
 
             } elseif ($field == 'trans_date') {
                 $this->db->like('DATE_FORMAT(a.trans_date, "%Y-%m-%d")', $value);
@@ -990,7 +1023,7 @@ class Fixed_assets extends CI_Controller
             </tr>';
         $no = 1;
         foreach ($records as $data) {
-            if($data['status_expired'] == 1){
+            if($data['status_expired'] == 'EXPIRED'){
                 $status = "EXPIRED";
             }else{
                 $status = "ACTIVE";
@@ -1011,7 +1044,7 @@ class Fixed_assets extends CI_Controller
                         <td>' . $data['estimate_month'] . '</td>
                         <td>' . $data['expired_date'] . '</td>
                         <td>' . $data['depreciation'] . '</td>
-                        <td>' . $data['depreciation_acc'] . '</td>
+                        <td>' . $data['depreciation_total'] . '</td>
                         <td>' . $data['book_value'] . '</td>
                         <td>' . $data['method'] . '</td>
                         <td>' . $data['department'] . '</td>
