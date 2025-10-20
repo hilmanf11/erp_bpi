@@ -43,7 +43,27 @@ class Asset_categories extends CI_Controller
         $this->db->select("a.id as number, a.name as name");
         $this->db->from('item_familys a');
         $this->db->join('item_categories b', 'a.item_category_id = b.id');
+        $this->db->where('a.status', 0);    // hanya get status active
         $this->db->like('b.name', 'ASSET'); // hanya get category ASSET
+        if (!empty($q)) {
+            $this->db->group_start();
+            $this->db->like('a.number', $q, 'after');
+            $this->db->or_like('a.name', $q, 'after');
+            $this->db->group_end();
+        }
+        $this->db->group_by('a.id');
+        $data = $this->db->get()->result();
+        echo json_encode($data);
+    }
+
+    public function readJournals()
+    {
+        $q = $this->input->get('q') ?? '';
+        
+        $this->db->select("a.*");
+        $this->db->from('journal_types a');
+        $this->db->where('status', 0);                  // hanya get status active
+        $this->db->like('a.module', 'ASSET', 'both');   // hanya get category ASSET
         if (!empty($q)) {
             $this->db->group_start();
             $this->db->like('a.number', $q, 'after');

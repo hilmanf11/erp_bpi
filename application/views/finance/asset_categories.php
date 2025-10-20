@@ -425,7 +425,7 @@
         });
 
         $("#journal_type_id").combogrid({
-            url: '<?= base_url('finance/journal_types/reads/ASSET') ?>',
+            url: '<?= base_url('finance/asset_categories/readJournals') ?>',
             panelWidth: 600,
             idField: 'id',
             textField: 'name',
