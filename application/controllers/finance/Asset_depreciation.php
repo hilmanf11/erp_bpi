@@ -61,45 +61,16 @@ class Asset_depreciation extends CI_Controller
         echo json_encode($data);
     }
 
-    public function readAssetNo($category_id, $month, $year)
+    public function readAssetNo($category_id, $month = null, $year = null)
     {
-        $post = isset($_POST['q']) ? $_POST['q'] : "";
+        $post = !empty($this->input->post('q')) ? $this->input->post('q') : "";
         $category = base64_decode($category_id);
-        $date = $year . "-" . $month;
+        $month = $month ?? date('m');
+        $year  = $year ?? date('Y');
+        $date  = $year . "-" . $month;
 
         $send = $this->crud->query("SELECT DISTINCT asset_no as number, asset_name as name FROM asset_journals WHERE item_family_id = '$category' and periode = '$date' and (`asset_no` like '%$post%' or asset_name like '%$post%')");
         echo json_encode($send);
-    }
-
-    public function getData()
-    {
-        if ($this->input->post()) {
-            $month = $this->input->post('month');
-            $year = $this->input->post('year');
-            $family = $this->input->post('family');
-            $number = $this->input->post('number');
-
-            $period = date("Y-m-t", strtotime($year . "-" . $month));
-
-            $this->db->select('*');
-            $this->db->from('asset_fixeds');
-            $this->db->where('trans_date <=', $period);
-            $this->db->where("expired_date >=", $period);
-            if (!empty($family)) {
-                $this->db->like('item_family_id', $family);
-            }
-            $this->db->like('number', $number);
-            $this->db->order_by('number', 'asc');
-
-            //Total Data
-            $totalRows = $this->db->count_all_results('', false);
-            //Get Data Array
-            $records = $this->db->get()->result_array();
-            //Mapping Data
-            $result['total'] = $totalRows;
-            $result = array_merge($result, ['rows' => $records]);
-            echo json_encode($result);
-        }
     }
 
     //GET DATATABLES
@@ -139,7 +110,7 @@ class Asset_depreciation extends CI_Controller
             $this->db->like('b.asset_no', $filter_asset_no);
             $this->db->group_by('b.id');
             $this->db->order_by('b.periode', 'asc');
-            $this->db->order_by('a.number', 'asc');
+            // $this->db->order_by('a.number', 'asc');
 
             //Total Data
             $totalRows = $this->db->count_all_results('', false);
@@ -154,37 +125,36 @@ class Asset_depreciation extends CI_Controller
         }
     }
 
-    public function calculate($category, $total)
+    // GET DATA GENERATE
+    public function getData()
     {
-        $category_number = base64_decode($category);
-        $asset_categories = $this->crud->reads("item_familys", [], ["id" => $category_number]);
-        $no = 1;
+        if ($this->input->post()) {
+            $month = $this->input->post('month');
+            $year = $this->input->post('year');
+            $family = $this->input->post('family');
+            $number = $this->input->post('number');
 
-        foreach ($asset_categories as $asset_category) {
-            // if ($asset_category->account_type == "DEBIT") {
-            //     $debit = $total;
-            //     $credit = 0;
-            // } else {
-            //     $debit = 0;
-            //     $credit = $total;
-            // }
+            $period = date("Y-m-t", strtotime($year . "-" . $month));
 
-            $debit = 0;
-            $credit = $total;
-            
-            $data[] = array(
-                "asset_category_number" => $category_number,
-                "account_number" => $asset_category->account_number,
-                "account_name"  => $asset_category->account_name,
-                "debit"         => $debit,
-                "credit"        => $credit,
-                "flag"          => $no,
-            );
+            $this->db->select('*');
+            $this->db->from('asset_fixeds');
+            $this->db->where('trans_date <=', $period);
+            $this->db->where("expired_date >=", $period);
+            if (!empty($family)) {
+                $this->db->like('item_family_id', $family);
+            }
+            $this->db->like('number', $number);
+            $this->db->order_by('number', 'asc');
 
-            $no++;
+            //Total Data
+            $totalRows = $this->db->count_all_results('', false);
+            //Get Data Array
+            $records = $this->db->get()->result_array();
+            //Mapping Data
+            $result['total'] = $totalRows;
+            $result = array_merge($result, ['rows' => $records]);
+            echo json_encode($result);
         }
-
-        echo json_encode($data);
     }
 
     //CREATE DATA
@@ -197,13 +167,20 @@ class Asset_depreciation extends CI_Controller
             if (@$asset_journals->id != "") {
                 echo json_encode(array("title" => "Duplicate", "message" => "Asset No " . $post['asset_no'] . " in Period " . $post['periode'] . " Duplicate", "theme" => "error"));
             } else {
-                $asset_categories = $this->crud->reads("item_familys", [], ["id" => $post['item_family_id']]);
+                $asset_categories = $this->crud->reads("asset_categories", [], ["number" => $post['item_family_id']]);
 
-                $send = json_encode(array("title" => "Not Found", "message" => "Asset Family " . $post['item_family_id'] . " Not Found", "theme" => "error"));
+                $send = json_encode(array("title" => "Not Found", "message" => "Asset Category " . $post['item_family_id'] . " Not Found", "theme" => "error"));
 
-                foreach ($asset_categories as $asset_category) {
-                    $debit  = 0;
-                    $credit = $post['depreciation'];
+                foreach ($asset_categories as $asset_category) 
+                {
+                    $total = $post['depreciation'];
+                    if ($asset_category->account_type == "DEBIT") {
+                        $debit = $total;
+                        $credit = 0;
+                    } else {
+                        $debit = 0;
+                        $credit = $total;
+                    }
 
                     $data = array(
                         "item_family_id"    => $post['item_family_id'],
@@ -227,6 +204,7 @@ class Asset_depreciation extends CI_Controller
         }
     }
 
+    // SAVE CREATE DATA TO JOURNAL
     public function saveJournal()
     {
         $post = $this->input->post();
@@ -239,6 +217,36 @@ class Asset_depreciation extends CI_Controller
             $send = $this->crud->create('asset_journal_details', $post);
             echo $send;
         }
+    }
+
+    public function calculate($category, $total)
+    {
+        $category_number = base64_decode($category);
+        $asset_categories = $this->crud->reads("asset_categories", [], ["id" => $category_number]);
+        $no = 1;
+
+        foreach ($asset_categories as $asset_category) {
+            if ($asset_category->account_type == "DEBIT") {
+                $debit = $total;
+                $credit = 0;
+            } else {
+                $debit = 0;
+                $credit = $total;
+            }
+            
+            $data[] = [
+                "asset_category_number" => $category_number,
+                "account_number" => $asset_category->account_number,
+                "account_name"  => $asset_category->account_name,
+                "debit"         => $debit,
+                "credit"        => $credit,
+                "flag"          => $no,
+            ];
+
+            $no++;
+        }
+
+        echo json_encode($data);
     }
 
     //DELETE DATA

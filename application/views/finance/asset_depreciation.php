@@ -85,6 +85,24 @@
         </fieldset> -->
     </div>
     <?= $button ?>
+    <a href="javascript:void(0)" class="easyui-linkbutton" data-options="plain:true" onclick="$('#dlg_help').dialog('open');"><i class="fa fa-info"></i> Help</a>
+</div>
+
+<div id="dlg_help" class="easyui-dialog" title="About Menu" data-options="closed: true,modal:true" style="width: 800px; height: 500px; left: 10px; top: 20px;">
+    <div class="easyui-accordion" style="width:100%; height: 100%;">
+        <div title="RELATIONS" style="padding: 20px;">
+            <ul>
+                <li>Get data from Modul Purchase Invoicing and <b>Account Category = Fixed Asset</b></li>
+                <li><b>Asset Family or Asset Category = Product Family</b> (Master Data > Accounting & Finance > Item Family)</li>
+                <li><b>Journal Types</b> (Master Data > Accounting & Finance > Journal Types)</li>
+            </ul>
+        </div>
+        <div title="CONDITIONS" style="padding: 20px;">
+            <ul>
+                <li><b>Depreciation = Asset Cost/Economic month</b> </li>
+            </ul>
+        </div>
+    </div>
 </div>
 
 <!-- PDF -->
@@ -176,6 +194,7 @@
                         url: '<?= base_url('finance/asset_depreciation/create') ?>',
                         data: {
                             item_family_id: itemData.item_family_id,
+                            // account_type: itemData.account_type,
                             asset_no: itemData.number,
                             asset_name: itemData.name,
                             depreciation: itemData.depreciation,

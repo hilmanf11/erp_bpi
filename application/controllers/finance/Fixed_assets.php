@@ -550,6 +550,7 @@ class Fixed_assets extends CI_Controller
 
         $success_count = 0;
         $total_qty = (int)($post['qty'] ?? 0);
+        $post['asset_category_number'] = $post['item_family_id'];
         
         // jika UOM=METER qty tetap tidak looping
         if (strtoupper($post['uom']) === "MTR" || strtolower($post['uom']) === "Meter") {
@@ -893,8 +894,13 @@ class Fixed_assets extends CI_Controller
                     $item_rm_id = "";
                 }
 
+                $cost     = (float)$data['cost'] ?? 0;
+                $qty      = (float)$data['qty'] ?? 0;
+                $currency = $data['currency'] ?? 'IDR'; // Default IDR
+                $uom      = $item_rm->uom ?? $data['uom'];
+
                 $dataFinal = [
-                    "asset_category_number"   => null,
+                    "asset_category_number"   => $asset_categories->id ?? $data['asset_category_number'],
                     "item_family_id"          => $asset_categories->id ?? $data['asset_category_number'],
                     "purchase_invoice_number" => $purchase_invoice->number ?? $data['purchase_invoice_number'],
                     "supplier_name"           => $data['supplier_name'],
@@ -903,14 +909,14 @@ class Fixed_assets extends CI_Controller
                     "name"                    => $data['name'],
                     "trans_date"              => $data['trans_date'],
                     "usage_date"              => $data['usage_date'],
-                    "qty"                     => $data['qty'],
-                    "uom"                     => $data['uom'],
-                    "currency"                => $data['currency'],
-                    "cost"                    => $data['cost'],
+                    "qty"                     => $qty,
+                    "uom"                     => $uom ?? null,
+                    "currency"                => $currency,
+                    "cost"                    => $cost,
                     "estimate_month"          => ($data['estimate_year'] * 12),
                     "estimate_year"           => $data['estimate_year'],
                     "expired_date"            => date("Y-m-d", strtotime("+" . ($data['estimate_year'] * 12) . ' months', strtotime($data['trans_date']))),
-                    "depreciation"            => ($data['cost'] / $estimate_month),
+                    "depreciation"            => ($cost / $estimate_month),
                     "depreciation_accumulate" => $data['depreciation_accumulate'], 
                     "remarks"                 => $data['remarks'],
                     "method"                  => $data['method'],
@@ -918,7 +924,7 @@ class Fixed_assets extends CI_Controller
                     "previous_location"       => null,
                     "department"              => $data['department'],
                     "location"                => $data['location'],
-                    "total"                   => ($data['qty'] * $data['cost']),
+                    "total"                   => ($qty * $cost),
                 ];
 
                 $send   = $this->crud->create('asset_fixeds', $dataFinal);

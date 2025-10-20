@@ -123,8 +123,8 @@
         <div title="RELATIONS" style="padding: 20px;">
             <ul>
                 <li>Get data from Modul Purchase Invoicing and <b>Account Category = Fixed Asset</b></li>
-                <li><b>Asset Type = Account Name</b> (Master Data > Accounting & Finance > Chart of Account)</li>
-                <li><b>Asset Family = Product Family</b> (Master Data > Accounting & Finance > Item Family)</li>
+                <li><b>Asset Family or Asset Category = Product Family</b> (Master Data > Accounting & Finance > Item Family)</li>
+                <li><b>Journal Types</b> (Master Data > Accounting & Finance > Journal Types)</li>
             </ul>
         </div>
         <div title="CONDITIONS" style="padding: 20px;">
@@ -1192,7 +1192,7 @@
     function statusformat(value, row) {
         if (value == "ACTIVE") {
             return "<b style='color:green;'>ACTIVE</b>";
-        } else if (value == 1) {
+        } else {
             return "<b style='color:red;'>EXPIRED</b>";
         }
     }
@@ -1200,7 +1200,7 @@
     function statusStyle(value, row, index) {
         if (value == "ACTIVE") {
             return 'background-color:#C8FFCC;';
-        } else if (value == 1) {
+        } else {
             return 'background-color:#FFC8C8;';
         }
     }
