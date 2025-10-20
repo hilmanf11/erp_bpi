@@ -2451,25 +2451,29 @@ class Journal_postings extends CI_Controller
                     <td style="vertical-align:middle;">' . $data['account_number'] . '</td>
                     <td style="vertical-align:middle;">' . $data['account_name'] . '</td>
                     <td style="text-align:center; vertical-align:middle;">' . $data['currency'] . '</td>
-                    <td style="text-align:right; vertical-align:middle;">' . $this->formatNominal($data['original_debit'], $data['currency']) . '</td>
-                    <td style="text-align:right; vertical-align:middle;">' . $this->formatNominal($data['original_credit'], $data['currency']) . '</td>
-                    <td style="text-align:center; vertical-align:middle;">' . $this->formatNominal($data['rates'], $data['currency']) . '</td>
-                    <td style="text-align:right; vertical-align:middle;">' . $this->formatNominal($data['local_debit'], $data['currency']) . '</td>
-                    <td style="text-align:right; vertical-align:middle;">' . $this->formatNominal($data['local_credit'], $data['currency']) . '</td>';
+                    <td style="text-align:right; vertical-align:middle;">' . $this->formatNominal($data['original_debit'], $data['currency'], $option) . '</td>
+                    <td style="text-align:right; vertical-align:middle;">' . $this->formatNominal($data['original_credit'], $data['currency'], $option) . '</td>
+                    <td style="text-align:center; vertical-align:middle;">' . $this->formatNominal($data['rates'], $data['currency'], $option) . '</td>
+                    <td style="text-align:right; vertical-align:middle;">' . $this->formatNominal($data['local_debit'], $data['currency'], $option) . '</td>
+                    <td style="text-align:right; vertical-align:middle;">' . $this->formatNominal($data['local_credit'], $data['currency'], $option) . '</td>';
             $no++;
         }
         $html .= '</table></body></html>';
         echo $html;
     }
 
-    private function formatNominal($value, $currency) 
+    private function formatNominal($value, $currency, $option = "") 
     {
         if (!is_numeric($value)) {
             return $value;
         }
         
-        $decimal = ($currency === "IDR") ? 2 : 4;    
-        return number_format($value, $decimal, ",", ".");
+        $decimal = (empty($currency) || $currency === 'IDR') ? 2 : 4;
+        if (!empty($option) && $option == "excel") {
+            return number_format($value, $decimal, ".", "");
+        } else {
+            return number_format($value, $decimal, ",", ".");
+        }
     }
 
     // Show GL and Hyperlink each transaction (Report_general_ledgers)
