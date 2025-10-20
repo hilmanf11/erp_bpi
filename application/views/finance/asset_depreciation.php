@@ -9,6 +9,7 @@
             <th rowspan="2" data-options="field:'asset_no',width:150,halign:'center'">Asset No</th>
             <th rowspan="2" data-options="field:'asset_name',width:200,halign:'center'">Asset Name</th>
             <th rowspan="2" data-options="field:'asset_family_name',width:150,halign:'center'">Asset Family</th>
+            <th rowspan="2" data-options="field:'asset_category_number',width:150,halign:'center',hidden:true">Asset Category</th>
             <th rowspan="2" data-options="field:'purchase_invoice_number',width:150,halign:'center'">Purchase Invoice No</th>
             <th rowspan="2" data-options="field:'purchase_date',width:120,align:'center'">Purchase Date</th>
             <th rowspan="2" data-options="field:'cost',width:100,halign:'center',align:'right', formatter:priceformat">Asset Cost</th>
@@ -193,8 +194,8 @@
                         type: "post",
                         url: '<?= base_url('finance/asset_depreciation/create') ?>',
                         data: {
+                            asset_category_number: itemData.asset_category_number,
                             item_family_id: itemData.item_family_id,
-                            // account_type: itemData.account_type,
                             asset_no: itemData.number,
                             asset_name: itemData.name,
                             depreciation: itemData.depreciation,
@@ -271,21 +272,34 @@
         var rows = $('#dg').datagrid('getSelections');
         var totalrows = rows.length;
 
-        if (filter_family != "") {
+        if (filter_family !== "") {
             if (totalrows > 0) {
                 var total = 0;
+                
                 for (let i = 0; i < totalrows; i++) {
-                    if (filter_family == rows[i].asset_category_number) {
-                        total += rows[i].debit;
+                    var debitValue = parseFloat(rows[i].debit) || 0; 
+
+                    if (filter_family === rows[i].asset_category_number) {
+                        total += debitValue;
                     }
                 }
 
-                $('#dg3').datagrid({
-                    url: '<?= base_url('finance/asset_depreciation/calculate/') ?>' + window.btoa(filter_family) + "/" + total,
-                    rownumbers: true,
-                });
+                console.log("TOTAL ", total);
+
+                if (!isNaN(total)) {
+                    // Pastikan total dikonversi ke string yang aman untuk URL sebelum base64
+                    var totalString = total.toFixed(2); // Menggunakan 2 desimal untuk akurasi
+
+                    $('#dg3').datagrid({
+                        url: '<?= base_url('finance/asset_depreciation/calculate/') ?>' + window.btoa(filter_family) + "/" + window.btoa(totalString),
+                        rownumbers: true,
+                    });
+                } else {
+                    toastr.error("Calculation Error. Result is not a valid number.");
+                }
+
             } else {
-                toastr.info("Please Select All Data in the Table first");
+                toastr.info("Please Select Data in the Table first");
             }
         } else {
             toastr.info("Please Select Category First");

@@ -273,7 +273,7 @@ class Fixed_assets extends CI_Controller
         $filter_purchase_invoice_number = $filter_list["filter_purchase_invoice_number"];
         $filter_supplier    = $filter_list["filter_supplier"];
 
-        $period_expired = !empty($filter_to) ? $filter_to : date('Y-m-d');
+        $period_expired = !empty($filter_to) ? date("Y-m", strtotime($filter_to))  : date('Y-m');
         
         /** -- manual calculate depreciation_accumulation without relation to asset_journals
         $this->db->select("a.*, 
@@ -320,8 +320,7 @@ class Fixed_assets extends CI_Controller
             SUM(debit) AS depreciation_accum_journal 
             FROM 
             asset_journals 
-            WHERE periode BETWEEN DATE_FORMAT('$filter_from', '%Y%m') AND DATE_FORMAT('$filter_to', '%Y%m')
-            OR trans_date <= '$filter_to'
+            WHERE periode <= '$period_expired'
             GROUP BY 
             asset_no
             ) c", "a.number = c.asset_no", "left"); // -- FILTER WHERE trans_date <= PENTING: Hanya jurnal yang terjadi pada atau sebelum tanggal filter

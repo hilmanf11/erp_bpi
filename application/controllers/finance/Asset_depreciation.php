@@ -131,7 +131,7 @@ class Asset_depreciation extends CI_Controller
         if ($this->input->post()) {
             $month = $this->input->post('month');
             $year = $this->input->post('year');
-            $family = $this->input->post('family');
+            $category = $this->input->post('category');
             $number = $this->input->post('number');
 
             $period = date("Y-m-t", strtotime($year . "-" . $month));
@@ -140,8 +140,8 @@ class Asset_depreciation extends CI_Controller
             $this->db->from('asset_fixeds');
             $this->db->where('trans_date <=', $period);
             $this->db->where("expired_date >=", $period);
-            if (!empty($family)) {
-                $this->db->like('item_family_id', $family);
+            if (!empty($category)) {
+                $this->db->like('item_family_id', $category);
             }
             $this->db->like('number', $number);
             $this->db->order_by('number', 'asc');
@@ -183,6 +183,7 @@ class Asset_depreciation extends CI_Controller
                     }
 
                     $data = array(
+                    "asset_category_number" => $post['asset_category_number'],
                         "item_family_id"    => $post['item_family_id'],
                         "asset_no"          => $post['asset_no'],
                         "asset_name"        => $post['asset_name'],
@@ -204,7 +205,41 @@ class Asset_depreciation extends CI_Controller
         }
     }
 
-    // SAVE CREATE DATA TO JOURNAL
+    // CALCULATE TOTAL PER JOURNAL ACCOUNT DEBIT/CREDIT
+    public function calculate($category, $total)
+    {
+        $category_number = base64_decode($category);
+        $total = base64_decode($total);
+        $asset_categories = $this->crud->reads("asset_categories", [], ["number" => $category_number]);
+        
+        $data = [];
+        if (!empty($asset_categories)) {
+            $no = 1;
+            foreach ($asset_categories as $asset_category) {
+                if ($asset_category->account_type == "DEBIT") {
+                    $debit = $total;
+                    $credit = 0;
+                } else {
+                    $debit = 0;
+                    $credit = $total;
+                }
+
+                $data[] = [
+                    "asset_category_number" => $category_number,
+                    "account_number" => $asset_category->account_number,
+                    "account_name"  => $asset_category->account_name,
+                    "debit"         => $debit,
+                    "credit"        => $credit,
+                    "flag"          => $no,
+                ];
+
+                $no++;
+            }
+        }
+        echo json_encode($data);
+    }
+
+    // SAVE JOURNAL DETAIL RESULT CALCULATE
     public function saveJournal()
     {
         $post = $this->input->post();
@@ -217,36 +252,6 @@ class Asset_depreciation extends CI_Controller
             $send = $this->crud->create('asset_journal_details', $post);
             echo $send;
         }
-    }
-
-    public function calculate($category, $total)
-    {
-        $category_number = base64_decode($category);
-        $asset_categories = $this->crud->reads("asset_categories", [], ["id" => $category_number]);
-        $no = 1;
-
-        foreach ($asset_categories as $asset_category) {
-            if ($asset_category->account_type == "DEBIT") {
-                $debit = $total;
-                $credit = 0;
-            } else {
-                $debit = 0;
-                $credit = $total;
-            }
-            
-            $data[] = [
-                "asset_category_number" => $category_number,
-                "account_number" => $asset_category->account_number,
-                "account_name"  => $asset_category->account_name,
-                "debit"         => $debit,
-                "credit"        => $credit,
-                "flag"          => $no,
-            ];
-
-            $no++;
-        }
-
-        echo json_encode($data);
     }
 
     //DELETE DATA
@@ -380,18 +385,33 @@ class Asset_depreciation extends CI_Controller
                         <td>' . $data['asset_category_name'] . '</td>
                         <td>' . $data['purchase_invoice_number'] . '</td>
                         <td>' . $data['purchase_date'] . '</td>
-                        <td style="text-align:right;">' . number_format($data['cost']) . '</td>
-                        <td style="text-align:right;">' . number_format($data['estimate_year']) . '</td>
-                        <td style="text-align:right;">' . number_format($data['estimate_month']) . '</td>
+                        <td style="text-align:right;">' . $this->formatNominal($data['cost'], 2, $option) . '</td>
+                        <td style="text-align:right;">' . $this->formatNominal($data['estimate_year'], 2, $option) . '</td>
+                        <td style="text-align:right;">' . $this->formatNominal($data['estimate_month'], 2, $option) . '</td>
                         <td>' . $data['expired_date'] . '</td>
                         <td>' . $data['account_number'] . '</td>
                         <td>' . $data['account_name'] . '</td>
-                        <td style="text-align:right;">' . number_format($data['debit']) . '</td>
-                        <td style="text-align:right;">' . number_format($data['credit']) . '</td>
+                        <td style="text-align:right;">' . $this->formatNominal($data['debit'], 2, $option) . '</td>
+                        <td style="text-align:right;">' . $this->formatNominal($data['credit'], 2, $option) . '</td>
                     </tr>';
             $no++;
         }
         $html .= '</table></body></html>';
         echo $html;
     }
+
+    // format separator and decimal point by option excel or print
+    private function formatNominal($value, $decimal, $option = "") 
+    {
+        if (!is_numeric($value)) {
+            return $value;
+        }
+        
+        if (!empty($option) && $option == "excel") {
+            return number_format($value, $decimal, ".", ""); // tanpa separator
+        } else {
+            return number_format($value, $decimal, ",", ".");
+        }
+    }
+
 }
