@@ -741,6 +741,20 @@
                     } else {
                         if (customer_id != "" && trans_type != "" && delivery_order_date != "" && delivery_date != "") {
                             if (totalrows > 0) {
+
+                                let invalidItems = [];
+                                for (let i = 0; i < totalrows; i++) {
+                                    if (selectedItems[i].qty_del < 0) {
+                                        invalidItems.push(selectedItems[i]);
+                                    }
+                                }
+
+                                if (invalidItems.length > 0) {
+                                    toastr.error("Qty Delivery cannot be minus!.");
+                                    console.warn("Invalid items:", invalidItems);
+                                    return;
+                                }
+
                                 for (let i = 0; i < totalrows; i++) {
                                     if (selectedItems[i].item_fg_id) {
                                         $.ajax({
