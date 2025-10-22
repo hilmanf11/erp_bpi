@@ -456,6 +456,9 @@ class Report_ap extends CI_Controller
             $supplier_name = $supplier['name'];
             $supplier_currency = $supplier['currency'] ?? $supplier['supplier_currency'];
 
+            // fix bug ketika tanggal journal pada posting_no | document_no | invoice_no berbeda dengan periode
+            $is_document_filter_active = false;
+            
             //Purchase invoicing
             $this->db->select("
                 number, modul, document_no, invoice_no, journal_date, account_number, currency, company_id, description, status, trans_date,
@@ -465,23 +468,31 @@ class Report_ap extends CI_Controller
                 SUM(local_credit) AS local_credit
             ");
             $this->db->from('journal_postings');
+            $this->db->like('company_name', $supplier_name, 'both');
             if (!empty($account_numbers)) {
                 $this->db->where_in('account_number', $account_numbers);
             }
-            $this->db->like('company_name', $supplier_name, 'both');
-            $this->db->where('journal_date >=', $filter_from);
-            $this->db->where('journal_date <=', $filter_to);
+            if (!empty($filter_posting_no) || !empty($filter_document_no) || !empty($filter_invoice_no)) {
+                $is_document_filter_active = true;
+                $this->db->group_start();
+                if (!empty($filter_posting_no)) {
+                    $this->db->like('number', $filter_posting_no, 'both');
+                }
+                if (!empty($filter_document_no)) {
+                    // Gunakan OR LIKE agar filter-filter ini bekerja secara independen, fix bug posting_no berbeda dengan posting_no di document_no
+                    $this->db->or_like('document_no', $filter_document_no, 'both'); 
+                }
+                if (!empty($filter_invoice_no)) {
+                    $this->db->or_like('invoice_no', $filter_invoice_no, 'both');
+                }
+                $this->db->group_end();
+            }
+            if (!empty($filter_from) && !empty($filter_to) && !$is_document_filter_active) {
+                $this->db->where('journal_date >=', $filter_from);
+                $this->db->where('journal_date <=', $filter_to);
+            }
             if (!empty($filter_currency)) {
                 $this->db->where('currency', $filter_currency);
-            }
-            if (!empty($filter_posting_no)) {
-                $this->db->like('number', $filter_posting_no, 'both');
-            }
-            if (!empty($filter_document_no)) {
-                $this->db->like('document_no', $filter_document_no, 'both');
-            }
-            if (!empty($filter_invoice_no)) {
-                $this->db->like('invoice_no', $filter_invoice_no, 'both');
             }
             $this->db->group_by('number, document_no, account_number, modul, invoice_no, journal_date, currency, company_id, description, status, trans_date');
             $subquery_a = $this->db->get_compiled_select(); // Dapatkan string SQL dari subquery
