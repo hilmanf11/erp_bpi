@@ -36,24 +36,33 @@ class Report_ap extends CI_Controller
         echo json_encode($send);
     }
 
-    public function readPostingNo() 
+    public function readPostingNo($supplier_name) 
     {
         $post = isset($_POST['q']) ? $_POST['q'] : "";
-        $send = $this->crud->query("SELECT DISTINCT number, journal_date FROM journal_postings WHERE modul NOT IN ('BANK STATEMENT','CLEARING') and modul IN ('AP PAYMENT','PURCHASE INVOICING') and number like '%$post%' ORDER BY number DESC");
+        $supplier_name = base64_decode($supplier_name);
+
+        $send = $this->crud->query("SELECT DISTINCT number, modul, journal_date, company_name FROM journal_postings WHERE modul NOT IN ('BANK STATEMENT','CLEARING') and modul IN ('AP PAYMENT','PURCHASE INVOICING') 
+        and number like '%$post%' and company_name like '%$supplier_name%' ORDER BY number DESC");
         echo json_encode($send);
     }
 
-    public function readDocumentNo() 
+    public function readDocumentNo($supplier_name) 
     {
         $post = isset($_POST['q']) ? $_POST['q'] : "";
-        $send = $this->crud->query("SELECT DISTINCT document_no, modul FROM journal_postings WHERE modul NOT IN ('BANK STATEMENT','CLEARING') and modul IN ('AP PAYMENT','PURCHASE INVOICING') and document_no like '%$post%' ORDER BY document_no DESC");
+        $supplier_name = base64_decode($supplier_name);
+
+        $send = $this->crud->query("SELECT DISTINCT document_no, number, modul, journal_date, company_name FROM journal_postings WHERE modul NOT IN ('BANK STATEMENT','CLEARING') and modul IN ('AP PAYMENT','PURCHASE INVOICING') 
+        and document_no like '%$post%' and company_name like '%$supplier_name%' ORDER BY document_no DESC");
         echo json_encode($send);
     }
 
-    public function readInvoiceNo()
+    public function readInvoiceNo($supplier_name)
     {
         $post = isset($_POST['q']) ? $_POST['q'] : "";
-        $send = $this->crud->query("SELECT DISTINCT invoice_no, modul FROM journal_postings WHERE modul NOT IN ('BANK STATEMENT','CLEARING') and modul IN ('AP PAYMENT','PURCHASE INVOICING') and invoice_no like '%$post%' ORDER BY invoice_no DESC");
+        $supplier_name = base64_decode($supplier_name);
+
+        $send = $this->crud->query("SELECT DISTINCT invoice_no, number, modul, journal_date, company_name FROM journal_postings WHERE modul NOT IN ('BANK STATEMENT','CLEARING') and modul IN ('AP PAYMENT','PURCHASE INVOICING') 
+        and invoice_no like '%$post%' and company_name like '%$supplier_name%' ORDER BY invoice_no DESC");
         echo json_encode($send);
     }
 
@@ -62,12 +71,6 @@ class Report_ap extends CI_Controller
         $post = isset($_POST['q']) ? $_POST['q'] : "";
         $send = $this->crud->reads('currencies', ["name" => $post]);
         echo json_encode($send);
-    }
-
-    public function readPi($supplier_id){
-        $supplier_id = base64_decode($supplier_id);
-        $query = $this->crud->query("SELECT DISTINCT `number` FROM purchase_invoices WHERE supplier_id = '$supplier_id' ORDER BY `number` ASC");
-        die(json_encode($query));
     }
 
     function exchangeRates($currency, $date)

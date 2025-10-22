@@ -49,8 +49,8 @@
                 <div class="fitem">
                     <span style="width:35%; display:inline-block;">Display</span>
                     <select style="width:60%;" id="filter_display" class="easyui-combobox" panelHeight="auto">
-                        <option value="Summary">Summary</option>
                         <option value="Detail">Detail</option>
+                        <option value="Summary">Summary</option>
                     </select>
                 </div>
             </div>
@@ -229,83 +229,90 @@
                     width: 300
                 }, ]
             ],
-        });
+            onSelect: function(index, supplier) {
+                
+                $("#filter_posting_no").combogrid({
+                    url: '<?= base_url('finance/report_ap/readPostingNo/') ?>' + window.btoa(supplier.name),
+                    panelWidth: 300,
+                    idField: 'number',
+                    textField: 'number',
+                    mode: 'remote',
+                    fitColumns: true,
+                    prompt: "Choose Posting No",
+                    icons: [{
+                        iconCls: 'icon-clear',
+                        handler: function(e) {
+                            $(e.data.target).combogrid('clear').combogrid('textbox').focus();
+                        }
+                    }],
+                    columns: [
+                        [{
+                            field: 'number',
+                            title: 'Posting No',
+                            width: 150
+                        }, {
+                            field: 'journal_date',
+                            title: 'Posting Date',
+                            width: 150
+                        }, ]
+                    ],
+                });
 
-        $("#filter_posting_no").combogrid({
-            url: '<?= base_url('finance/report_ap/readPostingNo/') ?>',
-            panelWidth: 300,
-            idField: 'number',
-            textField: 'number',
-            mode: 'remote',
-            fitColumns: true,
-            prompt: "Choose Posting No",
-            icons: [{
-                iconCls: 'icon-clear',
-                handler: function(e) {
-                    $(e.data.target).combogrid('clear').combogrid('textbox').focus();
-                }
-            }],
-            columns: [
-                [{
-                    field: 'number',
-                    title: 'Posting No',
-                    width: 150
-                }, {
-                    field: 'journal_date',
-                    title: 'Posting Date',
-                    width: 150
-                }, ]
-            ],
-        });
+                $("#filter_document_no").combogrid({
+                    url: '<?= base_url('finance/report_ap/readDocumentNo/') ?>' + window.btoa(supplier.name),
+                    panelWidth: 350,
+                    idField: 'document_no',
+                    textField: 'document_no',
+                    mode: 'remote',
+                    fitColumns: true,
+                    prompt: "Choose Document No",
+                    icons: [{
+                        iconCls: 'icon-clear',
+                        handler: function(e) {
+                            $(e.data.target).combogrid('clear').combogrid('textbox').focus();
+                        }
+                    }],
+                    columns: [
+                        [{
+                            field: 'document_no',
+                            title: 'Document No',
+                            width: 175
+                        }, {
+                            field: 'journal_date',
+                            title: 'Posting Date',
+                            width: 175
+                        }, ]
+                    ],
+                });
 
-        $("#filter_document_no").combogrid({
-            url: '<?= base_url('finance/report_ap/readDocumentNo/') ?>',
-            panelWidth: 350,
-            idField: 'document_no',
-            textField: 'document_no',
-            mode: 'remote',
-            fitColumns: true,
-            prompt: "Choose Document No",
-            icons: [{
-                iconCls: 'icon-clear',
-                handler: function(e) {
-                    $(e.data.target).combogrid('clear').combogrid('textbox').focus();
-                }
-            }],
-            columns: [
-                [{
-                    field: 'document_no',
-                    title: 'Document No',
-                    width: 175
-                }, ]
-            ],
-        });
+                $("#filter_invoice_no").combogrid({
+                    url: '<?= base_url('finance/report_ap/readInvoiceNo/') ?>' + window.btoa(supplier.name),
+                    panelWidth: 400,
+                    idField: 'invoice_no',
+                    textField: 'invoice_no',
+                    mode: 'remote',
+                    fitColumns: true,
+                    prompt: "Choose Invoice No",
+                    icons: [{
+                        iconCls: 'icon-clear',
+                        handler: function(e) {
+                            $(e.data.target).combogrid('clear').combogrid('textbox').focus();
+                        }
+                    }],
+                    columns: [
+                        [{
+                            field: 'invoice_no',
+                            title: 'Invoice No',
+                            width: 200
+                        }, {
+                            field: 'modul',
+                            title: 'Modul',
+                            width: 200
+                        }, ]
+                    ],
+                });
 
-        $("#filter_invoice_no").combogrid({
-            url: '<?= base_url('finance/report_ap/readInvoiceNo/') ?>',
-            panelWidth: 400,
-            idField: 'invoice_no',
-            textField: 'invoice_no',
-            mode: 'remote',
-            fitColumns: true,
-            prompt: "Choose Invoice No",
-            icons: [{
-                iconCls: 'icon-clear',
-                handler: function(e) {
-                    $(e.data.target).combogrid('clear').combogrid('textbox').focus();
-                }
-            }],
-            columns: [
-                [{
-                    field: 'invoice_no',
-                    title: 'Invoice No',
-                    width: 200
-                }, {
-                    field: 'modul',
-                    title: 'Modul',
-                    width: 200
-                }, ]
-            ],
+            }
         });
 
         $("#filter_currency").combogrid({
@@ -333,6 +340,26 @@
                     width: 150
                 }, ]
             ],
+        });
+
+        // -- disable filter lain jika filter_display=Summary
+        $('#filter_display').combobox({
+            onChange: function(newValue, oldValue) {
+                if (newValue === 'Summary') {
+                    // Menonaktifkan (disable) elemen saat 'Summary' dipilih
+                    $('#filter_posting_no').textbox('disable');
+                    $('#filter_posting_no').textbox('setValue', ''); // Kosongkan nilainya
+                    $('#filter_document_no').textbox('disable');
+                    $('#filter_document_no').textbox('setValue', ''); // Kosongkan nilainya
+                    $('#filter_invoice_no').textbox('disable');
+                    $('#filter_invoice_no').textbox('setValue', ''); // Kosongkan nilainya
+                } else {
+                    // Mengaktifkan kembali elemen saat 'Detail' dipilih
+                    $('#filter_posting_no').textbox('enable');
+                    $('#filter_document_no').textbox('enable');
+                    $('#filter_invoice_no').textbox('enable');
+                }
+            }
         });
 
     });
