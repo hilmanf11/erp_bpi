@@ -3831,7 +3831,7 @@ class Sales_invoices extends CI_Controller
 
         // Build XML Structure
         $xml = new SimpleXMLElement('<TaxInvoiceBulk xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="TaxInvoice.xsd"></TaxInvoiceBulk>');
-        $xml->addChild('TIN', $npwp_seller);
+        $xml->addChild('TIN', htmlspecialchars($npwp_seller));
         $listFakturNode = $xml->addChild('ListOfTaxInvoice');
 
         foreach ($faktur_query as $faktur) 
@@ -3918,7 +3918,7 @@ class Sales_invoices extends CI_Controller
                     // Perbarui tag dengan nilai yang sudah digabungkan
                     $itemNode->addChild('Opt', 'A');
                     $itemNode->addChild('Code', $hs_code);
-                    $itemNode->addChild('Name', $detail['item_name'] . $hs_code_item);
+                    $itemNode->addChild('Name', htmlspecialchars($detail['item_name']) . $hs_code_item);
                     $itemNode->addChild('Unit', $uom);
                     $itemNode->addChild('Price', round($detail['price'], 2));
                     $itemNode->addChild('Qty', round($detail['qty'], 2)); // Gunakan qty yang sudah dijumlahkan
