@@ -243,6 +243,7 @@ class Report_ap extends CI_Controller
                     body {
                         font-family: Arial, Helvetica, sans-serif;
                         margin: 20px;
+                        zoom: 90%;
                     }
                     .header-section {
                         overflow: hidden;
@@ -314,11 +315,11 @@ class Report_ap extends CI_Controller
 
                         /* Memaksa warna latar belakang untuk muncul saat dicetak */
                         #customers th {
-                            background-color: #4E73BE !important;
+                            background-color: #99b2e4 !important;
                             -webkit-print-color-adjust: exact;
                         }
                         #customers tr:nth-child(even) {
-                            background-color: #DEEBF7; !important;
+                            background-color: #ededed !important;
                             -webkit-print-color-adjust: exact;
                         }
                         #customers tr:hover {

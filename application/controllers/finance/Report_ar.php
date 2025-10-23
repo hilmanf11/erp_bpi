@@ -28,6 +28,13 @@ class Report_ar extends CI_Controller
         }
     }
 
+    public function readAddress($customer_id)
+    {
+        $customer_id = base64_decode($customer_id);
+        $send = $this->crud->query("SELECT * FROM customer_address WHERE customer_id = '$customer_id' ");
+        echo json_encode($send);
+    }
+
     public function readSi($customer_id){
         $customer_id = base64_decode($customer_id);
         $query = $this->crud->query("SELECT DISTINCT `number` FROM sales_invoices WHERE customer_id = '$customer_id' ORDER BY `number` ASC");
@@ -53,7 +60,739 @@ class Report_ar extends CI_Controller
         return $amount;
     }
 
-    public function print($option = "") 
+    // BEGIN BALANCE CUSTOMER
+    public function begin_balance($customer_id, $filter_list, $initial_balance)
+    {
+        $filter_from          = $filter_list["filter_from"];
+        $filter_to            = $filter_list["filter_to"];
+        $filter_customer      = $filter_list["filter_customer"];
+        $filter_plant         = $filter_list["filter_plant"];
+        $filter_sales_invoice = $filter_list["filter_sales_invoice"];
+        $filter_currency      = $filter_list["filter_currency"];
+        $filter_status        = $filter_list["filter_status"];
+        $filter_display       = $filter_list["filter_display"];
+
+        // Get data Customer
+        $customer = $this->crud->read("customers", ["id" => $customer_id]);
+        $customer_name = $customer->name;
+        if (empty($customer)) {
+            return 0; // Kembalikan 0 jika pelanggan tidak ditemukan
+        }
+        
+        // Get account_number yang termasuk ke REPORT AR
+        $get_account_numbers = $this->db->select('account_number')->from('account_coa')->where('report_ar', 1)->get()->result_array();
+        $account_numbers = array_column($get_account_numbers, 'account_number'); 
+        if (empty($account_numbers)) {
+            // Jika tidak ada akun AR, saldo awal adalah saldo customer
+            return (float)$initial_balance;
+        }
+        
+        // Inisialisasi variabel untuk Query Builder
+        $this->db->reset_query();
+
+        // Query 1: Sales Invoices (SI) - Mengambil Debit (Piutang)
+        $this->db->select('SUM(b.local_debit) AS debit_si, SUM(b.local_credit) AS credit_si');
+        $this->db->from('sales_invoices a');
+        $this->db->join('journal_postings b', 'a.number = b.document_no');
+        $this->db->join('customer_address ca', 'a.customer_id = ca.customer_id', 'left');
+        if (!empty($account_numbers)) {
+            $this->db->where_in('b.account_number', $account_numbers);
+        }
+        $this->db->where('a.customer_id', $customer_id);
+        $this->db->where('b.journal_date <', $filter_from);
+        $this->db->where('b.modul', 'SALES INVOICING'); // Hanya modul Sales Invoicing
+        $this->db->like('a.status', $filter_status, 'both');
+        if (!empty($filter_currency)) {
+            $this->db->where('a.currency', $filter_currency);
+        }
+        $query_1 = $this->db->get()->row();
+        $this->db->reset_query();
+
+        // Query 2: AR Receipts (AR) - Mengambil Kredit (Pembayaran Masuk)
+        $this->db->select('SUM(b.local_debit) AS debit_ar, SUM(b.local_credit) AS credit_ar');
+        $this->db->from('ar_receipts a');
+        $this->db->join('journal_postings b', 'a.receipt_no = b.document_no');
+        $this->db->join('customer_address ca', 'a.customer_id = ca.customer_id', 'left');
+        if (!empty($account_numbers)) {
+            $this->db->where_in('b.account_number', $account_numbers);
+        }
+        $this->db->where('a.customer_id', $customer_id);
+        $this->db->where('b.journal_date <', $filter_from);
+        $this->db->where('b.modul', 'AR-RECEIPT'); // Hanya modul AR Receipt
+        $this->db->like('a.status', $filter_status, 'both');
+        if (!empty($filter_currency)) {
+            $this->db->where('a.currency', $filter_currency);
+        }
+        $query_2 = $this->db->get()->row();
+        $this->db->reset_query();
+        
+        // === Perhitungan Saldo Awal (Local Currency) ===
+        $local_debit_si  = (float)($query_1->debit_si ?? 0);
+        $local_credit_si = (float)($query_1->credit_si ?? 0);
+        $local_debit_ar  = (float)($query_2->debit_ar ?? 0);
+        $local_credit_ar = (float)($query_2->credit_ar ?? 0);
+        
+        // Total Debit (Piutang)
+        $total_debit_old = $local_debit_si;
+        
+        // Total Kredit (Pembayaran Masuk)
+        $total_credit_old = $local_credit_si + $local_credit_ar;
+
+        // Saldo awal adalah Saldo Awal Sistem + (Total Debit Lama - Total Kredit Lama)
+        $begin_balance = $initial_balance + $total_debit_old - $total_credit_old;
+        
+        return $begin_balance;
+    }
+
+    public function formatNo($amount) 
+    {
+        if ($amount >= 0) {
+            return number_format(@$amount, 2);
+        } else {
+            return "<span style='color:red;'>(" . number_format(abs($amount), 2) . ")</span>";
+        }
+    }
+    
+    // format separator and decimal point by option excel or print
+    private function formatNominal($value, $decimal, $option = "") 
+    {
+        if (!is_numeric($value)) {
+            return $value;
+        }
+        
+        if (!empty($option) && $option == "excel") {
+            return number_format($value, $decimal, ".", ""); // tanpa separator
+        } else {
+            return number_format($value, $decimal, ",", ".");
+        }
+    }
+
+    public function print($option = "")
+    {
+        if ($option == "excel") {
+            $format  = date("Ymd");
+            header("Content-type: application/vnd-ms-excel");
+            header("Content-Disposition: attachment; filename=report_ar_$format.xls");
+        }
+        
+        $filter_from          = base64_decode($this->input->get('filter_from') ?? '');
+        $filter_to            = base64_decode($this->input->get('filter_to') ?? '');
+        $filter_sales_invoice = base64_decode($this->input->get('filter_sales_invoice')) ?? null;
+        $filter_customer      = $this->input->get('filter_customer') ?? null;
+        $filter_plant         = $this->input->get('filter_plant') ?? null;
+        $filter_currency      = $this->input->get('filter_currency') ?? null;
+        $filter_status        = $this->input->get('filter_status') ?? null;
+        $filter_display       = $this->input->get('filter_display') ?? null;
+
+        $filter_list = [
+            'filter_from'          => $filter_from,
+            'filter_to'            => $filter_to,
+            'filter_customer'      => $filter_customer,
+            'filter_plant'         => $filter_plant,
+            'filter_sales_invoice' => $filter_sales_invoice,
+            'filter_currency'      => $filter_currency,
+            'filter_status'        => $filter_status,
+            'filter_display'       => $filter_display,
+        ];
+
+        //Config
+        $this->db->select('*');
+        $this->db->from('config');
+        $config = $this->db->get()->row();
+
+        // Prepare HTML Report
+        $html = '<html><head><title>Print Data</title></head>
+            <style>
+                    body {
+                        font-family: Arial, Helvetica, sans-serif;
+                        margin: 20px;
+                        zoom: 90%;
+                    }
+                    .header-section {
+                        overflow: hidden;
+                        margin-bottom: 20px;
+                    }
+                    .company-info {
+                        float: left;
+                        width: 60%;
+                        font-size: 12px;
+                        text-align: left;
+                    }
+                    .print-info {
+                        float: right;
+                        width: 38%;
+                        font-size: 12px;
+                        text-align: right;
+                    }
+                    .company-logo {
+                        vertical-align: top;
+                        padding-right: 10px;
+                    }
+                    .company-details b {
+                        font-size: 14px;
+                    }
+                    .company-details span {
+                        font-size: 10px;
+                    }
+                    .report-title {
+                        text-align: center;
+                        margin-top: 20px;
+                        margin-bottom: 20px;
+                    }
+                    .report-title h3 {
+                        margin: 0;
+                        font-size: 18px;
+                    }
+                    .report-title small {
+                        font-size: 12px;
+                    }
+                    #customers {
+                        border-collapse: collapse;
+                        width: 100%;
+                        font-size: 13px; 
+                        margin-top: 15px;
+                    }
+                    #customers th,
+                    #customers td {
+                        border: 1px solid black;
+                        padding: 0.6rem; 
+                    }
+                    #customers th {
+                        background-color: #ffffff;
+                        text-align: center;
+                        color: black; 
+                        font-weight: bold;
+                    }
+                    #customers tr:nth-child(even) {
+                        background-color: #ffffff;
+                    }
+                    #customers tr:hover {
+                        background-color: #f1f1f1;
+                    }
+
+                    /* Aturan CSS khusus untuk print */
+                    @media print {
+                        body {
+                            zoom: 90%;
+                        }
+
+                        /* Memaksa warna latar belakang untuk muncul saat dicetak */
+                        #customers th {
+                            background-color: #99b2e4 !important;
+                            -webkit-print-color-adjust: exact;
+                        }
+                        
+                        .begin_balance {
+                            background-color: #DEE2FF !important;
+                            -webkit-print-color-adjust: exact;
+                        }
+                        
+                        .grand_total {
+                            background-color: #C3FFB4 !important;
+                            -webkit-print-color-adjust: exact;
+                        }
+                        
+                        #customers tr:hover {
+                            background-color: #f1f1f1 !important;
+                            -webkit-print-color-adjust: exact;
+                        }
+                        
+                        /* Styling untuk baris ERP */
+                        .bg-erp-row { /* Menambahkan class baru untuk baris ERP */
+                            background-color: #DEEBF7 !important;
+                            -webkit-print-color-adjust: exact;
+                        }
+                    }
+
+                    .text-right { text-align: right; }
+                    .text-center { text-align: center; }
+                    .font-bold { font-weight: bold; }
+                    .bg-light-green { background-color: #CAFFB3; } /* Untuk baris kelompok akun */
+                    .bg-grey { background-color: #EBEBEB; } /* Untuk grand total */
+
+                    .table-custom-summary {
+                        width: 100%;
+                        border-collapse: collapse;
+                        font-size: 11pt;
+                        color: #495057;
+                    }
+                    
+                    /* Specific styling to match the image */
+                    .table-custom-summary thead {
+                        border-top: 2px solid black;
+                        border-bottom: 2px solid black;
+                    }
+
+                    .table-custom-summary thead th {
+                        background-color: transparent; /* No background color in the header */
+                        color: black;
+                        padding: 0.3rem;
+                        font-weight: bold;
+                    }
+                    
+                    .table-custom-summary tbody tr {
+                        border-bottom: 1px solid #dee2e6; /* Border at the bottom of each row */
+                    }
+                    
+                    .table-custom-summary tbody tr:last-child {
+                        border-bottom: none; /* No border for the last row */
+                    }
+                    
+                    .table-custom-summary tbody tr td {
+                        padding: 0.3rem;
+                        vertical-align: middle;
+                        border: none; /* Remove all cell borders */
+                    }
+
+                    .table-custom-summary .text-end {
+                        text-align: right;
+                    }
+
+                    .table-custom-summary .text-danger {
+                        color: #dc3545;
+                        font-weight: bold;
+                    }
+                    
+                    .clearfix::after {
+                        content: "";
+                        clear: both;
+                        display: table;
+                    }
+                </style>            
+            <body>
+            <center>
+                <div style="float: left; font-size: 12px; text-align: left;">
+                    <table style="width: 100%;">
+                        <tr>
+                            <td width="50" style="font-size: 12px; vertical-align: top; text-align: center; vertical-align:jus margin-right:10px;">
+                                <img src="' . $config->favicon . '" width="30">
+                            </td>
+                            <td style="font-size: 14px; text-align: left; margin:2px;">
+                                <b style="font-size:14px;">' . $config->name . '</b><br>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td colspan="2" style="font-size: 14px; text-align: left; margin:2px;"> 
+                                <span style="font-size:10px;">' . $config->address . '</span><br>
+                            </td>
+                        </tr>
+                    </table>
+                </div>
+                <div style="float: right; font-size: 12px; text-align: right;">
+                    Print Date ' . date("d M Y H:i:s") . ' <br>
+                    Print By ' . $this->session->username . '  
+                </div>
+            </center>';
+            if ($option != "excel") {
+                $html .= '<br><br><br><br>'; // separator print 
+            }
+            $html .= '<center>
+                <h3 style="margin:0;">ACCOUNT RECEIVABLE REPORT <i>('.$filter_display.')</i></h3>
+                <small>PERIOD : <b>' . $filter_from . '</b> To <b>' . $filter_to . '</b></small>
+            </center>
+            <br><br>';
+
+        $summary = '<table id="customers" border="1">
+                        <thead>
+                            <tr style="background-color: #E5E5E5;">
+                                <th width="20">No</th>
+                                <th>Customer Name</th>
+                                <th>Currency</th>
+                                <th>LOCAL CURRENCY<br><i>Balance</i></th>
+                            </tr>
+                        </thead>';
+
+        $invoice = '<table id="customers" border="1">
+                        <tr>
+                            <th rowspan="2" width="20">No</th>
+                            <th rowspan="2" width="50">Status</th>
+                            <th rowspan="2">Customer ID</th>
+                            <th rowspan="2">Customer Name</th>
+                            <th rowspan="2">Plant</th>
+                            <th rowspan="2">Source</th>
+                            <th rowspan="2">Invoice Date</th>
+                            <th rowspan="2">Payment Due</th>
+                            <th rowspan="2">Document No</th>
+                            <th rowspan="2">Invoice No</th>
+                            <th rowspan="2">Posting Date</th>
+                            <th rowspan="2">Posting No</th>
+                            <th rowspan="2">Account No</th>
+                            <th rowspan="2">Currency</th>
+                            <th colspan="4">LOCAL CURRENCY</th>
+                        </tr>
+                        <tr>
+                            <th>Invoice</th>
+                            <th>Payment</th>
+                            <th>Remain</th>
+                            <th>Accumulated</th>
+                        </tr>';
+    
+        $detail = '<table id="customers" border="1">
+                        <tr>
+                            <th rowspan="2" width="20">No</th>
+                            <th rowspan="2" width="50">Status</th>
+                            <th rowspan="2">Customer ID</th>
+                            <th rowspan="2">Customer Name</th>
+                            <th rowspan="2">Plant</th>
+                            <th rowspan="2">Source</th>
+                            <th rowspan="2">Invoice Date</th>
+                            <th rowspan="2">Payment Due</th>
+                            <th rowspan="2">Document No</th>
+                            <th rowspan="2">Invoice No</th>
+                            <th rowspan="2">Posting Date</th>
+                            <th rowspan="2">Posting No</th>
+                            <th rowspan="2">Account No</th>
+                            <th rowspan="2">Currency</th>
+                            <th colspan="4">LOCAL CURRENCY</th>
+                        </tr>
+                        <tr>
+                            <th>Debit</th>
+                            <th>Credit</th>
+                            <th>Balance</th>
+                            <th>Accumulated</th>
+                        </tr>';
+
+        // Get Customers
+        $this->db->select('a.*, c.plant, (COALESCE(b.balance_local, 0)) as balance_local, (COALESCE(b.balance, 0)) as balance');
+        $this->db->from('customers a');
+        $this->db->join('customer_address c', 'a.id = c.customer_id', 'left');
+        $this->db->join('account_balance_customers b', 'a.id = b.customer_id', 'left');
+        if (!empty($filter_customer)) {
+            $this->db->where("a.id", $filter_customer);
+        }
+        if (!empty($filter_currency)) {
+            $this->db->group_start();
+            $this->db->where("a.currency", $filter_currency);
+            $this->db->or_where("b.currency", $filter_currency);
+            $this->db->group_end();
+        }
+        if (!empty($filter_plant)) {
+            $this->db->where("c.plant", $filter_plant);
+        }
+        // $this->db->group_by('c.plant'); // tidak tampil per plant
+        $this->db->group_by('c.customer_id');
+        $this->db->order_by('a.name', 'asc');
+        $customers = $this->db->get()->result_array();
+
+        $no = 1;
+        $noid = 1;
+        $grand_local_debit = 0;
+        $grand_local_credit = 0;
+        $grand_local_balance = 0;
+        $grand_summary_total = 0;
+
+        function compare_trans_date($a, $b) {
+            return strtotime($a['voucher_date']) - strtotime($b['voucher_date']);
+        }
+
+        // Get account_number yang termasuk ke REPORT AR
+        $get_account_numbers = $this->db->select('account_number')->from('account_coa')->where('report_ar', 1)->get()->result_array();
+        $account_numbers_array = array_column($get_account_numbers, 'account_number'); // konversi tampil hanya value
+
+        if (empty($account_numbers_array)) {
+            $account_numbers_array = ['NON_EXISTING_ACCOUNT_AR']; 
+        }            
+
+        foreach ($customers as $customer) 
+        {
+            $customer_id = $customer['id'];
+            $customer_name = $customer['name'];
+            $plant = $customer['plant'];
+            $company_name = $customer_name;
+            $company_name2 = $customer_name . " | " . $plant;
+
+            // Siapkan string untuk WHERE IN di Subquery
+            $account_numbers_list = "'" . implode("','", $account_numbers_array) . "'"; 
+
+            $this->db->select("
+                'SI' AS source,
+                a.number AS invoice_no,
+                a.trans_date AS invoice_date,
+                a.due_date AS payment_due,
+                a.delivery_note_no AS document_no,
+                b.description,
+                b.journal_date AS voucher_date,
+                b.number AS voucher_no,
+                b.account_number,
+                a.currency,
+                b.local_debit,
+                b.local_credit,
+                (CASE WHEN a.number IS NULL THEN a.status ELSE 1 END) as status
+            ", FALSE);
+            $this->db->from('sales_invoices a');
+            $this->db->join(
+                "(SELECT journal_date, number, currency, document_no, account_number, description, SUM(local_debit) AS local_debit, SUM(local_credit) AS local_credit 
+                FROM journal_postings 
+                WHERE modul IN ('SALES INVOICING')
+                AND account_number IN ({$account_numbers_list})
+                GROUP BY number, document_no, account_number) b", 
+                'a.number = b.document_no', 
+                'JOIN', 
+                FALSE 
+            );
+            $this->db->join('customer_address ca', 'a.customer_id = ca.customer_id', 'LEFT');
+            $this->db->where('a.customer_id', $customer_id);
+            $this->db->where('ca.plant', $plant);
+            $this->db->where("b.journal_date BETWEEN '{$filter_from}' AND '{$filter_to}'");
+            $this->db->like('a.status', $filter_status);
+            if (!empty($filter_sales_invoice)) {
+                $this->db->or_like('a.number', $filter_sales_invoice);
+            }
+            if (!empty($filter_currency)) {
+                $this->db->group_start();
+                $this->db->where("a.currency", $filter_currency);
+                $this->db->or_where("b.currency", $filter_currency);
+                $this->db->group_end();
+            }
+            $this->db->group_by(['a.number', 'b.number']); 
+            $this->db->order_by('b.journal_date', 'ASC');
+            $data_1 = $this->db->get()->result_array();
+
+            $this->db->select("
+                'AR' AS source,
+                a.receipt_no AS invoice_no,
+                a.receipt_date AS invoice_date,
+                '-' AS payment_due,
+                a.sales_invoice AS document_no,
+                b.description,
+                b.journal_date AS voucher_date,
+                b.number AS voucher_no,
+                b.account_number,
+                a.currency,
+                (CASE WHEN a.account_type = 'DEBIT' THEN b.local_debit ELSE 0 END) as local_debit,
+                (CASE WHEN a.account_type = 'CREDIT' THEN b.local_credit ELSE 0 END) as local_credit,
+                (CASE WHEN c.status IS NULL THEN a.status ELSE c.status END) as status
+            ", FALSE);
+            $this->db->from('ar_receipts a');
+            $this->db->join(
+                "(SELECT journal_date, number, document_no, account_number, description, SUM(local_debit) AS local_debit, SUM(local_credit) AS local_credit 
+                FROM journal_postings 
+                WHERE modul IN ('AR RECEIPT') 
+                AND account_number IN ({$account_numbers_list})
+                GROUP BY number, document_no, account_number) b", 
+                'a.receipt_no = b.document_no', 
+                'LEFT', 
+                FALSE
+            );
+            $this->db->join('sales_invoices c', 'a.sales_invoice = c.number', 'LEFT');
+            $this->db->join('customer_address ca', 'a.customer_id = ca.customer_id', 'LEFT');
+            $this->db->where('a.customer_id', $customer_id);
+            $this->db->where('ca.plant', $plant);
+            // Mengkonversi logika $where_inv ke Query Builder
+            if ($filter_display == "Detail") {
+                // Memastikan subquery di-execute secara literal dengan parameter ketiga = FALSE
+                $this->db->where("a.sales_invoice NOT IN (SELECT DISTINCT number FROM sales_invoices)", NULL, FALSE);
+            }
+            $this->db->where("b.journal_date BETWEEN '{$filter_from}' AND '{$filter_to}'");
+            if (!empty($filter_sales_invoice)) {
+                $this->db->or_where('a.sales_invoice', $filter_sales_invoice);
+            }
+            if (!empty($filter_currency)) {
+                $this->db->group_start();
+                $this->db->where("a.currency", $filter_currency);
+                $this->db->or_where("b.currency", $filter_currency);
+                $this->db->group_end();
+            }
+            if (!empty($filter_status)) {
+                $this->db->group_start();
+                $this->db->where("a.status", $filter_status);
+                $this->db->or_where("c.status", $filter_status);
+                $this->db->group_end();
+            }
+            $this->db->group_by(['a.receipt_no', 'a.account_number']);
+            $this->db->order_by('b.journal_date', 'ASC');
+            $data_2 = $this->db->get()->result_array();
+
+            $sales_invoices = array_merge($data_1, $data_2);
+
+            usort($sales_invoices, 'compare_trans_date');
+
+            $local_debit = 0;
+            $local_credit = 0;
+
+            $begin_balance_local = $this->begin_balance($customer_id, $filter_list, @$customer['balance_local']);
+
+            if (count($sales_invoices) > 0 || $begin_balance_local > 0) {
+                $detail .= '<tr style="background: #DEE2FF; font-weight:bold;" class="begin_balance">
+                                <td colspan="14">BEGINING BALANCE ('.$customer_name.')</td>
+                                <td colspan="4" style="text-align:right;">' . number_format(@$begin_balance_local, 2) . '</td>
+                            </tr>';
+
+                $invoice .= '<tr style="background: #DEE2FF; font-weight:bold;" class="begin_balance">
+                                <td colspan="14">BEGINING BALANCE ('.$customer_name.')</td>
+                                <td colspan="4" style="text-align:right;">' . number_format(@$begin_balance_local, 2) . '</td>
+                            </tr>';
+            }
+
+            $accumulated = $begin_balance_local;
+
+            foreach ($sales_invoices as $sales_invoice) 
+            {
+                $document_no = $sales_invoice['invoice_no'];
+                if ($filter_display == "Invoice") {
+                    $payments = $this->db->query("SELECT a.*, b.number as voucher_no, b.trans_date as voucher_date, a.account_number,
+                        (CASE WHEN a.account_type = 'DEBIT' THEN (a.receipt) ELSE 0 END) AS local_debit,
+                        (CASE WHEN a.account_type = 'CREDIT' THEN (a.receipt) ELSE 0 END) AS local_credit
+                        FROM ar_receipts a
+                        LEFT JOIN journal_postings b ON a.receipt_no = b.document_no
+                        JOIN sales_invoices c ON a.sales_invoice = c.number
+                        WHERE a.sales_invoice = '$document_no'
+                        GROUP BY a.receipt_no")->result_array();
+                }
+
+                if ($sales_invoice['status'] == '0') {
+                    $status_purchase = "OPEN";
+                    $style_status_purchase = "background-color:#C8FFCC;";
+                } else if ($sales_invoice['status'] == '1') {
+                    $status_purchase = "CLOSE";
+                    $style_status_purchase = "background-color:#FFC8C8;";
+                } else {
+                    $status_purchase = "-";
+                    $style_status_purchase = "";
+                }
+                
+                $balance_local = ($sales_invoice['local_debit'] - $sales_invoice['local_credit']);
+
+                $accumulated += ($sales_invoice['local_debit'] - $sales_invoice['local_credit']);
+                $detail .= '<tr>
+                                <td>' . $no . '</td>
+                                <td style="text-align:center;' . $style_status_purchase . '">' . $status_purchase . '</td>
+                                <td>' . $customer_id . '</td>
+                                <td>' . $customer_name . '</td>
+                                <td>' . $plant . '</td>
+                                <td>' . $sales_invoice['source'] . '</td>
+                                <td>' . $sales_invoice['invoice_date'] . '</td>
+                                <td>' . $sales_invoice['payment_due'] . '</td>
+                                <td>' . $sales_invoice['document_no'] . '</td>
+                                <td>' . $sales_invoice['invoice_no'] . '</td>
+                                <td>' . $sales_invoice['voucher_date'] . '</td>
+                                <td>' . $sales_invoice['voucher_no'] . '</td>
+                                <td>' . $sales_invoice['account_number'] . '</td>
+                                <td style="text-align:center;">' . $sales_invoice['currency'] . '</td>
+                                <td style="text-align:right;">' . number_format($sales_invoice['local_debit'], 2) . '</td>
+                                <td style="text-align:right;">' . number_format($sales_invoice['local_credit'], 2) . '</td>
+                                <td style="text-align:right;">' . $this->formatNo($balance_local) . '</td>
+                                <td style="text-align:right;">' . $this->formatNo($accumulated) . '</td>
+                            </tr>';
+
+                if ($filter_display == "Invoice") {
+                    $payment_total = 0;
+                    foreach ($payments as $payment) {
+                        $balance_local += ($payment['local_debit'] - $payment['local_credit']);
+                        $accumulated += ($payment['local_debit'] - $payment['local_credit']);
+                        $payment_total += $payment['local_credit'];
+                        $local_debit += $payment['local_debit'];
+                        $local_credit += $payment['local_credit'];
+                    }
+
+                    if($payment_total == 0){
+                        $payment_total = $sales_invoice['local_credit'];
+                    }
+
+                    $balance_invoice = ($sales_invoice['local_debit'] - $payment_total);
+
+                    $invoice .= '<tr>
+                                    <td>' . $no . '</td>
+                                    <td style="text-align:center;' . $style_status_purchase . '">' . $status_purchase . '</td>
+                                    <td>' . $customer_id . '</td>
+                                    <td>' . $customer_name . '</td>
+                                    <td>' . $plant . '</td>
+                                    <td>' . $sales_invoice['source'] . '</td>
+                                    <td>' . $sales_invoice['invoice_date'] . '</td>
+                                    <td>' . $sales_invoice['payment_due'] . '</td>
+                                    <td>' . $sales_invoice['document_no'] . '</td>
+                                    <td>' . $sales_invoice['invoice_no'] . '</td>
+                                    <td>' . $sales_invoice['voucher_date'] . '</td>
+                                    <td>' . $sales_invoice['voucher_no'] . '</td>
+                                    <td>' . $sales_invoice['account_number'] . '</td>
+                                    <td style="text-align:center;">' . $sales_invoice['currency'] . '</td>
+                                    <td style="text-align:right;">' . number_format($sales_invoice['local_debit'], 2) . '</td>
+                                    <td style="text-align:right;">' . number_format($payment_total, 2) . '</td>
+                                    <td style="text-align:right;">' . $this->formatNo($balance_invoice) . '</td>
+                                    <td style="text-align:right;">' . $this->formatNo($accumulated) . '</td>
+                                </tr>';
+                }
+
+                $no++;
+                $local_debit += $sales_invoice['local_debit'];
+                $local_credit += $sales_invoice['local_credit'];
+            }
+
+            $balance_local = ($begin_balance_local + $local_debit - $local_credit);
+
+            if (count($sales_invoices) > 0 || $balance_local > 0) 
+            {
+                $detail .= '<tr style="background: #E5E5E5; font-weight:bold;">
+                                <td colspan="14">SUB TOTAL</td>
+                                <td style="text-align:right;">' . number_format($local_debit, 2) . '</td>
+                                <td style="text-align:right;">' . number_format($local_credit, 2) . '</td>
+                                <td style="text-align:right;">' . $this->formatNo($balance_local) . '</td>
+                                <td style="text-align:right;">' . $this->formatNo($accumulated) . '</td>
+                            </tr>
+                            <tr>
+                                <td colspan="18" style="height:20px;"></td>
+                            </tr>';
+
+                $invoice .= '<tr style="background: #E5E5E5; font-weight:bold;">
+                                <td colspan="14">SUB TOTAL</td>
+                                <td style="text-align:right;">' . number_format($local_debit, 2) . '</td>
+                                <td style="text-align:right;">' . number_format($local_credit, 2) . '</td>
+                                <td style="text-align:right;">' . $this->formatNo($balance_local) . '</td>
+                                <td style="text-align:right;">' . $this->formatNo($accumulated) . '</td>
+                            </tr>
+                            <tr>
+                                <td colspan="18" style="height:20px;"></td>
+                            </tr>';
+            
+                $summary .= '<tbody>
+                                <tr>
+                                <td>' . $noid . '</td>
+                                <td>' . $customer['name'] . '</td>
+                                <td style="text-align:center;">' . $customer['currency'] . '</td>
+                                <td style="text-align:right;">' . $this->formatNo($balance_local) . '</td>
+                            </tr>';
+            }
+            
+            $noid++;
+
+            $grand_local_debit += $local_debit;
+            $grand_local_credit += $local_credit;
+            $grand_local_balance += ($begin_balance_local + $grand_local_debit - $grand_local_credit);
+            $grand_summary_total += $balance_local;
+        }
+
+        $detail .= '<tr style="background: #C3FFB4; font-weight:bold;">
+                        <td colspan="14">GRAND TOTAL</td>
+                        <td style="text-align:right;">' . number_format($grand_local_debit, 2) . '</td>
+                        <td style="text-align:right;">' . number_format($grand_local_credit, 2) . '</td>
+                        <td style="text-align:right;">' .$this->formatNo($grand_local_balance) . '</td>
+                        <td style="text-align:right;">' . $this->formatNo($grand_summary_total) . '</td>
+                    </tr>';
+
+        $invoice .= '<tr style="background: #C3FFB4; font-weight:bold;">
+                        <td colspan="14">GRAND TOTAL</td>
+                        <td style="text-align:right;">' . number_format($grand_local_debit, 2) . '</td>
+                        <td style="text-align:right;">' . number_format($grand_local_credit, 2) . '</td>
+                        <td style="text-align:right;">' . $this->formatNo($grand_local_balance) . '</td>
+                        <td style="text-align:right;">' . $this->formatNo($grand_summary_total) . '</td>
+                    </tr>';
+
+        $summary .= '<tr style="font-weight:bold;" class="grand_total">
+                        <td style="text-align:right;" colspan="3">GRAND TOTAL</td>
+                        <td style="text-align:right;">' . $this->formatNo($grand_summary_total) . '</td>
+                    </tr>
+                </tbody>';
+
+        $htmlend = '</table></body></html>';
+
+        if ($filter_display == "Summary") {
+            echo $html . $summary . $htmlend;
+        } else {
+            echo $html . $detail . $htmlend;
+        }
+    }
+
+    public function print_new($option = "") 
     {
         if ($option == "excel") {
             $format  = date("Ymd");
