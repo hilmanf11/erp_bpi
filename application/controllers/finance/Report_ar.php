@@ -144,12 +144,12 @@ class Report_ar extends CI_Controller
         return $begin_balance;
     }
 
-    public function formatNo($amount) 
+    public function formatNo($amount, $option = "") 
     {
         if ($amount >= 0) {
-            return number_format(@$amount, 2);
+            return $this->formatNominal(@$amount, 2, $option);
         } else {
-            return "<span style='color:red;'>(" . number_format(abs($amount), 2) . ")</span>";
+            return "<span style='color:red;'>(" . $this->formatNominal(abs($amount), 2, $option) . ")</span>";
         }
     }
     
@@ -615,12 +615,12 @@ class Report_ar extends CI_Controller
             if (count($sales_invoices) > 0 || $begin_balance_local > 0) {
                 $detail .= '<tr style="background: #DEE2FF; font-weight:bold;" class="begin_balance">
                                 <td colspan="14">BEGINING BALANCE ('.$customer_name.')</td>
-                                <td colspan="4" style="text-align:right;">' . number_format(@$begin_balance_local, 2) . '</td>
+                                <td colspan="4" style="text-align:right;">' . $this->formatNominal(@$begin_balance_local, 2, $option) . '</td>
                             </tr>';
 
                 $invoice .= '<tr style="background: #DEE2FF; font-weight:bold;" class="begin_balance">
                                 <td colspan="14">BEGINING BALANCE ('.$customer_name.')</td>
-                                <td colspan="4" style="text-align:right;">' . number_format(@$begin_balance_local, 2) . '</td>
+                                <td colspan="4" style="text-align:right;">' . $this->formatNominal(@$begin_balance_local, 2, $option) . '</td>
                             </tr>';
             }
 
@@ -669,10 +669,10 @@ class Report_ar extends CI_Controller
                                 <td>' . $sales_invoice['voucher_no'] . '</td>
                                 <td>' . $sales_invoice['account_number'] . '</td>
                                 <td style="text-align:center;">' . $sales_invoice['currency'] . '</td>
-                                <td style="text-align:right;">' . number_format($sales_invoice['local_debit'], 2) . '</td>
-                                <td style="text-align:right;">' . number_format($sales_invoice['local_credit'], 2) . '</td>
-                                <td style="text-align:right;">' . $this->formatNo($balance_local) . '</td>
-                                <td style="text-align:right;">' . $this->formatNo($accumulated) . '</td>
+                                <td style="text-align:right;">' . $this->formatNominal($sales_invoice['local_debit'], 2, $option) . '</td>
+                                <td style="text-align:right;">' . $this->formatNominal($sales_invoice['local_credit'], 2, $option) . '</td>
+                                <td style="text-align:right;">' . $this->formatNo($balance_local, $option) . '</td>
+                                <td style="text-align:right;">' . $this->formatNo($accumulated, $option) . '</td>
                             </tr>';
 
                 if ($filter_display == "Invoice") {
@@ -706,10 +706,10 @@ class Report_ar extends CI_Controller
                                     <td>' . $sales_invoice['voucher_no'] . '</td>
                                     <td>' . $sales_invoice['account_number'] . '</td>
                                     <td style="text-align:center;">' . $sales_invoice['currency'] . '</td>
-                                    <td style="text-align:right;">' . number_format($sales_invoice['local_debit'], 2) . '</td>
-                                    <td style="text-align:right;">' . number_format($payment_total, 2) . '</td>
-                                    <td style="text-align:right;">' . $this->formatNo($balance_invoice) . '</td>
-                                    <td style="text-align:right;">' . $this->formatNo($accumulated) . '</td>
+                                    <td style="text-align:right;">' . $this->formatNominal($sales_invoice['local_debit'], 2, $option) . '</td>
+                                    <td style="text-align:right;">' . $this->formatNominal($payment_total, 2, $option) . '</td>
+                                    <td style="text-align:right;">' . $this->formatNo($balance_invoice, $option) . '</td>
+                                    <td style="text-align:right;">' . $this->formatNo($accumulated, $option) . '</td>
                                 </tr>';
                 }
 
@@ -724,10 +724,10 @@ class Report_ar extends CI_Controller
             {
                 $detail .= '<tr style="background: #E5E5E5; font-weight:bold;">
                                 <td colspan="14">SUB TOTAL</td>
-                                <td style="text-align:right;">' . number_format($local_debit, 2) . '</td>
-                                <td style="text-align:right;">' . number_format($local_credit, 2) . '</td>
-                                <td style="text-align:right;">' . $this->formatNo($balance_local) . '</td>
-                                <td style="text-align:right;">' . $this->formatNo($accumulated) . '</td>
+                                <td style="text-align:right;">' . $this->formatNominal($local_debit, 2, $option) . '</td>
+                                <td style="text-align:right;">' . $this->formatNominal($local_credit, 2, $option) . '</td>
+                                <td style="text-align:right;">' . $this->formatNo($balance_local, $option) . '</td>
+                                <td style="text-align:right;">' . $this->formatNo($accumulated, $option) . '</td>
                             </tr>
                             <tr>
                                 <td colspan="18" style="height:20px;"></td>
@@ -735,10 +735,10 @@ class Report_ar extends CI_Controller
 
                 $invoice .= '<tr style="background: #E5E5E5; font-weight:bold;">
                                 <td colspan="14">SUB TOTAL</td>
-                                <td style="text-align:right;">' . number_format($local_debit, 2) . '</td>
-                                <td style="text-align:right;">' . number_format($local_credit, 2) . '</td>
-                                <td style="text-align:right;">' . $this->formatNo($balance_local) . '</td>
-                                <td style="text-align:right;">' . $this->formatNo($accumulated) . '</td>
+                                <td style="text-align:right;">' . $this->formatNominal($local_debit, 2, $option) . '</td>
+                                <td style="text-align:right;">' . $this->formatNominal($local_credit, 2, $option) . '</td>
+                                <td style="text-align:right;">' . $this->formatNo($balance_local, $option) . '</td>
+                                <td style="text-align:right;">' . $this->formatNo($accumulated, $option) . '</td>
                             </tr>
                             <tr>
                                 <td colspan="18" style="height:20px;"></td>
@@ -749,7 +749,7 @@ class Report_ar extends CI_Controller
                                 <td>' . $noid . '</td>
                                 <td>' . $customer['name'] . '</td>
                                 <td style="text-align:center;">' . $customer['currency'] . '</td>
-                                <td style="text-align:right;">' . $this->formatNo($balance_local) . '</td>
+                                <td style="text-align:right;">' . $this->formatNo($balance_local, $option) . '</td>
                             </tr>';
             }
             
@@ -763,23 +763,23 @@ class Report_ar extends CI_Controller
 
         $detail .= '<tr style="background: #C3FFB4; font-weight:bold;">
                         <td colspan="14">GRAND TOTAL</td>
-                        <td style="text-align:right;">' . number_format($grand_local_debit, 2) . '</td>
-                        <td style="text-align:right;">' . number_format($grand_local_credit, 2) . '</td>
-                        <td style="text-align:right;">' .$this->formatNo($grand_local_balance) . '</td>
-                        <td style="text-align:right;">' . $this->formatNo($grand_summary_total) . '</td>
+                        <td style="text-align:right;">' . $this->formatNominal($grand_local_debit, 2, $option) . '</td>
+                        <td style="text-align:right;">' . $this->formatNominal($grand_local_credit, 2, $option) . '</td>
+                        <td style="text-align:right;">' .$this->formatNo($grand_local_balance, $option) . '</td>
+                        <td style="text-align:right;">' . $this->formatNo($grand_summary_total, $option) . '</td>
                     </tr>';
 
         $invoice .= '<tr style="background: #C3FFB4; font-weight:bold;">
                         <td colspan="14">GRAND TOTAL</td>
-                        <td style="text-align:right;">' . number_format($grand_local_debit, 2) . '</td>
-                        <td style="text-align:right;">' . number_format($grand_local_credit, 2) . '</td>
-                        <td style="text-align:right;">' . $this->formatNo($grand_local_balance) . '</td>
-                        <td style="text-align:right;">' . $this->formatNo($grand_summary_total) . '</td>
+                        <td style="text-align:right;">' . $this->formatNominal($grand_local_debit, 2, $option) . '</td>
+                        <td style="text-align:right;">' . $this->formatNominal($grand_local_credit, 2, $option) . '</td>
+                        <td style="text-align:right;">' . $this->formatNo($grand_local_balance, $option) . '</td>
+                        <td style="text-align:right;">' . $this->formatNo($grand_summary_total, $option) . '</td>
                     </tr>';
 
         $summary .= '<tr style="font-weight:bold;" class="grand_total">
                         <td style="text-align:right;" colspan="3">GRAND TOTAL</td>
-                        <td style="text-align:right;">' . $this->formatNo($grand_summary_total) . '</td>
+                        <td style="text-align:right;">' . $this->formatNo($grand_summary_total, $option) . '</td>
                     </tr>
                 </tbody>';
 
