@@ -118,7 +118,7 @@ class Report_ar extends CI_Controller
         }
         $this->db->where('a.customer_id', $customer_id);
         $this->db->where('b.journal_date <', $filter_from);
-        $this->db->where('b.modul', 'AR-RECEIPT'); // Hanya modul AR Receipt
+        $this->db->where('b.modul', 'AR RECEIPT'); // Hanya modul AR Receipt
         $this->db->like('a.status', $filter_status, 'both');
         if (!empty($filter_currency)) {
             $this->db->where('a.currency', $filter_currency);

@@ -89,11 +89,16 @@
         let url = "?";
         // Gunakan URL encoding (window.btoa) hanya pada tanggal yang mungkin sensitif
         url += "filter_from=" + window.btoa(filters.filter_from) +
-            "&filter_to=" + window.btoa(filters.filter_to);
+            "&filter_to=" + window.btoa(filters.filter_to) +
+            "&filter_supplier=" + window.btoa(filters.filter_supplier) +
+            "&filter_posting_no=" + window.btoa(filters.filter_posting_no) +
+            "&filter_invoice_no=" + window.btoa(filters.filter_invoice_no) +
+            "&filter_document_no=" + window.btoa(filters.filter_document_no);
 
         // Tambahkan filter lainnya
         for (const key in filters) {
-            if (filters.hasOwnProperty(key) && key !== 'filter_from' && key !== 'filter_to') {
+            if (filters.hasOwnProperty(key) && key !== 'filter_from' && key !== 'filter_to' && key !== 'filter_supplier' 
+                && key !== 'filter_posting_no' && key !== 'filter_invoice_no' && key !== 'filter_document_no') {
                 // Hindari pengiriman ulang filter_from dan filter_to
                 url += `&${key}=${filters[key]}`;
             }
@@ -125,7 +130,8 @@
         if (filter_display == "Summary") {
             display = "print"; 
         } else {
-            display = "print_detail";
+            // display = "print_detail"; // function detail dipisah dengan summary
+            display = "print";           // same function
         } 
         return display;
     }
