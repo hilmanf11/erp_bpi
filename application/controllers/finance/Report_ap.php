@@ -430,7 +430,7 @@ class Report_ap extends CI_Controller
     
         // --- Bagian 2: Persiapan Data & Format Laporan ---
         
-        // 2.1 Get Suppliers (Mirip AR Get Customers)
+        // 2.1 Get Suppliers
         $this->db->select('a.*, (COALESCE(b.balance_local, 0)) as balance_local, (COALESCE(b.balance, 0)) as balance');
         $this->db->from('suppliers a');
         $this->db->join('account_balance_suppliers b', 'a.id = b.supplier_id', 'left');
@@ -503,12 +503,15 @@ class Report_ap extends CI_Controller
         $grand_summary_total = 0; // Menggantikan grand_local_balance untuk konsistensi nama grand total
         
         // --- Bagian 3: Loop Per Supplier & Pengambilan Transaksi ---
+        
+        // fix bug ketika tanggal journal pada posting_no | document_no | invoice_no berbeda dengan periode
+        $is_document_filter_active = false;
 
         foreach ($suppliers as $supplier) 
         {
             $supplier_id = $supplier['id'];
             $supplier_name = $supplier['name'];
-
+            
             // 3.1 Query 1: Purchase Invoices (Hutang Bertambah = Credit)
             $this->db->select("
                 'PI' AS source, 
@@ -536,11 +539,12 @@ class Report_ap extends CI_Controller
                 FALSE 
             );
             $this->db->where('a.supplier_id', $supplier_id);
-            $this->db->where("b.journal_date BETWEEN '{$filter_from}' AND '{$filter_to}'");
+            // $this->db->where("b.journal_date BETWEEN '{$filter_from}' AND '{$filter_to}'");
             if (!empty($filter_posting_no) || !empty($filter_document_no) || !empty($filter_invoice_no)) {
+                $is_document_filter_active = true;
                 $this->db->group_start();
                 if (!empty($filter_posting_no)) {
-                    $this->db->like('number', $filter_posting_no, 'both');
+                    $this->db->like('b.number', $filter_posting_no, 'both');
                 }
                 if (!empty($filter_document_no)) {
                     // Gunakan OR LIKE agar filter-filter ini bekerja secara independen, fix bug posting_no berbeda dengan posting_no di document_no
@@ -551,17 +555,18 @@ class Report_ap extends CI_Controller
                 }
                 $this->db->group_end();
             }
+            if (!empty($filter_from) && !empty($filter_to) && !$is_document_filter_active) {
+                $this->db->where('journal_date >=', $filter_from);
+                $this->db->where('journal_date <=', $filter_to);
+            }
             if (!empty($filter_currency)) {
                 $this->db->group_start();
                 $this->db->where("a.currency", $filter_currency);
                 $this->db->or_where("b.currency", $filter_currency);
                 $this->db->group_end();
             }
-            if (!empty($filter_status)) {
-                $this->db->group_start();
+            if ($filter_status != null) {
                 $this->db->where("a.status", $filter_status);
-                $this->db->or_where("c.status", $filter_status);
-                $this->db->group_end();
             }
             $this->db->group_by(['a.number', 'b.number']);
             $this->db->order_by('b.journal_date', 'ASC');
@@ -598,11 +603,12 @@ class Report_ap extends CI_Controller
                 // Memastikan subquery di-execute secara literal dengan parameter ketiga = FALSE
                 $this->db->where("a.purchase_invoice NOT IN (SELECT DISTINCT number FROM purchase_invoices)", NULL, FALSE);
             }
-            $this->db->where("b.journal_date BETWEEN '{$filter_from}' AND '{$filter_to}'");
+            // $this->db->where("b.journal_date BETWEEN '{$filter_from}' AND '{$filter_to}'");
             if (!empty($filter_posting_no) || !empty($filter_document_no) || !empty($filter_invoice_no)) {
+                $is_document_filter_active = true;
                 $this->db->group_start();
                 if (!empty($filter_posting_no)) {
-                    $this->db->like('number', $filter_posting_no, 'both');
+                    $this->db->like('b.number', $filter_posting_no, 'both');
                 }
                 if (!empty($filter_document_no)) {
                     // Gunakan OR LIKE agar filter-filter ini bekerja secara independen, fix bug posting_no berbeda dengan posting_no di document_no
@@ -613,16 +619,20 @@ class Report_ap extends CI_Controller
                 }
                 $this->db->group_end();
             }
+            if (!empty($filter_from) && !empty($filter_to) && !$is_document_filter_active) {
+                $this->db->where('journal_date >=', $filter_from);
+                $this->db->where('journal_date <=', $filter_to);
+            }
             if (!empty($filter_currency)) {
                 $this->db->group_start();
                 $this->db->where("a.currency", $filter_currency);
                 $this->db->or_where("b.currency", $filter_currency);
                 $this->db->group_end();
             }
-            if (!empty($filter_status)) {
+            if ($filter_status != null) {
                 $this->db->group_start();
-                $this->db->where("a.status", $filter_status);
-                $this->db->or_where("c.status", $filter_status);
+                $this->db->where("a.status", $filter_status); // Status Payment (tabel a)
+                $this->db->or_where("c.status", $filter_status); // Status Invoice terkait (tabel c)
                 $this->db->group_end();
             }
             $this->db->group_by(['a.payment_no', 'a.account_number']);
