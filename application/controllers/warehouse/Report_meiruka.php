@@ -105,17 +105,107 @@ class Report_meiruka extends CI_Controller
             COALESCE(h.qty_issued, 0) as qty_issued,
             COALESCE(j.begin_stock) AS begin_stock,
             (COALESCE(d.qty_scan_in, 0) + COALESCE(e.qty_os_rm, 0) + COALESCE(f.qty_trans_rm_in, 0) + COALESCE(g.return_qty, 0) + COALESCE(k.qty_scan_bpm, 0)) AS qty_in,
-            COALESCE(h.qty_issued, 0) AS qty_out
+            COALESCE(h.qty_issued, 0) + COALESCE(i.qty_trans_rm_out, 0) AS qty_out,
+            (COALESCE(d.in_week1_receipt, 0) + COALESCE(e.in_week1_osrm, 0) + COALESCE(f.in_week1_trans, 0) + COALESCE(g.in_week1_return, 0) + COALESCE(k.in_week1_bpm, 0)) AS in_week1,
+            (COALESCE(d.in_week2_receipt, 0) + COALESCE(e.in_week2_osrm, 0) + COALESCE(f.in_week2_trans, 0) + COALESCE(g.in_week2_return, 0) + COALESCE(k.in_week2_bpm, 0)) AS in_week2,
+            (COALESCE(d.in_week3_receipt, 0) + COALESCE(e.in_week3_osrm, 0) + COALESCE(f.in_week3_trans, 0) + COALESCE(g.in_week3_return, 0) + COALESCE(k.in_week3_bpm, 0)) AS in_week3,
+            (COALESCE(d.in_week4_receipt, 0) + COALESCE(e.in_week4_osrm, 0) + COALESCE(f.in_week4_trans, 0) + COALESCE(g.in_week4_return, 0) + COALESCE(k.in_week4_bpm, 0)) AS in_week4,
+            (COALESCE(h.out_week1_issue, 0) + COALESCE(i.out_week1_trans, 0)) AS out_week1,
+            (COALESCE(h.out_week2_issue, 0) + COALESCE(i.out_week2_trans, 0)) AS out_week2,
+            (COALESCE(h.out_week3_issue, 0) + COALESCE(i.out_week3_trans, 0)) AS out_week3,
+            (COALESCE(h.out_week4_issue, 0) + COALESCE(i.out_week4_trans, 0)) AS out_week4
         FROM item_rm a
         JOIN item_familys b ON a.item_family_id = b.id AND b.number != 'FG'
         JOIN item_categories c ON a.item_category_id = c.id
-        LEFT JOIN (SELECT b.item_rm_id, SUM(a.qty) AS qty_scan_in FROM scan_item_receipts a JOIN purchase_order_receipts b ON a.receipt_id = b.receipt_id WHERE b.receipt_date BETWEEN '$filter_from' AND '$filter_to' GROUP BY b.item_rm_id) d ON a.id = d.item_rm_id
-        LEFT JOIN (SELECT item_rm_id, SUM(qty) AS qty_os_rm FROM os_rm WHERE trans_date BETWEEN '$filter_from' AND '$filter_to' GROUP BY item_rm_id) e ON a.id = e.item_rm_id
-        LEFT JOIN (SELECT item_rm_id, SUM(qty) AS qty_trans_rm_in FROM transaction_rm WHERE request_date BETWEEN '$filter_from' AND '$filter_to' AND transaction_kind = 'IN' GROUP BY item_rm_id) f ON a.id = f.item_rm_id
-        LEFT JOIN (SELECT a.item_rm_id, SUM(c.qty) as return_qty FROM return_materials a JOIN return_material_labels b ON a.return_id = b.return_id JOIN scan_item_receipts c ON a.return_id = c.receipt_id AND b.label_no = c.label_no WHERE a.return_date BETWEEN '$filter_from' AND '$filter_to' GROUP BY a.item_rm_id) g ON a.id = g.item_rm_id
-        LEFT JOIN (SELECT item_rm_id, SUM(qty) AS qty_issued FROM issued_material_details WHERE DATE_FORMAT(created_date, '%Y-%m-%d') BETWEEN '$filter_from' AND '$filter_to' GROUP BY item_rm_id) h ON a.id = h.item_rm_id
-        LEFT JOIN (SELECT item_rm_id, SUM(qty) AS qty_trans_rm_out FROM transaction_rm WHERE request_date BETWEEN '$filter_from' AND '$filter_to' AND transaction_kind = 'OUT' GROUP BY item_rm_id) i ON a.id = i.item_rm_id
-        LEFT JOIN (SELECT item_rm_id, SUM(qty) AS qty_scan_bpm FROM scan_item_bpm WHERE DATE_FORMAT(request_date, '%Y-%m-%d') BETWEEN '$filter_from' AND '$filter_to' GROUP BY item_rm_id) k ON a.id = k.item_rm_id
+        LEFT JOIN (
+            SELECT 
+                b.item_rm_id, 
+                SUM(a.qty) AS qty_scan_in,
+                SUM(CASE WHEN DAY(b.receipt_date) BETWEEN 1 AND 7  THEN a.qty ELSE 0 END) AS in_week1_receipt,
+                SUM(CASE WHEN DAY(b.receipt_date) BETWEEN 8 AND 14 THEN a.qty ELSE 0 END) AS in_week2_receipt,
+                SUM(CASE WHEN DAY(b.receipt_date) BETWEEN 15 AND 21 THEN a.qty ELSE 0 END) AS in_week3_receipt,
+                SUM(CASE WHEN DAY(b.receipt_date) BETWEEN 22 AND DAY(LAST_DAY(b.receipt_date)) THEN a.qty ELSE 0 END) AS in_week4_receipt
+            FROM scan_item_receipts a 
+            JOIN purchase_order_receipts b ON a.receipt_id = b.receipt_id 
+            WHERE b.receipt_date BETWEEN '$filter_from' AND '$filter_to' 
+            GROUP BY b.item_rm_id
+        ) d ON a.id = d.item_rm_id
+        LEFT JOIN (
+            SELECT 
+                item_rm_id, 
+                SUM(qty) AS qty_os_rm,
+                SUM(CASE WHEN DAY(trans_date) BETWEEN 1 AND 7  THEN qty ELSE 0 END) AS in_week1_osrm,
+                SUM(CASE WHEN DAY(trans_date) BETWEEN 8 AND 14 THEN qty ELSE 0 END) AS in_week2_osrm,
+                SUM(CASE WHEN DAY(trans_date) BETWEEN 15 AND 21 THEN qty ELSE 0 END) AS in_week3_osrm,
+                SUM(CASE WHEN DAY(trans_date) BETWEEN 22 AND DAY(LAST_DAY(trans_date)) THEN qty ELSE 0 END) AS in_week4_osrm
+            FROM os_rm 
+            WHERE trans_date BETWEEN '$filter_from' AND '$filter_to' 
+            GROUP BY item_rm_id
+        ) e ON a.id = e.item_rm_id
+        LEFT JOIN (
+            SELECT 
+                item_rm_id, 
+                SUM(qty) AS qty_trans_rm_in,
+                SUM(CASE WHEN DAY(request_date) BETWEEN 1 AND 7  THEN qty ELSE 0 END) AS in_week1_trans,
+                SUM(CASE WHEN DAY(request_date) BETWEEN 8 AND 14 THEN qty ELSE 0 END) AS in_week2_trans,
+                SUM(CASE WHEN DAY(request_date) BETWEEN 15 AND 21 THEN qty ELSE 0 END) AS in_week3_trans,
+                SUM(CASE WHEN DAY(request_date) BETWEEN 22 AND DAY(LAST_DAY(request_date)) THEN qty ELSE 0 END) AS in_week4_trans
+            FROM transaction_rm 
+            WHERE request_date BETWEEN '$filter_from' AND '$filter_to'
+            AND transaction_kind = 'IN'
+            GROUP BY item_rm_id
+        ) f ON a.id = f.item_rm_id
+        LEFT JOIN (
+            SELECT 
+                a.item_rm_id, 
+                SUM(c.qty) AS return_qty,
+                SUM(CASE WHEN DAY(a.return_date) BETWEEN 1 AND 7  THEN c.qty ELSE 0 END) AS in_week1_return,
+                SUM(CASE WHEN DAY(a.return_date) BETWEEN 8 AND 14 THEN c.qty ELSE 0 END) AS in_week2_return,
+                SUM(CASE WHEN DAY(a.return_date) BETWEEN 15 AND 21 THEN c.qty ELSE 0 END) AS in_week3_return,
+                SUM(CASE WHEN DAY(a.return_date) BETWEEN 22 AND DAY(LAST_DAY(a.return_date)) THEN c.qty ELSE 0 END) AS in_week4_return
+            FROM return_materials a 
+            JOIN return_material_labels b ON a.return_id = b.return_id 
+            JOIN scan_item_receipts c ON a.return_id = c.receipt_id AND b.label_no = c.label_no 
+            WHERE a.return_date BETWEEN '$filter_from' AND '$filter_to' 
+            GROUP BY a.item_rm_id
+        ) g ON a.id = g.item_rm_id
+        LEFT JOIN (
+            SELECT 
+                item_rm_id, 
+                SUM(qty) AS qty_issued,
+                SUM(CASE WHEN DAY(created_date) BETWEEN 1 AND 7  THEN qty ELSE 0 END) AS out_week1_issue,
+                SUM(CASE WHEN DAY(created_date) BETWEEN 8 AND 14 THEN qty ELSE 0 END) AS out_week2_issue,
+                SUM(CASE WHEN DAY(created_date) BETWEEN 15 AND 21 THEN qty ELSE 0 END) AS out_week3_issue,
+                SUM(CASE WHEN DAY(created_date) BETWEEN 22 AND DAY(LAST_DAY(created_date)) THEN qty ELSE 0 END) AS out_week4_issue
+            FROM issued_material_details 
+            WHERE DATE_FORMAT(created_date, '%Y-%m-%d') BETWEEN '$filter_from' AND '$filter_to' 
+            GROUP BY item_rm_id
+        ) h ON a.id = h.item_rm_id
+        LEFT JOIN (
+            SELECT 
+                item_rm_id, 
+                SUM(qty) AS qty_trans_rm_out,
+                SUM(CASE WHEN DAY(request_date) BETWEEN 1 AND 7  THEN qty ELSE 0 END) AS out_week1_trans,
+                SUM(CASE WHEN DAY(request_date) BETWEEN 8 AND 14 THEN qty ELSE 0 END) AS out_week2_trans,
+                SUM(CASE WHEN DAY(request_date) BETWEEN 15 AND 21 THEN qty ELSE 0 END) AS out_week3_trans,
+                SUM(CASE WHEN DAY(request_date) BETWEEN 22 AND DAY(LAST_DAY(request_date)) THEN qty ELSE 0 END) AS out_week4_trans
+            FROM transaction_rm 
+            WHERE request_date BETWEEN '$filter_from' AND '$filter_to' 
+            AND transaction_kind = 'OUT' 
+            GROUP BY item_rm_id
+        ) i ON a.id = i.item_rm_id
+        LEFT JOIN (
+            SELECT 
+                item_rm_id, 
+                SUM(qty) AS qty_scan_bpm,
+                SUM(CASE WHEN DAY(request_date) BETWEEN 1 AND 7  THEN qty ELSE 0 END) AS in_week1_bpm,
+                SUM(CASE WHEN DAY(request_date) BETWEEN 8 AND 14 THEN qty ELSE 0 END) AS in_week2_bpm,
+                SUM(CASE WHEN DAY(request_date) BETWEEN 15 AND 21 THEN qty ELSE 0 END) AS in_week3_bpm,
+                SUM(CASE WHEN DAY(request_date) BETWEEN 22 AND DAY(LAST_DAY(request_date)) THEN qty ELSE 0 END) AS in_week4_bpm
+            FROM scan_item_bpm 
+            WHERE DATE_FORMAT(request_date, '%Y-%m-%d') BETWEEN '$filter_from' AND '$filter_to' 
+            GROUP BY item_rm_id
+        ) k ON a.id = k.item_rm_id
 
         LEFT JOIN (SELECT a.id, a.number, ((COALESCE(b.qty_scan_in, 0) + COALESCE(c.qty_os_rm, 0) + COALESCE(d.qty_trans_rm_in, 0) + COALESCE(e.return_qty, 0) + COALESCE(h.qty_scan_bpm, 0)) - (COALESCE(f.qty_issued, 0) + COALESCE(g.qty_trans_rm_out, 0))) AS begin_stock
                         FROM item_rm a
@@ -212,27 +302,37 @@ class Report_meiruka extends CI_Controller
 
         <table id="customers" border="1" style="font-size: 11px;">
             <tr>
-                <th width="20">No</th>
-                <th colspan="3">Part No</th>
-                <th colspan="2">Part Name</th>
-                <th>Product Family</th>
-                <th>Supplier</th>
-                <th>Plan <br>Supply</th>
-                <th>Actual <br>Supply</th>
-                <th>Remain <br>Supply</th>
-                <th>Supply <br>perday</th>
-                <th>Min Stock <br>(Day)</th>
-                <th>Min <br>Stock</th>
-                <th>Lead Time <br>Pickup</th>
-                <th>Stock <br>Current</th>
-                <th>Max Stock <br>(Day)</th>
-                <th>Max <br>Stock</th>
-                <th>Status</th>
-                <th>Status <br>Supply</th>
-                <th>Address</th>
+                <th rowspan = "2" width="20">No</th>
+                <th rowspan = "2" colspan="3">Part No</th>
+                <th rowspan = "2" colspan="2">Part Name</th>
+                <th rowspan = "2">Product Family</th>
+                <th rowspan = "2">Supplier</th>
+                <th rowspan = "2">Plan <br>Supply</th>
+                <th rowspan = "2">Actual <br>Supply</th>
+                <th rowspan = "2">Remain <br>Supply</th>
+                <th rowspan = "2">Supply <br>perday</th>
+                <th rowspan = "2">Min Stock <br>(Day)</th>
+                <th rowspan = "2">Min <br>Stock</th>
+                <th rowspan = "2">Lead Time <br>Pickup</th>
+                <th rowspan = "2">Stock <br>Current</th>
+                <th rowspan = "2">Max Stock <br>(Day)</th>
+                <th rowspan = "2">Max <br>Stock</th>
+                <th rowspan = "2">Status</th>
+                <th rowspan = "2">Status <br>Supply</th>
+                <th rowspan = "2">Address</th>
+                <th colspan="4">IN</th>
+                <th colspan="4">OUT</th>
+            </tr>
+            <tr>
+                <th>Week 1</th>
+                <th>Week 2</th>
+                <th>Week 3</th>
+                <th>Week 4</th>
+                <th>Week 1</th>
+                <th>Week 2</th>
+                <th>Week 3</th>
+                <th>Week 4</th>
             </tr>';
-
-
 
         $no = 1;
         $totalBeginStock = 0;
@@ -322,6 +422,14 @@ class Report_meiruka extends CI_Controller
                 <td style="' . $style . '">' . $status . '</td>
                 <td>' . $status_supply . '</td>
                 <td>' . $record->rack . '</td>
+                <td>' . number_format($record->in_week1, 2) . '</td>
+                <td>' . number_format($record->in_week2, 2) . '</td>
+                <td>' . number_format($record->in_week3, 2) . '</td>
+                <td>' . number_format($record->in_week4, 2) . '</td>
+                <td>' . number_format($record->out_week1, 2) . '</td>
+                <td>' . number_format($record->out_week2, 2) . '</td>
+                <td>' . number_format($record->out_week3, 2) . '</td>
+                <td>' . number_format($record->out_week4, 2) . '</td>
             </tr>';
             $no++;
         }
