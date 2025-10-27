@@ -26,6 +26,7 @@
             <th rowspan="2" data-options="field:'packing_qty',width:80,align:'center'" sortable="true">Packing Qty</th>
             <th rowspan="2" data-options="field:'label',width:80,align:'center'">Qty Label</th>
             <th rowspan="2" data-options="field:'print',width:80,align:'center',formatter:BtnPrint">Print</th>
+            <th rowspan="2" data-options="field:'recreate',width:80,align:'center',formatter:BtnReCreate">ReCreate</th>
             <th rowspan="2" data-options="field:'status',width:80,align:'center',formatter:statusformat,styler:statusStyle" sortable="true">Status</th>
             <th rowspan="2" data-options="field:'total_scan',width:80,align:'center',formatter:statusFormatScan,styler:statusStyleScan">Status<br>Label</th>
             <th rowspan="2" data-options="field:'document_no',width:160,align:'center'" sortable="true">WIP No</th>
@@ -1132,6 +1133,111 @@
             }
         });
     }
+
+    function BtnReCreate(val, row) {
+         return '<a class="btn btn-primary w-100" style="pointer-events: visible; opacity:1;" onclick="recreate(\'' + row.number + '\' , \'' + row.packing + '\' , \'' + row.receipt + '\' , \'' + row.packing_qty + '\')"><i class="fa fa-refresh"></i></a>';
+    }
+
+    function recreate(number, packing, receipt, packing_qty) {
+        Swal.fire({
+            title: 'Recreate Label?',
+            text: 'Are you sure recreate label for ' + number + '?',
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonText: 'Yes',
+            cancelButtonText: 'Cancel'
+        }).then((result) => {
+            if (result.isConfirmed) {
+                Swal.fire({
+                    title: 'Delete Old label.',
+                    text: 'Please Wait...',
+                    allowOutsideClick: false,
+                    didOpen: () => {
+                        Swal.showLoading();
+                    }
+                });
+
+                let deleteUrl = '';
+                if (packing == 1 || packing == 3) {
+                    deleteUrl = '<?= base_url('planning/checksheets/recreate_all_labels') ?>';
+                } else {
+                    deleteUrl = '<?= base_url('planning/checksheets/recreate_all_label_boxs') ?>';
+                }
+
+                $.ajax({
+                    type: "POST",
+                    url: deleteUrl,
+                    data: {
+                        checksheet_number: number,
+                        qty: receipt,
+                        packing_qty: packing_qty
+                    },
+                    dataType: "json",
+                    success: function(response) {
+                        if (response.theme == 'success') {
+                            Swal.fire({
+                                title: 'Recreate label...',
+                                html: '<b id="progress-label">Label No-1 Create...</b>',
+                                allowOutsideClick: false,
+                                didOpen: () => {
+                                    Swal.showLoading();
+                                }
+                            });
+
+                            recreateLabels(number, packing, receipt, packing_qty);
+                        } else {
+                            Swal.fire('Error', response.message, 'error');
+                        }
+                    }
+                });
+            }
+        });
+    }
+
+    function recreateLabels(number, packing, qty, packing_qty) {
+        var totalData = Math.ceil(qty / packing_qty);
+        var counter = 1;
+
+        function createNext(qty_balance, index) {
+            if (index <= totalData && qty_balance > 0) {
+                var qty_final = (qty_balance > packing_qty) ? packing_qty : qty_balance;
+
+                let url = '';
+                if (packing == 1 || packing == 3) {
+                    url = '<?= base_url('planning/checksheets/create_label') ?>';
+                } else {
+                    url = '<?= base_url('planning/checksheets/create_label_box') ?>';
+                }
+
+                $.ajax({
+                    type: "POST",
+                    url: url,
+                    data: {
+                        checksheet_number: number,
+                        qty: qty_final
+                    },
+                    dataType: "json",
+                    success: function() {
+                        $('#progress-label').html(`Label No-${index} created...`);
+
+                        createNext(qty_balance - qty_final, index + 1);
+                    },
+                    error: function() {
+                        Swal.fire('Error', 'Gagal membuat label ke-' + index, 'error');
+                    }
+                });
+            } else {
+                Swal.fire({
+                    icon: 'success',
+                    title: 'Finish',
+                    text: 'All label finish recreate (' + (index - 1) + ' label).'
+                });
+            }
+        }
+
+        createNext(qty, counter);
+    }
+
 
     function close_fc() {
         var rows = $('#dg').datagrid('getSelections');

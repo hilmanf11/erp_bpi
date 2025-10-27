@@ -39,65 +39,70 @@ class Checksheets extends CI_Controller
     public function readRepairNo()//berubah
     {
         $post = isset($_POST['q']) ? $_POST['q'] : "";
-        $send = $this->crud->query("SELECT 
+        $send = $this->crud->query("SELECT
                 a.document_no AS wo_no,
                 '-' AS period,
                 b.name AS product_name,
                 b.number AS product_no,
                 b.status_subcont,
                 b.subcont_type,
-                c.lot_no,
+                MAX(c.lot_no) AS lot_no,
                 b.id AS item_fg_id,
                 a.qty,
                 a.division
             FROM repair_of_goods a
-            JOIN item_fg b 
-                ON a.item_fg_id = b.id
+            JOIN item_fg b ON a.item_fg_id = b.id
             LEFT JOIN scan_repair_of_goods c ON a.document_no = c.document_no AND a.item_fg_id = c.item_fg_id
             WHERE a.status_fc = 0
             AND (
-                    b.number LIKE '%$post%' 
-                    OR a.document_no LIKE '%$post%' 
-                )
+                b.number LIKE '%$post%' 
+                OR a.document_no LIKE '%$post%' 
+            )
+            GROUP BY 
+                a.document_no, a.item_fg_id, b.name, b.number, b.status_subcont, 
+                b.subcont_type, b.id, a.qty, a.division
+            HAVING 
+                MAX(c.lot_no) IS NOT NULL
 
             UNION ALL
 
-            SELECT 
+                        SELECT
                 a.document_no AS wo_no,
                 '-' AS period,
                 eq_fg.name AS product_name,
                 eq_fg.number AS product_no,
                 b.status_subcont,
                 b.subcont_type,
-                c.lot_no,
+                MAX(c.lot_no) AS lot_no,
                 eq_fg.id AS item_fg_id,
                 a.qty,
                 a.division
             FROM repair_of_goods a
-            JOIN item_fg b 
-                ON a.item_fg_id = b.id
-            JOIN item_equivalents_fg eq 
-                ON eq.item_fg_id = a.item_fg_id
-            JOIN item_fg eq_fg 
-                ON eq.item_fg_id_equivalent = eq_fg.id
+            JOIN item_fg b ON a.item_fg_id = b.id
+            JOIN item_equivalents_fg eq ON eq.item_fg_id = a.item_fg_id
+            JOIN item_fg eq_fg ON eq.item_fg_id_equivalent = eq_fg.id
             LEFT JOIN scan_repair_of_goods c ON a.document_no = c.document_no AND a.item_fg_id = c.item_fg_id
             WHERE a.status_fc = 0
             AND (
-                    b.number LIKE '%$post%' 
-                    OR a.document_no LIKE '%$post%' 
-                )
+                b.number LIKE '%$post%' 
+                OR a.document_no LIKE '%$post%' 
+            )
             AND EXISTS (
-                    SELECT 1
-                    FROM repair_of_goods a2
-                    JOIN item_fg b2 ON a2.item_fg_id = b2.id
-                    WHERE a2.status_fc = 0
-                    AND a2.document_no = a.document_no
-                    AND (
-                            b2.number LIKE '%$post%' 
-                            OR a2.document_no LIKE '%$post%'
-                        )
+                SELECT 1
+                FROM repair_of_goods a2
+                JOIN item_fg b2 ON a2.item_fg_id = b2.id
+                WHERE a2.status_fc = 0
+                AND a2.document_no = a.document_no
+                AND (
+                    b2.number LIKE '%$post%' 
+                    OR a2.document_no LIKE '%$post%'
                 )
-            ORDER BY product_no DESC
+            )
+            GROUP BY 
+                a.document_no, a.item_fg_id, eq_fg.name, eq_fg.number, b.status_subcont, 
+                b.subcont_type, eq_fg.id, a.qty, a.division
+            HAVING 
+                MAX(c.lot_no) IS NOT NULL
         ");
         echo json_encode($send);
     }
@@ -150,6 +155,11 @@ class Checksheets extends CI_Controller
                         a.division = 'INJ' 
                         AND a.status_subcont = 'NO' 
                         AND d.item_fg_id IS NOT NULL
+                    )
+                    OR (
+                        a.division = 'INJ' 
+                        AND a.status_subcont = 'NO' 
+                        AND b.type ='RM'
                     )
                 )
                 AND (
@@ -1291,5 +1301,51 @@ class Checksheets extends CI_Controller
         }
         $html .= '</table></body></html>';
         echo $html;
+    }
+
+    public function recreate_all_labels()
+    {
+        $post = $this->input->post();
+        $checksheet_number = $post['checksheet_number'] ?? null;
+        $qty = $post['qty'] ?? 0;
+        $packing_qty = $post['packing_qty'] ?? 0;
+
+        if (!$checksheet_number) {
+            die(json_encode(['theme' => 'error', 'message' => 'Checksheet number not valid']));
+        }
+
+        $this->db->where('checksheet_number', $checksheet_number);
+        $this->db->delete('wip_receipt_labels');
+
+        die(json_encode([
+            'theme' => 'success',
+            'message' => 'Old Label Delete, Ready recreate.',
+            'checksheet_number' => $checksheet_number,
+            'qty' => $qty,
+            'packing_qty' => $packing_qty
+        ]));
+    }
+
+    public function recreate_all_label_boxs()
+    {
+        $post = $this->input->post();
+        $checksheet_number = $post['checksheet_number'] ?? null;
+        $qty = $post['qty'] ?? 0;
+        $packing_qty = $post['packing_qty'] ?? 0;
+
+        if (!$checksheet_number) {
+            die(json_encode(['theme' => 'error', 'message' => 'Checksheet number not valid']));
+        }
+
+        $this->db->where('checksheet_number', $checksheet_number);
+        $this->db->delete('wip_receipt_boxs');
+
+        die(json_encode([
+            'theme' => 'success',
+            'message' => 'Old Label Delete, Ready recreate.',
+            'checksheet_number' => $checksheet_number,
+            'qty' => $qty,
+            'packing_qty' => $packing_qty
+        ]));
     }
 }
