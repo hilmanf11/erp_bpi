@@ -1338,14 +1338,11 @@ class Sales_invoices extends CI_Controller
             // Hitung total dari semua item dan gabungkan entri
             foreach ($items as $item) {
                 $total = (float)($item['total'] ?? 0);
-                $total_idr = (float)($item['total2'] ?? 0);
                 $subTotal += $total;
 
                 if (isset($mergedData[$item['account_number']])) {
                     $mergedData[$item['account_number']]['debit'] += ($item['account_type'] == "DEBIT" ? $total : 0);
                     $mergedData[$item['account_number']]['credit'] += ($item['account_type'] == "CREDIT" ? $total : 0);
-                    $mergedData[$item['account_number']]['local_debit'] += ($item['account_type'] == "DEBIT" ? $total_idr : 0);
-                    $mergedData[$item['account_number']]['local_credit'] += ($item['account_type'] == "CREDIT" ? $total_idr : 0);
                 } else {
                     $mergedData[$item['account_number']] = [
                         "number"         => $number,
@@ -1353,8 +1350,6 @@ class Sales_invoices extends CI_Controller
                         "account_name"   => $item['account_name'],
                         "debit"          => ($item['account_type'] == "DEBIT" ? $total : 0),
                         "credit"         => ($item['account_type'] == "CREDIT" ? $total : 0),
-                        "local_debit"    => ($item['account_type'] == "DEBIT" ? $total_idr : 0),
-                        "local_credit"   => ($item['account_type'] == "CREDIT" ? $total_idr : 0),
                     ];
                 }
             }
@@ -1383,17 +1378,12 @@ class Sales_invoices extends CI_Controller
                 $debitAR = ($journalSetupAR['status'] == "DEBIT") ? $arrTotal : 0; 
                 $creditAR = ($journalSetupAR['status'] == "CREDIT") ? $arrTotal : 0;
                 
-                $localDebitAR = $debitAR * $rate;
-                $localCreditAR = $creditAR * $rate;
-                
                 $mergedData[$ar_account_used] = [ // Menggunakan nomor akun yang ditemukan
                     "number"         => $number,
                     "account_number" => $journalSetupAR['account_number'],
                     "account_name"   => $journalSetupAR['account_name'],
                     "debit"          => $debitAR,
                     "credit"         => $creditAR,
-                    "local_debit"    => $localDebitAR,
-                    "local_credit"   => $localCreditAR,
                 ];
             }
 
@@ -1404,17 +1394,12 @@ class Sales_invoices extends CI_Controller
                 $debitVAT = ($journalSetupVAT['status'] == "DEBIT") ? $vatTotal : 0;
                 $creditVAT = ($journalSetupVAT['status'] == "CREDIT") ? $vatTotal : 0;
                 
-                $localDebitVAT = $debitVAT * $rate;
-                $localCreditVAT = $creditVAT * $rate;
-                
                 $mergedData[$journalSetupVAT['account_number']] = [
                     "number"         => $number,
                     "account_number" => $journalSetupVAT['account_number'],
                     "account_name"   => $journalSetupVAT['account_name'],
                     "debit"          => $debitVAT,
                     "credit"         => $creditVAT,
-                    "local_debit"    => $localDebitVAT,
-                    "local_credit"   => $localCreditVAT,
                 ];
             }
 
@@ -1445,140 +1430,10 @@ class Sales_invoices extends CI_Controller
         echo json_encode($result);
     }
 
-    public function uploadGetJournal_bug_journal_setup()
-    {
-        $this->db->select('a.*, b.account_name');
-        $this->db->from('sales_invoices a');
-        $this->db->join('account_coa b', 'a.account_number = b.account_number');
-        $this->db->where('a.upload', "YES");
-        $this->db->where('a.upload_date', date("Y-m-d"));
-        $records = $this->db->get()->result_array();
-        
-        // Array untuk menyimpan hasil akhir
-        $journal_setup_map = [];
-        $allJournals = [];
-        $groupedInvoices = [];
-        
-        // Konversi Journal Setup ke dalam array asosiatif untuk akses cepat
-        $this->db->select('journal_setups.*, account_coa.account_name');
-        $this->db->from('journal_setups');
-        $this->db->join('account_coa', 'journal_setups.account_number = account_coa.account_number');
-        $journal_setups = $this->db->get()->result_array();
-        foreach ($journal_setups as $setup) {
-            $journal_setup_map[$setup['journal_type_id']][$setup['account_number']] = $setup;
-        }
-
-        // Kelompokkan data berdasarkan nomor invoice
-        foreach ($records as $record) {
-            $number = $record['number'];
-            if (!isset($groupedInvoices[$number])) {
-                $groupedInvoices[$number] = [
-                    'main_record' => $record,
-                    'items' => []
-                ];
-            }
-            $groupedInvoices[$number]['items'][] = $record;
-        }
-
-        // Proses setiap grup invoice
-        foreach ($groupedInvoices as $number => $group) {
-            $main_record = $group['main_record'];
-            $items = $group['items'];
-            $rate = (float)($main_record['rate'] ?? 1);
-            $journal_type_id = $main_record['journal_type_id'];
-
-            $mergedData = [];
-            $subTotal = 0;
-
-            // Hitung total dari semua item dan gabungkan entri
-            foreach ($items as $item) {
-                $total = (float)($item['total'] ?? 0);
-                $total_idr = (float)($item['total2'] ?? 0);
-                $subTotal += $total;
-
-                if (isset($mergedData[$item['account_number']])) {
-                    $mergedData[$item['account_number']]['debit'] += ($item['account_type'] == "DEBIT" ? $total : 0);
-                    $mergedData[$item['account_number']]['credit'] += ($item['account_type'] == "CREDIT" ? $total : 0);
-                } else {
-                    $mergedData[$item['account_number']] = [
-                        "number"         => $number,
-                        "account_number" => $item['account_number'],
-                        "account_name"   => $item['account_name'],
-                        "debit"          => ($item['account_type'] == "DEBIT" ? $total : 0),
-                        "credit"         => ($item['account_type'] == "CREDIT" ? $total : 0),
-                    ];
-                }
-            }
-
-            // Perhitungan VAT (Pajak)
-            $vatRate = (float)($main_record['taxes'] ?? 0) / 100;
-            $vatTotal = $subTotal * $vatRate;
-            $arrTotal = $subTotal + $vatTotal;
-            $localTotal = $arrTotal * $rate;
-            
-            // Jurnal untuk Akun Third Parties (Others) => Di DEBIT
-            $journalSetupAR = $journal_setup_map[$journal_type_id]['140.220.00'] ?? null;
-            if ($journalSetupAR) {
-                $debitAR = ($journalSetupAR['status'] == "DEBIT") ? $arrTotal : 0;
-                $creditAR = ($journalSetupAR['status'] == "CREDIT") ? $arrTotal : 0;
-                
-                $mergedData[$journalSetupAR['account_number']] = [
-                    "number"         => $number,
-                    "account_number" => $journalSetupAR['account_number'],
-                    "account_name"   => $journalSetupAR['account_name'],
-                    "debit"          => $debitAR,
-                    "credit"         => $creditAR,
-                ];
-            }
-
-            // Jurnal untuk Akun VAT (Pajak) => Di CREDIT
-            $journalSetupVAT = $journal_setup_map[$journal_type_id]['250.160.00'] ?? null;
-            if ($journalSetupVAT) {
-                $debitVAT = ($journalSetupVAT['status'] == "DEBIT") ? $vatTotal : 0;
-                $creditVAT = ($journalSetupVAT['status'] == "CREDIT") ? $vatTotal : 0;
-                
-                $mergedData[$journalSetupVAT['account_number']] = [
-                    "number"         => $number,
-                    "account_number" => $journalSetupVAT['account_number'],
-                    "account_name"   => $journalSetupVAT['account_name'],
-                    "debit"          => $debitVAT,
-                    "credit"         => $creditVAT,
-                ];
-            }
-
-            // Update total di tabel sales_invoices
-            $this->db->update('sales_invoices', [
-                "total_sub" => $subTotal,
-                "total_vat" => $vatTotal,
-                "total_pph" => 0, // PPH not calculated
-                "total_grand" => $arrTotal,
-                "total_invoice" => $arrTotal,
-                "total_local" => $localTotal
-            ], ["number" => $number]);
-
-            // Tambahkan hasil jurnal ke array utama
-            $flag_counter = 1;
-            foreach (array_values($mergedData) as $journalEntry) {
-                $journalEntry['flag'] = $flag_counter++;
-                $allJournals[] = $journalEntry;
-            }
-        }
-
-        // Respons JSON untuk JavaScript
-        $result = [
-            'total' => count($allJournals),
-            'data'  => $allJournals
-        ];
-
-        echo json_encode($result);
-    }
-
     public function uploadCreateJournal()
     {
         if ($this->input->post()) {
             $post = $this->input->post('data');
-            unset($post['local_debit']);
-            unset($post['local_credit']);
             
             $sales_invoice_journals = $this->crud->read('sales_invoice_journals', [], ["number" => $post['number'], "account_number" => $post['account_number']]);
 
