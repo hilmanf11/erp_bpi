@@ -16,10 +16,13 @@
             <th rowspan="2" data-options="field:'id',width:80,align:'center'">ID</th>
             <th rowspan="2" data-options="field:'item_kind_name',width:150,halign:'center'">Kind Of Box</th>
             <th rowspan="2" data-options="field:'name',width:150,halign:'center'">Name</th>
+            <th rowspan="2" data-options="field:'code',width:150,halign:'center'">Code</th>
             <th rowspan="2" data-options="field:'size',width:150,halign:'center'">Size</th>
             <th rowspan="2" data-options="field:'volume',width:150,halign:'center'">Volume</th>
             <th rowspan="2" data-options="field:'color',width:200,halign:'center'">Color</th>
             <th rowspan="2" data-options="field:'material',width:100,halign:'center'">Material</th>
+            <th rowspan="2" data-options="field:'uom',width:100,halign:'center'">Uom</th>
+            <th rowspan="2" data-options="field:'attachment',width:100,halign:'center',formatter:cellbutton">Attachment</th>
             <th colspan="2" data-options="field:'',width:100,halign:'center'"> Created</th>
             <th colspan="2" data-options="field:'',width:100,halign:'center'"> Updated</th>
         </tr>
@@ -38,7 +41,7 @@
 </div>
 <!-- DIALOG SAVE AND UPDATE -->
 <div id="dlg_insert" class="easyui-dialog" title="Add New" data-options="closed: true,modal:true" style="width: 400px; padding:10px; top: 20px;">
-    <form id="frm_insert" method="post" novalidate>
+    <form id="frm_insert" method="post" novalidate enctype="multipart/form-data">
         <fieldset style="width:100%; border:1px solid #d0d0d0; margin-bottom: 10px; border-radius:4px; float: left;">
             <legend><b>Form Data</b></legend>
             <div class="fitem">
@@ -48,6 +51,10 @@
             <div class="fitem">
                 <span style="width:35%; display:inline-block;">Kind Of Box</span>
                 <input style="width:60%;" name="item_kind_id" id="item_kind_id" required="" class="easyui-combobox">
+            </div>
+            <div class="fitem">
+                <span style="width:35%; display:inline-block;">Code Box</span>
+                <input style="width:60%;" name="code" id="code" required="" class="easyui-textbox">
             </div>
             <div class="fitem">
                 <span style="width:35%; display:inline-block;">Name</span>
@@ -68,6 +75,14 @@
             <div class="fitem">
                 <span style="width:35%; display:inline-block;">Material</span>
                 <input style="width:60%;" name="material" id="material" required="" class="easyui-textbox">
+            </div>
+            <div class="fitem">
+                <span style="width:35%; display:inline-block;">Unit of Measure</span>
+                <input style="width:60%;" name="uom" id="uom" required="" class="easyui-combobox">
+            </div>
+            <div class="fitem">
+                <span style="width:35%; display:inline-block;">Attachment</span>
+                <input style="width:60%;" name="attachment" id="attachment" class="easyui-filebox">
             </div>
         </fieldset>
     </form>
@@ -93,6 +108,7 @@
     //EDIT DATA
     function update() {
         var row = $('#dg').datagrid('getSelected');
+        console.log(row);
         if (row) {
             $('#dlg_insert').dialog('open');
             $('#frm_insert').form('load', row);
@@ -176,9 +192,10 @@
                             } else {
                                 toastr.error(result.message, result.title);
                             }
-                            
+
                             $('#dlg_insert').dialog('close');
                             $('#dg').datagrid('reload');
+                            window.location.reload();
                         }
                     });
                 }
@@ -199,4 +216,18 @@
         textField:'name',
         prompt: 'Choose Color',
     });
+
+    $('#uom').combobox({
+        url:'<?= base_url('master/uom/reads'); ?>',
+        valueField:'name',
+        textField:'name',
+        prompt: 'Choose Unit of Measure',
+    });
+
+    function cellbutton(value) {
+        if (value != null) {
+            return '<a target="_blank" href="' + value + '" class="btn btn-primary btn-sm" style="pointer-events: auto; opacity:1; width:100%;"><i class="fa fa-eye"></i> View</a>';
+            // alert(value);
+        }
+    };
 </script>

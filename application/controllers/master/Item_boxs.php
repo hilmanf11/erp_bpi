@@ -93,7 +93,9 @@ class Item_boxs extends CI_Controller
             if (!empty($item_boxs->name)) {
                 echo json_encode(array("title" => "Duplicated", "message" => " is Duplicate Data", "theme" => "error"));
             } else {
-                $send   = $this->crud->create('item_boxs', $data);
+                $attachment = $this->crud->upload('attachment', ["pdf"], 'assets/documents/item_boxs/', ["id" => $data['id']], "item_boxs", "attachment");
+                $postFinal = array_merge($data, ["attachment" => $attachment]);
+                $send   = $this->crud->create('item_boxs', $postFinal);
                 echo $send;
             }
         } else {
@@ -106,7 +108,9 @@ class Item_boxs extends CI_Controller
         if ($this->input->post()) {
             $id   = base64_decode($this->input->get('id'));
             $post = $this->input->post();
-            $send = $this->crud->update('item_boxs', ["id" => $id], $post);
+            $attachment = $this->crud->upload('attachment', ["pdf"], 'assets/documents/item_boxs/', ["id" => $id], "item_boxs", "attachment");
+            $postFinal = array_merge($post, ["attachment" => $attachment]);
+            $send = $this->crud->update('item_boxs', ["id" => $id], $postFinal);
             echo $send;
         } else {
             show_error("Cannot Process your request");
