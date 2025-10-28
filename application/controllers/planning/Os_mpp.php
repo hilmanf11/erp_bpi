@@ -401,6 +401,7 @@ class Os_mpp extends CI_Controller
                 <th>Product No</th>
                 <th>Product Name</th>
                 <th>Quantity</th>
+                <th>Revisi</th>
             </tr>';
         $no = 1;
         foreach ($records as $data) {
@@ -411,6 +412,7 @@ class Os_mpp extends CI_Controller
                         <td>' . $data['item_fg_number'] . '</td>
                         <td>' . $data['item_fg_name'] . '</td>
                         <td>' . number_format($data['qty']) . '</td>
+                        <td>' . $data['revision'] . '</td>
                     </tr>';
             $no++;
         }
