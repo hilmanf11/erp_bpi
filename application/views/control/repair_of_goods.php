@@ -487,7 +487,15 @@
                             title: 'Status',
                             halign: 'center',
                             align: 'right',
-                            width: 100,
+                            width: 80,
+                            formatter: cellFormatter,
+                            styler: cellStyler
+                         }, {
+                            field: 'status_fc',
+                            title: 'Status FC',
+                            halign: 'center',
+                            align: 'right',
+                            width: 80,
                             formatter: cellFormatter,
                             styler: cellStyler
                         }]
