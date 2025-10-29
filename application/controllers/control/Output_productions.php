@@ -308,16 +308,17 @@ class Output_productions extends CI_Controller
             $item_fg = $this->crud->read('item_fg', [], array("number" => $data['item_number']));
             $machines = $this->crud->read('machines', [], array("number" => $data['machine_number']));
             $data_cek = array(
-                    "item_fg_id" => $item_fg->id,
-                    "trans_date" => $data['trans_date'],
-                    "wo_no" => $data['wo_no'],
-                    "period" => $data['period'],
-                    "qty" => $data['qty'],
-                    "qty_wip" => $data['qty_wip'],
-                    "shift" => $data['shift'],
-                    "machine_number" => $data['machine_number'],
-                );
+                "item_fg_id" => $item_fg->id,
+                "trans_date" => $data['trans_date'],
+                "wo_no" => $data['wo_no'],
+                "period" => $data['period'],
+                "qty" => $data['qty'],
+                "qty_wip" => $data['qty_wip'],
+                "shift" => $data['shift'],
+                "machine_number" => $data['machine_number'],
+            );
             $output_productions = $this->crud->read('output_productions', [], $data_cek);
+
             $send = $this->crud->query("
                 SELECT DISTINCT a.item_fg_id, a.workorder AS wo_no, a.period, b.number, b.name, a.lot_no, 'Supply Sheets' AS modul
                 FROM supply_sheets a 
@@ -338,16 +339,13 @@ class Output_productions extends CI_Controller
 
             if (empty($item_fg) || empty($item_fg->id)) {
                 echo json_encode(array("title" => "Not Found","message" => "Product number " . $data['item_number'] . " NOT FOUND","theme" => "error"));
-                // return;
             } elseif (empty($machines)) {
                 echo json_encode(array("title" => "Not Found","message" => "Machine number " . $data['machine_number'] . " NOT FOUND IN MODUL MACHINE","theme" => "error"));
-            // return;
             } elseif ($output_productions) {
                 echo json_encode(array("title" => "Duplicate","message" => "Duplicate Product number " . $data['item_number'] . " FOUND","theme" => "error"));
             } elseif (!in_array($item_fg->id, $item_fg_ids)) {
                 echo json_encode(array("title" => "Not Found","message" => "Product number " . $data['item_number'] . " NOT FOUND IN PERIOD " . $data['period'],"theme" => "error"));
-                // return;
-            }else{
+            } else {
                 $lot_no = null;
                 foreach ($send as $row) {
                     if ($row->item_fg_id == $item_fg->id) {
@@ -382,7 +380,34 @@ class Output_productions extends CI_Controller
                     "type" => "Upload",
                 );
 
-                $send   = $this->crud->create('output_productions', $dataFinal);
+                // var_dump($item_fg->type);
+                // return;
+
+                $send = $this->crud->create('output_productions', $dataFinal);
+
+                // === Tambahan Validasi Update Status Production Schedule ===
+                if ($item_fg->type == 'SA') {
+                    // Hitung total qty output_productions berdasarkan wo_no
+                    $this->db->select_sum('qty');
+                    $this->db->where('wo_no', $data['wo_no']);
+                    $total_output = $this->db->get('output_productions')->row()->qty ?? 0;
+
+                    // Ambil qty dari production_schedules berdasarkan wo_no
+                    $this->db->select('qty');
+                    $this->db->where('wo_no', $data['wo_no']);
+                    $ps = $this->db->get('production_schedules')->row();
+
+                    if ($ps) {
+                        $qty_schedule = $ps->qty ?? 0;
+
+                        if ($total_output >= $qty_schedule) {
+                            // Update status menjadi 1
+                            $this->db->where('wo_no', $data['wo_no']);
+                            $this->db->update('production_schedules', ['status' => 1]);
+                        }
+                    }
+                }
+
                 echo $send;
             }
         }
