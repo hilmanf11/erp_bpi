@@ -441,6 +441,7 @@ class Customers extends CI_Controller
                 <th>Email</th>
                 <th>Website</th>
                 <th>Currency</th>
+                <th>Taxes</th>
                 <th>Payment Term (Day)</th>
                 <th>Bank Account</th>
                 <th>Bank Name</th>
@@ -475,9 +476,14 @@ class Customers extends CI_Controller
                     <td>' . $data['email'] . '</td>
                     <td>' . $data['website'] . '</td>
                     <td>' . $data['currency'] . '</td>
+                    <td>' . $data['taxes'] . '</td>
                     <td>' . $data['payment_term'] . '</td>
                     <td>' . $data['bank_account'] . '</td>
                     <td>' . $data['bank_name'] . '</td>
+                    <td>' . $data['faktur_code'] . '</td>
+                    <td style="mso-number-format:\@;">' . $data['npwp'] . '</td>
+                    <td style="mso-number-format:\@;">' . $data['account_number'] . '</td>
+                    <td style="mso-number-format:\@;">' . $data['account_name'] . '</td>
                     <td>' . $status . '</td>';
             $no++;
         }
