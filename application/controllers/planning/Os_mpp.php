@@ -409,8 +409,8 @@ class Os_mpp extends CI_Controller
                         <td>' . $no . '</td>
                         <td>' . $data['document_no'] . '</td>
                         <td>' . $data['customer_name'] . '</td>
-                        <td>' . $data['item_fg_number'] . '</td>
-                        <td>' . $data['item_fg_name'] . '</td>
+                        <td style="mso-number-format:\@;">' . $data['item_fg_number'] . '</td>
+                        <td style="mso-number-format:\@;">' . $data['item_fg_name'] . '</td>
                         <td>' . number_format($data['qty']) . '</td>
                         <td>' . $data['revision'] . '</td>
                     </tr>';
