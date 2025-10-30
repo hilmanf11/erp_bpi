@@ -1001,6 +1001,7 @@ class Journal_postings extends CI_Controller
         } elseif ($modul == "AR RECEIPT") {
 
             $this->db->select('a.receipt_no, b.receipt_date, b.sales_invoice, b.description, c.name as customer_name, b.currency, a.description, a.account_number, a.account_name, a.debit, a.credit, a.flag, b.rate');
+            $this->db->select('a.debit as local_debit, a.credit as local_credit');
             $this->db->select('a.exchange_rate');
             $this->db->from('ar_receipt_journals a');
             $this->db->join("(SELECT * FROM ar_receipts GROUP BY receipt_no) b", "b.receipt_no = a.receipt_no");
