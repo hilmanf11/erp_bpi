@@ -814,6 +814,7 @@ class Ap_payments extends CI_Controller
         if ($this->input->post()) 
         {
             $post = $this->input->post();
+            unset($post['id']);
 
             // Validasi Exist
             $ap_exists = $this->db->get_where('ap_payments', ['payment_no' => $post['payment_no'], 'purchase_invoice' => $post['purchase_invoice']])->row();
@@ -822,6 +823,7 @@ class Ap_payments extends CI_Controller
                 $update = $this->crud->update('ap_payments', ['payment_no' => $post['payment_no'], 'purchase_invoice' => $post['purchase_invoice']], $post);
                 echo $update;
             } else {
+                // Jika tidak ada PI yang sesuai, update by payment_no
                 $send = $this->crud->update('ap_payments', ["payment_no" => $post['payment_no']], $post);
                 echo $send;
 
