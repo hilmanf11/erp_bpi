@@ -258,9 +258,9 @@ class Ap_payments extends CI_Controller
 
         echo json_encode($arr);
     }
-    
+
     // -- belum menggunakan rate
-    public function calculateJournalOld($journal_type_id = "", $bank_account = "")
+    public function calculateJournal_existing($journal_type_id = "", $bank_account = "")
     {
         $journal_type_id = base64_decode($journal_type_id);
         $bank_account = base64_decode($bank_account);
@@ -494,24 +494,27 @@ class Ap_payments extends CI_Controller
     //     echo $datenow . "-" . $autoID;
     // }
 
-    public function number($trans_date, $bank_code)
+    public function number($trans_date, $bank_code = null)
     {
-        $decoded_date = base64_decode($trans_date);
-        $year = date("y", strtotime($decoded_date));
-        $month = date("m", strtotime($decoded_date));
-        // $bank_code = base64_decode($bank_code);
-        $datenow    = $bank_code."/".$month."-".$year."/"."K";
-        $sqlGetID   = $this->db->query("SELECT max(`payment_no`) as kode FROM ap_payments WHERE `payment_no` like '%$datenow%'");
-        $rowID      = $sqlGetID->row();
-        $kode       = $rowID->kode;
-        if ($kode == NULL) {
-            $autoID = sprintf("%03s", $kode + 1);
-        } else {
-            $urutan = (int) substr($kode, 0, 3);
-            $urutan++;
-            $autoID = sprintf("%03s", $urutan);
+        if (!empty($trans_date) && !empty($bank_code)) {
+            $decoded_date = base64_decode($trans_date);
+            $year = date("y", strtotime($decoded_date));
+            $month = date("m", strtotime($decoded_date));
+            // $bank_code = base64_decode($bank_code);
+            $datenow    = $bank_code."/".$month."-".$year."/"."K";
+            $sqlGetID   = $this->db->query("SELECT max(`payment_no`) as kode FROM ap_payments WHERE `payment_no` like '%$datenow%'");
+            $rowID      = $sqlGetID->row();
+            $kode       = $rowID->kode;
+            if ($kode == NULL) {
+                $autoID = sprintf("%03s", $kode + 1);
+            } else {
+                $urutan = (int) substr($kode, 0, 3);
+                $urutan++;
+                $autoID = sprintf("%03s", $urutan);
+            }
+            echo $autoID."/".$datenow;
         }
-        echo $autoID."/".$datenow;
+        echo ""; // if trans_date or bank_code is not choosed
     }
 
     public function datatablesTemp()
@@ -584,7 +587,7 @@ class Ap_payments extends CI_Controller
                 }
             }
 
-            // $ap_payment = $this->crud->query("SELECT purchase_invoice, SUM(payment) as payment FROM ap_payments WHERE purchase_invoice = '$number' GROUP BY purchase_invoice, account_number ORDER BY payment DESC");
+            $ap_payment = $this->crud->query("SELECT purchase_invoice, SUM(payment) as payment FROM ap_payments WHERE purchase_invoice = '$number' GROUP BY purchase_invoice, account_number ORDER BY payment DESC");
 
             $obj[] = array(
                 "trans_date"       => $record['trans_date'],
@@ -593,8 +596,8 @@ class Ap_payments extends CI_Controller
                 "currency"         => $record['currency'],
                 "rate"             => $exchange_rate,
                 "amount"           => $record['total'],
-                // "balance"          => ($record['total'] - @$ap_payment[0]->payment), // bug jadi 0 saat update
-                // "payment"          => ($record['total'] - @$ap_payment[0]->payment), // bug jadi 0 saat update
+                "balance"          => ($record['total'] - @$ap_payment[0]->payment), // jadi 0 saat update = lunas
+                "payment"          => ($record['total'] - @$ap_payment[0]->payment), // jadi 0 saat update = lunas
                 "balance"          => $record['total'],
                 "payment"          => $record['total'],
                 "account_number"   => $account_number,
@@ -608,7 +611,7 @@ class Ap_payments extends CI_Controller
         die(json_encode($arr));
     }
 
-    public function datatablesTempOld()
+    public function datatablesTemp_existing()
     {
         $purchase_invoice = base64_decode($this->input->get('purchase_invoice'));
         $purchase_invoice_ex = explode(",", $purchase_invoice);
