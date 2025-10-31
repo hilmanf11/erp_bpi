@@ -346,11 +346,12 @@ class Account_coa extends CI_Controller
                 $ar_exists = $this->db->get_where('ar_receipts', ['account_number' => $dataExist->account_number, 'deleted' => 0])->row();
                 $journal_exists = $this->db->get_where('journal_postings', ['account_number' => $dataExist->account_number, 'deleted' => 0])->row();
 
-                if ( !empty($pi_exists) || !empty($si_exists) || !empty($ap_exists) || !empty($ar_exists) || !empty($journal_exists) ) {
-                    // echo json_encode(["title" => "Error", "message" => "Data is already in use in another table", "theme" => "error"]); 
-                    echo 'Existed';
+                //dokumentasi : di comment dahulu sementara Kurniawan
+                // if ( !empty($pi_exists) || !empty($si_exists) || !empty($ap_exists) || !empty($ar_exists) || !empty($journal_exists) ) {
+                //     // echo json_encode(["title" => "Error", "message" => "Data is already in use in another table", "theme" => "error"]); 
+                //     echo 'Existed';
                 
-                } else {
+                // } else {
                     $update = $this->crud->update('account_coa', ["id" => $id], $post);
                     $update_result = json_decode($update);
 
@@ -363,7 +364,7 @@ class Account_coa extends CI_Controller
                         // echo json_encode(['success' => false, 'message' => 'Failed to update data.', 'title' => 'Error', 'theme' => 'error']);
                         echo 'Error';
                     }
-                }
+                // }
 
 
             } else {        
