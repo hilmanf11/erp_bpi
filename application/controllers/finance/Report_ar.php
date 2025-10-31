@@ -101,7 +101,6 @@ class Report_ar extends CI_Controller
         $this->db->where('a.customer_id', $customer_id);
         $this->db->where('b.journal_date <', $filter_from);
         $this->db->where('b.modul', 'SALES INVOICING'); // Hanya modul Sales Invoicing
-        $this->db->like('a.status', $filter_status, 'both');
         if (!empty($filter_currency)) {
             $this->db->where('a.currency', $filter_currency);
         }
@@ -119,7 +118,6 @@ class Report_ar extends CI_Controller
         $this->db->where('a.customer_id', $customer_id);
         $this->db->where('b.journal_date <', $filter_from);
         $this->db->where('b.modul', 'AR RECEIPT'); // Hanya modul AR Receipt
-        $this->db->like('a.status', $filter_status, 'both');
         if (!empty($filter_currency)) {
             $this->db->where('a.currency', $filter_currency);
         }
@@ -183,6 +181,11 @@ class Report_ar extends CI_Controller
         $filter_currency      = $this->input->get('filter_currency') ?? null;
         $filter_status        = $this->input->get('filter_status') ?? null;
         $filter_display       = $this->input->get('filter_display') ?? null;
+
+        $currency_show = !empty($filter_currency) ? $filter_currency : 'IDR'; // default showed currency = IDR
+
+        $filtered_sales_invoices = [];
+        $is_status_filter_active = ($filter_status != null && ($filter_status === '0' || $filter_status === '1'));
 
         $filter_list = [
             'filter_from'          => $filter_from,
@@ -433,7 +436,6 @@ class Report_ar extends CI_Controller
                             <th rowspan="2" width="50">Status</th>
                             <th rowspan="2">Customer ID</th>
                             <th rowspan="2">Customer Name</th>
-                            <th rowspan="2">Plant</th>
                             <th rowspan="2">Source</th>
                             <th rowspan="2">Invoice Date</th>
                             <th rowspan="2">Payment Due</th>
@@ -454,17 +456,13 @@ class Report_ar extends CI_Controller
 
         // Get Customers
         $this->db->select('a.*, c.plant, (COALESCE(b.balance_local, 0)) as balance_local, (COALESCE(b.balance, 0)) as balance');
+        $this->db->select('a.currency as currency_customer');
+        $this->db->select('b.currency as currency_balance');
         $this->db->from('customers a');
         $this->db->join('customer_address c', 'a.id = c.customer_id', 'left');
         $this->db->join('account_balance_customers b', 'a.id = b.customer_id', 'left');
         if (!empty($filter_customer)) {
             $this->db->where("a.id", $filter_customer);
-        }
-        if (!empty($filter_currency)) {
-            $this->db->group_start();
-            $this->db->where("a.currency", $filter_currency);
-            $this->db->or_where("b.currency", $filter_currency);
-            $this->db->group_end();
         }
         if (!empty($filter_plant)) {
             $this->db->where("c.plant", $filter_plant);
@@ -491,7 +489,7 @@ class Report_ar extends CI_Controller
 
         if (empty($account_numbers_array)) {
             $account_numbers_array = ['NON_EXISTING_ACCOUNT_AR']; 
-        }            
+        }
 
         foreach ($customers as $customer) 
         {
@@ -515,13 +513,17 @@ class Report_ar extends CI_Controller
                 b.number AS voucher_no,
                 b.account_number,
                 a.currency,
-                b.local_debit,
-                b.local_credit,
+                (CASE WHEN '{$currency_show}' = 'IDR' THEN b.local_debit ELSE b.original_debit END) as local_debit,
+                (CASE WHEN '{$currency_show}' = 'IDR' THEN b.local_credit ELSE b.original_credit END) as local_credit,
+                b.original_debit,
+                b.original_credit,
                 (CASE WHEN a.number IS NULL THEN a.status ELSE 1 END) as status
             ", FALSE);
             $this->db->from('sales_invoices a');
             $this->db->join(
-                "(SELECT journal_date, number, currency, document_no, account_number, description, SUM(local_debit) AS local_debit, SUM(local_credit) AS local_credit 
+                "(SELECT journal_date, number, currency, document_no, account_number, description, 
+                    SUM(original_debit) AS original_debit, SUM(original_credit) AS original_credit,
+                    SUM(local_debit) AS local_debit, SUM(local_credit) AS local_credit 
                 FROM journal_postings 
                 WHERE modul IN ('SALES INVOICING')
                 AND account_number IN ({$account_numbers_list})
@@ -532,17 +534,12 @@ class Report_ar extends CI_Controller
             );
             $this->db->join('customer_address ca', 'a.customer_id = ca.customer_id', 'LEFT');
             $this->db->where('a.customer_id', $customer_id);
-            $this->db->where('ca.plant', $plant);
             $this->db->where("b.journal_date BETWEEN '{$filter_from}' AND '{$filter_to}'");
-            $this->db->like('a.status', $filter_status);
             if (!empty($filter_sales_invoice)) {
                 $this->db->or_like('a.number', $filter_sales_invoice);
             }
             if (!empty($filter_currency)) {
-                $this->db->group_start();
                 $this->db->where("a.currency", $filter_currency);
-                $this->db->or_where("b.currency", $filter_currency);
-                $this->db->group_end();
             }
             $this->db->group_by(['a.number', 'b.number']); 
             $this->db->order_by('b.journal_date', 'ASC');
@@ -559,13 +556,17 @@ class Report_ar extends CI_Controller
                 b.number AS voucher_no,
                 b.account_number,
                 a.currency,
-                (CASE WHEN a.account_type = 'DEBIT' THEN b.local_debit ELSE 0 END) as local_debit,
-                (CASE WHEN a.account_type = 'CREDIT' THEN b.local_credit ELSE 0 END) as local_credit,
+                (CASE WHEN ('{$currency_show}' = 'IDR' AND a.account_type = 'DEBIT') THEN b.local_debit ELSE b.original_debit END) as local_debit,
+                (CASE WHEN ('{$currency_show}' = 'IDR' AND a.account_type = 'CREDIT') THEN b.local_credit ELSE b.original_credit END) as local_credit,
+                (CASE WHEN a.account_type = 'DEBIT' THEN b.original_debit ELSE 0 END) as original_debit,
+                (CASE WHEN a.account_type = 'CREDIT' THEN b.original_credit ELSE 0 END) as original_credit,
                 (CASE WHEN c.status IS NULL THEN a.status ELSE c.status END) as status
             ", FALSE);
             $this->db->from('ar_receipts a');
             $this->db->join(
-                "(SELECT journal_date, number, document_no, account_number, description, SUM(local_debit) AS local_debit, SUM(local_credit) AS local_credit 
+                "(SELECT journal_date, number, document_no, account_number, description, 
+                    SUM(original_debit) AS original_debit, SUM(original_credit) AS original_credit,
+                    SUM(local_debit) AS local_debit, SUM(local_credit) AS local_credit 
                 FROM journal_postings 
                 WHERE modul IN ('AR RECEIPT') 
                 AND account_number IN ({$account_numbers_list})
@@ -577,7 +578,6 @@ class Report_ar extends CI_Controller
             $this->db->join('sales_invoices c', 'a.sales_invoice = c.number', 'LEFT');
             $this->db->join('customer_address ca', 'a.customer_id = ca.customer_id', 'LEFT');
             $this->db->where('a.customer_id', $customer_id);
-            $this->db->where('ca.plant', $plant);
             // Mengkonversi logika $where_inv ke Query Builder
             if ($filter_display == "Detail") {
                 // Memastikan subquery di-execute secara literal dengan parameter ketiga = FALSE
@@ -588,45 +588,124 @@ class Report_ar extends CI_Controller
                 $this->db->or_where('a.sales_invoice', $filter_sales_invoice);
             }
             if (!empty($filter_currency)) {
-                $this->db->group_start();
                 $this->db->where("a.currency", $filter_currency);
-                $this->db->or_where("b.currency", $filter_currency);
-                $this->db->group_end();
-            }
-            if (!empty($filter_status)) {
-                $this->db->group_start();
-                $this->db->where("a.status", $filter_status);
-                $this->db->or_where("c.status", $filter_status);
-                $this->db->group_end();
             }
             $this->db->group_by(['a.receipt_no', 'a.account_number']);
             $this->db->order_by('b.journal_date', 'ASC');
             $data_2 = $this->db->get()->result_array();
 
             $sales_invoices = array_merge($data_1, $data_2);
-
             usort($sales_invoices, 'compare_trans_date');
 
-            $local_debit = 0;
+            // --- STATUS: Open : Jika Nilai SI ><Nilai AR Receipt; Closed : Jika Nilai SI = Nilai AR Receipt
+            $invoice_balances = [];
+
+            // Menghitung Saldo Bersih untuk Setiap Faktur (SI dan AR) berdasarkan Kunci Faktur
+            foreach ($sales_invoices as $transaction) {
+                // Tentukan kunci unik yang konsisten: Invoice No, atau Document No, atau Voucher No
+                $key_id = $transaction['invoice_no'] ?? $transaction['document_no'] ?? $transaction['voucher_no']; 
+                
+                // Abaikan jika tidak ada key yang valid
+                if (empty($key_id)) continue; 
+
+                // Inisialisasi jika kunci baru
+                if (!isset($invoice_balances[$key_id])) {
+                    $invoice_balances[$key_id] = [
+                        'total_debit' => 0.0,
+                        'total_credit' => 0.0,
+                        'status_closed' => 0 // Default: OPEN
+                    ];
+                }
+                
+                // Akumulasi Debit dan Kredit untuk setiap Faktur/Dokumen
+                $invoice_balances[$key_id]['total_debit'] += (float)$transaction['local_debit'];
+                $invoice_balances[$key_id]['total_credit'] += (float)$transaction['local_credit'];
+            }
+
+            // Menentukan Status Akhir (CLOSED=1, OPEN=0)
+            foreach ($invoice_balances as $key_id => &$summary_status) {
+                
+                // Saldo Bersih (Net Balance) = Total Debit (SI) - Total Kredit (AR)
+                $remaining_balance = $summary_status['total_debit'] - $summary_status['total_credit'];
+                
+                // Terapkan Logika: Balance = 0 (CLOSED=1)
+                if (round($remaining_balance, 2) == 0 || round($summary_status['total_debit'], 2) == round($summary_status['total_credit'], 2)) { 
+                    $summary_status['status_closed'] = 1; // CLOSED (Lunas)
+                } else {
+                    $summary_status['status_closed'] = 0; // OPEN (Masih ada selisih)
+                }
+            }
+            unset($summary_status); // Wajib: Hapus referensi
+
+            // Flag Status ke setiap baris Transaksi
+            foreach ($sales_invoices as $key => $transaction) {
+                
+                $key_id = $transaction['invoice_no'] ?? $transaction['document_no'] ?? $transaction['voucher_no'];
+
+                // Cek di array hasil agregasi
+                if (isset($invoice_balances[$key_id])) {
+                    // Tempelkan status yang sudah dihitung (0 atau 1)
+                    $sales_invoices[$key]['status_closed_flag'] = $invoice_balances[$key_id]['status_closed'];
+                } else {
+                    // Jika tidak terhitung di aggregasi (misalnya kunci tidak valid), asumsikan OPEN (0)
+                    $sales_invoices[$key]['status_closed_flag'] = 0; 
+                }
+            }
+
+            // --- START: Filtering berdasarkan status_closed_flag ---
+            if ($is_status_filter_active) {
+                $target_status = (int)$filter_status; // Tentukan nilai status yang dicari (Konversi string ke integer)
+
+                // Lakukan filter_status pada array $sales_invoices
+                foreach ($sales_invoices as $transaction) {
+                    if (isset($transaction['status_closed_flag']) && $transaction['status_closed_flag'] === $target_status) {
+                        $filtered_sales_invoices[] = $transaction;
+                    }
+                }
+            } else {
+                $filtered_sales_invoices = $sales_invoices;
+            }
+
+
+            // ------- TRANSACTION START ----------
+            $local_debit  = 0;
             $local_credit = 0;
+            $init_balance = 0; // default balance
 
-            $begin_balance_local = $this->begin_balance($customer_id, $filter_list, @$customer['balance_local']);
+            // Get Balance sesuai filter_currency
+            $get_balance = $this->db->select('*')->from('account_balance_customers')->where('customer_id', $customer_id)->get()->row();
+            if (!empty($get_balance)) {
+                if ($currency_show == 'IDR') {
+                    // Hanya ambil saldo IDR jika data saldo customer memang ber-currency IDR
+                    if ($get_balance->currency == 'IDR' || $get_balance->currency_local == 'IDR') {
+                         $init_balance = $customer['balance_local'] ?? 0;
+                    }
+                } elseif ($currency_show != 'IDR') {
+                    if ($get_balance->currency == $currency_show) {
+                        $init_balance = $customer['balance'] ?? 0;
+                    }
+                }              
+            }
+            
+            $begin_balance_local = $this->begin_balance($customer_id, $filter_list, $init_balance);
 
-            if (count($sales_invoices) > 0 || $begin_balance_local > 0) {
+            if (count($sales_invoices) > 0 || $begin_balance_local != 0) {
                 $detail .= '<tr style="background: #DEE2FF; font-weight:bold;" class="begin_balance">
-                                <td colspan="14">BEGINING BALANCE ('.$customer_name.')</td>
+                                <td colspan="12">BEGINING BALANCE (' . $customer_name . ')</td>
+                                <td style="text-align:center;">' . $customer['currency_balance'] . '</td>
                                 <td colspan="4" style="text-align:right;">' . $this->formatNominal(@$begin_balance_local, 2, $option) . '</td>
                             </tr>';
 
                 $invoice .= '<tr style="background: #DEE2FF; font-weight:bold;" class="begin_balance">
-                                <td colspan="14">BEGINING BALANCE ('.$customer_name.')</td>
+                                <td colspan="12">BEGINING BALANCE ('.$customer_name.')</td>
+                                <td style="text-align:center;">' . $customer['currency_balance'] . '</td>
                                 <td colspan="4" style="text-align:right;">' . $this->formatNominal(@$begin_balance_local, 2, $option) . '</td>
                             </tr>';
             }
 
             $accumulated = $begin_balance_local;
 
-            foreach ($sales_invoices as $sales_invoice) 
+            foreach ($filtered_sales_invoices as $sales_invoice) 
             {
                 $document_no = $sales_invoice['invoice_no'];
                 if ($filter_display == "Invoice") {
@@ -640,26 +719,33 @@ class Report_ar extends CI_Controller
                         GROUP BY a.receipt_no")->result_array();
                 }
 
-                if ($sales_invoice['status'] == '0') {
+                // if ($sales_invoice['status'] == '0') {
+                //     $status_purchase = "OPEN";
+                //     $style_status_purchase = "background-color:#C8FFCC;";
+                // } else if ($sales_invoice['status'] == '1') {
+                //     $status_purchase = "CLOSE";
+                //     $style_status_purchase = "background-color:#FFC8C8;";
+                // } else {
+                //     $status_purchase = "-";
+                //     $style_status_purchase = "";
+                // }
+
+                if ($sales_invoice['status_closed_flag'] == 0) {
                     $status_purchase = "OPEN";
                     $style_status_purchase = "background-color:#C8FFCC;";
-                } else if ($sales_invoice['status'] == '1') {
-                    $status_purchase = "CLOSE";
+                } else { // Jika 1 (CLOSED)
+                    $status_purchase = "CLOSED";
                     $style_status_purchase = "background-color:#FFC8C8;";
-                } else {
-                    $status_purchase = "-";
-                    $style_status_purchase = "";
                 }
                 
                 $balance_local = ($sales_invoice['local_debit'] - $sales_invoice['local_credit']);
-
                 $accumulated += ($sales_invoice['local_debit'] - $sales_invoice['local_credit']);
+
                 $detail .= '<tr>
                                 <td>' . $no . '</td>
                                 <td style="text-align:center;' . $style_status_purchase . '">' . $status_purchase . '</td>
                                 <td>' . $customer_id . '</td>
                                 <td>' . $customer_name . '</td>
-                                <td>' . $plant . '</td>
                                 <td>' . $sales_invoice['source'] . '</td>
                                 <td>' . $sales_invoice['invoice_date'] . '</td>
                                 <td>' . $sales_invoice['payment_due'] . '</td>
@@ -668,7 +754,7 @@ class Report_ar extends CI_Controller
                                 <td>' . $sales_invoice['voucher_date'] . '</td>
                                 <td>' . $sales_invoice['voucher_no'] . '</td>
                                 <td>' . $sales_invoice['account_number'] . '</td>
-                                <td style="text-align:center;">' . $sales_invoice['currency'] . '</td>
+                                <td style="text-align:center;">' . $currency_show . '</td>
                                 <td style="text-align:right;">' . $this->formatNominal($sales_invoice['local_debit'], 2, $option) . '</td>
                                 <td style="text-align:right;">' . $this->formatNominal($sales_invoice['local_credit'], 2, $option) . '</td>
                                 <td style="text-align:right;">' . $this->formatNo($balance_local, $option) . '</td>
@@ -705,7 +791,7 @@ class Report_ar extends CI_Controller
                                     <td>' . $sales_invoice['voucher_date'] . '</td>
                                     <td>' . $sales_invoice['voucher_no'] . '</td>
                                     <td>' . $sales_invoice['account_number'] . '</td>
-                                    <td style="text-align:center;">' . $sales_invoice['currency'] . '</td>
+                                    <td style="text-align:center;">' . $currency_show . '</td>
                                     <td style="text-align:right;">' . $this->formatNominal($sales_invoice['local_debit'], 2, $option) . '</td>
                                     <td style="text-align:right;">' . $this->formatNominal($payment_total, 2, $option) . '</td>
                                     <td style="text-align:right;">' . $this->formatNo($balance_invoice, $option) . '</td>
@@ -723,32 +809,34 @@ class Report_ar extends CI_Controller
             if (count($sales_invoices) > 0 || $balance_local > 0) 
             {
                 $detail .= '<tr style="background: #E5E5E5; font-weight:bold;">
-                                <td colspan="14">SUB TOTAL</td>
+                                <td colspan="13">SUB TOTAL</td>
                                 <td style="text-align:right;">' . $this->formatNominal($local_debit, 2, $option) . '</td>
                                 <td style="text-align:right;">' . $this->formatNominal($local_credit, 2, $option) . '</td>
                                 <td style="text-align:right;">' . $this->formatNo($balance_local, $option) . '</td>
                                 <td style="text-align:right;">' . $this->formatNo($accumulated, $option) . '</td>
                             </tr>
                             <tr>
-                                <td colspan="18" style="height:20px;"></td>
+                                <td colspan="17" style="height:20px;"></td>
                             </tr>';
 
                 $invoice .= '<tr style="background: #E5E5E5; font-weight:bold;">
-                                <td colspan="14">SUB TOTAL</td>
+                                <td colspan="13">SUB TOTAL</td>
                                 <td style="text-align:right;">' . $this->formatNominal($local_debit, 2, $option) . '</td>
                                 <td style="text-align:right;">' . $this->formatNominal($local_credit, 2, $option) . '</td>
                                 <td style="text-align:right;">' . $this->formatNo($balance_local, $option) . '</td>
                                 <td style="text-align:right;">' . $this->formatNo($accumulated, $option) . '</td>
                             </tr>
                             <tr>
-                                <td colspan="18" style="height:20px;"></td>
+                                <td colspan="17" style="height:20px;"></td>
                             </tr>';
+
+                $currency_summary = !empty($customer['currency_balance']) ? $customer['currency_balance'] : $customer['currency'];
             
                 $summary .= '<tbody>
                                 <tr>
                                 <td>' . $noid . '</td>
                                 <td>' . $customer['name'] . '</td>
-                                <td style="text-align:center;">' . $customer['currency'] . '</td>
+                                <td style="text-align:center;">' . $currency_summary . '</td>
                                 <td style="text-align:right;">' . $this->formatNo($balance_local, $option) . '</td>
                             </tr>';
             }
@@ -762,7 +850,7 @@ class Report_ar extends CI_Controller
         }
 
         $detail .= '<tr style="background: #C3FFB4; font-weight:bold;">
-                        <td colspan="14">GRAND TOTAL</td>
+                        <td colspan="13">GRAND TOTAL</td>
                         <td style="text-align:right;">' . $this->formatNominal($grand_local_debit, 2, $option) . '</td>
                         <td style="text-align:right;">' . $this->formatNominal($grand_local_credit, 2, $option) . '</td>
                         <td style="text-align:right;">' .$this->formatNo($grand_local_balance, $option) . '</td>
@@ -770,7 +858,7 @@ class Report_ar extends CI_Controller
                     </tr>';
 
         $invoice .= '<tr style="background: #C3FFB4; font-weight:bold;">
-                        <td colspan="14">GRAND TOTAL</td>
+                        <td colspan="13">GRAND TOTAL</td>
                         <td style="text-align:right;">' . $this->formatNominal($grand_local_debit, 2, $option) . '</td>
                         <td style="text-align:right;">' . $this->formatNominal($grand_local_credit, 2, $option) . '</td>
                         <td style="text-align:right;">' . $this->formatNo($grand_local_balance, $option) . '</td>
