@@ -184,9 +184,6 @@ class Report_ar extends CI_Controller
 
         $currency_show = !empty($filter_currency) ? $filter_currency : 'IDR'; // default showed currency = IDR
 
-        $filtered_sales_invoices = [];
-        $is_status_filter_active = ($filter_status != null && ($filter_status === '0' || $filter_status === '1'));
-
         $filter_list = [
             'filter_from'          => $filter_from,
             'filter_to'            => $filter_to,
@@ -517,6 +514,24 @@ class Report_ar extends CI_Controller
                 (CASE WHEN '{$currency_show}' = 'IDR' THEN b.local_credit ELSE b.original_credit END) as local_credit,
                 b.original_debit,
                 b.original_credit,
+                b.local_debit AS si_debit_local,
+                b.original_debit AS si_debit_original,
+                /** -- Mengambil Total Pembayaran (AR) yang sudah diagregasi dari SubQuery AR **/
+                COALESCE(ar_summary.total_ar_credit_local, 0) AS ar_credit_local,
+                COALESCE(ar_summary.total_ar_credit_original, 0) AS ar_credit_original,
+                /** -- LOGIKA STATUS (CLOSED=1, OPEN=0) **/
+                (CASE 
+                    WHEN '{$currency_show}' = 'IDR' THEN 
+                        CASE 
+                            WHEN ROUND(b.local_debit, 2) = ROUND(COALESCE(ar_summary.total_ar_credit_local, 0), 2) THEN 1 
+                            ELSE 0 
+                        END
+                    ELSE 
+                        CASE 
+                            WHEN ROUND(b.original_debit, 2) = ROUND(COALESCE(ar_summary.total_ar_credit_original, 0), 2) THEN 1 
+                            ELSE 0 
+                        END
+                END) AS status_closed_flag,
                 (CASE WHEN a.number IS NULL THEN a.status ELSE 1 END) as status
             ", FALSE);
             $this->db->from('sales_invoices a');
@@ -532,6 +547,22 @@ class Report_ar extends CI_Controller
                 'JOIN', 
                 FALSE 
             );
+            $this->db->join(
+                /* Subquery yang menghitung total pembayaran AR per Invoice */
+                "(SELECT ar.sales_invoice, 
+                (CASE WHEN ar.account_type = 'DEBIT' THEN b.local_debit ELSE 0 END) as total_ar_debit_local,
+                (CASE WHEN ar.account_type = 'CREDIT' THEN b.local_credit ELSE 0 END) as total_ar_credit_local,
+                (CASE WHEN ar.account_type = 'DEBIT' THEN b.original_debit ELSE 0 END) as total_ar_debit_original,
+                (CASE WHEN ar.account_type = 'CREDIT' THEN b.original_credit ELSE 0 END) as total_ar_credit_original
+                FROM ar_receipts ar 
+                JOIN journal_postings b ON ar.receipt_no = b.document_no
+                WHERE b.modul = 'AR RECEIPT'
+                GROUP BY ar.sales_invoice, ar.account_number ORDER BY receipt DESC
+                ) ar_summary",
+                'ar_summary.sales_invoice = a.number', // Relation ke nomor Invoice
+                'LEFT', 
+                FALSE 
+            );
             $this->db->join('customer_address ca', 'a.customer_id = ca.customer_id', 'LEFT');
             $this->db->where('a.customer_id', $customer_id);
             $this->db->where("b.journal_date BETWEEN '{$filter_from}' AND '{$filter_to}'");
@@ -540,6 +571,10 @@ class Report_ar extends CI_Controller
             }
             if (!empty($filter_currency)) {
                 $this->db->where("a.currency", $filter_currency);
+            }
+            if (!empty($filter_status)) {
+                $target_status = (int)$filter_status;
+                $this->db->having("status_closed_flag", $target_status);
             }
             $this->db->group_by(['a.number', 'b.number']); 
             $this->db->order_by('b.journal_date', 'ASC');
@@ -556,6 +591,7 @@ class Report_ar extends CI_Controller
                 b.number AS voucher_no,
                 b.account_number,
                 a.currency,
+                a.status as status_closed_flag,
                 (CASE WHEN ('{$currency_show}' = 'IDR' AND a.account_type = 'DEBIT') THEN b.local_debit ELSE b.original_debit END) as local_debit,
                 (CASE WHEN ('{$currency_show}' = 'IDR' AND a.account_type = 'CREDIT') THEN b.local_credit ELSE b.original_credit END) as local_credit,
                 (CASE WHEN a.account_type = 'DEBIT' THEN b.original_debit ELSE 0 END) as original_debit,
@@ -590,81 +626,16 @@ class Report_ar extends CI_Controller
             if (!empty($filter_currency)) {
                 $this->db->where("a.currency", $filter_currency);
             }
+            if (!empty($filter_status)) {
+                $target_status = (int)$filter_status;
+                $this->db->having("status_closed_flag", $target_status);
+            }
             $this->db->group_by(['a.receipt_no', 'a.account_number']);
             $this->db->order_by('b.journal_date', 'ASC');
             $data_2 = $this->db->get()->result_array();
 
             $sales_invoices = array_merge($data_1, $data_2);
             usort($sales_invoices, 'compare_trans_date');
-
-            // --- STATUS: Open : Jika Nilai SI ><Nilai AR Receipt; Closed : Jika Nilai SI = Nilai AR Receipt
-            $invoice_balances = [];
-
-            // Menghitung Saldo Bersih untuk Setiap Faktur (SI dan AR) berdasarkan Kunci Faktur
-            foreach ($sales_invoices as $transaction) {
-                // Tentukan kunci unik yang konsisten: Invoice No, atau Document No, atau Voucher No
-                $key_id = $transaction['invoice_no'] ?? $transaction['document_no'] ?? $transaction['voucher_no']; 
-                
-                // Abaikan jika tidak ada key yang valid
-                if (empty($key_id)) continue; 
-
-                // Inisialisasi jika kunci baru
-                if (!isset($invoice_balances[$key_id])) {
-                    $invoice_balances[$key_id] = [
-                        'total_debit' => 0.0,
-                        'total_credit' => 0.0,
-                        'status_closed' => 0 // Default: OPEN
-                    ];
-                }
-                
-                // Akumulasi Debit dan Kredit untuk setiap Faktur/Dokumen
-                $invoice_balances[$key_id]['total_debit'] += (float)$transaction['local_debit'];
-                $invoice_balances[$key_id]['total_credit'] += (float)$transaction['local_credit'];
-            }
-
-            // Menentukan Status Akhir (CLOSED=1, OPEN=0)
-            foreach ($invoice_balances as $key_id => &$summary_status) {
-                
-                // Saldo Bersih (Net Balance) = Total Debit (SI) - Total Kredit (AR)
-                $remaining_balance = $summary_status['total_debit'] - $summary_status['total_credit'];
-                
-                // Terapkan Logika: Balance = 0 (CLOSED=1)
-                if (round($remaining_balance, 2) == 0 || round($summary_status['total_debit'], 2) == round($summary_status['total_credit'], 2)) { 
-                    $summary_status['status_closed'] = 1; // CLOSED (Lunas)
-                } else {
-                    $summary_status['status_closed'] = 0; // OPEN (Masih ada selisih)
-                }
-            }
-            unset($summary_status); // Wajib: Hapus referensi
-
-            // Flag Status ke setiap baris Transaksi
-            foreach ($sales_invoices as $key => $transaction) {
-                
-                $key_id = $transaction['invoice_no'] ?? $transaction['document_no'] ?? $transaction['voucher_no'];
-
-                // Cek di array hasil agregasi
-                if (isset($invoice_balances[$key_id])) {
-                    // Tempelkan status yang sudah dihitung (0 atau 1)
-                    $sales_invoices[$key]['status_closed_flag'] = $invoice_balances[$key_id]['status_closed'];
-                } else {
-                    // Jika tidak terhitung di aggregasi (misalnya kunci tidak valid), asumsikan OPEN (0)
-                    $sales_invoices[$key]['status_closed_flag'] = 0; 
-                }
-            }
-
-            // --- START: Filtering berdasarkan status_closed_flag ---
-            if ($is_status_filter_active) {
-                $target_status = (int)$filter_status; // Tentukan nilai status yang dicari (Konversi string ke integer)
-
-                // Lakukan filter_status pada array $sales_invoices
-                foreach ($sales_invoices as $transaction) {
-                    if (isset($transaction['status_closed_flag']) && $transaction['status_closed_flag'] === $target_status) {
-                        $filtered_sales_invoices[] = $transaction;
-                    }
-                }
-            } else {
-                $filtered_sales_invoices = $sales_invoices;
-            }
 
 
             // ------- TRANSACTION START ----------
@@ -705,7 +676,7 @@ class Report_ar extends CI_Controller
 
             $accumulated = $begin_balance_local;
 
-            foreach ($filtered_sales_invoices as $sales_invoice) 
+            foreach ($sales_invoices as $sales_invoice) 
             {
                 $document_no = $sales_invoice['invoice_no'];
                 if ($filter_display == "Invoice") {
