@@ -687,7 +687,7 @@
                 for (let i = 0; i < totalrows; i++) {
                     //if(rows[i].balance >= rows[i].payment){
                     var data = {
-                        trans_date: rows[i].trans_date,
+                        trans_date: (rows[i].trans_date || payment_date),
                         account_number: rows[i].account_number,
                         account_name: rows[i].account_name,
                         account_type: rows[i].account_type,
@@ -1180,14 +1180,14 @@
                                     let combogridGrid = $('#purchase_invoice').combogrid('grid');
                                     let checkedRows = combogridGrid.datagrid('getChecked');
 
-                                    // Validasi pastikan minimal satu yang terceklis
-                                    if (checkedRows.length === 0) {
-                                        $.messager.alert('Warning', 'You must select at least one data.', 'warning', function() {
-                                            combogridGrid.datagrid('checkRow', index); 
-                                            addJournal();
-                                        });
-                                        return;
-                                    }
+                                    // Validasi pastikan minimal satu yang terceklis (OFF tgl 31 Oktober karena bisa tanpa PI atau PI="-")
+                                    // if (checkedRows.length === 0) {
+                                    //     $.messager.alert('Warning', 'You must select at least one data.', 'warning', function() {
+                                    //         combogridGrid.datagrid('checkRow', index); 
+                                    //         addJournal();
+                                    //     });
+                                    //     return;
+                                    // }
 
                                     // otomatis ubah dg2 ketika Un-checklist
                                     let uncheckedPI = rowData.purchase_invoice;
@@ -1211,29 +1211,31 @@
                                     
                                     // Jika yang di un-checklist ada di #dg2
                                     if (foundAndRemoved) {
-                                        // delete confirmation
                                         $.messager.confirm('Confirm', 'Are you sure want to remove this data?', function(r) {
                                             if (r) {
-                                                $.ajax({
-                                                    method: 'post',
-                                                    url: '<?= base_url('finance/ap_payments/deleteOnUncheck') ?>',
-                                                    data: {
-                                                        purchase_invoice: rowData.purchase_invoice,
-                                                    },
-                                                    dataType: "json",
-                                                    success: function(result) {
-                                                        console.log("Delete on Uncheck ", result);
-                                                        toastr.success(result.message);
-                                                        $.messager.alert("Warning", "<b>Please click Preview Data and Add To Journal again before Save All</b>", 'warning');
-                                                    },
-                                                    error: function(jqXHR, textStatus, errorThrown) {
-                                                        toastr.error(jqXHR.statusText);
-                                                        $.messager.alert("Error", jqXHR.statusText, 'error');                                                    
-                                                    },
-                                                    complete: function(data) {
-                                                        $('#dg').datagrid('reload');
-                                                    }
-                                                });
+                                                $.messager.alert("Warning", "<b>Please click Preview Data and Add To Journal again before Save All</b>", 'warning');
+
+                                                // delete ajax (comment sementara karena jika PI sisa 1 maka AP terhapus) 
+                                                // $.ajax({
+                                                //     method: 'post',
+                                                //     url: '<?= base_url('finance/ap_payments/deleteOnUncheck') ?>',
+                                                //     data: {
+                                                //         purchase_invoice: rowData.purchase_invoice,
+                                                //     },
+                                                //     dataType: "json",
+                                                //     success: function(result) {
+                                                //         console.log("Delete on Uncheck ", result);
+                                                //         toastr.success(result.message);
+                                                //         $.messager.alert("Warning", "<b>Please click Preview Data and Add To Journal again before Save All</b>", 'warning');
+                                                //     },
+                                                //     error: function(jqXHR, textStatus, errorThrown) {
+                                                //         toastr.error(jqXHR.statusText);
+                                                //         $.messager.alert("Error", jqXHR.statusText, 'error');                                                    
+                                                //     },
+                                                //     complete: function(data) {
+                                                //         $('#dg').datagrid('reload');
+                                                //     }
+                                                // });
 
                                                 // preview('<?= base_url('finance/ap_payments/reads/') ?>' + window.btoa(row.payment_no));
                                                 // addTable2('<?= base_url('finance/ap_payments/readJournals/') ?>' + window.btoa(row.payment_no) + "/" + window.btoa(row.journal_type) + "/" + window.btoa(row.bank_account));
@@ -2080,6 +2082,10 @@
                                                                 // ----- FITUR AUTO POSTING JOURNAL -----
                                                                 if (jml == total) {
                                                                     Swal.close();
+
+                                                                    // jika berhasil 
+                                                                    if (result.theme === "success") {
+
                                                                     Swal.fire({
                                                                         title: "Add Posting Journal?",
                                                                         text: result.message + ". Do you want to save the Posting Journal too?",
@@ -2195,6 +2201,20 @@
                                                                             });
                                                                         }
                                                                     });
+                                                                    
+                                                                    } else {
+                                                                        // jika gagal 
+                                                                        Swal.fire({
+                                                                            title: "Failed",
+                                                                            title: result.message,
+                                                                            icon: result.theme,
+                                                                            text: "Failed to save data " + payment_no + "! Please contact admin",
+                                                                            confirmButtonText: 'Done',
+                                                                            allowOutsideClick: false,
+                                                                        }).then(function() {
+                                                                            window.location.reload();
+                                                                        });
+                                                                    }
                                                                 }
                                                                 // ----- END FITUR AUTO POSTING JOURNAL -----
                                                             }
@@ -2994,13 +3014,29 @@
     });
 
     
+    // DETAILS
     function btnDetails(val, row) {
+        return `<a class="btn btn-primary w-100 btn-details" data-id="${row.id}" data-number="${row.payment_no || ''}" style="pointer-events: visible; opacity:1;">
+                    <i class="fa fa-eye"></i> View
+                </a>`;
+    }
+    // Tambahkan event listener setelah tombol dirender
+    $(document).on('click', '.btn-details', function () {
+        var id = $(this).data('id');
+        var number = $(this).data('number');
+        details(id, number);
+    });
+
+    function btnDetails_backup(val, row) {
         var details = "viewDetails('" + row.payment_no + "')";
         return '<a class="btn btn-primary w-100" onClick="' + details + '" style="pointer-events: visible; opacity:1;"><i class="fa fa-eye"></i> View</a>';
     }
     
     //Detail Data
-    function viewDetails(number) {        
+    function details(id, number) {
+        console.log("Number: ", number);
+    
+        // function viewDetails(number) {        
         $("#d_receipt_no").textbox('disable');
         $("#d_receipt_no").textbox('setValue', number);
         

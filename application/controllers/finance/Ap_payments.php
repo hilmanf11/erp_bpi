@@ -141,7 +141,7 @@ class Ap_payments extends CI_Controller
             $currency         = $jsonData['currency'];
             $payment_original = $jsonData["payment"] ?? 0;
             $payment_date     = $jsonData['payment_date'];
-            $trans_date       = $jsonData['trans_date'];
+            $trans_date       = $jsonData['trans_date'] ?? $jsonData['payment_date'];
             $account_type     = $jsonData["account_type"] ?? "";
             
             // Hitung total pada kurs transaksi
@@ -169,7 +169,7 @@ class Ap_payments extends CI_Controller
             $account_name     = $journal['account_name'];
             $currency         = $journal['currency'];
             $payment_original = $journal['payment'];
-            $trans_date       = $journal['trans_date'];
+            $trans_date       = $journal['trans_date'] ?? $journal['payment_date'];
             $description      = $journal['description'];
             $account_type     = $journal['account_type'];
             
@@ -741,6 +741,23 @@ class Ap_payments extends CI_Controller
         if ($this->input->post()) {
             $post = $this->input->post();
 
+            // check journal_type_id
+            $input_value = trim($post['journal_type_id']) ?? '';
+            if (!is_numeric($input_value) || empty($input_value)) {
+                $this->db->select('id');
+                $this->db->from('journal_types');
+                $this->db->like('name', $input_value, 'both'); 
+                $getJournalType = $this->db->get()->row();
+
+                if (!empty($getJournalType)) {
+                    $journal_type_id = $getJournalType->id;
+                } else {
+                    $journal_type_id = NULL;                     
+                }
+                
+                $post['journal_type_id'] = $journal_type_id;
+            }
+            
             if (@$post['id'] != "") {
                 $send = $this->crud->update('ap_payments', ["id" => $post['id']], $post);
                 echo $send;
@@ -805,7 +822,10 @@ class Ap_payments extends CI_Controller
                 $update = $this->crud->update('ap_payments', ['payment_no' => $post['payment_no'], 'purchase_invoice' => $post['purchase_invoice']], $post);
                 echo $update;
             } else {
-                echo json_encode(['success' => false, 'message' => 'AP Payment Not Found.', 'title' => 'Error', 'theme' => 'error']);
+                $send = $this->crud->update('ap_payments', ["payment_no" => $post['payment_no']], $post);
+                echo $send;
+
+                // echo json_encode(['success' => false, 'message' => 'AP Payment Not Found.', 'title' => 'Error', 'theme' => 'error']);
             }
 
         } else {
@@ -827,9 +847,9 @@ class Ap_payments extends CI_Controller
     public function deleteOnUncheck() 
     {
         $data = $this->input->post();
-        $send = $this->crud->delete('ap_payments', $data);
-        echo $send;
-        exit;
+        // $send = $this->crud->delete('ap_payments', $data); // fatal jika sisa PI tinggal 1 terhapus AP Payment saat update
+        // echo $send;
+        // exit;
 
         if ($this->input->method() === 'post') 
         {
@@ -840,8 +860,11 @@ class Ap_payments extends CI_Controller
                 // check availability first 
                 $check_availability = $this->crud->read("ap_payments", [], ["purchase_invoice" => $purchase_invoice]);
                 if (!empty($check_availability)) {
-                    $this->db->where_in('purchase_invoice', $purchase_invoice);
-                    $result = $this->db->delete('ap_payments'); // Mengembalikan TRUE/FALSE
+
+                    // $this->db->where_in('purchase_invoice', $purchase_invoice);
+                    // $result = $this->db->delete('ap_payments'); // Mengembalikan TRUE/FALSE
+
+                    $result = $this->crud->update('ap_payments', ["id" => $check_availability->id, "purchase_invoice" => $purchase_invoice], ["deleted" => 1]);
                     echo json_encode($result);
 
                     // if ($result) {
