@@ -54,10 +54,15 @@
     <a href="javascript:;" class="easyui-linkbutton" data-options="plain:true" onclick="download_excel2()"><i class="fa fa-download"></i> Download Template</a>
 </div>
 
+<div id="toolbar3">
+    <a href="javascript:void(0)" class="easyui-linkbutton" data-options="plain:true" onclick="append()"><i class="fa fa-plus"></i> Add</a>
+    <a href="javascript:void(0)" class="easyui-linkbutton" data-options="plain:true" onclick="removeit()"><i class="fa fa-times"></i> Remove</a>
+</div>
+
 <!-- DIALOG SAVE AND UPDATE -->
-<div id="dlg_insert" class="easyui-dialog" title="Add New" data-options="closed: true,modal:true" style="width: 800px; padding:10px; top: 20px;">
-    <form id="frm_insert" method="post" novalidate>
-        <fieldset style="width:100%; border:1px solid #d0d0d0; margin-bottom: 10px; border-radius:4px; float: left;">
+<div id="dlg_insert" class="easyui-dialog" title="Add New" data-options="closed: true,modal:true, fit:false, height:550, resizable:true" style="width: 1100px; padding:10px; top: 20px;">
+    <form id="frm_insert" method="post" novalidate style="overflow: auto;">
+        <fieldset style="width:98%; border:1px solid #d0d0d0; margin-bottom: 10px; border-radius:4px; float: left;">
             <legend><b>Form Data</b></legend>
             <div style="float:left; width:50%;">
                 <div class="fitem">
@@ -127,14 +132,7 @@
                     <span style="width:35%; display:inline-block;">NPWP</span>
                     <input style="width:60%;" name="npwp" id="npwp" class="easyui-numberbox">
                 </div>
-                <div class="fitem">
-                    <span style="width:35%; display:inline-block;">COA No</span>
-                    <input style="width:60%;" id="account_number" name="account_number" class="easyui-combogrid">
-                </div>
-                <div class="fitem">
-                    <span style="width:35%; display:inline-block;">COA Name</span>
-                    <input style="width:60%;" id="account_name" name="account_name" class="easyui-textbox">
-                </div>
+                
                 <div class="fitem">
                     <span style="width:35%; display:inline-block;">Status</span>
                     <select style="width:60%;" name="status" id="status" required="" panelHeight="auto" class="easyui-combobox">
@@ -142,8 +140,23 @@
                         <option value="1">Not Active</option>
                     </select>
                 </div>
+
+                <div id="single_account">
+                    <div class="fitem" hidden>
+                        <hr>
+                        <span style="width:35%; display:inline-block;">COA No</span>
+                        <input style="width:60%;" id="account_number" name="account_number" class="easyui-combogrid">
+                    </div>
+                    <div class="fitem" hidden>
+                        <span style="width:35%; display:inline-block;">COA Name</span>
+                        <input style="width:60%;" id="account_name" name="account_name" class="easyui-textbox">
+                    </div>
+                </div>
             </div>
         </fieldset>
+        
+        <table id="dgAccounts" class="easyui-datagrid" style="width:100%; height: 250px;" title="Account Number List" toolbar="#toolbar3"></table>
+        
     </form>
 </div>
 
@@ -272,11 +285,23 @@
 <!-- PDF -->
 <iframe id="printout" src="<?= base_url('master/customers/print') ?>" style="width: 100%;" hidden></iframe>
 <script>
+    let formMode = 'add';
+
     //ADD DATA
     function add() {
+        formMode = 'add';
+
         $('#dlg_insert').dialog('open');
         url_save = '<?= base_url('master/customers/create') ?>';
         $('#frm_insert').form('clear');
+
+        // Multiple Account Number
+        $('#dgAccounts').datagrid('loadData', []);
+        addTable();
+
+        // Form existing account number
+        // $('#single_account').hide();
+        $('#single_account').find('input, select, textarea').prop('disabled', true);
 
         $('#type').combobox('setValue', 'LOCAL');
         $('#currency').combobox('setValue', 'IDR');
@@ -304,6 +329,263 @@
         });
     }
 
+    // ACCOUNT NUMBER DATAGRID
+    function addTable(link = "") {
+        var lastIndex;
+        var dg = $('#dgAccounts').datagrid({
+            url: link,
+            singleSelect: true,
+            columns: [
+                [ {
+                    field: 'no',
+                    width: 30,
+                    readonly: true,
+                    halign: 'center',
+                    align: 'center',
+                    title: "No.",
+                    formatter: function(value, row, index) {
+                        return index + 1;
+                    }
+                },
+                {
+                    field: 'action',
+                    width: 100,
+                    align: 'center',
+                    halign: 'center',
+                    title: "Action",
+                    formatter: function(value, row, index) {
+                        let button = '<a href="javascript:void(0)" class="btn btn-primary btn-sm" style="pointer-events:auto; opacity:1;" onclick="endEditRow(' + index + ')"><i class="fa fa-check"></i></a>  ';
+                        
+                        // tampilkan delete jika bukan baris baru append 00000
+                        if (row.migration_id !== '00000') {
+                            button += ' <a href="javascript:void(0)" class="btn btn-danger btn-sm" style="pointer-events:auto; opacity:1;" onclick="deleterow(' + index + ')"><i class="fa fa-trash"></i></a>';
+                        }
+                        return button;
+                    },
+                },
+                {
+                    field: 'division',
+                    width: 150,
+                    readonly: true,
+                    halign: 'center',
+                    title: "Division",
+                    editor: {
+                        type: 'combogrid',
+                        options: {
+                            url: '<?= base_url('master/customers/readDivision') ?>',
+                            idField: 'number',
+                            textField: 'number',
+                            panelWidth: 300,
+                            fitColumns: true,
+                            mode: 'remote',
+                            required: true,
+                            prompt: "Choose Division",
+                            columns: [
+                                [{
+                                    field: 'number',
+                                    title: 'Code',
+                                    width: 100
+                                }, {
+                                    field: 'name',
+                                    title: 'Division Name',
+                                    width: 200
+                                }, ]
+                            ],
+                        }
+                    }
+                },
+                {
+                    field: 'account_number',
+                    width: 150,
+                    halign: 'center',
+                    title: "Account Number",
+                    editor: {
+                        type: 'combogrid',
+                        options: {
+                            url: '<?= base_url('finance/account_coa/reads') ?>',
+                            panelWidth: 250,
+                            idField: 'account_number',
+                            textField: 'account_number',
+                            mode: 'remote',
+                            required: true,
+                            fitColumns: true,
+                            prompt: 'Choose Account No',
+                            columns: [
+                                [{
+                                    field: 'account_number',
+                                    title: 'Account No',
+                                    width: 100
+                                }, {
+                                    field: 'account_name',
+                                    title: 'Account Name',
+                                    width: 200
+                                }, ]
+                            ],
+                            onSelect: function(value, rows) {
+                                var dg = $('#dgAccounts');
+                                var row = dg.datagrid('getSelected');
+                                var rowIndex = dg.datagrid('getRowIndex', row);
+                                var ed = dg.datagrid('getEditor', {
+                                    index: rowIndex,
+                                    field: 'account_name'
+                                });
+
+                                $(ed.target).textbox('setValue', rows.account_name);
+                            }
+                        }
+                    }
+                }, 
+                {
+                    field: 'account_name',
+                    width: 250,
+                    readonly: true,
+                    halign: 'center',
+                    title: "Account Name",
+                    editor: {
+                        type: 'textbox',
+                        options: {
+                            required: true,
+                            readonly: true
+                        }
+                    }
+                },
+                {
+                    field: 'flag',
+                    width: 80,
+                    hidden: true,
+                    halign: 'center',
+                    title: "Index",
+                    editor: {
+                        type: 'numberbox',
+                    }
+                }, ]
+            ],
+            onClickRow: function(rowIndex) {
+                if (lastIndex != rowIndex) {
+                    $(this).datagrid('endEdit', lastIndex);
+                    $(this).datagrid('beginEdit', rowIndex);
+                }
+                lastIndex = rowIndex;
+            },
+            onBeginEdit: function(rowIndex, row) {
+                var editors = $('#dgAccounts').datagrid('getEditors', rowIndex);
+            }
+        });
+    }
+
+    function endEditRow(rowIndex) {
+        var dg = $('#dgAccounts');
+        if (dg.datagrid('validateRow', rowIndex)) {
+            dg.datagrid('endEdit', rowIndex);
+            
+            // Opsional: Hapus lastIndex agar baris lain bisa diedit
+            lastIndex = undefined; 
+        } else {
+            // alert('Data belum lengkap atau ada yang salah!');
+            toastr.error('Data belum lengkap!');
+        }
+    }
+
+    // Datagrid dgAccounts
+    var editIndex = undefined;
+    function endEditing() {
+        if (editIndex == undefined) {
+            return true
+        }
+        if ($('#dgAccounts').datagrid('validateRow', editIndex)) {
+            $('#dgAccounts').datagrid('endEdit', editIndex);
+            editIndex = undefined;
+            return true;
+        } else {
+            return false;
+        }
+    }
+    function append() {
+        var id     = $("#id").textbox('getValue');
+        var number = $("#number").textbox('getValue');
+        var name   = $("#name").textbox('getValue');
+        var type   = $("#type").textbox('getValue');
+
+        if (number != "" && number != "" && name != "" && type != "") {
+            if (endEditing()) {
+                $('#dgAccounts').datagrid('appendRow', {
+                    migration_id: '00000',
+                    flag: 0
+                });
+                editIndex = $('#dgAccounts').datagrid('getRows').length - 1;
+                $('#dgAccounts').datagrid('selectRow', editIndex).datagrid('beginEdit', editIndex);
+            }
+        } else {
+            toastr.error("Please Completed Your input");
+        }
+    }
+    function removeit() {
+        if (editIndex == undefined) {
+            return true;
+        }
+        $('#dgAccounts').datagrid('cancelEdit', editIndex).datagrid('deleteRow', editIndex);
+        editIndex = undefined;
+    }
+
+    // delete account
+    function deleterow(index) {
+        if (formMode == 'add') {
+            if (index == undefined) {
+                return true;
+            }
+            $('#dgAccounts').datagrid('cancelEdit', index).datagrid('deleteRow', index);
+            index = undefined;
+            
+        } else {        
+            $.messager.confirm('Confirm', 'Are you sure?', function(r) {
+                if (r) {
+                    var customer_id = $("#id").textbox("getValue");
+                    var rows = $('#dgAccounts').datagrid('getSelected');
+                    var dg = $('#dgAccounts');
+                    var row = dg.datagrid('getSelected');
+                    var rowIndex = dg.datagrid('getRowIndex', row);
+
+                    var ed = dg.datagrid('getEditor', {
+                        index: editIndex,
+                        field: 'id'
+                    });
+
+                    console.log("deleterow :", rows);
+
+                    $.ajax({
+                        method: 'post',
+                        url: '<?= base_url('master/customers/deleteSingleAccount') ?>',
+                        data: {
+                            division: row.division,
+                            customer_id: customer_id,
+                            account_number: row.account_number,
+                            account_name: row.account_name,
+                            account_type: (row.account_type || ''),
+                        },
+                        success: function(response) {
+                            var result = JSON.parse(response); // pengganti eval()
+                            if (result.theme == 'success') {
+                                toastr.success(result.message, result.title);
+                            } else {
+                                toastr.error(result.message, result.title);
+                            }
+
+                        },
+                        error: function(jqXHR, textStatus, errorThrown) {
+                            toastr.error(jqXHR.statusText, "AJAX Error");
+                        },
+                        complete: function(data) {
+                            $('#dgAccounts').datagrid('reload');
+                        }
+                    });
+                    
+                    $('#dgAccounts').datagrid('cancelEdit', index).datagrid('deleteRow', index);
+                }
+            });
+        }
+    }
+    // --- END DATAGRID
+
     //ADD DATA
     function add2() {
         $('#dlg_insert2').dialog('open');
@@ -321,6 +603,30 @@
 
     //EDIT DATA
     function update() {
+        formMode = 'update';
+        
+        // Form existing account number
+        $('#single_account').find('input, select, textarea').prop('disabled', true);
+        
+        var row = $('#dg').datagrid('getSelected');
+        if (row) {
+            // Pastikan faktur_code tidak null sebelum memuat data ke form
+            if (!row.faktur_code) {
+                row.faktur_code = ''; // Gantikan null dengan string kosong
+            }
+            
+            url_save = '<?= base_url('master/customers/update') ?>?id=' + btoa(row.id);
+            
+            $('#dlg_insert').dialog('open');
+            $('#frm_insert').form('load', row);
+
+            addTable('<?= base_url('master/customers/datatableMultiAccounts?id=') ?>' + window.btoa(row.id));
+        } else {
+            toastr.warning("Please select one of the data in the table first!", "Information");
+        }
+    }
+
+    function update_backup() {
         var row = $('#dg').datagrid('getSelected');
         if (row) {
             // Pastikan faktur_code tidak null sebelum memuat data ke form
@@ -363,8 +669,15 @@
                             data: {
                                 id: row.id
                             },
-                            success: function(result) {
-                                var result = eval('(' + result + ')');
+                            success: function(response) {
+                                // var result = eval('(' + response + ')');
+
+                                var result = JSON.parse(response); // pengganti eval()
+                                if (result.theme == 'success') {
+                                    toastr.success(result.message, result.title);
+                                } else {
+                                    toastr.error(result.message, result.title);
+                                }
                             },
                             error: function(jqXHR, textStatus, errorThrown) {
                                 toastr.error(jqXHR.statusText);
@@ -517,7 +830,7 @@
         //     }]
         // });
 
-        $('#dlg_insert').dialog({
+        $('#dlg_insert_backup').dialog({
             buttons: [{
                 text: 'Save',
                 iconCls: 'icon-ok',
@@ -547,6 +860,128 @@
                             } else {
                                 toastr.error(result.message, result.title);
                             }
+                            $('#dlg_insert').dialog('close');
+                            $('#dg').datagrid('reload');
+                        }
+                    });
+                }
+            }]
+        });
+
+        //SAVE DATA CUSTOMER - WITH MULTIPLE ACCOUNT NUMBER
+        $('#dlg_insert').dialog({
+            buttons: [{
+                text: 'Save All',
+                iconCls: 'icon-ok',
+                handler: function() {
+                    // Ambil nilai combobox faktur_code (array untuk multiple)
+                    var fakturCodes = $('#faktur_code').combobox('getValues');
+
+                    // Periksa apakah fakturCodes kosong/null
+                    if (!fakturCodes || fakturCodes.length === 0) {
+                        fakturCodes = ['']; // Atur ke array kosong untuk mencegah error
+                    }
+
+                    // Set nilai ke hidden input sebelum submit
+                    $('#faktur_code_hidden').val(fakturCodes.join(',')); // Gabungkan menjadi string dengan koma
+
+                    var id = $("#id").textbox('getValue');
+                    var name = $("#name").textbox('getValue');
+                    var number = $("#number").textbox('getValue');
+
+                    if (!id || id.length === 0) {
+                        toastr.error("Customer ID is required!", "error");
+                        return;
+                    }
+                    if (!name || name.length === 0) {
+                        toastr.error("Customer Name is required!", "error");
+                        return;
+                    }
+                    if (!number || number.length === 0) {
+                        toastr.error("Customer Code is required!", "error");
+                        return;
+                    }
+                    
+                    var rows = $('#dgAccounts').datagrid('getRows');
+                    var totalrows = rows.length;
+                    endEditing();
+
+                    // Submit form insert data customer
+                    $('#frm_insert').form('submit', {
+                        url: url_save,
+                        method: 'post', // Metode HTTP yang digunakan
+                        onSubmit: function() {
+                            return $(this).form('validate');
+                        },
+                        success: function(response) {
+                            var result = JSON.parse(response); // pengganti eval()
+
+                            if (result.theme == "success") {
+                                var newCustomerId = id;
+                                
+                                if (!newCustomerId) {
+                                    toastr.error("New ID Customer not found in response.", "Fatal Error");
+                                    return;
+                                }
+                                // toastr.success(result.message, result.title);
+                            
+                                // Insert multiple account_number
+                                var accountsToSave = [];
+                                for (let i = 0; i < totalrows; i++) {
+                                    if (rows[i].account_number) {
+                                        accountsToSave.push({
+                                            division: rows[i].division,
+                                            account_number: rows[i].account_number,
+                                            account_name: rows[i].account_name,
+                                            account_type: (rows[i].account_type || ''),
+                                        });
+                                    }
+                                }
+                                
+                                // Hanya kirim jika ada akun yang perlu disimpan
+                                if (accountsToSave.length > 0) {
+                                    $.ajax({
+                                        type: "post",
+                                        url: '<?= base_url('master/customers/createMultiAccounts') ?>',
+                                        data: {
+                                            customer_id: newCustomerId,  // Menggunakan ID yang BENAR dari server
+                                            accounts: accountsToSave     // Mengirim semua data akun sekaligus
+                                        },
+                                        dataType: "json",
+                                        success: function(multiAccountResult) {
+                                            Swal.fire({
+                                                title: multiAccountResult.message || "Data Customer dan Akun berhasil disimpan.",
+                                                icon: multiAccountResult.theme || "success",
+                                                confirmButtonText: 'Ok',
+                                                allowOutsideClick: false,
+                                            }).then((swalResult) => {
+                                                if (swalResult.isConfirmed) {
+                                                    window.location.reload();
+                                                }
+                                            });
+                                        },
+                                        error: function() {
+                                            toastr.error("Failed to save Multiple Account Number.", "Error Ajax Account");
+                                        }
+                                    });
+
+                                } else {
+                                    // Jika tidak ada akun ganda, tampilkan hasil submit form utama saja
+                                    Swal.fire({
+                                        title: result.message,
+                                        icon: result.theme,
+                                        confirmButtonText: 'Ok',
+                                        allowOutsideClick: false,
+                                    }).then((swalResult) => {
+                                        if (swalResult.isConfirmed) {
+                                            window.location.reload();
+                                        }
+                                    });
+                                }
+                            } else {
+                                toastr.error(result.message, result.title);
+                            }
+                            
                             $('#dlg_insert').dialog('close');
                             $('#dg').datagrid('reload');
                         }

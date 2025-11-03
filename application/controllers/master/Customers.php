@@ -49,6 +49,13 @@ class Customers extends CI_Controller
         echo json_encode($send);
     }
 
+    public function readDivision()
+    {
+        $post = isset($_POST['q']) ? $_POST['q'] : "";
+        $send = $this->crud->reads('divisions', ["name" => $post], ["deleted" => 0], "", "id", "ASC");
+        echo json_encode($send);
+    }
+
     //GET DATATABLES
     public function datatables()
     {
@@ -178,8 +185,59 @@ class Customers extends CI_Controller
             show_error("Cannot Process your request");
         }
     }
+
     //DELETE DATA
-    public function delete()
+    function delete() 
+    {
+        if (!$this->input->post()) {
+            $this->output->set_status_header(400); // Bad Request
+            echo json_encode(['title' => 'Error', 'theme' => 'error', 'message' => 'Invalid request method.']);
+            return;
+        }
+
+        // Ambil hanya Primary Key (ID)
+        $id = $this->input->post('id'); 
+        if (empty($id)) {
+            echo json_encode(['title' => 'Error', 'theme' => 'error', 'message' => 'Customer ID is required for deletion.']);
+            return;
+        }
+
+        // Cek apakah data customer ada
+        $dataBefore = $this->crud->read('customers', [], ['id' => $id]); 
+        if (!$dataBefore) {
+            echo json_encode(['title' => 'Error', 'theme' => 'error', 'message' => 'Customer not found.']);
+            return;
+        }
+
+        $dataBeforeAccount = $this->db->get_where('customer_account_numbers', ['customer_id' => $id])->result_array();
+
+        // DB::transaction() penting karena ada dua operasi: DELETE dan LOG
+        $this->db->trans_start();
+
+        // HAPUS DATA CHILD (customer_account_numbers)
+        // Ini harus dilakukan pertama untuk menghindari error Foreign Key
+        $this->db->where('customer_id', $id)->delete('customer_account_numbers');
+
+        // HAPUS DATA PARENT (customers)
+        $this->db->where('id', $id)->delete('customers');
+
+        // Logging
+        $this->crud->logs("Delete", json_encode($dataBefore), 'customers');
+
+        if (!empty($dataBeforeAccount)) {
+            $this->crud->logs("Delete", json_encode($dataBeforeAccount), 'customer_account_numbers');
+        }
+
+        $this->db->trans_complete();
+
+        if ($this->db->trans_status() === FALSE) {
+            echo json_encode(['title' => 'Error', 'theme' => 'error', 'message' => 'Failed to delete Customer']);
+        } else {
+           echo json_encode(['title' => 'Success', 'theme' => 'success', 'message' => 'Customer deleted successfully.']);
+        }
+    }
+
+    public function delete_existing()
     {
         $data = $this->input->post();
         $send = $this->crud->delete('customers', $data);
@@ -192,6 +250,147 @@ class Customers extends CI_Controller
         $send = $this->crud->delete('customer_address', $data);
         echo $send;
     }
+
+
+    // --- FUNCTIONS OF MULTIPLE ACCOUNT NUMBERS --- 
+    // DATATABLE 
+    function datatableMultiAccounts() 
+    {
+        $customer_id = base64_decode($this->input->get('id'));
+        $records = $this->db->select('*')->from('customer_account_numbers')->where('customer_id', $customer_id)->get()->result_array();
+        echo json_encode($records);
+    }
+    
+    // CREATE OR UPDATE
+    function createMultiAccounts() 
+    {
+        if ($this->input->post()) {
+            
+            $customer_id   = $this->input->post('customer_id');
+            $accounts_data = $this->input->post('accounts');
+            
+            if (empty($customer_id) || empty($accounts_data) || !is_array($accounts_data)) {
+                $response = [
+                    'theme' => 'error', 
+                    'title' => 'Error', 
+                    'message' => 'Data Customer ID is not complete.'
+                ];
+                echo json_encode($response);
+                return;
+            }
+
+            $all_success = true;
+            $this->db->trans_start();
+
+            foreach ($accounts_data as $account) {
+                $data_to_save = [
+                    'customer_id'    => $customer_id,
+                    'division'       => $account['division'],
+                    'account_number' => $account['account_number'],
+                    'account_name'   => $account['account_name'],
+                    'account_type'   => $account['account_type'] ?? null,
+                    'flag'           => $account['flag'] ?? 1,
+                ];
+
+                $account_number = $data_to_save['account_number'];
+                $account_name   = $data_to_save['account_name'];
+
+                $existing = $this->db->select('*')->from('customer_account_numbers')
+                            ->where("customer_id", $customer_id)
+                            ->where("account_number", $data_to_save['account_number'])
+                            ->get()->row();
+
+                $customer_coa_existing = $this->db->select('*')->from('customers')
+                    ->where('id', $customer_id)
+                    ->where('account_number', $account_number)
+                    ->get()->row();
+                
+                if (!empty($customer_coa_existing) && !empty($existing)) {
+                    // ALSO UPDATE COA IN TABLE CUSTOMERS
+                    $this->crud->update('customers', 
+                        ["id" => $customer_coa_existing->id], 
+                        ["account_number" => $account_number, "account_name" => $account_name]
+                    );
+
+                    $result = $this->crud->update('customer_account_numbers', 
+                        ["migration_id" => $existing->migration_id], 
+                        $data_to_save
+                    );
+                    
+                } elseif (!empty($existing) && empty($customer_coa_existing)) {
+                    // UPDATE
+                    $result = $this->crud->update('customer_account_numbers', 
+                        ["migration_id" => $existing->migration_id], 
+                        $data_to_save
+                    );
+                
+                } else {
+                    // CREATE
+                    $result = $this->crud->create('customer_account_numbers', $data_to_save);
+                }
+
+                if (!$result) {
+                    $all_success = false;
+                    break; 
+                }
+            }
+            
+            $this->db->trans_complete();
+            
+            if ($this->db->trans_status() === FALSE || $all_success === false) {
+                $response = [
+                    'theme' => 'error', 
+                    'title' => 'Error', 
+                    'message' => 'Failed to save Multiple Account..'
+                ];
+                echo json_encode($response);
+                
+            } else {
+                echo $result;
+            }
+
+        } else {
+            $response = [
+                'theme' => 'error', 
+                'title' => 'Error', 
+                'message' => 'Request method is not valid!'
+            ];
+            echo json_encode($response);
+        }
+    }
+
+    // DELETE 
+    function deleteSingleAccount() 
+    {
+        if ($this->input->post()) {
+            $data = $this->input->post();
+            $customer_id    = $this->input->post('customer_id');
+            $account_number = $this->input->post('account_number');
+
+            $check = $this->db->select('*')->from('customer_account_numbers')
+                    ->where('customer_id', $customer_id)
+                    ->where('account_number', $account_number)
+                    ->get()->row();
+            $customer_coa_existing = $this->db->select('*')->from('customers')
+                ->where('id', $customer_id)
+                ->where('account_number', $account_number)
+                ->get()->row();
+
+            if (!empty($customer_coa_existing) && !empty($check)) {
+                $send = json_encode(["title" => "Failed", "message" => "Cannot delete existing Account COA!", "theme" => "error"]);
+                
+            } elseif (!empty($check) && empty($customer_coa_existing)) {
+                $send = $this->crud->delete('customer_account_numbers', $data);
+            
+            } else {
+                $send = json_encode(["title" => "Removed", "message" => "Data not in database but removed from table", "theme" => "success"]);
+            }
+            echo $send;
+        }
+    }
+
+
+    // --- UPLOAD FUNCTIONS ---
     //UPLOAD DATA
     public function upload()
     {
