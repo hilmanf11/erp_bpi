@@ -1691,6 +1691,7 @@ class Sales_invoices extends CI_Controller
                     $sales_order_no = $record['customer_order_no'];
                 }
 
+                /** -- existing --
                 $total_invoice = ($record['total_invoice']);
                 $discount = ($record['discount']);
                 $sub_total = ($record['total_sub']);
@@ -1699,6 +1700,26 @@ class Sales_invoices extends CI_Controller
                 $vat_total = ($dpp_total * ($record['taxes']/100));
                 $disc_pr = ($record['disc_pr']);
                 $disc_dp = ($record['disc_dp']);
+                **/
+
+                // fixing nominal-nominal seharusnya output print out = data grid (Bu Nina)
+                $total_invoice  = ($record['total_invoice']);
+                $discount       = ($record['discount']) ?? 0;
+                $taxes          = ($record['taxes']);
+                $down_payment   = ($record['down_payment']);
+
+                // --- SUB TOTAL = total_invoice - discount
+                $sub_total      = ($record['total_sub'] - $discount);
+
+                // --- DPP = sub_total * 11/12
+                $dpp_total      = (($record['total_sub']) * 11/12);
+
+                // --- VAT = ((sub_total - down_payment) * 11/12) * taxes
+                $vat_total      = (($sub_total - $down_payment) * 11/12) * ($taxes/100);
+
+                $disc_pr = ($record['disc_pr']);
+                $disc_dp = ($record['disc_dp']);
+
                 $sales_invoices = $this->db->query("SELECT * FROM sales_invoice_journals WHERE account_number IN ('170.110.00', '170.130.00') AND number = ?", [$record['number']])->result();
                 // var_dump($sales_invoices);
                 
@@ -1726,13 +1747,11 @@ class Sales_invoices extends CI_Controller
                     $tax_total = 0;
                 }
 
-                if($record['currency'] == 'IDR'){
-                    $format_no = 2;
-                }else{
-                    $format_no = 4;
-                }
-                
+                // Tax Total = Total PPH from table sales_invoices
+                $tax_total = $record['total_pph'] ?? $tax_total;
+
                 $grand_total = ((($sub_total - $down_payment) + $vat_total) - $tax_total);
+
 
                 // if ($record['type'] == "EXPORT") {
                 //     $content = '<td style="text-align:right">' . number_format($record['price'], 4, ",", ".") . '</td>
@@ -1740,6 +1759,12 @@ class Sales_invoices extends CI_Controller
                 // } else {
                 //     $content = "";
                 // }
+
+                if($record['currency'] == 'IDR'){
+                    $format_no = 2;
+                }else{
+                    $format_no = 4;
+                }
 
                 $html .= '<tr>';
                 $html .= '<td style="text-align:center">' . $no . '</td>';
@@ -2283,6 +2308,9 @@ class Sales_invoices extends CI_Controller
         a.down_payment,
         a.taxes,
         a.disc_pr,
+        a.total_pph,
+        a.total_vat,
+        a.total_grand,
         a.disc_dp')
             ->from('sales_invoices a')
             ->join('item_fg fg', 'fg.id = a.item_fg_id', 'left')
@@ -2425,6 +2453,7 @@ class Sales_invoices extends CI_Controller
             $no = 1 + ($i * $rows_per_page);
             $sub_total = 0;
             foreach ($records as $row) {
+                /** -- existing --
                 $qty = $row['qty_sum'];
                 $total_invoice = $row['total_invoice'];
                 $discount = $row['discount'];
@@ -2432,8 +2461,27 @@ class Sales_invoices extends CI_Controller
                 $down_payment = $row['down_payment'];
                 $dpp_total = (($record['total_sub'] - $record['down_payment']) * 11/12);
                 $vat_total = ($dpp_total * ($record['taxes']/100));
+                **/
+
+                // fixing nominal-nominal seharusnya output print out = data grid (Bu Nina)
+                $qty            = $row['qty_sum'];
+                $total_invoice  = $row['total_invoice'];
+                $discount       = $row['discount'] ?? 0;
+                $taxes          = $row['taxes'];
+                $down_payment   = $row['down_payment'];
+
+                // --- SUB TOTAL = total_invoice - discount
+                $sub_total      = ($row['total_sub'] - $discount);
+
+                // --- DPP = sub_total * 11/12
+                $dpp_total      = (($record['total_sub']) * 11/12);
+
+                // --- VAT = ((sub_total - down_payment) * 11/12) * taxes
+                $vat_total      = (($sub_total - $down_payment) * 11/12) * ($taxes/100);
+
                 $disc_pr = ($record['disc_pr']);
                 $disc_dp = ($record['disc_dp']);
+
                 $sales_invoices = $this->db->query("SELECT * FROM sales_invoice_journals WHERE account_number IN ('170.110.00', '170.130.00') AND number = ?", [$record['number']])->result();
                 // var_dump($sales_invoices);
                 
@@ -2460,6 +2508,10 @@ class Sales_invoices extends CI_Controller
                     $tax = "";
                     $tax_total = 0;
                 }
+
+                // Tax Total = Total PPH from table sales_invoices
+                $tax_total = $row['total_pph'] ?? $tax_total;
+
                 
                 if($record['currency'] == 'IDR'){
                     $format_no = 2;
@@ -2467,6 +2519,7 @@ class Sales_invoices extends CI_Controller
                     $format_no = 4;
                 }
                 
+                // --- GRAND TOTAL = (Subtotal - DP) + Vat - Tax Total // $grand_total = $row['total_grand'];
                 $grand_total = ((($sub_total - $down_payment) + $vat_total) - $tax_total);
                 
                 $format_no = $row['currency'] === 'IDR' ? 2 : 4;
