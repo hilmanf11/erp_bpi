@@ -934,7 +934,7 @@
                                             account_number: rows[i].account_number,
                                             account_name: rows[i].account_name,
                                             account_type: (rows[i].account_type || ''),
-                                            flag: i,
+                                            flag: i + 1,
                                         });
                                     }
                                 }

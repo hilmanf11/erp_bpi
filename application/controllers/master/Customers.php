@@ -366,7 +366,7 @@ class Customers extends CI_Controller
 
                 // Update data COA di Customers
                 if (empty($customer_coa_existing)) {
-                    if ($account['flag'] == '0' || $data_to_save['flag'] == '1') {
+                    if ($account['flag'] == '1' || $data_to_save['flag'] == '1') {
                         $this->crud->update('customers', 
                             ["id" => $customer_id], 
                             [
