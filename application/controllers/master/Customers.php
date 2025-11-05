@@ -254,11 +254,70 @@ class Customers extends CI_Controller
 
     // --- FUNCTIONS OF MULTIPLE ACCOUNT NUMBERS --- 
     // DATATABLE 
-    function datatableMultiAccounts() 
+    public function datatableMultiAccounts() 
     {
         $customer_id = base64_decode($this->input->get('id'));
-        $records = $this->db->select('*')->from('customer_account_numbers')->where('customer_id', $customer_id)->get()->result_array();
-        echo json_encode($records);
+        
+        $customer = $this->db->select('a.id, a.account_number, b.account_name')
+            ->from('customers a')
+            ->join('account_coa b', 'a.account_number = b.account_number', 'left')
+            ->where('a.id', $customer_id)
+            ->where('a.deleted', 0)
+            ->get()->row();
+
+        if (empty($customer)) {
+            $result = [];
+            echo json_encode($result);
+            return;
+        }
+
+        // Logic CREATE baris pertama jika belum ada
+        $check_existing = $this->db->get_where('customer_account_numbers', ['customer_id' => $customer_id, 'account_number' => $customer->account_number])->row();
+        if (empty($check_existing) && !empty($customer->account_number)) { 
+            $data_to_save = [
+                'customer_id'    => $customer_id,
+                'division'       => $this->check_division($customer->account_name),
+                'account_number' => $customer->account_number,
+                'account_name'   => $customer->account_name ?? null,
+                'account_type'   => null,
+                'flag'           => 1,
+            ];
+            
+            $this->crud->create('customer_account_numbers', $data_to_save);
+        } 
+
+        // SHOW DATA
+        $records = $this->db->get_where('customer_account_numbers', ['customer_id' => $customer_id])->result_array();
+        
+        $result = [];
+        foreach ($records as $row) {            
+            $division = $row['division'];
+            if (empty($division)) { 
+                $division = $this->check_division($row['account_name']);
+            }
+            
+            $result[] = [
+                'migration_id'   => $row['migration_id'],
+                'customer_id'    => $row['customer_id'],
+                'division'       => $division,
+                'account_number' => $row['account_number'],
+                'account_name'   => $row['account_name'],
+                'account_type'   => $row['account_type'],
+                'flag'           => $row['flag'],
+            ];
+        }
+        
+        echo json_encode($result); 
+    }
+
+    protected function check_division($account_name) {
+        if (stripos($account_name, 'mds') === 0) { 
+            return 'MTS';
+        } elseif (stripos($account_name, 'inj') === 0) {
+            return 'INJ';
+        } else {
+            return '';
+        }
     }
     
     // CREATE OR UPDATE
@@ -304,6 +363,19 @@ class Customers extends CI_Controller
                     ->where('id', $customer_id)
                     ->where('account_number', $account_number)
                     ->get()->row();
+
+                // Update data COA di Customers
+                if (empty($customer_coa_existing)) {
+                    if ($account['flag'] == '0' || $data_to_save['flag'] == '1') {
+                        $this->crud->update('customers', 
+                            ["id" => $customer_id], 
+                            [
+                                "account_number" => $account_number, 
+                                "account_name" => $account_name, // di table customers dengan nama
+                            ]
+                        );
+                    }
+                }
                 
                 if (!empty($customer_coa_existing) && !empty($existing)) {
                     // ALSO UPDATE COA IN TABLE CUSTOMERS

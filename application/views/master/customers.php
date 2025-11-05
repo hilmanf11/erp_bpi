@@ -559,8 +559,6 @@
                             division: row.division,
                             customer_id: customer_id,
                             account_number: row.account_number,
-                            account_name: row.account_name,
-                            account_type: (row.account_type || ''),
                         },
                         success: function(response) {
                             var result = JSON.parse(response); // pengganti eval()
@@ -917,6 +915,8 @@
                             var result = JSON.parse(response); // pengganti eval()
 
                             if (result.theme == "success") {
+                                toastr.success('Customer ' + result.message, result.title);
+
                                 var newCustomerId = id;
                                 
                                 if (!newCustomerId) {
@@ -934,6 +934,7 @@
                                             account_number: rows[i].account_number,
                                             account_name: rows[i].account_name,
                                             account_type: (rows[i].account_type || ''),
+                                            flag: i,
                                         });
                                     }
                                 }
