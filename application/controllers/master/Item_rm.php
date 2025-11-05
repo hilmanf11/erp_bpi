@@ -390,7 +390,7 @@ class Item_rm extends CI_Controller
     }
 
     //UPLOAD CREATE DATA
-    public function uploadcreate()
+    public function uploadCreate()
     {
         if (!$this->input->post()) {
             echo json_encode(["title" => "Error", "message" => "Invalid request. No data received.", "theme" => "error"]);
@@ -402,6 +402,25 @@ class Item_rm extends CI_Controller
             if (empty($data)) {
                 echo json_encode(["title" => "Not Found", "message" => "Input data is empty.", "theme" => "error"]);
                 return;
+            }
+
+            if (empty($data['number'])) {
+                echo json_encode(["title" => "Not Found", "message" => "Product ID is not detected. Please check your file", "theme" => "error"]);
+                return;
+            }
+
+            if (empty($data['item_category_id'])) {
+                echo json_encode(["title" => "Not Found", "message" => "Category ID is not detected. Please check your file", "theme" => "error"]);
+                return;
+            }
+
+            if (empty($data['item_family_id'])) {
+                echo json_encode(["title" => "Not Found", "message" => "Family ID is not detected. Please check your file", "theme" => "error"]);
+                return;
+            }
+
+            if (empty($data['item_sub_family_id'])) {
+                $data['item_sub_family_id'] = "";
             }
 
             //Cek Process Number          //table       //field        //field excel

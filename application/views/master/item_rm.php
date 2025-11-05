@@ -586,6 +586,13 @@
                     contentType: false, // Penting: Biarkan jQuery mengatur Content-Type
                     success: function(json) {
                         $.messager.progress('close');
+
+                        if (!json || !json.data || json.data.length === 0) {
+                            $.messager.alert('Upload Aborted', 'No valid data received from file upload.', 'warning');
+                            console.error('Upload Aborted: No valid data received from /upload endpoint.');
+                            return; // Hentikan eksekusi handler dan mencegah requestData dipanggil
+                        }
+                        
                         requestData(json.total, json.data);
                     },
                     error: function(xhr, status, error) {
@@ -607,8 +614,8 @@
                     $('#p_upload').progressbar('setValue', value);
                     $('#p_start').html(number);
                     $('#p_finish').html(total);
-                    $('#p_success').html(success);
-                    $('#p_failed').html(failed);
+                    // $('#p_success').html(success);
+                    // $('#p_failed').html(failed);
                     
                     $.ajax({
                         type: "POST",
@@ -633,6 +640,9 @@
                             }
                             
                             $("#p_remarks").append(title + "<br>");
+                            $('#p_success').html(success);
+                            $('#p_failed').html(failed);
+
                             requestData(total, data_array, number + 1, success, failed);
                         },
                         error: function(xhr, status, error) {
