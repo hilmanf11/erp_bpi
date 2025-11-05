@@ -180,7 +180,7 @@ class Report_ar extends CI_Controller
         $filter_plant         = $this->input->get('filter_plant') ?? null;
         $filter_currency      = $this->input->get('filter_currency') ?? null;
         $filter_status        = $this->input->get('filter_status') ?? null;
-        $filter_display       = $this->input->get('filter_display') ?? null;
+        $filter_display       = $this->input->get('filter_display') ?? 'Detail'; // Default: Detail
 
         $currency_show = !empty($filter_currency) ? $filter_currency : 'IDR'; // default showed currency = IDR
 
@@ -502,6 +502,7 @@ class Report_ar extends CI_Controller
             $this->db->select("
                 'SI' AS source,
                 a.number AS invoice_no,
+                a.number as sales_invoice,
                 a.trans_date AS invoice_date,
                 a.due_date AS payment_due,
                 a.delivery_note_no AS document_no,
@@ -549,7 +550,7 @@ class Report_ar extends CI_Controller
             );
             $this->db->join(
                 /* Subquery yang menghitung total pembayaran AR per Invoice */
-                "(SELECT ar.sales_invoice, 
+                "(SELECT ar.sales_invoice, ar.customer_id,
                 (CASE WHEN ar.account_type = 'DEBIT' THEN b.local_debit ELSE 0 END) as total_ar_debit_local,
                 (CASE WHEN ar.account_type = 'CREDIT' THEN b.local_credit ELSE 0 END) as total_ar_credit_local,
                 (CASE WHEN ar.account_type = 'DEBIT' THEN b.original_debit ELSE 0 END) as total_ar_debit_original,
@@ -585,6 +586,7 @@ class Report_ar extends CI_Controller
                 a.receipt_no AS invoice_no,
                 a.receipt_date AS invoice_date,
                 '-' AS payment_due,
+                a.sales_invoice,
                 a.sales_invoice AS document_no,
                 b.description,
                 b.journal_date AS voucher_date,
@@ -596,6 +598,21 @@ class Report_ar extends CI_Controller
                 (CASE WHEN ('{$currency_show}' = 'IDR' AND a.account_type = 'CREDIT') THEN b.local_credit ELSE b.original_credit END) as local_credit,
                 (CASE WHEN a.account_type = 'DEBIT' THEN b.original_debit ELSE 0 END) as original_debit,
                 (CASE WHEN a.account_type = 'CREDIT' THEN b.original_credit ELSE 0 END) as original_credit,
+                /** -- Mengambil Total Pembayaran (AR) yang sudah diagregasi dari SubQuery AR **/
+                COALESCE(si_summary.total_si_debit_local, 0) AS si_debit_local,
+                COALESCE(si_summary.total_si_debit_original, 0) AS si_debit_original,
+                (CASE 
+                    WHEN '{$currency_show}' = 'IDR' THEN 
+                        CASE 
+                            WHEN ROUND(b.local_credit, 2) = ROUND(COALESCE(si_summary.total_si_credit_local, 0), 2) THEN 1 
+                            ELSE 0 
+                        END
+                    ELSE 
+                        CASE 
+                            WHEN ROUND(b.original_credit, 2) = ROUND(COALESCE(si_summary.total_si_credit_original, 0), 2) THEN 1 
+                            ELSE 0 
+                        END
+                END) AS status_closed_flag,
                 (CASE WHEN c.status IS NULL THEN a.status ELSE c.status END) as status
             ", FALSE);
             $this->db->from('ar_receipts a');
@@ -610,6 +627,22 @@ class Report_ar extends CI_Controller
                 'a.receipt_no = b.document_no', 
                 'LEFT', 
                 FALSE
+            );
+            $this->db->join(
+                /* Subquery yang menghitung total pembayaran AR per Invoice */
+                "(SELECT si.number, si.customer_id,
+                (CASE WHEN si.account_type = 'DEBIT' THEN SUM(b.local_debit) ELSE 0 END) as total_si_debit_local,
+                (CASE WHEN si.account_type = 'CREDIT' THEN SUM(b.local_credit) ELSE 0 END) as total_si_credit_local,
+                (CASE WHEN si.account_type = 'DEBIT' THEN SUM(b.original_debit) ELSE 0 END) as total_si_debit_original,
+                (CASE WHEN si.account_type = 'CREDIT' THEN SUM(b.original_credit) ELSE 0 END) as total_si_credit_original
+                FROM sales_invoices si 
+                JOIN journal_postings b ON si.number = b.document_no
+                WHERE b.modul = 'SALES INVOICING'
+                GROUP BY si.number, si.account_number ORDER BY si.number DESC
+                ) si_summary",
+                'si_summary.number = a.sales_invoice', // Relation ke nomor Invoice
+                'LEFT', 
+                FALSE 
             );
             $this->db->join('sales_invoices c', 'a.sales_invoice = c.number', 'LEFT');
             $this->db->join('customer_address ca', 'a.customer_id = ca.customer_id', 'LEFT');
@@ -690,6 +723,7 @@ class Report_ar extends CI_Controller
                         GROUP BY a.receipt_no")->result_array();
                 }
 
+                // --- STYLE STATUS
                 // if ($sales_invoice['status'] == '0') {
                 //     $status_purchase = "OPEN";
                 //     $style_status_purchase = "background-color:#C8FFCC;";
