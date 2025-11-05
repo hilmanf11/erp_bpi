@@ -276,7 +276,8 @@ class Customers extends CI_Controller
         if (empty($check_existing) && !empty($customer->account_number)) { 
             $data_to_save = [
                 'customer_id'    => $customer_id,
-                'division'       => $this->check_division($customer->account_name),
+                // 'division'       => $this->check_division($customer->account_name),
+                'division'       => 'INJ',
                 'account_number' => $customer->account_number,
                 'account_name'   => $customer->account_name ?? null,
                 'account_type'   => null,
@@ -291,10 +292,10 @@ class Customers extends CI_Controller
         
         $result = [];
         foreach ($records as $row) {            
-            $division = $row['division'];
-            if (empty($division)) { 
-                $division = $this->check_division($row['account_name']);
-            }
+            $division = $row['division'] ?? 'INJ';
+            // if (empty($division)) { 
+            //     $division = $this->check_division($row['account_name']);
+            // }
             
             $result[] = [
                 'migration_id'   => $row['migration_id'],
