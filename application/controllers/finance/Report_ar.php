@@ -593,7 +593,6 @@ class Report_ar extends CI_Controller
                 b.number AS voucher_no,
                 b.account_number,
                 a.currency,
-                a.status as status_closed_flag,
                 (CASE WHEN ('{$currency_show}' = 'IDR' AND a.account_type = 'DEBIT') THEN b.local_debit ELSE b.original_debit END) as local_debit,
                 (CASE WHEN ('{$currency_show}' = 'IDR' AND a.account_type = 'CREDIT') THEN b.local_credit ELSE b.original_credit END) as local_credit,
                 (CASE WHEN a.account_type = 'DEBIT' THEN b.original_debit ELSE 0 END) as original_debit,
