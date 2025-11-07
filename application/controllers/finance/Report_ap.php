@@ -95,7 +95,7 @@ class Report_ap extends CI_Controller
     }
 
     // BEGIN BALANCE 
-    public function begin_balance($supplier_name, $filter_list, $initial_balance)
+    public function begin_balance($supplier_id, $filter_list, $initial_balance)
     {
         $filter_from        = $filter_list["filter_from"];
         $filter_to          = $filter_list["filter_to"];
@@ -108,7 +108,7 @@ class Report_ap extends CI_Controller
         $filter_display     = $filter_list["filter_display"];
         
         // Get data Supplier
-        $supplier = $this->db->select('*')->from("suppliers")->like('name', $supplier_name, 'both')->get()->row();
+        $supplier = $this->db->select('*')->from("suppliers")->like('id', $supplier_id, 'both')->get()->row();
         if (empty($supplier)) {
             return 0; // Kembalikan 0 jika supplier tidak ditemukan
         }
@@ -223,6 +223,7 @@ class Report_ap extends CI_Controller
         $filter_invoice_no  = base64_decode($this->input->get("filter_invoice_no")) ?? null;
         $filter_currency    = $this->input->get('filter_currency') ?? null;
         $filter_status      = $this->input->get('filter_status') ?? null;
+        $filter_source      = $this->input->get('filter_source') ?? null;
         $filter_display     = $this->input->get('filter_display') ?? "Detail"; // Default: Detail
 
         $currency_show = !empty($filter_currency) ? $filter_currency : 'IDR'; // default showed currency = IDR
@@ -236,6 +237,7 @@ class Report_ap extends CI_Controller
             'filter_invoice_no'  => $filter_invoice_no,
             'filter_currency'    => $filter_currency,
             'filter_status'      => $filter_status,
+            'filter_source'      => $filter_source,
             'filter_display'     => $filter_display,
         ];
 
@@ -408,6 +410,7 @@ class Report_ap extends CI_Controller
                 <div style="float: left; font-size: 12px; text-align: left;">
                     <table style="width: 100%;">
                         <tr>
+                            <td>&nbsp;</td>
                             <td width="50" style="font-size: 12px; vertical-align: top; text-align: center; vertical-align:jus margin-right:10px;">
                                 <img src="' . $config->favicon . '" width="30">
                             </td>
@@ -416,15 +419,17 @@ class Report_ap extends CI_Controller
                             </td>
                         </tr>
                         <tr>
-                            <td colspan="2" style="font-size: 14px; text-align: left; margin:2px;"> 
+                            <td>&nbsp;</td>
+                            <td>&nbsp;</td>
+                            <td style="font-size: 14px; text-align: left; margin:2px;"> 
                                 <span style="font-size:10px;">' . $config->address . '</span><br>
                             </td>
                         </tr>
                     </table>
                 </div>
                 <div style="float: right; font-size: 12px; text-align: right;">
-                    Print Date ' . date("d M Y H:i:s") . ' <br>
-                    Print By ' . $this->session->username . '  
+                    Print Date : ' . date("d M Y H:i:s") . ' <br>
+                    Print By : ' . $this->session->username . '  
                 </div>
             </center>';
             if ($option != "excel") {
@@ -445,7 +450,8 @@ class Report_ap extends CI_Controller
                                         <th rowspan="2">Supplier Name</th>
                                         <th rowspan="2">Source</th>
                                         <th rowspan="2">Transaction Date</th>
-                                        <th rowspan="2">Payment Due</th>
+                                        <th rowspan="2"> <span style="color:white">_</span>Payment<span style="color:white">_</span> Due</th>
+                                        <th rowspan="2">Aging Due (Days)</th>
                                         <th rowspan="2">Document No</th>
                                         <th rowspan="2">Invoice No</th>
                                         <th rowspan="2">Posting Date</th>
@@ -503,6 +509,9 @@ class Report_ap extends CI_Controller
         $get_account_numbers = $this->db->select('account_number')->from('account_coa')->where('report_ap', 1)->get()->result_array();
         $account_numbers_array = array_column($get_account_numbers, 'account_number'); 
 
+        // Siapkan string untuk WHERE IN di Subquery
+        $account_numbers_list = "'" . implode("','", $account_numbers_array) . "'";
+
         if (empty($account_numbers_array)) {
             $account_numbers_array = ['NON_EXISTING_ACCOUNT_AP']; 
         } 
@@ -510,13 +519,13 @@ class Report_ap extends CI_Controller
         // fix bug ketika tanggal journal pada posting_no | document_no | invoice_no berbeda dengan periode
         $is_document_filter_active = false;
 
+        // Tetapkan tanggal cut-off dari filter_to untuk Aging Due (Days)
+        $cut_off_date = new DateTime($filter_to);
+
         foreach ($suppliers as $supplier) 
         {
             $supplier_id = $supplier['id'];
             $supplier_name = $supplier['name'];
-
-            // Siapkan string untuk WHERE IN di Subquery
-            $account_numbers_list = "'" . implode("','", $account_numbers_array) . "'";
             
             // 3.1 Query 1: Purchase Invoices (Hutang Bertambah = Credit)
             $this->db->select("
@@ -604,7 +613,7 @@ class Report_ap extends CI_Controller
                 $this->db->where('journal_date >=', $filter_from);
                 $this->db->where('journal_date <=', $filter_to);
             }
-            if (!empty($filter_currency)) {
+            if (!empty($filter_currency) && $filter_currency !== 'IDR') {
                 $this->db->where("a.currency", $filter_currency);
             }
             if (!empty($filter_status)) {
@@ -613,6 +622,7 @@ class Report_ap extends CI_Controller
             }
             $this->db->group_by(['a.number', 'b.number']);
             $this->db->order_by('b.journal_date', 'ASC');
+            $this->db->order_by('b.number', 'DESC');
             $data_1 = $this->db->get()->result_array();
 
             // 3.2 Query 2: AP Payments (Hutang Berkurang = Debit)
@@ -621,7 +631,7 @@ class Report_ap extends CI_Controller
                 a.payment_no AS document_no, 
                 '-' AS invoice_no, 
                 a.payment_date AS trans_date,
-                '-' AS payment_due, 
+                c.due_date AS payment_due, 
                 a.purchase_invoice,
                 b.journal_date AS voucher_date, 
                 b.number AS voucher_no,
@@ -679,10 +689,10 @@ class Report_ap extends CI_Controller
             );
             $this->db->join('purchase_invoices c', 'a.purchase_invoice = c.number', 'LEFT');
             $this->db->where('a.supplier_id', $supplier_id);
-            if ($filter_display == "Detail") {
-                // Memastikan subquery di-execute secara literal dengan parameter ketiga = FALSE
-                $this->db->where("a.purchase_invoice NOT IN (SELECT DISTINCT number FROM purchase_invoices)", NULL, FALSE);
-            }
+            // if ($filter_display == "Detail") { // -- Bug AP tidak muncul (Bu Nina)
+            //     // Memastikan subquery di-execute secara literal dengan parameter ketiga = FALSE
+            //     $this->db->where("a.purchase_invoice NOT IN (SELECT DISTINCT number FROM purchase_invoices)", NULL, FALSE);
+            // }
             // $this->db->where("b.journal_date BETWEEN '{$filter_from}' AND '{$filter_to}'");
             if (!empty($filter_posting_no) || !empty($filter_document_no) || !empty($filter_invoice_no)) {
                 $is_document_filter_active = true;
@@ -703,7 +713,7 @@ class Report_ap extends CI_Controller
                 $this->db->where('journal_date >=', $filter_from);
                 $this->db->where('journal_date <=', $filter_to);
             }
-            if (!empty($filter_currency)) {
+            if (!empty($filter_currency) && $filter_currency !== 'IDR') {
                 $this->db->where("a.currency", $filter_currency);
             }
             if (!empty($filter_status)) {
@@ -713,10 +723,20 @@ class Report_ap extends CI_Controller
             $this->db->group_by(['a.payment_no', 'a.account_number']);
             $this->db->order_by('b.journal_date', 'ASC');
             $data_2 = $this->db->get()->result_array();
+
+            // Tampil data PI atau AP saja
+            if (!empty($filter_source) && $filter_source == 'PI') {
+                $transactions = $data_1;
+                
+            } elseif (!empty($filter_source) && $filter_source == 'AP') {
+                $transactions = $data_2;
             
-            // Gabungkan dan urutkan seperti skrip AR
+            } else {
+            // Tampil semua
             $transactions = array_merge($data_1, $data_2);
             usort($transactions, 'compare_trans_date'); // Menggunakan fungsi sort yang sudah didefinisikan sebelumnya
+            
+            }
 
 
             // ------- TRANSACTION START ----------
@@ -745,6 +765,7 @@ class Report_ap extends CI_Controller
             if (count($transactions) > 0 || $begin_balance_local != 0) {
                 $detail .= '<tr style="background: #DEE2FF; font-weight:bold;" class="begin_balance">
                     <td colspan="13">BEGINING BALANCE ('.$supplier_name.')</td>
+                    <td style="text-align:center;">' . $supplier['currency_balance'] . '</td>
                     <td colspan="4" style="text-align:right;">' . $this->formatNominal(@$begin_balance_local, 2, $option) . '</td>
                     </tr>';
             }
@@ -754,6 +775,34 @@ class Report_ap extends CI_Controller
             foreach ($transactions as $transaction) 
             {
                 $document_no = $transaction['document_no'];
+                $payment_due = $transaction['payment_due'];
+                
+                // Kolom baru : Aging Due (Bu Nina)
+                $aging_due_days = 0;
+                $style_aging = '';
+                if (!empty($payment_due) && $payment_due != '-') 
+                {
+                    $due_date = new DateTime($payment_due);
+            
+                    // Hitung selisih: Cut-off - Payment Due. (%r memberikan tanda - untuk overdue)
+                    $interval = $cut_off_date->diff($due_date);
+                    $days = (int)$interval->format('%r%a'); 
+
+                    // Jika hari negatif (due_date sudah lewat cut_off), itu adalah OVERDUE.
+                    // tampilkan nilai hari OVERDUE sebagai angka positif.                    
+                    if ($days < 0) {
+                        // Hutang sudah lewat jatuh tempo (Overdue)
+                        $aging_due_days = abs($days);
+                        $style_aging = 'font-weight:bold; color:red;';
+                    } elseif ($days > 0) {
+                        // Hutang belum jatuh tempo (Not Due Yet).
+                        $aging_due_days = -$days; 
+                        $style_aging = 'font-weight:bold;';
+                    } else {
+                        // Nol: Jatuh tempo tepat hari ini (0 hari aging)
+                        $aging_due_days = 0;
+                    }
+                }
 
                 // --- STYLE STATUS
                 // if ($transaction['status'] == '0') {
@@ -768,10 +817,10 @@ class Report_ap extends CI_Controller
                 
                 if ($transaction['status_closed_flag'] == 0) {
                     $status_purchase = "OPEN";
-                    $style_status_purchase = "background-color:#C8FFCC;";
+                    $style_status_purchase = "background-color:#FFC8C8;";
                 } else { // Jika 1 (CLOSED)
                     $status_purchase = "CLOSED";
-                    $style_status_purchase = "background-color:#FFC8C8;";
+                    $style_status_purchase = "background-color:#C8FFCC;";
                 }
 
                 // Logika AP: Kredit menambah hutang, Debit mengurangi hutang
@@ -788,17 +837,18 @@ class Report_ap extends CI_Controller
                                     <td style="text-align:center;' . $style_status_purchase . '">' . $status_purchase . '</td>
                                     <td>' . $supplier_id . '</td>
                                     <td>' . $supplier_name . '</td>
-                                    <td>' . $transaction['source'] . '</td>
+                                    <td style="text-align:center;">' . $transaction['source'] . '</td>
                                     <td>' . $transaction['trans_date'] . '</td>
                                     <td>' . $transaction['payment_due'] . '</td>
+                                    <td style="text-align:center;' . $style_aging . '">' . $aging_due_days . '</td>
                                     <td>' . $transaction['document_no'] . '</td>
                                     <td>' . $transaction['invoice_no'] . '</td>
                                     <td>' . $transaction['voucher_date'] . '</td>
                                     <td>' . $transaction['voucher_no'] . '</td>
                                     <td>' . $transaction['account_number'] . '</td>
-                                    <td style="text-align:center;">' . $transaction['currency'] . '</td>
-                                    <td style="text-align:right;">' . $this->formatNominal($debit_value, 2, $option) . '</td>
-                                    <td style="text-align:right;">' . $this->formatNominal($credit_value, 2, $option) . '</td>
+                                    <td style="text-align:center;">' . $currency_show . '</td>
+                                    <td style="text-align:right;">' . $this->formatNominal($transaction['local_debit'], 2, $option) . '</td>
+                                    <td style="text-align:right;">' . $this->formatNominal($transaction['local_credit'], 2, $option) . '</td>
                                     <td style="text-align:right;">' . $this->formatNo($balance_local, $option) . '</td>
                                     <td style="text-align:right;">' . $this->formatNo($accumulated, $option) . '</td>
                                 </tr>';
@@ -816,7 +866,7 @@ class Report_ap extends CI_Controller
             if (count($transactions) > 0 || $current_balance > 0) 
             {
                 $sub_total_row = '<tr style="background: #E5E5E5; font-weight:bold;">
-                                        <td colspan="13">SUB TOTAL</td>
+                                        <td colspan="14">SUB TOTAL</td>
                                         <td style="text-align:right;">' . $this->formatNominal($local_debit, 2, $option) . '</td>
                                         <td style="text-align:right;">' . $this->formatNominal($local_credit, 2, $option) . '</td>
                                         <td style="text-align:right;">' . $this->formatNo($current_balance, $option) . '</td>
@@ -847,7 +897,7 @@ class Report_ap extends CI_Controller
         }
 
         $grand_total_row = '<tr style="background: #C3FFB4; font-weight:bold;" class="grand_total">
-                                <td colspan="13">GRAND TOTAL</td>
+                                <td colspan="14">GRAND TOTAL</td>
                                 <td style="text-align:right;">' . $this->formatNominal($grand_local_debit, 2, $option) . '</td>
                                 <td style="text-align:right;">' . $this->formatNominal($grand_local_credit, 2, $option) . '</td>
                                 <td style="text-align:right;">' . $this->formatNo($grand_local_balance, $option) . '</td>

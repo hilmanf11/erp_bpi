@@ -5,7 +5,7 @@
             <div style="width: 40%; float: left;">
                 <div class="fitem">
                     <span style="width:35%; display:inline-block;">Trans Date</span>
-                    <input style="width:30%;" id="filter_from" class="easyui-datebox" data-options="prompt:'Start Date',formatter:myformatter,parser:myparser, editable:false">
+                    <input style="width:30%;" id="filter_from" value="<?= date('Y-01-01'); ?>" class="easyui-datebox" data-options="prompt:'Start Date',formatter:myformatter,parser:myparser, editable:false">
                     <input style="width:30%;" id="filter_to" class="easyui-datebox" data-options="prompt:'End Date',formatter:myformatter,parser:myparser, editable:false">
                 </div>
                 <div class="fitem">
@@ -30,6 +30,10 @@
                 <div class="fitem">
                     <span style="width:35%; display:inline-block;">Invoice No</span>
                     <input style="width:60%;" id="filter_invoice_no" class="easyui-combogrid">
+                </div>
+                <div class="fitem">
+                    <span style="width:35%; display:inline-block;">Source</span>
+                    <input style="width:60%;" id="filter_source" class="easyui-combogrid">
                 </div>
             </div>
                 
@@ -76,6 +80,7 @@
             filter_invoice_no: $("#filter_invoice_no").combogrid("getValue"),
             filter_currency: $("#filter_currency").combogrid("getValue"),
             filter_status: $("#filter_status").combobox("getValue"),
+            filter_source: $("#filter_source").combobox("getValue"),
             filter_display: $("#filter_display").combobox("getValue")
         };
 
@@ -319,6 +324,34 @@
                 });
 
             }
+        });
+
+        $("#filter_source").combogrid({
+            panelWidth: 200,
+            idField: 'id',
+            textField: 'name',
+            data: [{
+                id: 'PI',
+                name: 'PURCHASE INVOICING'
+            }, {
+                id: 'AP',
+                name: 'AP PAYMENT'
+            }],          
+            fitColumns: true,
+            prompt: "Choose Source",
+            icons: [{
+                iconCls: 'icon-clear',
+                handler: function(e) {
+                    $(e.data.target).combogrid('clear').combogrid('textbox').focus();
+                }
+            }],
+            columns: [
+                [{
+                    field: 'name',
+                    title: 'Name',
+                    width: 150
+                }, ]
+            ],
         });
 
         $("#filter_currency").combogrid({
