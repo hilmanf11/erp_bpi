@@ -609,8 +609,8 @@ class Item_rm extends CI_Controller
             header("Content-Disposition: attachment; filename=item_rm_$format.xls");
             
             // Tambahkan Byte Order Mark (BOM) untuk membantu Excel mengenali encoding
-            echo "\xEF\xBB\xBF";
-            echo '<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />';
+            // echo "\xEF\xBB\xBF";
+            // echo '<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />';
         }
 
         // Config
