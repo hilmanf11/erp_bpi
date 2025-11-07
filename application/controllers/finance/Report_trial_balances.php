@@ -451,6 +451,20 @@ class Report_trial_balances extends CI_Controller
         }
     }
 
+    // format separator and decimal point by option excel or print
+    private function formatNominal($value, $decimal, $option = "") 
+    {
+        if (!is_numeric($value)) {
+            return $value;
+        }
+        
+        if (!empty($option) && $option == "excel") {
+            return number_format($value, $decimal, ".", ""); // tanpa separator
+        } else {
+            return number_format($value, $decimal, ",", ".");
+        }
+    }
+
     public function print($option = "")
     {
         if ($option == "excel") {
@@ -788,12 +802,12 @@ class Report_trial_balances extends CI_Controller
                                 $linked_ending_credit = $this->createLink($trial_balance['ending_credit'], $filter_from, $filter_to, $trial_balance['account_number'], $trial_balance['header']);
                                 
                                 if ($option == "excel") {
-                                    $linked_begin_debit   = number_format($trial_balance['begin_debit'], 2, ",", ".");
-                                    $linked_begin_credit  = number_format($trial_balance['begin_credit'], 2, ",", ".");
-                                    $linked_debit         = number_format($trial_balance['local_debit'], 2, ",", ".");
-                                    $linked_credit        = number_format($trial_balance['local_credit'], 2, ",", ".");
-                                    $linked_ending_debit  = number_format($trial_balance['ending_debit'], 2, ",", ".");
-                                    $linked_ending_credit = number_format($trial_balance['ending_credit'], 2, ",", ".");
+                                    $linked_begin_debit   = $this->formatNominal($trial_balance['begin_debit'], 2, $option);
+                                    $linked_begin_credit  = $this->formatNominal($trial_balance['begin_credit'], 2, $option);
+                                    $linked_debit         = $this->formatNominal($trial_balance['local_debit'], 2, $option);
+                                    $linked_credit        = $this->formatNominal($trial_balance['local_credit'], 2, $option);
+                                    $linked_ending_debit  = $this->formatNominal($trial_balance['ending_debit'], 2, $option);
+                                    $linked_ending_credit = $this->formatNominal($trial_balance['ending_credit'], 2, $option);
                                 }
 
                                 $html .= '<tr style="' . $row_class . '"> 
@@ -815,12 +829,12 @@ class Report_trial_balances extends CI_Controller
                     <tfoot>
                         <tr style="background-color: #EBEBEB; font-weight: bold;">
                             <td colspan="3" class="text-center">GRAND TOTAL</td>
-                            <td class="text-right">' . number_format($grand_total_begin_debit, 2, ',', '.') . '</td>
-                            <td class="text-right">' . number_format($grand_total_begin_credit, 2, ',', '.') . '</td>
-                            <td class="text-right">' . number_format($grand_total_local_debit, 2, ',', '.') . '</td>
-                            <td class="text-right">' . number_format($grand_total_local_credit, 2, ',', '.') . '</td>
-                            <td class="text-right">' . number_format($grand_total_ending_debit, 2, ',', '.') . '</td>
-                            <td class="text-right">' . number_format($grand_total_ending_credit, 2, ',', '.') . '</td>
+                            <td class="text-right">' . $this->formatNominal($grand_total_begin_debit, 2, $option) . '</td>
+                            <td class="text-right">' . $this->formatNominal($grand_total_begin_credit, 2, $option) . '</td>
+                            <td class="text-right">' . $this->formatNominal($grand_total_local_debit, 2, $option) . '</td>
+                            <td class="text-right">' . $this->formatNominal($grand_total_local_credit, 2, $option) . '</td>
+                            <td class="text-right">' . $this->formatNominal($grand_total_ending_debit, 2, $option) . '</td>
+                            <td class="text-right">' . $this->formatNominal($grand_total_ending_credit, 2, $option) . '</td>
                         </tr>
                     </tfoot>';
 
