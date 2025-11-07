@@ -1173,7 +1173,10 @@
                                     }
                                 },
                                 onCheck: function(index, rowData) { 
+                                    /**
                                     $("#journal_type").combobox('setValue', rowData.journal_type);
+                                    **/
+                                    $("#journal_type").combobox('setValue', row.journal_type_id);
                                 },
                                 onUncheck: function(index, rowData) {                                    
                                     // Dapatkan semua baris yang saat ini terceklis di combogrid
@@ -2130,10 +2133,10 @@
                                                                                     // console.log(JSON.stringify(dataPosting));
                                                                                     $.ajax({
                                                                                         type: "post",
-                                                                                        // url: "<?= base_url('finance/journal_postings/number/') ?>" + window.btoa(journalDate),
-                                                                                        url: "<?= base_url('finance/ap_payments/number/') ?>" + window.btoa(trans_date) +"/"+ bank_code,
+                                                                                        url: "<?= base_url('finance/journal_postings/number/') ?>" + window.btoa(journalDate),
                                                                                         dataType: "html",
                                                                                         success: function(noGL) {
+                                                                                            console.log("GL No : ", noGL);
                                                                                             var nomorGL = noGL;
                                                                                             var rowsData = dataPosting.rows;
                                                                                             var totalData = dataPosting.total;
