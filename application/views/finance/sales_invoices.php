@@ -495,10 +495,7 @@
                         <span style="width:35%; display:inline-block;">Sales Invoice No</span>
                         <input style="width:60%;" readonly id="number" name="number" class="easyui-textbox" data-options="prompt:'Automatic From Purchase Invoce Date & Customer'">
                     </div>
-                    <div class="fitem">
-                        <span style="width:35%; display:inline-block;">Journal Type</span>
-                        <input style="width:60%;" required="" name="journal_type_id" id="journal_type" class="easyui-combobox">
-                    </div>
+                    
                     <div class="fitem">
                         <span style="width:35%; display:inline-block;">Customer Name</span>
                         <input style="width:60%;" required="" id="customer_id" name="customer_name" class="easyui-combogrid">
@@ -507,18 +504,23 @@
                         <span style="width:35%; display:inline-block;">Country Name</span>
                         <input style="width:60%;" required="" id="country_name" name="country_name" class="easyui-textbox">
                     </div>
-                    <div class="fitem"hidden>
-                        <span style="width:35%; display:inline-block;">Plant</span>
-                        <input style="width:60%;" id="customer_address_id" name="customer_address_id" class="easyui-combobox">
-                    </div>
+
                     <div class="fitem">
                         <span style="width:35%; display:inline-block;">Division</span>
                         <input style="width:60%;" name="division" id="division" required="" class="easyui-combobox">
                     </div>
+
+                    <!-- journal type by division and customer name (Bu Nina) -->
+                    <div class="fitem">
+                        <span style="width:35%; display:inline-block;">Journal Type</span>
+                        <input style="width:60%;" required="" id="journal_type" name="journal_type_id" class="easyui-combobox">
+                    </div>
+
                     <div class="fitem">
                         <span style="width:35%; display:inline-block;">Delivery Note</span>
                         <input style="width:60%;" required="" id="delivery_note_no" name="delivery_note_no" class="easyui-combogrid">
                     </div>
+                    
                     <div class="fitem">
                         <span style="width:35%; display:inline-block;">Taxes</span>
                         <input style="width:30%;" id="taxes" name="taxes" class="easyui-numberbox">
@@ -531,6 +533,12 @@
                         <span style="width:35%; display:inline-block;">Payment Due</span>
                         <input style="width:60%;" id="due_date" name="due_date" required="" class="easyui-datebox" data-options="formatter:myformatter,parser:myparser, editable:false">
                     </div>
+                    
+                    <div class="fitem"hidden>
+                        <span style="width:35%; display:inline-block;">Plant</span>
+                        <input style="width:60%;" id="customer_address_id" name="customer_address_id" class="easyui-combobox">
+                    </div>
+                                        
                     <div class="fitem">
                         <span style="width:35%; display:inline-block;"></span>
                         <a href="javascript:;" class="easyui-linkbutton" onclick="preview()" id="preview"><i class="fa fa-search"></i> Preview Data</a>
@@ -804,6 +812,8 @@
     </form>
 </div>
 
+
+
 <!-- Upload -->
 <div id="dlg_upload" class="easyui-dialog" title="Upload Data" data-options="closed: true,modal:true" style="width: 500px; padding:10px; top: 20px;">
     <form id="frm_upload" method="post" enctype="multipart/form-data" novalidate>
@@ -909,7 +919,11 @@
                     width: 250
                 }, ]
             ],
+            onChange: function(newValue, oldValue){
+                getJournalType();
+            },
             onSelect: function(index, row) {
+
                 var trans_date = $("#trans_date").datebox('getValue');
                 number(trans_date, row.number);
                 $("#payment_term").numberbox("setValue", row.payment_term);
@@ -1072,6 +1086,9 @@
                     textField: 'name',
                     panelHeight: 'panelHeight',
                     prompt: 'Choose Division',
+                    onChange: function(newValue, oldValue){
+                        getJournalType();
+                    },
                     onSelect: function(division) {
                         $("#delivery_note_no").combogrid({
                             url: '<?= base_url('finance/sales_invoices/readDeliverys') ?>' +  '?customer_id=' + row.id +'&division_number=' + division.number,
@@ -3939,6 +3956,42 @@
         });
  
     });
+
+    // --- FUNGSI UTAMA UNTUK MENGAMBIL JOURNAL TYPE ---
+    function getJournalType() {
+        // 1. Ambil Nilai dari Division dan Customer
+        var division = $('#division').combobox('getValue');
+        var customerId = $('#customer_id').combogrid('getValue');
+        
+        // Pastikan kedua nilai sudah terisi sebelum memanggil AJAX
+        if (division && customerId) { 
+            $.ajax({
+                url: '<?= base_url('finance/sales_invoices/readJournalTypeByDivision/') ?>',
+                type: 'POST',
+                data: {
+                    division: division,
+                    customer_id: customerId
+                },
+                success: function(response) {
+                    var result = JSON.parse(response); // pengganti eval()
+                    
+                    if (result && result.id) {
+                        $('#journal_type').combobox('setValue', result.id);
+                    } else {
+                        $('#journal_type').combobox('clear');
+                        toastr.warning('Journal Type not found for this division and customer combination.');
+                    }
+                },
+                error: function() {
+                    $('#journal_type').combobox('clear');
+                    toastr.warning('Failed to get Journal Type.');
+                }
+            });
+        } else {
+            // Bersihkan Journal Type jika salah satu input dikosongkan
+            $('#journal_type').combobox('clear');
+        }
+    }
     
     function btnDetails(val, row) {
         var details = "viewDetails('" + row.number + "')";

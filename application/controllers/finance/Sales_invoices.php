@@ -312,6 +312,47 @@ class Sales_invoices extends CI_Controller
         echo json_encode($journalData);
     }
 
+    // Autofill Journal Type by Division - Company Name
+    public function readJournalTypeByDivision()
+    {
+        $division = $this->input->post('division');
+        $customer_id = $this->input->post('customer_id');
+
+        // Customer
+        $customer = $this->db->get_where('customers', ['id' => $customer_id])->row();
+        $customer_name = "";
+        $normalized_customer_name = "";
+        if (!empty($customer)) {
+            $customer_name = $customer->name;
+            // Menghapus titik (.), koma (,), dan spasi ganda
+            $cleaned_name = str_replace(array('.', ',', '  '), '', $customer_name);            
+            $normalized_customer_name = strtolower(trim($cleaned_name));
+        }
+
+        // Division
+        $division_search = $division;
+        if ($division == "MTS") {
+            $division_search = "MDS";
+        }
+        $division_search = strtolower($division_search);
+
+        $this->db->select('id, name'); 
+        $this->db->from('journal_types');        
+        $this->db->like('name', $division_search, 'right');
+        if (!empty($normalized_customer_name)) {
+            // Hapus "pt " di awal nama (jika ada di database) sebelum like:
+            $search_term = str_replace('pt ', '', $normalized_customer_name);    
+            $this->db->like('name', $search_term, 'both'); 
+        }
+        $result = $this->db->get()->row();
+
+        if ($result) {
+            echo json_encode($result);
+        } else {
+            echo json_encode([]);
+        }
+    }
+
     public function readJournal($journal_type_id)
     {
         $post = isset($_POST['q']) ? $_POST['q'] : "";
