@@ -543,21 +543,20 @@ class Report_ap extends CI_Controller
                 (CASE WHEN '{$currency_show}' = 'IDR' THEN b.local_credit ELSE b.original_credit END) as local_credit, 
                 b.original_debit, 
                 b.original_credit, 
-                b.local_debit as pi_debit_local,
-                b.original_debit as pi_debit_original,
-                /** -- Mengambil Total Pembayaran (AP) yang sudah diagregasi dari SubQuery AP **/
-                COALESCE(ap_summary.total_ap_credit_local, 0) AS ap_credit_local,
-                COALESCE(ap_summary.total_ap_credit_original, 0) AS ap_credit_original,
+                ap_summary.summary_original_debit,
+                ap_summary.summary_original_credit,
+                b.local_debit AS summary_local_debit,
+                b.local_credit AS summary_local_credit,
                 /** -- LOGIKA STATUS (CLOSED=1, OPEN=0) **/
                 (CASE 
-                    WHEN '{$currency_show}' = 'IDR' THEN 
+                    WHEN a.currency = 'IDR' AND '{$currency_show}' = 'IDR' THEN 
                         CASE 
-                            WHEN ROUND(b.local_credit, 2) = ROUND(COALESCE(ap_summary.total_ap_debit_local, 0), 2) THEN 1 
+                            WHEN ROUND(b.local_credit, 2) = ROUND(COALESCE(ap_summary.summary_original_debit, 0), 2) THEN 1 
                             ELSE 0 
                         END
                     ELSE 
                         CASE 
-                            WHEN ROUND(b.original_credit, 2) = ROUND(COALESCE(ap_summary.total_ap_debit_original, 0), 2) THEN 1 
+                            WHEN ROUND(b.original_credit, 2) = ROUND(COALESCE(ap_summary.summary_original_debit, 0), 2) THEN 1 
                             ELSE 0 
                         END
                 END) AS status_closed_flag,
@@ -579,14 +578,16 @@ class Report_ap extends CI_Controller
             $this->db->join(
                 /* Subquery yang menghitung total pembayaran AP per Invoice */
                 "(SELECT ap.purchase_invoice, ap.supplier_id,
-                (CASE WHEN ap.account_type = 'DEBIT' THEN b.local_debit ELSE 0 END) as total_ap_debit_local,
-                (CASE WHEN ap.account_type = 'CREDIT' THEN b.local_credit ELSE 0 END) as total_ap_credit_local,
-                (CASE WHEN ap.account_type = 'DEBIT' THEN b.original_debit ELSE 0 END) as total_ap_debit_original,
-                (CASE WHEN ap.account_type = 'CREDIT' THEN b.original_credit ELSE 0 END) as total_ap_credit_original
+                    ap.payment_no, ap.currency,
+                    (CASE WHEN ap.account_type = 'DEBIT' THEN ap.payment ELSE 0 END) as summary_original_debit,
+                    (CASE WHEN ap.account_type = 'CREDIT' THEN ap.payment ELSE 0 END) as summary_original_credit
                 FROM ap_payments ap 
-                JOIN journal_postings b ON ap.payment_no = b.document_no
-                WHERE b.modul = 'AP PAYMENT'
-                GROUP BY ap.purchase_invoice, ap.account_number ORDER BY payment DESC
+                JOIN (
+                    SELECT document_no, modul FROM journal_postings
+                    WHERE modul = 'AP PAYMENT'
+                    GROUP BY document_no
+                    ) journal_ap ON journal_ap.document_no = ap.payment_no
+                GROUP BY ap.purchase_invoice
                 ) ap_summary",
                 'ap_summary.purchase_invoice = a.number', // Relation ke nomor Invoice
                 'LEFT', 
@@ -622,7 +623,7 @@ class Report_ap extends CI_Controller
             }
             $this->db->group_by(['a.number', 'b.number']);
             $this->db->order_by('b.journal_date', 'ASC');
-            $this->db->order_by('b.number', 'DESC');
+            $this->db->order_by('b.number', 'ASC');
             $data_1 = $this->db->get()->result_array();
 
             // 3.2 Query 2: AP Payments (Hutang Berkurang = Debit)
@@ -641,18 +642,19 @@ class Report_ap extends CI_Controller
                 (CASE WHEN ('{$currency_show}' = 'IDR' AND a.account_type = 'CREDIT') THEN b.local_credit ELSE b.original_credit END) as local_credit,
                 (CASE WHEN a.account_type = 'DEBIT' THEN b.original_debit ELSE 0 END) as original_debit,
                 (CASE WHEN a.account_type = 'CREDIT' THEN b.original_credit ELSE 0 END) as original_credit,
-                /** -- Mengambil Total Pembayaran (AP) yang sudah diagregasi dari SubQuery AP **/
-                COALESCE(pi_summary.total_pi_debit_local, 0) AS pi_debit_local,
-                COALESCE(pi_summary.total_pi_debit_original, 0) AS pi_debit_original,
+                pi_summary.summary_original_debit,
+                pi_summary.summary_original_credit,
+                pi_summary.summary_local_debit,
+                pi_summary.summary_local_credit,
                 (CASE 
-                    WHEN '{$currency_show}' = 'IDR' THEN 
+                    WHEN a.currency = 'IDR' AND '{$currency_show}' = 'IDR' THEN 
                         CASE 
-                            WHEN ROUND(b.local_debit, 2) = ROUND(COALESCE(pi_summary.total_pi_debit_local, 0), 2) THEN 1 
+                            WHEN ROUND(b.local_debit, 2) = ROUND(COALESCE(pi_summary.summary_local_credit, 0), 2) THEN 1 
                             ELSE 0 
                         END
                     ELSE 
                         CASE 
-                            WHEN ROUND(b.original_debit, 2) = ROUND(COALESCE(pi_summary.total_pi_debit_original, 0), 2) THEN 1 
+                            WHEN ROUND(b.original_debit, 2) = ROUND(COALESCE(pi_summary.summary_original_credit, 0), 2) THEN 1 
                             ELSE 0 
                         END
                 END) AS status_closed_flag,
@@ -673,17 +675,23 @@ class Report_ap extends CI_Controller
             );
             $this->db->join(
                 /* Subquery yang menghitung total pembayaran AP per Invoice */
-                "(SELECT pi.number, pi.supplier_id,
-                (CASE WHEN pi.account_type = 'DEBIT' THEN SUM(b.local_debit) ELSE 0 END) as total_pi_debit_local,
-                (CASE WHEN pi.account_type = 'CREDIT' THEN SUM(b.local_credit) ELSE 0 END) as total_pi_credit_local,
-                (CASE WHEN pi.account_type = 'DEBIT' THEN SUM(b.original_debit) ELSE 0 END) as total_pi_debit_original,
-                (CASE WHEN pi.account_type = 'CREDIT' THEN SUM(b.original_credit) ELSE 0 END) as total_pi_credit_original
+                "(SELECT pi.number, pay.payment_no,
+                    pi.invoice_no, pi.currency,
+                    SUM(journal_ap.original_debit) AS summary_original_debit,
+                    SUM(journal_ap.original_credit) AS summary_original_credit,
+                    SUM(journal_ap.local_debit) AS summary_local_debit,
+                    SUM(journal_ap.local_credit) AS summary_local_credit
                 FROM purchase_invoices pi 
-                JOIN journal_postings b ON pi.number = b.document_no
-                WHERE b.modul = 'PURCHASE INVOICING'
-                GROUP BY pi.number, pi.account_number ORDER BY pi.number DESC
+                JOIN (
+                    SELECT * FROM journal_postings
+                    WHERE modul = 'PURCHASE INVOICING'
+                    AND account_number IN ({$account_numbers_list})
+                    GROUP BY document_no
+                    ) journal_ap ON journal_ap.document_no = pi.number
+                JOIN ap_payments pay ON pi.number = pay.purchase_invoice 
+                GROUP BY pay.payment_no
                 ) pi_summary",
-                'pi_summary.number = a.purchase_invoice', // Relation ke nomor Invoice
+                'pi_summary.payment_no = a.payment_no', // Relation ke nomor Invoice
                 'LEFT', 
                 FALSE 
             );
@@ -780,7 +788,7 @@ class Report_ap extends CI_Controller
                 // Kolom baru : Aging Due (Bu Nina)
                 $aging_due_days = 0;
                 $style_aging = '';
-                if (!empty($payment_due) && $payment_due != '-') 
+                if ($transaction['status_closed_flag'] == "0" && !empty($payment_due) && $payment_due != '-') 
                 {
                     $due_date = new DateTime($payment_due);
             
@@ -824,10 +832,31 @@ class Report_ap extends CI_Controller
                 }
 
                 // Logika AP: Kredit menambah hutang, Debit mengurangi hutang
+                /** 
                 $debit_value = (float)$transaction['local_debit'];
                 $credit_value = (float)$transaction['local_credit'];
+                */
 
-                $balance_local = ($credit_value - $debit_value); // Saldo per baris transaksi
+                // Tampil di debit nominal PI yang sudah Lunas / dibayar pada AP (Bu Nina)
+                if ($transaction['source'] == 'PI') {
+                    if ($currency_show == 'IDR' && $transaction['currency'] == 'IDR') {
+                        $debit_value = $transaction['local_debit'] + $transaction['summary_original_debit'];
+                    } else {
+
+                        if ($currency_show == 'IDR') {
+                            $debit_value = $transaction['local_debit'] + $transaction['summary_local_credit'];
+                        } else {
+                            $debit_value = $transaction['original_debit'] + $transaction['summary_original_debit'];
+                        }
+                    }
+                } else {
+                    $debit_value = (float)$transaction['local_debit'];
+                }
+                
+                $credit_value = (float)$transaction['local_credit'];
+                
+                // $balance_local = ($credit_value - $debit_value); // Saldo per baris transaksi
+                $balance_local = $credit_value - $debit_value;
                 $accumulated += $balance_local;
                 
                 // Jika mode Detail, cetak baris transaksi
@@ -847,7 +876,7 @@ class Report_ap extends CI_Controller
                                     <td>' . $transaction['voucher_no'] . '</td>
                                     <td>' . $transaction['account_number'] . '</td>
                                     <td style="text-align:center;">' . $currency_show . '</td>
-                                    <td style="text-align:right;">' . $this->formatNominal($transaction['local_debit'], 2, $option) . '</td>
+                                    <td style="text-align:right;">' . $this->formatNominal($debit_value, 2, $option) . '</td>
                                     <td style="text-align:right;">' . $this->formatNominal($transaction['local_credit'], 2, $option) . '</td>
                                     <td style="text-align:right;">' . $this->formatNo($balance_local, $option) . '</td>
                                     <td style="text-align:right;">' . $this->formatNo($accumulated, $option) . '</td>
@@ -861,7 +890,6 @@ class Report_ap extends CI_Controller
 
             
             $current_balance = ($begin_balance_local + $local_credit - $local_debit);
-            // $balance_local = ($begin_balance_local + $local_debit - $local_credit); // -- AR
 
             if (count($transactions) > 0 || $current_balance > 0) 
             {
