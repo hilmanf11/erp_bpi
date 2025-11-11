@@ -3908,6 +3908,7 @@ class Sales_invoices extends CI_Controller
         // Query Detail Faktur
         $detailfaktur_query = $this->db->select('e.number as item_number, e.name as item_name,
             e.id as item_no, 
+            e.number as product_no,
             a.price, 
             a.number as si_no,
             a.qty, 
@@ -3998,8 +3999,8 @@ class Sales_invoices extends CI_Controller
                 // Jika ada Product Name yang sama, maka dijadikan satu, qtynya dijumlahkan. (Bu Nina)
                 $mergedItems = [];
                 foreach ($groupedDetails[$faktur['invoice_number']] as $detail) {
-                    $key = $detail['item_name'];
-                    // $key = $detail['item_no'];
+                    // $key = $detail['item_name']; 
+                    $key = $detail['item_no'];      // Jika product namenya sama tetapi product nonya berbeda, maka qty dijumlahman krn dianggap item yg berbeda (Bu Nina)
                     
                     if (isset($mergedItems[$key])) {
                         // Jika item sudah ada, jumlahkan qty dan totalnya
@@ -4030,10 +4031,15 @@ class Sales_invoices extends CI_Controller
                     if ($detail['uom'] == "Lembar") $uom = "UM.0020";
                     if ($detail['uom'] == "Piece") $uom = "UM.0021";
 
+                    // Nama Barang minta tolong ditambahkan menjadi >>productno/productname/hscode (Bu Nina)
+                    $item_no   = htmlspecialchars($detail['item_no']);
+                    $product_no= htmlspecialchars($detail['product_no']);
+                    $item_name = htmlspecialchars($detail['item_name']);
+
                     // Perbarui tag dengan nilai yang sudah digabungkan
                     $itemNode->addChild('Opt', 'A');
                     $itemNode->addChild('Code', $hs_code);
-                    $itemNode->addChild('Name', htmlspecialchars($detail['item_name']) . $hs_code_item);
+                    $itemNode->addChild('Name', $product_no . '/' . $item_name . $hs_code_item);
                     $itemNode->addChild('Unit', $uom);
                     $itemNode->addChild('Price', round($detail['price'], 2));
                     $itemNode->addChild('Qty', round($detail['qty'], 2)); // Gunakan qty yang sudah dijumlahkan
