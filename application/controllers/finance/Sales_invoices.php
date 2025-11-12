@@ -906,6 +906,25 @@ class Sales_invoices extends CI_Controller
         $sales_invoices = $post['dataSi'];
         $sales_invoice_journals = $post['dataJournal'];
 
+        // Validasi total DEBIT dan CREDIT itu Balance
+        $balance_array = $post['dataBalance'] ?? null;
+        $dataBalance = ($balance_array && is_array($balance_array) && count($balance_array) > 0) ? $balance_array[0] : null;
+        if (empty($dataBalance) || !isset($dataBalance['balance_debit']) || !isset($dataBalance['balance_credit'])) {
+            echo json_encode(["title" => "Error", "message" => "Balance data is missing or improperly formatted.", "theme" => "error"]);
+            return;
+        }
+
+        $debit  = (float)$dataBalance['balance_debit'];
+        $credit = (float)$dataBalance['balance_credit'];
+        if (round($debit, 2) != round($credit, 2)) {
+            echo json_encode([
+                "title"   => "Error", 
+                "message" => "Total Debit ($debit) and Total Credit ($credit) are Not Balance! Transaction blocked.", 
+                "theme"   => "error"
+            ]);
+            return;
+        }
+
         foreach ($sales_invoices as $sales_invoice) {
             $dn_no = $sales_invoice['delivery_note_no'] ?? null;
             $co_no = $sales_invoice['customer_order_no'] ?? null;

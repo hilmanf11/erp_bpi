@@ -3661,6 +3661,10 @@
                             addJournal();
 
                             checkAccountBalance(balance_debit, balance_credit);
+                            if (checkAccountBalance != true) {
+                                console.log("Not Balance!");
+                                return;
+                            }
 
                             setTimeout(function () {
                                 $('#dg2').datagrid('acceptChanges');//datatablesTemp
@@ -3764,10 +3768,20 @@
                                                 }
                                             }
 
+                                            // prepare data for balance's validation
+                                            combinedBalance = [];
+                                            combinedBalance.push({
+                                                balance_debit: balance_debit,
+                                                balance_credit: balance_credit
+                                            });
+
                                             $.ajax({
                                                 type: "post",
                                                 url: '<?= base_url('finance/sales_invoices/create') ?>',
+                                                /** -- existing send data
                                                 data: JSON.stringify({ dataSi: combinedSi, dataJournal: combinedJournal }),
+                                                 */
+                                                data: JSON.stringify({ dataBalance: combinedBalance, dataSi: combinedSi, dataJournal: combinedJournal }),
                                                 dataType: "json",
                                                 success: function (result) {
                                                     
@@ -4384,7 +4398,7 @@
     //Detail Data
     function details(id, number) {
         console.log("Number: ", number);
-        
+
         // function viewDetails(number) {
         $("#d_number").textbox('disable');
         $("#d_number").textbox('setValue', number);
