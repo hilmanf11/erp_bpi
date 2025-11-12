@@ -1379,6 +1379,31 @@
 
     });
 
+    function checkAccountBalance(debit_nominal, credit_nominal) {
+        // Compare Balance 
+        const debit = parseFloat(debit_nominal);
+        const credit = parseFloat(credit_nominal);
+
+        if (isNaN(debit) || isNaN(credit)) {
+            toastr.error("Nilai nominal tidak valid (NaN).", "Error Validasi");
+            console.error("Nilai debit atau kredit bukan angka yang valid.");
+            return false;
+        }
+
+        const roundedDebit = Math.round(debit * 10000) / 10000;
+        const roundedCredit = Math.round(credit * 10000) / 10000;
+
+        if (roundedDebit === roundedCredit) {
+            return true;
+        } else {
+            toastr.error(
+                `Total Debit (${debit.toFixed(2)}) is not balance with Total Credit (${credit.toFixed(2)}). Sumbit canceled.`, 
+                "Balance Error"
+            );
+            return false;
+        }
+    }
+
     function addJournal() {
         var customer_id = $("#customer_id").combogrid('getValue');
         var trans_date = $("#trans_date").datebox('getValue');
@@ -1393,12 +1418,12 @@
 
         var currency = (rows.length > 0 && rows[0].currency) ? rows[0].currency : 'IDR'; // default IDR
 
-        console.log("Currency AddJournal : " + currency);
+        // console.log("Currency AddJournal : " + currency);
 
         var rows2 = $('#dg3').datagrid('getRows');//journal
         var totalrows2 = rows2.length;
 
-        console.log("dg3 AddJournal : " + totalrows2);
+        // console.log("dg3 AddJournal : " + totalrows2);
         endEditing2();
 
         if (pphname != "") {
@@ -1449,7 +1474,7 @@
                     url: "<?= base_url('finance/sales_invoices/readExchangeRates?currency=') ?>" + currency + "&trans_date=" + trans_date,
                     dataType: "json",
                     success: function(exchange) {
-                        console.log(exchange[0].middle);
+                        // console.log(exchange[0].middle);
                         if (exchange.length > 0) {
                             $("#total_local").numberbox('setValue', (parseFloat(total_grand) * parseFloat(exchange[0].middle)));
                         } else {
@@ -1984,30 +2009,74 @@
 
     function append() {
         if (endEditing()) {
-            $('#dg2').datagrid('appendRow', {
-                "action": 0,
-                "currency": 'IDR',
+            var customer_id = $("#customer_id").combogrid('getValue');
+            var division = $("#division").combobox('getValue');
+
+            if (!customer_id || !division) {
+                toastr.error("Customer ID and Division are required before adding a row.", "Error Input");
+                return;
+            }
+
+            var dg2 = $('#dg2'); // Inisialisasi dg2
+            dg2.datagrid('loading');
+
+            // START: AJAX Request Get Account Number Customers by Division - tanpa tarik DN (Bu Nina)
+            $.ajax({
+                type: "get",
+                url: "<?= base_url('finance/sales_invoices/readAccountDivision?customer_id=') ?>" + customer_id + "&division=" + division,
+                dataType: "json",
+                success: function(response) { 
+                    var dg2 = $('#dg2'); // Inisialisasi dg2       
+                    dg2.datagrid('loaded');
+
+                    if (response && response.account_number) {
+                        $('#dg2').datagrid('appendRow', {
+                            "action": 0,
+                            "currency": 'IDR',
+                            "account_number": response.account_number,
+                            "account_name": response.account_name,
+                        });
+                    } else {
+                        toastr.warning("There is no Account Number based on this Division.", "Not Found");
+
+                        $('#dg2').datagrid('appendRow', {
+                            "action": 0,
+                            "currency": 'IDR',
+                            "account_number": response.account_number,
+                            "account_name": response.account_name,
+                        });
+                    }
+                    
+                    editIndex = $('#dg2').datagrid('getRows').length - 1;
+                    $('#dg2').datagrid('selectRow', editIndex).datagrid('beginEdit', editIndex);
+
+                    var dg = $('#dg2');
+                    var row = dg.datagrid('getSelected');
+                    var rowIndex = dg.datagrid('getRowIndex', row);
+
+                    var qty = dg.datagrid('getEditor', {
+                        index: rowIndex,
+                        field: 'qty'
+                    });
+
+                    var price = dg.datagrid('getEditor', {
+                        index: rowIndex,
+                        field: 'price'
+                    });
+                    
+                    if (qty && price) {
+                        $(qty.target).numberbox('readonly', false);
+                        $(price.target).numberbox('readonly', false);
+                    } else {
+                        // Jika editor tidak ditemukan, mungkin field 'qty' atau 'price' tidak memiliki editor di kolom datagrid.
+                        console.warn("Could not find editors for qty or price. Check column definition.");
+                    }
+                },
+                error: function() {
+                    dg2.datagrid('loaded');
+                    toastr.error("Failed to connect to the server", "Error Connection");
+                }
             });
-
-            editIndex = $('#dg2').datagrid('getRows').length - 1;
-            $('#dg2').datagrid('selectRow', editIndex).datagrid('beginEdit', editIndex);
-
-            var dg = $('#dg2');
-            var row = dg.datagrid('getSelected');
-            var rowIndex = dg.datagrid('getRowIndex', row);
-
-            var qty = dg.datagrid('getEditor', {
-                index: rowIndex,
-                field: 'qty'
-            });
-
-            var price = dg.datagrid('getEditor', {
-                index: rowIndex,
-                field: 'price'
-            });
-
-            $(qty.target).numberbox('readonly', false);
-            $(price.target).numberbox('readonly', false);
         }
     }
 
@@ -2058,7 +2127,8 @@
                 });
 
                 $('#dg2').datagrid('deleteRow', getRowIndex(target));
-                UpdatedDeliveryNotes(rows.number); 
+                var number_row = (rows.number || '');
+                UpdatedDeliveryNotes(number_row); 
                 addJournal();
             }
         });
@@ -2560,6 +2630,35 @@
         });
     }
 
+    function validateAllAccountRows(response) {       
+        // Pengecekan awal data.rows
+        if (!response || !response.rows || response.rows.length === 0) {
+            console.warn('Tidak ada detail datagrid preview yang ditemukan untuk divalidasi.');
+            return false;
+        }
+
+        // loop jika ada data
+        for (const row of response.rows) {
+            const accountNumber = row.account_number;
+            const accountName = row.account_name;
+            
+            // Memeriksa account_number
+            if (!accountNumber || String(accountNumber).trim() === '') {
+                console.log(`Account Number empty based on this Division. Please Check Customers Data!`, "Not Found");
+                return false;
+            }
+
+            // Memeriksa account_name
+            if (!accountName || String(accountName).trim() === '') {
+                console.log(`Account Number empty based on this Division. Please Check Customers Data!`, "Not Found");
+                return false;
+            }
+        }
+
+        // Jika loop selesai tanpa 'return false', berarti semua valid
+        return true;
+    }
+
     // AI Optimasi Preview Data
     function preview() {
         const customerId = $("#customer_id").combogrid('getValue');
@@ -2595,7 +2694,8 @@
 
                 // Check if data.rows exists and has elements before accessing data.rows[0]
                 if (!data.rows || data.rows.length === 0) {
-                    toastr.warning('No detail data found for the selected delivery note.');
+                    toastr.warning('No detail data found for the selected Delivery Note.', 'Not Found');
+
                     // Clear related fields if no data
                     $("#total_sub").numberbox('setValue', 0);
                     $("#total_invoice").numberbox('setValue', 0);
@@ -2604,6 +2704,12 @@
                     $("#total_grand").numberbox('setValue', 0);
                     $("#total_local").numberbox('setValue', 0);
                     $('#dg_journal').datagrid('loadData', []); 
+                    return;
+                }
+
+                // Validasi Account Number kosong dan Division Berbeda dengan Account Name
+                if (!validateAllAccountRows(data)) {                    
+                    toastr.warning(`Account Number/Name by Division Not Found. Please Check Master Customers!`, "Customer Account Division Not Found");
                     return;
                 }
 
@@ -3308,6 +3414,8 @@
                         } else {
                             addJournal();
 
+                            checkAccountBalance(balance_debit, balance_credit);
+
                             setTimeout(function () {
                                 $('#dg2').datagrid('acceptChanges');//datatablesTemp
                                 var rows = $('#dg2').datagrid('getRows');
@@ -3434,6 +3542,22 @@
                                                         $('#dg').datagrid('reload');
                                                         
                                                     } else {
+                                                        // Jika create SI gagal 
+                                                        if (responses.theme != "success" || responses.theme == "error") {
+                                                            console.log('Failed to save data Sales Invoices');
+                                                            Swal.fire({
+                                                                title: result.message,
+                                                                icon: result.theme,
+                                                                confirmButtonText: 'Ok',
+                                                                allowOutsideClick: false,
+                                                            }).then((result) => {
+                                                                if (result.isConfirmed) {
+                                                                    window.location.reload();
+                                                                }
+                                                            });
+                                                            return;
+                                                        }
+
                                                         // ----- FITUR AUTO POSTING JOURNAL -----
                                                         Swal.close();
                                                         Swal.fire({
@@ -3979,7 +4103,7 @@
                         $('#journal_type').combobox('setValue', result.id);
                     } else {
                         $('#journal_type').combobox('clear');
-                        toastr.warning('Journal Type not found for this division and customer combination.');
+                        toastr.warning('Journal Type not found for this division and customer combination.', 'Not Found');
                     }
                 },
                 error: function() {

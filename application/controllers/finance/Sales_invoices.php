@@ -60,6 +60,20 @@ class Sales_invoices extends CI_Controller
         die(json_encode($records));
     }
 
+    public function readAccountDivision() 
+    {
+        $customer_id = $this->input->get('customer_id');
+        $account_division = $this->input->get('division');
+        
+        $data = [];
+
+        $getAccount = $this->db->get_where('customer_account_numbers', ['division' => $account_division, 'customer_id' => $customer_id])->row();
+        if (!empty($getAccount)) {
+            $data = $getAccount;
+        }
+        echo json_encode($data);
+    }
+
     // public function readExchangeRates()
     // {
     //     $customer_id = $this->input->get('customer_id');
@@ -594,6 +608,8 @@ class Sales_invoices extends CI_Controller
 
         $this->db->select('a.delivery_note_no, 
             a.customer_order_no,  
+            a.division,
+            a.customer_id,
             d.sales_order_no,
             d.sales_order_no_rm,
             a.item_fg_id, 
@@ -627,10 +643,12 @@ class Sales_invoices extends CI_Controller
 
         $records = $this->db->get()->result_array();
 
+        $obj = [];
         $total_sub = 0;
         foreach ($records as $record) {
             $total_sub += $record['total'];
 
+            $customer_id = $record['customer_id'];
             $qty = $record['qty'];
 
             $price = 0;
@@ -655,6 +673,14 @@ class Sales_invoices extends CI_Controller
                 $price  = 0;
                 $amount = 0;
             }
+
+            // Dokumentasi : Account Number ambil dari child table customer_account_numbers
+            $account_division = $record['division'] ?? '-';
+            $getAccount = $this->db->get_where('customer_account_numbers', ['division' => $account_division, 'customer_id' => $customer_id])->row();
+            if (!empty($getAccount)) {
+                $account_number = $getAccount->account_number ?? '';
+                $account_name = $getAccount->account_name ?? '';
+            }
             
             $obj[] = array(
                 "id" => $record['si_id'],
@@ -669,8 +695,8 @@ class Sales_invoices extends CI_Controller
                 "qty" => $record['qty'],
                 "price" => $record['price'] ?? $price,
                 "total" => $record['total'] ?? $amount,
-                "account_number" => $record['account_number'],
-                "account_name" => $record['account_name'],
+                "account_number" => $account_number ?? '',
+                "account_name"   => $account_name ?? '',
                 "account_type" => "CREDIT",
             );
         }
@@ -3954,15 +3980,26 @@ class Sales_invoices extends CI_Controller
         {
             $fakturNode = $listFakturNode->addChild('TaxInvoice');
             
+            // value 'Tidak Ada' di aplikasi pajak tidak valid
+            $additional_info = $faktur['keterangan_tambahan'];
+            if (empty($additional_info) || strtolower($additional_info) == "tidak ada") {
+                $additional_info = '';
+            }
+            
+            $facility_stamp = $faktur['cap_fasilitas'];
+            if (empty($facility_stamp) || strtolower($facility_stamp) == "tidak ada") {
+                $facility_stamp = '';
+            }
+            
             // Perbarui nama tag utama
             $fakturNode->addChild('TaxInvoiceDate', $faktur['trans_date']);
             $fakturNode->addChild('TaxInvoiceOpt', 'Normal');
             $fakturNode->addChild('TrxCode', $faktur['faktur_code']);
-            $fakturNode->addChild('AddInfo', $faktur['keterangan_tambahan']);
+            $fakturNode->addChild('AddInfo', $additional_info);
             $fakturNode->addChild('CustomDoc', $faktur['invoice_number']);
             $fakturNode->addChild('CustomDocMonthYear', date('mY', strtotime($faktur['trans_date'])));
             $fakturNode->addChild('RefDesc', $faktur['invoice_number']);
-            $fakturNode->addChild('FacilityStamp', $faktur['cap_fasilitas']);
+            $fakturNode->addChild('FacilityStamp', $facility_stamp);
 
             // NPWP dan ID Penjual
             $fakturNode->addChild('SellerIDTKU', $idtku_seller);
