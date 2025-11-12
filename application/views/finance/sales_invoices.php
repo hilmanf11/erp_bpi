@@ -1848,7 +1848,7 @@
         var totalrows = rows.length;
         endEditing2();
 
-        console.log(rows);
+        console.log("Journal Data: ", rows);
 
         if (totalrows > 0) {
             var debit = 0;
@@ -3543,7 +3543,7 @@
                                                         
                                                     } else {
                                                         // Jika create SI gagal 
-                                                        if (responses.theme != "success" || responses.theme == "error") {
+                                                        if (result.theme != "success" || result.theme == "error") {
                                                             console.log('Failed to save data Sales Invoices');
                                                             Swal.fire({
                                                                 title: result.message,
