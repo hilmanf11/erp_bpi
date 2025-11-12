@@ -439,6 +439,118 @@ class Sales_invoices extends CI_Controller
     public function calculateJournal()
     {
         $journals = json_decode(file_get_contents("json/sales_invoice_journals.json"), true);
+        $sales_invoices_data = json_decode(file_get_contents("json/sales_invoices.json"), true);
+        $arr = [];
+
+        // Jika sales_invoice_journals.json TIDAK KOSONG
+        if (count($journals) == 0) {
+            $mergedData = [];
+            $flag = 1;
+            
+            foreach ($sales_invoices_data as $jsonData) {
+                $account_number = $jsonData["account_number"];
+                $account_name = $jsonData["account_name"];
+                $total = $jsonData["total"];
+
+                // Inisialisasi entri jika belum ada
+                if (!isset($mergedData[$account_number])) {
+                    $mergedData[$account_number] = [
+                        "account_number" => $account_number,
+                        "account_name" => $account_name,
+                        "debit" => 0,
+                        "credit" => 0,
+                        "flag" => $flag++, 
+                    ];
+                }
+
+                // Tambahkan nilai ke Debit atau Credit yang sesuai
+                if ($jsonData['account_type'] == "DEBIT") {
+                    $mergedData[$account_number]["debit"] += $total;
+                } elseif ($jsonData['account_type'] == "CREDIT") {
+                    $mergedData[$account_number]["credit"] += $total;
+                }
+            }
+
+            // Ubah hasil penggabungan menjadi array berindeks numerik
+            $arr = array_values($mergedData);
+
+        } else {
+            // --- Jika Jurnal SUDAH ADA (Membandingkan/Memperbarui) ---
+            
+            // 1. Agregasi data sales_invoices
+            $aggregated_invoices = [];
+            foreach ($sales_invoices_data as $jsonData) {
+                $account_number = $jsonData["account_number"];
+                $total = $jsonData["total"];
+                
+                if (!isset($aggregated_invoices[$account_number])) {
+                    $aggregated_invoices[$account_number] = ["debit" => 0, "credit" => 0];
+                }
+
+                if ($jsonData['account_type'] == "DEBIT") {
+                    $aggregated_invoices[$account_number]["debit"] += $total;
+                } elseif ($jsonData['account_type'] == "CREDIT") {
+                    $aggregated_invoices[$account_number]["credit"] += $total;
+                }
+            }
+
+            // 2. Loop melalui jurnal yang sudah ada untuk memperbarui nilainya
+            foreach ($journals as $journal) {
+                $account_number = $journal['account_number'];
+                $total_debit = $journal['debit'];
+                $total_credit = $journal['credit'];
+                
+                // Cari total baru dari aggregated_invoices dan lakukan overwrite
+                if (isset($aggregated_invoices[$account_number])) {
+                    $total_debit = $aggregated_invoices[$account_number]['debit'];
+                    $total_credit = $aggregated_invoices[$account_number]['credit'];
+                    
+                    // Hapus dari aggregated_invoices setelah diproses
+                    unset($aggregated_invoices[$account_number]); 
+                }
+                
+                // Tambahkan ke array hasil
+                $arr[] = [
+                    "account_number" => $account_number,
+                    "account_name" => $journal['account_name'],
+                    "debit" => round($total_debit, 4),
+                    "credit" => round($total_credit, 4),
+                    "flag" => $journal['flag'],
+                ];
+            }
+            
+            // 3. Tambahkan akun-akun BARU
+            $flag_counter = count($journals) + 1;
+            foreach ($aggregated_invoices as $account_number => $data) {
+                $account_name = $this->getAccountNameFromInvoiceData($sales_invoices_data, $account_number);
+
+                $arr[] = [
+                    "account_number" => $account_number,
+                    "account_name" => $account_name,
+                    "debit" => round($data['debit'], 4),
+                    "credit" => round($data['credit'], 4),
+                    "flag" => $flag_counter++,
+                ];
+            }
+        }
+        
+        // Output akhir hanya berupa array jurnal
+        echo json_encode($arr);
+    }
+    // match account_number between json sales_invoice and journal
+    private function getAccountNameFromInvoiceData($sales_invoices_data, $account_number) 
+    {
+        foreach ($sales_invoices_data as $data) {
+            if ($data['account_number'] == $account_number) {
+                return $data['account_name'];
+            }
+        }
+        return "N/A";
+    }
+
+    public function calculateJournal_existing()
+    {
+        $journals = json_decode(file_get_contents("json/sales_invoice_journals.json"), true);
         // $sales_invoices = array("1121101", "1121102", "1121103");
 
         if (count($journals) > 0) {

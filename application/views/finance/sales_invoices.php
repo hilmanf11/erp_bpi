@@ -1404,7 +1404,249 @@
         }
     }
 
+    // Optimasi Add to Journal
     function addJournal() {
+        var customer_id = $("#customer_id").combogrid('getValue');
+        var trans_date = $("#trans_date").datebox('getValue');
+
+        var rows = $('#dg2').datagrid('getRows'); // datatatblesTemp (Detail Penjualan)
+        var taxes = parseFloat($("#taxes").numberbox('getValue')) || 0; // % Pajak
+        var pphname = $("#pph").combobox('getValue'); // Kode PPH
+        var discount = parseFloat($("#discount").numberbox('getValue')) || 0;
+        var down_payment = parseFloat($("#down_payment").numberbox('getValue')) || 0;
+        var totalrows = rows.length;
+        var type = $("#type").textbox('getValue');
+        var currency = (rows.length > 0 && rows[0].currency) ? rows[0].currency : 'IDR';
+
+        var rows2 = $('#dg3').datagrid('getRows'); // Journal Setups/Existing
+        var totalrows2 = rows2.length;
+
+        endEditing2();
+
+        if (pphname != "") {
+            if (totalrows > 0) {
+                var data_array = [];
+                var data_array2 = [];
+                var total_invoice = 0;
+                var vat_val = 0;
+                var pph_val = 0;
+
+                // 1. Hitung Total Invoice dari detail (Tidak Berubah)
+                for (let i = 0; i < totalrows; i++) {
+                    var total_detail = parseFloat(rows[i].total) || 0;
+                    
+                    var data = {
+                        account_number: rows[i].account_number,
+                        account_name: rows[i].account_name,
+                        account_type: rows[i].account_type,
+                        total: total_detail
+                    }
+                    
+                    if (rows[i].account_type == "DEBIT") {
+                        total_invoice -= Math.abs(total_detail);
+                    } else {
+                        total_invoice += Math.abs(total_detail);
+                    }
+
+                    data_array.push(data);
+                }
+                
+                total_invoice = Math.abs(total_invoice); 
+                $("#total_invoice").numberbox('setValue', total_invoice.toFixed(4));
+
+                // 2. Hitung Nilai Total Transaksi & Pajak (Tidak Berubah)
+                var total_sub_discount = total_invoice - discount;
+                $("#total_sub").numberbox('setValue', total_sub_discount.toFixed(4));
+
+                var total_dpp;
+                if(type == "LOCAL"){
+                    total_dpp = parseFloat(Math.abs(total_sub_discount - down_payment) * 11/12);
+                }else{
+                    total_dpp = parseFloat(Math.abs(total_sub_discount - down_payment) * 0);
+                }
+
+                var disc_tax = parseFloat(total_dpp * (taxes / 100)); // Total PPN
+                $("#total_vat").numberbox('setValue', disc_tax.toFixed(4));
+
+                var total_pph = parseFloat($("#total_pph").numberbox('getValue')) || 0;
+                
+                var total_grand = (total_sub_discount + disc_tax - total_pph);
+                $("#total_grand").numberbox('setValue', total_grand.toFixed(4));
+                
+                // AJAX untuk Exchange Rate
+                $.ajax({
+                    type: "post",
+                    url: "<?= base_url('finance/sales_invoices/readExchangeRates?currency=') ?>" + currency + "&trans_date=" + trans_date,
+                    dataType: "json",
+                    success: function(exchange) {
+                        // console.log(exchange[0].middle);
+                        if (exchange.length > 0) {
+                            $("#total_local").numberbox('setValue', (parseFloat(total_grand) * parseFloat(exchange[0].middle)));
+                        } else {
+                            $("#total_local").numberbox('setValue', (parseFloat(total_grand) * 1));
+                        }
+                    }
+                });
+                
+                // 3. Setup Variabel dan Map Jurnal
+                var total_revenue_net = total_sub_discount - down_payment; 
+                var arr_pph = ["1154101", "1154103", "1154106", "170.110.00", "170.130.00", "170.150.00"];
+                var arr_ar = ["1121101", "1121102", "1121103", "220.110.00", "140.120.00", "140.220.00", "140.110.00"];
+
+                var journal_map = {}; 
+                var ar_account_in_template = false; // Flag untuk melacak keberadaan akun AR di template
+
+                // Pindahkan baris existing dari rows2 ke map dan RESET Debit/Credit
+                for (let z = 0; z < totalrows2; z++) {
+                    var accNum = rows2[z].account_number;
+                    
+                    // Inisialisasi: Semua nilai Debit/Credit dari template di-reset ke 0
+                    journal_map[accNum] = {
+                        account_number: accNum,
+                        account_name: rows2[z].account_name,
+                        debit: 0, // DIBUAT 0
+                        credit: 0, // DIBUAT 0
+                        flag: rows2[z].flag,
+                    };
+
+                    // Catat apakah akun AR sudah ada di template (untuk mencegah penambahan duplikat di Langkah 5)
+                    if (jQuery.inArray(accNum, arr_ar) >= 0) {
+                        ar_account_in_template = true;
+                    }
+                }
+                
+                // 4. Update Nilai Akun Berdasarkan Header (Logika Sales Invoice) - OVERWRITE
+                // Piutang Usaha / Related Parties (DEBIT: Grand Total)
+                for (const accNum of arr_ar) {
+                    if (journal_map[accNum]) {
+                        journal_map[accNum].debit = parseFloat(total_grand.toFixed(4));
+                        journal_map[accNum].credit = 0;
+                    }
+                }
+                
+                // PPN Keluaran (250.160.00)
+                if (journal_map["250.160.00"]) {
+                    journal_map["250.160.00"].credit = parseFloat(disc_tax.toFixed(4));
+                    journal_map["250.160.00"].debit = 0;
+                } 
+                
+                // Pendapatan/Revenue (4xx.xxx.xx)
+                if (journal_map["410.150.00"]) {
+                    journal_map["410.150.00"].credit = parseFloat(total_revenue_net.toFixed(4));
+                    journal_map["410.150.00"].debit = 0;
+                } else if (journal_map["420.130.00"]) {
+                    journal_map["420.130.00"].credit = parseFloat(total_revenue_net.toFixed(4));
+                    journal_map["420.130.00"].debit = 0;
+                } else if (journal_map["410.330.00"]) {
+                    journal_map["410.330.00"].credit = parseFloat(total_revenue_net.toFixed(4));
+                    journal_map["410.330.00"].debit = 0;
+                }
+                
+                // Diskon Penjualan (460.1x.xx)
+                if (journal_map["460.110.00"]) {
+                    journal_map["460.110.00"].debit = parseFloat(discount.toFixed(4));
+                    journal_map["460.110.00"].credit = 0;
+                } else if (journal_map["460.120.00"]) {
+                    journal_map["460.120.00"].debit = parseFloat(discount.toFixed(4));
+                    journal_map["460.120.00"].credit = 0;
+                }
+                
+                // Uang Muka Penjualan (260.130.00)
+                if (journal_map["260.130.00"]) {
+                    journal_map["260.130.00"].debit = parseFloat(down_payment.toFixed(4));
+                    journal_map["260.130.00"].credit = 0;
+                }
+
+                // PPH Piutang/Prepaid Tax
+                for (const accNum of arr_pph) {
+                    if (journal_map[accNum]) {
+                        journal_map[accNum].debit = parseFloat(total_pph.toFixed(4));
+                        journal_map[accNum].credit = 0;
+                    }
+                }
+
+                // 5. Penambahan Akun Yang Belum Ada
+                
+                // Akun Piutang/Related Parties (220.110.00)
+                var parties_account_number = "220.110.00";
+                if (!ar_account_in_template && total_grand > 0) {
+                    journal_map[parties_account_number] = {
+                        account_number: parties_account_number,
+                        account_name: "Relatied Parties (Others)",
+                        debit: parseFloat(total_grand.toFixed(4)), 
+                        credit: 0,
+                        flag: "0",
+                    };
+                }
+                
+                // PPN Keluaran (250.160.00)
+                var vat_account_number = "250.160.00";
+                if (!journal_map[vat_account_number] && taxes > 0 && disc_tax > 0) {
+                    journal_map[vat_account_number] = {
+                        account_number: vat_account_number,
+                        account_name: "PPN Keluaran (VAT OUT)",
+                        debit: 0,
+                        credit: parseFloat(disc_tax.toFixed(4)),
+                        flag: "0",
+                    };
+                }
+                
+                // Uang Muka Penjualan (260.130.00)
+                var dp_account_number = "260.130.00";
+                if (!journal_map[dp_account_number] && down_payment > 0) {
+                    journal_map[dp_account_number] = {
+                        account_number: dp_account_number,
+                        account_name: "UANG MUKA PENJUALAN",
+                        debit: parseFloat(down_payment.toFixed(4)),
+                        credit: 0,
+                        flag: "0",
+                    };
+                }
+
+                // PPH (Contoh PPH 23, 170.130.00)
+                if (total_pph > 0 && pphname == "2" && !journal_map["170.130.00"]) {
+                    journal_map["170.130.00"] = {
+                        account_number: "170.130.00",
+                        account_name: "PPH 23",
+                        debit: parseFloat(total_pph.toFixed(4)),
+                        credit: 0,
+                        flag: "0",
+                    };
+                }
+
+                // 6. Konversi kembali ke data_array2 (array berindeks numerik)
+                data_array2 = Object.values(journal_map);
+                
+                // 7. Proses Akhir dan Tampilkan
+                var jsonData = JSON.stringify(data_array);
+                var jsonData2 = JSON.stringify(data_array2);
+
+                $.ajax({
+                    type: "POST",
+                    url: "<?= base_url('finance/sales_invoices/createJson') ?>",
+                    data: {
+                        jsonData: jsonData,
+                        jsonData2: jsonData2,
+                    },
+                    success: function(response) {
+                        addTable2('<?= base_url('finance/sales_invoices/calculateJournal') ?>');
+
+                        setTimeout(function() {
+                            $('#dg3').datagrid('reload');
+
+                            balance_journal();
+                        }, 2000);
+                    },
+                });
+            } else {
+                toastr.warning("please selections your data in table first");
+            }
+        } else {
+            toastr.warning("please select PPH");
+        }
+    }
+
+    function addJournal_existing() {
         var customer_id = $("#customer_id").combogrid('getValue');
         var trans_date = $("#trans_date").datebox('getValue');
 
@@ -2127,7 +2369,10 @@
                 });
 
                 $('#dg2').datagrid('deleteRow', getRowIndex(target));
-                var number_row = (rows.number || '');
+                var number_row = 0;
+                if (rows) {
+                    number_row = (rows.number || 0);
+                }
                 UpdatedDeliveryNotes(number_row); 
                 addJournal();
             }
@@ -2687,6 +2932,7 @@
 
         const encodedDeliveryNoteNo = window.btoa(deliveryNoteNo);
 
+        var lastIndex;
         $('#dg2').datagrid({
             url: `<?= base_url('finance/sales_invoices/datatablesTemp/') ?>?delivery_note_no=${encodedDeliveryNoteNo}`,
             onLoadSuccess: function(data) {
@@ -4116,14 +4362,30 @@
             $('#journal_type').combobox('clear');
         }
     }
-    
+
+    // DETAILS
     function btnDetails(val, row) {
+        return `<a class="btn btn-primary w-100 btn-details" data-id="${row.id}" data-number="${row.number || ''}" style="pointer-events: visible; opacity:1;">
+                    <i class="fa fa-eye"></i> View
+                </a>`;
+    }
+    // Tambahkan event listener setelah tombol dirender
+    $(document).on('click', '.btn-details', function () {
+        var id = $(this).data('id');
+        var number = $(this).data('number');
+        details(id, number);
+    });
+    
+    function btnDetails_backup(val, row) {
         var details = "viewDetails('" + row.number + "')";
         return '<a class="btn btn-primary w-100" onClick="' + details + '" style="pointer-events: visible; opacity:1;"><i class="fa fa-eye"></i> View</a>';
     }
 
     //Detail Data
-    function viewDetails(number) {
+    function details(id, number) {
+        console.log("Number: ", number);
+        
+        // function viewDetails(number) {
         $("#d_number").textbox('disable');
         $("#d_number").textbox('setValue', number);
 
