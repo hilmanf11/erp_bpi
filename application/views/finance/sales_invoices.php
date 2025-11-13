@@ -2298,6 +2298,35 @@
         }
     }
 
+    function append_existing() {
+        if (endEditing()) {
+            $('#dg2').datagrid('appendRow', {
+                "action": 0,
+                "currency": 'IDR',
+            });
+
+            editIndex = $('#dg2').datagrid('getRows').length - 1;
+            $('#dg2').datagrid('selectRow', editIndex).datagrid('beginEdit', editIndex);
+
+            var dg = $('#dg2');
+            var row = dg.datagrid('getSelected');
+            var rowIndex = dg.datagrid('getRowIndex', row);
+
+            var qty = dg.datagrid('getEditor', {
+                index: rowIndex,
+                field: 'qty'
+            });
+
+            var price = dg.datagrid('getEditor', {
+                index: rowIndex,
+                field: 'price'
+            });
+
+            $(qty.target).numberbox('readonly', false);
+            $(price.target).numberbox('readonly', false);
+        }
+    }
+
     function getRowIndex(target) {
         var tr = $(target).closest('tr.datagrid-row');
         return parseInt(tr.attr('datagrid-row-index'));

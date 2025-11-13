@@ -187,7 +187,7 @@ class Customers extends CI_Controller
     }
 
     //DELETE DATA
-    function delete() 
+    public function delete() 
     {
         if (!$this->input->post()) {
             $this->output->set_status_header(400); // Bad Request
@@ -322,7 +322,7 @@ class Customers extends CI_Controller
     }
     
     // CREATE OR UPDATE
-    function createMultiAccounts() 
+    public function createMultiAccounts() 
     {
         if ($this->input->post()) {
             
@@ -433,7 +433,7 @@ class Customers extends CI_Controller
     }
 
     // DELETE 
-    function deleteSingleAccount() 
+    public function deleteSingleAccount() 
     {
         if ($this->input->post()) {
             $data = $this->input->post();
