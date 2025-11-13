@@ -132,6 +132,7 @@ class Report_ap extends CI_Controller
 
         // Query 1: Purchase Invoices (PI) - Mengambil Kredit (Hutang Bertambah)
         $this->db->select('SUM(b.local_debit) AS debit_pi, SUM(b.local_credit) AS credit_pi');
+        $this->db->select('SUM(b.original_debit) AS original_debit_pi, SUM(b.original_credit) AS original_credit_pi');
         $this->db->from('purchase_invoices a');
         $this->db->join('journal_postings b', 'a.number = b.document_no');
         if (!empty($account_numbers)) {
@@ -149,6 +150,7 @@ class Report_ap extends CI_Controller
         
         // Query 2: AP Payments (AP) - Mengambil Debit (Hutang Berkurang)
         $this->db->select('SUM(b.local_debit) AS debit_payment, SUM(b.local_credit) AS credit_payment');
+        $this->db->select('SUM(b.original_debit) AS original_debit_payment, SUM(b.original_credit) AS original_credit_payment');
         $this->db->from('ap_payments a');
         $this->db->join('journal_postings b', 'a.payment_no = b.document_no');
         if (!empty($account_numbers)) {
@@ -165,22 +167,43 @@ class Report_ap extends CI_Controller
         $this->db->reset_query();
 
         // === Perhitungan Saldo Awal (Local Currency) ===
-        $local_debit_pi    = (float)($query_1->debit_pi ?? 0);
-        $local_credit_pi   = (float)($query_1->credit_pi ?? 0);
-        $local_debit_payment = (float)($query_2->debit_payment ?? 0);
-        $local_credit_payment = (float)($query_2->credit_payment ?? 0);
+        if (!empty($filter_currency) && $filter_currency != "IDR") {
+            $debit_pi = (float)($query_1->original_debit_pi ?? 0);
+            $credit_pi = (float)($query_1->original_credit_pi ?? 0);
+            $debit_payment = (float)($query_2->original_debit_payment ?? 0);
+            $credit_payment = (float)($query_2->original_credit_payment ?? 0);
+        } else {
+            // Default/IDR
+            $debit_pi = (float)($query_1->debit_pi ?? 0);
+            $credit_pi = (float)($query_1->credit_pi ?? 0);
+            $debit_payment = (float)($query_2->debit_payment ?? 0);
+            $credit_payment = (float)($query_2->credit_payment ?? 0);
+        }
 
-        // Total Kredit Lama (Hutang Bertambah)
-        // Hutang bertambah melalui Credit PI dan Credit Payment (jika ada jurnal reversal/adjustment)
-        $total_credit_old = $local_credit_pi; 
+        // Total Transaksi Kumulatif Sebelum Periode (Kredit Hutang Bertambah, Debit Hutang Berkurang)
+        $total_credit_old = $credit_pi + $credit_payment;
+        $total_debit_old  = $debit_pi + $debit_payment;
 
-        // Total Debit Lama (Hutang Berkurang)
-        // Hutang berkurang melalui Debit PI (jika ada jurnal reversal/adjustment) dan Debit Payment
-        $total_debit_old = $local_debit_pi + $local_debit_payment;
+        // Hitung Saldo Jurnal Bersih (Net Journal Activity) sebelum periode filter
+        $net_journal_activity = $total_credit_old - $total_debit_old;
 
-        // Logika AP (Hutang): Saldo Manual + Kredit - Debit
-        $begin_balance = $initial_balance + $total_credit_old - $total_debit_old;
-        
+        // --- LOGIKA BALANCE ---
+        // Cek apakah tanggal filter_from adalah tanggal 1 Januari (Awal Tahun)
+        $is_start_of_year = (date('m-d', strtotime($filter_from)) === '01-01');
+
+        if ($is_start_of_year) {
+            // KETENTUAN 1: Periode Januari (Awal Tahun)
+            // Saldo Awal = Initial Balance (dari account_balance_suppliers)
+            // Namun, transaksi sebelum 01 Jan tetap harus diperhitungkan jika ada
+            // $initial_balance adalah Saldo per 31 Des tahun lalu.
+            $begin_balance = (float)$initial_balance + $net_journal_activity;
+
+        } else {
+            // KETENTUAN 2 & 3: Periode Februari, Maret, dst.
+            // Saldo Awal = Saldo Akhir Bulan Sebelumnya.
+            $begin_balance = (float)$initial_balance + $net_journal_activity;
+        }
+
         return $begin_balance;
     }
 
@@ -456,6 +479,7 @@ class Report_ap extends CI_Controller
                                         <th rowspan="2">Invoice No</th>
                                         <th rowspan="2">Posting Date</th>
                                         <th rowspan="2">Posting No</th>
+                                        <th rowspan="2">Payment No</th>
                                         <th rowspan="2">Account No</th>
                                         <th rowspan="2">Currency</th>
                                         <th colspan="4">LOCAL CURRENCY</th>
@@ -533,6 +557,7 @@ class Report_ap extends CI_Controller
                 a.number AS document_no, 
                 a.invoice_no, 
                 a.number as purchase_invoice,
+                ap_summary.payment_no as column_payment_no,
                 a.trans_date AS trans_date,
                 a.due_date AS payment_due, 
                 b.journal_date AS voucher_date, 
@@ -631,6 +656,7 @@ class Report_ap extends CI_Controller
                 'AP' AS source, 
                 a.payment_no AS document_no, 
                 '-' AS invoice_no, 
+                a.payment_no as column_payment_no,
                 a.payment_date AS trans_date,
                 c.due_date AS payment_due, 
                 a.purchase_invoice,
@@ -673,24 +699,39 @@ class Report_ap extends CI_Controller
                 'LEFT', 
                 FALSE
             );
+            /* Subquery yang menghitung total pembayaran AP per Invoice */
             $this->db->join(
-                /* Subquery yang menghitung total pembayaran AP per Invoice */
-                "(SELECT pi.number, pay.payment_no,
-                    pi.invoice_no, pi.currency,
-                    SUM(journal_ap.original_debit) AS summary_original_debit,
-                    SUM(journal_ap.original_credit) AS summary_original_credit,
-                    SUM(journal_ap.local_debit) AS summary_local_debit,
-                    SUM(journal_ap.local_credit) AS summary_local_credit
-                FROM purchase_invoices pi 
-                JOIN (
-                    SELECT * FROM journal_postings
-                    WHERE modul = 'PURCHASE INVOICING'
-                    AND account_number IN ({$account_numbers_list})
-                    GROUP BY document_no
-                    ) journal_ap ON journal_ap.document_no = pi.number
-                JOIN ap_payments pay ON pi.number = pay.purchase_invoice 
-                GROUP BY pay.payment_no
-                ) pi_summary",
+                "(SELECT
+                    t.payment_no,
+                    GROUP_CONCAT(t.pi_number SEPARATOR ', ') AS invoices, 
+                    SUM(t.pi_local_credit) AS summary_local_credit,     
+                    SUM(t.pi_original_credit) AS summary_original_credit, 
+                    SUM(t.pi_local_debit) AS summary_local_debit,     
+                    SUM(t.pi_original_debit) AS summary_original_debit 
+                FROM
+                    (
+                        SELECT 
+                            pay.payment_no,
+                            pi.number AS pi_number,
+                            journal_ap.local_debit AS pi_local_debit,
+                            journal_ap.original_debit AS pi_original_debit,
+                            journal_ap.local_credit AS pi_local_credit,
+                            journal_ap.original_credit AS pi_original_credit
+                        FROM 
+                            ap_payments pay 
+                        JOIN 
+                            purchase_invoices pi ON pi.number = pay.purchase_invoice 
+                        JOIN 
+                            journal_postings journal_ap 
+                            ON journal_ap.document_no = pi.number 
+                        WHERE 
+                            journal_ap.modul = 'PURCHASE INVOICING' 
+                            AND journal_ap.account_number IN ({$account_numbers_list})
+                        GROUP BY 
+                            pay.payment_no, pi.number, journal_ap.document_no
+                            
+                    ) t
+                GROUP BY t.payment_no) pi_summary",
                 'pi_summary.payment_no = a.payment_no', // Relation ke nomor Invoice
                 'LEFT', 
                 FALSE 
@@ -713,7 +754,7 @@ class Report_ap extends CI_Controller
                     $this->db->or_like('document_no', $filter_document_no, 'both'); 
                 }
                 if (!empty($filter_invoice_no)) {
-                    $this->db->or_like('invoice_no', $filter_invoice_no, 'both');
+                    $this->db->or_like('pi_summary.invoice_no', $filter_invoice_no, 'both');
                 }
                 $this->db->group_end();
             }
@@ -772,7 +813,7 @@ class Report_ap extends CI_Controller
             
             if (count($transactions) > 0 || $begin_balance_local != 0) {
                 $detail .= '<tr style="background: #DEE2FF; font-weight:bold;" class="begin_balance">
-                    <td colspan="13">BEGINING BALANCE ('.$supplier_name.')</td>
+                    <td colspan="14">BEGINING BALANCE ('.$supplier_name.')</td>
                     <td style="text-align:center;">' . $supplier['currency_balance'] . '</td>
                     <td colspan="4" style="text-align:right;">' . $this->formatNominal(@$begin_balance_local, 2, $option) . '</td>
                     </tr>';
@@ -874,6 +915,7 @@ class Report_ap extends CI_Controller
                                     <td>' . $transaction['invoice_no'] . '</td>
                                     <td>' . $transaction['voucher_date'] . '</td>
                                     <td>' . $transaction['voucher_no'] . '</td>
+                                    <td>' . $transaction['column_payment_no']. '</td>
                                     <td>' . $transaction['account_number'] . '</td>
                                     <td style="text-align:center;">' . $currency_show . '</td>
                                     <td style="text-align:right;">' . $this->formatNominal($debit_value, 2, $option) . '</td>
@@ -894,7 +936,7 @@ class Report_ap extends CI_Controller
             if (count($transactions) > 0 || $current_balance > 0) 
             {
                 $sub_total_row = '<tr style="background: #E5E5E5; font-weight:bold;">
-                                        <td colspan="14">SUB TOTAL</td>
+                                        <td colspan="15">SUB TOTAL</td>
                                         <td style="text-align:right;">' . $this->formatNominal($local_debit, 2, $option) . '</td>
                                         <td style="text-align:right;">' . $this->formatNominal($local_credit, 2, $option) . '</td>
                                         <td style="text-align:right;">' . $this->formatNo($current_balance, $option) . '</td>
@@ -925,7 +967,7 @@ class Report_ap extends CI_Controller
         }
 
         $grand_total_row = '<tr style="background: #C3FFB4; font-weight:bold;" class="grand_total">
-                                <td colspan="14">GRAND TOTAL</td>
+                                <td colspan="15">GRAND TOTAL</td>
                                 <td style="text-align:right;">' . $this->formatNominal($grand_local_debit, 2, $option) . '</td>
                                 <td style="text-align:right;">' . $this->formatNominal($grand_local_credit, 2, $option) . '</td>
                                 <td style="text-align:right;">' . $this->formatNo($grand_local_balance, $option) . '</td>
