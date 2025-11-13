@@ -1379,30 +1379,6 @@
 
     });
 
-    function checkAccountBalance(debit_nominal, credit_nominal) {
-        // Compare Balance 
-        const debit = parseFloat(debit_nominal);
-        const credit = parseFloat(credit_nominal);
-
-        if (isNaN(debit) || isNaN(credit)) {
-            toastr.error("Nilai nominal tidak valid (NaN).", "Error Validasi");
-            console.error("Nilai debit atau kredit bukan angka yang valid.");
-            return false;
-        }
-
-        const roundedDebit = Math.round(debit * 10000) / 10000;
-        const roundedCredit = Math.round(credit * 10000) / 10000;
-
-        if (roundedDebit === roundedCredit) {
-            return true;
-        } else {
-            toastr.error(
-                `Total Debit (${debit.toFixed(2)}) is not balance with Total Credit (${credit.toFixed(2)}). Sumbit canceled.`, 
-                "Balance Error"
-            );
-            return false;
-        }
-    }
 
     // Optimasi Add to Journal
     function addJournal() {
@@ -3659,12 +3635,6 @@
 
                         } else {
                             addJournal();
-
-                            checkAccountBalance(balance_debit, balance_credit);
-                            if (checkAccountBalance != true) {
-                                console.log("Not Balance!");
-                                return;
-                            }
 
                             setTimeout(function () {
                                 $('#dg2').datagrid('acceptChanges');//datatablesTemp
