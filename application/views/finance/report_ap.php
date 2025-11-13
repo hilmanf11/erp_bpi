@@ -382,24 +382,24 @@
         });
 
         // -- disable filter lain jika filter_display=Summary
-        $('#filter_display').combobox({
-            onChange: function(newValue, oldValue) {
-                if (newValue === 'Summary') {
-                    // Menonaktifkan (disable) elemen saat 'Summary' dipilih
-                    $('#filter_posting_no').textbox('disable');
-                    $('#filter_posting_no').textbox('setValue', ''); // Kosongkan nilainya
-                    $('#filter_document_no').textbox('disable');
-                    $('#filter_document_no').textbox('setValue', ''); // Kosongkan nilainya
-                    $('#filter_invoice_no').textbox('disable');
-                    $('#filter_invoice_no').textbox('setValue', ''); // Kosongkan nilainya
-                } else {
-                    // Mengaktifkan kembali elemen saat 'Detail' dipilih
-                    $('#filter_posting_no').textbox('enable');
-                    $('#filter_document_no').textbox('enable');
-                    $('#filter_invoice_no').textbox('enable');
-                }
-            }
-        });
+        // $('#filter_display').combobox({
+        //     onChange: function(newValue, oldValue) {
+        //         if (newValue === 'Summary') {
+        //             // Menonaktifkan (disable) elemen saat 'Summary' dipilih
+        //             $('#filter_posting_no').textbox('disable');
+        //             $('#filter_posting_no').textbox('setValue', ''); // Kosongkan nilainya
+        //             $('#filter_document_no').textbox('disable');
+        //             $('#filter_document_no').textbox('setValue', ''); // Kosongkan nilainya
+        //             $('#filter_invoice_no').textbox('disable');
+        //             $('#filter_invoice_no').textbox('setValue', ''); // Kosongkan nilainya
+        //         } else {
+        //             // Mengaktifkan kembali elemen saat 'Detail' dipilih
+        //             $('#filter_posting_no').textbox('enable');
+        //             $('#filter_document_no').textbox('enable');
+        //             $('#filter_invoice_no').textbox('enable');
+        //         }
+        //     }
+        // });
 
     });
 </script>

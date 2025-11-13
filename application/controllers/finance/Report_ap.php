@@ -275,7 +275,7 @@ class Report_ap extends CI_Controller
                     body {
                         font-family: Arial, Helvetica, sans-serif;
                         margin: 20px;
-                        zoom: 90%;
+                        zoom: 80%;
                     }
                     .header-section {
                         overflow: hidden;
@@ -464,6 +464,11 @@ class Report_ap extends CI_Controller
             </center>
             <br><br>';        
                 
+        $currency_title = 'LOCAL';
+        if ($currency_show != 'IDR') {
+            $currency_title = 'ORIGINAL';
+        }
+
         // Header Tabel
         $detail_table_header = '<table id="customers" border="1">
                                     <tr>
@@ -482,7 +487,8 @@ class Report_ap extends CI_Controller
                                         <th rowspan="2">Payment No</th>
                                         <th rowspan="2">Account No</th>
                                         <th rowspan="2">Currency</th>
-                                        <th colspan="4">LOCAL CURRENCY</th>
+                                        <th rowspan="2">Rate</th>
+                                        <th colspan="4">' . $currency_title . ' CURRENCY</th>
                                     </tr>
                                     <tr>
                                         <th>Debit</th>
@@ -497,7 +503,10 @@ class Report_ap extends CI_Controller
                                             <th width="20">No</th>
                                             <th>Supplier Name</th>
                                             <th>Currency</th>
-                                            <th>LOCAL CURRENCY<br><i>Balance</i></th>
+                                            <th> 
+                                                ' . $currency_title . ' CURRENCY<br> 
+                                                <i>Balance</i>
+                                            </th>
                                         </tr>
                                     </thead>';
 
@@ -564,6 +573,7 @@ class Report_ap extends CI_Controller
                 b.number AS voucher_no,
                 b.account_number, 
                 a.currency,
+                a.rate,
                 (CASE WHEN '{$currency_show}' = 'IDR' THEN b.local_debit ELSE b.original_debit END) as local_debit,
                 (CASE WHEN '{$currency_show}' = 'IDR' THEN b.local_credit ELSE b.original_credit END) as local_credit, 
                 b.original_debit, 
@@ -664,6 +674,7 @@ class Report_ap extends CI_Controller
                 b.number AS voucher_no,
                 b.account_number,
                 a.currency, 
+                a.rate,
                 (CASE WHEN ('{$currency_show}' = 'IDR' AND a.account_type = 'DEBIT') THEN b.local_debit ELSE b.original_debit END) as local_debit,
                 (CASE WHEN ('{$currency_show}' = 'IDR' AND a.account_type = 'CREDIT') THEN b.local_credit ELSE b.original_credit END) as local_credit,
                 (CASE WHEN a.account_type = 'DEBIT' THEN b.original_debit ELSE 0 END) as original_debit,
@@ -815,6 +826,7 @@ class Report_ap extends CI_Controller
                 $detail .= '<tr style="background: #DEE2FF; font-weight:bold;" class="begin_balance">
                     <td colspan="14">BEGINING BALANCE ('.$supplier_name.')</td>
                     <td style="text-align:center;">' . $supplier['currency_balance'] . '</td>
+                    <td style="text-align:center;">-</td>
                     <td colspan="4" style="text-align:right;">' . $this->formatNominal(@$begin_balance_local, 2, $option) . '</td>
                     </tr>';
             }
@@ -878,28 +890,48 @@ class Report_ap extends CI_Controller
                 $credit_value = (float)$transaction['local_credit'];
                 */
 
-                // Tampil di debit nominal PI yang sudah Lunas / dibayar pada AP (Bu Nina)
-                if ($transaction['source'] == 'PI') {
-                    if ($currency_show == 'IDR' && $transaction['currency'] == 'IDR') {
-                        $debit_value = $transaction['local_debit'] + $transaction['summary_original_debit'];
-                    } else {
-
-                        if ($currency_show == 'IDR') {
-                            $debit_value = $transaction['local_debit'] + $transaction['summary_local_credit'];
-                        } else {
-                            $debit_value = $transaction['original_debit'] + $transaction['summary_original_debit'];
-                        }
+                // Tampilkan di kolom Debit PI yang sudah lunas (Hutang Berkurang) hanya jika status CLOSED (1)
+                if ($transaction['status_closed_flag'] == 1) 
+                {   
+                    if ($currency_show == 'IDR') {
+                        // Skema IDR: Ambil nilai Local
+                        // $pi_value = (float)($transaction['local_credit'] ?? 0); // jadi double
+                        $pi_value = 0;
+                        $payment_summary = (float)($transaction['summary_local_credit'] ?? 0);
+                        $ap_value = (float)($transaction['local_debit'] ?? 0);
+                        
+                    } else { // Valas
+                        // Skema Valas: Ambil nilai Original
+                        $pi_value = (float)($transaction['original_credit'] ?? 0);
+                        $payment_summary = (float)($transaction['summary_original_credit'] ?? 0);
+                        $ap_value = (float)($transaction['original_debit'] ?? 0);
                     }
-                } else {
-                    $debit_value = (float)$transaction['local_debit'];
+
+                    if ($transaction['source'] == 'PI') {
+                        $debit_value = $pi_value + $payment_summary;
+                        
+                    } elseif ($transaction['source'] == 'AP') {
+                        $debit_value = $ap_value; 
+                        
+                    } else {
+                        $debit_value = 0; // Default untuk source yang tidak relevan
+                    }
+
+                } else { 
+                    if ($currency_show == 'IDR') {
+                        $debit_value = (float)($transaction['local_debit'] ?? 0);
+                    } else {
+                        $debit_value = (float)($transaction['original_debit'] ?? 0);
+                    }
                 }
-                
+
                 $credit_value = (float)$transaction['local_credit'];
+                $rate_show = (float)$transaction['rate'] ?? 1;
                 
                 // $balance_local = ($credit_value - $debit_value); // Saldo per baris transaksi
                 $balance_local = $credit_value - $debit_value;
                 $accumulated += $balance_local;
-                
+
                 // Jika mode Detail, cetak baris transaksi
                 if ($filter_display == "Detail") {
                     $detail .= '<tr>
@@ -918,6 +950,7 @@ class Report_ap extends CI_Controller
                                     <td>' . $transaction['column_payment_no']. '</td>
                                     <td>' . $transaction['account_number'] . '</td>
                                     <td style="text-align:center;">' . $currency_show . '</td>
+                                    <td style="text-align:right;">' . $this->formatNominal($rate_show, 2, $option) . '</td>
                                     <td style="text-align:right;">' . $this->formatNominal($debit_value, 2, $option) . '</td>
                                     <td style="text-align:right;">' . $this->formatNominal($transaction['local_credit'], 2, $option) . '</td>
                                     <td style="text-align:right;">' . $this->formatNo($balance_local, $option) . '</td>
@@ -936,7 +969,7 @@ class Report_ap extends CI_Controller
             if (count($transactions) > 0 || $current_balance > 0) 
             {
                 $sub_total_row = '<tr style="background: #E5E5E5; font-weight:bold;">
-                                        <td colspan="15">SUB TOTAL</td>
+                                        <td colspan="16">SUB TOTAL</td>
                                         <td style="text-align:right;">' . $this->formatNominal($local_debit, 2, $option) . '</td>
                                         <td style="text-align:right;">' . $this->formatNominal($local_credit, 2, $option) . '</td>
                                         <td style="text-align:right;">' . $this->formatNo($current_balance, $option) . '</td>
@@ -953,7 +986,7 @@ class Report_ap extends CI_Controller
                                 <tr>
                                     <td>' . $noid . '</td>
                                     <td>' . $supplier_name . '</td>
-                                    <td style="text-align:center;">' . $supplier['currency'] . '</td>
+                                    <td style="text-align:center;">' . $currency_show . '</td>
                                     <td style="text-align:right;">' . $this->formatNo($current_balance, $option) . '</td>
                                 </tr>';
             }
@@ -967,7 +1000,7 @@ class Report_ap extends CI_Controller
         }
 
         $grand_total_row = '<tr style="background: #C3FFB4; font-weight:bold;" class="grand_total">
-                                <td colspan="15">GRAND TOTAL</td>
+                                <td colspan="16">GRAND TOTAL</td>
                                 <td style="text-align:right;">' . $this->formatNominal($grand_local_debit, 2, $option) . '</td>
                                 <td style="text-align:right;">' . $this->formatNominal($grand_local_credit, 2, $option) . '</td>
                                 <td style="text-align:right;">' . $this->formatNo($grand_local_balance, $option) . '</td>
