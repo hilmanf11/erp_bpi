@@ -653,7 +653,7 @@ class Report_ap extends CI_Controller
                 $this->db->where("a.currency", $filter_currency);
             }
             if (!empty($filter_status)) {
-                $target_status = (int)$filter_status;
+                $target_status = ($filter_status == 'OPEN') ? '0' : '1';
                 $this->db->having("status_closed_flag", $target_status);
             }
             $this->db->group_by(['a.number', 'b.number']);
@@ -683,6 +683,7 @@ class Report_ap extends CI_Controller
                 pi_summary.summary_original_credit,
                 pi_summary.summary_local_debit,
                 pi_summary.summary_local_credit,
+                pi_summary.invoices,
                 (CASE 
                     WHEN a.currency = 'IDR' AND '{$currency_show}' = 'IDR' THEN 
                         CASE 
@@ -765,7 +766,7 @@ class Report_ap extends CI_Controller
                     $this->db->or_like('document_no', $filter_document_no, 'both'); 
                 }
                 if (!empty($filter_invoice_no)) {
-                    $this->db->or_like('pi_summary.invoice_no', $filter_invoice_no, 'both');
+                    $this->db->or_like('pi_summary.invoices', $filter_invoice_no, 'both');
                 }
                 $this->db->group_end();
             }
@@ -777,7 +778,7 @@ class Report_ap extends CI_Controller
                 $this->db->where("a.currency", $filter_currency);
             }
             if (!empty($filter_status)) {
-                $target_status = (int)$filter_status;
+                $target_status = ($filter_status == 'OPEN') ? '0' : '1';
                 $this->db->having("status_closed_flag", $target_status);
             }
             $this->db->group_by(['a.payment_no', 'a.account_number']);

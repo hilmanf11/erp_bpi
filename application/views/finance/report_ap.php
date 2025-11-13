@@ -46,8 +46,8 @@
                     <span style="width:35%; display:inline-block;">Status</span>
                     <select style="width:60%;" id="filter_status" class="easyui-combobox" panelHeight="auto">
                         <option value="">Choose All</option>
-                        <option value="0">OPEN</option>
-                        <option value="1">CLOSE</option>
+                        <option value="OPEN">OPEN</option>
+                        <option value="CLOSED">CLOSED</option>
                     </select>
                 </div>
                 <div class="fitem">
