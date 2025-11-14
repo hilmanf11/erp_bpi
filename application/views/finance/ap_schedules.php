@@ -4,7 +4,7 @@
             <legend><b>Form Filter Data</b></legend>
             <div class="fitem">
                 <span style="width:35%; display:inline-block;">Trans Date</span>
-                <input style="width:30%;" id="filter_from" value="<?= date("Y-m-01") ?>" class="easyui-datebox" data-options="prompt:'Start Date',formatter:myformatter,parser:myparser, editable:false">
+                <input style="width:30%;" id="filter_from" value="<?= date("Y-01-01") ?>" class="easyui-datebox" data-options="prompt:'Start Date',formatter:myformatter,parser:myparser, editable:false">
                 <input style="width:30%;" id="filter_to" value="<?= date("Y-m-t") ?>" class="easyui-datebox" data-options="prompt:'Finish Date',formatter:myformatter,parser:myparser, editable:false">
             </div>
             <div class="fitem">
@@ -25,7 +25,85 @@
     <iframe id="printout" src="" style="width: 100%; height: 70%; border: 0;"></iframe>
 </div>
 <script>
+    // FILTER SHOW DATA
+    function getFilterUrl() {
+        const filters = {
+            filter_from: $("#filter_from").datebox("getValue"),
+            filter_to: $("#filter_to").datebox("getValue"),
+            filter_supplier: $("#filter_supplier").combogrid("getValue"),
+        };
+
+        const isDateRangeEmpty = filters.filter_from === "" || filters.filter_to === "";
+        // const isSupplierEmpty = filters.filter_supplier === ""; // di EBWS per supplier
+        if (isDateRangeEmpty) {
+            toastr.warning("Please select Trans Date");
+            return null; // Gagal validasi
+        }
+
+        let url = "?";
+        // Gunakan URL encoding (window.btoa) hanya pada tanggal yang mungkin sensitif
+        url += "filter_from=" + window.btoa(filters.filter_from) +
+            "&filter_to=" + window.btoa(filters.filter_to) +
+            "&filter_supplier=" + window.btoa(filters.filter_supplier);
+
+        // Tambahkan filter lainnya
+        for (const key in filters) {
+            if (filters.hasOwnProperty(key) && key !== 'filter_from' && key !== 'filter_to' && key !== 'filter_supplier') {
+                // Hindari pengiriman ulang filter_from dan filter_to
+                url += `&${key}=${filters[key]}`;
+            }
+        }
+
+        return url;
+    }
+
+    function validateDateRange() {
+        var filter_from = $("#filter_from").datebox("getValue");
+        var filter_to = $("#filter_to").datebox("getValue");
+
+        // Periksa apakah kedua tanggal sudah terisi
+        if (filter_from === "" || filter_to === "") {
+            return true; 
+        }
+
+        if (filter_from > filter_to) {
+            toastr.error("Start Date cannot be larger than End Date!");
+            return false; // Validasi Gagal
+        }
+
+        return true; // Validasi Sukses
+    }
+
+    // SHOW DATA
     function filter() {
+        if (!validateDateRange()) {
+            return; // Hentikan proses jika validasi tanggal gagal
+        }
+
+        const urlQuery = getFilterUrl();
+        if (urlQuery === null) {
+            return; // Hentikan jika validasi gagal
+        }
+        
+        $("#printout").attr('src', '<?= base_url('finance/ap_schedules/print') ?>' + urlQuery);
+        $("#printout").contents().find('html').html("<center><br><br><br><b style='font-size:20px;'>Please Wait...</b></center>");
+    }
+
+    // EXPORT EXCEL
+    function excel() {
+        if (!validateDateRange()) {
+            return; // Hentikan proses jika validasi tanggal gagal
+        }
+
+        const urlQuery = getFilterUrl();
+        if (urlQuery === null) {
+            return; // Hentikan jika validasi gagal
+        }
+
+        window.location.assign('<?= base_url('finance/ap_schedules/print/excel') ?>' + urlQuery);
+    }
+
+    function filter_existing() {
         var filter_from = $("#filter_from").datebox("getValue");
         var filter_to = $("#filter_to").datebox("getValue");
         var filter_supplier = $("#filter_supplier").combobox("getValue");
@@ -40,7 +118,7 @@
         }
     }
 
-    function excel() {
+    function excel_existing() {
         var filter_from = $("#filter_from").datebox("getValue");
         var filter_to = $("#filter_to").datebox("getValue");
         var filter_supplier = $("#filter_supplier").combobox("getValue");

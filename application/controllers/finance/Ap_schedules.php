@@ -28,7 +28,328 @@ class Ap_schedules extends CI_Controller
         }
     }
 
+    // format separator and decimal point by option excel or print
+    private function formatNominal($value, $decimal, $option = "") 
+    {
+        if (!is_numeric($value)) {
+            return $value;
+        }
+        
+        if (!empty($option) && $option == "excel") {
+            return number_format($value, $decimal, ".", ""); // tanpa separator
+        } else {
+            return number_format($value, $decimal, ",", ".");
+        }
+    }
+
     public function print($option = "")
+    {
+        if ($option == "excel") {
+            $format = date("Ymd");
+            header("Content-type: application/vnd-ms-excel");
+            header("Content-Disposition: attachment; filename=ap_aging_schedules_$format.xls");
+        }
+        $filter_from = base64_decode($this->input->get("filter_from"));
+        $filter_to = base64_decode($this->input->get("filter_to"));
+        $filter_supplier = base64_decode($this->input->get("filter_supplier"));
+
+        // Config dan Get Suppliers
+        $this->db->select('*');
+        $this->db->from('config');
+        $config = $this->db->get()->row();
+
+        $this->db->select('id, name, currency');
+        $this->db->from('suppliers');
+        $this->db->like("id", $filter_supplier);
+        $this->db->order_by('name', 'asc');
+        $suppliers = $this->db->get()->result_array();
+
+        // Get account_number yang termasuk ke REPORT AP
+        $get_account_numbers = $this->db->select('account_number')->from('account_coa')->where('report_ap', 1)->get()->result_array();
+        $account_numbers_array = array_column($get_account_numbers, 'account_number'); 
+
+        // Siapkan string untuk WHERE IN di Subquery
+        $account_numbers_list = "'" . implode("','", $account_numbers_array) . "'";
+
+        // Header HTML dan Judul
+        $html = '<html><head><title>Print Data</title></head>
+                <style>
+                    body {
+                        font-family: Arial, Helvetica, sans-serif;
+                        margin: 20px;
+                    }
+                    .header-section {
+                        overflow: hidden;
+                        margin-bottom: 20px;
+                    }
+                    .company-info {
+                        float: left;
+                        width: 60%;
+                        font-size: 12px;
+                        text-align: left;
+                    }
+                    .print-info {
+                        float: right;
+                        width: 38%;
+                        font-size: 12px;
+                        text-align: right;
+                    }
+                    .company-logo {
+                        vertical-align: top;
+                        padding-right: 10px;
+                    }
+                    .company-details b {
+                        font-size: 14px;
+                    }
+                    .company-details span {
+                        font-size: 10px;
+                    }
+                    .report-title {
+                        text-align: center;
+                        margin-top: 20px;
+                        margin-bottom: 20px;
+                    }
+                    .report-title h3 {
+                        margin: 0;
+                        font-size: 18px;
+                    }
+                    .report-title small {
+                        font-size: 12px;
+                    }
+                    #customers {
+                        border-collapse: collapse;
+                        width: 100%;
+                        font-size: 13px; 
+                        margin-top: 15px;
+                    }
+                    #customers th,
+                    #customers td {
+                        border: 1px solid #ddd;
+                        padding: 4px 8px; 
+                    }
+                    #customers th {
+                        background-color: #f0f0f0;
+                        text-align: center;
+                        color: black;
+                        font-weight: bold;
+                    }
+                    #customers tr:nth-child(even) {
+                        background-color: #f9f9f9;
+                    }
+                    #customers tr:hover {
+                        background-color: #f1f1f1;
+                    }
+                    .text-right { text-align: right; }
+                    .text-center { text-align: center; }
+                    .font-bold { font-weight: bold; }
+                    .bg-light-green { background-color: #CAFFB3; } /* Untuk baris kelompok akun */
+                    .bg-grey { background-color: #EBEBEB; } /* Untuk grand total */
+
+                    .link-transaction {
+                        color: inherit;
+                        text-decoration: none;
+                    }
+                    .link-transaction:hover {
+                        color: inherit;
+                        font-weight: bolder;
+                        text-decoration: underline;
+                    }
+
+                    .clearfix::after {
+                        content: "";
+                        clear: both;
+                        display: table;
+                    }
+                </style>
+            <body>
+            <center>
+                <div style="float: left; font-size: 12px; text-align: left;">
+                    <table style="width: 100%;">
+                        <tr>
+                            <td width="50" style="font-size: 12px; vertical-align: top; text-align: center; vertical-align:jus margin-right:10px;">
+                                <img src="' . $config->favicon . '" width="30">
+                            </td>
+                            <td style="font-size: 14px; text-align: left; margin:2px;">
+                                <b>' . $config->name . '</b><br>
+                                <small>'. $config->description .'</small><br>
+                            </td>
+                        </tr>
+                    </table>
+                </div>
+                <div style="float: right; font-size: 12px; text-align: right;">
+                    Print Date ' . date("d M Y H:i:s") . ' <br>
+                    Print By ' . $this->session->username . '  
+                </div>
+
+                <br><br><br>
+                <div style="float: centet; font-size: 16px; text-align: center;">
+                    <h3 style="margin:0;">REPORT ACCOUNT PAYABLE AGING</h3>
+                    <small>PERIOD : <b>' . $filter_from . '</b> To <b>' . $filter_to . '</b></small>
+                </div>
+            </center>
+            <br><br>
+            ';
+        
+        // Header Tabel
+        $html .= '<table id="customers" border="1">
+            <tr>
+                <th rowspan="3" width="20">No</th>
+                <th rowspan="3">Supplier Name</th>
+                <th rowspan="3">Currency</th> 
+            </tr>
+            <tr>
+                <th rowspan="2">Current (0 Days)</th>
+                <th colspan="4">Overdue Days</th>
+                <th rowspan="2">Grand Total</th> 
+            </tr>
+            <tr>
+                <th>1-30 Days</th>
+                <th>31-60 Days</th>
+                <th>61-90 Days</th>
+                <th>Over 90 Days</th>
+            </tr>';
+
+        // Prepare variables
+        $no = 1;
+        $grand_total_current = 0; 
+        $grand_total_week_1 = 0; 
+        $grand_total_week_2 = 0; 
+        $grand_total_week_3 = 0; 
+        $grand_total_week_4 = 0;
+        
+        $grand_count_current = 0; 
+        $grand_count_week_1 = 0; 
+        $grand_count_week_2 = 0;
+        $grand_count_week_3 = 0; 
+        $grand_count_week_4 = 0; 
+
+        // loop supplier dan perhitungan aggregat
+        foreach ($suppliers as $supplier) {
+            $supplier_id = $supplier['id'];
+            
+            // Query utama AP aging 
+            $pi_aging_results = $this->db->query("
+                SELECT 
+                    SUM(pi.local_credit) AS total_value, 
+                    COUNT(pi.number) AS count_document,
+                    DATEDIFF('$filter_to', pi.due_date) AS difference 
+                FROM 
+                    (SELECT p.number, p.due_date, p.total, p.supplier_id, p.status, 
+                        j.local_debit, j.local_credit 
+                        FROM `purchase_invoices` p 
+                        JOIN journal_postings j ON j.document_no = p.number 
+                        WHERE p.supplier_id = '$supplier_id' 
+                        AND j.account_number IN ({$account_numbers_list})
+                ) pi
+                WHERE 
+                    pi.supplier_id = '$supplier_id' 
+                    AND pi.status = '0' 
+                GROUP BY 
+                    DATEDIFF('$filter_to', pi.due_date)
+            ")->result_array();
+
+            // Prepare variables per supplier
+            $current = 0; 
+            $week_1 = 0; 
+            $week_2 = 0; 
+            $week_3 = 0; 
+            $week_4 = 0;
+
+            $current_count = 0; 
+            $week_1_count = 0; 
+            $week_2_count = 0; 
+            $week_3_count = 0; 
+            $week_4_count = 0;
+
+            // Total Keseluruhan
+            $all_total = 0;
+            $all_total_count = 0;
+            
+            // Memproses Hasil SQL ke Aging Buckets
+            foreach ($pi_aging_results as $pi_due) {
+                $diff = (int)$pi_due['difference'];
+                $total_value = (float)$pi_due['total_value'];
+                $count_value = (int)$pi_due['count_document'];
+
+                // Saldo Saat Ini / Belum Jatuh Tempo (Difference <= 0)
+                if ($diff <= 0) {
+                    $current += $total_value;
+                    $current_count += $count_value;
+                } 
+                // 1-30 Hari Overdue (Difference > 0 dan <= 30)
+                elseif ($diff >= 1 && $diff <= 30) {
+                    $week_1 += $total_value;
+                    $week_1_count += $count_value;
+                } 
+                // 31-60 Hari Overdue
+                elseif ($diff >= 31 && $diff <= 60) {
+                    $week_2 += $total_value;
+                    $week_2_count += $count_value;
+                } 
+                // 61-90 Hari Overdue
+                elseif ($diff >= 61 && $diff <= 90) {
+                    $week_3 += $total_value;
+                    $week_3_count += $count_value;
+                } 
+                // > 90 Hari Overdue
+                elseif ($diff > 90) {
+                    $week_4 += $total_value;
+                    $week_4_count += $count_value;
+                }
+
+                $all_total = $current + $week_1 + $week_2 + $week_3 + $week_4;
+                $all_total_count = $current_count + $week_1_count + $week_2_count + $week_3_count + $week_4_count;
+            }
+            
+            // Tentukan format desimal berdasarkan mata uang supplier
+            $decimal = ($supplier['currency'] == "IDR") ? 0 : 2;
+
+            // Output per supplier
+            $html .= ' <tr>
+                <td style="text-align:center">' . $no . '</td>
+                <td>' . $supplier['name'] . '</td>
+                <td style="text-align:center;">' . $supplier['currency'] . '</td>
+                <td style="text-align:right;">' . $this->formatNominal($current, $decimal, $option) . '</td>
+                <td style="text-align:right;">' . $this->formatNominal($week_1, $decimal, $option) . '</td>
+                <td style="text-align:right;">' . $this->formatNominal($week_2, $decimal, $option) . '</td>
+                <td style="text-align:right;">' . $this->formatNominal($week_3, $decimal, $option) . '</td>
+                <td style="text-align:right;">' . $this->formatNominal($week_4, $decimal, $option) . '</td>
+                <td style="text-align:right;">' . $this->formatNominal($all_total, $decimal, $option) . '</td>
+            </tr>';
+            
+            $no++;
+
+            // Akumulasi Jumlah Nominal
+            $grand_total_current += $current;
+            $grand_total_week_1 += $week_1;
+            $grand_total_week_2 += $week_2;
+            $grand_total_week_3 += $week_3;
+            $grand_total_week_4 += $week_4;
+            
+            // Akumulasi Jumlah Dokumen
+            $grand_count_current += $current_count;
+            $grand_count_week_1 += $week_1_count;
+            $grand_count_week_2 += $week_2_count;
+            $grand_count_week_3 += $week_3_count;
+            $grand_count_week_4 += $week_4_count;
+        }
+
+        $html .= ' <tr>
+                <td style="text-align:right; font-weight:bold" colspan="3">GRAND TOTAL AMOUNT</td>
+                <td style="text-align:right; font-weight:bold">' . $this->formatNominal($grand_total_current, 2, $option) . '</td>
+                <td style="text-align:right; font-weight:bold">' . $this->formatNominal($grand_total_week_1, 2, $option) . '</td>
+                <td style="text-align:right; font-weight:bold">' . $this->formatNominal($grand_total_week_2, 2, $option) . '</td>
+                <td style="text-align:right; font-weight:bold">' . $this->formatNominal($grand_total_week_3, 2, $option) . '</td>
+                <td style="text-align:right; font-weight:bold">' . $this->formatNominal($grand_total_week_4, 2, $option) . '</td>
+                <td style="text-align:right; font-weight:bold">' . $this->formatNominal($all_total, 2, $option) . '</td>
+            </tr>';
+
+        $html .= '</table></body></html>';
+        echo $html;
+    }
+
+
+    public function print_existing($option = "")
     {
         if ($option == "excel") {
             $format  = date("Ymd");
