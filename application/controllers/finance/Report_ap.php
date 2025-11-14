@@ -488,7 +488,7 @@ class Report_ap extends CI_Controller
                                         <th rowspan="2">Account No</th>
                                         <th rowspan="2">Currency</th>
                                         <th rowspan="2">Rate</th>
-                                        <th colspan="4">' . $currency_title . ' CURRENCY</th>
+                                        <th colspan="5">' . $currency_title . ' CURRENCY</th>
                                     </tr>
                                     <tr>
                                         <th>Debit</th>
@@ -530,6 +530,7 @@ class Report_ap extends CI_Controller
         $noid = 1;
         $grand_local_debit = 0;
         $grand_local_credit = 0;
+        $grand_total_payment = 0;
         $grand_local_balance = 0;
         $grand_summary_total = 0; // Menggantikan grand_local_balance untuk konsistensi nama grand total
         
@@ -683,7 +684,7 @@ class Report_ap extends CI_Controller
                 pi_summary.summary_original_credit,
                 pi_summary.summary_local_debit,
                 pi_summary.summary_local_credit,
-                pi_summary.invoices,
+                pi_summary.invoices as invoice_no,
                 (CASE 
                     WHEN a.currency = 'IDR' AND '{$currency_show}' = 'IDR' THEN 
                         CASE 
@@ -804,6 +805,7 @@ class Report_ap extends CI_Controller
             $local_debit  = 0;
             $local_credit = 0;
             $init_balance = 0; // default balance
+            $total_payment = 0;
 
             // Get Balance sesuai filter_currency
             $get_balance = $this->db->select('*')->from('account_balance_suppliers')->where('supplier_id', $supplier_id)->get()->row();
@@ -825,7 +827,7 @@ class Report_ap extends CI_Controller
             
             if (count($transactions) > 0 || $begin_balance_local != 0) {
                 $detail .= '<tr style="background: #DEE2FF; font-weight:bold;" class="begin_balance">
-                    <td colspan="14">BEGINING BALANCE ('.$supplier_name.')</td>
+                    <td colspan="15">BEGINING BALANCE ('.$supplier_name.')</td>
                     <td style="text-align:center;">' . $supplier['currency_balance'] . '</td>
                     <td style="text-align:center;">-</td>
                     <td colspan="4" style="text-align:right;">' . $this->formatNominal(@$begin_balance_local, 2, $option) . '</td>
@@ -886,82 +888,70 @@ class Report_ap extends CI_Controller
                 }
 
                 // Logika AP: Kredit menambah hutang, Debit mengurangi hutang
-                /** 
                 $debit_value = (float)$transaction['local_debit'];
                 $credit_value = (float)$transaction['local_credit'];
-                */
+                $rate_show = (float)$transaction['rate'] ?? 1;
+                $payment = 0;
 
-                // Tampilkan di kolom Debit PI yang sudah lunas (Hutang Berkurang) hanya jika status CLOSED (1)
+                // Jika closed get payment
                 if ($transaction['status_closed_flag'] == 1) 
-                {   
+                { 
                     if ($currency_show == 'IDR') {
-                        // Skema IDR: Ambil nilai Local
-                        // $pi_value = (float)($transaction['local_credit'] ?? 0); // jadi double
-                        $pi_value = 0;
-                        $payment_summary = (float)($transaction['summary_local_credit'] ?? 0);
-                        $ap_value = (float)($transaction['local_debit'] ?? 0);
-                        
-                    } else { // Valas
-                        // Skema Valas: Ambil nilai Original
-                        $pi_value = (float)($transaction['original_credit'] ?? 0);
-                        $payment_summary = (float)($transaction['summary_original_credit'] ?? 0);
-                        $ap_value = (float)($transaction['original_debit'] ?? 0);
+                        $payment = (float)$transaction['summary_local_credit'];
+                    } else {
+                        $payment = (float)$transaction['summary_original_credit'];
                     }
 
                     if ($transaction['source'] == 'PI') {
-                        $debit_value = $pi_value + $payment_summary;
+                        $debit_calc = $debit_value + $payment;
+                        $credit_calc = $credit_value;
                         
                     } elseif ($transaction['source'] == 'AP') {
-                        $debit_value = $ap_value; 
-                        
+                        $debit_calc = $debit_value;
+                        $credit_calc = $credit_value + $payment;
                     } else {
-                        $debit_value = 0; // Default untuk source yang tidak relevan
+                        $debit_calc = 0;
+                        $credit_calc = 0;
                     }
 
-                } else { 
-                    if ($currency_show == 'IDR') {
-                        $debit_value = (float)($transaction['local_debit'] ?? 0);
-                    } else {
-                        $debit_value = (float)($transaction['original_debit'] ?? 0);
-                    }
+                } else {
+                    $debit_calc = $debit_value;
+                    $credit_calc = $credit_value;
                 }
 
-                $credit_value = (float)$transaction['local_credit'];
-                $rate_show = (float)$transaction['rate'] ?? 1;
-                
-                // $balance_local = ($credit_value - $debit_value); // Saldo per baris transaksi
-                $balance_local = $credit_value - $debit_value;
-                $accumulated += $balance_local;
+                $balance_local = $credit_calc - $debit_calc;
+                $accumulated = $credit_value - $debit_value;
 
                 // Jika mode Detail, cetak baris transaksi
                 if ($filter_display == "Detail") {
-                    $detail .= '<tr>
-                                    <td>' . $no . '</td>
-                                    <td style="text-align:center;' . $style_status_purchase . '">' . $status_purchase . '</td>
-                                    <td>' . $supplier_id . '</td>
-                                    <td>' . $supplier_name . '</td>
-                                    <td style="text-align:center;">' . $transaction['source'] . '</td>
-                                    <td>' . $transaction['trans_date'] . '</td>
-                                    <td>' . $transaction['payment_due'] . '</td>
-                                    <td style="text-align:center;' . $style_aging . '">' . $aging_due_days . '</td>
-                                    <td>' . $transaction['document_no'] . '</td>
-                                    <td>' . $transaction['invoice_no'] . '</td>
-                                    <td>' . $transaction['voucher_date'] . '</td>
-                                    <td>' . $transaction['voucher_no'] . '</td>
-                                    <td>' . $transaction['column_payment_no']. '</td>
-                                    <td>' . $transaction['account_number'] . '</td>
-                                    <td style="text-align:center;">' . $currency_show . '</td>
-                                    <td style="text-align:right;">' . $this->formatNominal($rate_show, 2, $option) . '</td>
-                                    <td style="text-align:right;">' . $this->formatNominal($debit_value, 2, $option) . '</td>
-                                    <td style="text-align:right;">' . $this->formatNominal($transaction['local_credit'], 2, $option) . '</td>
-                                    <td style="text-align:right;">' . $this->formatNo($balance_local, $option) . '</td>
-                                    <td style="text-align:right;">' . $this->formatNo($accumulated, $option) . '</td>
-                                </tr>';
+                    $detail .= '<tr>';
+                    $detail .= '<td>' . $no . '</td>';
+                    $detail .= '<td style="text-align:center;' . $style_status_purchase . '">' . $status_purchase . '</td>';
+                    $detail .= '<td>' . $supplier_id . '</td>';
+                    $detail .= '<td>' . $supplier_name . '</td>';
+                    $detail .= '<td style="text-align:center;">' . $transaction['source'] . '</td>';
+                    $detail .= '<td>' . $transaction['trans_date'] . '</td>';
+                    $detail .= '<td>' . $transaction['payment_due'] . '</td>';
+                    $detail .= '<td style="text-align:center;' . $style_aging . '">' . $aging_due_days . '</td>';
+                    $detail .= '<td>' . $transaction['document_no'] . '</td>';
+                    $detail .= '<td>' . $transaction['invoice_no'] . '</td>';
+                    $detail .= '<td>' . $transaction['voucher_date'] . '</td>';
+                    $detail .= '<td>' . $transaction['voucher_no'] . '</td>';
+                    $detail .= '<td>' . $transaction['column_payment_no']. '</td>';
+                    $detail .= '<td>' . $transaction['account_number'] . '</td>';
+                    $detail .= '<td style="text-align:center;">' . $currency_show . '</td>';
+                    $detail .= '<td style="text-align:right;">' . $this->formatNominal($rate_show, 2, $option) . '</td>';
+                    $detail .= '<td style="text-align:right;">' . $this->formatNominal($transaction['local_debit'], 2, $option) . '</td>';
+                    $detail .= '<td style="text-align:right;">' . $this->formatNominal($transaction['local_credit'], 2, $option) . '</td>';
+                    $detail .= '<td style="text-align:right;">' . $this->formatNo($balance_local, $option) . '</td>';
+                    $detail .= '<td style="text-align:right;">' . $this->formatNo($accumulated, $option) . '</td>';
+                    $detail .= '</tr>';
                 }
 
                 $no++;
                 $local_debit += $debit_value;
                 $local_credit += $credit_value;
+                $total_payment += $payment;
             }
 
             
@@ -996,6 +986,7 @@ class Report_ap extends CI_Controller
 
             $grand_local_debit += $local_debit;
             $grand_local_credit += $local_credit;
+            $grand_total_payment += $total_payment;
             $grand_local_balance += ($begin_balance_local + $grand_local_credit - $grand_local_debit);
             $grand_summary_total += $current_balance; 
         }
