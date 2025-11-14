@@ -28,6 +28,13 @@ class Ap_schedules extends CI_Controller
         }
     }
 
+    public function readCurrencies()
+    {
+        $post = isset($_POST['q']) ? $_POST['q'] : "";
+        $send = $this->crud->reads('currencies', ["name" => $post]);
+        echo json_encode($send);
+    }
+
     // format separator and decimal point by option excel or print
     private function formatNominal($value, $decimal, $option = "") 
     {
@@ -52,6 +59,9 @@ class Ap_schedules extends CI_Controller
         $filter_from = base64_decode($this->input->get("filter_from"));
         $filter_to = base64_decode($this->input->get("filter_to"));
         $filter_supplier = base64_decode($this->input->get("filter_supplier"));
+        $filter_currency = $this->input->get('filter_currency') ?? null;
+
+        $currency_show = !empty($filter_currency) ? $filter_currency : 'IDR'; // default showed currency = IDR
 
         // Config dan Get Suppliers
         $this->db->select('*');
@@ -230,11 +240,16 @@ class Ap_schedules extends CI_Controller
             // Query utama AP aging 
             $pi_aging_results = $this->db->query("
                 SELECT 
-                    SUM(pi.local_credit) AS total_value, 
+                    pi.supplier_id,
+                    SUM(pi.local_credit) AS total_value_1, 
+                    SUM(pi.credit) AS total_value, 
                     COUNT(pi.number) AS count_document,
+                    pi.currency,
                     DATEDIFF('$filter_to', pi.due_date) AS difference 
                 FROM 
                     (SELECT p.number, p.due_date, p.total, p.supplier_id, p.status, 
+                        p.currency, 
+                        (CASE WHEN '{$currency_show}' = 'IDR' THEN j.local_credit ELSE j.original_credit END) as credit,
                         j.local_debit, j.local_credit 
                         FROM `purchase_invoices` p 
                         JOIN journal_postings j ON j.document_no = p.number 
@@ -243,10 +258,33 @@ class Ap_schedules extends CI_Controller
                 ) pi
                 WHERE 
                     pi.supplier_id = '$supplier_id' 
-                    AND pi.status = '0' 
+                    AND pi.number NOT IN (
+                        SELECT DISTINCT purchase_invoice 
+                        FROM ap_payments
+                    )
                 GROUP BY 
                     DATEDIFF('$filter_to', pi.due_date)
             ")->result_array();
+
+            // Inisialisasi variabel untuk Query Builder
+            $this->db->reset_query();
+            
+            // Get saldo yang termasuk sebelum januari 2025 dari balance supplier, lalu tambahkan dengan over 90 days
+            $this->db->select("
+                supplier_id,
+                currency,
+                (CASE WHEN '{$currency_show}' = 'IDR' THEN balance_local ELSE balance END) as balance_supplier,
+                status
+            ");
+            $this->db->from('account_balance_suppliers');
+            $this->db->where('supplier_id', $supplier_id);
+            $this->db->where('status', '0');
+            $get_balance = $this->db->get()->row();
+
+            $balance_supplier = 0;
+            if (!empty($get_balance)) {
+                $balance_supplier = $get_balance->balance_supplier;
+            }
 
             // Prepare variables per supplier
             $current = 0; 
@@ -304,11 +342,14 @@ class Ap_schedules extends CI_Controller
             // Tentukan format desimal berdasarkan mata uang supplier
             $decimal = ($supplier['currency'] == "IDR") ? 0 : 2;
 
+            // Tambah saldo balance supplier di week_4 (Over 90 days)
+            $week_4 = $week_4 + $balance_supplier;
+
             // Output per supplier
             $html .= ' <tr>
                 <td style="text-align:center">' . $no . '</td>
                 <td>' . $supplier['name'] . '</td>
-                <td style="text-align:center;">' . $supplier['currency'] . '</td>
+                <td style="text-align:center;">' . $currency_show . '</td>
                 <td style="text-align:right;">' . $this->formatNominal($current, $decimal, $option) . '</td>
                 <td style="text-align:right;">' . $this->formatNominal($week_1, $decimal, $option) . '</td>
                 <td style="text-align:right;">' . $this->formatNominal($week_2, $decimal, $option) . '</td>

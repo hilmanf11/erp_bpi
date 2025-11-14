@@ -12,6 +12,10 @@
                 <input style="width:60%;" id="filter_supplier" class="easyui-combobox">
             </div>
             <div class="fitem">
+                <span style="width:35%; display:inline-block;">Currency</span>
+                <input style="width:60%;" id="filter_currency" class="easyui-combogrid">
+            </div>
+            <div class="fitem">
                 <span style="width:35%; display:inline-block;"></span>
                 <a href="javascript:;" class="easyui-linkbutton" onclick="filter()"><i class="fa fa-search"></i> Filter Data</a>
             </div>
@@ -30,6 +34,7 @@
         const filters = {
             filter_from: $("#filter_from").datebox("getValue"),
             filter_to: $("#filter_to").datebox("getValue"),
+            filter_currency: $("#filter_currency").combogrid("getValue"),
             filter_supplier: $("#filter_supplier").combogrid("getValue"),
         };
 
@@ -152,7 +157,36 @@
                 }
             }],
         });
+
+        $("#filter_currency").combogrid({
+            url: '<?= base_url('finance/ap_schedules/readCurrencies/') ?>',
+            panelWidth: 250,
+            idField: 'name',
+            textField: 'name',
+            mode: 'remote',
+            fitColumns: true,
+            prompt: "Choose Currency",
+            icons: [{
+                iconCls: 'icon-clear',
+                handler: function(e) {
+                    $(e.data.target).combogrid('clear').combogrid('textbox').focus();
+                }
+            }],
+            columns: [
+                [{
+                    field: 'name',
+                    title: 'Currency',
+                    width: 100
+                }, {
+                    field: 'description',
+                    title: 'Description',
+                    width: 150
+                }, ]
+            ],
+        });
+
     });
+
     //Format Datepicker
     function myformatter(date) {
         var y = date.getFullYear();
