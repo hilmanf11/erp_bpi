@@ -406,51 +406,51 @@ class Receipt_crusher extends CI_Controller
                 //Generate QRcode
                 $this->createQrcode($record->label_no, "assets/image/qrcode/");
                 $html .= '<div style="width:75mm; border:1px solid black; margin-bottom:5px; font-family:Arial, sans-serif;">
-                    <table border="1" cellspacing="0" cellpadding="3" style="width:100%; border-collapse:collapse; font-size:11px;">
-                        <tr>
-                            <td colspan="2" style="font-weight:bold; font-size:15px;">LABEL MATERIAL</td>
-                            <td colspan="2" style="text-align:left; font-size:9px;">FM-MCL-021-REV-00</td>
-                        </tr>
-                        <tr>
-                            <td style="width:25%;">PART NO</td>
-                            <td colspan="3" style="text-align:left; font-size:14px;"><b>' . $record->number . '</b></td>
-                        </tr>
-                        <tr>
-                            <td>PART NAME</td>
-                            <td colspan="3" style="text-align:left; font-size:14px;"><b>' . $record->name . '</b></td>
-                        </tr>
-                        <tr>
-                            <td>COLOR</td>
-                            <td colspan="3">' . $record->color . '</td>
-                        </tr>
-                        <tr>
-                            <td>LOT NO</td>
-                            <td colspan="2">' . $lot_no . '</td>
-                            <td rowspan="5" style="text-align:center;">
-                                <img src="' . base_url('assets/image/qrcode/' . $record->label_no . '.png') . '" width="120"/><br>
-                            </td>
-                        </tr>
-                        <tr>
-                            <td>QTY</td>
-                            <td colspan="2">' . number_format($record->qty,2) . ' ' . $record->uom . '</td>
-                        </tr>
-                        <tr>
-                            <td>DATE</td>
-                            <td colspan="2">' . $request_date . '</td>
-                        </tr>
-                        <tr>
-                            <td>PIC</td>
-                            <td colspan="2">' . $this->session->username . '</td>
-                        </tr>
-                        <tr>
-                            <td>SHIFT</td>
-                            <td colspan="2">' . $shift . '</td>
-                        </tr>
-                        <tr>
-                            <td colspan="4" style="text-align:center; font-size:13px;">' . $record->label_no . '</b></td>
-                        </tr>
-                    </table>
-                </div>';
+                <table cellspacing="0" cellpadding="3" style="width:100%; border-collapse:collapse; font-size:11px; border:1px solid black;">
+                    <tr>
+                        <td colspan="2" style="font-weight:bold; font-size:15px; border:1px solid black;">LABEL MATERIAL</td>
+                        <td colspan="2" style="text-align:left; font-size:9px; border:1px solid black;">FM-MCL-021-REV-00</td>
+                    </tr>
+                    <tr>
+                        <td style="width:25%; border:1px solid black;">PART NO</td>
+                        <td colspan="3" style="text-align:left; font-size:15px; border:1px solid black;"><b>' . $record->number . '</b></td>
+                    </tr>
+                    <tr>
+                        <td style="border:1px solid black;">PART NAME</td>
+                        <td colspan="3" style="text-align:left; font-size:15px; border:1px solid black;"><b>' . $record->name . '</b></td>
+                    </tr>
+                    <tr>
+                        <td style="border:1px solid black;">COLOR</td>
+                        <td colspan="3" style="text-align:left; font-size:15px; border:1px solid black;"><b>' . $record->color . '</b></td>
+                    </tr>
+                    <tr>
+                        <td style="border:1px solid black;">LOT NO</td>
+                        <td colspan="2" style="border:1px solid black;">' . $lot_no . '</td>
+                        <td rowspan="5" style="text-align:center; border:1px solid black;">
+                            <img src="' . base_url('assets/image/qrcode/' . $record->label_no . '.png') . '" width="120"/><br>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td style="border:1px solid black;">QTY</td>
+                        <td colspan="2" style="border:1px solid black;">' . number_format($record->qty,2) . ' ' . $record->uom . '</td>
+                    </tr>
+                    <tr>
+                        <td style="border:1px solid black;">DATE</td>
+                        <td colspan="2" style="border:1px solid black;">' . $request_date . '</td>
+                    </tr>
+                    <tr>
+                        <td style="border:1px solid black;">PIC</td>
+                        <td colspan="2" style="border:1px solid black;">' . $this->session->username . '</td>
+                    </tr>
+                    <tr>
+                        <td style="border:1px solid black;">SHIFT</td>
+                        <td colspan="2" style="border:1px solid black;">' . $shift . '</td>
+                    </tr>
+                    <tr>
+                        <td colspan="4" style="text-align:center; font-size:13px; border:1px solid black;">' . $record->label_no . '</td>
+                    </tr>
+                </table>
+            </div>';
             }
             $html .= '</div><script>window.print()</script>';
         } else {
