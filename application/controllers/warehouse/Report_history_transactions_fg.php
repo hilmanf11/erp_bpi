@@ -272,7 +272,7 @@ class Report_history_transactions_fg extends CI_Controller
             LEFT JOIN ($query_scan_repair_of_goods2) qh ON a.id = qh.item_fg_id
             LEFT JOIN ($query_qty_in_wip_receipt2) qw ON a.id = qw.item_fg_id
             GROUP BY a.id) x ON a.id = x.id
-        WHERE a.id LIKE '%$filter_items%' AND a.division_id LIKE '%$filter_division%'
+        WHERE a.id LIKE '%$filter_items%' AND a.division_id LIKE '%$filter_division%' AND a.status = 0
         ORDER BY a.number
         ";
 
@@ -503,7 +503,7 @@ class Report_history_transactions_fg extends CI_Controller
                         LEFT JOIN scan_item_receipts_fg f ON a.label_no = f.checksheet_label AND a.item_fg_id = f.item_fg_id
                         LEFT JOIN users u ON f.created_by = u.username
                         WHERE a.item_fg_id = '$item_fg_id' 
-                        AND DATE_FORMAT(a.packing_date, '%Y-%m-%d') BETWEEN '$filter_from' and '$filter_to'");
+                        AND DATE_FORMAT(f.packing_date, '%Y-%m-%d') BETWEEN '$filter_from' and '$filter_to'");
 
                     $receiptsWIP = $this->crud->query("SELECT a.*, u.name as username, 'RECEIPT FG' AS receipt_type, a.document_no as checksheet_label
                         FROM wip_receipts a
@@ -668,7 +668,7 @@ class Report_history_transactions_fg extends CI_Controller
                             LEFT JOIN scan_item_receipts_fg f ON a.label_no = f.checksheet_label AND a.item_fg_id = f.item_fg_id
                             LEFT JOIN users u ON f.created_by = u.username
                             WHERE a.item_fg_id = '$item_fg_id' 
-                            AND DATE_FORMAT(a.packing_date, '%Y-%m-%d') BETWEEN '$filter_from' and '$filter_to'");
+                            AND DATE_FORMAT(f.packing_date, '%Y-%m-%d') BETWEEN '$filter_from' and '$filter_to'");
                         
                         if (empty($receipts)) {
                             $receipts = $this->crud->query("SELECT a.*, u.name as username, 'RECEIPT FG' AS receipt_type, a.document_no as checksheet_label
@@ -713,7 +713,7 @@ class Report_history_transactions_fg extends CI_Controller
                         LEFT JOIN scan_item_receipts_fg f ON a.label_no = f.checksheet_label AND a.item_fg_id = f.item_fg_id
                         LEFT JOIN users u ON f.created_by = u.username
                         WHERE a.item_fg_id = '$item_fg_id' 
-                        AND DATE_FORMAT(a.packing_date, '%Y-%m-%d') BETWEEN '$filter_from' and '$filter_to'");
+                        AND DATE_FORMAT(f.packing_date, '%Y-%m-%d') BETWEEN '$filter_from' and '$filter_to'");
                         
 
                     //RECEIPT
@@ -941,7 +941,7 @@ class Report_history_transactions_fg extends CI_Controller
         if ($option == "excel") {
             $format  = date("Ymd");
             header("Content-type: application/vnd-ms-excel");
-            header("Content-Disposition: attachment; filename=history_transactions_rm_$format.xls");
+            header("Content-Disposition: attachment; filename=history_transactions_fg_$format.xls");
         }
         //------------------------------------ Opsi print berakhir disini------------------------------------------------------//
 
@@ -979,23 +979,31 @@ class Report_history_transactions_fg extends CI_Controller
         WHERE DATE_FORMAT(e.packing_date, '%Y-%m-%d') BETWEEN '$filter_from' AND '$filter_to'
         GROUP BY e.item_fg_id";
 
+        //Pecahan dari IN Checksheet
         $query_qty_in_checksheet_non_subcont = "SELECT e.item_fg_id, SUM(f.qty) as qty_in_non_subcont
         FROM scan_item_receipts_fg f
         JOIN checksheets e ON e.number = f.checksheet_number
-        WHERE DATE_FORMAT(e.packing_date, '%Y-%m-%d') BETWEEN '$filter_from' AND '$filter_to' AND e.status_subcont = 'NO'
+        WHERE DATE_FORMAT(e.packing_date, '%Y-%m-%d') BETWEEN '$filter_from' AND '$filter_to' AND e.status_subcont = 'NO' AND e.wo_no not like '%RG-%'
         GROUP BY e.item_fg_id";
 
         $query_qty_in_checksheet_subcont_jasa = "SELECT e.item_fg_id, SUM(f.qty) as qty_in_subcont_jasa
         FROM scan_item_receipts_fg f
         JOIN checksheets e ON e.number = f.checksheet_number
-        WHERE DATE_FORMAT(e.packing_date, '%Y-%m-%d') BETWEEN '$filter_from' AND '$filter_to' AND e.subcont_type = 'Jasa'
+        WHERE DATE_FORMAT(e.packing_date, '%Y-%m-%d') BETWEEN '$filter_from' AND '$filter_to' AND e.subcont_type = 'Jasa' AND e.wo_no not like '%RG-%'
         GROUP BY e.item_fg_id";
 
         $query_qty_in_checksheet_subcont_fg = "SELECT e.item_fg_id, SUM(f.qty) as qty_in_subcont_fg
         FROM scan_item_receipts_fg f
         JOIN checksheets e ON e.number = f.checksheet_number
-        WHERE DATE_FORMAT(e.packing_date, '%Y-%m-%d') BETWEEN '$filter_from' AND '$filter_to' AND e.subcont_type = 'Finished Good'
+        WHERE DATE_FORMAT(e.packing_date, '%Y-%m-%d') BETWEEN '$filter_from' AND '$filter_to' AND e.subcont_type = 'Finished Good' AND e.wo_no not like '%RG-%'
         GROUP BY e.item_fg_id";
+
+        $query_qty_in_checksheet_repair_fg = "SELECT e.item_fg_id, SUM(f.qty) as qty_in_repair_fg
+        FROM scan_item_receipts_fg f
+        JOIN checksheets e ON e.number = f.checksheet_number
+        WHERE DATE_FORMAT(e.packing_date, '%Y-%m-%d') BETWEEN '$filter_from' AND '$filter_to' AND e.wo_no like '%RG-%'
+        GROUP BY e.item_fg_id";
+        //------------------------------------
 
         // Step 2: Hitung qty_in tanpa checksheet
         $query_qty_in_no_checksheet = "SELECT i.item_fg_id, SUM(i.qty) as qty_in_no_checksheet
@@ -1157,10 +1165,12 @@ class Report_history_transactions_fg extends CI_Controller
             COALESCE(qia.initial_in_adj, 0) as qty_in_adj,
             COALESCE(qir.initial_in_rfg, 0) as qty_in_rfg,
             COALESCE(qnc.qty_in_no_checksheet, 0) as qty_in_new_barcode,
+            -- pecahan dari IN checksheet
             COALESCE(qins.qty_in_non_subcont, 0) as qty_in_non_subcont,
             COALESCE(qisj.qty_in_subcont_jasa, 0) as qty_in_subcont_jasa,
             COALESCE(qisfg.qty_in_subcont_fg, 0) as qty_in_subcont_fg,
-
+            COALESCE(qirfg.qty_in_repair_fg, 0) as qty_in_repair_fg,
+            ------------------------------
             COALESCE(qc.qty_in_checksheet, 0) + COALESCE(qnc.qty_in_no_checksheet, 0) + COALESCE(qi.initial_in, 0) + COALESCE(qw.qty_in_wip_receipt, 0) AS qty_in,
             
             COALESCE(qo.qty_out, 0) + COALESCE(qg.initial_out_g, 0) + COALESCE(qh.initial_out_h, 0) AS qty_out,
@@ -1202,6 +1212,7 @@ class Report_history_transactions_fg extends CI_Controller
         LEFT JOIN ($query_qty_in_checksheet_non_subcont) qins ON a.id = qins.item_fg_id
         LEFT JOIN ($query_qty_in_checksheet_subcont_jasa) qisj ON a.id = qisj.item_fg_id
         LEFT JOIN ($query_qty_in_checksheet_subcont_fg) qisfg ON a.id = qisfg.item_fg_id
+        LEFT JOIN ($query_qty_in_checksheet_repair_fg) qirfg ON a.id = qirfg.item_fg_id
 
         LEFT JOIN ( SELECT a.id,
             (COALESCE(qc.qty_in_checksheet, 0) + COALESCE(qnc.qty_in_no_checksheet, 0) + COALESCE(qi.initial_in, 0) + COALESCE(qw.qty_in_wip_receipt, 0) - 
@@ -1256,7 +1267,7 @@ class Report_history_transactions_fg extends CI_Controller
                     <th rowspan="3">Type</th>
                     <th rowspan="3" width="100">Begin<br>Stock</th>
                     
-                    <th colspan="5">IN</th>
+                    <th colspan="6">IN</th>
                     <th rowspan="3" width="100">Total<br>In</th>
                     <th colspan="5">OUT</th>
                     <th rowspan="3" width="100">Total<br>Out</th>
@@ -1266,6 +1277,7 @@ class Report_history_transactions_fg extends CI_Controller
                 </tr>
                 <tr>
                     <th rowspan="2" width="80">IN RFG</th>
+                    <th rowspan="2" width="80">IN REPAIR FG</th>
                     <th rowspan="2" width="80">NEW BARCODE</th>
                     <th colspan="2" width="80">SUBCONT</th>
                     <th rowspan="2" width="80">ADJ STO</th>
@@ -1290,6 +1302,7 @@ class Report_history_transactions_fg extends CI_Controller
         $totalEndingStock = 0;
 
         $totalRfgQty = 0;
+        $totalRfgRepairQty = 0;
         $totalNBQty = 0;
         $totalSubcontFGQty = 0;
         $totalSubcontJSQty = 0;
@@ -1323,6 +1336,7 @@ class Report_history_transactions_fg extends CI_Controller
             $totalEndingStock += @(@$record->begin_stock + $record->qty_in) - $record->qty_out;
             
             $totalRfgQty += $record->qty_rfg;
+            $totalRfgRepairQty += $record->qty_in_repair_fg;
             $totalNBQty += $record->qty_in_new_barcode;
             $totalSubcontFGQty += $record->qty_in_subcont_fg;
             $totalSubcontJSQty += $record->qty_in_subcont_jasa;
@@ -1363,12 +1377,13 @@ class Report_history_transactions_fg extends CI_Controller
                             <td style="text-align:right;">' . number_format(@$record->begin_stock, 2) . '</td>
                             
                             <td style="text-align:right;">' . $record->qty_rfg . '</td>
+                            <td style="text-align:right;">' . $record->qty_in_repair_fg . '</td>
                             <td style="text-align:right;">' . $record->qty_in_new_barcode . '</td>
                             <td style="text-align:right;">' . number_format($record->qty_in_subcont_fg, 2) . '</td>
                             <td style="text-align:right;">' . number_format($record->qty_in_subcont_jasa, 2) . '</td>
                             <td style="text-align:right;">' . $record->qty_in_adj . '</td>
 
-                            <td style="text-align:right;">' . number_format($record->qty_rfg + $record->qty_in_new_barcode + $record->qty_in_subcont_fg + $record->qty_in_subcont_jasa + $record->qty_in_adj,2) . '</td>
+                            <td style="text-align:right;">' . number_format($record->qty_rfg + $record->qty_in_repair_fg + $record->qty_in_new_barcode + $record->qty_in_subcont_fg + $record->qty_in_subcont_jasa + $record->qty_in_adj,2) . '</td>
 
                             <td style="text-align:right;">' . $record->qty_out_sales . '</td>
                             <td style="text-align:right;">' . $record->qty_out_bpb . '</td>
@@ -1389,6 +1404,7 @@ class Report_history_transactions_fg extends CI_Controller
             <td colspan="5" style="text-align:right;"><b>GRAND TOTAL</b></td>
             <td style="text-align:right;">' . number_format($totalBeginStock, 2) . '</td>
             <td style="text-align:right;">' . number_format($totalRfgQty, 2) . '</td>
+            <td style="text-align:right;">' . number_format($totalRfgRepairQty, 2) . '</td>
             <td style="text-align:right;">' . number_format($totalNBQty, 2) . '</td>
             <td style="text-align:right;">' . number_format($totalSubcontFGQty, 2) . '</td>
             <td style="text-align:right;">' . number_format($totalSubcontJSQty, 2) . '</td>
@@ -1699,7 +1715,7 @@ class Report_history_transactions_fg extends CI_Controller
                         LEFT JOIN scan_item_receipts_fg f ON a.label_no = f.checksheet_label AND a.item_fg_id = f.item_fg_id
                         LEFT JOIN users u ON f.created_by = u.username
                         WHERE a.item_fg_id = '$item_fg_id' 
-                        AND DATE_FORMAT(a.packing_date, '%Y-%m-%d') BETWEEN '$filter_from' and '$filter_to'");
+                        AND DATE_FORMAT(f.packing_date, '%Y-%m-%d') BETWEEN '$filter_from' and '$filter_to'");
 
                     $receiptsWIP = $this->crud->query("SELECT a.*, u.name as username, 'RECEIPT FG' AS receipt_type, a.document_no as checksheet_label
                         FROM wip_receipts a
@@ -1951,7 +1967,7 @@ class Report_history_transactions_fg extends CI_Controller
                         LEFT JOIN scan_item_receipts_fg f ON a.label_no = f.checksheet_label AND a.item_fg_id = f.item_fg_id
                         LEFT JOIN users u ON f.created_by = u.username
                         WHERE a.item_fg_id = '$item_fg_id' 
-                        AND DATE_FORMAT(a.packing_date, '%Y-%m-%d') BETWEEN '$filter_from' and '$filter_to'");
+                        AND DATE_FORMAT(f.packing_date, '%Y-%m-%d') BETWEEN '$filter_from' and '$filter_to'");
                         
                     //RECEIPT
                     $nod = 1;
