@@ -541,8 +541,9 @@ class Warehouse_transferred extends CI_Controller
 
     public function print_note($document_no)
     {
-        $scan_rm_transfer_total = $this->crud->reads('scan_rm_transfer', [], ["document_no" => base64_decode($document_no)]);
+        $scan_rm_transfer_total = $this->crud->reads('scan_rm_transfer', [], ["document_no" => base64_decode($document_no)], ["item_rm_id"]);
         $scan_rm_transfers = $this->crud->read('scan_rm_transfer', [], ["document_no" => base64_decode($document_no)]);
+        $user_0 = $this->crud->read('users', [], ["username" => $scan_rm_transfers->created_by]);
 
         $config = $this->db->get('config')->row();
         $config_iso = $this->db->get('config_iso')->row();
@@ -569,22 +570,22 @@ class Warehouse_transferred extends CI_Controller
             $users_2 = '';
             $users_3 = '';
         } elseif ($scan_rm_transfers->approved == 1) {
-            $users_0 = '<img src="' . base_url('assets/image/qrcode/' . $this->session->name . '.png') . '" width="80"/>';
+            $users_0 = '<img src="' . base_url('assets/image/qrcode/' . $user_0->name . '.png') . '" width="80"/>';
             $users_1 = '';
             $users_2 = '';
             $users_3 = '';
         } elseif ($scan_rm_transfers->approved == 2) {
-            $users_0 = '<img src="' . base_url('assets/image/qrcode/' . $this->session->name . '.png') . '" width="80"/>';
+            $users_0 = '<img src="' . base_url('assets/image/qrcode/' . $user_0->name . '.png') . '" width="80"/>';
             $users_1 = '<img src="' . base_url('assets/image/qrcode/' . $user_1->name . '.png') . '" width="80"/>';
             $users_2 = '';
             $users_3 = '';
         } elseif ($scan_rm_transfers->approved == 3) {
-            $users_0 = '<img src="' . base_url('assets/image/qrcode/' . $this->session->name . '.png') . '" width="80"/>';
+            $users_0 = '<img src="' . base_url('assets/image/qrcode/' . $user_0->name . '.png') . '" width="80"/>';
             $users_1 = '<img src="' . base_url('assets/image/qrcode/' . $user_1->name . '.png') . '" width="80"/>';
             $users_2 = '<img src="' . base_url('assets/image/qrcode/' . $user_2->name . '.png') . '" width="80"/>';
             $users_3 = '';
         } else {
-            $users_0 = '<img src="' . base_url('assets/image/qrcode/' . $this->session->name . '.png') . '" width="80"/>';
+            $users_0 = '<img src="' . base_url('assets/image/qrcode/' . $user_0->name . '.png') . '" width="80"/>';
             $users_1 = '<img src="' . base_url('assets/image/qrcode/' . $user_1->name . '.png') . '" width="80"/>';
             $users_2 = '<img src="' . base_url('assets/image/qrcode/' . $user_2->name . '.png') . '" width="80"/>';
             $users_3 = '<img src="' . base_url('assets/image/qrcode/' . $user_3->name . '.png') . '" width="80"/>';
@@ -599,7 +600,7 @@ class Warehouse_transferred extends CI_Controller
         $this->createQrcode($user_3->name, "assets/image/qrcode/");
         $this->createQrcode($user_2->name, "assets/image/qrcode/");
         $this->createQrcode($user_1->name, "assets/image/qrcode/");
-        $this->createQrcode($this->session->name, "assets/image/qrcode/");
+        $this->createQrcode($user_0->name, "assets/image/qrcode/");
         $html = '<html>
                     <head>
                         <title>' . $scan_rm_transfers->document_no . '</title>
@@ -805,18 +806,20 @@ class Warehouse_transferred extends CI_Controller
                     <table id="customers" style="margin-top:20px;">
                         <tr>
                             <th width="200" style="text-align:center;">Approved By</th>
-                            <th width="200" style="text-align:center;">Checked By</th>
+                            <th colspan = "2" width="200" style="text-align:center;">Checked By</th>
                             <th width="200" style="text-align:center;">Prepared By</th>
                         </tr>
                         <tr>
+                            <th style="height:100px;">'. $users_3. '</th>
                             <th style="height:100px;">'. $users_2. '</th>
                             <th style="height:100px;">'. $users_1. '</th>
                             <th style="height:100px;">'. $users_0. '</th>
                         </tr>
                         <tr>
+                            <th style="height:20px; text-align:center;">' . $user_3->name . '</th>
                             <th style="height:20px; text-align:center;">' . $user_2->name . '</th>
                             <th style="height:20px; text-align:center;">' . $user_1->name . '</th>
-                            <th style="height:20px; text-align:center;">' . $this->session->name . '</th>
+                            <th style="height:20px; text-align:center;">' . $user_0->name . '</th>
                         </tr>
                     </table>
                         <div style="text-align:left; font-size: 15px; margin-top: 20px; border: none;">
