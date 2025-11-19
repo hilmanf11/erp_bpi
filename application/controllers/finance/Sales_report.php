@@ -189,12 +189,12 @@ class Sales_report extends CI_Controller
                                 <td>' . $record->sales_order_no . '</td>
                                 <td>' . $record->customer_order_no . '</td>
                                 <td>' . $record->uom . '</td>
-                                <td style="text-align:right;">' . number_format($record->qty, 2, ',', '.') . '</td>
+                                <td style="text-align:right;">' . number_format($record->qty, 2, '.', ',') . '</td>
                                 <td style="text-align:center;">' . $record->currency . '</td>
-                                <td style="text-align:right;">' . number_format($record->price, 2, ',', '.') . '</td>
-                                <td style="text-align:right;">' . number_format($amount, 2, ',', '.') . '</td>
+                                <td style="text-align:right;">' . number_format($record->price, 2, '.', ',') . '</td>
+                                <td style="text-align:right;">' . number_format($amount, 2, '.', ',') . '</td>
                                 <td style="text-align:center;">' . $exchange_rate . '</td>
-                                <td style="text-align:right;">' . number_format($amountIDR, 2, ',', '.') . '</td>
+                                <td style="text-align:right;">' . number_format($amountIDR, 2, '.', ',') . '</td>
                             </tr>';
                 $no++;
                 $totalAmount += $amount;
@@ -203,9 +203,9 @@ class Sales_report extends CI_Controller
 
             $html .= '<tr style="background-color:#EBEBEB;">
                 <td colspan="14" style="text-align:right;"><b>GRAND TOTAL</b></td>
-                <td style="text-align:right">' . number_format($totalAmount, 2, ',', '.') . '</td>
+                <td style="text-align:right">' . number_format($totalAmount, 2, '.', ',') . '</td>
                 <td style="text-align:right;">-</td>
-                <td style="text-align:right">' . number_format($totalAmountIDR, 2, ',', '.') . '</td>
+                <td style="text-align:right">' . number_format($totalAmountIDR, 2, '.', ',') . '</td>
             </tr>';
 
             $html .= '</table></body></html>';
@@ -324,11 +324,11 @@ class Sales_report extends CI_Controller
                 $html .= '<tr>';
                 $html .= '<td style="text-align: center;">' . $no++ . '</td>';
                 $html .= '<td>' . htmlspecialchars($customer_group['customer_name']) . '</td>';
-                $html .= '<td style="text-align: right;">' . number_format($customer_group['divisions']['RM / SUBCONT'], 2, ",", ".") . '</td>';
-                $html .= '<td style="text-align: right;">' . number_format($customer_group['divisions']['INJ'], 2, ",", ".") . '</td>';
-                $html .= '<td style="text-align: right;">' . number_format($customer_group['divisions']['MTS'], 2, ",", ".") . '</td>';
-                $html .= '<td style="text-align: right;">' . number_format($customer_group['divisions']['ADM'], 2, ",", ".") . '</td>';
-                $html .= '<td style="text-align: right;">' . number_format($customer_group['total_per_customer_overall'], 2, ",", ".") . '</td>';
+                $html .= '<td style="text-align: right;">' . number_format($customer_group['divisions']['RM / SUBCONT'], 2, ".", ",") . '</td>';
+                $html .= '<td style="text-align: right;">' . number_format($customer_group['divisions']['INJ'], 2, ".", ",") . '</td>';
+                $html .= '<td style="text-align: right;">' . number_format($customer_group['divisions']['MTS'], 2, ".", ",") . '</td>';
+                $html .= '<td style="text-align: right;">' . number_format($customer_group['divisions']['ADM'], 2, ".", ",") . '</td>';
+                $html .= '<td style="text-align: right;">' . number_format($customer_group['total_per_customer_overall'], 2, ".", ",") . '</td>';
                 $html .= '</tr>';
 
                 // Akumulasi grand totals
@@ -343,11 +343,11 @@ class Sales_report extends CI_Controller
             $html .= '<tfoot>';
             $html .= '<tr style="background-color:#EBEBEB;">';
             $html .= '<th colspan="2" style="text-align: right;">GRAND TOTAL</th>';
-            $html .= '<th style="text-align: right;">' . number_format($grand_total_rm, 2, ",", ".") . '</th>';
-            $html .= '<th style="text-align: right;">' . number_format($grand_total_inj, 2, ",", ".") . '</th>';
-            $html .= '<th style="text-align: right;">' . number_format($grand_total_mts, 2, ",", ".") . '</th>';
-            $html .= '<th style="text-align: right;">' . number_format($grand_total_adm, 2, ",", ".") . '</th>';
-            $html .= '<th style="text-align: right;">' . number_format($grand_overall_total, 2, ",", ".") . '</th>';
+            $html .= '<th style="text-align: right;">' . number_format($grand_total_rm, 2, ".", ",") . '</th>';
+            $html .= '<th style="text-align: right;">' . number_format($grand_total_inj, 2, ".", ",") . '</th>';
+            $html .= '<th style="text-align: right;">' . number_format($grand_total_mts, 2, ".", ",") . '</th>';
+            $html .= '<th style="text-align: right;">' . number_format($grand_total_adm, 2, ".", ",") . '</th>';
+            $html .= '<th style="text-align: right;">' . number_format($grand_overall_total, 2, ".", ",") . '</th>';
             $html .= '</tr>';
             $html .= '</tfoot>';
             $html .= '</table>';
