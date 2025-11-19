@@ -62,6 +62,18 @@ class Scan_rm_transfer extends CI_Controller
                     $this->db->where('a.status_issued', 0);
                     $totalRows = $this->db->count_all_results('', false);
                     $records = $this->db->get()->result_array();
+
+                    if (!$records) {
+                        $this->db->select("'-' as po_no, b.request_no as receipt_no, b.request_id as receipt_id, a.label_no, a.qty, b.item_rm_id, c.number as item_number, c.name as item_name, c.uom");
+                        $this->db->from('receipt_crusher_labels a');
+                        $this->db->join('receipt_crusher_labels b', 'a.request_id = b.request_id');
+                        $this->db->join('item_rm c', 'b.item_rm_id = c.id');
+                        $this->db->where('a.label_no', $label_no);
+                        $this->db->where('a.status_issued', 0);
+                        $this->db->group_by('a.label_no');
+                        $totalRows = $this->db->count_all_results('', false);
+                        $records = $this->db->get()->result_array();
+                    }
                 }
             }
 
