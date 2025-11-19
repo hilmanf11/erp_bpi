@@ -75,7 +75,8 @@ class Customer_items extends CI_Controller
             $offset = ($page - 1) * $rows;
             $result = array();
             //Select Query
-            $this->db->select('b.id as customer_id, 
+            $this->db->select('a.id,
+            b.id as customer_id, 
             b.number as customer_number, 
             b.name as customer_name, 
             b.type, 
@@ -86,21 +87,27 @@ class Customer_items extends CI_Controller
             a.updated_date,
             a.division_id,
             a.customer_address_id,
+            a.currency,
+            a.price,
+            a.valid_date,
+            a.remark,
             c.name as division_name,
-            d.plant');
+            d.plant,
+            e.id as item_fg_id,
+            e.number as item_fg_number,
+            e.name as item_fg_name,
+            e.number_customer as item_fg_customer');
             $this->db->from('customer_items a');
             $this->db->join('customers b', 'a.customer_id = b.id');
             $this->db->join('divisions c', 'a.division_id = c.id','left');
             $this->db->join('customer_address d', 'a.customer_address_id = d.id','left');
+            $this->db->join('item_fg e', 'a.item_fg_id = e.id');
             $this->db->like('a.customer_id', $filter_customer_id);
             $this->db->like('a.item_fg_id', $filter_item_fg_id);
             $this->db->like('a.division_id', $filter_division_id);
             $this->db->like('a.customer_address_id', $filter_customer_address_id);
-            $this->db->group_by('b.name');
-            $this->db->group_by('a.division_id');
-            $this->db->group_by('a.customer_address_id');
-            $this->db->order_by('b.name','ASC');
             $this->db->order_by('b.id', 'ASC');
+            $this->db->order_by('d.plant', 'ASC');
             //Total Data
             $totalRows = $this->db->count_all_results('', false);
             //Limit 1 - 10
@@ -115,52 +122,52 @@ class Customer_items extends CI_Controller
     }
 
     //GET DATATABLES DETAILS
-    public function datatableDetails()
-    {
-        if ($this->input->get()) {
-            $number = base64_decode($this->input->get('number'));
-            $division_id = base64_decode($this->input->get('division_id'));
-            $customer_address_id = base64_decode($this->input->get('customer_address_id'));
-            $filter_customer_id = base64_decode($this->input->get('filter_customer_id'));
+    // public function datatableDetails()
+    // {
+    //     if ($this->input->get()) {
+    //         $number = base64_decode($this->input->get('number'));
+    //         $division_id = base64_decode($this->input->get('division_id'));
+    //         $customer_address_id = base64_decode($this->input->get('customer_address_id'));
+    //         $filter_customer_id = base64_decode($this->input->get('filter_customer_id'));
 
-            $this->db->select('a.*, b.number as customer_number, b.name as customer_name, b.currency, c.number as item_fg_number, c.number_customer as item_fg_customer, c.name as item_fg_name');
-            $this->db->from('customer_items a');
-            $this->db->join('customers b', 'a.customer_id = b.id');
-            $this->db->join('item_fg c', 'a.item_fg_id = c.id');
-            $this->db->where('b.number', $number);
-            $this->db->where('a.division_id', $division_id);
-            $this->db->where('a.customer_address_id', $customer_address_id);
-            $this->db->like('a.customer_id', $filter_customer_id);
-            $this->db->group_by('a.id');
-            $this->db->order_by('c.number', 'ASC');
-            $this->db->order_by('a.id', 'ASC');
-            $records = $this->db->get()->result_array();
+    //         $this->db->select('a.*, b.number as customer_number, b.name as customer_name, a.currency, c.number as item_fg_number, c.number_customer as item_fg_customer, c.name as item_fg_name');
+    //         $this->db->from('customer_items a');
+    //         $this->db->join('customers b', 'a.customer_id = b.id');
+    //         $this->db->join('item_fg c', 'a.item_fg_id = c.id');
+    //         $this->db->where('b.number', $number);
+    //         $this->db->where('a.division_id', $division_id);
+    //         $this->db->where('a.customer_address_id', $customer_address_id);
+    //         $this->db->like('a.customer_id', $filter_customer_id);
+    //         $this->db->group_by('a.id');
+    //         $this->db->order_by('c.number', 'ASC');
+    //         $this->db->order_by('a.id', 'ASC');
+    //         $records = $this->db->get()->result_array();
 
-            echo json_encode($records);
-        }
-    }
+    //         echo json_encode($records);
+    //     }
+    // }
 
     // GET DATATABLES UPDATE
-    public function datatableUpdates()
-    {
-        if ($this->input->get()) {
-            $customer_id = base64_decode($this->input->get('customer_id'));
-            $division_id = base64_decode($this->input->get('division_id'));
-            $customer_address_id = base64_decode($this->input->get('customer_address_id'));
+    // public function datatableUpdates()
+    // {
+    //     if ($this->input->get()) {
+    //         $customer_id = base64_decode($this->input->get('customer_id'));
+    //         $division_id = base64_decode($this->input->get('division_id'));
+    //         $customer_address_id = base64_decode($this->input->get('customer_address_id'));
+            
+    //         $this->db->select('a.*, b.number as item_fg_number, b.number_customer as item_fg_customer, a.currency');
+    //         $this->db->from('customer_items a');
+    //         $this->db->join('item_fg b', 'a.item_fg_id = b.id');
+    //         $this->db->join('customers c', 'a.customer_id = c.id');
+    //         $this->db->where('a.customer_id', $customer_id);
+    //         $this->db->where('a.division_id', $division_id);
+    //         $this->db->where('a.customer_address_id', $customer_address_id);
+    //         $this->db->order_by('a.id', 'ASC');
+    //         $records = $this->db->get()->result_array();
 
-            $this->db->select('a.*, b.number as item_fg_number, b.number_customer as item_fg_customer, c.currency');
-            $this->db->from('customer_items a');
-            $this->db->join('item_fg b', 'a.item_fg_id = b.id');
-            $this->db->join('customers c', 'a.customer_id = c.id');
-            $this->db->where('a.customer_id', $customer_id);
-            $this->db->where('a.division_id', $division_id);
-            $this->db->where('a.customer_address_id', $customer_address_id);
-            $this->db->order_by('a.id', 'ASC');
-            $records = $this->db->get()->result_array();
-
-            echo json_encode($records);
-        }
-    }
+    //         echo json_encode($records);
+    //     }
+    // }
 
     // GET DATATABLE HISTORY PRICE
     public function datatableHistories()
@@ -208,6 +215,33 @@ class Customer_items extends CI_Controller
         }
     }
 
+    public function update()
+    {
+        if ($this->input->post()) {
+            $id   = base64_decode($this->input->get('id'));
+            $post = $this->input->post();
+
+            $dataFinal = array(
+                //field
+                "customer_id" => $post['customer_id'],
+                "division_id" => $post['division_id'],
+                "customer_address_id" => $post['customer_address_id'],
+                "item_fg_id" => $post['item_fg_id'],
+                "price" => $post['price'],
+                "valid_date" => $post['valid_date'],
+                "currency" => $post['currency'],
+                "remark" => $post['remark'],
+            );
+
+            $send = $this->crud->update('customer_items', ["id" => $id], $dataFinal);
+            $send2 = $this->crud->create('customer_item_histories', $dataFinal);
+           
+            echo $send;
+        } else {
+            show_error("Cannot Process your request");
+        }
+    }
+
     //DELETE DATA
     public function delete()
     {
@@ -236,8 +270,9 @@ class Customer_items extends CI_Controller
                 'customer_address_id' => $data->val($i, 4),
                 'item_fg_id' => $data->val($i, 5),
                 'price' => $data->val($i, 6),
-                'valid_date' => $data->val($i, 7),
-                'remark' => $data->val($i, 8)
+                'currency' => $data->val($i, 7),
+                'valid_date' => $data->val($i, 8),
+                'remark' => $data->val($i, 9)
             );
         }
         $datas['total'] = count($datas);
@@ -332,6 +367,7 @@ class Customer_items extends CI_Controller
                     "customer_address_id" => $data['customer_address_id'],
                     "item_fg_id" => $data['item_fg_id'],
                     "price" => $data['price'],
+                    "currency" => $data['currency'],
                     "valid_date" => $data['valid_date'],
                     "remark" => $data['remark'],
                 );
@@ -346,6 +382,7 @@ class Customer_items extends CI_Controller
                     "division_id" => $data['division_id'],
                     "customer_address_id" => $data['customer_address_id'],
                     "price" => $data['price'],
+                    "currency" => $data['currency'],
                     "valid_date" => $data['valid_date'],
                     "remark" => $data['remark'],
                 );
@@ -378,6 +415,7 @@ class Customer_items extends CI_Controller
 
         $this->db->select('a.*, b.number as customer_number, 
         b.name as customer_name, 
+        b.currency, 
         c.number as item_fg_number, 
         c.name as item_fg_name, 
         c.number_customer as item_fg_customer,

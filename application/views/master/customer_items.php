@@ -15,10 +15,18 @@
     <thead>
         <tr>
             <th rowspan="2" field="ck" checkbox="true"></th>
-            <th rowspan="2" data-options="field:'customer_name',width:550,halign:'center'">Customer Name</th>
+            <th rowspan="2" data-options="field:'btn',width:100,halign:'center',align:'right',formatter:btnHistories">History</th>
+            <th rowspan="2" data-options="field:'customer_name',width:400,halign:'center'">Customer Name</th>
             <th rowspan="2" data-options="field:'division_name',width:100,halign:'center'">Division</th>
             <th rowspan="2" data-options="field:'plant',width:200,halign:'center'">Plant</th>
             <th rowspan="2" data-options="field:'type',width:100,align:'center'">Type</th>
+            <th rowspan="2" data-options="field:'item_fg_number',width:120,align:'left'">Product No</th>
+            <th rowspan="2" data-options="field:'item_fg_name',width:200,align:'left'">Product Name</th>
+            <th rowspan="2" data-options="field:'item_fg_customer',width:120,align:'left'">Product Customer</th>
+            <th rowspan="2" data-options="field:'currency',width:80,align:'left'">Currency</th>
+            <th rowspan="2" data-options="field:'price',width:100,align:'left',formatter:priceformat">Price</th>
+            <th rowspan="2" data-options="field:'valid_date',width:80,align:'center'">Valid Date</th>
+            <th rowspan="2" data-options="field:'remark',width:80,align:'center'">Remark</th>
             <th rowspan="2" data-options="field:'status',width:100,halign:'center', styler:cellStyler, formatter:cellFormatter">Status</th>
             <th colspan="2" data-options="field:'',width:100,halign:'center'"> Created</th>
             <th colspan="2" data-options="field:'',width:100,halign:'center'"> Updated</th>
@@ -88,6 +96,63 @@
             </div>
         </fieldset>
         <table id="dg2" class="easyui-datagrid" style="width:100%; height: 410px;" title="Customer Item Lists" toolbar="#toolbar2"></table>
+    </form>
+</div>
+
+<!-- Update -->
+<div id="dlg_insert2" class="easyui-dialog" title="Add New" data-options="closed: true,modal:true" style="width: 40%; padding:10px; top: 10px;">
+    <form id="frm_insert2" method="post" novalidate>
+        <fieldset style="width:100%; border:1px solid #d0d0d0; margin-bottom: 10px; border-radius:4px; float: left;">
+            <legend><b>Form Data</b></legend>
+                <div class="fitem" hidden>
+                    <span style="width:35%; display:inline-block;">ID</span>
+                    <input style="width:30%;" name="id" id="id" class="easyui-textbox" readonly>
+                </div>
+                <div class="fitem" hidden>
+                    <span style="width:35%; display:inline-block;">Customer ID</span>
+                    <input style="width:30%;" name="customer_id" class="easyui-textbox" readonly>
+                </div>
+                <div class="fitem">
+                    <span style="width:35%; display:inline-block;">Customer</span>
+                    <input style="width:60%;" name="customer_name" class="easyui-textbox" readonly>
+                </div>
+                <div class="fitem">
+                    <span style="width:35%; display:inline-block;">Division ID</span>
+                    <input style="width:60%;" name="division_id"  class="easyui-textbox" readonly>
+                </div>
+                <div class="fitem" hidden>
+                    <span style="width:35%; display:inline-block;">Plant ID</span>
+                    <input style="width:30%;" name="customer_address_id" class="easyui-textbox">
+                </div>
+                <div class="fitem">
+                    <span style="width:35%; display:inline-block;">Plant</span>
+                    <input style="width:60%;" name="plant" class="easyui-textbox" readonly>
+                </div>
+                <div class="fitem">
+                    <span style="width:35%; display:inline-block;">Part Id</span>
+                    <input style="width:60%;" name="item_fg_id" class="easyui-textbox" readonly>
+                </div>
+                <div class="fitem">
+                    <span style="width:35%; display:inline-block;">Part Number</span>
+                    <input style="width:60%;" name="item_fg_number" class="easyui-textbox" readonly>
+                </div>
+                <div class="fitem">
+                    <span style="width:35%; display:inline-block;">Price</span>
+                    <input style="width:60%;" name="price" class="easyui-numberbox" precision='4'>
+                </div>
+                <div class="fitem">
+                    <span style="width:35%; display:inline-block;">Currency</span>
+                    <input style="width:60%;" name="currency" class="easyui-textbox">
+                </div>
+                <div class="fitem">
+                    <span style="width:35%; display:inline-block;">Valid Date</span>
+                    <input style="width:60%;" name="valid_date" required="" data-options="formatter:myformatter,parser:myparser,editable:false" class="easyui-datebox">
+                </div>
+                <div class="fitem">
+                    <span style="width:35%; display:inline-block;">Remark</span>
+                    <input style="width:60%;" name="remark"  class="easyui-textbox">
+                </div>
+        </fieldset>
     </form>
 </div>
 
@@ -190,10 +255,15 @@
                                     index: rowIndex,
                                     field: 'item_fg_customer'
                                 });
+                                //   var ed4 = dg.datagrid('getEditor', {
+                                //     index: rowIndex,
+                                //     field: 'currency'
+                                // });
 
                                 $(ed.target).textbox('setValue', rows.number);
                                 $(ed2.target).textbox('setValue', rows.id);
                                 $(ed3.target).textbox('setValue', rows.number_customer);
+                                // $(ed4.target).combobox('setValue', rows.currency);
                             }
                         }
                     }
@@ -226,6 +296,21 @@
                         type: 'numberbox',
                         options: {
                             precision: 4
+                        }
+                    }
+                  }, {
+                    field: 'currency',
+                    width: 100,
+                    align: 'center',
+                    title: "Currency",
+                    editor: {
+                        type: 'combobox',
+                        options: {
+                            url: '<?= base_url('master/currencies/reads') ?>',
+                            editable:false,
+                            valueField: 'name',
+                            textField: 'name',
+                            prompt: 'Choose Currencies'
                         }
                     }
                 }, {
@@ -364,68 +449,67 @@
     }
 
     //EDIT DATA
-    // function update() {
-    //     var row = $('#dg').treegrid('getSelected');
-    //     console.log(row);
-    //     if (row) {
-    //         $('#dlg_insert').dialog('open');
-    //         $('#frm_insert').form('load', row);
-    //         $("#item_fg_id").combogrid('disable');
-
-    //         addTable('<?= base_url('master/customer_items/datatableUpdates?customer_id=') ?>' + window.btoa(row.customer_id));
-    //     } else {
-    //         toastr.warning("Please select one of the data in the table first!", "Information");
-    //     }
-    // }
-
     function update() {
-        var row = $('#dg').treegrid('getSelected');
+        var row = $('#dg').datagrid('getSelected');
+        console.log(row);
         if (row) {
-            $('#dlg_insert').dialog('open');
-            $('#frm_insert').form('load', row);
-            $("#item_fg_id").combogrid('disable');
-
-            // Set nilai customer_id lebih dulu
-            $('#customer_id').combogrid('setValue', row.customer_id);
-
-            // Load customer_address_id berdasarkan customer_id
-            $('#customer_address_id').combogrid({
-                url: '<?= base_url('master/customer_items/readPlant/'); ?>' + window.btoa(row.customer_id) ,
-                panelWidth: 420,
-                idField: 'id',
-                textField: 'plant',
-                mode: 'remote',
-                fitColumns: true,
-                prompt: 'Choose Plant',
-                columns: [
-                    [{
-                        field: 'plant',
-                        title: 'Plant',
-                        width: 120
-                    }, {
-                        field: 'address',
-                        title: 'Address',
-                        width: 300
-                    }]
-                ],
-                onLoadSuccess: function(data) {
-                    console.log("Loaded Data:", data); // Debugging apakah data masuk
-                    console.log("Row Data:", row); // Debugging data row yang dipilih
-                    console.log("Setting Value:", row.customer_address_id);
-                    $('#customer_address_id').combogrid('setValue', row.customer_address_id);
-                }
-            });
-
-            // Load tabel terkait
-            addTable('<?= base_url('master/customer_items/datatableUpdates?customer_id=') ?>' + window.btoa(row.customer_id) + "&division_id=" + window.btoa(row.division_id) + "&customer_address_id=" + window.btoa(row.customer_address_id));
+            $('#dlg_insert2').dialog('open');
+            $('#frm_insert2').form('load', row);
+            url_save = '<?= base_url('master/customer_items/update') ?>?id=' + btoa(row.id);
         } else {
             toastr.warning("Please select one of the data in the table first!", "Information");
         }
     }
 
+    // function update() {
+    //     var row = $('#dg').treegrid('getSelected');
+    //     if (row) {
+    //         $('#dlg_insert').dialog('open');
+    //         $('#frm_insert').form('load', row);
+    //         $("#item_fg_id").combogrid('disable');
+
+    //         // Set nilai customer_id lebih dulu
+    //         $('#customer_id').combogrid('setValue', row.customer_id);
+
+    //         // Load customer_address_id berdasarkan customer_id
+    //         $('#customer_address_id').combogrid({
+    //             url: '<?= base_url('master/customer_items/readPlant/'); ?>' + window.btoa(row.customer_id) ,
+    //             panelWidth: 420,
+    //             idField: 'id',
+    //             textField: 'plant',
+    //             mode: 'remote',
+    //             fitColumns: true,
+    //             prompt: 'Choose Plant',
+    //             columns: [
+    //                 [{
+    //                     field: 'plant',
+    //                     title: 'Plant',
+    //                     width: 120
+    //                 }, {
+    //                     field: 'address',
+    //                     title: 'Address',
+    //                     width: 300
+    //                 }]
+    //             ],
+    //             onLoadSuccess: function(data) {
+    //                 console.log("Loaded Data:", data); // Debugging apakah data masuk
+    //                 console.log("Row Data:", row); // Debugging data row yang dipilih
+    //                 console.log("Setting Value:", row.customer_address_id);
+    //                 $('#customer_address_id').combogrid('setValue', row.customer_address_id);
+    //             }
+    //         });
+
+    //         // Load tabel terkait
+    //         addTable('<?= base_url('master/customer_items/datatableUpdates?customer_id=') ?>' + window.btoa(row.customer_id) + "&division_id=" + window.btoa(row.division_id) + "&customer_address_id=" + window.btoa(row.customer_address_id));
+    //     } else {
+    //         toastr.warning("Please select one of the data in the table first!", "Information");
+    //     }
+    // }
+
     //DELETE DATA
     function deleted() {
         var rows = $('#dg').datagrid('getSelections');
+        console.log(rows);
         if (rows.length > 0) {
             $.messager.confirm('Warning', 'Are you sure you want to delete this data?', function(r) {
                 if (r) {
@@ -516,88 +600,99 @@
         addTable();
 
         //SETTING DATAGRID EASYUI
+        // $('#dg').datagrid({
+        //     url: '<?= base_url('master/customer_items/datatables') ?>',
+        //     pagination: true,
+        //     rownumbers: true,
+        //     fit: true,
+        //     pageList: [20, 50, 100, 500, 1000],
+        //     pageSize: 20,
+        //     view: detailview,
+        //     detailFormatter: function(index, row) {
+        //         return '<div style="padding:2px;position:relative;"><table class="ddv" title="Detail Of ' + row.customer_name + '"></table></div>';
+        //     },
+        //     onExpandRow: function(index, row) {
+        //         var ddv = $(this).datagrid('getRowDetail', index).find('table.ddv');
+        //         var filter_item_fg_id = $("#filter_item_fg_id").combogrid('getValue');
+
+        //         ddv.datagrid({
+        //             url: '<?= base_url('master/customer_items/datatableDetails?number=') ?>' + window.btoa(row.customer_number) + "&filter_item_fg_id=" + window.btoa(filter_item_fg_id) + "&division_id=" + window.btoa(row.division_id) + "&customer_address_id=" + window.btoa(row.customer_address_id),
+        //             singleSelect: true,
+        //             rownumbers: true,
+        //             columns: [
+        //                 [{
+        //                     field: 'item_fg_id',
+        //                     title: 'Product ID',
+        //                     halign: 'center',
+        //                     width: 200
+        //                 }, {
+        //                     field: 'item_fg_number',
+        //                     title: 'Product No.',
+        //                     halign: 'center',
+        //                     width: 200
+        //                 }, {
+        //                     field: 'item_fg_name',
+        //                     title: 'Product Name',
+        //                     halign: 'center',
+        //                     width: 200
+        //                 }, {
+        //                     field: 'item_fg_customer',
+        //                     title: 'Product Customer',
+        //                     halign: 'center',
+        //                     width: 150
+        //                 }, {
+        //                     field: 'currency',
+        //                     title: 'Currency',
+        //                     align: 'center',
+        //                     width: 80
+        //                 }, {
+        //                     field: 'price',
+        //                     title: 'Price',
+        //                     halign: 'center',
+        //                     align: 'right',
+        //                     width: 100,
+        //                     formatter: priceformat
+        //                 }, {
+        //                     field: 'valid_date',
+        //                     title: 'Valid Date',
+        //                     halign: 'center',
+        //                     width: 100
+        //                 }, {
+        //                     field: 'btn',
+        //                     title: 'History',
+        //                     halign: 'center',
+        //                     width: 80,
+        //                     formatter: btnHistories
+        //                 }, {
+        //                     field: 'remark',
+        //                     title: 'Remarks',
+        //                     width: 150,
+        //                     halign: 'center',
+        //                 }]
+        //             ],
+        //             onResize: function() {
+        //                 $('#dg').datagrid('fixDetailRowHeight', index);
+        //             },
+        //             onLoadSuccess: function() {
+        //                 setTimeout(function() {
+        //                     $('#dg').datagrid('fixDetailRowHeight', index);
+        //                 }, 0);
+        //             }
+        //         });
+        //         $('#dg').datagrid('fixDetailRowHeight', index);
+        //     }
+        // });
+
         $('#dg').datagrid({
             url: '<?= base_url('master/customer_items/datatables') ?>',
             pagination: true,
+            clientPaging: false,
+            remoteFilter: true,
             rownumbers: true,
             fit: true,
             pageList: [20, 50, 100, 500, 1000],
             pageSize: 20,
-            view: detailview,
-            detailFormatter: function(index, row) {
-                return '<div style="padding:2px;position:relative;"><table class="ddv" title="Detail Of ' + row.customer_name + '"></table></div>';
-            },
-            onExpandRow: function(index, row) {
-                var ddv = $(this).datagrid('getRowDetail', index).find('table.ddv');
-                var filter_item_fg_id = $("#filter_item_fg_id").combogrid('getValue');
-
-                ddv.datagrid({
-                    url: '<?= base_url('master/customer_items/datatableDetails?number=') ?>' + window.btoa(row.customer_number) + "&filter_item_fg_id=" + window.btoa(filter_item_fg_id) + "&division_id=" + window.btoa(row.division_id) + "&customer_address_id=" + window.btoa(row.customer_address_id),
-                    singleSelect: true,
-                    rownumbers: true,
-                    columns: [
-                        [{
-                            field: 'item_fg_id',
-                            title: 'Product ID',
-                            halign: 'center',
-                            width: 200
-                        }, {
-                            field: 'item_fg_number',
-                            title: 'Product No.',
-                            halign: 'center',
-                            width: 200
-                        }, {
-                            field: 'item_fg_name',
-                            title: 'Product Name',
-                            halign: 'center',
-                            width: 200
-                        }, {
-                            field: 'item_fg_customer',
-                            title: 'Product Customer',
-                            halign: 'center',
-                            width: 150
-                        }, {
-                            field: 'currency',
-                            title: 'Currency',
-                            align: 'center',
-                            width: 80
-                        }, {
-                            field: 'price',
-                            title: 'Price',
-                            halign: 'center',
-                            align: 'right',
-                            width: 100,
-                            formatter: priceformat
-                        }, {
-                            field: 'valid_date',
-                            title: 'Valid Date',
-                            halign: 'center',
-                            width: 100
-                        }, {
-                            field: 'btn',
-                            title: 'History',
-                            halign: 'center',
-                            width: 80,
-                            formatter: btnHistories
-                        }, {
-                            field: 'remark',
-                            title: 'Remarks',
-                            width: 150,
-                            halign: 'center',
-                        }]
-                    ],
-                    onResize: function() {
-                        $('#dg').datagrid('fixDetailRowHeight', index);
-                    },
-                    onLoadSuccess: function() {
-                        setTimeout(function() {
-                            $('#dg').datagrid('fixDetailRowHeight', index);
-                        }, 0);
-                    }
-                });
-                $('#dg').datagrid('fixDetailRowHeight', index);
-            }
-        });
+        })
 
         //SAVE DATA
         $('#dlg_insert').dialog({
@@ -624,6 +719,7 @@
                                     customer_id: customer_id,
                                     division_id: division_id,
                                     customer_address_id: customer_address_id,
+                                    currency: rows[i].currency,
                                     item_fg_id: rows[i].item_fg_id,
                                     price: rows[i].price,
                                     valid_date: rows[i].valid_date,
@@ -653,6 +749,32 @@
                 }
             }]
         });
+    });
+
+    //SAVE DATA2
+    $('#dlg_insert2').dialog({
+        buttons: [{
+            text: 'Save',
+            iconCls: 'icon-ok',
+            handler: function() {
+                $('#frm_insert2').form('submit', {
+                    url: url_save,
+                    onSubmit: function() {
+                        return $(this).form('validate');
+                    },
+                    success: function(result) {
+                        var result = eval('(' + result + ')');
+                        if (result.theme == "success") {
+                            toastr.success(result.message, result.title);
+                        } else {
+                            toastr.error(result.message, result.title);
+                        }
+                        $('#dlg_insert2').dialog('close');
+                        $('#dg').datagrid('reload');
+                    }
+                });
+            }
+        }]
     });
 
     $('#customer_id').combogrid({
@@ -879,13 +1001,6 @@
             return "<b>" + formatter.format(value) + "</b>";
         }
     }
-
-    // function priceformat(value, row) {
-    //     const formatter = new Intl.NumberFormat('id-ID', {
-    //         minimumFractionDigits: 2
-    //     });
-    //     return "<b>" + formatter.format(value) + "</b>";
-    // }
 
     function btnHistories(val, row) {
         var history = "viewHistories('" + row.customer_id + "','" + row.item_fg_id + "','" + row.division_id + "','" + row.customer_address_id + "')";
