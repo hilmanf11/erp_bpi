@@ -136,7 +136,7 @@ class Report_history_transactions extends CI_Controller
         echo json_encode($records);
     }
 
-    public function print($option = "")//berubah
+    public function print($option = "")
     {
         if ($option == "excel") {
             $format  = date("Ymd");
@@ -323,8 +323,20 @@ class Report_history_transactions extends CI_Controller
             (COALESCE(h1.qty_issued, 0) + COALESCE(i1.qty_trans_rm_out, 0)) AS qty_out_minus1,
             (COALESCE(h2.qty_issued, 0) + COALESCE(i2.qty_trans_rm_out, 0)) AS qty_out_minus2,
             (COALESCE(h3.qty_issued, 0) + COALESCE(i3.qty_trans_rm_out, 0)) AS qty_out_minus3,
-            (COALESCE(begin_whs.begin_bpi, 0) + COALESCE(y.in_bpi,0) - COALESCE(y.out_bpi,0) + COALESCE(d_bpi.qty_scan_in_bpi, 0)) AS qty_bpi,
-            (COALESCE(begin_whs.begin_plant1, 0)  + COALESCE(y.in_plant1,0) - COALESCE(y.out_plant1,0) + COALESCE(d_plant1.qty_scan_in_plant1, 0)) AS qty_plant1
+            (
+            COALESCE(begin_whs.begin_bpi, 0)
+            + COALESCE(in_bpi_now.total_in_bpi, 0)
+            - COALESCE(out_bpi_now.total_out_bpi, 0)
+            + COALESCE(trf_now.in_bpi, 0)
+            - COALESCE(trf_now.out_bpi, 0)
+            ) AS qty_bpi,
+
+            (
+            COALESCE(begin_whs.begin_plant1, 0)
+            + COALESCE(trf_now.in_plant1, 0)
+            - COALESCE(trf_now.out_plant1, 0)
+            ) AS qty_plant1
+
         FROM item_rm a
         JOIN item_familys b ON a.item_family_id = b.id AND b.number != 'FG'
         JOIN item_categories c ON a.item_category_id = c.id
@@ -355,81 +367,93 @@ class Report_history_transactions extends CI_Controller
                         LEFT JOIN (SELECT item_rm_id, SUM(qty) AS qty_trans_rm_out FROM transaction_rm WHERE request_date < '$filter_from' AND transaction_kind = 'OUT' GROUP BY item_rm_id) g ON a.id = g.item_rm_id
                         LEFT JOIN (SELECT item_rm_id, SUM(qty) AS qty_scan_bpm FROM scan_item_bpm WHERE DATE_FORMAT(request_date, '%Y-%m-%d') < '$filter_from' GROUP BY item_rm_id) h ON a.id = h.item_rm_id
                     ) j ON a.id = j.id
-
-        LEFT JOIN (SELECT a.item_rm_id,
-                            CASE WHEN a.transfer_from = 'BPI' THEN a.qty_from ELSE 0 END + CASE WHEN a.transfer_to = 'BPI' THEN a.qty_to ELSE 0 END AS qty_bpi,
-                            CASE WHEN a.transfer_from = 'PLANT 1' THEN a.qty_from ELSE 0 END + CASE WHEN a.transfer_to = 'PLANT 1' THEN a.qty_to ELSE 0 END AS qty_plant1
-                        FROM upload_stock_whs_tf a
-                        WHERE a.trans_date = '2025-09-19'
-                    ) x ON a.id = x.item_rm_id
         LEFT JOIN (
             SELECT 
                 item_rm_id,
-                SUM(CASE WHEN transfer_to   = 'BPI'    THEN qty ELSE 0 END) AS in_bpi,
-                SUM(CASE WHEN transfer_from = 'BPI'    THEN qty ELSE 0 END) AS out_bpi,
-                SUM(CASE WHEN transfer_to   = 'PLANT 1' THEN qty ELSE 0 END) AS in_plant1,
-                SUM(CASE WHEN transfer_from = 'PLANT 1' THEN qty ELSE 0 END) AS out_plant1
-            FROM scan_rm_transfer
-           	WHERE DATE_FORMAT(transaction_date, '%Y-%m-%d') BETWEEN '$filter_from'
-           	AND '$filter_to'
+                SUM(CASE WHEN transfer_from = 'BPI' THEN qty_from ELSE 0 END 
+                    + CASE WHEN transfer_to = 'BPI' THEN qty_to ELSE 0 END) AS begin_bpi,
+                SUM(CASE WHEN transfer_from = 'PLANT 1' THEN qty_from ELSE 0 END 
+                    + CASE WHEN transfer_to = 'PLANT 1' THEN qty_to ELSE 0 END) AS begin_plant1
+            FROM upload_stock_whs_tf
+            WHERE trans_date >= '2025-09-18'
             GROUP BY item_rm_id
-        ) y ON a.id = y.item_rm_id
+        ) begin_whs ON a.id = begin_whs.item_rm_id
+
+        -- DOKUMENTASI :Semua transaksi IN otomatis ke BPI (transfer)
         LEFT JOIN (
             SELECT 
-                base.item_rm_id,
-                COALESCE(base.qty_bpi,0)
-                + COALESCE(rcv_bpi.qty_in,0)
-                + COALESCE(trf_bpi.in_bpi,0)
-                - COALESCE(trf_bpi.out_bpi,0) AS begin_bpi,
-                COALESCE(base.qty_plant1,0)
-                + COALESCE(rcv_plant1.qty_in,0)
-                + COALESCE(trf_plant1.in_plant1,0)
-                - COALESCE(trf_plant1.out_plant1,0) AS begin_plant1
+                x.item_rm_id,
+                SUM(x.total_in) AS total_in_bpi
             FROM (
-                SELECT a.item_rm_id,
-                       SUM(CASE WHEN a.transfer_from = 'BPI' THEN a.qty_from ELSE 0 END + CASE WHEN a.transfer_to = 'BPI' THEN a.qty_to ELSE 0 END) AS qty_bpi,
-                       SUM(CASE WHEN a.transfer_from = 'PLANT 1' THEN a.qty_from ELSE 0 END + CASE WHEN a.transfer_to = 'PLANT 1' THEN a.qty_to ELSE 0 END) AS qty_plant1
-                FROM upload_stock_whs_tf a
-                WHERE a.trans_date = '2025-09-19'
+                -- scan_item_receipts
+                SELECT b.item_rm_id, SUM(a.qty) AS total_in
+                FROM scan_item_receipts a
+                JOIN purchase_order_receipts b ON a.receipt_id = b.receipt_id
+                WHERE b.receipt_date BETWEEN '$filter_from' AND '$filter_to'
+                GROUP BY b.item_rm_id
+                UNION ALL
+                -- os_rm
+                SELECT item_rm_id, SUM(qty) FROM os_rm
+                WHERE trans_date BETWEEN '$filter_from' AND '$filter_to'
+                GROUP BY item_rm_id
+                UNION ALL
+                -- transaction_rm IN
+                SELECT item_rm_id, SUM(qty) FROM transaction_rm
+                WHERE request_date BETWEEN '$filter_from' AND '$filter_to'
+                AND transaction_kind = 'IN'
+                GROUP BY item_rm_id
+                UNION ALL
+                -- return_materials
+                SELECT a.item_rm_id, SUM(c.qty)
+                FROM return_materials a
+                JOIN return_material_labels b ON a.return_id = b.return_id
+                JOIN scan_item_receipts c ON a.return_id = c.receipt_id AND b.label_no = c.label_no
+                WHERE a.return_date BETWEEN '$filter_from' AND '$filter_to'
                 GROUP BY a.item_rm_id
-            ) base
-            LEFT JOIN (
-                SELECT b.item_rm_id, SUM(a.qty) AS qty_in
-                FROM scan_item_receipts a
-                JOIN purchase_order_receipts b ON a.receipt_id = b.receipt_id
-                WHERE a.plant = 'BPI' 
-                  AND b.receipt_date >= '2025-09-18' 
-                  AND b.receipt_date < '$filter_from'
-                GROUP BY b.item_rm_id
-            ) rcv_bpi ON base.item_rm_id = rcv_bpi.item_rm_id
-            LEFT JOIN (
-                SELECT b.item_rm_id, SUM(a.qty) AS qty_in
-                FROM scan_item_receipts a
-                JOIN purchase_order_receipts b ON a.receipt_id = b.receipt_id
-                WHERE a.plant = 'PLANT 1' 
-                  AND b.receipt_date >= '2025-09-18' 
-                  AND b.receipt_date < '$filter_from'
-                GROUP BY b.item_rm_id
-            ) rcv_plant1 ON base.item_rm_id = rcv_plant1.item_rm_id
-            LEFT JOIN (
-                SELECT item_rm_id,
-                       SUM(CASE WHEN transfer_to = 'BPI' THEN qty ELSE 0 END) AS in_bpi,
-                       SUM(CASE WHEN transfer_from = 'BPI' THEN qty ELSE 0 END) AS out_bpi
-                FROM scan_rm_transfer
-                WHERE transaction_date >= '2025-09-18'
-                  AND transaction_date < '$filter_from'
+                UNION ALL
+                -- scan_item_bpm
+                SELECT item_rm_id, SUM(qty) FROM scan_item_bpm
+                WHERE request_date BETWEEN '$filter_from' AND '$filter_to'
                 GROUP BY item_rm_id
-            ) trf_bpi ON base.item_rm_id = trf_bpi.item_rm_id
-            LEFT JOIN (
-                SELECT item_rm_id,
-                       SUM(CASE WHEN transfer_to = 'PLANT 1' THEN qty ELSE 0 END) AS in_plant1,
-                       SUM(CASE WHEN transfer_from = 'PLANT 1' THEN qty ELSE 0 END) AS out_plant1
-                FROM scan_rm_transfer
-                WHERE transaction_date >= '2025-09-18'
-                  AND transaction_date < '$filter_from'
+            ) x
+            GROUP BY x.item_rm_id
+        ) in_bpi_now ON a.id = in_bpi_now.item_rm_id
+
+         -- DOKUMENTASI :Semua transaksi OUT otomatis ke BPI (transfer)
+        LEFT JOIN (
+            SELECT 
+                x.item_rm_id,
+                SUM(x.total_out) AS total_out_bpi
+            FROM (
+                -- issued_material_details
+                SELECT item_rm_id, SUM(qty) AS total_out
+                FROM issued_material_details
+                WHERE DATE_FORMAT(created_date, '%Y-%m-%d')
+                    BETWEEN '$filter_from' AND '$filter_to'
                 GROUP BY item_rm_id
-            ) trf_plant1 ON base.item_rm_id = trf_plant1.item_rm_id
-        ) begin_whs ON a.id = begin_whs.item_rm_id
+                UNION ALL
+                -- transaction_rm OUT
+                SELECT item_rm_id, SUM(qty) AS total_out
+                FROM transaction_rm
+                WHERE request_date BETWEEN '$filter_from' AND '$filter_to'
+                AND transaction_kind = 'OUT'
+                GROUP BY item_rm_id
+            ) x
+            GROUP BY x.item_rm_id
+        ) out_bpi_now ON a.id = out_bpi_now.item_rm_id
+
+        LEFT JOIN (
+            SELECT 
+                item_rm_id,
+                SUM(CASE WHEN transfer_to = 'BPI' THEN qty ELSE 0 END) AS in_bpi,
+                SUM(CASE WHEN transfer_from = 'BPI' THEN qty ELSE 0 END) AS out_bpi,
+                SUM(CASE WHEN transfer_to = 'PLANT 1' THEN qty ELSE 0 END) AS in_plant1,
+                SUM(CASE WHEN transfer_from = 'PLANT 1' THEN qty ELSE 0 END) AS out_plant1
+            FROM scan_rm_transfer
+            WHERE DATE_FORMAT(transaction_date, '%Y-%m-%d')
+                BETWEEN '$filter_from' AND '$filter_to'
+            GROUP BY item_rm_id
+        ) trf_now ON a.id = trf_now.item_rm_id
 
         WHERE c.id LIKE '%$filter_item_category%'
         AND b.number LIKE '%$filter_item_family%'
@@ -1421,7 +1445,7 @@ class Report_history_transactions extends CI_Controller
         echo $html;
     }
 
-    public function lsb($option = "")
+    public function lsb($option = "")//berubah
     {
         if ($option == "excel") {
             $format  = date("Ymd");
@@ -1685,7 +1709,6 @@ class Report_history_transactions extends CI_Controller
         $totalIto = 0;
 
         foreach ($records as $record) {
-
             $item_rm_id = $record->id;
 
             $totalBeginStock += @$record->begin_stock;
@@ -1711,13 +1734,22 @@ class Report_history_transactions extends CI_Controller
             $totalQtySelisihOut += (($record->qty_issued_supply_sheet + $record->qty_issued_material_request + $record->qty_kanban + $record->qty_issued_non_supply_sheet_SJ + $record->qty_issued_non_supply_sheet_SP + $record->adj_out_qty + $record->bpb_qty) - $record->qty_out);
 
             $total_sales_minus = $record->qty_out_minus1 + $record->qty_out_minus2 + $record->qty_out_minus3;
-            $avg_sales_minus = ($total_sales_minus > 0) ? number_format($total_sales_minus / 3, 2) : '0.00';
+            
+            $avg_sales_minus_numeric = ($total_sales_minus > 0) ? ($total_sales_minus / 3) : 0;
+            $avg_sales_minus = number_format($avg_sales_minus_numeric, 2); // Hanya untuk tampilan
 
-            $stock_coverage = ($total_sales_minus > 0)
-                ? number_format(((@$record->begin_stock + $record->qty_in) - $record->qty_out) / ($total_sales_minus / 3), 2)
+            $ending_stock = (@$record->begin_stock + $record->qty_in) - $record->qty_out;
+
+            $_stock_coverage_numeric = 0;
+            if ($avg_sales_minus_numeric > 0) {
+                $_stock_coverage_numeric = $ending_stock / $avg_sales_minus_numeric;
+            }
+
+            $totalIto += $_stock_coverage_numeric;
+
+            $stock_coverage = ($avg_sales_minus_numeric > 0)
+                ? number_format($_stock_coverage_numeric, 2)
                 : '0'; // atau bisa diganti jadi '0.00' atau '-'
-
-            $totalIto += $stock_coverage;
 
             $html .= '  <tr>
                             <td style="text-align:center">' . $no . '</td>
