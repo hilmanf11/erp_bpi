@@ -49,11 +49,12 @@
             <div class="fitem">
                 <span style="width:35%; display:inline-block;">Category</span>
                 <select style="width:60%;" name="category" required="" class="easyui-combobox" panelHeight="auto">
-                    <option value="Current Assets">Currrent Assets</option>
+                    <option value="Current Assets">Current Assets</option>
                     <option value="Other Assets">Other Assets</option>
                     <option value="Current Liabilities">Current Liabilities</option>
                     <option value="Other Liabilities">Other Liabilities</option>
-                    <option value="Other Investor Equity">Current Investor Equity</option>
+                    <option value="Current Investor Equity">Current Investor Equity</option>
+                    <option value="Other Investor Equity">Other Investor Equity</option>
                     <option value="Manufacturing">Manufacturing</option>
                     <option value="Finishgood">Finishgood</option>
                     <option value="Sales">Sales</option>
