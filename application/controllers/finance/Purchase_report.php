@@ -65,7 +65,7 @@ class Purchase_report extends CI_Controller
 
                 $query= "SELECT 
                     a.id, 
-                    c.name as supplier_name,
+                    f.name as supplier_name,
                     a.receipt_no,
                     e.number as category_number,
                     a.po_no,
@@ -79,10 +79,21 @@ class Purchase_report extends CI_Controller
                     f.currency,
                     g.uom_default as uom,
                     b.division,
-                    d.price
+                    d.total_sub,
+                    d.total,
+                    (d.total / d.total_sub) as disc_portion,
+                    (CASE 
+                        WHEN COALESCE(d.discount_nominal,0) > 0 
+                            THEN COALESCE(d.total,0) / COALESCE(d.qty,0) 
+                        ELSE 
+                            (COALESCE(d.total,0) 
+                            - ((COALESCE(d.total,0) / NULLIF(COALESCE(d.total_sub,0),0)) 
+                                * COALESCE(d.discount_total,0)
+                            )
+                            ) / NULLIF(COALESCE(d.qty,0),0)
+                    END) AS price 
                 FROM purchase_order_receipts a
                 LEFT JOIN item_rm b ON a.item_rm_id = b.id
-                LEFT JOIN suppliers c ON a.supplier_id = c.id
                 LEFT JOIN purchase_orders d ON a.po_no = d.po_no and a.item_rm_id = d.item_rm_id
                 LEFT JOIN item_categories e ON b.item_category_id = e.id
                 LEFT JOIN suppliers f ON d.supplier_id = f.id
@@ -90,7 +101,7 @@ class Purchase_report extends CI_Controller
                 WHERE a.supplier_id LIKE '%$filter_supplier_id%' and b.division LIKE '%$filter_division%' and 
                 DATE_FORMAT(a.receipt_date, '%Y-%m-%d') BETWEEN '$filter_from' and '$filter_to' and b.item_category_id LIKE '%$filter_category_id%'
                 GROUP BY a.id  
-                ORDER BY c.name ASC, a.receipt_no ASC, b.number DESC";
+                ORDER BY f.name ASC, a.receipt_no ASC, b.number DESC";
             $records = $this->crud->query($query);
 
             $html = '<html><head><title>Print Data</title></head><style>body {font-family: Arial, Helvetica, sans-serif;}#customers {border-collapse: collapse;width: 100%;font-size: 12px;}#customers td, #customers th {border: 1px solid #ddd;padding: 2px;}#customers tr:nth-child(even){background-color: #f2f2f2;}#customers tr:hover {background-color: #ddd;}#customers th {padding-top: 2px;padding-bottom: 2px;text-align: center;color: black;}</style><body>
@@ -223,8 +234,8 @@ class Purchase_report extends CI_Controller
             // SUMMARY REPORT 
             $query = "SELECT 
                     a.id, 
-                    c.id as supplier_id,
-                    c.name as supplier_name,
+                    f.id as supplier_id,
+                    f.name as supplier_name,
                     a.receipt_no,
                     e.number as category_number,
                     a.po_no,
@@ -239,10 +250,18 @@ class Purchase_report extends CI_Controller
                     f.currency,
                     g.uom_default as uom,
                     b.division,
-                    d.price
+                    (CASE 
+                        WHEN COALESCE(d.discount_nominal,0) > 0 
+                            THEN COALESCE(d.total,0) / COALESCE(d.qty,0) 
+                        ELSE 
+                            (COALESCE(d.total,0) 
+                            - ((COALESCE(d.total,0) / NULLIF(COALESCE(d.total_sub,0),0)) 
+                                * COALESCE(d.discount_total,0)
+                            )
+                            ) / NULLIF(COALESCE(d.qty,0),0)
+                    END) AS price 
                 FROM purchase_order_receipts a
                 LEFT JOIN item_rm b ON a.item_rm_id = b.id
-                LEFT JOIN suppliers c ON a.supplier_id = c.id
                 LEFT JOIN purchase_orders d ON a.po_no = d.po_no and a.item_rm_id = d.item_rm_id
                 LEFT JOIN item_categories e ON b.item_category_id = e.id
                 LEFT JOIN suppliers f ON d.supplier_id = f.id
@@ -250,7 +269,7 @@ class Purchase_report extends CI_Controller
                 WHERE a.supplier_id LIKE '%$filter_supplier_id%' and b.division LIKE '%$filter_division%' and 
                 DATE_FORMAT(a.receipt_date, '%Y-%m-%d') BETWEEN '$filter_from' and '$filter_to' and b.item_category_id LIKE '%$filter_category_id%'
                 GROUP BY a.id  
-                ORDER BY c.name ASC, a.receipt_no ASC, b.number DESC";
+                ORDER BY f.name ASC, a.receipt_no ASC, b.number DESC";
             $records = $this->db->query($query)->result_array();
 
             // mapping data per supplier_id and division
