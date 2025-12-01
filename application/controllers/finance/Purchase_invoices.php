@@ -250,130 +250,6 @@ class Purchase_invoices extends CI_Controller
     public function calculateJournal()
     {
         $journals = json_decode(file_get_contents("json/purchase_invoice_journals.json"), true);
-        $jsonDatas = json_decode(file_get_contents("json/purchase_invoices.json"), true);
-        $arr = [];
-
-        // Jika purchase_invoice_journals.json TIDAK KOSONG
-        if (!empty($journals)) {
-            // Mengubah jsonDatas menjadi peta (map) agar mudah diakses
-            $aggregatedData = [];
-            foreach ($jsonDatas as $data) {
-                $account_number = $data['account_number'];
-                $account_type = $data['account_type'];
-                
-                if (!isset($aggregatedData[$account_number])) {
-                    $aggregatedData[$account_number] = [
-                        'debit' => 0,
-                        'credit' => 0,
-                        'local_debit' => 0,
-                        'local_credit' => 0
-                    ];
-                }
-                
-                if ($account_type == "DEBIT") {
-                    $aggregatedData[$account_number]['debit'] += $data['total'];
-                    $aggregatedData[$account_number]['local_debit'] += $data['total_idr'] ?? $data['total'];
-                } elseif ($account_type == "CREDIT") {
-                    $aggregatedData[$account_number]['credit'] += $data['total'];
-                    $aggregatedData[$account_number]['local_credit'] += $data['total_idr'] ?? $data['total'];
-                }
-            }
-
-            // Loop melalui jurnal dan gabungkan dengan data yang sudah dihitung
-            foreach ($journals as $journal) {
-                $account_number = $journal['account_number'];
-                $total_debit = $aggregatedData[$account_number]['debit'] ?? 0;
-                $total_credit = $aggregatedData[$account_number]['credit'] ?? 0;
-                $local_debit = $aggregatedData[$account_number]['local_debit'] ?? 0;
-                $local_credit = $aggregatedData[$account_number]['local_credit'] ?? 0;
-
-                $final_debit = max($total_debit, $journal['debit'] ?? 0);
-                $final_credit = max($total_credit, $journal['credit'] ?? 0);
-                $final_local_debit = max($local_debit, $journal['local_debit'] ?? 0);
-                $final_local_credit = max($local_credit, $journal['local_credit'] ?? 0);
-                
-                $arr[] = [
-                    "account_number" => $journal['account_number'],
-                    "account_name" => $journal['account_name'],
-                    "debit" => round($final_debit, 2),
-                    "credit" => round($final_credit, 2),
-                    "local_debit" => round($final_local_debit, 2),
-                    "local_credit" => round($final_local_credit, 2),
-                    "flag" => $journal['flag'],
-                ];
-            }
-        } else {
-            // Jika purchase_invoice_journals.json kosong
-            $mergedData = [];
-            foreach ($jsonDatas as $jsonData) {
-                $account_number = $jsonData["account_number"];
-                $account_name = $jsonData["account_name"];
-                $account_type = $jsonData["account_type"];
-                
-                if (!isset($mergedData[$account_number])) {
-                    $mergedData[$account_number] = [
-                        "account_number" => $account_number,
-                        "account_name" => $account_name,
-                        "debit" => 0,
-                        "credit" => 0,
-                        "local_debit" => 0,
-                        "local_credit" => 0,
-                        "flag" => 0,
-                    ];
-                }
-
-                if ($account_type == "DEBIT") {
-                    $mergedData[$account_number]["debit"] += $jsonData["total"];
-                    $mergedData[$account_number]["local_debit"] += $jsonData["total_idr"] ?? $jsonData["total"];
-                } elseif ($account_type == "CREDIT") {
-                    $mergedData[$account_number]["credit"] += $jsonData["total"];
-                    $mergedData[$account_number]["local_credit"] += $jsonData["total_idr"] ?? $jsonData["total"];
-                }
-            }
-            
-            // Account VAT IN otomatis muncul di Journal List Ketika Add To Journal walau tidak ada setup journal. Posisinya di DEBIT.
-            $vatIn = $this->db->select('account_number, account_name')->from('account_coa')->where('account_number', '170.170.00')->get()->row_array();
-            if ($vatIn) {
-                $mergedData[$vatIn['account_number']] = [
-                    "account_number" => $vatIn['account_number'],
-                    "account_name" => $vatIn['account_name'],
-                    "debit" => 0,
-                    "credit" => 0,
-                    "local_debit" => 0,
-                    "local_credit" => 0,
-                    "flag" => 0,
-                ];
-            }
-
-            $thirdParties = $this->db->select('account_number, account_name')->from('account_coa')->where('account_number', '210.120.00')->get()->row_array();
-            if ($thirdParties) {
-                $mergedData[$thirdParties['account_number']] = [
-                    "account_number" => $thirdParties['account_number'],
-                    "account_name" => $thirdParties['account_name'],
-                    "debit" => 0,
-                    "credit" => 0,
-                    "local_debit" => 0,
-                    "local_credit" => 0,
-                    "flag" => 0,
-                ];
-            }
-
-            // Mengisi flag setelah penggabungan data selesai
-            $flag = 1;
-            foreach ($mergedData as &$data) {
-                $data['flag'] = $flag++;
-            }
-            unset($data);
-
-            $arr = array_values($mergedData);
-        }
-        
-        echo json_encode($arr);
-    }
-
-    public function calculateJournal_backup()
-    {
-        $journals = json_decode(file_get_contents("json/purchase_invoice_journals.json"), true);
         if (count($journals) > 0) {
             foreach ($journals as $journal) {
                 $jsonDatas = json_decode(file_get_contents("json/purchase_invoices.json"), true);
@@ -632,16 +508,17 @@ class Purchase_invoices extends CI_Controller
         echo $datenow . "-" . time();
     }
 
-    public function datatablesTemp()//berubah : penambahan COALESCE(g. middle,1) as middle
+    public function datatablesTemp()//berubah req Bu Nina 01-12-2025
     {
         $por_no = base64_decode($this->input->get('por_no'));
         $trans_date = base64_decode($this->input->get('trans_date'));
         $por_no_ex = explode(",", $por_no);
 
-        $this->db->select("a.receipt_no as por_no, a.po_no, c.id as item_rm_id, c.number as item_number, c.name as item_name, c.uom, b.currency, e.item_supplier as supplier_product,
-            a.qty_receipt as qty, f.price, f.discount, 'IDR' as currency_local, h.account_number, i.account_name,
-            ((a.qty_receipt * f.price) - (a.qty_receipt * f.price) * (f.discount / 100)) as total,COALESCE(g. middle,1) as middle, 
-            (CASE WHEN g.middle != '' THEN (g.middle * ((a.qty_receipt * f.price) - (a.qty_receipt * f.price) * (f.discount / 100))) ELSE ((a.qty_receipt * f.price) - (a.qty_receipt * f.price) * (f.discount / 100)) END) as total_local");
+        $this->db->select("a.receipt_no as por_no, a.po_no, c.id as item_rm_id, c.number as item_number, c.name as item_name, e.uom_default as uom, b.currency, 
+            (CASE WHEN c.item_family_id = 'P28' THEN f.specification ELSE e.item_supplier END ) as supplier_product,
+            a.qty_receipt2 as qty, f.price, f.discount, 'IDR' as currency_local, h.account_number, i.account_name,
+            ((a.qty_receipt2 * f.price) - (a.qty_receipt2 * f.price) * (f.discount / 100)) as total,COALESCE(g. middle,1) as middle, 
+            (CASE WHEN g.middle != '' THEN (g.middle * ((a.qty_receipt2 * f.price) - (a.qty_receipt2 * f.price) * (f.discount / 100))) ELSE ((a.qty_receipt2 * f.price) - (a.qty_receipt2 * f.price) * (f.discount / 100)) END) as total_local");
         $this->db->from('purchase_order_receipts a');
         $this->db->join('suppliers b', 'a.supplier_id = b.id');
         $this->db->join('item_rm c', 'a.item_rm_id = c.id');
@@ -658,6 +535,7 @@ class Purchase_invoices extends CI_Controller
         $this->db->group_by('a.po_no');
         $this->db->group_by('a.item_rm_id');
         $this->db->group_by('a.receipt_no');
+        $this->db->group_by('f.specification');
         $this->db->order_by('a.receipt_no', 'asc');
         $records = $this->db->get()->result_array();
 
@@ -1052,6 +930,7 @@ class Purchase_invoices extends CI_Controller
                     $this->db->where('por_no', @$post['por_no']);
                     $this->db->where('po_no', @$post['po_no']);
                     $this->db->where('item_no', @$post['item_no']); 
+                    $this->db->where('supplier_product', @$post['supplier_product']); //berubah: menambahkan supplier_product untuk item no sama tapi spec beda
                     $checkExisting = $this->db->get('purchase_invoices')->row();
 
                     if ($checkExisting) {
@@ -1870,6 +1749,7 @@ class Purchase_invoices extends CI_Controller
                                         <th rowspan="2">PO No</th>
                                         <th rowspan="2">Product No</th>
                                         <th rowspan="2">Product Name</th>
+                                        <th rowspan="2">Supplier Product</th>
                                         <th rowspan="2">Uom</th>
                                         <th rowspan="2">Qty</th>
                                         <th colspan="3">Original Currency</th>
@@ -1910,13 +1790,14 @@ class Purchase_invoices extends CI_Controller
                     $grand_total_all -= $record['total'];
                     $grand_total_local -= $amount;
                 }
-
+                // berubah : penambahan supplier_product saat print
                 $html .= '  <tr>
                                 <td style="text-align:center">' . $no . '</td>
                                 <td>' . $record['por_no'] . '</td>
                                 <td>' . $record['po_no'] . '</td>
                                 <td>' . $record['item_number'] . '</td>
                                 <td>' . $record['item_name'] . '</td>
+                                <td>' . $record['supplier_product'] . '</td>
                                 <td>' . $record['uom'] . '</td>
                                 <td style="text-align:right;">' . @number_format(($record['qty']), 2) . '</td>
                                 <td>' . $record['currency'] . '</td>
@@ -1929,7 +1810,7 @@ class Purchase_invoices extends CI_Controller
             }
 
             $html .= '  <tr>
-                            <th colspan="9" style="text-align:right">TOTAL</th>
+                            <th colspan="10" style="text-align:right">TOTAL</th>
                             <th style="text-align:right">'.number_format($grand_total, 2).'</th>
                             <th></th>
                             <th style="text-align:right">'.number_format($grand_total_local, 2).'</th>
