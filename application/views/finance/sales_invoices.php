@@ -845,6 +845,8 @@
     // Setting on/off FITUR AUTO POSTING JOURNAL => ubah ke TRUE jika ingin dinyalakan
     let auto_posting_journal = true; // di SI live sudah diaktifkan
 
+    let globalDivisionCode = null;
+
     let formMode = 'create';
     //ADD DATA
     function add() {
@@ -1087,6 +1089,7 @@
                     panelHeight: 'panelHeight',
                     prompt: 'Choose Division',
                     onChange: function(newValue, oldValue){
+                        getDivisionCode();
                         getJournalType();
                     },
                     onSelect: function(division) {
@@ -2939,7 +2942,7 @@
 
         var lastIndex;
         $('#dg2').datagrid({
-            url: `<?= base_url('finance/sales_invoices/datatablesTemp/') ?>?delivery_note_no=${encodedDeliveryNoteNo}`,
+            url: `<?= base_url('finance/sales_invoices/datatablesTemp/') ?>?delivery_note_no=${encodedDeliveryNoteNo}&division=${globalDivisionCode}`,
             onLoadSuccess: function(data) {
                 console.log("Data from Preview:", data);
 
@@ -4339,6 +4342,11 @@
         });
  
     });
+
+    function getDivisionCode() {
+        globalDivisionCode = $('#division').combobox('getValue');
+        console.log("Division Code: ", globalDivisionCode);
+    }
 
     // --- FUNGSI UTAMA UNTUK MENGAMBIL JOURNAL TYPE ---
     function getJournalType() {

@@ -683,6 +683,7 @@ class Sales_invoices extends CI_Controller
     {
         // $delivery_note_no = base64_decode($this->input->get('delivery_note_no'));
         $delivery_note_no = explode(",", base64_decode($this->input->get('delivery_note_no')));
+        $division = $this->input->get('division');
 
         // $this->db->select('a.delivery_note_no, 
         // a.customer_order_no, 
@@ -787,7 +788,8 @@ class Sales_invoices extends CI_Controller
             }
 
             // Dokumentasi : Account Number ambil dari child table customer_account_numbers
-            $account_division = $record['division'] ?? '-';
+            $divisionDN = $record['division'] ?? '';
+            $account_division = $division ?? $divisionDN;
             $getAccount = $this->db->get_where('customer_account_numbers', ['division' => $account_division, 'customer_id' => $customer_id])->row();
             if (!empty($getAccount)) {
                 $account_number = $getAccount->account_number ?? '';
