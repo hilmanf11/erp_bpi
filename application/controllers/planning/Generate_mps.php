@@ -142,7 +142,24 @@ class Generate_mps extends CI_Controller
             $this->db->from('item_fg a');
             $this->db->join('item_fg_subs b', "a.id = b.item_fg_sa_id", 'left');
             $this->db->join('stock_wip c', "a.id = c.item_fg_id and c.p_month = '$filter_month' and c.p_year = '$filter_year' and c.revision = '$filter_revision'", 'left');
-            $this->db->join('os_mpp d', "a.id = d.item_fg_id and d.p_month = '$filter_month' and d.p_year = '$filter_year' and d.revision = '$filter_revision'", 'left');
+            $this->db->join("
+                (
+                    SELECT item_fg_id,
+                        SUM(qty) AS qty
+                    FROM os_mpp
+                    WHERE p_month = '$filter_month'
+                    AND p_year = '$filter_year'
+                    AND revision = (
+                        SELECT MAX(revision)
+                        FROM os_mpp m2
+                        WHERE m2.item_fg_id = os_mpp.item_fg_id
+                            AND m2.p_month = '$filter_month'
+                            AND m2.p_year = '$filter_year'
+                    )
+                    GROUP BY item_fg_id
+                ) d",
+                "a.id = d.item_fg_id", "left"
+            );
             $this->db->join("(SELECT a.id, (COALESCE(b.qty_scan, 0) + COALESCE(c.qty_nb, 0) + COALESCE(d.qty_adj_in, 0) + COALESCE(e.qty_wip, 0) - COALESCE(f.qty_adj_out, 0) - COALESCE(g.qty_dn, 0) - COALESCE(h.qty_repair, 0)) AS stock_fg
                 FROM item_fg a
                 LEFT JOIN (SELECT a.item_fg_id, SUM(a.qty) AS qty_scan FROM scan_item_receipts_fg a JOIN checksheets b ON a.checksheet_number = b.number AND a.item_fg_id = b.item_fg_id WHERE b.packing_date <= '$filter_cutoff' GROUP BY a.item_fg_id) b ON a.id = b.item_fg_id
@@ -162,24 +179,110 @@ class Generate_mps extends CI_Controller
                 GROUP BY a.sales_order_no, a.item_fg_id) z
                 GROUP BY z.id) f", '(a.id = f.id or b.item_fg_id = f.id)', 'left');
 
-            $this->db->join("(SELECT f.item_fg_id, 
-                SUM(f.month_1) AS month_1, 
-                SUM(f.month_2) AS month_2, 
-                SUM(f.month_3) AS month_3, 
-                SUM(f.month_4) AS month_4, 
-                SUM(f.month_5) AS month_5, 
-                SUM(f.month_6) AS month_6 
-            FROM forecasts f 
-            JOIN ( SELECT customer_id, item_fg_id, MAX(revision) AS latest_revision 
-                   FROM forecasts 
-                   WHERE p_year = '$filter_year' AND p_month = '$filter_month' 
-                   GROUP BY customer_id, item_fg_id 
-            ) AS latest_revisions 
-                   ON f.customer_id = latest_revisions.customer_id 
-                   AND f.item_fg_id = latest_revisions.item_fg_id 
-                   AND f.revision = latest_revisions.latest_revision 
-            WHERE f.p_year = '$filter_year' AND f.p_month = '$filter_month' 
-            GROUP BY f.item_fg_id) g ", '(a.id = g.item_fg_id or b.item_fg_id = g.item_fg_id)', 'left');
+            // $this->db->join("(SELECT f.item_fg_id, 
+            //     SUM(f.month_1) AS month_1, 
+            //     SUM(f.month_2) AS month_2, 
+            //     SUM(f.month_3) AS month_3, 
+            //     SUM(f.month_4) AS month_4, 
+            //     SUM(f.month_5) AS month_5, 
+            //     SUM(f.month_6) AS month_6 
+            // FROM forecasts f 
+            // JOIN ( SELECT customer_id, item_fg_id, MAX(revision) AS latest_revision 
+            //        FROM forecasts 
+            //        WHERE p_year = '$filter_year' AND p_month = '$filter_month' 
+            //        GROUP BY customer_id, item_fg_id 
+            // ) AS latest_revisions 
+            //        ON f.customer_id = latest_revisions.customer_id 
+            //        AND f.item_fg_id = latest_revisions.item_fg_id 
+            //        AND f.revision = latest_revisions.latest_revision 
+            // WHERE f.p_year = '$filter_year' AND f.p_month = '$filter_month' 
+            // GROUP BY f.item_fg_id) g ", '(a.id = g.item_fg_id or b.item_fg_id = g.item_fg_id)', 'left');
+
+            $this->db->join("
+            (
+                SELECT 
+                    T.item_fg_id,
+
+                    MAX(CASE WHEN T.idx = 1 THEN T.final_value END) AS month_1,
+                    MAX(CASE WHEN T.idx = 2 THEN T.final_value END) AS month_2,
+                    MAX(CASE WHEN T.idx = 3 THEN T.final_value END) AS month_3,
+                    MAX(CASE WHEN T.idx = 4 THEN T.final_value END) AS month_4,
+                    MAX(CASE WHEN T.idx = 5 THEN T.final_value END) AS month_5,
+                    MAX(CASE WHEN T.idx = 6 THEN T.final_value END) AS month_6
+
+                FROM
+                (
+                    --
+                    -- Buat 6 bulan ke depan dari filter
+                    --
+                    SELECT 
+                        f.item_fg_id,
+                        m.idx,
+                        (
+                            SELECT 
+                                COALESCE(
+                                    /* 1. ambil forecast bulan target (month_1) */
+                                    (SELECT f1.month_1 
+                                    FROM forecasts f1 
+                                    WHERE f1.item_fg_id = f.item_fg_id
+                                    AND f1.customer_id = f.customer_id
+                                    AND CONCAT(f1.p_year,'-',LPAD(f1.p_month,2,'0')) = DATE_FORMAT(m.period,'%Y-%m')
+                                    ORDER BY f1.revision DESC LIMIT 1),
+
+                                    /* 2. fallback 1 bulan sebelum → month_2 */
+                                    (SELECT f2.month_2 
+                                    FROM forecasts f2 
+                                    WHERE f2.item_fg_id = f.item_fg_id
+                                    AND f2.customer_id = f.customer_id
+                                    AND CONCAT(f2.p_year,'-',LPAD(f2.p_month,2,'0')) = DATE_FORMAT(DATE_SUB(m.period, INTERVAL 1 MONTH),'%Y-%m')
+                                    ORDER BY f2.revision DESC LIMIT 1),
+
+                                    /* 3. fallback 2 bulan sebelum → month_3 */
+                                    (SELECT f3.month_3 
+                                    FROM forecasts f3 
+                                    WHERE f3.item_fg_id = f.item_fg_id
+                                    AND f3.customer_id = f.customer_id
+                                    AND CONCAT(f3.p_year,'-',LPAD(f3.p_month,2,'0')) = DATE_FORMAT(DATE_SUB(m.period, INTERVAL 2 MONTH),'%Y-%m')
+                                    ORDER BY f3.revision DESC LIMIT 1),
+
+                                    /* 4. fallback 3 bulan sebelum → month_4 */
+                                    (SELECT f4.month_4 
+                                    FROM forecasts f4 
+                                    WHERE f4.item_fg_id = f.item_fg_id
+                                    AND f4.customer_id = f.customer_id
+                                    AND CONCAT(f4.p_year,'-',LPAD(f4.p_month,2,'0')) = DATE_FORMAT(DATE_SUB(m.period, INTERVAL 3 MONTH),'%Y-%m')
+                                    ORDER BY f4.revision DESC LIMIT 1),
+
+                                    0
+                                )
+                        ) AS final_value
+                    FROM forecasts f
+
+                    CROSS JOIN (
+                        /* generate 6 bulan dari filter */
+                        SELECT 1 AS idx, 
+                            DATE_ADD(MAKEDATE({$filter_year},1), INTERVAL {$filter_month}-1 MONTH) AS period
+                        UNION ALL
+                        SELECT 2, DATE_ADD(DATE_ADD(MAKEDATE({$filter_year},1), INTERVAL {$filter_month}-1 MONTH), INTERVAL 1 MONTH)
+                        UNION ALL
+                        SELECT 3, DATE_ADD(DATE_ADD(MAKEDATE({$filter_year},1), INTERVAL {$filter_month}-1 MONTH), INTERVAL 2 MONTH)
+                        UNION ALL
+                        SELECT 4, DATE_ADD(DATE_ADD(MAKEDATE({$filter_year},1), INTERVAL {$filter_month}-1 MONTH), INTERVAL 3 MONTH)
+                        UNION ALL
+                        SELECT 5, DATE_ADD(DATE_ADD(MAKEDATE({$filter_year},1), INTERVAL {$filter_month}-1 MONTH), INTERVAL 4 MONTH)
+                        UNION ALL
+                        SELECT 6, DATE_ADD(DATE_ADD(MAKEDATE({$filter_year},1), INTERVAL {$filter_month}-1 MONTH), INTERVAL 5 MONTH)
+                    ) m
+
+                    WHERE 
+                        f.p_year = {$filter_year}
+                        AND f.p_month = {$filter_month}
+                        AND f.deleted = 0
+                ) T
+
+                GROUP BY T.item_fg_id
+
+            ) g", "a.id = g.item_fg_id OR b.item_fg_id = g.item_fg_id", "left");
 
             $this->db->join("(SELECT DISTINCT a.item_fg_id, a.cycle_time, a.shift_hour, a.productcivity, b.cavity_standard, a.priority FROM menu_loadings a JOIN molds b ON a.mold_id = b.id WHERE a.priority = 1 GROUP BY a.item_fg_id) h ", 'a.id = h.item_fg_id', 'left');
             
@@ -341,7 +444,7 @@ class Generate_mps extends CI_Controller
             $this->db->where('p_month', $filter_month);
             $this->db->where('p_year', $filter_year);
         }
-        $this->db->like('revision', $filter_revision);
+        // $this->db->like('revision', $filter_revision);
         $records = $this->db->get()->result_array();
         
         if (count($records) > 0) {
@@ -1020,6 +1123,9 @@ class Generate_mps extends CI_Controller
         $filter_revision = base64_decode($this->input->get('filter_revision'));
         $period = $filter_year . "-" . $filter_month;
 
+        $cutoff = $this->crud->read("generate_mps", [], ["p_month" => $filter_month, "p_year" => $filter_year,"revision" => $filter_revision]);
+
+
         //Select Customer
         // $this->db->select('a.*, b.name as customer_name');
         // $this->db->from('generate_mps a');
@@ -1086,7 +1192,7 @@ class Generate_mps extends CI_Controller
         </center>
         <p style="font-size:12px; margin:0;">PERIOD ' . $this->monthName($filter_month) . ' ' . $filter_year . '</p>
         <p style="font-size:12px; margin:0;">REVISION ' . $filter_revision . '</p>
-        <p style="font-size:12px; margin:0;">CUTOFF ' . @$filter_cutoff . '</p>
+        <p style="font-size:12px; margin:0;">CUTOFF ' . @$cutoff->cutoff . '</p>
         <p style="font-size:12px; margin:0;">PRINT DATE ' . date("d M Y H:m:s") . '</p>
         <p style="font-size:12px; margin:0;">PRINT BY ' . $this->session->username . '</p>
         <br>
