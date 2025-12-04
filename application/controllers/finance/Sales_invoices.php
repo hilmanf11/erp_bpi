@@ -1913,7 +1913,8 @@ class Sales_invoices extends CI_Controller
                 $dpp_total      = (($record['total_sub']) * 11/12);
 
                 // --- VAT = ((sub_total - down_payment) * 11/12) * taxes
-                $vat_total      = (($sub_total - $down_payment) * 11/12) * ($taxes/100);
+                // $vat_total      = (($sub_total - $down_payment) * 11/12) * ($taxes/100);
+                $vat_total      = ($record['total_vat']);
 
                 $disc_pr = ($record['disc_pr']);
                 $disc_dp = ($record['disc_dp']);
@@ -2675,7 +2676,8 @@ class Sales_invoices extends CI_Controller
                 $dpp_total      = (($record['total_sub']) * 11/12);
 
                 // --- VAT = ((sub_total - down_payment) * 11/12) * taxes
-                $vat_total      = (($sub_total - $down_payment) * 11/12) * ($taxes/100);
+                // $vat_total      = (($sub_total - $down_payment) * 11/12) * ($taxes/100);
+                $vat_total      = ($record['total_vat']); // sementara ambil dari db
 
                 $disc_pr = ($record['disc_pr']);
                 $disc_dp = ($record['disc_dp']);
