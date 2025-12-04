@@ -15,7 +15,8 @@
         <tr>
             <th rowspan="2" field="ck" checkbox="true"></th>
             <th rowspan="2" data-options="field:'customer_name',width:220,halign:'center'">Customer Name</th>
-            <th rowspan="2" data-options="field:'issued_date',width:100,halign:'center'">Issued Date</th>
+            <!-- <th rowspan="2" data-options="field:'document_no',width:150,halign:'center'">Document No</th> -->
+            <!-- <th rowspan="2" data-options="field:'issued_date',width:100,halign:'center'">Issued Date</th> -->
             <th colspan="2" data-options="field:'',width:200,halign:'center'">Period</th>
             <th rowspan="2" data-options="field:'revision',width:80,align:'center'">Revision</th>
             <th rowspan="2" data-options="field:'remark',width:100,halign:'center'">Remarks</th>
@@ -42,13 +43,13 @@
             <div style="float: left; width: 50%;">
                 <div class="fitem">
                     <span style="width:35%; display:inline-block;">Issued Date</span>
-                    <input style="width:30%;" id="filter_issued_date_from" value="<?= date("Y-m-01") ?>" data-options="formatter:myformatter,parser:myparser" class="easyui-datebox">
-                    <input style="width:30%;" id="filter_issued_date_to" value="<?= date("Y-m-t") ?>" data-options="formatter:myformatter,parser:myparser" class="easyui-datebox">
+                    <input style="width:30%;" id="filter_issued_date_from" value="" data-options="formatter:myformatter,parser:myparser" class="easyui-datebox">
+                    <input style="width:30%;" id="filter_issued_date_to" value="" data-options="formatter:myformatter,parser:myparser" class="easyui-datebox">
                 </div>
                 <div class="fitem">
                     <span style="width:35%; display:inline-block;">Period</span>
-                    <input style="width:30%;" id="filter_period_month" value="<?= date("m") ?>" class="easyui-combobox">
-                    <input style="width:30%;" id="filter_period_year" value="<?= date("Y") ?>" class="easyui-combobox">
+                    <input style="width:30%;" id="filter_period_month" value="" class="easyui-combobox">
+                    <input style="width:30%;" id="filter_period_year" value="" class="easyui-combobox">
                 </div>
                 <div class="fitem">
                     <span style="width:35%; display:inline-block;"></span>
@@ -59,6 +60,10 @@
                 <div class="fitem">
                     <span style="width:35%; display:inline-block;">Customer</span>
                     <input style="width:60%;" id="filter_customer_id" class="easyui-combogrid">
+                </div>
+                <div class="fitem">
+                    <span style="width:35%; display:inline-block;">Product No</span>
+                    <input style="width:60%;" id="filter_items" class="easyui-combogrid">
                 </div>
                 <div class="fitem">
                     <span style="width:35%; display:inline-block;">Revision</span>
@@ -543,6 +548,7 @@
         var filter_period_month = $("#filter_period_month").combobox('getValue');
         var filter_period_year = $("#filter_period_year").combobox('getValue');
         var filter_customer_id = $("#filter_customer_id").combogrid('getValue');
+        var filter_items = $("#filter_items").combogrid('getValue');
         var filter_revision = $("#filter_revision").combobox('getValue');
 
         var url = "?filter_issued_date_from=" + window.btoa(filter_issued_date_from) +
@@ -550,6 +556,7 @@
             "&filter_period_month=" + window.btoa(filter_period_month) +
             "&filter_period_year=" + window.btoa(filter_period_year) +
             "&filter_customer_id=" + window.btoa(filter_customer_id) +
+            "&filter_items=" + window.btoa(filter_items) +
             "&filter_revision=" + window.btoa(filter_revision);
 
         $('#dg').datagrid({
@@ -572,6 +579,7 @@
         var filter_period_month = $("#filter_period_month").combobox('getValue');
         var filter_period_year = $("#filter_period_year").combobox('getValue');
         var filter_customer_id = $("#filter_customer_id").combogrid('getValue');
+        var filter_items = $("#filter_items").combogrid('getValue');
         var filter_revision = $("#filter_revision").combobox('getValue');
 
         var url = "?filter_issued_date_from=" + window.btoa(filter_issued_date_from) +
@@ -579,6 +587,7 @@
             "&filter_period_month=" + window.btoa(filter_period_month) +
             "&filter_period_year=" + window.btoa(filter_period_year) +
             "&filter_customer_id=" + window.btoa(filter_customer_id) +
+            "&filter_items=" + window.btoa(filter_items) +
             "&filter_revision=" + window.btoa(filter_revision);
 
         window.location.assign('<?= base_url('planning/forecasts/print/excel') ?>' + url);
@@ -626,7 +635,12 @@
                                     field: 'document_no',
                                     title: 'Document No',
                                     halign: 'center',
-                                    width: 120
+                                    width: 100
+                                }, {
+                                    field: 'issued_date',
+                                    title: 'Isseud Date',
+                                    halign: 'center',
+                                    width: 100
                                 }, {
                                     field: 'item_fg_number',
                                     title: 'Product No',
@@ -928,6 +942,34 @@
         }],
     });
 
+    $('#filter_items').combogrid({
+        url: '<?= base_url('master/item_fg/reads/') ?>',
+        panelWidth: 420,
+        idField: 'id',
+        textField: 'number',
+        mode: 'remote',
+        fitColumns: true,
+        prompt: "Select Product No",
+        icons: [{
+            iconCls: 'icon-clear',
+            handler: function(e) {
+                $(e.data.target).combogrid('clear').combogrid('textbox').focus();
+            }
+        }],
+
+        columns: [
+            [{
+                field: 'number',
+                title: 'Product No',
+                width: 100
+            }, {
+                field: 'name',
+                title: 'Product Name',
+                width: 200
+            }, ]
+        ]
+    });
+
     // FORMAT tahun-bulan-tanggal
     function myformatter(date) {
         var y = date.getFullYear();
@@ -950,9 +992,15 @@
     }
 
     function numberFormat(value, row) {
+    // Jika value null, undefined, atau string kosong → tampilkan kosong
+        if (value === null || value === undefined || value === "") {
+            return "<b></b>";
+        }
+
         const formatter = new Intl.NumberFormat('id-ID', {
             minimumFractionDigits: 0
         });
+
         return "<b>" + formatter.format(value) + "</b>";
     }
 

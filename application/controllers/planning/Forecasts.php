@@ -109,6 +109,7 @@ class Forecasts extends CI_Controller
             $filter_period_month = @base64_decode($get['filter_period_month']);
             $filter_period_year = @base64_decode($get['filter_period_year']);
             $filter_customer_id = @base64_decode($get['filter_customer_id']);
+            $filter_items = @base64_decode($get['filter_items']);
             $filter_revision = @base64_decode($get['filter_revision']);
 
             $page = $this->input->post('page');
@@ -130,14 +131,15 @@ class Forecasts extends CI_Controller
             $this->db->like('a.p_year', $filter_period_year);
             $this->db->like('a.customer_id', $filter_customer_id);
             $this->db->like('a.revision', $filter_revision);
+            $this->db->like('a.item_fg_id', $filter_items);
             $this->db->group_by('a.customer_id');
             $this->db->group_by('a.p_month');
             $this->db->group_by('a.p_year');
             $this->db->group_by('a.revision');
             // $this->db->group_by('a.item_fg_id');
             // $this->db->group_by('a.document_no');
-            $this->db->order_by('a.p_month', 'ASC');
             $this->db->order_by('a.p_year', 'ASC');
+            $this->db->order_by('a.p_month', 'ASC');
             $this->db->order_by('a.customer_id', 'ASC');
             //Total Data
             $totalRows = $this->db->count_all_results('', false);
@@ -258,7 +260,34 @@ class Forecasts extends CI_Controller
                     $send2 = $this->crud->create('forecast_histories', $post);
                 }
             } else {
-                $send = $this->crud->create('forecasts', $post);
+                function toNull($value) {
+                    return $value === "" ? null : $value;
+                }
+
+                $dataFinal = array(
+                    "p_month"       => $post['p_month'],
+                    "p_year"        => $post['p_year'],
+                    "customer_id"   => $post['customer_id'],
+                    "document_no"   => $post['document_no'],
+                    "issued_date"   => $post['issued_date'],
+                    "revision"      => $post['revision'],
+                    "item_fg_id"    => $post['item_fg_id'],
+                    "month_1"       => toNull($post['month_1'] ?? null),
+                    "month_2"       => toNull($post['month_2'] ?? null),
+                    "month_3"       => toNull($post['month_3'] ?? null),
+                    "month_4"       => toNull($post['month_4'] ?? null),
+                    "month_5"       => toNull($post['month_5'] ?? null),
+                    "month_6"       => toNull($post['month_6'] ?? null),
+                    "month_7"       => toNull($post['month_7'] ?? null),
+                    "month_8"       => toNull($post['month_8'] ?? null),
+                    "month_9"       => toNull($post['month_9'] ?? null),
+                    "month_10"      => toNull($post['month_10'] ?? null),
+                    "month_11"      => toNull($post['month_11'] ?? null),
+                    "month_12"      => toNull($post['month_12'] ?? null),
+                    "remark"        => $post['remark'],
+                );
+
+                $send = $this->crud->create('forecasts', $dataFinal);
                 $send2 = $this->crud->create('forecast_histories', $post);
             }
             echo $send;
@@ -353,6 +382,10 @@ class Forecasts extends CI_Controller
 
             //Cek Process Number          //table       //field        //field excel
             $forecasts = $this->crud->reads('forecasts', [], ["customer_id" => $data['customer_id'], "item_fg_id" => $data['item_fg_id'], "p_month" => $data['p_month'], "p_year" => $data['p_year'], "revision" => $data['revision']]);
+            
+            function toNull($value) {
+                return $value === "" ? null : $value;
+            }
 
             $post = $this->input->post();
             $issued_date = $data["issued_date"];
@@ -370,19 +403,19 @@ class Forecasts extends CI_Controller
             if ($forecasts) {                
                 $dataFinal = array(
                     //field
-                    "month_1" => $data['month_1'],
-                    "month_2" => $data['month_2'],
-                    "month_3" => $data['month_3'],
-                    "month_4" => $data['month_4'],
-                    "month_5" => $data['month_5'],
-                    "month_6" => $data['month_6'],
-                    "month_7" => $data['month_7'],
-                    "month_8" => $data['month_8'],
-                    "month_9" => $data['month_9'],
-                    "month_10" => $data['month_10'],
-                    "month_11" => $data['month_11'],
-                    "month_12" => $data['month_12'],
-                    "remark" => $data['remark'],
+                    "month_1"       => toNull($data['month_1'] ?? null),
+                    "month_2"       => toNull($data['month_2'] ?? null),
+                    "month_3"       => toNull($data['month_3'] ?? null),
+                    "month_4"       => toNull($data['month_4'] ?? null),
+                    "month_5"       => toNull($data['month_5'] ?? null),
+                    "month_6"       => toNull($data['month_6'] ?? null),
+                    "month_7"       => toNull($data['month_7'] ?? null),
+                    "month_8"       => toNull($data['month_8'] ?? null),
+                    "month_9"       => toNull($data['month_9'] ?? null),
+                    "month_10"      => toNull($data['month_10'] ?? null),
+                    "month_11"      => toNull($data['month_11'] ?? null),
+                    "month_12"      => toNull($data['month_12'] ?? null),
+                    "remark"        => $data['remark'],
                 );
                 $send   = $this->db->update('forecasts',$dataFinal, ["customer_id" => $data['customer_id'], "item_fg_id" => $data['item_fg_id'], "p_month" => $data['p_month'], "p_year" => $data['p_year'], "revision" => $data['revision']]);
                 $send2 = $this->crud->createNotLog('forecast_histories', $dataFinal);
@@ -391,26 +424,26 @@ class Forecasts extends CI_Controller
             } else {
                 $dataFinal = array(
                     //field
-                    "customer_id" => $data['customer_id'],
-                    "item_fg_id" => $data['item_fg_id'],
-                    "document_no" => $autoid,
-                    "issued_date" => $data['issued_date'],
-                    "p_month" => $data['p_month'],
-                    "p_year" => $data['p_year'],
-                    "revision" => $data['revision'],
-                    "month_1" => $data['month_1'],
-                    "month_2" => $data['month_2'],
-                    "month_3" => $data['month_3'],
-                    "month_4" => $data['month_4'],
-                    "month_5" => $data['month_5'],
-                    "month_6" => $data['month_6'],
-                    "month_7" => $data['month_7'],
-                    "month_8" => $data['month_8'],
-                    "month_9" => $data['month_9'],
-                    "month_10" => $data['month_10'],
-                    "month_11" => $data['month_11'],
-                    "month_12" => $data['month_12'],
-                    "remark" => $data['remark'],
+                    "customer_id"   => $data['customer_id'],
+                    "item_fg_id"    => $data['item_fg_id'],
+                    "document_no"   => $autoid,
+                    "issued_date"   => $data['issued_date'],
+                    "p_month"       => $data['p_month'],
+                    "p_year"        => $data['p_year'],
+                    "revision"      => $data['revision'],
+                    "month_1"       => toNull($data['month_1'] ?? null),
+                    "month_2"       => toNull($data['month_2'] ?? null),
+                    "month_3"       => toNull($data['month_3'] ?? null),
+                    "month_4"       => toNull($data['month_4'] ?? null),
+                    "month_5"       => toNull($data['month_5'] ?? null),
+                    "month_6"       => toNull($data['month_6'] ?? null),
+                    "month_7"       => toNull($data['month_7'] ?? null),
+                    "month_8"       => toNull($data['month_8'] ?? null),
+                    "month_9"       => toNull($data['month_9'] ?? null),
+                    "month_10"      => toNull($data['month_10'] ?? null),
+                    "month_11"      => toNull($data['month_11'] ?? null),
+                    "month_12"      => toNull($data['month_12'] ?? null),
+                    "remark"        => $data['remark'],
                 );
                 $send   = $this->crud->create('forecasts', $dataFinal);
                 $send2  = $this->crud->create('forecast_histories', $dataFinal);
@@ -434,6 +467,7 @@ class Forecasts extends CI_Controller
         $filter_period_month = @base64_decode($get['filter_period_month']);
         $filter_period_year = @base64_decode($get['filter_period_year']);
         $filter_customer_id = @base64_decode($get['filter_customer_id']);
+        $filter_items = @base64_decode($get['filter_items']);
         $filter_revision = @base64_decode($get['filter_revision']);
 
         $p_date_start = date("Y-m-d", strtotime($filter_period_year . "-" . $filter_period_month . "-01"));
@@ -444,6 +478,34 @@ class Forecasts extends CI_Controller
             );
 
             $p_date_start = date("Y-m-d", strtotime("+1 month", strtotime($p_date_start)));
+        }
+
+        if($filter_period_year == "" || $filter_period_month == ""){
+            $month1 = "Month 1";
+            $month2 = "Month 2";
+            $month3 = "Month 3";
+            $month4 = "Month 4";
+            $month5 = "Month 5";
+            $month6 = "Month 6";
+            $month7 = "Month 7";
+            $month8 = "Month 8";
+            $month9 = "Month 9";
+            $month10 = "Month 10";
+            $month11 = "Month 11";
+            $month12 = "Month 12";
+        }else{
+            $month1 = $dates[0]['name'];
+            $month2 = $dates[1]['name'];
+            $month3 = $dates[2]['name'];
+            $month4 = $dates[3]['name'];
+            $month5 = $dates[4]['name'];
+            $month6 = $dates[5]['name'];
+            $month7 = $dates[6]['name'];
+            $month8 = $dates[7]['name'];
+            $month9 = $dates[8]['name'];
+            $month10 = $dates[9]['name'];
+            $month11 = $dates[10]['name'];
+            $month12 = $dates[11]['name'];
         }
 
         //Config
@@ -459,13 +521,24 @@ class Forecasts extends CI_Controller
             $this->db->where('a.issued_date >=', $filter_issued_date_from);
             $this->db->where('a.issued_date <=', $filter_issued_date_to);
         }
-        $this->db->like('a.p_month', $filter_period_month);
-        $this->db->like('a.p_year', $filter_period_year);
-        $this->db->like('a.customer_id', $filter_customer_id);
-        $this->db->like('a.revision', $filter_revision);
-        $this->db->group_by('a.customer_id');
-        $this->db->group_by('a.item_fg_id');
-        $this->db->group_by('a.document_no');
+        if ($filter_period_month != "") {
+            $this->db->where('a.p_month', $filter_period_month);
+        }
+        if ($filter_period_year != "") {
+            $this->db->where('a.p_year', $filter_period_year);
+        }
+        if ($filter_customer_id != "") {
+            $this->db->where('a.customer_id', $filter_customer_id);
+        }
+        if ($filter_revision != "") {
+            $this->db->where('a.revision', $filter_revision);
+        }
+        if ($filter_items != "") {
+            $this->db->where('a.item_fg_id', $filter_items);
+        }
+        // $this->db->group_by('a.customer_id');
+        // $this->db->group_by('a.item_fg_id');
+        // $this->db->group_by('a.document_no');
         // $this->db->group_by('a.p_month');
         // $this->db->group_by('a.p_year');
         // $this->db->group_by('a.revision');
@@ -528,18 +601,18 @@ class Forecasts extends CI_Controller
                     <th>Remark</th>
                     <th>Product No</th>
                     <th>Product Name</th>
-                    <th>' . $dates[0]['name'] . '</th>
-                    <th>' . $dates[1]['name'] . '</th>
-                    <th>' . $dates[2]['name'] . '</th>
-                    <th>' . $dates[3]['name'] . '</th>
-                    <th>' . $dates[4]['name'] . '</th>
-                    <th>' . $dates[5]['name'] . '</th>
-                    <th>' . $dates[6]['name'] . '</th>
-                    <th>' . $dates[7]['name'] . '</th>
-                    <th>' . $dates[8]['name'] . '</th>
-                    <th>' . $dates[9]['name'] . '</th>
-                    <th>' . $dates[10]['name'] . '</th>
-                    <th>' . $dates[11]['name'] . '</th>
+                    <th>' . $month1 . '</th>
+                    <th>' . $month2 . '</th>
+                    <th>' . $month3 . '</th>
+                    <th>' . $month4 . '</th>
+                    <th>' . $month5 . '</th>
+                    <th>' . $month6 . '</th>
+                    <th>' . $month7 . '</th>
+                    <th>' . $month8 . '</th>
+                    <th>' . $month9 . '</th>
+                    <th>' . $month10 . '</th>
+                    <th>' . $month11 . '</th>
+                    <th>' . $month12 . '</th>
                 </tr>';
             $no = 1;
             foreach ($records as $data) {
@@ -551,20 +624,20 @@ class Forecasts extends CI_Controller
                         <td>' . $data['p_month'] . '/' . $data['p_year'] . '</td>
                         <td>' . $data['revision'] . '</td>
                         <td>' . $data['remark'] . '</td>
-                        <td>' . $data['item_fg_number'] . '</td>
+                        <td style="mso-number-format:\@;">' . $data['item_fg_number'] . '</td>
                         <td>' . $data['item_fg_name'] . '</td>
-                        <td>' . number_format($data['month_1']) . '</td>
-                        <td>' . number_format($data['month_2']) . '</td>
-                        <td>' . number_format($data['month_3']) . '</td>
-                        <td>' . number_format($data['month_4']) . '</td>
-                        <td>' . number_format($data['month_5']) . '</td>
-                        <td>' . number_format($data['month_6']) . '</td>
-                        <td>' . number_format($data['month_7']) . '</td>
-                        <td>' . number_format($data['month_8']) . '</td>
-                        <td>' . number_format($data['month_9']) . '</td>
-                        <td>' . number_format($data['month_10']) . '</td>
-                        <td>' . number_format($data['month_11']) . '</td>
-                        <td>' . number_format($data['month_12']) . '</td>';
+                        <td>' . $data['month_1'] . '</td>
+                        <td>' . $data['month_2'] . '</td>
+                        <td>' . $data['month_3'] . '</td>
+                        <td>' . $data['month_4'] . '</td>
+                        <td>' . $data['month_5'] . '</td>
+                        <td>' . $data['month_6'] . '</td>
+                        <td>' . $data['month_7'] . '</td>
+                        <td>' . $data['month_8'] . '</td>
+                        <td>' . $data['month_9'] . '</td>
+                        <td>' . $data['month_10'] . '</td>
+                        <td>' . $data['month_11'] . '</td>
+                        <td>' . $data['month_12'] . '</td>';
                 $no++;
             }
             $html .= '</table></body></html>';
@@ -628,18 +701,18 @@ class Forecasts extends CI_Controller
                     <th>Remark</th>
                     <th>Product No</th>
                     <th>Product Name</th>
-                    <th>' . $dates[0]['name'] . '</th>
-                    <th>' . $dates[1]['name'] . '</th>
-                    <th>' . $dates[2]['name'] . '</th>
-                    <th>' . $dates[3]['name'] . '</th>
-                    <th>' . $dates[4]['name'] . '</th>
-                    <th>' . $dates[5]['name'] . '</th>
-                    <th>' . $dates[6]['name'] . '</th>
-                    <th>' . $dates[7]['name'] . '</th>
-                    <th>' . $dates[8]['name'] . '</th>
-                    <th>' . $dates[9]['name'] . '</th>
-                    <th>' . $dates[10]['name'] . '</th>
-                    <th>' . $dates[11]['name'] . '</th>
+                    <th>' . $month1 . '</th>
+                    <th>' . $month2 . '</th>
+                    <th>' . $month3 . '</th>
+                    <th>' . $month4 . '</th>
+                    <th>' . $month5 . '</th>
+                    <th>' . $month6 . '</th>
+                    <th>' . $month7 . '</th>
+                    <th>' . $month8 . '</th>
+                    <th>' . $month9 . '</th>
+                    <th>' . $month10 . '</th>
+                    <th>' . $month11 . '</th>
+                    <th>' . $month12 . '</th>
                 </tr>';
             $no = 1;
             foreach ($records as $data) {
@@ -651,20 +724,20 @@ class Forecasts extends CI_Controller
                         <td>' . $data['p_month'] . '/' . $data['p_year'] . '</td>
                         <td>' . $data['revision'] . '</td>
                         <td>' . $data['remark'] . '</td>
-                        <td>' . $data['item_fg_number'] . '</td>
+                        <td style="mso-number-format:\@;">' . $data['item_fg_number'] . '</td>
                         <td>' . $data['item_fg_name'] . '</td>
-                        <td>' . number_format($data['month_1']) . '</td>
-                        <td>' . number_format($data['month_2']) . '</td>
-                        <td>' . number_format($data['month_3']) . '</td>
-                        <td>' . number_format($data['month_4']) . '</td>
-                        <td>' . number_format($data['month_5']) . '</td>
-                        <td>' . number_format($data['month_6']) . '</td>
-                        <td>' . number_format($data['month_7']) . '</td>
-                        <td>' . number_format($data['month_8']) . '</td>
-                        <td>' . number_format($data['month_9']) . '</td>
-                        <td>' . number_format($data['month_10']) . '</td>
-                        <td>' . number_format($data['month_11']) . '</td>
-                        <td>' . number_format($data['month_12']) . '</td>';
+                        <td>' . $data['month_1'] . '</td>
+                        <td>' . $data['month_2'] . '</td>
+                        <td>' . $data['month_3'] . '</td>
+                        <td>' . $data['month_4'] . '</td>
+                        <td>' . $data['month_5'] . '</td>
+                        <td>' . $data['month_6'] . '</td>
+                        <td>' . $data['month_7'] . '</td>
+                        <td>' . $data['month_8'] . '</td>
+                        <td>' . $data['month_9'] . '</td>
+                        <td>' . $data['month_10'] . '</td>
+                        <td>' . $data['month_11'] . '</td>
+                        <td>' . $data['month_12'] . '</td>';
                 $no++;
             }
             $html .= '</table></body></html>';
