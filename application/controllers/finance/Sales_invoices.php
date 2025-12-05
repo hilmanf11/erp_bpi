@@ -787,13 +787,30 @@ class Sales_invoices extends CI_Controller
                 $amount = 0;
             }
 
-            // Dokumentasi : Account Number ambil dari child table customer_account_numbers
-            $divisionDN = $record['division'] ?? '';
-            $account_division = $division ?? $divisionDN;
-            $getAccount = $this->db->get_where('customer_account_numbers', ['division' => $account_division, 'customer_id' => $customer_id])->row();
+            // Account Number ambil dari child table customer_account_numbers
+            $account_division = $division ?? '';
+            $account_number = '';
+            $account_name = '';
+
+            $getAccount = $this->db->get_where('customer_account_numbers', [
+                'customer_id' => $customer_id, 
+                'division' => $account_division
+            ])->row();
+
             if (!empty($getAccount)) {
-                $account_number = $getAccount->account_number ?? '';
-                $account_name = $getAccount->account_name ?? '';
+                $account_number = $getAccount->account_number;
+                $account_name = $getAccount->account_name;
+                
+            } else {
+                // Get dari customers jika tidak ada pada customer_account_numbers
+                $getDefaultAccount = $this->db->get_where('customers', [
+                    'id' => $customer_id, 
+                ])->row();
+                
+                if (!empty($getDefaultAccount)) {
+                    $account_number = $getDefaultAccount->account_number;
+                    $account_name = $getDefaultAccount->account_name;
+                }
             }
             
             $obj[] = array(

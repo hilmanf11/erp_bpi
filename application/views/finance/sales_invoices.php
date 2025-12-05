@@ -846,6 +846,7 @@
     let auto_posting_journal = true; // di SI live sudah diaktifkan
 
     let globalDivisionCode = null;
+    let globalCustomerId = null;
 
     let formMode = 'create';
     //ADD DATA
@@ -922,6 +923,7 @@
                 }, ]
             ],
             onChange: function(newValue, oldValue){
+                getCustomerId();
                 getJournalType();
             },
             onSelect: function(index, row) {
@@ -4348,11 +4350,15 @@
         console.log("Division Code: ", globalDivisionCode);
     }
 
+    function getCustomerId() {
+        globalCustomerId = $('#customer_id').combobox('getValue');
+        console.log("Customer ID: ", globalCustomerId);
+    }
+
     // --- FUNGSI UTAMA UNTUK MENGAMBIL JOURNAL TYPE ---
     function getJournalType() {
-        // 1. Ambil Nilai dari Division dan Customer
-        var division = $('#division').combobox('getValue');
-        var customerId = $('#customer_id').combogrid('getValue');
+        var division = globalDivisionCode;
+        var customerId = globalCustomerId;
         
         // Pastikan kedua nilai sudah terisi sebelum memanggil AJAX
         if (division && customerId) { 
