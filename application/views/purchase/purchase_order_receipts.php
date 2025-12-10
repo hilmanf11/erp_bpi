@@ -15,9 +15,11 @@
             <th rowspan="2" data-options="field:'bc_date',width:80,halign:'center'">Document <br>Date</th>
             <th rowspan="2" data-options="field:'item_number',width:150,halign:'center'">Product No</th>
             <th rowspan="2" data-options="field:'item_name',width:200,halign:'center'">Product Name</th>
-            <th rowspan="2" data-options="field:'qty_receipt',width:80,halign:'center',align:'right',formatter:numberformat">Qty</th>
+            <th rowspan="2" data-options="field:'specification',width:200,halign:'center'">Specification</th>
+            <th rowspan="2" data-options="field:'qty_receipt',width:80,halign:'center',align:'right',formatter:numberformat">Qty <br>Inventory</th>
+            <th rowspan="2" data-options="field:'uom_inventory',width:100,align:'center'">UOM <br>Inventory</th>
+            <th rowspan="2" data-options="field:'qty_receipt2',width:80,halign:'center',align:'right',formatter:numberformat">Qty PO</th>
             <th rowspan="2" data-options="field:'uom_default',width:80,align:'center'">UOM PO</th>
-            <th rowspan="2" data-options="field:'uom_inventory',width:100,align:'center'">UOM Inventory</th>
             <th rowspan="2" data-options="field:'currency',width:80,halign:'center',align:'center'">Currency</th>
             <th rowspan="2" data-options="field:'mpq',width:80,halign:'center',align:'right'">MPQ</th>
             <th rowspan="2" data-options="field:'qty_label',width:80,halign:'center',align:'right'">Qty <br> Label</th>
@@ -115,7 +117,7 @@
     <?= $button ?>
 </div>
 <!-- Insert & Update -->
-<div id="dlg_insert" class="easyui-dialog" title="Add New" data-options="closed: true,modal:true" style="width: 1200px; height: 100%; padding:10px; top: 20px;">
+<div id="dlg_insert" class="easyui-dialog" title="Add New" data-options="closed: true,modal:true" style="width: 100%; height: 100%; padding:10px; top: 20px;">
     <form id="frm_insert" method="post" novalidate>
         <fieldset style="width:100%; border:1px solid #d0d0d0; margin-bottom: 10px; border-radius:4px; float: left;">
             <legend><b>Form Data</b></legend>
@@ -172,24 +174,23 @@
                 </div> -->
             </div>
         </fieldset>
-        <table id="dg_request" class="easyui-datagrid" style="width:100%;" title="Purchase Order List" idField="item_number">
+        <table id="dg_request" class="easyui-datagrid" style="width:100%;" title="Purchase Order List" idField="id">
             <thead>
                 <tr>
                     <th field="ck" checkbox="true"></th>
-                    <th data-options="field:'item_rm_id',width:150">Product ID</th>
+                    <th data-options="field:'item_rm_id',width:200">Product ID</th>
                     <th data-options="field:'item_number',width:150">Product No</th>
                     <th data-options="field:'item_name',width:200">Product Name</th>
+                    <th data-options="field:'specification',width:200">Specification</th>
                     <th data-options="field:'uom_default',width:80">UOM PO</th>
-                    <th data-options="field:'qty_po',width:80,editor:{type:'numberbox', options:{readonly:true}}">PO</th>
+                    <th data-options="field:'qty_po',width:80,editor:{type:'numberbox', options:{readonly:true}}"> QTY PO</th>
+                    <th data-options="field:'uom_inventory',width:100">UOM <br>Inventory</th>
+                    <th data-options="field:'convertion',width:100,editor:{type:'numberbox', options:{readonly:true, precision:2}}">Convertion</th>
+                    <th data-options="field:'qty_convertion',width:100,editor:{type:'numberbox', options:{readonly:true, precision:2}}">Qty <br>Convertion</th>
                     <th data-options="field:'qty_os',width:80,editor:{type:'numberbox', options:{readonly:true}}">OS PO</th>
                     <th data-options="field:'qty_receipt',width:80,editor:{type:'numberbox',options:{precision:2}}">Receipt</th>
                     <th data-options="field:'mpq',width:80,editor:{type:'numberbox', options:{readonly:true, precision:2}}">MPQ</th>
-                    <th data-options="field:'uom_inventory',width:100">UOM Inventory</th>
-                    <th data-options="field:'convertion',width:80,editor:{type:'numberbox', options:{readonly:true, precision:2}}">Convertion</th>
-                    <th data-options="field:'qty_convertion',width:100,editor:{type:'numberbox', options:{readonly:true, precision:2}}">Qty Convertion</th>
                     <th data-options="field:'qty_label',width:80,editor:{type:'numberbox', options:{readonly:true}}">Label</th>
-                    <th data-options="field:'price',width:80">Price</th>
-                    <th data-options="field:'currency',width:80">Currency</th>
                 </tr>
             </thead>
         </table>
@@ -212,7 +213,7 @@
         $('#frm_insert').form('clear');
         $('#receipt_date').datebox('setValue', '<?= date("Y-m-d") ?>');
         receipt_no();
-        lotno();
+        // lotno();
         // $("#bc_kind").combobox({
         //     url: '<?= base_url('master/bc_kind/reads') ?>',
         //     valueField: 'name',
@@ -260,6 +261,9 @@
                         }]
                     ],
                 });
+
+                let date = $('#receipt_date').datebox('getValue');
+                lotno(date);
             }
         });
     }
@@ -275,10 +279,26 @@
         });
     }
 
+    //dokumentasi : lotno otomatis tanpa kondisi supplier
+    // function lotno(date = "") {
+    //     $.ajax({
+    //         type: "post",
+    //         url: "<?= base_url('purchase/purchase_order_receipts/lotno/') ?>" + window.btoa(date),
+    //         dataType: "html",
+    //         success: function(result) {
+    //             $("#lotno").textbox('setValue', result);
+    //         }
+    //     });
+    // }
+
     function lotno(date = "") {
+        let supplier_id = $('#supplier_id').combogrid('getValue');
+        if (!supplier_id) return; // kalau belum pilih supplier, jangan jalankan
+
         $.ajax({
             type: "post",
-            url: "<?= base_url('purchase/purchase_order_receipts/lotno/') ?>" + window.btoa(date),
+            url: "<?= base_url('purchase/purchase_order_receipts/lotno/') ?>" 
+                + window.btoa(date) + "/" + window.btoa(supplier_id),
             dataType: "html",
             success: function(result) {
                 $("#lotno").textbox('setValue', result);
@@ -315,11 +335,11 @@
                 onBeginEdit: function(rowIndex, row) {
                     var editors = $('#dg_request').datagrid('getEditors', rowIndex);
                     var qty_po = $(editors[0].target);
-                    var qty_os = $(editors[1].target);
-                    var qty_receipt = $(editors[2].target);
-                    var qty_mpq = $(editors[3].target);
-                    var convertion = $(editors[4].target);
-                    var qty_convertion = $(editors[5].target);
+                    var qty_os = $(editors[3].target);
+                    var qty_receipt = $(editors[4].target);
+                    var qty_mpq = $(editors[5].target);
+                    var convertion = $(editors[1].target);
+                    var qty_convertion = $(editors[2].target);
                     var qty_label = $(editors[6].target);
 
                     // qty_receipt.numberbox('setValue', 0);
@@ -360,65 +380,153 @@
         }
     }
 
-   //Delete Data
+    //Delete Data
+    // function deleted() {
+    //     var rows = $('#dg').treegrid('getSelections');
+    //     if (rows.length > 0) {
+    //         $.messager.confirm('Warning', 'Are you sure you want to delete this data?', function(r) {
+    //             if (r) {
+    //                 for (var i = 0; i < rows.length; i++) {
+    //                     var row = rows[i];
+    //                     if (row.state == "closed") {
+    //                         toastr.error("Please Select Detail of POR <br>" + row.id);
+    //                     } else {
+    //                         // Step 1: cek dulu
+    //                         $.ajax({
+    //                             method: 'post',
+    //                             url: '<?= base_url('purchase/purchase_order_receipts/checkReceipt') ?>',
+    //                             data: {
+    //                                 receipt_id: row.id
+    //                             },
+    //                             success: function(result) {
+    //                                 var result = eval('(' + result + ')');
+    //                                 if (result.status === 'error') {
+    //                                     toastr.error(result.message);
+    //                                 } else {
+    //                                     // Step 2: baru eksekusi delete
+    //                                     $.ajax({
+    //                                         method: 'post',
+    //                                         url: '<?= base_url('purchase/purchase_order_receipts/delete') ?>',
+    //                                         data: {
+    //                                             id: row.purchase_order_receipts_id,
+    //                                             receipt_id: row.id,
+    //                                             po_no: row.po_no,
+    //                                             item_rm_id: row.item_rm_id,
+    //                                             qty_receipt: row.qty_receipt
+    //                                         },
+    //                                         success: function(result) {
+    //                                             var result = eval('(' + result + ')');
+    //                                             toastr.success("Data berhasil dihapus");
+    //                                             readReceiptNo();
+    //                                         },
+    //                                         error: function(jqXHR, textStatus, errorThrown) {
+    //                                             toastr.error(jqXHR.statusText);
+    //                                             $.messager.alert("Error", jqXHR.statusText, 'error');
+    //                                         },
+    //                                         complete: function() {
+    //                                             $('#dg').treegrid('reload');
+    //                                         }
+    //                                     });
+    //                                 }
+    //                             },
+    //                             error: function(jqXHR, textStatus, errorThrown) {
+    //                                 toastr.error(jqXHR.statusText);
+    //                                 $.messager.alert("Error", jqXHR.statusText, 'error');
+    //                             }
+    //                         });
+    //                     }
+    //                 }
+    //             }
+    //         });
+    //     } else {
+    //         toastr.warning("Please select one of the data in the table first!", "Information");
+    //     }
+    // }
+
     function deleted() {
-        var rows = $('#dg').treegrid('getSelections');
-        if (rows.length > 0) {
-            $.messager.confirm('Warning', 'Are you sure you want to delete this data?', function(r) {
-                if (r) {
-                    for (var i = 0; i < rows.length; i++) {
-                        var row = rows[i];
-                        if (row.state == "closed") {
-                            toastr.error("Please Select Detail of POR <br>" + row.id);
-                        } else {
+        let rows = $('#dg').treegrid('getSelections');
+
+        if (rows.length === 0) {
+            toastr.warning("Please select one of the data in the table first!", "Information");
+            return;
+        }
+
+        $.messager.confirm('Warning', 'Are you sure you want to delete this data?', function (r) {
+            if (!r) return;
+
+            // Tampilkan loading selama proses berlangsung
+            $.messager.progress({
+                title: 'Please Wait',
+                msg: 'Deleting data...'
+            });
+
+            let promises = [];
+
+            rows.forEach(row => {
+
+                if (row.state === "closed") {
+                    toastr.error("Please Select Detail of POR <br>" + row.id);
+                    return;
+                }
+
+                // Wrapper promise untuk setiap row
+                let p = new Promise((resolve, reject) => {
+
+                    // Step 1: Check first
+                    $.ajax({
+                        method: 'POST',
+                        url: '<?= base_url('purchase/purchase_order_receipts/checkReceipt') ?>',
+                        data: { receipt_id: row.id },
+                        success: function (resCheck) {
+
+                            let check = JSON.parse(resCheck);
+
+                            if (check.status === 'error') {
+                                toastr.error(check.message);
+                                return resolve(); // skip saja
+                            }
+
+                            // Step 2: Delete
                             $.ajax({
-                                method: 'post',
-                                url: '<?= base_url('purchase/purchase_order_receipts/checkReceipt') ?>',
+                                method: 'POST',
+                                url: '<?= base_url('purchase/purchase_order_receipts/delete') ?>',
                                 data: {
-                                    receipt_id: row.id
+                                    id: row.purchase_order_receipts_id,
+                                    receipt_id: row.id,
+                                    po_no: row.po_no,
+                                    item_rm_id: row.item_rm_id,
+                                    qty_receipt: row.qty_receipt
                                 },
-                                success: function(result) {
-                                    var result = eval('(' + result + ')');
-                                    if (result.status === 'error') {
-                                        toastr.error(result.message);
-                                    } else {
-                                        $.ajax({
-                                            method: 'post',
-                                            url: '<?= base_url('purchase/purchase_order_receipts/delete') ?>',
-                                            data: {
-                                                id: row.purchase_order_receipts_id,
-                                                receipt_id: row.id,
-                                                po_no: row.po_no,
-                                                item_rm_id: row.item_rm_id,
-                                                qty_receipt: row.qty_receipt
-                                            },
-                                            success: function(result) {
-                                                var result = eval('(' + result + ')');
-                                                toastr.success("Data berhasil dihapus");
-                                                readReceiptNo();
-                                            },
-                                            error: function(jqXHR, textStatus, errorThrown) {
-                                                toastr.error(jqXHR.statusText);
-                                                $.messager.alert("Error", jqXHR.statusText, 'error');
-                                            },
-                                            complete: function() {
-                                                $('#dg').treegrid('reload');
-                                            }
-                                        });
-                                    }
+                                success: function (resDelete) {
+                                    resolve();
                                 },
-                                error: function(jqXHR, textStatus, errorThrown) {
-                                    toastr.error(jqXHR.statusText);
-                                    $.messager.alert("Error", jqXHR.statusText, 'error');
+                                error: function (xhr) {
+                                    toastr.error("Error: " + xhr.statusText);
+                                    resolve(); // tetap lanjut
                                 }
                             });
+
+                        },
+                        error: function (xhr) {
+                            toastr.error("Error: " + xhr.statusText);
+                            resolve(); // tetap lanjut
                         }
-                    }
-                }
+                    });
+
+                });
+
+                promises.push(p);
             });
-        } else {
-            toastr.warning("Please select one of the data in the table first!", "Information");
-        }
+
+            // Eksekusi setelah semua selesai
+            Promise.all(promises).then(() => {
+                $.messager.progress('close'); // tutup loading
+                toastr.success("Selected data has been deleted");
+                $('#dg').treegrid('reload');
+                readReceiptNo();
+            });
+
+        });
     }
 
     function filter() {
@@ -513,6 +621,7 @@
         if (receipt_no == "") {
             toastr.warning("Please select Receipt No!", "Information");
         } else {
+            // Step 1: cek label dulu
             $.ajax({
                 type: "post",
                 url: "<?= base_url('purchase/purchase_order_receipts/checkLabel/') ?>" + window.btoa(receipt_no),
@@ -520,16 +629,20 @@
                 success: function (response) {
                     console.log(response);
 
+                    // kalau kategori RM (C01) harus dicek dulu labelnya
                     if (response.category === 'C01') {
                         if (response.qty_label == response.label_no) {
+                            // Step 2: cek item setelah label ok
                             $.ajax({
                                 type: "post",
                                 url: "<?= base_url('purchase/purchase_order_receipts/checkItems/') ?>" + window.btoa(receipt_no),
                                 dataType: "json",
                                 success: function (res) {
+                                    // Step 3: apapun hasilnya (status diupdate/tidak), tetap cetak
                                     window.open("<?= base_url('purchase/purchase_order_receipts/print_receiving/') ?>" + window.btoa(receipt_no), "_blank");
                                 },
                                 error: function() {
+                                    // kalau error checkItems tetap lanjut cetak
                                     window.open("<?= base_url('purchase/purchase_order_receipts/print_receiving/') ?>" + window.btoa(receipt_no), "_blank");
                                 }
                             });
@@ -537,6 +650,7 @@
                             toastr.error("The labels haven't been scanned yet for category RM");
                         }
                     } else {
+                        // kalau kategori bukan C01, langsung cek item
                         $.ajax({
                             type: "post",
                             url: "<?= base_url('purchase/purchase_order_receipts/checkItems/') ?>" + window.btoa(receipt_no),
@@ -706,24 +820,28 @@
                     var lotno = $("#lotno").textbox('getValue');
                     var bc_document = $("#bc_document").textbox('getValue');
                     var bc_date = $("#bc_date").datebox('getValue');
+                    var supplier_id = $('#supplier_id').combogrid('getValue');
 
                     if (bc_document == "" || bc_date == "") {
                         toastr.warning("Please input Doc No and Doc Date!", "Information");
                     } else {
                         $('#dg_request').datagrid('acceptChanges');
                         var rows = $('#dg_request').datagrid('getSelections');
+                        // console.log('Rows selected:', rows.length, rows);
+                        // return;
                         if (rows.length > 0) {
                             $.messager.confirm('Warning', 'Are you sure you want to save this data?', function(r) {
                                 if (r) {
                                     // Fetch the latest receipt number from the server
                                     var encodedReceiptDate = window.btoa(receipt_date);
+                                    var encodedSupplierId = window.btoa(supplier_id);
                                     $.ajax({
                                         type: "get",
                                         url: '<?= base_url('purchase/purchase_order_receipts/receipt_no/') ?>' + encodedReceiptDate,
                                         success: function(receipt_number) {
                                             $.ajax({
                                                 type: "get",
-                                                url: '<?= base_url('purchase/purchase_order_receipts/lotno/') ?>' + encodedReceiptDate,
+                                                url: '<?= base_url('purchase/purchase_order_receipts/lotno/') ?>' + encodedReceiptDate + "/" + encodedSupplierId,
                                                 success: function(lotno) {
                                                     for (var i = 0; i < rows.length; i++) {
                                                         var row = rows[i];
@@ -745,8 +863,7 @@
                                                                 qty_receipt2: row.qty_receipt,
                                                                 qty_mpq: row.mpq,
                                                                 qty_label: row.qty_label,
-                                                                currency: row.currency,
-                                                                price: row.price
+                                                                specification: row.specification
                                                             },
                                                             dataType: "json",
                                                             success: function(result) {
