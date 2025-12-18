@@ -321,7 +321,10 @@
         var item_rm_id_sh = $("#item_rm_id_sh").textbox('getValue');
        
         url_save2 = '<?= base_url('warehouse/issued_materials/create2') ?>';
-        $('#frm_insert2').form('clear');
+        // $('#frm_insert2').form('clear');
+        $("#qty").textbox('clear');
+        $("#item_rm_id").combogrid('clear')
+
         $("#request_number").textbox('setValue', request_number);
         $("#qty_sh").textbox('setValue', qty_sh);
         $("#item_rm_id_sh").textbox('setValue', item_rm_id_sh);
@@ -361,15 +364,10 @@
     }
 
     function others(request_no, item_rm_id, qty) {
-        console.log("Request No: " + request_no);
-        console.log("Item RM ID: " + item_rm_id);
-        console.log("Qty SH: " + qty);
-
         $("#dlg_details").dialog('open');
         $("#request_number").textbox('setValue', request_no);
         $("#qty_sh").textbox('setValue', qty);
         $("#item_rm_id_sh").textbox('setValue', item_rm_id);
-        
 
         $.ajax({
             url: '<?= base_url('warehouse/issued_materials/getCRItem') ?>',
@@ -378,45 +376,28 @@
             success: function(response) {
                 var data = JSON.parse(response);
                 var itemIds = [];
+
                 if (data.cr_item) itemIds.push(data.cr_item.item_rm_id);
                 if (data.pl_item) itemIds.push(data.pl_item.item_rm_id);
                 if (data.vg_item) itemIds.push(data.vg_item.item_rm_id);
 
                 var encodedIds = btoa(JSON.stringify(itemIds));
-                console.log("Encoded IDs: ", encodedIds);
-                
-                $('#dg2').datagrid({
-                    url: '<?= base_url('warehouse/issued_materials/datatables2/') ?>' + btoa(request_no) + '/' + encodedIds,
-                    pagination: true,
-                    clientPaging: false,
-                    remoteFilter: true,
-                    rownumbers: true
-                }).datagrid('enableFilter');
 
-                 // Mengatur URL combogrid untuk memuat data berdasarkan encodedId
-                $('#item_rm_id').combogrid({
-                    url: '<?= base_url('warehouse/issued_materials/readItemRmByIds') ?>/' + encodedIds,
-                    panelWidth: 400,
-                    idField: 'id',
-                    textField: 'number',
-                    mode: 'remote',
-                    fitColumns: true,
-                    prompt: "Choose Part Other",
-                    columns: [
-                        [{
-                            field: 'number',
-                            title: 'Part No PL/CR/Equivalent',
-                            width: 200
-                        }, {
-                            field: 'name',
-                            title: 'Part Name',
-                            width: 200
-                        }]
-                    ]
-                });         
-            },
-            error: function(xhr, status, error) {
-                console.error("Error: ", error);
+                // ✅ SET URL dg2
+                $('#dg2').datagrid('options').url =
+                    '<?= base_url('warehouse/issued_materials/datatables2/') ?>' +
+                    btoa(request_no) + '/' + encodedIds;
+
+                $('#dg2').datagrid('reload');
+
+                // ✅ SET URL combogrid
+                $('#item_rm_id')
+                    .combogrid('grid')
+                    .datagrid({
+                        url: '<?= base_url('warehouse/issued_materials/readItemRmByIds') ?>/' + encodedIds
+                    });
+
+                $('#item_rm_id').combogrid('clear');
             }
         });
     }
@@ -427,8 +408,8 @@
             iconCls: 'icon-ok',
             handler: function() {
                 // Ambil nilai qty dan qty_sh dari input
-                var qty = parseFloat($('#qty').val());
-                var qty_sh = parseFloat($('#qty_sh').val());
+                var qty = parseFloat($('#qty').textbox('getValue'));
+                var qty_sh = parseFloat($('#qty_sh').textbox('getValue'));
                 
                 // Validasi qty
                 if (qty > qty_sh) {
@@ -456,35 +437,23 @@
         }]
     });
 
+    $('#item_rm_id').combogrid({
+        panelWidth: 400,
+        idField: 'id',
+        textField: 'number',
+        mode: 'remote',
+        fitColumns: true,
+        prompt: "Choose Part Other",
+        columns: [[
+            { field: 'number', title: 'Part No PL/CR/Equivalent', width: 200 },
+            { field: 'name', title: 'Part Name', width: 200 }
+        ]]
+    });
 
-    // $('#item_rm_id').combogrid({
-    //     url: '<?= base_url('warehouse/issued_materials/readItemRm'); ?>',
-    //     panelWidth: 500,
-    //     idField: 'id',
-    //     textField: 'number',
-    //     mode: 'remote',
-    //     fitColumns: true,
-    //     prompt: "Choose Part No Crusher.",
-    //     columns: [
-    //         [{
-    //             field: 'id',
-    //             title: 'Part ID',
-    //             width: 180
-    //         }, {
-    //             field: 'number',
-    //             title: 'Part No.',
-    //             width: 150
-    //         }, {
-    //             field: 'name',
-    //             title: 'Part Name',
-    //             width: 150
-    //         }]
-    //     ],
-    //     icons: [{
-    //         iconCls: 'icon-clear',
-    //         handler: function(e) {
-    //             $(e.data.target).combogrid('clear').combogrid('textbox').focus();
-    //         }
-    //     }],
-    // });
+    $('#dg2').datagrid({
+        pagination: true,
+        clientPaging: false,
+        remoteFilter: true,
+        rownumbers: true
+    }).datagrid('enableFilter');
 </script>
