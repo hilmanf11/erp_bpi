@@ -317,7 +317,7 @@ class Report_history_transactions extends CI_Controller
             b.name as prodfam, 
             a.uom,
             c.name as category_name,
-            COALESCE(j.begin_stock) AS begin_stock,
+            COALESCE(j.begin_stock, 0) AS begin_stock,
             (COALESCE(d.qty_scan_in, 0) + COALESCE(e.qty_os_rm, 0) + COALESCE(f.qty_trans_rm_in, 0) + COALESCE(g.return_qty, 0) + COALESCE(k.qty_scan_bpm, 0)) AS qty_in,
             (COALESCE(h.qty_issued, 0) + COALESCE(i.qty_trans_rm_out, 0)) AS qty_out,
             (COALESCE(h1.qty_issued, 0) + COALESCE(i1.qty_trans_rm_out, 0)) AS qty_out_minus1,
@@ -325,6 +325,7 @@ class Report_history_transactions extends CI_Controller
             (COALESCE(h3.qty_issued, 0) + COALESCE(i3.qty_trans_rm_out, 0)) AS qty_out_minus3,
             (
             COALESCE(begin_whs.begin_bpi, 0)
+            + COALESCE(j.begin_stock, 0)
             + COALESCE(in_bpi_now.total_in_bpi, 0)
             - COALESCE(out_bpi_now.total_out_bpi, 0)
             + COALESCE(trf_now.in_bpi, 0)
@@ -346,6 +347,7 @@ class Report_history_transactions extends CI_Controller
         LEFT JOIN (SELECT item_rm_id, SUM(qty) AS qty_os_rm FROM os_rm WHERE trans_date BETWEEN '$filter_from' AND '$filter_to' GROUP BY item_rm_id) e ON a.id = e.item_rm_id
         LEFT JOIN (SELECT item_rm_id, SUM(qty) AS qty_trans_rm_in FROM transaction_rm WHERE request_date BETWEEN '$filter_from' AND '$filter_to' AND transaction_kind = 'IN' GROUP BY item_rm_id) f ON a.id = f.item_rm_id
         LEFT JOIN (SELECT a.item_rm_id, SUM(c.qty) as return_qty FROM return_materials a JOIN return_material_labels b ON a.return_id = b.return_id JOIN scan_item_receipts c ON a.return_id = c.receipt_id AND b.label_no = c.label_no WHERE a.return_date BETWEEN '$filter_from' AND '$filter_to' GROUP BY a.item_rm_id) g ON a.id = g.item_rm_id
+        
         LEFT JOIN (SELECT item_rm_id, SUM(qty) AS qty_issued FROM issued_material_details WHERE DATE_FORMAT(created_date, '%Y-%m-%d') BETWEEN '$filter_from' AND '$filter_to' GROUP BY item_rm_id) h ON a.id = h.item_rm_id
         LEFT JOIN (SELECT item_rm_id, SUM(qty) AS qty_trans_rm_out FROM transaction_rm WHERE request_date BETWEEN '$filter_from' AND '$filter_to' AND transaction_kind = 'OUT' GROUP BY item_rm_id) i ON a.id = i.item_rm_id
 
