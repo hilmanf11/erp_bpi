@@ -65,8 +65,8 @@
             <div style="width: 50%; float: left;">
                 <div class="fitem">
                     <span style="width:35%; display:inline-block;">Purchase Date</span>
-                    <input style="width:28%;" id="filter_from" class="easyui-datebox" data-options="formatter:myformatter,parser:myparser, editable:false"> To
-                    <input style="width:28%;" id="filter_to" class="easyui-datebox" data-options="formatter:myformatter,parser:myparser, editable:false">
+                    <input style="width:28%;" id="filter_from" value="<?= date("Y-m-01") ?>" class="easyui-datebox" data-options="formatter:myformatter,parser:myparser, editable:false"> To
+                    <input style="width:28%;" id="filter_to" value="<?= date("Y-m-t") ?>" class="easyui-datebox" data-options="formatter:myformatter,parser:myparser, editable:false">
                 </div>
                 <div class="fitem">
                     <span style="width:35%; display:inline-block;">Asset Family</span>
@@ -125,6 +125,7 @@
                 <li>Get data from Modul Purchase Invoicing and <b>Account Category = Fixed Asset</b></li>
                 <li><b>Asset Family or Asset Category = Product Family</b> (Master Data > Accounting & Finance > Item Family)</li>
                 <li><b>Journal Types</b> (Master Data > Accounting & Finance > Journal Types)</li>
+                <li><b>Account Number Asset</b> is based on Item's Account Number in Purchase Invoice Transaction</li>
             </ul>
         </div>
         <div title="CONDITIONS" style="padding: 20px;">
@@ -367,6 +368,23 @@
         }
     }
 
+    function validateDateRange() {
+        var filter_from = $("#filter_from").datebox("getValue");
+        var filter_to = $("#filter_to").datebox("getValue");
+
+        // Periksa apakah kedua tanggal sudah terisi
+        if (filter_from === "" || filter_to === "") {
+            return true; 
+        }
+
+        if (filter_from > filter_to) {
+            toastr.error("Start Date cannot be larger than End Date!");
+            return false; // Validasi Gagal
+        }
+
+        return true; // Validasi Sukses
+    }
+
     function filter() {
         var filter_from = $("#filter_from").datebox('getValue');
         var filter_to = $("#filter_to").datebox('getValue');
@@ -385,6 +403,10 @@
             "&filter_estimate=" + window.btoa(filter_estimate) +
             "&filter_purchase_invoice_number=" + window.btoa(filter_purchase_invoice_number) +
             "&filter_supplier=" + window.btoa(filter_supplier);
+        
+        if (!validateDateRange()) {
+            return; // Hentikan proses jika validasi tanggal gagal
+        }
 
         $('#dg').datagrid({
             url: '<?= base_url('finance/fixed_assets/datatables') ?>' + url
@@ -425,6 +447,10 @@
             "&filter_estimate=" + window.btoa(filter_estimate) +
             "&filter_purchase_invoice_number=" + window.btoa(filter_purchase_invoice_number) +
             "&filter_supplier=" + window.btoa(filter_supplier);
+
+        if (!validateDateRange()) {
+            return; // Hentikan proses jika validasi tanggal gagal
+        }
 
         window.location.assign('<?= base_url('finance/fixed_assets/print/excel') ?>' + url);
     }

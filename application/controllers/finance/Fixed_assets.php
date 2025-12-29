@@ -20,17 +20,6 @@ class Fixed_assets extends CI_Controller
         } elseif ($this->checkuserAccess($this->id_menu()) > 0) {
             $data['button'] = $this->getbutton($this->id_menu());
             $data['menus_id'] = $this->id_menu();
-            
-            // loading data big latency
-            // $row = $this->crud->read("asset_fixeds", [], [], "1", "trans_date", "asc");
-            // if ($row) { 
-            //     // Jika data ditemukan, gunakan trans_date
-            //     $data['filter_from'] = $row->trans_date; // loading data big latency
-            // } else { 
-            //     // Jika data tidak ditemukan, beri nilai default
-            //     $data['filter_from'] = date('Y-m-1');
-            // }
-            
             $data['filter_from'] = date('Y-m-1');
 
             $this->load->view('template/header', $data);
@@ -274,6 +263,10 @@ class Fixed_assets extends CI_Controller
         $filter_supplier    = $filter_list["filter_supplier"];
 
         $period_expired = !empty($filter_to) ? date("Y-m", strtotime($filter_to))  : date('Y-m');
+
+        // Jika tidak ada filter tanggal, default tampil penambahan asset per bulan berjalan (Bu Nina)
+        $filter_from = !empty($filter_from) ? $filter_from : date('Y-m-01');
+        $filter_to   = !empty($filter_to) ? $filter_to : date('Y-m-t');
         
         /** -- manual calculate depreciation_accumulation without relation to asset_journals
         $this->db->select("a.*, 
