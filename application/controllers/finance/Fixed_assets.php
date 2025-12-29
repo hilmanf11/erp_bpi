@@ -301,7 +301,7 @@ class Fixed_assets extends CI_Controller
             coa.account_name,
             jp.number as posting_no,
             COALESCE(b.type, coa.account_name) as asset_category_type");
-        $this->db->select('COALESCE(pi.account_number, coa.account_number) as account_number'); // -- Get Account Number dari Purchase Invoice (Request Bu Nina)
+        $this->db->select("COALESCE(a.account_number, pi.account_number) as account_number"); // -- Get Account Number dari Purchase Invoice (Request Bu Nina)
         // -- Menghitung jumlah bulan sejak tanggal transaksi
         $this->db->select("PERIOD_DIFF(DATE_FORMAT('$filter_to', '%Y%m'), DATE_FORMAT(a.trans_date, '%Y%m')) + 1 AS qty_month");
         // -- Menghitung Akumulasi Depresiasi yang harusnya terjadi (Logika Sederhana: Depresiasi * Bulanan)
@@ -807,6 +807,7 @@ class Fixed_assets extends CI_Controller
                     'method'                  => preg_replace('/[^\x20-\x7E]/', '', $data->val($i, 16)),
                     'department'              => preg_replace('/[^\x20-\x7E]/', '', $data->val($i, 17)),
                     'location'                => preg_replace('/[^\x20-\x7E]/', '', $data->val($i, 18)),
+                    'account_number'          => preg_replace('/[^\x20-\x7E]/', '', $data->val($i, 19)),
                 ];
             }
 
@@ -873,6 +874,9 @@ class Fixed_assets extends CI_Controller
             if (empty($asset_categories->id)) {
                 echo json_encode(array("title" => "Not Found", "message" => "Asset Category No " . $data['asset_category_number'] . " Not Found", "theme" => "error"));
             
+            } elseif (empty($data['account_number'])) {
+                echo json_encode(array("title" => "Not Found", "message" => "Account Number of " . $data['name'] . " is Required!", "theme" => "error"));
+            
             } elseif (!empty($asset_fixeds->id)) {
                 echo json_encode(array("title" => "Duplicate", "message" => "Asset No " . $data['number'] . " Duplicated", "theme" => "error"));
             
@@ -887,8 +891,10 @@ class Fixed_assets extends CI_Controller
                     $estimate_month = 1;
                 }
 
+                $account_number = '';
                 if (!empty($purchase_invoice)) {
                     $item_rm_id = $purchase_invoice->item_rm_id;
+                    $account_number = $purchase_invoice->account_number;
                 } elseif (!empty($item_rm)) {
                     $item_rm_id = $item_rm->id;
                 } else {
@@ -904,6 +910,7 @@ class Fixed_assets extends CI_Controller
                     "asset_category_number"   => $asset_categories->id ?? $data['asset_category_number'],
                     "item_family_id"          => $asset_categories->id ?? $data['asset_category_number'],
                     "purchase_invoice_number" => $purchase_invoice->number ?? $data['purchase_invoice_number'],
+                    "account_number"          => $data['account_number'] ?? $account_number,
                     "supplier_name"           => $data['supplier_name'],
                     "item_rm_id"              => $item_rm_id,
                     "number"                  => $data['number'],
@@ -926,6 +933,8 @@ class Fixed_assets extends CI_Controller
                     "department"              => $data['department'],
                     "location"                => $data['location'],
                     "total"                   => ($qty * $cost),
+                    "upload"                  => "YES",
+                    "upload_date"             => date('Y-m-d'),
                 ];
 
                 $send   = $this->crud->create('asset_fixeds', $dataFinal);
