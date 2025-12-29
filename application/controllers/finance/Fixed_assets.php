@@ -298,10 +298,10 @@ class Fixed_assets extends CI_Controller
         // -- Fix Query : Hitung accumulation depreciation hasil upload + accumulation depreciation dari generate asset_journals (Bu Nina)
         $this->db->select("a.*, 
             COALESCE(b.name, f.name) as asset_family_name,
-            coa.account_number,
             coa.account_name,
             jp.number as posting_no,
             COALESCE(b.type, coa.account_name) as asset_category_type");
+        $this->db->select('COALESCE(pi.account_number, coa.account_number) as account_number'); // -- Get Account Number dari Purchase Invoice (Request Bu Nina)
         // -- Menghitung jumlah bulan sejak tanggal transaksi
         $this->db->select("PERIOD_DIFF(DATE_FORMAT('$filter_to', '%Y%m'), DATE_FORMAT(a.trans_date, '%Y%m')) + 1 AS qty_month");
         // -- Menghitung Akumulasi Depresiasi yang harusnya terjadi (Logika Sederhana: Depresiasi * Bulanan)
@@ -327,6 +327,7 @@ class Fixed_assets extends CI_Controller
         $this->db->join("item_familys f", "a.item_family_id = f.id");
         $this->db->join("account_coa coa", "f.account_number = coa.account_number", "left");
         $this->db->join("journal_postings jp", "a.purchase_invoice_number = jp.document_no", "left");
+        $this->db->join('purchase_invoices pi', 'a.purchase_invoice_number = pi.number', 'left');
 
         if (!empty($filters)) {
             $this->applyFilters($filters); // Library filter 
@@ -382,7 +383,7 @@ class Fixed_assets extends CI_Controller
                 $this->db->like('COALESCE(b.name, f.name)', $value);
 
             } elseif ($field == 'account_number') {
-                $this->db->like('coa.account_number', $value);
+                $this->db->like('pi.account_number', $value);
 
             } elseif ($field == 'posting_no') {
                 $this->db->like('jp.number', $value);
@@ -513,6 +514,7 @@ class Fixed_assets extends CI_Controller
 
         // Cek data Purchase Invoice dan Item Family dalam satu blok
         $readPI = $this->db->select('item_rm_id, trans_date, qty, YEAR(trans_date) as trans_year, MONTH(trans_date) as trans_month')
+            ->select('account_number')
             ->from('purchase_invoices')
             ->where('number', $pi_number)
             ->where('item_rm_id', $item_rm_id)
