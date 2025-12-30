@@ -104,6 +104,7 @@ class Journal_postings extends CI_Controller
 
             echo json_encode($records);
         } elseif ($modul == "ASSET") {
+            /** --- existing query ---
             $this->db->select('a.*');
             $this->db->from('journal_types a');
             $this->db->join('asset_categories d', 'a.id = d.journal_type_id');
@@ -117,8 +118,31 @@ class Journal_postings extends CI_Controller
             $this->db->group_by('d.journal_type_id');
             $this->db->order_by('a.name', 'asc');
             $records = $this->db->get()->result_array();
+             */
+
+            $this->db->select('a.*');
+            $this->db->from('journal_types a');
+            $this->db->join('asset_categories b', 'b.journal_type_id = a.id');
+            $this->db->join('asset_journals c', 'c.item_family_id = b.number');
+            $this->db->join('asset_fixeds d', 'd.number = c.asset_no');
+            $this->db->join(
+                'journal_postings jp', 
+                "jp.document_no = c.asset_no AND c.periode = DATE_FORMAT(jp.journal_date, '%Y-%m')", 
+                'left', 
+                FALSE
+            );
+            $this->db->where('jp.document_no IS NULL', null, false);
+            
+            if (!empty($post)) {
+                $this->db->like('a.name', $post);
+            }
+
+            $this->db->group_by('a.id');
+            $this->db->order_by('a.name', 'ASC');
+            $records = $this->db->get()->result_array();
 
             echo json_encode($records);
+
         } elseif ($modul == "CURRENCY REVALUATION") {
             $this->db->select('a.*');
             $this->db->from('journal_types a');
