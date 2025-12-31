@@ -131,7 +131,7 @@ class Journal_postings extends CI_Controller
                 'left', 
                 FALSE
             );
-            $this->db->where('jp.document_no IS NULL', null, false);
+            $this->db->where('jp.document_no', null, false);
             
             if (!empty($post)) {
                 $this->db->like('a.name', $post);
@@ -330,7 +330,7 @@ class Journal_postings extends CI_Controller
                 FALSE
             );
             $this->db->where('a.id', $journal_type);
-            $this->db->where('jp.document_no IS NULL', null, false);
+            $this->db->where('jp.document_no', null, false);
             
             // if (!empty($transaction_from_ex) && !empty($transaction_to_ex)) {
             //     $this->db->where('c.periode >=', $transaction_from_ex);
@@ -501,7 +501,9 @@ class Journal_postings extends CI_Controller
             $records = $this->db->get()->result_array();
 
             echo json_encode($records);
+        
         } elseif ($modul == "ASSET") {
+            /** --- existing query ---
             $this->db->select('a.asset_no as number');
             $this->db->from('asset_journals a');
             $this->db->join('journal_postings b', "a.asset_no = b.document_no and a.periode = DATE_FORMAT(b.journal_date, '%Y-%m')", 'left');
@@ -517,7 +519,33 @@ class Journal_postings extends CI_Controller
             $this->db->order_by('a.asset_no', 'asc');
             $records = $this->db->get()->result_array();
 
+            */
+
+            $this->db->select('c.asset_no as number');
+            $this->db->from('journal_types a');
+            $this->db->join('asset_categories b', 'b.journal_type_id = a.id');
+            $this->db->join('asset_journals c', 'c.item_family_id = b.number');
+            $this->db->join('asset_fixeds d', 'd.number = c.asset_no');
+            $this->db->join(
+                'journal_postings jp', 
+                "jp.document_no = c.asset_no AND c.periode = DATE_FORMAT(jp.journal_date, '%Y-%m')", 
+                'left', 
+                FALSE
+            );
+            $this->db->where('jp.document_no', null, false);
+            $this->db->where('b.journal_type_id', $journal_type);
+            $this->db->where('d.supplier_name', $company_id);
+
+            // if (!empty($transaction_from_ex) && !empty($transaction_to_ex)) {
+            //     $this->db->where('c.periode >=', $transaction_from_ex);
+            //     $this->db->where('c.periode <=', $transaction_to_ex);
+            // }
+            
+            $this->db->group_by('a.id');
+            $this->db->order_by('a.name', 'ASC');
+            $records = $this->db->get()->result_array();
             echo json_encode($records);
+        
         } elseif ($modul == "CURRENCY REVALUATION") {
             $this->db->select('a.number');
             $this->db->from('journal_revaluations a');

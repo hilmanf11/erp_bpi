@@ -1138,6 +1138,10 @@
                     field: 'name',
                     title: 'Asset Name',
                     width: 250
+                }, {
+                    field: 'trans_date',
+                    title: 'Purchase Date',
+                    width: 150
                 }, ]
             ],
         });

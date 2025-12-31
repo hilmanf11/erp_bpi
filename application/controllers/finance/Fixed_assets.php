@@ -227,11 +227,13 @@ class Fixed_assets extends CI_Controller
 
         $this->db->distinct('number');
         $this->db->select("number, name");
+        $this->db->select("trans_date");
         $this->db->from('asset_fixeds'); 
         $this->db->where("(`number` like '%$post%' or name like '%$post%')");
         if (!empty($asset_category_number)) {
             $this->db->where("(asset_category_number = '$asset_category_number' OR item_family_id = '$asset_category_number')");
         }
+        $this->db->order_by('trans_date', 'asc');
         $send = $this->db->get()->result_array();
         echo json_encode($send);
     }
