@@ -802,6 +802,7 @@ class Journal_postings extends CI_Controller
             $result['total'] = count($data);
             $result = array_merge($result, ['rows' => $data], ["footer" => $footer]);
             echo json_encode($result);
+        
         } elseif ($modul == "SALES INVOICING") {
             $this->db->select('a.number, b.trans_date, b.sales_order_no, b.customer_order_no, c.name as customer_name, b.currency, b.item_no, b.item_name, a.account_number, a.account_name, a.debit, a.credit, a.flag');
             $this->db->from('sales_invoice_journals a');
@@ -965,6 +966,7 @@ class Journal_postings extends CI_Controller
             $result['total'] = count($data);
             $result = array_merge($result, ['rows' => $data], ["footer" => $footer]);
             echo json_encode($result);
+
         } elseif ($modul == "AP PAYMENT") {
 
             $this->db->select('a.payment_no, b.payment_date, b.purchase_invoice, b.supplier_invoice, c.name as supplier_name, b.currency, a.description, a.account_number, a.account_name, a.debit, a.credit, a.flag, a.local_debit, a.local_credit, b.rate');
@@ -1207,6 +1209,7 @@ class Journal_postings extends CI_Controller
             echo json_encode($result);
             
         } elseif ($modul == "ASSET") {
+            /** --- existing query --- 
             $this->db->select('a.asset_no, a.trans_date, b.purchase_invoice_number, b.supplier_name, b.currency, b.name, a.account_number, a.account_name, a.debit, a.credit');
             $this->db->from('asset_journals a');
             $this->db->join("asset_fixeds b", "a.asset_no = b.number");
@@ -1214,6 +1217,29 @@ class Journal_postings extends CI_Controller
             $this->db->where_in('a.asset_no', $document_no);
             $this->db->group_by(['asset_no', 'account_number']);
             $this->db->order_by('a.asset_no', 'asc');
+            $journals = $this->db->get()->result_array();
+             */
+                        
+            $this->db->select('
+                c.asset_no, 
+                c.trans_date, 
+                c.account_number, 
+                c.account_name, 
+                c.debit, 
+                c.credit,
+                d.supplier_name, 
+                d.currency, 
+                d.name,
+                d.purchase_invoice_number 
+            ');
+            $this->db->from('journal_types a');
+            $this->db->join('asset_categories b', 'b.journal_type_id = a.id');
+            $this->db->join('asset_journals c', 'c.item_family_id = b.number');
+            $this->db->join('asset_fixeds d', 'd.number = c.asset_no');
+            // $this->db->where("c.periode BETWEEN '$transaction_from_ex' and '$transaction_to_ex'");
+            $this->db->where_in('c.asset_no', $document_no);
+            $this->db->group_by(['asset_no', 'account_number']);
+            $this->db->order_by('c.asset_no', 'asc');
             $journals = $this->db->get()->result_array();
 
             $original_debit = 0;
@@ -1286,6 +1312,7 @@ class Journal_postings extends CI_Controller
             $result['total'] = count($data);
             $result = array_merge($result, ['rows' => $data], ["footer" => $footer]);
             echo json_encode($result);
+        
         } elseif ($modul == "CURRENCY REVALUATION") {
             $this->db->select('a.number, a.trans_date, a.document_no, a.account_number, a.account_name, a.debit, a.credit,
                 (CASE WHEN d.name IS NULL THEN e.name ELSE d.name END) as company_name');
