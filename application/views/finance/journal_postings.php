@@ -393,6 +393,7 @@
         var modul = $("#modul").combobox('getValue');
         var company_id = $("#company_name").combobox('getValue');
         var document_no = $("#document_no").combogrid('getText');
+        var journal_type = $("#journal_type").datebox('getValue');
 
         if (modul == "" || (jQuery.inArray(modul, ['PURCHASE INVOICING','SALES INVOICING','AP PAYMENT','AR RECEIPT']) >= 0 && document_no == "")) {
             toastr.info('Please Choose Modul and Document No');
@@ -404,6 +405,7 @@
                 data: {
                     journal_date: journal_date,
                     modul: modul,
+                    journal_type: journal_type,
                     company_id: company_id,
                     document_no: document_no,
                 },
@@ -413,6 +415,7 @@
                         var dg = $('#dg2').datagrid({
                             url: '<?= base_url('finance/journal_postings/datatablesTemp') ?>?journal_date=' + window.btoa(journal_date) +
                                 "&modul=" + window.btoa(modul) +
+                                "&journal_type=" + window.btoa(journal_type) +
                                 "&company_id=" + window.btoa(company_id) +
                                 "&document_no=" + window.btoa(document_no),
                             onLoadSuccess: function(data){

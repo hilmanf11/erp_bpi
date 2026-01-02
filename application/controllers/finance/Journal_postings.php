@@ -623,6 +623,7 @@ class Journal_postings extends CI_Controller
         $modul = base64_decode($get['modul']);
         $company_id = base64_decode($get['company_id']);
         $document_no = explode(",", base64_decode($get['document_no']));
+        $journal_type = base64_decode($get['journal_type']);
 
         $start = strtotime($transaction_from);
         $finish = strtotime($transaction_to);
@@ -1219,28 +1220,23 @@ class Journal_postings extends CI_Controller
             $this->db->order_by('a.asset_no', 'asc');
             $journals = $this->db->get()->result_array();
              */
-                        
-            $this->db->select('
-                c.asset_no, 
-                c.trans_date, 
-                c.account_number, 
-                c.account_name, 
-                c.debit, 
-                c.credit,
-                d.supplier_name, 
-                d.currency, 
-                d.name,
-                d.purchase_invoice_number 
-            ');
-            $this->db->from('journal_types a');
-            $this->db->join('asset_categories b', 'b.journal_type_id = a.id');
-            $this->db->join('asset_journals c', 'c.item_family_id = b.number');
-            $this->db->join('asset_fixeds d', 'd.number = c.asset_no');
-            // $this->db->where("c.periode BETWEEN '$transaction_from_ex' and '$transaction_to_ex'");
-            $this->db->where_in('c.asset_no', $document_no);
-            $this->db->group_by(['asset_no', 'account_number']);
-            $this->db->order_by('c.asset_no', 'asc');
-            $journals = $this->db->get()->result_array();
+            
+            $journal_date = base64_decode($get['journal_date']);
+            $periode_target = date('Y-m', strtotime($journal_date));
+
+            $sql = "SELECT 
+                a.periode, a.asset_no, a.trans_date, a.account_number, a.debit, a.credit, 
+                b.account_name, b.account_type,
+                c.purchase_invoice_number, c.supplier_name, c.currency, c.name
+                FROM asset_journals a
+                JOIN asset_categories b ON b.number = a.asset_category_number 
+                JOIN asset_fixeds c ON a.asset_no = c.number 
+                LEFT JOIN journal_postings jp ON jp.document_no = a.asset_no AND a.periode = DATE_FORMAT(jp.journal_date, '%Y-%m')
+                WHERE a.periode = ? 
+                AND b.journal_type_id = ?
+                ORDER BY a.asset_no, b.account_number;";
+            $query = $this->db->query($sql, [$periode_target, $journal_type]);
+            $journals = $query->result_array();
 
             $original_debit = 0;
             $original_credit = 0;
