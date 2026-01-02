@@ -102,7 +102,7 @@ class Asset_depreciation extends CI_Controller
             $this->db->join('asset_fixeds a', 'a.number = b.asset_no');
             $this->db->join('item_familys fam', 'a.item_family_id = fam.id');
             $this->db->join('asset_categories c', 'a.asset_category_number = c.number', 'left');
-            $this->db->join('journal_postings d', "a.purchase_invoice_number = d.document_no", 'left');
+            $this->db->join('journal_postings d', "b.asset_no = d.document_no", 'left'); // Asset No yang sudah di posting journal
             $this->db->where('b.periode', $filter_period);
             if($filter_family != ""){
                 $this->db->where('b.item_family_id', $filter_family);
