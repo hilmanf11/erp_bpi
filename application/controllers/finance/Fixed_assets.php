@@ -510,6 +510,7 @@ class Fixed_assets extends CI_Controller
         // Cek data Purchase Invoice dan Item Family dalam satu blok
         $readPI = $this->db->select('item_rm_id, trans_date, qty, YEAR(trans_date) as trans_year, MONTH(trans_date) as trans_month')
             ->select('account_number')
+            ->select('supplier_id')
             ->from('purchase_invoices')
             ->where('number', $pi_number)
             ->where('item_rm_id', $item_rm_id)
@@ -529,6 +530,9 @@ class Fixed_assets extends CI_Controller
             ]);
             return;
         }
+
+        $supplier_id = $readPI->supplier_id ?? '';
+        $account_number = $readPI->account_number ?? '';
 
         $trans_year  = $readPI->trans_year;
         $trans_month = str_pad($readPI->trans_month, 2, '0', STR_PAD_LEFT);
@@ -555,6 +559,8 @@ class Fixed_assets extends CI_Controller
                 "item_family_id"          => $post['item_family_id'],
                 "asset_category_number"   => $post['asset_category_number'] ?? null,
                 "purchase_invoice_number" => $post['purchase_invoice_number'],
+                "account_number"          => $account_number ?? null,
+                "supplier_id"             => $supplier_id ?? null,
                 "supplier_name"           => $post['supplier_name'],
                 "item_rm_id"              => $post['item_rm_id'],
                 "number"                  => $asset_number,
@@ -582,7 +588,7 @@ class Fixed_assets extends CI_Controller
             echo $send;
 
         } else {
-        // UOM selain MTR
+        // UOM selain MTR (meter)
         for ($i = 0; $i < $total_qty; $i++) {
             // Tentukan nomor aset yang benar
             if ($total_qty > 1) {
@@ -597,6 +603,8 @@ class Fixed_assets extends CI_Controller
                 "item_family_id"          => $post['item_family_id'],
                 "asset_category_number"   => $post['asset_category_number'] ?? null,
                 "purchase_invoice_number" => $post['purchase_invoice_number'],
+                "account_number"          => $account_number ?? null,
+                "supplier_id"             => $supplier_id ?? null,
                 "supplier_name"           => $post['supplier_name'],
                 "item_rm_id"              => $post['item_rm_id'],
                 "number"                  => $asset_number,
@@ -790,19 +798,20 @@ class Fixed_assets extends CI_Controller
                     'name'                    => preg_replace('/[^\x20-\x7E]/', '', $data->val($i, 4)),
                     'asset_category_number'   => preg_replace('/[^\x20-\x7E]/', '', $data->val($i, 5)),
                     'trans_date'              => preg_replace('/[^\x20-\x7E]/', '', $data->val($i, 6)),
-                    'supplier_name'           => preg_replace('/[^\x20-\x7E]/', '', $data->val($i, 7)),
-                    'qty'                     => preg_replace('/[^\x20-\x7E]/', '', $data->val($i, 8)),
-                    'uom'                     => preg_replace('/[^\x20-\x7E]/', '', $data->val($i, 9)),
-                    'currency'                => preg_replace('/[^\x20-\x7E]/', '', $data->val($i, 10)),
-                    'cost'                    => preg_replace('/[^\x20-\x7E]/', '', $data->val($i, 11)),
-                    'usage_date'              => preg_replace('/[^\x20-\x7E]/', '', $data->val($i, 12)),
-                    'estimate_year'           => preg_replace('/[^\x20-\x7E]/', '', $data->val($i, 13)),
-                    'depreciation_accumulate' => preg_replace('/[^\x20-\x7E]/', '', $data->val($i, 14)),
-                    'remarks'                 => preg_replace('/[^\x20-\x7E]/', '', $data->val($i, 15)),
-                    'method'                  => preg_replace('/[^\x20-\x7E]/', '', $data->val($i, 16)),
-                    'department'              => preg_replace('/[^\x20-\x7E]/', '', $data->val($i, 17)),
-                    'location'                => preg_replace('/[^\x20-\x7E]/', '', $data->val($i, 18)),
-                    'account_number'          => preg_replace('/[^\x20-\x7E]/', '', $data->val($i, 19)),
+                    'account_number'          => preg_replace('/[^\x20-\x7E]/', '', $data->val($i, 7)),
+                    'supplier_id'             => preg_replace('/[^\x20-\x7E]/', '', $data->val($i, 8)),
+                    'supplier_name'           => preg_replace('/[^\x20-\x7E]/', '', $data->val($i, 9)),
+                    'qty'                     => preg_replace('/[^\x20-\x7E]/', '', $data->val($i, 10)),
+                    'uom'                     => preg_replace('/[^\x20-\x7E]/', '', $data->val($i, 11)),
+                    'currency'                => preg_replace('/[^\x20-\x7E]/', '', $data->val($i, 12)),
+                    'cost'                    => preg_replace('/[^\x20-\x7E]/', '', $data->val($i, 13)),
+                    'usage_date'              => preg_replace('/[^\x20-\x7E]/', '', $data->val($i, 14)),
+                    'estimate_year'           => preg_replace('/[^\x20-\x7E]/', '', $data->val($i, 15)),
+                    'depreciation_accumulate' => preg_replace('/[^\x20-\x7E]/', '', $data->val($i, 16)),
+                    'remarks'                 => preg_replace('/[^\x20-\x7E]/', '', $data->val($i, 17)),
+                    'method'                  => preg_replace('/[^\x20-\x7E]/', '', $data->val($i, 18)),
+                    'department'              => preg_replace('/[^\x20-\x7E]/', '', $data->val($i, 19)),
+                    'location'                => preg_replace('/[^\x20-\x7E]/', '', $data->val($i, 20)),
                 ];
             }
 
@@ -863,6 +872,7 @@ class Fixed_assets extends CI_Controller
             //Cek Process Number
             $asset_categories = $this->crud->read('item_familys', [], ["number" => $data['asset_category_number']]);
             $asset_fixeds     = $this->crud->read('asset_fixeds', [], ["number" => $data['number']]);
+            $suppliers        = $this->crud->read('suppliers', [], ["id" => $data['supplier_id']]);
             $purchase_invoice = $this->crud->read('purchase_invoices', [], ['number' => $data['purchase_invoice_number']]);
             $item_rm          = $this->db->select('id, number, name')->from('item_rm')->like('number', $data['name'])->or_like('name', $data['name'])->get()->row();
 
@@ -896,6 +906,11 @@ class Fixed_assets extends CI_Controller
                     $item_rm_id = "";
                 }
 
+                $supplier_id = '';
+                if (!empty($suppliers)) {
+                    $supplier_id = $suppliers->id;
+                }
+
                 $cost     = (float)$data['cost'] ?? 0;
                 $qty      = (float)$data['qty'] ?? 0;
                 $currency = $data['currency'] ?? 'IDR'; // Default IDR
@@ -906,6 +921,7 @@ class Fixed_assets extends CI_Controller
                     "item_family_id"          => $asset_categories->id ?? $data['asset_category_number'],
                     "purchase_invoice_number" => $purchase_invoice->number ?? $data['purchase_invoice_number'],
                     "account_number"          => $data['account_number'] ?? $account_number,
+                    "supplier_id"             => $supplier_id ?? $data['supplier_id'],
                     "supplier_name"           => $data['supplier_name'],
                     "item_rm_id"              => $item_rm_id,
                     "number"                  => $data['number'],
