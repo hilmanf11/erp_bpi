@@ -1387,6 +1387,15 @@
 
                     if (customer_address_id != "" && total_grand != "") {
                         for (let i = 0; i < totalrows; i++) {
+
+                            if (!rows[i].currency || rows[i].currency === '') {
+                                toastr.error(
+                                    'Currency Cannot Empty (Rows-' + (i + 1) + ')',
+                                    'Validation Error'
+                                );
+                                return false;
+                            }
+                            
                             if (rows[i].item_fg_id) {
                                 $.ajax({
                                     type: "post",
