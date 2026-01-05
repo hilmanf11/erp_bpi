@@ -785,7 +785,8 @@
                     </div>
                     <div class="fitem">
                         <b style="width:35%; display:inline-block;">VAT</b>
-                        <input style="width:60%;" id="total_vat" name="total_vat" readonly class="easyui-numberbox" data-options="precision:2,groupSeparator:','">
+                        <input style="width:40%;" id="total_vat" name="total_vat" class="easyui-numberbox">
+                        &nbsp;&nbsp;<input id="check_vat" class="easyui-checkbox" data-options="{onChange:checkVAT}">
                     </div>
                     <div class="fitem">
                         <b style="width:35%; display:inline-block;">PPH</b>
@@ -842,6 +843,7 @@
 <!-- PDF -->
 <iframe id="printout" src="" style="width: 100%;" hidden></iframe>
 <script>
+    function checkVAT(checked) { $('#total_vat').numberbox('readonly', !checked); }
     // Setting on/off FITUR AUTO POSTING JOURNAL => ubah ke TRUE jika ingin dinyalakan
     let auto_posting_journal = true; // di SI live sudah diaktifkan
 
@@ -1446,8 +1448,10 @@
                     total_dpp = parseFloat(Math.abs(total_sub_discount - down_payment) * 0);
                 }
 
-                var disc_tax = parseFloat(total_dpp * (taxes / 100)); // Total PPN
-                $("#total_vat").numberbox('setValue', disc_tax.toFixed(4));
+                // var disc_tax = parseFloat(total_dpp * (taxes / 100)); // Total PPN
+                // $("#total_vat").numberbox('setValue', disc_tax.toFixed(4));
+                var disc_tax = parseFloat($("#total_vat").numberbox('getValue')); // Total PPN
+                $("#check_vat").checkbox('uncheck');
 
                 var total_pph = parseFloat($("#total_pph").numberbox('getValue')) || 0;
                 
@@ -4275,35 +4279,7 @@
         })
 
         $("#pph").combobox({
-            onChange: function(e) {
-                var customer_id = $("#customer_id").combogrid('getValue');
-                var total_sub = $("#total_sub").numberbox('getValue');
-                var down_payment = $("#down_payment").numberbox('getValue');
-                var total_vat = $("#total_vat").numberbox('getValue');
-                var trans_date = $("#trans_date").datebox('getValue');
-                var pph = $("#pph").combobox('getValue');
-                var rows = $('#dg2').datagrid('getRows');//datatatblesTemp
-                var currency = (rows.length > 0 && rows[0].currency) ? rows[0].currency : 'IDR';
-
-                console.log("Dari Pph :",rows);
-                var total_pph = parseFloat((total_sub - down_payment) * parseFloat(parseInt(pph) / 100));
-                $("#total_pph").numberbox('setValue', total_pph);
-
-                var grand_total = (parseFloat(total_sub - down_payment) + parseFloat(total_vat) - parseFloat(total_pph));
-                $("#total_grand").numberbox('setValue', grand_total);
-
-                $.ajax({
-                    type: "post",
-                    // url: "<?= base_url('finance/sales_invoices/readExchangeRates?customer_id=') ?>" + customer_id,
-                    url: "<?= base_url('finance/sales_invoices/readExchangeRates?currency=') ?>" + currency + "&trans_date=" + trans_date,
-                    dataType: "json",
-                    success: function(exchange) {
-                        if (exchange) {
-                            $("#total_local").numberbox('setValue', (grand_total * parseFloat(exchange[0].middle)));
-                        }
-                    }
-                });
-            }
+            onChange: function (newValue, oldValue) { calculatePPH(); }
         })
 
         $('#keterangan_tambahan').combogrid({
@@ -4343,7 +4319,43 @@
             editable: false,
         });
  
+        $('#total_vat').numberbox({
+            precision: 2,
+            readonly: true,
+            groupSeparator: ',',
+            onChange: function (newValue, oldValue) { calculatePPH(); }
+        });
     });
+
+    function calculatePPH() {
+        var customer_id = $("#customer_id").combogrid('getValue');
+        var total_sub = $("#total_sub").numberbox('getValue');
+        var down_payment = $("#down_payment").numberbox('getValue');
+        var total_vat = $("#total_vat").numberbox('getValue');
+        var trans_date = $("#trans_date").datebox('getValue');
+        var pph = $("#pph").combobox('getValue');
+        var rows = $('#dg2').datagrid('getRows');//datatatblesTemp
+        var currency = (rows.length > 0 && rows[0].currency) ? rows[0].currency : 'IDR';
+
+        console.log("Dari Pph :",rows);
+        var total_pph = parseFloat((total_sub - down_payment) * parseFloat(parseInt(pph) / 100));
+        $("#total_pph").numberbox('setValue', total_pph);
+
+        var grand_total = (parseFloat(total_sub - down_payment) + parseFloat(total_vat) - parseFloat(total_pph));
+        $("#total_grand").numberbox('setValue', grand_total);
+
+        $.ajax({
+            type: "post",
+            // url: "<?= base_url('finance/sales_invoices/readExchangeRates?customer_id=') ?>" + customer_id,
+            url: "<?= base_url('finance/sales_invoices/readExchangeRates?currency=') ?>" + currency + "&trans_date=" + trans_date,
+            dataType: "json",
+            success: function(exchange) {
+                if (exchange) {
+                    $("#total_local").numberbox('setValue', (grand_total * parseFloat(exchange[0].middle)));
+                }
+            }
+        });
+    }
 
     function getDivisionCode() {
         globalDivisionCode = $('#division').combobox('getValue');
