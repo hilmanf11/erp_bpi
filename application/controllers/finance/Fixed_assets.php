@@ -294,7 +294,7 @@ class Fixed_assets extends CI_Controller
         $this->db->select("a.*, 
             COALESCE(b.name, f.name) as asset_family_name,
             coa.account_name,
-            COALESCE(jp.number, jp_asset.number) as posting_no,
+            jp.number as posting_no,
             COALESCE(b.type, coa.account_name) as asset_category_type");
         $this->db->select("COALESCE(a.account_number, pi.account_number) as account_number"); // -- Get Account Number dari Purchase Invoice (Request Bu Nina)
         // -- Menghitung jumlah bulan sejak tanggal transaksi
@@ -322,7 +322,6 @@ class Fixed_assets extends CI_Controller
         $this->db->join("item_familys f", "a.item_family_id = f.id");
         $this->db->join("account_coa coa", "f.account_number = coa.account_number", "left");
         $this->db->join("journal_postings jp", "a.purchase_invoice_number = jp.document_no", "left");
-        $this->db->join("journal_postings jp_asset", "jp_asset.document_no = a.number", "left"); // Tampil GL No dari Asset Depreciation yang di Posting Journal
         $this->db->join('purchase_invoices pi', 'a.purchase_invoice_number = pi.number', 'left');
 
         if (!empty($filters)) {
