@@ -300,8 +300,7 @@ class Journal_postings extends CI_Controller
             echo json_encode($records);
             
         } elseif ($modul == "ASSET") {
-            /** 
-             * --- exosting query --- 
+            /** --- exosting query --- 
             $this->db->select('e.supplier_name as company_id, e.supplier_name as company_name');
             $this->db->from('journal_types a');
             $this->db->join('asset_categories d', 'a.id = d.journal_type_id');
@@ -518,8 +517,10 @@ class Journal_postings extends CI_Controller
             $this->db->group_by('a.asset_no');
             $this->db->order_by('a.asset_no', 'asc');
             $records = $this->db->get()->result_array();
-
             */
+
+            $journal_date = base64_decode($get['journal_date']);
+            $periode_target = date('Y-m', strtotime($journal_date));
 
             $this->db->select('c.asset_no as number');
             $this->db->from('journal_types a');
@@ -532,17 +533,12 @@ class Journal_postings extends CI_Controller
                 'left', 
                 FALSE
             );
-            $this->db->where('jp.document_no', null, false);
+            $this->db->where('jp.document_no IS NULL', null, false);
             $this->db->where('b.journal_type_id', $journal_type);
             $this->db->where('d.supplier_name', $company_id);
-
-            // if (!empty($transaction_from_ex) && !empty($transaction_to_ex)) {
-            //     $this->db->where('c.periode >=', $transaction_from_ex);
-            //     $this->db->where('c.periode <=', $transaction_to_ex);
-            // }
-            
-            $this->db->group_by('a.id');
-            $this->db->order_by('a.name', 'ASC');
+            $this->db->where('c.periode', $periode_target);
+            $this->db->group_by('c.asset_no');
+            $this->db->order_by('c.asset_no', 'ASC');
             $records = $this->db->get()->result_array();
             echo json_encode($records);
         
