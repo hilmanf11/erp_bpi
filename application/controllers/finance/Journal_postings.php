@@ -1227,9 +1227,11 @@ class Journal_postings extends CI_Controller
             $sql = "SELECT 
                 a.periode, a.asset_no, a.trans_date, a.account_number, a.debit, a.credit, 
                 b.account_name, b.account_type,
+                COALESCE(a.asset_category_number, a.item_family_id) as category_id,
                 c.purchase_invoice_number, c.supplier_name, c.currency, c.name
                 FROM asset_journals a
                 JOIN asset_categories b ON b.number = a.asset_category_number 
+                    OR b.number = a.item_family_id
                 JOIN asset_fixeds c ON a.asset_no = c.number 
                 LEFT JOIN journal_postings jp ON jp.document_no = a.asset_no AND a.periode = DATE_FORMAT(jp.journal_date, '%Y-%m')
                 WHERE a.periode = ? 

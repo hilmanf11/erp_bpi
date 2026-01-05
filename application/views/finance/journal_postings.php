@@ -377,12 +377,19 @@
 
     //NOMOR AUTOMATIC
     function number(journal_date) {
+        var dateValue = journal_date ? journal_date : "<?= date('Y-m-d') ?>";
+        
         $.ajax({
             type: "post",
-            url: "<?= base_url('finance/journal_postings/number/') ?>" + window.btoa(journal_date),
+            url: "<?= base_url('finance/journal_postings/number/') ?>" + window.btoa(dateValue),
             dataType: "html",
             success: function(result) {
-                $("#number").textbox('setValue', result);
+                if ($("#number").length > 0) {
+                    $("#number").textbox('setValue', result.trim());
+                }
+            },
+            error: function(xhr, status, error) {
+                console.error("Error fetching number: ", error);
             }
         });
     }
