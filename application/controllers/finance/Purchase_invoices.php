@@ -514,6 +514,7 @@ class Purchase_invoices extends CI_Controller
         $trans_date = base64_decode($this->input->get('trans_date'));
         $por_no_ex = explode(",", $por_no);
 
+        $this->db->select("a.id");
         $this->db->select("a.receipt_no as por_no, a.po_no, c.id as item_rm_id, c.number as item_number, c.name as item_name, e.uom_default as uom, b.currency, 
             (CASE WHEN c.item_family_id = 'P28' THEN f.specification ELSE e.item_supplier END ) as supplier_product,
             a.qty_receipt2 as qty, f.price, f.discount, 'IDR' as currency_local, h.account_number, i.account_name,
@@ -532,15 +533,21 @@ class Purchase_invoices extends CI_Controller
         $this->db->where('a.deleted', 0);
         // $this->db->where('a.status', 0);
         $this->db->where_in('a.receipt_no', $por_no_ex);
+        /**
         $this->db->group_by('a.po_no');
         $this->db->group_by('a.item_rm_id');
         $this->db->group_by('a.receipt_no');
         $this->db->group_by('f.specification');
+        */
+        $this->db->group_by('a.po_no');
+        $this->db->group_by('a.item_rm_id');
+        $this->db->group_by('a.id');
         $this->db->order_by('a.receipt_no', 'asc');
         $records = $this->db->get()->result_array();
 
         $total_sub = 0;
         $id = 1;
+        $obj = [];
         foreach ($records as $record) {
             $total_sub += $record['total'];
             $obj[] = array(
