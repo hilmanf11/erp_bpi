@@ -35,6 +35,24 @@ class Sales_report extends CI_Controller
         echo json_encode($send);
     }
 
+    public function readsDN()
+    {
+        $q = isset($_POST['q']) ? $_POST['q'] : '';
+        $this->db->select('delivery_note_no');
+        $this->db->from('delivery_notes');
+        $this->db->where('created_date >=', '2025-01-01 00:00:00');
+        $this->db->where('created_date <=', '2026-12-31 23:59:59');
+        $this->db->group_by('delivery_note_no');
+        $this->db->order_by('created_date','ASC');
+        if ($q !== '') {
+            $this->db->like('delivery_note_no', $q);
+        }
+        // Optional: batasi hasil (boleh diaktifkan)
+        // $this->db->limit(20);
+        $result = $this->db->get()->result_array();
+        echo json_encode($result);
+    }
+
     public function print($option = "")
     {
         if ($option == "excel") {
@@ -47,6 +65,8 @@ class Sales_report extends CI_Controller
         $filter_division = $this->input->get('filter_division');
         $filter_display = $this->input->get("filter_display");
         $filter_customer_id = $this->input->get("filter_customer_id");
+        $filter_item_fg_id = $this->input->get("filter_item_fg_id");
+        $filter_delivery_notes = $this->input->get("filter_delivery_notes");
 
         $division = $this->crud->read('divisions',[],["number"=> $filter_division]);
         $division_num = isset($division->number) && !empty($division->number) ? $division->number : '-';
@@ -89,8 +109,8 @@ class Sales_report extends CI_Controller
                 LEFT JOIN customers c ON a.customer_id = c.id
                 LEFT JOIN sales_orders d ON a.sales_order_no = d.sales_order_no and a.item_fg_id = d.item_fg_id
                 LEFT JOIN sales_order_rm e ON a.sales_order_no_rm = e.sales_order_no and a.item_fg_id = e.item_fg_id
-                WHERE a.customer_id LIKE '%$filter_customer_id%' and a.division LIKE '%$filter_division%' and 
-                DATE_FORMAT(a.delivery_note_date, '%Y-%m-%d') BETWEEN '$filter_from' and '$filter_to' AND a.trans_type = 'SALES'
+                WHERE a.customer_id LIKE '%$filter_customer_id%' and a.division LIKE '%$filter_division%' and a.item_fg_id LIKE '%$filter_item_fg_id%' 
+                and a.delivery_note_no LIKE '%$filter_delivery_notes%' and DATE_FORMAT(a.delivery_note_date, '%Y-%m-%d') BETWEEN '$filter_from' and '$filter_to' AND a.trans_type = 'SALES'
                 GROUP BY a.id  
                 ORDER BY c.name ASC, a.delivery_note_no ASC, b.number ASC";
             $records = $this->crud->query($query);
