@@ -206,6 +206,34 @@ class Sales_invoices extends CI_Controller
         $records = $this->crud->query("SELECT a.delivery_note_no, a.delivery_note_date, b.plant
             FROM delivery_notes a
             LEFT JOIN customer_address b ON a.address_id = b.id
+            WHERE a.customer_id = '$customer_id' 
+            AND a.status = '0' 
+            AND a.delivery_note_date >= '2025-01-01' 
+            AND a.trans_type = 'SALES' 
+            AND a.delivery_note_no LIKE '%$post%' 
+            AND a.division = '$division_number'
+            GROUP BY a.delivery_note_no 
+            ORDER BY a.delivery_note_date ASC, a.delivery_note_no ASC");
+
+        // Tambahkan nomor urut
+        $data_with_no = [];
+        $no = 1;
+        foreach ($records as $record) {
+            $record->no = $no++; // Tambahkan nomor urut
+            $data_with_no[] = $record;
+        }
+
+        echo json_encode($data_with_no);
+    }
+
+    public function readDeliverys_existing()
+    {
+        $post = isset($_POST['q']) ? $_POST['q'] : "";
+        $customer_id = $this->input->get('customer_id');
+        $division_number = $this->input->get('division_number');
+        $records = $this->crud->query("SELECT a.delivery_note_no, a.delivery_note_date, b.plant
+            FROM delivery_notes a
+            LEFT JOIN customer_address b ON a.address_id = b.id
             WHERE a.customer_id = '$customer_id' and a.status = '0' AND YEAR(a.delivery_note_date) = 2025 AND a.trans_type = 'SALES' and a.delivery_note_no like '%$post%' and a.division = '$division_number'
             GROUP BY a.delivery_note_no 
             ORDER BY a.delivery_note_date ASC, a.delivery_note_no ASC");
