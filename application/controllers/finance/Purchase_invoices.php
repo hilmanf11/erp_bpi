@@ -525,7 +525,8 @@ class Purchase_invoices extends CI_Controller
         $this->db->join('item_rm c', 'a.item_rm_id = c.id');
         // $this->db->join('uom d', 'c.uom_id = d.id');
         $this->db->join('supplier_items e', 'b.id = e.supplier_id and c.id = e.item_rm_id');
-        $this->db->join('purchase_orders f', 'a.po_no = f.po_no AND a.item_rm_id = f.item_rm_id AND a.specification = f.specification'); // specification as new Composite Key Join
+        // $this->db->join('purchase_orders f', 'a.po_no = f.po_no AND a.item_rm_id = f.item_rm_id AND a.specification = f.specification'); // specification as new Composite Key Join
+        $this->db->join('purchase_orders f', 'a.po_no = f.po_no and b.id = f.supplier_id and c.id = f.item_rm_id');
         // $this->db->join('exchange_rates g', "g.start_date = DATE_FORMAT((a.receipt_date - INTERVAL '1' MONTH), '%Y-%m-01') and g.currency_from = b.currency", 'left');
         $this->db->join('exchange_rates g',"g.start_date <= '{$trans_date}' AND g.end_date >= '{$trans_date}' AND g.currency_from = b.currency",'left');
         $this->db->join('item_familys h', "c.item_family_id = h.id", 'left');
