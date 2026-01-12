@@ -57,8 +57,8 @@
 
     </fieldset>
     <?= $button ?>
-    <a href="javascript:;" class="easyui-linkbutton" data-options="plain:true" onclick="excel_lsb()"><i class="fa fa-file"></i> Export LSB</a>
-    <a href="javascript:;" class="easyui-linkbutton" data-options="plain:true" onclick="excel_detail_transaction()"><i class="fa fa-file"></i> Export Detail Transaction</a>
+    <!-- <a href="javascript:;" class="easyui-linkbutton" data-options="plain:true" onclick="excel_lsb()"><i class="fa fa-file"></i> Export LSB</a> -->
+    <!-- <a href="javascript:;" class="easyui-linkbutton" data-options="plain:true" onclick="excel_detail_transaction()"><i class="fa fa-file"></i> Export Detail Transaction</a> -->
 
 </div>
 
@@ -143,6 +143,7 @@
         // Tampilkan overlay
         $("#loadingOverlay").show();
 
+        if (filter_display == "DETAIL") {
         // Unduh file
         window.location.assign('<?= base_url('finance/report_inventory_rm/print/excel') ?>' + url);
 
@@ -150,6 +151,10 @@
         setTimeout(function () {
             $("#loadingOverlay").hide();
         }, 3000); // Sesuaikan waktu jika perlu
+        
+        } else {
+            excel_lsb();
+        }
     }
 
 

@@ -148,7 +148,7 @@ class Report_inventory_rm extends CI_Controller
         if ($option == "excel") {
             $format  = date("Ymd");
             header("Content-type: application/vnd-ms-excel");
-            header("Content-Disposition: attachment; filename=history_transactions_rm_$format.xls");
+            header("Content-Disposition: attachment; filename=report_inventory_rm_standard_actual_$format.xls");
         }
         //------------------------------------ Opsi print berakhir disini------------------------------------------------------//
 
@@ -1459,7 +1459,7 @@ class Report_inventory_rm extends CI_Controller
         if ($option == "excel") {
             $format  = date("Ymd");
             header("Content-type: application/vnd-ms-excel");
-            header("Content-Disposition: attachment; filename=history_transactions_rm_$format.xls");
+            header("Content-Disposition: attachment; filename=report_inventory_rm_standard_actual_$format.xls");
         }
         //------------------------------------ Opsi print berakhir disini------------------------------------------------------//
 
@@ -1732,8 +1732,9 @@ class Report_inventory_rm extends CI_Controller
                     .bg-summary { background-color: #f2f2f2; font-weight: bold; }
                     .bg-standard { background-color: #c6efce; }
                     .bg-actual { background-color: #deeaf6; }
+                    .bg-white { background-color: #fff; }
                     .bg-grey { background-color: #e7e6e6; }
-                    .bg-grey { background-color: #e7e6e6; }
+                    .bg-yellow { background-color: #fffccc; }
                     .bg-blue { background-color: #81a1d1; color: white; }
                 </style>
             </style>
@@ -1795,29 +1796,32 @@ class Report_inventory_rm extends CI_Controller
 
                 <tr>
                     <th rowspan="2">QTY</th>
-                    <th rowspan="2" style="background-color: #c6efce;">STD</th>
-                    <th rowspan="2" style="background-color: #deeaf6;">ACTUAL</th>
-                    <th rowspan="2" style="background-color: #c6efce;">Amount STD</th>
-                    <th rowspan="2" style="background-color: #deeaf6;">Amount Actual</th>
-                    <th rowspan="2">VARIANCE</th>
+                    <th colspan="2" style="background-color: #c6efce;">STANDARD</th>
+                    <th colspan="2" style="background-color: #deeaf6;">ACTUAL</th>
+                    <th rowspan="2" style="background-color: #e8e8e8;">VARIANCE</th>
                     
                     <th rowspan="2">QTY</th>
                     <th colspan="2" style="background-color: #c6efce;">STANDARD</th>
                     <th colspan="2" style="background-color: #deeaf6;">ACTUAL</th>
-                    <th rowspan="2">VARIANCE</th>
+                    <th rowspan="2" style="background-color: #e8e8e8;">VARIANCE</th>
 
                     <th rowspan="2">QTY</th>
                     <th colspan="2" style="background-color: #c6efce;">STANDARD</th>
                     <th colspan="2" style="background-color: #deeaf6;">ACTUAL</th>
-                    <th rowspan="2">VARIANCE</th>
+                    <th rowspan="2" style="background-color: #e8e8e8;">VARIANCE</th>
 
                     <th rowspan="2">QTY</th>
                     <th colspan="2" style="background-color: #c6efce;">STANDARD</th>
                     <th colspan="2" style="background-color: #deeaf6;">ACTUAL</th>
-                    <th rowspan="2">VARIANCE</th>
+                    <th rowspan="2" style="background-color: #e8e8e8;">VARIANCE</th>
                 </tr>
 
                 <tr>
+                    <th style="background-color: #c6efce;">PRICE</th>
+                    <th style="background-color: #c6efce;">AMOUNT</th>
+                    <th style="background-color: #deeaf6;">PRICE</th>
+                    <th style="background-color: #deeaf6;">AMOUNT</th>
+
                     <th style="background-color: #c6efce;">PRICE</th>
                     <th style="background-color: #c6efce;">AMOUNT</th>
                     <th style="background-color: #deeaf6;">PRICE</th>
@@ -2038,7 +2042,7 @@ class Report_inventory_rm extends CI_Controller
         if ($option == "excel") {
             $format  = date("Ymd");
             header("Content-type: application/vnd-ms-excel");
-            header("Content-Disposition: attachment; filename=history_transactions_rm_$format.xls");
+            header("Content-Disposition: attachment; filename=report_inventory_rm_standard_actual_$format.xls");
         }
         //------------------------------------ Opsi print berakhir disini------------------------------------------------------//
 
