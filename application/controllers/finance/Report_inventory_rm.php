@@ -1,6 +1,14 @@
 <?php
 date_default_timezone_set("Asia/Bangkok");
 defined('BASEPATH') or exit('No direct script access allowed');
+
+/**
+ * @property CI_Input $input
+ * @property CI_Loader $load
+ * @property CI_Session $session
+ * @property CI_DB_query_builder $db
+ * @property Crud $crud
+ */
 class Report_inventory_rm extends CI_Controller
 {
     public function __construct()
@@ -510,7 +518,7 @@ class Report_inventory_rm extends CI_Controller
         }
         
         $html .= '<br><br>
-                <h3 style="margin:0;">REPORT INVENTORY RM <i>(DETAIL)</i> </h3>
+                <h3 style="margin:0;">REPORT INVENTORY RM STANDARD AND ACTUAL <i>(DETAIL)</i> </h3>
                 <small>PERIOD : <b>' . $filter_from . '</b> To <b>' . $filter_to . '</b></small>
             </center>
             <br><br>
@@ -1622,7 +1630,114 @@ class Report_inventory_rm extends CI_Controller
         GROUP BY a.id
         ORDER BY c.name DESC, b.name DESC, a.number");
 
-        $html = '<html><head><title>Print Data</title></head><style>body {font-family: Arial, Helvetica, sans-serif;}#customers {border-collapse: collapse;width: 100%;font-size: 12px;}#customers td, #customers th {border: 1px solid #ddd;padding: 2px;}#customers tr:nth-child(even){background-color: #f2f2f2;}#customers tr:hover {background-color: #ddd;}#customers th {padding-top: 2px;padding-bottom: 2px;text-align: center;color: black;}</style><body>
+        $html = '<html><head><title>Print Data</title></head>
+            <style>
+                <style>
+                    body {
+                        font-family: Arial, sans-serif;
+                        margin: 20px;
+                    }
+                    .header-section {
+                        overflow: hidden;
+                        margin-bottom: 20px;
+                    }
+                    .company-info {
+                        float: left;
+                        width: 60%;
+                        font-size: 12px;
+                        text-align: left;
+                    }
+                    .print-info {
+                        float: right;
+                        width: 38%;
+                        font-size: 12px;
+                        text-align: right;
+                    }
+                    .company-logo {
+                        vertical-align: top;
+                        padding-right: 10px;
+                    }
+                    .company-details b {
+                        font-size: 14px;
+                    }
+                    .company-details span {
+                        font-size: 10px;
+                    }
+                    .report-title {
+                        text-align: center;
+                        margin-top: 20px;
+                        margin-bottom: 20px;
+                    }
+                    .report-title h3 {
+                        margin: 0;
+                        font-size: 18px;
+                    }
+                    .report-title small {
+                        font-size: 12px;
+                    }
+                    #customers {
+                        border-collapse: collapse;
+                        width: 100%;
+                        font-size: 13px; 
+                        margin-top: 15px;
+                    }
+                    #customers th,
+                    #customers td {
+                        border: 1px solid #ddd;
+                        padding: 4px 8px; 
+                    }
+                    #customers th {
+                        background-color: #f0f0f0;
+                        text-align: center;
+                        color: black;
+                        font-weight: bold;
+                    }
+                    #customers tr:nth-child(even) {
+                        background-color: #f9f9f9;
+                    }
+                    #customers tr:hover {
+                        background-color: #f1f1f1;
+                    }
+                    .text-right { text-align: right; }
+                    .text-center { text-align: center; }
+                    .font-bold { font-weight: bold; }
+                    .bg-light-green { background-color: #CAFFB3; } /* Untuk baris kelompok akun */
+                    .bg-grey { background-color: #EBEBEB; } /* Untuk grand total */
+
+                    .link-transaction {
+                        color: inherit;
+                        text-decoration: none;
+                    }
+                    .link-transaction:hover {
+                        color: inherit;
+                        font-weight: bolder;
+                        text-decoration: underline;
+                    }
+
+                    .clearfix::after {
+                        content: "";
+                        clear: both;
+                        display: table;
+                    }
+
+                    table {
+                        width: 100%;
+                        border-collapse: collapse;
+                        font-family: Arial, sans-serif;
+                        font-size: 11px; /* Ukuran font sedikit diperkecil karena kolom bertambah */
+                        text-align: center;
+                    }
+
+                    /* Warna Header */
+                    .bg-summary { background-color: #f2f2f2; font-weight: bold; }
+                    .bg-standard { background-color: #c6efce; }
+                    .bg-actual { background-color: #deeaf6; }
+                    .bg-grey { background-color: #e7e6e6; }
+                    .bg-grey { background-color: #e7e6e6; }
+                    .bg-blue { background-color: #81a1d1; color: white; }
+                </style>
+            </style>
+            <body>
             <center>
                 <div style="float: left; font-size: 12px; text-align: left;">
                     <table style="width: 100%;">
@@ -1642,46 +1757,95 @@ class Report_inventory_rm extends CI_Controller
                     Print By ' . $this->session->username . '  
                 </div>
                 <br><br><br>
-                <h3 style="margin:0;">REPORT INVENTORY RM <i>(RECAP)</i></h3>
+                <h3 style="margin:0;">REPORT INVENTORY RM STANDARD AND ACTUAL <i>(RECAP)</i></h3>
                 <small>PERIOD : <b>' . $filter_from . '</b> To <b>' . $filter_to . '</b></small>
             </center>
-            <br>
-            
-            <table id="customers" border="1" style="font-size: 11px;">
-                <tr>
-                    <th rowspan="2" width="20">No</th>
-                    <th rowspan="2">Product No</th>
-                    <th rowspan="2">Product Name</th>
-                    <th rowspan="2">Uom</th>
-                    <th rowspan="2">Division</th>
-                    <th rowspan="2">Category</th>
-                    <th rowspan="2">Product Family</th>
-                    <th rowspan="2">Sub Product <br>Family</th>
-                    <th rowspan="2" width="100">Begin<br>Stock</th>
-                    <th rowspan="2" width="100">In</th>
-                    <th rowspan="2" width="100">Out</th>
-                    <th rowspan="2" width="100">Ending<br>Stock</th>
-                    <th colspan="3">IN</th>
-                    <th colspan="7">OUT</th>
-                    <th rowspan="2" width="100">Total<br>In</th>
-                    <th rowspan="2" width="100">Total<br>Out</th>
-                    <th rowspan="2" width="100">Selisih Summary <br>VS Detail (IN)</th>
-                    <th rowspan="2" width="100">Selisih Summary <br>VS Detail (OUT)</th>
-                    <th rowspan="2" width="100">ITO (MONTH)</th>
-                </tr>
-                <tr>
-                    <th width="80">Purchase</th>
-                    <th width="80">BPM</th>
-                    <th width="80">ADJ STO</th>
+            <br>';
 
-                    <th width="80">Supply Sheet</th>
-                    <th width="80">Material Request</th>
-                    <th width="80">Kanban PRD</th>
-                    <th width="80">Kanban Subcont Jasa</th>
-                    <th width="80">Kanban Subcont Product</th>
-                    <th width="80">BPB</th>
-                    <th width="80">ADJ STO</th>
-                </tr>';
+        $html .= '<table id="customers" border="1" style="font-size: 11px;">
+            <thead>
+                <tr class="bg-summary">
+                    <th rowspan="4">No</th>
+                    <th rowspan="4">Product No</th>
+                    <th rowspan="4">Product Name</th>
+                    <th rowspan="4">Uom</th>
+                    <th rowspan="4">Division</th>
+                    <th rowspan="4">Category</th>
+                    <th rowspan="4">Product Family</th>
+                    <th rowspan="4">Sub Product Family</th>
+                    <th colspan="24" class="bg-blue">SUMMARY</th>
+                    <th colspan="15" class="bg-blue">DETAIL</th>
+                </tr>
+                
+                <tr>
+                    <th colspan="6" class="bg-grey">BEGIN</th>
+                    <th colspan="6" class="bg-grey">IN</th>
+                    <th colspan="6" class="bg-grey">OUT</th>
+                    <th colspan="6" class="bg-grey">ENDING</th>
+
+                    
+                    <th rowspan="2" colspan="3">IN</th>
+                    <th rowspan="2" colspan="7">OUT</th>
+                    <th rowspan="3" width="100">Total<br>In</th>
+                    <th rowspan="3" width="100">Total<br>Out</th>
+                    <th rowspan="3" width="100">Selisih Summary <br>VS Detail (IN)</th>
+                    <th rowspan="3" width="100">Selisih Summary <br>VS Detail (OUT)</th>
+                    <th rowspan="3" width="100">ITO (MONTH)</th>
+                </tr>
+
+                <tr>
+                    <th rowspan="2">QTY</th>
+                    <th rowspan="2" style="background-color: #c6efce;">STD</th>
+                    <th rowspan="2" style="background-color: #deeaf6;">ACTUAL</th>
+                    <th rowspan="2" style="background-color: #c6efce;">Amount STD</th>
+                    <th rowspan="2" style="background-color: #deeaf6;">Amount Actual</th>
+                    <th rowspan="2">VARIANCE</th>
+                    
+                    <th rowspan="2">QTY</th>
+                    <th colspan="2" style="background-color: #c6efce;">STANDARD</th>
+                    <th colspan="2" style="background-color: #deeaf6;">ACTUAL</th>
+                    <th rowspan="2">VARIANCE</th>
+
+                    <th rowspan="2">QTY</th>
+                    <th colspan="2" style="background-color: #c6efce;">STANDARD</th>
+                    <th colspan="2" style="background-color: #deeaf6;">ACTUAL</th>
+                    <th rowspan="2">VARIANCE</th>
+
+                    <th rowspan="2">QTY</th>
+                    <th colspan="2" style="background-color: #c6efce;">STANDARD</th>
+                    <th colspan="2" style="background-color: #deeaf6;">ACTUAL</th>
+                    <th rowspan="2">VARIANCE</th>
+                </tr>
+
+                <tr>
+                    <th style="background-color: #c6efce;">PRICE</th>
+                    <th style="background-color: #c6efce;">AMOUNT</th>
+                    <th style="background-color: #deeaf6;">PRICE</th>
+                    <th style="background-color: #deeaf6;">AMOUNT</th>
+
+                    <th style="background-color: #c6efce;">PRICE</th>
+                    <th style="background-color: #c6efce;">AMOUNT</th>
+                    <th style="background-color: #deeaf6;">PRICE</th>
+                    <th style="background-color: #deeaf6;">AMOUNT</th>
+
+                    <th style="background-color: #c6efce;">PRICE</th>
+                    <th style="background-color: #c6efce;">AMOUNT</th>
+                    <th style="background-color: #deeaf6;">PRICE</th>
+                    <th style="background-color: #deeaf6;">AMOUNT</th>
+
+
+                    <th rowspan="2" width="80">Purchase</th>
+                    <th rowspan="2" width="80">BPM</th>
+                    <th rowspan="2" width="80">ADJ STO</th>
+                    <th rowspan="2" width="80">Supply Sheet</th>
+                    <th rowspan="2" width="80">Material Request</th>
+                    <th rowspan="2" width="80">Kanban PRD</th>
+                    <th rowspan="2" width="80">Kanban Subcont Jasa</th>
+                    <th rowspan="2" width="80">Kanban Subcont Product</th>
+                    <th rowspan="2" width="80">BPB</th>
+                    <th rowspan="2" width="80">ADJ STO</th>
+                </tr>
+            </thead>';
 
                 
         $no = 1;
@@ -1752,6 +1916,7 @@ class Report_inventory_rm extends CI_Controller
                 ? number_format($_stock_coverage_numeric, 2)
                 : '0'; // atau bisa diganti jadi '0.00' atau '-'
 
+            $html .= '<tbody>';
             $html .= '  <tr>
                             <td style="text-align:center">' . $no . '</td>
                             <td>' . $record->number . '</td>
@@ -1761,10 +1926,34 @@ class Report_inventory_rm extends CI_Controller
                             <td>' . $record->category_name . '</td>
                             <td>' . $record->prodfam . '</td>
                             <td>' . $record->sub_prodfam . '</td>
+                            
                             <td style="text-align:right;">' . number_format(@$record->begin_stock, 2) . '</td>
+                            <td></td>
+                            <td></td>
+                            <td></td>
+                            <td></td>
+                            <td></td>
+
                             <td style="text-align:right;">' . number_format($record->qty_in, 2) . '</td>
+                            <td></td>
+                            <td></td>
+                            <td></td>
+                            <td></td>
+                            <td></td>
+
                             <td style="text-align:right;">' . number_format($record->qty_out, 2) . '</td>
+                            <td></td>
+                            <td></td>
+                            <td></td>
+                            <td></td>
+                            <td></td>
+
                             <td style="text-align:right;">' . number_format((@$record->begin_stock + $record->qty_in) - $record->qty_out, 2) . '</td>
+                            <td></td>
+                            <td></td>
+                            <td></td>
+                            <td></td>
+                            <td></td>
                             
                             <td style="text-align:right;">' . $record->receipt_qty . '</td>
                             <td style="text-align:right;">' . $record->bpm_qty . '</td>
@@ -1791,9 +1980,32 @@ class Report_inventory_rm extends CI_Controller
         $html .= '<tr>
             <td colspan="8" style="text-align:right;"><b>GRAND TOTAL</b></td>
             <td style="text-align:right;">' . number_format($totalBeginStock, 2) . '</td>
+            <td></td>
+            <td></td>
+            <td></td>
+            <td></td>
+            <td></td>
+
             <td style="text-align:right;">' . number_format($totalIn, 2) . '</td>
+            <td></td>
+            <td></td>
+            <td></td>
+            <td></td>
+            <td></td>
+
             <td style="text-align:right;">' . number_format($totalOut, 2) . '</td>
+            <td></td>
+            <td></td>
+            <td></td>
+            <td></td>
+            <td></td>
+
             <td style="text-align:right;">' . number_format($totalEndingStock, 2) . '</td>
+            <td></td>
+            <td></td>
+            <td></td>
+            <td></td>
+            <td></td>
 
             <td style="text-align:right;">' . number_format($totalReceiptQty, 2) . '</td>
             <td style="text-align:right;">' . number_format($totalBpmQty, 2) . '</td>
@@ -1815,6 +2027,7 @@ class Report_inventory_rm extends CI_Controller
             <td style="text-align:right;">' . $totalIto . '</td>
             
         </tr>';
+        $html .= '</tbody>';
       
         $html .= '</table></body></html>';
         echo $html;
