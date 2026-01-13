@@ -1475,6 +1475,11 @@ class Report_inventory_rm extends CI_Controller
         $start = strtotime($filter_from);
         $finish = strtotime($filter_to);
 
+        // FILTER PRICE PERIOD
+        $year = $filter_from ? date('Y', strtotime($filter_from)) : date('Y');
+        $period_year_from = $year . '-01-01';
+        $period_year_to   = date($year . '-12-t');
+
         $filter_from_minus1 = date('Y-m-01', strtotime('-1 month', strtotime($filter_from)));
         $filter_to_minus1   = date('Y-m-t',  strtotime('-1 month', strtotime($filter_from)));
         $filter_from_minus2 = date('Y-m-01', strtotime('-2 month', strtotime($filter_from)));
@@ -1501,6 +1506,9 @@ class Report_inventory_rm extends CI_Controller
             a.uom,
             c.name as category_name, 
             COALESCE(x.begin_stock) AS begin_stock,
+            
+            COALESCE(std.price, 0) AS std_price,
+
             COALESCE(d.qty_scan_in,0) as receipt_qty, 
             COALESCE(i.qty,0) + COALESCE(o.qty_bpm_scan,0) as bpm_qty, 
             COALESCE(k.qty,0) as adj_in_qty, 
@@ -1622,6 +1630,12 @@ class Report_inventory_rm extends CI_Controller
                         LEFT JOIN (SELECT item_rm_id, SUM(qty) AS qty_trans_rm_out FROM transaction_rm WHERE request_date < '$filter_from' AND transaction_kind = 'OUT' GROUP BY item_rm_id) g ON a.id = g.item_rm_id
                         LEFT JOIN (SELECT item_rm_id, SUM(qty) AS qty_scan_bpm FROM scan_item_bpm WHERE DATE_FORMAT(request_date, '%Y-%m-%d') < '$filter_from' GROUP BY item_rm_id) h ON a.id = h.item_rm_id
                     ) x ON a.id = x.id
+            
+            LEFT JOIN (
+                SELECT a.* 
+                FROM standard_price_rm a
+                WHERE a.deleted = 0 AND a.start_date >= '$period_year_from' AND a.end_date <= '$period_year_to' 
+            ) std ON std.item_rm_id = a.id
         
         WHERE c.id LIKE '%$filter_item_category%' 
         AND b.number LIKE '%$filter_item_family%' 
@@ -1920,6 +1934,17 @@ class Report_inventory_rm extends CI_Controller
                 ? number_format($_stock_coverage_numeric, 2)
                 : '0'; // atau bisa diganti jadi '0.00' atau '-'
 
+            
+            // VARIABLES AND CALCULATIONS
+            $standard_price     = $record->std_price ?? 0;
+
+            $begin_qty              = @$record->begin_stock;
+            $begin_standard_amount  = $begin_qty * $standard_price;
+            $begin_actual_price     = 0; // data dari upload master nanti oleh user
+            $begin_actual_amount    = $begin_qty * $begin_actual_price;
+            $begin_variance         = 0;
+            // $begin_variance      = $begin_actual_amount - $begin_standard_amount;
+
             $html .= '<tbody>';
             $html .= '  <tr>
                             <td style="text-align:center">' . $no . '</td>
@@ -1931,29 +1956,29 @@ class Report_inventory_rm extends CI_Controller
                             <td>' . $record->prodfam . '</td>
                             <td>' . $record->sub_prodfam . '</td>
                             
-                            <td style="text-align:right;">' . number_format(@$record->begin_stock, 2) . '</td>
-                            <td></td>
-                            <td></td>
-                            <td></td>
-                            <td></td>
-                            <td></td>
+                            <td style="text-align:right;">' . number_format($begin_qty, 2) . '</td>
+                            <td style="text-align:right;">' . number_format($standard_price, 2) . '</td>
+                            <td style="text-align:right;">' . number_format($begin_standard_amount, 2) . '</td>
+                            <td style="text-align:right;">' . number_format($begin_actual_price, 2) . '</td>
+                            <td style="text-align:right;">' . number_format($begin_actual_amount, 2) . '</td>
+                            <td style="text-align:right;">' . number_format($begin_variance, 2) . '</td>
 
                             <td style="text-align:right;">' . number_format($record->qty_in, 2) . '</td>
-                            <td></td>
+                            <td style="text-align:right;">' . number_format($standard_price, 2) . '</td>
                             <td></td>
                             <td></td>
                             <td></td>
                             <td></td>
 
                             <td style="text-align:right;">' . number_format($record->qty_out, 2) . '</td>
-                            <td></td>
+                            <td style="text-align:right;">' . number_format($standard_price, 2) . '</td>
                             <td></td>
                             <td></td>
                             <td></td>
                             <td></td>
 
                             <td style="text-align:right;">' . number_format((@$record->begin_stock + $record->qty_in) - $record->qty_out, 2) . '</td>
-                            <td></td>
+                            <td style="text-align:right;">' . number_format($standard_price, 2) . '</td>
                             <td></td>
                             <td></td>
                             <td></td>
