@@ -24,15 +24,13 @@
             <div class="fitem">
                 <span style="width:35%; display:inline-block;"></span>
                 <a href="javascript:;" class="easyui-linkbutton" onclick="filter()"><i class="fa fa-search"></i> Filter Data</a>
-                <!-- <a href="javascript:;" class="easyui-linkbutton" onclick="filter_lsb()"><i class="fa fa-search"></i> LSB</a> -->
-                <!-- <a href="javascript:;" class="easyui-linkbutton" onclick="filter_detail_transaction()"><i class="fa fa-search"></i> Detail Transaction</a> -->
             </div>
         </div>
         <div style="width: 49%; float:left;">
             <div class="fitem">
-                    <span style="width:35%; display:inline-block;">Product No</span>
-                    <input style="width:60%;" id="filter_items" class="easyui-combobox">
-                </div>
+                <span style="width:35%; display:inline-block;">Product No</span>
+                <input style="width:60%;" id="filter_items" class="easyui-combobox">
+            </div>
             <div class="fitem">
                 <span style="width:35%; display:inline-block;">Report Display</span>
                 <select style="width:60%;" id="filter_display" class="easyui-combobox" panelHeight="auto">
@@ -57,9 +55,6 @@
 
     </fieldset>
     <?= $button ?>
-    <!-- <a href="javascript:;" class="easyui-linkbutton" data-options="plain:true" onclick="excel_lsb()"><i class="fa fa-file"></i> Export LSB</a> -->
-    <!-- <a href="javascript:;" class="easyui-linkbutton" data-options="plain:true" onclick="excel_detail_transaction()"><i class="fa fa-file"></i> Export Detail Transaction</a> -->
-
 </div>
 
 <div class="easyui-panel" title="Print Preview" style="width:100%;padding:10px;">
@@ -79,8 +74,6 @@
         $("#printout").get(0).contentWindow.print();
     }
 
-
-
     function filter() {
         var filter_from = $("#filter_from").datebox('getValue');
         var filter_to = $("#filter_to").datebox('getValue');
@@ -90,44 +83,18 @@
         var filter_display = $("#filter_display").combobox('getValue');
         var filter_trans_type = $("#filter_trans_type").combobox('getValue');
         var filter_division = $("#filter_division").combobox('getValue');
-        url = "?filter_from=" + filter_from + "&filter_to=" + filter_to + "&filter_item_category=" + filter_item_category + "&filter_item_family=" + filter_item_family + "&filter_items=" + filter_items + "&filter_display=" + filter_display + "&filter_trans_type=" + filter_trans_type + "&filter_division=" + filter_division;
-        
-        if (filter_display == "DETAIL") {
+
+        var yearFrom = filter_from.substring(0, 4);
+        var yearTo = filter_to.substring(0, 4);
+        if (yearFrom !== yearTo) {
+            toastr.warning("Please select the same year for Receipt Date", "Information");
+        } else {
+            url = "?filter_from=" + filter_from + "&filter_to=" + filter_to + "&filter_item_category=" + filter_item_category + "&filter_item_family=" + filter_item_family + "&filter_items=" + filter_items + "&filter_display=" + filter_display + "&filter_trans_type=" + filter_trans_type + "&filter_division=" + filter_division;
             $("#printout").contents().find('html').html("<center><br><br><br><b style='font-size:20px;'>Please Wait...</b></center>");
             $("#printout").attr('src', '<?= base_url('finance/report_inventory_rm/print') ?>' + url);
-        } else {
-            filter_lsb();
         }
-    }
 
-    function filter_lsb() {
-        var filter_from = $("#filter_from").datebox('getValue');
-        var filter_to = $("#filter_to").datebox('getValue');
-        var filter_item_category = $("#filter_item_category").combobox('getValue');
-        var filter_item_family = $("#filter_item_family").combobox('getValue');
-        var filter_items = $("#filter_items").combobox('getValue');
-        var filter_display = $("#filter_display").combobox('getValue');
-        var filter_trans_type = $("#filter_trans_type").combobox('getValue');
-        var filter_division = $("#filter_division").combobox('getValue');
-        url = "?filter_from=" + filter_from + "&filter_to=" + filter_to + "&filter_item_category=" + filter_item_category + "&filter_item_family=" + filter_item_family + "&filter_items=" + filter_items + "&filter_display=" + filter_display + "&filter_trans_type=" + filter_trans_type + "&filter_division=" + filter_division;
-        $("#printout").contents().find('html').html("<center><br><br><br><b style='font-size:20px;'>Please Wait...</b></center>");
-        $("#printout").attr('src', '<?= base_url('finance/report_inventory_rm/lsb') ?>' + url);
     }
-
-    function filter_detail_transaction() {
-        var filter_from = $("#filter_from").datebox('getValue');
-        var filter_to = $("#filter_to").datebox('getValue');
-        var filter_item_category = $("#filter_item_category").combobox('getValue');
-        var filter_item_family = $("#filter_item_family").combobox('getValue');
-        var filter_items = $("#filter_items").combobox('getValue');
-        var filter_display = $("#filter_display").combobox('getValue');
-        var filter_trans_type = $("#filter_trans_type").combobox('getValue');
-        var filter_division = $("#filter_division").combobox('getValue');
-        url = "?filter_from=" + filter_from + "&filter_to=" + filter_to + "&filter_item_category=" + filter_item_category + "&filter_item_family=" + filter_item_family + "&filter_items=" + filter_items + "&filter_display=" + filter_display + "&filter_trans_type=" + filter_trans_type + "&filter_division=" + filter_division;
-        $("#printout").contents().find('html').html("<center><br><br><br><b style='font-size:20px;'>Please Wait...</b></center>");
-        $("#printout").attr('src', '<?= base_url('finance/report_inventory_rm/detail_transaction') ?>' + url);
-    }
-
 
     function excel() {
         var filter_from = $("#filter_from").datebox('getValue');
@@ -138,68 +105,25 @@
         var filter_display = $("#filter_display").combobox('getValue');
         var filter_trans_type = $("#filter_trans_type").combobox('getValue');
         var filter_division = $("#filter_division").combobox('getValue');
-        var url = "?filter_from=" + filter_from + "&filter_to=" + filter_to + "&filter_item_category=" + filter_item_category + "&filter_item_family=" + filter_item_family + "&filter_items=" + filter_items + "&filter_display=" + filter_display + "&filter_trans_type=" + filter_trans_type + "&filter_division=" + filter_division;
-
-        // Tampilkan overlay
-        $("#loadingOverlay").show();
-
-        if (filter_display == "DETAIL") {
-        // Unduh file
-        window.location.assign('<?= base_url('finance/report_inventory_rm/print/excel') ?>' + url);
-
-        // Sembunyikan overlay setelah beberapa saat
-        setTimeout(function () {
-            $("#loadingOverlay").hide();
-        }, 3000); // Sesuaikan waktu jika perlu
         
+        var yearFrom = filter_from.substring(0, 4);
+        var yearTo = filter_to.substring(0, 4);
+        if (yearFrom !== yearTo) {
+            toastr.warning("Please select the same year for Receipt Date", "Information");
         } else {
-            excel_lsb();
+            var url = "?filter_from=" + filter_from + "&filter_to=" + filter_to + "&filter_item_category=" + filter_item_category + "&filter_item_family=" + filter_item_family + "&filter_items=" + filter_items + "&filter_display=" + filter_display + "&filter_trans_type=" + filter_trans_type + "&filter_division=" + filter_division;
+
+            // Tampilkan overlay
+            $("#loadingOverlay").show();
+
+            // Unduh file
+            window.location.assign('<?= base_url('finance/report_inventory_rm/print/excel') ?>' + url);
+
+            // Sembunyikan overlay setelah beberapa saat
+            setTimeout(function() {
+                $("#loadingOverlay").hide();
+            }, 3000); // Sesuaikan waktu jika perlu
         }
-    }
-
-
-    function excel_lsb() {
-        var filter_from = $("#filter_from").datebox('getValue');
-        var filter_to = $("#filter_to").datebox('getValue');
-        var filter_item_category = $("#filter_item_category").combobox('getValue');
-        var filter_item_family = $("#filter_item_family").combobox('getValue');
-        var filter_items = $("#filter_items").combobox('getValue');
-        var filter_display = $("#filter_display").combobox('getValue');
-        var filter_trans_type = $("#filter_trans_type").combobox('getValue');
-        var filter_division = $("#filter_division").combobox('getValue');
-        url = "?filter_from=" + filter_from + "&filter_to=" + filter_to + "&filter_item_category=" + filter_item_category + "&filter_item_family=" + filter_item_family + "&filter_items=" + filter_items + "&filter_display=" + filter_display + "&filter_trans_type=" + filter_trans_type + "&filter_division=" + filter_division;
-        
-        // Tampilkan overlay
-        $("#loadingOverlay").show();
-    
-        window.location.assign('<?= base_url('finance/report_inventory_rm/lsb/excel') ?>' + url);
-
-         // Sembunyikan overlay setelah beberapa saat
-         setTimeout(function () {
-            $("#loadingOverlay").hide();
-        }, 3000); // Sesuaikan waktu jika perlu
-    }
-
-    function excel_detail_transaction() {
-        var filter_from = $("#filter_from").datebox('getValue');
-        var filter_to = $("#filter_to").datebox('getValue');
-        var filter_item_category = $("#filter_item_category").combobox('getValue');
-        var filter_item_family = $("#filter_item_family").combobox('getValue');
-        var filter_items = $("#filter_items").combobox('getValue');
-        var filter_display = $("#filter_display").combobox('getValue');
-        var filter_trans_type = $("#filter_trans_type").combobox('getValue');
-        var filter_division = $("#filter_division").combobox('getValue');
-        url = "?filter_from=" + filter_from + "&filter_to=" + filter_to + "&filter_item_category=" + filter_item_category + "&filter_item_family=" + filter_item_family + "&filter_items=" + filter_items + "&filter_display=" + filter_display + "&filter_trans_type=" + filter_trans_type + "&filter_division=" + filter_division;
-        
-        // Tampilkan overlay
-        $("#loadingOverlay").show();
-    
-        window.location.assign('<?= base_url('finance/report_inventory_rm/detail_transaction/excel') ?>' + url);
-
-         // Sembunyikan overlay setelah beberapa saat
-         setTimeout(function () {
-            $("#loadingOverlay").hide();
-        }, 3000); // Sesuaikan waktu jika perlu
     }
 
     $(function() {
@@ -288,15 +212,15 @@
     });
 
     $("#filter_display").combobox({
-        onChange: function(display){
-            if(display === 'DETAIL'){
+        onChange: function(display) {
+            if (display === 'DETAIL') {
                 $('#filter_trans_type').combobox('enable');
             } else {
                 $('#filter_trans_type').combobox('disable');
             }
         }
     });
-        
+
 
     //Format Datepicker
     function myformatter(date) {
