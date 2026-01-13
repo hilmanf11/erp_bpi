@@ -110,6 +110,172 @@ class Report_inventory_rm extends CI_Controller
         echo json_encode($records);
     }
 
+    function customCss() 
+    {
+        $css = '<style>
+                    body {
+                        font-family: Arial, Helvetica, sans-serif;
+                        margin: 20px;
+                    }
+                    .header-section {
+                        overflow: hidden;
+                        margin-bottom: 20px;
+                    }
+                    .company-info {
+                        float: left;
+                        width: 60%;
+                        font-size: 12px;
+                        text-align: left;
+                    }
+                    .print-info {
+                        float: right;
+                        width: 38%;
+                        font-size: 12px;
+                        text-align: right;
+                    }
+                    .company-logo {
+                        vertical-align: top;
+                        padding-right: 10px;
+                    }
+                    .company-details b {
+                        font-size: 14px;
+                    }
+                    .company-details span {
+                        font-size: 10px;
+                    }
+                    .report-title {
+                        text-align: center;
+                        margin-top: 20px;
+                        margin-bottom: 20px;
+                    }
+                    .report-title h3 {
+                        margin: 0;
+                        font-size: 18px;
+                    }
+                    .report-title small {
+                        font-size: 12px;
+                    }
+                    #customers {
+                        border-collapse: collapse;
+                        width: 100%;
+                        font-size: 13px; 
+                        margin-top: 15px;
+                    }
+                    #customers th,
+                    #customers td {
+                        border: 1px solid black;
+                        padding: 0.6rem; 
+                    }
+                    #customers th {
+                        /* background-color: #4E73BE !important; */
+                        text-align: center;
+                        color: black; 
+                        font-weight: bold;
+                    }
+                    #customers tr:nth-child(even) {
+                        background-color: #EEE;
+                    }
+                    #customers tr:hover {
+                        background-color: #DEEBF7;
+                    }
+
+                    /* Aturan CSS khusus untuk print */
+                    @media print {
+                        body {
+                            zoom: 90%;
+                        }
+
+                        /* Memaksa warna latar belakang untuk muncul saat dicetak */
+                        #customers th {
+                            background-color: #EEE !important;
+                            /* background-color: #4E73BE !important; */
+                            -webkit-print-color-adjust: exact;
+                        }
+                        #customers tr:nth-child(even) {
+                            background-color: #DEEBF7; !important;
+                            -webkit-print-color-adjust: exact;
+                        }
+                        #customers tr:hover {
+                            background-color: #f1f1f1 !important;
+                            -webkit-print-color-adjust: exact;
+                        }
+                        
+                        /* Styling untuk baris ERP */
+                        .bg-erp-row { /* Menambahkan class baru untuk baris ERP */
+                            background-color: #DEEBF7 !important;
+                            -webkit-print-color-adjust: exact;
+                        }
+                    }
+
+
+                    .text-right { text-align: right; }
+                    .text-center { text-align: center; }
+                    .font-bold { font-weight: bold; }
+                    .bg-light-green { background-color: #CAFFB3; } /* Untuk baris kelompok akun */
+                    .bg-grey { background-color: #EBEBEB; } /* Untuk grand total */
+
+                    .table-custom-summary {
+                        width: 100%;
+                        border-collapse: collapse;
+                        font-size: 11pt;
+                        color: #495057;
+                    }
+                    
+                    /* Specific styling to match the image */
+                    .table-custom-summary thead {
+                        border-top: 2px solid black;
+                        border-bottom: 2px solid black;
+                    }
+
+                    .table-custom-summary thead th {
+                        background-color: transparent; /* No background color in the header */
+                        color: black;
+                        padding: 0.3rem;
+                        font-weight: bold;
+                    }
+                    
+                    .table-custom-summary tbody tr {
+                        border-bottom: 1px solid #dee2e6; /* Border at the bottom of each row */
+                    }
+                    
+                    .table-custom-summary tbody tr:last-child {
+                        border-bottom: none; /* No border for the last row */
+                    }
+                    
+                    .table-custom-summary tbody tr td {
+                        padding: 0.3rem;
+                        vertical-align: middle;
+                        border: none; /* Remove all cell borders */
+                    }
+
+                    .table-custom-summary .text-end {
+                        text-align: right;
+                    }
+
+                    .table-custom-summary .text-danger {
+                        color: #dc3545;
+                        font-weight: bold;
+                    }
+                    
+                    .clearfix::after {
+                        content: "";
+                        clear: both;
+                        display: table;
+                    }
+
+                    /* Warna Header */
+                    .bg-summary { background-color: #f2f2f2; font-weight: bold; }
+                    .bg-standard { background-color: #c6efce; }
+                    .bg-actual { background-color: #cfe6f9; }
+                    .bg-variance { background-color: #d1eeee; }
+                    .bg-white { background-color: #fff; }
+                    .bg-grey { background-color: #e7e6e6; }
+                    .bg-yellow { background-color: #fffccc; }
+                    .bg-blue { background-color: #81a1d1; color: white; }
+                </style>';
+        return $css;
+    }
+
     public function print($option = "")
     {
         if ($option == "excel") {
@@ -317,8 +483,10 @@ class Report_inventory_rm extends CI_Controller
         // Eksekusi query
         $records = $this->crud->query($query_main);
 
-        $html = '<html><head><title>Print Data</title></head><style>body {font-family: Arial, Helvetica, sans-serif;}#customers {border-collapse: collapse;width: 100%;font-size: 12px;}#customers td, #customers th {border: 1px solid #ddd;padding: 2px;}#customers tr:nth-child(even){background-color: #f2f2f2;}#customers tr:hover {background-color: #ddd;}#customers th {padding-top: 2px;padding-bottom: 2px;text-align: center;color: black;}</style><body>
-            <center>
+        $html = '<html><head><title>Print Data</title></head>';
+        $html .= $this->customCss();
+        $html .= '<body>
+                <center>
                 <div style="float: left; font-size: 12px; text-align: left;">
                     <table style="width: 100%;">
                         <tr>
@@ -340,41 +508,69 @@ class Report_inventory_rm extends CI_Controller
                 <h3 style="margin:0;">REPORT INVENTORY RM STANDARD AND ACTUAL <i>' . $display_title . '</i></h3>
                 <small>PERIOD : <b>' . $filter_from . '</b> To <b>' . $filter_to . '</b></small>
             </center>
-            <br>
+            <br>';
             
-            <table id="customers" border="1" style="font-size: 11px;">
+        $html .= '<table id="customers" border="1" style="font-size: 11px;">
                 <tr>
-                    <th rowspan="2" width="20">No</th>
-                    <th rowspan="2" colspan="3">Product No</th>
-                    <th rowspan="2">Product Name</th>
-                    <th rowspan="2">Uom</th>
-                    <th rowspan="2">Division</th>
-                    <th rowspan="2">Category</th>
-                    <th rowspan="2">Product Family</th>
-                    <th rowspan="2">Currency</th>
-                    <th rowspan="2">Price Standard</th>
-                    <th rowspan="2">Rate</th>
-                    <th colspan="3" >Begin<br>Stock</th>
-                    <th colspan="3" width="100">In</th>
-                    <th colspan="3" width="100">Out</th>
-                    <th colspan="3" width="100">Balance</th>
+                    <th rowspan="4" width="20">No</th>
+                    <th rowspan="4" colspan="3">Product No</th>
+                    <th rowspan="4">Product Name</th>
+                    <th rowspan="4">Uom</th>
+                    <th rowspan="4">Division</th>
+                    <th rowspan="4">Category</th>
+                    <th rowspan="4">Product Family</th>
+                    <th rowspan="4" colspan="2">CCY</th>
+                    <th rowspan="4">Rate</th>
+                    <th colspan="24">SUMMARY</th>
                 </tr>
                 <tr>
-                    <th width="80">QTY</th>
-                    <th width="80">PRICE</th>
-                    <th width="80">AMOUNT</th>
+                    <th colspan="6" class="bg-grey">BEGIN</th>
+                    <th colspan="6" class="bg-grey">IN</th>
+                    <th colspan="6" class="bg-grey">OUT</th>
+                    <th colspan="6" class="bg-grey">ENDING</th>
+                </tr>
+                <tr>
+                    <th rowspan="2">QTY</th>
+                    <th colspan="2" class="bg-standard">STANDARD</th>
+                    <th colspan="2" class="bg-actual">ACTUAL</th>
+                    <th rowspan="2">VARIANCE</th>
+                    
+                    <th rowspan="2">QTY</th>
+                    <th colspan="2" class="bg-standard">STANDARD</th>
+                    <th colspan="2" class="bg-actual">ACTUAL</th>
+                    <th rowspan="2">VARIANCE</th>
 
-                    <th width="80">QTY</th>
-                    <th width="80">PRICE</th>
-                    <th width="80">AMOUNT</th>
+                    <th rowspan="2">QTY</th>
+                    <th colspan="2" class="bg-standard">STANDARD</th>
+                    <th colspan="2" class="bg-actual">ACTUAL</th>
+                    <th rowspan="2">VARIANCE</th>
 
-                    <th width="80">QTY</th>
-                    <th width="80">PRICE</th>
-                    <th width="80">AMOUNT</th>
+                    <th rowspan="2">QTY</th>
+                    <th colspan="2" class="bg-standard">STANDARD</th>
+                    <th colspan="2" class="bg-actual">ACTUAL</th>
+                    <th rowspan="2">VARIANCE</th>
+                </tr>
 
-                    <th width="80">QTY</th>
-                    <th width="80">PRICE</th>
-                    <th width="80">AMOUNT</th>
+                <tr>
+                    <th class="bg-standard">PRICE</th>
+                    <th class="bg-standard">AMOUNT</th>
+                    <th class="bg-actual">PRICE</th>
+                    <th class="bg-actual">AMOUNT</th>
+
+                    <th class="bg-standard">PRICE</th>
+                    <th class="bg-standard">AMOUNT</th>
+                    <th class="bg-actual">PRICE</th>
+                    <th class="bg-actual">AMOUNT</th>
+
+                    <th class="bg-standard">PRICE</th>
+                    <th class="bg-standard">AMOUNT</th>
+                    <th class="bg-actual">PRICE</th>
+                    <th class="bg-actual">AMOUNT</th>
+
+                    <th class="bg-standard">PRICE</th>
+                    <th class="bg-standard">AMOUNT</th>
+                    <th class="bg-actual">PRICE</th>
+                    <th class="bg-actual">AMOUNT</th>
                 </tr>';
 
         $no = 1;
@@ -426,30 +622,41 @@ class Report_inventory_rm extends CI_Controller
                             <td>' . $record->division . '</td>
                             <td>' . $record->category_name . '</td>
                             <td>' . $record->prodfam . '</td>
-                            <td style="text-align:right;">' . $record->currency . '</td>
-                            <td style="text-align:right;">' . number_format($record->price, 2) . '</td>
-                            <td style="text-align:right;">' . number_format($rate, 2) . '</td>
+                            <td colspan="2">' . $record->currency . '</td>
+                            <td>' . $rate . '</td>
                             
                             <td style="text-align:right;">' . number_format(@$record->begin_stock, 2) . '</td>
                             <td style="text-align:right;">' . number_format($record->price * $rate, 2) . '</td>
                             <td style="text-align:right;">' . number_format(($record->price * $rate) * $record->begin_stock, 2) . '</td>
+                            <td></td>
+                            <td></td>
+                            <td></td>
 
                             <td style="text-align:right;">' . number_format($record->qty_in, 2) . '</td>
                             <td style="text-align:right;">' . number_format($record->price * $rate, 2) . '</td>
                             <td style="text-align:right;">' . number_format(($record->price * $rate) * $record->qty_in, 2) . '</td>
+                            <td></td>
+                            <td></td>
+                            <td></td>
 
                             <td style="text-align:right;">' . number_format($record->qty_out, 2) . '</td>
                             <td style="text-align:right;">' . number_format($record->price * $rate, 2) . '</td>
                             <td style="text-align:right;">' . number_format(($record->price * $rate) * $record->qty_out, 2) . '</td>
+                            <td></td>
+                            <td></td>
+                            <td></td>
 
                             <td style="text-align:right;">' . number_format((@$record->begin_stock + $record->qty_in) - $record->qty_out, 2) . '</td>
                             <td style="text-align:right;">' . number_format($record->price * $rate, 2) . '</td>
                             <td style="text-align:right;">' . number_format((@($record->price * $rate) * $record->qty_in) + (($record->price * $rate) * $record->begin_stock) - (($record->price * $rate) * $record->qty_out), 2) . '</td>
+                            <td></td>
+                            <td></td>
+                            <td></td>
                         </tr>';
 
             if ($filter_display == "DETAIL") {
                 $html .= '  <tr>
-                                <td colspan="31" style="background:#D1FFC6; font-size: 11px;"><b>DETAIL OF ' . $record->number . ' - ' . $record->name . '</b></td>
+                                <td colspan="24" style="background:#D1FFC6; font-size: 11px;"><b>DETAIL OF ' . $record->number . ' - ' . $record->name . '</b></td>
                             </tr>
                             <tr>
                                 <th rowspan="2" width="20"></th>
@@ -1185,21 +1392,58 @@ class Report_inventory_rm extends CI_Controller
             $no++;
         }
 
-        $html .= '<tr>
-            <td colspan="12" style="text-align:right;"><b>GRAND TOTAL</b></td>
-            <td style="text-align:right;"><b>' . number_format($totalBeginStock, 2) . '</b></td>
-            <td style="text-align:right;"></td>
-            <td style="text-align:right;"><b>' . number_format($totalBeginAmount, 2) . '</b></td>
-            <td style="text-align:right;">' . number_format($totalIn, 2) . '</b></td>
-            <td style="text-align:right;"><b></td>
-            <td style="text-align:right;"><b>' . number_format($totalAmountIn, 2) . '</b></td>
-            <td style="text-align:right;"><b>' . number_format($totalOut, 2) . '</b></td>
-            <td style="text-align:right;"></td>
-            <td style="text-align:right;"><b>' . number_format($totalAmountOut, 2) . '</b></td>
-            <td style="text-align:right;"><b>' . number_format($totalEndingStock, 2) . '</b></td>
-            <td style="text-align:right;"></td>
-            <td style="text-align:right;"><b>' . number_format($totalAmountEndingStock, 2) . '</b></td>
-        </tr>';
+        if ($filter_display == "DETAIL") {
+            $cols = 12;
+            $html .= '<tr>
+                <td colspan="' . $cols . '" style="text-align:right;"><b>GRAND TOTAL</b></td>
+                <td style="text-align:right;"><b>' . number_format($totalBeginStock, 2) . '</b></td>
+                <td style="text-align:right;"></td>
+                <td style="text-align:right;"><b>' . number_format($totalBeginAmount, 2) . '</b></td>
+                <td style="text-align:right;">' . number_format($totalIn, 2) . '</b></td>
+                <td style="text-align:right;"><b></td>
+                <td style="text-align:right;"><b>' . number_format($totalAmountIn, 2) . '</b></td>
+                <td style="text-align:right;"><b>' . number_format($totalOut, 2) . '</b></td>
+                <td style="text-align:right;"></td>
+                <td style="text-align:right;"><b>' . number_format($totalAmountOut, 2) . '</b></td>
+                <td style="text-align:right;"><b>' . number_format($totalEndingStock, 2) . '</b></td>
+                <td style="text-align:right;"></td>
+                <td style="text-align:right;"><b>' . number_format($totalAmountEndingStock, 2) . '</b></td>
+            </tr>';
+
+        } else {
+            $cols = 10; 
+            $html .= '<tr>
+                <td colspan="' . $cols . '" style="text-align:right;"><b>GRAND TOTAL</b></td>
+                <td style="text-align:right;"><b>' . number_format($totalBeginStock, 2) . '</b></td>
+                <td style="text-align:right;"></td>
+                <td style="text-align:right;"><b>' . number_format($totalBeginAmount, 2) . '</b></td>
+                <td></td>
+                <td></td>
+                <td></td>
+
+                <td style="text-align:right;">' . number_format($totalIn, 2) . '</b></td>
+                <td style="text-align:right;"><b></td>
+                <td style="text-align:right;"><b>' . number_format($totalAmountIn, 2) . '</b></td>
+                <td></td>
+                <td></td>
+                <td></td>
+                
+                <td style="text-align:right;"><b>' . number_format($totalOut, 2) . '</b></td>
+                <td style="text-align:right;"></td>
+                <td style="text-align:right;"><b>' . number_format($totalAmountOut, 2) . '</b></td>
+                <td></td>
+                <td></td>
+                <td></td>
+
+                <td style="text-align:right;"><b>' . number_format($totalEndingStock, 2) . '</b></td>
+                <td style="text-align:right;"></td>
+                <td style="text-align:right;"><b>' . number_format($totalAmountEndingStock, 2) . '</b></td>
+                <td></td>
+                <td></td>
+                <td></td>
+            </tr>';
+        }
+
 
         $html .= '</table></body></html>';
         echo $html;
