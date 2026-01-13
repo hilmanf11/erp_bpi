@@ -116,6 +116,7 @@ class Report_inventory_rm extends CI_Controller
                     body {
                         font-family: Arial, Helvetica, sans-serif;
                         margin: 20px;
+                        background-color: white;
                     }
                     .header-section {
                         overflow: hidden;
@@ -173,7 +174,7 @@ class Report_inventory_rm extends CI_Controller
                         font-weight: bold;
                     }
                     #customers tr:nth-child(even) {
-                        background-color: #EEE;
+                        background-color: #EEEFFF;
                     }
                     #customers tr:hover {
                         background-color: #DEEBF7;
@@ -265,11 +266,11 @@ class Report_inventory_rm extends CI_Controller
 
                     /* Warna Header */
                     .bg-summary { background-color: #f2f2f2; font-weight: bold; }
-                    .bg-standard { background-color: #c6efce; }
+                    .bg-standard { background-color: #D1FFC6; }
                     .bg-actual { background-color: #cfe6f9; }
                     .bg-variance { background-color: #d1eeee; }
                     .bg-white { background-color: #fff; }
-                    .bg-grey { background-color: #e7e6e6; }
+                    .bg-gray { background-color: #e7e6e6; }
                     .bg-yellow { background-color: #fffccc; }
                     .bg-blue { background-color: #81a1d1; color: white; }
                 </style>';
@@ -305,135 +306,6 @@ class Report_inventory_rm extends CI_Controller
 
 
         //------------------------------------ GET DATA AND CALCULATIONS ------------------------------------------------------//
-        
-        // $records = $this->crud->query("SELECT
-        //     a.id,
-        //     a.number, 
-        //     a.name, 
-        //     a.division, 
-        //     b.name as prodfam, 
-        //     a.uom,
-        //     c.name as category_name, 
-        //     COALESCE(0,0) as begin_stock,
-        //     (COALESCE(SUM(e.qty),0) + COALESCE(g.return_qty, 0) + COALESCE(h.qty_stock_rm, 0) + COALESCE(i.qty, 0)) as qty_in,
-        //     (COALESCE(f.qty,0) + COALESCE(j.qty, 0)) as qty_out
-
-        //     FROM item_rm a 
-        //     JOIN item_familys b ON a.item_family_id = b.id and b.number != 'FG'
-        //     JOIN item_categories c ON a.item_category_id = c.id
-        //     LEFT JOIN purchase_order_receipts d ON a.id = d.item_rm_id and d.receipt_date between '$filter_from' and '$filter_to'
-        //     LEFT JOIN scan_item_receipts e ON d.receipt_id = e.receipt_id
-        //     LEFT JOIN (SELECT item_rm_id, COALESCE(SUM(qty), 0) as qty FROM issued_material_details WHERE DATE_FORMAT(created_date, '%Y-%m-%d') between '$filter_from' and '$filter_to' GROUP BY item_rm_id) f ON a.id = f.item_rm_id
-        //     LEFT JOIN (SELECT a.item_rm_id, SUM(c.qty) as return_qty
-        //         FROM return_materials a 
-        //         JOIN return_material_labels b ON a.return_id = b.return_id
-        //         JOIN scan_item_receipts c ON a.return_id = c.receipt_id and b.label_no = c.label_no
-        //         WHERE a.return_date between '$filter_from' and '$filter_to'
-        //         GROUP BY a.item_rm_id) g ON a.id = g.item_rm_id
-
-        //     LEFT JOIN (SELECT a.item_rm_id, SUM(a.qty) as qty_stock_rm
-        //         FROM os_rm a
-        //         JOIN item_rm b ON a.item_rm_id = b.id
-        //         WHERE a.trans_date between '$filter_from' and '$filter_to'
-        //         GROUP BY a.item_rm_id) h ON a.id = h.item_rm_id
-
-        //     LEFT JOIN (
-        //         SELECT a.item_rm_id, a.transaction_kind, SUM(a.qty) AS qty
-        //         FROM transaction_rm a
-        //         JOIN item_rm b ON a.item_rm_id = b.id
-        //         WHERE a.request_date BETWEEN '$filter_from' AND '$filter_to'
-        //         GROUP BY a.item_rm_id, a.transaction_kind
-        //     ) i ON a.id = i.item_rm_id and i.transaction_kind = 'IN'
-
-        //     LEFT JOIN (
-        //         SELECT a.item_rm_id, a.transaction_kind, SUM(a.qty) AS qty
-        //         FROM transaction_rm a
-        //         JOIN item_rm b ON a.item_rm_id = b.id
-        //         WHERE a.request_date BETWEEN '$filter_from' AND '$filter_to'
-        //         GROUP BY a.item_rm_id, a.transaction_kind
-        //     ) j ON a.id = j.item_rm_id and j.transaction_kind = 'OUT'
-
-        // WHERE c.id like '%$filter_item_category%' and b.number like '%$filter_item_family%' and a.id like '%$filter_items%' and a.division like '%$filter_division%' 
-        // GROUP BY a.id
-        // ORDER BY c.name DESC, b.name DESC, a.number");
-
-        // --------------------------IN-----------------------------------
-
-        // // Step 1: Hitung qty_in dari `scan_item_receipts`
-        // $query_qty_in_scan = "SELECT d.item_rm_id,SUM(e.qty) as qty_in_scan
-        // FROM purchase_order_receipts d
-        // LEFT JOIN scan_item_receipts e ON d.receipt_id = e.receipt_id
-        // WHERE d.receipt_date BETWEEN '$filter_from' AND '$filter_to'
-        // GROUP BY d.item_rm_id";
-
-        // // Step 3: Hitung return_qty dari `return_materials`
-        // $query_return_qty = "SELECT a.item_rm_id, SUM(c.qty) as return_qty
-        // FROM return_materials a
-        // JOIN return_material_labels b ON a.return_id = b.return_id
-        // JOIN scan_item_receipts c ON a.return_id = c.receipt_id AND b.label_no = c.label_no
-        // WHERE a.return_date BETWEEN '$filter_from' AND '$filter_to'
-        // GROUP BY a.item_rm_id";
-
-        // // Step 4: Hitung qty_stock_rm dari `os_rm`
-        // $query_qty_stock_rm = "SELECT item_rm_id, SUM(qty) as qty_stock_rm
-        // FROM os_rm
-        // WHERE trans_date BETWEEN '$filter_from' AND '$filter_to'
-        // GROUP BY item_rm_id";
-
-        // // Step 5: Hitung qty_in dari `transaction_rm` (kind = IN)
-        // $query_transaction_in = "SELECT item_rm_id, SUM(qty) as qty_in_transaction
-        // FROM transaction_rm
-        // WHERE transaction_kind = 'IN'
-        // AND request_date BETWEEN '$filter_from' AND '$filter_to'
-        // GROUP BY item_rm_id";
-
-        // //------------------------------OUT------------------------------------
-
-        // // Step 2: Hitung qty_out dari `issued_material_details`
-        // $query_qty_out_issued = "SELECT item_rm_id, SUM(qty) as qty_out_issued
-        // FROM issued_material_details
-        // WHERE DATE_FORMAT(created_date, '%Y-%m-%d') BETWEEN '$filter_from' AND '$filter_to'
-        // GROUP BY item_rm_id";
-
-        // // Step 6: Hitung qty_out dari `transaction_rm` (kind = OUT)
-        // $query_transaction_out = "SELECT item_rm_id, SUM(qty) as qty_out_transaction
-        // FROM transaction_rm
-        // WHERE transaction_kind = 'OUT'
-        // AND request_date BETWEEN '$filter_from' AND '$filter_to'
-        // GROUP BY item_rm_id";
-
-        // // ---------------------------------------------------------------------
-
-        // // Step 7: Gabungkan semua data dalam query utama
-        // $query_main = "SELECT 
-        //     a.id,
-        //     a.number, 
-        //     a.name, 
-        //     a.division, 
-        //     b.name as prodfam, 
-        //     a.uom,
-        //     c.name as category_name,
-        //     0 AS begin_stock,
-        //     (COALESCE(qs.qty_in_scan, 0) + COALESCE(rt.return_qty, 0) + COALESCE(sr.qty_stock_rm, 0) + COALESCE(ti.qty_in_transaction, 0)) as qty_in,
-        //     (COALESCE(io.qty_out_issued, 0) + COALESCE(tr_out.qty_out_transaction, 0)) as qty_out
-        // FROM item_rm a
-        // JOIN item_familys b ON a.item_family_id = b.id AND b.number != 'FG'
-        // JOIN item_categories c ON a.item_category_id = c.id
-        // LEFT JOIN ($query_qty_in_scan) qs ON a.id = qs.item_rm_id
-        // LEFT JOIN ($query_qty_out_issued) `io` ON a.id = io.item_rm_id
-        // LEFT JOIN ($query_return_qty) rt ON a.id = rt.item_rm_id
-        // LEFT JOIN ($query_qty_stock_rm) sr ON a.id = sr.item_rm_id
-        // LEFT JOIN ($query_transaction_in) ti ON a.id = ti.item_rm_id
-        // LEFT JOIN ($query_transaction_out) tr_out ON a.id = tr_out.item_rm_id
-        // WHERE c.id LIKE '%$filter_item_category%'
-        // AND b.number LIKE '%$filter_item_family%'
-        // AND a.id LIKE '%$filter_items%'
-        // AND a.division LIKE '%$filter_division%'
-        // GROUP BY a.id
-        // ORDER BY c.name DESC, b.name DESC, a.number";
-
-        // // Eksekusi query
-        // $records = $this->crud->query($query_main);
 
         $query_main = "SELECT 
             a.id,
@@ -441,6 +313,7 @@ class Report_inventory_rm extends CI_Controller
             a.name, 
             a.division, 
             b.name as prodfam, 
+            l.name as sub_prodfam,
             COALESCE(aa.price,0) as price,
             COALESCE(aa.currency,'-') as currency,
             d.receipt_date,
@@ -453,6 +326,7 @@ class Report_inventory_rm extends CI_Controller
         FROM item_rm a
         JOIN item_familys b ON a.item_family_id = b.id AND b.number != 'FG'
         JOIN item_categories c ON a.item_category_id = c.id
+        LEFT JOIN item_family_subs l ON a.item_sub_family_id = l.id
         LEFT JOIN (SELECT item_rm_id, currency, price from standard_price_rm where '$filter_from' >= `start_date` and '$filter_to' <= `end_date`) aa on a.id = aa.item_rm_id
         LEFT JOIN (SELECT MAX(b.price) AS price, MAX(b.currency) AS currency, MAX(b.receipt_date) AS receipt_date, b.item_rm_id, SUM(a.qty) AS qty_scan_in FROM scan_item_receipts a JOIN purchase_order_receipts b ON a.receipt_id = b.receipt_id WHERE b.receipt_date BETWEEN '$filter_from' AND '$filter_to' GROUP BY b.item_rm_id) d ON a.id = d.item_rm_id
         LEFT JOIN (SELECT item_rm_id, SUM(qty) AS qty_os_rm FROM os_rm WHERE trans_date BETWEEN '$filter_from' AND '$filter_to' GROUP BY item_rm_id) e ON a.id = e.item_rm_id
@@ -493,6 +367,7 @@ class Report_inventory_rm extends CI_Controller
                             <td width="50" style="font-size: 12px; vertical-align: top; text-align: center; vertical-align:jus margin-right:10px;">
                                 <img src="' . $config->favicon . '" width="30">
                             </td>
+                            <td></td>
                             <td style="font-size: 14px; text-align: left; margin:2px;">
                                 <b>' . $config->name . '</b><br>
                                 <small>' . $config->description . '</small>
@@ -511,44 +386,68 @@ class Report_inventory_rm extends CI_Controller
             <br>';
             
         $html .= '<table id="customers" border="1" style="font-size: 11px;">
-                <tr>
-                    <th rowspan="4" width="20">No</th>
-                    <th rowspan="4" colspan="3">Product No</th>
-                    <th rowspan="4">Product Name</th>
-                    <th rowspan="4">Uom</th>
-                    <th rowspan="4">Division</th>
-                    <th rowspan="4">Category</th>
-                    <th rowspan="4">Product Family</th>
-                    <th rowspan="4" colspan="2">CCY</th>
-                    <th rowspan="4">Rate</th>
+                <thead>
+                <tr class="bg-white">
+                    <th rowspan="5" width="20">No</th>
+                    <th rowspan="5" colspan="3">Product No</th>
+                    <th rowspan="5">Product Name</th>
+                    <th rowspan="5">Uom</th>
+                    <th rowspan="5">Division</th>
+                    <th rowspan="5">Category</th>
+                    <th rowspan="5">Product Family</th>
+                    <th rowspan="5">Sub Product <br>Family</th>
+                    <th rowspan="5">CCY</th>
+                    <th rowspan="5">Rate</th>
                     <th colspan="24">SUMMARY</th>
+                    <th colspan="15">DETAIL</th>
                 </tr>
                 <tr>
                     <th colspan="6" class="bg-grey">BEGIN</th>
                     <th colspan="6" class="bg-grey">IN</th>
                     <th colspan="6" class="bg-grey">OUT</th>
                     <th colspan="6" class="bg-grey">ENDING</th>
+                    <th colspan="15" class="bg-grey">IN</th>
                 </tr>
+
                 <tr>
-                    <th rowspan="2">QTY</th>
-                    <th colspan="2" class="bg-standard">STANDARD</th>
-                    <th colspan="2" class="bg-actual">ACTUAL</th>
-                    <th rowspan="2">VARIANCE</th>
+                    <th rowspan="3">QTY</th>
+                    <th rowspan="2" colspan="2" class="bg-standard">STANDARD</th>
+                    <th rowspan="2" colspan="2" class="bg-actual">ACTUAL</th>
+                    <th rowspan="3">VARIANCE</th>
                     
+                    <th rowspan="3">QTY</th>
+                    <th rowspan="2" colspan="2" class="bg-standard">STANDARD</th>
+                    <th rowspan="2" colspan="2" class="bg-actual">ACTUAL</th>
+                    <th rowspan="3">VARIANCE</th>
+
+                    <th rowspan="3">QTY</th>
+                    <th rowspan="2" colspan="2" class="bg-standard">STANDARD</th>
+                    <th rowspan="2" colspan="2" class="bg-actual">ACTUAL</th>
+                    <th rowspan="3">VARIANCE</th>
+
+                    <th rowspan="3">QTY</th>
+                    <th rowspan="2" colspan="2" class="bg-standard">STANDARD</th>
+                    <th rowspan="2" colspan="2" class="bg-actual">ACTUAL</th>
+                    <th rowspan="3">VARIANCE</th>
+                    
+                    <th colspan="5" class="bg-yellow">PURCHASE</th>
+                    <th colspan="5" class="bg-yellow">BPM</th>
+                    <th colspan="5" class="bg-yellow">ODJ STO</th>
+                    
+                </tr>
+                
+                <tr>
                     <th rowspan="2">QTY</th>
                     <th colspan="2" class="bg-standard">STANDARD</th>
                     <th colspan="2" class="bg-actual">ACTUAL</th>
-                    <th rowspan="2">VARIANCE</th>
 
                     <th rowspan="2">QTY</th>
                     <th colspan="2" class="bg-standard">STANDARD</th>
                     <th colspan="2" class="bg-actual">ACTUAL</th>
-                    <th rowspan="2">VARIANCE</th>
 
                     <th rowspan="2">QTY</th>
                     <th colspan="2" class="bg-standard">STANDARD</th>
                     <th colspan="2" class="bg-actual">ACTUAL</th>
-                    <th rowspan="2">VARIANCE</th>
                 </tr>
 
                 <tr>
@@ -571,7 +470,24 @@ class Report_inventory_rm extends CI_Controller
                     <th class="bg-standard">AMOUNT</th>
                     <th class="bg-actual">PRICE</th>
                     <th class="bg-actual">AMOUNT</th>
-                </tr>';
+
+
+                    <th class="bg-standard">PRICE</th>
+                    <th class="bg-standard">AMOUNT</th>
+                    <th class="bg-actual">PRICE</th>
+                    <th class="bg-actual">AMOUNT</th>
+
+                    <th class="bg-standard">PRICE</th>
+                    <th class="bg-standard">AMOUNT</th>
+                    <th class="bg-actual">PRICE</th>
+                    <th class="bg-actual">AMOUNT</th>
+
+                    <th class="bg-standard">PRICE</th>
+                    <th class="bg-standard">AMOUNT</th>
+                    <th class="bg-actual">PRICE</th>
+                    <th class="bg-actual">AMOUNT</th>
+                </tr>
+                <thead>';
 
         $no = 1;
         $totalBeginStock = 0;
@@ -587,8 +503,8 @@ class Report_inventory_rm extends CI_Controller
             $item_rm_id = $record->id;
             $receipt_date = @$record->receipt_date;
             $currency = @$record->currency;
-            $rate = 1;
 
+            $rate = 1;
             if ($currency == 'USD') {
                 if (empty($receipt_date)) {
                     $rate = 0;
@@ -613,8 +529,11 @@ class Report_inventory_rm extends CI_Controller
             $totalEndingStock += @(@$record->begin_stock + $record->qty_in) - $record->qty_out;
             $totalAmountEndingStock += ((@$record->price * $rate) * @$record->qty_in) + ((@$record->price * $rate) * @$record->begin_stock) - ((@$record->price * $rate) * @$record->qty_out);
 
+            $standard_price = $record->price * $rate;
 
-            $html .= '  <tr>
+            // SUMMARY
+            $html .= '<tbody>
+                        <tr>
                             <td style="text-align:center">' . $no . '</td>
                             <td colspan="3">' . $record->number . '</td>
                             <td>' . $record->name . '</td>
@@ -622,37 +541,60 @@ class Report_inventory_rm extends CI_Controller
                             <td>' . $record->division . '</td>
                             <td>' . $record->category_name . '</td>
                             <td>' . $record->prodfam . '</td>
-                            <td colspan="2">' . $record->currency . '</td>
+                            <td>' . $record->sub_prodfam . '</td>
+                            <td>' . $record->currency . '</td>
                             <td>' . $rate . '</td>
                             
                             <td style="text-align:right;">' . number_format(@$record->begin_stock, 2) . '</td>
-                            <td style="text-align:right;">' . number_format($record->price * $rate, 2) . '</td>
-                            <td style="text-align:right;">' . number_format(($record->price * $rate) * $record->begin_stock, 2) . '</td>
+                            <td style="text-align:right;">' . number_format($standard_price, 2) . '</td>
+                            <td style="text-align:right;">' . number_format(($standard_price) * $record->begin_stock, 2) . '</td>
                             <td></td>
                             <td></td>
                             <td></td>
 
                             <td style="text-align:right;">' . number_format($record->qty_in, 2) . '</td>
-                            <td style="text-align:right;">' . number_format($record->price * $rate, 2) . '</td>
-                            <td style="text-align:right;">' . number_format(($record->price * $rate) * $record->qty_in, 2) . '</td>
+                            <td style="text-align:right;">' . number_format($standard_price, 2) . '</td>
+                            <td style="text-align:right;">' . number_format(($standard_price) * $record->qty_in, 2) . '</td>
                             <td></td>
                             <td></td>
                             <td></td>
 
                             <td style="text-align:right;">' . number_format($record->qty_out, 2) . '</td>
-                            <td style="text-align:right;">' . number_format($record->price * $rate, 2) . '</td>
-                            <td style="text-align:right;">' . number_format(($record->price * $rate) * $record->qty_out, 2) . '</td>
+                            <td style="text-align:right;">' . number_format($standard_price, 2) . '</td>
+                            <td style="text-align:right;">' . number_format(($standard_price) * $record->qty_out, 2) . '</td>
                             <td></td>
                             <td></td>
                             <td></td>
 
                             <td style="text-align:right;">' . number_format((@$record->begin_stock + $record->qty_in) - $record->qty_out, 2) . '</td>
-                            <td style="text-align:right;">' . number_format($record->price * $rate, 2) . '</td>
-                            <td style="text-align:right;">' . number_format((@($record->price * $rate) * $record->qty_in) + (($record->price * $rate) * $record->begin_stock) - (($record->price * $rate) * $record->qty_out), 2) . '</td>
+                            <td style="text-align:right;">' . number_format($standard_price, 2) . '</td>
+                            <td style="text-align:right;">' . number_format(($standard_price * $record->qty_in) + ($standard_price * $record->begin_stock) - ($standard_price * $record->qty_out), 2) . '</td>
+                            <td></td>
+                            <td></td>
+                            <td></td>';
+            // DETAIL 
+            $html .= '  
+                            <td></td>
+                            <td style="text-align:right;">' . number_format($standard_price, 2) . '</td>
                             <td></td>
                             <td></td>
                             <td></td>
-                        </tr>';
+                            
+                            <td></td>
+                            <td style="text-align:right;">' . number_format($standard_price, 2) . '</td>
+                            <td></td>
+                            <td></td>
+                            <td></td>
+                            
+                            <td></td>
+                            <td style="text-align:right;">' . number_format($standard_price, 2) . '</td>
+                            <td></td>
+                            <td></td>
+                            <td></td>
+                        ';
+            $html .= '</tr>
+                    </tbody>';
+            
 
             if ($filter_display == "DETAIL") {
                 $html .= '  <tr>
@@ -923,146 +865,6 @@ class Report_inventory_rm extends CI_Controller
                         $nod++;
                     }
 
-                    // Dokumentasi : penerapan HTML tanpa sort Date ------------- //
-                    // //Purchase Order Receipt
-                    // foreach ($receipts as $receipt) {
-                    //     $balance = ($begin + ($receipt->qty_receipt - $end_qty));
-                    //     $html .= '  <tr>
-                    //                     <td></td>
-                    //                     <td style="text-align:center">' . $nod . '</td>
-                    //                     <td>RECEIPT</td>
-                    //                     <td>' . $receipt->username . '</td>
-                    //                     <td>' . $receipt->receipt_date . '</td>
-                    //                     <td>' . $receipt->bc_kind . '</td>
-                    //                     <td>' . $receipt->bc_aju . '</td>
-                    //                     <td>' . $receipt->bc_document . '</td>
-                    //                     <td>' . $receipt->bc_date . '</td>
-                    //                     <td style="text-align:right;">' . number_format($begin, 2) . '</td>
-                    //                     <td style="text-align:right;">' . number_format($receipt->qty_receipt, 2) . '</td>
-                    //                     <td style="text-align:right;">' . number_format(0)  . '</td>
-                    //                     <td style="text-align:right;">' . number_format($balance, 2)  . '</td>
-                    //                 </tr>';
-                    //     $begin += $receipt->qty_receipt;
-                    //     $nod++;
-                    // }
-                    // //Issued Material
-                    // foreach ($issueds as $issued) {
-                    //     $user = $this->crud->read("users", [], ["username" => $issued->created_by]);
-                    //     $balance = ($begin - $issued->qty);
-                    //     $html .= '  <tr>
-                    //                     <td></td>
-                    //                     <td style="text-align:center">' . $nod . '</td>
-                    //                     <td>ISSUED</td>
-                    //                     <td>' . $user->name . '</td>
-                    //                     <td>' . date("Y-m-d", strtotime($issued->created_date)) . '</td>
-                    //                     <td>-</td>
-                    //                     <td>' . $issued->label_no . '</td>
-                    //                     <td>' . $issued->request_no . '</td>
-                    //                     <td>-</td>
-                    //                     <td style="text-align:right;">' . number_format($begin, 2) . '</td>
-                    //                     <td style="text-align:right;">' . number_format(0) . '</td>
-                    //                     <td style="text-align:right;">' . number_format($issued->qty, 2)  . '</td>
-                    //                     <td style="text-align:right;">' . number_format($balance, 2)  . '</td>
-                    //                 </tr>';
-                    //     $begin -= $issued->qty;
-                    //     $nod++;
-                    // }
-                    // //Return Material
-                    // foreach ($returns as $return) {
-                    //     $balance = ($begin + $return->qty);
-                    //     $html .= '  <tr>
-                    //                     <td></td>
-                    //                     <td style="text-align:center">' . $nod . '</td>
-                    //                     <td>RETURN</td>
-                    //                     <td>' . $return->username . '</td>
-                    //                     <td>' . date("Y-m-d", strtotime($return->return_date)) . '</td>
-                    //                     <td>-</td>
-                    //                     <td>' . $return->label_no . '</td>
-                    //                     <td>' . $return->return_no . '</td>
-                    //                     <td>-</td>
-                    //                     <td style="text-align:right;">' . number_format($begin, 2) . '</td>
-                    //                     <td style="text-align:right;">' . number_format($return->qty, 2)  . '</td>
-                    //                     <td style="text-align:right;">' . number_format(0) . '</td>
-                    //                     <td style="text-align:right;">' . number_format($balance, 2)  . '</td>
-                    //                 </tr>';
-                    //     $begin += $return->qty;
-                    //     $nod++;
-                    // }
-                    // //OS RM
-                    // foreach ($os_rms as $os_rm) {
-                    //     $user = $this->crud->read("users", [], ["username" => $os_rm->created_by]);
-                    //     $balance = ($begin + $os_rm->qty);
-                    //     $html .= '  <tr>
-                    //                     <td></td>
-                    //                     <td style="text-align:center">' . $nod . '</td>
-                    //                     <td>OS RM</td>
-                    //                     <td>' . $user->name . '</td>
-                    //                     <td>' . date("Y-m-d", strtotime($os_rm->created_date)) . '</td>
-                    //                     <td>-</td>
-                    //                     <td>-</td>
-                    //                     <td>-</td>
-                    //                     <td>-</td>
-                    //                     <td style="text-align:right;">' . number_format($begin, 2) . '</td>
-                    //                     <td style="text-align:right;">' . number_format($os_rm->qty, 2)  . '</td>
-                    //                     <td style="text-align:right;">' . number_format(0) . '</td>
-                    //                     <td style="text-align:right;">' . number_format($balance, 2)  . '</td>
-                    //                 </tr>';
-                    //     $begin += $os_rm->qty;
-                    //     $nod++;
-                    // }
-                    // //SCAN BPM
-                    // foreach ($bpm_scans as $bpm_scan) {
-                    //     $user = $this->crud->read("users", [], ["username" => $bpm_scan->created_by]);
-                    //     $balance = ($begin + $bpm_scan->qty);
-                    //     $html .= '  <tr>
-                    //                     <td></td>
-                    //                     <td style="text-align:center">' . $nod . '</td>
-                    //                     <td>BPM</td>
-                    //                     <td>' . $user->name . '</td>
-                    //                     <td>' . date("Y-m-d", strtotime($bpm_scan->created_date)) . '</td>
-                    //                     <td>-</td>
-                    //                     <td>' . $bpm_scan->label . '</td>
-                    //                     <td>' . $bpm_scan->request_id . '</td>
-                    //                     <td>' . $bpm_scan->request_date . '</td>
-                    //                     <td style="text-align:right;">' . number_format($begin, 2) . '</td>
-                    //                     <td style="text-align:right;">' . number_format($bpm_scan->qty, 2)  . '</td>
-                    //                     <td style="text-align:right;">' . number_format(0) . '</td>
-                    //                     <td style="text-align:right;">' . number_format($balance, 2)  . '</td>
-                    //                 </tr>';
-                    //     $begin += $bpm_scan->qty;
-                    //     $nod++;
-                    // }
-                    // //TRANSACTION
-                    // foreach ($transactions as $transaction) {
-                    //     $trans_type_label = $transaction->transaction_type;
-                    //     $balance = ($transaction->transaction_kind == 'IN') ? ($begin + $transaction->qty) : ($begin - $transaction->qty);
-
-                    //     $html .= '  <tr>
-                    //                     <td></td>
-                    //                     <td style="text-align:center">' . $nod . '</td>
-                    //                     <td>' . $trans_type_label . '</td>
-                    //                     <td>' . $transaction->username . '</td>
-                    //                     <td>' . date("Y-m-d", strtotime($transaction->request_date)) . '</td>
-                    //                     <td>-</td>
-                    //                     <td>-</td>
-                    //                     <td>' . $transaction->request_no . '</td>
-                    //                     <td>-</td>
-                    //                     <td style="text-align:right;">' . number_format($begin, 2) . '</td>
-                    //                     <td style="text-align:right;">' . ($transaction->transaction_kind == 'IN' ? number_format($transaction->qty, 2) : number_format(0)) . '</td>
-                    //                     <td style="text-align:right;">' . ($transaction->transaction_kind == 'OUT' ? number_format($transaction->qty, 2) : number_format(0)) . '</td>
-                    //                     <td style="text-align:right;">' . number_format($balance, 2) . '</td>
-                    //                 </tr>';
-
-                    //     // Update balance
-                    //     if ($transaction->transaction_kind == 'IN') {
-                    //         $begin += $transaction->qty;
-                    //     } else {
-                    //         $begin -= $transaction->qty;
-                    //     }
-
-                    //     $nod++;
-                    // }
-                    // Dokumentasi berakhir disini ------------------------- //
                 }
 
                 if ($filter_trans_type == 'RECEIPT') {
@@ -1411,7 +1213,9 @@ class Report_inventory_rm extends CI_Controller
             </tr>';
 
         } else {
-            $cols = 10; 
+            $cols = 12; 
+            
+            // SUMMARY
             $html .= '<tr>
                 <td colspan="' . $cols . '" style="text-align:right;"><b>GRAND TOTAL</b></td>
                 <td style="text-align:right;"><b>' . number_format($totalBeginStock, 2) . '</b></td>
@@ -1441,7 +1245,29 @@ class Report_inventory_rm extends CI_Controller
                 <td></td>
                 <td></td>
                 <td></td>
+            ';
+
+            // DETAIL 
+            $html .= '
+                <td></td>
+                <td></td>
+                <td></td>
+                <td></td>
+                <td></td>
+                
+                <td></td>
+                <td></td>
+                <td></td>
+                <td></td>
+                <td></td>
+
+                <td></td>
+                <td></td>
+                <td></td>
+                <td></td>
+                <td></td>
             </tr>';
+
         }
 
 
