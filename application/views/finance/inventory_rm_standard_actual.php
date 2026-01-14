@@ -91,7 +91,12 @@
         } else {
             url = "?filter_from=" + filter_from + "&filter_to=" + filter_to + "&filter_item_category=" + filter_item_category + "&filter_item_family=" + filter_item_family + "&filter_items=" + filter_items + "&filter_display=" + filter_display + "&filter_trans_type=" + filter_trans_type + "&filter_division=" + filter_division;
             $("#printout").contents().find('html').html("<center><br><br><br><b style='font-size:20px;'>Please Wait...</b></center>");
-            $("#printout").attr('src', '<?= base_url('finance/inventory_rm_standard_actual/print') ?>' + url);
+
+            if (filter_display == 'RECAP') {
+                $("#printout").attr('src', '<?= base_url('finance/inventory_rm_standard_actual/print') ?>' + url);
+            } else {
+                $("#printout").attr('src', '<?= base_url('finance/inventory_rm_standard_actual/print_detail') ?>' + url);
+            }
         }
 
     }
@@ -117,7 +122,11 @@
             $("#loadingOverlay").show();
 
             // Unduh file
-            window.location.assign('<?= base_url('finance/inventory_rm_standard_actual/print/excel') ?>' + url);
+            if (filter_display == 'RECAP') {
+                window.location.assign('<?= base_url('finance/inventory_rm_standard_actual/print/excel') ?>' + url);
+            } else {
+                window.location.assign('<?= base_url('finance/inventory_rm_standard_actual/print_detail/excel') ?>' + url);
+            }
 
             // Sembunyikan overlay setelah beberapa saat
             setTimeout(function() {
