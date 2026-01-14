@@ -9,7 +9,7 @@ defined('BASEPATH') or exit('No direct script access allowed');
  * @property CI_DB_query_builder $db
  * @property Crud $crud
  */
-class Report_inventory_rm extends CI_Controller
+class Inventory_rm_standard_actual extends CI_Controller
 {
     public function __construct()
     {
@@ -29,7 +29,7 @@ class Report_inventory_rm extends CI_Controller
         } elseif ($this->checkuserAccess($this->id_menu()) > 0) {
             $data['button'] = $this->getbutton($this->id_menu());
             $this->load->view('template/header', $data);
-            $this->load->view('finance/report_inventory_rm');
+            $this->load->view('finance/inventory_rm_standard_actual');
         } else {
             redirect('error_access');
         }
@@ -174,7 +174,7 @@ class Report_inventory_rm extends CI_Controller
                         font-weight: bold;
                     }
                     #customers tr:nth-child(even) {
-                        background-color: #EEEFFF;
+                        background-color: #FFF;
                     }
                     #customers tr:hover {
                         background-color: #DEEBF7;
@@ -271,9 +271,14 @@ class Report_inventory_rm extends CI_Controller
                     .bg-variance { background-color: #d1eeee; }
                     .bg-white { background-color: #fff; }
                     .bg-gray { background-color: #e7e6e6; }
+                    .bg-gray-darker { background-color: #d5d5d5; }
+                    .bg-gray-lighter { background-color: #eee; }
                     .bg-yellow { background-color: #fffccc; }
                     .bg-blue { background-color: #81a1d1; color: white; }
-                </style>';
+                    
+                    /* Warna Header */
+                    .bg-grand-total { background-color: #cfffcc; }
+                    </style>';
         return $css;
     }
 
@@ -282,7 +287,7 @@ class Report_inventory_rm extends CI_Controller
         if ($option == "excel") {
             $format  = date("Ymd");
             header("Content-type: application/vnd-ms-excel");
-            header("Content-Disposition: attachment; filename=report_inventory_rm_standard_actual_$format.xls");
+            header("Content-Disposition: attachment; filename=inventory_rm_standard_actual_$format.xls");
         }
 
         $filter_from = $this->input->get('filter_from');
@@ -320,32 +325,56 @@ class Report_inventory_rm extends CI_Controller
             h.created_date as receipt_date_out,
             a.uom,
             c.name as category_name,
+
+            /** QTY */
             COALESCE(j.begin_stock) AS begin_stock,
+            COALESCE(d.qty_scan_in,0) as receipt_qty, 
+            COALESCE(k.qty_scan_bpm,0) as bpm_qty, 
+
             (COALESCE(d.qty_scan_in, 0) + COALESCE(e.qty_os_rm, 0) + COALESCE(f.qty_trans_rm_in, 0) + COALESCE(g.return_qty, 0) + COALESCE(k.qty_scan_bpm, 0)) AS qty_in,
-            (COALESCE(h.qty_issued, 0) + COALESCE(i.qty_trans_rm_out, 0)) AS qty_out
+            (COALESCE(h.qty_issued, 0) + COALESCE(i.qty_trans_rm_out, 0)) AS qty_out,
+
+            /** PRICE ACTUAL */
+            COALESCE(actual_in.price, 0) as price_actual_in 
+        
         FROM item_rm a
         JOIN item_familys b ON a.item_family_id = b.id AND b.number != 'FG'
         JOIN item_categories c ON a.item_category_id = c.id
         LEFT JOIN item_family_subs l ON a.item_sub_family_id = l.id
         LEFT JOIN (SELECT item_rm_id, currency, price from standard_price_rm where '$filter_from' >= `start_date` and '$filter_to' <= `end_date`) aa on a.id = aa.item_rm_id
+        
         LEFT JOIN (SELECT MAX(b.price) AS price, MAX(b.currency) AS currency, MAX(b.receipt_date) AS receipt_date, b.item_rm_id, SUM(a.qty) AS qty_scan_in FROM scan_item_receipts a JOIN purchase_order_receipts b ON a.receipt_id = b.receipt_id WHERE b.receipt_date BETWEEN '$filter_from' AND '$filter_to' GROUP BY b.item_rm_id) d ON a.id = d.item_rm_id
+        
         LEFT JOIN (SELECT item_rm_id, SUM(qty) AS qty_os_rm FROM os_rm WHERE trans_date BETWEEN '$filter_from' AND '$filter_to' GROUP BY item_rm_id) e ON a.id = e.item_rm_id
+        
         LEFT JOIN (SELECT item_rm_id, SUM(qty) AS qty_trans_rm_in FROM transaction_rm WHERE request_date BETWEEN '$filter_from' AND '$filter_to' AND transaction_kind = 'IN' GROUP BY item_rm_id) f ON a.id = f.item_rm_id
+        
         LEFT JOIN (SELECT a.item_rm_id, SUM(c.qty) as return_qty FROM return_materials a JOIN return_material_labels b ON a.return_id = b.return_id JOIN scan_item_receipts c ON a.return_id = c.receipt_id AND b.label_no = c.label_no WHERE a.return_date BETWEEN '$filter_from' AND '$filter_to' GROUP BY a.item_rm_id) g ON a.id = g.item_rm_id
+        
         LEFT JOIN (SELECT MAX(price) AS price, MAX(currency) AS currency, MAX(created_date) AS created_date, item_rm_id, SUM(qty) AS qty_issued FROM issued_material_details WHERE DATE_FORMAT(created_date, '%Y-%m-%d') BETWEEN '$filter_from' AND '$filter_to' GROUP BY item_rm_id) h ON a.id = h.item_rm_id
-        LEFT JOIN (SELECT item_rm_id, SUM(qty) AS qty_trans_rm_out FROM transaction_rm WHERE request_date BETWEEN '$filter_from' AND '$filter_to' AND transaction_kind = 'OUT' GROUP BY item_rm_id) i ON a.id = i.item_rm_id
+        
+        LEFT JOIN (SELECT item_rm_id, SUM(qty) AS qty_trans_rm_out FROM transaction_rm WHERE request_date BETWEEN '$filter_from' AND '$filter_to' AND transaction_kind = 'OUT' GROUP BY item_rm_id) i ON a.id = i.item_rm_id 
+
         LEFT JOIN (SELECT item_rm_id, SUM(qty) AS qty_scan_bpm FROM scan_item_bpm WHERE DATE_FORMAT(request_date, '%Y-%m-%d') BETWEEN '$filter_from' AND '$filter_to' GROUP BY item_rm_id) k ON a.id = k.item_rm_id
 
         LEFT JOIN (SELECT a.id, a.number, ((COALESCE(b.qty_scan_in, 0) + COALESCE(c.qty_os_rm, 0) + COALESCE(d.qty_trans_rm_in, 0) + COALESCE(e.return_qty, 0) + COALESCE(h.qty_scan_bpm, 0)) - (COALESCE(f.qty_issued, 0) + COALESCE(g.qty_trans_rm_out, 0))) AS begin_stock
-                        FROM item_rm a
-                        LEFT JOIN (SELECT b.item_rm_id, SUM(a.qty) AS qty_scan_in FROM scan_item_receipts a JOIN purchase_order_receipts b ON a.receipt_id = b.receipt_id WHERE b.receipt_date < '$filter_from'  GROUP BY b.item_rm_id) b ON a.id = b.item_rm_id
-                        LEFT JOIN (SELECT item_rm_id, SUM(qty) AS qty_os_rm FROM os_rm WHERE trans_date < '$filter_from' GROUP BY item_rm_id) c ON a.id = c.item_rm_id
-                        LEFT JOIN (SELECT item_rm_id, SUM(qty) AS qty_trans_rm_in FROM transaction_rm WHERE request_date < '$filter_from' AND transaction_kind = 'IN' GROUP BY item_rm_id) d ON a.id = d.item_rm_id
-                        LEFT JOIN (SELECT a.item_rm_id, SUM(c.qty) as return_qty FROM return_materials a JOIN return_material_labels b ON a.return_id = b.return_id JOIN scan_item_receipts c ON a.return_id = c.receipt_id AND b.label_no = c.label_no WHERE a.return_date < '$filter_from' GROUP BY a.item_rm_id) e ON a.id = e.item_rm_id
-                        LEFT JOIN (SELECT item_rm_id, SUM(qty) AS qty_issued FROM issued_material_details WHERE created_date < '$filter_from' GROUP BY item_rm_id) f ON a.id = f.item_rm_id
-                        LEFT JOIN (SELECT item_rm_id, SUM(qty) AS qty_trans_rm_out FROM transaction_rm WHERE request_date < '$filter_from' AND transaction_kind = 'OUT' GROUP BY item_rm_id) g ON a.id = g.item_rm_id
-                        LEFT JOIN (SELECT item_rm_id, SUM(qty) AS qty_scan_bpm FROM scan_item_bpm WHERE DATE_FORMAT(request_date, '%Y-%m-%d') < '$filter_from' GROUP BY item_rm_id) h ON a.id = h.item_rm_id
-                    ) j ON a.id = j.id
+            FROM item_rm a
+            LEFT JOIN (SELECT b.item_rm_id, SUM(a.qty) AS qty_scan_in FROM scan_item_receipts a JOIN purchase_order_receipts b ON a.receipt_id = b.receipt_id WHERE b.receipt_date < '$filter_from'  GROUP BY b.item_rm_id) b ON a.id = b.item_rm_id
+            LEFT JOIN (SELECT item_rm_id, SUM(qty) AS qty_os_rm FROM os_rm WHERE trans_date < '$filter_from' GROUP BY item_rm_id) c ON a.id = c.item_rm_id
+            LEFT JOIN (SELECT item_rm_id, SUM(qty) AS qty_trans_rm_in FROM transaction_rm WHERE request_date < '$filter_from' AND transaction_kind = 'IN' GROUP BY item_rm_id) d ON a.id = d.item_rm_id
+            LEFT JOIN (SELECT a.item_rm_id, SUM(c.qty) as return_qty FROM return_materials a JOIN return_material_labels b ON a.return_id = b.return_id JOIN scan_item_receipts c ON a.return_id = c.receipt_id AND b.label_no = c.label_no WHERE a.return_date < '$filter_from' GROUP BY a.item_rm_id) e ON a.id = e.item_rm_id
+            LEFT JOIN (SELECT item_rm_id, SUM(qty) AS qty_issued FROM issued_material_details WHERE created_date < '$filter_from' GROUP BY item_rm_id) f ON a.id = f.item_rm_id
+            LEFT JOIN (SELECT item_rm_id, SUM(qty) AS qty_trans_rm_out FROM transaction_rm WHERE request_date < '$filter_from' AND transaction_kind = 'OUT' GROUP BY item_rm_id) g ON a.id = g.item_rm_id
+            LEFT JOIN (SELECT item_rm_id, SUM(qty) AS qty_scan_bpm FROM scan_item_bpm WHERE DATE_FORMAT(request_date, '%Y-%m-%d') < '$filter_from' GROUP BY item_rm_id) h ON a.id = h.item_rm_id
+        ) j ON a.id = j.id
+
+        /** Find actual price IN */
+        LEFT JOIN (SELECT a.price, a.item_rm_id 
+            FROM purchase_orders a
+            LEFT JOIN purchase_order_receipts b ON a.po_no = b.po_no
+            WHERE b.receipt_date < '$filter_from'
+            GROUP BY a.item_rm_id
+        ) actual_in ON a.id = actual_in.item_rm_id
 
         WHERE c.id LIKE '%$filter_item_category%'
         AND b.number LIKE '%$filter_item_family%'
@@ -387,7 +416,7 @@ class Report_inventory_rm extends CI_Controller
             
         $html .= '<table id="customers" border="1" style="font-size: 11px;">
                 <thead>
-                <tr class="bg-white">
+                <tr class="bg-gray-lighter" style="background-color: #eee;">
                     <th rowspan="5" width="20">No</th>
                     <th rowspan="5" colspan="3">Product No</th>
                     <th rowspan="5">Product Name</th>
@@ -395,97 +424,169 @@ class Report_inventory_rm extends CI_Controller
                     <th rowspan="5">Division</th>
                     <th rowspan="5">Category</th>
                     <th rowspan="5">Product Family</th>
-                    <th rowspan="5">Sub Product <br>Family</th>
+                    <th rowspan="5">Sub Product Family</th>
                     <th rowspan="5">CCY</th>
                     <th rowspan="5">Rate</th>
                     <th colspan="24">SUMMARY</th>
-                    <th colspan="15">DETAIL</th>
+                    <th colspan="50">DETAIL</th>
                 </tr>
-                <tr>
-                    <th colspan="6" class="bg-grey">BEGIN</th>
-                    <th colspan="6" class="bg-grey">IN</th>
-                    <th colspan="6" class="bg-grey">OUT</th>
-                    <th colspan="6" class="bg-grey">ENDING</th>
-                    <th colspan="15" class="bg-grey">IN</th>
+                <tr style="background-color: #d5d5d5;">
+                    <th colspan="6" class="bg-gray">BEGIN</th>
+                    <th colspan="6" class="bg-gray">IN</th>
+                    <th colspan="6" class="bg-gray-darker">OUT</th>
+                    <th colspan="6" class="bg-gray">ENDING</th>
+                    <th colspan="15" class="bg-gray">IN</th>
+                    <th colspan="35" class="bg-gray-darker">OUT</th>
                 </tr>
 
-                <tr>
+                <tr style="background-color: #eee;">
                     <th rowspan="3">QTY</th>
-                    <th rowspan="2" colspan="2" class="bg-standard">STANDARD</th>
-                    <th rowspan="2" colspan="2" class="bg-actual">ACTUAL</th>
+                    <th rowspan="2" colspan="2" class="bg-standard" style="background-color: #D1FFC6;">STANDARD</th>
+                    <th rowspan="2" colspan="2" class="bg-actual" style="background-color: #DEEAF6;">ACTUAL</th>
                     <th rowspan="3">VARIANCE</th>
                     
                     <th rowspan="3">QTY</th>
-                    <th rowspan="2" colspan="2" class="bg-standard">STANDARD</th>
-                    <th rowspan="2" colspan="2" class="bg-actual">ACTUAL</th>
+                    <th rowspan="2" colspan="2" class="bg-standard" style="background-color: #D1FFC6;">STANDARD</th>
+                    <th rowspan="2" colspan="2" class="bg-actual" style="background-color: #DEEAF6;">ACTUAL</th>
                     <th rowspan="3">VARIANCE</th>
 
                     <th rowspan="3">QTY</th>
-                    <th rowspan="2" colspan="2" class="bg-standard">STANDARD</th>
-                    <th rowspan="2" colspan="2" class="bg-actual">ACTUAL</th>
+                    <th rowspan="2" colspan="2" class="bg-standard" style="background-color: #D1FFC6;">STANDARD</th>
+                    <th rowspan="2" colspan="2" class="bg-actual" style="background-color: #DEEAF6;">ACTUAL</th>
                     <th rowspan="3">VARIANCE</th>
 
                     <th rowspan="3">QTY</th>
-                    <th rowspan="2" colspan="2" class="bg-standard">STANDARD</th>
-                    <th rowspan="2" colspan="2" class="bg-actual">ACTUAL</th>
+                    <th rowspan="2" colspan="2" class="bg-standard" style="background-color: #D1FFC6;">STANDARD</th>
+                    <th rowspan="2" colspan="2" class="bg-actual" style="background-color: #DEEAF6;">ACTUAL</th>
                     <th rowspan="3">VARIANCE</th>
                     
+
                     <th colspan="5" class="bg-yellow">PURCHASE</th>
                     <th colspan="5" class="bg-yellow">BPM</th>
                     <th colspan="5" class="bg-yellow">ODJ STO</th>
                     
+                    <th colspan="5" class="bg-yellow"> Supply Sheet </th>
+                    <th colspan="5" class="bg-yellow"> Material Request </th>
+                    <th colspan="5" class="bg-yellow"> Kanban PRD </th>
+                    <th colspan="5" class="bg-yellow"> Kanban Subcont Jasa </th>
+                    <th colspan="5" class="bg-yellow"> Kanban Subcont Product </th>
+                    <th colspan="5" class="bg-yellow"> BPB </th>
+                    <th colspan="5" class="bg-yellow"> ADJ STO </th>
                 </tr>
                 
                 <tr>
                     <th rowspan="2">QTY</th>
-                    <th colspan="2" class="bg-standard">STANDARD</th>
-                    <th colspan="2" class="bg-actual">ACTUAL</th>
+                    <th colspan="2" class="bg-standard" style="background-color: #D1FFC6;">STANDARD</th>
+                    <th colspan="2" class="bg-actual" style="background-color: #DEEAF6;">ACTUAL</th>
 
                     <th rowspan="2">QTY</th>
-                    <th colspan="2" class="bg-standard">STANDARD</th>
-                    <th colspan="2" class="bg-actual">ACTUAL</th>
+                    <th colspan="2" class="bg-standard" style="background-color: #D1FFC6;">STANDARD</th>
+                    <th colspan="2" class="bg-actual" style="background-color: #DEEAF6;">ACTUAL</th>
 
                     <th rowspan="2">QTY</th>
-                    <th colspan="2" class="bg-standard">STANDARD</th>
-                    <th colspan="2" class="bg-actual">ACTUAL</th>
+                    <th colspan="2" class="bg-standard" style="background-color: #D1FFC6;">STANDARD</th>
+                    <th colspan="2" class="bg-actual" style="background-color: #DEEAF6;">ACTUAL</th>
+
+                    <th rowspan="2">QTY</th>
+                    <th colspan="2" class="bg-standard" style="background-color: #D1FFC6;">STANDARD</th>
+                    <th colspan="2" class="bg-actual" style="background-color: #DEEAF6;">ACTUAL</th>
+
+                    <th rowspan="2">QTY</th>
+                    <th colspan="2" class="bg-standard" style="background-color: #D1FFC6;">STANDARD</th>
+                    <th colspan="2" class="bg-actual" style="background-color: #DEEAF6;">ACTUAL</th>
+
+                    <th rowspan="2">QTY</th>
+                    <th colspan="2" class="bg-standard" style="background-color: #D1FFC6;">STANDARD</th>
+                    <th colspan="2" class="bg-actual" style="background-color: #DEEAF6;">ACTUAL</th>
+
+                    <th rowspan="2">QTY</th>
+                    <th colspan="2" class="bg-standard" style="background-color: #D1FFC6;">STANDARD</th>
+                    <th colspan="2" class="bg-actual" style="background-color: #DEEAF6;">ACTUAL</th>
+
+                    <th rowspan="2">QTY</th>
+                    <th colspan="2" class="bg-standard" style="background-color: #D1FFC6;">STANDARD</th>
+                    <th colspan="2" class="bg-actual" style="background-color: #DEEAF6;">ACTUAL</th>
+
+                    <th rowspan="2">QTY</th>
+                    <th colspan="2" class="bg-standard" style="background-color: #D1FFC6;">STANDARD</th>
+                    <th colspan="2" class="bg-actual" style="background-color: #DEEAF6;">ACTUAL</th>
+
+                    <th rowspan="2">QTY</th>
+                    <th colspan="2" class="bg-standard" style="background-color: #D1FFC6;">STANDARD</th>
+                    <th colspan="2" class="bg-actual" style="background-color: #DEEAF6;">ACTUAL</th>
                 </tr>
 
                 <tr>
-                    <th class="bg-standard">PRICE</th>
-                    <th class="bg-standard">AMOUNT</th>
-                    <th class="bg-actual">PRICE</th>
-                    <th class="bg-actual">AMOUNT</th>
+                    <th class="bg-standard" style="background-color: #D1FFC6;">PRICE</th>
+                    <th class="bg-standard" style="background-color: #D1FFC6;">AMOUNT</th>
+                    <th class="bg-actual" style="background-color: #DEEAF6;">PRICE</th>
+                    <th class="bg-actual" style="background-color: #DEEAF6;">AMOUNT</th>
 
-                    <th class="bg-standard">PRICE</th>
-                    <th class="bg-standard">AMOUNT</th>
-                    <th class="bg-actual">PRICE</th>
-                    <th class="bg-actual">AMOUNT</th>
+                    <th class="bg-standard" style="background-color: #D1FFC6;">PRICE</th>
+                    <th class="bg-standard" style="background-color: #D1FFC6;">AMOUNT</th>
+                    <th class="bg-actual" style="background-color: #DEEAF6;">PRICE</th>
+                    <th class="bg-actual" style="background-color: #DEEAF6;">AMOUNT</th>
 
-                    <th class="bg-standard">PRICE</th>
-                    <th class="bg-standard">AMOUNT</th>
-                    <th class="bg-actual">PRICE</th>
-                    <th class="bg-actual">AMOUNT</th>
-
-                    <th class="bg-standard">PRICE</th>
-                    <th class="bg-standard">AMOUNT</th>
-                    <th class="bg-actual">PRICE</th>
-                    <th class="bg-actual">AMOUNT</th>
+                    <th class="bg-standard" style="background-color: #D1FFC6;">PRICE</th>
+                    <th class="bg-standard" style="background-color: #D1FFC6;">AMOUNT</th>
+                    <th class="bg-actual" style="background-color: #DEEAF6;">PRICE</th>
+                    <th class="bg-actual" style="background-color: #DEEAF6;">AMOUNT</th>
 
 
-                    <th class="bg-standard">PRICE</th>
-                    <th class="bg-standard">AMOUNT</th>
-                    <th class="bg-actual">PRICE</th>
-                    <th class="bg-actual">AMOUNT</th>
+                    <th class="bg-standard" style="background-color: #D1FFC6;">PRICE</th>
+                    <th class="bg-standard" style="background-color: #D1FFC6;">AMOUNT</th>
+                    <th class="bg-actual" style="background-color: #DEEAF6;">PRICE</th>
+                    <th class="bg-actual" style="background-color: #DEEAF6;">AMOUNT</th>
 
-                    <th class="bg-standard">PRICE</th>
-                    <th class="bg-standard">AMOUNT</th>
-                    <th class="bg-actual">PRICE</th>
-                    <th class="bg-actual">AMOUNT</th>
+                    <th class="bg-standard" style="background-color: #D1FFC6;">PRICE</th>
+                    <th class="bg-standard" style="background-color: #D1FFC6;">AMOUNT</th>
+                    <th class="bg-actual" style="background-color: #DEEAF6;">PRICE</th>
+                    <th class="bg-actual" style="background-color: #DEEAF6;">AMOUNT</th>
 
-                    <th class="bg-standard">PRICE</th>
-                    <th class="bg-standard">AMOUNT</th>
-                    <th class="bg-actual">PRICE</th>
-                    <th class="bg-actual">AMOUNT</th>
+                    <th class="bg-standard" style="background-color: #D1FFC6;">PRICE</th>
+                    <th class="bg-standard" style="background-color: #D1FFC6;">AMOUNT</th>
+                    <th class="bg-actual" style="background-color: #DEEAF6;">PRICE</th>
+                    <th class="bg-actual" style="background-color: #DEEAF6;">AMOUNT</th>
+
+                    <th class="bg-standard" style="background-color: #D1FFC6;">PRICE</th>
+                    <th class="bg-standard" style="background-color: #D1FFC6;">AMOUNT</th>
+                    <th class="bg-actual" style="background-color: #DEEAF6;">PRICE</th>
+                    <th class="bg-actual" style="background-color: #DEEAF6;">AMOUNT</th>
+
+                    <th class="bg-standard" style="background-color: #D1FFC6;">PRICE</th>
+                    <th class="bg-standard" style="background-color: #D1FFC6;">AMOUNT</th>
+                    <th class="bg-actual" style="background-color: #DEEAF6;">PRICE</th>
+                    <th class="bg-actual" style="background-color: #DEEAF6;">AMOUNT</th>
+
+                    <th class="bg-standard" style="background-color: #D1FFC6;">PRICE</th>
+                    <th class="bg-standard" style="background-color: #D1FFC6;">AMOUNT</th>
+                    <th class="bg-actual" style="background-color: #DEEAF6;">PRICE</th>
+                    <th class="bg-actual" style="background-color: #DEEAF6;">AMOUNT</th>
+
+                    <th class="bg-standard" style="background-color: #D1FFC6;">PRICE</th>
+                    <th class="bg-standard" style="background-color: #D1FFC6;">AMOUNT</th>
+                    <th class="bg-actual" style="background-color: #DEEAF6;">PRICE</th>
+                    <th class="bg-actual" style="background-color: #DEEAF6;">AMOUNT</th>
+
+                    <th class="bg-standard" style="background-color: #D1FFC6;">PRICE</th>
+                    <th class="bg-standard" style="background-color: #D1FFC6;">AMOUNT</th>
+                    <th class="bg-actual" style="background-color: #DEEAF6;">PRICE</th>
+                    <th class="bg-actual" style="background-color: #DEEAF6;">AMOUNT</th>
+
+                    <th class="bg-standard" style="background-color: #D1FFC6;">PRICE</th>
+                    <th class="bg-standard" style="background-color: #D1FFC6;">AMOUNT</th>
+                    <th class="bg-actual" style="background-color: #DEEAF6;">PRICE</th>
+                    <th class="bg-actual" style="background-color: #DEEAF6;">AMOUNT</th>
+
+                    <th class="bg-standard" style="background-color: #D1FFC6;">PRICE</th>
+                    <th class="bg-standard" style="background-color: #D1FFC6;">AMOUNT</th>
+                    <th class="bg-actual" style="background-color: #DEEAF6;">PRICE</th>
+                    <th class="bg-actual" style="background-color: #DEEAF6;">AMOUNT</th>
+
+                    <th class="bg-standard" style="background-color: #D1FFC6;">PRICE</th>
+                    <th class="bg-standard" style="background-color: #D1FFC6;">AMOUNT</th>
+                    <th class="bg-actual" style="background-color: #DEEAF6;">PRICE</th>
+                    <th class="bg-actual" style="background-color: #DEEAF6;">AMOUNT</th>
                 </tr>
                 <thead>';
 
@@ -520,6 +621,7 @@ class Report_inventory_rm extends CI_Controller
                 }
             }
 
+            // ----- GRAND TOTAL -----
             $totalBeginStock += @$record->begin_stock;
             $totalBeginAmount += @$record->price * $rate * @$record->begin_stock;
             $totalIn += @$record->qty_in;
@@ -529,7 +631,41 @@ class Report_inventory_rm extends CI_Controller
             $totalEndingStock += @(@$record->begin_stock + $record->qty_in) - $record->qty_out;
             $totalAmountEndingStock += ((@$record->price * $rate) * @$record->qty_in) + ((@$record->price * $rate) * @$record->begin_stock) - ((@$record->price * $rate) * @$record->qty_out);
 
+            
+            // ---- PRICE ----
             $standard_price = $record->price * $rate;
+            
+            // actual begin price dari upload user 
+            // sementara menggunakan standard_price
+            $actual_price_begin  = $record->price * $rate;
+            $actual_price_in     = $record->price_actual_in * $rate;
+            $actual_price_out    = 0 * $rate;
+            $actual_price_ending = 0 * $rate;
+            
+            // ---- QTY ----
+            $qty_begin  = @$record->begin_stock;
+            $qty_in     = $record->qty_in;
+            $qty_out    = $record->qty_out;
+            
+            // ---- AMOUNT ----
+            $amount_standard_begin  = $standard_price * $qty_begin;
+            $amount_standard_in     = $standard_price * $qty_in;
+            $amount_standard_out    = $standard_price * $qty_out;
+            
+            $amount_actual_begin  = $actual_price_begin * $qty_begin;
+            $amount_actual_in     = $actual_price_begin * $qty_begin;
+            $amount_actual_out    = $actual_price_begin * $qty_begin;
+            
+            // ---- VARIANCE = amount actual - amount standard
+            $variance_begin  = $amount_actual_begin - $amount_standard_begin;
+            $variance_in     = $amount_actual_in - $amount_standard_in;
+            $variance_out    = $amount_actual_out - $amount_standard_out;
+            
+            // ---- ENDING ----
+            $qty_ending             = ($qty_begin + $qty_in) - $qty_out;
+            $amount_standard_ending = ($amount_standard_in) + ($amount_standard_in) - ($amount_standard_out);
+            $amount_actual_ending   = ($amount_actual_in) + ($amount_actual_begin) - ($amount_actual_out);
+            $variance_ending        = $amount_actual_ending - $amount_standard_ending;
 
             // SUMMARY
             $html .= '<tbody>
@@ -545,47 +681,110 @@ class Report_inventory_rm extends CI_Controller
                             <td>' . $record->currency . '</td>
                             <td>' . $rate . '</td>
                             
-                            <td style="text-align:right;">' . number_format(@$record->begin_stock, 2) . '</td>
+                            <td style="text-align:right;">' . number_format($qty_begin, 2) . '</td>
                             <td style="text-align:right;">' . number_format($standard_price, 2) . '</td>
-                            <td style="text-align:right;">' . number_format(($standard_price) * $record->begin_stock, 2) . '</td>
-                            <td></td>
-                            <td></td>
-                            <td></td>
+                            <td style="text-align:right;">' . number_format($amount_standard_begin, 2) . '</td>
+                            <td style="text-align:right;">' . number_format($actual_price_begin, 2) . '</td>
+                            <td style="text-align:right;">' . number_format($amount_actual_begin, 2) . '</td>
+                            <td style="text-align:right;">' . number_format($variance_begin, 2) . '</td>
 
-                            <td style="text-align:right;">' . number_format($record->qty_in, 2) . '</td>
-                            <td style="text-align:right;">' . number_format($standard_price, 2) . '</td>
-                            <td style="text-align:right;">' . number_format(($standard_price) * $record->qty_in, 2) . '</td>
-                            <td></td>
-                            <td></td>
-                            <td></td>
 
-                            <td style="text-align:right;">' . number_format($record->qty_out, 2) . '</td>
+                            <td style="text-align:right;">' . number_format($qty_in, 2) . '</td>
                             <td style="text-align:right;">' . number_format($standard_price, 2) . '</td>
-                            <td style="text-align:right;">' . number_format(($standard_price) * $record->qty_out, 2) . '</td>
-                            <td></td>
-                            <td></td>
-                            <td></td>
+                            <td style="text-align:right;">' . number_format($amount_standard_in, 2) . '</td>
+                            <td style="text-align:right;">' . number_format($actual_price_in, 2) . '</td>
+                            <td style="text-align:right;">' . number_format($amount_actual_in, 2) . '</td>
+                            <td style="text-align:right;">' . number_format($variance_in, 2) . '</td>
 
-                            <td style="text-align:right;">' . number_format((@$record->begin_stock + $record->qty_in) - $record->qty_out, 2) . '</td>
+
+                            <td style="text-align:right;">' . number_format($qty_out, 2) . '</td>
                             <td style="text-align:right;">' . number_format($standard_price, 2) . '</td>
-                            <td style="text-align:right;">' . number_format(($standard_price * $record->qty_in) + ($standard_price * $record->begin_stock) - ($standard_price * $record->qty_out), 2) . '</td>
-                            <td></td>
-                            <td></td>
-                            <td></td>';
+                            <td style="text-align:right;">' . number_format($amount_standard_out, 2) . '</td>
+                            <td style="text-align:right;">' . number_format($actual_price_out, 2) . '</td>
+                            <td style="text-align:right;">' . number_format($amount_actual_out, 2) . '</td>
+                            <td style="text-align:right;">' . number_format($variance_out, 2) . '</td>
+
+
+                            <td style="text-align:right;">' . number_format($qty_ending, 2) . '</td>
+                            <td style="text-align:right;">' . number_format($standard_price, 2) . '</td>
+                            <td style="text-align:right;">' . number_format($amount_standard_ending, 2) . '</td>
+                            <td style="text-align:right;">' . number_format($actual_price_ending, 2) . '</td>
+                            <td style="text-align:right;">' . number_format($amount_actual_ending, 2) . '</td>
+                            <td style="text-align:right;">' . number_format($variance_ending, 2) . '</td>
+                        ';
+
+            // IN - DETAIL
+            $qty_purchase = $record->receipt_qty ?? 0;
+            $qty_bpm      = $record->bpm_qty ?? 0;
+            $qty_adj_in   = $record->adj_in_qty ?? 0;
+            
+            // OUT - DETAIL
+            $qty_supply_sheet       = $record->qty_issued_supply_sheet ?? 0;
+            $qty_material_req       = $record->qty_issued_material_request ?? 0;
+            $qty_kanban             = $record->qty_kanban ?? 0;
+            $qty_kanban_sub_jasa    = $record->qty_issued_non_supply_sheet_SJ ?? 0;
+            $qty_kanban_sub_product = $record->qty_issued_non_supply_sheet_SP ?? 0;
+            $qty_bpb                = $record->bpb_qty ?? 0;
+            $qty_adj_out            = $record->adj_out_qty ?? 0;            
+
+
             // DETAIL 
             $html .= '  
-                            <td></td>
+                            <td style="text-align:right;">' . number_format($qty_purchase, 2) . '</td>
                             <td style="text-align:right;">' . number_format($standard_price, 2) . '</td>
+                            <td style="text-align:right;">' . number_format($standard_price * $qty_purchase, 2) . '</td>
                             <td></td>
                             <td></td>
+                            
+                            <td style="text-align:right;">' . number_format($qty_bpm, 2) . '</td>
+                            <td style="text-align:right;">' . number_format($standard_price, 2) . '</td>
+                            <td style="text-align:right;">' . number_format($standard_price * $qty_bpm, 2) . '</td>
                             <td></td>
+                            <td></td>
+                            
+                            <td style="text-align:right;">' . number_format($qty_adj_in, 2) . '</td>
+                            <td style="text-align:right;">' . number_format($standard_price, 2) . '</td>
+                            <td style="text-align:right;">' . number_format($standard_price * $qty_adj_in, 2) . '</td>
+                            <td></td>
+                            <td></td>
+                            
                             
                             <td></td>
                             <td style="text-align:right;">' . number_format($standard_price, 2) . '</td>
                             <td></td>
                             <td></td>
                             <td></td>
-                            
+
+                            <td></td>
+                            <td style="text-align:right;">' . number_format($standard_price, 2) . '</td>
+                            <td></td>
+                            <td></td>
+                            <td></td>
+
+                            <td></td>
+                            <td style="text-align:right;">' . number_format($standard_price, 2) . '</td>
+                            <td></td>
+                            <td></td>
+                            <td></td>
+
+                            <td></td>
+                            <td style="text-align:right;">' . number_format($standard_price, 2) . '</td>
+                            <td></td>
+                            <td></td>
+                            <td></td>
+
+                            <td></td>
+                            <td style="text-align:right;">' . number_format($standard_price, 2) . '</td>
+                            <td></td>
+                            <td></td>
+                            <td></td>
+
+                            <td></td>
+                            <td style="text-align:right;">' . number_format($standard_price, 2) . '</td>
+                            <td></td>
+                            <td></td>
+                            <td></td>
+
                             <td></td>
                             <td style="text-align:right;">' . number_format($standard_price, 2) . '</td>
                             <td></td>
@@ -598,41 +797,66 @@ class Report_inventory_rm extends CI_Controller
 
             if ($filter_display == "DETAIL") {
                 $html .= '  <tr>
-                                <td colspan="24" style="background:#D1FFC6; font-size: 11px;"><b>DETAIL OF ' . $record->number . ' - ' . $record->name . '</b></td>
+                                <td colspan="32" style="background:#CAFFB3; font-size: 11px;"><b>DETAIL OF ' . $record->number . ' - ' . $record->name . '</b></td>
                             </tr>
                             <tr>
-                                <th rowspan="2" width="20"></th>
-                                <th rowspan="2" width="20">No</th>
-                                <th rowspan="2">Trans Type</th>
-                                <th rowspan="2">Created By</th>
-                                <th rowspan="2">Trans Date</th>
-                                <th rowspan="2">Custom. Kind</th>
-                                <th rowspan="2">Custom. No</th>
-                                <th rowspan="2">Doc. No</th>
-                                <th rowspan="2">Custom. Date</th>
-                                <th rowspan="2">CCY</th>
-                                <th rowspan="2">Price</th>
-                                <th rowspan="2">Rate</th>
-                                <th colspan="3">Begin</th>
-                                <th colspan="3">In</th>
-                                <th colspan="3">Out</th>
-                                <th colspan="3">Balance</th>
+                                <th rowspan="3" width="20"></th>
+                                <th rowspan="3" width="20">No</th>
+                                <th rowspan="3">Trans Type</th>
+                                <th rowspan="3">Created By</th>
+                                <th rowspan="3">Trans Date</th>
+                                <th rowspan="3">Custom. Kind</th>
+                                <th rowspan="3">Custom. No</th>
+                                <th rowspan="3">Doc. No</th>
+                                <th rowspan="3">Custom. Date</th>
+                                <th rowspan="3">CCY</th>
+                                <th rowspan="3">Price PO</th>
+                                <th rowspan="3">Rate</th>
+                                
+                                <th colspan="5">BEGIN</th>
+                                <th colspan="5">IN</th>
+                                <th colspan="5">OUT</th>
+                                <th colspan="5">BALANCE</th>
+                            </tr>
+
                             <tr>
-                                <th width="80">QTY</th>
-                                <th width="80">PRICE</th>
-                                <th width="80">AMOUNT</th>
+                                <th rowspan="2" width="80">QTY</th>
+                                <th colspan="2" class="bg-standard" style="background-color: #D1FFC6;">STANDARD</th>
+                                <th colspan="2" class="bg-actual" style="background-color: #DEEAF6;">ACTUAL</th>
 
-                                <th width="80">QTY</th>
-                                <th width="80">PRICE</th>
-                                <th width="80">AMOUNT</th>
+                                <th rowspan="2" width="80">QTY</th>
+                                <th colspan="2" class="bg-standard" style="background-color: #D1FFC6;">STANDARD</th>
+                                <th colspan="2" class="bg-actual" style="background-color: #DEEAF6;">ACTUAL</th>
 
-                                <th width="80">QTY</th>
-                                <th width="80">PRICE</th>
-                                <th width="80">AMOUNT</th>
+                                <th rowspan="2" width="80">QTY</th>
+                                <th colspan="2" class="bg-standard" style="background-color: #D1FFC6;">STANDARD</th>
+                                <th colspan="2" class="bg-actual" style="background-color: #DEEAF6;">ACTUAL</th>
 
-                                <th width="80">QTY</th>
-                                <th width="80">PRICE</th>
-                                <th width="80">AMOUNT</th>
+                                <th rowspan="2" width="80">QTY</th>
+                                <th colspan="2" class="bg-standard" style="background-color: #D1FFC6;">STANDARD</th>
+                                <th colspan="2" class="bg-actual" style="background-color: #DEEAF6;">ACTUAL</th>
+                            </tr>
+
+                            <tr>
+                                <th width="80" class="bg-standard" style="background-color: #D1FFC6;">PRICE</th>
+                                <th width="80" class="bg-standard" style="background-color: #D1FFC6;">AMOUNT</th>
+                                <th width="80" class="bg-actual" style="background-color: #DEEAF6;">PRICE</th>
+                                <th width="80" class="bg-actual" style="background-color: #DEEAF6;">AMOUNT</th>
+                                
+                                <th width="80" class="bg-standard" style="background-color: #D1FFC6;">PRICE</th>
+                                <th width="80" class="bg-standard" style="background-color: #D1FFC6;">AMOUNT</th>
+                                <th width="80" class="bg-actual" style="background-color: #DEEAF6;">PRICE</th>
+                                <th width="80" class="bg-actual" style="background-color: #DEEAF6;">AMOUNT</th>
+
+                                <th width="80" class="bg-standard" style="background-color: #D1FFC6;">PRICE</th>
+                                <th width="80" class="bg-standard" style="background-color: #D1FFC6;">AMOUNT</th>
+                                <th width="80" class="bg-actual" style="background-color: #DEEAF6;">PRICE</th>
+                                <th width="80" class="bg-actual" style="background-color: #DEEAF6;">AMOUNT</th>
+
+                                <th width="80" class="bg-standard" style="background-color: #D1FFC6;">PRICE</th>
+                                <th width="80" class="bg-standard" style="background-color: #D1FFC6;">AMOUNT</th>
+                                <th width="80" class="bg-actual" style="background-color: #DEEAF6;">PRICE</th>
+                                <th width="80" class="bg-actual" style="background-color: #DEEAF6;">AMOUNT</th>
                             </tr>';
 
                 $nod = 1;
@@ -844,21 +1068,30 @@ class Report_inventory_rm extends CI_Controller
                                 <td style="text-align:right;">' . $currency . '</td>
                                 <td style="text-align:right;">' . number_format($price, 2) . '</td>
                                 <td style="text-align:right;">' . number_format($rate, 2) . '</td>
+
                                 <td style="text-align:right;">' . number_format($begin, 2) . '</td>
                                 <td style="text-align:right;">' . number_format($rate * $price, 2) . '</td>
                                 <td style="text-align:right;">' . number_format(($rate * $price) * $begin, 2) . '</td>
-
+                                <td></td>
+                                <td></td>
+                                
                                 <td style="text-align:right;">' . number_format($data['qty_in'], 2) . '</td>
                                 <td style="text-align:right;">' . number_format($rate * $price, 2) . '</td>
                                 <td style="text-align:right;">' . number_format(($rate * $price) * $data['qty_in'], 2) . '</td>
-
+                                <td></td>
+                                <td></td>
+                                
                                 <td style="text-align:right;">' . number_format($data['qty_out'], 2) . '</td>
                                 <td style="text-align:right;">' . number_format($rate * $price, 2) . '</td>
                                 <td style="text-align:right;">' . number_format(($rate * $price) * $data['qty_out'], 2) . '</td>
-
+                                <td></td>
+                                <td></td>
+                                
                                 <td style="text-align:right;">' . number_format($balance, 2) . '</td>
                                 <td style="text-align:right;">' . number_format($rate * $price, 2) . '</td>
                                 <td style="text-align:right;">' . number_format(($rate * $price) * $balance, 2) . '</td>
+                                <td></td>
+                                <td></td>
                             </tr>';
 
                         $begin = $balance;
@@ -1216,7 +1449,7 @@ class Report_inventory_rm extends CI_Controller
             $cols = 12; 
             
             // SUMMARY
-            $html .= '<tr>
+            $html .= '<tr class="bg-grand-total">
                 <td colspan="' . $cols . '" style="text-align:right;"><b>GRAND TOTAL</b></td>
                 <td style="text-align:right;"><b>' . number_format($totalBeginStock, 2) . '</b></td>
                 <td style="text-align:right;"></td>
@@ -1255,6 +1488,49 @@ class Report_inventory_rm extends CI_Controller
                 <td></td>
                 <td></td>
                 
+                <td></td>
+                <td></td>
+                <td></td>
+                <td></td>
+                <td></td>
+
+                <td></td>
+                <td></td>
+                <td></td>
+                <td></td>
+                <td></td>
+
+                
+                <td></td>
+                <td></td>
+                <td></td>
+                <td></td>
+                <td></td>
+
+                <td></td>
+                <td></td>
+                <td></td>
+                <td></td>
+                <td></td>
+
+                <td></td>
+                <td></td>
+                <td></td>
+                <td></td>
+                <td></td>
+
+                <td></td>
+                <td></td>
+                <td></td>
+                <td></td>
+                <td></td>
+
+                <td></td>
+                <td></td>
+                <td></td>
+                <td></td>
+                <td></td>
+
                 <td></td>
                 <td></td>
                 <td></td>
@@ -1661,7 +1937,7 @@ class Report_inventory_rm extends CI_Controller
         if ($option == "excel") {
             $format  = date("Ymd");
             header("Content-type: application/vnd-ms-excel");
-            header("Content-Disposition: attachment; filename=report_inventory_rm_standard_actual_$format.xls");
+            header("Content-Disposition: attachment; filename=inventory_rm_standard_actual_$format.xls");
         }
         //------------------------------------ Opsi print berakhir disini------------------------------------------------------//
 

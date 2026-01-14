@@ -91,7 +91,7 @@
         } else {
             url = "?filter_from=" + filter_from + "&filter_to=" + filter_to + "&filter_item_category=" + filter_item_category + "&filter_item_family=" + filter_item_family + "&filter_items=" + filter_items + "&filter_display=" + filter_display + "&filter_trans_type=" + filter_trans_type + "&filter_division=" + filter_division;
             $("#printout").contents().find('html').html("<center><br><br><br><b style='font-size:20px;'>Please Wait...</b></center>");
-            $("#printout").attr('src', '<?= base_url('finance/report_inventory_rm/print') ?>' + url);
+            $("#printout").attr('src', '<?= base_url('finance/inventory_rm_standard_actual/print') ?>' + url);
         }
 
     }
@@ -117,7 +117,7 @@
             $("#loadingOverlay").show();
 
             // Unduh file
-            window.location.assign('<?= base_url('finance/report_inventory_rm/print/excel') ?>' + url);
+            window.location.assign('<?= base_url('finance/inventory_rm_standard_actual/print/excel') ?>' + url);
 
             // Sembunyikan overlay setelah beberapa saat
             setTimeout(function() {
@@ -134,7 +134,7 @@
             prompt: "Select Categories",
             onSelect: function(category) {
                 $("#filter_item_family").combobox({
-                    url: '<?= base_url('finance/report_inventory_rm/readItemFamily/') ?>' + category.id,
+                    url: '<?= base_url('finance/inventory_rm_standard_actual/readItemFamily/') ?>' + category.id,
                     valueField: 'number',
                     textField: 'name',
                     prompt: "Select Product Family",
@@ -164,7 +164,7 @@
     });
 
     $("#filter_item_family").combobox({
-        url: '<?= base_url('finance/report_inventory_rm/readItemFamilys/') ?>',
+        url: '<?= base_url('finance/inventory_rm_standard_actual/readItemFamilys/') ?>',
         valueField: 'number',
         textField: 'name',
         prompt: "Select Product Family",
