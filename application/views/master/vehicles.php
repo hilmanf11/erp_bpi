@@ -6,17 +6,17 @@
             <th rowspan="2" data-options="field:'id',width:80,align:'center'">Vehicle ID</th>
             <th rowspan="2" data-options="field:'name',width:250,halign:'center'">Vehicle Name</th>
             <th rowspan="2" data-options="field:'police_no',width:100,halign:'center'">Police No.</th>
-            <th colspan="3" data-options="field:'',width:100,halign:'center'">Dimension (cm)</th>
-            <th rowspan="2" data-options="field:'volume',width:100,halign:'center',formatter:volumeformat">Volume Box <br>(cm3)</th>
+            <th colspan="3" data-options="field:'',width:100,halign:'center'">Dimension (mm)</th>
+            <th rowspan="2" data-options="field:'volume',width:100,halign:'center',formatter:volumeformat">Volume Box <br>(mm)</th>
             <th rowspan="2" data-options="field:'remark',width:150,halign:'center'">Remarks</th>
             <th rowspan="2" data-options="field:'status',width:100,halign:'center', styler:cellStyler, formatter:cellFormatter">Status</th>
             <th colspan="2" data-options="field:'',width:100,halign:'center'"> Created</th>
             <th colspan="2" data-options="field:'',width:100,halign:'center'"> Updated</th>
         </tr>
         <tr>
-            <th data-options="field:'dimension_p',width:80,halign:'center'">P</th>
-            <th data-options="field:'dimension_l',width:80,halign:'center'">L</th>
-            <th data-options="field:'dimension_t',width:80,halign:'center'">T</th>
+            <th data-options="field:'dimension_p',width:80,halign:'center'">Length</th>
+            <th data-options="field:'dimension_l',width:80,halign:'center'">Width</th>
+            <th data-options="field:'dimension_t',width:80,halign:'center'">Height</th>
             <th data-options="field:'created_by',width:100,align:'center'"> By</th>
             <th data-options="field:'created_date',width:150,align:'center'"> Date</th>
             <th data-options="field:'updated_by',width:100,align:'center'"> By</th>
@@ -46,15 +46,15 @@
                 <input style="width:60%;" name="police_no" id="police_no" required="" class="easyui-textbox">
             </div>
             <div class="fitem">
-                <span style="width:35%; display:inline-block;">Dimension Panjang</span>
+                <span style="width:35%; display:inline-block;">Length</span>
                 <input style="width:60%;" name="dimension_p" id="dimension_p" class="easyui-numberbox">
             </div>
             <div class="fitem">
-                <span style="width:35%; display:inline-block;">Dimension Lebar</span>
+                <span style="width:35%; display:inline-block;">Width</span>
                 <input style="width:60%;" name="dimension_l" id="dimension_l" class="easyui-numberbox">
             </div>
             <div class="fitem">
-                <span style="width:35%; display:inline-block;">Dimension Tinggi</span>
+                <span style="width:35%; display:inline-block;">Height</span>
                 <input style="width:60%;" name="dimension_t" id="dimension_t" class="easyui-numberbox">
             </div>
             <div class="fitem">

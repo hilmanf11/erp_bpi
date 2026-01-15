@@ -243,9 +243,9 @@ class Vehicles extends CI_Controller
                 <th>Vehicle ID</th>
                 <th>Vehicle Name</th>
                 <th>Police No.</th>
-                <th>Dimension P</th>
-                <th>Dimension L</th>
-                <th>Dimension T</th>
+                <th>Length</th>
+                <th>Width</th>
+                <th>Height</th>
                 <th>Volume Box (cm3)</th>
             </tr>';
         $no = 1;
