@@ -171,6 +171,9 @@ class Item_boxs extends CI_Controller
                 <th>ID</th>
                 <th>Kind Of Box</th>
                 <th>Name</th>
+                <th>Length</th>
+                <th>Width</th>
+                <th>Height</th>
                 <th>Size</th>
                 <th>Volume</th>
                 <th>Color</th>
@@ -183,6 +186,9 @@ class Item_boxs extends CI_Controller
                     <td>' . $data['id'] . '</td>
                     <td>' . $data['item_kind_name'] . '</td>
                     <td>' . $data['name'] . '</td>
+                    <td>' . $data['length'] . '</td>
+                    <td>' . $data['width'] . '</td>
+                    <td>' . $data['height'] . '</td>
                     <td>' . $data['size'] . '</td>
                     <td>' . $data['volume'] . '</td>
                     <td>' . $data['color'] . '</td>

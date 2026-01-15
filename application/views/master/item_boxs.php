@@ -17,6 +17,9 @@
             <th rowspan="2" data-options="field:'item_kind_name',width:150,halign:'center'">Kind Of Box</th>
             <th rowspan="2" data-options="field:'name',width:150,halign:'center'">Name</th>
             <th rowspan="2" data-options="field:'code',width:150,halign:'center'">Code</th>
+            <th rowspan="2" data-options="field:'length',width:150,halign:'center'">Length</th>
+            <th rowspan="2" data-options="field:'width',width:150,halign:'center'">Width</th>
+            <th rowspan="2" data-options="field:'height',width:150,halign:'center'">Heigth</th>
             <th rowspan="2" data-options="field:'size',width:150,halign:'center'">Size</th>
             <th rowspan="2" data-options="field:'volume',width:150,halign:'center'">Volume</th>
             <th rowspan="2" data-options="field:'color',width:200,halign:'center'">Color</th>
@@ -40,49 +43,65 @@
     <a href="javascript:void(0)" class="easyui-linkbutton" data-options="plain:true" onclick="$('#dlg_help').dialog('open');"><i class="fa fa-info"></i> Help</a>
 </div>
 <!-- DIALOG SAVE AND UPDATE -->
-<div id="dlg_insert" class="easyui-dialog" title="Add New" data-options="closed: true,modal:true" style="width: 400px; padding:10px; top: 20px;">
+<div id="dlg_insert" class="easyui-dialog" title="Add New" data-options="closed: true,modal:true" style="width: 1000px; padding:10px; top: 20px;">
     <form id="frm_insert" method="post" novalidate enctype="multipart/form-data">
         <fieldset style="width:100%; border:1px solid #d0d0d0; margin-bottom: 10px; border-radius:4px; float: left;">
             <legend><b>Form Data</b></legend>
-            <div class="fitem">
-                <span style="width:35%; display:inline-block;">ID</span>
-                <input style="width:60%;" name="id" id="id" required="" class="easyui-textbox" readonly>
+            <div style="float:left; width:50%;">
+                <div class="fitem">
+                    <span style="width:35%; display:inline-block;">ID</span>
+                    <input style="width:60%;" name="id" id="id" required="" class="easyui-textbox" readonly>
+                </div>
+                <div class="fitem">
+                    <span style="width:35%; display:inline-block;">Kind Of Box</span>
+                    <input style="width:60%;" name="item_kind_id" id="item_kind_id" required="" class="easyui-combobox">
+                </div>
+                <div class="fitem">
+                    <span style="width:35%; display:inline-block;">Code Box</span>
+                    <input style="width:60%;" name="code" id="code" required="" class="easyui-textbox">
+                </div>
+                <div class="fitem">
+                    <span style="width:35%; display:inline-block;">Name</span>
+                    <input style="width:60%;" name="name" id="name" required="" class="easyui-textbox">
+                </div>
+                <div class="fitem">
+                    <span style="width:35%; display:inline-block;">Panjang</span>
+                    <input style="width:60%;" name="length" id="length" required="" class="easyui-numberbox" data-options="prompt:'mm'">
+                </div>
+                <div class="fitem">
+                    <span style="width:35%; display:inline-block;">Lebar</span>
+                    <input style="width:60%;" name="width" id="width" required="" class="easyui-numberbox" data-options="prompt:'mm'">
+                </div>
+                <div class="fitem">
+                    <span style="width:35%; display:inline-block;">Tinggi</span>
+                    <input style="width:60%;" name="height" id="height" required="" class="easyui-numberbox" data-options="prompt:'mm'">
+                </div>
             </div>
-            <div class="fitem">
-                <span style="width:35%; display:inline-block;">Kind Of Box</span>
-                <input style="width:60%;" name="item_kind_id" id="item_kind_id" required="" class="easyui-combobox">
-            </div>
-            <div class="fitem">
-                <span style="width:35%; display:inline-block;">Code Box</span>
-                <input style="width:60%;" name="code" id="code" required="" class="easyui-textbox">
-            </div>
-            <div class="fitem">
-                <span style="width:35%; display:inline-block;">Name</span>
-                <input style="width:60%;" name="name" id="name" required="" class="easyui-textbox">
-            </div>
-            <div class="fitem">
-                <span style="width:35%; display:inline-block;">Size</span>
-                <input style="width:60%;" name="size" id="size" required="" class="easyui-textbox">
-            </div>
-            <div class="fitem">
-                <span style="width:35%; display:inline-block;">Volume</span>
-                <input style="width:60%;" name="volume" id="volume" required="" class="easyui-numberbox">
-            </div>
-            <div class="fitem">
-                <span style="width:35%; display:inline-block;">Color</span>
-                <input style="width:60%;" name="color" id="color" required="" class="easyui-combobox">
-            </div>
-            <div class="fitem">
-                <span style="width:35%; display:inline-block;">Material</span>
-                <input style="width:60%;" name="material" id="material" required="" class="easyui-textbox">
-            </div>
-            <div class="fitem">
-                <span style="width:35%; display:inline-block;">Unit of Measure</span>
-                <input style="width:60%;" name="uom" id="uom" required="" class="easyui-combobox">
-            </div>
-            <div class="fitem">
-                <span style="width:35%; display:inline-block;">Attachment</span>
-                <input style="width:60%;" name="attachment" id="attachment" class="easyui-filebox">
+            <div style="float:left; width:50%;">
+                <div class="fitem">
+                    <span style="width:35%; display:inline-block;">Size</span>
+                    <input style="width:60%;" name="size" id="size" required="" class="easyui-textbox">
+                </div>
+                <div class="fitem">
+                    <span style="width:35%; display:inline-block;">Volume</span>
+                    <input style="width:60%;" name="volume" id="volume" required="" class="easyui-numberbox">
+                </div>
+                <div class="fitem">
+                    <span style="width:35%; display:inline-block;">Color</span>
+                    <input style="width:60%;" name="color" id="color" required="" class="easyui-combobox">
+                </div>
+                <div class="fitem">
+                    <span style="width:35%; display:inline-block;">Material</span>
+                    <input style="width:60%;" name="material" id="material" required="" class="easyui-textbox">
+                </div>
+                <div class="fitem">
+                    <span style="width:35%; display:inline-block;">Unit of Measure</span>
+                    <input style="width:60%;" name="uom" id="uom" required="" class="easyui-combobox">
+                </div>
+                <div class="fitem">
+                    <span style="width:35%; display:inline-block;">Attachment</span>
+                    <input style="width:60%;" name="attachment" id="attachment" class="easyui-filebox">
+                </div>
             </div>
         </fieldset>
     </form>
@@ -200,6 +219,41 @@
                     });
                 }
             }]
+        });
+
+        function calculateBox() {
+            let length = parseFloat($('#length').numberbox('getValue')) || 0;
+            let width  = parseFloat($('#width').numberbox('getValue')) || 0;
+            let height = parseFloat($('#height').numberbox('getValue')) || 0;
+
+            // hitung volume jika semua > 0
+            if (length > 0 && width > 0 && height > 0) {
+                let volume = length * width * height;
+                $('#volume').numberbox('setValue', volume);
+
+                // set size juga
+                let sizeText = length + " x " + width + " x " + height + " mm";
+                $('#size').textbox('setValue', sizeText);
+            }
+        }
+
+        // event untuk 3 inputan
+        $('#length').numberbox({
+            onChange: function() {
+                calculateBox();
+            }
+        });
+
+        $('#width').numberbox({
+            onChange: function() {
+                calculateBox();
+            }
+        });
+
+        $('#height').numberbox({
+            onChange: function() {
+                calculateBox();
+            }
         });
     });
 
