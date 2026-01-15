@@ -315,10 +315,6 @@
                                     type: "0"
                                 },
                                 {
-                                    name: "CRUSHER",
-                                    type: "100"
-                                },
-                                {
                                     name: "BOTH",
                                     type: ""
                                 },
@@ -346,6 +342,7 @@
                 }, {
                     field: 'recyle',
                     width: 80,
+                    hidden: true,
                     align: 'center',
                     title: "Crusher",
                     editor: {
@@ -601,6 +598,7 @@
                         }, {
                             field: 'recyle',
                             title: 'Crusher',
+                            hidden: true,
                             width: 100,
                             halign: 'center',
                             align: 'right',
