@@ -20,6 +20,7 @@
             <th rowspan="2" data-options="field:'division_name',width:100,halign:'center'">Division</th>
             <th rowspan="2" data-options="field:'plant',width:200,halign:'center'">Plant</th>
             <th rowspan="2" data-options="field:'type',width:100,align:'center'">Type</th>
+            <th rowspan="2" data-options="field:'item_fg_id',width:130,align:';left'">Product Id</th>
             <th rowspan="2" data-options="field:'item_fg_number',width:120,align:'left'">Product No</th>
             <th rowspan="2" data-options="field:'item_fg_name',width:200,align:'left'">Product Name</th>
             <th rowspan="2" data-options="field:'item_fg_customer',width:120,align:'left'">Product Customer</th>
@@ -41,31 +42,40 @@
 </table>
 
 <!-- TOOLBAR DATAGRID -->
-<div id="toolbar" style="height: 270px; padding: 10px;">
+<div id="toolbar" style="height: 200px; padding: 10px;">
     <!-- <div style="width: 100%; display: grid; grid-template-columns: auto auto auto; grid-gap: 5px; display: flex;"> -->
     <div style="width: 100%;">
-        <fieldset style="width: 45%; border:2px solid #d0d0d0; margin-bottom: 5px; margin-top: 5px; border-radius:4px;">
+        <fieldset style="width: 50%; border:2px solid #d0d0d0; margin-bottom: 5px; margin-top: 5px; border-radius:4px;">
             <legend><b>Form Filter Data</b></legend>
-            <div class="fitem">
-                <span style="width:35%; display:inline-block;">Customer</span>
-                <input style="width:60%;" id="filter_customer_id" class="easyui-combogrid">
+            <div style="width: 50%; float: left;">
+                <div class="fitem">
+                    <span style="width:35%; display:inline-block;">Customer</span>
+                    <input style="width:60%;" id="filter_customer_id" class="easyui-combogrid">
+                </div>
+                <div class="fitem">
+                    <span style="width:35%; display:inline-block;">Division</span>
+                    <input style="width:60%;" id="filter_division_id" class="easyui-combobox">
+                </div>
+                <div class="fitem">
+                    <span style="width:35%; display:inline-block;">Plant</span>
+                    <input style="width:60%;" id="filter_customer_address_id" class="easyui-combogrid">
+                </div>
             </div>
-            <div class="fitem">
-                <span style="width:35%; display:inline-block;">Division</span>
-                <input style="width:60%;" id="filter_division_id" class="easyui-combobox">
+            <div style="width: 50%; float: left;">
+                <div class="fitem">
+                    <span style="width:35%; display:inline-block;">Product Id</span>
+                    <input style="width:60%;" id="filter_item_fg_id" class="easyui-combogrid">
+                </div>
+                <div class="fitem">
+                    <span style="width:35%; display:inline-block;">Product No</span>
+                    <input style="width:60%;" id="filter_item_fg_number" class="easyui-combogrid">
+                </div>
+                <div class="fitem">
+                    <span style="width:35%; display:inline-block;"></span>
+                    <a href="javascript:;" class="easyui-linkbutton" onclick="filter()"><i class="fa fa-search"></i> Filter Data</a>
+                </div>
             </div>
-            <div class="fitem">
-                <span style="width:35%; display:inline-block;">Plant</span>
-                <input style="width:60%;" id="filter_customer_address_id" class="easyui-combogrid">
-            </div>
-            <div class="fitem">
-                <span style="width:35%; display:inline-block;">Product No</span>
-                <input style="width:60%;" id="filter_item_fg_id" class="easyui-combogrid">
-            </div>
-            <div class="fitem">
-                <span style="width:35%; display:inline-block;"></span>
-                <a href="javascript:;" class="easyui-linkbutton" onclick="filter()"><i class="fa fa-search"></i> Filter Data</a>
-            </div>
+            
         </fieldset>
         <?= $button ?>
         <a href="javascript:void(0)" class="easyui-linkbutton" data-options="plain:true" onclick="$('#dlg_help').dialog('open');"><i class="fa fa-info"></i> Help</a>
@@ -554,11 +564,12 @@
     function filter() {
         var filter_customer_id = $("#filter_customer_id").combogrid('getValue');
         var filter_item_fg_id = $("#filter_item_fg_id").combogrid('getValue');
+        var filter_item_fg_number = $("#filter_item_fg_number").combogrid('getValue');
         var filter_division_id = $("#filter_division_id").combobox('getValue');
         var filter_customer_address_id = $("#filter_customer_address_id").combogrid('getValue');
 
         var url = "?filter_customer_id=" + window.btoa(filter_customer_id) +
-            "&filter_item_fg_id=" + window.btoa(filter_item_fg_id) + 
+            "&filter_item_fg_id=" + window.btoa(filter_item_fg_id) + "&filter_item_fg_number=" + window.btoa(filter_item_fg_number) + 
             "&filter_division_id=" + window.btoa(filter_division_id) + 
             "&filter_customer_address_id=" + window.btoa(filter_customer_address_id);
 
@@ -579,11 +590,12 @@
     function excel() {
         var filter_customer_id = $("#filter_customer_id").combogrid('getValue');
         var filter_item_fg_id = $("#filter_item_fg_id").combogrid('getValue');
+        var filter_item_fg_number = $("#filter_item_fg_number").combogrid('getValue');
         var filter_division_id = $("#filter_division_id").combobox('getValue');
         var filter_customer_address_id = $("#filter_customer_address_id").combogrid('getValue');
 
         var url = "?filter_customer_id=" + window.btoa(filter_customer_id) +
-            "&filter_item_fg_id=" + window.btoa(filter_item_fg_id) + 
+            "&filter_item_fg_id=" + window.btoa(filter_item_fg_id) + "&filter_item_fg_number=" + window.btoa(filter_item_fg_number) + 
             "&filter_division_id=" + window.btoa(filter_division_id) + 
             "&filter_customer_address_id=" + window.btoa(filter_customer_address_id);
 
@@ -889,16 +901,43 @@
         url: '<?= base_url('master/item_fg/reads'); ?>',
         panelWidth: 500,
         idField: 'id',
+        textField: 'id',
+        mode: 'remote',
+        fitColumns: true,
+        prompt: "Choose Product Id.",
+        columns: [
+            [{
+                field: 'id',
+                title: 'Product ID',
+                width: 200
+            }, {
+                field: 'number',
+                title: 'Product No.',
+                width: 150
+            }, {
+                field: 'name',
+                title: 'Product Name',
+                width: 150
+            }]
+        ],
+        icons: [{
+            iconCls: 'icon-clear',
+            handler: function(e) {
+                $(e.data.target).combogrid('clear').combogrid('textbox').focus();
+            }
+        }],
+    });
+
+    $('#filter_item_fg_number').combogrid({
+        url: '<?= base_url('master/item_fg/reads'); ?>',
+        panelWidth: 500,
+        idField: 'number',
         textField: 'number',
         mode: 'remote',
         fitColumns: true,
         prompt: "Choose Product No.",
         columns: [
             [{
-                field: 'id',
-                title: 'Product ID',
-                width: 180
-            }, {
                 field: 'number',
                 title: 'Product No.',
                 width: 150
@@ -909,7 +948,7 @@
             }, {
                 field: 'number_customer',
                 title: 'Product Customer',
-                width: 180
+                width: 200
             }, ]
         ],
         icons: [{

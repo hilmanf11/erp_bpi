@@ -64,6 +64,7 @@ class Customer_items extends CI_Controller
             $get = $this->input->get();
             $filter_customer_id = @base64_decode($get['filter_customer_id']);
             $filter_item_fg_id = @base64_decode($get['filter_item_fg_id']);
+            $filter_item_fg_number = @base64_decode($get['filter_item_fg_number']);
             $filter_division_id = @base64_decode($get['filter_division_id']);
             $filter_customer_address_id = @base64_decode($get['filter_customer_address_id']);
 
@@ -104,6 +105,7 @@ class Customer_items extends CI_Controller
             $this->db->join('item_fg e', 'a.item_fg_id = e.id');
             $this->db->like('a.customer_id', $filter_customer_id);
             $this->db->like('a.item_fg_id', $filter_item_fg_id);
+            $this->db->like('e.number', $filter_item_fg_number);
             $this->db->like('a.division_id', $filter_division_id);
             $this->db->like('a.customer_address_id', $filter_customer_address_id);
             $this->db->order_by('b.id', 'ASC');
@@ -405,6 +407,7 @@ class Customer_items extends CI_Controller
         $get = $this->input->get();
         $filter_customer_id = @base64_decode($get['filter_customer_id']);
         $filter_item_fg_id = @base64_decode($get['filter_item_fg_id']);
+        $filter_item_fg_number = @base64_decode($get['filter_item_fg_number']);
         $filter_division_id = @base64_decode($get['filter_division_id']);
         $filter_customer_address_id = @base64_decode($get['filter_customer_address_id']);
 
@@ -428,6 +431,7 @@ class Customer_items extends CI_Controller
         $this->db->join('customer_address e', 'a.customer_address_id = e.id','left');
         $this->db->like('a.customer_id', $filter_customer_id);
         $this->db->like('a.item_fg_id', $filter_item_fg_id);
+        $this->db->like('c.number', $filter_item_fg_number);
         $this->db->like('a.division_id', $filter_division_id);
         $this->db->like('a.customer_address_id', $filter_customer_address_id);
         $this->db->order_by('a.id', 'ASC');
