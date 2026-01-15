@@ -576,34 +576,37 @@ class Inventory_rm_standard_actual extends CI_Controller
                     <th colspan="15">IN</th>
                     <th colspan="35">OUT</th>
                 </tr>';
+        
+        $variance_title = "VARIANCE = Amount Actual - Amount Standard";
+        $out_amount_title = "OUT = (Amount BEGIN + Amount IN) / (Qty BEGIN + Qty IN)";
 
         // SUMMARY
         $html .= '<tr class="bg-yellow">
                 <th rowspan="3" class="bg-grey">QTY</th>
                 <th rowspan="2" colspan="2" style="background-color: #D1FFC6;">STANDARD</th>
                 <th rowspan="2" colspan="2" style="background-color: #CFE6F9;">ACTUAL</th>
-                <td rowspan="3" class="has-tooltip" data-tooltip="VARIANCE = Amount Actual - Amount Standard">
+                <td rowspan="3" class="has-tooltip" data-tooltip="' . $variance_title . '">
                     VARIANCE
                 </td>
 
                 <th rowspan="3" class="bg-grey">QTY</th>
                 <th rowspan="2" colspan="2" style="background-color: #D1FFC6;">STANDARD</th>
                 <th rowspan="2" colspan="2" style="background-color: #CFE6F9;">ACTUAL</th>
-                <td rowspan="3" class="has-tooltip" data-tooltip="VARIANCE = Amount Actual - Amount Standard">
+                <td rowspan="3" class="has-tooltip" data-tooltip="' . $variance_title . '">
                     VARIANCE
                 </td>
 
                 <th rowspan="3" class="bg-grey">QTY</th>
                 <th rowspan="2" colspan="2" style="background-color: #D1FFC6;">STANDARD</th>
                 <th rowspan="2" colspan="2" style="background-color: #CFE6F9;">ACTUAL</th>
-                <td rowspan="3" class="has-tooltip" data-tooltip="VARIANCE = Amount Actual - Amount Standard">
+                <td rowspan="3" class="has-tooltip" data-tooltip="' . $variance_title . '">
                     VARIANCE
                 </td>
 
                 <th rowspan="3" class="bg-grey">QTY</th>
                 <th rowspan="2" colspan="2" style="background-color: #D1FFC6;">STANDARD</th>
                 <th rowspan="2" colspan="2" style="background-color: #CFE6F9;">ACTUAL</th>
-                <td rowspan="3" class="has-tooltip" data-tooltip="VARIANCE = Amount Actual - Amount Standard">
+                <td rowspan="3" class="has-tooltip" data-tooltip="' . $variance_title . '">
                     VARIANCE
                 </td>
             ';
@@ -675,9 +678,9 @@ class Inventory_rm_standard_actual extends CI_Controller
                 <th style="background-color: #CFE6F9;">AMOUNT</th>
                 
                 <th style="background-color: #D1FFC6;">PRICE</th>
-                <th style="background-color: #D1FFC6;">AMOUNT</th>
+                <th style="background-color: #D1FFC6;" class="has-tooltip" data-tooltip="' . $out_amount_title . '">AMOUNT</th>
                 <th style="background-color: #CFE6F9;">PRICE</th>
-                <th style="background-color: #CFE6F9;">AMOUNT</th>
+                <th style="background-color: #CFE6F9;" class="has-tooltip" data-tooltip="' . $out_amount_title . '">AMOUNT</th>
                 
                 <th style="background-color: #D1FFC6;">PRICE</th>
                 <th style="background-color: #D1FFC6;">AMOUNT</th>
@@ -764,10 +767,14 @@ class Inventory_rm_standard_actual extends CI_Controller
         $standard_price = 0;
         $rate = 1;
 
-        $beginAmountSTD    = 0;
-        $beginAmountActual = 0;
-        $inAmountSTD       = 0;
-        $inAmountActual    = 0;
+        $beginAmountSTD     = 0;
+        $beginAmountActual  = 0;
+        $inAmountSTD        = 0;
+        $inAmountActual     = 0;
+        $outAmountSTD       = 0;
+        $outAmountActual    = 0;
+        $endingAmountSTD    = 0;
+        $endingAmountActual = 0;
 
         foreach ($records as $record) {
             $item_rm_id = $record->id;
@@ -828,14 +835,50 @@ class Inventory_rm_standard_actual extends CI_Controller
             $beginAmountActual += $begin_actual_amount;
 
             // ---- IN ----
-            $in_qty = $record->qty_in;
+            $in_qty             = $record->qty_in;
             $in_standard_amount = $standard_price * $in_qty;
-            $in_actual_price = $record->actual_price_in * $rate;
-            $in_actual_amount = $in_actual_price * $in_qty;
-            $in_variance = $in_actual_amount - $in_standard_amount;
+            $in_actual_price    = $record->actual_price_in * $rate;
+            $in_actual_amount   = $in_actual_price * $in_qty;
+            $in_variance        = $in_actual_amount - $in_standard_amount;
 
             $inAmountSTD += $in_standard_amount;
             $inAmountActual += $in_actual_amount;
+
+            // ---- OUT ---- 
+            // OUT = (Amount BEGIN + Amount IN) / (Qty BEGIN + Qty IN)
+            $out_qty             = $record->qty_out;
+            $out_standard_amount = $standard_price * $out_qty;
+
+            $out_actual_price = 0;
+            if (($begin_qty + $in_qty) > 0) {
+                $out_actual_price = ($begin_actual_amount + $in_actual_amount) / ($begin_qty + $in_qty);
+            }
+
+            $out_actual_amount   = $out_actual_price * $out_qty;
+            $out_variance        = $out_actual_amount - $out_standard_amount;
+
+            $outAmountSTD += $out_standard_amount;
+            $outAmountActual += $out_actual_amount;
+
+            // ---- ENDING ----
+            // QTY BALANCE = qty begin + qty in - qty out
+            $ending_qty = ((@$record->begin_stock + $record->qty_in) - $record->qty_out);
+
+            // AMOUNT BALANCE = amount begin + amount in - amount out 
+            $ending_actual_amount = ($begin_actual_amount + $in_actual_amount) - $out_actual_amount;
+
+            // PRICE BALANCE = amount ending / qty ending
+            $ending_actual_price = 0;
+            if ($ending_qty > 0) {
+                $ending_actual_price = $ending_actual_amount / $ending_qty;
+            }
+
+            $ending_standard_amount = ($standard_price * ((@$record->begin_stock + $record->qty_in) - $record->qty_out));
+            $ending_variance = $ending_actual_amount - $ending_standard_amount;
+
+            $endingAmountSTD += $ending_standard_amount;
+            $endingAmountActual += $ending_actual_amount;
+
 
             $html .= '  <tr>
                             <td style="text-align:center">' . $no . '</td>
@@ -864,16 +907,16 @@ class Inventory_rm_standard_actual extends CI_Controller
                             <td style="text-align:right;">' . number_format($record->qty_out, 2) . '</td>
                             <td style="text-align:right;">' . number_format($standard_price, 2) . '</td>
                             <td style="text-align:right;">' . number_format($standard_price * $record->qty_out, 2) . '</td>
-                            <td></td>
-                            <td></td>
-                            <td></td>
+                            <td style="text-align:right;">' . number_format($out_actual_price, 2) . '</td>
+                            <td style="text-align:right;">' . number_format($out_actual_amount, 2) . '</td>
+                            <td style="text-align:right;">' . number_format($out_variance, 2) . '</td>
 
                             <td style="text-align:right;">' . number_format((@$record->begin_stock + $record->qty_in) - $record->qty_out, 2) . '</td>
                             <td style="text-align:right;">' . number_format($standard_price, 2) . '</td>
                             <td style="text-align:right;">' . number_format($standard_price * ((@$record->begin_stock + $record->qty_in) - $record->qty_out), 2) . '</td>
-                            <td></td>
-                            <td></td>
-                            <td></td>
+                            <td style="text-align:right;">' . number_format($ending_actual_price, 2) . '</td>
+                            <td style="text-align:right;">' . number_format($ending_actual_amount, 2) . '</td>
+                            <td style="text-align:right;">' . number_format($ending_variance, 2) . '</td>
                             
                             <td style="text-align:right;">' . $record->receipt_qty . '</td>
                             <td style="text-align:right;">' . number_format($standard_price, 2) . '</td>
@@ -957,17 +1000,17 @@ class Inventory_rm_standard_actual extends CI_Controller
 
             <td style="text-align:right;">' . number_format($totalOut, 2) . '</td>
             <td></td>
+            <td style="text-align:right;">' . number_format($outAmountSTD, 2) . '</td>
             <td></td>
-            <td></td>
-            <td></td>
-            <td></td>
+            <td style="text-align:right;">' . number_format($outAmountActual, 2) . '</td>
+            <td style="text-align:right;">' . number_format($outAmountSTD - $outAmountActual, 2) . '</td>
 
             <td style="text-align:right;">' . number_format($totalEndingStock, 2) . '</td>
             <td></td>
+            <td style="text-align:right;">' . number_format($endingAmountSTD, 2) . '</td>
             <td></td>
-            <td></td>
-            <td></td>
-            <td></td>
+            <td style="text-align:right;">' . number_format($endingAmountActual, 2) . '</td>
+            <td style="text-align:right;">' . number_format($endingAmountSTD - $endingAmountActual, 2) . '</td>
 
 
             <td style="text-align:right;">' . number_format($totalReceiptQty, 2) . '</td>
