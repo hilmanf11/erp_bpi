@@ -61,7 +61,7 @@
             </div>
             <div class="fitem">
                 <span style="width:35%; display:inline-block;">Density</span>
-                <input style="width:60%;" name="density" id="density" required="" class="easyui-numberbox" data-options="precision:2">
+                <input style="width:60%;" name="density" id="density" required="" class="easyui-numberbox" data-options="precision:3">
             </div>
             <div class="fitem">
                 <span style="width:35%; display:inline-block;">Description</span>
