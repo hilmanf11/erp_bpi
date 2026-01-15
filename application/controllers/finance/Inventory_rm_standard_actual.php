@@ -279,6 +279,57 @@ class Inventory_rm_standard_actual extends CI_Controller
                     
                     /* Warna Header */
                     .bg-grand-total { background-color: #cfffcc; }
+
+                    /* Tooltip */
+                    .has-tooltip {
+                        position: relative;
+                        cursor: help; /* Mengubah kursor menjadi tanda tanya */
+                    }
+
+                    /* Membuat kotak tooltip */
+                    .has-tooltip::after {
+                        content: attr(data-tooltip); /* Mengambil teks dari data-tooltip */
+                        position: absolute;
+                        bottom: 125%; /* Muncul di atas sel */
+                        left: 50%;
+                        transform: translateX(-50%);
+                        background-color: #333;
+                        color: #fff;
+                        padding: 5px 10px;
+                        border-radius: 4px;
+                        white-space: nowrap;
+                        font-size: 14px;
+                        visibility: hidden;
+                        opacity: 0;
+                        transition: opacity 0.3s;
+                        z-index: 10;
+                    }
+
+                    /* Munculkan saat hover */
+                    .has-tooltip:hover::after {
+                        visibility: visible;
+                        opacity: 1;
+                    }
+
+                    /* Opsional: Tambahkan panah kecil di bawah tooltip */
+                    .has-tooltip::before {
+                        content: "";
+                        position: absolute;
+                        bottom: 115%;
+                        left: 50%;
+                        transform: translateX(-50%);
+                        border-width: 5px;
+                        border-style: solid;
+                        border-color: #333 transparent transparent transparent;
+                        visibility: hidden;
+                        opacity: 0;
+                        transition: opacity 0.3s;
+                    }
+
+                    .has-tooltip:hover::before {
+                        visibility: visible;
+                        opacity: 1;
+                    }
                     </style>';
         return $css;
     }
@@ -332,6 +383,7 @@ class Inventory_rm_standard_actual extends CI_Controller
             c.name as category_name, 
             std_price.price AS standard_price,
             std_price.currency AS standard_currency,
+            MAX(po.price) actual_price_in,
 
             COALESCE(x.begin_stock) AS begin_stock,
             COALESCE(d.qty_scan_in,0) as receipt_qty, 
@@ -360,6 +412,14 @@ class Inventory_rm_standard_actual extends CI_Controller
             LEFT JOIN (SELECT b.item_rm_id, SUM(a.qty) AS qty_scan_in FROM scan_item_receipts a JOIN purchase_order_receipts b ON a.receipt_id = b.receipt_id WHERE b.receipt_date BETWEEN '$filter_from' AND '$filter_to' GROUP BY b.item_rm_id) d ON a.id = d.item_rm_id
             LEFT JOIN item_family_subs l ON a.item_sub_family_id = l.id
             LEFT JOIN (SELECT item_rm_id, COALESCE(SUM(qty), 0) as qty FROM issued_material_details WHERE DATE_FORMAT(created_date, '%Y-%m-%d') between '$filter_from' and '$filter_to' GROUP BY item_rm_id) f ON a.id = f.item_rm_id
+
+            LEFT JOIN (
+                SELECT b.item_rm_id, SUM(a.qty) AS qty_scan_in, c.po_no, c.price 
+                FROM scan_item_receipts a 
+                JOIN purchase_order_receipts b ON a.receipt_id = b.receipt_id 
+                JOIN purchase_orders c ON c.po_no = b.po_no AND c.item_rm_id = b.item_rm_id
+                WHERE b.receipt_date BETWEEN '$filter_from' AND '$filter_to' GROUP BY b.item_rm_id
+            ) po ON a.id = po.item_rm_id
 
             LEFT JOIN (SELECT item_rm_id, SUM(qty) AS qty_issued FROM issued_material_details WHERE DATE_FORMAT(created_date, '%Y-%m-%d') BETWEEN '$filter_from_minus1' AND '$filter_to_minus1' GROUP BY item_rm_id) h1 ON a.id = h1.item_rm_id
             LEFT JOIN (SELECT item_rm_id, SUM(qty) AS qty_trans_rm_out FROM transaction_rm WHERE request_date BETWEEN '$filter_from_minus1' AND '$filter_to_minus1' AND transaction_kind = 'OUT' GROUP BY item_rm_id) i1 ON a.id = i1.item_rm_id
@@ -508,17 +568,48 @@ class Inventory_rm_standard_actual extends CI_Controller
                 </tr>
 
                 <tr style="background-color:#d5d5d5;">
-                    <th rowspan="2" colspan="6" width="100">BEGIN</th>
-                    <th rowspan="2" colspan="6" width="100">IN</th>
-                    <th rowspan="2" colspan="6" width="100">OUT</th>
-                    <th rowspan="2" colspan="6" width="100">ENDING</th>
+                    <th colspan="6" width="100">BEGIN</th>
+                    <th colspan="6" width="100">IN</th>
+                    <th colspan="6" width="100">OUT</th>
+                    <th colspan="6" width="100">ENDING</th>
 
                     <th colspan="15">IN</th>
                     <th colspan="35">OUT</th>
-                </tr>
+                </tr>';
 
-                <tr class="bg-yellow">
-                    <th colspan="5">Purchase</th>
+        // SUMMARY
+        $html .= '<tr class="bg-yellow">
+                <th rowspan="3" class="bg-grey">QTY</th>
+                <th rowspan="2" colspan="2" style="background-color: #D1FFC6;">STANDARD</th>
+                <th rowspan="2" colspan="2" style="background-color: #CFE6F9;">ACTUAL</th>
+                <td rowspan="3" class="has-tooltip" data-tooltip="VARIANCE = Amount Actual - Amount Standard">
+                    VARIANCE
+                </td>
+
+                <th rowspan="3" class="bg-grey">QTY</th>
+                <th rowspan="2" colspan="2" style="background-color: #D1FFC6;">STANDARD</th>
+                <th rowspan="2" colspan="2" style="background-color: #CFE6F9;">ACTUAL</th>
+                <td rowspan="3" class="has-tooltip" data-tooltip="VARIANCE = Amount Actual - Amount Standard">
+                    VARIANCE
+                </td>
+
+                <th rowspan="3" class="bg-grey">QTY</th>
+                <th rowspan="2" colspan="2" style="background-color: #D1FFC6;">STANDARD</th>
+                <th rowspan="2" colspan="2" style="background-color: #CFE6F9;">ACTUAL</th>
+                <td rowspan="3" class="has-tooltip" data-tooltip="VARIANCE = Amount Actual - Amount Standard">
+                    VARIANCE
+                </td>
+
+                <th rowspan="3" class="bg-grey">QTY</th>
+                <th rowspan="2" colspan="2" style="background-color: #D1FFC6;">STANDARD</th>
+                <th rowspan="2" colspan="2" style="background-color: #CFE6F9;">ACTUAL</th>
+                <td rowspan="3" class="has-tooltip" data-tooltip="VARIANCE = Amount Actual - Amount Standard">
+                    VARIANCE
+                </td>
+            ';
+
+        // DETAIL                
+        $html .= '<th colspan="5">Purchase</th>
                     <th colspan="5">BPM</th>
                     <th colspan="5">ADJ STO</th>
 
@@ -530,30 +621,6 @@ class Inventory_rm_standard_actual extends CI_Controller
                     <th colspan="5">BPB</th>
                     <th colspan="5">ADJ STO</th>
                 </tr>';
-                    
-        // SUMMARY
-        $html .= '<tr>
-                <th rowspan="2" class="bg-grey">QTY</th>
-                <th colspan="2" style="background-color: #D1FFC6;">STANDARD</th>
-                <th colspan="2" style="background-color: #CFE6F9;">ACTUAL</th>
-                <th rowspan="2">VARIANCE</th>
-
-                <th rowspan="2" class="bg-grey">QTY</th>
-                <th colspan="2" style="background-color: #D1FFC6;">STANDARD</th>
-                <th colspan="2" style="background-color: #CFE6F9;">ACTUAL</th>
-                <th rowspan="2">VARIANCE</th>
-
-                <th rowspan="2" class="bg-grey">QTY</th>
-                <th colspan="2" style="background-color: #D1FFC6;">STANDARD</th>
-                <th colspan="2" style="background-color: #CFE6F9;">ACTUAL</th>
-                <th rowspan="2">VARIANCE</th>
-
-                <th rowspan="2" class="bg-grey">QTY</th>
-                <th colspan="2" style="background-color: #D1FFC6;">STANDARD</th>
-                <th colspan="2" style="background-color: #CFE6F9;">ACTUAL</th>
-                <th rowspan="2">VARIANCE</th>';
-
-        // DETAIL
         $html .= '
                 <th rowspan="2" class="bg-grey">QTY</th>
                 <th colspan="2" style="background-color: #D1FFC6;">STANDARD</th>
@@ -697,6 +764,11 @@ class Inventory_rm_standard_actual extends CI_Controller
         $standard_price = 0;
         $rate = 1;
 
+        $beginAmountSTD    = 0;
+        $beginAmountActual = 0;
+        $inAmountSTD       = 0;
+        $inAmountActual    = 0;
+
         foreach ($records as $record) {
             $item_rm_id = $record->id;
 
@@ -743,6 +815,28 @@ class Inventory_rm_standard_actual extends CI_Controller
 
             $standard_price = $record->standard_price * $rate;
 
+            // ---- BEGIN ----
+            // actual begin price dari upload user 
+            // sementara menggunakan standard_price
+            $begin_qty             = @$record->begin_stock;
+            $begin_standard_amount = $standard_price * $begin_qty;
+            $begin_actual_price    = $standard_price;
+            $begin_actual_amount   = $begin_actual_price * $begin_qty;
+            $begin_variance        = $begin_actual_amount - $begin_standard_amount;
+
+            $beginAmountSTD += $begin_standard_amount;
+            $beginAmountActual += $begin_actual_amount;
+
+            // ---- IN ----
+            $in_qty = $record->qty_in;
+            $in_standard_amount = $standard_price * $in_qty;
+            $in_actual_price = $record->actual_price_in * $rate;
+            $in_actual_amount = $in_actual_price * $in_qty;
+            $in_variance = $in_actual_amount - $in_standard_amount;
+
+            $inAmountSTD += $in_standard_amount;
+            $inAmountActual += $in_actual_amount;
+
             $html .= '  <tr>
                             <td style="text-align:center">' . $no . '</td>
                             <td>' . $record->number . '</td>
@@ -756,16 +850,16 @@ class Inventory_rm_standard_actual extends CI_Controller
                             <td style="text-align:right;">' . number_format(@$record->begin_stock, 2) . '</td>
                             <td style="text-align:right;">' . number_format($standard_price, 2) . '</td>
                             <td style="text-align:right;">' . number_format($standard_price * @$record->begin_stock, 2) . '</td>
-                            <td></td>
-                            <td></td>
-                            <td></td>
+                            <td style="text-align:right;">' . number_format($begin_actual_price, 2) . '</td>
+                            <td style="text-align:right;">' . number_format($begin_actual_amount, 2) . '</td>
+                            <td style="text-align:right;">' . number_format($begin_variance, 2) . '</td>                            
 
                             <td style="text-align:right;">' . number_format($record->qty_in, 2) . '</td>
                             <td style="text-align:right;">' . number_format($standard_price, 2) . '</td>
                             <td style="text-align:right;">' . number_format($standard_price * $record->qty_in, 2) . '</td>
-                            <td></td>
-                            <td></td>
-                            <td></td>
+                            <td style="text-align:right;">' . number_format($in_actual_price, 2) . '</td>
+                            <td style="text-align:right;">' . number_format($in_actual_amount, 2) . '</td>
+                            <td style="text-align:right;">' . number_format($in_variance, 2) . '</td>
 
                             <td style="text-align:right;">' . number_format($record->qty_out, 2) . '</td>
                             <td style="text-align:right;">' . number_format($standard_price, 2) . '</td>
@@ -845,21 +939,21 @@ class Inventory_rm_standard_actual extends CI_Controller
             $no++;
         }
 
-        $html .= '<tr class="bg-blue">
+        $html .= '<tr>
             <td colspan="8" style="text-align:right;"><b>GRAND TOTAL</b></td>
             <td style="text-align:right;">' . number_format($totalBeginStock, 2) . '</td>
             <td></td>
+            <td style="text-align:right;">' . number_format($beginAmountSTD, 2) . '</td>
             <td></td>
-            <td></td>
-            <td></td>
-            <td></td>
+            <td style="text-align:right;">' . number_format($beginAmountActual, 2) . '</td>
+            <td style="text-align:right;">' . number_format($beginAmountActual - $beginAmountSTD, 2) . '</td>
 
             <td style="text-align:right;">' . number_format($totalIn, 2) . '</td>
             <td></td>
+            <td style="text-align:right;">' . number_format($inAmountSTD, 2) . '</td>
             <td></td>
-            <td></td>
-            <td></td>
-            <td></td>
+            <td style="text-align:right;">' . number_format($inAmountActual, 2) . '</td>
+            <td style="text-align:right;">' . number_format($inAmountSTD - $inAmountActual, 2) . '</td>
 
             <td style="text-align:right;">' . number_format($totalOut, 2) . '</td>
             <td></td>
@@ -3801,6 +3895,4 @@ class Inventory_rm_standard_actual extends CI_Controller
         $html .= '</table></body></html>';
         echo $html;
     }
-
-    
 }
