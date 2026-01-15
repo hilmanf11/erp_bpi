@@ -1664,7 +1664,7 @@
         }
 
         $.ajax({
-            url: '<?= base_url("sales/sales_orders/checkSalesInvoice/"); ?>' + sales_order_no + '/' + btoa(customer_order_no),
+            url: '<?= base_url("sales/sales_orders/checkSalesInvoice/"); ?>' + sales_order_no + '/' + btoa(customer_order_no) + '/' + btoa(item_fg_id),
             method: 'GET',
             dataType: 'json',
             success: function(response) {
