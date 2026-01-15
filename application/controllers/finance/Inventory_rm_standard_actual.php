@@ -330,6 +330,9 @@ class Inventory_rm_standard_actual extends CI_Controller
             l.name as sub_prodfam, 
             a.uom,
             c.name as category_name, 
+            std_price.price AS standard_price,
+            std_price.currency AS standard_currency,
+
             COALESCE(x.begin_stock) AS begin_stock,
             COALESCE(d.qty_scan_in,0) as receipt_qty, 
             COALESCE(i.qty,0) + COALESCE(o.qty_bpm_scan,0) as bpm_qty, 
@@ -366,6 +369,8 @@ class Inventory_rm_standard_actual extends CI_Controller
             LEFT JOIN (SELECT item_rm_id, SUM(qty) AS qty_trans_rm_out FROM transaction_rm WHERE request_date BETWEEN '$filter_from_minus3' AND '$filter_to_minus3' AND transaction_kind = 'OUT' GROUP BY item_rm_id) i3 ON a.id = i3.item_rm_id
             
             LEFT JOIN (SELECT item_rm_id, SUM(qty) AS qty_stock_rm FROM os_rm WHERE trans_date >= '$filter_from' AND trans_date < DATE_ADD('$filter_to', INTERVAL 1 DAY) GROUP BY item_rm_id) h ON a.id = h.item_rm_id            
+
+            LEFT JOIN (SELECT item_rm_id, currency, price from standard_price_rm where '$filter_from' >= `start_date` and '$filter_to' <= `end_date`) std_price on a.id = std_price.item_rm_id
 
             LEFT JOIN (
                 SELECT a.item_rm_id, a.transaction_kind, a.transaction_type,SUM(a.qty) AS qty
@@ -488,41 +493,181 @@ class Inventory_rm_standard_actual extends CI_Controller
             <br>
             
             <table id="customers" border="1" style="font-size: 11px;">
-                <tr>
-                    <th rowspan="2" width="20">No</th>
-                    <th rowspan="2">Product No</th>
-                    <th rowspan="2">Product Name</th>
-                    <th rowspan="2">Uom</th>
-                    <th rowspan="2">Division</th>
-                    <th rowspan="2">Category</th>
-                    <th rowspan="2">Product Family</th>
-                    <th rowspan="2">Sub Product <br>Family</th>
-                    <th rowspan="2" width="100">Begin<br>Stock</th>
-                    <th rowspan="2" width="100">In</th>
-                    <th rowspan="2" width="100">Out</th>
-                    <th rowspan="2" width="100">Ending<br>Stock</th>
-                    <th colspan="3">IN</th>
-                    <th colspan="7">OUT</th>
-                    <th rowspan="2" width="100">Total<br>In</th>
-                    <th rowspan="2" width="100">Total<br>Out</th>
-                    <th rowspan="2" width="100">Selisih Summary <br>VS Detail (IN)</th>
-                    <th rowspan="2" width="100">Selisih Summary <br>VS Detail (OUT)</th>
-                    <th rowspan="2" width="100">ITO (MONTH)</th>
+                <tr style="background-color: #eee;">
+                    <th rowspan="5" width="20">No</th>
+                    <th rowspan="5">Product No</th>
+                    <th rowspan="5">Product Name</th>
+                    <th rowspan="5">Uom</th>
+                    <th rowspan="5">Division</th>
+                    <th rowspan="5">Category</th>
+                    <th rowspan="5">Product Family</th>
+                    <th rowspan="5">Sub Product Family</th>
+
+                    <th colspan="24">SUMMARY</th>
+                    <th colspan="50">DETAIL</th>
                 </tr>
-                <tr>
-                    <th width="80">Purchase</th>
-                    <th width="80">BPM</th>
-                    <th width="80">ADJ STO</th>
 
-                    <th width="80">Supply Sheet</th>
-                    <th width="80">Material Request</th>
-                    <th width="80">Kanban PRD</th>
-                    <th width="80">Kanban Subcont Jasa</th>
-                    <th width="80">Kanban Subcont Product</th>
-                    <th width="80">BPB</th>
-                    <th width="80">ADJ STO</th>
+                <tr style="background-color:#d5d5d5;">
+                    <th rowspan="2" colspan="6" width="100">BEGIN</th>
+                    <th rowspan="2" colspan="6" width="100">IN</th>
+                    <th rowspan="2" colspan="6" width="100">OUT</th>
+                    <th rowspan="2" colspan="6" width="100">ENDING</th>
+
+                    <th colspan="15">IN</th>
+                    <th colspan="35">OUT</th>
+                </tr>
+
+                <tr class="bg-yellow">
+                    <th colspan="5">Purchase</th>
+                    <th colspan="5">BPM</th>
+                    <th colspan="5">ADJ STO</th>
+
+                    <th colspan="5">Supply Sheet</th>
+                    <th colspan="5">Material Request</th>
+                    <th colspan="5">Kanban PRD</th>
+                    <th colspan="5">Kanban Subcont Jasa</th>
+                    <th colspan="5">Kanban Subcont Product</th>
+                    <th colspan="5">BPB</th>
+                    <th colspan="5">ADJ STO</th>
                 </tr>';
+                    
+        // SUMMARY
+        $html .= '<tr>
+                <th rowspan="2" class="bg-grey">QTY</th>
+                <th colspan="2" style="background-color: #D1FFC6;">STANDARD</th>
+                <th colspan="2" style="background-color: #CFE6F9;">ACTUAL</th>
+                <th rowspan="2">VARIANCE</th>
 
+                <th rowspan="2" class="bg-grey">QTY</th>
+                <th colspan="2" style="background-color: #D1FFC6;">STANDARD</th>
+                <th colspan="2" style="background-color: #CFE6F9;">ACTUAL</th>
+                <th rowspan="2">VARIANCE</th>
+
+                <th rowspan="2" class="bg-grey">QTY</th>
+                <th colspan="2" style="background-color: #D1FFC6;">STANDARD</th>
+                <th colspan="2" style="background-color: #CFE6F9;">ACTUAL</th>
+                <th rowspan="2">VARIANCE</th>
+
+                <th rowspan="2" class="bg-grey">QTY</th>
+                <th colspan="2" style="background-color: #D1FFC6;">STANDARD</th>
+                <th colspan="2" style="background-color: #CFE6F9;">ACTUAL</th>
+                <th rowspan="2">VARIANCE</th>';
+
+        // DETAIL
+        $html .= '
+                <th rowspan="2" class="bg-grey">QTY</th>
+                <th colspan="2" style="background-color: #D1FFC6;">STANDARD</th>
+                <th colspan="2" style="background-color: #CFE6F9;">ACTUAL</th>
+                
+                <th rowspan="2" class="bg-grey">QTY</th>
+                <th colspan="2" style="background-color: #D1FFC6;">STANDARD</th>
+                <th colspan="2" style="background-color: #CFE6F9;">ACTUAL</th>
+
+                <th rowspan="2" class="bg-grey">QTY</th>
+                <th colspan="2" style="background-color: #D1FFC6;">STANDARD</th>
+                <th colspan="2" style="background-color: #CFE6F9;">ACTUAL</th>
+
+                <th rowspan="2" class="bg-grey">QTY</th>
+                <th colspan="2" style="background-color: #D1FFC6;">STANDARD</th>
+                <th colspan="2" style="background-color: #CFE6F9;">ACTUAL</th>
+
+                <th rowspan="2" class="bg-grey">QTY</th>
+                <th colspan="2" style="background-color: #D1FFC6;">STANDARD</th>
+                <th colspan="2" style="background-color: #CFE6F9;">ACTUAL</th>
+
+                <th rowspan="2" class="bg-grey">QTY</th>
+                <th colspan="2" style="background-color: #D1FFC6;">STANDARD</th>
+                <th colspan="2" style="background-color: #CFE6F9;">ACTUAL</th>
+
+                <th rowspan="2" class="bg-grey">QTY</th>
+                <th colspan="2" style="background-color: #D1FFC6;">STANDARD</th>
+                <th colspan="2" style="background-color: #CFE6F9;">ACTUAL</th>
+
+                <th rowspan="2" class="bg-grey">QTY</th>
+                <th colspan="2" style="background-color: #D1FFC6;">STANDARD</th>
+                <th colspan="2" style="background-color: #CFE6F9;">ACTUAL</th>
+
+                <th rowspan="2" class="bg-grey">QTY</th>
+                <th colspan="2" style="background-color: #D1FFC6;">STANDARD</th>
+                <th colspan="2" style="background-color: #CFE6F9;">ACTUAL</th>
+
+                <th rowspan="2" class="bg-grey">QTY</th>
+                <th colspan="2" style="background-color: #D1FFC6;">STANDARD</th>
+                <th colspan="2" style="background-color: #CFE6F9;">ACTUAL</th>
+            </tr>';
+
+        $html .= '<tr>
+                <th style="background-color: #D1FFC6;">PRICE</th>
+                <th style="background-color: #D1FFC6;">AMOUNT</th>
+                <th style="background-color: #CFE6F9;">PRICE</th>
+                <th style="background-color: #CFE6F9;">AMOUNT</th>
+                
+                <th style="background-color: #D1FFC6;">PRICE</th>
+                <th style="background-color: #D1FFC6;">AMOUNT</th>
+                <th style="background-color: #CFE6F9;">PRICE</th>
+                <th style="background-color: #CFE6F9;">AMOUNT</th>
+                
+                <th style="background-color: #D1FFC6;">PRICE</th>
+                <th style="background-color: #D1FFC6;">AMOUNT</th>
+                <th style="background-color: #CFE6F9;">PRICE</th>
+                <th style="background-color: #CFE6F9;">AMOUNT</th>
+                
+                <th style="background-color: #D1FFC6;">PRICE</th>
+                <th style="background-color: #D1FFC6;">AMOUNT</th>
+                <th style="background-color: #CFE6F9;">PRICE</th>
+                <th style="background-color: #CFE6F9;">AMOUNT</th>
+
+
+                <th style="background-color: #D1FFC6;">PRICE</th>
+                <th style="background-color: #D1FFC6;">AMOUNT</th>
+                <th style="background-color: #CFE6F9;">PRICE</th>
+                <th style="background-color: #CFE6F9;">AMOUNT</th>
+                
+                <th style="background-color: #D1FFC6;">PRICE</th>
+                <th style="background-color: #D1FFC6;">AMOUNT</th>
+                <th style="background-color: #CFE6F9;">PRICE</th>
+                <th style="background-color: #CFE6F9;">AMOUNT</th>
+                
+                <th style="background-color: #D1FFC6;">PRICE</th>
+                <th style="background-color: #D1FFC6;">AMOUNT</th>
+                <th style="background-color: #CFE6F9;">PRICE</th>
+                <th style="background-color: #CFE6F9;">AMOUNT</th>
+                
+                <th style="background-color: #D1FFC6;">PRICE</th>
+                <th style="background-color: #D1FFC6;">AMOUNT</th>
+                <th style="background-color: #CFE6F9;">PRICE</th>
+                <th style="background-color: #CFE6F9;">AMOUNT</th>
+                
+                <th style="background-color: #D1FFC6;">PRICE</th>
+                <th style="background-color: #D1FFC6;">AMOUNT</th>
+                <th style="background-color: #CFE6F9;">PRICE</th>
+                <th style="background-color: #CFE6F9;">AMOUNT</th>
+                
+                <th style="background-color: #D1FFC6;">PRICE</th>
+                <th style="background-color: #D1FFC6;">AMOUNT</th>
+                <th style="background-color: #CFE6F9;">PRICE</th>
+                <th style="background-color: #CFE6F9;">AMOUNT</th>
+                
+                <th style="background-color: #D1FFC6;">PRICE</th>
+                <th style="background-color: #D1FFC6;">AMOUNT</th>
+                <th style="background-color: #CFE6F9;">PRICE</th>
+                <th style="background-color: #CFE6F9;">AMOUNT</th>
+                
+                <th style="background-color: #D1FFC6;">PRICE</th>
+                <th style="background-color: #D1FFC6;">AMOUNT</th>
+                <th style="background-color: #CFE6F9;">PRICE</th>
+                <th style="background-color: #CFE6F9;">AMOUNT</th>
+                
+                <th style="background-color: #D1FFC6;">PRICE</th>
+                <th style="background-color: #D1FFC6;">AMOUNT</th>
+                <th style="background-color: #CFE6F9;">PRICE</th>
+                <th style="background-color: #CFE6F9;">AMOUNT</th>
+                
+                <th style="background-color: #D1FFC6;">PRICE</th>
+                <th style="background-color: #D1FFC6;">AMOUNT</th>
+                <th style="background-color: #CFE6F9;">PRICE</th>
+                <th style="background-color: #CFE6F9;">AMOUNT</th>
+            </tr>';
                 
         $no = 1;
         $totalBeginStock = 0;
@@ -548,6 +693,9 @@ class Inventory_rm_standard_actual extends CI_Controller
         $totalQtySelisihOut = 0;
 
         $totalIto = 0;
+
+        $standard_price = 0;
+        $rate = 1;
 
         foreach ($records as $record) {
             $item_rm_id = $record->id;
@@ -592,6 +740,9 @@ class Inventory_rm_standard_actual extends CI_Controller
                 ? number_format($_stock_coverage_numeric, 2)
                 : '0'; // atau bisa diganti jadi '0.00' atau '-'
 
+
+            $standard_price = $record->standard_price * $rate;
+
             $html .= '  <tr>
                             <td style="text-align:center">' . $no . '</td>
                             <td>' . $record->number . '</td>
@@ -601,59 +752,189 @@ class Inventory_rm_standard_actual extends CI_Controller
                             <td>' . $record->category_name . '</td>
                             <td>' . $record->prodfam . '</td>
                             <td>' . $record->sub_prodfam . '</td>
+
                             <td style="text-align:right;">' . number_format(@$record->begin_stock, 2) . '</td>
+                            <td style="text-align:right;">' . number_format($standard_price, 2) . '</td>
+                            <td style="text-align:right;">' . number_format($standard_price * @$record->begin_stock, 2) . '</td>
+                            <td></td>
+                            <td></td>
+                            <td></td>
+
                             <td style="text-align:right;">' . number_format($record->qty_in, 2) . '</td>
+                            <td style="text-align:right;">' . number_format($standard_price, 2) . '</td>
+                            <td style="text-align:right;">' . number_format($standard_price * $record->qty_in, 2) . '</td>
+                            <td></td>
+                            <td></td>
+                            <td></td>
+
                             <td style="text-align:right;">' . number_format($record->qty_out, 2) . '</td>
+                            <td style="text-align:right;">' . number_format($standard_price, 2) . '</td>
+                            <td style="text-align:right;">' . number_format($standard_price * $record->qty_out, 2) . '</td>
+                            <td></td>
+                            <td></td>
+                            <td></td>
+
                             <td style="text-align:right;">' . number_format((@$record->begin_stock + $record->qty_in) - $record->qty_out, 2) . '</td>
+                            <td style="text-align:right;">' . number_format($standard_price, 2) . '</td>
+                            <td style="text-align:right;">' . number_format($standard_price * ((@$record->begin_stock + $record->qty_in) - $record->qty_out), 2) . '</td>
+                            <td></td>
+                            <td></td>
+                            <td></td>
                             
                             <td style="text-align:right;">' . $record->receipt_qty . '</td>
+                            <td style="text-align:right;">' . number_format($standard_price, 2) . '</td>
+                            <td style="text-align:right;">' . number_format($standard_price * $record->receipt_qty, 2) . '</td>
+                            <td></td>
+                            <td></td>
+
                             <td style="text-align:right;">' . $record->bpm_qty . '</td>
+                            <td style="text-align:right;">' . number_format($standard_price, 2) . '</td>
+                            <td style="text-align:right;">' . number_format($standard_price * $record->bpm_qty, 2) . '</td>
+                            <td></td>
+                            <td></td>
+
                             <td style="text-align:right;">' . $record->adj_in_qty . '</td>
+                            <td style="text-align:right;">' . number_format($standard_price, 2) . '</td>
+                            <td style="text-align:right;">' . number_format($standard_price * $record->adj_in_qty, 2) . '</td>
+                            <td></td>
+                            <td></td>
+
 
                             <td style="text-align:right;">' . number_format($record->qty_issued_supply_sheet,2) . '</td>
+                            <td style="text-align:right;">' . number_format($standard_price, 2) . '</td>
+                            <td style="text-align:right;">' . number_format($standard_price * $record->qty_issued_supply_sheet, 2) . '</td>
+                            <td></td>
+                            <td></td>
+
                             <td style="text-align:right;">' . $record->qty_issued_material_request . '</td>
+                            <td style="text-align:right;">' . number_format($standard_price, 2) . '</td>
+                            <td style="text-align:right;">' . number_format($standard_price * $record->qty_issued_material_request, 2) . '</td>
+                            <td></td>
+                            <td></td>
+
                             <td style="text-align:right;">' . $record->qty_kanban . '</td>
+                            <td style="text-align:right;">' . number_format($standard_price, 2) . '</td>
+                            <td style="text-align:right;">' . number_format($standard_price * $record->qty_kanban, 2) . '</td>
+                            <td></td>
+                            <td></td>
+
                             <td style="text-align:right;">' . $record->qty_issued_non_supply_sheet_SJ . '</td>
+                            <td style="text-align:right;">' . number_format($standard_price, 2) . '</td>
+                            <td style="text-align:right;">' . number_format($standard_price * $record->qty_issued_non_supply_sheet_SJ, 2) . '</td>
+                            <td></td>
+                            <td></td>
+
                             <td style="text-align:right;">' . $record->qty_issued_non_supply_sheet_SP . '</td>
+                            <td style="text-align:right;">' . number_format($standard_price, 2) . '</td>
+                            <td style="text-align:right;">' . number_format($standard_price * $record->qty_issued_non_supply_sheet_SP, 2) . '</td>
+                            <td></td>
+                            <td></td>
+
                             <td style="text-align:right;">' . $record->bpb_qty . '</td>
+                            <td style="text-align:right;">' . number_format($standard_price, 2) . '</td>
+                            <td style="text-align:right;">' . number_format($standard_price * $record->bpb_qty, 2) . '</td>
+                            <td></td>
+                            <td></td>
+
                             <td style="text-align:right;">' . $record->adj_out_qty . '</td>
-
-                            <td style="text-align:right;">' . number_format($record->receipt_qty + $record->bpm_qty + $record->adj_in_qty,2) . '</td>
-                            <td style="text-align:right;">' . number_format($record->qty_issued_supply_sheet + $record->qty_issued_material_request + $record->qty_kanban + $record->qty_issued_non_supply_sheet_SJ + $record->qty_issued_non_supply_sheet_SP + $record->adj_out_qty + $record->bpb_qty,2) . '</td>
-                            <td style="text-align:right;">' . number_format(($record->receipt_qty + $record->bpm_qty + $record->adj_in_qty) - $record->qty_in, 2) . '</td>
-                            <td style="text-align:right;">' . number_format(($record->qty_issued_supply_sheet + $record->qty_issued_material_request + $record->qty_kanban + $record->qty_issued_non_supply_sheet_SJ + $record->qty_issued_non_supply_sheet_SP + $record->adj_out_qty + $record->bpb_qty) - $record->qty_out, 2) . '</td>
-
-                            <td style="text-align:right;">' . $stock_coverage . '</td>
+                            <td style="text-align:right;">' . number_format($standard_price, 2) . '</td>
+                            <td style="text-align:right;">' . number_format($standard_price * $record->adj_out_qty, 2) . '</td>
+                            <td></td>
+                            <td></td>
                         </tr>';
             $no++;
         }
 
-        $html .= '<tr>
+        $html .= '<tr class="bg-blue">
             <td colspan="8" style="text-align:right;"><b>GRAND TOTAL</b></td>
             <td style="text-align:right;">' . number_format($totalBeginStock, 2) . '</td>
+            <td></td>
+            <td></td>
+            <td></td>
+            <td></td>
+            <td></td>
+
             <td style="text-align:right;">' . number_format($totalIn, 2) . '</td>
+            <td></td>
+            <td></td>
+            <td></td>
+            <td></td>
+            <td></td>
+
             <td style="text-align:right;">' . number_format($totalOut, 2) . '</td>
+            <td></td>
+            <td></td>
+            <td></td>
+            <td></td>
+            <td></td>
+
             <td style="text-align:right;">' . number_format($totalEndingStock, 2) . '</td>
+            <td></td>
+            <td></td>
+            <td></td>
+            <td></td>
+            <td></td>
+
 
             <td style="text-align:right;">' . number_format($totalReceiptQty, 2) . '</td>
+            <td></td>
+            <td></td>
+            <td></td>
+            <td></td>
+
             <td style="text-align:right;">' . number_format($totalBpmQty, 2) . '</td>
+            <td></td>
+            <td></td>
+            <td></td>
+            <td></td>
+
             <td style="text-align:right;">' . number_format($totalAdjInQty, 2) . '</td>
+            <td></td>
+            <td></td>
+            <td></td>
+            <td></td>
 
             <td style="text-align:right;">' . number_format($totalQtyIssuedSupplySheet, 2) . '</td>
-            <td style="text-align:right;">' . number_format($totalQtyIssuedMaterialRequest, 2) . '</td>
-            <td style="text-align:right;">' . number_format($totalQtyKanban, 2) . '</td>
-            <td style="text-align:right;">' . number_format($totalQtyKanbanSJ, 2) . '</td>
-            <td style="text-align:right;">' . number_format($totalQtyKanbanSP, 2) . '</td>
-            <td style="text-align:right;">' . number_format($totalBpbQty, 2) . '</td>
-            <td style="text-align:right;">' . number_format($totalAdjOutQty, 2) . '</td>
-           
-            <td style="text-align:right;">' . number_format($totalQtyIn, 2) . '</td>
-            <td style="text-align:right;">' . number_format($totalQtyOut, 2) . '</td>
-            <td style="text-align:right;">' . number_format($totalQtySelisihIn, 2) . '</td>
-            <td style="text-align:right;">' . number_format($totalQtySelisihOut, 2) . '</td>
+            <td></td>
+            <td></td>
+            <td></td>
+            <td></td>
 
-            <td style="text-align:right;">' . $totalIto . '</td>
-            
+            <td style="text-align:right;">' . number_format($totalQtyIssuedMaterialRequest, 2) . '</td>
+            <td></td>
+            <td></td>
+            <td></td>
+            <td></td>
+
+            <td style="text-align:right;">' . number_format($totalQtyKanban, 2) . '</td>
+            <td></td>
+            <td></td>
+            <td></td>
+            <td></td>
+
+            <td style="text-align:right;">' . number_format($totalQtyKanbanSJ, 2) . '</td>
+            <td></td>
+            <td></td>
+            <td></td>
+            <td></td>
+
+            <td style="text-align:right;">' . number_format($totalQtyKanbanSP, 2) . '</td>
+            <td></td>
+            <td></td>
+            <td></td>
+            <td></td>
+
+            <td style="text-align:right;">' . number_format($totalBpbQty, 2) . '</td>
+            <td></td>
+            <td></td>
+            <td></td>
+            <td></td>
+
+            <td style="text-align:right;">' . number_format($totalAdjOutQty, 2) . '</td>
+            <td></td>
+            <td></td>
+            <td></td>
+            <td></td>
         </tr>';
       
         $html .= '</table></body></html>';
