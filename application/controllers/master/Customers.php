@@ -125,6 +125,40 @@ class Customers extends CI_Controller
         }
     }
 
+    public function datatables3($customer_address_id)//berubah
+    {
+        if ($this->input->post()) {
+            $filters = json_decode($this->input->post('filterRules'));
+            $page = $this->input->post('page');
+            $rows = $this->input->post('rows');
+            //Pagination 1-10
+            $page   = isset($page) ? intval($page) : 1;
+            $rows   = isset($rows) ? intval($rows) : 10;
+            $offset = ($page - 1) * $rows;
+            $result = array();
+            //Select Query
+            $this->db->select('*');
+            $this->db->from('customer_address_histories');
+            $this->db->where('customer_address_id', $customer_address_id);
+            if (@count($filters) > 0) {
+                foreach ($filters as $filter) {
+                    $this->db->like($filter->field, $filter->value);
+                }
+            }
+            $this->db->order_by('created_date', 'asc');
+            //Total Data
+            $totalRows = $this->db->count_all_results('', false);
+            //Limit 1 - 10
+            $this->db->limit($rows, $offset);
+            //Get Data Array
+            $records = $this->db->get()->result_array();
+            //Mapping Data
+            $result['total'] = $totalRows;
+            $result = array_merge($result, ['rows' => $records]);
+            echo json_encode($result);
+        }
+    }
+
     //AUTO ID
     public function autoid()
     {
@@ -180,6 +214,28 @@ class Customers extends CI_Controller
             $id   = base64_decode($this->input->get('id'));
             $post = $this->input->post();
             $send = $this->crud->update('customer_address', ["id" => $id], $post);
+
+            $history = [
+                'customer_address_id' => $id,
+                'plant'               => $post['plant'],
+                'department'          => $post['department'],
+                'address'             => $post['address'],
+                'address_billing'     => $post['address_billing'],
+                'contact_person'      => $post['contact_person'],
+                'telp'                => $post['telp'],
+                'telp_billing'        => $post['telp_billing'],
+                'email'               => $post['email'],
+                'website'             => $post['website'],
+                'taxes_plant'         => $post['taxes_plant']
+            ];
+
+            $send2 = $this->crud->create('customer_address_histories', $history);
+
+            if (!$send2) {
+                echo '<pre>';
+                print_r($this->db->error());
+                exit;
+            }
             echo $send;
         } else {
             show_error("Cannot Process your request");
