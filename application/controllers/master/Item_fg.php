@@ -12,7 +12,7 @@ class item_fg extends CI_Controller
         $this->load->library('session');
         $this->load->model('crud');
         //VALIDASI FORM
-        $this->form_validation->set_rules('number', 'Product No.', 'required|min_length[1]|max_length[50]|is_unique[item_fg.number]');
+        $this->form_validation->set_rules('number', 'Product No.', 'required|min_length[1]|max_length[100]|is_unique[item_fg.number]');
     }
     //HALAMAN UTAMA
     public function index()
