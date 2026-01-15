@@ -126,7 +126,10 @@ class Report_master_data_eng extends CI_Controller
         WHERE a.id LIKE '%$filter_items%' 
         AND a.division_id LIKE '%$filter_division%'
         AND a.status LIKE '%$filter_status%'
-        AND e.id LIKE '%$filter_customer_id%'
+        AND (
+                e.id LIKE '%$filter_customer_id%'
+                OR e.id IS NULL
+            )
         ORDER BY a.number
         ";
 
