@@ -80,15 +80,21 @@ class Sales_orders extends CI_Controller
         echo json_encode($send);
     }
 
-    public function checkSalesInvoice($sales_order_no, $customer_order_no)
+    public function checkSalesInvoice($sales_order_no, $customer_order_no, $item_fg_id)
     {
-        $customer_order_nos = base64_decode($customer_order_no);
-        $send = $this->crud->query("SELECT 1 FROM sales_invoices 
-            WHERE sales_order_no = '$sales_order_no' 
-            AND customer_order_no = '$customer_order_nos' 
-            LIMIT 1");
+        $customer_order_no = base64_decode($customer_order_no);
+        $item_fg_id        = base64_decode($item_fg_id);
 
-        echo json_encode(['exists' => !empty($send)]);
+        $this->db->select('1');
+        $this->db->from('sales_invoices');
+        $this->db->where('sales_order_no', $sales_order_no);
+        $this->db->where('customer_order_no', $customer_order_no);
+        $this->db->where('item_fg_id', $item_fg_id);
+        $this->db->limit(1);
+
+        $query = $this->db->get();
+
+        echo json_encode(['exists' => ($query->num_rows() > 0)]);
     }
 
     public function readItems($customer_id, $sales_order_no)
