@@ -46,7 +46,7 @@ class Item_familys extends CI_Controller
     public function readNotFg()
     {
         $post = isset($_POST['q']) ? $_POST['q'] : "";
-        $send = $this->crud->query("SELECT * FROM item_familys WHERE number != 'FG'");
+        $send = $this->crud->query("SELECT * FROM item_familys WHERE number NOT IN ('FG','PU','CR','SCRAP') AND name LIKE '%$post%'");
         echo json_encode($send);
     }
 
