@@ -1,0 +1,768 @@
+<div id="dlg_help" class="easyui-dialog" title="About Menu" data-options="closed: true,modal:true" style="width: 800px; height: 500px; left: 10px; top: 20px;">
+    <div class="easyui-accordion" style="width:100%; height: 100%;">
+        <div title="RELATIONS" style="padding: 20px;">
+            <ul>
+                <li>The Data Supplier is taken from <b>Master Data > Material Control > Suppliers</b></li>
+                <li>The Data Product No is taken from <b>Master Data > Engineering > Item Raw Materials</b></li>
+                <li>The Data Currency is taken from <b>Master Data > Material Control > Suppliers > Currency</b></li>
+            </ul>
+        </div>
+    </div>
+</div>
+
+<!-- TABLE DATAGRID -->
+<table id="dg" class="easyui-datagrid" style="width:100%;" toolbar="#toolbar">
+    <thead>
+        <tr>
+            <th rowspan="2" field="ck" checkbox="true"></th>
+            <th rowspan="2" data-options="field:'item_number_induk',width:300,halign:'center'">Product Number</th>
+            <th rowspan="2" data-options="field:'item_name_induk',width:300,halign:'center'">Product Name</th>
+            <th rowspan="2" data-options="field:'division_name',width:100,halign:'center'">Dvision</th>
+            <th colspan="2" data-options="field:'',width:100,halign:'center'"> Created</th>
+            <th colspan="2" data-options="field:'',width:100,halign:'center'"> Updated</th>
+        </tr>
+        <tr>
+            <th data-options="field:'created_by',width:120,align:'center'"> By</th>
+            <th data-options="field:'created_date',width:150,align:'center'"> Date</th>
+            <th data-options="field:'updated_by',width:120,align:'center'"> By</th>
+            <th data-options="field:'updated_date',width:150,align:'center'"> Date</th>
+        </tr>
+    </thead>
+</table>
+
+<!-- TOOLBAR DATAGRID -->
+<div id="toolbar" style="height: 200px; padding: 10px;">
+    <!-- <div style="width: 100%; display: grid; grid-template-columns: auto auto auto; grid-gap: 5px; display: flex;"> -->
+    <div style="width: 100%;">
+        <fieldset style="width: 45%; border:2px solid #d0d0d0; margin-bottom: 5px; margin-top: 5px; border-radius:4px;">
+            <legend><b>Form Filter Data</b></legend>
+            <div class="fitem">
+                <span style="width:35%; display:inline-block;">Product No</span>
+                <input style="width:60%;" id="filter_item_fg_id" class="easyui-combogrid">
+            </div>
+            <div class="fitem">
+                <span style="width:35%; display:inline-block;">Product No Equivalent</span>
+                <input style="width:60%;" id="filter_item_fg_id_equivalent" class="easyui-combogrid">
+            </div>
+            <div class="fitem">
+                <span style="width:35%; display:inline-block;"></span>
+                <a href="javascript:;" class="easyui-linkbutton" onclick="filter()"><i class="fa fa-search"></i> Filter Data</a>
+            </div>
+        </fieldset>
+        <?= $button ?>
+    </div>
+</div>
+
+<div id="toolbar2">
+    <a href="javascript:void(0)" class="easyui-linkbutton" data-options="plain:true" onclick="append()"><i class="fa fa-plus"></i> Add</a>
+    <a href="javascript:void(0)" class="easyui-linkbutton" data-options="plain:true" onclick="removeit()"><i class="fa fa-times"></i> Remove</a>
+</div>
+
+<!-- Insert & Update -->
+<div id="dlg_insert" class="easyui-dialog" title="Add New" data-options="closed: true,modal:true" style="width: 1000px; height: 500px; padding:10px; top: 20px; left: 10px;">
+    <form id="frm_insert" method="post" novalidate>
+        <fieldset style="width:100%; border:1px solid #d0d0d0; margin-bottom: 10px; border-radius:4px; float: left;">
+            <legend><b>Form Data</b></legend>
+            <div class="fitem">
+                <span style="width:15%; display:inline-block;">Product No</span>
+                <input style="width:40%;" name="item_fg_id" id="item_fg_id" required="" class="easyui-combogrid">
+            </div>
+            <div class="fitem">
+                <span style="width:15%; display:inline-block;">Division</span>
+                <input style="width:40%;" name="division_id" id="division_id" required="" class="easyui-combobox">
+            </div>
+        </fieldset>
+        <table id="dg2" class="easyui-datagrid" style="width:100%; height: 310px;" title="Item Equivalent Lists" toolbar="#toolbar2"></table>
+    </form>
+</div>
+
+<!-- Upload -->
+<div id="dlg_upload" class="easyui-dialog" title="Upload Data" data-options="closed: true,modal:true" style="width: 500px; padding:10px; top: 20px;">
+    <form id="frm_upload" method="post" enctype="multipart/form-data" novalidate>
+        <fieldset style="width:100%; border:1px solid #d0d0d0; margin-bottom: 10px; border-radius:4px; float: left;">
+            <legend><b>Form Data</b></legend>
+            <div class="fitem">
+                <span style="width:35%; display:inline-block;">File Upload</span>
+                <input name="file_upload" style="width: 60%;" required="" accept=".xls" id="file_excel" class="easyui-filebox">
+            </div>
+        </fieldset>
+    </form>
+    <span style="float: left; color:green;">SUCCESS : <b id="p_success">0</b></span><span style="float: right; color:red;"> FAILED : <b id="p_failed">0</b></span>
+    <div id="p_upload" class="easyui-progressbar" style="width:100%; margin-top: 10px;"></div>
+    <center><b id="p_start">0</b> Of <b id="p_finish">0</b></center>
+    <div id="p_remarks" title="History Upload" class="easyui-panel" style="width:100%; height:200px; padding:10px; margin-top: 10px;">
+        <ul id="remarks">
+        </ul>
+    </div>
+</div>
+
+<!-- PDF -->
+<iframe id="printout" src="<?= base_url('master/item_equivalent_fg/print') ?>" style="width: 100%;" hidden></iframe>
+
+<script>
+
+    // $.extend($.fn.numberbox.defaults, {
+    //     decimalSeparator: ',',
+    //     groupSeparator: '.',
+    //     precision: 4 // Tetap mendukung angka dengan 4 desimal
+    // });
+    
+    //ADD DATA
+    function add() {
+        $('#dlg_insert').dialog('open');
+        $('#dg2').datagrid('loadData', []);
+        url_save = '<?= base_url('master/item_equivalent_fg/create') ?>';
+        $('#frm_insert').form('clear');
+    }
+
+    function addTable(division = "", link = "") {
+        var dg = $('#dg2').datagrid({
+            url: link,
+            singleSelect: true,
+            columns: [
+                [{
+                    field: 'item_number',
+                    width: 200,
+                    halign: 'center',
+                    title: "Product No.",
+                    editor: {
+                        type: 'combogrid',
+                        options: {
+                            url: '<?= base_url('master/item_equivalent_fg/readItems/'); ?>' + division,
+                            required: true,
+                            panelWidth: 400,
+                            idField: 'number',
+                            textField: 'number',
+                            mode: 'remote',
+                            fitColumns: true,
+                            prompt: 'Choose Product No.',
+                            columns: [
+                                [{
+                                    field: 'number',
+                                    title: 'Product No.',
+                                    width: 150
+                                }, {
+                                    field: 'name',
+                                    title: 'Product Name',
+                                    width: 200
+                                }]
+                            ],
+                            onSelect: function(value, rows) {
+                                var dg = $('#dg2');
+                                var allRows = dg.datagrid('getRows');
+                                var isDuplicate = allRows.some(function(r) {
+                                    return r.item_fg_number === rows.number;
+                                });
+
+                                if (isDuplicate) {
+                                    toastr.warning('Item Has Been Add!');
+                                    var rowIndex = dg.datagrid('getRowIndex', rows);
+                                    dg.datagrid('cancelEdit', rowIndex);
+                                    return;
+                                }
+
+                                var rowIndex = dg.datagrid('getRowIndex', dg.datagrid('getSelected'));
+
+                                var ed = dg.datagrid('getEditor', {
+                                    index: rowIndex,
+                                    field: 'item_number'
+                                });
+                                var ed2 = dg.datagrid('getEditor', {
+                                    index: rowIndex,
+                                    field: 'item_fg_id_equivalent'
+                                });
+                                var ed3 = dg.datagrid('getEditor', {
+                                    index: rowIndex,
+                                    field: 'item_family_name'
+                                });
+                                var ed4 = dg.datagrid('getEditor', {
+                                    index: rowIndex,
+                                    field: 'uom'
+                                });
+                                var ed5 = dg.datagrid('getEditor', {
+                                    index: rowIndex,
+                                    field: 'item_name'
+                                });
+
+                                $(ed.target).textbox('setValue', rows.number);
+                                $(ed2.target).textbox('setValue', rows.id);
+                                $(ed3.target).textbox('setValue', rows.item_family_name);
+                                $(ed4.target).textbox('setValue', rows.uom);
+                                $(ed5.target).textbox('setValue', rows.name);
+                            }
+                        }
+                    }
+                }, {
+                    field: 'item_fg_id_equivalent',
+                    width: 150,
+                    hidden: true,
+                    halign: 'center',
+                    title: "Product ID",
+                    editor: {
+                        type: 'textbox'
+                    }
+                }, {
+                    field: 'item_name',
+                    width: 150,
+                    halign: 'center',
+                    title: "Product Name",
+                    editor: {
+                        type: 'textbox',
+                        options: {
+                            readonly: true
+                        }
+                    }
+                }, {
+                    field: 'item_family_name',
+                    width: 150,
+                    halign: 'center',
+                    title: "Product Family",
+                    editor: {
+                        type: 'textbox',
+                        options: {
+                            readonly: true
+                        }
+                    }
+                }, {
+                    field: 'uom',
+                    width: 150,
+                    halign: 'center',
+                    title: "Uom",
+                    editor: {
+                        type: 'textbox',
+                        options: {
+                            readonly: true
+                        }
+                    }
+                }, {
+                    field: 'remarks',
+                    width: 150,
+                    halign: 'center',
+                    title: "Remarks",
+                    editor: {
+                        type: 'textbox',
+                    }
+                }]
+            ],
+            onClickCell: onClickCell
+        });
+    }
+
+    var editIndex = undefined;
+
+    function endEditing() {
+        if (editIndex == undefined) {
+            return true
+        }
+        if ($('#dg2').datagrid('validateRow', editIndex)) {
+            $('#dg2').datagrid('endEdit', editIndex);
+            editIndex = undefined;
+            return true;
+        } else {
+            return false;
+        }
+    }
+
+    function onClickCell(index, field) {
+        if (editIndex != index) {
+            if (endEditing()) {
+                $('#dg2').datagrid('selectRow', index).datagrid('beginEdit', index);
+                editIndex = index;
+            } else {
+                setTimeout(function() {
+                    $('#dg2').datagrid('selectRow', editIndex);
+                }, 0);
+            }
+        }
+    }
+
+    function append() {
+        var item_fg_id = $("#item_fg_id").combogrid('getValue');
+        if (item_fg_id != "") {
+            if (endEditing()) {
+                var firstRowIndex = $('#dg2').datagrid('getRows').length > 0 ? 0 : undefined;
+                $('#dg2').datagrid('insertRow', {
+                    index: firstRowIndex,
+                    row: {}
+                });
+                $('#dg2').datagrid('selectRow', firstRowIndex).datagrid('beginEdit', firstRowIndex);
+            }
+        } else {
+            toastr.error("Please Choose Item Rm first");
+        }
+    }
+
+    function removeit() {
+        if (editIndex == undefined) {
+            return true;
+        }
+
+        var dg = $('#dg2');
+        var row = dg.datagrid('getSelected');
+        var rowIndex = dg.datagrid('getRowIndex', row);
+
+        var ed = dg.datagrid('getEditor', {
+            index: editIndex,
+            field: 'item_fg_id_equivalent'
+        });
+
+        var item_fg_id = $("#item_fg_id").combogrid('getValue');
+        var item_fg_id_equivalent = $(ed.target).textbox('getValue');
+
+        $.ajax({
+            method: 'post',
+            url: '<?= base_url('master/item_equivalent_fg/delete') ?>',
+            data: {
+                item_fg_id: row.item_fg_id,
+                item_fg_id_equivalent: item_fg_id_equivalent
+            },
+            success: function(result) {
+                var result = eval('(' + result + ')');
+                toastr.success(result.message);
+            },
+            error: function(jqXHR, textStatus, errorThrown) {
+                toastr.error(jqXHR.statusText);
+                $.messager.alert("Error", jqXHR.statusText, 'error');
+            },
+            complete: function(data) {
+                $('#dg').datagrid('reload');
+            }
+        });
+
+        $('#dg2').datagrid('cancelEdit', editIndex).datagrid('deleteRow', editIndex);
+        editIndex = undefined;
+    }
+
+    //EDIT DATA
+    function update() {
+        var row = $('#dg').treegrid('getSelected');
+        if (row) {
+            $('#dlg_insert').dialog('open');
+            $('#frm_insert').form('load', row);
+            $("#item_fg_id").combogrid('disable');
+
+            addTable(row.division, '<?= base_url('master/item_equivalent_fg/datatableUpdates?item_fg_id=') ?>' + window.btoa(row.item_fg_id));
+        } else {
+            toastr.warning("Please select one of the data in the table first!", "Information");
+        }
+    }
+
+    //DELETE DATA
+    function deleted() {
+        var rows = $('#dg').datagrid('getSelections');
+        if (rows.length > 0) {
+            $.messager.confirm('Warning', 'Are you sure you want to delete this data?', function(r) {
+                if (r) {
+                    for (var i = 0; i < rows.length; i++) {
+                        var row = rows[i];
+                        $.ajax({
+                            method: 'post',
+                            url: '<?= base_url('master/item_equivalent_fg/delete') ?>',
+                            data: {
+                                item_fg_id: row.item_fg_id
+                            },
+                            success: function(result) {
+                                var result = eval('(' + result + ')');
+                                $('#dg').datagrid('reload');
+                            },
+                            error: function(jqXHR, textStatus, errorThrown) {
+                                toastr.error(jqXHR.statusText);
+                                $.messager.alert("Error", jqXHR.statusText, 'error');
+                            },
+                            complete: function(data) {
+                                $('#dg').datagrid('reload');
+                            }
+                        });
+                    }
+                }
+            });
+        } else {
+            toastr.warning("Please select one of the data in the table first!", "Information");
+        }
+    }
+    // UPLOAD DATA
+    function upload() {
+        $('#dlg_upload').dialog('open');
+    }
+    // DOWNLOAD
+    function download_excel() {
+        window.location.assign('<?= base_url('template/tmp_item_equivalent_fg.xls') ?>');
+    }
+
+    //FILTER DATA
+    function filter() {
+        var filter_item_fg_id_equivalent = $("#filter_item_fg_id_equivalent").combogrid('getValue');
+        var filter_item_fg_id = $("#filter_item_fg_id").combogrid('getValue');
+
+        var url = "?filter_item_fg_id_equivalent=" + window.btoa(filter_item_fg_id_equivalent) +
+            "&filter_item_fg_id=" + window.btoa(filter_item_fg_id);
+
+        $('#dg').datagrid({
+            url: '<?= base_url('master/item_equivalent_fg/datatables') ?>' + url
+        });
+
+        $("#printout").contents().find('html').html("<center><br><br><br><b style='font-size:20px;'>Please Wait...</b></center>");
+        $("#printout").attr('src', '<?= base_url('master/item_equivalent_fg/print') ?>' + url);
+    }
+
+    //PRINT PDF
+    function pdf() {
+        $("#printout").get(0).contentWindow.print();
+    }
+
+    //PRINT EXCEL
+    function excel() {
+        var filter_item_fg_id_equivalent = $("#filter_item_fg_id_equivalent").combogrid('getValue');
+        var filter_item_fg_id = $("#filter_item_fg_id").combogrid('getValue');
+
+        var url = "?filter_item_fg_id_equivalent=" + window.btoa(filter_item_fg_id_equivalent) +
+            "&filter_item_fg_id=" + window.btoa(filter_item_fg_id);
+
+        window.location.assign('<?= base_url('master/item_equivalent_fg/print/excel') ?>' + url);
+    }
+
+    //RELOAD
+    function reload() {
+        window.location.reload();
+    }
+
+    $(function() {
+        //ADD DATA
+        addTable();
+
+        //SETTING DATAGRID EASYUI
+        $('#dg').datagrid({
+            url: '<?= base_url('master/item_equivalent_fg/datatables') ?>',
+            pagination: true,
+            rownumbers: true,
+            fit: true,
+            pageList: [20, 50, 100, 500, 1000],
+            pageSize: 20,
+            view: detailview,
+            detailFormatter: function(index, row) {
+                return '<div style="padding:2px;position:relative;"><table class="ddv" title="Detail Of ' + row.item_number_induk + '"></table></div>';
+            },
+            onExpandRow: function(index, row) {
+                var ddv = $(this).datagrid('getRowDetail', index).find('table.ddv');
+                var filter_item_fg_id = $("#filter_item_fg_id").combogrid('getValue');
+
+                ddv.datagrid({
+                    url: '<?= base_url('master/item_equivalent_fg/datatableDetails?number=') ?>' + window.btoa(row.item_fg_id) + "&filter_item_fg_id=" + window.btoa(filter_item_fg_id),
+                    singleSelect: true,
+                    rownumbers: true,
+                    width: '1600px',
+                    columns: [
+                        [{
+                            field: 'item_fg_id_equivalent',
+                            title: 'Product ID',
+                            halign: 'center',
+                            width: 150
+                        }, {
+                            field: 'item_number',
+                            title: 'Product No Equivalent.',
+                            halign: 'center',
+                            width: 150
+                        }, {
+                            field: 'item_name',
+                            title: 'Product Name Equivalent',
+                            halign: 'center',
+                            width: 200
+                        }, {
+                            field: 'status_subcont',
+                            title: 'Status Subcont',
+                            halign: 'center',
+                            width: 150
+                        }, {
+                            field: 'remarks',
+                            title: 'Remarks',
+                            width: 100,
+                            halign: 'center',
+                        }]
+                    ],
+                    onResize: function() {
+                        $('#dg').datagrid('fixDetailRowHeight', index);
+                    },
+                    onLoadSuccess: function() {
+                        setTimeout(function() {
+                            $('#dg').datagrid('fixDetailRowHeight', index);
+                        }, 0);
+                    }
+                });
+                $('#dg').datagrid('fixDetailRowHeight', index);
+            }
+        });
+
+        //SAVE DATA
+        $('#dlg_insert').dialog({
+            buttons: [{
+                text: 'Save All',
+                iconCls: 'icon-ok',
+                handler: function() {
+                    var item_fg_id = $("#item_fg_id").combogrid('getValue');
+                    var division_id = $("#division_id").combobox('getValue');
+                    var rows = $('#dg2').datagrid('getRows');
+                    var totalrows = rows.length;
+                    
+                    endEditing();
+                    $("#dg2").datagrid('acceptChanges');
+
+                    if (item_fg_id == "") {
+                        toastr.error(`Please Choose Item first!`);
+                        return;
+                    }
+
+                    for (let i = 0; i < totalrows; i++) {
+                        if (rows[i].item_fg_id_equivalent) {
+                            $.ajax({
+                                type: "post",
+                                url: '<?= base_url('master/item_equivalent_fg/create') ?>',
+                                data: {
+                                    item_fg_id: item_fg_id,
+                                    division_id: division_id,
+                                    item_fg_id_equivalent: rows[i].item_fg_id_equivalent,
+                                    item_number: rows[i].item_number,
+                                    item_name: rows[i].item_name,
+                                    uom: rows[i].uom,
+                                    remarks: rows[i].remarks
+                                },
+                                dataType: "json",
+                                success: function(result) {
+                                    if (i == (totalrows - 1)) {
+                                        Swal.fire({
+                                            title: result.message,
+                                            icon: result.theme,
+                                            confirmButtonText: 'Ok',
+                                            allowOutsideClick: false,
+                                        }).then((result) => {
+                                            if (result.isConfirmed) {
+                                                window.location.reload();
+                                            }
+                                        });
+                                    }
+                                }
+                            });
+                        }
+                    }
+
+                    $('#dg').datagrid('reload');
+                    $('#dlg_insert').dialog('close');
+                }
+            }]
+        });
+    });
+
+    $('#item_fg_id').combogrid({
+        url: '<?= base_url('master/item_equivalent_fg/readItem'); ?>',
+        panelWidth: 500,
+        idField: 'id',
+        textField: 'number',
+        mode: 'remote',
+        fitColumns: true,
+        prompt: "Choose Product No",
+        columns: [
+            [{
+                field: 'id',
+                title: 'Product ID',
+                width: 150
+            }, {
+                field: 'number',
+                title: 'Product No',
+                width: 150
+            }, {
+                field: 'name',
+                title: 'Product Name',
+                width: 150
+            }, ]
+        ],
+    });
+
+    $('#division_id').combobox({
+        url: '<?= base_url('master/divisions/reads/'); ?>',
+        valueField: 'id',
+        textField: 'name',
+        prompt: 'Choose Division',
+        onSelect: function(division) {
+            addTable(division.id);
+        }
+    });
+
+    $('#filter_item_fg_id').combogrid({
+        url: '<?= base_url('master/item_fg/reads'); ?>',
+        panelWidth: 500,
+        idField: 'id',
+        textField: 'number',
+        mode: 'remote',
+        fitColumns: true,
+        prompt: "Choose Product No.",
+        columns: [
+            [{
+                field: 'id',
+                title: 'Product ID',
+                width: 180
+            }, {
+                field: 'number',
+                title: 'Product No.',
+                width: 150
+            }, {
+                field: 'name',
+                title: 'Product Name',
+                width: 150
+            }]
+        ],
+        icons: [{
+            iconCls: 'icon-clear',
+            handler: function(e) {
+                $(e.data.target).combogrid('clear').combogrid('textbox').focus();
+            }
+        }],
+    });
+
+    $('#filter_item_fg_id_equivalent').combogrid({
+        url: '<?= base_url('master/item_fg/reads'); ?>',
+        panelWidth: 500,
+        idField: 'id',
+        textField: 'number',
+        mode: 'remote',
+        fitColumns: true,
+        prompt: "Choose Product No Equivalent.",
+        columns: [
+            [{
+                field: 'id',
+                title: 'Product ID',
+                width: 180
+            }, {
+                field: 'number',
+                title: 'Product No.',
+                width: 150
+            }, {
+                field: 'name',
+                title: 'Product Name',
+                width: 150
+            }]
+        ],
+        icons: [{
+            iconCls: 'icon-clear',
+            handler: function(e) {
+                $(e.data.target).combogrid('clear').combogrid('textbox').focus();
+            }
+        }],
+    });
+
+    //CELLSTYLE STATUS
+    function cellStyler(value, row, index) {
+        if (value == 0) {
+            return 'background: #53D636; color:white;';
+        } else {
+            return 'background: #FF5F5F; color:white;';
+        }
+    }
+    //FORMATTER STATUS
+    function cellFormatter(value) {
+        if (value == 0) {
+            return 'Active';
+        } else {
+            return 'Not Active';
+        }
+    };
+
+    // FORMAT tahun-bulan-tanggal
+    function myformatter(date) {
+        var y = date.getFullYear();
+        var m = date.getMonth() + 1;
+        var d = date.getDate();
+        return y + '-' + (m < 10 ? ('0' + m) : m) + '-' + (d < 10 ? ('0' + d) : d);
+    }
+
+    function myparser(s) {
+        if (!s) return new Date();
+        var ss = (s.split('-'));
+        var y = parseInt(ss[0], 10);
+        var m = parseInt(ss[1], 10);
+        var d = parseInt(ss[2], 10);
+        if (!isNaN(y) && !isNaN(m) && !isNaN(d)) {
+            return new Date(y, m - 1, d);
+        } else {
+            return new Date();
+        }
+    }
+
+    // UPLOAD DATA
+    $('#dlg_upload').dialog({
+        buttons: [{
+            text: 'List Failed',
+            handler: function() {
+                window.open('<?= base_url('master/item_equivalent_fg/uploadDownloadFailed') ?>', '_blank');
+            }
+        }, {
+            text: 'Upload',
+            iconCls: 'icon-ok',
+            handler: function() {
+                $('#frm_upload').form('submit', {
+                    url: '<?= base_url('master/item_equivalent_fg/upload') ?>',
+                    onSubmit: function() {
+                        if ($(this).form('validate') == false) {
+                            return $(this).form('validate');
+                        } else {
+                            $.messager.progress({
+                                title: 'Please Wait',
+                                msg: 'Importing Excel to Database'
+                            });
+                        }
+                    },
+                    success: function(result) {
+                        $.messager.progress('close');
+                        //Clear File
+                        $.ajax({
+                            url: "<?= base_url('master/item_equivalent_fg/uploadclearFailed') ?>"
+                        });
+                        var json = eval('(' + result + ')');
+                        requestData(json.total, json);
+
+                        function requestData(total, json, number = 1, value = 0, success = 1, failed = 1) {
+                            if (value < 100) {
+                                value = Math.floor((number / total) * 100);
+                                $('#p_upload').progressbar('setValue', value);
+                                $('#p_start').html(number);
+                                $('#p_finish').html(total);
+
+                                $.ajax({
+                                    type: "POST",
+                                    async: true,
+                                    url: "<?= base_url('master/item_equivalent_fg/uploadCreate') ?>",
+                                    data: {
+                                        "data": json[number - 1]
+                                    },
+                                    cache: false,
+                                    dataType: "json",
+                                    success: function(result) {
+                                        if (result.theme == "success") {
+                                            $('#p_success').html(success);
+                                            var title = "<b style='color: green;'>" + result.title + "</b> | " + result.message;
+                                            requestData(total, json, number + 1, value, success + 1, failed + 0);
+                                        } else {
+                                            $('#p_failed').html(failed);
+                                            var title = "<b style='color: red;'>" + result.title + "</b> | " + result.message;
+                                            //Json Failed
+                                            $.ajax({
+                                                type: "POST",
+                                                async: true,
+                                                url: "<?= base_url('master/item_equivalent_fg/uploadcreateFailed') ?>",
+                                                data: {
+                                                    data: json[number - 1],
+                                                    message: result.message
+                                                },
+                                                cache: false
+                                            });
+                                            requestData(total, json, number + 1, value, success + 0, failed + 1);
+                                        }
+                                        $("#p_remarks").append(title + "<br>");
+                                    }
+                                });
+                            }
+                        }
+                    }
+                });
+            }
+        }]
+    });
+</script>
