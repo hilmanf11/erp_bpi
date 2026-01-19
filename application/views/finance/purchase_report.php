@@ -159,10 +159,6 @@
 
         columns: [
             [{
-                field: 'number',
-                title: 'Part No',
-                width: 100
-            }, {
                 field: 'name',
                 title: 'Part Name',
                 width: 200
