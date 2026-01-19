@@ -143,7 +143,7 @@
     });
 
     $('#filter_item_rm_name').combogrid({
-        url: '<?= base_url('master/item_rm/reads/') ?>',
+        url: '<?= base_url('master/item_rm/reads2/') ?>',
         panelWidth: 420,
         idField: 'name',
         textField: 'name',
