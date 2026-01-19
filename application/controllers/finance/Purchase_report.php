@@ -46,6 +46,8 @@ class Purchase_report extends CI_Controller
         $filter_display = $this->input->get("filter_display");
         $filter_supplier_id = $this->input->get("filter_supplier_id");
         $filter_category_id = $this->input->get("filter_category_id");
+        $filter_item_rm_name = $this->input->get("filter_item_rm_name");
+        $filter_item_rm_number = $this->input->get("filter_item_rm_number");
 
         $division = $this->crud->read('divisions',[],["number"=> $filter_division]);
         $division_num = isset($division->number) && !empty($division->number) ? $division->number : NULL;
@@ -99,7 +101,8 @@ class Purchase_report extends CI_Controller
                 LEFT JOIN suppliers f ON d.supplier_id = f.id
                 LEFT JOIN supplier_items g ON d.item_rm_id = g.item_rm_id and d.supplier_id = g.supplier_id
                 WHERE a.supplier_id LIKE '%$filter_supplier_id%' and b.division LIKE '%$filter_division%' and 
-                DATE_FORMAT(a.receipt_date, '%Y-%m-%d') BETWEEN '$filter_from' and '$filter_to' and b.item_category_id LIKE '%$filter_category_id%'
+                DATE_FORMAT(a.receipt_date, '%Y-%m-%d') BETWEEN '$filter_from' and '$filter_to' and b.item_category_id LIKE '%$filter_category_id%' and 
+                b.name LIKE '%$filter_item_rm_name%' and b.number LIKE '%$filter_item_rm_number%'
                 GROUP BY a.id  
                 ORDER BY f.name ASC, a.receipt_no ASC, b.number DESC";
             $records = $this->crud->query($query);
