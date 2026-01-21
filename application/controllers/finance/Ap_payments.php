@@ -608,8 +608,6 @@ class Ap_payments extends CI_Controller
                 "amount"           => $record['total'],
                 "balance"          => ($record['total'] - @$ap_payment[0]->payment), // jadi 0 saat update = lunas
                 "payment"          => ($record['total'] - @$ap_payment[0]->payment), // jadi 0 saat update = lunas
-                "balance"          => $record['total'],
-                "payment"          => $record['total'],
                 "account_number"   => $account_number,
                 "account_name"     => $account_name,
                 "account_type"     => "DEBIT",
