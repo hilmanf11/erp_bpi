@@ -1724,6 +1724,15 @@
                     var local_balance_debit = $("#local_balance_debit").numberbox('getValue');
                     var local_balance_credit = $("#local_balance_credit").numberbox('getValue');
 
+
+                    // --- Validasi: Jika null, string kosong, atau berisi '-' (Bu Nina 2026-01-21)
+                    if (!customer_id || customer_id == "" || customer_id == "-") {
+                        $.messager.alert('Warning', 'Customer ID is required!', 'warning');
+                        return false; // Menghentikan eksekusi kode di bawahnya
+                    }
+                    // Lanjutkan proses jika validasi lolos...
+                    console.log("Proses berlanjut dengan Customer ID: " + customer_id);
+
                     // $.ajax({
                     //     type: "post",
                     //     url: "<?= base_url('closing/locks/checkLock') ?>",
