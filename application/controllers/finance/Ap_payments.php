@@ -689,7 +689,7 @@ class Ap_payments extends CI_Controller
             (CASE WHEN a.journal_type_id is null THEN c.journal_type_id ELSE a.journal_type_id END) as journal_type , GROUP_CONCAT(DISTINCT REPLACE(a.purchase_invoice, ' ', '') SEPARATOR ',') as purchase_invoices");
             $this->db->select("'view' as details");
             $this->db->from('ap_payments a');
-            $this->db->join('suppliers b', 'a.supplier_id = b.id');
+            $this->db->join('suppliers b', 'a.supplier_id = b.id', 'left');
             $this->db->join('purchase_invoices c', 'a.purchase_invoice = c.number', 'left');
             $this->db->join('journal_postings d', 'a.payment_no = d.document_no', 'left');
             $this->db->like('a.payment_type', $filter_payment_type);
