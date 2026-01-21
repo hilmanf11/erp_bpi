@@ -563,18 +563,28 @@ class Ap_payments extends CI_Controller
                 $account_number = $journal_setup->account_number;
                 $account_name   = $journal_setup->account_name;
             } else {
-                // -- Tidak ada setting account di journal_setups
+                // -- Jika Tidak ada setting account di journal_setups, maka ambil dari COA category=Account Payable
                 $this->db->select('*');
                 $this->db->from('account_coa');
                 $this->db->where('account_number', $record['account_number']);
                 $get_account = $this->db->get()->row();
 
-                if (!empty($get_account)) {
-                    $account_number = $get_account->account_number;
-                    $account_name   = $get_account->account_name;
+                $pi_number = $record['number'];
+                $get_account_payable = $this->crud->query("SELECT a.* 
+                    FROM purchase_invoice_journals a 
+                    JOIN account_coa b ON a.account_number = b.account_number 
+                    JOIN account_group_details c ON c.id = b.account_group_detail_id 
+                    WHERE c.name LIKE 'Account Payable%' AND b.status = 0 
+                    AND a.number = '$pi_number' 
+                    ORDER BY a.id");
+
+                if (!empty($get_account_payable)) {
+                    $account_number = $get_account_payable[0]->account_number;
+                    $account_name   = $get_account_payable[0]->account_name;
+
                 } else {
-                    $account_number = $record['account_number'];
-                    $account_name   = "";
+                    $account_number = $get_account->account_number ?? $record['account_number'];;
+                    $account_name   = $get_account->account_name ?? "";
                 }
             }
 
