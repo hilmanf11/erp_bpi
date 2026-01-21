@@ -557,20 +557,35 @@ class Ar_receipts extends CI_Controller
             $this->db->from('journal_setups a');
             $this->db->join('account_coa b', 'a.account_number = b.account_number', 'LEFT');
             $this->db->where('a.journal_type_id', $journal_type_id);
-            $this->db->where('a.ap_payment', 'YES');
+            $this->db->where('a.ar_receipt', 'YES');
             $journal_setup = $this->db->get()->row();
             if (!empty($journal_setup)) {
                 $account_number = $journal_setup->account_number;
-                $account_name   = $journal_setup->account_number;
+                $account_name   = $journal_setup->account_name;
             } else {
-                // -- Tidak ada setting account di journal_setups
+                // -- Jika Tidak ada setting account di journal_setups, maka ambil dari COA category=Account Receivable
                 $this->db->select('*');
                 $this->db->from('account_coa');
                 $this->db->where('account_number', $record['account_number']);
                 $get_account = $this->db->get()->row();
 
-                $account_number = $get_account->account_number;
-                $account_name   = $get_account->account_name;
+                $si_number = $record['number'];
+                $get_account_receivable = $this->crud->query("SELECT a.* 
+                    FROM sales_invoice_journals a 
+                    JOIN account_coa b ON a.account_number = b.account_number 
+                    JOIN account_group_details c ON c.id = b.account_group_detail_id 
+                    WHERE c.name LIKE 'Account Receivable%' AND b.status = 0 
+                    AND a.number = '$si_number' 
+                    ORDER BY a.id");
+
+                if (!empty($get_account_receivable)) {
+                    $account_number = $get_account_receivable[0]->account_number;
+                    $account_name   = $get_account_receivable[0]->account_name;
+
+                } else {
+                    $account_number = $get_account->account_number ?? $record['account_number'];
+                    $account_name   = $get_account->account_name ?? "";
+                }
             }
 
             // -- Exchange Rate by trans_date SI
