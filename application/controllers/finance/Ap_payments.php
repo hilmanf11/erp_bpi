@@ -1,6 +1,16 @@
 <?php
 date_default_timezone_set("Asia/Bangkok");
 defined('BASEPATH') or exit('No direct script access allowed');
+
+/**
+ * @property CI_Input $input
+ * @property CI_Loader $load
+ * @property CI_Session $session
+ * @property CI_DB_query_builder $db
+ * @property CI_Output $output
+ * @property Crud $crud
+ * @property Convertcurrency $convertcurrency
+ */
 class Ap_payments extends CI_Controller
 {
     public function __construct()
@@ -1441,7 +1451,7 @@ class Ap_payments extends CI_Controller
 
 
     // ------- PRINT FUNCTIONS ---------
-    public function print_voucher($payment)
+    public function print_voucher_existing($payment)
     {
         $payment_no = base64_decode($payment);
         $this->db->select('a.*, b.name as supplier_name');
@@ -1780,6 +1790,378 @@ class Ap_payments extends CI_Controller
         $html .= "</div></div><script>window.print()</script></body>";
         die($html);
     }
+
+    public function print_voucher($payment) // perbaikan undefined supplier_id
+    {
+        $payment_no = base64_decode($payment);
+
+        /** -- existing query --
+        $this->db->select('a.*, b.name as supplier_name');
+        $this->db->from('ap_payments a');
+        $this->db->join('suppliers b', 'a.supplier_id = b.id');
+        $this->db->like('a.payment_no', $payment_no);
+        $this->db->order_by('a.status', 'ASC');
+        $this->db->order_by('a.payment_date', 'DESC');
+        $payment_total = $this->db->get()->result_array();
+        */
+
+        // Ambil data lengkap di awal (Master Data)
+        $this->db->select('a.*, b.name as supplier_name, c.bank_name');
+        $this->db->from('ap_payments a');
+        $this->db->join('suppliers b', 'a.supplier_id = b.id', 'left'); // Gunakan LEFT JOIN
+        $this->db->join('account_banks c', 'a.bank_account = c.bank_account', 'left'); // Gunakan LEFT JOIN
+        $this->db->where('a.payment_no', $payment_no);
+        $payment_total = $this->db->get()->result_array();
+
+        // Proteksi jika data benar-benar tidak ada di database
+        if (empty($payment_total)) {
+            die("Error: Data payment tidak ditemukan untuk nomor: " . $payment_no);
+        }
+
+        // Ambil data default jika records kosong
+        $header_supplier = !empty($payment_total) ? $payment_total[0]['supplier_name'] : '-';
+        $header_pay_by   = !empty($payment_total) ? $payment_total[0]['payment_by'] : '-';
+        $header_pay_no   = !empty($payment_total) ? $payment_total[0]['payment_no'] : $payment_no;
+        $header_date     = !empty($payment_total) ? date("d F Y", strtotime($payment_total[0]['payment_date'])) : date("d F Y");
+        $header_bank_acc = !empty($payment_total) ? $payment_total[0]['bank_account'] : '-';
+        $header_bank_nm  = !empty($payment_total) ? $payment_total[0]['bank_name'] : '-';
+        $header_curr     = !empty($payment_total) ? $payment_total[0]['currency'] : 'IDR';
+
+        $config = $this->db->get('config')->row();
+        $config_iso = $this->db->get('config_iso')->row();
+
+        //Config Page
+        $rows = 40;
+        $page = ceil(count($payment_total) / $rows);
+        //Generate QRcode
+        // $this->createQrcode(@$payment_no, "assets/image/qrcode/");
+        $html = '<html>
+                    <head>
+                        <title>' . $payment_no . '</title>
+                        <link rel="icon" href="' . $config->favicon . '" type="image/png" sizes="16x16">
+                    </head>
+                    <style>
+                        body {
+                            font-family: Arial, Helvetica, sans-serif;
+                        }
+                        #customers {
+                            border-collapse: collapse;width: 100%;
+                            font-size: 12px;
+                        }
+                        #customers td, #customers th {
+                            border: 1px solid black;padding: 2px;
+                        }
+                        #customers th {
+                            padding-top: 2px;
+                            padding-bottom: 2px;
+                            text-align: center;color: black;
+                        }
+                        @media screen {
+                            .print {
+                                display: none !important;
+                            }
+                        }
+            
+                        @media print {
+                            .noprint {
+                                display: none !important;
+                            }
+                        }
+                    </style>
+                    <body>
+                    <div style="margin:20%;" class="noprint">
+                        <center>
+                            <h1>Press CTRL + P for Print</h1>
+                            <p>Display pages for 40 rows</p>
+                            <p>Paper Size A4, Layout Landscape</p>
+                            <p>Margin Default, Scale 95</p>
+                        </center>
+                    </div>
+                    <div class="print">';
+        $no = 1;
+        $hal = 1;
+        $subtotal = 0;
+        $grand_total = 0;
+
+        for ($i = 0; $i < $page; $i++) {
+
+            $this->db->select('a.*, b.name as supplier_name, c.bank_name');
+            $this->db->from('ap_payments a');
+            $this->db->join('suppliers b', 'a.supplier_id = b.id', 'left');
+            $this->db->join('account_banks c', 'a.bank_account = c.bank_account');
+            $this->db->like('a.payment_no', $payment_no);
+            $this->db->order_by('a.status', 'ASC');
+            $this->db->order_by('a.payment_date', 'DESC');
+            //$this->db->group_by('a.payment_no');
+            $this->db->limit(40, ($i * 40));
+            $records = $this->db->get()->result_array();
+
+            //Exchange Rate
+            $payment_date = $records[0]['payment_date'];
+            $currency = $records[0]['currency'];
+
+            $search_date = date("d", strtotime($payment_date));
+            if($search_date == "31"){
+              $payment_date = date("Y-m-d", strtotime('-1 days', strtotime($payment_date)));
+            }
+
+            $monthBf = date('Y-m-01', strtotime('-1 month', strtotime($payment_date)));
+            $exchange = $this->crud->read('exchange_rates', [], ["start_date" => $monthBf, "currency_from" => $currency, "currency_to" => "IDR"]);
+
+            if ($exchange) {
+                $amount = $exchange->middle;
+                $hide = "";
+            } else {
+                $amount = 0;
+                $hide = "hidden";
+            }
+            // <td width="50" rowspan="4"><img src="' . base_url('assets/image/qrcode/' . $payment_no . '.png') . '" width="60"/></td>
+            $exchangeName = "Rp. " . number_format($amount, 2);
+
+            $html .= '<table style="width:100%;">
+                            <tr>
+                                <th width="10"><img src="' . $config->favicon . '" width="60" /></th>
+                                <td width="250" style="padding:10px;">
+                                    <b style="font-size:14px;">' . $config->name . '</b><br>
+                                    <span style="font-size:10px;">' . $config->address . '</span><br>
+                                </td>
+                                <td width="100" style="text-align:right;">
+                                    <table style="width:100%; font-size:10px;">
+                                        <tr>
+                                            <td width="60">Doc No</td>
+                                            <td width="5">:</td>
+                                            <td width="100">' . $config_iso->doc_ap_payment . '</td>
+                                        </tr>
+                                        <tr>
+                                            <td>Form</td>
+                                            <td>:</td>
+                                            <td>' . $config_iso->form_ap_payment . '</td>
+                                        </tr>
+                                        <tr>
+                                            <td>Print Date</td>
+                                            <td>:</td>
+                                            <td>' . date("Y-m-d H:i") . '</td>
+                                        </tr>
+                                        <tr>
+                                            <td>Print By</td>
+                                            <td>:</td>
+                                            <td>' . $this->session->name . '</td>
+                                        </tr>
+                                    </table>
+                                </td>
+                            </tr>
+                        </table>
+                        <div style="border: none; width:100%;">
+                            <div style="padding:10px;">
+                                <center>
+                                    <h3>PAYMENT VOUCHER</h3>
+                                </center>
+                                <div style="float:left; width:40%;"> 
+                                    <table style="width:100%; font-size:12px; margin-bottom:10px;">
+                                        <tr>
+                                            <td width="80">Pay To</td>
+                                            <td width="10">:</td>
+                                            <td><b>' . $header_supplier . '</b></td>
+                                        </tr>
+                                        <tr>
+                                            <td width="50">Payment By</td>
+                                            <td width="10">:</td>
+                                            <td><b>' . $header_pay_by . '</b></td>
+                                        </tr>
+                                    </table>
+                                </div>
+                                <div style="float:left; width:30%;"> 
+                                    <table style="width:100%; font-size:12px; margin-bottom:10px;">
+                                        <tr>
+                                            <td width="80">Payment No</td>
+                                            <td width="10">:</td>
+                                            <td><b>' . $header_pay_no . '</b></td>
+                                        </tr>
+                                        <tr>
+                                            <td width="80">Payment Date</td>
+                                            <td width="10">:</td>
+                                            <td><b>' . $header_date . '</b></td>
+                                        </tr>
+                                        <tr>
+                                            <td width="50">Bank Account</td>
+                                            <td width="10">:</td>
+                                            <td><b>' . $header_bank_acc . '</b></td>
+                                        </tr>
+                                         <tr>
+                                            <td width="50">Bank Name</td>
+                                            <td width="10">:</td>
+                                            <td><b>' . $header_bank_nm . '</b></td>
+                                        </tr>
+                                    </table>
+                                </div>
+                                <div ' . $hide . ' style="float:left; width:25%; border:2px solid black; padding:10px; font-size:12px; margin-left:20px;"> 
+                                    <p style="margin:0;">Rate USD to IDR : <b>' . $exchangeName . '</b></p>
+                                </div>
+                                <table id="customers">
+                                    <tr>
+                                        <th>No</th>
+                                        <th>Purchase Invoice No</th>
+                                        <th>Supplier Invoice No</th>
+                                        <th>Currency</th>
+                                        <th>Amount</th>
+                                        <th>Balance</th>
+                                        <th>Payment</th>
+                                    </tr>';
+            // $grand_total = 0;
+            foreach ($records as $record) {
+                if ($record['account_type'] == "DEBIT") {
+                    $grand_total += $record['payment'];
+                    $subtotal += $record['payment'];
+                } else {
+                    $grand_total -= $record['payment'];
+                    $subtotal -= $record['payment'];
+                }
+
+                $html .= '  <tr>
+                                <td style="text-align:center">' . $no . '</td>
+                                <td>' . $record['purchase_invoice'] . '</td>
+                                <td>' . $record['supplier_invoice'] . '</td>
+                                <td>' . $record['currency'] . '</td>
+                                <td style="text-align:right;">' . @number_format(($record['amount']), 2) . '</td>
+                                <td style="text-align:right;">' . @number_format($record['balance'], 2) . '</td>
+                                <td style="text-align:right;">' . @number_format($record['payment'], 2) . '</td>
+                            </tr>';
+                $no++;
+            }
+
+            // if (($i + 1) == $page) {
+            //     $html_grand_total = '<tr>
+            //                 <th style="text-align:right" colspan="6">GRAND TOTAL</th>
+            //                 <th style="text-align:right;">' . @number_format($subtotal, 2) . '</th>
+            //             </tr>';
+            // }else{
+            //     $html_grand_total = "";
+            // }
+
+            // $html .= '  <tr>
+            //                 <th style="text-align:right" colspan="6">SUB TOTAL</th>
+            //                 <th style="text-align:right;">' . @number_format($grand_total, 2) . '</th>
+            //             </tr>
+            //             '.$html_grand_total.'
+            //         </table>';
+
+            // $html .= '  <tr>
+            //                 <th style="text-align:right" colspan="6">GRAND TOTAL</th>
+            //                 <th style="text-align:right;">' . @number_format($grand_total, 2) . '</th>
+            //             </tr>
+            //         </table>';
+
+            if (($i + 1) == $page) { 
+                $html .= '  <tr>
+                                <th style="text-align:right" colspan="6">GRAND TOTAL</th>
+                                <th style="text-align:right;">' . @number_format($grand_total, 2) . '</th>
+                            </tr>';
+            }
+            
+            $html .= '</table>';
+
+            if (($i + 1) != $page) {
+                $html .= '<div style="page-break-after:always;"></div>';
+            }
+            $hal++;
+        }
+
+        $display_currency = !empty($payment_total) ? $payment_total[0]['currency'] : '';
+        $display_note = !empty($payment_total) ? $payment_total[0]['note'] : '';
+
+        //<td>' . $this->convertcurrency->convertCurrencyToWords($subtotal, $records[0]['currency']) . '</td>
+        $html .= '<div style="width:100%; float:left;">
+                        <table id="customers" style="margin-top:10px;">
+                            <tr>
+                                <th style="text-align:center;">Amount in Words</th>
+                                <td>' . $this->convertcurrency->convertCurrencyToWords($grand_total, $display_currency) . '</td>
+                               
+                            </tr>
+                        </table>
+                        <p style="font-size:12px;"><i>Note: ' . $display_note . '</i>
+                        <i>*This Payment Voucher was prepared by ' . $config->name . '</i></p>
+                    </div>
+                    <div style="width:100%; float:left; margin-bottom:20px;">
+                        <table id="customers" style="width:100%; font-size:12px;">
+                            <tr>
+                                <td rowspan="2" style="font-weight:bold;">Account No</td>
+                                <td rowspan="2" style="font-weight:bold;">Account Name</td>
+                                <td rowspan="2" style="font-weight:bold;">Description</td>
+                                <td colspan="2" style="font-weight:bold;">Original Currency</td>
+                                <td colspan="2" style="font-weight:bold;">Local Currency</td>
+                            </tr>
+                            <tr>
+                                <td style="font-weight:bold;">Debit</td>
+                                <td style="font-weight:bold;">Credit</td>
+                                <td style="font-weight:bold;">Debit</td>
+                                <td style="font-weight:bold;">Credit</td>
+                            </tr>';
+            $journals = $this->crud->query("SELECT a.*, b.account_name 
+            FROM ap_payment_journals a 
+            JOIN account_coa b ON a.account_number = b.account_number
+            WHERE a.payment_no = '$payment_no' ORDER BY a.flag ASC");
+
+            $total_debit = 0;
+            $total_credit = 0;
+            $local_total_debit = 0;
+            $local_total_credit = 0;
+            foreach ($journals as $journal) {
+
+                $total_debit += $journal->debit;
+                $total_credit += $journal->credit;
+                $local_total_debit += $journal->local_debit;
+                $local_total_credit += $journal->local_credit;
+
+                $html .= '  <tr>
+                                <td>' . $journal->account_number . '</td>
+                                <td>' . $journal->account_name . '</td>
+                                <td>' . $journal->description . '</td>
+                                <td style="text-align:right;">' . number_format($journal->debit, 2) . '</td>
+                                <td style="text-align:right;">' . number_format($journal->credit, 2) . '</td>
+                                <td style="text-align:right;">' . number_format($journal->local_debit, 2) . '</td>
+                                <td style="text-align:right;">' . number_format($journal->local_credit, 2) . '</td>
+                            </tr>';
+            }
+
+            $html .= '      <tr>
+                                <td colspan="3"><b>BALANCE TOTAL</b></td>
+                                <td style="text-align:right;">' . @number_format($total_debit, 2) . '</td>
+                                <td style="text-align:right;">' . @number_format($total_credit, 2) . '</td>
+                                <td style="text-align:right;">' . @number_format($local_total_debit, 2) . '</td>
+                                <td style="text-align:right;">' . @number_format($local_total_credit, 2) . '</td>
+                            </tr>
+                        </table>
+                    </div>';
+
+            $html .= '</table>
+                <br>
+                <table style="width:100%; font-size:12px;">
+                    <tr>
+                        <td style="text-align:center;">Prepared By</td>
+                        <td style="text-align:center;">Checked By</td>
+                        <td style="text-align:center;">Checked By</td>
+                        <td style="text-align:center;">Approved By</td>
+                    </tr>
+                    <tr>
+                        <td style="height:60px;"></td>
+                        <td style="height:60px;"></td>
+                        <td style="height:60px;"></td>
+                        <td style="height:60px;"></td>
+                    </tr>
+                    <tr>
+                        <th style="height:20px; text-align:center;">' . $this->session->name . '<hr style="width:60%;margin-left:20%;">User Entry</th>
+                        <th style="height:20px; text-align:center;"><br><hr style="width:60%;margin-left:20%;">Assistant Manager</th>
+                        <th style="height:20px; text-align:center;"><br><hr style="width:60%;margin-left:20%;">Finance Accounting Manager</th>
+                        <th style="height:20px; text-align:center;"><br><hr style="width:60%;margin-left:20%;">Director</th>
+                    </tr>
+                </table>
+                </div>
+            </div>';
+
+        $html .= "</div></div><script>window.print()</script></body>";
+        die($html);
+    }
+
 
     public function print($option = "")
     {
