@@ -106,3 +106,6 @@ Halaman ini merangkum seluruh aktivitas pengembangan sistem ERP selama tahun 202
 ### [2026-01-02]
 - **Rizki Puji**: Feat: fixing datatablestemp insert Asset Depreciation to Journal Postings ([dd30755](https://github.com/hilmanf11/erp_bpi/commit/dd30755029ef746a3978c9033f0b741992bc5335))
 - **Rizki Puji**: Fixing: fix query GL No relation Asset Depreciation ([ca00f52](https://github.com/hilmanf11/erp_bpi/commit/ca00f52b432da6feab79f4d572b1a1512bdf27ab))
+
+### [2026-01-22]
+- **Rizki Puji**: docs: fixing changelog-2026 conflict on Merge ([48deae34](https://github.com/hilmanf11/erp_bpi/commit/48deae3475f48ff49f8acc4bd8ecd448ebbc012e))
