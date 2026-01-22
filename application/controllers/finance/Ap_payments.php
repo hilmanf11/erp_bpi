@@ -151,7 +151,7 @@ class Ap_payments extends CI_Controller
         $arr = [];
         $flag = 1;
 
-        // --- Ambil data per baris transaksi (Sesuai permintaan Atasan) ---
+        // --- Ambil data per baris transaksi (Bu Nina 2026-01-22) ---
         foreach ($jsonDatas as $journal) {
             $account_number   = $journal['account_number'];
             $account_name     = $journal['account_name'];
@@ -218,8 +218,9 @@ class Ap_payments extends CI_Controller
         $difference = round($final_local_debit - $final_local_credit, 2);
 
         if ($currency !== "IDR" && abs($difference) > 0.01) {
-            $gainLossDebit  = ($difference < 0) ? abs($difference) : 0;
-            $gainLossCredit = ($difference > 0) ? abs($difference) : 0;
+            $isLoss = ($difference < 0);
+            $gainLossDebit  = $isLoss ? abs($difference) : 0;
+            $gainLossCredit = !$isLoss ? abs($difference) : 0;
 
             $arr[] = [
                 "account_number" => "810.150.00",
@@ -916,6 +917,24 @@ class Ap_payments extends CI_Controller
     }
 
     public function createJournals()
+    {
+        if ($this->input->post()) {
+            $post = $this->input->post();
+            $purchase_invoice_journals = $this->crud->read('ap_payment_journals', [], ["payment_no" => $post['payment_no'], "description" => $post['description'], "account_number" => $post['account_number']]);
+
+            if (@$purchase_invoice_journals->id != "") {
+                $send = $this->crud->update('ap_payment_journals', ["payment_no" => $post['payment_no'], "description" => $post['description'], "account_number" => $post['account_number']], $post);
+                echo $send;
+            } else {
+                $send = $this->crud->create('ap_payment_journals', $post);
+                echo $send;
+            }
+        } else {
+            show_error("Cannot Process your request");
+        }
+    }
+
+    public function createJournals_existing()
     {
         if ($this->input->post()) {
             $post = $this->input->post();
