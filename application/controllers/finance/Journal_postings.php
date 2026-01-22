@@ -619,7 +619,11 @@ class Journal_postings extends CI_Controller
         $modul = base64_decode($get['modul']);
         $company_id = base64_decode($get['company_id']);
         $document_no = explode(",", base64_decode($get['document_no']));
-        $journal_type = base64_decode($get['journal_type']);
+
+        $journal_type = null;
+        if ($modul == "ASSET") {
+            $journal_type = base64_decode($get['journal_type']);
+        }
 
         $start = strtotime($transaction_from);
         $finish = strtotime($transaction_to);
