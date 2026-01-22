@@ -1,0 +1,59 @@
+name: Auto Update ERP Changelog
+on:
+  push:
+    branches:
+      - main  # Sesuaikan jika nama branch utama 'master'
+
+jobs:
+  update-changelog:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+
+      - name: Append Commit to Changelog
+        run: |
+          # 1. Ambil data yang dibutuhkan
+          COMMIT_MSG=$(git log -1 --pretty=%B)
+          AUTHOR_NAME=$(git log -1 --pretty=format:'%an')
+          SHORT_HASH=$(git log -1 --pretty=format:'%h')
+          FULL_HASH=$(git log -1 --pretty=format:'%H')
+          DATE=$(date +'%Y-%m-%d')
+          MONTH_NAME=$(date +'%B %Y')
+          YEAR=$(date +'%Y')
+          REPO_URL="https://github.com/hilmanf11/erp_bpi"
+          
+          CHANGELOG_FILE="docs/changelog-$YEAR.md"
+
+          # 2. Cek jika file belum ada, buat header tahunan
+          if [ ! -f "$CHANGELOG_FILE" ]; then
+            echo "# 🗓️ Riwayat Perubahan - $YEAR" > $CHANGELOG_FILE
+            echo "" >> $CHANGELOG_FILE
+            echo "Halaman ini merangkum seluruh aktivitas pengembangan sistem ERP selama tahun $YEAR." >> $CHANGELOG_FILE
+            echo "---" >> $CHANGELOG_FILE
+          fi
+
+          # 3. Cek jika sub-header bulan sudah ada, jika belum tambahkan
+          if ! grep -q "## $MONTH_NAME" "$CHANGELOG_FILE"; then
+            echo "" >> $CHANGELOG_FILE
+            echo "## $MONTH_NAME" >> $CHANGELOG_FILE
+          fi
+
+          # 4. Masukkan data commit (Tanggal - Author - Pesan - Link)
+          echo "" >> $CHANGELOG_FILE
+          echo "### [$DATE]" >> $CHANGELOG_FILE
+          echo "- **$AUTHOR_NAME**: $COMMIT_MSG ([$SHORT_HASH]($REPO_URL/commit/$FULL_HASH))" >> $CHANGELOG_FILE
+          
+      - name: Commit and Push Changes
+        run: |
+          git config --global user.name "Github Action Bot"
+          git config --global user.email "action@github.com"
+          git add docs/changelog-2026.md
+          # Memastikan bot tidak push jika tidak ada perubahan
+          git commit -m "docs: auto update changelog 2026 [skip ci]" || exit 0
+          git push
