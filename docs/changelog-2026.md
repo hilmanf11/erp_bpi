@@ -1,0 +1,108 @@
+# 🗓️ Update History - 2026
+
+Halaman ini merangkum seluruh aktivitas pengembangan sistem ERP selama tahun 2026.
+
+---
+
+## January 2026
+
+### [2026-01-22]
+- **Rizki Puji**: docs: add yml auto save commit to changelog ([5edc2ff9](https://github.com/hilmanf11/erp_bpi/commit/5edc2ff9c21076cc341011ea4dca98dc1baa183d))
+- **Rizki Puji**: chore: add changelog 2025 documentations ([2d7f50e](https://github.com/hilmanf11/erp_bpi/commit/2d7f50e4df33a72824ec5acecd0f67b1674b44bd))
+- **Rizki Puji**: chore: fixing documentation (docsify) ([04e05cb](https://github.com/hilmanf11/erp_bpi/commit/04e05cba11e55a595bd3bf36a1d49734de4de704))
+- **Rizki Puji**: chore: make documentation ([802ad5b](https://github.com/hilmanf11/erp_bpi/commit/802ad5b4f1f0f94b5c37ffb19f964628527e333b))
+- **Rizki Puji**: Fixing: bug create Journals AP Payment per PI transactions ([56d5e07](https://github.com/hilmanf11/erp_bpi/commit/56d5e0799efc947b6431faa9f69b3db1cff84644))
+- **Rizki Puji**: Fixing: fixing Calculate Journal add to journal by PI transactions on AP Payment (Bu Nina 2026-01-22) ([c55d485](https://github.com/hilmanf11/erp_bpi/commit/c55d485bc91556544d2c8757e4eb1f453e725177))
+- **Rizki Puji**: Fixing: bug undefined journal_type on Auto Posting Journal AP Payment" ([8a73634](https://github.com/hilmanf11/erp_bpi/commit/8a73634bd390ffcf1b384410d4c5e961c88b9576))
+
+### [2026-01-21]
+- **Rizki Puji**: chore: fixing call libraries PHPDoc for Intellisense ([ca51766](https://github.com/hilmanf11/erp_bpi/commit/ca517667380fe5d7b310945316a02b4e67be4c49))
+- **Rizki Puji**: Fixing: bug Account Number category Account Receivable on AR Receipt ([9d16750](https://github.com/hilmanf11/erp_bpi/commit/9d16750c04d8a99f30f81df08bb031821df142cc))
+- **Rizki Puji**: Fixing: validasi Customer ID null or - on AR Receipt ([43d6a48](https://github.com/hilmanf11/erp_bpi/commit/43d6a48950eaa68de12f9ae33541e79469de6823))
+- **Rizki Puji**: Fixing: bug Account Number category Account Payable on AP Payments ([b95033f](https://github.com/hilmanf11/erp_bpi/commit/b95033fd3451b66658b99b94ecdfa1560a53fd7a))
+- **Rizki Puji**: Fixing: validasi Suplier ID null or - on AP Payment ([2faa3b8](https://github.com/hilmanf11/erp_bpi/commit/2faa3b817932bc01e242dd0ad20f6f46c1d450a1))
+- **Rizki Puji**: chore: fixing duplicate balance calc on temp AP Payment ([4ebf246](https://github.com/hilmanf11/erp_bpi/commit/4ebf246316948b77cfa4b4b2afd56e7f9c153d7e))
+- **Rizki Puji**: Fixing: print_voucher AP Payments (Bu Nina) ([b1c542e](https://github.com/hilmanf11/erp_bpi/commit/b1c542e020f614322dd4b8f5f9079a0f91132ea0))
+- **Rizki Puji**: Fixing: Bug AP Payments source OTHERS no supplier-id (Bu Nina 2026-01-20) ([b668229](https://github.com/hilmanf11/erp_bpi/commit/b668229a8811ba748510cfd264c0ac5b571978a6))
+
+### [2026-01-19]
+- **kurniawan**: Update purchase_report.php ([2022d81](https://github.com/hilmanf11/erp_bpi/commit/2022d81bd66826e535892d159ec049c8a77f22dd))
+- **kurniawan**: Update Item_rm.php ([4164741](https://github.com/hilmanf11/erp_bpi/commit/416474116dd71b7b134887f56635db1115e3f224))
+- **kurniawan**: Update purchase_report.php ([fadc981](https://github.com/hilmanf11/erp_bpi/commit/fadc981e854a685fc46b471c9dfa1a84f7aac8e6))
+- **kurniawan**: Update Purchase Report ([c3fbc33](https://github.com/hilmanf11/erp_bpi/commit/c3fbc3301624c2dc428eb54b932f4077b021e706))
+- **Rizki Puji**: Feature: calc grand total balance standard display Recap on Report Inventory RM STD Actual ([b178b85](https://github.com/hilmanf11/erp_bpi/commit/b178b851fa83878fbf2775fbcc47f88df342c033))
+
+### [2026-01-15]
+- **kurniawan**: New Modul Polybag Prices ([4f7db2e](https://github.com/hilmanf11/erp_bpi/commit/4f7db2e89f7c5d83096a0c2ac7e3bf8f35decdf8))
+- **kurniawan**: New Modul Master Transaction boxs ([6b3395e](https://github.com/hilmanf11/erp_bpi/commit/6b3395e0d0f96d96b6a2907b2811cd9891d1e4d0))
+- **kurniawan**: New Modul Master mpq material crusher ([70060a0](https://github.com/hilmanf11/erp_bpi/commit/70060a0114a3859e6ac0f881d564cee359c8316c))
+- **kurniawan**: New Modul Machine Price ([a377cd4](https://github.com/hilmanf11/erp_bpi/commit/a377cd46218fcdc96a849d00295ddbf1b62f035a))
+- **kurniawan**: Create Item_equivalent_fg.php ([305967a](https://github.com/hilmanf11/erp_bpi/commit/305967a9fff473d4078150489486981367cdebb4))
+- **kurniawan**: Create item_equivalent_fg.php ([32928de](https://github.com/hilmanf11/erp_bpi/commit/32928decc6c66b4736dee2d79d88dc6237cc404e))
+- **kurniawan**: Update item_family_subs.php ([c8053be](https://github.com/hilmanf11/erp_bpi/commit/c8053be6651834abfecf8aa2ae9e0d9cb16a8ad5))
+- **kurniawan**: udpate Bom ([77e9085](https://github.com/hilmanf11/erp_bpi/commit/77e9085ec95d537f965f44b144582a9ef0e48ff7))
+- **kurniawan**: update Vehicle ([ba5c64f](https://github.com/hilmanf11/erp_bpi/commit/ba5c64f813686fc71ea99bff5c801ecbe60648f6))
+- **kurniawan**: Update Item Boxs ([11f471b](https://github.com/hilmanf11/erp_bpi/commit/11f471b375f892f3ab822267af8eadd52a14f5cc))
+- **kurniawan**: Update Customer Items ([c507139](https://github.com/hilmanf11/erp_bpi/commit/c50713926256904b6b872b82361fc1265ef2338f))
+- **kurniawan**: New Modul Component rate ([075db1e](https://github.com/hilmanf11/erp_bpi/commit/075db1edf65e5c47b25f403e58c7d5d347b87869))
+- **kurniawan**: New Modul Op trans costs ([20dc3e5](https://github.com/hilmanf11/erp_bpi/commit/20dc3e539b35248368dd0e97f2c73f4a781a6c76))
+- **kurniawan**: Update Report_master_data_eng.php ([3e5b38b](https://github.com/hilmanf11/erp_bpi/commit/3e5b38bf3bc94fc822af253b8757788ec4158f35))
+- **kurniawan**: Update Item_rm.php ([640e388](https://github.com/hilmanf11/erp_bpi/commit/640e3888229ff6a7c300cc87b5b4865dacf69358))
+- **kurniawan**: Update Item_fg.php ([42ba0af](https://github.com/hilmanf11/erp_bpi/commit/42ba0af0fc0727cc809700be360a7400d9020fd5))
+- **kurniawan**: Update Item_familys.php ([efe3dd3](https://github.com/hilmanf11/erp_bpi/commit/efe3dd319cb170a4ffa43f240e0987834c458e6b))
+- **kurniawan**: Update Customers.php ([33b252c](https://github.com/hilmanf11/erp_bpi/commit/33b252c03118c76f0a90b253555e51df9d0f2c89))
+- **kurniawan**: New Modul Report value NG RM ([c35cac7](https://github.com/hilmanf11/erp_bpi/commit/c35cac72ee54196aeca4a382783103e39c9be25e))
+- **kurniawan**: New Modul Report Value NG ([b155b83](https://github.com/hilmanf11/erp_bpi/commit/b155b83eadee96eb274a7bc0c9008357e92cd1ee))
+- **kurniawan**: Update Progress_wip.php ([cc2e280](https://github.com/hilmanf11/erp_bpi/commit/cc2e2804c073a735f45c7c545e779f6ee7f2f8fe))
+- **kurniawan**: Update Report_history_transactions_wip_rm.php ([abc7d88](https://github.com/hilmanf11/erp_bpi/commit/abc7d887685d1396cdbaed6af74641f5c2f53df7))
+- **kurniawan**: New Modul Wip Adjustment Fg ([687520c](https://github.com/hilmanf11/erp_bpi/commit/687520cc964de98281da7ae414db5ed3522f1590))
+- **kurniawan**: New Modul Report NG RM ([b2f8e63](https://github.com/hilmanf11/erp_bpi/commit/b2f8e638e847363ef03646fb218ad52b9cf114e3))
+- **kurniawan**: New Modul Input Crushing ([00c974c](https://github.com/hilmanf11/erp_bpi/commit/00c974c853184163ac4e0d0ff723f52902c720be))
+- **Rizki Puji**: Feature: calc OUT and ENDING balance display Recap on Report Inventory RM STD Actual ([4513de5](https://github.com/hilmanf11/erp_bpi/commit/4513de5b5c51ebd6e39f717a5e4d68ed8a06ccb5))
+- **Rizki Puji**: Merge Update SO ([b3bd8b8](https://github.com/hilmanf11/erp_bpi/commit/b3bd8b898902f78dcc4ccb9277f478c07473c34b))
+- **Rizki Puji**: Feature: query actual price IN display Recap on Report Inventory RM STD Actual ([990aa81](https://github.com/hilmanf11/erp_bpi/commit/990aa81a4962ab5e8204a8486ea8ebbe87608578))
+- **kurniawan**: Update SO ([05c471e](https://github.com/hilmanf11/erp_bpi/commit/05c471e8ddbf98072e22b4e072267fc8e56a3b31))
+- **Rizki Puji**: Feature: fixing get standard Display Recap on Report Inventory RM STD Actual ([44329b2](https://github.com/hilmanf11/erp_bpi/commit/44329b2ac903e91b217b8b24326608e1d57fffa8))
+- **Rizki Puji**: Feature: fixing get actual price IN on Report Inventory RM STD Actual ([2804075](https://github.com/hilmanf11/erp_bpi/commit/2804075534a2b3580777163ef62a1a79d61c99c1))
+
+### [2026-01-14]
+- **Rizki Puji**: Feature: resources controller and view Report Inventory FG STD Actual ([c265437](https://github.com/hilmanf11/erp_bpi/commit/c2654379bd3119e8c0dd97f8faf8b7d9939149b1))
+- **Rizki Puji**: Feature: fixing print Recap (LSB) and Detail (Inventory) Report Inventory RM ([c84b144](https://github.com/hilmanf11/erp_bpi/commit/c84b14482c91c6b9c7bc7df4f7b1b5ce3197182d))
+- **Rizki Puji**: Feature: fixing query get actual IN price and rename Report Inventory RM INJ ([4d26341](https://github.com/hilmanf11/erp_bpi/commit/4d2634168b37498ec833c085586bcd9f5d16e336))
+
+### [2026-01-13]
+- **Rizki Puji**: Feature: fixing layout Recap on Report Inventory RM INJ ([e13292d](https://github.com/hilmanf11/erp_bpi/commit/e13292d729d3983c07b28c2b3812b1a0f5abe521))
+- **Rizki Puji**: Feature: fixing layout Recap and Detail on Report Inventory RM INJ ([82e9d28](https://github.com/hilmanf11/erp_bpi/commit/82e9d2894fd52312bf835794e39ba26f8a57072f))
+- **Rizki Puji**: Feature: fixing get data Inventory RM on Report Inventory RM INJ ([9837eae](https://github.com/hilmanf11/erp_bpi/commit/9837eae43fd1eb15085705543699826cdf6da58b))
+- **Rizki Puji**: Feature: query get Begin Standard Price on Report Inventory RM INJ ([5febcf8](https://github.com/hilmanf11/erp_bpi/commit/5febcf877ce32e6d4b16d9ba07baf944fe30dbcf))
+
+### [2026-01-12]
+- **Rizki Puji**: Feature: fixing validation export excel Recap and Detail Report Inventory RM INJ ([5a5f4b1](https://github.com/hilmanf11/erp_bpi/commit/5a5f4b1070614b10f95aa21106a49aa8589c3316))
+- **Rizki Puji**: Feature: fixing header new feature Report Inventory RM INJ ([027435f](https://github.com/hilmanf11/erp_bpi/commit/027435f412e2e34affecbf43d5bd14b88e8c83aa))
+- **Rizki Puji**: Feature: add resources new feature Report Inventory RM INJ ([f3c009f](https://github.com/hilmanf11/erp_bpi/commit/f3c009ffeb426044336505697b114870a2971f1f))
+
+### [2026-01-08]
+- **Rizki Puji**: Fixing get POR readReceipts since 2025 on Purchase Invoices ([4d2050c](https://github.com/hilmanf11/erp_bpi/commit/4d2050c98f1f4b8a4e00e6fd2fb5e238f7409fa0))
+- **Rizki Puji**: Optimasi query get POR in Purchase Invoice validate size=YES/NO ([681bb59](https://github.com/hilmanf11/erp_bpi/commit/681bb59f7c4dd1f545914d1ce6de2c111e30a634))
+- **Rizki Puji**: Fixing bug POR tdk tampil di Purchase Invoices (Bu Nina) ([0518466](https://github.com/hilmanf11/erp_bpi/commit/0518466974f94c515480f939968fc06c06615d88))
+
+### [2026-01-07]
+- **Rizki Puji**: Hotfix: fixing bug DN date since 2025 on Sales Invoices ([6c98ecd](https://github.com/hilmanf11/erp_bpi/commit/6c98ecdd49369d46624a2a7f30e968cce095beb0))
+- **kurniawan**: Update Sales Report ([ea38aeb](https://github.com/hilmanf11/erp_bpi/commit/ea38aeb130c775f6357342a11bd33a5c1eac68e7))
+
+### [2026-01-06]
+- **Rizki Puji**: Hotfix: fixing Join bug price POR in datatablestemp Purchase Invoices ([7299520](https://github.com/hilmanf11/erp_bpi/commit/7299520469136871c1be6f185a1ecd83befc4977))
+- **Rizki Puji**: Hotfix: fixing group by bug qty POR in datatablestemp Purchase Invoices ([61282e7](https://github.com/hilmanf11/erp_bpi/commit/61282e7b24b79d4fc6b816e7e2a0e31ddaab975a))
+
+### [2026-01-05]
+- **Rizki Puji**: Feature: Checkbox VAT on Sales Invoices (mas Agung) ([49f9432](https://github.com/hilmanf11/erp_bpi/commit/49f94329aea5e0a70b41633957efac22b0da29e6))
+- **Rizki Puji**: Fixing: add column supplier_id to Fixed Assets and fixing create upload ([f334018](https://github.com/hilmanf11/erp_bpi/commit/f334018d1f0361cd2b3388f0ffeeb7e1aa2252d2))
+- **kurniawan**: Update sales_orders.php ([b039b8d](https://github.com/hilmanf11/erp_bpi/commit/b039b8d5f97c87aefc4f03a42365489032e4d1cc))
+- **Rizki Puji**: Fixing: fix get all asset no Posting Journal ([902eddf](https://github.com/hilmanf11/erp_bpi/commit/902eddf8013dc9cd0c6eb65c846de812620ee1b1))
+- **Rizki Puji**: Fixing query get datatablestemp ASSET Posting Journal category_id ([69fb619](https://github.com/hilmanf11/erp_bpi/commit/69fb6192e73f124656a4d22d61e109be7e001e8a))
+- **Rizki Puji**: Fixing: fix query get GL No Asset Depreciation and Journal Posting ([b2a4fbb](https://github.com/hilmanf11/erp_bpi/commit/b2a4fbb922e79ef8ee65dd108909f630eb24d778))
+- **Rizki Puji**: Fixing: rollback query Fixed Asset Posting No ([5b55175](https://github.com/hilmanf11/erp_bpi/commit/5b5517597f298a68dec9570defbc541974d097fd))
+
+### [2026-01-02]
+- **Rizki Puji**: Feat: fixing datatablestemp insert Asset Depreciation to Journal Postings ([dd30755](https://github.com/hilmanf11/erp_bpi/commit/dd30755029ef746a3978c9033f0b741992bc5335))
+- **Rizki Puji**: Fixing: fix query GL No relation Asset Depreciation ([ca00f52](https://github.com/hilmanf11/erp_bpi/commit/ca00f52b432da6feab79f4d572b1a1512bdf27ab))

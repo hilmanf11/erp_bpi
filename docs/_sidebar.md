@@ -1,10 +1,11 @@
-* **Ringkasan**
+* **Main Menu**
   * [Dashboard](home.md)
+  * [SOP Developer](sop-developer.md)
 
-* **Modul ERP**
-  * [Master Data](modul-master.md)
-  * [Accounting & Finance](modul-finance.md)
+* **Modul Accounting & Finance**
+  * [Account Payables (AP)](finance/ap-payments.md)
+  * [Account Receivables (AR)](finance/ar-receipts.md)
 
 * **History & Changelog**
-  * [Update Januari 2026](changelog-jan-2026.md)
+  * [Changelog 2026](changelog-2026.md)
   * [Archives 2025](changelog-2025.md)
