@@ -146,6 +146,114 @@ class Ap_payments extends CI_Controller
         $grand_local_credit = 0;
         $grand_local_debit = 0;
         $total_payment_local_now = 0;
+        $currency = "IDR"; // Default
+
+        $arr = [];
+        $flag = 1;
+
+        // --- Ambil data per baris transaksi (Sesuai permintaan Atasan) ---
+        foreach ($jsonDatas as $journal) {
+            $account_number   = $journal['account_number'];
+            $account_name     = $journal['account_name'];
+            $currency         = $journal['currency'];
+            $payment_original = $journal['payment'] ?? 0;
+            $payment_date     = $journal['payment_date'];
+            $trans_date       = $journal['trans_date'] ?? $journal['payment_date'];
+            $description      = $journal['description'];
+            $account_type     = $journal['account_type'];
+            
+            $debit_original  = ($account_type == "DEBIT") ? $payment_original : 0;
+            $credit_original = ($account_type == "CREDIT") ? $payment_original : 0;
+
+            // Ambil Kurs
+            $exchange_trans_date = ($currency !== 'IDR') ? ($this->getExchange($currency, $trans_date) ?? 0) : 1;
+            $local_debit  = round($debit_original * $exchange_trans_date, 2); 
+            $local_credit = round($credit_original * $exchange_trans_date, 2); 
+
+            // LANGSUNG MASUKKAN KE ARRAY (Tanpa pengecekan isset/merging)
+            $arr[] = [
+                "account_number" => $account_number,
+                "account_name"   => $account_name,
+                "description"    => $description,
+                "currency"       => $currency,
+                "exchange_rate"  => $exchange_trans_date,
+                "debit"          => number_format($debit_original, 2, '.', ''),
+                "credit"         => number_format($credit_original, 2, '.', ''),
+                "local_debit"    => $local_debit,
+                "local_credit"   => $local_credit,
+                "flag"           => $flag
+            ];
+
+            // Akumulasi untuk perhitungan Grand Total & Selisih Kurs
+            $grand_total += $payment_original;
+            $grand_local_debit += $local_debit;
+            $grand_local_credit += $local_credit;
+            
+            $exchange_payment_date = ($currency !== 'IDR') ? ($this->getExchange($currency, $payment_date) ?? 0) : 1;
+            $total_payment_local_now += round($payment_original * $exchange_payment_date, 2);
+            
+            $flag++;
+        }
+        
+        // --- Akun Bank ---
+        foreach ($banks as $bank) {
+            $arr[] = array(
+                "account_number" => $bank->account_number,
+                "account_name"   => $bank->account_name,
+                "description"    => "Payment Total",
+                "currency"       => "IDR",
+                "exchange_rate"  => $exchange_payment_date ?? 1,
+                "debit"          => "0.00",
+                "credit"         => number_format($grand_total, 2, '.', ''),
+                "local_debit"    => 0,
+                "local_credit"   => round($total_payment_local_now, 2),
+                "flag"           => $flag,
+            );
+            $flag++;
+        }
+
+        // --- Perhitungan Selisih Kurs (Gain/Loss) ---
+        $final_local_debit  = array_sum(array_column($arr, 'local_debit'));
+        $final_local_credit = array_sum(array_column($arr, 'local_credit'));
+        $difference = round($final_local_debit - $final_local_credit, 2);
+
+        if ($currency !== "IDR" && abs($difference) > 0.01) {
+            $gainLossDebit  = ($difference < 0) ? abs($difference) : 0;
+            $gainLossCredit = ($difference > 0) ? abs($difference) : 0;
+
+            $arr[] = [
+                "account_number" => "810.150.00",
+                "account_name"   => "Gain (Loss) Sales Asset / Foreign Exchange",
+                "description"    => "Selisih Kurs Otomatis",
+                "currency"       => "IDR",
+                "exchange_rate"  => "-",
+                "debit"          => 0,
+                "credit"         => 0,
+                "local_debit"    => $gainLossDebit,
+                "local_credit"   => $gainLossCredit,
+                "flag"           => $flag,
+            ];
+        }
+
+        echo json_encode($arr);
+    }
+
+    // --- Journal total per Account Number dari PI, jika account_number berbeda maka di split
+    public function calculateJournalPerAccount($journal_type_id = "", $bank_account = "")
+    {
+        $journal_type_id = base64_decode($journal_type_id);
+        $bank_account = base64_decode($bank_account);
+
+        $banks = $this->crud->query("SELECT a.*, b.account_name FROM account_banks a 
+            JOIN account_coa b ON a.account_number = b.account_number 
+            WHERE a.bank_account = '{$bank_account}'");
+
+        $jsonDatas = json_decode(file_get_contents("json/ap_payments.json"), true);
+        
+        $grand_total = 0;
+        $grand_local_credit = 0;
+        $grand_local_debit = 0;
+        $total_payment_local_now = 0;
 
         foreach ($jsonDatas as $jsonData) {
             $currency         = $jsonData['currency'];
