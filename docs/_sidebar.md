@@ -7,3 +7,4 @@
 
 * **History & Changelog**
   * [Update Januari 2026](changelog-jan-2026.md)
+  * [Archives 2025](changelog-2025.md)
