@@ -111,3 +111,6 @@ Halaman ini merangkum seluruh aktivitas pengembangan sistem ERP selama tahun 202
 
 ### [2026-01-22]
 - **Rizki Puji**: docs: fixing changelog-2026 conflict on Merge ([48deae34](https://github.com/hilmanf11/erp_bpi/commit/48deae3475f48ff49f8acc4bd8ecd448ebbc012e))
+
+### [2026-01-22]
+- **Rizki Puji**: docs: update changelog-2026 manual entry ([f5a735a3](https://github.com/hilmanf11/erp_bpi/commit/f5a735a3fcfe1a9b55ddf62cf98703e463b8be01))
