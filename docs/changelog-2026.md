@@ -132,3 +132,6 @@ Halaman ini merangkum seluruh aktivitas pengembangan sistem ERP selama tahun 202
 
 ### [2026-01-27]
 - **Rizki Puji**: Feature: fix get Actual Amount Recap Inventory RM STD Actual ([abaf1634](https://github.com/hilmanf11/erp_bpi/commit/abaf1634bb6941c8189a6e61c075d44aef39ffee))
+
+### [2026-01-27]
+- **Rizki Puji**: Feature: fix variable record print detail Inventory RM STD Actual ([d5c66b1d](https://github.com/hilmanf11/erp_bpi/commit/d5c66b1d600fbaa0da78271c165fe1b30facca27))
