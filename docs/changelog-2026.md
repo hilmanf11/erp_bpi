@@ -126,3 +126,6 @@ Halaman ini merangkum seluruh aktivitas pengembangan sistem ERP selama tahun 202
 
 ### [2026-01-27]
 - **Rizki Puji**: pull origin 'main' ([14e6c809](https://github.com/hilmanf11/erp_bpi/commit/14e6c8090a199b403fc23084fa1da899863909fc))
+
+### [2026-01-27]
+- **Hilman Fadillah**: Update : Temporary Invoice Validation ([74ea0031](https://github.com/hilmanf11/erp_bpi/commit/74ea003189dd5ef09e655e66b9fb9e634c2759a6))
