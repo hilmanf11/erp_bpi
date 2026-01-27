@@ -348,98 +348,89 @@ class Inventory_rm_standard_actual extends CI_Controller
         if ($option == "excel") {
             $format  = date("Ymd");
             header("Content-type: application/vnd-ms-excel");
-            header("Content-Disposition: attachment; filename=history_transactions_rm_$format.xls");
+            header("Content-Disposition: attachment; filename=inventory_rm_standard_actual_$format.xls");
         }
         
-        $filter_from        = $this->input->get('filter_from');
-        $filter_to          = $this->input->get('filter_to');
-        $filter_items       = $this->input->get('filter_items');
-        $filter_display     = $this->input->get("filter_display");
-        $filter_division    = $this->input->get('filter_division');
-        $filter_trans_type  = $this->input->get('filter_trans_type');
+        $filter_from = $this->input->get('filter_from');
+        $filter_to   = $this->input->get('filter_to');
+        $filter_items = $this->input->get('filter_items');
+        $filter_display = $this->input->get("filter_display");
+        $filter_division = $this->input->get('filter_division');
         $filter_item_family = $this->input->get('filter_item_family');
         $filter_item_category = $this->input->get('filter_item_category');
 
         $display_title = ($filter_display == "DETAIL") ? '(DETAIL)' : '(RECAP)';
 
-        $start  = strtotime($filter_from);
-        $finish = strtotime($filter_to);
+        // Config Logo & Name
+        $config = $this->db->get('config')->row();
 
-        $filter_from_minus1 = date('Y-m-01', strtotime('-1 month', strtotime($filter_from)));
-        $filter_to_minus1   = date('Y-m-t',  strtotime('-1 month', strtotime($filter_from)));
-        $filter_from_minus2 = date('Y-m-01', strtotime('-2 month', strtotime($filter_from)));
-        $filter_to_minus2   = date('Y-m-t',  strtotime('-2 month', strtotime($filter_from)));
-        $filter_from_minus3 = date('Y-m-01', strtotime('-3 month', strtotime($filter_from)));
-        $filter_to_minus3   = date('Y-m-t',  strtotime('-3 month', strtotime($filter_from)));
+        //------------------------------------ OPTIMIZED QUERY ----------------------------------//
+        $query = "SELECT
+                a.id, 
+                a.number, 
+                a.name, 
+                a.division, 
+                a.uom,
+                b.name as prodfam, 
+                l.name as sub_prodfam, 
+                c.name as category_name, 
+                std_price.price AS standard_price, 
+                std_price.currency AS standard_currency,
+                
+                -- BEGIN STOCK
+                COALESCE(x.begin_stock, 0) AS begin_stock,
 
-        //Config
-        $this->db->select('*');
-        $this->db->from('config');
-        $config = $this->db->get()->row();
+                -- QTY IN DETAILS
+                COALESCE(d.qty_scan_in, 0) as receipt_qty, 
+                (COALESCE(i.qty, 0) + COALESCE(o.qty_bpm_scan, 0)) as bpm_qty, 
+                COALESCE(k.qty, 0) as adj_in_qty, 
 
+                -- QTY OUT DETAILS
+                COALESCE(f2.qty, 0) as qty_supply_sheet,
+                COALESCE(f5.qty, 0) as qty_mat_request,
+                (COALESCE(j.qty, 0) + COALESCE(f4.qty, 0) + COALESCE(f3.qty, 0)) as qty_kanban,
+                COALESCE(f6.qty, 0) as qty_kanban_sj,
+                COALESCE(f7.qty, 0) as qty_kanban_sp,
+                COALESCE(n.qty, 0) as bpb_qty, 
+                COALESCE(m.qty, 0) as adj_out_qty,
 
-        //------------------------------------ GET DATA AND CALCULATIONS ----------------------------------//
-
-        $records = $this->crud->query("SELECT
-            a.id,
-            a.number, 
-            a.name, 
-            a.division, 
-            b.name as prodfam, 
-            l.name as sub_prodfam, 
-            a.uom,
-            c.name as category_name, 
-            std_price.price AS standard_price,
-            std_price.currency AS standard_currency,
-            MAX(po.price) actual_price_in,
-
-            COALESCE(x.begin_stock) AS begin_stock,
-            COALESCE(d.qty_scan_in,0) as receipt_qty, 
-            COALESCE(i.qty,0) + COALESCE(o.qty_bpm_scan,0) as bpm_qty, 
-            COALESCE(k.qty,0) as adj_in_qty, 
-            COALESCE(f.qty,0) as qty_issued,
-            COALESCE(f2.qty,0) as qty_issued_supply_sheet,
-            COALESCE(f3.qty,0) as qty_issued_non_supply_sheet,
-            COALESCE(j.qty,0) + COALESCE(f4.qty,0) + COALESCE(f3.qty,0) as qty_kanban,
-            COALESCE(f5.qty,0) as qty_issued_material_request,
-            COALESCE(f6.qty,0) as qty_issued_non_supply_sheet_SJ,
-            COALESCE(f7.qty,0) as qty_issued_non_supply_sheet_SP,
-            COALESCE(m.qty,0) as adj_out_qty,
-            COALESCE(n.qty,0) as bpb_qty, 
-
-            (COALESCE(h1.qty_issued, 0) + COALESCE(i1.qty_trans_rm_out, 0)) AS qty_out_minus1,
-            (COALESCE(h2.qty_issued, 0) + COALESCE(i2.qty_trans_rm_out, 0)) AS qty_out_minus2,
-            (COALESCE(h3.qty_issued, 0) + COALESCE(i3.qty_trans_rm_out, 0)) AS qty_out_minus3,
-
-            (COALESCE(d.qty_scan_in,0) + COALESCE(h.qty_stock_rm, 0) + COALESCE(i.qty, 0) + COALESCE(k.qty, 0) + COALESCE(o.qty_bpm_scan, 0)) as qty_in,
-            (COALESCE(f.qty,0) + COALESCE(j.qty, 0) + COALESCE(m.qty, 0)+ COALESCE(n.qty, 0)) as qty_out
-
+                -- ACTUAL IN AMOUNT (Uang Riil dari PO)
+                COALESCE(act_in.total_actual_amt_in, 0) as total_actual_amt_in,                
+                d.max_receipt_date
             FROM item_rm a 
-            JOIN item_familys b ON a.item_family_id = b.id and b.number != 'FG'
+            JOIN item_familys b ON a.item_family_id = b.id AND b.number != 'FG'
             JOIN item_categories c ON a.item_category_id = c.id
-            LEFT JOIN (SELECT b.item_rm_id, SUM(a.qty) AS qty_scan_in FROM scan_item_receipts a JOIN purchase_order_receipts b ON a.receipt_id = b.receipt_id WHERE b.receipt_date BETWEEN '$filter_from' AND '$filter_to' GROUP BY b.item_rm_id) d ON a.id = d.item_rm_id
             LEFT JOIN item_family_subs l ON a.item_sub_family_id = l.id
-            LEFT JOIN (SELECT item_rm_id, COALESCE(SUM(qty), 0) as qty FROM issued_material_details WHERE DATE_FORMAT(created_date, '%Y-%m-%d') between '$filter_from' and '$filter_to' GROUP BY item_rm_id) f ON a.id = f.item_rm_id
-
-            LEFT JOIN (
-                SELECT b.item_rm_id, SUM(a.qty) AS qty_scan_in, c.po_no, c.price 
-                FROM scan_item_receipts a 
-                JOIN purchase_order_receipts b ON a.receipt_id = b.receipt_id 
-                JOIN purchase_orders c ON c.po_no = b.po_no AND c.item_rm_id = b.item_rm_id
-                WHERE b.receipt_date BETWEEN '$filter_from' AND '$filter_to' GROUP BY b.item_rm_id
-            ) po ON a.id = po.item_rm_id
-
-            LEFT JOIN (SELECT item_rm_id, SUM(qty) AS qty_issued FROM issued_material_details WHERE DATE_FORMAT(created_date, '%Y-%m-%d') BETWEEN '$filter_from_minus1' AND '$filter_to_minus1' GROUP BY item_rm_id) h1 ON a.id = h1.item_rm_id
-            LEFT JOIN (SELECT item_rm_id, SUM(qty) AS qty_trans_rm_out FROM transaction_rm WHERE request_date BETWEEN '$filter_from_minus1' AND '$filter_to_minus1' AND transaction_kind = 'OUT' GROUP BY item_rm_id) i1 ON a.id = i1.item_rm_id
-            LEFT JOIN (SELECT item_rm_id, SUM(qty) AS qty_issued FROM issued_material_details WHERE DATE_FORMAT(created_date, '%Y-%m-%d') BETWEEN '$filter_from_minus2' AND '$filter_to_minus2' GROUP BY item_rm_id) h2 ON a.id = h2.item_rm_id
-            LEFT JOIN (SELECT item_rm_id, SUM(qty) AS qty_trans_rm_out FROM transaction_rm WHERE request_date BETWEEN '$filter_from_minus2' AND '$filter_to_minus2' AND transaction_kind = 'OUT' GROUP BY item_rm_id) i2 ON a.id = i2.item_rm_id
-            LEFT JOIN (SELECT item_rm_id, SUM(qty) AS qty_issued FROM issued_material_details WHERE DATE_FORMAT(created_date, '%Y-%m-%d') BETWEEN '$filter_from_minus3' AND '$filter_to_minus3' GROUP BY item_rm_id) h3 ON a.id = h3.item_rm_id
-            LEFT JOIN (SELECT item_rm_id, SUM(qty) AS qty_trans_rm_out FROM transaction_rm WHERE request_date BETWEEN '$filter_from_minus3' AND '$filter_to_minus3' AND transaction_kind = 'OUT' GROUP BY item_rm_id) i3 ON a.id = i3.item_rm_id
             
-            LEFT JOIN (SELECT item_rm_id, SUM(qty) AS qty_stock_rm FROM os_rm WHERE trans_date >= '$filter_from' AND trans_date < DATE_ADD('$filter_to', INTERVAL 1 DAY) GROUP BY item_rm_id) h ON a.id = h.item_rm_id            
+            -- Standard Price Lookup
+            LEFT JOIN (SELECT item_rm_id, currency, price FROM standard_price_rm WHERE '$filter_from' >= `start_date` AND '$filter_to' <= `end_date`) std_price ON a.id = std_price.item_rm_id
 
-            LEFT JOIN (SELECT item_rm_id, currency, price from standard_price_rm where '$filter_from' >= `start_date` and '$filter_to' <= `end_date`) std_price on a.id = std_price.item_rm_id
+            -- Actual Amount In (Sum Qty * Price PO)
+            LEFT JOIN (
+                SELECT pr.item_rm_id, SUM(sr.qty * po.price) as total_actual_amt_in
+                FROM purchase_order_receipts pr
+                JOIN scan_item_receipts sr ON pr.receipt_id = sr.receipt_id
+                JOIN purchase_orders po ON pr.po_no = po.po_no AND pr.item_rm_id = po.item_rm_id
+                WHERE pr.receipt_date BETWEEN '$filter_from' AND '$filter_to'
+                GROUP BY pr.item_rm_id
+            ) act_in ON a.id = act_in.item_rm_id
 
+            -- Qty In Lookup
+            LEFT JOIN (SELECT b.item_rm_id, SUM(a.qty) AS qty_scan_in, MAX(b.receipt_date) as max_receipt_date FROM scan_item_receipts a JOIN purchase_order_receipts b ON a.receipt_id = b.receipt_id WHERE b.receipt_date BETWEEN '$filter_from' AND '$filter_to' GROUP BY b.item_rm_id) d ON a.id = d.item_rm_id
+
+            -- Begin Stock Lookup
+            LEFT JOIN (SELECT a.id, a.number, ((COALESCE(b.qty_scan_in, 0) + COALESCE(c.qty_os_rm, 0) + COALESCE(d.qty_trans_rm_in, 0) + COALESCE(e.return_qty, 0) + COALESCE(h.qty_scan_bpm, 0)) - (COALESCE(f.qty_issued, 0) + COALESCE(g.qty_trans_rm_out, 0))) AS begin_stock
+                FROM item_rm a
+                LEFT JOIN (SELECT b.item_rm_id, SUM(a.qty) AS qty_scan_in FROM scan_item_receipts a JOIN purchase_order_receipts b ON a.receipt_id = b.receipt_id WHERE b.receipt_date < '$filter_from'  GROUP BY b.item_rm_id) b ON a.id = b.item_rm_id
+                LEFT JOIN (SELECT item_rm_id, SUM(qty) AS qty_os_rm FROM os_rm WHERE trans_date < '$filter_from' GROUP BY item_rm_id) c ON a.id = c.item_rm_id
+                LEFT JOIN (SELECT item_rm_id, SUM(qty) AS qty_trans_rm_in FROM transaction_rm WHERE request_date < '$filter_from' AND transaction_kind = 'IN' GROUP BY item_rm_id) d ON a.id = d.item_rm_id
+                LEFT JOIN (SELECT a.item_rm_id, SUM(c.qty) as return_qty FROM return_materials a JOIN return_material_labels b ON a.return_id = b.return_id JOIN scan_item_receipts c ON a.return_id = c.receipt_id AND b.label_no = c.label_no WHERE a.return_date < '$filter_from' GROUP BY a.item_rm_id) e ON a.id = e.item_rm_id
+                LEFT JOIN (SELECT item_rm_id, SUM(qty) AS qty_issued FROM issued_material_details WHERE created_date < '$filter_from' GROUP BY item_rm_id) f ON a.id = f.item_rm_id
+                LEFT JOIN (SELECT item_rm_id, SUM(qty) AS qty_trans_rm_out FROM transaction_rm WHERE request_date < '$filter_from' AND transaction_kind = 'OUT' GROUP BY item_rm_id) g ON a.id = g.item_rm_id
+                LEFT JOIN (SELECT item_rm_id, SUM(qty) AS qty_scan_bpm FROM scan_item_bpm WHERE DATE_FORMAT(request_date, '%Y-%m-%d') < '$filter_from' GROUP BY item_rm_id) h ON a.id = h.item_rm_id
+            ) x ON a.id = x.id
+
+            -- BPM
             LEFT JOIN (
                 SELECT a.item_rm_id, a.transaction_kind, a.transaction_type,SUM(a.qty) AS qty
                 FROM transaction_rm a
@@ -448,12 +439,14 @@ class Inventory_rm_standard_actual extends CI_Controller
                 GROUP BY a.item_rm_id, a.transaction_kind
             ) i ON a.id = i.item_rm_id
 
+            -- BPM SCAN
             LEFT JOIN (SELECT a.item_rm_id, SUM(a.qty) as qty_bpm_scan
                 FROM scan_item_bpm a
                 JOIN item_rm b ON a.item_rm_id = b.id
                 WHERE a.request_date >= '$filter_from' AND a.request_date < DATE_ADD('$filter_to', INTERVAL 1 DAY)
                 GROUP BY a.item_rm_id) o ON a.id = o.item_rm_id
-
+            
+            -- ADJ IN 
             LEFT JOIN (
                 SELECT a.item_rm_id, a.transaction_kind, a.transaction_type, SUM(a.qty) AS qty
                 FROM transaction_rm a
@@ -462,11 +455,13 @@ class Inventory_rm_standard_actual extends CI_Controller
                 GROUP BY a.item_rm_id, a.transaction_kind
             ) k ON a.id = k.item_rm_id
 
-            LEFT JOIN (SELECT item_rm_id, COALESCE(SUM(qty), 0) as qty FROM issued_material_details WHERE created_date >= '$filter_from' AND created_date < DATE_ADD('$filter_to', INTERVAL 1 DAY) and request_no like '%SH-%' GROUP BY item_rm_id) f2 ON a.id = f2.item_rm_id
+            -- ISSUED MATERIAL - Left Join (f2-f7, i, j, k, m, n)
+            LEFT JOIN (SELECT item_rm_id, SUM(qty) as qty FROM issued_material_details WHERE created_date >= '$filter_from' AND created_date < DATE_ADD('$filter_to', INTERVAL 1 DAY) AND request_no LIKE '%SH-%' GROUP BY item_rm_id) f2 ON a.id = f2.item_rm_id
             
-            LEFT JOIN (SELECT item_rm_id, COALESCE(SUM(qty), 0) as qty FROM issued_material_details WHERE created_date >= '$filter_from' AND created_date < DATE_ADD('$filter_to', INTERVAL 1 DAY) and request_no like '%PRQ-%' GROUP BY item_rm_id) f5 ON a.id = f5.item_rm_id
-
-            LEFT JOIN (SELECT item_rm_id, COALESCE(SUM(qty), 0) as qty FROM issued_material_details WHERE created_date >= '$filter_from' AND created_date < DATE_ADD('$filter_to', INTERVAL 1 DAY) and `type` like '%WIP%' GROUP BY item_rm_id) f4 ON a.id = f4.item_rm_id
+            LEFT JOIN (SELECT item_rm_id, SUM(qty) as qty FROM issued_material_details WHERE created_date >= '$filter_from' AND created_date < DATE_ADD('$filter_to', INTERVAL 1 DAY) AND request_no LIKE '%PRQ-%' GROUP BY item_rm_id) f5 ON a.id = f5.item_rm_id
+            
+            LEFT JOIN (SELECT item_rm_id, SUM(qty) as qty FROM issued_material_details WHERE created_date >= '$filter_from' AND created_date < DATE_ADD('$filter_to', INTERVAL 1 DAY) AND `type` LIKE '%WIP%' GROUP BY item_rm_id) f4 ON a.id = f4.item_rm_id
+            
             LEFT JOIN (
                 SELECT a.item_rm_id, COALESCE(SUM(a.qty), 0) as qty 
                 FROM issued_material_details a
@@ -515,25 +510,17 @@ class Inventory_rm_standard_actual extends CI_Controller
                 GROUP BY a.item_rm_id, a.transaction_kind
             ) n ON a.id = n.item_rm_id
 
-            LEFT JOIN (SELECT a.id, a.number, ((COALESCE(b.qty_scan_in, 0) + COALESCE(c.qty_os_rm, 0) + COALESCE(d.qty_trans_rm_in, 0) + COALESCE(e.return_qty, 0) + COALESCE(h.qty_scan_bpm, 0)) - (COALESCE(f.qty_issued, 0) + COALESCE(g.qty_trans_rm_out, 0))) AS begin_stock
-                        FROM item_rm a
-                        LEFT JOIN (SELECT b.item_rm_id, SUM(a.qty) AS qty_scan_in FROM scan_item_receipts a JOIN purchase_order_receipts b ON a.receipt_id = b.receipt_id WHERE b.receipt_date < '$filter_from'  GROUP BY b.item_rm_id) b ON a.id = b.item_rm_id
-                        LEFT JOIN (SELECT item_rm_id, SUM(qty) AS qty_os_rm FROM os_rm WHERE trans_date < '$filter_from' GROUP BY item_rm_id) c ON a.id = c.item_rm_id
-                        LEFT JOIN (SELECT item_rm_id, SUM(qty) AS qty_trans_rm_in FROM transaction_rm WHERE request_date < '$filter_from' AND transaction_kind = 'IN' GROUP BY item_rm_id) d ON a.id = d.item_rm_id
-                        LEFT JOIN (SELECT a.item_rm_id, SUM(c.qty) as return_qty FROM return_materials a JOIN return_material_labels b ON a.return_id = b.return_id JOIN scan_item_receipts c ON a.return_id = c.receipt_id AND b.label_no = c.label_no WHERE a.return_date < '$filter_from' GROUP BY a.item_rm_id) e ON a.id = e.item_rm_id
-                        LEFT JOIN (SELECT item_rm_id, SUM(qty) AS qty_issued FROM issued_material_details WHERE created_date < '$filter_from' GROUP BY item_rm_id) f ON a.id = f.item_rm_id
-                        LEFT JOIN (SELECT item_rm_id, SUM(qty) AS qty_trans_rm_out FROM transaction_rm WHERE request_date < '$filter_from' AND transaction_kind = 'OUT' GROUP BY item_rm_id) g ON a.id = g.item_rm_id
-                        LEFT JOIN (SELECT item_rm_id, SUM(qty) AS qty_scan_bpm FROM scan_item_bpm WHERE DATE_FORMAT(request_date, '%Y-%m-%d') < '$filter_from' GROUP BY item_rm_id) h ON a.id = h.item_rm_id
-                    ) x ON a.id = x.id
-        
-        WHERE c.id LIKE '%$filter_item_category%' 
-        AND b.number LIKE '%$filter_item_family%' 
-        AND a.id LIKE '%$filter_items%' 
-        AND a.division LIKE '%$filter_division%' 
-        GROUP BY a.id
-        ORDER BY c.name DESC, b.name DESC, a.number");
+            WHERE c.id LIKE '%$filter_item_category%' 
+            AND b.number LIKE '%$filter_item_family%' 
+            AND a.id LIKE '%$filter_items%' 
+            AND a.division LIKE '%$filter_division%' 
+            GROUP BY a.id
+            ORDER BY c.name DESC, b.name DESC, a.number";
 
-        $html = '<html><head><title>Print Data</title></head>';
+        $records = $this->crud->query($query);
+
+        //------------------------------------ HTML OUTPUT ----------------------------------//
+        $html = '<html><head><title>Inventory Report</title></head>';
         $html .= $this->customCss();
         $html .= '<body>
             <center>
@@ -558,9 +545,9 @@ class Inventory_rm_standard_actual extends CI_Controller
                 <h3 style="margin:0;">INVENTORY RM STANDARD AND ACTUAL <i>' . $display_title . '</i> </h3>
                 <small>PERIOD : <b>' . $filter_from . '</b> To <b>' . $filter_to . '</b></small>
             </center>
-            <br>
-            
-            <table id="customers" border="1" style="font-size: 11px;">
+            <br>';
+
+        $html .= '<table id="customers" border="1" style="font-size: 11px;">
                 <tr style="background-color: #eee;">
                     <th rowspan="5" width="20">No</th>
                     <th rowspan="5">Product No</th>
@@ -747,368 +734,184 @@ class Inventory_rm_standard_actual extends CI_Controller
                 <th style="background-color: #CFE6F9;">PRICE</th>
                 <th style="background-color: #CFE6F9;">AMOUNT</th>
             </tr>';
-                
+        
         $no = 1;
-        $totalBeginStock = 0;
-        $totalIn = 0;
-        $totalOut = 0;
-        $totalEndingStock = 0;
-
-        $totalReceiptQty = 0;
-        $totalBpmQty = 0;
-        $totalAdjInQty = 0;
-
-        $totalQtyIssuedSupplySheet = 0;
-        $totalQtyIssuedMaterialRequest = 0;
-        $totalQtyKanban = 0;
-        $totalQtyKanbanSJ = 0;
-        $totalQtyKanbanSP = 0;
-        $totalAdjOutQty = 0;
-        $totalBpbQty = 0;
-
-        $totalQtyIn = 0;
-        $totalQtyOut = 0;
-        $totalQtySelisihIn = 0;
-        $totalQtySelisihOut = 0;
-
-        $totalIto = 0;
-
-        $standard_price = 0;
-        $rate = 1;
-
-        $begin_total_STD     = 0;
-        $begin_total_actual  = 0;
-        $in_total_STD        = 0;
-        $in_total_actual     = 0;
-        $out_total_STD       = 0;
-        $out_total_actual    = 0;
-        $ending_total_STD    = 0;
-        $ending_total_actual = 0;
-
-        $receipt_total_STD          = 0;
-        $bpm_total_STD              = 0;
-        $adj_in_total_STD           = 0;
-        $supply_sheet_total_STD     = 0;
-        $material_request_total_STD = 0;
-        $kanban_total_STD           = 0;
-        $kanbanSJ_total_STD         = 0;
-        $kanbanSP_total_STD         = 0;
-        $bpb_total_STD              = 0;
-        $adj_out_total_STD          = 0;
-
-        foreach ($records as $record) {
-            $item_rm_id = $record->id;
-
-            $totalBeginStock += @$record->begin_stock;
-            $totalIn += $record->qty_in;
-            $totalOut += $record->qty_out;
-            $totalEndingStock += @(@$record->begin_stock + $record->qty_in) - $record->qty_out;
-            
-            $totalReceiptQty += $record->receipt_qty;
-            $totalBpmQty += $record->bpm_qty;
-            $totalAdjInQty += $record->adj_in_qty;
-
-            $totalQtyIssuedSupplySheet += $record->qty_issued_supply_sheet;
-            $totalQtyIssuedMaterialRequest += $record->qty_issued_material_request;
-            $totalQtyKanban += $record->qty_kanban;
-            $totalQtyKanbanSJ += $record->qty_issued_non_supply_sheet_SJ;
-            $totalQtyKanbanSP += $record->qty_issued_non_supply_sheet_SP;
-            $totalAdjOutQty += $record->adj_out_qty;
-            $totalBpbQty += $record->bpb_qty;
-
-            $totalQtyIn += ($record->receipt_qty + $record->bpm_qty + $record->adj_in_qty);
-            $totalQtyOut += ($record->qty_issued_supply_sheet + $record->qty_issued_material_request + $record->qty_kanban + $record->qty_issued_non_supply_sheet_SJ + $record->qty_issued_non_supply_sheet_SP + $record->adj_out_qty + $record->bpb_qty);
-            $totalQtySelisihIn += (($record->receipt_qty + $record->bpm_qty + $record->adj_in_qty) - $record->qty_in);
-            $totalQtySelisihOut += (($record->qty_issued_supply_sheet + $record->qty_issued_material_request + $record->qty_kanban + $record->qty_issued_non_supply_sheet_SJ + $record->qty_issued_non_supply_sheet_SP + $record->adj_out_qty + $record->bpb_qty) - $record->qty_out);
-
-            $total_sales_minus = $record->qty_out_minus1 + $record->qty_out_minus2 + $record->qty_out_minus3;
-            
-            $avg_sales_minus_numeric = ($total_sales_minus > 0) ? ($total_sales_minus / 3) : 0;
-            $avg_sales_minus = number_format($avg_sales_minus_numeric, 2); // Hanya untuk tampilan
-
-            $ending_stock = (@$record->begin_stock + $record->qty_in) - $record->qty_out;
-
-            $_stock_coverage_numeric = 0;
-            if ($avg_sales_minus_numeric > 0) {
-                $_stock_coverage_numeric = $ending_stock / $avg_sales_minus_numeric;
+        foreach ($records as $record) 
+        {
+            $rate = 1;
+            if ($record->standard_currency == 'USD' && !empty($record->max_receipt_date)) {
+                $q_rate = $this->db->get_where('standard_exchange_rates', ['currency_from'=>'USD','start_date <='=>$record->max_receipt_date,'end_date >='=>$record->max_receipt_date])->row();
+                $rate = $q_rate ? $q_rate->middle : 1;
             }
 
-            $totalIto += $_stock_coverage_numeric;
+            // standard Price
+            $std_p = (float)$record->standard_price * $rate;
 
-            $stock_coverage = ($avg_sales_minus_numeric > 0)
-                ? number_format($_stock_coverage_numeric, 2)
-                : '0'; // atau bisa diganti jadi '0.00' atau '-'
+            // Begin
+            $b_qty = (float)$record->begin_stock;
+            $b_std_a = $b_qty * $std_p;
+            $b_act_a = $b_qty * $std_p; // begin actual = std
+            $b_variance = $b_act_a - $b_std_a;
 
+            // In
+            $i_qty = (float)$record->receipt_qty + (float)$record->bpm_qty + (float)$record->adj_in_qty;
+            $i_std_a = $i_qty * $std_p;
+            $i_act_a = (float)$record->total_actual_amt_in * $rate; // Hanya Purchase yang punya harga riil po
+            $i_act_p = 0;
+            if ($i_qty > 0) {
+                $i_act_p = $i_act_a / $i_qty;
+            }
+            $i_variance = $i_act_a - $i_std_a;
 
-            $standard_price = $record->standard_price * $rate;
-
-            // ---- BEGIN ----
-            // actual begin price dari upload user 
-            // sementara menggunakan standard_price
-            $begin_qty             = @$record->begin_stock;
-            $begin_standard_amount = $standard_price * $begin_qty;
-            $begin_actual_price    = $standard_price;
-            $begin_actual_amount   = $begin_actual_price * $begin_qty;
-            $begin_variance        = $begin_actual_amount - $begin_standard_amount;
-
-            $begin_total_STD += $begin_standard_amount;
-            $begin_total_actual += $begin_actual_amount;
-
-            // ---- IN ----
-            $in_qty             = $record->qty_in;
-            $in_standard_amount = $standard_price * $in_qty;
-            $in_actual_price    = $record->actual_price_in * $rate;
-            $in_actual_amount   = $in_actual_price * $in_qty;
-            $in_variance        = $in_actual_amount - $in_standard_amount;
-
-            $in_total_STD += $in_standard_amount;
-            $in_total_actual += $in_actual_amount;
-
-            // ---- OUT ---- 
-            // OUT = (Amount BEGIN + Amount IN) / (Qty BEGIN + Qty IN)
-            $out_qty             = $record->qty_out;
-            $out_standard_amount = $standard_price * $out_qty;
-
-            $out_actual_price = 0;
-            if (($begin_qty + $in_qty) > 0) {
-                $out_actual_price = ($begin_actual_amount + $in_actual_amount) / ($begin_qty + $in_qty);
+            // HARGA RATA-RATA (Moving Average Price)
+            $avg_act_p = 0;
+            if (($b_qty + $i_qty) > 0) {
+                $avg_act_p = ($b_act_a + $i_act_a) / ($b_qty + $i_qty);
             }
 
-            $out_actual_amount   = $out_actual_price * $out_qty;
-            $out_variance        = $out_actual_amount - $out_standard_amount;
-
-            $out_total_STD += $out_standard_amount;
-            $out_total_actual += $out_actual_amount;
-
-            // ---- ENDING ----
-            // QTY BALANCE = qty begin + qty in - qty out
-            $ending_qty = ((@$record->begin_stock + $record->qty_in) - $record->qty_out);
-
-            // AMOUNT BALANCE = amount begin + amount in - amount out 
-            $ending_actual_amount = ($begin_actual_amount + $in_actual_amount) - $out_actual_amount;
-
-            // PRICE BALANCE = amount ending / qty ending
-            $ending_actual_price = 0;
-            if ($ending_qty > 0) {
-                $ending_actual_price = $ending_actual_amount / $ending_qty;
+            // Out
+            $o_qty = (float)$record->qty_supply_sheet + (float)$record->qty_mat_request + (float)$record->qty_kanban + (float)$record->qty_kanban_sj + (float)$record->qty_kanban_sp + (float)$record->bpb_qty + (float)$record->adj_out_qty;
+            $o_std_a = $o_qty * $std_p;
+            // Moving Average for Actual Out
+            $o_act_a = 0;
+            $o_act_p = 0;
+            if (($b_qty + $i_qty) > 0) {
+                $o_act_a = $o_qty * $avg_act_p;
+                $o_act_p = $o_act_a / $o_qty;
             }
+            $o_variance = $o_act_a - $o_std_a;
 
-            $ending_standard_amount = ($standard_price * ((@$record->begin_stock + $record->qty_in) - $record->qty_out));
-            $ending_variance = $ending_actual_amount - $ending_standard_amount;
+            // Ending = (Begin + In) - Out
+            $e_qty = ($b_qty + $i_qty) - $o_qty;
+            $e_std_a = $e_qty * $std_p;
+            $e_act_a = ($b_act_a + $i_act_a) - $o_act_a;
+            $e_act_p = 0;
+            if ($e_qty > 0) {
+                $e_act_p = $e_act_a / $e_qty;
+            }
+            $e_variance = $e_act_a - $e_std_a;
 
-            $ending_total_STD += $ending_standard_amount;
-            $ending_total_actual += $ending_actual_amount;
             
-            // DETAIL
-            $receipt_total_STD += ($standard_price * $record->receipt_qty);
-            $bpm_total_STD += ($standard_price * $record->bpm_qty);
-            $adj_in_total_STD += ($standard_price * $record->adj_in_qty);
-            $supply_sheet_total_STD += ($standard_price * $record->qty_issued_supply_sheet);
-            $material_request_total_STD += ($standard_price * $record->qty_issued_material_request);
-            $kanban_total_STD += ($standard_price * $record->qty_kanban);
-            $kanbanSJ_total_STD += ($standard_price * $record->qty_issued_non_supply_sheet_SJ);
-            $kanbanSP_total_STD += ($standard_price * $record->qty_issued_non_supply_sheet_SP);
-            $bpb_total_STD += ($standard_price * $record->bpb_qty);
-            $adj_out_total_STD += ($standard_price * $record->adj_out_qty);
+            // -- CALCULATE AMOUNT IN (Based on Average Price) --
+            $amt_act_purchase = $record->receipt_qty * $avg_act_p; 
+            $amt_act_bpm      = $record->bpm_qty * $avg_act_p; 
+            $amt_act_adjin    = $record->adj_in_qty * $avg_act_p;
+
+            // -- CALCULATE AMOUNT OUT (Based on Average Price) --
+            $amt_act_supply = $record->qty_supply_sheet * $avg_act_p;
+            $amt_act_req    = $record->qty_mat_request * $avg_act_p;
+            $amt_act_kanban = $record->qty_kanban * $avg_act_p;
+            $amt_act_bpb    = $record->bpb_qty * $avg_act_p;
+            $amt_act_adjout = $record->adj_out_qty * $avg_act_p;
+            $amt_act_kanban_sj = $record->qty_kanban_sj * $avg_act_p;
+            $amt_act_kanban_sp = $record->qty_kanban_sp * $avg_act_p;
 
 
-            $html .= '  <tr>
-                            <td style="text-align:center">' . $no . '</td>
-                            <td>' . $record->number . '</td>
-                            <td>' . $record->name . '</td>
-                            <td>' . $record->uom . '</td>
-                            <td>' . $record->division . '</td>
-                            <td>' . $record->category_name . '</td>
-                            <td>' . $record->prodfam . '</td>
-                            <td>' . $record->sub_prodfam . '</td>
+            $html .= '<tr>
+                    <td align="center">'.$no++.'</td>
+                    <td>'.$record->number.'</td>
+                    <td>'.$record->name.'</td>
+                    <td>'.$record->uom.'</td>
+                    <td>'.$record->division.'</td>
+                    <td>'.$record->category_name.'</td>
+                    <td>'.$record->prodfam.'</td>
+                    <td>'.$record->sub_prodfam.'</td>
+                    
+                    <td align="right">'.number_format($b_qty, 2).'</td>
+                    <td>'.number_format($std_p, 2).'</td>
+                    <td>'.number_format($b_std_a, 2).'</td>
+                    <td>'.number_format($std_p, 2).'</td>
+                    <td>'.number_format($b_act_a, 2).'</td>
+                    <td>'.number_format($b_variance, 2).'</td>
+                    
+                    <td align="right">'.number_format($i_qty, 2).'</td>
+                    <td>'.number_format($std_p, 2).'</td>
+                    <td>'.number_format($i_std_a, 2).'</td>
+                    <td>'.number_format($i_act_p, 2).'</td>
+                    <td>'.number_format($i_act_a, 2).'</td>
+                    <td>'.number_format($i_variance, 2).'</td>
+                    
+                    <td align="right">'.number_format($o_qty, 2).'</td>
+                    <td>'.number_format($std_p, 2).'</td>
+                    <td>'.number_format($o_std_a, 2).'</td>
+                    <td>'.number_format($o_act_p, 2).'</td>
+                    <td>'.number_format($o_act_a, 2).'</td>
+                    <td>'.number_format($o_variance, 2).'</td>
 
-                            <td style="text-align:right;">' . number_format(@$record->begin_stock, 2) . '</td>
-                            <td style="text-align:right;">' . number_format($standard_price, 2) . '</td>
-                            <td style="text-align:right;">' . number_format($standard_price * @$record->begin_stock, 2) . '</td>
-                            <td style="text-align:right;">' . number_format($begin_actual_price, 2) . '</td>
-                            <td style="text-align:right;">' . number_format($begin_actual_amount, 2) . '</td>
-                            <td style="text-align:right;">' . number_format($begin_variance, 2) . '</td>                            
+                    <td align="right">'.number_format($e_qty, 2).'</td>
+                    <td>'.number_format($std_p, 2).'</td>
+                    <td>'.number_format($e_std_a, 2).'</td>
+                    <td>'.number_format($e_act_p, 2).'</td>
+                    <td>'.number_format($e_act_a, 2).'</td>
+                    <td>'.number_format($e_variance, 2).'</td>
 
-                            <td style="text-align:right;">' . number_format($record->qty_in, 2) . '</td>
-                            <td style="text-align:right;">' . number_format($standard_price, 2) . '</td>
-                            <td style="text-align:right;">' . number_format($standard_price * $record->qty_in, 2) . '</td>
-                            <td style="text-align:right;">' . number_format($in_actual_price, 2) . '</td>
-                            <td style="text-align:right;">' . number_format($in_actual_amount, 2) . '</td>
-                            <td style="text-align:right;">' . number_format($in_variance, 2) . '</td>
+                    <td align="right">'.number_format($record->receipt_qty, 2).'</td>
+                    <td>'.number_format($std_p, 2).'</td>
+                    <td>'.number_format($record->receipt_qty*$std_p, 2).'</td>
+                    <td align="right">'.number_format($avg_act_p, 2).'</td>
+                    <td align="right">'.number_format($amt_act_purchase, 2).'</td>
 
-                            <td style="text-align:right;">' . number_format($record->qty_out, 2) . '</td>
-                            <td style="text-align:right;">' . number_format($standard_price, 2) . '</td>
-                            <td style="text-align:right;">' . number_format($standard_price * $record->qty_out, 2) . '</td>
-                            <td style="text-align:right;">' . number_format($out_actual_price, 2) . '</td>
-                            <td style="text-align:right;">' . number_format($out_actual_amount, 2) . '</td>
-                            <td style="text-align:right;">' . number_format($out_variance, 2) . '</td>
+                    <td align="right">'.number_format($record->bpm_qty, 2).'</td>
+                    <td>'.number_format($std_p, 2).'</td>
+                    <td>'.number_format($record->bpm_qty*$std_p, 2).'</td>
+                    <td align="right">'.number_format($avg_act_p, 2).'</td>
+                    <td align="right">'.number_format($amt_act_bpm, 2).'</td>
 
-                            <td style="text-align:right;">' . number_format((@$record->begin_stock + $record->qty_in) - $record->qty_out, 2) . '</td>
-                            <td style="text-align:right;">' . number_format($standard_price, 2) . '</td>
-                            <td style="text-align:right;">' . number_format($standard_price * ((@$record->begin_stock + $record->qty_in) - $record->qty_out), 2) . '</td>
-                            <td style="text-align:right;">' . number_format($ending_actual_price, 2) . '</td>
-                            <td style="text-align:right;">' . number_format($ending_actual_amount, 2) . '</td>
-                            <td style="text-align:right;">' . number_format($ending_variance, 2) . '</td>
-                            
-                            <td style="text-align:right;">' . $record->receipt_qty . '</td>
-                            <td style="text-align:right;">' . number_format($standard_price, 2) . '</td>
-                            <td style="text-align:right;">' . number_format($standard_price * $record->receipt_qty, 2) . '</td>
-                            <td></td>
-                            <td></td>
+                    <td align="right">'.number_format($record->adj_in_qty, 2).'</td>
+                    <td>'.number_format($std_p, 2).'</td>
+                    <td>'.number_format($record->adj_in_qty*$std_p, 2).'</td>
+                    <td align="right">'.number_format($avg_act_p, 2).'</td>
+                    <td align="right">'.number_format($amt_act_adjin, 2).'</td>
 
-                            <td style="text-align:right;">' . $record->bpm_qty . '</td>
-                            <td style="text-align:right;">' . number_format($standard_price, 2) . '</td>
-                            <td style="text-align:right;">' . number_format($standard_price * $record->bpm_qty, 2) . '</td>
-                            <td></td>
-                            <td></td>
+                    <td align="right">'.number_format($record->qty_supply_sheet, 2).'</td>
+                    <td>'.number_format($std_p, 2).'</td>
+                    <td>'.number_format($record->qty_supply_sheet*$std_p, 2).'</td>
+                    <td align="right">'.number_format($avg_act_p, 2).'</td>
+                    <td align="right">'.number_format($amt_act_supply, 2).'</td>
 
-                            <td style="text-align:right;">' . $record->adj_in_qty . '</td>
-                            <td style="text-align:right;">' . number_format($standard_price, 2) . '</td>
-                            <td style="text-align:right;">' . number_format($standard_price * $record->adj_in_qty, 2) . '</td>
-                            <td></td>
-                            <td></td>
+                    <td align="right">'.number_format($record->qty_mat_request, 2).'</td>
+                    <td>'.number_format($std_p, 2).'</td>
+                    <td>'.number_format($record->qty_mat_request*$std_p, 2).'</td>
+                    <td align="right">'.number_format($avg_act_p, 2).'</td>
+                    <td align="right">'.number_format($amt_act_req, 2).'</td>
 
+                    <td align="right">'.number_format($record->qty_kanban, 2).'</td>
+                    <td>'.number_format($std_p, 2).'</td>
+                    <td>'.number_format($record->qty_kanban*$std_p, 2).'</td>
+                    <td align="right">'.number_format($avg_act_p, 2).'</td>
+                    <td align="right">'.number_format($amt_act_kanban, 2).'</td>
 
-                            <td style="text-align:right;">' . number_format($record->qty_issued_supply_sheet,2) . '</td>
-                            <td style="text-align:right;">' . number_format($standard_price, 2) . '</td>
-                            <td style="text-align:right;">' . number_format($standard_price * $record->qty_issued_supply_sheet, 2) . '</td>
-                            <td></td>
-                            <td></td>
+                    <td align="right">'.number_format($record->qty_kanban_sj, 2).'</td>
+                    <td>'.number_format($std_p, 2).'</td>
+                    <td>'.number_format(($record->qty_kanban_sj)*$std_p, 2).'</td>
+                    <td align="right">'.number_format($avg_act_p, 2).'</td>
+                    <td align="right">'.number_format($amt_act_kanban_sj, 2).'</td>
 
-                            <td style="text-align:right;">' . $record->qty_issued_material_request . '</td>
-                            <td style="text-align:right;">' . number_format($standard_price, 2) . '</td>
-                            <td style="text-align:right;">' . number_format($standard_price * $record->qty_issued_material_request, 2) . '</td>
-                            <td></td>
-                            <td></td>
+                    <td align="right">'.number_format($record->qty_kanban_sp, 2).'</td>
+                    <td>'.number_format($std_p, 2).'</td>
+                    <td>'.number_format(($record->qty_kanban_sp)*$std_p, 2).'</td>
+                    <td align="right">'.number_format($avg_act_p, 2).'</td>
+                    <td align="right">'.number_format($amt_act_kanban_sp, 2).'</td>
 
-                            <td style="text-align:right;">' . $record->qty_kanban . '</td>
-                            <td style="text-align:right;">' . number_format($standard_price, 2) . '</td>
-                            <td style="text-align:right;">' . number_format($standard_price * $record->qty_kanban, 2) . '</td>
-                            <td></td>
-                            <td></td>
+                    <td align="right">'.number_format($record->bpb_qty, 2).'</td>
+                    <td>'.number_format($std_p, 2).'</td>
+                    <td>'.number_format($record->bpb_qty*$std_p, 2).'</td>
+                    <td align="right">'.number_format($avg_act_p, 2).'</td>
+                    <td align="right">'.number_format($amt_act_bpb, 2).'</td>
 
-                            <td style="text-align:right;">' . $record->qty_issued_non_supply_sheet_SJ . '</td>
-                            <td style="text-align:right;">' . number_format($standard_price, 2) . '</td>
-                            <td style="text-align:right;">' . number_format($standard_price * $record->qty_issued_non_supply_sheet_SJ, 2) . '</td>
-                            <td></td>
-                            <td></td>
-
-                            <td style="text-align:right;">' . $record->qty_issued_non_supply_sheet_SP . '</td>
-                            <td style="text-align:right;">' . number_format($standard_price, 2) . '</td>
-                            <td style="text-align:right;">' . number_format($standard_price * $record->qty_issued_non_supply_sheet_SP, 2) . '</td>
-                            <td></td>
-                            <td></td>
-
-                            <td style="text-align:right;">' . $record->bpb_qty . '</td>
-                            <td style="text-align:right;">' . number_format($standard_price, 2) . '</td>
-                            <td style="text-align:right;">' . number_format($standard_price * $record->bpb_qty, 2) . '</td>
-                            <td></td>
-                            <td></td>
-
-                            <td style="text-align:right;">' . $record->adj_out_qty . '</td>
-                            <td style="text-align:right;">' . number_format($standard_price, 2) . '</td>
-                            <td style="text-align:right;">' . number_format($standard_price * $record->adj_out_qty, 2) . '</td>
-                            <td></td>
-                            <td></td>
-                        </tr>';
-            $no++;
+                    <td align="right">'.number_format($record->adj_out_qty, 2).'</td>
+                    <td>'.number_format($std_p, 2).'</td>
+                    <td>'.number_format($record->adj_out_qty*$std_p, 2).'</td>
+                    <td align="right">'.number_format($avg_act_p, 2).'</td>
+                    <td align="right">'.number_format($amt_act_adjout, 2).'</td>
+                </tr>
+            ';
         }
 
-        $html .= '<tr class="bg-gray-darker">
-            <td colspan="8" style="text-align:right;"><b>GRAND TOTAL</b></td>
-            <td style="text-align:right;">' . number_format($totalBeginStock, 2) . '</td>
-            <td></td>
-            <td style="text-align:right;">' . number_format($begin_total_STD, 2) . '</td>
-            <td></td>
-            <td style="text-align:right;">' . number_format($begin_total_actual, 2) . '</td>
-            <td style="text-align:right;">' . number_format($begin_total_actual - $begin_total_STD, 2) . '</td>
-
-            <td style="text-align:right;">' . number_format($totalIn, 2) . '</td>
-            <td></td>
-            <td style="text-align:right;">' . number_format($in_total_STD, 2) . '</td>
-            <td></td>
-            <td style="text-align:right;">' . number_format($in_total_actual, 2) . '</td>
-            <td style="text-align:right;">' . number_format($in_total_STD - $in_total_actual, 2) . '</td>
-
-            <td style="text-align:right;">' . number_format($totalOut, 2) . '</td>
-            <td></td>
-            <td style="text-align:right;">' . number_format($out_total_STD, 2) . '</td>
-            <td></td>
-            <td style="text-align:right;">' . number_format($out_total_actual, 2) . '</td>
-            <td style="text-align:right;">' . number_format($out_total_STD - $out_total_actual, 2) . '</td>
-
-            <td style="text-align:right;">' . number_format($totalEndingStock, 2) . '</td>
-            <td></td>
-            <td style="text-align:right;">' . number_format($ending_total_STD, 2) . '</td>
-            <td></td>
-            <td style="text-align:right;">' . number_format($ending_total_actual, 2) . '</td>
-            <td style="text-align:right;">' . number_format($ending_total_STD - $ending_total_actual, 2) . '</td>
-
-
-            <td style="text-align:right;">' . number_format($totalReceiptQty, 2) . '</td>
-            <td></td>
-            <td style="text-align:right;">' . number_format($receipt_total_STD, 2) . '</td>
-            <td></td>
-            <td></td>
-
-            <td style="text-align:right;">' . number_format($totalBpmQty, 2) . '</td>
-            <td></td>
-            <td style="text-align:right;">' . number_format($bpm_total_STD, 2) . '</td>
-            <td></td>
-            <td></td>
-
-            <td style="text-align:right;">' . number_format($totalAdjInQty, 2) . '</td>
-            <td></td>
-            <td style="text-align:right;">' . number_format($adj_in_total_STD, 2) . '</td>
-            <td></td>
-            <td></td>
-
-            <td style="text-align:right;">' . number_format($totalQtyIssuedSupplySheet, 2) . '</td>
-            <td></td>
-            <td style="text-align:right;">' . number_format($supply_sheet_total_STD, 2) . '</td>
-            <td></td>
-            <td></td>
-
-            <td style="text-align:right;">' . number_format($totalQtyIssuedMaterialRequest, 2) . '</td>
-            <td></td>
-            <td style="text-align:right;">' . number_format($material_request_total_STD, 2) . '</td>
-            <td></td>
-            <td></td>
-
-            <td style="text-align:right;">' . number_format($totalQtyKanban, 2) . '</td>
-            <td></td>
-            <td style="text-align:right;">' . number_format($kanban_total_STD, 2) . '</td>
-            <td></td>
-            <td></td>
-
-            <td style="text-align:right;">' . number_format($totalQtyKanbanSJ, 2) . '</td>
-            <td></td>
-            <td style="text-align:right;">' . number_format($kanbanSJ_total_STD, 2) . '</td>
-            <td></td>
-            <td></td>
-
-            <td style="text-align:right;">' . number_format($totalQtyKanbanSP, 2) . '</td>
-            <td></td>
-            <td style="text-align:right;">' . number_format($kanbanSP_total_STD, 2) . '</td>
-            <td></td>
-            <td></td>
-
-            <td style="text-align:right;">' . number_format($totalBpbQty, 2) . '</td>
-            <td></td>
-            <td style="text-align:right;">' . number_format($bpb_total_STD, 2) . '</td>
-            <td></td>
-            <td></td>
-
-            <td style="text-align:right;">' . number_format($totalAdjOutQty, 2) . '</td>
-            <td></td>
-            <td style="text-align:right;">' . number_format($adj_out_total_STD, 2) . '</td>
-            <td></td>
-            <td></td>
-        </tr>';
-      
         $html .= '</table></body></html>';
         echo $html;
     }
+
 
 
     // -------------- PRINT DETAIL (INVENTORY RM) -------------
@@ -1117,7 +920,7 @@ class Inventory_rm_standard_actual extends CI_Controller
         if ($option == "excel") {
             $format  = date("Ymd");
             header("Content-type: application/vnd-ms-excel");
-            header("Content-Disposition: attachment; filename=inventory_rm_$format.xls");
+            header("Content-Disposition: attachment; filename=inventory_rm_standard_actual_$format.xls");
         }
 
         $filter_from = $this->input->get('filter_from');
@@ -1486,19 +1289,19 @@ class Inventory_rm_standard_actual extends CI_Controller
 
                     // --- RECEIPT ---
                     foreach ($receipts as $r) {
-                        $actual_price_in = $r->actual_price_in;
+                        $actual_price_in = $record->actual_price_in;
 
                         $all_data[] = [
                             'type' => 'RECEIPT',
-                            'date' => $r->receipt_date,
-                            'username' => $r->username,
-                            'qty_in' => $r->qty_receipt,
+                            'date' => $record->receipt_date,
+                            'username' => $record->username,
+                            'qty_in' => $record->qty_receipt,
                             'qty_out' => 0,
                             'actual_price_in' => $actual_price_in,
-                            'doc1' => $r->bc_kind,
-                            'doc2' => $r->bc_aju,
-                            'doc3' => $r->bc_document,
-                            'doc4' => $r->bc_date
+                            'doc1' => $record->bc_kind,
+                            'doc2' => $record->bc_aju,
+                            'doc3' => $record->bc_document,
+                            'doc4' => $record->bc_date
                         ];
                     }
 
@@ -1523,14 +1326,14 @@ class Inventory_rm_standard_actual extends CI_Controller
                     foreach ($returns as $r) {
                         $all_data[] = [
                             'type' => 'RETURN',
-                            'date' => $r->return_date,
-                            'username' => $r->username,
-                            'qty_in' => $r->qty,
+                            'date' => $record->return_date,
+                            'username' => $record->username,
+                            'qty_in' => $record->qty,
                             'qty_out' => 0,
                             'actual_price_in' => $actual_price_in,
                             'doc1' => '-',
-                            'doc2' => $r->label_no,
-                            'doc3' => $r->return_no,
+                            'doc2' => $record->label_no,
+                            'doc3' => $record->return_no,
                             'doc4' => '-'
                         ];
                     }
