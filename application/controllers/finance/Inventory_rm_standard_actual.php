@@ -1216,7 +1216,31 @@ class Inventory_rm_standard_actual extends CI_Controller
 
         $html = '<html><head><title>Inventory Report</title></head>';
         $html .= $this->customCss();
-        $html .= '<body><center><h3>INVENTORY RM STANDARD AND ACTUAL ' . $display_title . '</h3></center>';
+        $html .= '<body>
+                <center>
+                <div style="float: left; font-size: 12px; text-align: left;">
+                    <table style="width: 100%;">
+                        <tr>
+                            <td width="50" style="font-size: 12px; vertical-align: top; text-align: center; vertical-align:jus margin-right:10px;">
+                                <img src="' . $config->favicon . '" width="30">
+                            </td>
+                            <td></td>
+                            <td style="font-size: 14px; text-align: left; margin:2px;">
+                                <b>' . $config->name . '</b><br>
+                                <small>' . $config->description . '</small>
+                            </td>
+                        </tr>
+                    </table>
+                </div>
+                <div style="float: right; font-size: 12px; text-align: right;">
+                    Print Date ' . date("d M Y H:i:s") . ' <br>
+                    Print By ' . $this->session->username . '  
+                </div>
+                <br><br><br>
+                <h3 style="margin:0;">INVENTORY RM STANDARD AND ACTUAL <i>' . $display_title . '</i> </h3>
+                <small>PERIOD : <b>' . $filter_from . '</b> To <b>' . $filter_to . '</b></small>
+            </center>
+            <br>';
         
         // Build Table Header
         $html .= '<table id="customers" border="1" style="font-size: 11px;">
