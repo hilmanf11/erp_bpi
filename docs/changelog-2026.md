@@ -117,3 +117,6 @@ Halaman ini merangkum seluruh aktivitas pengembangan sistem ERP selama tahun 202
 
 ### [2026-01-27]
 - **Rizki Puji**: Fixing: datatables readonly qty and price add Sales Invoices ([e42b3027](https://github.com/hilmanf11/erp_bpi/commit/e42b3027ebc6bca0ef381296ad80659e7d92a8f9))
+
+### [2026-01-27]
+- **Rizki Puji**: Fixing: currency without DN on print commercial Sales Invoices ([81bd14f0](https://github.com/hilmanf11/erp_bpi/commit/81bd14f0c06ea126db40dbe2ef0f42f2485df5cc))
