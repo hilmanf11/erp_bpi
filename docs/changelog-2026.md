@@ -114,3 +114,6 @@ Halaman ini merangkum seluruh aktivitas pengembangan sistem ERP selama tahun 202
 
 ### [2026-01-22]
 - **Rizki Puji**: docs: update changelog-2026 manual entry ([f5a735a3](https://github.com/hilmanf11/erp_bpi/commit/f5a735a3fcfe1a9b55ddf62cf98703e463b8be01))
+
+### [2026-01-27]
+- **Rizki Puji**: Fixing: datatables readonly qty and price add Sales Invoices ([e42b3027](https://github.com/hilmanf11/erp_bpi/commit/e42b3027ebc6bca0ef381296ad80659e7d92a8f9))
