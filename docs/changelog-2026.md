@@ -120,3 +120,6 @@ Halaman ini merangkum seluruh aktivitas pengembangan sistem ERP selama tahun 202
 
 ### [2026-01-27]
 - **Rizki Puji**: Fixing: currency without DN on print commercial Sales Invoices ([81bd14f0](https://github.com/hilmanf11/erp_bpi/commit/81bd14f0c06ea126db40dbe2ef0f42f2485df5cc))
+
+### [2026-01-27]
+- **Rizki Puji**: Feature: fix get Actual data print Detail Inventory RM STD Actual ([e29c4ba7](https://github.com/hilmanf11/erp_bpi/commit/e29c4ba7811826e34f2406d621176b9a678278af))
