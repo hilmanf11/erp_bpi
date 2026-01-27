@@ -1742,6 +1742,7 @@ class Sales_invoices extends CI_Controller
                 b.telp_billing,
                 b.telp,
                 COALESCE(h.currency,h2.currency) as currency,
+                COALESCE(d.currency, "") as customer_currency,
                 g.origin,
                 g.sailing,
                 g.ship_by,
@@ -2022,9 +2023,11 @@ class Sales_invoices extends CI_Controller
                     $html .= '<td style="text-align:center;"><span style="font-size:10px;">' . $record['hs_code'] . '</span></td>';
                 }
 
+                $currency_display = $record['currency'] ?? $record['customer_currency'];
+
                 $html .= '<td style="text-align:center;"><span style="font-size:10px;">' . $record['uom'] . '</span></td>';
                 $html .= '<td style="text-align:right">' . number_format($record['qty'], 0, ",", ".") . '</td>';
-                $html .= '<td style="text-align:center;"><span style="font-size:10px;">' . $record['currency'] . '</span></td>';
+                $html .= '<td style="text-align:center;"><span style="font-size:10px;">' . $currency_display . '</span></td>';
                 $html .= '<td style="text-align:right">' . number_format($record['price'], $format_no, ",", ".") . '</td>';
                 $html .= '<td style="text-align:right">' . number_format(($record['price'] * $record['qty']), $format_no, ",", ".") . '</td>';
                 $html .= '</tr>';
