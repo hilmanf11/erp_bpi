@@ -645,7 +645,7 @@
                         type: 'numberbox', 
                         options: {
                             required: true,
-                            readonly: true,
+                            readonly: false,
                             onChange: function(value) {
                                 var dg = $('#dg2');
                                 var row = dg.datagrid('getSelected');
@@ -670,7 +670,7 @@
                         options: {
                             required: true,
                             precision: 4,
-                            readonly: true,
+                            readonly: false,
                             onChange: function(value) {
                                 var dg = $('#dg2');
                                 var row = dg.datagrid('getSelected');
