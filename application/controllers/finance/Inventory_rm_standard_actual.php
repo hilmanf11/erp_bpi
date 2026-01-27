@@ -912,8 +912,6 @@ class Inventory_rm_standard_actual extends CI_Controller
         echo $html;
     }
 
-
-
     // -------------- PRINT DETAIL (INVENTORY RM) -------------
     public function print_detail($option = "")
     {
@@ -1289,19 +1287,19 @@ class Inventory_rm_standard_actual extends CI_Controller
 
                     // --- RECEIPT ---
                     foreach ($receipts as $r) {
-                        $actual_price_in = $record->actual_price_in;
+                        $actual_price_in = $r->actual_price_in;
 
                         $all_data[] = [
                             'type' => 'RECEIPT',
-                            'date' => $record->receipt_date,
-                            'username' => $record->username,
-                            'qty_in' => $record->qty_receipt,
+                            'date' => $r->receipt_date,
+                            'username' => $r->username,
+                            'qty_in' => $r->qty_receipt,
                             'qty_out' => 0,
                             'actual_price_in' => $actual_price_in,
-                            'doc1' => $record->bc_kind,
-                            'doc2' => $record->bc_aju,
-                            'doc3' => $record->bc_document,
-                            'doc4' => $record->bc_date
+                            'doc1' => $r->bc_kind,
+                            'doc2' => $r->bc_aju,
+                            'doc3' => $r->bc_document,
+                            'doc4' => $r->bc_date
                         ];
                     }
 
@@ -1326,14 +1324,14 @@ class Inventory_rm_standard_actual extends CI_Controller
                     foreach ($returns as $r) {
                         $all_data[] = [
                             'type' => 'RETURN',
-                            'date' => $record->return_date,
-                            'username' => $record->username,
-                            'qty_in' => $record->qty,
+                            'date' => $r->return_date,
+                            'username' => $r->username,
+                            'qty_in' => $r->qty,
                             'qty_out' => 0,
                             'actual_price_in' => $actual_price_in,
                             'doc1' => '-',
-                            'doc2' => $record->label_no,
-                            'doc3' => $record->return_no,
+                            'doc2' => $r->label_no,
+                            'doc3' => $r->return_no,
                             'doc4' => '-'
                         ];
                     }
