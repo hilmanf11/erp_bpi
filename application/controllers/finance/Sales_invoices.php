@@ -4207,8 +4207,8 @@ class Sales_invoices extends CI_Controller
             $fakturNode->addChild('BuyerDocument', 'TIN');
             $fakturNode->addChild('BuyerCountry', ($faktur['customer_type'] == "LOCAL") ? "IDN" : "");
             $fakturNode->addChild('BuyerDocumentNumber', '-');
-            $fakturNode->addChild('BuyerName', $faktur['cust_name']);
-            $fakturNode->addChild('BuyerAdress', $faktur['address']);
+            $fakturNode->addChild('BuyerName', htmlspecialchars($faktur['cust_name']));
+            $fakturNode->addChild('BuyerAdress', htmlspecialchars($faktur['address']));
             $fakturNode->addChild('BuyerEmail', $faktur['email']);
             $fakturNode->addChild('BuyerIDTKU', $idtku_buyer);
 
