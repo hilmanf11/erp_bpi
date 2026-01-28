@@ -135,3 +135,6 @@ Halaman ini merangkum seluruh aktivitas pengembangan sistem ERP selama tahun 202
 
 ### [2026-01-27]
 - **Rizki Puji**: Feature: fix variable record print detail Inventory RM STD Actual ([d5c66b1d](https://github.com/hilmanf11/erp_bpi/commit/d5c66b1d600fbaa0da78271c165fe1b30facca27))
+
+### [2026-01-28]
+- **Rizki Puji**: Fixing bug price coz specification on Purchase Invoices (Bu Nina) ([c3efd199](https://github.com/hilmanf11/erp_bpi/commit/c3efd199878897d32dccf43f23c2b5ffa3342029))
