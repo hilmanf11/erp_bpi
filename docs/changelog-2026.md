@@ -153,3 +153,8 @@ Halaman ini merangkum seluruh aktivitas pengembangan sistem ERP selama tahun 202
 
 ### [2026-01-28]
 - **Rizki Puji**: Fixing: special chars address on eCoretax Sales Invoices ([9a2189af](https://github.com/hilmanf11/erp_bpi/commit/9a2189af667fbe6eb7165480a85130297be4c876))
+
+### [2026-01-28]
+- **kurniawan**: Update Inventory Report
+
+Add New Filter and features that user can choose for report Details ([ece025fd](https://github.com/hilmanf11/erp_bpi/commit/ece025fd8a05ef991741d93f0b639fdfa2315bb9))
