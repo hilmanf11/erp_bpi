@@ -376,6 +376,7 @@ class Inventory_rm_standard_actual extends CI_Controller
                 c.name as category_name, 
                 std_price.price AS standard_price, 
                 std_price.currency AS standard_currency,
+                item_spec.specification,
                 
                 -- BEGIN STOCK
                 COALESCE(x.begin_stock, 0) AS begin_stock,
@@ -401,6 +402,14 @@ class Inventory_rm_standard_actual extends CI_Controller
             JOIN item_familys b ON a.item_family_id = b.id AND b.number != 'FG'
             JOIN item_categories c ON a.item_category_id = c.id
             LEFT JOIN item_family_subs l ON a.item_sub_family_id = l.id
+            
+            -- get specification 
+            LEFT JOIN (
+                SELECT a.item_rm_id, f.specification, c.size 
+                FROM purchase_order_receipts a
+                LEFT JOIN item_rm c ON a.item_rm_id = c.id
+                LEFT JOIN purchase_orders f ON a.po_no = f.po_no AND a.item_rm_id = f.item_rm_id and (a.item_rm_id = f.item_rm_id or a.specification = f.specification)
+            ) item_spec ON item_spec.item_rm_id = a.id
             
             -- Standard Price Lookup
             LEFT JOIN (SELECT item_rm_id, currency, price FROM standard_price_rm WHERE '$filter_from' >= `start_date` AND '$filter_to' <= `end_date`) std_price ON a.id = std_price.item_rm_id
@@ -556,7 +565,7 @@ class Inventory_rm_standard_actual extends CI_Controller
                     <th rowspan="5">Division</th>
                     <th rowspan="5">Category</th>
                     <th rowspan="5">Product Family</th>
-                    <th rowspan="5">Sub Product Family</th>
+                    <th rowspan="5">Specification</th>
 
                     <th colspan="24">SUMMARY</th>
                     <th colspan="50">DETAIL</th>
@@ -777,6 +786,8 @@ class Inventory_rm_standard_actual extends CI_Controller
             $o_act_p = 0;
             if (($b_qty + $i_qty) > 0) {
                 $o_act_a = $o_qty * $avg_act_p;
+            }
+            if ($o_qty > 0) {
                 $o_act_p = $o_act_a / $o_qty;
             }
             $o_variance = $o_act_a - $o_std_a;
@@ -815,7 +826,7 @@ class Inventory_rm_standard_actual extends CI_Controller
                     <td>'.$record->division.'</td>
                     <td>'.$record->category_name.'</td>
                     <td>'.$record->prodfam.'</td>
-                    <td>'.$record->sub_prodfam.'</td>
+                    <td>'.$record->specification.'</td>
                     
                     <td align="right">'.number_format($b_qty, 2).'</td>
                     <td>'.number_format($std_p, 2).'</td>
