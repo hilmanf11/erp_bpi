@@ -37,118 +37,721 @@ class Inventory_fg_standard_actual extends CI_Controller
         }
     }
 
-    public function getData()
+    function customCss() 
     {
-        $filter_from = $this->input->post('filter_from');
-        $filter_to   = $this->input->post('filter_to');
-        $filter_item_fg = $this->input->post('filter_item_fg');
-        $periode = date("Y-m", strtotime($filter_from));
-        $periode_bf = date("Y-m", strtotime("-1 month", strtotime($filter_from)));
+        $css = '<style>
+                    body {
+                        font-family: Arial, Helvetica, sans-serif;
+                        margin: 20px;
+                        background-color: white;
+                    }
+                    .header-section {
+                        overflow: hidden;
+                        margin-bottom: 20px;
+                    }
+                    .company-info {
+                        float: left;
+                        width: 60%;
+                        font-size: 12px;
+                        text-align: left;
+                    }
+                    .print-info {
+                        float: right;
+                        width: 38%;
+                        font-size: 12px;
+                        text-align: right;
+                    }
+                    .company-logo {
+                        vertical-align: top;
+                        padding-right: 10px;
+                    }
+                    .company-details b {
+                        font-size: 14px;
+                    }
+                    .company-details span {
+                        font-size: 10px;
+                    }
+                    .report-title {
+                        text-align: center;
+                        margin-top: 20px;
+                        margin-bottom: 20px;
+                    }
+                    .report-title h3 {
+                        margin: 0;
+                        font-size: 18px;
+                    }
+                    .report-title small {
+                        font-size: 12px;
+                    }
+                    #customers {
+                        border-collapse: collapse;
+                        width: 100%;
+                        font-size: 13px; 
+                        margin-top: 15px;
+                    }
+                    #customers th,
+                    #customers td {
+                        border: 1px solid black;
+                        padding: 0.6rem; 
+                    }
+                    #customers th {
+                        /* background-color: #4E73BE !important; */
+                        text-align: center;
+                        color: black; 
+                        font-weight: bold;
+                    }
+                    #customers tr:nth-child(even) {
+                        background-color: #FFF;
+                    }
+                    #customers tr:hover {
+                        background-color: #DEEBF7;
+                    }
+
+                    /* Aturan CSS khusus untuk print */
+                    @media print {
+                        body {
+                            zoom: 90%;
+                        }
+
+                        /* Memaksa warna latar belakang untuk muncul saat dicetak */
+                        #customers th {
+                            background-color: #EEE !important;
+                            /* background-color: #4E73BE !important; */
+                            -webkit-print-color-adjust: exact;
+                        }
+                        #customers tr:nth-child(even) {
+                            background-color: #DEEBF7 !important;
+                            -webkit-print-color-adjust: exact;
+                        }
+                        #customers tr:hover {
+                            background-color: #f1f1f1 !important;
+                            -webkit-print-color-adjust: exact;
+                        }
+                        
+                        /* Styling untuk baris ERP */
+                        .bg-erp-row { /* Menambahkan class baru untuk baris ERP */
+                            background-color: #DEEBF7 !important;
+                            -webkit-print-color-adjust: exact;
+                        }
+                    }
+
+
+                    .text-right { text-align: right; }
+                    .text-center { text-align: center; }
+                    .font-bold { font-weight: bold; }
+                    .bg-light-green { background-color: #CAFFB3; } /* Untuk baris kelompok akun */
+                    .bg-grey { background-color: #EBEBEB; } /* Untuk grand total */
+
+                    .table-custom-summary {
+                        width: 100%;
+                        border-collapse: collapse;
+                        font-size: 11pt;
+                        color: #495057;
+                    }
+                    
+                    /* Specific styling to match the image */
+                    .table-custom-summary thead {
+                        border-top: 2px solid black;
+                        border-bottom: 2px solid black;
+                    }
+
+                    .table-custom-summary thead th {
+                        background-color: transparent; /* No background color in the header */
+                        color: black;
+                        padding: 0.3rem;
+                        font-weight: bold;
+                    }
+                    
+                    .table-custom-summary tbody tr {
+                        border-bottom: 1px solid #dee2e6; /* Border at the bottom of each row */
+                    }
+                    
+                    .table-custom-summary tbody tr:last-child {
+                        border-bottom: none; /* No border for the last row */
+                    }
+                    
+                    .table-custom-summary tbody tr td {
+                        padding: 0.3rem;
+                        vertical-align: middle;
+                        border: none; /* Remove all cell borders */
+                    }
+
+                    .table-custom-summary .text-end {
+                        text-align: right;
+                    }
+
+                    .table-custom-summary .text-danger {
+                        color: #dc3545;
+                        font-weight: bold;
+                    }
+                    
+                    .clearfix::after {
+                        content: "";
+                        clear: both;
+                        display: table;
+                    }
+
+                    /* Warna Header */
+                    .bg-summary { background-color: #f2f2f2; font-weight: bold; }
+                    .bg-standard { background-color: #D1FFC6; }
+                    .bg-actual { background-color: #cfe6f9; }
+                    .bg-variance { background-color: #d1eeee; }
+                    .bg-white { background-color: #fff; }
+                    .bg-gray { background-color: #e7e6e6; }
+                    .bg-gray-darker { background-color: #d5d5d5; }
+                    .bg-gray-lighter { background-color: #eee; }
+                    .bg-yellow { background-color: #fffccc; }
+                    .bg-blue { background-color: #81a1d1; color: white; }
+                    
+                    /* Warna Header */
+                    .bg-grand-total { background-color: #cfffcc; }
+
+                    /* Tooltip */
+                    .has-tooltip {
+                        position: relative;
+                        cursor: help; /* Mengubah kursor menjadi tanda tanya */
+                    }
+
+                    /* Membuat kotak tooltip */
+                    .has-tooltip::after {
+                        content: attr(data-tooltip); /* Mengambil teks dari data-tooltip */
+                        position: absolute;
+                        bottom: 125%; /* Muncul di atas sel */
+                        left: 50%;
+                        transform: translateX(-50%);
+                        background-color: #333;
+                        color: #fff;
+                        padding: 5px 10px;
+                        border-radius: 4px;
+                        white-space: nowrap;
+                        font-size: 14px;
+                        visibility: hidden;
+                        opacity: 0;
+                        transition: opacity 0.3s;
+                        z-index: 10;
+                    }
+
+                    /* Munculkan saat hover */
+                    .has-tooltip:hover::after {
+                        visibility: visible;
+                        opacity: 1;
+                    }
+
+                    /* Opsional: Tambahkan panah kecil di bawah tooltip */
+                    .has-tooltip::before {
+                        content: "";
+                        position: absolute;
+                        bottom: 115%;
+                        left: 50%;
+                        transform: translateX(-50%);
+                        border-width: 5px;
+                        border-style: solid;
+                        border-color: #333 transparent transparent transparent;
+                        visibility: hidden;
+                        opacity: 0;
+                        transition: opacity 0.3s;
+                    }
+
+                    .has-tooltip:hover::before {
+                        visibility: visible;
+                        opacity: 1;
+                    }
+                    </style>';
+        return $css;
+    }
+
+    public function print($option = "") 
+    {
+        if ($option == "excel") {
+            $format  = date("Ymd");
+            header("Content-type: application/vnd-ms-excel");
+            header("Content-Disposition: attachment; filename=history_transactions_fg_$format.xls");
+        }
+        //------------------------------------ Opsi print berakhir disini------------------------------------------------------//
+
+        $filter_from = $this->input->get('filter_from');
+        $filter_to   = $this->input->get('filter_to');
+        $filter_items = $this->input->get('filter_items');
+        $filter_display = $this->input->get("filter_display");
+        $filter_trans_type = $this->input->get("filter_trans_type");
+        $filter_division = $this->input->get("filter_division");
 
         $start = strtotime($filter_from);
         $finish = strtotime($filter_to);
 
-        //Item Receipts
-        $records = $this->crud->query("SELECT
-            a.id,
+        $filter_from_minus1 = date('Y-m-01', strtotime('-1 month', strtotime($filter_from)));
+        $filter_to_minus1   = date('Y-m-t',  strtotime('-1 month', strtotime($filter_from)));
+        $filter_from_minus2 = date('Y-m-01', strtotime('-2 month', strtotime($filter_from)));
+        $filter_to_minus2   = date('Y-m-t',  strtotime('-2 month', strtotime($filter_from)));
+        $filter_from_minus3 = date('Y-m-01', strtotime('-3 month', strtotime($filter_from)));
+        $filter_to_minus3   = date('Y-m-t',  strtotime('-3 month', strtotime($filter_from)));
+
+        $display_title = ($filter_display == "DETAIL") ? '(DETAIL)' : '(RECAP)';
+
+        // Config Logo & Name
+        $config = $this->db->get('config')->row();
+
+        //------------------------------------ OPTIMIZED QUERY ----------------------------------//
+
+        // Step 1: Hitung qty_in dari checksheet
+        $query_qty_in_checksheet = "SELECT e.item_fg_id, SUM(f.qty) as qty_in_checksheet
+        FROM scan_item_receipts_fg f
+        JOIN checksheets e ON e.number = f.checksheet_number
+        WHERE DATE_FORMAT(e.packing_date, '%Y-%m-%d') BETWEEN '$filter_from' AND '$filter_to'
+        GROUP BY e.item_fg_id";
+
+        //Pecahan dari IN Checksheet
+        $query_qty_in_checksheet_non_subcont = "SELECT e.item_fg_id, SUM(f.qty) as qty_in_non_subcont
+        FROM scan_item_receipts_fg f
+        JOIN checksheets e ON e.number = f.checksheet_number
+        WHERE DATE_FORMAT(e.packing_date, '%Y-%m-%d') BETWEEN '$filter_from' AND '$filter_to' AND e.status_subcont = 'NO' AND e.wo_no not like '%RG-%'
+        GROUP BY e.item_fg_id";
+
+        $query_qty_in_checksheet_subcont_jasa = "SELECT e.item_fg_id, SUM(f.qty) as qty_in_subcont_jasa
+        FROM scan_item_receipts_fg f
+        JOIN checksheets e ON e.number = f.checksheet_number
+        WHERE DATE_FORMAT(e.packing_date, '%Y-%m-%d') BETWEEN '$filter_from' AND '$filter_to' AND e.subcont_type = 'Jasa' AND e.wo_no not like '%RG-%'
+        GROUP BY e.item_fg_id";
+
+        $query_qty_in_checksheet_subcont_fg = "SELECT e.item_fg_id, SUM(f.qty) as qty_in_subcont_fg
+        FROM scan_item_receipts_fg f
+        JOIN checksheets e ON e.number = f.checksheet_number
+        WHERE DATE_FORMAT(e.packing_date, '%Y-%m-%d') BETWEEN '$filter_from' AND '$filter_to' AND e.subcont_type = 'Finished Good' AND e.wo_no not like '%RG-%'
+        GROUP BY e.item_fg_id";
+
+        $query_qty_in_checksheet_repair_fg = "SELECT e.item_fg_id, SUM(f.qty) as qty_in_repair_fg
+        FROM scan_item_receipts_fg f
+        JOIN checksheets e ON e.number = f.checksheet_number
+        WHERE DATE_FORMAT(e.packing_date, '%Y-%m-%d') BETWEEN '$filter_from' AND '$filter_to' AND e.wo_no like '%RG-%'
+        GROUP BY e.item_fg_id";
+        //------------------------------------
+
+        // Step 2: Hitung qty_in tanpa checksheet
+        $query_qty_in_no_checksheet = "SELECT i.item_fg_id, SUM(i.qty) as qty_in_no_checksheet
+        FROM scan_item_receipts_fg i
+        WHERE i.type = 'NBFG'
+        AND i.packing_date BETWEEN '$filter_from' AND '$filter_to'
+        GROUP BY i.item_fg_id";
+
+        // Step 3: Hitung initial `i` dari transaction_fg (kind IN)
+        $query_transaction_fg_in = "SELECT a.item_fg_id, SUM(a.qty) as initial_in
+        FROM transaction_fg a
+        WHERE a.transaction_kind = 'IN'
+        AND a.request_date BETWEEN '$filter_from' AND '$filter_to'
+        GROUP BY a.item_fg_id";
+
+        $query_transaction_fg_in_adj = "SELECT a.item_fg_id, SUM(a.qty) as initial_in_adj
+        FROM transaction_fg a
+        WHERE a.transaction_kind = 'IN' AND a.transaction_type = 'ADJ IN STO'
+        AND a.request_date BETWEEN '$filter_from' AND '$filter_to'
+        GROUP BY a.item_fg_id";
+
+        $query_transaction_fg_in_rfg = "SELECT a.item_fg_id, SUM(a.qty) as initial_in_rfg
+        FROM transaction_fg a
+        WHERE a.transaction_kind = 'IN' AND a.transaction_type = 'RECEIPT FG'
+        AND a.request_date BETWEEN '$filter_from' AND '$filter_to'
+        GROUP BY a.item_fg_id";
+
+        // Step 4: Hitung qty_out dari transaction_fg
+        $query_qty_out = "SELECT a.item_fg_id, SUM(a.qty) as qty_out
+        FROM transaction_fg a
+        WHERE a.transaction_kind = 'OUT'
+        AND a.request_date BETWEEN '$filter_from' AND '$filter_to'
+        GROUP BY a.item_fg_id";
+
+        $query_qty_out_bpb = "SELECT a.item_fg_id, SUM(a.qty) as qty_out_bpb
+        FROM transaction_fg a
+        WHERE a.transaction_kind = 'OUT' AND a.transaction_type = 'BPB'
+        AND a.request_date BETWEEN '$filter_from' AND '$filter_to'
+        GROUP BY a.item_fg_id";
+
+        $query_qty_out_adj = "SELECT a.item_fg_id, SUM(a.qty) as qty_out_adj
+        FROM transaction_fg a
+        WHERE a.transaction_kind = 'OUT' AND a.transaction_type = 'ADJ OUT STO'
+        AND a.request_date BETWEEN '$filter_from' AND '$filter_to'
+        GROUP BY a.item_fg_id";
+
+        // Step 5: Hitung initial `g` (delivery_notes)
+        $query_delivery_notes = "SELECT item_fg_id, SUM(qty) as initial_out_g
+        FROM delivery_notes
+        WHERE delivery_note_date BETWEEN '$filter_from' AND '$filter_to'
+        GROUP BY item_fg_id";
+
+        $query_delivery_notes_sales = "SELECT item_fg_id, SUM(qty) as qty_notes_sales
+        FROM delivery_notes
+        WHERE delivery_note_date BETWEEN '$filter_from' AND '$filter_to' AND trans_type = 'SALES'
+        GROUP BY item_fg_id";
+
+        $query_delivery_notes_sales_minus1 = "SELECT item_fg_id, SUM(qty) as qty_notes_sales
+        FROM delivery_notes
+        WHERE delivery_note_date BETWEEN '$filter_from_minus1' AND '$filter_to_minus1' AND trans_type = 'SALES'
+        GROUP BY item_fg_id";
+
+        $query_delivery_notes_sales_minus2 = "SELECT item_fg_id, SUM(qty) as qty_notes_sales
+        FROM delivery_notes
+        WHERE delivery_note_date BETWEEN '$filter_from_minus2' AND '$filter_to_minus2' AND trans_type = 'SALES'
+        GROUP BY item_fg_id";
+
+        $query_delivery_notes_sales_minus3 = "SELECT item_fg_id, SUM(qty) as qty_notes_sales
+        FROM delivery_notes
+        WHERE delivery_note_date BETWEEN '$filter_from_minus3' AND '$filter_to_minus3' AND trans_type = 'SALES'
+        GROUP BY item_fg_id";
+
+        $query_delivery_notes_return = "SELECT item_fg_id, SUM(qty) as qty_notes_return
+        FROM delivery_notes
+        WHERE delivery_note_date BETWEEN '$filter_from' AND '$filter_to' AND trans_type = 'RETURN'
+        GROUP BY item_fg_id";
+
+        $query_delivery_notes_sample = "SELECT item_fg_id, SUM(qty) as qty_notes_sample
+        FROM delivery_notes
+        WHERE delivery_note_date BETWEEN '$filter_from' AND '$filter_to' AND trans_type = 'SAMPLE'
+        GROUP BY item_fg_id";
+
+        // Step 6: Hitung initial `h` (scan_repair_of_goods)
+        $query_scan_repair_of_goods = "SELECT e.item_fg_id, SUM(f.qty) as initial_out_h
+        FROM scan_repair_of_goods f
+        JOIN repair_of_goods e ON e.document_no = f.document_no and f.item_fg_id = e.item_fg_id
+        WHERE DATE_FORMAT(e.trans_date, '%Y-%m-%d') BETWEEN '$filter_from' AND '$filter_to'
+        GROUP BY f.item_fg_id";
+
+        // Step 7: Hitung qty_in WIP division MTS
+        $query_qty_in_wip_receipt = "SELECT i.item_fg_id, SUM(i.qty) as qty_in_wip_receipt
+        FROM wip_receipts i
+        WHERE i.division = 'MTS'
+        AND i.trans_date BETWEEN '$filter_from' AND '$filter_to'
+        GROUP BY i.item_fg_id";
+
+        //-----------------------------------------------------------------
+
+        $query_qty_in_checksheet2 = "SELECT e.item_fg_id, SUM(f.qty) as qty_in_checksheet
+        FROM scan_item_receipts_fg f
+        JOIN checksheets e ON e.number = f.checksheet_number
+        WHERE DATE_FORMAT(e.packing_date, '%Y-%m-%d') < '$filter_from'
+        GROUP BY e.item_fg_id";
+
+        // Step 2: Hitung qty_in tanpa checksheet
+        $query_qty_in_no_checksheet2 = "SELECT i.item_fg_id, SUM(i.qty) as qty_in_no_checksheet
+        FROM scan_item_receipts_fg i
+        WHERE i.type = 'NBFG'
+        AND i.packing_date < '$filter_from'
+        GROUP BY i.item_fg_id";
+
+        // Step 3: Hitung initial `i` dari transaction_fg (kind IN)
+        $query_transaction_fg_in2 = "SELECT a.item_fg_id, SUM(a.qty) as initial_in
+        FROM transaction_fg a
+        WHERE a.transaction_kind = 'IN'
+        AND a.request_date < '$filter_from'
+        GROUP BY a.item_fg_id";
+
+        // Step 4: Hitung qty_out dari transaction_fg
+        $query_qty_out2 = "SELECT a.item_fg_id, SUM(a.qty) as qty_out
+        FROM transaction_fg a
+        WHERE a.transaction_kind = 'OUT'
+        AND a.request_date < '$filter_from'
+        GROUP BY a.item_fg_id";
+
+        // Step 5: Hitung initial `g` (delivery_notes)
+        $query_delivery_notes2 = "SELECT item_fg_id, SUM(qty) as initial_out_g
+        FROM delivery_notes
+        WHERE delivery_note_date < '$filter_from'
+        GROUP BY item_fg_id";
+
+        // Step 6: Hitung initial `h` (scan_repair_of_goods)
+        $query_scan_repair_of_goods2 = "SELECT e.item_fg_id, SUM(f.qty) as initial_out_h
+        FROM scan_repair_of_goods f
+        JOIN repair_of_goods e ON e.document_no = f.document_no and f.item_fg_id = e.item_fg_id
+        WHERE DATE_FORMAT(e.trans_date, '%Y-%m-%d') < '$filter_from'
+        GROUP BY f.item_fg_id";
+
+        // Step 8: Hitung qty_in WIP division MTS
+        $query_qty_in_wip_receipt2 = "SELECT i.item_fg_id, SUM(i.qty) as qty_in_wip_receipt
+        FROM wip_receipts i
+        WHERE i.division = 'MTS'
+        AND i.trans_date < '$filter_from'
+        GROUP BY i.item_fg_id";
+
+        // Step 9: Gabungan query
+        $query_main = "SELECT 
+            a.id, 
             a.number, 
             a.name, 
-            b.name as prodfam, 
             a.uom,
-            COALESCE(d.qty) as qty,
-            COALESCE(d.amount) as amount
+            b.number as division,
+            '0' as subcont_qty,
+            a.type,
+            COALESCE(x.begin_stock,0) AS begin_stock,
+
+            COALESCE(qins.qty_in_non_subcont, 0) + COALESCE(qir.initial_in_rfg, 0) + COALESCE(qw.qty_in_wip_receipt, 0) as qty_rfg,
+            COALESCE(qi.initial_in, 0) as adj_in_qty,
+            COALESCE(qia.initial_in_adj, 0) as qty_in_adj,
+            COALESCE(qir.initial_in_rfg, 0) as qty_in_rfg,
+            COALESCE(qnc.qty_in_no_checksheet, 0) as qty_in_new_barcode,
+            -- pecahan dari IN checksheet
+            COALESCE(qins.qty_in_non_subcont, 0) as qty_in_non_subcont,
+            COALESCE(qisj.qty_in_subcont_jasa, 0) as qty_in_subcont_jasa,
+            COALESCE(qisfg.qty_in_subcont_fg, 0) as qty_in_subcont_fg,
+            COALESCE(qirfg.qty_in_repair_fg, 0) as qty_in_repair_fg,
+            ------------------------------
+            COALESCE(qc.qty_in_checksheet, 0) + COALESCE(qnc.qty_in_no_checksheet, 0) + COALESCE(qi.initial_in, 0) + COALESCE(qw.qty_in_wip_receipt, 0) AS qty_in,
+            
+            COALESCE(qo.qty_out, 0) + COALESCE(qg.initial_out_g, 0) + COALESCE(qh.initial_out_h, 0) AS qty_out,
+
+            COALESCE(dns.qty_notes_sales, 0) as qty_out_sales,
+            COALESCE(dns1.qty_notes_sales, 0) as qty_out_sales_minus1,
+            COALESCE(dns2.qty_notes_sales, 0) as qty_out_sales_minus2,
+            COALESCE(dns3.qty_notes_sales, 0) as qty_out_sales_minus3,
+            COALESCE(dnr.qty_notes_return, 0) as qty_out_return,
+            COALESCE(dnss.qty_notes_sample, 0) as qty_out_sample,
+
+            COALESCE(qh.initial_out_h, 0) as qty_out_repair,
+
+            COALESCE(qo.qty_out, 0) as adj_out_qty,
+            COALESCE(qob.qty_out_bpb, 0) + COALESCE(qh.initial_out_h, 0) as qty_out_bpb,
+            COALESCE(qoa.qty_out_adj, 0) as qty_out_adj,
+            
+            (COALESCE(qc.qty_in_checksheet, 0) + COALESCE(qnc.qty_in_no_checksheet, 0) + COALESCE(qi.initial_in, 0) - 
+            (COALESCE(qo.qty_out, 0) + COALESCE(qg.initial_out_g, 0) + COALESCE(qh.initial_out_h, 0))) AS end_stock
         FROM item_fg a
-        LEFT JOIN (SELECT item_fg_id, SUM(qty) as qty, SUM(amount) as amount FROM inventory_fg WHERE trans_date < '$filter_from' GROUP BY item_fg_id) d ON a.id = d.item_fg_id
-        WHERE a.id like '%$filter_item_fg%'
-        GROUP BY a.id
-        ORDER BY a.number");
+        LEFT JOIN divisions b ON a.division_id = b.id
+        LEFT JOIN ($query_qty_in_checksheet) qc ON a.id = qc.item_fg_id
+        LEFT JOIN ($query_qty_in_no_checksheet) qnc ON a.id = qnc.item_fg_id
+        LEFT JOIN ($query_transaction_fg_in) qi ON a.id = qi.item_fg_id
+        LEFT JOIN ($query_transaction_fg_in_adj) qia ON a.id = qia.item_fg_id
+        LEFT JOIN ($query_transaction_fg_in_rfg) qir ON a.id = qir.item_fg_id
+        LEFT JOIN ($query_qty_out) qo ON a.id = qo.item_fg_id
+        LEFT JOIN ($query_qty_out_bpb) qob ON a.id = qob.item_fg_id
+        LEFT JOIN ($query_qty_out_adj) qoa ON a.id = qoa.item_fg_id
+        LEFT JOIN ($query_delivery_notes) qg ON a.id = qg.item_fg_id
+        LEFT JOIN ($query_delivery_notes_sales) dns ON a.id = dns.item_fg_id
+        LEFT JOIN ($query_delivery_notes_sales_minus1) dns1 ON a.id = dns1.item_fg_id
+        LEFT JOIN ($query_delivery_notes_sales_minus2) dns2 ON a.id = dns2.item_fg_id
+        LEFT JOIN ($query_delivery_notes_sales_minus3) dns3 ON a.id = dns3.item_fg_id
+        LEFT JOIN ($query_delivery_notes_return) dnr ON a.id = dnr.item_fg_id
+        LEFT JOIN ($query_delivery_notes_sample) dnss ON a.id = dnss.item_fg_id
+        LEFT JOIN ($query_scan_repair_of_goods) qh ON a.id = qh.item_fg_id
+        LEFT JOIN ($query_qty_in_wip_receipt) qw ON a.id = qw.item_fg_id
+        LEFT JOIN ($query_qty_in_checksheet_non_subcont) qins ON a.id = qins.item_fg_id
+        LEFT JOIN ($query_qty_in_checksheet_subcont_jasa) qisj ON a.id = qisj.item_fg_id
+        LEFT JOIN ($query_qty_in_checksheet_subcont_fg) qisfg ON a.id = qisfg.item_fg_id
+        LEFT JOIN ($query_qty_in_checksheet_repair_fg) qirfg ON a.id = qirfg.item_fg_id
 
-        $data = array();
+        LEFT JOIN ( SELECT a.id,
+            (COALESCE(qc.qty_in_checksheet, 0) + COALESCE(qnc.qty_in_no_checksheet, 0) + COALESCE(qi.initial_in, 0) + COALESCE(qw.qty_in_wip_receipt, 0) - 
+            (COALESCE(qo.qty_out, 0) + COALESCE(qg.initial_out_g, 0) + COALESCE(qh.initial_out_h, 0))) AS begin_stock
+            FROM item_fg a
+            LEFT JOIN ($query_qty_in_checksheet2) qc ON a.id = qc.item_fg_id
+            LEFT JOIN ($query_qty_in_no_checksheet2) qnc ON a.id = qnc.item_fg_id
+            LEFT JOIN ($query_transaction_fg_in2) qi ON a.id = qi.item_fg_id
+            LEFT JOIN ($query_qty_out2) qo ON a.id = qo.item_fg_id
+            LEFT JOIN ($query_delivery_notes2) qg ON a.id = qg.item_fg_id
+            LEFT JOIN ($query_scan_repair_of_goods2) qh ON a.id = qh.item_fg_id
+            LEFT JOIN ($query_qty_in_wip_receipt2) qw ON a.id = qw.item_fg_id
+
+            GROUP BY a.id) x ON a.id = x.id
+        WHERE a.id LIKE '%$filter_items%' AND a.division_id LIKE '%$filter_division%'
+        ORDER BY a.number
+        ";
+
+        $records = $this->crud->query($query_main);
+
+        $html = '<html><head><title>Inventory Report</title></head>';
+        $html .= $this->customCss();
+        $html .= '<body>
+            <center>
+                <div style="float: left; font-size: 12px; text-align: left;">
+                    <table style="width: 100%;">
+                        <tr>
+                            <td width="50" style="font-size: 12px; vertical-align: top; text-align: center; vertical-align:jus margin-right:10px;">
+                                <img src="' . $config->favicon . '" width="30">
+                            </td>
+                            <td style="font-size: 14px; text-align: left; margin:2px;">
+                                <b>' . $config->name . '</b><br>
+                                <small>'.$config->description.'</small>
+                            </td>
+                        </tr>
+                    </table>
+                </div>
+                <div style="float: right; font-size: 12px; text-align: right;">
+                    Print Date ' . date("d M Y H:i:s") . ' <br>
+                    Print By ' . $this->session->username . '  
+                </div>
+                <br><br><br>
+                <h3 style="margin:0;">INVENTORY FG STANDARD AND ACTUAL <i>' . $display_title . '</i> </h3>
+                <small>PERIOD : <b>' . $filter_from . '</b> To <b>' . $filter_to . '</b></small>
+            </center>
+            <br>
+            
+            <table id="customers" border="1" style="font-size: 11px;">
+                <tr>
+                    <th rowspan="3" width="20">No</th>
+                    <th rowspan="3">Product No</th>
+                    <th rowspan="3">Product Name</th>
+                    <th rowspan="3">UOM</th>
+                    <th rowspan="3">Type</th>
+                    <th rowspan="3" width="100">Begin<br>Stock</th>
+                    
+                    <th colspan="6">IN</th>
+                    <th rowspan="3" width="100">Total<br>In</th>
+                    <th colspan="5">OUT</th>
+                    <th rowspan="3" width="100">Total<br>Out</th>
+
+                    <th rowspan="3" width="100">Ending<br>Stock</th>
+                    <th rowspan="3" width="100">ITO<br>(MONTH)</th>
+                </tr>
+                <tr>
+                    <th rowspan="2" width="80">IN RFG</th>
+                    <th rowspan="2" width="80">IN REPAIR FG</th>
+                    <th rowspan="2" width="80">NEW BARCODE</th>
+                    <th colspan="2" width="80">SUBCONT</th>
+                    <th rowspan="2" width="80">ADJ STO</th>
+
+                    <th rowspan="2" width="80">OUT SJ</th>
+                    <th rowspan="2" width="80">OUT BPB</th>
+                    <th rowspan="2" width="80">OUT RETUR<br>TKG</th>
+                    <th rowspan="2" width="80">OUT SAMPLE</th>
+                    <th rowspan="2" width="80">OUT ADJ<br>(STO)</th>
+
+                </tr>
+                <tr>
+                    <th width="80">FG</th>
+                    <th width="80">JASA</th>
+                </tr>';
+
+                
+        $no = 1;
+        $totalBeginStock = 0;
+        $totalIn = 0;
+        $totalOut = 0;
+        $totalEndingStock = 0;
+
+        $totalRfgQty = 0;
+        $totalRfgRepairQty = 0;
+        $totalNBQty = 0;
+        $totalSubcontFGQty = 0;
+        $totalSubcontJSQty = 0;
+        $totalAdjInQty = 0;
+
+        $totalOutSales = 0;
+        $totalOutSalesMinus1 = 0;
+        $totalOutSalesMinus2 = 0;
+        $totalOutSalesMinus3 = 0;
+        $totalOutReturn = 0;
+        $totalOutSample = 0;
+        $totalOutBpb = 0;
+        $totalOutAdj = 0;
+
+        $totalQtyIn = 0;
+        $totalQtyOut = 0;
+        $totalQtySelisihIn = 0;
+        $totalQtySelisihOut = 0;
+
+        $totalAverageOut = 0;
+        $totalITOMonth = 0;
+
         foreach ($records as $record) {
+
             $item_fg_id = $record->id;
+            //Item Receipts
+            
+            $totalBeginStock += @$record->begin_stock;
+            $totalIn += $record->qty_in;
+            $totalOut += $record->qty_out;
+            $totalEndingStock += @(@$record->begin_stock + $record->qty_in) - $record->qty_out;
+            
+            $totalRfgQty += $record->qty_rfg;
+            $totalRfgRepairQty += $record->qty_in_repair_fg;
+            $totalNBQty += $record->qty_in_new_barcode;
+            $totalSubcontFGQty += $record->qty_in_subcont_fg;
+            $totalSubcontJSQty += $record->qty_in_subcont_jasa;
+            $totalAdjInQty += $record->qty_in_adj;
 
-            $begin = $this->crud->query("SELECT item_fg_id, SUM(qty) as qty, SUM(amount) as amount, SUM(direct_material) as direct_material, SUM(direct_labor) as direct_labor, SUM(direct_foh) as direct_foh FROM inventory_fg WHERE trans_date < '$filter_from' and item_fg_id = '$item_fg_id' GROUP BY item_fg_id");
+            $totalOutSales += $record->qty_out_sales;
+            $totalOutSalesMinus1 += $record->qty_out_sales_minus1;
+            $totalOutSalesMinus2 += $record->qty_out_sales_minus2;
+            $totalOutSalesMinus3 += $record->qty_out_sales_minus3;
+            $totalOutReturn += $record->qty_out_return;
+            $totalOutSample += $record->qty_out_sample;
+            $totalOutBpb += $record->qty_out_bpb;
+            $totalOutAdj += $record->qty_out_adj;
 
-            $in_qty = @$begin[0]->qty;
-            $in_dm = @$begin[0]->direct_material;
-            $in_dl = @$begin[0]->direct_labor;
-            $in_foh = @$begin[0]->direct_foh;
+            $total_sales_minus = $record->qty_out_sales_minus1 + $record->qty_out_sales_minus2 + $record->qty_out_sales_minus3;
 
-            //RECEIPT
-            $receipts = $this->crud->query("SELECT * FROM inventory_wip WHERE trans_type = 'SCAN FG' and item_fg_id = '$item_fg_id' and trans_date between '$filter_from' and '$filter_to'");
+            // Perhitungan numerik asli
+            $numeric_avg_sales_minus = ($total_sales_minus > 0) ? $total_sales_minus / 3 : 0;
+            $numeric_stock_coverage = ($total_sales_minus > 0)
+                ? ((@$record->begin_stock + $record->qty_in) - $record->qty_out) / $numeric_avg_sales_minus
+                : 0;
 
-            //DELIVERY
-            $returns = $this->crud->query("SELECT a.*, d.name as username
-                            FROM delivery_notes a 
-                            JOIN users d ON a.created_by = d.username
-                            WHERE a.item_fg_id = '$item_fg_id' and a.trans_date between '$filter_from' and '$filter_to'");
+            // Format hanya jika perlu ditampilkan
+            $avg_sales_minus = number_format($numeric_avg_sales_minus, 2);
+            $stock_coverage = number_format($numeric_stock_coverage, 2);
 
-            //Wip Receipt
-            foreach ($receipts as $receipt) {
-                $data[] = array(
-                    "period" => $periode,
-                    "item_fg_id" => $item_fg_id,
-                    "trans_type" => "RECEIPT FG",
-                    "created_name" => $receipt->created_name,
-                    "trans_date" => $receipt->trans_date,
-                    "invoice_no" => $receipt->invoice_no,
-                    "customer_po" => "",
-                    "document_no" => $receipt->document_no,
-                    "uom" => $record->uom,
-                    "qty" => abs($receipt->qty),
-                    "direct_material" => abs($receipt->direct_material),
-                    "direct_labor" => abs($receipt->direct_labor),
-                    "direct_foh" => abs($receipt->direct_foh),
-                    "price" => abs($receipt->price),
-                    "amount" => abs($receipt->amount),
-                );
+            // Jumlahkan dengan nilai numerik murni
+            $totalAverageOut += $numeric_avg_sales_minus;
+            $totalITOMonth += $numeric_stock_coverage;
 
-                $in_qty += abs($receipt->qty);
-                $in_dm += abs($receipt->direct_material);
-                $in_dl += abs($receipt->direct_labor);
-                $in_foh += abs($receipt->direct_foh);
-            }
+            $html .= '  <tr>
+                            <td style="text-align:center">' . $no . '</td>
+                            <td style="mso-number-format:\@;">' . $record->number . '</td>
+                            <td style="mso-number-format:\@;">' . $record->name . '</td>
+                            <td>' . $record->uom . '</td>
+                            <td>' . $record->type . '</td>
+                            
+                            <td style="text-align:right;">' . number_format(@$record->begin_stock, 2) . '</td>
+                            
+                            <td style="text-align:right;">' . $record->qty_rfg . '</td>
+                            <td style="text-align:right;">' . $record->qty_in_repair_fg . '</td>
+                            <td style="text-align:right;">' . $record->qty_in_new_barcode . '</td>
+                            <td style="text-align:right;">' . number_format($record->qty_in_subcont_fg, 2) . '</td>
+                            <td style="text-align:right;">' . number_format($record->qty_in_subcont_jasa, 2) . '</td>
+                            <td style="text-align:right;">' . $record->qty_in_adj . '</td>
 
-            //Delivery Note
-            foreach ($returns as $return) {
-                $direct_material = ((($in_dm / $in_qty) * $return->qty) * -1);
-                $direct_labor = ((($in_dl / $in_qty) * $return->qty) * -1);
-                $direct_foh = ((($in_foh / $in_qty) * $return->qty) * -1);
-                $price_out = abs(($direct_material + $direct_labor + $direct_foh) / $return->qty);
+                            <td style="text-align:right;">' . number_format($record->qty_rfg + $record->qty_in_repair_fg + $record->qty_in_new_barcode + $record->qty_in_subcont_fg + $record->qty_in_subcont_jasa + $record->qty_in_adj,2) . '</td>
 
-                $data[] = array(
-                    "period" => $periode,
-                    "item_fg_id" => $item_fg_id,
-                    "trans_type" => "DELIVERY NOTE",
-                    "type_sales" => $return->trans_type,
-                    "created_name" => $return->username,
-                    "trans_date" => $return->trans_date,
-                    "invoice_no" => $return->do_number,
-                    "customer_po" => $return->customer_po,
-                    "document_no" => $return->number,
-                    "uom" => $record->uom,
-                    "qty" => ($return->qty * -1),
-                    "direct_material" => $direct_material,
-                    "direct_labor" => $direct_labor,
-                    "direct_foh" => $direct_foh,
-                    "price" => $price_out,
-                    "amount" => (($return->qty * -1) * $price_out),
-                );
+                            <td style="text-align:right;">' . $record->qty_out_sales . '</td>
+                            <td style="text-align:right;">' . $record->qty_out_bpb . '</td>
+                            <td style="text-align:right;">' . $record->qty_out_return . '</td>
+                            <td style="text-align:right;">' . $record->qty_out_sample . '</td>
+                            <td style="text-align:right;">' . $record->qty_out_adj . '</td>
 
-                $in_dm -= (($in_dm / $in_qty) * $return->qty);
-                $in_dl -= (($in_dl / $in_qty) * $return->qty);
-                $in_foh -= (($in_foh / $in_qty) * $return->qty);
-                $in_qty -= $return->qty;
-            }
+                            <td style="text-align:right;">' . number_format($record->qty_out_sales + $record->qty_out_bpb + $record->qty_out_return + $record->qty_out_sample + $record->qty_out_adj,2) . '</td>
+                                                        
+                            <td style="text-align:right;">' . number_format((@$record->begin_stock + $record->qty_in) - $record->qty_out, 2) . '</td>
+
+                            <td style="text-align:right;">' . $stock_coverage . '</td>
+                        </tr>';
+            $no++;
         }
 
-        $result['total'] = count($data);
-        $result = array_merge($result, ['rows' => $data]);
-        echo json_encode($result);
+        $html .= '<tr>
+            <td colspan="5" style="text-align:right;"><b>GRAND TOTAL</b></td>
+            <td style="text-align:right;">' . number_format($totalBeginStock, 2) . '</td>
+            <td style="text-align:right;">' . number_format($totalRfgQty, 2) . '</td>
+            <td style="text-align:right;">' . number_format($totalRfgRepairQty, 2) . '</td>
+            <td style="text-align:right;">' . number_format($totalNBQty, 2) . '</td>
+            <td style="text-align:right;">' . number_format($totalSubcontFGQty, 2) . '</td>
+            <td style="text-align:right;">' . number_format($totalSubcontJSQty, 2) . '</td>
+            <td style="text-align:right;">' . number_format($totalAdjInQty, 2) . '</td>
+
+            <td style="text-align:right;">' . number_format($totalIn, 2) . '</td>
+            <td style="text-align:right;">' . number_format($totalOutSales, 2) . '</td>
+            <td style="text-align:right;">' . number_format($totalOutBpb, 2) . '</td>
+            <td style="text-align:right;">' . number_format($totalOutReturn, 2) . '</td>
+            <td style="text-align:right;">' . number_format($totalOutSample, 2) . '</td>
+            <td style="text-align:right;">' . number_format($totalOutAdj, 2) . '</td>
+            <td style="text-align:right;">' . number_format($totalOut, 2) . '</td>
+
+            <td style="text-align:right;">' . number_format($totalEndingStock, 2) . '</td>
+          
+            <td style="text-align:right;">' . number_format($totalITOMonth, 2) . '</td>
+        </tr>';
+      
+        $html .= '</table></body></html>';
+        echo $html;
     }
 
 
-    public function print($option = "")
+    public function print_detail($option = "")
     {
         if ($option == "excel") {
             $format  = date("Ymd");
@@ -316,7 +919,9 @@ class Inventory_fg_standard_actual extends CI_Controller
 
         $records = $this->crud->query($query_main);
 
-        $html = '<html><head><title>Print Data</title></head><style>body {font-family: Arial, Helvetica, sans-serif;}#customers {border-collapse: collapse;width: 100%;font-size: 12px;}#customers td, #customers th {border: 1px solid #ddd;padding: 2px;}#customers tr:nth-child(even){background-color: #f2f2f2;}#customers tr:hover {background-color: #ddd;}#customers th {padding-top: 2px;padding-bottom: 2px;text-align: center;color: black;}</style><body>
+        $html = '<html><head><title>Inventory Report</title></head>';
+        $html .= $this->customCss();
+        $html .= '<body>
             <center>
             <div style="float: left; font-size: 12px; text-align: left;">
                 <table style="width: 100%;">
