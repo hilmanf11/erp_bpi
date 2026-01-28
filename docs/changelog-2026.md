@@ -150,3 +150,6 @@ Halaman ini merangkum seluruh aktivitas pengembangan sistem ERP selama tahun 202
 
 ### [2026-01-28]
 - **Rizki Puji**: Feature: fixing print and print_detail Inventory FG Standard Actual ([2cc604be](https://github.com/hilmanf11/erp_bpi/commit/2cc604bebcb972e6019240f901019561d2e58664))
+
+### [2026-01-28]
+- **Rizki Puji**: Fixing: special chars address on eCoretax Sales Invoices ([9a2189af](https://github.com/hilmanf11/erp_bpi/commit/9a2189af667fbe6eb7165480a85130297be4c876))
