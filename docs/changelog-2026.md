@@ -144,3 +144,6 @@ Halaman ini merangkum seluruh aktivitas pengembangan sistem ERP selama tahun 202
 
 ### [2026-01-28]
 - **Rizki Puji**: pull origin 'main' ([b0fc0f64](https://github.com/hilmanf11/erp_bpi/commit/b0fc0f6446ab7f6e3eb2e2acfe8fb8fe9b061c76))
+
+### [2026-01-28]
+- **Rizki Puji**: Perf: optimation get datatables Preview Add Purchase Invoices ([4a4fa9c2](https://github.com/hilmanf11/erp_bpi/commit/4a4fa9c27258fd53458e42ff085af6b97fbfcf55))
