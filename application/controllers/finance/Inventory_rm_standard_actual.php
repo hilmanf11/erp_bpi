@@ -955,6 +955,8 @@ class Inventory_rm_standard_actual extends CI_Controller
                 b.name as prodfam, 
                 subfam.name as sub_prodfam,
                 c.name as category_name,
+                item_spec.specification,
+
                 COALESCE(aa.price, 0) as std_price,
                 COALESCE(aa.currency, '-') as currency,
                 COALESCE(j.begin_stock, 0) AS begin_stock,
@@ -971,6 +973,14 @@ class Inventory_rm_standard_actual extends CI_Controller
             JOIN item_familys b ON a.item_family_id = b.id AND b.number != 'FG'
             JOIN item_categories c ON a.item_category_id = c.id
             LEFT JOIN item_family_subs subfam ON a.item_sub_family_id = subfam.id
+
+            -- get specification 
+            LEFT JOIN (
+                SELECT a.item_rm_id, f.specification, c.size 
+                FROM purchase_order_receipts a
+                LEFT JOIN item_rm c ON a.item_rm_id = c.id
+                LEFT JOIN purchase_orders f ON a.po_no = f.po_no AND a.item_rm_id = f.item_rm_id and (a.item_rm_id = f.item_rm_id or a.specification = f.specification)
+            ) item_spec ON item_spec.item_rm_id = a.id
             
             -- Standard Price
             LEFT JOIN (SELECT item_rm_id, currency, price from standard_price_rm where '$filter_from' >= `start_date` and '$filter_to' <= `end_date`) aa on a.id = aa.item_rm_id
@@ -1065,7 +1075,7 @@ class Inventory_rm_standard_actual extends CI_Controller
                     <th rowspan="4">Division</th>
                     <th rowspan="4">Category</th>
                     <th rowspan="4">Product Family</th>
-                    <th rowspan="4">Sub Product Family</th>
+                    <th rowspan="4">Specification</th>
                     <th rowspan="4">Currency</th>
                     <th rowspan="4">Rate</th>
 
@@ -1190,7 +1200,7 @@ class Inventory_rm_standard_actual extends CI_Controller
                         <td>'.$record->division.'</td>
                         <td>'.$record->category_name.'</td>
                         <td>'.$record->prodfam.'</td>
-                        <td>'.$record->sub_prodfam.'</td>
+                        <td>'.$record->specification.'</td>
                         <td align="center">'.$record->currency.'</td>
                         <td align="right">'.number_format($rate, 2).'</td>
                         
@@ -1563,4 +1573,5 @@ class Inventory_rm_standard_actual extends CI_Controller
         $html .= '</table></body></html>';
         echo $html;
     }
+
 }
