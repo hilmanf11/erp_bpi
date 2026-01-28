@@ -1,6 +1,16 @@
 <?php
 date_default_timezone_set("Asia/Bangkok");
 defined('BASEPATH') or exit('No direct script access allowed');
+
+/**
+ * @property CI_Input $input
+ * @property CI_Output $output
+ * @property CI_Loader $load
+ * @property CI_Session $session
+ * @property CI_DB_query_builder $db
+ * @property CI_Form_validation $form_validation
+ * @property Crud $crud
+ */
 class Purchase_invoices extends CI_Controller
 {
     public function __construct()
@@ -511,7 +521,117 @@ class Purchase_invoices extends CI_Controller
         echo $datenow . "-" . time();
     }
 
-    public function datatablesTemp()//berubah req Bu Nina 01-12-2025
+    public function datatablesTemp() 
+    {
+        $por_no = base64_decode($this->input->get('por_no'));
+        $trans_date = base64_decode($this->input->get('trans_date'));
+        $por_no_ex = explode(",", $por_no);
+
+        // --- Subquery untuk purchase_invoices ---
+        $this->db->select('number, por_no, journal_type_id');
+        $this->db->from('purchase_invoices');
+        $this->db->where('status', 0);
+        $this->db->like('invoice_no', 'INVTMP', 'after'); // Lebih efisien daripada SUBSTRING_INDEX
+        $this->db->group_by(['number', 'por_no', 'journal_type_id']);
+        $sub_pi = $this->db->get_compiled_select();
+
+        // --- Main Query ---
+        $this->db->select("
+            a.id, a.receipt_no as por_no, a.po_no, a.qty_receipt2 as qty,
+            c.id as item_rm_id, c.number as item_number, c.name as item_name, 
+            e.uom_default as uom, b.currency, 
+            j.number as pi_no, j.journal_type_id as pi_journal_type_id,
+            (CASE WHEN c.item_family_id = 'P28' THEN f.specification ELSE e.item_supplier END) as supplier_product,
+            f.price, f.discount, 'IDR' as currency_local, h.account_number, i.account_name,
+            COALESCE(g.middle, 1) as rate
+        ");
+        
+        // Hitung Total di SQL agar PHP tidak berat
+        $this->db->select("((a.qty_receipt2 * f.price) * (1 - (f.discount / 100))) as total", FALSE);
+        $this->db->select("
+            (CASE 
+                WHEN COALESCE(g.middle, 0) > 0 
+                THEN (g.middle * ((a.qty_receipt2 * f.price) * (1 - (f.discount / 100)))) 
+                ELSE ((a.qty_receipt2 * f.price) * (1 - (f.discount / 100))) 
+            END) as total_local
+        ", FALSE);
+
+        $this->db->from('purchase_order_receipts a');
+        $this->db->join('suppliers b', 'a.supplier_id = b.id');
+        $this->db->join('item_rm c', 'a.item_rm_id = c.id');
+        $this->db->join('supplier_items e', 'b.id = e.supplier_id and c.id = e.item_rm_id');
+        $this->db->join('purchase_orders f', "
+            a.po_no = f.po_no AND 
+            a.item_rm_id = f.item_rm_id AND 
+            COALESCE(a.specification, '') = COALESCE(f.specification, '')
+        ", 'left', FALSE);
+        
+        $this->db->join('exchange_rates g', "'$trans_date' BETWEEN g.start_date AND g.end_date AND g.currency_from = b.currency", 'left');
+        $this->db->join('item_familys h', "c.item_family_id = h.id", 'left');
+        $this->db->join('account_coa i', "h.account_number = i.account_number", 'left');
+        $this->db->join("($sub_pi) j", "a.receipt_no = j.por_no", 'left', FALSE);
+
+        $this->db->where('a.deleted', 0);
+        $this->db->where_in('a.receipt_no', $por_no_ex);
+        $this->db->group_by(['a.po_no', 'a.item_rm_id', 'a.id']);
+        $this->db->order_by('a.receipt_no', 'asc');
+        
+        $records = $this->db->get()->result_array();
+
+        // --- Optimasi Mapping Data (Mencegah N+1 query) ---
+        $journal_data = $this->db->select('js.journal_type_id, coa.account_number, coa.account_name')
+            ->from('journal_setups js')
+            ->join('account_coa coa', 'js.account_number = coa.account_number')
+            ->where('js.status', 'CREDIT')
+            ->get()->result_array();
+
+        $journal_map = [];
+        foreach($journal_data as $jd) {
+            $journal_map[$jd['journal_type_id']] = $jd;
+        }
+
+        $obj = [];
+        $total_sub = 0;
+        foreach ($records as $index => $record) {
+            $total_sub += $record['total'];
+            
+            // Logika penentuan Account
+            $acc_no = $record['account_number'];
+            $acc_name = $record['account_name'];
+
+            if (!empty($record['pi_no']) && isset($journal_map[$record['pi_journal_type_id']])) {
+                $acc_no = $journal_map[$record['pi_journal_type_id']]['account_number'];
+                $acc_name = $journal_map[$record['pi_journal_type_id']]['account_name'];
+            }
+
+            $obj[] = [
+                "no_id"            => $index + 1,
+                "por_no"           => $record['por_no'],
+                "po_no"            => $record['po_no'],
+                "item_rm_id"       => $record['item_rm_id'],
+                "item_number"      => $record['item_number'],
+                "item_name"        => $record['item_name'],
+                "supplier_product" => $record['supplier_product'],
+                "uom"              => $record['uom'],
+                "currency"         => $record['currency'],
+                "currency_local"   => $record['currency_local'],
+                "qty"              => $record['qty'],
+                "discount"         => $record['discount'],
+                "price"            => $record['price'],
+                "total"            => $record['total'],
+                "rate"             => $record['rate'],
+                "total_local"      => $record['total_local'],
+                "account_number"   => $acc_no,
+                "account_name"     => $acc_name,
+                "account_type"     => "DEBIT"
+            ];
+        }
+
+        echo json_encode(['rows' => $obj, 'total_sub' => round($total_sub, 4)]);
+    }
+
+    // Dokumentasi: Bug price sama atau 0 ketika item Specification berbeda dari purchase_orders
+    public function datatablesTemp_existing()//berubah req Bu Nina 01-12-2025
     {
         $por_no = base64_decode($this->input->get('por_no'));
         $trans_date = base64_decode($this->input->get('trans_date'));
@@ -973,9 +1093,9 @@ class Purchase_invoices extends CI_Controller
                     if ($checkExisting) {
                         // Jika data dengan kombinasi por_no, po_no, dan item_no sudah ada, lakukan UPDATE pada record tersebut
                         $invoice_id_to_update = $checkExisting->id;
-                        $this->db->update('purchase_invoices', $post, ["id" => $invoice_id_to_update]);
+                        $update = $this->db->update('purchase_invoices', $post, ["id" => $invoice_id_to_update]);
                         
-                        if ($this->db->affected_rows() > 0) {
+                        if ($update) {
                             echo json_encode(array("title" => "Good Job", "message" => "Data Updated Successfully", "theme" => "success"));
                         } else {
                             echo json_encode(array("title" => "Info", "message" => "No changes detected, data remains the same.", "theme" => "info"));
