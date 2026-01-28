@@ -147,3 +147,6 @@ Halaman ini merangkum seluruh aktivitas pengembangan sistem ERP selama tahun 202
 
 ### [2026-01-28]
 - **Rizki Puji**: Perf: optimation get datatables Preview Add Purchase Invoices ([4a4fa9c2](https://github.com/hilmanf11/erp_bpi/commit/4a4fa9c27258fd53458e42ff085af6b97fbfcf55))
+
+### [2026-01-28]
+- **Rizki Puji**: Feature: fixing print and print_detail Inventory FG Standard Actual ([2cc604be](https://github.com/hilmanf11/erp_bpi/commit/2cc604bebcb972e6019240f901019561d2e58664))
