@@ -14,16 +14,6 @@
                 <input style="width:60%;" id="filter_division" class="easyui-combobox">
             </div>
             <div class="fitem">
-                <span style="width:35%; display:inline-block;"></span>
-                <a href="javascript:;" class="easyui-linkbutton" onclick="filter()"><i class="fa fa-search"></i> Filter Data</a>
-            </div>
-        </div>
-        <div style="width: 49%; float:left;">
-            <div class="fitem">
-                <span style="width:35%; display:inline-block;">Product No</span>
-                <input style="width:60%;" id="filter_items" class="easyui-combogrid">
-            </div>
-            <div class="fitem">
                 <span style="width:35%; display:inline-block;">Type</span>
                 <select style="width:60%;" name="filter_type" id="filter_type" class="easyui-combobox" panelHeight="auto">
                     <option value="">Choose All</option>
@@ -31,6 +21,18 @@
                     <option value="RM">RM</option>
                     <option value="SA">SUB ASSY</option>
                 </select>
+            </div>
+
+            <div class="fitem">
+                <span style="width:35%; display:inline-block;"></span>
+                <a href="javascript:;" class="easyui-linkbutton" onclick="filter()"><i class="fa fa-search"></i> Filter Data</a>
+            </div>
+        </div>
+
+        <div style="width: 49%; float:left;">
+            <div class="fitem">
+                <span style="width:35%; display:inline-block;">Product No</span>
+                <input style="width:60%;" id="filter_items" class="easyui-combogrid">
             </div>
             <div class="fitem">
                 <span style="width:35%; display:inline-block;">Report Display</span>

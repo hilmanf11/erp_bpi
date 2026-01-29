@@ -4,9 +4,11 @@ defined('BASEPATH') or exit('No direct script access allowed');
 
 /**
  * @property CI_Input $input
+ * @property CI_Output $output
  * @property CI_Loader $load
  * @property CI_Session $session
  * @property CI_DB_query_builder $db
+ * @property CI_Form_validation $form_validation
  * @property Crud $crud
  */
 class Inventory_fg_standard_actual extends CI_Controller
@@ -267,7 +269,6 @@ class Inventory_fg_standard_actual extends CI_Controller
             header("Content-type: application/vnd-ms-excel");
             header("Content-Disposition: attachment; filename=history_transactions_fg_$format.xls");
         }
-        //------------------------------------ Opsi print berakhir disini------------------------------------------------------//
 
         $filter_from = $this->input->get('filter_from');
         $filter_to   = $this->input->get('filter_to');
@@ -278,13 +279,6 @@ class Inventory_fg_standard_actual extends CI_Controller
 
         $start = strtotime($filter_from);
         $finish = strtotime($filter_to);
-
-        $filter_from_minus1 = date('Y-m-01', strtotime('-1 month', strtotime($filter_from)));
-        $filter_to_minus1   = date('Y-m-t',  strtotime('-1 month', strtotime($filter_from)));
-        $filter_from_minus2 = date('Y-m-01', strtotime('-2 month', strtotime($filter_from)));
-        $filter_to_minus2   = date('Y-m-t',  strtotime('-2 month', strtotime($filter_from)));
-        $filter_from_minus3 = date('Y-m-01', strtotime('-3 month', strtotime($filter_from)));
-        $filter_to_minus3   = date('Y-m-t',  strtotime('-3 month', strtotime($filter_from)));
 
         $display_title = ($filter_display == "DETAIL") ? '(DETAIL)' : '(RECAP)';
 
@@ -382,20 +376,6 @@ class Inventory_fg_standard_actual extends CI_Controller
         WHERE delivery_note_date BETWEEN '$filter_from' AND '$filter_to' AND trans_type = 'SALES'
         GROUP BY item_fg_id";
 
-        $query_delivery_notes_sales_minus1 = "SELECT item_fg_id, SUM(qty) as qty_notes_sales
-        FROM delivery_notes
-        WHERE delivery_note_date BETWEEN '$filter_from_minus1' AND '$filter_to_minus1' AND trans_type = 'SALES'
-        GROUP BY item_fg_id";
-
-        $query_delivery_notes_sales_minus2 = "SELECT item_fg_id, SUM(qty) as qty_notes_sales
-        FROM delivery_notes
-        WHERE delivery_note_date BETWEEN '$filter_from_minus2' AND '$filter_to_minus2' AND trans_type = 'SALES'
-        GROUP BY item_fg_id";
-
-        $query_delivery_notes_sales_minus3 = "SELECT item_fg_id, SUM(qty) as qty_notes_sales
-        FROM delivery_notes
-        WHERE delivery_note_date BETWEEN '$filter_from_minus3' AND '$filter_to_minus3' AND trans_type = 'SALES'
-        GROUP BY item_fg_id";
 
         $query_delivery_notes_return = "SELECT item_fg_id, SUM(qty) as qty_notes_return
         FROM delivery_notes
@@ -497,9 +477,6 @@ class Inventory_fg_standard_actual extends CI_Controller
             COALESCE(qo.qty_out, 0) + COALESCE(qg.initial_out_g, 0) + COALESCE(qh.initial_out_h, 0) AS qty_out,
 
             COALESCE(dns.qty_notes_sales, 0) as qty_out_sales,
-            COALESCE(dns1.qty_notes_sales, 0) as qty_out_sales_minus1,
-            COALESCE(dns2.qty_notes_sales, 0) as qty_out_sales_minus2,
-            COALESCE(dns3.qty_notes_sales, 0) as qty_out_sales_minus3,
             COALESCE(dnr.qty_notes_return, 0) as qty_out_return,
             COALESCE(dnss.qty_notes_sample, 0) as qty_out_sample,
 
@@ -523,9 +500,6 @@ class Inventory_fg_standard_actual extends CI_Controller
         LEFT JOIN ($query_qty_out_adj) qoa ON a.id = qoa.item_fg_id
         LEFT JOIN ($query_delivery_notes) qg ON a.id = qg.item_fg_id
         LEFT JOIN ($query_delivery_notes_sales) dns ON a.id = dns.item_fg_id
-        LEFT JOIN ($query_delivery_notes_sales_minus1) dns1 ON a.id = dns1.item_fg_id
-        LEFT JOIN ($query_delivery_notes_sales_minus2) dns2 ON a.id = dns2.item_fg_id
-        LEFT JOIN ($query_delivery_notes_sales_minus3) dns3 ON a.id = dns3.item_fg_id
         LEFT JOIN ($query_delivery_notes_return) dnr ON a.id = dnr.item_fg_id
         LEFT JOIN ($query_delivery_notes_sample) dnss ON a.id = dnss.item_fg_id
         LEFT JOIN ($query_scan_repair_of_goods) qh ON a.id = qh.item_fg_id
@@ -596,7 +570,6 @@ class Inventory_fg_standard_actual extends CI_Controller
                     <th rowspan="3" width="100">Total<br>Out</th>
 
                     <th rowspan="3" width="100">Ending<br>Stock</th>
-                    <th rowspan="3" width="100">ITO<br>(MONTH)</th>
                 </tr>
                 <tr>
                     <th rowspan="2" width="80">IN RFG</th>
@@ -666,29 +639,11 @@ class Inventory_fg_standard_actual extends CI_Controller
             $totalAdjInQty += $record->qty_in_adj;
 
             $totalOutSales += $record->qty_out_sales;
-            $totalOutSalesMinus1 += $record->qty_out_sales_minus1;
-            $totalOutSalesMinus2 += $record->qty_out_sales_minus2;
-            $totalOutSalesMinus3 += $record->qty_out_sales_minus3;
             $totalOutReturn += $record->qty_out_return;
             $totalOutSample += $record->qty_out_sample;
             $totalOutBpb += $record->qty_out_bpb;
             $totalOutAdj += $record->qty_out_adj;
 
-            $total_sales_minus = $record->qty_out_sales_minus1 + $record->qty_out_sales_minus2 + $record->qty_out_sales_minus3;
-
-            // Perhitungan numerik asli
-            $numeric_avg_sales_minus = ($total_sales_minus > 0) ? $total_sales_minus / 3 : 0;
-            $numeric_stock_coverage = ($total_sales_minus > 0)
-                ? ((@$record->begin_stock + $record->qty_in) - $record->qty_out) / $numeric_avg_sales_minus
-                : 0;
-
-            // Format hanya jika perlu ditampilkan
-            $avg_sales_minus = number_format($numeric_avg_sales_minus, 2);
-            $stock_coverage = number_format($numeric_stock_coverage, 2);
-
-            // Jumlahkan dengan nilai numerik murni
-            $totalAverageOut += $numeric_avg_sales_minus;
-            $totalITOMonth += $numeric_stock_coverage;
 
             $html .= '  <tr>
                             <td style="text-align:center">' . $no . '</td>
@@ -717,8 +672,6 @@ class Inventory_fg_standard_actual extends CI_Controller
                             <td style="text-align:right;">' . number_format($record->qty_out_sales + $record->qty_out_bpb + $record->qty_out_return + $record->qty_out_sample + $record->qty_out_adj,2) . '</td>
                                                         
                             <td style="text-align:right;">' . number_format((@$record->begin_stock + $record->qty_in) - $record->qty_out, 2) . '</td>
-
-                            <td style="text-align:right;">' . $stock_coverage . '</td>
                         </tr>';
             $no++;
         }
@@ -742,8 +695,6 @@ class Inventory_fg_standard_actual extends CI_Controller
             <td style="text-align:right;">' . number_format($totalOut, 2) . '</td>
 
             <td style="text-align:right;">' . number_format($totalEndingStock, 2) . '</td>
-          
-            <td style="text-align:right;">' . number_format($totalITOMonth, 2) . '</td>
         </tr>';
       
         $html .= '</table></body></html>';
@@ -768,10 +719,18 @@ class Inventory_fg_standard_actual extends CI_Controller
         $start = strtotime($filter_from);
         $finish = strtotime($filter_to);
 
-        //Config
-        $this->db->select('*');
-        $this->db->from('config');
-        $config = $this->db->get()->row();
+        $display_title = ($filter_display == "DETAIL") ? '(DETAIL)' : '(RECAP)';
+
+        // Config Logo & Name
+        $config = $this->db->get('config')->row();
+
+        //------------------------------------ GET DATA ----------------------------------//
+        
+        // mengambil 'price' (standard price) dari standard_price_fg
+        $query_standard_price = "SELECT item_fg_id, currency, price 
+        FROM standard_price_fg 
+        WHERE '$filter_from' >= `start_date` AND '$filter_to' <= `end_date` 
+        GROUP BY item_fg_id";
 
         // Step 1: Hitung qty_in dari checksheet
         $query_qty_in_checksheet = "SELECT e.item_fg_id, SUM(f.qty) as qty_in_checksheet
@@ -881,6 +840,8 @@ class Inventory_fg_standard_actual extends CI_Controller
             COALESCE(aa.price,0) as price,
             COALESCE(aa.currency,'-') as currency,
             COALESCE(x.begin_stock,0) AS begin_stock,
+            COALESCE(sp.price, 0) as std_price,
+
             COALESCE(qc.qty_in_checksheet, 0) + COALESCE(qnc.qty_in_no_checksheet, 0) + COALESCE(qi.initial_in, 0) + COALESCE(qw.qty_in_wip_receipt, 0) AS qty_in,
             
             COALESCE(qo.qty_out, 0) + COALESCE(qg.initial_out_g, 0) + COALESCE(qh.initial_out_h, 0) AS qty_out,
@@ -890,6 +851,7 @@ class Inventory_fg_standard_actual extends CI_Controller
         FROM item_fg a
         LEFT JOIN divisions xy on a.division_id = xy.id
         LEFT JOIN (SELECT item_fg_id, currency, price from standard_price_fg where '$filter_from' >= `start_date` and '$filter_to' <= `end_date`) aa on a.id = aa.item_fg_id
+        LEFT JOIN ($query_standard_price) sp ON a.id = sp.item_fg_id
         LEFT JOIN ($query_qty_in_checksheet) qc ON a.id = qc.item_fg_id
         LEFT JOIN ($query_qty_in_no_checksheet) qnc ON a.id = qnc.item_fg_id
         LEFT JOIN ($query_transaction_fg_in) qi ON a.id = qi.item_fg_id
@@ -914,71 +876,102 @@ class Inventory_fg_standard_actual extends CI_Controller
         ORDER BY a.number
         ";
 
-        // echo $query_main;
-        // die();
 
         $records = $this->crud->query($query_main);
 
         $html = '<html><head><title>Inventory Report</title></head>';
         $html .= $this->customCss();
         $html .= '<body>
-            <center>
-            <div style="float: left; font-size: 12px; text-align: left;">
-                <table style="width: 100%;">
-                    <tr>
-                        <td width="50" style="font-size: 12px; vertical-align: top; text-align: center; vertical-align:jus margin-right:10px;">
-                            <img src="' . $config->favicon . '" width="30">
-                        </td>
-                        <td style="font-size: 14px; text-align: left; margin:2px;">
-                            <b>' . $config->name . '</b><br>
-                            <small>' . $config->description . '</small>
-                        </td>
-                    </tr>
-                </table>
-            </div>
-            <div style="float: right; font-size: 12px; text-align: right;">
-                Print Date ' . date("d M Y H:i:s") . ' <br>
-                Print By ' . $this->session->username . '  
-            </div>
-            <br><br><br>
-            <h3 style="margin:0;">INVENTORY FG STANDARD AND ACTUAL</h3>
-            <small>PERIOD : <b>' . $filter_from . '</b> To <b>' . $filter_to . '</b></small>
-        </center>
-        <br>
-            <table id="customers" border="1" style="font-size: 11px;">
-                <tr>
-                    <th rowspan="2" width="20">No</th>
-                    <th rowspan="2" colspan="3">Product No</th>
-                    <th rowspan="2">Product Name</th>
-                    <th rowspan="2">Uom</th>
-                    <th rowspan="2">Division</th>
-                    <th rowspan="2">Product Family</th>
-                    <th rowspan="2">Type</th>
-                    <th rowspan="2">Currency</th>
-                    <th rowspan="2">Price</th>
-                    <th rowspan="2">Rate</th>
-                    <th colspan="3" width="100">Begin</th>
-                    <th colspan="3" width="100">In</th>
-                    <th colspan="3" width="100">Out</th>
-                    <th colspan="3" width="100">Balance</th>
+                <center>
+                <div style="float: left; font-size: 12px; text-align: left;">
+                    <table style="width: 100%;">
+                        <tr>
+                            <td width="50" style="font-size: 12px; vertical-align: top; text-align: center; vertical-align:jus margin-right:10px;">
+                                <img src="' . $config->favicon . '" width="30">
+                            </td>
+                            <td></td>
+                            <td style="font-size: 14px; text-align: left; margin:2px;">
+                                <b>' . $config->name . '</b><br>
+                                <small>' . $config->description . '</small>
+                            </td>
+                        </tr>
+                    </table>
+                </div>
+                <div style="float: right; font-size: 12px; text-align: right;">
+                    Print Date ' . date("d M Y H:i:s") . ' <br>
+                    Print By ' . $this->session->username . '  
+                </div>
+                <br><br><br>
+                <h3 style="margin:0;">INVENTORY FG STANDARD AND ACTUAL <i>' . $display_title . '</i> </h3>
+                <small>PERIOD : <b>' . $filter_from . '</b> To <b>' . $filter_to . '</b></small>
+            </center>
+            <br>';
+        
+        // Build Table Header
+        $html .= '<table id="customers" border="1" style="font-size: 11px;">
+            <thead>
+                <tr style="background-color:#eee;">
+                    <th rowspan="4" width="20">No</th>
+                    <th rowspan="4" colspan="3">Product No</th>
+                    <th rowspan="4" colspan="2">Product Name</th>
+                    <th rowspan="4">Uom</th>
+                    <th rowspan="4">Division</th>
+                    <th rowspan="4">Product Family</th>
+                    <th rowspan="4">Type</th>
+                    <th rowspan="4">Currency</th>
+                    <th rowspan="4">Rate</th>
+
+                    <th colspan="20">SUMMARY</th>
                 </tr>
+                
+                <tr style="background-color:#d5d5d5;">
+                    <th colspan="5" >BEGIN</th>
+                    <th colspan="5" width="100">IN</th>
+                    <th colspan="5" width="100">OUT</th>
+                    <th colspan="5" width="100">BALANCE</th>
+                </tr>
+
                 <tr>
-                    <th width="80">QTY</th>
-                    <th width="80">PRICE</th>
-                    <th width="80">AMOUNT</th>
+                    <th width="80" rowspan="2">QTY</th>
+                    <th colspan="2" style="background-color: #D1FFC6;">STANDARD</th>
+                    <th colspan="2" style="background-color: #CFE6F9;">ACTUAL</th>
+                    
+                    <th width="80" rowspan="2">QTY</th>
+                    <th colspan="2" style="background-color: #D1FFC6;">STANDARD</th>
+                    <th colspan="2" style="background-color: #CFE6F9;">ACTUAL</th>
+                    
+                    <th width="80" rowspan="2">QTY</th>
+                    <th colspan="2" style="background-color: #D1FFC6;">STANDARD</th>
+                    <th colspan="2" style="background-color: #CFE6F9;">ACTUAL</th>
+                    
+                    <th width="80" rowspan="2">QTY</th>
+                    <th colspan="2" style="background-color: #D1FFC6;">STANDARD</th>
+                    <th colspan="2" style="background-color: #CFE6F9;">ACTUAL</th>
+                </tr>
 
-                    <th width="80">QTY</th>
-                    <th width="80">PRICE</th>
-                    <th width="80">AMOUNT</th>
+                <tr>
+                    <th style="background-color: #D1FFC6;">PRICE</th>
+                    <th style="background-color: #D1FFC6;">AMOUNT</th>
+                    <th style="background-color: #CFE6F9;">PRICE</th>
+                    <th style="background-color: #CFE6F9;">AMOUNT</th>
 
-                    <th width="80">QTY</th>
-                    <th width="80">PRICE</th>
-                    <th width="80">AMOUNT</th>
+                    <th style="background-color: #D1FFC6;">PRICE</th>
+                    <th style="background-color: #D1FFC6;">AMOUNT</th>
+                    <th style="background-color: #CFE6F9;">PRICE</th>
+                    <th style="background-color: #CFE6F9;">AMOUNT</th>
+                    
+                    <th style="background-color: #D1FFC6;">PRICE</th>
+                    <th style="background-color: #D1FFC6;">AMOUNT</th>
+                    <th style="background-color: #CFE6F9;">PRICE</th>
+                    <th style="background-color: #CFE6F9;">AMOUNT</th>
+                    
+                    <th style="background-color: #D1FFC6;">PRICE</th>
+                    <th style="background-color: #D1FFC6;">AMOUNT</th>
+                    <th style="background-color: #CFE6F9;">PRICE</th>
+                    <th style="background-color: #CFE6F9;">AMOUNT</th>
+                </tr>
+            </thead>';
 
-                    <th width="80">QTY</th>
-                    <th width="80">PRICE</th>
-                    <th width="80">AMOUNT</th>
-                </tr>';
         $no = 1;
         $totalBeginStock = 0;
         $totalBeginAmount = 0;
@@ -988,7 +981,9 @@ class Inventory_fg_standard_actual extends CI_Controller
         $totalAmountOut = 0;
         $totalEndingStock = 0;
         $totalAmountEndingStock = 0;
-        foreach ($records as $record) {
+
+        foreach ($records as $record) 
+        {
             $item_fg_id = $record->id;
             $currency = @$record->currency;
             $rate = 1;
@@ -1021,73 +1016,107 @@ class Inventory_fg_standard_actual extends CI_Controller
             $html .= '  <tr>
                             <td style="text-align:center">' . $no . '</td>
                             <td colspan="3" style="mso-number-format:\@;">' . $record->number . '</td>
-                            <td style="mso-number-format:\@;">' . $record->name . '</td>
+                            <td colspan="2" style="mso-number-format:\@;">' . $record->name . '</td>
                             <td>' . $record->uom . '</td>
                             <td>' . $record->division . '</td>
                             <td>FINISH GOOD</td>
                             <td>' . $record->type . '</td>
                             <td style="text-align:center;">' . $record->currency . '</td>
-                            <td style="text-align:right;">' . number_format($record->price, 2) . '</td>
                             <td style="text-align:right;">' . number_format($rate, 2) . '</td>
 
                             <td style="text-align:right;">' . number_format(@$record->begin_stock, 2) . '</td>
                             <td style="text-align:right;">' . number_format($record->price * $rate, 2) . '</td>
                             <td style="text-align:right;">' . number_format(($record->price * $rate) * $record->begin_stock, 2) . '</td>
+                            <td>0</td>
+                            <td>-</td>
 
                             <td style="text-align:right;">' . number_format($record->qty_in, 2) . '</td>
                             <td style="text-align:right;">' . number_format($record->price * $rate, 2) . '</td>
                             <td style="text-align:right;">' . number_format(($record->price * $rate) * $record->qty_in, 2) . '</td>
+                            <td>0</td>
+                            <td>0</td>
 
                             <td style="text-align:right;">' . number_format($record->qty_out, 2) . '</td>
                             <td style="text-align:right;">' . number_format($record->price * $rate, 2) . '</td>
                             <td style="text-align:right;">' . number_format(($record->price * $rate) * $record->qty_out, 2) . '</td>
+                            <td>0</td>
+                            <td>0</td>
 
                             <td style="text-align:right;">' . number_format((@$record->begin_stock + $record->qty_in) - $record->qty_out, 2) . '</td>
                             <td style="text-align:right;">' . number_format($record->price * $rate, 2) . '</td>
                             <td style="text-align:right;">' . number_format((@($record->price * $rate) * $record->qty_in) + (($record->price * $rate) * $record->begin_stock) - (($record->price * $rate) * $record->qty_out), 2) . '</td>
+                            <td>0</td>
+                            <td>0</td>
                         
                         </tr>';
 
             if ($filter_display == "DETAIL") {
                 $html .= '  <tr>
-                                <td colspan="24" style="background:#D1FFC6; font-size: 11px;"><b>DETAIL OF ' . $record->number . ' - ' . $record->name . '</b></td>
+                                <td colspan="32" style="background:#D1FFC6; font-size: 11px;"><b>DETAIL OF ' . $record->number . ' - ' . $record->name . '</b></td>
                             </tr>';
-                $html .= '  <tr>
-                                <th rowspan="2" width="20"></th>
-                                <th rowspan="2" width="20">No</th>
-                                <th rowspan="2">Trans Type</th>
-                                <th rowspan="2">Created By</th>
-                                <th rowspan="2">Trans Date</th>
-                                <th rowspan="2">WO / DO</th>
-                                <th rowspan="2" colspan="3" >Doc. No</th>
-                                <th rowspan="2">CCY</th>
-                                <th rowspan="2">Price</th>
-                                <th rowspan="2">Rate</th>
-                                <th colspan="3">Begin</th>
-                                <th colspan="3">In</th>
-                                <th colspan="3">Out</th>
-                                <th colspan="3">Balance</th>
-                            </tr>
-                            <tr>
-                                <th>QTY</th>
-                                <th>PRICE</th>
-                                <th>AMOUNT</th>
+                $html .= '<thead>
+                        <tr>
+                            <th rowspan="3" width="20"></th>
+                            <th rowspan="3" width="20">No</th>
+                            <th rowspan="3">Trans Type</th>
+                            <th rowspan="3">Created By</th>
+                            <th rowspan="3">Trans Date</th>
+                            <th rowspan="3">WO / DO</th>
+                            <th rowspan="3" colspan="3" >Doc. No</th>
+                            <th rowspan="3">CCY</th>
+                            <th rowspan="3">Price</th>
+                            <th rowspan="3">Rate</th>
 
-                                <th>QTY</th>
-                                <th>PRICE</th>
-                                <th>AMOUNT</th>
+                            <th colspan="5">BEGIN</th>
+                            <th colspan="5">IN</th>
+                            <th colspan="5">OUT</th>
+                            <th colspan="5">BALANCE</th>
+                        </tr>
+                        
+                        <tr>
+                            <th width="80" rowspan="2">QTY</th>
+                            <th colspan="2" style="background-color: #D1FFC6;">STANDARD</th>
+                            <th colspan="2" style="background-color: #CFE6F9;">ACTUAL</th>
+                            
+                            <th width="80" rowspan="2">QTY</th>
+                            <th colspan="2" style="background-color: #D1FFC6;">STANDARD</th>
+                            <th colspan="2" style="background-color: #CFE6F9;">ACTUAL</th>
+                            
+                            <th width="80" rowspan="2">QTY</th>
+                            <th colspan="2" style="background-color: #D1FFC6;">STANDARD</th>
+                            <th colspan="2" style="background-color: #CFE6F9;">ACTUAL</th>
+                            
+                            <th width="80" rowspan="2">QTY</th>
+                            <th colspan="2" style="background-color: #D1FFC6;">STANDARD</th>
+                            <th colspan="2" style="background-color: #CFE6F9;">ACTUAL</th>
+                        </tr>
 
-                                <th>QTY</th>
-                                <th>PRICE</th>
-                                <th>AMOUNT</th>
+                        <tr>
+                            <th style="background-color: #D1FFC6;">PRICE</th>
+                            <th style="background-color: #D1FFC6;">AMOUNT</th>
+                            <th style="background-color: #CFE6F9;">PRICE</th>
+                            <th style="background-color: #CFE6F9;">AMOUNT</th>
 
-                                <th>QTY</th>
-                                <th>PRICE</th>
-                                <th>AMOUNT</th>
-                            </tr>';
+                            <th style="background-color: #D1FFC6;">PRICE</th>
+                            <th style="background-color: #D1FFC6;">AMOUNT</th>
+                            <th style="background-color: #CFE6F9;">PRICE</th>
+                            <th style="background-color: #CFE6F9;">AMOUNT</th>
+                            
+                            <th style="background-color: #D1FFC6;">PRICE</th>
+                            <th style="background-color: #D1FFC6;">AMOUNT</th>
+                            <th style="background-color: #CFE6F9;">PRICE</th>
+                            <th style="background-color: #CFE6F9;">AMOUNT</th>
+                            
+                            <th style="background-color: #D1FFC6;">PRICE</th>
+                            <th style="background-color: #D1FFC6;">AMOUNT</th>
+                            <th style="background-color: #CFE6F9;">PRICE</th>
+                            <th style="background-color: #CFE6F9;">AMOUNT</th>
+                        </tr>
+                    </thead>';
+
                 $nod = 1;
                 $begin = @$record->begin_stock;
-                $price = @$record->price;
+                $price = @$record->std_price;
                 $currency = @$record->currency;
                 $in_qty = 0;
                 $end_qty = 0;
@@ -1129,11 +1158,10 @@ class Inventory_fg_standard_actual extends CI_Controller
                         WHERE a.item_fg_id = '$item_fg_id' AND a.division = 'MTS'
                         AND DATE_FORMAT(a.trans_date, '%Y-%m-%d') BETWEEN '$filter_from' and '$filter_to'");
 
-
-
-                $delivery_notes = $this->crud->query("SELECT a.*, d.name AS username
+                $delivery_notes = $this->crud->query("SELECT a.*, d.name AS username, so.price as act_price
                     FROM delivery_notes a
                     JOIN users d ON a.created_by = d.username
+                    LEFT JOIN sales_orders so ON so.sales_order_no = a.sales_order_no
                     WHERE a.item_fg_id = '$item_fg_id'
                     AND a.delivery_note_date BETWEEN '$filter_from' AND '$filter_to'");
 
@@ -1174,6 +1202,7 @@ class Inventory_fg_standard_actual extends CI_Controller
                         'label' => $receipt->checksheet_label,
                         'qty_in' => $receipt->qty,
                         'qty_out' => 0,
+                        'price' => 0,
                     ];
                 }
 
@@ -1186,6 +1215,7 @@ class Inventory_fg_standard_actual extends CI_Controller
                         'label' => $receiptNB->checksheet_label,
                         'qty_in' => $receiptNB->qty,
                         'qty_out' => 0,
+                        'price' => 0,
                     ];
                 }
 
@@ -1198,6 +1228,7 @@ class Inventory_fg_standard_actual extends CI_Controller
                         'label' => $receiptWIP->checksheet_label,
                         'qty_in' => $receiptWIP->qty,
                         'qty_out' => 0,
+                        'price' => 0,
                     ];
                 }
 
@@ -1211,6 +1242,7 @@ class Inventory_fg_standard_actual extends CI_Controller
                         'label' => $delivery_note->delivery_note_no,
                         'qty_in' => 0,
                         'qty_out' => $delivery_note->qty,
+                        'price' => $delivery_note->act_price,
                     ];
                 }
 
@@ -1224,6 +1256,7 @@ class Inventory_fg_standard_actual extends CI_Controller
                         'label' => $transaction->request_no,
                         'qty_in' => $transaction->transaction_kind == 'IN' ? $transaction->qty : 0,
                         'qty_out' => $transaction->transaction_kind == 'OUT' ? $transaction->qty : 0,
+                        'price' => 0,
                     ];
                 }
 
@@ -1236,6 +1269,7 @@ class Inventory_fg_standard_actual extends CI_Controller
                         'label' => $scan_repair_of_good->document_no,
                         'qty_in' => 0,
                         'qty_out' => $scan_repair_of_good->qty,
+                        'price' => 0,
                     ];
                 }
 
@@ -1247,34 +1281,48 @@ class Inventory_fg_standard_actual extends CI_Controller
                 // Generate HTML
                 $nod = 1;
                 $balance = $begin;
+
                 foreach ($all_data as $data) {
+                    $wo_no = (isset($data['wo_no']) && !in_array($data['wo_no'], ['undefined', 'null', ''])) ? $data['wo_no'] : '-';
+                    $act_price = $data['price'] ?? 0;
+                    
                     $balance += $data['qty_in'] - $data['qty_out'];
+
                     $html .= '  <tr>
                                     <td></td>
                                     <td style="text-align:center">' . $nod . '</td>
                                     <td>' . $data['type'] . '</td>
                                     <td>' . $data['username'] . '</td>
                                     <td>' . $data['date'] . '</td>
-                                    <td>' . $data['wo_no'] . '</td>
+                                    <td>' . $wo_no . '</td>
                                     <td colspan="3">' . $data['label'] . '</td>
                                     <td style="text-align:center;">' . $currency . '</td>
                                     <td style="text-align:right;">' . number_format($price, 2) . '</td>
                                     <td style="text-align:right;">' . number_format($rate, 2) . '</td>
+
                                     <td style="text-align:right;">' . number_format($begin, 2) . '</td>
                                     <td style="text-align:right;">' . number_format($rate * $price, 2) . '</td>
                                     <td style="text-align:right;">' . number_format(($rate * $price) * $begin, 2) . '</td>
+                                    <td>0</td>
+                                    <td>0</td>                                    
 
                                     <td style="text-align:right;">' . number_format($data['qty_in'], 2) . '</td>
                                     <td style="text-align:right;">' . number_format($rate * $price, 2) . '</td>
                                     <td style="text-align:right;">' . number_format(($rate * $price) * $data['qty_in'], 2) . '</td>
+                                    <td>0</td>
+                                    <td>0</td>
 
                                     <td style="text-align:right;">' . number_format($data['qty_out'], 2) . '</td>
                                     <td style="text-align:right;">' . number_format($rate * $price, 2) . '</td>
                                     <td style="text-align:right;">' . number_format(($rate * $price) * $data['qty_out'], 2) . '</td>
+                                    <td>0</td>
+                                    <td>0</td>
 
                                     <td style="text-align:right;">' . number_format($balance, 2) . '</td>
                                     <td style="text-align:right;">' . number_format($rate * $price, 2) . '</td>
                                     <td style="text-align:right;">' . number_format(($rate * $price) * $balance, 2) . '</td>
+                                    <td>0</td>
+                                    <td>0</td>
                                 </tr>';
 
                     $begin = $balance;
@@ -1289,17 +1337,29 @@ class Inventory_fg_standard_actual extends CI_Controller
                     <td style="text-align:right;"><b>' . number_format($totalBeginStock, 2) . '</b></td>
                     <td style="text-align:right;"></td>
                     <td style="text-align:right;"><b>' . number_format($totalBeginAmount, 2) . '</b></td>
+                    <td style="text-align:right;"></td>
+                    <td style="text-align:right;"></td>
+
                     <td style="text-align:right;"><b>' . number_format($totalIn, 2) . '</b></td>
                     <td style="text-align:right;"></td>
                     <td style="text-align:right;"><b>' . number_format($totalAmountIn, 2) . '</b></td>
+                    <td style="text-align:right;"></td>
+                    <td style="text-align:right;"></td>
+
                     <td style="text-align:right;"><b>' . number_format($totalOut, 2) . '</b></td>
                     <td style="text-align:right;"></td>
                     <td style="text-align:right;"><b>' . number_format($totalAmountOut, 2) . '</b></td>
+                    <td style="text-align:right;"></td>
+                    <td style="text-align:right;"></td>
+
                     <td style="text-align:right;"><b>' . number_format($totalEndingStock, 2) . '</b></td>
                     <td style="text-align:right;"></td>
                     <td style="text-align:right;"><b>' . number_format($totalAmountEndingStock, 2) . '</b></td>
+                    <td style="text-align:right;"></td>
+                    <td style="text-align:right;"></td>
                 </tr>';
         $html .= '</table></body></html>';
         echo $html;
     }
+
 }
