@@ -1359,7 +1359,7 @@ class Ar_receipts extends CI_Controller
                                 </td>
                             </tr>
                         </table>
-                        <div style="border: 1px solid black; width:100%;">
+                        <div style="border: none; width:100%;">
                             <div style="padding:10px;">
                                 <center>
                                     <h3>RECEIPT VOUCHER</h3>
@@ -2290,4 +2290,5 @@ class Ar_receipts extends CI_Controller
         $formatted_number = number_format($number, $decimal_places, ',', '.');
         return $formatted_number;
     }
+
 }
