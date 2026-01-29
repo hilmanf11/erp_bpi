@@ -10,6 +10,7 @@
             <th rowspan="2" data-options="field:'supplier_name',width:250,halign:'center'">Supplier Name</th>
             <th rowspan="2" data-options="field:'bank_account',width:150,halign:'center'">Bank Account</th>
             <th rowspan="2" data-options="field:'payment_by',width:100,align:'center'">Payment By</th>
+            <th rowspan="2" data-options="field:'total_payment',width:100,align:'center',formatter:priceformat">Total Payment</th>
             <th rowspan="2" data-options="field:'gl_no',width:100,align:'center'">GL No</th>
             <th rowspan="2" data-options="field:'note',width:200,halign:'center'">Note</th>
             <th colspan="2" data-options="field:'',width:100,halign:'center'"> Created</th>
@@ -348,7 +349,7 @@
         </div>
         <div id="toolbar2">
             <a href="javascript:void(0)" class="easyui-linkbutton" data-options="plain:true" onclick="append()"><i class="fa fa-plus"></i> Add</a>
-            <a href="javascript:void(0)" class="easyui-linkbutton" data-options="plain:true" onclick="append_dp()"><i class="fa fa-eye"></i> Find Down Payment</a>
+            <a href="javascript:void(0)" class="easyui-linkbutton" data-options="plain:true" onclick="append_dp()" id="append_dp"><i class="fa fa-eye"></i> Find Down Payment</a>
         </div>
 
         <div id="toolbar3">
@@ -909,13 +910,14 @@
                 success: function(dp) {
                     if (parseInt(dp.length) > 0) {
                         toastr.success("Data Down Payment Added Success");
+                        $("#append_dp").linkbutton('disable');
 
                         for (let i = 0; i < dp.length; i++) {
-                            if(dp[i].amount == 0){
-                                var amount = dp[i].payment;
-                            }else{
-                                var amount = dp[i].amount;
-                            }
+                            // if(dp[i].amount == 0){
+                            //     var amount = dp[i].payment;
+                            // }else{
+                            //     var amount = dp[i].amount;
+                            // }
 
                             if(dp[i].balance == 0){
                                 var balance = dp[i].payment;
@@ -923,19 +925,20 @@
                                 var balance = (parseFloat(dp[i].balance) - parseFloat(dp[i].payment));
                             }
 
-                            var payment = (parseFloat(dp[i].balance) - parseFloat(dp[i].payment));
+                            // var payment = (parseFloat(dp[i].balance) - parseFloat(dp[i].payment));
 
                             $('#dg2').datagrid('appendRow', {
                                 purchase_invoice: dp[i].payment_no,
                                 supplier_invoice: dp[i].supplier_invoice,
                                 currency: dp[i].currency,
-                                amount: amount,
+                                amount: 0,
                                 balance: balance,
-                                payment: payment,
+                                payment: dp[i].payment,
                                 remarks: dp[i].remarks,
                                 account_number: dp[i].account_number,
                                 account_name: dp[i].account_name,
-                                account_type: dp[i].account_type,
+                                //account_type: dp[i].account_type,
+                                account_type: 'CREDIT',
                             });
                         }
 
@@ -970,6 +973,8 @@
                     index: editIndex,
                     field: 'id'
                 });
+
+                $("#append_dp").linkbutton('enable');
 
                 // $.ajax({
                 //     method: 'post',

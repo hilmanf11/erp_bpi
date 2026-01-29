@@ -143,8 +143,7 @@ class Ap_payments extends CI_Controller
         $jsonDatas = json_decode(file_get_contents("json/ap_payments.json"), true);
         
         $grand_total = 0;
-        $grand_local_credit = 0;
-        $grand_local_debit = 0;
+        $grand_total_local = 0;
         $total_payment_local_now = 0;
         $currency = "IDR"; // Default
 
@@ -185,14 +184,25 @@ class Ap_payments extends CI_Controller
             ];
 
             // Akumulasi untuk perhitungan Grand Total & Selisih Kurs
-            $grand_total += $payment_original;
-            $grand_local_debit += $local_debit;
-            $grand_local_credit += $local_credit;
+            $grand_total += ($debit_original - $credit_original);
+            $grand_total_local += ($local_debit - $local_credit);
             
             $exchange_payment_date = ($currency !== 'IDR') ? ($this->getExchange($currency, $payment_date) ?? 0) : 1;
             $total_payment_local_now += round($payment_original * $exchange_payment_date, 2);
             
             $flag++;
+        }
+
+        if($grand_total < 0){
+            $debit = abs($grand_total);
+            $credit = 0;
+            $local_debit = abs($grand_total_local);
+            $local_credit = 0;
+        }else{
+            $debit = 0;
+            $credit = abs($grand_total);
+            $local_debit = 0;
+            $local_credit = abs($grand_total_local);
         }
         
         // --- Akun Bank ---
@@ -203,10 +213,10 @@ class Ap_payments extends CI_Controller
                 "description"    => "Payment Total",
                 "currency"       => "IDR",
                 "exchange_rate"  => $exchange_payment_date ?? 1,
-                "debit"          => "0.00",
-                "credit"         => number_format($grand_total, 2, '.', ''),
-                "local_debit"    => 0,
-                "local_credit"   => round($total_payment_local_now, 2),
+                "debit"          => $debit,
+                "credit"         => $credit,
+                "local_debit"    => $local_debit,
+                "local_credit"   => $local_credit,
                 "flag"           => $flag,
             );
             $flag++;
@@ -586,11 +596,10 @@ class Ap_payments extends CI_Controller
 
         $this->db->select('a.*, b.account_name');
         $this->db->from('ap_payments a');
-        $this->db->join('account_coa b', 'a.account_number = b.account_number', 'left');
+        $this->db->join('account_coa b', 'a.account_number = b.account_number');
         $this->db->where('a.supplier_id', $supplier_id);
-        $this->db->where('a.purchase_invoice', $purchase_invoice);
-        // $this->db->where('a.journal_type_id', '20230823000001');
-        //$this->db->where('a.account_number', '1151101');
+        $this->db->where_in('a.account_number', ['130.110.00','130.120.00']);
+        $this->db->where("a.balance != a.payment");
         $this->db->where('a.status_dp', '0');
         $records = $this->db->get()->result_array();
 
