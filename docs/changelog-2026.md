@@ -178,3 +178,6 @@ add NULL if checksheet number and wo no is empty ([dcb5fe4f](https://github.com/
 
 ### [2026-01-29]
 - **Hilman Fadillah**: Fixed : Find DP for account specific 130.110.00 and 130.120.00 also fixing add to journal CREDIT cases ([234875b9](https://github.com/hilmanf11/erp_bpi/commit/234875b93fc1ec14aabf58b94fc17e7e8bfa6a0d))
+
+### [2026-01-29]
+- **Rizki Puji**: Feature: fix layout Recap Inventory FG STD Actual ([a7e8cb09](https://github.com/hilmanf11/erp_bpi/commit/a7e8cb097c5b10b7f2e61480a7040125c621e730))
