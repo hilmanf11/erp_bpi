@@ -164,3 +164,6 @@ Add New Filter and features that user can choose for report Details ([ece025fd](
 
 ### [2026-01-29]
 - **Rizki Puji**: Fixing: no border on Print Voucher AR Receipts ([a57db5f9](https://github.com/hilmanf11/erp_bpi/commit/a57db5f953181dbd0ee3652d1cd5700d776945a5))
+
+### [2026-01-29]
+- **Rizki Puji**: Feature: add resources new feature Report Inventory WIP STD Actual ([970e38f4](https://github.com/hilmanf11/erp_bpi/commit/970e38f4124a934104f58228bf9f272e5eccd074))
