@@ -167,3 +167,8 @@ Add New Filter and features that user can choose for report Details ([ece025fd](
 
 ### [2026-01-29]
 - **Rizki Puji**: Feature: add resources new feature Report Inventory WIP STD Actual ([970e38f4](https://github.com/hilmanf11/erp_bpi/commit/970e38f4124a934104f58228bf9f272e5eccd074))
+
+### [2026-01-29]
+- **kurniawan**: Update Scan_repair_of_goods.php
+
+add NULL if checksheet number and wo no is empty ([dcb5fe4f](https://github.com/hilmanf11/erp_bpi/commit/dcb5fe4f4ba035f6d450e7ce8e8ab30c4b7dcdcb))
