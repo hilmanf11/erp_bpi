@@ -172,3 +172,6 @@ Add New Filter and features that user can choose for report Details ([ece025fd](
 - **kurniawan**: Update Scan_repair_of_goods.php
 
 add NULL if checksheet number and wo no is empty ([dcb5fe4f](https://github.com/hilmanf11/erp_bpi/commit/dcb5fe4f4ba035f6d450e7ce8e8ab30c4b7dcdcb))
+
+### [2026-01-29]
+- **Rizki Puji**: Feature: fix layout and get Detail Inventory FG STD Actual ([46e93eba](https://github.com/hilmanf11/erp_bpi/commit/46e93eba7e28a786e0fcff43306e58e5304843e2))
