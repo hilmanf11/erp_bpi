@@ -161,3 +161,6 @@ Add New Filter and features that user can choose for report Details ([ece025fd](
 
 ### [2026-01-29]
 - **Rizki Puji**: chore: add property CI on controller Sales Invoices ([8c8eaafe](https://github.com/hilmanf11/erp_bpi/commit/8c8eaafe12c6652366ea530fa958cb61bc4f7933))
+
+### [2026-01-29]
+- **Rizki Puji**: Fixing: no border on Print Voucher AR Receipts ([a57db5f9](https://github.com/hilmanf11/erp_bpi/commit/a57db5f953181dbd0ee3652d1cd5700d776945a5))
