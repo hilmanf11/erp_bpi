@@ -158,3 +158,6 @@ Halaman ini merangkum seluruh aktivitas pengembangan sistem ERP selama tahun 202
 - **kurniawan**: Update Inventory Report
 
 Add New Filter and features that user can choose for report Details ([ece025fd](https://github.com/hilmanf11/erp_bpi/commit/ece025fd8a05ef991741d93f0b639fdfa2315bb9))
+
+### [2026-01-29]
+- **Rizki Puji**: chore: add property CI on controller Sales Invoices ([8c8eaafe](https://github.com/hilmanf11/erp_bpi/commit/8c8eaafe12c6652366ea530fa958cb61bc4f7933))
