@@ -41,6 +41,233 @@ class Inventory_wip_standard_actual extends CI_Controller
         }
     }
 
+    function customCss() 
+    {
+        $css = '<style>
+                    body {
+                        font-family: Arial, Helvetica, sans-serif;
+                        margin: 20px;
+                        background-color: white;
+                    }
+                    .header-section {
+                        overflow: hidden;
+                        margin-bottom: 20px;
+                    }
+                    .company-info {
+                        float: left;
+                        width: 60%;
+                        font-size: 12px;
+                        text-align: left;
+                    }
+                    .print-info {
+                        float: right;
+                        width: 38%;
+                        font-size: 12px;
+                        text-align: right;
+                    }
+                    .company-logo {
+                        vertical-align: top;
+                        padding-right: 10px;
+                    }
+                    .company-details b {
+                        font-size: 14px;
+                    }
+                    .company-details span {
+                        font-size: 10px;
+                    }
+                    .report-title {
+                        text-align: center;
+                        margin-top: 20px;
+                        margin-bottom: 20px;
+                    }
+                    .report-title h3 {
+                        margin: 0;
+                        font-size: 18px;
+                    }
+                    .report-title small {
+                        font-size: 12px;
+                    }
+                    #customers {
+                        border-collapse: collapse;
+                        width: 100%;
+                        font-size: 13px; 
+                        margin-top: 15px;
+                    }
+                    #customers th,
+                    #customers td {
+                        border: 1px solid black;
+                        padding: 0.6rem; 
+                    }
+                    #customers th {
+                        /* background-color: #4E73BE !important; */
+                        text-align: center;
+                        color: black; 
+                        font-weight: bold;
+                    }
+                    #customers tr:nth-child(even) {
+                        background-color: #FFF;
+                    }
+                    #customers tr:hover {
+                        background-color: #DEEBF7;
+                    }
+
+                    /* Aturan CSS khusus untuk print */
+                    @media print {
+                        body {
+                            zoom: 90%;
+                        }
+
+                        /* Memaksa warna latar belakang untuk muncul saat dicetak */
+                        #customers th {
+                            background-color: #EEE !important;
+                            /* background-color: #4E73BE !important; */
+                            -webkit-print-color-adjust: exact;
+                        }
+                        #customers tr:nth-child(even) {
+                            background-color: #DEEBF7 !important;
+                            -webkit-print-color-adjust: exact;
+                        }
+                        #customers tr:hover {
+                            background-color: #f1f1f1 !important;
+                            -webkit-print-color-adjust: exact;
+                        }
+                        
+                        /* Styling untuk baris ERP */
+                        .bg-erp-row { /* Menambahkan class baru untuk baris ERP */
+                            background-color: #DEEBF7 !important;
+                            -webkit-print-color-adjust: exact;
+                        }
+                    }
+
+
+                    .text-right { text-align: right; }
+                    .text-center { text-align: center; }
+                    .font-bold { font-weight: bold; }
+                    .bg-light-green { background-color: #CAFFB3; } /* Untuk baris kelompok akun */
+                    .bg-grey { background-color: #EBEBEB; } /* Untuk grand total */
+
+                    .table-custom-summary {
+                        width: 100%;
+                        border-collapse: collapse;
+                        font-size: 11pt;
+                        color: #495057;
+                    }
+                    
+                    /* Specific styling to match the image */
+                    .table-custom-summary thead {
+                        border-top: 2px solid black;
+                        border-bottom: 2px solid black;
+                    }
+
+                    .table-custom-summary thead th {
+                        background-color: transparent; /* No background color in the header */
+                        color: black;
+                        padding: 0.3rem;
+                        font-weight: bold;
+                    }
+                    
+                    .table-custom-summary tbody tr {
+                        border-bottom: 1px solid #dee2e6; /* Border at the bottom of each row */
+                    }
+                    
+                    .table-custom-summary tbody tr:last-child {
+                        border-bottom: none; /* No border for the last row */
+                    }
+                    
+                    .table-custom-summary tbody tr td {
+                        padding: 0.3rem;
+                        vertical-align: middle;
+                        border: none; /* Remove all cell borders */
+                    }
+
+                    .table-custom-summary .text-end {
+                        text-align: right;
+                    }
+
+                    .table-custom-summary .text-danger {
+                        color: #dc3545;
+                        font-weight: bold;
+                    }
+                    
+                    .clearfix::after {
+                        content: "";
+                        clear: both;
+                        display: table;
+                    }
+
+                    /* Warna Header */
+                    .bg-summary { background-color: #f2f2f2; font-weight: bold; }
+                    .bg-standard { background-color: #D1FFC6; }
+                    .bg-actual { background-color: #cfe6f9; }
+                    .bg-variance { background-color: #d1eeee; }
+                    .bg-white { background-color: #fff; }
+                    .bg-gray { background-color: #e7e6e6; }
+                    .bg-gray-darker { background-color: #d5d5d5; }
+                    .bg-gray-lighter { background-color: #eee; }
+                    .bg-yellow { background-color: #fffccc; }
+                    .bg-blue { background-color: #81a1d1; color: white; }
+                    
+                    /* Warna Header */
+                    .bg-grand-total { background-color: #cfffcc; }
+
+                    /* Warna Nominal */
+                    .negatif { color: red; }
+                    .positif { color: black; }
+
+                    /* Tooltip */
+                    .has-tooltip {
+                        position: relative;
+                        cursor: help; /* Mengubah kursor menjadi tanda tanya */
+                    }
+
+                    /* Membuat kotak tooltip */
+                    .has-tooltip::after {
+                        content: attr(data-tooltip); /* Mengambil teks dari data-tooltip */
+                        position: absolute;
+                        bottom: 125%; /* Muncul di atas sel */
+                        left: 50%;
+                        transform: translateX(-50%);
+                        background-color: #333;
+                        color: #fff;
+                        padding: 5px 10px;
+                        border-radius: 4px;
+                        white-space: nowrap;
+                        font-size: 14px;
+                        visibility: hidden;
+                        opacity: 0;
+                        transition: opacity 0.3s;
+                        z-index: 10;
+                    }
+
+                    /* Munculkan saat hover */
+                    .has-tooltip:hover::after {
+                        visibility: visible;
+                        opacity: 1;
+                    }
+
+                    /* Opsional: Tambahkan panah kecil di bawah tooltip */
+                    .has-tooltip::before {
+                        content: "";
+                        position: absolute;
+                        bottom: 115%;
+                        left: 50%;
+                        transform: translateX(-50%);
+                        border-width: 5px;
+                        border-style: solid;
+                        border-color: #333 transparent transparent transparent;
+                        visibility: hidden;
+                        opacity: 0;
+                        transition: opacity 0.3s;
+                    }
+
+                    .has-tooltip:hover::before {
+                        visibility: visible;
+                        opacity: 1;
+                    }
+                    </style>';
+        return $css;
+    }
+
 
     public function print($option = "")
     {
@@ -58,6 +285,8 @@ class Inventory_wip_standard_actual extends CI_Controller
 
         $start = strtotime($filter_from);
         $finish = strtotime($filter_to);
+
+        $display_title = ($filter_display == "DETAIL") ? '(DETAIL)' : '(RECAP)';
 
         //Config
         $this->db->select('*');
@@ -365,31 +594,34 @@ class Inventory_wip_standard_actual extends CI_Controller
 
         $records = $this->crud->query($query_main);
 
-        $html = '<html><head><title>Print Data</title></head><style>body {font-family: Arial, Helvetica, sans-serif;}#customers {border-collapse: collapse;width: 100%;font-size: 12px;}#customers td, #customers th {border: 1px solid #ddd;padding: 2px;}#customers tr:nth-child(even){background-color: #f2f2f2;}#customers tr:hover {background-color: #ddd;}#customers th {padding-top: 2px;padding-bottom: 2px;text-align: center;color: black;}</style><body>
+        $html = '<html><head><title>Inventory Report</title></head>';
+        $html .= $this->customCss();
+        $html .= '<body>
             <center>
-            <div style="float: left; font-size: 12px; text-align: left;">
-                <table style="width: 100%;">
-                    <tr>
-                        <td width="50" style="font-size: 12px; vertical-align: top; text-align: center; vertical-align:jus margin-right:10px;">
-                            <img src="' . $config->favicon . '" width="30">
-                        </td>
-                        <td style="font-size: 14px; text-align: left; margin:2px;">
-                            <b>' . $config->name . '</b><br>
-                            <small>' . $config->description . '</small>
-                        </td>
-                    </tr>
-                </table>
-            </div>
-            <div style="float: right; font-size: 12px; text-align: right;">
-                Print Date ' . date("d M Y H:i:s") . ' <br>
-                Print By ' . $this->session->username . '  
-            </div>
-            <br><br><br>
-            <h3 style="margin:0;">INVENTORY WIP</h3>
-            <small>PERIOD : <b>' . $filter_from . '</b> To <b>' . $filter_to . '</b></small>
-        </center>
-        <br>
-            <table id="customers" border="1" style="font-size: 11px;">
+                <div style="float: left; font-size: 12px; text-align: left;">
+                    <table style="width: 100%;">
+                        <tr>
+                            <td width="50" style="font-size: 12px; vertical-align: top; text-align: center; vertical-align:jus margin-right:10px;">
+                                <img src="' . $config->favicon . '" width="30">
+                            </td>
+                            <td style="font-size: 14px; text-align: left; margin:2px;">
+                                <b>' . $config->name . '</b><br>
+                                <small>'.$config->description.'</small>
+                            </td>
+                        </tr>
+                    </table>
+                </div>
+                <div style="float: right; font-size: 12px; text-align: right;">
+                    Print Date ' . date("d M Y H:i:s") . ' <br>
+                    Print By ' . $this->session->username . '  
+                </div>
+                <br><br><br>
+                <h3 style="margin:0;">INVENTORY FG STANDARD AND ACTUAL <i>' . $display_title . '</i> </h3>
+                <small>PERIOD : <b>' . $filter_from . '</b> To <b>' . $filter_to . '</b></small>
+            </center>
+            <br>';
+
+        $html .= '<table id="customers" border="1" style="font-size: 11px;">
                  <tr>
                     <th rowspan="2" width="20">No</th>
                     <th rowspan="2" colspan="2">Product No</th>
