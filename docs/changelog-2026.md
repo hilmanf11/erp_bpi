@@ -193,3 +193,6 @@ add NULL if checksheet number and wo no is empty ([dcb5fe4f](https://github.com/
 
 ### [2026-01-30]
 - **Rizki Puji**: Feature: calculate standard amount Recap Inventory FG STD Actual ([0b14b92f](https://github.com/hilmanf11/erp_bpi/commit/0b14b92f5a6db1db9fab082602fbeac8a3b191a8))
+
+### [2026-01-30]
+- **Rizki Puji**: Feature: fix grand total standard Recap Inventory FG STD Actual ([971308ee](https://github.com/hilmanf11/erp_bpi/commit/971308eee14ff06eeefe2ce18cf2b1505d9bf62c))
