@@ -208,6 +208,10 @@ class Inventory_fg_standard_actual extends CI_Controller
                     /* Warna Header */
                     .bg-grand-total { background-color: #cfffcc; }
 
+                    /* Warna Nominal */
+                    .negatif { color: red; }
+                    .positif { color: black; }
+
                     /* Tooltip */
                     .has-tooltip {
                         position: relative;
@@ -848,14 +852,15 @@ class Inventory_fg_standard_actual extends CI_Controller
             $o_std_a = $std_p * $o_qty;
             $o_variance = 0;
             // Moving Average for Actual Out
+            // NOTE: Actual Price belum pasti get dari Sales Order, Delivery Note, dll
             $o_act_a = 0;
             $o_act_p = 0;
-            if (($b_qty + $i_qty) > 0) {
-                $o_act_a = $o_qty * $avg_act_p;
-            }
-            if ($o_qty > 0) {
-                $o_act_p = $o_act_a / $o_qty;
-            }
+            // if (($b_qty + $i_qty) > 0) {
+            //     $o_act_a = $o_qty * $avg_act_p;
+            // }
+            // if ($o_qty > 0) {
+            //     $o_act_p = $o_act_a / $o_qty;
+            // }
             $o_variance = $o_act_a - $o_std_a;
 
             // Ending
@@ -867,6 +872,19 @@ class Inventory_fg_standard_actual extends CI_Controller
                 $e_act_p = $e_act_a / $e_qty;
             }
             $e_variance = $e_act_a - $e_std_a;
+
+            // -- STANDARD AMOUNT DETAILS (Based on Standard Price) --
+            $amt_std_rfg        = $std_p * $record->qty_rfg;
+            $amt_std_repairfg   = $std_p * $record->qty_in_repair_fg;
+            $amt_std_newbarcode = $std_p * $record->qty_in_new_barcode;
+            $amt_std_subcontfg  = $std_p * $record->qty_in_subcont_fg;
+            $amt_std_subcontjs  = $std_p * $record->qty_in_subcont_jasa;
+            $amt_std_adjin      = $std_p * $record->qty_in_adj;
+            $amt_std_sales      = $std_p * $record->qty_out_sales;
+            $amt_std_bpb        = $std_p * $record->qty_out_bpb;
+            $amt_std_return     = $std_p * $record->qty_out_return;
+            $amt_std_sample     = $std_p * $record->qty_out_sample;
+            $amt_std_adjout     = $std_p * $record->qty_out_adj;
 
 
             $html .= '  <tr>
@@ -905,100 +923,100 @@ class Inventory_fg_standard_actual extends CI_Controller
                             <td style="text-align:right;">' . number_format($e_variance, 2) . '</td>
                             
                             <td style="text-align:right;">' . number_format($record->qty_rfg, 2) . '</td>
-                            <td style="text-align:right;"></td>
-                            <td style="text-align:right;"></td>
+                            <td style="text-align:right;">' . number_format($std_p, 2) . '</td>
+                            <td style="text-align:right;">' . number_format($amt_std_rfg, 2) . '</td>
                             <td style="text-align:right;"></td>
                             <td style="text-align:right;"></td>
 
                             <td style="text-align:right;">' . number_format($record->qty_in_repair_fg, 2) . '</td>
-                            <td style="text-align:right;"></td>
-                            <td style="text-align:right;"></td>
+                            <td style="text-align:right;">' . number_format($std_p, 2) . '</td>
+                            <td style="text-align:right;">' . number_format($amt_std_repairfg, 2) . '</td>
                             <td style="text-align:right;"></td>
                             <td style="text-align:right;"></td>
 
                             <td style="text-align:right;">' . number_format($record->qty_in_new_barcode, 2) . '</td>
-                            <td style="text-align:right;"></td>
-                            <td style="text-align:right;"></td>
+                            <td style="text-align:right;">' . number_format($std_p, 2) . '</td>
+                            <td style="text-align:right;">' . number_format($amt_std_newbarcode, 2) . '</td>
                             <td style="text-align:right;"></td>
                             <td style="text-align:right;"></td>
 
                             <td style="text-align:right;">' . number_format($record->qty_in_subcont_fg, 2) . '</td>
-                            <td style="text-align:right;"></td>
-                            <td style="text-align:right;"></td>
+                            <td style="text-align:right;">' . number_format($std_p, 2) . '</td>
+                            <td style="text-align:right;">' . number_format($amt_std_subcontfg, 2) . '</td>
                             <td style="text-align:right;"></td>
                             <td style="text-align:right;"></td>
 
                             <td style="text-align:right;">' . number_format($record->qty_in_subcont_jasa, 2) . '</td>
-                            <td style="text-align:right;"></td>
-                            <td style="text-align:right;"></td>
+                            <td style="text-align:right;">' . number_format($std_p, 2) . '</td>
+                            <td style="text-align:right;">' . number_format($amt_std_subcontjs, 2) . '</td>
                             <td style="text-align:right;"></td>
                             <td style="text-align:right;"></td>
 
                             <td style="text-align:right;">' . number_format($record->qty_in_adj, 2) . '</td>
-                            <td style="text-align:right;"></td>
-                            <td style="text-align:right;"></td>
+                            <td style="text-align:right;">' . number_format($std_p, 2) . '</td>
+                            <td style="text-align:right;">' . number_format($amt_std_adjin, 2) . '</td>
                             <td style="text-align:right;"></td>
                             <td style="text-align:right;"></td>
 
                             <td style="text-align:right;">' . number_format($record->qty_out_sales, 2) . '</td>
-                            <td style="text-align:right;"></td>
-                            <td style="text-align:right;"></td>
+                            <td style="text-align:right;">' . number_format($std_p, 2) . '</td>
+                            <td style="text-align:right;">' . number_format($amt_std_sales, 2) . '</td>
                             <td style="text-align:right;"></td>
                             <td style="text-align:right;"></td>
 
                             <td style="text-align:right;">' . number_format($record->qty_out_bpb, 2) . '</td>
-                            <td style="text-align:right;"></td>
-                            <td style="text-align:right;"></td>
+                            <td style="text-align:right;">' . number_format($std_p, 2) . '</td>
+                            <td style="text-align:right;">' . number_format($amt_std_bpb, 2) . '</td>
                             <td style="text-align:right;"></td>
                             <td style="text-align:right;"></td>
 
                             <td style="text-align:right;">' . number_format($record->qty_out_return, 2) . '</td>
-                            <td style="text-align:right;"></td>
-                            <td style="text-align:right;"></td>
+                            <td style="text-align:right;">' . number_format($std_p, 2) . '</td>
+                            <td style="text-align:right;">' . number_format($amt_std_return, 2) . '</td>
                             <td style="text-align:right;"></td>
                             <td style="text-align:right;"></td>
 
                             <td style="text-align:right;">' . number_format($record->qty_out_sample, 2) . '</td>
-                            <td style="text-align:right;"></td>
-                            <td style="text-align:right;"></td>
+                            <td style="text-align:right;">' . number_format($std_p, 2) . '</td>
+                            <td style="text-align:right;">' . number_format($amt_std_sample, 2) . '</td>
                             <td style="text-align:right;"></td>
                             <td style="text-align:right;"></td>
 
                             <td style="text-align:right;">' . number_format($record->qty_out_adj, 2) . '</td>
-                            <td style="text-align:right;"></td>
-                            <td style="text-align:right;"></td>
+                            <td style="text-align:right;">' . number_format($std_p, 2) . '</td>
+                            <td style="text-align:right;">' . number_format($amt_std_adjout, 2) . '</td>
                             <td style="text-align:right;"></td>
                             <td style="text-align:right;"></td>
                         </tr>';
             $no++;
         }
 
-        $html .= '<tr>
+        $html .= '<tr style="font-weight:bold;">
             <td colspan="5" style="text-align:right;"><b>GRAND TOTAL</b></td>
             <td style="text-align:right;">' . number_format($totalBeginStock, 2) . '</td>
             <td style="text-align:right;"></td>
-            <td style="text-align:right;"></td>
+            <td style="text-align:right;">' . number_format($totalBeginStock * $std_p, 2) . '</td>
             <td style="text-align:right;"></td>
             <td style="text-align:right;"></td>
             <td style="text-align:right;"></td>
 
             <td style="text-align:right;">' . number_format($totalIn, 2) . '</td>
             <td style="text-align:right;"></td>
-            <td style="text-align:right;"></td>
+            <td style="text-align:right;">' . number_format($totalIn * $std_p, 2) . '</td>
             <td style="text-align:right;"></td>
             <td style="text-align:right;"></td>
             <td style="text-align:right;"></td>
 
             <td style="text-align:right;">' . number_format($totalOut, 2) . '</td>
             <td style="text-align:right;"></td>
-            <td style="text-align:right;"></td>
+            <td style="text-align:right;">' . number_format($totalOut * $std_p, 2) . '</td>
             <td style="text-align:right;"></td>
             <td style="text-align:right;"></td>
             <td style="text-align:right;"></td>
 
             <td style="text-align:right;">' . number_format($totalEndingStock, 2) . '</td>
             <td style="text-align:right;"></td>
-            <td style="text-align:right;"></td>
+            <td style="text-align:right;">' . number_format($totalEndingStock * $std_p, 2) . '</td>
             <td style="text-align:right;"></td>
             <td style="text-align:right;"></td>
             <td style="text-align:right;"></td>
@@ -1006,67 +1024,67 @@ class Inventory_fg_standard_actual extends CI_Controller
 
             <td style="text-align:right;">' . number_format($totalRfgQty, 2) . '</td>
             <td style="text-align:right;"></td>
-            <td style="text-align:right;"></td>
+            <td style="text-align:right;">' . number_format($totalRfgQty * $std_p, 2) . '</td>
             <td style="text-align:right;"></td>
             <td style="text-align:right;"></td>
 
             <td style="text-align:right;">' . number_format($totalRfgRepairQty, 2) . '</td>
             <td style="text-align:right;"></td>
-            <td style="text-align:right;"></td>
+            <td style="text-align:right;">' . number_format($totalRfgRepairQty * $std_p, 2) . '</td>
             <td style="text-align:right;"></td>
             <td style="text-align:right;"></td>
 
             <td style="text-align:right;">' . number_format($totalNBQty, 2) . '</td>
             <td style="text-align:right;"></td>
-            <td style="text-align:right;"></td>
+            <td style="text-align:right;">' . number_format($totalNBQty * $std_p, 2) . '</td>
             <td style="text-align:right;"></td>
             <td style="text-align:right;"></td>
 
             <td style="text-align:right;">' . number_format($totalSubcontFGQty, 2) . '</td>
             <td style="text-align:right;"></td>
-            <td style="text-align:right;"></td>
+            <td style="text-align:right;">' . number_format($totalSubcontFGQty * $std_p, 2) . '</td>
             <td style="text-align:right;"></td>
             <td style="text-align:right;"></td>
 
             <td style="text-align:right;">' . number_format($totalSubcontJSQty, 2) . '</td>
             <td style="text-align:right;"></td>
-            <td style="text-align:right;"></td>
+            <td style="text-align:right;">' . number_format($totalSubcontJSQty * $std_p, 2) . '</td>
             <td style="text-align:right;"></td>
             <td style="text-align:right;"></td>
 
             <td style="text-align:right;">' . number_format($totalAdjInQty, 2) . '</td>
             <td style="text-align:right;"></td>
-            <td style="text-align:right;"></td>
+            <td style="text-align:right;">' . number_format($totalAdjInQty * $std_p, 2) . '</td>
             <td style="text-align:right;"></td>
             <td style="text-align:right;"></td>
 
             <td style="text-align:right;">' . number_format($totalOutSales, 2) . '</td>
             <td style="text-align:right;"></td>
-            <td style="text-align:right;"></td>
+            <td style="text-align:right;">' . number_format($totalOutSales * $std_p, 2) . '</td>
             <td style="text-align:right;"></td>
             <td style="text-align:right;"></td>
 
             <td style="text-align:right;">' . number_format($totalOutBpb, 2) . '</td>
             <td style="text-align:right;"></td>
-            <td style="text-align:right;"></td>
+            <td style="text-align:right;">' . number_format($totalOutBpb * $std_p, 2) . '</td>
             <td style="text-align:right;"></td>
             <td style="text-align:right;"></td>
 
             <td style="text-align:right;">' . number_format($totalOutReturn, 2) . '</td>
             <td style="text-align:right;"></td>
-            <td style="text-align:right;"></td>
+            <td style="text-align:right;">' . number_format($totalOutReturn * $std_p, 2) . '</td>
             <td style="text-align:right;"></td>
             <td style="text-align:right;"></td>
 
             <td style="text-align:right;">' . number_format($totalOutSample, 2) . '</td>
             <td style="text-align:right;"></td>
-            <td style="text-align:right;"></td>
+            <td style="text-align:right;">' . number_format($totalOutSample * $std_p, 2) . '</td>
             <td style="text-align:right;"></td>
             <td style="text-align:right;"></td>
 
             <td style="text-align:right;">' . number_format($totalOutAdj, 2) . '</td>
             <td style="text-align:right;"></td>
-            <td style="text-align:right;"></td>
+            <td style="text-align:right;">' . number_format($totalOutAdj * $std_p, 2) . '</td>
             <td style="text-align:right;"></td>
             <td style="text-align:right;"></td>
         </tr>';
@@ -1733,7 +1751,5 @@ class Inventory_fg_standard_actual extends CI_Controller
         $html .= '</table></body></html>';
         echo $html;
     }
-
-    
 
 }
