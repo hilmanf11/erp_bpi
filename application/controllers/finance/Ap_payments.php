@@ -2161,6 +2161,12 @@ class Ap_payments extends CI_Controller
                     $subtotal -= $record['payment'];
                 }
 
+                if($record['account_type'] == "CREDIT"){
+                    $payment = "(".@number_format($record['payment'], 2).")";
+                }else{
+                    $payment = @number_format($record['payment'], 2);
+                }
+
                 $html .= '  <tr>
                                 <td style="text-align:center">' . $no . '</td>
                                 <td>' . $record['purchase_invoice'] . '</td>
@@ -2168,7 +2174,7 @@ class Ap_payments extends CI_Controller
                                 <td>' . $record['currency'] . '</td>
                                 <td style="text-align:right;">' . @number_format(($record['amount']), 2) . '</td>
                                 <td style="text-align:right;">' . @number_format($record['balance'], 2) . '</td>
-                                <td style="text-align:right;">' . @number_format($record['payment'], 2) . '</td>
+                                <td style="text-align:right;">' . $payment . '</td>
                             </tr>';
                 $no++;
             }
