@@ -184,3 +184,6 @@ add NULL if checksheet number and wo no is empty ([dcb5fe4f](https://github.com/
 
 ### [2026-01-30]
 - **Rizki Puji**: Feature: fix get standard amount Recap Inventory FG STD Actual ([80647a89](https://github.com/hilmanf11/erp_bpi/commit/80647a89d9a530e5e97cfe2792e003eb57b0159a))
+
+### [2026-01-30]
+- **Hilman Fadillah**: Update : Debit/Credit in Print Voucher ([16483c9c](https://github.com/hilmanf11/erp_bpi/commit/16483c9cf797100b49c1f6441d87d10e636a1fef))
