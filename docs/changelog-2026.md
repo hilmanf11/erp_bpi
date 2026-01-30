@@ -196,3 +196,6 @@ add NULL if checksheet number and wo no is empty ([dcb5fe4f](https://github.com/
 
 ### [2026-01-30]
 - **Rizki Puji**: Feature: fix grand total standard Recap Inventory FG STD Actual ([971308ee](https://github.com/hilmanf11/erp_bpi/commit/971308eee14ff06eeefe2ce18cf2b1505d9bf62c))
+
+### [2026-01-30]
+- **Rizki Puji**: Feature: fix layout css report Inventory WIP STD Actual ([1c0f615d](https://github.com/hilmanf11/erp_bpi/commit/1c0f615d30481997dc80c3f9408f247b784a2a2b))
