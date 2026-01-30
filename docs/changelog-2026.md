@@ -187,3 +187,6 @@ add NULL if checksheet number and wo no is empty ([dcb5fe4f](https://github.com/
 
 ### [2026-01-30]
 - **Hilman Fadillah**: Update : Debit/Credit in Print Voucher ([16483c9c](https://github.com/hilmanf11/erp_bpi/commit/16483c9cf797100b49c1f6441d87d10e636a1fef))
+
+### [2026-01-30]
+- **Rizki Puji**: Fixing: add all Grand Total Recap Inventory RM STD Actual ([fcecdd96](https://github.com/hilmanf11/erp_bpi/commit/fcecdd9641825c39eea4270150452da3d2d4a0d9))
