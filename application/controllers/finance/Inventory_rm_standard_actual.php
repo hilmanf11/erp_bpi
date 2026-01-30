@@ -745,6 +745,53 @@ class Inventory_rm_standard_actual extends CI_Controller
             </tr>';
         
         $no = 1;
+        $total_b_qty = 0;
+        $total_i_qty = 0;
+        $total_o_qty = 0;
+        $total_e_qty = 0;
+
+        $total_receipt_qty      = 0;
+        $total_bpm_qty          = 0;
+        $total_adj_in_qty       = 0;
+        $total_qty_supply_sheet = 0;
+        $total_qty_mat_request  = 0;
+        $total_qty_kanban       = 0;
+        $total_bpb_qty          = 0;
+        $total_adj_out_qty      = 0;
+        $total_qty_kanban_sj    = 0;
+        $total_qty_kanban_sp    = 0;
+
+        $total_std_b = 0;
+        $total_std_i = 0;
+        $total_std_o = 0;
+        $total_std_e = 0;
+        $total_act_b = 0;
+        $total_act_i = 0;
+        $total_act_o = 0;
+        $total_act_e = 0;
+
+        $total_std_purchase  = 0;
+        $total_std_bpm       = 0;
+        $total_std_adjin     = 0;
+        $total_std_supply    = 0;
+        $total_std_req       = 0;
+        $total_std_kanban    = 0;
+        $total_std_bpb       = 0;
+        $total_std_adjout    = 0;
+        $total_std_kanban_sj = 0;
+        $total_std_kanban_sp = 0;
+
+        $total_act_purchase  = 0;
+        $total_act_bpm       = 0;
+        $total_act_adjin     = 0;
+        $total_act_supply    = 0;
+        $total_act_req       = 0;
+        $total_act_kanban    = 0;
+        $total_act_bpb       = 0;
+        $total_act_adjout    = 0;
+        $total_act_kanban_sj = 0;
+        $total_act_kanban_sp = 0;
+
         foreach ($records as $record) 
         {
             $rate = 1;
@@ -816,6 +863,57 @@ class Inventory_rm_standard_actual extends CI_Controller
             $amt_act_adjout = $record->adj_out_qty * $avg_act_p;
             $amt_act_kanban_sj = $record->qty_kanban_sj * $avg_act_p;
             $amt_act_kanban_sp = $record->qty_kanban_sp * $avg_act_p;
+
+            // Total QTY 
+            $total_b_qty += $b_qty;
+            $total_i_qty += $i_qty;
+            $total_o_qty += $o_qty;
+            $total_e_qty += $e_qty;
+
+            $total_receipt_qty      += $record->receipt_qty;
+            $total_bpm_qty          += $record->bpm_qty;
+            $total_adj_in_qty       += $record->adj_in_qty;
+            $total_qty_supply_sheet += $record->qty_supply_sheet;
+            $total_qty_mat_request  += $record->qty_mat_request;
+            $total_qty_kanban       += $record->qty_kanban;
+            $total_bpb_qty          += $record->bpb_qty;
+            $total_adj_out_qty      += $record->adj_out_qty;
+            $total_qty_kanban_sj    += $record->qty_kanban_sj;
+            $total_qty_kanban_sp    += $record->qty_kanban_sp;
+
+            // Summary
+            $total_std_b += $b_std_a;
+            $total_std_i += $i_std_a;
+            $total_std_o += $o_std_a;
+            $total_std_e += $e_std_a;
+            $total_act_b += $b_act_a;
+            $total_act_i += $i_act_a;
+            $total_act_o += $o_act_a;
+            $total_act_e += $e_act_a;
+
+            // Total STD 
+            $total_std_purchase  += ($record->receipt_qty * $std_p);
+            $total_std_bpm       += ($record->bpm_qty * $std_p);
+            $total_std_adjin     += ($record->adj_in_qty * $std_p);
+            $total_std_supply    += ($record->qty_supply_sheet * $std_p);
+            $total_std_req       += ($record->qty_mat_request * $std_p);
+            $total_std_kanban    += ($record->qty_kanban * $std_p);
+            $total_std_bpb       += ($record->bpb_qty * $std_p);
+            $total_std_adjout    += ($record->adj_out_qty * $std_p);
+            $total_std_kanban_sj += ($record->qty_kanban_sj * $std_p);
+            $total_std_kanban_sp += ($record->qty_kanban_sp * $std_p);
+
+            // Total ACTUAL
+            $total_act_purchase  += $amt_act_purchase;
+            $total_act_bpm       += $amt_act_bpm;
+            $total_act_adjin     += $amt_act_adjin;
+            $total_act_supply    += $amt_act_supply;
+            $total_act_req       += $amt_act_req;
+            $total_act_kanban    += $amt_act_kanban;
+            $total_act_bpb       += $amt_act_bpb;
+            $total_act_adjout    += $amt_act_adjout;
+            $total_act_kanban_sj += $amt_act_kanban_sj;
+            $total_act_kanban_sp += $amt_act_kanban_sp;
 
 
             $html .= '<tr>
@@ -918,6 +1016,98 @@ class Inventory_rm_standard_actual extends CI_Controller
                 </tr>
             ';
         }
+
+        $html .= '<tr style="font-weight:bold;">
+            <td colspan="8" style="text-align:right;"><b>GRAND TOTAL</b></td>
+
+            <td align="right">'.number_format($total_b_qty, 2).'</td>
+            <td></td>
+            <td align="right">'.number_format($total_std_b, 2).'</td>
+            <td></td>
+            <td align="right">'.number_format($total_act_b, 2).'</td>
+            <td></td>
+
+            <td align="right">'.number_format($total_i_qty, 2).'</td>
+            <td></td>
+            <td align="right">'.number_format($total_std_i, 2).'</td>
+            <td></td>
+            <td align="right">'.number_format($total_act_i, 2).'</td>
+            <td></td>
+
+            <td align="right">'.number_format($total_o_qty, 2).'</td>
+            <td></td>
+            <td align="right">'.number_format($total_std_o, 2).'</td>
+            <td></td>
+            <td align="right">'.number_format($total_act_o, 2).'</td>
+            <td></td>
+
+            <td align="right">'.number_format($total_e_qty, 2).'</td>
+            <td></td>
+            <td align="right">'.number_format($total_std_e, 2).'</td>
+            <td></td>
+            <td align="right">'.number_format($total_act_e, 2).'</td>
+            <td></td>
+
+            <td align="right">'.number_format($total_receipt_qty, 2).'</td>
+            <td></td>
+            <td align="right">'.number_format($total_std_purchase, 2).'</td>
+            <td></td>
+            <td align="right">'.number_format($total_act_purchase, 2).'</td>
+
+            <td align="right">'.number_format($total_bpm_qty, 2).'</td>
+            <td></td>
+            <td align="right">'.number_format($total_std_bpm, 2).'</td>
+            <td></td>
+            <td align="right">'.number_format($total_act_bpm, 2).'</td>
+
+            <td align="right">'.number_format($total_adj_in_qty, 2).'</td>
+            <td></td>
+            <td align="right">'.number_format($total_std_adjin, 2).'</td>
+            <td></td>
+            <td align="right">'.number_format($total_act_adjin, 2).'</td>
+
+            <td align="right">'.number_format($total_qty_supply_sheet, 2).'</td>
+            <td></td>
+            <td align="right">'.number_format($total_std_supply, 2).'</td>
+            <td></td>
+            <td align="right">'.number_format($total_act_supply, 2).'</td>
+
+            <td align="right">'.number_format($total_qty_mat_request, 2).'</td>
+            <td></td>
+            <td align="right">'.number_format($total_std_req, 2).'</td>
+            <td></td>
+            <td align="right">'.number_format($total_act_req, 2).'</td>
+
+            <td align="right">'.number_format($total_qty_kanban, 2).'</td>
+            <td></td>
+            <td align="right">'.number_format($total_std_kanban, 2).'</td>
+            <td></td>
+            <td align="right">'.number_format($total_act_kanban, 2).'</td>
+
+            <td align="right">'.number_format($total_qty_kanban_sj, 2).'</td>
+            <td></td>
+            <td align="right">'.number_format($total_std_kanban_sj, 2).'</td>
+            <td></td>
+            <td align="right">'.number_format($total_act_kanban_sj, 2).'</td>
+
+            <td align="right">'.number_format($total_qty_kanban_sp, 2).'</td>
+            <td></td>
+            <td align="right">'.number_format($total_std_kanban_sp, 2).'</td>
+            <td></td>
+            <td align="right">'.number_format($total_act_kanban_sp, 2).'</td>
+
+            <td align="right">'.number_format($total_bpb_qty, 2).'</td>
+            <td></td>
+            <td align="right">'.number_format($total_std_bpb, 2).'</td>
+            <td></td>
+            <td align="right">'.number_format($total_act_bpb, 2).'</td>
+
+            <td align="right">'.number_format($total_adj_out_qty, 2).'</td>
+            <td></td>
+            <td align="right">'.number_format($total_std_adjout, 2).'</td>
+            <td></td>
+            <td align="right">'.number_format($total_act_adjout, 2).'</td>
+        </tr>';
 
         $html .= '</table></body></html>';
         echo $html;
