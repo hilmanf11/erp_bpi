@@ -204,3 +204,6 @@ add NULL if checksheet number and wo no is empty ([dcb5fe4f](https://github.com/
 
 ### [2026-02-02]
 - **Rizki Puji**: Feature: fix filter get Recap and Detail Inventory WIP STD Actual ([eda588ea](https://github.com/hilmanf11/erp_bpi/commit/eda588ea0740749d3963d35230290d02bb8a32ea))
+
+### [2026-02-02]
+- **kurniawan**: Update Production Schedules ([8b56a820](https://github.com/hilmanf11/erp_bpi/commit/8b56a820c6768a87a5b13c1551200db13a402dcd))
