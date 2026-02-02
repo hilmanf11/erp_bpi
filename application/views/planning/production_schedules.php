@@ -26,8 +26,11 @@
             <th rowspan="2" data-options="field:'print',width:60,align:'center', formatter:btnPrint">Print</th>
             <th rowspan="2" data-options="field:'period',width:80,align:'center'">Period</th>
             <th rowspan="2" data-options="field:'wo_no',width:150,align:'center'">Work Order</th>
+            <th rowspan="2" data-options="field:'wo_no_assembly',width:150,align:'center'">Work Order <br> Assembly</th>
             <th rowspan="2" data-options="field:'division',width:100,align:'center'">Division</th>
-            <th rowspan="2" data-options="field:'status',width:80,align:'center',formatter:statusformat,styler:statusStyle">Status</th>
+            <th rowspan="2" data-options="field:'status',width:80,align:'center',formatter:statusformat,styler:statusStyle">Status WO</th>
+            <th rowspan="2" data-options="field:'supply_sheet_status',width:90,align:'center',formatter:statusformat,styler:statusStyle">Supply Sheet</th>
+            <th rowspan="2" data-options="field:'status_supply',width:90,align:'center',formatter:statusformat,styler:statusStyle">Status Supply</th>
             <th rowspan="2" data-options="field:'machine_number',width:100,align:'center'">Machine No</th>
             <th rowspan="2" data-options="field:'lot_no',width:100,align:'center'">Lot No</th>
             <th rowspan="2" data-options="field:'trans_date',width:120,align:'center'">Wo Date</th>
@@ -35,8 +38,13 @@
             <th rowspan="2" data-options="field:'item_name',width:200">Product Name</th>
             <th rowspan="2" data-options="field:'uom',width:80,align:'center'">Uom</th>
             <th rowspan="2" data-options="field:'qty',width:80,halign:'center',align:'right',formatter:numberformat">Qty</th>
+            <th rowspan="2" data-options="field:'os_qty',width:80,halign:'center',align:'right',formatter:numberformat">Qty <br> Checksheet</th>
+            <th rowspan="2" data-options="field:'os_wo',width:80,halign:'center',align:'right',formatter:numberformat">OS WO</th>
             <th rowspan="2" data-options="field:'color',width:80,align:'center'">Color</th>
             <th rowspan="2" data-options="field:'total_purging',width:100,align:'center'">Total Purging</th>
+            <th rowspan="2" data-options="field:'status_subcont',width:100,align:'center'">Status Subcont</th>
+            <th rowspan="2" data-options="field:'subcont_type',width:100,align:'center'">Subcont Type</th>
+            <th rowspan="2" data-options="field:'type',width:100,align:'center'">Type</th>
             <th colspan="2" data-options="field:'',width:100,halign:'center'"> Created</th>
             <th colspan="2" data-options="field:'',width:100,halign:'center'"> Updated</th>
         </tr>
@@ -51,11 +59,11 @@
         </tr>
     </thead>
 </table>
-<div id="toolbar" style="height: 200px; padding:10px;">
+<div id="toolbar" style="height: 230px; padding:10px;">
     <!-- <div style="width: 100%; display: grid; grid-template-columns: auto auto auto; grid-gap: 5px; display: flex;"> -->
     <fieldset style="width: 100%; border:2px solid #d0d0d0; margin-bottom: 5px; margin-top: 5px; border-radius:4px;">
         <legend><b>Form Filter Data</b></legend>
-        <div style="width: 30%; float: left;">
+        <div style="width: 25%; float: left;">
             <div class="fitem">
                 <span style="width:35%; display:inline-block;">Period</span>
                 <input style="width:30%;" id="filter_month" value="<?= date("m") ?>" class="easyui-combobox" data-options="prompt:'Select Month'">
@@ -66,15 +74,15 @@
                 <input style="width:60%;" id="filter_division" class="easyui-combobox">
             </div>
             <div class="fitem">
+                <span style="width:35%; display:inline-block;">Wo No</span>
+                <input style="width:60%;" id="filter_wo_no" class="easyui-combobox">
+            </div>
+            <div class="fitem">
                 <span style="width:35%; display:inline-block;"></span>
                 <a href="javascript:;" class="easyui-linkbutton" onclick="filter()"><i class="fa fa-search"></i> Filter Data</a>
             </div>
         </div>
-        <div style="width: 30%; float: left;">
-            <div class="fitem">
-                <span style="width:35%; display:inline-block;">Wo No</span>
-                <input style="width:60%;" id="filter_wo_no" class="easyui-combobox">
-            </div>
+        <div style="width: 25%; float: left;">
             <div class="fitem">
                 <span style="width:35%; display:inline-block;">Machine No</span>
                 <input style="width:60%;" id="filter_machine_id" class="easyui-combobox">
@@ -83,81 +91,141 @@
                 <span style="width:35%; display:inline-block;">Mold No</span>
                 <input style="width:60%;" id="filter_mold_id" class="easyui-combobox">
             </div>
-        </div>
-        <div style="width: 30%; float: left;">
             <div class="fitem">
                 <span style="width:35%; display:inline-block;">Product No</span>
                 <input style="width:60%;" id="filter_item_fg_id" class="easyui-combogrid">
             </div>
+        </div>
+        <div style="width: 25%; float: left;">
             <div class="fitem">
                 <span style="width:35%; display:inline-block;">Status WO</span>
                 <select style="width:60%;" id="filter_status" class="easyui-combobox" panelHeight="auto">
                     <option value="">Select All</option>
                     <option value="0">OPEN</option>
                     <option value="1">CLOSE</option>
+                    <option value="2">COMPLETE</option>
+                </select>
+            </div>
+            <div class="fitem">
+                <span style="width:35%; display:inline-block;">Status Subcont</span>
+                <select style="width:60%;" id="filter_status_subcont" class="easyui-combobox" panelHeight="auto">
+                    <option value="">Select All</option>
+                    <option value="YES">YES</option>
+                    <option value="NO">NO</option>
+                </select>
+            </div>
+            <div class="fitem">
+                <span style="width:35%; display:inline-block;">Subcont TYpe</span>
+                <select style="width:60%;" id="filter_subcont_type" class="easyui-combobox" panelHeight="auto">
+                    <option value="">Select All</option>
+                    <option value="Jasa">Jasa</option>
+                    <option value="Finished Good">Finished Good</option>
+                </select>
+            </div>
+        </div>
+        <div style="width: 25%; float: left;">
+            <div class="fitem">
+                <span style="width:35%; display:inline-block;">Supply Sheet</span>
+                <select style="width:60%;" id="filter_supply_sheet" class="easyui-combobox" panelHeight="auto">
+                    <option value="">Select All</option>
+                    <option value="0">OPEN</option>
+                    <option value="1">CLOSE</option>
+                </select>
+            </div>
+            <div class="fitem">
+                <span style="width:35%; display:inline-block;">Status Supply</span>
+                <select style="width:60%;" id="filter_status_supply" class="easyui-combobox" panelHeight="auto">
+                    <option value="">Select All</option>
+                    <option value="0">OPEN</option>
+                    <option value="1">CLOSE</option>
+                </select>
+            </div>
+            <div class="fitem">
+                <span style="width:35%; display:inline-block;">Type</span>
+                <select style="width:60%;" id="filter_type" class="easyui-combobox" panelHeight="auto">
+                    <option value="">Select All</option>
+                    <option value="FG">FG</option>
+                    <option value="RM">RM</option>
+                    <option value="SA">SA</option>
                 </select>
             </div>
         </div>
     </fieldset>
     <?= $button ?>
     <a href="javascript:void(0)" class="easyui-linkbutton" data-options="plain:true" onclick="$('#dlg_help').dialog('open');"><i class="fa fa-info"></i> Help</a>
-    <a href="javascript:;" class="easyui-linkbutton" data-options="plain:true" onclick="close_ps()"><i class="fa fa-times"></i> Close/Open</a>
+    <a href="javascript:;" class="easyui-linkbutton" data-options="plain:true" onclick="close_ps()"><i class="fa fa-times"></i> Complete/Open</a>
     <!-- <a href="javascript:;" class="easyui-linkbutton" data-options="plain:true" onclick="print_job_order()"><i class="fa fa-print"></i> Print Job Order</a> -->
     <!-- <a href="javascript:;" class="easyui-linkbutton" plain="true" onclick="print_wo()"><i class="fa fa-print"></i> Print Work Order</a> -->
 </div>
 <!-- Insert & Update -->
-<div id="dlg_insert" class="easyui-dialog" title="Add New" data-options="closed: true,modal:true" style="width: 400px; padding:10px; top: 20px;">
+<div id="dlg_insert" class="easyui-dialog" title="Add New" data-options="closed: true,modal:true" style="width: 1000px; height: 450px; padding:10px; top: 20px;">
     <form id="frm_insert" method="post" novalidate>
         <fieldset style="width:100%; border:1px solid #d0d0d0; margin-bottom: 10px; border-radius:4px; float: left;">
             <legend><b>Form Data</b></legend>
-            <div class="fitem">
-                <span style="width:35%; display:inline-block;">No WO</span>
-                <input style="width:60%;" name="wo_no" id="wo_no" required="" class="easyui-textbox">
+            <div style="width: 50%; float: left;">
+                <div class="fitem">
+                    <span style="width:35%; display:inline-block;">No WO</span>
+                    <input style="width:60%;" name="wo_no" id="wo_no" required="" class="easyui-textbox">
+                </div>
+                <div class="fitem">
+                    <span style="width:35%; display:inline-block;">Period</span>
+                    <input style="width:30%;" id="month" name="month" required class="easyui-combobox">
+                    <input style="width:30%;" id="year" name="year" required class="easyui-combobox" panelHeight="auto">
+                </div>
+                <div class="fitem">
+                    <span style="width:35%; display:inline-block;">Lot No</span>
+                    <input style="width:60%;" name="lot_no" id="lot_no" required="" class="easyui-textbox">
+                </div>
+                <div class="fitem">
+                    <span style="width:35%; display:inline-block;">Mold</span>
+                    <input style="width:60%;" name="mold_id" id="mold_id" class="easyui-combobox">
+                </div>
+                <div class="fitem">
+                    <span style="width:35%; display:inline-block;">WO date</span>
+                    <input style="width:60%;" name="trans_date" id="trans_date" required="" class="easyui-datebox" data-options="formatter:myformatter,parser:myparser, editable:false">
+                </div>
+                <div class="fitem">
+                    <span style="width:35%; display:inline-block;">Division</span>
+                    <input style="width:60%;" name="division" id="division" required="" class="easyui-combobox">
+                </div>
+                <div class="fitem">
+                    <span style="width:35%; display:inline-block;">Product No</span>
+                    <input style="width:60%;" name="item_fg_id" id="item_fg_id" required="" class="easyui-combogrid">
+                </div>
             </div>
-            <div class="fitem">
-                <span style="width:35%; display:inline-block;">Period</span>
-                <input style="width:30%;" id="month" name="month" required class="easyui-combobox">
-                <input style="width:30%;" id="year" name="year" required class="easyui-combobox" panelHeight="auto">
-            </div>
-            <div class="fitem">
-                <span style="width:35%; display:inline-block;">Lot No</span>
-                <input style="width:60%;" name="lot_no" id="lot_no" required="" class="easyui-textbox">
-            </div>
-            <div class="fitem">
-                <span style="width:35%; display:inline-block;">Mold</span>
-                <input style="width:60%;" name="mold_id" id="mold_id" class="easyui-combobox">
-            </div>
-            <div class="fitem">
-                <span style="width:35%; display:inline-block;">WO date</span>
-                <input style="width:60%;" name="trans_date" id="trans_date" required="" class="easyui-datebox" data-options="formatter:myformatter,parser:myparser, editable:false">
-            </div>
-            <div class="fitem">
-                <span style="width:35%; display:inline-block;">Division</span>
-                <input style="width:60%;" name="division" id="division" required="" class="easyui-combobox">
-            </div>
-            <div class="fitem">
-                <span style="width:35%; display:inline-block;">Product No</span>
-                <input style="width:60%;" name="item_fg_id" id="item_fg_id" required="" class="easyui-combogrid">
-            </div>
-            <div class="fitem">
-                <span style="width:35%; display:inline-block;">Part Name</span>
-                <input style="width:60%;" name="item_fg_name" id="item_fg_name" readonly class="easyui-textbox">
-            </div>
-            <div class="fitem">
-                <span style="width:35%; display:inline-block;">Color</span>
-                <input style="width:60%;" name="color" id="color" readonly class="easyui-textbox">
-            </div>
-            <div class="fitem">
-                <span style="width:35%; display:inline-block;">Machine</span>
-                <input style="width:60%;" name="machine_id" id="machine_id" required="" class="easyui-combobox">
-            </div>
-            <div class="fitem">
-                <span style="width:35%; display:inline-block;">Total Purging</span>
-                <input style="width:60%;" name="total_purging" id="total_purging" readonly class="easyui-textbox">
-            </div>
-            <div class="fitem">
-                <span style="width:35%; display:inline-block;">Quantity</span>
-                <input style="width:30%;" name="qty" id="qty" required="" class="easyui-numberbox" data-options="precision:2">
+            <div style="width: 50%; float: left;">
+                <div class="fitem">
+                    <span style="width:35%; display:inline-block;">Part Name</span>
+                    <input style="width:60%;" name="item_fg_name" id="item_fg_name" readonly class="easyui-textbox">
+                </div>
+                <div class="fitem">
+                    <span style="width:35%; display:inline-block;">No WO Assembly</span>
+                    <input style="width:60%;" name="wo_no_assembly" id="wo_no_assembly" class="easyui-textbox">
+                </div>
+                <div class="fitem">
+                    <span style="width:35%; display:inline-block;">Color</span>
+                    <input style="width:60%;" name="color" id="color" readonly class="easyui-textbox">
+                </div>
+                <div class="fitem">
+                    <span style="width:35%; display:inline-block;">Status Subcont</span>
+                    <input style="width:60%;" name="status_subcont" id="status_subcont" readonly class="easyui-textbox">
+                </div>
+                <div class="fitem">
+                    <span style="width:35%; display:inline-block;">Subcont Type</span>
+                    <input style="width:60%;" name="subcont_type" id="subcont_type" readonly class="easyui-textbox">
+                </div>
+                <div class="fitem">
+                    <span style="width:35%; display:inline-block;">Machine</span>
+                    <input style="width:60%;" name="machine_id" id="machine_id" required="" class="easyui-combobox">
+                </div>
+                <div class="fitem">
+                    <span style="width:35%; display:inline-block;">Total Purging</span>
+                    <input style="width:60%;" name="total_purging" id="total_purging" readonly class="easyui-textbox">
+                </div>
+                <div class="fitem">
+                    <span style="width:35%; display:inline-block;">Quantity</span>
+                    <input style="width:30%;" name="qty" id="qty" required="" class="easyui-numberbox" data-options="precision:2">
+                </div>
             </div>
         </fieldset>
     </form>
@@ -209,7 +277,7 @@
         console.log(row);
         if (row) {
             $('#dlg_insert').dialog('open');
-           
+            $("#item_fg_id").combogrid('disable');
             $("#item_fg_name").textbox('disable');
             $("#mold_id").combobox('disable');
             url_save = '<?= base_url('planning/production_schedules/update') ?>?id=' + btoa(row.id);
@@ -238,24 +306,49 @@
                     width: 200
                 }]],
                     onLoadSuccess: function(){
+                        $("#item_fg_id").textbox('setValue', row.item_fg_id);
                         $("#item_fg_name").textbox('setValue', row.item_name);
                         $("#color").textbox('setValue', row.color);
                         $("#qty").textbox('setValue', row.qty);
+                        $("#status_subcont").textbox('setValue', row.status_subcont);
+                        $("#subcont_type").textbox('setValue', row.subcont_type);
+                        $("#machine_id").combobox('setValue', row.machine_id);
 
-                        $.ajax({
-                            url: '<?= base_url('planning/production_schedules/readPurging/') ?>' + window.btoa(row.machine_id) + "/" + row.color,
-                            type: 'GET',
-                            dataType: 'json',
-                            success: function(response) {
-                                if(response.length > 0) {
-                                    $("#total_purging").textbox('setValue', response[0].total);
-                                } else {
-                                    $("#total_purging").textbox('setValue', 0);
-                                }
-                            }
-                        });
+                        // $.ajax({
+                        //     url: '<?= base_url('planning/production_schedules/readPurging/') ?>' + window.btoa(row.machine_id) + "/" + row.color,
+                        //     type: 'GET',
+                        //     dataType: 'json',
+                        //     success: function(response) {
+                        //         if(response.length > 0) {
+                        //             $("#total_purging").textbox('setValue', response[0].total);
+                        //         } else {
+                        //             $("#total_purging").textbox('setValue', 0);
+                        //         }
+                        //     }
+                        // });
                             
                     }
+            });
+
+            $("#machine_id").combobox({
+                url: '<?= base_url('planning/production_schedules/readMachines/') ?>',
+                valueField: 'id',
+                textField: 'number',
+                prompt: "Choose Machine No",
+                onSelect: function(machine){
+                    $.ajax({
+                        url: '<?= base_url('planning/production_schedules/readPurging/') ?>' + window.btoa(machine.id) + "/" + row.color,
+                        type: 'GET',
+                        dataType: 'json',
+                        success: function(response) {
+                            if(response.length > 0) {
+                                $("#total_purging").textbox('setValue', response[0].total);
+                            } else {
+                                $("#total_purging").textbox('setValue', 0);
+                            }
+                        }
+                    });
+                }
             });
 
             $('#frm_insert').form('load', row);
@@ -266,17 +359,15 @@
         }
     }
 
-
     //Delete Data
     function deleted() {
         var rows = $('#dg').datagrid('getSelections');
-        console.log(rows);
-        if(rows.status == 0){
-            if (rows.length > 0) {
-                $.messager.confirm('Warning', 'Are you sure you want to delete this data?', function(r) {
-                    if (r) {
-                        for (var i = 0; i < rows.length; i++) {
-                            var row = rows[i];
+        if (rows.length > 0) {
+            $.messager.confirm('Warning', 'Are you sure you want to delete this data?', function(r) {
+                if (r) {
+                    for (var i = 0; i < rows.length; i++) {
+                        var row = rows[i];
+                        if (row.status == 0) {
                             $.ajax({
                                 method: 'post',
                                 url: '<?= base_url('planning/production_schedules/delete') ?>',
@@ -285,24 +376,30 @@
                                     item_fg_id: row.item_fg_id
                                 },
                                 success: function(result) {
-                                    var result = eval('(' + result + ')');
+                                    // Parsing JSON response
+                                    var res = typeof result === 'string' ? JSON.parse(result) : result;
+                                    
+                                    if (res.success) {
+                                        toastr.success("Data deleted successfully");
+                                    } else {
+                                        toastr.error(res.message);
+                                    }
                                 },
                                 error: function(jqXHR, textStatus, errorThrown) {
                                     toastr.error(jqXHR.statusText);
-                                    $.messager.alert("Error", jqXHR.statusText, 'error');
                                 },
-                                complete: function(data) {
+                                complete: function() {
                                     $('#dg').datagrid('reload');
                                 }
                             });
+                        } else {
+                            toastr.warning("Production Schedule is Closed!", "Information");
                         }
                     }
-                });
-            } else {
-                toastr.warning("Please select one of the data in the table first!", "Information");
-            }
+                }
+            });
         } else {
-            toastr.warning("Production Schedule is Closed!", "Information");
+            toastr.warning("Please select one of the data in the table first!", "Information");
         }
     }
 
@@ -315,12 +412,18 @@
         var filter_mold_id = $("#filter_mold_id").combobox('getValue');
         var filter_item_fg_id = $("#filter_item_fg_id").combogrid('getValue');
         var filter_status = $("#filter_status").combobox('getValue');
+        var filter_status_subcont = $("#filter_status_subcont").combobox('getValue');
+        var filter_subcont_type = $("#filter_subcont_type").combobox('getValue');
+        var filter_supply_sheet = $("#filter_supply_sheet").combobox('getValue');
+        var filter_status_supply = $("#filter_status_supply").combobox('getValue');
+        var filter_type = $("#filter_type").combobox('getValue');
 
         var url = "?filter_month=" + filter_month + "&filter_year=" + filter_year + "&filter_wo_no=" + filter_wo_no +
             "&filter_item_fg_id=" + filter_item_fg_id + "&filter_status=" + filter_status + 
+            "&filter_status_subcont=" + filter_status_subcont + "&filter_subcont_type=" + filter_subcont_type + 
+            "&filter_supply_sheet=" + filter_supply_sheet + "&filter_status_supply=" + filter_status_supply + 
             "&filter_machine_id=" + filter_machine_id + "&filter_mold_id=" + filter_mold_id + 
-            "&filter_division=" + filter_division;
-
+            "&filter_division=" + filter_division + "&filter_type=" + filter_type;
 
         $('#dg').datagrid({
             url: '<?= base_url('planning/production_schedules/datatables') ?>' + url,
@@ -347,11 +450,19 @@
         var filter_mold_id = $("#filter_mold_id").combobox('getValue');
         var filter_item_fg_id = $("#filter_item_fg_id").combogrid('getValue');
         var filter_status = $("#filter_status").combobox('getValue');
+        var filter_status_subcont = $("#filter_status_subcont").combobox('getValue');
+        var filter_subcont_type = $("#filter_subcont_type").combobox('getValue');
+        var filter_supply_sheet = $("#filter_supply_sheet").combobox('getValue');
+        var filter_status_supply = $("#filter_status_supply").combobox('getValue');
+        var filter_type = $("#filter_type").combobox('getValue');
 
         var url = "?filter_month=" + filter_month + "&filter_year=" + filter_year + "&filter_wo_no=" + filter_wo_no +
             "&filter_item_fg_id=" + filter_item_fg_id + "&filter_status=" + filter_status + 
+            "&filter_status_subcont=" + filter_status_subcont + "&filter_subcont_type=" + filter_subcont_type + 
+            "&filter_supply_sheet=" + filter_supply_sheet + "&filter_status_supply=" + filter_status_supply + 
             "&filter_machine_id=" + filter_machine_id + "&filter_mold_id=" + filter_mold_id + 
-            "&filter_division=" + filter_division;
+            "&filter_division=" + filter_division + "&filter_type=" + filter_type;
+
 
         window.location.assign('<?= base_url('planning/production_schedules/print/excel') ?>' + url);
     }
@@ -574,6 +685,18 @@
                     console.log(rowItem);
                     $("#item_fg_name").textbox('setValue', rowItem.name);
                     $("#color").textbox('setValue', rowItem.color);
+                    $("#status_subcont").textbox('setValue', rowItem.status_subcont);
+                    $("#subcont_type").textbox('setValue', rowItem.subcont_type);
+
+                    if (rowItem.type == "SA") {
+                        $('#wo_no_assembly').textbox('textbox')      // dapatkan elemen input benerannya
+                                        .validatebox({required: true});
+                        $('#wo_no_assembly').textbox('validate');
+                    } else {
+                        $('#wo_no_assembly').textbox('textbox')
+                                        .validatebox({required: false});
+                        $('#wo_no_assembly').textbox('validate');
+                    }
 
                     $("#machine_id").combobox({
                         url: '<?= base_url('planning/production_schedules/readMachines/') ?>',
@@ -630,21 +753,26 @@
         }
     }
 
-    function statusformat(value, row) {
+   function statusformat(value, row) {
         if (value == 0) {
             return "<b style='color:green;'>OPEN</b>";
-        } else {
+        } else if (value == 1) {
             return "<b style='color:red;'>CLOSED</b>";
+        } else if (value == 2) {
+            return "<b style='color:white;'>COMPLETE</b>";
         }
     }
 
     function statusStyle(value, row, index) {
         if (value == 0) {
             return 'background-color:#C8FFCC;';
-        } else {
+        } else if (value == 1) {
             return 'background-color:#FFC8C8;';
+        } else if (value == 2) {
+            return 'background-color:#4B54E7;';
         }
     }
+
     //Number Format Currency
     function numberformat(value, row) {
         const formatter = new Intl.NumberFormat('id-ID', {
@@ -665,7 +793,7 @@
                         if (row.status == "0") {
                             Swal.fire({
                                 title: "Are you sure?",
-                                text: "You want to Close this data?",
+                                text: "You want to Complete this data?",
                                 icon: "warning",
                                 showCancelButton: true,
                                 confirmButtonColor: "#3085d6",
