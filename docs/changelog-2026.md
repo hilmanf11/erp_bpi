@@ -199,3 +199,8 @@ add NULL if checksheet number and wo no is empty ([dcb5fe4f](https://github.com/
 
 ### [2026-01-30]
 - **Rizki Puji**: Feature: fix layout css report Inventory WIP STD Actual ([1c0f615d](https://github.com/hilmanf11/erp_bpi/commit/1c0f615d30481997dc80c3f9408f247b784a2a2b))
+
+## February 2026
+
+### [2026-02-02]
+- **Rizki Puji**: Feature: fix filter get Recap and Detail Inventory WIP STD Actual ([eda588ea](https://github.com/hilmanf11/erp_bpi/commit/eda588ea0740749d3963d35230290d02bb8a32ea))
