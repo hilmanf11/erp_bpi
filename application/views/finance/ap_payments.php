@@ -10,7 +10,8 @@
             <th rowspan="2" data-options="field:'supplier_name',width:250,halign:'center'">Supplier Name</th>
             <th rowspan="2" data-options="field:'bank_account',width:150,halign:'center'">Bank Account</th>
             <th rowspan="2" data-options="field:'payment_by',width:100,align:'center'">Payment By</th>
-            <th rowspan="2" data-options="field:'total_payment',width:100,align:'center',formatter:priceformat">Total Payment</th>
+            <th rowspan="2" data-options="field:'currency',width:100,align:'center'">Currency</th>
+            <th rowspan="2" data-options="field:'total_payment',width:120,align:'center',formatter:numberformat">Total Payment</th>
             <th rowspan="2" data-options="field:'gl_no',width:100,align:'center'">GL No</th>
             <th rowspan="2" data-options="field:'note',width:200,halign:'center'">Note</th>
             <th colspan="2" data-options="field:'',width:100,halign:'center'"> Created</th>
@@ -3207,7 +3208,7 @@
 
     function numberformat(value, row) {
         if (value !== "-") {        
-        const formatter = new Intl.NumberFormat('id-ID', {
+        const formatter = new Intl.NumberFormat('ja-JP', {
             minimumFractionDigits: 2
         });
 
