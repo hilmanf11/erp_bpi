@@ -210,3 +210,6 @@ add NULL if checksheet number and wo no is empty ([dcb5fe4f](https://github.com/
 
 ### [2026-02-02]
 - **Hilman Fadillah**: Update : Ap Payment add currency and change format prices ([3782fe02](https://github.com/hilmanf11/erp_bpi/commit/3782fe02d2523c4c0decc2a891dce3ce799313eb))
+
+### [2026-02-02]
+- **Rizki Puji**: Modifikasi AR Receipt Add to Journal per Transaksi (match script with live server) ([a3c23b80](https://github.com/hilmanf11/erp_bpi/commit/a3c23b80c1cacb9c6f7b33ab7f32664d3a57a347))
