@@ -204,7 +204,6 @@
                     <th data-options="field:'sales_invoice',width:200, editor: {type: 'textbox'}">Sales Invoice</th>
                     <th data-options="field:'description',width:150, editor: {type: 'textbox'}">Description</th>
                     <th data-options="field:'currency',align:'center',width:80, editor: {type: 'textbox'}">Currency</th>
-                    <th data-options="field:'rate',width:120, formatter:numberformat, align:'right', editor: {type: 'numberbox',options: {precision:2}}"> <div style="text-align:center;">Payment Rate</div> </th>
                     <th data-options="field:'amount',width:150, formatter:numberformat, align:'right', editor: {type: 'numberbox',options: {precision:2, readonly:true}}">Amount</th>
                     <th data-options="field:'balance',width:150, formatter:numberformat, align:'right', editor: {type: 'numberbox',options: {precision:2, readonly:true}}">Balance</th>
                     <th data-options="field:'receipt',width:150, formatter:numberformat, align:'right', editor: {type: 'numberbox',options: {precision:2}}">Receipt</th>
@@ -221,7 +220,7 @@
                 <a style="width: 90%; height: 50px; padding:10px;" class="easyui-linkbutton c2" disabled>Add to Journal</a>
             </div>
             <div style="float: left; width: 30%; border:4px solid green; padding:10px;" id="d_showExchange">
-                <p style="font-size: 16px !important; margin:0;"><b style="font-size: 16px !important;" id="d_exchange"></b></p>
+                <p style="font-size: 16px !important; margin:0;">Rate USD to IDR : <b style="font-size: 16px !important;" id="d_exchange"></b></p>
             </div>
         </div>
 
@@ -276,7 +275,6 @@
                         }">Account No</th>
                         <th rowspan="2" data-options="field:'account_name',halign:'center',width:200, editor: {type: 'textbox', options: {readonly: true}}">Account Name</th>
                         <th rowspan="2" data-options="field:'description',halign:'center',width:200, editor: {type: 'textbox', options: {required: true}}">Description</th>
-                        <th rowspan="2" data-options="field:'exchange_rate', halign:'center', align:'right', formatter:numberformat, width:100, editor: {type: 'numberbox'}">Rate</th>
                         <th colspan="2" data-options="field:'',width:150">Original Currency</th>
                         <th colspan="2" data-options="field:'',width:150">Local Currency</th>
                         <th rowspan="2" data-options="field:'flag',width:50,halign:'center',editor: {type: 'numberbox', options: {required: true}}">Index</th>
@@ -330,8 +328,7 @@
                     </div>
                     <div class="fitem">
                         <span style="width:35%; display:inline-block;"></span>
-                        <a href="javascript:;" class="easyui-linkbutton" onclick="preview()" id="btnPreview"><i class="fa fa-search"></i> Preview Data</a>
-                        <!-- <a href="javascript:;" class="easyui-linkbutton" onclick="previewUpdate()" id="btnPreviewUpdate" hidden><i class="fa fa-search"></i> Preview Data (Update)</a> -->
+                        <a href="javascript:;" class="easyui-linkbutton" onclick="preview()"><i class="fa fa-search"></i> Preview Data</a>
                     </div>
                 </div>
                 <div style="width: 50%; float: left;">
@@ -390,7 +387,6 @@
                     <th data-options="field:'delete',width:120, formatter:removebtn">Action</th>
                     <th hidden data-options="field:'id',width:150, editor: {type: 'textbox'}">ID</th>
                     <th data-options="field:'sales_invoice',width:150, editor: {type: 'textbox'}">Sales Invoice</th>
-                    <th data-options="field:'trans_date',width:150, editor: {type: 'textbox'}, hidden:true">Transaction Date</th>
                     <th data-options="field:'description',width:150, editor: {type: 'textbox'}">Description</th>
                     <th data-options="field:'currency',align:'center',width:80, editor: {
                         type: 'combobox',
@@ -403,7 +399,6 @@
                             panelHeight: 'auto',
                             required: true,
                         }}">Currency</th>
-                    <th data-options="field:'rate',width:120, formatter:numberformat, align:'right', editor: {type: 'numberbox',options: {precision:2}}"> <div style="text-align:center;">Payment Rate</div> </th>
                     <th data-options="field:'amount',width:100, formatter:numberformat, align:'right', editor: {type: 'numberbox',options: {precision:2, readonly:true}}">Amount</th>
                     <th data-options="field:'balance',width:100, formatter:numberformat, align:'right', editor: {type: 'numberbox',options: {precision:2, readonly:true}}">Balance</th>
                     <th data-options="field:'receipt',width:100, formatter:numberformat, align:'right', editor: {type: 'numberbox',options: {precision:2}}">Receipt</th>
@@ -519,54 +514,6 @@
                         }">Account No</th>
                         <th rowspan="2" data-options="field:'account_name',halign:'center',width:200, editor: {type: 'textbox', options: {readonly: true}}">Account Name</th>
                         <th rowspan="2" data-options="field:'description',halign:'center',width:200, editor: {type: 'textbox', options: {required: true}}">Description</th>
-                        <th rowspan="2" data-options="field:'exchange_rate', halign:'center', align:'right', formatter:numberformat, width:100, editor: {
-                            type: 'numberbox',
-                            options: {
-                                onChange: function(value, oldValue) {
-                                    var dg = $(this).closest('.datagrid-view').find('table.datagrid-f');
-                                    var row = dg.datagrid('getSelected');
-                                    var rowIndex = dg.datagrid('getRowIndex', row);
-                                    
-                                    if (row) {
-                                        var originalDebit = parseFloat(row.debit) || 0;
-                                        var originalCredit = parseFloat(row.credit) || 0;
-                                        var newRate = parseFloat(value);
-                                        
-                                        if (!isNaN(newRate)) {
-                                            var localDebit = originalDebit * newRate;
-                                            var localCredit = originalCredit * newRate;
-                                            
-                                            var edLocalDebit = dg.datagrid('getEditor', {
-                                                index: rowIndex,
-                                                field: 'local_debit'
-                                            });
-                                            var edLocalCredit = dg.datagrid('getEditor', {
-                                                index: rowIndex,
-                                                field: 'local_credit'
-                                            });
-                                            
-                                            // Pastikan editor diperbarui
-                                            if (edLocalDebit) {
-                                                $(edLocalDebit.target).numberbox('setValue', localDebit);
-                                            }
-                                            if (edLocalCredit) {
-                                                $(edLocalCredit.target).numberbox('setValue', localCredit);
-                                            }
-                                            
-                                            // Perbarui objek baris yang ada di datagrid dengan nilai baru
-                                            var rows = dg.datagrid('getRows');
-                                            rows[rowIndex].local_debit = localDebit;
-                                            rows[rowIndex].local_credit = localCredit;
-                                            
-                                            // Hitung ulang Gain Loss dan Total
-                                            recalculateGainLossAndTotals();
-                                            balance_journal();
-                                        }
-                                    }
-                                }
-                            }
-                        }">Rate</th>
-
                         <th colspan="2" data-options="field:'',width:150">Original Currency</th>
                         <th colspan="2" data-options="field:'',width:150">Local Currency</th>
                         <th rowspan="2" data-options="field:'flag',width:50,halign:'center',editor: {type: 'numberbox', options: {required: true}}">Index</th>
@@ -620,7 +567,7 @@
 <iframe id="printout" src="" style="width: 100%;" hidden></iframe>
 <script>
     // Setting on/off FITUR AUTO POSTING JOURNAL => ubah ke TRUE jika ingin dinyalakan
-    let auto_posting_journal = true;
+    let auto_posting_journal = true; // actived on 2025-07-29 (request Bu Nina)
 
     let formMode = 'add';
     //ADD DATA
@@ -650,7 +597,7 @@
         $("#receipt_date").datebox('enable');
         $("#receipt_type").combobox('enable');
         $("#customer_id").combogrid('enable');
-        $("#sales_invoice").combogrid('enable');
+        $("#sales_invoice").combobox('enable');
         $("#receipt_by").combobox('setValue', "TRANSFER");
         $("#f_cheque_no").hide();
 
@@ -685,7 +632,6 @@
 
                 for (let i = 0; i < totalrows; i++) {
                     var data = {
-                        trans_date: rows[i].trans_date,
                         account_number: rows[i].account_number,
                         account_name: rows[i].account_name,
                         account_type: rows[i].account_type,
@@ -783,56 +729,6 @@
         });
     }
 
-    // Gain (Loss) 810.140.00 . Foreign Exchange A/P
-    function recalculateGainLossAndTotals() 
-    {
-        var rows = $('#dg3').datagrid('getRows');
-        var totalLocalDebit = 0;
-        var totalLocalCredit = 0;
-        var gainLossRowIndex = -1;
-
-        // Iterasi semua baris untuk menjumlahkan total lokal dan menemukan baris Gain (Loss)
-        for (var i = 0; i < rows.length; i++) {
-            // Ambil nilai debit/kredit lokal yang sudah ada
-            var debit = parseFloat(rows[i].local_debit);
-            var credit = parseFloat(rows[i].local_credit);
-            
-            // Cek apakah ini baris Gain (Loss)
-            if (rows[i].account_number === '810.140.00') {
-                gainLossRowIndex = i;
-            } else {
-                // Tambahkan ke total jika bukan baris Gain (Loss)
-                totalLocalDebit += debit;
-                totalLocalCredit += credit;
-            }
-        }
-        
-        // Hitung selisih dan tentukan apakah itu debit atau kredit
-        var difference = totalLocalDebit - totalLocalCredit;
-        var gainLossDebit = 0;
-        var gainLossCredit = 0;
-        
-        if (difference > 0) {
-            // Jika Debit lebih besar dari Credit, selisih adalah 'Loss' (Local Credit)
-            gainLossCredit = Math.abs(difference);
-        } else if (difference < 0) {
-            // Jika Credit lebih besar dari Debit, selisih adalah 'Gain' (Local Debit)
-            gainLossDebit = Math.abs(difference);
-        }
-
-        if (gainLossRowIndex !== -1) {
-            $('#dg3').datagrid('updateRow', {
-                index: gainLossRowIndex,
-                row: {
-                    local_debit: gainLossDebit,
-                    local_credit: gainLossCredit
-                }
-            });
-        }
-
-        balance_journal();
-    }
-
     function balance_journal() {
         var rows = $('#dg3').datagrid('getRows');
         var totalrows = rows.length;
@@ -895,7 +791,7 @@
 
     function append_dp() {
         var customer_id = $("#customer_id").combobox('getValue');
-        var sales_invoice = $("#sales_invoice").combogrid('getValue');
+        var sales_invoice = $("#sales_invoice").combobox('getValue');
 
         if (endEditing()) {
             $.ajax({
@@ -1033,22 +929,10 @@
         editIndex2 = undefined;
     }
 
-    function previewUpdate() {
-        var receipt_no = $('#receipt_no').textbox('getValue');
-        preview('<?= base_url('finance/ar_receipts/reads/') ?>' + window.btoa(receipt_no));
-    }
-
     //Edit Data
     function update() {
         formMode = 'update';
         var row = $('#dg').datagrid('getSelected');
-        console.log("Data Loaded:",row);
-
-        // hide button preview add, show button previewUpdate
-        // $("#btnPreview").prop('disabled', true);
-        // $("#btnPreview").hide();
-        $("#btnPreviewUpdate").removeAttr('hidden');
-
         if (row) {
             if (row.status == 0) {
                 if(row.gl_no == null){
@@ -1059,7 +943,7 @@
                     
                     $("#receipt_type").combobox('disable');
                     $("#customer_id").combogrid('disable');
-                    // $("#sales_invoice").combogrid('disable');
+                    $("#sales_invoice").combobox('disable');
                     $("#showExchange").hide();
 
                     var receipt_by = $("#receipt_by").combobox('getValue');
@@ -1079,144 +963,17 @@
                             $("#customer_id").combobox('setValue', row.customer_id);
                         },
                         onSelect: function(customer) {
-
-                            $("#sales_invoice").combogrid({
-                                url: '<?= base_url('finance/ar_receipts/readInvoicesUpdate/') ?>' + customer.id,
+                            $("#sales_invoice").combobox({
+                                url: '<?= base_url('finance/ar_receipts/readInvoices/') ?>' + customer.id,
                                 valueField: 'sales_invoice',
                                 textField: 'sales_invoice',
                                 multiple: true,
                                 prompt: "Choose Sales Invoice No",
-                                idField: 'sales_invoice',
-                                mode: 'remote',
-                                columns: [
-                                    [ {
-                                        field: 'ck', // Kolom checkbox
-                                        checkbox: true, // Mengaktifkan checkbox
-                                    }, {
-                                        field: 'no',
-                                        title: 'No',
-                                        width: 30
-                                    }, {
-                                        field: 'sales_invoice',
-                                        title: 'Sales Invoice No',
-                                        width: 150,
-                                        align: 'left'
-                                    }, {
-                                        field: 'journal_type',
-                                        title: 'Journal Type',
-                                        width: 150,
-                                        align: 'left'
-                                    } ]
-                                ],
-                                fitColumns: true, // Menyesuaikan kolom secara otomatis
-                                selectOnCheck: true, // Pilih baris ketika checkbox di-check
-                                checkOnSelect: true,
-                                onLoadSuccess: function(data) {
-                                    $("#sales_invoice").combogrid('setValue', row.sales_invoice);
-                                    
-                                    if (row && row.sales_invoices) {
-                                        // Siapkan delivery_note dari row yang akan diupdate
-                                        let selectedSI = row.sales_invoices
-                                        .split(',')
-                                        .map(note => note.trim())
-                                        .filter(note => note !== '');
-                                        
-                                        // Dapatkan delivery_note datagrid dari combogrid
-                                        let grid = $('#sales_invoice').combogrid('grid'); 
-                                        if (grid) { 
-                                            const rowsData = data.rows || data;  
-                                            
-                                            // Checklist jika delivery_note dari row sama dengan combogrid
-                                            for (let i = 0; i < rowsData.length; i++) { 
-                                                let currentSI = rowsData[i].sales_invoice;
-                                                if (selectedSI.includes(currentSI)) {
-                                                    grid.datagrid('checkRow', i);
-                                                }
-                                            }
-                                        } else {
-                                            console.warn("Grid instance for #sales_invoice checklist not found.");
-                                        }
-                                        
-                                    }
-                                    
+                                onLoadSuccess: function(load_invoice) {
+                                    $("#sales_invoice").combobox('setValue', row.sales_invoice);
                                     $("#journal_type").combobox('setValue', row.journal_type_id);
                                 },
-                                onCheck: function(index, rowData) { 
-                                    $("#journal_type").combobox('setValue', rowData.journal_type);
-                                },
-                                onUncheck: function(index, rowData) {                                    
-                                    // Dapatkan semua baris yang saat ini terceklis di combogrid
-                                    let combogridGrid = $('#sales_invoice').combogrid('grid');
-                                    let checkedRows = combogridGrid.datagrid('getChecked');
-
-                                    // Validasi pastikan minimal satu yang terceklis
-                                    if (checkedRows.length === 0) {
-                                        $.messager.alert('Warning', 'You must select at least one data.', 'warning', function() {
-                                            combogridGrid.datagrid('checkRow', index); 
-                                            addJournal();
-                                        });
-                                        return;
-                                    }
-
-                                    // otomatis ubah dg2 ketika Un-checklist
-                                    let uncheckedSI = rowData.sales_invoice;
-                                    console.log("Unchecked " + uncheckedSI);
-                                    
-                                    // Validasi Penghapusan data di #dg2 
-                                    var dg2 = $('#dg2');
-                                    var rowsInDg2 = dg2.datagrid('getRows');
-                                    let foundAndRemoved = false; // Flag 
-
-                                    for (let i = rowsInDg2.length - 1; i >= 0; i--) { // Iterasi dari belakang agar penghapusan tidak mengganggu indeks
-                                        const rowInDg2 = rowsInDg2[i];
-                                        const dataDg2 = String(rowInDg2.sales_invoice).trim();
-
-                                        if (dataDg2 === uncheckedSI) {
-                                            dg2.datagrid('deleteRow', i); // Hapus baris dari dg2
-                                            foundAndRemoved = true;
-                                            console.log(`Removed row with Purchase Invoice '${uncheckedSI}' from #dg2 at index ${i}`);
-                                        }
-                                    }
-
-                                    // Jika yang di un-checklist ada di #dg2
-                                    if (foundAndRemoved) {   
-                                        // delete confirmation
-                                        $.messager.confirm('Confirm', 'Are you sure want to remove this data?', function(r) {
-                                            if (r) {
-                                                $.ajax({
-                                                    method: 'post',
-                                                    url: '<?= base_url('finance/ar_receipts/deleteOnUncheck') ?>',
-                                                    data: {
-                                                        sales_invoice: rowData.sales_invoice,
-                                                    },
-                                                    dataType: "json",
-                                                    success: function(result) {
-                                                        console.log("Delete on Uncheck ", result);
-                                                        console.log("Delete message ", result.message);
-                                                        toastr.success(result.message);
-                                                        $.messager.alert("Warning", "<b>Please click Preview Data and Add To Journal again before Save All</b>", 'warning');
-                                                    },
-                                                    error: function(jqXHR, textStatus, errorThrown) {
-                                                        toastr.error(jqXHR.statusText);
-                                                        $.messager.alert("Error", jqXHR.statusText, 'error');                                                    
-                                                    },
-                                                    complete: function(data) {
-                                                        $('#dg').datagrid('reload');
-                                                    }
-                                                });
-
-                                                // preview('<?= base_url('finance/ar_receipts/reads/') ?>' + window.btoa(row.receipt_no));
-                                                // addTable2('<?= base_url('finance/ar_receipts/readJournals/') ?>' + window.btoa(row.receipt_no) + "/" + window.btoa(row.journal_type_id) + "/" + window.btoa(row.bank_account));
-                                                
-                                            }
-                                        });
-
-                                    } else {
-                                        console.log(`Purchase Invoice '${uncheckedSI}' not found in #dg2. No data removed.`);
-                                    }
-                                }
                             });
-                            
                         }
                     });
 
@@ -1264,7 +1021,7 @@
     var editIndex = undefined;
 
     function preview(link = "") {
-        var sales_invoice = $("#sales_invoice").combogrid('getText');
+        var sales_invoice = $("#sales_invoice").combobox('getText');
 
         if (link == "") {
             var linked = '<?= base_url('finance/ar_receipts/datatablesTemp') ?>?sales_invoice=' + window.btoa(sales_invoice);
@@ -1272,17 +1029,11 @@
             var linked = link;
         }
 
-        // validasi get datatablesTemp
-        var url_preview = linked;
-        if (formMode == "update") {
-            url_preview = '<?= base_url('finance/ar_receipts/datatablesTemp/update') ?>?sales_invoice=' + window.btoa(sales_invoice);
-        }
-
         if (sales_invoice == "") {
             toastr.info('Please select Sales Invoice');
         } else {
             var dg = $('#dg2').datagrid({
-                url: url_preview,
+                url: linked,
                 onClickRow: function(rowIndex) {
                     if (editIndex != rowIndex) {
                         $(this).datagrid('endEdit', editIndex);
@@ -1632,7 +1383,6 @@
             var dg = $(datagridSelector);
             var allRows = dg.datagrid('getRows');
             let nullAccountNumberRows = [];
-            let nullRateRows = [];
             let isValid = true;
 
             if (allRows.length === 0) {
@@ -1646,22 +1396,11 @@
                     if (accountNumber === null || accountNumber === undefined || String(accountNumber).trim() === '') {
                         nullAccountNumberRows.push(i + 1);
                     }
-                    
-                    // validasi : jika rate=0 maka tidak bisa save kecuali account Gain/Loss 810.140.00
-                    if (row.rate === 0 || row.exchange_rate === 0 && row.account_number !== "810.140.00") {
-                        nullRateRows.push(i + 1);
-                    }
                 }
 
                 if (nullAccountNumberRows.length > 0) {
                     isValid = false;
                     var errorMessage = "<b>Failed! Account Number on " + listName + " cannot be empty for rows: " + nullAccountNumberRows.join(', ') + "!</b> <br><br>Please re-check the List and re-calculate Journal before Save All.";
-                    $.messager.alert("Error", errorMessage, 'error');
-                }
-
-                if (nullRateRows.length > 0) {
-                    isValid = false;
-                    var errorMessage = "<b>Failed! Exchange-Rate on " + listName + " cannot be '0,00' for rows: " + nullRateRows.join(', ') + "!</b> <br><br>Please check the exchange rate for this month.";
                     $.messager.alert("Error", errorMessage, 'error');
                 }
             }
@@ -1678,7 +1417,7 @@
                 iconCls: 'icon-ok',
                 handler: function() {
 
-                    // --- validasi account_number call function validateDatagrid ---
+                                        // --- validasi account_number call function validateDatagrid ---
                     var hasValidationError = false;
                     if (!validateDatagrid('#dg2', "AR Receipt Lists")) { // Validasi AP Payment Lists (#dg2)
                         hasValidationError = true;
@@ -1721,18 +1460,6 @@
                     var balance_debit = $("#balance_debit").numberbox('getValue');
                     var balance_credit = $("#balance_credit").numberbox('getValue');
 
-                    var local_balance_debit = $("#local_balance_debit").numberbox('getValue');
-                    var local_balance_credit = $("#local_balance_credit").numberbox('getValue');
-
-
-                    // --- Validasi: Jika null, string kosong, atau berisi '-' (Bu Nina 2026-01-21)
-                    if (!customer_id || customer_id == "" || customer_id == "-") {
-                        $.messager.alert('Warning', 'Customer ID is required!', 'warning');
-                        return false; // Menghentikan eksekusi kode di bawahnya
-                    }
-                    // Lanjutkan proses jika validasi lolos...
-                    console.log("Proses berlanjut dengan Customer ID: " + customer_id);
-
                     // $.ajax({
                     //     type: "post",
                     //     url: "<?= base_url('closing/locks/checkLock') ?>",
@@ -1744,7 +1471,7 @@
                     //             return false;
                     //         }
 
-                            if (parseFloat(balance_debit) == parseFloat(balance_credit)  && parseFloat(local_balance_debit) == parseFloat(local_balance_credit)) {
+                            if (parseFloat(balance_debit) == parseFloat(balance_credit)) {
                                 if (sales_invoice == "" || bank_account == "" || receipt_date == "" || receipt_by == "" || journal_type_id == "") {
                                     toastr.error("please complete your input data");
                                 } else {
@@ -1787,7 +1514,6 @@
                                                                 account_number: rows2[z].account_number,
                                                                 account_name: rows2[z].account_name,
                                                                 description: rows2[z].description,
-                                                                exchange_rate: rows2[z].exchange_rate || 0,
                                                                 debit: rows2[z].debit,
                                                                 credit: rows2[z].credit,
                                                                 local_debit: rows2[z].local_debit,
@@ -2085,9 +1811,8 @@
                                     //     }
                                     // });
                                 }
-
                             } else {
-                                toastr.error("Balance Debit and Balance Credit is not match!");
+                                toastr.error("Balance Debit Cannot match on Balance Credit");
                             }
                     //     }
                     // });
@@ -2351,7 +2076,7 @@
             onSelect: function(customer) {
                 var receipt_type = $("#receipt_type").combobox('getValue');
 
-                // $("#sales_invoice").combogrid({
+                // $("#sales_invoice").combobox({
                 //     url: '<?= base_url('finance/ar_receipts/readInvoiceType?customer_id=') ?>' + customer.id + "&receipt_type=" + receipt_type,
                 //     valueField: 'number',
                 //     textField: 'number',
@@ -2405,15 +2130,12 @@
                     checkOnSelect: true,
 
                     onSelect: function (index, row) {
-                        if (formMode !== 'update') {
-                            if (row.journal_type_id != null) {
-                                $("#journal_type").combobox('setValue', row.journal_type_id);
-                            } else {
-                                toastr.info("The journal type on the Sales Invoice is still empty");
-                                $("#journal_type").combobox('clear');
-                            }
+                        if (row.journal_type_id != null) {
+                            $("#journal_type").combobox('setValue', row.journal_type_id);
+                        } else {
+                            toastr.info("The journal type on the Sales Invoice is still empty");
+                            $("#journal_type").combobox('clear');
                         }
-                            
                     }
                 });
             }
@@ -2559,13 +2281,9 @@
                     type: "post",
                     url: "<?= base_url('finance/ar_receipts/readExchangeRate') ?>",
                     data: "receipt_date=" + row.receipt_date + "&currency=" + row.currency,
-                    dataType: "json",
+                    dataType: "html",
                     success: function(exchange) {
-                        console.log(exchange.label);
-                        console.log(exchange.amount);
-
-                        $("#d_rate").numberbox('setValue', exchange.amount);
-                        $("#d_exchange").html(exchange.label);
+                        $("#d_exchange").html(exchange);
                         $("#d_showExchange").show();
                     }
                 });
@@ -2624,18 +2342,10 @@
     }
 
     function numberformat(value, row) {
-        if (value !== "-") {        
         const formatter = new Intl.NumberFormat('id-ID', {
             minimumFractionDigits: 2
         });
-
-        if (value >= 0) {
-            return "<b>" + formatter.format(value) + "</b>";
-        } else {
-            return "<b>0,00</b>";
-        }
-        }
-        return "";
+        return "<b>" + formatter.format(value) + "</b>";
     }
 
     function statusformat(value, row) {
