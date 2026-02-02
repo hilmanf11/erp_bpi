@@ -207,3 +207,6 @@ add NULL if checksheet number and wo no is empty ([dcb5fe4f](https://github.com/
 
 ### [2026-02-02]
 - **kurniawan**: Update Production Schedules ([8b56a820](https://github.com/hilmanf11/erp_bpi/commit/8b56a820c6768a87a5b13c1551200db13a402dcd))
+
+### [2026-02-02]
+- **Hilman Fadillah**: Update : Ap Payment add currency and change format prices ([3782fe02](https://github.com/hilmanf11/erp_bpi/commit/3782fe02d2523c4c0decc2a891dce3ce799313eb))
