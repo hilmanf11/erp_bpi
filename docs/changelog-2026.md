@@ -213,3 +213,6 @@ add NULL if checksheet number and wo no is empty ([dcb5fe4f](https://github.com/
 
 ### [2026-02-02]
 - **Rizki Puji**: Modifikasi AR Receipt Add to Journal per Transaksi (match script with live server) ([a3c23b80](https://github.com/hilmanf11/erp_bpi/commit/a3c23b80c1cacb9c6f7b33ab7f32664d3a57a347))
+
+### [2026-02-02]
+- **Rizki Puji**: Feature: fixing get Progress WIP on Recap Inventory WIP STD Actual ([1a4131a4](https://github.com/hilmanf11/erp_bpi/commit/1a4131a4da21c7b8d2ca56162d7ba18f185f4dd7))
