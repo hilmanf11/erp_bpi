@@ -1,6 +1,16 @@
 <?php
 date_default_timezone_set("Asia/Bangkok");
 defined('BASEPATH') or exit('No direct script access allowed');
+
+/**
+ * @property CI_Input $input
+ * @property CI_Output $output
+ * @property CI_Loader $load
+ * @property CI_Session $session
+ * @property CI_DB_query_builder $db
+ * @property CI_Form_validation $form_validation
+ * @property Crud $crud
+ */
 class Journal_postings extends CI_Controller
 {
     public function __construct()
@@ -236,6 +246,7 @@ class Journal_postings extends CI_Controller
         $transaction_from_ex = date("Y-m", strtotime(@base64_decode($get['journal_date'])));
         $transaction_to_ex = date("Y-m", strtotime(@base64_decode($get['journal_date'])));
         $journal_type = base64_decode($get['journal_type']);
+        $post = isset($_POST['q']) ? $_POST['q'] : "";
 
         if ($modul == "PURCHASE INVOICING") {
             $this->db->select('c.id as company_id, c.name as company_name');
@@ -608,7 +619,1235 @@ class Journal_postings extends CI_Controller
         echo $datenow . $autoID;
     }
 
+    // Helper calculate row agar tidak berulang / don't repeat yourself (DRY) di datatablesTemp()
+    private function _calculate_row($source, $total, $type, $modul, $table) {
+        $currency   = $source['currency'];
+        $trans_date = $source['trans_date'];
+
+        $number = $source['number'];
+        if ($table == 'sales_invoice_journals') {
+            $number = $source['sales_order_no'];
+        }
+        
+        // LOGIKA KURS (Source of Truth)
+        $rates = 1;
+        if ($currency !== "IDR") {
+            $exchange = $this->db->select('middle')
+                                ->from('exchange_rates')
+                                ->where('currency_from', $currency)
+                                ->where("'$trans_date' BETWEEN start_date AND end_date", NULL, FALSE)
+                                ->get()->row();
+            // Aturan Bu Nina: Jika Valas dan data tidak ada, harus 0
+            $rates = ($exchange) ? (float)$exchange->middle : 0;
+        }
+
+        $orig_d = ($type === "DEBIT") ? $total : 0;
+        $orig_c = ($type === "CREDIT") ? $total : 0;
+
+        return [
+            'row' => [
+                "trans_date"     => $trans_date,
+                "document_no"    => $source['number'],
+                "invoice_no"     => $source['customer_order_no'] ?? '',
+                "company_name"   => $source['customer_name'] ?? '',
+                "modul"          => $modul,
+                "account_number" => $source['account_number'],
+                "account_name"   => $source['account_name'],
+                "description"    => ($source['customer_name'] ?? '') . " | " . ($number ?? '') . " | " . ($source['customer_order_no'] ?? '') . " | " . ($source['item_no'] ?? '') . " | " . ($source['item_name'] ?? ''),
+                "currency"       => $currency,
+                "original_debit" => $orig_d,
+                "original_credit"=> $orig_c,
+                "rates"          => $rates,
+                "local_debit"    => round($orig_d * $rates, 2),
+                "local_credit"   => round($orig_c * $rates, 2),
+            ]
+        ];
+    }
+    // Helper hitung total
+    private function _update_grand(&$grand, $row) 
+    {
+        $grand['orig_d'] += $row['original_debit'];
+        $grand['orig_c'] += $row['original_credit'];
+        $grand['loc_d']  += $row['local_debit'];
+        $grand['loc_c']  += $row['local_credit'];
+    }
+
     public function datatablesTemp()
+    {
+        $get = $this->input->get();
+        $journal_date = @base64_decode($get['journal_date']);
+        $transaction_from = date("Y-m-01", strtotime($journal_date));
+        $transaction_to = date("Y-m-t", strtotime($journal_date));
+        $transaction_from_ex = date("Y-m", strtotime(@base64_decode($get['journal_date'])));
+        $transaction_to_ex = date("Y-m", strtotime(@base64_decode($get['journal_date'])));
+        $modul = base64_decode($get['modul']);
+        $company_id = base64_decode($get['company_id']);
+        $document_no = explode(",", base64_decode($get['document_no']));
+
+        $journal_type = null;
+        if ($modul == "ASSET") {
+            $journal_type = base64_decode($get['journal_type']);
+        }
+
+        $start = strtotime($transaction_from);
+        $finish = strtotime($transaction_to);
+
+        if ($modul == "PURCHASE INVOICING") 
+        {
+            $this->db->select('a.number, b.trans_date, b.invoice_no, c.name as supplier_name, b.currency, b.item_no, b.item_name, a.account_number, a.account_name, a.debit, a.credit, b.rate, a.flag');
+            $this->db->from('purchase_invoice_journals a');
+            $this->db->join("(SELECT * FROM purchase_invoices GROUP BY number) b", "b.number = a.number");
+            $this->db->join("suppliers c", "b.supplier_id = c.id");
+            $this->db->where_in('a.number', $document_no);
+            $this->db->order_by('a.number', 'asc');
+            $this->db->order_by('a.flag', 'asc');
+            $journals = $this->db->get()->result_array();
+
+            $trans_date = "";
+            $supplier_name = "";
+            $currency = "";
+
+            $original_debit = 0;
+            $original_credit = 0;
+            $local_debit = 0;
+            $local_credit = 0;
+
+            $grand_original_debit = 0;
+            $grand_original_credit = 0;
+            $grand_local_debit = 0;
+            $grand_local_credit = 0;
+
+            $data = array();
+            foreach ($journals as $journal) {
+                $number = $journal['number'];
+                $account_number = $journal['account_number'];
+                $account_name = $journal['account_name'];
+                $debit = $journal['debit'];
+                $credit = $journal['credit'];
+
+                $this->db->select('a.trans_date, a.invoice_no, b.name as supplier_name, a.po_no, a.item_no, a.item_name, a.currency, a.account_number, c.account_name, a.account_type, a.rate, a.total');
+                $this->db->from('purchase_invoices a');
+                $this->db->join('suppliers b', 'a.supplier_id = b.id');
+                $this->db->join('account_coa c', 'a.account_number = c.account_number');
+                $this->db->where('a.number', $number);
+                $this->db->where('a.account_number', $account_number);
+                $this->db->order_by('a.trans_date', 'asc');
+                $purchase_invoices = $this->db->get()->result_array();
+
+                if ($debit > 0 || $credit > 0) {
+                    if (count($purchase_invoices) > 0) {
+
+                        $bal_original_debit = 0;
+                        $bal_original_credit = 0;
+                        $bal_local_debit = 0;
+                        $bal_local_credit = 0;
+
+                        foreach ($purchase_invoices as $purchase_invoice) {
+                            $currency = $purchase_invoice['currency'];
+                            $supplier_name = $purchase_invoice['supplier_name'];
+                            $trans_date = $purchase_invoice['trans_date'];
+
+                            // $transmonth = date('Y-m-01', strtotime('-1 month', strtotime($purchase_invoice['trans_date'])));
+                            // $exchange = $this->crud->read('exchange_rates', [], ["start_date" => $transmonth, "currency_from" => $currency, "currency_to" => "IDR"]);
+
+                            if ($currency != "IDR") {
+                                if ($purchase_invoice['account_type'] == "DEBIT") {
+                                    $original_debit = round($purchase_invoice['total'], 2);
+                                    $original_credit = 0;
+                                } else {
+                                    $original_debit = 0;
+                                    $original_credit = round($purchase_invoice['total'], 2);
+                                }
+
+                                if ($purchase_invoice['account_type'] == "DEBIT") {
+                                    $local_debit = round($purchase_invoice['total'] * $purchase_invoice['rate'], 2);
+                                    $local_credit = 0;
+                                } else {
+                                    $local_debit = 0;
+                                    $local_credit = round($purchase_invoice['total'] * $purchase_invoice['rate'], 2);
+                                }
+
+                                // $rates = @$exchange->middle;
+                                $rates = $purchase_invoice['rate'];
+                            } else {
+                                if ($purchase_invoice['account_type'] == "DEBIT") {
+                                    $original_debit = $purchase_invoice['total'];
+                                    $original_credit = 0;
+                                    $local_debit = $purchase_invoice['total'];
+                                    $local_credit = 0;
+                                } else {
+                                    $original_debit = 0;
+                                    $original_credit = $purchase_invoice['total'];
+                                    $local_debit = 0;
+                                    $local_credit = $purchase_invoice['total'];
+                                }
+
+                                $rates = 1;
+                            }
+
+                            $data[] = array(
+                                "trans_date" => $purchase_invoice['trans_date'],
+                                "document_no" => $number,
+                                "invoice_no" => $purchase_invoice['invoice_no'],
+                                "company_name" => $supplier_name,
+                                "modul" => $modul,
+                                "account_number" => $purchase_invoice['account_number'],
+                                "account_name" => $purchase_invoice['account_name'],
+                                "description" => $supplier_name . " | " . $purchase_invoice['po_no'] . " | " . $purchase_invoice['invoice_no'] . " | " . $purchase_invoice['item_no'] . " | " . $purchase_invoice['item_name'],
+                                "currency" => $purchase_invoice['currency'],
+                                "original_debit" => $original_debit,
+                                "original_credit" => $original_credit,
+                                "rates" => $rates,
+                                "local_debit" => $local_debit,
+                                "local_credit" => $local_credit,
+                            );
+
+                            $bal_original_debit += $original_debit;
+                            $bal_original_credit += $original_credit;
+                            $bal_local_debit += $local_debit;
+                            $bal_local_credit += $local_credit;
+
+                            $grand_original_debit += $original_debit;
+                            $grand_original_credit += $original_credit;
+                            $grand_local_debit += $local_debit;
+                            $grand_local_credit += $local_credit;
+                        }
+                    } else {
+                        // $transmonth = date('Y-m-01', strtotime('-1 month', strtotime($trans_date)));
+                        // $exchange = $this->crud->read('exchange_rates', [], ["start_date" => $transmonth, "currency_from" => $currency, "currency_to" => "IDR"]);
+
+                        if ($currency != "IDR") {
+                            $original_debit = $debit;
+                            $original_credit = $credit;
+                            $local_debit = round($debit * $journal['rate'], 2);
+                            $local_credit = round($credit * $journal['rate'], 2);
+
+                            // $rates = @$exchange->middle;
+                            $rates = $journal['rate'];
+                        } else {
+                            $original_debit = $debit;
+                            $original_credit = $credit;
+                            $local_debit = $debit;
+                            $local_credit = $credit;
+
+                            $rates = 1;
+                        }
+
+                        $data[] = array(
+                            "trans_date" => $journal['trans_date'],
+                            "document_no" => $number,
+                            "invoice_no" => $journal['invoice_no'],
+                            "company_name" => $journal['supplier_name'],
+                            "modul" => $modul,
+                            "account_number" => $account_number,
+                            "account_name" => $account_name,
+                            "description" => $journal['supplier_name'] . " | " . $number . " | " . $journal['invoice_no'] . " | " . $journal['item_no'] . " | " . $journal['item_name'],
+                            "currency" => $journal['currency'],
+                            "original_debit" => $original_debit,
+                            "original_credit" => $original_credit,
+                            "rates" => $rates,
+                            "local_debit" => $local_debit,
+                            "local_credit" => $local_credit,
+                        );
+
+                        $grand_original_debit += $original_debit;
+                        $grand_original_credit += $original_credit;
+                        $grand_local_debit += $local_debit;
+                        $grand_local_credit += $local_credit;
+                    }
+                }
+            }
+
+            $footer[] = array(
+                "original_debit" => round($grand_original_debit, 2),
+                "original_credit" => round($grand_original_credit, 2),
+                "local_debit" => round($grand_local_debit, 2),
+                "local_credit" => round($grand_local_debit, 2),
+            );
+
+            $result['total'] = count($data);
+            $result = array_merge($result, ['rows' => $data], ["footer" => $footer]);
+            echo json_encode($result);
+        
+        } 
+        elseif ($modul == "SALES INVOICING") 
+        {
+            $this->db->select('a.number, b.trans_date, b.sales_order_no, b.customer_order_no, c.name as customer_name, b.currency, b.item_no, b.item_name, a.account_number, a.account_name, a.debit, a.credit, a.flag');
+            $this->db->from('sales_invoice_journals a');
+            $this->db->join("(SELECT * FROM sales_invoices GROUP BY number) b", "b.number = a.number");
+            $this->db->join("customers c", "b.customer_id = c.id");
+            $this->db->where_in('a.number', $document_no);
+            $this->db->order_by('a.number', 'asc');
+            $this->db->order_by('a.flag', 'asc');
+            $journals = $this->db->get()->result_array();
+
+            $data = array();
+            $grand = ['orig_d' => 0, 'orig_c' => 0, 'loc_d' => 0, 'loc_c' => 0];
+
+            foreach ($journals as $journal) {
+                $number = $journal['number'];
+                $debit  = $journal['debit'];
+                $credit = $journal['credit'];
+
+                // Get detail invoice 
+                $this->db->select('a.*, b.name as customer_name, c.account_name');
+                $this->db->from('sales_invoices a');
+                $this->db->join('customers b', 'a.customer_id = b.id');
+                $this->db->join('account_coa c', 'a.account_number = c.account_number');
+                $this->db->where(['a.number' => $number, 'a.account_number' => $journal['account_number']]);
+                $sales_invoices = $this->db->get()->result_array();
+
+                if ($debit > 0 || $credit > 0) {
+                    // JIKA ADA DETAIL INVOICE
+                    if (!empty($sales_invoices)) {
+                        foreach ($sales_invoices as $si) {
+                            $table = 'sales_invoice';
+                            $res = $this->_calculate_row($si, $si['total'], $si['account_type'], $modul, $table);
+                            $data[] = $res['row'];
+                            $this->_update_grand($grand, $res['row']);
+                        }
+                    } else {
+                        // JIKA TIDAK ADA DETAIL (Fallback ke data Journal)
+                        $table = 'sales_invoice_journals';
+                        $res = $this->_calculate_row($journal, ($debit + $credit), ($debit > 0 ? "DEBIT" : "CREDIT"), $modul, $table);
+                        $data[] = $res['row'];
+                        $this->_update_grand($grand, $res['row']);
+                    }
+                }
+            }
+
+            $footer[] = [
+                "original_debit"  => $grand['orig_d'],
+                "original_credit" => $grand['orig_c'],
+                "local_debit"     => $grand['loc_d'],
+                "local_credit"    => $grand['loc_c'],
+            ];
+
+            $result['total'] = count($data);
+            $result = array_merge($result, ['rows' => $data], ["footer" => $footer]);
+            echo json_encode($result);
+
+        } 
+        elseif ($modul == "AP PAYMENT") 
+        {
+            $this->db->select('a.payment_no, b.payment_date, b.purchase_invoice, b.supplier_invoice, c.name as supplier_name, b.currency, a.description, a.account_number, a.account_name, a.debit, a.credit, a.flag, a.local_debit, a.local_credit, b.rate');
+            $this->db->select('a.exchange_rate');
+            $this->db->from('ap_payment_journals a');
+            $this->db->join("(SELECT * FROM ap_payments GROUP BY payment_no) b", "b.payment_no = a.payment_no");
+            $this->db->join("suppliers c", "b.supplier_id = c.id");
+            $this->db->where_in('a.payment_no', $document_no);
+            $this->db->order_by('a.payment_no', 'asc');
+            $this->db->order_by('a.flag', 'asc');
+            $journals = $this->db->get()->result_array();
+
+            $original_debit = 0;
+            $original_credit = 0;
+            $local_debit = 0;
+            $local_credit = 0;
+
+            $grand_original_debit = 0;
+            $grand_original_credit = 0;
+            $grand_local_debit = 0;
+            $grand_local_credit = 0;
+
+            $data = array();
+            $gainLossData = null;
+
+            foreach ($journals as $journal) {
+                $number = $journal['payment_no'];
+                $account_number = $journal['account_number'];
+                $account_name = $journal['account_name'];
+                $original_debit = (float)$journal['debit'];
+                $original_credit = (float)$journal['credit'];
+                $local_debit = 0;
+                $local_credit = 0;
+                
+                // Tentukan nilai local debit/credit
+                if ($journal['currency'] !== "IDR") {
+                    if ($journal['account_number'] === "810.150.00") {
+                        $gainLossData = $journal;
+                        continue;
+                    }
+                    $local_debit = round($original_debit * $journal['exchange_rate'], 2);
+                    $local_credit = round($original_credit * $journal['exchange_rate'], 2);
+                } else {
+                    $local_debit = (float)$journal['local_debit'];
+                    $local_credit = (float)$journal['local_credit'];
+                }
+
+                $data[] = array(
+                    "trans_date" => $journal['payment_date'],
+                    "document_no" => $number,
+                    "invoice_no" => $journal['purchase_invoice'],
+                    "company_name" => $journal['supplier_name'],
+                    "modul" => $modul,
+                    "account_number" => $account_number,
+                    "account_name" => $account_name,
+                    "description" => $journal['supplier_name'] . " | " . $number . " | " . $journal['purchase_invoice'] . " | " . $journal['supplier_invoice'],
+                    "currency" => $journal['currency'],
+                    "original_debit" => $original_debit,
+                    "original_credit" => $original_credit,
+                    "rates" => $journal['exchange_rate'] ?? 0,
+                    "local_debit" => $local_debit,
+                    "local_credit" => $local_credit,
+                );
+
+                $grand_original_debit += $original_debit;
+                $grand_original_credit += $original_credit;
+                $grand_local_debit += $local_debit;
+                $grand_local_credit += $local_credit;
+            }
+
+            // Gain (Loss) Sales Asset. 810.150.00 . Foreign Exchange A/P 
+            if ($journal['currency'] !== "IDR") {
+                if ($grand_local_debit !== $grand_local_credit) {
+                    $difference = $grand_local_debit - $grand_local_credit;
+                    $gainLossDebit = 0;
+                    $gainLossCredit = 0;
+                    
+                    if ($difference > 0) {
+                        $gainLossCredit = abs($difference);
+                    } else if ($difference < 0) {
+                        $gainLossDebit = abs($difference);
+                    }
+
+                    $gainloss_ap = $this->db->select('*')->from('account_coa')->where('account_number', '810.150.00')->get()->row();
+                    $data[] = array(
+                        "trans_date" => $gainLossData['payment_date'], // payment_date AP Payment
+                        "document_no" => $number,
+                        "invoice_no" => $gainLossData['purchase_invoice'],
+                        "company_name" => $gainLossData['supplier_name'],
+                        "modul" => $modul,
+                        "account_number" => "810.150.00",
+                        "account_name" => $gainloss_ap->account_name,
+                        "description" => $gainloss_ap->account_name,
+                        "currency" => "IDR", // Selalu IDR
+                        "original_debit" => 0,
+                        "original_credit" => 0,
+                        "rates" => 0, // Nilai rates bisa 0
+                        "local_debit" => $gainLossDebit,
+                        "local_credit" => $gainLossCredit,
+                    );
+                    
+                    // Tambahkan nilai Gain (Loss) ke grand total
+                    $grand_local_debit += $gainLossDebit;
+                    $grand_local_credit += $gainLossCredit;
+                }
+            }
+
+            $footer[] = array(
+                "original_debit" => $grand_original_debit,
+                "original_credit" => $grand_original_credit,
+                "local_debit" => $grand_local_debit,
+                "local_credit" => $grand_local_credit,
+            );
+
+            $result['total'] = count($data);
+            $result = array_merge($result, ['rows' => $data], ["footer" => $footer]);
+            echo json_encode($result);
+
+        } 
+        elseif ($modul == "AR RECEIPT") 
+        {
+            $this->db->select('a.receipt_no, b.receipt_date, b.sales_invoice, b.description, c.name as customer_name, b.currency, a.description, a.account_number, a.account_name, a.debit, a.credit, a.flag, b.rate');
+            $this->db->select('a.debit as local_debit, a.credit as local_credit');
+            $this->db->select('a.exchange_rate');
+            $this->db->from('ar_receipt_journals a');
+            $this->db->join("(SELECT * FROM ar_receipts GROUP BY receipt_no) b", "b.receipt_no = a.receipt_no");
+            $this->db->join("customers c", "b.customer_id = c.id");
+            $this->db->where_in('a.receipt_no', $document_no);
+            $this->db->order_by('a.receipt_no', 'asc');
+            $this->db->order_by('a.flag', 'asc');
+            $journals = $this->db->get()->result_array();
+
+            $original_debit = 0;
+            $original_credit = 0;
+            $local_debit = 0;
+            $local_credit = 0;
+
+            $grand_original_debit = 0;
+            $grand_original_credit = 0;
+            $grand_local_debit = 0;
+            $grand_local_credit = 0;
+
+            $data = array();
+            $gainLossData = null;
+
+            foreach ($journals as $journal) {
+                $number = $journal['receipt_no'];
+                $account_number = $journal['account_number'];
+                $account_name = $journal['account_name'];
+                $debit = $journal['debit'];
+                $credit = $journal['credit'];
+
+                $original_debit = (float)$journal['debit'];
+                $original_credit = (float)$journal['credit'];
+                $local_debit = 0;
+                $local_credit = 0;
+
+                // Tentukan nilai local debit/credit
+                if ($journal['currency'] != "IDR") {
+                    if ($journal['account_number'] === "810.140.00") {
+                        $gainLossData = $journal;
+                        continue;
+                    }
+                    $local_debit = round($original_debit * $journal['exchange_rate'], 2);
+                    $local_credit = round($original_credit * $journal['exchange_rate'], 2);
+
+                } else {
+                    $local_debit = (float)$journal['local_debit'];
+                    $local_credit = (float)$journal['local_credit'];
+                }
+
+                $data[] = array(
+                    "trans_date" => $journal['receipt_date'],
+                    "document_no" => $number,
+                    "invoice_no" => $journal['sales_invoice'],
+                    "company_name" => $journal['customer_name'],
+                    "modul" => $modul,
+                    "account_number" => $account_number,
+                    "account_name" => $account_name,
+                    "description" => $journal['customer_name'] . " | " . $number . " | " . $journal['sales_invoice'] . " | " . $journal['description'],
+                    "currency" => $journal['currency'],
+                    "original_debit" => $original_debit,
+                    "original_credit" => $original_credit,
+                    "rates" => $journal['exchange_rate'] ?? 0,
+                    "local_debit" => $local_debit,
+                    "local_credit" => $local_credit,
+                );
+
+                $grand_original_debit += $original_debit;
+                $grand_original_credit += $original_credit;
+                $grand_local_debit += $local_debit;
+                $grand_local_credit += $local_credit;
+            }
+
+            // Gain (Loss) Sales Asset. 810.140.00 . Foreign Exchange A/R 
+            if ($journal['currency'] !== "IDR") {
+                if ($grand_local_debit !== $grand_local_credit) {
+                    $difference = $grand_local_debit - $grand_local_credit;
+                    $gainLossDebit = 0;
+                    $gainLossCredit = 0;
+                    
+                    if ($difference > 0) {
+                        $gainLossCredit = abs($difference);
+                    } else if ($difference < 0) {
+                        $gainLossDebit = abs($difference);
+                    }
+
+                    $gainloss_ar = $this->db->select('*')->from('account_coa')->where('account_number', '810.140.00')->get()->row();
+                    $data[] = array(
+                        "trans_date" => $journal['receipt_date'], // receipt_date AR Receipt
+                        "document_no" => $number,
+                        "invoice_no" => $journal['sales_invoice'],
+                        "company_name" => $journal['customer_name'],
+                        "modul" => $modul,
+                        "account_number" => "810.140.00",
+                        "account_name" => $gainloss_ar->account_name,
+                        "description" => $gainloss_ar->account_name,
+                        "currency" => "IDR", // Selalu IDR
+                        "original_debit" => 0,
+                        "original_credit" => 0,
+                        "rates" => 0, // Nilai rates bisa 0
+                        "local_debit" => $gainLossDebit,
+                        "local_credit" => $gainLossCredit,
+                    );
+                    
+                    // Tambahkan nilai Gain (Loss) ke grand total
+                    $grand_local_debit += $gainLossDebit;
+                    $grand_local_credit += $gainLossCredit;
+                }
+            }
+
+            $footer[] = array(
+                "original_debit" => $grand_original_debit,
+                "original_credit" => $grand_original_credit,
+                "local_debit" => $grand_local_debit,
+                "local_credit" => $grand_local_credit,
+            );
+
+            $result['total'] = count($data);
+            $result = array_merge($result, ['rows' => $data], ["footer" => $footer]);
+            echo json_encode($result);
+            
+        } 
+        elseif ($modul == "ASSET") 
+        {
+            /** --- existing query --- 
+            $this->db->select('a.asset_no, a.trans_date, b.purchase_invoice_number, b.supplier_name, b.currency, b.name, a.account_number, a.account_name, a.debit, a.credit');
+            $this->db->from('asset_journals a');
+            $this->db->join("asset_fixeds b", "a.asset_no = b.number");
+            $this->db->where("a.periode BETWEEN '$transaction_from_ex' and '$transaction_to_ex'");
+            $this->db->where_in('a.asset_no', $document_no);
+            $this->db->group_by(['asset_no', 'account_number']);
+            $this->db->order_by('a.asset_no', 'asc');
+            $journals = $this->db->get()->result_array();
+             */
+            
+            $journal_date = base64_decode($get['journal_date']);
+            $periode_target = date('Y-m', strtotime($journal_date));
+
+            $sql = "SELECT 
+                a.periode, a.asset_no, a.trans_date, a.account_number, a.debit, a.credit, 
+                b.account_name, b.account_type,
+                COALESCE(a.asset_category_number, a.item_family_id) as category_id,
+                c.purchase_invoice_number, c.supplier_name, c.currency, c.name
+                FROM asset_journals a
+                JOIN asset_categories b ON b.number = a.asset_category_number 
+                    OR b.number = a.item_family_id
+                JOIN asset_fixeds c ON a.asset_no = c.number 
+                LEFT JOIN journal_postings jp ON jp.document_no = a.asset_no AND a.periode = DATE_FORMAT(jp.journal_date, '%Y-%m')
+                WHERE a.periode = ? 
+                AND b.journal_type_id = ?
+                ORDER BY a.asset_no, b.account_number;";
+            $query = $this->db->query($sql, [$periode_target, $journal_type]);
+            $journals = $query->result_array();
+
+            $original_debit = 0;
+            $original_credit = 0;
+            $local_debit = 0;
+            $local_credit = 0;
+
+            $grand_original_debit = 0;
+            $grand_original_credit = 0;
+            $grand_local_debit = 0;
+            $grand_local_credit = 0;
+
+            $data = array();
+            foreach ($journals as $journal) {
+                $number = $journal['asset_no'];
+                $account_number = $journal['account_number'];
+                $account_name = $journal['account_name'];
+                $debit = $journal['debit'];
+                $credit = $journal['credit'];
+
+                $transmonth = date('Y-m-01', strtotime('-1 month', strtotime($journal['trans_date'])));
+                $exchange = $this->crud->read('exchange_rates', [], ["start_date" => $transmonth, "currency_from" => $journal['currency'], "currency_to" => "IDR"]);
+
+                if ($journal['currency'] != "IDR") {
+                    $original_debit = $debit;
+                    $original_credit = $credit;
+                    $local_debit = round($debit * @$exchange->middle, 2);
+                    $local_credit = round($credit * @$exchange->middle, 2);
+
+                    $rates = @$exchange->middle;
+                } else {
+                    $original_debit = $debit;
+                    $original_credit = $credit;
+                    $local_debit = $debit;
+                    $local_credit = $credit;
+
+                    $rates = 1;
+                }
+
+                $data[] = array(
+                    "trans_date" => $journal['trans_date'],
+                    "document_no" => $number,
+                    "invoice_no" => $journal['purchase_invoice_number'],
+                    "company_name" => $journal['supplier_name'],
+                    "modul" => $modul,
+                    "account_number" => $account_number,
+                    "account_name" => $account_name,
+                    "description" => $journal['supplier_name'] . " | " . $number . " | " . $journal['purchase_invoice_number'] . " | " . $journal['name'],
+                    "currency" => $journal['currency'],
+                    "original_debit" => $original_debit,
+                    "original_credit" => $original_credit,
+                    "rates" => $rates,
+                    "local_debit" => $local_debit,
+                    "local_credit" => $local_credit,
+                );
+
+                $grand_original_debit += $original_debit;
+                $grand_original_credit += $original_credit;
+                $grand_local_debit += $local_debit;
+                $grand_local_credit += $local_credit;
+            }
+
+            $footer[] = array(
+                "original_debit" => $grand_original_debit,
+                "original_credit" => $grand_original_credit,
+                "local_debit" => $grand_local_debit,
+                "local_credit" => $grand_local_credit,
+            );
+
+            $result['total'] = count($data);
+            $result = array_merge($result, ['rows' => $data], ["footer" => $footer]);
+            echo json_encode($result);
+        
+        } 
+        elseif ($modul == "CURRENCY REVALUATION") 
+        {
+            $this->db->select('a.number, a.trans_date, a.document_no, a.account_number, a.account_name, a.debit, a.credit,
+                (CASE WHEN d.name IS NULL THEN e.name ELSE d.name END) as company_name');
+            $this->db->from('journal_revaluations a');
+            $this->db->join("purchase_invoices b", "a.document_no = b.number", "left");
+            $this->db->join("sales_invoices c", "a.document_no = c.number", "left");
+            $this->db->join("suppliers d", "b.supplier_id = d.id", "left");
+            $this->db->join("customers e", "c.customer_id = e.id", "left");
+            $this->db->where_in('a.number', $document_no);
+            $this->db->group_by(['a.number', 'a.account_number', 'a.document_no']);
+            $this->db->order_by('a.number', 'asc');
+            $journals = $this->db->get()->result_array();
+
+            $original_debit = 0;
+            $original_credit = 0;
+            $local_debit = 0;
+            $local_credit = 0;
+
+            $grand_original_debit = 0;
+            $grand_original_credit = 0;
+            $grand_local_debit = 0;
+            $grand_local_credit = 0;
+
+            $data = array();
+            foreach ($journals as $journal) {
+                $number = $journal['number'];
+                $account_number = $journal['account_number'];
+                $account_name = $journal['account_name'];
+                $debit = $journal['debit'];
+                $credit = $journal['credit'];
+
+                $original_debit = $debit;
+                $original_credit = $credit;
+                $local_debit = $debit;
+                $local_credit = $credit;
+
+                $rates = 1;
+                $data[] = array(
+                    "trans_date" => $journal['trans_date'],
+                    "document_no" => $number,
+                    "invoice_no" => $journal['document_no'],
+                    "company_name" => $journal['company_name'],
+                    "modul" => $modul,
+                    "account_number" => $account_number,
+                    "account_name" => $account_name,
+                    "description" => $journal['company_name'] . " | " . $number . " | " . $journal['document_no'],
+                    "currency" => "IDR",
+                    "original_debit" => $original_debit,
+                    "original_credit" => $original_credit,
+                    "rates" => $rates,
+                    "local_debit" => $local_debit,
+                    "local_credit" => $local_credit,
+                );
+
+                $grand_original_debit += $original_debit;
+                $grand_original_credit += $original_credit;
+                $grand_local_debit += $local_debit;
+                $grand_local_credit += $local_credit;
+            }
+
+            $footer[] = array(
+                "original_debit" => $grand_original_debit,
+                "original_credit" => $grand_original_credit,
+                "local_debit" => $grand_local_debit,
+                "local_credit" => $grand_local_credit,
+            );
+
+            $result['total'] = count($data);
+            $result = array_merge($result, ['rows' => $data], ["footer" => $footer]);
+            echo json_encode($result);
+        } 
+        elseif ($modul == "SUPPLY MATERIAL") 
+        {
+            //Item Receipts
+            $itemReceipts = $this->crud->query("SELECT
+                a.id, a.number, a.name, c.name as uom, b.name as prodfam, b.id as prodfam_id, COALESCE(d.qty, 0) as qty, COALESCE(d.amount, 0) as amount
+            FROM items a 
+            JOIN item_familys b ON a.item_family_id = b.id
+            JOIN uom c ON a.uom_id = c.id
+            LEFT JOIN (SELECT item_id, SUM(qty) as qty, SUM(amount) as amount FROM inventory_rm WHERE trans_date between '$transaction_from' and '$transaction_to' and trans_type = 'ISSUED' GROUP BY item_id) d ON a.id = d.item_id
+            WHERE b.number = '002'
+            GROUP BY a.id
+            ORDER BY a.number");
+
+            $data = array();
+            $total_amount_out = 0;
+            foreach ($itemReceipts as $itemReceipt) {
+                $total_amount_out += abs($itemReceipt->amount);
+            }
+
+            $this->db->select('a.id, a.account_number, b.account_name');
+            $this->db->from('journal_types a');
+            $this->db->join('account_coa b', 'a.account_number = b.account_number');
+            $this->db->where('number', 'J023');
+            $account = $this->db->get()->row();
+
+            $data[] = array(
+                "trans_date" => $transaction_to,
+                "document_no" => "INVENTORY RM (OUT) - DEBIT",
+                "invoice_no" => "-",
+                "company_id" => "ALL",
+                "company_name" => "ALL",
+                "modul" => $modul,
+                "account_number" => "4512001",
+                "account_name" => "COST OF GOOD MANUFACTURING - MATEIRAL",
+                "description" => "DEBIT TOTAL SUPPLY MATERIAL",
+                "currency" => "IDR",
+                "original_debit" => round($total_amount_out, 2),
+                "original_credit" => 0,
+                "rates" => 1,
+                "local_debit" => round($total_amount_out, 2),
+                "local_credit" => 0,
+            );
+
+            $data[] = array(
+                "trans_date" => $transaction_to,
+                "document_no" => "INVENTORY RM (OUT) - CREDIT",
+                "invoice_no" => "-",
+                "company_id" => "ALL",
+                "company_name" => "ALL",
+                "modul" => $modul,
+                "account_number" => @$account->account_number,
+                "account_name" => @$account->account_name,
+                "description" => "CREDIT TOTAL SUPPLY MATERIAL",
+                "currency" => "IDR",
+                "original_debit" => 0,
+                "original_credit" => round($total_amount_out, 2),
+                "rates" => 1,
+                "local_debit" => 0,
+                "local_credit" => round($total_amount_out, 2),
+            );
+
+            $footer[] = array(
+                "original_debit" => round($total_amount_out, 2),
+                "original_credit" => round($total_amount_out, 2),
+                "local_debit" => round($total_amount_out, 2),
+                "local_credit" => round($total_amount_out, 2),
+            );
+
+            $result['total'] = count($data);
+            $result = array_merge($result, ['rows' => $data], ["footer" => $footer]);
+            echo json_encode($result);
+        } 
+        elseif ($modul == "FINISH GOOD IN") 
+        {
+            $records = $this->crud->query("SELECT item_id, SUM(qty) as qty, SUM(amount) as amount, SUM(direct_material) as direct_material, SUM(direct_labor) as direct_labor, SUM(direct_foh) as direct_foh FROM inventory_wip WHERE trans_type = 'SCAN FG' and trans_date between '$transaction_from' and '$transaction_to' GROUP BY item_id");
+
+            $this->db->select('a.id, a.account_number, b.account_name');
+            $this->db->from('journal_types a');
+            $this->db->join('account_coa b', 'a.account_number = b.account_number');
+            $this->db->where('number', 'J042');
+            $account = $this->db->get()->row();
+
+            $total_amount_fg_in = 0;
+            $total_inventory_rm = 0;
+            $total_final_labor = 0;
+            $total_final_foh = 0;
+            foreach ($records as $record) {
+                $total_amount_fg_in += ($record->amount);
+                $total_inventory_rm += ($record->direct_material);
+                $total_final_labor += ($record->direct_labor);
+                $total_final_foh += ($record->direct_foh);
+            }
+
+            $data[] = array(
+                "trans_date" => $transaction_to,
+                "document_no" => "INVENTORY FG (IN) - FG IN",
+                "invoice_no" => "-",
+                "company_id" => "ALL",
+                "company_name" => "ALL",
+                "modul" => $modul,
+                "account_number" => $account->account_number,
+                "account_name" => $account->account_name,
+                "description" => "-",
+                "currency" => "IDR",
+                "original_debit" => round($total_amount_fg_in, 2),
+                "original_credit" => 0,
+                "rates" => 1,
+                "local_debit" => round($total_amount_fg_in, 2),
+                "local_credit" => 0,
+            );
+
+            $data[] = array(
+                "trans_date" => $transaction_to,
+                "document_no" => "INVENTORY RM (OUT) - FG IN",
+                "invoice_no" => "-",
+                "company_id" => "ALL",
+                "company_name" => "ALL",
+                "modul" => $modul,
+                "account_number" => "4512001",
+                "account_name" => "COST OF GOOD MANUFACTURING - MATERIAL",
+                "description" => "-",
+                "currency" => "IDR",
+                "original_debit" => 0,
+                "original_credit" => abs(round($total_inventory_rm, 2)),
+                "rates" => 1,
+                "local_debit" => 0,
+                "local_credit" => abs(round($total_inventory_rm, 2)),
+            );
+
+            $data[] = array(
+                "trans_date" => $transaction_to,
+                "document_no" => "DIRECT LABOR TOTAL - FG IN",
+                "invoice_no" => "-",
+                "company_id" => "ALL",
+                "company_name" => "ALL",
+                "modul" => $modul,
+                "account_number" => "4512002",
+                "account_name" => "COST OF GOOD MANUFACTURING - DIRECT LABOR",
+                "description" => "-",
+                "currency" => "IDR",
+                "original_debit" => 0,
+                "original_credit" => abs(round($total_final_labor, 2)),
+                "rates" => 1,
+                "local_debit" => 0,
+                "local_credit" => abs(round($total_final_labor, 2)),
+            );
+
+            $data[] = array(
+                "trans_date" => $transaction_to,
+                "document_no" => "DIRECT LABOR FOH - FG IN",
+                "invoice_no" => "-",
+                "company_id" => "ALL",
+                "company_name" => "ALL",
+                "modul" => $modul,
+                "account_number" => "4512003",
+                "account_name" => "COST OF GOOD MANUFACTURING - FACTORY",
+                "description" => "-",
+                "currency" => "IDR",
+                "original_debit" => 0,
+                "original_credit" => abs(round($total_final_foh, 2)),
+                "rates" => 1,
+                "local_debit" => 0,
+                "local_credit" => abs(round($total_final_foh, 2)),
+            );
+
+            $footer[] = array(
+                "original_debit" => round($total_amount_fg_in, 2),
+                "original_credit" => abs(round($total_inventory_rm + $total_final_labor + $total_final_foh, 2)),
+                "local_debit" => round($total_amount_fg_in, 2),
+                "local_credit" => abs(round($total_inventory_rm + $total_final_labor + $total_final_foh, 2)),
+            );
+
+            $result['total'] = count($data);
+            $result = array_merge($result, ['rows' => $data], ["footer" => $footer]);
+            echo json_encode($result);
+        } 
+        elseif ($modul == "FINISH GOOD OUT") 
+        {
+            $records = $this->crud->query("SELECT item_id, SUM(qty) as qty, SUM(amount) as amount, SUM(direct_material) as direct_material, SUM(direct_labor) as direct_labor, SUM(direct_foh) as direct_foh FROM inventory_fg WHERE trans_type = 'DELIVERY NOTE' and type_sales = 'SALES' and trans_date between '$transaction_from' and '$transaction_to' GROUP BY item_id");
+
+            $total_amount_fg_in = 0;
+            $total_inventory_rm = 0;
+            $total_final_labor = 0;
+            $total_final_foh = 0;
+            foreach ($records as $record) {
+                $total_amount_fg_in += ($record->amount);
+                $total_inventory_rm += ($record->direct_material);
+                $total_final_labor += ($record->direct_labor);
+                $total_final_foh += ($record->direct_foh);
+            }
+
+            $this->db->select('a.id, a.account_number, b.account_name');
+            $this->db->from('journal_types a');
+            $this->db->join('account_coa b', 'a.account_number = b.account_number');
+            $this->db->where('number', 'J043');
+            $account = $this->db->get()->row();
+
+            $data[] = array(
+                "trans_date" => $transaction_to,
+                "document_no" => "DIRECT MATERIAL (OUT)",
+                "invoice_no" => "-",
+                "company_id" => "ALL",
+                "company_name" => "ALL",
+                "modul" => $modul,
+                "account_number" => "4511001",
+                "account_name" => "COST OF GOOD SOLD - LOCAL - MATERIAL",
+                "description" => "-",
+                "currency" => "IDR",
+                "original_debit" => round(abs($total_inventory_rm), 2),
+                "original_credit" => 0,
+                "rates" => 1,
+                "local_debit" => round(abs($total_inventory_rm), 2),
+                "local_credit" => 0,
+            );
+
+            $data[] = array(
+                "trans_date" => $transaction_to,
+                "document_no" => "DIRECT LABOR TOTAL - FG OUT",
+                "invoice_no" => "-",
+                "company_id" => "ALL",
+                "company_name" => "ALL",
+                "modul" => $modul,
+                "account_number" => "4511002",
+                "account_name" => "COST OF GOOD SOLD - LOCAL - DIRECTLABOR",
+                "description" => "-",
+                "currency" => "IDR",
+                "original_debit" => round(abs($total_final_labor), 2),
+                "original_credit" => 0,
+                "rates" => 1,
+                "local_debit" => round(abs($total_final_labor), 2),
+                "local_credit" => 0,
+            );
+
+            $data[] = array(
+                "trans_date" => $transaction_to,
+                "document_no" => "DIRECT LABOR FOH - FG OUT",
+                "invoice_no" => "-",
+                "company_id" => "ALL",
+                "company_name" => "ALL",
+                "modul" => $modul,
+                "account_number" => "4511003",
+                "account_name" => "COST OF GOOD SOLD - LOCAL - OVERHEAD",
+                "description" => "-",
+                "currency" => "IDR",
+                "original_debit" => round(abs($total_final_foh), 2),
+                "original_credit" => 0,
+                "rates" => 1,
+                "local_debit" => round(abs($total_final_foh), 2),
+                "local_credit" => 0,
+            );
+
+            $this->db->select('a.id, a.account_number, b.account_name');
+            $this->db->from('journal_types a');
+            $this->db->join('account_coa b', 'a.account_number = b.account_number');
+            $this->db->where('number', 'J042');
+            $account = $this->db->get()->row();
+
+            $data[] = array(
+                "trans_date" => $transaction_to,
+                "document_no" => "INVENTORY FG (OUT) - FG OUT",
+                "invoice_no" => "-",
+                "company_id" => "ALL",
+                "company_name" => "ALL",
+                "modul" => $modul,
+                "account_number" => $account->account_number,
+                "account_name" => $account->account_name,
+                "description" => "-",
+                "currency" => "IDR",
+                "original_debit" => 0,
+                "original_credit" => abs(round($total_amount_fg_in, 2)),
+                "rates" => 1,
+                "local_debit" => 0,
+                "local_credit" => abs(round($total_amount_fg_in, 2)),
+            );
+
+            $footer[] = array(
+                "original_debit" => abs(round(($total_inventory_rm + $total_final_labor + $total_final_foh),2)),
+                "original_credit" => abs(round($total_amount_fg_in, 2)),
+                "local_debit" => abs(round(($total_inventory_rm + $total_final_labor + $total_final_foh),2)),
+                "local_credit" => abs(round($total_amount_fg_in, 2)),
+            );
+
+            $result['total'] = count($data);
+            $result = array_merge($result, ['rows' => $data], ["footer" => $footer]);
+            echo json_encode($result);
+        } 
+        elseif ($modul == "DIRECT LABOUR") 
+        {
+            $labours = $this->crud->query("SELECT account_number, account_name, SUM(local_debit) as local_debit, SUM(local_credit) as local_credit FROM journal_postings WHERE journal_date BETWEEN '$transaction_from' and '$transaction_to' and account_number LIKE '%4521%' GROUP BY account_number");
+
+            $total_labour = 0;
+            foreach ($labours as $labour) {
+                $total_labour += ($labour->local_debit + $labour->local_credit);
+            }
+
+            $data[] = array(
+                "trans_date" => $transaction_to,
+                "document_no" => "COSTING DIRECT LABOUR (COGM)",
+                "invoice_no" => "-",
+                "company_id" => "ALL",
+                "company_name" => "ALL",
+                "modul" => $modul,
+                "account_number" => "4512002",
+                "account_name" => "COST OF GOOD MANUFACTURING - DIRECT LABOR",
+                "description" => "-",
+                "currency" => "IDR",
+                "original_debit" => round($total_labour, 2),
+                "original_credit" => 0,
+                "rates" => 1,
+                "local_debit" => round($total_labour, 2),
+                "local_credit" => 0,
+            );
+            
+            $total_labour_credit = 0;
+            foreach ($labours as $labour) {
+                 $data[] = array(
+                    "trans_date" => $transaction_to,
+                    "document_no" => "COSTING DIRECT LABOUR (".$labour->account_number.")",
+                    "invoice_no" => "-",
+                    "company_id" => "ALL",
+                    "company_name" => "ALL",
+                    "modul" => $modul,
+                    "account_number" => $labour->account_number,
+                    "account_name" => $labour->account_name,
+                    "description" => "-",
+                    "currency" => "IDR",
+                    "original_debit" => 0,
+                    "original_credit" => ($labour->local_debit + $labour->local_credit),
+                    "rates" => 1,
+                    "local_debit" => 0,
+                    "local_credit" => ($labour->local_debit + $labour->local_credit),
+                );
+
+                $total_labour_credit += ($labour->local_debit + $labour->local_credit);
+            }
+
+            $footer[] = array(
+                "original_debit" => round(($total_labour),2),
+                "original_credit" => round($total_labour_credit, 2),
+                "local_debit" => round(($total_labour),2),
+                "local_credit" => round($total_labour_credit, 2),
+            );
+
+            $result['total'] = count($data);
+            $result = array_merge($result, ['rows' => $data], ["footer" => $footer]);
+            echo json_encode($result);
+        } 
+        elseif ($modul == "FOH") 
+        {
+            $labours = $this->crud->query("SELECT account_number, account_name, SUM(local_debit) as local_debit, SUM(local_credit) as local_credit FROM journal_postings WHERE journal_date BETWEEN '$transaction_from' and '$transaction_to' and account_number LIKE '%4531%' GROUP BY account_number");
+
+            $total_labour = 0;
+            foreach ($labours as $labour) {
+                $total_labour += ($labour->local_debit - abs($labour->local_credit));
+            }
+
+            $data[] = array(
+                "trans_date" => $transaction_to,
+                "document_no" => "COSTING FOH (COGM)",
+                "invoice_no" => "-",
+                "company_id" => "ALL",
+                "company_name" => "ALL",
+                "modul" => $modul,
+                "account_number" => "4512003",
+                "account_name" => "COST OF GOOD MANUFACTURING - FACTORY",
+                "description" => "-",
+                "currency" => "IDR",
+                "original_debit" => round($total_labour, 2),
+                "original_credit" => 0,
+                "rates" => 1,
+                "local_debit" => round($total_labour, 2),
+                "local_credit" => 0,
+            );
+            
+            $total_labour_debit = $total_labour;
+            $total_labour_credit = 0;
+            foreach ($labours as $labour) {
+                if(($labour->local_debit - abs($labour->local_credit)) > 0){
+                    $labor_debit = 0;
+                    $labor_credit = abs($labour->local_debit - abs($labour->local_credit));
+                }else{
+                    $labor_credit = 0;
+                    $labor_debit = abs($labour->local_debit - abs($labour->local_credit));
+                }
+
+                 $data[] = array(
+                    "trans_date" => $transaction_to,
+                    "document_no" => "COSTING FOH (".$labour->account_number.")",
+                    "invoice_no" => "-",
+                    "company_id" => "ALL",
+                    "company_name" => "ALL",
+                    "modul" => $modul,
+                    "account_number" => $labour->account_number,
+                    "account_name" => $labour->account_name,
+                    "description" => "-",
+                    "currency" => "IDR",
+                    "original_debit" => $labor_debit,
+                    "original_credit" => $labor_credit,
+                    "rates" => 1,
+                    "local_debit" => $labor_debit,
+                    "local_credit" => $labor_credit,
+                );
+
+                $total_labour_debit += $labor_debit;
+                $total_labour_credit += $labor_credit;
+            }
+
+            $footer[] = array(
+                "original_debit" => round(($total_labour_debit),2),
+                "original_credit" => round($total_labour_credit, 2),
+                "local_debit" => round(($total_labour_debit),2),
+                "local_credit" => round($total_labour_credit, 2),
+            );
+
+            $result['total'] = count($data);
+            $result = array_merge($result, ['rows' => $data], ["footer" => $footer]);
+            echo json_encode($result);
+        } 
+        elseif ($modul == "CLOSING JOURNAL") 
+        {
+            $accounts = $this->crud->query("SELECT account_number, account_name FROM account_coa WHERE `status` = '1' ORDER BY account_number asc");
+
+            $data = array();
+            $total_debit = 0;
+            $total_credit = 0;
+            foreach ($accounts as $account) {
+                $trial_balance = $this->crud->read("trial_balances", [], ["period" => date("Ym", strtotime($journal_date)), "account_number" => $account->account_number]);
+                
+                if(@$trial_balance->ending_debit > 0 || @$trial_balance->ending_credit > 0){
+                    if(@$trial_balance->ending_debit > 0){
+                        $debit = 0;
+                        $credit = $trial_balance->ending_debit;
+                    }else{
+                        $debit = @$trial_balance->ending_credit;
+                        $credit = 0;
+                    }
+
+                    $data[] = array(
+                        "trans_date" => $transaction_to,
+                        "document_no" => "CLOSING JOURNAL (DEBIT)",
+                        "invoice_no" => "-",
+                        "company_id" => "ALL",
+                        "company_name" => "ALL",
+                        "modul" => $modul,
+                        "account_number" => $account->account_number,
+                        "account_name" => $account->account_name,
+                        "description" => "-",
+                        "currency" => "IDR",
+                        "original_debit" => $debit,
+                        "original_credit" => $credit,
+                        "rates" => 1,
+                        "local_debit" => $debit,
+                        "local_credit" => $credit,
+                    );
+
+                    $total_debit += $debit;
+                    $total_credit += $credit;
+                }
+            }
+
+            if(($total_debit - $total_credit) > 0){
+                $earn_debit = 0;
+                $earn_credit = abs($total_debit - $total_credit);
+            }else{
+                $earn_debit = abs($total_debit - $total_credit);
+                $earn_credit = 0;
+            }
+
+            $data[] = array(
+                "trans_date" => $transaction_to,
+                "document_no" => "CLOSING JOURNAL (DEBIT)",
+                "invoice_no" => "-",
+                "company_id" => "ALL",
+                "company_name" => "ALL",
+                "modul" => $modul,
+                "account_number" => "3091200",
+                "account_name" => "RETAINED EARNING",
+                "description" => "-",
+                "currency" => "IDR",
+                "original_debit" => $earn_debit,
+                "original_credit" => $earn_credit,
+                "rates" => 1,
+                "local_debit" => $earn_debit,
+                "local_credit" => $earn_credit,
+            );
+
+            $footer[] = array(
+                "original_debit" => round(($total_debit + $earn_debit),2),
+                "original_credit" => round(($total_credit + $earn_credit), 2),
+                "local_debit" => round(($total_debit + $earn_debit),2),
+                "local_credit" => round(($total_credit + $earn_credit), 2),
+            );
+
+            $result['total'] = count($data);
+            $result = array_merge($result, ['rows' => $data], ["footer" => $footer]);
+            echo json_encode($result);
+        }
+    }
+
+    // Dokumentasi: Bug Rates Kosong on Preview Data Modul PI and SI
+    public function datatablesTemp_existing()
     {
         $get = $this->input->get();
         $journal_date = @base64_decode($get['journal_date']);
