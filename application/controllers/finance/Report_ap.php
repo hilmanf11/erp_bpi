@@ -127,6 +127,10 @@ class Report_ap extends CI_Controller
             $account_numbers = ['NON_EXISTING_ACCOUNT']; 
         }
         
+        // Mengatasi "Double Counting" ambil start_date initial balance suppliers 
+        $initial_data = $this->db->get_where('account_balance_suppliers', ['supplier_id' => $supplier_id])->row();
+        $initial_date = $initial_data->start_date; // Misal: 2025-12-31
+        
         // Inisialisasi variabel untuk Query Builder
         $this->db->reset_query();
 
@@ -139,6 +143,7 @@ class Report_ap extends CI_Controller
             $this->db->where_in('b.account_number', $account_numbers);
         }
         $this->db->where('a.supplier_id', $supplier_id);
+        $this->db->where('b.journal_date >', $initial_date); // Hanya ambil jurnal setelah tanggal saldo statis
         $this->db->where('b.journal_date <', $filter_from);
         $this->db->where('b.modul', 'PURCHASE INVOICING'); // Hanya modul Purchase Invoicing
 
@@ -157,6 +162,7 @@ class Report_ap extends CI_Controller
             $this->db->where_in('b.account_number', $account_numbers);
         }
         $this->db->where('a.supplier_id', $supplier_id);
+        $this->db->where('b.journal_date >', $initial_date); // Hanya ambil jurnal setelah tanggal saldo statis
         $this->db->where('b.journal_date <', $filter_from);
         $this->db->where('b.modul', 'AP PAYMENT'); // Hanya modul AP Payment
         
