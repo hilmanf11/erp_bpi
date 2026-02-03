@@ -1,6 +1,16 @@
 <?php
 date_default_timezone_set("Asia/Bangkok");
 defined('BASEPATH') or exit('No direct script access allowed');
+
+/**
+ * @property CI_Input $input
+ * @property CI_Output $output
+ * @property CI_Loader $load
+ * @property CI_Session $session
+ * @property CI_DB_query_builder $db
+ * @property CI_Form_validation $form_validation
+ * @property Crud $crud
+ */
 class Report_ar extends CI_Controller
 {
     public function __construct()
@@ -86,6 +96,10 @@ class Report_ar extends CI_Controller
             // Jika tidak ada akun AR, saldo awal adalah saldo customer
             return (float)$initial_balance;
         }
+
+        // Mengatasi "Double Counting" ambil start_date initial balance customers 
+        $initial_data = $this->db->get_where('account_balance_customers', ['customer_id' => $customer_id])->row();
+        $initial_date = $initial_data->start_date; // Misal: 2025-12-31
         
         // Inisialisasi variabel untuk Query Builder
         $this->db->reset_query();
@@ -99,6 +113,7 @@ class Report_ar extends CI_Controller
             $this->db->where_in('b.account_number', $account_numbers);
         }
         $this->db->where('a.customer_id', $customer_id);
+        $this->db->where('b.journal_date >', $initial_date); // Hanya ambil jurnal setelah tanggal saldo statis
         $this->db->where('b.journal_date <', $filter_from);
         $this->db->where('b.modul', 'SALES INVOICING'); // Hanya modul Sales Invoicing
         if (!empty($filter_currency)) {
@@ -116,6 +131,7 @@ class Report_ar extends CI_Controller
             $this->db->where_in('b.account_number', $account_numbers);
         }
         $this->db->where('a.customer_id', $customer_id);
+        $this->db->where('b.journal_date >', $initial_date); // Hanya ambil jurnal setelah tanggal saldo statis
         $this->db->where('b.journal_date <', $filter_from);
         $this->db->where('b.modul', 'AR RECEIPT'); // Hanya modul AR Receipt
         if (!empty($filter_currency)) {
