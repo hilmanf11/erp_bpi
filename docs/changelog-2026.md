@@ -225,3 +225,6 @@ add NULL if checksheet number and wo no is empty ([dcb5fe4f](https://github.com/
 
 ### [2026-02-03]
 - **Rizki Puji**: Fixing: fix rates modul Sales Invoices on Journal Postings ([b9f892b3](https://github.com/hilmanf11/erp_bpi/commit/b9f892b3763c2b442f28ed189de34f2a1ab8adb0))
+
+### [2026-02-03]
+- **kurniawan**: Update Progress_wip.php ([059949b5](https://github.com/hilmanf11/erp_bpi/commit/059949b5db013da04b39afac070fda11b41a09ad))
