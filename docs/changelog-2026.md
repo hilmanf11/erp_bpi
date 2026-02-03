@@ -222,3 +222,6 @@ add NULL if checksheet number and wo no is empty ([dcb5fe4f](https://github.com/
 
 ### [2026-02-03]
 - **Rizki Puji**: Refactor: get start_date Initial Balance Report AR ([ca6f21dc](https://github.com/hilmanf11/erp_bpi/commit/ca6f21dc08eb35b0ecfb2daba4a120a0f72d5f69))
+
+### [2026-02-03]
+- **Rizki Puji**: Fixing: fix rates modul Sales Invoices on Journal Postings ([b9f892b3](https://github.com/hilmanf11/erp_bpi/commit/b9f892b3763c2b442f28ed189de34f2a1ab8adb0))
