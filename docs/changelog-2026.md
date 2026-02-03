@@ -219,3 +219,6 @@ add NULL if checksheet number and wo no is empty ([dcb5fe4f](https://github.com/
 
 ### [2026-02-03]
 - **Rizki Puji**: Refactor: get start_date Initial Balance Report AP ([bb437780](https://github.com/hilmanf11/erp_bpi/commit/bb437780cb37ae42e205898a97f9a6247cdab05d))
+
+### [2026-02-03]
+- **Rizki Puji**: Refactor: get start_date Initial Balance Report AR ([ca6f21dc](https://github.com/hilmanf11/erp_bpi/commit/ca6f21dc08eb35b0ecfb2daba4a120a0f72d5f69))
