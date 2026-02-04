@@ -10,6 +10,8 @@
             <th rowspan="2" data-options="field:'customer_name',width:250,halign:'center'">Customer Name</th>
             <th rowspan="2" data-options="field:'bank_account',width:150,halign:'center'">Bank Account</th>
             <th rowspan="2" data-options="field:'receipt_by',width:100,align:'center'">Receipt By</th>
+            <th rowspan="2" data-options="field:'currency',width:100,align:'center'">Currency</th>
+            <th rowspan="2" data-options="field:'total_receipt',width:120,align:'center',formatter:numberformat">Total Receipt</th>
             <th rowspan="2" data-options="field:'gl_no',width:100,align:'center'">GL No</th>
             <th rowspan="2" data-options="field:'note',width:200,halign:'center'">Note</th>
             <th colspan="2" data-options="field:'',width:100,halign:'center'"> Created</th>
@@ -804,12 +806,19 @@
                         toastr.success("Data Down Payment Added Success");
 
                         for (let i = 0; i < dp.length; i++) {
+
+                            if(dp[i].balance == 0){
+                                var balance = dp[i].receipt;
+                            }else{
+                                var balance = (parseFloat(dp[i].balance) - parseFloat(dp[i].receipt));
+                            }
+
                             $('#dg2').datagrid('appendRow', {
-                                sales_invoice: dp[i].sales_invoice,
+                                sales_invoice: dp[i].receipt_no,
                                 description: dp[i].description,
                                 currency: dp[i].currency,
                                 amount: dp[i].amount,
-                                balance: dp[i].balance,
+                                balance: balance,
                                 receipt: dp[i].receipt,
                                 remarks: dp[i].remarks,
                                 account_number: dp[i].account_number,

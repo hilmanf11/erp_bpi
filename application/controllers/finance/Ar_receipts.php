@@ -192,15 +192,27 @@ class Ar_receipts extends CI_Controller
                 $amount = $grand_total;
             }
 
+            if($grand_total < 0){
+                $debit = 0;
+                $credit = abs($grand_total);
+                $local_debit = 0;
+                $local_credit = abs($amount);
+            }else{
+                $debit = abs($grand_total);
+                $credit = 0;
+                $local_debit = abs($amount);
+                $local_credit = 0;
+            }
+
             $arrBanks[] = array(
                 "account_number" => $bank->account_number,
                 "account_name" => $bank->account_name,
                 "account_type" => "CREDIT",
                 "description" => "Receipt Bank",
-                "debit" => $grand_total,
-                "credit" => 0,
-                "local_debit" => round($amount, 2),
-                "local_credit" => 0,
+                "debit" => $debit,
+                "credit" => $credit,
+                "local_debit" => $local_debit,
+                "local_credit" => $local_credit,
                 "flag" => ($flag - 1),
             );
         }
@@ -327,10 +339,13 @@ class Ar_receipts extends CI_Controller
         $this->db->from('ar_receipts a');
         $this->db->join('account_coa b', 'a.account_number = b.account_number', 'left');
         $this->db->where('a.customer_id', $customer_id);
-        $this->db->where('a.sales_invoice', $sales_invoice);
-        $this->db->where('a.journal_type_id', '20230823000001');
-        $this->db->where('a.account_number', '2041101');
+        $this->db->where_in('a.account_number', ['260.110.00','260.120.00','260.130.00']);
+        // $this->db->where('a.sales_invoice', $sales_invoice);
+        // $this->db->where('a.journal_type_id', '20230823000001');
+        // $this->db->where('a.account_number', '2041101');
         //$this->db->where('a.status_dp', '0');
+        $this->db->where("a.balance != a.receipt");
+        $this->db->where('a.status_dp', '0');
         $records = $this->db->get()->result_array();
 
         echo json_encode($records);
@@ -500,9 +515,12 @@ class Ar_receipts extends CI_Controller
                         if ($post['amount'] == $post['receipt']) {
                             $this->crud->update('sales_invoices', ["number" => $post['sales_invoice']], ["status" => 1]);
                         }
+
+                        if ($post['balance'] == $post['receipt']) {
+                            $this->db->update('ar_receipts', ["status_dp" => 1], ["receipt_no" => $post['sales_invoice']]);
+                        }
                     }
 
-                    $this->crud->update('ar_receipts', ["sales_invoice" => $post['sales_invoice'], "journal_type_id" => "20230823000001"], ["status_dp" => 1]);
                     echo $send;
                 }
             } else {
@@ -579,7 +597,7 @@ class Ar_receipts extends CI_Controller
                 "number" => $ap_receipt->sales_invoice,
             ], ["status" => 0]);
 
-            $this->crud->update('ar_receipts', ["receipt_no" => $ap_receipt->sales_invoice], ["status_dp" => 0]);
+            $this->db->update('ar_receipts', ["status_dp" => 0], ["receipt_no" => $ap_receipt->sales_invoice]);
         }
 
         $send = $this->crud->delete('ar_receipts', $data);
@@ -1186,9 +1204,11 @@ class Ar_receipts extends CI_Controller
                 if ($record['account_type'] == "DEBIT") {
                     $grand_total -= $record['receipt'];
                     $subtotal -= $record['receipt'];
+                    $receipt = "(".@number_format($record['receipt'], 2).")";
                 } else {
                     $grand_total += $record['receipt'];
                     $subtotal += $record['receipt'];
+                    $receipt = @number_format($record['receipt'], 2);
                 }
 
                 $html .= '  <tr>
@@ -1198,7 +1218,7 @@ class Ar_receipts extends CI_Controller
                                 <td>' . $record['currency'] . '</td>
                                 <td style="text-align:right;">' . @number_format(($record['amount']), 2) . '</td>
                                 <td style="text-align:right;">' . @number_format($record['balance'], 2) . '</td>
-                                <td style="text-align:right;">' . @number_format($record['receipt'], 2) . '</td>
+                                <td style="text-align:right;">' . $receipt . '</td>
                                 <td>' . $record['remarks'] . '</td>
                             </tr>';
                 $no++;
