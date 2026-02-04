@@ -231,3 +231,6 @@ add NULL if checksheet number and wo no is empty ([dcb5fe4f](https://github.com/
 
 ### [2026-02-04]
 - **Rizki Puji**: Fixing: begin balance Report General Ledgers, Trial Balances, Bank Statements ([32d290aa](https://github.com/hilmanf11/erp_bpi/commit/32d290aadbe996acc0b4014e3136ca8b39e90fb2))
+
+### [2026-02-04]
+- **kurniawan**: Update Master item ([7fa98601](https://github.com/hilmanf11/erp_bpi/commit/7fa98601d5169e79cc271107a1fe29036a0c3431))
