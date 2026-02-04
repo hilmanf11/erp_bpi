@@ -601,31 +601,42 @@ class Report_bank_statements extends CI_Controller
         $account_coa = $this->db->get()->row();
         
         // Get Saldo Awal Statis dari database
-        $initial_balance = $account_coa->balance ?? 0;
+        $initial_balance       = $account_coa->balance ?? 0;
         $initial_balance_local = $account_coa->balance_local ?? 0;
 
-        // Tentukan 'Search Start Date' secara dinamis
-        $starting_point = (!empty($account_coa->starting_date)) 
-                        ? $account_coa->starting_date 
-                        : date("Y-01-01", strtotime($filter_from));
+        // Sesuaikan beginning balance per 2026-01-01 berdasarkan dari Account Bank (Bu Nina)
+        $static_cutoff = "2026-01-01"; 
 
-        // Hitung Mutasi dari Starting Point sampai H-1 Tanggal Filter
-        $query_opening = "
-            SELECT SUM(original_debit - original_credit) as total_mutation
-            FROM journal_postings a
-            WHERE a.account_number = " . $this->db->escape($filter_account) . "
-            AND a.trans_date >= " . $this->db->escape($starting_point) . "
-            AND a.trans_date < " . $this->db->escape($filter_from) . "
-            $where_currency_journal
-        ";
-        $opening_mutation = $this->crud->query($query_opening)[0]->total_mutation ?? 0;
+        $opening_mutation = 0;
+        $opening_mutation_local = 0;
 
-        // Get Begin Balance Real
-        $current_original_balance = $initial_balance + $opening_mutation;
-        $opening_balance_original = $current_original_balance;
+        /**
+         * Jika user memfilter mulai dari 2026-01-01, maka mutasi = 0.
+         * Jika user memfilter mulai dari 2026-02-01, maka hitung mutasi Jan 2026 saja.
+         */
+        if ($filter_from > $static_cutoff) {
+            $query_opening = "
+                SELECT 
+                    SUM(original_debit - original_credit) as total_mutation,
+                    SUM(local_debit - local_credit) as total_mutation_local
+                FROM journal_postings a
+                WHERE a.account_number = " . $this->db->escape($filter_account) . "
+                AND a.trans_date >= '$static_cutoff' 
+                AND a.trans_date < " . $this->db->escape($filter_from) . "
+                $where_currency_journal
+            ";
+            $res = $this->crud->query($query_opening)[0];
+            $opening_mutation = $res->total_mutation ?? 0;
+            $opening_mutation_local = $res->total_mutation_local ?? 0;
+        }
 
-        $current_local_balance    = ($account_coa->balance_local ?? 0) + ($mutation_before->local_mut ?? 0);
-        $opening_balance_local    = $current_local_balance;
+        // Opening Balance yang akan dicetak di laporan
+        $opening_balance_original = $initial_balance + $opening_mutation;
+        $opening_balance_local    = $initial_balance_local + $opening_mutation_local;
+
+        // Inisialisasi Running Balance untuk looping transaksi di bawahnya
+        $current_original_balance = $opening_balance_original;
+        $current_local_balance    = $opening_balance_local;
 
         // Get Data Transaksi dalam Range Filter
         $time_start = new DateTime($filter_from);
@@ -670,7 +681,6 @@ class Report_bank_statements extends CI_Controller
             }
             $time_start->modify('+1 day');
         }
-
         
         //Config
         $this->db->select('*');
@@ -798,9 +808,9 @@ class Report_bank_statements extends CI_Controller
                         <td style="text-align:right;"><b>-</b></td>
                     </tr>';
 
-        // Ending Balance Total = {Opening Balance} + {Total Debit} - {Total Kredit}
-        $grand_ending_balance_original = $initial_balance + $grand_total_debit_original - $grand_total_credit_original;
-        $grand_ending_balance_local = $initial_balance_local + $grand_total_debit_original - $grand_total_credit_original;
+        // Ending Balance Total = {Opening Balance Awal Laporan} + {Total Mutasi Selama Periode Laporan}
+        $grand_ending_balance_original = $opening_balance_original + $grand_total_debit_original - $grand_total_credit_original;
+        $grand_ending_balance_local = $opening_balance_local + $grand_total_debit_local - $grand_total_credit_local;
 
         $html .= '  <tr style="background:#EBEBEB;">
                         <td colspan="6"><b>ENDING BALANCE</b></td>
