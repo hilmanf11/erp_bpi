@@ -249,3 +249,6 @@ add NULL if checksheet number and wo no is empty ([dcb5fe4f](https://github.com/
 
 ### [2026-02-04]
 - **Rizki Puji**: Feature: add rate box trigger Add to Journal Sales Invoices ([76383b41](https://github.com/hilmanf11/erp_bpi/commit/76383b418e9323eb3ea3c3211f3e0d04df430e86))
+
+### [2026-02-04]
+- **Rizki Puji**: Feature: fix trans_date get Rate on Add to Journal Sales Invoices ([96982cbf](https://github.com/hilmanf11/erp_bpi/commit/96982cbf26fff55e9d6cc508f0c67f4f92f4ad22))
