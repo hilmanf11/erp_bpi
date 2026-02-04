@@ -745,7 +745,7 @@ class Report_bank_statements extends CI_Controller
 
         $html .= '<tr>
                     <td style="text-align:center">#</td>
-                    <td>' . $starting_point . '</td>
+                    <td>' . $filter_from . '</td>
                     <td></td>
                     <td></td>
                     <td> <b>OPENING BALANCE</b> </td>
