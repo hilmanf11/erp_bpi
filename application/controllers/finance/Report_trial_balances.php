@@ -1,6 +1,16 @@
 <?php
 date_default_timezone_set("Asia/Bangkok");
 defined('BASEPATH') or exit('No direct script access allowed');
+
+/**
+ * @property CI_Input $input
+ * @property CI_Output $output
+ * @property CI_Loader $load
+ * @property CI_Session $session
+ * @property CI_DB_query_builder $db
+ * @property CI_Form_validation $form_validation
+ * @property Crud $crud
+ */
 class Report_trial_balances extends CI_Controller
 {
     public function __construct()
@@ -44,6 +54,9 @@ class Report_trial_balances extends CI_Controller
         $filter_from = $this->input->post('filter_from');
         $filter_to   = $this->input->post('filter_to');
 
+        // Modifikasi: Sesuaikan beginning balance per 2026-01-01 berdasarkan dari Chart of Account
+        $filter_before = date("Y-01-01", strtotime($filter_from));
+
         // Validasi input tanggal
         if (empty($filter_from) || empty($filter_to)) {
             echo json_encode([
@@ -67,6 +80,7 @@ class Report_trial_balances extends CI_Controller
 
         $this->db->select('a.*');
         $this->db->from('account_coa a');
+        $this->db->where("starting_date <=", $filter_before); // Get Begin Balance before Y-01-01
         $this->db->order_by('a.account_number', 'asc');
         $accounts_coa = $this->db->get()->result_array();
         

@@ -216,3 +216,27 @@ add NULL if checksheet number and wo no is empty ([dcb5fe4f](https://github.com/
 
 ### [2026-02-02]
 - **Rizki Puji**: Feature: fixing get Progress WIP on Recap Inventory WIP STD Actual ([1a4131a4](https://github.com/hilmanf11/erp_bpi/commit/1a4131a4da21c7b8d2ca56162d7ba18f185f4dd7))
+
+### [2026-02-03]
+- **Rizki Puji**: Refactor: get start_date Initial Balance Report AP ([bb437780](https://github.com/hilmanf11/erp_bpi/commit/bb437780cb37ae42e205898a97f9a6247cdab05d))
+
+### [2026-02-03]
+- **Rizki Puji**: Refactor: get start_date Initial Balance Report AR ([ca6f21dc](https://github.com/hilmanf11/erp_bpi/commit/ca6f21dc08eb35b0ecfb2daba4a120a0f72d5f69))
+
+### [2026-02-03]
+- **Rizki Puji**: Fixing: fix rates modul Sales Invoices on Journal Postings ([b9f892b3](https://github.com/hilmanf11/erp_bpi/commit/b9f892b3763c2b442f28ed189de34f2a1ab8adb0))
+
+### [2026-02-03]
+- **kurniawan**: Update Progress_wip.php ([059949b5](https://github.com/hilmanf11/erp_bpi/commit/059949b5db013da04b39afac070fda11b41a09ad))
+
+### [2026-02-04]
+- **Rizki Puji**: Fixing: begin balance Report General Ledgers, Trial Balances, Bank Statements ([32d290aa](https://github.com/hilmanf11/erp_bpi/commit/32d290aadbe996acc0b4014e3136ca8b39e90fb2))
+
+### [2026-02-04]
+- **kurniawan**: Update Master item ([7fa98601](https://github.com/hilmanf11/erp_bpi/commit/7fa98601d5169e79cc271107a1fe29036a0c3431))
+
+### [2026-02-04]
+- **Rizki Puji**: Refactor: Report Bank Statements and Initial Balance without Begin AP Begin AR ([e95505f0](https://github.com/hilmanf11/erp_bpi/commit/e95505f01f3ca8f63f455c7cb36b78c29fc7f9ff))
+
+### [2026-02-04]
+- **Rizki Puji**: Fixing: Opening Balance date on Report Bank Statements ([3cb8adec](https://github.com/hilmanf11/erp_bpi/commit/3cb8adec49f7c591bb207b371389462ace5f03c1))

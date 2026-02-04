@@ -425,7 +425,7 @@
     });
 
     $('#item_category_id').combobox({
-        url:'<?= base_url('master/item_categories/readsnotfg'); ?>',
+        url:'<?= base_url('master/item_rm/readsnotfg'); ?>',
         valueField:'id',
         textField:'name',
         prompt: 'Choose Category',

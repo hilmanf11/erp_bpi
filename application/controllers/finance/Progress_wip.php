@@ -278,7 +278,8 @@ class Progress_wip extends CI_Controller
                         COALESCE(g.qty_in_checksheet,0) + COALESCE(gb.initial_in,0) + COALESCE(gc.qty_in_wip_receipt,0) as qty_rfg,
                         COALESCE(h.qty_rfg_jasa,0) as rfg_jasa,
                         COALESCE(k.qty_adj_out,0) as qty_adj_out,
-                        COALESCE((COALESCE(i.begin_balance,0)) + COALESCE(c.qty_actual,0) + COALESCE(f.qty_subcont_jasa,0) +COALESCE(j.qty_adj_in,0) +COALESCE(c2.qty_wip,0) - COALESCE(ng_map.qty_ng,0) - COALESCE(g.qty_in_checksheet,0) - COALESCE(gb.initial_in,0) - COALESCE(gc.qty_in_wip_receipt,0) - COALESCE(h.qty_rfg_jasa,0)- COALESCE(k.qty_adj_out,0) - COALESCE(outmap.qty_output, 0), 0) as ending_balance
+                        COALESCE(k2.qty_ng_wip,0) as qty_ng_wip,
+                        COALESCE((COALESCE(i.begin_balance,0)) + COALESCE(c.qty_actual,0) + COALESCE(f.qty_subcont_jasa,0) +COALESCE(j.qty_adj_in,0) +COALESCE(c2.qty_wip,0) - COALESCE(ng_map.qty_ng,0) - COALESCE(g.qty_in_checksheet,0) - COALESCE(gb.initial_in,0) - COALESCE(gc.qty_in_wip_receipt,0) - COALESCE(h.qty_rfg_jasa,0)- COALESCE(k.qty_adj_out,0) - COALESCE(k2.qty_ng_wip,0) - COALESCE(outmap.qty_output, 0), 0) as ending_balance
                         FROM item_fg a
                         LEFT JOIN (
                                     select aa.item_fg_id,sum(aa.qty_wo) as qty_wo FROM (
@@ -317,7 +318,7 @@ class Progress_wip extends CI_Controller
 
                         LEFT JOIN (
                                     select aa.item_fg_id,sum(aa.qty_product) as qty_ng FROM (
-                                            select distinct document,item_fg_id, qty_product FROM  item_ng where trans_date between '$filter_from' AND '$filter_to' AND shift like '%$filter_shift%' AND created_by != 'PRD01'
+                                            select distinct document,item_fg_id, qty_product FROM  item_ng where trans_date between '$filter_from' AND '$filter_to' AND shift like '%$filter_shift%' AND kind LIKE 'Ng Process Production'
                                     ) aa group by aa.item_fg_id
                         ) d on a.id = d.item_fg_id
                         LEFT JOIN (
@@ -333,7 +334,7 @@ class Progress_wip extends CI_Controller
                                     FROM item_ng 
                                     WHERE trans_date BETWEEN '$filter_from' AND '$filter_to'
                                     AND shift LIKE '%$filter_shift%'
-                                    AND created_by != 'PRD01'
+                                    AND kind LIKE 'Ng Process Production'
                                 ) aa 
                                 GROUP BY aa.item_fg_id
                             ) d
@@ -410,8 +411,14 @@ class Progress_wip extends CI_Controller
                                     GROUP BY a.item_fg_id
                         ) k on a.id = k.item_fg_id
                         LEFT JOIN (
+                                    select a.item_fg_id,sum(a.qty) as qty_ng_wip 
+                                    FROM wip_adjustment_fg a
+                                    where a.request_date between '$filter_from' AND '$filter_to' and a.transaction_type='NG WIP'
+                                    GROUP BY a.item_fg_id
+                        ) k2 on a.id = k2.item_fg_id
+                        LEFT JOIN (
                                     SELECT a.id,
-                                        COALESCE(e.qty_balance_wip, 0) + COALESCE(c.qty_actual, 0) + COALESCE(c2.qty_wip, 0) + COALESCE(f.qty_subcont_jasa, 0) + COALESCE(j.qty_adj_in, 0) - COALESCE(ng_map.qty_ng,0) - COALESCE(g.qty_in_checksheet, 0) - COALESCE(gb.initial_in, 0) - COALESCE(gc.qty_in_wip_receipt, 0) - COALESCE(h.qty_rfg_jasa, 0) - COALESCE(k.qty_adj_out, 0) - COALESCE(outmap.qty_output, 0) AS begin_balance
+                                        COALESCE(e.qty_balance_wip, 0) + COALESCE(c.qty_actual, 0) + COALESCE(c2.qty_wip, 0) + COALESCE(f.qty_subcont_jasa, 0) + COALESCE(j.qty_adj_in, 0) - COALESCE(ng_map.qty_ng,0) - COALESCE(g.qty_in_checksheet, 0) - COALESCE(gb.initial_in, 0) - COALESCE(gc.qty_in_wip_receipt, 0) - COALESCE(h.qty_rfg_jasa, 0) - COALESCE(k.qty_adj_out, 0) - COALESCE(k2.qty_ng_wip, 0) - COALESCE(outmap.qty_output, 0) AS begin_balance
                                     FROM item_fg a
                                     -- qty_balance_wip pada 2025-04-30 (cutoff)
                                     LEFT JOIN (
@@ -506,7 +513,7 @@ class Progress_wip extends CI_Controller
                                                 FROM item_ng 
                                                 WHERE trans_date >= '2025-05-01' AND trans_date < '$filter_from'
                                                 AND shift LIKE '%$filter_shift%'
-                                                AND created_by != 'PRD01'
+                                                AND kind LIKE 'Ng Process Production'
                                             ) aa 
                                             GROUP BY aa.item_fg_id
                                         ) d
@@ -570,6 +577,15 @@ class Progress_wip extends CI_Controller
                                         AND transaction_type = 'ADJ OUT'
                                         GROUP BY item_fg_id
                                     ) k ON a.id = k.item_fg_id
+
+                                    LEFT JOIN (
+                                        SELECT item_fg_id, SUM(qty) AS qty_ng_wip
+                                        FROM wip_adjustment_fg
+                                        WHERE request_date >= '2025-05-01'
+                                        AND request_date < '$filter_from'
+                                        AND transaction_type = 'NG WIP'
+                                        GROUP BY item_fg_id
+                                    ) k2 ON a.id = k2.item_fg_id
                                 ) i ON a.id = i.id
                         WHERE a.type != 'RM'
                         AND a.status = 0
@@ -615,12 +631,13 @@ class Progress_wip extends CI_Controller
                     <th rowspan="2" colspan="2">Product Name</th>
                     <th rowspan="2" colspan="2">Total WO Qty</th>
                     <th rowspan="2">Begin Balance</th>
-                    <th colspan="2">Actual Production</th>
+                    <th colspan="2">Output Production</th>
                     <th rowspan="2">NG Process</th>
                     <th rowspan="2">Total Production</th>
                     <th rowspan="2">SubCont Jasa</th>
                     <th rowspan="2">ADJ IN</th>
                     <th rowspan="2">NG ASSY</th>
+                    <th rowspan="2">NG WIP</th>
                     <th rowspan="2">OUTPUT ASSY</th>
                     <th rowspan="2">RFG</th>
                     <th rowspan="2">RFG SubCont Jasa</th>
@@ -647,6 +664,7 @@ class Progress_wip extends CI_Controller
                             <td style="text-align:right;">' . number_format($record->subconts_jasa, 2) . '</td>
                             <td style="text-align:right;">' . number_format($record->qty_adj_in, 2) . '</td>
                             <td style="text-align:right;">' . number_format($record->qty_ng_sa, 2) . '</td>
+                            <td style="text-align:right;">' . number_format($record->qty_ng_wip, 2) . '</td>
                             <td style="text-align:right;">' . number_format($record->qty_output, 2) . '</td>
                             <td style="text-align:right;">' . number_format($record->qty_rfg, 2) . '</td>
                             <td style="text-align:right;">' . number_format($record->rfg_jasa, 2) . '</td>
@@ -668,7 +686,7 @@ class Progress_wip extends CI_Controller
                                 <th rowspan="2" >WO / Doc</th>
                                 <th rowspan="2" >WO Qty</th> 
                                 <th rowspan="2" >Begin Balance</th>
-                                <th colspan="2" >Actual Production</th>
+                                <th colspan="2" >Output Production</th>
                                 <th rowspan="2" >NG</th>
                                 <th rowspan="2" >Total Production</th>
                                 <th rowspan="2" >SubCont Jasa</th>
@@ -693,7 +711,7 @@ class Progress_wip extends CI_Controller
 
                 $dataNgs = $this->crud->query("
                                                 select aa.trans_date,aa.document,aa.item_fg_id,sum(aa.qty_product) as qty_ng FROM (
-                                                        select distinct trans_date,document,item_fg_id, qty_product FROM item_ng where item_fg_id='$item_fg_id' and trans_date between '$filter_from' and '$filter_to' AND shift like '%$filter_shift%' AND document like '%$filter_workorder%' AND created_by != 'PRD01'
+                                                        select distinct trans_date,document,item_fg_id, qty_product FROM item_ng where item_fg_id='$item_fg_id' and trans_date between '$filter_from' and '$filter_to' AND shift like '%$filter_shift%' AND document like '%$filter_workorder%' AND kind LIKE 'Ng Process Production'
                                                 ) aa group by aa.document,aa.trans_date,aa.item_fg_id
                 ");
 
@@ -756,7 +774,7 @@ class Progress_wip extends CI_Controller
 
                 foreach ($dataActualProductions as $actualProduction) {//ada wo_no
                     $all_data[] = [
-                        'type' => 'ACTUAL PRODUCTION',
+                        'type' => 'OUTPUT PRODUCTION',
                         'date' => $actualProduction->trans_date,
                         'wo_no' => $actualProduction->wo_no,
                         'wo_qty' => $record->qty_wo,
@@ -1035,7 +1053,7 @@ class Progress_wip extends CI_Controller
                                     <th rowspan="2" >WO / Doc</th>
                                     <th rowspan="2" >WO Qty</th> 
                                     <th rowspan="2" >Begin Balance</th>
-                                    <th colspan="2" >Actual Production</th>
+                                    <th colspan="2" >Output Production</th>
                                     <th rowspan="2" >NG</th>
                                     <th rowspan="2" >Total Production</th>
                                     <th rowspan="2" >SubCont Jasa</th>
@@ -1060,7 +1078,7 @@ class Progress_wip extends CI_Controller
 
                     $dataNgs = $this->crud->query("
                                                     select aa.trans_date,aa.document,aa.item_fg_id,sum(aa.qty_product) as qty_ng FROM (
-                                                            select distinct trans_date,document,item_fg_id, qty_product FROM item_ng where item_fg_id='$item_fg_id' and trans_date between '$filter_from' and '$filter_to' AND shift like '%$filter_shift%' AND document like '%$filter_workorder%' AND created_by != 'PRD01'
+                                                            select distinct trans_date,document,item_fg_id, qty_product FROM item_ng where item_fg_id='$item_fg_id' and trans_date between '$filter_from' and '$filter_to' AND shift like '%$filter_shift%' AND document like '%$filter_workorder%' AND kind LIKE 'Ng Process Production'
                                                     ) aa group by aa.document,aa.trans_date,aa.item_fg_id
                     ");
 
@@ -1123,7 +1141,7 @@ class Progress_wip extends CI_Controller
 
                     foreach ($dataActualProductions as $actualProduction) {//ada wo_no
                         $all_data[] = [
-                            'type' => 'ACTUAL PRODUCTION',
+                            'type' => 'OUTPUT PRODUCTION',
                             'date' => $actualProduction->trans_date,
                             'wo_no' => $actualProduction->wo_no,
                             'wo_qty' => $record->qty_wo,
@@ -1393,7 +1411,7 @@ class Progress_wip extends CI_Controller
                                 <th rowspan="2" >WO / Doc</th>
                                 <th rowspan="2" >WO Qty</th> 
                                 <th rowspan="2" >Begin Balance</th>
-                                <th colspan="2" >Actual Production</th>
+                                <th colspan="2" >Output Production</th>
                                 <th rowspan="2" >NG</th>
                                 <th rowspan="2" >Total Production</th>
                                 <th rowspan="2" >SubCont Jasa</th>
@@ -1417,7 +1435,7 @@ class Progress_wip extends CI_Controller
 
                 $dataNgs = $this->crud->query("
                                                 select aa.trans_date,aa.document,aa.item_fg_id,sum(aa.qty_product) as qty_ng FROM (
-                                                        select distinct trans_date,document,item_fg_id, qty_product FROM item_ng where item_fg_id='$item_fg_id' and trans_date between '$filter_from' and '$filter_to' AND shift like '%$filter_shift%' AND created_by != 'PRD01'
+                                                        select distinct trans_date,document,item_fg_id, qty_product FROM item_ng where item_fg_id='$item_fg_id' and trans_date between '$filter_from' and '$filter_to' AND shift like '%$filter_shift%' AND kind LIKE 'Ng Process Production'
                                                 ) aa group by aa.document,aa.trans_date,aa.item_fg_id
                 ");
 
@@ -1489,7 +1507,7 @@ class Progress_wip extends CI_Controller
 
                 foreach ($dataActualProductions as $actualProduction) {
                     $all_data[] = [
-                        'type' => 'ACTUAL PRODUCTION',
+                        'type' => 'OUTPUT PRODUCTION',
                         'date' => $actualProduction->trans_date,
                         'wo_no' => $actualProduction->wo_no,
                         'wo_qty' => $record->qty_wo,
@@ -1730,7 +1748,7 @@ class Progress_wip extends CI_Controller
 
             $dataNgs = $this->crud->query("
                                             select aa.workorder,aa.trans_date,aa.document,aa.item_fg_id,sum(aa.qty_product) as qty_ng FROM (
-                                                    select distinct workorder,trans_date,document,item_fg_id, qty_product FROM item_ng where item_fg_id='$filter_items' and trans_date between '$filter_from' and '$filter_to' AND shift like '%$filter_shift%' AND workorder like '%$filter_workorder%' AND created_by != 'PRD01'
+                                                    select distinct workorder,trans_date,document,item_fg_id, qty_product FROM item_ng where item_fg_id='$filter_items' and trans_date between '$filter_from' and '$filter_to' AND shift like '%$filter_shift%' AND workorder like '%$filter_workorder%' AND kind LIKE 'Ng Process Production'
                                             ) aa group by aa.document,aa.trans_date,aa.item_fg_id
             ");
 
@@ -2161,7 +2179,7 @@ class Progress_wip extends CI_Controller
 
             $dataNgs = $this->crud->query("
                                             select aa.workorder, aa.trans_date,aa.document,aa.item_fg_id,sum(aa.qty_product) as qty_ng FROM (
-                                                    select distinct workorder,trans_date,document,item_fg_id, qty_product FROM item_ng where item_fg_id='$filter_items' and trans_date between '$filter_from' and '$filter_to' AND shift like '%$filter_shift%' AND created_by != 'PRD01'
+                                                    select distinct workorder,trans_date,document,item_fg_id, qty_product FROM item_ng where item_fg_id='$filter_items' and trans_date between '$filter_from' and '$filter_to' AND shift like '%$filter_shift%' AND kind LIKE 'Ng Process Production'
                                             ) aa group by aa.document,aa.trans_date,aa.item_fg_id
             ");
 
@@ -2603,7 +2621,7 @@ class Progress_wip extends CI_Controller
 
             $dataNgs = $this->crud->query("
                                             select aa.workorder,aa.trans_date,aa.document,aa.item_fg_id,sum(aa.qty_product) as qty_ng FROM (
-                                                    select distinct workorder,trans_date,document,item_fg_id, qty_product FROM item_ng where trans_date between '$filter_from' and '$filter_to' AND shift like '%$filter_shift%' AND workorder like '%$filter_workorder%' AND created_by != 'PRD01'
+                                                    select distinct workorder,trans_date,document,item_fg_id, qty_product FROM item_ng where trans_date between '$filter_from' and '$filter_to' AND shift like '%$filter_shift%' AND workorder like '%$filter_workorder%' AND kind LIKE 'Ng Process Production'
                                             ) aa group by aa.document,aa.trans_date,aa.item_fg_id
             ");
 
@@ -3078,7 +3096,7 @@ class Progress_wip extends CI_Controller
 
                 $dataNgs = $this->crud->query("
                                                 select aa.workorder, aa.trans_date,aa.document,aa.item_fg_id,sum(aa.qty_product) as qty_ng FROM (
-                                                        select distinct workorder,trans_date,document,item_fg_id, qty_product FROM item_ng where item_fg_id='$itemId' and trans_date between '$filter_from' and '$filter_to' AND shift like '%$filter_shift%' AND created_by != 'PRD01'
+                                                        select distinct workorder,trans_date,document,item_fg_id, qty_product FROM item_ng where item_fg_id='$itemId' and trans_date between '$filter_from' and '$filter_to' AND shift like '%$filter_shift%' AND kind LIKE 'Ng Process Production'
                                                 ) aa group by aa.document,aa.trans_date,aa.item_fg_id
                 ");
 
@@ -3464,7 +3482,7 @@ class Progress_wip extends CI_Controller
 
                 $dataNgs = $this->crud->query("
                                                 select aa.workorder, aa.trans_date,aa.document,aa.item_fg_id,sum(aa.qty_product) as qty_ng FROM (
-                                                        select distinct workorder,trans_date,document,item_fg_id, qty_product FROM item_ng where item_fg_id='$itemId' and trans_date between '$filter_from' and '$filter_to' AND shift like '%$filter_shift%' AND created_by != 'PRD01'
+                                                        select distinct workorder,trans_date,document,item_fg_id, qty_product FROM item_ng where item_fg_id='$itemId' and trans_date between '$filter_from' and '$filter_to' AND shift like '%$filter_shift%' AND kind LIKE 'Ng Process Production'
                                                 ) aa group by aa.document,aa.trans_date,aa.item_fg_id
                 ");
 
@@ -3827,7 +3845,7 @@ class Progress_wip extends CI_Controller
 
             $dataNgs = $this->crud->query("
                                             select aa.workorder, aa.trans_date,aa.document,aa.item_fg_id,sum(aa.qty_product) as qty_ng FROM (
-                                                    select distinct workorder,trans_date,document,item_fg_id, qty_product FROM item_ng where item_fg_id='$filter_items' and trans_date between '$filter_from' and '$filter_to' AND shift like '%$filter_shift%' AND created_by != 'PRD01'
+                                                    select distinct workorder,trans_date,document,item_fg_id, qty_product FROM item_ng where item_fg_id='$filter_items' and trans_date between '$filter_from' and '$filter_to' AND shift like '%$filter_shift%' AND kind LIKE 'Ng Process Production'
                                             ) aa group by aa.document,aa.trans_date,aa.item_fg_id
             ");
 
@@ -4103,7 +4121,7 @@ class Progress_wip extends CI_Controller
                         <th rowspan="2">Part Name</th>
                         <th rowspan="2">Uom</th>
                         <th rowspan="2">WO Qty</th>
-                        <th colspan="2">ACTUAL PRODUCTION</th>
+                        <th colspan="2">OUTPUT PRODUCTION</th>
                         <th rowspan="2">NG Process</th>
                         <th rowspan="2">TOTAL PRODUCTION</th>
                         <th rowspan="2">RFG QTY</th>
@@ -4224,7 +4242,7 @@ class Progress_wip extends CI_Controller
 
             $dataNgs = $this->crud->query("
                                             select aa.workorder,aa.trans_date,aa.document,aa.item_fg_id,sum(aa.qty_product) as qty_ng FROM (
-                                                    select distinct workorder,trans_date,document,item_fg_id, qty_product FROM item_ng where trans_date between '$filter_from' and '$filter_to' AND shift like '%$filter_shift%' AND workorder like '%$filter_workorder%' AND created_by != 'PRD01'
+                                                    select distinct workorder,trans_date,document,item_fg_id, qty_product FROM item_ng where trans_date between '$filter_from' and '$filter_to' AND shift like '%$filter_shift%' AND workorder like '%$filter_workorder%' AND kind LIKE 'Ng Process Production'
                                             ) aa group by aa.document,aa.trans_date,aa.item_fg_id
             ");
 
@@ -4500,7 +4518,7 @@ class Progress_wip extends CI_Controller
                         <th rowspan="2">Part Name</th>
                         <th rowspan="2">Uom</th>
                         <th rowspan="2">WO Qty</th>
-                        <th colspan="2">ACTUAL PRODUCTION</th>
+                        <th colspan="2">OUTPUT PRODUCTION</th>
                         <th rowspan="2">NG Process</th>
                         <th rowspan="2">TOTAL PRODUCTION</th>
                         <th rowspan="2">RFG QTY</th>
@@ -4658,7 +4676,7 @@ class Progress_wip extends CI_Controller
                         <th rowspan="2">Part Name</th>
                         <th rowspan="2">Uom</th>
                         <th rowspan="2">WO Qty</th>
-                        <th colspan="2">ACTUAL PRODUCTION</th>
+                        <th colspan="2">OUTPUT PRODUCTION</th>
                         <th rowspan="2">NG Process</th>
                         <th rowspan="2">TOTAL PRODUCTION</th>
                         <th rowspan="2">RFG QTY</th>
@@ -4675,7 +4693,7 @@ class Progress_wip extends CI_Controller
 
                 $dataNgs = $this->crud->query("
                                                 select aa.workorder, aa.trans_date,aa.document,aa.item_fg_id,sum(aa.qty_product) as qty_ng FROM (
-                                                        select distinct workorder,trans_date,document,item_fg_id, qty_product FROM item_ng where item_fg_id='$itemId' and trans_date between '$filter_from' and '$filter_to' AND shift like '%$filter_shift%' AND created_by != 'PRD01'
+                                                        select distinct workorder,trans_date,document,item_fg_id, qty_product FROM item_ng where item_fg_id='$itemId' and trans_date between '$filter_from' and '$filter_to' AND shift like '%$filter_shift%' AND kind LIKE 'Ng Process Production'
                                                 ) aa group by aa.document,aa.trans_date,aa.item_fg_id
                 ");
 
@@ -5070,7 +5088,7 @@ class Progress_wip extends CI_Controller
 
                 $dataNgs = $this->crud->query("
                                                 select aa.workorder, aa.trans_date,aa.document,aa.item_fg_id,sum(aa.qty_product) as qty_ng FROM (
-                                                        select distinct workorder,trans_date,document,item_fg_id, qty_product FROM item_ng where item_fg_id='$itemId' and trans_date between '$filter_from' and '$filter_to' AND shift like '%$filter_shift%' AND created_by != 'PRD01'
+                                                        select distinct workorder,trans_date,document,item_fg_id, qty_product FROM item_ng where item_fg_id='$itemId' and trans_date between '$filter_from' and '$filter_to' AND shift like '%$filter_shift%' AND kind LIKE 'Ng Process Production'
                                                 ) aa group by aa.document,aa.trans_date,aa.item_fg_id
                 ");
 

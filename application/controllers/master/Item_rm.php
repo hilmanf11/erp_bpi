@@ -49,6 +49,13 @@ class Item_rm extends CI_Controller
         echo json_encode($send);
     }
 
+    public function readsnotfg()
+    {
+        $post = isset($_POST['q']) ? $_POST['q'] : "";
+        $send = $this->crud->query("SELECT * FROM item_categories WHERE name LIKE '%$post%' AND number != 'FG' AND `status` = '0'");
+        echo json_encode($send);
+    }
+
     public function readItems()
     {
        $post = isset($_POST['q']) ? $_POST['q'] : "";
