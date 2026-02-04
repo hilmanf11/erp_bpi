@@ -246,3 +246,6 @@ add NULL if checksheet number and wo no is empty ([dcb5fe4f](https://github.com/
 
 ### [2026-02-04]
 - **Rizki Puji**: Refactor: fix static cuttof date and calc balance on Report Bank Statements ([3d8b6b43](https://github.com/hilmanf11/erp_bpi/commit/3d8b6b438f938e8778271e6adb5f2fbda0607e54))
+
+### [2026-02-04]
+- **Rizki Puji**: Feature: add rate box trigger Add to Journal Sales Invoices ([76383b41](https://github.com/hilmanf11/erp_bpi/commit/76383b418e9323eb3ea3c3211f3e0d04df430e86))
