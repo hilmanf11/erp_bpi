@@ -117,14 +117,14 @@ class Sales_invoices extends CI_Controller
     // Get Rate (block hijau ketika klik button Add to Journal)
     function readExchangeRate()
     {
-        $receipt_date = $this->input->post('receipt_date');
+        $trans_date = $this->input->post('trans_date');
         $currency = $this->input->post('currency');
 
         $this->db->select('middle, currency_from, currency_to');
         $this->db->from('exchange_rates');
         $this->db->where('currency_from', $currency);
         $this->db->where('currency_to', 'IDR');
-        $this->db->where("'$receipt_date' BETWEEN start_date AND end_date", null, false); // penting: raw SQL
+        $this->db->where("'$trans_date' BETWEEN start_date AND end_date", null, false); // penting: raw SQL
 
         $query = $this->db->get()->row();
 

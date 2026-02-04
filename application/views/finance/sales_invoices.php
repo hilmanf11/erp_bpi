@@ -1484,24 +1484,23 @@
                     }
                 });
 
-                console.log("AddJournal currency: ", currency);
-                console.log("AddJournal trans_date: ", trans_date);
+                // Rate di Box Hijau jika selain IDR
+                if (currency != 'IDR') {
+                    $.ajax({
+                        type: "post",
+                        url: "<?= base_url('finance/sales_invoices/readExchangeRate') ?>",
+                        data: "trans_date=" + trans_date + "&currency=" + currency,
+                        dataType: "json",
+                        success: function(exchange) {
+                            console.log(exchange.label);
+                            console.log(exchange.amount);
 
-                // Rate di Box Hijau
-                $.ajax({
-                    type: "post",
-                    url: "<?= base_url('finance/sales_invoices/readExchangeRate') ?>",
-                    data: "trans_date=" + trans_date + "&currency=" + currency,
-                    dataType: "json",
-                    success: function(exchange) {
-                        console.log(exchange.label);
-                        console.log(exchange.amount);
-
-                        $("#rate").numberbox('setValue', exchange.amount);
-                        $("#exchange").html(exchange.label);
-                        $("#showExchange").show();
-                    }
-                });
+                            $("#rate").numberbox('setValue', exchange.amount);
+                            $("#exchange").html(exchange.label);
+                            $("#showExchange").show();
+                        }
+                    });
+                }
                 
                 
                 // 3. Setup Variabel dan Map Jurnal
