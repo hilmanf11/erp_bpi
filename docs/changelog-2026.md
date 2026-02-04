@@ -234,3 +234,6 @@ add NULL if checksheet number and wo no is empty ([dcb5fe4f](https://github.com/
 
 ### [2026-02-04]
 - **kurniawan**: Update Master item ([7fa98601](https://github.com/hilmanf11/erp_bpi/commit/7fa98601d5169e79cc271107a1fe29036a0c3431))
+
+### [2026-02-04]
+- **Rizki Puji**: Refactor: Report Bank Statements and Initial Balance without Begin AP Begin AR ([e95505f0](https://github.com/hilmanf11/erp_bpi/commit/e95505f01f3ca8f63f455c7cb36b78c29fc7f9ff))
