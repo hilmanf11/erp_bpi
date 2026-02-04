@@ -237,3 +237,6 @@ add NULL if checksheet number and wo no is empty ([dcb5fe4f](https://github.com/
 
 ### [2026-02-04]
 - **Rizki Puji**: Refactor: Report Bank Statements and Initial Balance without Begin AP Begin AR ([e95505f0](https://github.com/hilmanf11/erp_bpi/commit/e95505f01f3ca8f63f455c7cb36b78c29fc7f9ff))
+
+### [2026-02-04]
+- **Rizki Puji**: Fixing: Opening Balance date on Report Bank Statements ([3cb8adec](https://github.com/hilmanf11/erp_bpi/commit/3cb8adec49f7c591bb207b371389462ace5f03c1))
