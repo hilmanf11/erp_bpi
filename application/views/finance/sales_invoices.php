@@ -743,8 +743,18 @@
         </table>
 
         <div style="width: 50%; float: left; margin-top:20px;">
-            <a style="width: 100%;" class="easyui-linkbutton c2" onclick="addJournal()">Add to Journal</a>
-            <br><br>
+            <div style="display: flex; align-items: center; gap: 10px;">
+                <a class="easyui-linkbutton c2" onclick="addJournal()" style="width:50%; padding: 10px 20px;">
+                    Add to Journal
+                </a>
+                <div style="width:50%; border:4px solid green; padding:10px; min-width: 200px;" id="showExchange">
+                    <p style="font-size: 16px !important; margin:0;">
+                        <b style="font-size: 16px !important;" id="exchange"></b>
+                    </p>
+                </div>
+            </div>
+
+            <br><br>            
             <table id="dg3" class="easyui-datagrid" title="Journal Lists" style="width: 100%;" data-options="singleSelect: true" toolbar="#toolbar3"></table>
 
             <div class="fitem">
@@ -858,6 +868,7 @@
 
         $('#dg2').datagrid('loadData', []);
         $('#frm_insert').form('clear');
+        $("#showExchange").hide();
         
         $('#disc_pr').numberbox('setValue', 0); // initial discount 0
 
@@ -1472,6 +1483,26 @@
                         }
                     }
                 });
+
+                console.log("AddJournal currency: ", currency);
+                console.log("AddJournal trans_date: ", trans_date);
+
+                // Rate di Box Hijau
+                $.ajax({
+                    type: "post",
+                    url: "<?= base_url('finance/sales_invoices/readExchangeRate') ?>",
+                    data: "trans_date=" + trans_date + "&currency=" + currency,
+                    dataType: "json",
+                    success: function(exchange) {
+                        console.log(exchange.label);
+                        console.log(exchange.amount);
+
+                        $("#rate").numberbox('setValue', exchange.amount);
+                        $("#exchange").html(exchange.label);
+                        $("#showExchange").show();
+                    }
+                });
+                
                 
                 // 3. Setup Variabel dan Map Jurnal
                 var total_revenue_net = total_sub_discount - down_payment; 
@@ -2930,7 +2961,10 @@
         const taxes = parseFloat($("#taxes").numberbox('getValue')) || 0;
         const journalTypeId = $("#journal_type").combobox('getValue');
 
+        /** -- existing validation 
         if (!deliveryNoteNo || !transDate || !dueDate || !taxes) { // Check for empty values directly
+        */
+        if (!deliveryNoteNo || !transDate || !dueDate) {
             toastr.info('Please complete all required data (Delivery Note, Trans Date, Due Date, Taxes).');
             return;
         }

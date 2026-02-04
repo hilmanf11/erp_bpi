@@ -114,6 +114,36 @@ class Sales_invoices extends CI_Controller
         echo json_encode($records);
     }
 
+    // Get Rate (block hijau ketika klik button Add to Journal)
+    function readExchangeRate()
+    {
+        $receipt_date = $this->input->post('receipt_date');
+        $currency = $this->input->post('currency');
+
+        $this->db->select('middle, currency_from, currency_to');
+        $this->db->from('exchange_rates');
+        $this->db->where('currency_from', $currency);
+        $this->db->where('currency_to', 'IDR');
+        $this->db->where("'$receipt_date' BETWEEN start_date AND end_date", null, false); // penting: raw SQL
+
+        $query = $this->db->get()->row();
+
+        if ($query) {
+            $amount = $query->middle;
+            $currency_from = $query->currency_from;
+            $currency_to = $query->currency_to;
+        } else {
+            $amount = 0;
+            $currency_from = '-';
+            $currency_to = '-';
+        }
+
+        echo json_encode([
+            'amount' => $amount,
+            'label' => "Rate $currency_from to $currency_to: Rp. " . number_format($amount, 2)
+        ]);
+    }
+
     // public function readDelivery()
     // {
     //     $post = isset($_POST['q']) ? $_POST['q'] : "";
