@@ -1,6 +1,16 @@
 <?php
 date_default_timezone_set("Asia/Bangkok");
 defined('BASEPATH') or exit('No direct script access allowed');
+
+/**
+ * @property CI_Input $input
+ * @property CI_Output $output
+ * @property CI_Loader $load
+ * @property CI_Session $session
+ * @property CI_DB_query_builder $db
+ * @property CI_Form_validation $form_validation
+ * @property Crud $crud
+ */
 class Report_general_ledgers extends CI_Controller
 {
     public function __construct()
@@ -261,6 +271,7 @@ class Report_general_ledgers extends CI_Controller
             $this->db->select('*');
             $this->db->from('account_coa');
             $this->db->where("account_number", $filter_account_number);
+            $this->db->where("starting_date <=", $filter_before); // Get Begin Balance before Y-01-01
             $account_coa = $this->db->get()->row();
             if (!$account_coa) {
                 echo "<h3 style='font-family:monospace;'> Account Number ". $filter_account_number. " is unavailable! </h3>";

@@ -1,6 +1,16 @@
 <?php
 date_default_timezone_set("Asia/Bangkok");
 defined('BASEPATH') or exit('No direct script access allowed');
+
+/**
+ * @property CI_Input $input
+ * @property CI_Output $output
+ * @property CI_Loader $load
+ * @property CI_Session $session
+ * @property CI_DB_query_builder $db
+ * @property CI_Form_validation $form_validation
+ * @property Crud $crud
+ */
 class Report_bank_statements extends CI_Controller
 {
     public function __construct()
@@ -50,7 +60,20 @@ class Report_bank_statements extends CI_Controller
         $time_start = new DateTime($filter_from);
         $time_to = new DateTime($filter_to);
 
+        /** -- existing 
         $account_coa = $this->crud->read("account_coa", [], ["account_number" => $filter_account]);
+        */
+        
+        // Modifikasi: Sesuaikan beginning balance per 2026-01-01 berdasarkan dari Account Bank
+        $filter_before = date("Y-01-01", strtotime($filter_from));
+
+        $this->db->select('a.*, b.balance, b.balance_local');
+        $this->db->from('account_coa a');
+        $this->db->join('account_banks b', 'a.account_number = b.account_number');
+        $this->db->where('a.account_number', $filter_account);
+        $this->db->where('a.starting_date <', $filter_before);
+        $query = $this->db->get();
+        $account_coa = $query->row();
 
         $ar_receipt_begin = $this->crud->query("SELECT z.account_number, 
                 (SUM(z.local_debit) - SUM(z.local_credit)) as local_begin, 
@@ -81,8 +104,15 @@ class Report_bank_statements extends CI_Controller
 
         $datas = array();
         $processed_gl_nos = []; // Array untuk melacak GL No yang sudah diproses
+
+        /** -- existing
         $coa_original = (@$account_coa->original_debit - @$account_coa->original_kredit);
         $coa_local = (@$account_coa->local_debit - @$account_coa->local_kredit);
+        */
+        // Get from Account Banks
+        $coa_original = $account_coa->balance ?? 0;
+        $coa_local    = $account_coa->balance_local ?? 0;
+
         $ar_begin_local = @$ar_receipt_begin[0]->local_begin;
         $ar_begin_original = @$ar_receipt_begin[0]->original_begin;
         $ap_begin_local = @$ap_payment_begin[0]->local_begin;
@@ -155,10 +185,15 @@ class Report_bank_statements extends CI_Controller
             $time_start->modify('+1 day');
         }
 
-        $account = $this->crud->read('account_coa', [], ["account_number" => $filter_account]);
 
+        /** -- exisitng
         $opening_balance_original = ((@$account_coa->original_debit - @$account_coa->original_kredit) + (@$ar_receipt_begin[0]->original_begin + @$ap_payment_begin[0]->original_begin));
         $opening_balance_local = ((@$account_coa->local_debit - @$account_coa->local_kredit) + (@$ar_receipt_begin[0]->local_begin + @$ap_payment_begin[0]->local_begin) + @$journal_posting_begin[0]->local_begin);
+        */
+        // Get dari Account Banks
+        $opening_balance_original = ((@$account_coa->balance) + (@$ar_receipt_begin[0]->original_begin + @$ap_payment_begin[0]->original_begin));
+        $opening_balance_local = ((@$account_coa->balance_local) + (@$ar_receipt_begin[0]->local_begin + @$ap_payment_begin[0]->local_begin) + @$journal_posting_begin[0]->local_begin);
+        
 
         //Config
         $this->db->select('*');
@@ -196,12 +231,12 @@ class Report_bank_statements extends CI_Controller
                 <tr>
                     <td width="150">Account No</td>
                     <td width="5">:</td>
-                    <td>'.$account->account_number.'</td>
+                    <td>'.$account_coa->account_number.'</td>
                 </tr>
                 <tr>
                     <td>Account Name</td>
                     <td>:</td>
-                    <td>'.$account->account_name.'</td>
+                    <td>'.$account_coa->account_name.'</td>
                 </tr>
             </table>
             <br>
