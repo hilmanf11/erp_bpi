@@ -228,3 +228,6 @@ add NULL if checksheet number and wo no is empty ([dcb5fe4f](https://github.com/
 
 ### [2026-02-03]
 - **kurniawan**: Update Progress_wip.php ([059949b5](https://github.com/hilmanf11/erp_bpi/commit/059949b5db013da04b39afac070fda11b41a09ad))
+
+### [2026-02-04]
+- **Rizki Puji**: Fixing: begin balance Report General Ledgers, Trial Balances, Bank Statements ([32d290aa](https://github.com/hilmanf11/erp_bpi/commit/32d290aadbe996acc0b4014e3136ca8b39e90fb2))
