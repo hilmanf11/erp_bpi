@@ -240,3 +240,6 @@ add NULL if checksheet number and wo no is empty ([dcb5fe4f](https://github.com/
 
 ### [2026-02-04]
 - **Rizki Puji**: Fixing: Opening Balance date on Report Bank Statements ([3cb8adec](https://github.com/hilmanf11/erp_bpi/commit/3cb8adec49f7c591bb207b371389462ace5f03c1))
+
+### [2026-02-04]
+- **Hilman Fadillah**: Merge branch 'main' of https://github.com/hilmanf11/erp_bpi ([81e9327b](https://github.com/hilmanf11/erp_bpi/commit/81e9327b17766a0c8f30a81b0a2c6156ee21920c))
