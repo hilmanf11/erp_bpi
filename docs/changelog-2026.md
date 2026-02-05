@@ -255,3 +255,6 @@ add NULL if checksheet number and wo no is empty ([dcb5fe4f](https://github.com/
 
 ### [2026-02-05]
 - **Rizki Puji**: Chore: add compare balance check on Report Bank Statements ([2ff43bbd](https://github.com/hilmanf11/erp_bpi/commit/2ff43bbde98d91640085a07c8610bb28f92dadb7))
+
+### [2026-02-05]
+- **Rizki Puji**: Feature: add rates local_debit local_credit Sales Invoice ([6a59dfd3](https://github.com/hilmanf11/erp_bpi/commit/6a59dfd38ee516b3fcc150983e97fc3bcbaaf0a7))
