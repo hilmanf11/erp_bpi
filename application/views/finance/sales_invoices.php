@@ -77,7 +77,7 @@
 </style>
 
 <!-- FORM FILTER DATAGRID -->
-<div id="toolbar" style="height: 270px; padding:10px;">
+<div id="toolbar" style="padding:10px;">
     <!-- <div style="width: 100%; display: grid; grid-template-columns: auto auto auto; grid-gap: 5px; display: flex;"> -->
 
     <fieldset style="width: 99%; border:2px solid #d0d0d0; margin-bottom: 5px; margin-top: 5px; border-radius:4px;">
@@ -134,8 +134,10 @@
                 <span style="width:35%; display:inline-block;">Faktur No</span>
                 <input style="width:60%;" name="filter_faktur_no" id="filter_faktur_no" class="easyui-combobox">
             </div>
+            
         </div>
     </fieldset>
+
     <?= $button ?>
     <a href="javascript:void(0)" class="easyui-linkbutton" data-options="plain:true" onclick="excelDetail()"><i class="fa fa-file"></i> Export Excel Detail</a>
     <a href="javascript:void(0)" class="easyui-linkbutton" data-options="plain:true" onclick="excelJournal()"><i class="fa fa-file"></i> Export Excel Journal</a>
@@ -742,8 +744,8 @@
             </thead>
         </table>
 
-        <div style="width: 50%; float: left; margin-top:20px;">
-            <div style="display: flex; align-items: center; gap: 10px;">
+        <div style="width: 65%; float: left; margin-top: 20px;">
+            <div style="display: flex; align-items: center; gap: 15px;">
                 <a class="easyui-linkbutton c2" onclick="addJournal()" style="width:50%; padding: 10px 20px;">
                     Add to Journal
                 </a>
@@ -754,6 +756,8 @@
                 </div>
             </div>
 
+            <?php
+            /* -- existing table Add to Journal
             <br><br>            
             <table id="dg3" class="easyui-datagrid" title="Journal Lists" style="width: 100%;" data-options="singleSelect: true" toolbar="#toolbar3"></table>
 
@@ -762,9 +766,71 @@
                 <input style="width:18%;" id="balance_debit" name="balance_debit" readonly class="easyui-numberbox" data-options="precision:2,groupSeparator:'.', decimalSeparator:','">
                 <input style="width:18%;" id="balance_credit" name="balance_credit" readonly class="easyui-numberbox" data-options="precision:2,groupSeparator:'.', decimalSeparator:','">
             </div>
+            */
+            ?>
+
+            <br>
+            <table id="dg3" class="easyui-datagrid" title="Journal Lists" style="width: 100%;" data-options="singleSelect: true" toolbar="#toolbar3">
+                <thead>
+                    <tr>
+                        <th rowspan="2" data-options="field:'account_number',halign:'center',width:100, editor: {
+                            type: 'combogrid',
+                            options: {
+                                url: '<?= base_url('finance/account_coa/reads') ?>',
+                                panelWidth: 320,
+                                idField: 'account_number',
+                                textField: 'account_number',
+                                mode: 'remote',
+                                fitColumns: true,
+                                prompt: 'Choose Account No',
+                                columns: [
+                                    [{
+                                        field: 'account_number',
+                                        title: 'Account No',
+                                        width: 100
+                                    }, {
+                                        field: 'account_name',
+                                        title: 'Account Name',
+                                        width: 200
+                                    }]
+                                ],
+                                onSelect: function(value, rows) {
+                                    var dg = $('#dg3');
+                                    var row = dg.datagrid('getSelected');
+                                    var rowIndex = dg.datagrid('getRowIndex', row);
+                                    var ed = dg.datagrid('getEditor', {
+                                        index: rowIndex,
+                                        field: 'account_name'
+                                    });
+
+                                    $(ed.target).textbox('setValue', rows.account_name);
+                                }
+                            }
+                        }">Account No</th>
+                        <th rowspan="2" data-options="field:'account_name',halign:'center',width:200, editor: {type: 'textbox', options: {readonly: true}}">Account Name</th>
+                        <th colspan="2" data-options="field:'',width:150">Original Currency</th>
+                        <th colspan="2" data-options="field:'',width:150">Local Currency</th>
+                        <th rowspan="2" data-options="field:'flag',width:50,halign:'center',editor: {type: 'numberbox', options: {required: true}}">Index</th>
+                    </tr>
+                    <tr>
+                        <th data-options="field:'debit',width:120,halign:'center',align:'right',formatter:numberformat,editor: {type: 'numberbox', options: {required: true, precision:2}}">Debit</th>
+                        <th data-options="field:'credit',width:120,halign:'center',align:'right',formatter:numberformat,editor: {type: 'numberbox', options: {required: true, precision:2}}">Credit</th>
+                        <th data-options="field:'local_debit',width:120,halign:'center',align:'right',formatter:numberformat,editor: {type: 'numberbox', options: {required: true, precision:2}}">Debit</th>
+                        <th data-options="field:'local_credit',width:120,halign:'center',align:'right',formatter:numberformat,editor: {type: 'numberbox', options: {required: true, precision:2}}">Credit</th>
+                    </tr>
+                </thead>
+            </table>
+
+            <div class="fitem">
+                <b style="width:48%; display:inline-block; padding-left: 50px;">BALANCE TOTAL</b>
+                <input style="width:11%;" id="balance_debit" name="balance_debit" readonly class="easyui-numberbox" data-options="precision:2,groupSeparator:'.', decimalSeparator:','">
+                <input style="width:11%;" id="balance_credit" name="balance_credit" readonly class="easyui-numberbox" data-options="precision:2,groupSeparator:'.', decimalSeparator:','">
+                <input style="width:11%;" id="local_balance_debit" name="local_balance_debit" readonly class="easyui-numberbox" data-options="precision:2,groupSeparator:'.', decimalSeparator:','">
+                <input style="width:11%;" id="local_balance_credit" name="local_balance_credit" readonly class="easyui-numberbox" data-options="precision:2,groupSeparator:'.', decimalSeparator:','">
+            </div>
         </div>
 
-        <div style="width: 30%; display: grid; grid-template-columns: auto auto auto; grid-gap: 5px; display: flex; float: right; margin-top:20px;">
+        <div style="width: 33%; float: right; margin-top: 20px;">
             <fieldset style="width:100%; border:1px solid #d0d0d0; margin-bottom: 10px; border-radius:4px;">
                 <div style="width: 100%; float: left;">
                     <div class="fitem">
@@ -1433,6 +1499,8 @@
                         account_number: rows[i].account_number,
                         account_name: rows[i].account_name,
                         account_type: rows[i].account_type,
+                        currency: rows[i].currency,
+                        trans_date: trans_date,
                         total: total_detail
                     }
                     
@@ -1614,6 +1682,8 @@
                         account_name: "UANG MUKA PENJUALAN",
                         debit: parseFloat(down_payment.toFixed(4)),
                         credit: 0,
+                        local_debit: parseFloat(down_payment.toFixed(4)),
+                        local_credit: 0,
                         flag: "0",
                     };
                 }
@@ -1625,6 +1695,8 @@
                         account_name: "PPH 23",
                         debit: parseFloat(total_pph.toFixed(4)),
                         credit: 0,
+                        local_debit: parseFloat(down_payment.toFixed(4)),
+                        local_credit: 0,
                         flag: "0",
                     };
                 }
@@ -2001,7 +2073,20 @@
         }
     }
 
+    // Table Journal List on click Preview and Add to Journal
     function addTable2(link = "") {
+        var lastIndex;
+        var dg = $('#dg3').datagrid({
+            url: link,
+            singleSelect: true,
+            onClickCell: onClickCell2,
+            onBeginEdit: function(rowIndex, row) {
+                balance_journal();
+            }
+        });
+    }
+
+    function addTable2_existing(link = "") {
         var lastIndex;
         var dg = $('#dg3').datagrid({
             url: link,
@@ -2110,13 +2195,19 @@
         if (totalrows > 0) {
             var debit = 0;
             var credit = 0;
+            var local_debit = 0;
+            var local_credit = 0;
             for (let i = 0; i < totalrows; i++) {
                 debit += parseFloat(rows[i].debit);
                 credit += parseFloat(rows[i].credit);
+                local_debit += parseFloat(rows[i].local_debit);
+                local_credit += parseFloat(rows[i].local_credit);
             }
 
             $("#balance_debit").numberbox('setValue', debit);
             $("#balance_credit").numberbox('setValue', credit);
+            $("#local_balance_debit").numberbox('setValue', local_debit);
+            $("#local_balance_credit").numberbox('setValue', local_credit);
         }
     }
 
@@ -4075,7 +4166,7 @@
             textField: 'name',
             prompt: "Choose Journal Types",
             onSelect: function(row) {
-                addTable2('<?= base_url('finance/purchase_invoices/readJournal/') ?>' + window.btoa(row.id));
+                addTable2('<?= base_url('finance/sales_invoices/readJournal/') ?>' + window.btoa(row.id));
             }
         });
 

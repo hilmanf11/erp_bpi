@@ -445,6 +445,8 @@ class Sales_invoices extends CI_Controller
             JOIN account_coa b ON a.account_number = b.account_number 
             WHERE a.account_number LIKE '%$post%' and a.journal_type_id = '$journal_type_id' ORDER BY a.flag ASC");
 
+        $arr = [];
+        if (!empty($journals)) {
         foreach ($journals as $journal) {
             $arr[] = array(
                 "account_number" => $journal->account_number,
@@ -452,7 +454,10 @@ class Sales_invoices extends CI_Controller
                 "debit" => "0.00",
                 "credit" => "0.00",
                 "flag" => $journal->flag,
+                "local_debit"  => "0.00",
+                "local_credit" => "0.00",
             );
+        }
         }
 
         echo json_encode($arr);
@@ -519,6 +524,27 @@ class Sales_invoices extends CI_Controller
                 $account_number = $jsonData["account_number"];
                 $account_name = $jsonData["account_name"];
                 $total = $jsonData["total"];
+                $currency = $jsonData["currency"];
+                $trans_date = $jsonData["trans_date"];
+
+                // Total Local jika bukan IDR dikali Exchange Rates
+                if ($currency != "IDR") {
+                    $this->db->select('middle');
+                    $this->db->from('exchange_rates');
+                    $this->db->where('currency_from', $currency);
+                    $this->db->where('currency_to', 'IDR');
+                    $this->db->where("'$trans_date' BETWEEN start_date AND end_date", null, false);
+
+                    $exchange = $this->db->get()->row();
+
+                    if ($exchange) {
+                        $total_local = ($total * $exchange->middle);
+                    } else {
+                        $total_local = 0;
+                    }
+                } else {
+                    $total_local = $total;
+                }
 
                 // Inisialisasi entri jika belum ada
                 if (!isset($mergedData[$account_number])) {
@@ -527,6 +553,8 @@ class Sales_invoices extends CI_Controller
                         "account_name" => $account_name,
                         "debit" => 0,
                         "credit" => 0,
+                        "local_debit"  => 0,
+                        "local_credit" => 0,
                         "flag" => $flag++, 
                     ];
                 }
@@ -534,8 +562,11 @@ class Sales_invoices extends CI_Controller
                 // Tambahkan nilai ke Debit atau Credit yang sesuai
                 if ($jsonData['account_type'] == "DEBIT") {
                     $mergedData[$account_number]["debit"] += $total;
+                    $mergedData[$account_number]["local_debit"] += $total_local;
+
                 } elseif ($jsonData['account_type'] == "CREDIT") {
                     $mergedData[$account_number]["credit"] += $total;
+                    $mergedData[$account_number]["local_credit"] += $total_local;
                 }
             }
 
@@ -557,8 +588,11 @@ class Sales_invoices extends CI_Controller
 
                 if ($jsonData['account_type'] == "DEBIT") {
                     $aggregated_invoices[$account_number]["debit"] += $total;
+                    $aggregated_invoices[$account_number]["local_debit"] += $total;
+
                 } elseif ($jsonData['account_type'] == "CREDIT") {
                     $aggregated_invoices[$account_number]["credit"] += $total;
+                    $aggregated_invoices[$account_number]["local_credit"] += $total;
                 }
             }
 
@@ -584,6 +618,8 @@ class Sales_invoices extends CI_Controller
                     "debit" => round($total_debit, 4),
                     "credit" => round($total_credit, 4),
                     "flag" => $journal['flag'],
+                    "local_debit"  => round($total_debit, 4),
+                    "local_credit" => round($total_credit, 4),
                 ];
             }
             
@@ -598,6 +634,8 @@ class Sales_invoices extends CI_Controller
                     "debit" => round($data['debit'], 4),
                     "credit" => round($data['credit'], 4),
                     "flag" => $flag_counter++,
+                    "local_debit"  => round($data['debit'], 4),
+                    "local_credit" => round($data['credit'], 4),
                 ];
             }
         }
