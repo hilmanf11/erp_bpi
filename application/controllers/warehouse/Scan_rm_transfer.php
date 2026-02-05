@@ -83,102 +83,7 @@ class Scan_rm_transfer extends CI_Controller
             echo json_encode($result);
         }
     }
-    // public function datatables($label_no = "")
-    // {
-    //     $date = date("Y-m-d");
-    //     $purchase_order_label = $this->crud->read('purchase_order_labels', [], ["label_no" => base64_decode($label_no)]);
-    //     //Select Query
-    //     $this->db->select('a.label_no, b.receipt_no, b.bc_kind, b.bc_document, b.bc_date, b.po_no, d.number as item_number, d.name as item_name, d.uom, a.qty, a.created_by, a.created_date');
-    //     $this->db->from('scan_rm_transfer a');
-    //     $this->db->join('purchase_order_labels c', 'a.label_no = c.label_no');
-    //     $this->db->join('item_rm d', 'b.item_rm_id = d.id');
-    //     $this->db->where('a.deleted', 0);
-    //     $this->db->where('a.status', 0);
-    //     $this->db->like('a.created_date', $date);
-    //     $this->db->where('a.receipt_id', @$purchase_order_label->receipt_id);
-    //     $this->db->group_by('a.label_no');
-    //     //Total Data
-    //     $totalRows = $this->db->count_all_results('', false);
-    //     //Get Data Array
-    //     $records = $this->db->get()->result_array();
-
-    //     if (!$records) {
-    //         $return_material_labels = $this->crud->read('return_material_labels', [], ["label_no" => base64_decode($label_no)]);
-    //         $this->db->select('a.label_no, b.return_no as receipt_no, a.po_no, d.number as item_number, d.name as item_name, d.uom, a.qty, a.created_by, a.created_date');
-    //         $this->db->from('scan_rm_transfer a');
-    //         $this->db->join('return_materials b', 'a.receipt_id = b.return_id and a.receipt_no = b.return_no');
-    //         $this->db->join('return_material_labels c', 'a.label_no = c.label_no');
-    //         $this->db->join('item_rm d', 'b.item_rm_id = d.id');
-    //         $this->db->where('a.deleted', 0);
-    //         $this->db->where('a.status', 0);
-    //         $this->db->like('a.created_date', $date);
-    //         $this->db->where('a.receipt_id', @$return_material_labels->return_id);
-    //         $this->db->group_by('a.label_no');
-    //         //Total Data
-    //         $totalRows = $this->db->count_all_results('', false);
-    //         //Get Data Array
-    //         $records = $this->db->get()->result_array();
-
-    //         if (!$records) {
-    //             $new_barcode = $this->crud->read('new_barcode', [], ["label_no" => base64_decode($label_no)]);
-    //             $this->db->select('a.label_no, d.number as item_number, d.name as item_name, d.uom, a.qty, a.created_by, a.created_date');
-    //             $this->db->from('new_barcode a');
-    //             $this->db->join('item_rm d', 'a.item_rm_id = d.id');
-    //             $this->db->where('a.label_no', @$new_barcode->label_no);
-    //             $this->db->where('a.deleted', 0);
-    //             $this->db->where('a.status', 0);
-    //             // $this->db->like('a.created_date', $date);
-    //             // $this->db->group_by('a.label_no');
-    //             //Total Data
-    //             $totalRows = $this->db->count_all_results('', false);
-    //             //Get Data Array
-    //             $records = $this->db->get()->result_array();
-    //         }
-    //     }
-
-    //     //Mapping Data
-    //     $result['total'] = $totalRows;
-    //     $result = array_merge($result, ['rows' => $records]);
-    //     echo json_encode($result);
-    // }
-
-    // public function create()
-    // {
-    //     if ($this->input->post()) {
-    //         if ($this->form_validation->run() == TRUE) {
-    //             $post   = $this->input->post();
-    //             $item_receipts = $this->crud->read("scan_rm_transfer", [], ["label_no" => $post['label_no']]);
-    //             if (!$item_receipts) {
-    //                 $dataFinal = array(
-    //                     //field
-    //                     "label_no" => $post['label_no'],
-    //                     "receipt_no" => $post['receipt_no'],
-    //                     "receipt_id" => $post['receipt_id'],
-    //                     "po_no" => $post['po_no'],
-    //                     "item_rm_id" => $post['item_rm_id'],
-    //                     "qty" => $post['qty'],
-    //                 );
-
-    //                 $send   = $this->crud->create('scan_rm_transfer', $dataFinal);
-    //                 // if ($send) {
-    //                 //     $update   = $this->crud->update('purchase_order_labels', ["label_no" => $post['label_no']], ["status" => 1]);
-    //                 //     $update   = $this->crud->update('return_material_labels', ["label_no" => $post['label_no']], ["status" => 1]);
-    //                 //     $update   = $this->crud->update('new_barcode', ["label_no" => $post['label_no']], ["status" => 1]);
-    //                 //     echo $send;
-    //                 // }
-
-    //                 echo $send;
-    //             } else {
-    //                 echo json_encode(array("title" => "Available", "message" => "Data Label No has been Scanned", "theme" => "error"));
-    //             }
-    //         } else {
-    //             show_error(validation_errors());
-    //         }
-    //     } else {
-    //         show_error("Cannot Process your request");
-    //     }
-    // }
-
+    
     public function checkLabel()
     {
         $label_no   = $this->input->post('label_no');
@@ -209,19 +114,59 @@ class Scan_rm_transfer extends CI_Controller
             $date = date("Y-m-d");
         }
 
-        $query = $this->crud->query("SELECT 
-            a.id, 
-            a.number, 
-            ((COALESCE(b.qty_scan_in, 0) + COALESCE(c.qty_os_rm, 0) + COALESCE(d.qty_trans_rm_in, 0) + COALESCE(e.return_qty, 0) + COALESCE(h.qty_scan_bpm, 0)) - 
-            (COALESCE(f.qty_issued, 0) + COALESCE(g.qty_trans_rm_out, 0))) AS ending_stock
+        $query = $this->crud->query("SELECT a.id, a.number, (COALESCE(d.qty_scan_in, 0) + COALESCE(e.qty_trans_other_in, 0) + COALESCE(f.qty_trans_other_adj_in, 0) + COALESCE(g.qty_in_pur, 0)) - (COALESCE(h.qty_trans_other_out, 0) + COALESCE(i.qty_trans_other_adj_out, 0) + COALESCE(k.qty_scan_out, 0) + COALESCE(l.qty_dn_scrap, 0) + COALESCE(m.qty_issued, 0)) AS ending_stock
                         FROM item_rm a
-                        LEFT JOIN (SELECT b.item_rm_id, SUM(a.qty) AS qty_scan_in FROM scan_item_receipts a JOIN purchase_order_receipts b ON a.receipt_id = b.receipt_id WHERE b.receipt_date < '$date'  GROUP BY b.item_rm_id) b ON a.id = b.item_rm_id
-                        LEFT JOIN (SELECT item_rm_id, SUM(qty) AS qty_os_rm FROM os_rm WHERE trans_date < '$date' GROUP BY item_rm_id) c ON a.id = c.item_rm_id
-                        LEFT JOIN (SELECT item_rm_id, SUM(qty) AS qty_trans_rm_in FROM transaction_rm WHERE request_date < '$date' AND transaction_kind = 'IN' GROUP BY item_rm_id) d ON a.id = d.item_rm_id
-                        LEFT JOIN (SELECT a.item_rm_id, SUM(c.qty) as return_qty FROM return_materials a JOIN return_material_labels b ON a.return_id = b.return_id JOIN scan_item_receipts c ON a.return_id = c.receipt_id AND b.label_no = c.label_no WHERE a.return_date < '$date' GROUP BY a.item_rm_id) e ON a.id = e.item_rm_id
-                        LEFT JOIN (SELECT item_rm_id, SUM(qty) AS qty_issued FROM issued_material_details WHERE created_date < '$date' GROUP BY item_rm_id) f ON a.id = f.item_rm_id
-                        LEFT JOIN (SELECT item_rm_id, SUM(qty) AS qty_trans_rm_out FROM transaction_rm WHERE request_date < '$date' AND transaction_kind = 'OUT' GROUP BY item_rm_id) g ON a.id = g.item_rm_id
-                        LEFT JOIN (SELECT item_rm_id, SUM(qty) AS qty_scan_bpm FROM scan_item_bpm WHERE DATE_FORMAT(request_date, '%Y-%m-%d') < '$date' GROUP BY item_rm_id) h ON a.id = h.item_rm_id
+                        LEFT JOIN (SELECT item_rm_id, SUM(qty) AS qty_scan_in FROM scan_item_receipt_crusher WHERE request_date <= '$date' GROUP BY item_rm_id) d ON a.id = d.item_rm_id
+                        LEFT JOIN (SELECT item_rm_id, SUM(qty) AS qty_trans_other_in FROM transaction_other_component WHERE request_date <= '$date' AND transaction_type = 'ITEM IN' GROUP BY item_rm_id) e ON a.id = e.item_rm_id
+                        LEFT JOIN (SELECT item_rm_id, SUM(qty) AS qty_trans_other_adj_in FROM transaction_other_component WHERE request_date <= '$date' AND transaction_type = 'ADJ IN' GROUP BY item_rm_id) f ON a.id = f.item_rm_id
+                        LEFT JOIN (
+                            SELECT 
+                                item_id,
+                                number,
+                                SUM(qty) AS qty_in_pur
+                            FROM (
+                                SELECT 
+                                    b.id AS item_id,
+                                    b.number,
+                                    SUM(ic.qty) AS qty
+                                FROM input_crushing ic
+                                JOIN item_rm b ON ic.item_rm_id = b.id
+                                LEFT JOIN item_family_subs c ON b.item_sub_family_id = c.id
+                                WHERE ic.trans_date <= '$date'
+                                GROUP BY b.id, b.number
+
+                                UNION ALL
+
+                                SELECT 
+                                    pur.id AS item_id,
+                                    pur.number,
+                                    SUM(ic.qty) AS qty
+                                FROM input_crushing ic
+                                JOIN item_rm b ON ic.item_rm_id = b.id
+                                JOIN item_family_subs c ON b.item_sub_family_id = c.id
+                                JOIN item_rm pur ON pur.number IN ('PUR-PC','PUR-ABS','PUR-ASA','PUR-PA6','PUR-PA66','PUR-PBT','PUR-POM','PUR-PP','PUR-PVC')
+                                WHERE (
+                                    (c.id = 'PS005' AND pur.number = 'PUR-PC')
+                                    OR (c.id = 'PS002' AND pur.number = 'PUR-ABS')
+                                    OR (c.id = 'PS003' AND pur.number = 'PUR-ASA')
+                                    OR (c.id = 'PS007' AND pur.number = 'PUR-PA6')
+                                    OR (c.id = 'PS008' AND pur.number = 'PUR-PA66')
+                                    OR (c.id = 'PS009' AND pur.number = 'PUR-PBT')
+                                    OR (c.id = 'PS006' AND pur.number = 'PUR-PMMA')
+                                    OR (c.id = 'PS010' AND pur.number = 'PUR-POM')
+                                    OR (c.id = 'PS004' AND pur.number = 'PUR-PP')
+                                    OR (c.id = 'PS001' AND pur.number = 'PUR-PVC')
+                                )
+                                AND ic.trans_date <= '$date'
+                                GROUP BY pur.id, pur.number
+                            ) combined
+                            GROUP BY item_id, number
+                        ) g ON a.id = g.item_id
+                        LEFT JOIN (SELECT item_rm_id, SUM(qty) AS qty_trans_other_out FROM transaction_other_component WHERE request_date <= '$date' AND transaction_type = 'ITEM OUT' GROUP BY item_rm_id) h ON a.id = h.item_rm_id
+                        LEFT JOIN (SELECT item_rm_id, SUM(qty) AS qty_trans_other_adj_out FROM transaction_other_component WHERE request_date <= '$date' AND transaction_type = 'ADJ OUT' GROUP BY item_rm_id) i ON a.id = i.item_rm_id
+                        LEFT JOIN (SELECT item_rm_id, SUM(qty) AS qty_scan_out FROM scan_dn_crusher WHERE created_date <= '$date' GROUP BY item_rm_id) k ON a.id = k.item_rm_id
+                        LEFT JOIN (SELECT item_rm_id, SUM(qty) AS qty_dn_scrap FROM dn_scrap WHERE transaction_date <= '$date' GROUP BY item_rm_id) l ON a.id = l.item_rm_id
+                        LEFT JOIN (SELECT item_rm_id, SUM(qty) AS qty_issued FROM issued_material_details WHERE created_date <= '$date' and type = 'Other' GROUP BY item_rm_id) m ON a.id = m.item_rm_id
             WHERE a.id like '$item_rm_id'
             GROUP BY a.id
             ORDER BY a.number");
@@ -232,11 +177,13 @@ class Scan_rm_transfer extends CI_Controller
             $ending_stock = 0;
         }
 
+        // var_dump ($ending_stock);
+        // return;
+
         echo json_encode([
             "ending_stock" => $ending_stock
         ]);
     }
-
 
     public function saveTransfer()
     {
@@ -244,61 +191,66 @@ class Scan_rm_transfer extends CI_Controller
         $details = json_decode($this->input->post('details'), true);
 
         if (empty($header) || empty($details)) {
-            echo json_encode([
-                "status"  => "error",
-                "message" => "Data header atau detail tidak ada!"
-            ]);
+            echo json_encode(["status" => "error", "message" => "Data header or detail is empty!"]);
             return;
         }
 
-        // === generate autonumber (document_no) ===
-        $trans_date = $header['transaction_date'];
-        $year       = date("Y", strtotime($trans_date));
-        $datenow    = date("ymd", strtotime($trans_date));
+        // Mulai Transaksi Database
+        $this->db->trans_begin();
 
-        $sqlGetID   = $this->db->query("SELECT MAX(RIGHT(document_no,4)) as kode FROM scan_rm_transfer WHERE YEAR(transaction_date) = '$year'");
-        $rowID = $sqlGetID->row();
-        $kode  = $rowID->kode;
+        try {
+            // === generate autonumber ===
+            $trans_date = $header['transaction_date'];
+            $year       = date("Y", strtotime($trans_date));
+            $datenow    = date("ymd", strtotime($trans_date));
 
-        $urutan = ($kode == NULL) ? 1 : ((int) $kode + 1);
-        $autoID = sprintf("%04s", $urutan);
-        $autonumber = "WHSTR-" . $datenow . "-" . $autoID;
+            // Gunakan FOR UPDATE untuk mengunci baris terakhir agar tidak ada ID ganda di waktu bersamaan
+            $sqlGetID   = $this->db->query("SELECT MAX(RIGHT(document_no,4)) as kode FROM scan_rm_transfer WHERE YEAR(transaction_date) = '$year' FOR UPDATE");
+            $rowID = $sqlGetID->row();
+            $kode  = $rowID->kode;
 
-        // === insert detail dengan document_no sama ===
-        $inserted = 0;
-        foreach ($details as $row) {
-            $dataInsert = [
-                "document_no"      => $autonumber, // <--- tambahkan ini
-                "transfer_from"    => $header['transfer_from'],
-                "transfer_to"      => $header['transfer_to'],
-                "transaction_date" => $header['transaction_date'],
-                "cutoff"           => $header['cutoff'],
-                "division"         => $header['division'],
-                "ship_by"          => $header['ship_by'],
-                "remarks"          => $header['remarks'],
-                "label_no"         => $row['label_no'],
-                "receipt_no"       => $row['receipt_no'],
-                "receipt_id"       => $row['receipt_id'],
-                "po_no"            => $row['po_no'],
-                "item_rm_id"       => $row['item_rm_id'],
-                "qty"              => $row['qty']
-            ];
+            $urutan = ($kode == NULL) ? 1 : ((int) $kode + 1);
+            $autoID = sprintf("%04s", $urutan);
+            $autonumber = "WHSTR-" . $datenow . "-" . $autoID;
 
-            if ($this->crud->create('scan_rm_transfer', $dataInsert)) {
+            $inserted = 0;
+            foreach ($details as $row) {
+                $dataInsert = [
+                    "document_no"      => $autonumber,
+                    "transfer_from"    => $header['transfer_from'],
+                    "transfer_to"      => $header['transfer_to'],
+                    "transaction_date" => $header['transaction_date'],
+                    "cutoff"           => $header['cutoff'],
+                    "division"         => $header['division'],
+                    "ship_by"          => $header['ship_by'],
+                    "remarks"          => $header['remarks'],
+                    "label_no"         => $row['label_no'],
+                    "receipt_no"       => $row['receipt_no'],
+                    "receipt_id"       => $row['receipt_id'],
+                    "po_no"            => $row['po_no'],
+                    "item_rm_id"       => $row['item_rm_id'],
+                    "qty"              => $row['qty']
+                ];
+
+                $this->crud->create('scan_rm_transfer', $dataInsert);
                 $inserted++;
-            }
-        }
 
-        if ($inserted > 0) {
-            echo json_encode([
-                "status"  => "success",
-                "message" => "Transfer Succes with Document No: $autonumber ($inserted row)"
-            ]);
-        } else {
-            echo json_encode([
-                "status"  => "error",
-                "message" => "Gagal menyimpan data"
-            ]);
+            }
+
+            if ($this->db->trans_status() === FALSE) {
+                $this->db->trans_rollback();
+                echo json_encode(["status" => "error", "message" => "Transaction Failed"]);
+            } else {
+                $this->db->trans_commit();
+                echo json_encode([
+                    "status"  => "success",
+                    "message" => "Transfer Success with Document No: $autonumber ($inserted rows)"
+                ]);
+            }
+
+        } catch (Exception $e) {
+            $this->db->trans_rollback();
+            echo json_encode(["status" => "error", "message" => $e->getMessage()]);
         }
     }
 }

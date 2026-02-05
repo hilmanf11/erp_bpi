@@ -70,7 +70,7 @@
             </div>
             <div class="fitem" style="padding:10 200px 0 200px;">
                 <a href="javascript:;" class="easyui-linkbutton" onclick="reload()"><i class="fa fa-rotate-right"></i> Reload</a>
-                <a href="javascript:;" class="easyui-linkbutton" onclick="save()"><i class="fa fa-floppy-o"></i> Save</a>
+                <a href="javascript:;" id="btn-save" class="easyui-linkbutton" onclick="save()"><i class="fa fa-floppy-o"></i> Save</a>
             </div>
         </fieldset>
     </div>
@@ -362,6 +362,16 @@
             remarks: $('#remarks').textbox('getValue'),
         };
 
+        // Disable untuk handle multiple klik
+        $('#btn-save').linkbutton('disable');
+
+        // Loading Progress (Overlay)
+        $.messager.progress({
+            title: 'Please Wait',
+            msg: 'Saving data...',
+            text: 'Processing...'
+        });
+
         $.ajax({
             type: "POST",
             url: "<?= base_url('warehouse/scan_rm_transfer/saveTransfer') ?>",
@@ -371,16 +381,25 @@
             },
             dataType: "json",
             success: function(result) {
+                $.messager.progress('close');
+
                 if (result.status === "success") {
                     toastr.success(result.message);
+                    
+                    scannedData = []; 
                     setTimeout(function() {
                         window.location.reload();
                     }, 2000);
-                    scannedData = [];
-                    $('#dg').datagrid({ data: [] });
                 } else {
+                
+                    $('#btn-save').linkbutton('enable');
                     toastr.error(result.message);
                 }
+            },
+            error: function(jqXHR) {
+                $.messager.progress('close');
+                $('#btn-save').linkbutton('enable');
+                toastr.error("Internal Server Error: " + jqXHR.statusText);
             }
         });
     }
