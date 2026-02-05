@@ -346,6 +346,68 @@ class Report_bank_statements extends CI_Controller
     }
 
     
+    public function check_balance_integrity()
+    {
+        $account_number         = $this->input->post('account_number');
+        $filter_from            = $this->input->post('filter_from'); 
+        $opening_balance_report = (float) $this->input->post('opening_balance_report');
+
+        if (empty($account_number) || empty($filter_from)) {
+            return $this->output
+                ->set_content_type('application/json')
+                ->set_status_header(400)
+                ->set_output(json_encode(['message' => 'Missing required parameters']));
+        }
+
+        // 1. Ambil Saldo Awal & Starting Date (Sesuai fungsi print)
+        $this->db->select('a.starting_date, b.balance_local');
+        $this->db->from('account_coa a');
+        $this->db->join('account_banks b', 'a.account_number = b.account_number');
+        $this->db->where('a.account_number', $account_number);
+        $account = $this->db->get()->row();
+
+        $initial_balance_local = $account->balance_local ?? 0;
+        
+        // Tentukan starting point (Sesuai logika fungsi print)
+        $starting_point = (!empty($account->starting_date)) 
+                        ? $account->starting_date 
+                        : date("Y-01-01", strtotime($filter_from));
+
+        // 2. Hitung Mutasi Jurnal LOKAL (Hanya dari starting_point s/d H-1)
+        $last_day_prev = date("Y-m-d", strtotime("-1 day", strtotime($filter_from)));
+        
+        $query = "
+            SELECT SUM(local_debit - local_credit) as total_mutation_local
+            FROM journal_postings 
+            WHERE account_number = " . $this->db->escape($account_number) . "
+            AND trans_date >= " . $this->db->escape($starting_point) . "
+            AND trans_date <= " . $this->db->escape($last_day_prev);
+        
+        $mutation_local = $this->db->query($query)->row()->total_mutation_local ?? 0;
+        
+        // 3. Kalkulasi Ekspektasi
+        $expected_opening_local = $initial_balance_local + $mutation_local;
+
+        // 4. Bandingkan
+        $is_sync = (round($expected_opening_local, 2) === round($opening_balance_report, 2));
+        $selisih = $expected_opening_local - $opening_balance_report;
+
+        $response = [
+            'is_synchronized' => $is_sync,
+            'details' => [
+                'account_number' => $account_number,
+                'starting_point_used' => $starting_point,
+                'check_until_date' => $last_day_prev,
+                'expected_opening_local' => (float)$expected_opening_local,
+                'actual_report_opening_local' => $opening_balance_report,
+                'diff' => round($selisih, 2)
+            ],
+            'message' => $is_sync ? 'Sync OK' : 'Mismatch! Check transactions between starting_point and check_until_date.'
+        ];
+
+        return $this->output->set_content_type('application/json')->set_output(json_encode($response));
+    }
+    
     function customCss() 
     {
         $css = '<style>
