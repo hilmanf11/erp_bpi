@@ -261,3 +261,8 @@ add NULL if checksheet number and wo no is empty ([dcb5fe4f](https://github.com/
 
 ### [2026-02-05]
 - **Rizki Puji**: Feature: Fix get rates local_debit local_credit Sales Invoice ([61cbb567](https://github.com/hilmanf11/erp_bpi/commit/61cbb567c3ed457c081d986967fd2e12fe364928))
+
+### [2026-02-05]
+- **kurniawan**: Update Scan Label Rm Transfer
+
+Add validation for handle multiple click and update checkEndingBalance ([f537f559](https://github.com/hilmanf11/erp_bpi/commit/f537f559378ba06fadfce3949d0e47b3991e729d))
