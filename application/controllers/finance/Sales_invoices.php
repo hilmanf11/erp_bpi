@@ -528,22 +528,9 @@ class Sales_invoices extends CI_Controller
                 $trans_date = $jsonData["trans_date"];
 
                 // Total Local jika bukan IDR dikali Exchange Rates
+                $total_local = $jsonData["total"];
                 if ($currency != "IDR") {
-                    $this->db->select('middle');
-                    $this->db->from('exchange_rates');
-                    $this->db->where('currency_from', $currency);
-                    $this->db->where('currency_to', 'IDR');
-                    $this->db->where("'$trans_date' BETWEEN start_date AND end_date", null, false);
-
-                    $exchange = $this->db->get()->row();
-
-                    if ($exchange) {
-                        $total_local = ($total * $exchange->middle);
-                    } else {
-                        $total_local = 0;
-                    }
-                } else {
-                    $total_local = $total;
+                    $total_local = $this->getLocalValue($total, $currency, $trans_date);
                 }
 
                 // Inisialisasi entri jika belum ada
@@ -575,37 +562,52 @@ class Sales_invoices extends CI_Controller
 
         } else {
             // --- Jika Jurnal SUDAH ADA (Membandingkan/Memperbarui) ---
-            
-            // 1. Agregasi data sales_invoices
             $aggregated_invoices = [];
             foreach ($sales_invoices_data as $jsonData) {
                 $account_number = $jsonData["account_number"];
                 $total = $jsonData["total"];
+                $currency = $jsonData["currency"];
+                $trans_date = $jsonData["trans_date"];
                 
                 if (!isset($aggregated_invoices[$account_number])) {
-                    $aggregated_invoices[$account_number] = ["debit" => 0, "credit" => 0];
+                    $aggregated_invoices[$account_number] = [
+                        "debit"        => 0, 
+                        "credit"       => 0, 
+                        "local_debit"  => 0, 
+                        "local_credit" => 0, 
+                    ];
+                }
+
+                // Total Local jika bukan IDR dikali Exchange Rates
+                $total_local = $jsonData["total"];
+                if ($currency != "IDR") {
+                    $total_local = $this->getLocalValue($total, $currency, $trans_date);
                 }
 
                 if ($jsonData['account_type'] == "DEBIT") {
                     $aggregated_invoices[$account_number]["debit"] += $total;
-                    $aggregated_invoices[$account_number]["local_debit"] += $total;
+                    $aggregated_invoices[$account_number]["local_debit"] += $total_local;
 
                 } elseif ($jsonData['account_type'] == "CREDIT") {
-                    $aggregated_invoices[$account_number]["credit"] += $total;
-                    $aggregated_invoices[$account_number]["local_credit"] += $total;
+                    $aggregated_invoices[$account_number]["credit"] += $total;                    
+                    $aggregated_invoices[$account_number]["local_credit"] += $total_local;
                 }
             }
 
-            // 2. Loop melalui jurnal yang sudah ada untuk memperbarui nilainya
             foreach ($journals as $journal) {
                 $account_number = $journal['account_number'];
                 $total_debit = $journal['debit'];
                 $total_credit = $journal['credit'];
+                $total_debit_local = $journal['local_debit'];
+                $total_credit_local = $journal['local_credit'];
                 
                 // Cari total baru dari aggregated_invoices dan lakukan overwrite
                 if (isset($aggregated_invoices[$account_number])) {
                     $total_debit = $aggregated_invoices[$account_number]['debit'];
                     $total_credit = $aggregated_invoices[$account_number]['credit'];
+                    
+                    $total_debit_local = $aggregated_invoices[$account_number]['local_debit'];
+                    $total_credit_local = $aggregated_invoices[$account_number]['local_credit'];
                     
                     // Hapus dari aggregated_invoices setelah diproses
                     unset($aggregated_invoices[$account_number]); 
@@ -618,8 +620,8 @@ class Sales_invoices extends CI_Controller
                     "debit" => round($total_debit, 4),
                     "credit" => round($total_credit, 4),
                     "flag" => $journal['flag'],
-                    "local_debit"  => round($total_debit, 4),
-                    "local_credit" => round($total_credit, 4),
+                    "local_debit"  => round($total_debit_local, 4),
+                    "local_credit" => round($total_credit_local, 4),
                 ];
             }
             
@@ -634,8 +636,8 @@ class Sales_invoices extends CI_Controller
                     "debit" => round($data['debit'], 4),
                     "credit" => round($data['credit'], 4),
                     "flag" => $flag_counter++,
-                    "local_debit"  => round($data['debit'], 4),
-                    "local_credit" => round($data['credit'], 4),
+                    "local_debit"  => round($data['local_debit'], 4),
+                    "local_credit" => round($data['local_credit'], 4),
                 ];
             }
         }
@@ -652,6 +654,21 @@ class Sales_invoices extends CI_Controller
             }
         }
         return "N/A";
+    }
+    // get Exchange Rate
+    private function getLocalValue($total, $currency, $trans_date) {
+        if ($currency == "IDR") {
+            return $total;
+        }
+
+        $exchange = $this->db->select('middle')
+            ->from('exchange_rates')
+            ->where('currency_from', $currency)
+            ->where('currency_to', 'IDR')
+            ->where("'$trans_date' BETWEEN start_date AND end_date", null, false)
+            ->get()->row();
+
+        return $exchange ? ($total * $exchange->middle) : 0;
     }
 
     public function calculateJournal_existing()
@@ -1198,6 +1215,86 @@ class Sales_invoices extends CI_Controller
             echo $send;
         } else {
             show_error("Cannot Process your request");
+        }
+    }
+
+    // Modifikasi: Bisa Ubah Kode Faktur Pajak dll non mandatory form walau sudah Journal Posting
+    // CREATE TABLE sales_invoice_logs (
+    //     log_id INT AUTO_INCREMENT PRIMARY KEY,
+    //     voucher_no VARCHAR(50) NOT NULL, -- Menggunakan nomor voucher sebagai referensi
+    //     user_name VARCHAR(100),          -- Nama user yang melakukan perubahan
+    //     change_date DATETIME DEFAULT CURRENT_TIMESTAMP,
+    //     field_name VARCHAR(50),          -- Kolom yang diubah (misal: no_seri_fp)
+    //     old_value TEXT,
+    //     new_value TEXT,
+    //     reason TEXT,                     -- Alasan perubahan dari user
+    // );
+
+    public function update_tax_info() 
+    {
+        // 1. Ambil data dari POST
+        $voucher = $this->input->post('voucher');
+        $reason = $this->input->post('reason');
+        $user = $this->session->userdata('user_name'); // Ambil dari session
+        
+        // 2. Ambil data lama dari database untuk perbandingan
+        $old_data = $this->db->get_where('sales_invoice', ['voucher' => $voucher])->row_array();
+        
+        // Validasi: Jika periode akuntansi sudah dikunci, hentikan proses
+        if ($old_data['is_locked'] == 1) {
+            echo json_encode(['success' => false, 'errorMsg' => 'Periode sudah dikunci!']);
+            return;
+        }
+
+        // 3. Definisikan kolom yang boleh diupdate (hanya metadata pajak/fasilitas)
+        $fields = [
+            'faktur_code', 'fp_pengganti', 'no_urut', 
+            'bc_no', 'keterangan_tambahan', 'cap_fasilitas'
+        ];
+
+        $update_data = [];
+        $logs = [];
+
+        foreach ($fields as $field) {
+            $new_val = $this->input->post($field);
+            
+            // Cek jika ada perbedaan antara data lama dan input baru
+            if ($new_val != $old_data[$field]) {
+                $update_data[$field] = $new_val;
+                
+                // Siapkan data untuk tabel log
+                $logs[] = [
+                    'voucher_no' => $voucher,
+                    'user_name'  => $user,
+                    'field_name' => $field,
+                    'old_value'  => $old_data[$field],
+                    'new_value'  => $new_val,
+                    'reason'     => $reason,
+                    'ip_address' => $this->input->ip_address()
+                ];
+            }
+        }
+
+        // 4. Eksekusi Database Transaction
+        if (!empty($update_data)) {
+            $this->db->trans_start();
+            
+            // Update tabel utama
+            $this->db->where('voucher', $voucher);
+            $this->db->update('sales_invoice', $update_data);
+            
+            // Simpan log perubahan (batch insert)
+            $this->db->insert_batch('sales_invoice_logs', $logs);
+            
+            $this->db->trans_complete();
+
+            if ($this->db->trans_status() === FALSE) {
+                echo json_encode(['success' => false, 'errorMsg' => 'Gagal menyimpan data ke database.']);
+            } else {
+                echo json_encode(['success' => true]);
+            }
+        } else {
+            echo json_encode(['success' => false, 'errorMsg' => 'Tidak ada perubahan data yang terdeteksi.']);
         }
     }
 
