@@ -45,7 +45,6 @@ class Sales_invoices extends CI_Controller
             
             $this->load->view('template/header', $data);
             $this->load->view('finance/sales_invoices');
-            $this->load->view('finance/edit_tax_sales_invoices'); // Modal Dialog Edit Data Tax Non Mandatory
         } else {
             redirect('error_access');
         }
@@ -620,21 +619,6 @@ class Sales_invoices extends CI_Controller
             }
         }
         return "N/A";
-    }
-    // get Exchange Rate
-    private function getLocalValue($total, $currency, $trans_date) {
-        if ($currency == "IDR") {
-            return $total;
-        }
-
-        $exchange = $this->db->select('middle')
-            ->from('exchange_rates')
-            ->where('currency_from', $currency)
-            ->where('currency_to', 'IDR')
-            ->where("'$trans_date' BETWEEN start_date AND end_date", null, false)
-            ->get()->row();
-
-        return $exchange ? ($total * $exchange->middle) : 0;
     }
 
     public function calculateJournal_existing()

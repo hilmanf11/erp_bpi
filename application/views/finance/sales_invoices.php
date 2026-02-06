@@ -77,7 +77,7 @@
 </style>
 
 <!-- FORM FILTER DATAGRID -->
-<div id="toolbar" style="padding:10px;">
+<div id="toolbar" style="height: 270px; padding:10px;">
     <!-- <div style="width: 100%; display: grid; grid-template-columns: auto auto auto; grid-gap: 5px; display: flex;"> -->
 
     <fieldset style="width: 99%; border:2px solid #d0d0d0; margin-bottom: 5px; margin-top: 5px; border-radius:4px;">
@@ -134,15 +134,8 @@
                 <span style="width:35%; display:inline-block;">Faktur No</span>
                 <input style="width:60%;" name="filter_faktur_no" id="filter_faktur_no" class="easyui-combobox">
             </div>
-            
-            <!-- Javascript editTaxData() dan Form Modal ada di file edit_tax_sales_invoices.php -->
-            <div class="fitem" hidden>
-                <a href="javascript:;" class="easyui-linkbutton" onclick="editTaxData()"><i class="fa fa-edit"></i> Edit Tax Data</a>
-            </div>
-
         </div>
     </fieldset>
-
     <?= $button ?>
     <a href="javascript:void(0)" class="easyui-linkbutton" data-options="plain:true" onclick="excelDetail()"><i class="fa fa-file"></i> Export Excel Detail</a>
     <a href="javascript:void(0)" class="easyui-linkbutton" data-options="plain:true" onclick="excelJournal()"><i class="fa fa-file"></i> Export Excel Journal</a>
@@ -749,21 +742,9 @@
             </thead>
         </table>
 
-        <div style="width: 65%; float: left; margin-top: 20px;">
-            <div style="display: flex; align-items: center; gap: 15px;">
-                <a class="easyui-linkbutton c2" onclick="addJournal()" style="width:50%; padding: 10px 20px;">
-                    Add to Journal
-                </a>
-                <div style="width:50%; border:4px solid green; padding:10px; min-width: 200px;" id="showExchange">
-                    <p style="font-size: 16px !important; margin:0;">
-                        <b style="font-size: 16px !important;" id="exchange"></b>
-                    </p>
-                </div>
-            </div>
-
-            <?php
-            /* -- existing table Add to Journal
-            <br><br>            
+        <div style="width: 50%; float: left; margin-top:20px;">
+            <a style="width: 100%;" class="easyui-linkbutton c2" onclick="addJournal()">Add to Journal</a>
+            <br><br>
             <table id="dg3" class="easyui-datagrid" title="Journal Lists" style="width: 100%;" data-options="singleSelect: true" toolbar="#toolbar3"></table>
 
             <div class="fitem">
@@ -771,71 +752,9 @@
                 <input style="width:18%;" id="balance_debit" name="balance_debit" readonly class="easyui-numberbox" data-options="precision:2,groupSeparator:'.', decimalSeparator:','">
                 <input style="width:18%;" id="balance_credit" name="balance_credit" readonly class="easyui-numberbox" data-options="precision:2,groupSeparator:'.', decimalSeparator:','">
             </div>
-            */
-            ?>
-
-            <br>
-            <table id="dg3" class="easyui-datagrid" title="Journal Lists" style="width: 100%;" data-options="singleSelect: true" toolbar="#toolbar3">
-                <thead>
-                    <tr>
-                        <th rowspan="2" data-options="field:'account_number',halign:'center',width:100, editor: {
-                            type: 'combogrid',
-                            options: {
-                                url: '<?= base_url('finance/account_coa/reads') ?>',
-                                panelWidth: 320,
-                                idField: 'account_number',
-                                textField: 'account_number',
-                                mode: 'remote',
-                                fitColumns: true,
-                                prompt: 'Choose Account No',
-                                columns: [
-                                    [{
-                                        field: 'account_number',
-                                        title: 'Account No',
-                                        width: 100
-                                    }, {
-                                        field: 'account_name',
-                                        title: 'Account Name',
-                                        width: 200
-                                    }]
-                                ],
-                                onSelect: function(value, rows) {
-                                    var dg = $('#dg3');
-                                    var row = dg.datagrid('getSelected');
-                                    var rowIndex = dg.datagrid('getRowIndex', row);
-                                    var ed = dg.datagrid('getEditor', {
-                                        index: rowIndex,
-                                        field: 'account_name'
-                                    });
-
-                                    $(ed.target).textbox('setValue', rows.account_name);
-                                }
-                            }
-                        }">Account No</th>
-                        <th rowspan="2" data-options="field:'account_name',halign:'center', width:350, editor: {type: 'textbox', options: {readonly: true}}">Account Name</th>
-                        <th colspan="2" data-options="field:'',width:150">Original Currency</th>
-                        <!-- <th colspan="2" data-options="field:'',width:150">Local Currency</th>
-                        <th rowspan="2" data-options="field:'flag',width:50,halign:'center',editor: {type: 'numberbox', options: {required: true}}">Index</th> -->
-                    </tr>
-                    <tr>
-                        <th data-options="field:'debit',width:200,halign:'center',align:'right',formatter:numberformat,editor: {type: 'numberbox', options: {required: true, precision:2}}">Debit</th>
-                        <th data-options="field:'credit',width:200,halign:'center',align:'right',formatter:numberformat,editor: {type: 'numberbox', options: {required: true, precision:2}}">Credit</th>
-                        <!-- <th data-options="field:'local_debit',width:200,halign:'center',align:'right',formatter:numberformat,editor: {type: 'numberbox', options: {required: true, precision:2}}">Debit</th>
-                        <th data-options="field:'local_credit',width:200,halign:'center',align:'right',formatter:numberformat,editor: {type: 'numberbox', options: {required: true, precision:2}}">Credit</th> -->
-                    </tr>
-                </thead>
-            </table>
-
-            <div class="fitem">
-                <b style="width:48%; display:inline-block; padding-left: 50px;">BALANCE TOTAL</b>
-                <input style="width:11%;" id="balance_debit" name="balance_debit" readonly class="easyui-numberbox" data-options="precision:2,groupSeparator:'.', decimalSeparator:','">
-                <input style="width:11%;" id="balance_credit" name="balance_credit" readonly class="easyui-numberbox" data-options="precision:2,groupSeparator:'.', decimalSeparator:','">
-                <!-- <input style="width:11%;" id="local_balance_debit" name="local_balance_debit" readonly class="easyui-numberbox" data-options="precision:2,groupSeparator:'.', decimalSeparator:','">
-                <input style="width:11%;" id="local_balance_credit" name="local_balance_credit" readonly class="easyui-numberbox" data-options="precision:2,groupSeparator:'.', decimalSeparator:','"> -->
-            </div>
         </div>
 
-        <div style="width: 33%; float: right; margin-top: 20px;">
+        <div style="width: 30%; display: grid; grid-template-columns: auto auto auto; grid-gap: 5px; display: flex; float: right; margin-top:20px;">
             <fieldset style="width:100%; border:1px solid #d0d0d0; margin-bottom: 10px; border-radius:4px;">
                 <div style="width: 100%; float: left;">
                     <div class="fitem">
@@ -939,7 +858,6 @@
 
         $('#dg2').datagrid('loadData', []);
         $('#frm_insert').form('clear');
-        $("#showExchange").hide();
         
         $('#disc_pr').numberbox('setValue', 0); // initial discount 0
 
@@ -1333,7 +1251,7 @@
             validType: 'length[1,11]',
             inputEvents: $.extend({}, $.fn.textbox.defaults.inputEvents, {
                 keyup: function(e) {
-                    var value = $(this).val().replace(/[^0-9]/g, ''); // Faktur No hanya Numerik (Bu Nina)
+                    var value = $(this).val();
                     if (value.length > 11) {
                         $(this).val(value.slice(0, 11));
                     }
@@ -1504,8 +1422,6 @@
                         account_number: rows[i].account_number,
                         account_name: rows[i].account_name,
                         account_type: rows[i].account_type,
-                        currency: rows[i].currency,
-                        trans_date: trans_date,
                         total: total_detail
                     }
                     
@@ -1556,25 +1472,6 @@
                         }
                     }
                 });
-
-                // Rate di Box Hijau jika selain IDR
-                if (currency != 'IDR') {
-                    $.ajax({
-                        type: "post",
-                        url: "<?= base_url('finance/sales_invoices/readExchangeRate') ?>",
-                        data: "trans_date=" + trans_date + "&currency=" + currency,
-                        dataType: "json",
-                        success: function(exchange) {
-                            console.log(exchange.label);
-                            console.log(exchange.amount);
-
-                            $("#rate").numberbox('setValue', exchange.amount);
-                            $("#exchange").html(exchange.label);
-                            $("#showExchange").show();
-                        }
-                    });
-                }
-                
                 
                 // 3. Setup Variabel dan Map Jurnal
                 var total_revenue_net = total_sub_discount - down_payment; 
@@ -1687,8 +1584,6 @@
                         account_name: "UANG MUKA PENJUALAN",
                         debit: parseFloat(down_payment.toFixed(4)),
                         credit: 0,
-                        local_debit: parseFloat(down_payment.toFixed(4)),
-                        local_credit: 0,
                         flag: "0",
                     };
                 }
@@ -1700,8 +1595,6 @@
                         account_name: "PPH 23",
                         debit: parseFloat(total_pph.toFixed(4)),
                         credit: 0,
-                        local_debit: parseFloat(down_payment.toFixed(4)),
-                        local_credit: 0,
                         flag: "0",
                     };
                 }
@@ -2078,20 +1971,7 @@
         }
     }
 
-    // Table Journal List on click Preview and Add to Journal
     function addTable2(link = "") {
-        var lastIndex;
-        var dg = $('#dg3').datagrid({
-            url: link,
-            singleSelect: true,
-            onClickCell: onClickCell2,
-            onBeginEdit: function(rowIndex, row) {
-                balance_journal();
-            }
-        });
-    }
-
-    function addTable2_existing(link = "") {
         var lastIndex;
         var dg = $('#dg3').datagrid({
             url: link,
@@ -2200,19 +2080,13 @@
         if (totalrows > 0) {
             var debit = 0;
             var credit = 0;
-            var local_debit = 0;
-            var local_credit = 0;
             for (let i = 0; i < totalrows; i++) {
                 debit += parseFloat(rows[i].debit);
                 credit += parseFloat(rows[i].credit);
-                local_debit += parseFloat(rows[i].local_debit);
-                local_credit += parseFloat(rows[i].local_credit);
             }
 
             $("#balance_debit").numberbox('setValue', debit);
             $("#balance_credit").numberbox('setValue', credit);
-            $("#local_balance_debit").numberbox('setValue', local_debit);
-            $("#local_balance_credit").numberbox('setValue', local_credit);
         }
     }
 
@@ -2925,7 +2799,7 @@
                         validType: 'length[1,11]',
                         inputEvents: $.extend({}, $.fn.textbox.defaults.inputEvents, {
                             keyup: function(e) {
-                                var value = $(this).val().replace(/[^0-9]/g, ''); // Faktur No hanya Numerik (Bu Nina)
+                                var value = $(this).val();
                                 if (value.length > 11) {
                                     $(this).val(value.slice(0, 11));
                                 }
@@ -3056,10 +2930,7 @@
         const taxes = parseFloat($("#taxes").numberbox('getValue')) || 0;
         const journalTypeId = $("#journal_type").combobox('getValue');
 
-        /** -- existing validation 
         if (!deliveryNoteNo || !transDate || !dueDate || !taxes) { // Check for empty values directly
-        */
-        if (!deliveryNoteNo || !transDate || !dueDate) {
             toastr.info('Please complete all required data (Delivery Note, Trans Date, Due Date, Taxes).');
             return;
         }
@@ -4171,7 +4042,7 @@
             textField: 'name',
             prompt: "Choose Journal Types",
             onSelect: function(row) {
-                addTable2('<?= base_url('finance/sales_invoices/readJournal/') ?>' + window.btoa(row.id));
+                addTable2('<?= base_url('finance/purchase_invoices/readJournal/') ?>' + window.btoa(row.id));
             }
         });
 
