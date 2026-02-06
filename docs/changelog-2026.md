@@ -266,3 +266,6 @@ add NULL if checksheet number and wo no is empty ([dcb5fe4f](https://github.com/
 - **kurniawan**: Update Scan Label Rm Transfer
 
 Add validation for handle multiple click and update checkEndingBalance ([f537f559](https://github.com/hilmanf11/erp_bpi/commit/f537f559378ba06fadfce3949d0e47b3991e729d))
+
+### [2026-02-06]
+- **Rizki Puji**: Fixing: Bug get start-date begin balance Report AP and Report AR ([8a8c3bc3](https://github.com/hilmanf11/erp_bpi/commit/8a8c3bc3f2ee7ec273c3bd13c5e5513dd84d9c4f))
