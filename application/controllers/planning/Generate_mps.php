@@ -213,10 +213,11 @@ class Generate_mps extends CI_Controller
                 FROM
                 (
                     --
-                    -- Buat 6 bulan ke depan dari filter
+                    -- Buat list (item_fg_id, customer_id) dari seluruh bulan yg relevan (target +/- fallback)
                     --
                     SELECT 
-                        f.item_fg_id,
+                        fc.item_fg_id,
+                        fc.customer_id,
                         m.idx,
                         (
                             SELECT 
@@ -224,65 +225,68 @@ class Generate_mps extends CI_Controller
                                     /* 1. ambil forecast bulan target (month_1) */
                                     (SELECT f1.month_1 
                                     FROM forecasts f1 
-                                    WHERE f1.item_fg_id = f.item_fg_id
-                                    AND f1.customer_id = f.customer_id
+                                    WHERE f1.item_fg_id = fc.item_fg_id
+                                    AND f1.customer_id = fc.customer_id
                                     AND CONCAT(f1.p_year,'-',LPAD(f1.p_month,2,'0')) = DATE_FORMAT(m.period,'%Y-%m')
                                     ORDER BY f1.revision DESC LIMIT 1),
 
                                     /* 2. fallback 1 bulan sebelum → month_2 */
                                     (SELECT f2.month_2 
                                     FROM forecasts f2 
-                                    WHERE f2.item_fg_id = f.item_fg_id
-                                    AND f2.customer_id = f.customer_id
+                                    WHERE f2.item_fg_id = fc.item_fg_id
+                                    AND f2.customer_id = fc.customer_id
                                     AND CONCAT(f2.p_year,'-',LPAD(f2.p_month,2,'0')) = DATE_FORMAT(DATE_SUB(m.period, INTERVAL 1 MONTH),'%Y-%m')
                                     ORDER BY f2.revision DESC LIMIT 1),
 
                                     /* 3. fallback 2 bulan sebelum → month_3 */
                                     (SELECT f3.month_3 
                                     FROM forecasts f3 
-                                    WHERE f3.item_fg_id = f.item_fg_id
-                                    AND f3.customer_id = f.customer_id
+                                    WHERE f3.item_fg_id = fc.item_fg_id
+                                    AND f3.customer_id = fc.customer_id
                                     AND CONCAT(f3.p_year,'-',LPAD(f3.p_month,2,'0')) = DATE_FORMAT(DATE_SUB(m.period, INTERVAL 2 MONTH),'%Y-%m')
                                     ORDER BY f3.revision DESC LIMIT 1),
 
                                     /* 4. fallback 3 bulan sebelum → month_4 */
                                     (SELECT f4.month_4 
                                     FROM forecasts f4 
-                                    WHERE f4.item_fg_id = f.item_fg_id
-                                    AND f4.customer_id = f.customer_id
+                                    WHERE f4.item_fg_id = fc.item_fg_id
+                                    AND f4.customer_id = fc.customer_id
                                     AND CONCAT(f4.p_year,'-',LPAD(f4.p_month,2,'0')) = DATE_FORMAT(DATE_SUB(m.period, INTERVAL 3 MONTH),'%Y-%m')
                                     ORDER BY f4.revision DESC LIMIT 1),
 
                                     0
                                 )
                         ) AS final_value
-                    FROM forecasts f
+                    FROM 
+                        (
+                            SELECT DISTINCT item_fg_id, customer_id
+                            FROM forecasts
+                            WHERE deleted = 0
+                            AND (
+                                /* ambil rentang periode: filter_month -3  sampai filter_month +5 (6 bulan forward + 3 fallback back) */
+                                CONCAT(p_year,'-',LPAD(p_month,2,'0')) BETWEEN
+                                    DATE_FORMAT(DATE_SUB(DATE_ADD(MAKEDATE({$filter_year},1), INTERVAL {$filter_month}-1 MONTH), INTERVAL 3 MONTH),'%Y-%m')
+                                AND
+                                    DATE_FORMAT(DATE_ADD(DATE_ADD(MAKEDATE({$filter_year},1), INTERVAL {$filter_month}-1 MONTH), INTERVAL 5 MONTH),'%Y-%m')
+                            )
+                        ) fc
 
                     CROSS JOIN (
                         /* generate 6 bulan dari filter */
-                        SELECT 1 AS idx, 
-                            DATE_ADD(MAKEDATE({$filter_year},1), INTERVAL {$filter_month}-1 MONTH) AS period
-                        UNION ALL
-                        SELECT 2, DATE_ADD(DATE_ADD(MAKEDATE({$filter_year},1), INTERVAL {$filter_month}-1 MONTH), INTERVAL 1 MONTH)
-                        UNION ALL
-                        SELECT 3, DATE_ADD(DATE_ADD(MAKEDATE({$filter_year},1), INTERVAL {$filter_month}-1 MONTH), INTERVAL 2 MONTH)
-                        UNION ALL
-                        SELECT 4, DATE_ADD(DATE_ADD(MAKEDATE({$filter_year},1), INTERVAL {$filter_month}-1 MONTH), INTERVAL 3 MONTH)
-                        UNION ALL
-                        SELECT 5, DATE_ADD(DATE_ADD(MAKEDATE({$filter_year},1), INTERVAL {$filter_month}-1 MONTH), INTERVAL 4 MONTH)
-                        UNION ALL
-                        SELECT 6, DATE_ADD(DATE_ADD(MAKEDATE({$filter_year},1), INTERVAL {$filter_month}-1 MONTH), INTERVAL 5 MONTH)
+                        SELECT 1 AS idx, DATE_ADD(MAKEDATE({$filter_year},1), INTERVAL {$filter_month}-1 MONTH) AS period
+                        UNION ALL SELECT 2, DATE_ADD(DATE_ADD(MAKEDATE({$filter_year},1), INTERVAL {$filter_month}-1 MONTH), INTERVAL 1 MONTH)
+                        UNION ALL SELECT 3, DATE_ADD(DATE_ADD(MAKEDATE({$filter_year},1), INTERVAL {$filter_month}-1 MONTH), INTERVAL 2 MONTH)
+                        UNION ALL SELECT 4, DATE_ADD(DATE_ADD(MAKEDATE({$filter_year},1), INTERVAL {$filter_month}-1 MONTH), INTERVAL 3 MONTH)
+                        UNION ALL SELECT 5, DATE_ADD(DATE_ADD(MAKEDATE({$filter_year},1), INTERVAL {$filter_month}-1 MONTH), INTERVAL 4 MONTH)
+                        UNION ALL SELECT 6, DATE_ADD(DATE_ADD(MAKEDATE({$filter_year},1), INTERVAL {$filter_month}-1 MONTH), INTERVAL 5 MONTH)
                     ) m
 
-                    WHERE 
-                        f.p_year = {$filter_year}
-                        AND f.p_month = {$filter_month}
-                        AND f.deleted = 0
                 ) T
 
                 GROUP BY T.item_fg_id
 
             ) g", "a.id = g.item_fg_id OR b.item_fg_id = g.item_fg_id", "left");
+
 
             $this->db->join("(SELECT DISTINCT a.item_fg_id, a.cycle_time, a.shift_hour, a.productcivity, b.cavity_standard, a.priority FROM menu_loadings a JOIN molds b ON a.mold_id = b.id WHERE a.priority = 1 GROUP BY a.item_fg_id) h ", 'a.id = h.item_fg_id', 'left');
             
