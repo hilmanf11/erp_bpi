@@ -278,3 +278,6 @@ Add validation for handle multiple click and update checkEndingBalance ([f537f55
 
 ### [2026-02-06]
 - **kurniawan**: Merge branch 'main' of https://github.com/hilmanf11/erp_bpi ([05d4bab6](https://github.com/hilmanf11/erp_bpi/commit/05d4bab6dd90bdd68d4707901a212a73beb40110))
+
+### [2026-02-06]
+- **Rizki Puji**: Revert: takeout local balance Journal list on Add Sales Invoice ([495f9d6e](https://github.com/hilmanf11/erp_bpi/commit/495f9d6edc8e1e1e2778cfa1279a65f6a33de2dc))
