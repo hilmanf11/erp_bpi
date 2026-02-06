@@ -251,12 +251,44 @@ class Supply_materials extends CI_Controller
                 $records = $this->db->get()->result_array();
 
                 foreach ($records as $record) {
+                    $issued_qty_crusher = 0;
+                    $issued_qty_peletizing = 0;
+                
+                    $item_number = $record['item_number'];
+                
+                    // Cek untuk CR-
+                    $query_cr = $this->db->query("SELECT id FROM item_rm WHERE number LIKE CONCAT('CR-', '$item_number')");
+                    $new_cr = $query_cr->row_array();
+                
+                    // Cek untuk PL-
+                    $query_pl = $this->db->query("SELECT id FROM item_rm WHERE number LIKE CONCAT('PL-', '$item_number')");
+                    $new_pl = $query_pl->row_array();
 
-                    if($record['qty'] == $record['qty_actual']){
-                        $status = '1';
-                    }else{
-                        $status = '0';
+                
+                    if ($new_cr) {
+                        // Mengambil data issued quantity untuk Crusher
+                        $this->db->select('SUM(qty) as issued_qty_crusher');
+                        $this->db->from('issued_material_details');
+                        $this->db->where('item_rm_id', $new_cr['id']);
+                        $this->db->where('request_no', $record['request_no']);
+                        $issued_material = $this->db->get()->row_array();
+                
+                        $issued_qty_crusher = $issued_material ? $issued_material['issued_qty_crusher'] : 0;
                     }
+
+                    if ($new_pl) {
+                        // Mengambil data issued quantity untuk Peletizing
+                        $this->db->select('SUM(qty) as issued_qty_peletizing');
+                        $this->db->from('issued_material_details');
+                        $this->db->where('item_rm_id', $new_pl['id']);
+                        $this->db->where('request_no', $record['request_no']);
+                        $issued_material = $this->db->get()->row_array();
+                
+                        $issued_qty_peletizing = $issued_material ? $issued_material['issued_qty_peletizing'] : 0;
+                    }
+
+                    // Menentukan status berdasarkan jumlah yang dikeluarkan dan jumlah yang diminta
+                    $status = ($record['qty'] == ($record['qty_actual'] + $issued_qty_crusher + $issued_qty_peletizing)) ? '1' : '0';
 
                     $arr[] = array(
                         "id" => $record['id'],
