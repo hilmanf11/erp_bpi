@@ -105,6 +105,8 @@
         <?= $button ?>
         <a href="javascript:;" class="easyui-linkbutton" plain="true" onclick="print_kanban()"><i class="fa fa-print"></i> Print Supply Sheet</a>
         <a href="javascript:;" class="easyui-linkbutton" plain="true" onclick="print_label_supply()"><i class="fa fa-print"></i> Print Label Supply</a>
+        <a href="javascript:;" class="easyui-linkbutton" data-options="plain:true" onclick="close_sh()"><i class="fa fa-times"></i> Complete/Open</a>
+
     </div>
 </div>
 
@@ -588,22 +590,153 @@
          "&filter_status_subcont=" + filter_status_subcont + "&filter_subcont_type=" + filter_subcont_type + 
          "&filter_item_fg_id=" + filter_item_fg_id; //"&filter_operation=" + filter_operation +
 
+        // $('#dg').datagrid({
+        //     url: '<?= base_url('planning/supply_sheets/datatables') ?>' + url,
+        //     pagination: true,
+        //     rownumbers: true,
+        //     fit: true,
+        //     view: detailview,
+        //     detailFormatter:function(index,row){
+        //         return '<div style="padding:2px;position:relative;"><table class="ddv" title="Detail Of ' + row.request_no + '"></table></div>';
+        //     },
+        //     onExpandRow: function(index, row) {
+        //         var ddv = $(this).datagrid('getRowDetail', index).find('table.ddv');
+
+        //         ddv.datagrid({
+        //             url: '<?= base_url('planning/supply_sheets/datatableDetails/') ?>' + window.btoa(row.request_no),
+        //             singleSelect: true,
+        //             rownumbers: true,
+        //             columns: [
+        //                 [{
+        //                     field: 'status',
+        //                     title: 'Status',
+        //                     halign: 'center',
+        //                     align: 'center',
+        //                     width: 100,
+        //                     formatter: statusformat,
+        //                     styler: statusStyle
+        //                 },{
+        //                     field: 'item_rm_number',
+        //                     title: 'Part No',
+        //                     halign: 'center',
+        //                     width: 200
+        //                 },{
+        //                     field: 'item_rm_name',
+        //                     title: 'Part Name.',
+        //                     halign: 'center',
+        //                     width: 200
+        //                 },{
+        //                     field: 'item_rm_family',
+        //                     title: 'Product Family.',
+        //                     halign: 'center',
+        //                     width: 200
+        //                 }, {
+        //                     field: 'uom',
+        //                     title: 'UoM',
+        //                     halign: 'center',
+        //                     width: 80
+        //                 }, {
+        //                     field: 'qty_wo',
+        //                     title: 'Qty WO',
+        //                     halign: 'center',
+        //                     width: 80
+        //                 }, {
+        //                     field: 'composition',
+        //                     title: 'Qpa',
+        //                     halign: 'center',
+        //                     width: 80
+        //                 }, {
+        //                     field: 'mpq',
+        //                     title: 'MPQ',
+        //                     halign: 'center',
+        //                     width: 80,
+        //                     formatter: numberformatQpa
+        //                 }, {
+        //                     field: 'qty_req',
+        //                     title: 'Supply',
+        //                     halign: 'center',
+        //                     align: 'right',
+        //                     width: 100,
+        //                     formatter: numberformatQpa
+        //                 }, {
+        //                     field: 'need',
+        //                     title: 'Need',
+        //                     halign: 'center',
+        //                     align: 'right',
+        //                     width: 100,
+        //                     formatter: numberformatQpa
+        //                 }, {
+        //                     field: 'qty_issued',
+        //                     title: 'Issued',
+        //                     halign: 'center',
+        //                     align: 'right',
+        //                     width: 100,
+        //                     formatter: numberformatQpa
+        //                 }, {
+        //                     field: 'lotnos',
+        //                     title: 'Lot NO RM',
+        //                     halign: 'center',
+        //                     align: 'right',
+        //                     width: 120,
+        //                 }, 
+        //                 {
+        //                     field: 'issued_qty_crusher',
+        //                     title: 'Issued Qty <br> Crusher',
+        //                     halign: 'center',
+        //                     width: 100,
+        //                     formatter: numberformatQpa
+        //                 }, 
+        //                 {
+        //                     field: 'issued_qty_peletizing',
+        //                     title: 'Issued Qty <br> Peletizing',
+        //                     halign: 'center',
+        //                     width: 100,
+        //                     formatter: numberformatQpa
+        //                 }, 
+        //                 {
+        //                     field: 'qty_purging',
+        //                     title: 'Req Qty <br> Purging',
+        //                     halign: 'center',
+        //                     width: 100,
+        //                     formatter: numberformatQpa
+        //                 }
+                       
+        //                 ]
+        //             ],
+        //             onResize: function() {
+        //                 $('#dg').datagrid('fixDetailRowHeight', index);
+        //             },
+        //             onLoadSuccess: function() {
+        //                 setTimeout(function() {
+        //                     $('#dg').datagrid('fixDetailRowHeight', index);
+        //                 }, 0);
+        //             }
+        //         });
+        //         $('#dg').datagrid('fixDetailRowHeight', index);
+        //     }
+        // });
+
         $('#dg').datagrid({
             url: '<?= base_url('planning/supply_sheets/datatables') ?>' + url,
             pagination: true,
             rownumbers: true,
             fit: true,
             view: detailview,
-            detailFormatter:function(index,row){
-                return '<div style="padding:2px;position:relative;"><table class="ddv" title="Detail Of ' + row.request_no + '"></table></div>';
+            detailFormatter: function(index, row) {
+                return '<div style="padding:2px;position:relative;"><div class="loading-detail" style="text-align:center;padding:20px;">Loading data...</div><table class="ddv" title="Detail Of ' + row.request_no + '" style="display:none;"></table></div>';
             },
             onExpandRow: function(index, row) {
-                var ddv = $(this).datagrid('getRowDetail', index).find('table.ddv');
+                var rowDetail = $(this).datagrid('getRowDetail', index);
+                var ddv = rowDetail.find('table.ddv');
+                var loading = rowDetail.find('.loading-detail');
 
                 ddv.datagrid({
                     url: '<?= base_url('planning/supply_sheets/datatableDetails/') ?>' + window.btoa(row.request_no),
+                    method: 'get',
                     singleSelect: true,
                     rownumbers: true,
+                    fitColumns: false,
+                    loadMsg: 'Loading...',
                     columns: [
                         [{
                             field: 'status',
@@ -613,17 +746,17 @@
                             width: 100,
                             formatter: statusformat,
                             styler: statusStyle
-                        },{
+                        }, {
                             field: 'item_rm_number',
                             title: 'Part No',
                             halign: 'center',
                             width: 200
-                        },{
+                        }, {
                             field: 'item_rm_name',
                             title: 'Part Name.',
                             halign: 'center',
                             width: 200
-                        },{
+                        }, {
                             field: 'item_rm_family',
                             title: 'Product Family.',
                             halign: 'center',
@@ -670,43 +803,49 @@
                             align: 'right',
                             width: 100,
                             formatter: numberformatQpa
-                        }, 
-                        {
+                        }, {
+                            field: 'lotnos',
+                            title: 'Lot NO RM',
+                            halign: 'center',
+                            align: 'right',
+                            width: 120,
+                        }, {
                             field: 'issued_qty_crusher',
-                            title: 'Issued Qty <br> Crusher',
+                            title: 'Issued Oth <br> 1',
                             halign: 'center',
                             width: 100,
                             formatter: numberformatQpa
-                        }, 
-                        {
+                        }, {
                             field: 'issued_qty_peletizing',
-                            title: 'Issued Qty <br> Peletizing',
+                            title: 'Issued Oth <br> 2',
                             halign: 'center',
                             width: 100,
                             formatter: numberformatQpa
-                        }, 
-                        {
+                        }, {
                             field: 'qty_purging',
                             title: 'Req Qty <br> Purging',
                             halign: 'center',
                             width: 100,
                             formatter: numberformatQpa
-                        }
-                       
-                        ]
+                        }]
                     ],
-                    onResize: function() {
-                        $('#dg').datagrid('fixDetailRowHeight', index);
-                    },
                     onLoadSuccess: function() {
                         setTimeout(function() {
                             $('#dg').datagrid('fixDetailRowHeight', index);
                         }, 0);
+                        // Sembunyikan loading dan tampilkan tabel
+                        loading.hide();
+                        ddv.show();
+                    },
+                    onResize: function() {
+                        $('#dg').datagrid('fixDetailRowHeight', index);
                     }
                 });
+
                 $('#dg').datagrid('fixDetailRowHeight', index);
             }
         });
+
 
         $("#printout").contents().find('html').html("<center><br><br><br><b style='font-size:20px;'>Please Wait...</b></center>");
         $("#printout").attr('src', '<?= base_url('planning/supply_sheets/print') ?>' + url);
@@ -1044,16 +1183,20 @@
     function statusformat(value, row) {
         if (value == 0) {
             return "<b style='color:green;'>OPEN</b>";
-        } else {
+        } else if (value == 1) {
             return "<b style='color:red;'>CLOSED</b>";
+        } else if (value == 2) {
+            return "<b style='color:white;'>COMPLETE</b>";
         }
     }
 
     function statusStyle(value, row, index) {
         if (value == 0) {
             return 'background-color:#C8FFCC;';
-        } else {
+        } else if (value == 1) {
             return 'background-color:#FFC8C8;';
+        } else if (value == 2) {
+            return 'background-color:#4B54E7;';
         }
     }
 
@@ -1075,5 +1218,84 @@
 
     function BtnPrintLabel(val, row) {
         return '<a style="text-decoration: none; font-weight:bold;" target="_blank" href="<?= base_url('planning/supply_sheets/print_label/') ?>' + window.btoa(row.id) + '"><i class="fa fa-print"></i> Print</a>';
+    }
+
+    function close_sh(){
+        var rows = $('#dg').datagrid('getSelections');
+        console.log(rows);
+        if (rows.length > 0) {
+            // $.messager.confirm('Warning', 'Are you sure you want to completed this data?', function(r) {
+            //     if (r) {
+                    for (var i = 0; i < rows.length; i++) {
+                        var row = rows[i];
+                        console.log(row);
+                        if (row.status == "0") {
+                            Swal.fire({
+                                title: "Are you sure?",
+                                text: "You want to Complete this data?",
+                                icon: "warning",
+                                showCancelButton: true,
+                                confirmButtonColor: "#3085d6",
+                                cancelButtonColor: "#d33",
+                                confirmButtonText: "Yes",
+                            }).then((result) => {
+                                if (result.isConfirmed) {
+                                    $.ajax({
+                                        method: 'post',
+                                        url: '<?= base_url('planning/supply_sheets/closeSh') ?>',
+                                        data: {
+                                            request_no: row.request_no,
+                                        },
+                                        success: function(result) {
+                                            var result = eval('(' + result + ')');
+                                            toastr.success(result.message);
+                                        },
+                                        error: function(jqXHR, textStatus, errorThrown) {
+                                            toastr.error(jqXHR.statusText);
+                                            $.messager.alert("Error", jqXHR.statusText, 'error');
+                                        },
+                                        complete: function(data) {
+                                            $('#dg').datagrid('reload');
+                                        }
+                                    });
+                                }
+                            });
+                        } else {
+                            // toastr.error("this data has been Completed");
+                            Swal.fire({
+                                title: "Are you sure?",
+                                text: "You want to Open this data!",
+                                icon: "warning",
+                                showCancelButton: true,
+                                confirmButtonColor: "#3085d6",
+                                cancelButtonColor: "#d33",
+                                confirmButtonText: "Yes",
+                            }).then((result) => {
+                                if (result.isConfirmed) {
+                                    $.ajax({
+                                        method: 'post',
+                                        url: '<?= base_url('planning/supply_sheets/openSh') ?>',
+                                        data: {
+                                            request_no: row.request_no,
+                                        },
+                                        success: function(result) {
+                                            var result = eval('(' + result + ')');
+                                            toastr.success(result.message);
+                                        },
+                                        error: function(jqXHR, textStatus, errorThrown) {
+                                            toastr.error(jqXHR.statusText);
+                                            $.messager.alert("Error", jqXHR.statusText, 'error');
+                                        },
+                                        complete: function(data) {
+                                            $('#dg').datagrid('reload');
+                                        }
+                                    });
+                                }
+                            });
+                        }
+                    }
+            //     }
+            // });
+        }
     }
 </script>

@@ -126,6 +126,7 @@ class Supply_sheets extends CI_Controller
             WHERE a.status = 0 
             AND (c.qty_bal IS NULL OR c.qty_bal != 0)
             AND b.period = '$period'
+            AND b.status = 0 
             ORDER BY b.wo_no ASC");
         echo json_encode($send);
     }
@@ -221,7 +222,33 @@ class Supply_sheets extends CI_Controller
         echo "SH-" . $datenow . "-" . $autoID;
     }
 
-   
+    public function closeSh()
+    {
+        $request_no = $this->input->post('request_no');
+        $update = $this->db->update('supply_sheets', ["status" => 2, "remarks" =>'Closing SH'], ["request_no" => $request_no]);// , "qty" => 0
+        // echo $update;
+
+         // Berikan respon sesuai hasil
+        if ($update) {
+            echo json_encode(["success" => true,"message" => "Supply Sheets Close successfully."]);
+        } else {
+            echo json_encode(["success" => false,"message" => "Failed to Close Supply Sheets."]);
+        }
+    }
+
+    public function openSh()
+    {
+        // $po_no = $this->input->post('po_no');
+        $request_no = $this->input->post('request_no');
+        $update = $this->db->update('supply_sheets', ["status" => 0,"remarks" =>null], ["request_no" => $request_no]);// , "qty" => 0
+
+        if ($update) {
+            echo json_encode(["success" => true,"message" => "Supply Sheets Open successfully."]);
+        } else {
+            echo json_encode(["success" => false,"message" => "Failed to Open Supply Sheets."]);
+        }
+    }
+
     public function datatables()
     {
         // Ambil filter dari input GET/POST
@@ -249,7 +276,7 @@ class Supply_sheets extends CI_Controller
 
         // Select Query Utama
         $this->db->select('a.*, SUM(a.qty_req) as qty_req2, SUM(a.qty_act) as qty_act2, SUM(a.qty_bal) as qty_bal2, b.number as item_fg_number,
-        b.name as item_fg_name, b.uom, b.status_subcont, b.subcont_type, g.qty_issued2, COALESCE(SUM(c.qty),0) as qty_actual, COUNT(a.status) as total_status, i.total_status_open, h.total_status_close');
+        b.name as item_fg_name, b.uom, b.status_subcont, b.subcont_type, g.qty_issued2, COALESCE(SUM(c.qty),0) as qty_actual, COUNT(a.status) as total_status, i.total_status_open, h.total_status_close, j.total_status_complete');
         $this->db->from('supply_sheets a');
         $this->db->join('item_fg b', 'a.item_fg_id = b.id');
         $this->db->join('issued_material_details c', 'a.request_no = c.request_no and a.item_rm_id = c.item_rm_id','left');
@@ -260,6 +287,7 @@ class Supply_sheets extends CI_Controller
         HAVING (SUM(a.qty) - b.qty_req) < 0) g", "a.request_no = g.request_no", "LEFT");
         $this->db->join('(SELECT a.request_no, COUNT(a.status) as total_status_close FROM supply_sheets a JOIN bom b ON a.item_fg_id = b.item_fg_id and a.item_rm_id = b.item_rm_id WHERE a.status = 1 GROUP BY a.request_no) h', 'a.request_no = h.request_no', 'left');
         $this->db->join('(SELECT a.request_no, COUNT(a.status) as total_status_open FROM supply_sheets a JOIN bom b ON a.item_fg_id = b.item_fg_id and a.item_rm_id = b.item_rm_id WHERE a.status = 0 GROUP BY a.request_no) i', 'a.request_no = i.request_no', 'left');
+        $this->db->join('(SELECT a.request_no, COUNT(a.status) as total_status_complete FROM supply_sheets a JOIN bom b ON a.item_fg_id = b.item_fg_id and a.item_rm_id = b.item_rm_id WHERE a.status = 2 GROUP BY a.request_no) j', 'a.request_no = j.request_no', 'left');
         $this->db->where('a.deleted', 0);
         if ($filter_request_no != "") {
             $this->db->where('a.request_no', $filter_request_no);
@@ -289,10 +317,6 @@ class Supply_sheets extends CI_Controller
             $this->db->where('b.subcont_type', $filter_subcont_type);
         }
 
-        // if ($filter_status != "") {
-        //     $this->db->where('a.status', $filter_status);
-        // }
-
         if ($filter_status != "") {
             // Jika filter status adalah '0' (Open)
             if ($filter_status == "0") {
@@ -302,6 +326,10 @@ class Supply_sheets extends CI_Controller
             elseif ($filter_status == "1") {
                 $this->db->where('h.total_status_close >=', 1); // Status close
             }
+            elseif ($filter_status == "2") {
+                $this->db->where('j.total_status_complete >=', 1); // Status close
+            }
+            
         }
 
         $this->db->group_by('a.request_no');
@@ -322,12 +350,16 @@ class Supply_sheets extends CI_Controller
                 $status = "0";
             } elseif ($record['total_status'] == $record['total_status_close']) {
                 $status = "1";
+            } elseif ($record['total_status'] == $record['total_status_complete']) {
+                $status = "2";
             } elseif ($record['total_status_open'] >= 1) {
                 $status = "0";
+            } elseif ($record['total_status_complete'] >= 1) {
+                $status = "2";
             } elseif ($record['total_status_close'] >= 1) {
                 $status = "1";
             } else {
-                $status = "1";
+                $status = "0";
             }
 
             // Simpan data ke array hasil akhir
@@ -341,6 +373,10 @@ class Supply_sheets extends CI_Controller
                 "item_fg_name" => $record['item_fg_name'],
                 "uom" => $record['uom'],
                 "status" => $status,
+                "total_status" => $record['total_status'],
+                "total_status_open" => $record['total_status_open'],
+                "total_status_close" => $record['total_status_close'],
+                "total_status_complete" => $record['total_status_complete'],
                 "status_subcont" => $record['status_subcont'],
                 "subcont_type" => $record['subcont_type'],
                 "created_by" => $record['created_by'],
@@ -366,7 +402,7 @@ class Supply_sheets extends CI_Controller
         $filter_item_fg_id = $this->input->get('filter_item_fg_id');
         $filter_status = $this->input->get('filter_status');
 
-        $this->db->select('a.*, b.number as item_number, b.name as item_name, a.mpq, a.qty_wo,
+        $this->db->select('a.*, b.number as item_number, b.name as item_name, a.mpq, a.qty_wo, l.lotnos,
                 c.id as item_rm_id,
                 c.number as item_rm_no, 
                 c.name as item_rm_name, 
@@ -394,6 +430,29 @@ class Supply_sheets extends CI_Controller
             // $this->db->join("(SELECT request_no, item_rm_id, SUM(qty) as issued_qty_crusher FROM issued_material_details GROUP BY request_no, item_rm_id) k", "k.request_no = a.request_no and k.item_rm_id = e.item_rm_id", "LEFT");
             $this->db->join('item_familys j', 'c.item_family_id = j.id', 'left');
             $this->db->join('issued_material_details k', 'a.request_no = k.request_no and a.item_rm_id = k.item_rm_id','left');
+            $this->db->join("(
+                SELECT 
+                    a.request_no,
+                    a.item_rm_id, 
+                    GROUP_CONCAT(DISTINCT d.lotno ORDER BY d.lotno SEPARATOR ', ') AS lotnos
+                FROM supply_sheets a
+                LEFT JOIN issued_material_details b ON a.request_no = b.request_no AND a.item_rm_id = b.item_rm_id
+                LEFT JOIN purchase_order_labels c ON c.label_no = b.label_no
+                LEFT JOIN purchase_order_receipts d ON d.receipt_id = c.receipt_id
+                GROUP BY a.request_no, a.item_rm_id
+
+                UNION
+
+                SELECT 
+                    a.request_no,
+                    a.item_rm_id, 
+                    GROUP_CONCAT(DISTINCT d.lot_no ORDER BY d.lot_no SEPARATOR ', ') AS lotnos
+                FROM supply_sheets a
+                LEFT JOIN issued_material_details b ON a.request_no = b.request_no AND a.item_rm_id = b.item_rm_id
+                LEFT JOIN bpm_labels c ON c.label_no = b.label_no
+                LEFT JOIN bpm d ON d.request_id = c.request_id
+                GROUP BY a.request_no, a.item_rm_id
+            ) l", "a.request_no = l.request_no AND a.item_rm_id = l.item_rm_id", "left");
             $this->db->where('a.deleted', 0);
             // $this->db->where('a.status', 0);
             $this->db->where('a.request_no', $request_no);
@@ -485,6 +544,7 @@ class Supply_sheets extends CI_Controller
                     "item_rm_family" => $record['item_rm_family'],
                     "qty_wo" => $record['qty_wo'],
                     "qty_req" => $record['qty_req'],
+                    "lotnos" => $record['lotnos'],
                     "qty_act" => $record['qty_act'],
                     "qty_bal" => $record['qty_bal'],
                     "need" => $record['need'],
@@ -730,6 +790,7 @@ class Supply_sheets extends CI_Controller
                 $qty_act = $post['qty_act'];
                 $qty_req = $post['qty_req'];
                 $qty_real = $post['qty_real'];
+                $qty_purging = $post['qty_purging'];
                 $query = "SELECT * FROM wip_balances WHERE item_rm_id = ? ORDER BY created_date DESC, id DESC LIMIT 1";
                 $result = $this->db->query($query, [$item_rm_id])->row();
                 
@@ -766,13 +827,15 @@ class Supply_sheets extends CI_Controller
 
                     $need = $qty_act;
                     
-                    if ($begin >= $qty_real) {
+                    if ($begin >= $qty_act) {
                         $supply = 0;
+                        $status = 1;
                     } else {
                         $supply = $qty_req;
+                        $status = 0;
                     }
                     
-                    $balance = $begin + $supply - $need;
+                    $balance = $begin + $supply - $need - $qty_purging;
 
                     if ($qty_act == 0) {
                         echo json_encode(array("title" => "Qty 0", "message" => $post['item_rm_id'] . " Qty 0", "theme" => "error"));
@@ -785,11 +848,12 @@ class Supply_sheets extends CI_Controller
                             "issued" => $supply,
                             "balance" => $balance,
                             "qty_real" => $qty_real,
+                            "qty_purging" => $qty_purging,
                             "warehouse" => $stockWarehouse[0]->ending_stock
                         ]);
 
 
-                        $send   = $this->crud->create('supply_sheets', array_merge($post, array("qty_issued" => $supply)));
+                        $send   = $this->crud->create('supply_sheets', array_merge($post, array("qty_issued" => $supply, "status" => $status)));
                         echo $send;
                     }
                 }
@@ -805,7 +869,7 @@ class Supply_sheets extends CI_Controller
     {
         $data = $this->input->post();
         $send = $this->crud->delete('supply_sheets', ["request_no" => $data['request_no']]);
-        // $update = $this->crud->update('production_schedules', ["workorder" => $data['workorder'], "item_fg_id" => $data['item_fg_id']], ["status" => 0]);
+        $update = $this->crud->update('production_schedules', ["workorder" => $data['workorder'], "item_fg_id" => $data['item_fg_id']], ["status" => 0]);
         $delete = $this->crud->delete('wip_balances', ["request_no" => $data['request_no']]);
         echo $send;
     }
@@ -889,7 +953,7 @@ class Supply_sheets extends CI_Controller
         $subtotal = 0;
         for ($i = 0; $i < $page; $i++) {
             $this->db->select('a.*, 
-            (CASE WHEN a.mpq > 0 THEN a.mpq ELSE g.mpq END) as mpq, 
+            (CASE WHEN a.mpq > 0 THEN a.mpq ELSE g.mpq END) as mpq, l.lotnos,
             c.number as item_rm_no, 
             c.name as item_rm_name, 
             e.composition, 
@@ -908,6 +972,30 @@ class Supply_sheets extends CI_Controller
             $this->db->join('production_schedules h', 'a.workorder = h.wo_no and a.item_fg_id = h.item_fg_id');
             $this->db->join("(SELECT request_no, item_rm_id, SUM(qty) as qty_issueds FROM issued_material_details GROUP BY request_no, item_rm_id) i", "i.request_no = a.request_no and i.item_rm_id = c.id", "LEFT");
             $this->db->join('convertions j', 'a.item_rm_id = j.item_rm_id', 'left');
+            $this->db->join("(
+                SELECT 
+                    a.request_no,
+                    a.item_rm_id, 
+                    GROUP_CONCAT(DISTINCT d.lotno ORDER BY d.lotno SEPARATOR ', ') AS lotnos
+                FROM supply_sheets a
+                LEFT JOIN issued_material_details b ON a.request_no = b.request_no AND a.item_rm_id = b.item_rm_id
+                LEFT JOIN purchase_order_labels c ON c.label_no = b.label_no
+                LEFT JOIN purchase_order_receipts d ON d.receipt_id = c.receipt_id
+                GROUP BY a.request_no, a.item_rm_id
+
+                UNION
+
+                SELECT 
+                    a.request_no,
+                    a.item_rm_id, 
+                    GROUP_CONCAT(DISTINCT d.lot_no ORDER BY d.lot_no SEPARATOR ', ') AS lotnos
+                FROM supply_sheets a
+                LEFT JOIN issued_material_details b ON a.request_no = b.request_no AND a.item_rm_id = b.item_rm_id
+                LEFT JOIN bpm_labels c ON c.label_no = b.label_no
+                LEFT JOIN bpm d ON d.request_id = c.request_id
+                GROUP BY a.request_no, a.item_rm_id
+            ) l", "a.request_no = l.request_no AND a.item_rm_id = l.item_rm_id", "left");
+
             $this->db->where('a.deleted', 0);
             // $this->db->where('a.status', 0);
             // $this->db->where('e.operation', base64_decode($operation));
@@ -1010,19 +1098,20 @@ class Supply_sheets extends CI_Controller
                                 </div>
                                 <table id="customers">
                                     <tr>
-                                        <th>No</th>
-                                        <th>Part No</th>
-                                        <th>Part Name</th>
-                                        <th>QPA</th>
-                                        <th>Uom</th>
-                                        <th>MPQ</th>
-                                        <th>Need</th>
-                                        <th>Qty Purging</th>
-                                        <th>Supply</th>
-                                        <th>Issued</th>
-                                        <th>Balance WIP</th>
-                                        <th>Stock WHS</th>
-                                        <th width="10">WHS Location</th>
+                                        <th style="text-align:center">No</th>
+                                        <th style="text-align:center">Part No</th>
+                                        <th style="text-align:center">Part Name</th>
+                                        <th style="text-align:center">QPA</th>
+                                        <th style="text-align:center">Uom</th>
+                                        <th style="text-align:center">MPQ</th>
+                                        <th style="text-align:center">Need</th>
+                                        <th style="text-align:center">Qty Purging</th>
+                                        <th style="text-align:center">Supply</th>
+                                        <th style="text-align:center">Issued</th>
+                                        <th style="text-align:center">Lot NO RM</th>
+                                        <th style="text-align:center">Balance WIP</th>
+                                        <th style="text-align:center">Stock WHS</th>
+                                        <th style="text-align:center; width:10">WHS Location</th>
                                     </tr>';
             foreach ($records as $record) {
                 $wip_balances = $this->crud->read("wip_balances", [], ["item_rm_id" => $record['item_rm_id'], "request_no" => $record['request_no']], "", "id", "desc");
@@ -1063,6 +1152,7 @@ class Supply_sheets extends CI_Controller
                                 <td style="text-align:right;">' . @number_format($record['req_qty_purging'], 2) . '</td>
                                 <td style="text-align:right;">' . @number_format($record['qty_req'], 4) . '</td>
                                 <td style="text-align:right;">' . @number_format($record['qty_issueds'], 4) . '</td>
+                                <td style="text-align:right;">' . @$record['lotnos'] . '</td>
                                 <td style="text-align:right;">' . @number_format(($wip_balances->balance), 4) . '</td>
                                 <td style="text-align:right;">' . @number_format(($ending_stock), 4) . '</td>
                                 <td>' . $record['location'] . '</td>
@@ -1110,7 +1200,6 @@ class Supply_sheets extends CI_Controller
         $this->db->join('warehouse_location_items f', "a.item_rm_id = f.item_rm_id", 'left');
         $this->db->join('supplier_items g', 'a.item_rm_id = g.item_rm_id','left');
         $this->db->where('a.deleted', 0);
-        // $this->db->where('a.status', 0);
         // $this->db->where('e.operation', base64_decode($operation));
         $this->db->like('a.request_no', $requestno);
         $this->db->group_by('c.number');
@@ -1300,6 +1389,7 @@ class Supply_sheets extends CI_Controller
             $this->db->join('purchase_order_receipts h', 'g.receipt_id = h.receipt_id', 'left');
             $this->db->join('supplier_items i', 'c.item_rm_id = i.item_rm_id AND i.share_order = 100', 'left');
             $this->db->where('a.deleted', 0);
+            $this->db->where('f.item_family_id !=', 'P01');
             $this->db->like('a.request_no', base64_decode($request_no));
             $this->db->group_by('f.number');
             $this->db->order_by('f.number', 'ASC');
