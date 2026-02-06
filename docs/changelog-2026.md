@@ -272,3 +272,6 @@ Add validation for handle multiple click and update checkEndingBalance ([f537f55
 
 ### [2026-02-06]
 - **Rizki Puji**: Hotfix: bug eCORETAX product no different price on Sales Invoices ([3c61cd73](https://github.com/hilmanf11/erp_bpi/commit/3c61cd731933b11dc4d888056e23b502537f17dd))
+
+### [2026-02-06]
+- **kurniawan**: Update Supply sheet ([21c43fa2](https://github.com/hilmanf11/erp_bpi/commit/21c43fa2888bf5cfa5287ab166eb56283b8540b4))
