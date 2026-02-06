@@ -524,14 +524,6 @@ class Sales_invoices extends CI_Controller
                 $account_number = $jsonData["account_number"];
                 $account_name = $jsonData["account_name"];
                 $total = $jsonData["total"];
-                $currency = $jsonData["currency"];
-                $trans_date = $jsonData["trans_date"];
-
-                // Total Local jika bukan IDR dikali Exchange Rates
-                $total_local = $jsonData["total"];
-                if ($currency != "IDR") {
-                    $total_local = $this->getLocalValue($total, $currency, $trans_date);
-                }
 
                 // Inisialisasi entri jika belum ada
                 if (!isset($mergedData[$account_number])) {
@@ -540,8 +532,6 @@ class Sales_invoices extends CI_Controller
                         "account_name" => $account_name,
                         "debit" => 0,
                         "credit" => 0,
-                        "local_debit"  => 0,
-                        "local_credit" => 0,
                         "flag" => $flag++, 
                     ];
                 }
@@ -549,11 +539,8 @@ class Sales_invoices extends CI_Controller
                 // Tambahkan nilai ke Debit atau Credit yang sesuai
                 if ($jsonData['account_type'] == "DEBIT") {
                     $mergedData[$account_number]["debit"] += $total;
-                    $mergedData[$account_number]["local_debit"] += $total_local;
-
                 } elseif ($jsonData['account_type'] == "CREDIT") {
                     $mergedData[$account_number]["credit"] += $total;
-                    $mergedData[$account_number]["local_credit"] += $total_local;
                 }
             }
 
@@ -562,52 +549,34 @@ class Sales_invoices extends CI_Controller
 
         } else {
             // --- Jika Jurnal SUDAH ADA (Membandingkan/Memperbarui) ---
+            
+            // 1. Agregasi data sales_invoices
             $aggregated_invoices = [];
             foreach ($sales_invoices_data as $jsonData) {
                 $account_number = $jsonData["account_number"];
                 $total = $jsonData["total"];
-                $currency = $jsonData["currency"];
-                $trans_date = $jsonData["trans_date"];
                 
                 if (!isset($aggregated_invoices[$account_number])) {
-                    $aggregated_invoices[$account_number] = [
-                        "debit"        => 0, 
-                        "credit"       => 0, 
-                        "local_debit"  => 0, 
-                        "local_credit" => 0, 
-                    ];
-                }
-
-                // Total Local jika bukan IDR dikali Exchange Rates
-                $total_local = $jsonData["total"];
-                if ($currency != "IDR") {
-                    $total_local = $this->getLocalValue($total, $currency, $trans_date);
+                    $aggregated_invoices[$account_number] = ["debit" => 0, "credit" => 0];
                 }
 
                 if ($jsonData['account_type'] == "DEBIT") {
                     $aggregated_invoices[$account_number]["debit"] += $total;
-                    $aggregated_invoices[$account_number]["local_debit"] += $total_local;
-
                 } elseif ($jsonData['account_type'] == "CREDIT") {
-                    $aggregated_invoices[$account_number]["credit"] += $total;                    
-                    $aggregated_invoices[$account_number]["local_credit"] += $total_local;
+                    $aggregated_invoices[$account_number]["credit"] += $total;
                 }
             }
 
+            // 2. Loop melalui jurnal yang sudah ada untuk memperbarui nilainya
             foreach ($journals as $journal) {
                 $account_number = $journal['account_number'];
                 $total_debit = $journal['debit'];
                 $total_credit = $journal['credit'];
-                $total_debit_local = $journal['local_debit'];
-                $total_credit_local = $journal['local_credit'];
                 
                 // Cari total baru dari aggregated_invoices dan lakukan overwrite
                 if (isset($aggregated_invoices[$account_number])) {
                     $total_debit = $aggregated_invoices[$account_number]['debit'];
                     $total_credit = $aggregated_invoices[$account_number]['credit'];
-                    
-                    $total_debit_local = $aggregated_invoices[$account_number]['local_debit'];
-                    $total_credit_local = $aggregated_invoices[$account_number]['local_credit'];
                     
                     // Hapus dari aggregated_invoices setelah diproses
                     unset($aggregated_invoices[$account_number]); 
@@ -620,8 +589,6 @@ class Sales_invoices extends CI_Controller
                     "debit" => round($total_debit, 4),
                     "credit" => round($total_credit, 4),
                     "flag" => $journal['flag'],
-                    "local_debit"  => round($total_debit_local, 4),
-                    "local_credit" => round($total_credit_local, 4),
                 ];
             }
             
@@ -636,8 +603,6 @@ class Sales_invoices extends CI_Controller
                     "debit" => round($data['debit'], 4),
                     "credit" => round($data['credit'], 4),
                     "flag" => $flag_counter++,
-                    "local_debit"  => round($data['local_debit'], 4),
-                    "local_credit" => round($data['local_credit'], 4),
                 ];
             }
         }
