@@ -308,3 +308,6 @@ Add UpdateNotLog in CRUD ([8b1c7876](https://github.com/hilmanf11/erp_bpi/commit
 
 ### [2026-02-06]
 - **Rizki Puji**: Feature: form Edit Non Mandatory Data Sales Invoices ([1a5f16d6](https://github.com/hilmanf11/erp_bpi/commit/1a5f16d69804d7c1113ea0c389a4f5227154233e))
+
+### [2026-02-06]
+- **Rizki Puji**: Feat: fix Faktur No Numerik on Edit Non Mandatory Data Sales Invoices ([1bed0e4c](https://github.com/hilmanf11/erp_bpi/commit/1bed0e4cb84922163532ad5b6503b4583ebcabe1))
