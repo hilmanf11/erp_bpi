@@ -297,3 +297,6 @@ add fallback 6 month ([13196cbe](https://github.com/hilmanf11/erp_bpi/commit/131
 - **kurniawan**: Update Supply_materials.php
 
 add Query CR & PL ([618af0c4](https://github.com/hilmanf11/erp_bpi/commit/618af0c4d0b4abcde9710f76c217419321d64dc7))
+
+### [2026-02-06]
+- **kurniawan**: Update Bpm ([14d71fe0](https://github.com/hilmanf11/erp_bpi/commit/14d71fe071d073b2219384534979e3b7959d390a))
