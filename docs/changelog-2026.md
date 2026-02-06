@@ -284,3 +284,6 @@ Add validation for handle multiple click and update checkEndingBalance ([f537f55
 
 ### [2026-02-06]
 - **kurniawan**: Update Checksheets ([070c621a](https://github.com/hilmanf11/erp_bpi/commit/070c621ae7d05be8fde4857b874bbb24336675d4))
+
+### [2026-02-06]
+- **kurniawan**: New Modul Generate Loadcap ([d55fb36f](https://github.com/hilmanf11/erp_bpi/commit/d55fb36f2dbc8922d13b1c8d1513c72381572391))
