@@ -319,3 +319,6 @@ Add new Folder Modul Pricing ([6327c43e](https://github.com/hilmanf11/erp_bpi/co
 
 ### [2026-02-06]
 - **kurniawan**: Update Request Material Memo ([3d7b4d88](https://github.com/hilmanf11/erp_bpi/commit/3d7b4d8893b492b8b490cd0f92081710e086a155))
+
+### [2026-02-06]
+- **Rizki Puji**: Revert: calc Local Balance Journal and Edit Tax on Sales Invoices ([a8a19ff8](https://github.com/hilmanf11/erp_bpi/commit/a8a19ff8685a508e7357b73a85a5a953a50f1e16))
