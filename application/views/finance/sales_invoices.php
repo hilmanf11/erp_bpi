@@ -135,6 +135,11 @@
                 <input style="width:60%;" name="filter_faktur_no" id="filter_faktur_no" class="easyui-combobox">
             </div>
             
+            <!-- Javascript editTaxData() dan Form Modal ada di file edit_tax_sales_invoices.php -->
+            <div class="fitem" hidden>
+                <a href="javascript:;" class="easyui-linkbutton" onclick="editTaxData()"><i class="fa fa-edit"></i> Edit Tax Data</a>
+            </div>
+
         </div>
     </fieldset>
 
@@ -1328,7 +1333,7 @@
             validType: 'length[1,11]',
             inputEvents: $.extend({}, $.fn.textbox.defaults.inputEvents, {
                 keyup: function(e) {
-                    var value = $(this).val();
+                    var value = $(this).val().replace(/[^0-9]/g, ''); // Faktur No hanya Numerik (Bu Nina)
                     if (value.length > 11) {
                         $(this).val(value.slice(0, 11));
                     }
@@ -2920,7 +2925,7 @@
                         validType: 'length[1,11]',
                         inputEvents: $.extend({}, $.fn.textbox.defaults.inputEvents, {
                             keyup: function(e) {
-                                var value = $(this).val();
+                                var value = $(this).val().replace(/[^0-9]/g, ''); // Faktur No hanya Numerik (Bu Nina)
                                 if (value.length > 11) {
                                     $(this).val(value.slice(0, 11));
                                 }

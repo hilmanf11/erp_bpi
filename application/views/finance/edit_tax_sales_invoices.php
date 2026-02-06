@@ -217,7 +217,7 @@
                     validType: 'length[1,11]',
                     inputEvents: $.extend({}, $.fn.textbox.defaults.inputEvents, {
                         keyup: function(e) {
-                            var value = $(this).val();
+                            var value = $(this).val().replace(/[^0-9]/g, '');
                             
                             // Limit 11 karakter
                             if (value.length > 11) {

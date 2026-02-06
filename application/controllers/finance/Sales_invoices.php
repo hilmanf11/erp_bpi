@@ -45,6 +45,7 @@ class Sales_invoices extends CI_Controller
             
             $this->load->view('template/header', $data);
             $this->load->view('finance/sales_invoices');
+            $this->load->view('finance/edit_tax_sales_invoices'); // Modal Dialog Edit Data Tax Non Mandatory
         } else {
             redirect('error_access');
         }
