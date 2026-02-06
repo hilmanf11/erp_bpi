@@ -333,3 +333,6 @@ Optimation for Create with Race Condition ([c36c3c13](https://github.com/hilmanf
 
 ### [2026-02-06]
 - **Rizki Puji**: Feat: get Rate validation on save Journal Postings ([c617c543](https://github.com/hilmanf11/erp_bpi/commit/c617c5439796adbee34ed845be25d0e3463cef42))
+
+### [2026-02-06]
+- **Rizki Puji**: Feat: fix validation Rate if not IDR on save Journal Postings ([9a643e7d](https://github.com/hilmanf11/erp_bpi/commit/9a643e7d9fdb2dae73b9345f77586466ce2aa60f))
