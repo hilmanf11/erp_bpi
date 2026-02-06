@@ -311,3 +311,8 @@ Add UpdateNotLog in CRUD ([8b1c7876](https://github.com/hilmanf11/erp_bpi/commit
 
 ### [2026-02-06]
 - **Rizki Puji**: Feat: fix Faktur No Numerik on Edit Non Mandatory Data Sales Invoices ([1bed0e4c](https://github.com/hilmanf11/erp_bpi/commit/1bed0e4cb84922163532ad5b6503b4583ebcabe1))
+
+### [2026-02-06]
+- **kurniawan**: New Modul Pricing
+
+Add new Folder Modul Pricing ([6327c43e](https://github.com/hilmanf11/erp_bpi/commit/6327c43e3db80d9ee5186102040f65f8e498fc7a))
