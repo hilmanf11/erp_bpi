@@ -275,3 +275,6 @@ Add validation for handle multiple click and update checkEndingBalance ([f537f55
 
 ### [2026-02-06]
 - **kurniawan**: Update Supply sheet ([21c43fa2](https://github.com/hilmanf11/erp_bpi/commit/21c43fa2888bf5cfa5287ab166eb56283b8540b4))
+
+### [2026-02-06]
+- **kurniawan**: Merge branch 'main' of https://github.com/hilmanf11/erp_bpi ([05d4bab6](https://github.com/hilmanf11/erp_bpi/commit/05d4bab6dd90bdd68d4707901a212a73beb40110))
