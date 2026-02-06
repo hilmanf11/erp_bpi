@@ -300,3 +300,8 @@ add Query CR & PL ([618af0c4](https://github.com/hilmanf11/erp_bpi/commit/618af0
 
 ### [2026-02-06]
 - **kurniawan**: Update Bpm ([14d71fe0](https://github.com/hilmanf11/erp_bpi/commit/14d71fe071d073b2219384534979e3b7959d390a))
+
+### [2026-02-06]
+- **kurniawan**: Update Crud.php
+
+Add UpdateNotLog in CRUD ([8b1c7876](https://github.com/hilmanf11/erp_bpi/commit/8b1c78762d430a7e3f1bad348937eaafe9b9b866))
