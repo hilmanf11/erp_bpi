@@ -38,7 +38,8 @@ class Purchase_requests extends CI_Controller
             b.id as item_rm_id,
             b.number as item_number, 
             b.name as item_name, 
-            
+            b.density,
+            b.kind,
             a.expected_date as delivery_date,
             c.name as category_name');
         $this->db->from('purchase_requests a');
@@ -47,8 +48,15 @@ class Purchase_requests extends CI_Controller
         $this->db->where('a.deleted', 0);
         $this->db->where('a.status', 0);
         $this->db->where('a.request_no', $request_no);
+
+        $this->db->group_start();
+        $this->db->where('a.approved_to IS NULL', null, false);
+        $this->db->or_where('a.approved_to', '');
+        $this->db->group_end();
+
         $this->db->order_by('b.number', 'ASC');
         $records = $this->db->get()->result_array();
+
         echo json_encode($records);
     }
 
@@ -202,7 +210,7 @@ class Purchase_requests extends CI_Controller
     public function readsnotfg()
     {
         $post = isset($_POST['q']) ? $_POST['q'] : "";
-        $send = $this->crud->query("SELECT * FROM item_categories WHERE name LIKE '%$post%'AND number != 'FG' AND status = '0' ");
+        $send = $this->crud->query("SELECT * FROM item_categories WHERE name LIKE '%$post%'AND number != 'FG' AND id NOT IN ('C06','C11') AND status = '0' ");
         echo json_encode($send);
     }
 
@@ -247,9 +255,16 @@ class Purchase_requests extends CI_Controller
 
     public function readFamily($item_category_id)
     {
-        $post = isset($_POST['q']) ? $_POST['q'] : "";
-        $send = $this->crud->reads('item_familys', ["name" => $post],["item_category_id" => $item_category_id, "status" => 0]);
-        echo json_encode($send);
+        $post = $this->input->post('q');
+
+        $this->db->from('item_familys');
+        $this->db->where('item_category_id', $item_category_id);
+        $this->db->where('status', 0);
+        $this->db->where_not_in('id', ['P04', 'P05']);
+        $this->db->like('name', $post);
+
+        $query = $this->db->get();
+        echo json_encode($query->result());
     }
 
     public function datatables()
@@ -360,7 +375,8 @@ class Purchase_requests extends CI_Controller
             $this->db->select('a.*, 
                 b.number as item_number, 
                 b.name as item_name, 
-                b.uom, 
+                e.uom_default,
+                e.uom_inventory,
                 d.po_no, 
                 d.status as status_po, 
                 c.name as category_name');
@@ -368,6 +384,7 @@ class Purchase_requests extends CI_Controller
             $this->db->join('item_rm b', 'a.item_rm_id = b.id');
             $this->db->join('item_familys c', 'b.item_family_id = c.id','left');
             $this->db->join('purchase_orders d', 'a.request_no = d.request_no and a.item_rm_id = d.item_rm_id', 'left');
+            $this->db->join('supplier_items e', 'a.item_rm_id = e.item_rm_id', 'left');
             $this->db->where('a.deleted', 0);
             if ($filter_from != "" or $filter_to != "") {
                 $this->db->where('a.request_date >=', $filter_from);
@@ -375,6 +392,11 @@ class Purchase_requests extends CI_Controller
             }
             $this->db->where('a.request_no', $id);
             $this->db->like('c.id', $filter_item_familys);
+            $this->db->group_by('a.request_no');
+            $this->db->group_by('b.id');
+            $this->db->group_by('a.length');
+            $this->db->group_by('a.width');
+            $this->db->group_by('a.thickness');
             $this->db->order_by('b.number', 'ASC');
             $records = $this->db->get()->result_array();
             echo json_encode($records);
@@ -383,11 +405,11 @@ class Purchase_requests extends CI_Controller
 
     public function datatable_updates(){
         $request_no = base64_decode($this->input->get('request_no'));
-        $records = $this->crud->query("SELECT a.id, c.number as item_number, c.name as item_name, c.id as item_rm_id, a.qty, a.remarks
+        $records = $this->crud->query("SELECT DISTINCT a.*, c.number as item_number, c.name as item_name, c.id as item_rm_id, b.uom_default, b.uom_inventory
             FROM purchase_requests a
             JOIN item_rm c on a.item_rm_id = c.id
-            WHERE a.status = '0' and a.request_no = '$request_no'
-            GROUP BY c.number");
+            LEFT JOIN supplier_items b on c.id = b.item_rm_id
+            WHERE a.status = '0' and a.request_no = '$request_no'");
         echo json_encode($records);
     }
 
@@ -399,6 +421,10 @@ class Purchase_requests extends CI_Controller
             if ($post['id'] != "") {
                 $post_final = [
                     "qty" => $post['qty'],
+                    "length" => $post['length'],
+                    "width" => $post['width'],
+                    "thickness" => $post['thickness'],
+                    "diameter" => $post['diameter'],
                     "remarks" => $post['remarks']
                 ];
                 $send = $this->crud->update('purchase_requests', ["id" => $post['id']], $post_final);
@@ -863,6 +889,10 @@ class Purchase_requests extends CI_Controller
                 <th>Part Name</th>
                 <th>Qty</th>
                 <th>Uom</th>
+                <th>Length</th>
+                <th>Width</th>
+                <th>Thickness</th>
+                <th>Diameter</th>
                 <th>Remarks</th>
                 <th>PO No</th>
                 <th>Status PO</th>
@@ -894,6 +924,10 @@ class Purchase_requests extends CI_Controller
                         <td>' . $data['item_name'] . '</td>
                         <td>' . number_format($data['qty'], 2) . '</td>
                         <td>' . $data['uom'] . '</td>
+                        <td>' . $data['length'] . '</td>
+                        <td>' . $data['width'] . '</td>
+                        <td>' . $data['thickness'] . '</td>
+                        <td>' . $data['diameter'] . '</td>
                         <td>' . $data['remarks'] . '</td>
                         <td>' . $data['po_no'] . '</td>
                         <td>' . $status_po . '</td>

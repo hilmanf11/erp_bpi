@@ -16,6 +16,10 @@
             <th rowspan="2" data-options="field:'uom_default',width:80,align:'center'">UOM PO</th>
             <th rowspan="2" data-options="field:'uom_inventory',width:100,align:'center'">UOM Inventory</th>
             <th rowspan="2" data-options="field:'qty',width:80,halign:'center',align:'right'">Total Qty</th>
+            <th rowspan="2" data-options="field:'length',width:80,halign:'center',align:'right'">Length</th>
+            <th rowspan="2" data-options="field:'width',width:80,halign:'center',align:'right'">Width</th>
+            <th rowspan="2" data-options="field:'thickness',width:80,halign:'center',align:'right'">Thickness</th>
+            <th rowspan="2" data-options="field:'diameter',width:80,halign:'center',align:'right'">Diameter</th>
             <th rowspan="2" data-options="field:'remarks',width:100,halign:'center'">Remarks</th>
             <th rowspan="2" data-options="field:'attachment',width:80,align:'center',formatter: btnDetails">Attachment</th>
             <th rowspan="2" data-options="field:'po_no',width:150,align:'left',halign:'center'">Po No</th>
@@ -85,7 +89,7 @@
 </div>
 
 <!-- Insert & Update -->
-<div id="dlg_insert" class="easyui-dialog" title="Add New" data-options="closed: true,modal:true" style="width: 1100px; height: 100%; padding:10px; left:5px; top: 0;">
+<div id="dlg_insert" class="easyui-dialog" title="Add New" data-options="closed: true,modal:true" style="width: 100%; height: 100%; padding:10px; left:5px; top: 0;">
     <form id="frm_insert" method="post" novalidate>
         <fieldset style="width:100%; border:1px solid #d0d0d0; margin-bottom: 10px; border-radius:4px; float: left;">
             <legend><b>Form Data</b></legend>
@@ -231,6 +235,7 @@
     function addTable(item_family_id, link = "") {
         var dg = $('#dg2').datagrid({
             url: link,
+            fitColumns: true,
             singleSelect: true,
             columns: [
                 [{
@@ -273,7 +278,18 @@
                             onSelect: function(value, row) {
                                 var dg = $('#dg2');
                                 var allRows = dg.datagrid('getRows');
+                                // var isDuplicate = allRows.some(function(r) {
+                                //     return r.item_number === row.item_number;
+                                // });
+
+                                var exemptItems = ["SLD","MPOM CF"];
+                                var isExempt = row.item_number && exemptItems.some(function(keyword) {
+                                    return row.item_number.toUpperCase() === keyword.toUpperCase();
+                                });
+
                                 var isDuplicate = allRows.some(function(r) {
+                                    if (isExempt) return false;
+
                                     return r.item_number === row.item_number;
                                 });
 
@@ -311,15 +327,27 @@
                                     field: 'uom_default'
                                 });
 
-                                 var ed6 = dg.datagrid('getEditor', {
+                                var ed6 = dg.datagrid('getEditor', {
                                     index: rowIndex,
                                     field: 'uom_inventory'
+                                });
+
+                                var ed7 = dg.datagrid('getEditor', {
+                                    index: rowIndex,
+                                    field: 'kind'
+                                });
+
+                                var ed8 = dg.datagrid('getEditor', {
+                                    index: rowIndex,
+                                    field: 'density'
                                 });
 
                                 $(ed.target).textbox('setValue', row.id);
                                 $(ed2.target).textbox('setValue', row.item_name);
                                 $(ed5.target).textbox('setValue', row.uom_default);
                                 $(ed6.target).textbox('setValue', row.uom_inventory);
+                                $(ed7.target).textbox('setValue', row.kind);
+                                $(ed8.target).textbox('setValue', row.density);
 
                                 $.ajax({
                                     type: "post",
@@ -366,6 +394,64 @@
                         type: 'textbox'
                     }
                 }, {
+                    field: 'length',
+                    width: 100,
+                    halign: 'center',
+                    title: "Length",
+                    editor: {
+                        type: 'numberbox',
+                        options: {
+                            precision: 2
+                        }
+                    }
+                }, {
+                    field: 'width',
+                    width: 100,
+                    halign: 'center',
+                    title: "Width",
+                    editor: {
+                        type: 'numberbox',
+                        options: {
+                            precision: 2
+                        }
+                    }
+                }, {
+                    field: 'thickness',
+                    width: 100,
+                    halign: 'center',
+                    title: "Thickness",
+                    editor: {
+                        type: 'numberbox',
+                        options: {
+                            precision: 2
+                        }
+                    }
+                 }, {
+                    field: 'diameter',
+                    width: 100,
+                    halign: 'center',
+                    title: "Diameter",
+                    editor: {
+                        type: 'numberbox',
+                        options: {
+                            precision: 2
+                        }
+                    }
+                }, {
+                    field: 'weight',
+                    width: 120,
+                    halign: 'center',
+                    title: "Weight (Kg)",
+                    editor: {
+                        type: 'combobox',
+                        options: {
+                            valueField: 'value',
+                            textField: 'text',
+                            editable: false,
+                            panelHeight: 'auto'
+                        }
+                    }
+                }, {
                     field: 'qty',
                     width: 80,
                     halign: 'center',
@@ -392,6 +478,28 @@
                     title: "Uom Inventory",
                     editor: {
                         type: 'textbox',
+                    }
+                }, {
+                    field: 'kind',
+                    width: 80,
+                    hidden: true,
+                    halign: 'center',
+                    title: "Kind",
+                    editor: {
+                        type: 'textbox',
+                    }
+                }, {
+                    field: 'density',
+                    width: 80,
+                    hidden: true,
+                    halign: 'center',
+                    title: "Density",
+                    editor: {
+                        type: 'numberbox',
+                        options: {
+                            readonly: true,
+                            precision: 3
+                        }
                     }
                 }, {
                     field: 'stock',
@@ -481,10 +589,66 @@
                     }
                 }]
             ],
-            onClickCell: onClickCell
+            onClickCell: onClickCell,
+            onBeginEdit: function (index, row) {
+                var dg = $(this);
+
+                function recalcWeight() {
+                    var edKind = dg.datagrid('getEditor', { index: index, field: 'kind' });
+                    var edDensity = dg.datagrid('getEditor', { index: index, field: 'density' });
+                    var edDiameter = dg.datagrid('getEditor', { index: index, field: 'diameter' });
+                    var edLength = dg.datagrid('getEditor', { index: index, field: 'length' });
+                    var edWidth = dg.datagrid('getEditor', { index: index, field: 'width' });
+                    var edThickness = dg.datagrid('getEditor', { index: index, field: 'thickness' });
+                    var edWeight = dg.datagrid('getEditor', { index: index, field: 'weight' });
+
+                    var kind = $(edKind.target).textbox('getValue') || "";
+                    var density = parseFloat($(edDensity.target).numberbox('getValue')) || 0;
+                    var diameter = parseFloat($(edDiameter.target).numberbox('getValue')) || 0;
+                    var length = parseFloat($(edLength.target).numberbox('getValue')) || 0;
+                    var width = parseFloat($(edWidth.target).numberbox('getValue')) || 0;
+                    var thickness = parseFloat($(edThickness.target).numberbox('getValue')) || 0;
+
+                    let volume = 0;
+                    if (kind === "TUBE" && diameter && length) {
+                        volume = Math.PI * Math.pow(diameter / 2, 2) * length;
+                    } else if (kind === "CUBE" && length && width && thickness) {
+                        volume = length * width * thickness;
+                    }
+
+                    if (!density || !volume) return;
+
+                    var weightGr = density * volume;
+                    var weightKg = weightGr / 1000000;
+                    var finalWeight = parseFloat(weightKg.toFixed(4));
+
+                    // buat list 0–4 decimal
+                    let options = [];
+                    for (let i = 0; i <= 4; i++) {
+                        let val = parseFloat(weightKg.toFixed(i));
+                        options.push({ value: val, text: val.toFixed(i) });
+                    }
+
+                    if (edWeight) {
+                        $(edWeight.target).combobox('loadData', options);
+                        $(edWeight.target).combobox('setValue', finalWeight);
+                    }
+                }
+
+                // aktifkan listener ke setiap editor dimensi
+                ['length', 'width', 'thickness', 'diameter'].forEach(function (field) {
+                    var ed = dg.datagrid('getEditor', { index: index, field: field });
+                    if (ed) {
+                        $(ed.target).numberbox({
+                            onChange: function () {
+                                recalcWeight();
+                            }
+                        });
+                    }
+                });
+            }
         });
     }
-
 
     var editIndex = undefined;
 
@@ -808,6 +972,90 @@
         // });
 
         //Save Data
+        //dokumentasi : create tanpa MTS
+        // $('#dlg_insert').dialog({
+        //     buttons: [{
+        //         text: 'Save All',
+        //         iconCls: 'icon-ok',
+        //         handler: function() {
+        //             var categoryid = $("#item_category_id").combobox('getValue');
+        //             var prodfam = $("#item_family_id").combobox('getValue');
+
+        //             if (categoryid == "" || prodfam == "") {
+        //                 toastr.warning("Please Choose Category and Product Family First!", "Information");
+        //             } else {
+        //                 // // Fetch the latest request number from the server
+        //                 var category = $("#category_number").textbox('getValue');
+        //                 var request_no = $("#request_no").textbox('getValue');
+
+        //                 $.ajax({
+        //                     type: "get",
+        //                     url: '<?= base_url('purchase/purchase_requests/request_no/')?>'+ category + "/" + btoa(request_no) + "/" + methode,
+        //                     success: function(data) {               
+        //                         console.log(data);
+        //                         var request_no = data; // Use the response from the server as the new request number
+
+        //                         var request_date = $("#request_date").datebox('getValue');
+        //                         var request_name = $("#request_name").textbox('getValue');
+        //                         var expected_date = $("#expected_date").datebox('getValue');
+        //                         var division = $("#division").textbox('getValue');
+        //                         var department = $("#department").textbox('getValue');
+        //                         var sub_department = $("#sub_department").textbox('getValue');
+
+        //                         $("#dg2").datagrid('acceptChanges');
+        //                         var rows = $('#dg2').datagrid('getRows');
+        //                         var totalrows = rows.length;
+        //                         endEditing();
+
+
+        //                         for (let i = 0; i < totalrows; i++) {
+        //                             if (rows[i].item_rm_id) {
+        //                                 $.ajax({
+        //                                     type: "post",
+        //                                     url: url_save,
+        //                                     data: {
+        //                                         id: rows[i].id,
+        //                                         item_rm_id: rows[i].item_rm_id,
+        //                                         request_no: request_no,
+        //                                         request_date: request_date,
+        //                                         request_name: request_name,
+        //                                         division: division,
+        //                                         department: department,
+        //                                         sub_department: sub_department,
+        //                                         length: rows[i].length,
+        //                                         width: rows[i].width,
+        //                                         thickness: rows[i].thickness,
+        //                                         diamater: rows[i].diamater,
+        //                                         qty: rows[i].qty,
+        //                                         expected_date: expected_date,
+        //                                         remarks: rows[i].remarks
+        //                                     },
+        //                                     dataType: "json",
+        //                                     success: function(result) {
+        //                                         Swal.fire({
+        //                                             title: result.message,
+        //                                             icon: result.theme,
+        //                                             confirmButtonText: 'Ok',
+        //                                             allowOutsideClick: false,
+        //                                         }).then((result) => {
+        //                                             if (result.isConfirmed) {
+        //                                                 window.location.reload();
+        //                                             }
+        //                                         });
+        //                                     }
+        //                                 });
+        //                             }
+        //                         }
+
+        //                         $('#dg').treegrid('reload');
+        //                         $('#dlg_insert').dialog('close');
+        //                     }
+        //                 });
+        //             }
+        //         }
+        //     }]
+        // });
+
         $('#dlg_insert').dialog({
             buttons: [{
                 text: 'Save All',
@@ -816,76 +1064,139 @@
                     var categoryid = $("#item_category_id").combobox('getValue');
                     var prodfam = $("#item_family_id").combobox('getValue');
 
-                    if (categoryid == "" || prodfam == "") {
+                    if (!categoryid || !prodfam) {
                         toastr.warning("Please Choose Category and Product Family First!", "Information");
-                    } else {
-                        // // Fetch the latest request number from the server
-                        var category = $("#category_number").textbox('getValue');
-                        var request_no = $("#request_no").textbox('getValue');
+                        return;
+                    }
 
-                        $.ajax({
-                            type: "get",
-                            url: '<?= base_url('purchase/purchase_requests/request_no/')?>'+ category + "/" + btoa(request_no) + "/" + methode,
-                            success: function(data) {               
-                                console.log(data);
-                                var request_no = data; // Use the response from the server as the new request number
+                    var category = $("#category_number").textbox('getValue');
+                    var request_no = $("#request_no").textbox('getValue');
 
-                                var request_date = $("#request_date").datebox('getValue');
-                                var request_name = $("#request_name").textbox('getValue');
-                                var expected_date = $("#expected_date").datebox('getValue');
-                                var division = $("#division").textbox('getValue');
-                                var department = $("#department").textbox('getValue');
-                                var sub_department = $("#sub_department").textbox('getValue');
+                    $.ajax({
+                        type: "get",
+                        url: '<?= base_url('purchase/purchase_requests/request_no/') ?>' + category + "/" + btoa(request_no) + "/" + methode,
+                        success: function(data) {
+                            var request_no = data;
+                            var rows = $('#dg2').datagrid('getRows');
+                            endEditing();
+                            $("#dg2").datagrid('acceptChanges');
 
-                                $("#dg2").datagrid('acceptChanges');
-                                var rows = $('#dg2').datagrid('getRows');
-                                var totalrows = rows.length;
-                                endEditing();
+                            if (checkDuplicateRows(rows)) {
+                                toastr.error("Duplicate items detected with the same dimensions!");
+                                return;
+                            }
 
+                            var request_date = $("#request_date").datebox('getValue');
+                            var request_name = $("#request_name").textbox('getValue');
+                            var expected_date = $("#expected_date").datebox('getValue');
+                            var division = $("#division").textbox('getValue');
+                            var department = $("#department").textbox('getValue');
+                            var sub_department = $("#sub_department").textbox('getValue');
 
-                                for (let i = 0; i < totalrows; i++) {
-                                    if (rows[i].item_rm_id) {
-                                        $.ajax({
-                                            type: "post",
-                                            url: url_save,
-                                            data: {
-                                                id: rows[i].id,
-                                                item_rm_id: rows[i].item_rm_id,
-                                                request_no: request_no,
-                                                request_date: request_date,
-                                                request_name: request_name,
-                                                division: division,
-                                                department: department,
-                                                sub_department: sub_department,
-                                                qty: rows[i].qty,
-                                                expected_date: expected_date,
-                                                remarks: rows[i].remarks
-                                            },
-                                            dataType: "json",
-                                            success: function(result) {
-                                                Swal.fire({
-                                                    title: result.message,
-                                                    icon: result.theme,
-                                                    confirmButtonText: 'Ok',
-                                                    allowOutsideClick: false,
-                                                }).then((result) => {
-                                                    if (result.isConfirmed) {
-                                                        window.location.reload();
-                                                    }
-                                                });
-                                            }
+                            for (let i = 0; i < rows.length; i++) {
+                                if (!rows[i].item_rm_id) continue;
+                                $.ajax({
+                                    type: "post",
+                                    url: url_save,
+                                    data: {
+                                        id: rows[i].id,
+                                        item_rm_id: rows[i].item_rm_id,
+                                        request_no: request_no,
+                                        request_date: request_date,
+                                        request_name: request_name,
+                                        division: division,
+                                        department: department,
+                                        sub_department: sub_department,
+                                        length: rows[i].length,
+                                        width: rows[i].width,
+                                        weight: rows[i].weight,
+                                        thickness: rows[i].thickness,
+                                        diameter: rows[i].diameter,
+                                        qty: rows[i].qty,
+                                        expected_date: expected_date,
+                                        remarks: rows[i].remarks
+                                    },
+                                    dataType: "json",
+                                    success: function(result) {
+                                        Swal.fire({
+                                            title: result.message,
+                                            icon: result.theme,
+                                            confirmButtonText: 'Ok',
+                                            allowOutsideClick: false,
+                                        }).then((r) => {
+                                            if (r.isConfirmed) window.location.reload();
                                         });
                                     }
-                                }
-
-                                $('#dg').treegrid('reload');
-                                $('#dlg_insert').dialog('close');
+                                });
                             }
-                        });
-                    }
+
+                            $('#dg').treegrid('reload');
+                            $('#dlg_insert').dialog('close');
+                        }
+                    });
                 }
             }]
         });
+
+        function checkDuplicateRows(rows) {
+            console.log("Start duplicate check, total rows:", rows.length);
+
+            function normalize(value) {
+                if (value === null || value === undefined) return 0;
+                return parseFloat(String(value).replace(",", ".").trim()) || 0;
+            }
+
+            for (let i = 0; i < rows.length; i++) {
+                const r1 = rows[i];
+                console.log(r1);
+                if (!r1.item_number) continue;
+
+                const len1 = normalize(r1.length);
+                const wid1 = normalize(r1.width);
+                const thick1 = normalize(r1.thickness);
+                const dia1 = normalize(r1.diameter);
+
+                const isDimensionItem = len1 > 0 || wid1 > 0 || thick1 > 0 || dia1 > 0;
+
+                for (let j = i + 1; j < rows.length; j++) {
+                    const r2 = rows[j];
+                    if (!r2.item_number) continue;
+
+                    const len2 = normalize(r2.length);
+                    const wid2 = normalize(r2.width);
+                    const thick2 = normalize(r2.thickness);
+                    const dia2 = normalize(r2.diameter);
+
+                    // log bandingan yang sedang dicek
+                    console.log(
+                        `Compare [${i},${j}] ${r1.item_number}`,
+                        { len1, wid1, thick1, dia1 },
+                        { len2, wid2, thick2, dia2 }
+                    );
+
+                    if (r1.item_number === r2.item_number) {
+                        if (isDimensionItem) {
+                            const sameDimension =
+                                Math.abs(len1 - len2) < 0.001 &&
+                                Math.abs(wid1 - wid2) < 0.001 &&
+                                Math.abs(thick1 - thick2) < 0.001 &&
+                                Math.abs(dia1 - dia2) < 0.001;
+
+                            if (sameDimension) {
+                                console.warn(`DUPLICATE FOUND (with dimension):`, r1.item_number);
+                                return true;
+                            }
+                        } else {
+                            console.warn(`DUPLICATE FOUND (no dimension):`, r1.item_number);
+                            return true;
+                        }
+                    }
+                }
+            }
+
+            console.log("No duplicates found");
+            return false;
+        }
 
         //Upload Data
         $('#dlg_upload').dialog({
@@ -991,7 +1302,7 @@
             columns: [
                 [{
                     field: 'number',
-                    title: 'Product Family ID',
+                    title: 'Product Family No',
                     width: 120
                 }, {
                     field: 'name',
@@ -1032,7 +1343,7 @@
                     columns: [
                         [{
                             field: 'number',
-                            title: 'Product Family ID',
+                            title: 'Product Family No',
                             width: 120
                         }, {
                             field: 'name',
