@@ -15,6 +15,7 @@
             <th rowspan="2" data-options="field:'supplier_name',width:200,halign:'center'">Supplier</th>
             <th rowspan="2" data-options="field:'item_number',width:150,halign:'center'">Product No</th>
             <th rowspan="2" data-options="field:'item_name',width:200,halign:'center'">Product Name</th>
+            <th rowspan="2" data-options="field:'specification',width:200,halign:'center'">Specification</th>
             <th rowspan="2" data-options="field:'mpq',width:80,halign:'center',align:'right',formatter:numberformatDefault">MPQ</th>
             <th rowspan="2" data-options="field:'moq',width:80,halign:'center',align:'right',formatter:numberformatDefault">MOQ</th>
             <th rowspan="2" data-options="field:'qty',width:80,halign:'center',align:'right',formatter:numberformatDefault">Qty</th>
@@ -46,9 +47,9 @@
 <div id="toolbar" style="height: 250px; padding:10px;">
     <!-- <div style="width: 100%; display: grid; grid-template-columns: auto auto auto; grid-gap: 5px; display: flex;"> -->
     <div style="width: 100%;">
-    <fieldset style="width: 70%; border:2px solid #d0d0d0; margin-bottom: 5px; margin-top: 5px; border-radius:4px;">    
+    <fieldset style="width: 100%; border:2px solid #d0d0d0; margin-bottom: 5px; margin-top: 5px; border-radius:4px;">    
             <legend><b>Form Filter Data</b></legend>
-            <div style="width: 50%; float: left;">
+            <div style="width: 30%; float: left;">
                 <div class="fitem">
                     <span style="width:35%; display:inline-block;">Period</span>
                     <input style="width:28%;" id="filter_from" class="easyui-datebox" data-options="formatter:myformatter,parser:myparser, editable:false"> To
@@ -70,11 +71,21 @@
                     <!-- <a href="javascript:;" class="easyui-linkbutton" onclick="complete_po()"><i class="fa fa-check"></i> Complete</a> -->
                 </div>
             </div>
-            <div style="width: 50%; float: left;">
+            <div style="width: 30%; float: left;">
                 <div class="fitem">
                     <span style="width:35%; display:inline-block;">Po No</span>
                     <input style="width:60%;" id="filter_po_no" class="easyui-combogrid">
                 </div>
+                <div class="fitem">
+                    <span style="width:35%; display:inline-block;">Part No</span>
+                    <input style="width:60%;" id="filter_part_no" class="easyui-combogrid">
+                </div>
+                <div class="fitem">
+                    <span style="width:35%; display:inline-block;">Part Name</span>
+                    <input style="width:60%;" id="filter_part_name" class="easyui-combogrid">
+                </div>
+            </div>
+             <div style="width: 30%; float: left;">
                 <div class="fitem">
                     <span style="width:35%; display:inline-block;">Category</span>
                     <input style="width:60%;" id="filter_categories" class="easyui-combobox">
@@ -221,6 +232,7 @@
                                     valueField: 'request_no',
                                     textField: 'request_no',
                                     prompt: "Select Purchase Request No",
+                                    editable: false,
                                     icons: [{
                                         iconCls: 'icon-clear',
                                         handler: function(e) {
@@ -258,26 +270,14 @@
         var row = $('#dg').treegrid('getSelected');
         if (row) {
             console.log("Update :",row);
+            console.log("row.convertion", row.convertion);
             if (row.datatable == "1") {
                 if (row.status_pi == "0" || row.status_pi == null ) {
                     $('#dlg_insert').dialog('open');
                     $('#frm_insert').form('load', row);
                     $('#frm_calculate').show();
                     $("#btnPreview").linkbutton('disable');
-
-                    // var total_subs = row.total_price;
-                    // var discount_total = $('#discount_total').numberbox('getValue');
-                    // var income_total = $('#income_total').numberbox('getValue');
-                    // var total_dp = $('#income_total').numberbox('getValue');
-                    // var taxes = row.taxes;
-                    // console.log(taxes);
-                    // var total_vat = Math.floor((total_subs - discount_total) * (taxes / 100));
                     
-                    // var total_grand = ((total_subs - discount_total) + total_vat - income_total - total_dp);
-
-                    // $('#total_vat').numberbox('setValue', total_vat);
-                    
-
                     setTimeout(function() { 
                         $('#income_total').numberbox('setValue', row.income_total);
                         $('#discount_total').numberbox('setValue', row.discount_total);
@@ -356,6 +356,37 @@
                                 halign: 'center',
                                 title: "Product Name"
                             }, {
+                                field: 'length',
+                                width: 80,
+                                readonly: true,
+                                halign: 'center',
+                                title: "Length"
+                            }, {
+                                field: 'width',
+                                width: 80,
+                                readonly: true,
+                                halign: 'center',
+                                title: "Width"
+                            }, {
+                                field: 'thickness',
+                                width: 80,
+                                readonly: true,
+                                halign: 'center',
+                                title: "Thickness"
+                            }, {
+                                field: 'diameter',
+                                width: 80,
+                                readonly: true,
+                                halign: 'center',
+                                title: "Diameter"
+                            }, {
+                                field: 'kind',
+                                hidden: true,
+                                width: 80,
+                                readonly: true,
+                                halign: 'center',
+                                title: "Kind"
+                            }, {
                                 field: 'category_name',
                                 width: 150,
                                 readonly: true,
@@ -380,7 +411,7 @@
                                 }
                             }, {//4
                                 field: 'supplier_id',
-                                // hidden: true,
+                                hidden: true,
                                 width: 250,
                                 halign: 'center',
                                 title: "Supplier Id",
@@ -468,9 +499,24 @@
                                     options: {
                                         formatter: numberformats,
                                         readonly: true,
+                                        precision: 2
                                     }
                                 }
                             }, {//12
+                                field: 'price_conv',
+                                width: 100,
+                                halign: 'center',
+                                align: 'right',
+                                title: "Price <br>Conversion",
+                                editor: {
+                                    type: 'numberbox',
+                                    options: {
+                                        formatter: numberformats,
+                                        readonly: true,
+                                        precision: 2
+                                    }
+                                }
+                            }, {//13
                                 field: 'total',
                                 width: 100,
                                 halign: 'center',
@@ -484,7 +530,7 @@
                                         precision: 2
                                     }
                                 }
-                            }, {//13
+                            }, {//14
                                 field: 'delivery_date',
                                 width: 120,
                                 halign: 'center',
@@ -498,7 +544,7 @@
                                         // required: true
                                     }
                                 }
-                            }, {//14
+                            }, {//15
                                 field: 'remarks',
                                 width: 200,
                                 halign: 'center',
@@ -506,7 +552,7 @@
                                 editor: {
                                     type: 'textbox'
                                 }
-                            }, {//15
+                            }, {//16
                                 field: 'month_1',
                                 width: 80,
                                 align: 'center',
@@ -517,7 +563,7 @@
                                         required: true,
                                     }
                                 }
-                            }, {//16
+                            }, {//17
                                 field: 'month_2',
                                 width: 80,
                                 align: 'center',
@@ -525,7 +571,7 @@
                                 editor: {
                                     type: 'numberbox',
                                 }
-                            }, {//17
+                            }, {//18
                                 field: 'month_3',
                                 width: 80,
                                 align: 'center',
@@ -533,7 +579,7 @@
                                 editor: {
                                     type: 'numberbox',
                                 }
-                            }, {//18
+                            }, {//19
                                 field: 'month_4',
                                 width: 80,
                                 align: 'center',
@@ -541,7 +587,7 @@
                                 editor: {
                                     type: 'numberbox',
                                 }
-                            },{//19
+                            },{//20
                                 field: 'item_rm_id',
                                 width: 150,
                                 hidden: true,
@@ -550,7 +596,7 @@
                                 editor: {
                                     type: 'textbox',
                                 }
-                            },{//20
+                            },{//21
                                 field: 'taxes',
                                 width: 150,
                                 hidden: true,
@@ -559,7 +605,7 @@
                                 editor: {
                                     type: 'textbox',
                                 }
-                            },{//21
+                            },{//22
                                 field: 'type',
                                 width: 150,
                                 // hidden: true,
@@ -567,6 +613,40 @@
                                 title: "Type",
                                 editor: {
                                     type: 'textbox',
+                                }
+                            },{//23
+                                field: 'specification',
+                                width: 150,
+                                hidden: true,
+                                halign: 'center',
+                                title: "Sp",
+                                editor: {
+                                    type: 'textbox',
+                                }
+                            },{
+                                field: 'density',
+                                width: 150,
+                                hidden: true,
+                                halign: 'center',
+                                title: "Density"
+                            },{
+                                field: 'weight',
+                                width: 150,
+                                hidden: true,
+                                halign: 'center',
+                                title: "Weight"
+                             },{//24
+                                field: 'convertion',
+                                width: 100,
+                                //hidden: true,
+                                halign: 'center',
+                                title: "Convertion",
+                                editor: {
+                                    type: 'numberbox',
+                                    options: {
+                                        readonly: true,
+                                        precision: 2
+                                    }
                                 }
                             }]
                         ],
@@ -584,19 +664,31 @@
                         },
                         onBeginEdit: function(rowIndex, row) {
                             var editors = $('#dg_request').datagrid('getEditors', rowIndex);
-                            var item_rm_id = $(editors[19].target).textbox('getValue');
+                            var item_rm_id = $(editors[20].target).textbox('getValue');
                             var supplier_id = $(editors[3].target);
                             var po_date = $("#po_date").datebox('getValue');
                             var total_sub = $("#total_sub").numberbox('getValue');
-                            var delivery_date = $(editors[13].target);
+                            
+                            var delivery_date = $(editors[14].target);
+
+                            var length = row.length || "";
+                            var width = row.width || "";
+                            var thickness = row.thickness || "";
+
+                            if (length && width && thickness) {
+                                var spec = length + " x " + width + " x " + thickness;
+                                if (editors[23]) {
+                                    $(editors[23].target).textbox('setValue', spec);
+                                }
+                            }
 
                             $(editors[7].target).numberbox({
                                 onChange: function() {
                                     var qty = $(editors[7].target).numberbox('getValue');
                                     var discount_nominal = $(editors[10].target).numberbox('getValue');
-                                    var price = $(editors[11].target).numberbox('getValue');
+                                    var price = $(editors[12].target).numberbox('getValue');
                                     var total = ((qty * price)-(discount_nominal));
-                                    editors[12].target.numberbox('setValue', total);
+                                    editors[13].target.numberbox('setValue', total);
                                 }
                             });
 
@@ -618,7 +710,7 @@
                                     var total = sub_total - discount_nominal;
 
                                     $(editors[10].target).numberbox('setValue', discount_nominal.toFixed(2));
-                                    $(editors[12].target).numberbox('setValue', total.toFixed(2));
+                                    $(editors[13].target).numberbox('setValue', total.toFixed(2));
 
                                     isUpdatingFromPercent = false;
                                 }
@@ -639,7 +731,7 @@
                                     var total = sub_total - discount_nominal;
 
                                     $(editors[9].target).numberbox('setValue', disc_pr.toFixed(2));
-                                    $(editors[12].target).numberbox('setValue', total.toFixed(2));
+                                    $(editors[13].target).numberbox('setValue', total.toFixed(2));
 
                                     isUpdatingFromNominal = false;
                                 }
@@ -708,16 +800,19 @@
                                 $(editors[8].target).textbox('setValue', supplier.currency);
                                 $(editors[9].target).textbox('setValue', 0);
                                 $(editors[10].target).textbox('setValue', 0);
-                                $(editors[11].target).textbox('setValue', supplier.price);
-                                $(editors[20].target).textbox('setValue', supplier.vat); // Tambahkan ini agar VAT juga diset
-                                $(editors[21].target).textbox('setValue', supplier.type); // Supplier Type
+                                $(editors[11].target).numberbox('setValue', supplier.price);
+                                $(editors[21].target).textbox('setValue', supplier.vat); // Tambahkan ini agar VAT juga diset
+                                $(editors[22].target).textbox('setValue', supplier.type); // Supplier Type
                                 // Menghitung total harga setelah diskon
-                                var qty = parseFloat($(editors[7].target).textbox('getValue')) || 0;
-                                var price = parseFloat($(editors[11].target).textbox('getValue')) || 0;
-                                var discount = parseFloat($(editors[9].target).textbox('getValue')) || 0;
-                                var totalDiscountedPrice = (qty * price) - ((qty * price) * (discount / 100));
+                                var qty = parseFloat($(editors[7].target).numberbox('getValue')) || 0;
+                                var price = parseFloat($(editors[11].target).numberbox('getValue')) || 0;
+                                var discount = parseFloat($(editors[9].target).numberbox('getValue')) || 0;
+                                var convertion = parseFloat($(editors[24].target).numberbox('getValue')) || 1;
+                                var totalDiscountedPrice = (qty * (convertion * price)) - ((qty * (convertion * price)) * (discount / 100));
+                                var price_conv = convertion * price;
 
-                                $(editors[12].target).numberbox('setValue', totalDiscountedPrice);
+                                $(editors[12].target).numberbox('setValue', price_conv);
+                                $(editors[13].target).numberbox('setValue', totalDiscountedPrice);
                             }
 
                             delivery_date.add(delivery_date).datebox({
@@ -736,6 +831,40 @@
                             var rows = $('#dg_request').datagrid('getRows');
                             console.log(rows);
                             endEditing();
+
+                            for (var i = 0; i < rows.length; i++) {
+                                var r = rows[i];
+
+                                var density = parseFloat(r.density) || 0;
+                                var diameter = parseFloat(r.diameter) || 0;
+                                var length = parseFloat(r.length) || 0;
+                                var width = parseFloat(r.width) || 0;
+                                var thickness = parseFloat(r.thickness) || 0;
+                                var weight = parseFloat(r.weight) || 0;
+
+                                let volume = 0;
+
+                                if (r.kind === "TUBE" && diameter && length) {
+                                    volume = Math.PI * Math.pow(diameter / 2, 2) * length;
+                                    r.specification = `π × (${diameter})² × ${length}`;
+                                } else if (r.kind === "CUBE" && length && width && thickness) {
+                                    volume = length * width * thickness;
+                                    r.specification = `${length} x ${width} x ${thickness}`;
+                                }
+
+                                // var weightGr = density * volume;
+                                // var weightKg = weightGr / 1000000;
+                                var defaultweightKg = 1;
+
+                                if (length != 0 ) {
+                                    r.convertion = parseFloat(weight);
+                                }else{
+                                    r.convertion = parseFloat(defaultweightKg.toFixed(2));
+                                }
+
+                                $('#dg_request').datagrid('refreshRow', i);
+                            }
+                                                    
                             var totalrows = rows.length;
                             
                             if (totalrows > 0) {
@@ -939,6 +1068,68 @@
                 }
             }],
         });
+
+        $('#filter_part_no').combogrid({
+            url: '<?= base_url('master/item_rm/reads'); ?>',
+            panelWidth: 500,
+            idField: 'number',
+            textField: 'number',
+            mode: 'remote',
+            fitColumns: true,
+            prompt: "Select Part No",
+            columns: [
+                [{
+                    field: 'id',
+                    title: 'Part ID',
+                    width: 150
+                }, {
+                    field: 'number',
+                    title: 'Part No',
+                    width: 150
+                }, {
+                    field: 'name',
+                    title: 'Part Name',
+                    width: 150
+                }, ]
+            ],
+            icons: [{
+                iconCls: 'icon-clear',
+                handler: function(e) {
+                    $(e.data.target).combogrid('clear').combogrid('textbox').focus();
+                }
+            }],
+        });
+
+        $('#filter_part_name').combogrid({
+            url: '<?= base_url('master/item_rm/reads'); ?>',
+            panelWidth: 500,
+            idField: 'name',
+            textField: 'name',
+            mode: 'remote',
+            fitColumns: true,
+            prompt: "Select Part Name",
+            columns: [
+                [{
+                    field: 'id',
+                    title: 'Part ID',
+                    width: 150
+                }, {
+                    field: 'number',
+                    title: 'Part No',
+                    width: 150
+                }, {
+                    field: 'name',
+                    title: 'Part Name',
+                    width: 150
+                }, ]
+            ],
+            icons: [{
+                iconCls: 'icon-clear',
+                handler: function(e) {
+                    $(e.data.target).combogrid('clear').combogrid('textbox').focus();
+                }
+            }],
+        });
     }
 
     //Delete Data
@@ -991,11 +1182,13 @@
         var filter_from_update = $("#filter_from_update").datebox('getValue');
         var filter_to_update = $("#filter_to_update").datebox('getValue');
         var filter_po_no = $("#filter_po_no").combogrid('getValue');
+        var filter_part_no = $("#filter_part_no").combogrid('getValue');
+        var filter_part_name = $("#filter_part_name").combogrid('getValue');
         var filter_suppliers = $("#filter_suppliers").combobox('getValue');
         var filter_categories = $("#filter_categories").combobox('getValue');
         var filter_status = $("#filter_status").combobox('getValue');
 
-        url = "?filter_from=" + filter_from + "&filter_to=" + filter_to + "&filter_from_update=" + filter_from_update + "&filter_to_update=" + filter_to_update + "&filter_po_no=" + filter_po_no + "&filter_suppliers=" + filter_suppliers + "&filter_status=" + filter_status + "&filter_categories=" + filter_categories;
+        url = "?filter_from=" + filter_from + "&filter_to=" + filter_to + "&filter_from_update=" + filter_from_update + "&filter_to_update=" + filter_to_update + "&filter_po_no=" + filter_po_no + "&filter_part_no=" + filter_part_no + "&filter_part_name=" + filter_part_name + "&filter_suppliers=" + filter_suppliers + "&filter_status=" + filter_status + "&filter_categories=" + filter_categories;
         $('#dg').treegrid({
             url: '<?= base_url('purchase/purchase_orders/datatables') ?>' + url
         });
@@ -1013,11 +1206,13 @@
         var filter_from_update = $("#filter_from_update").datebox('getValue');
         var filter_to_update = $("#filter_to_update").datebox('getValue');
         var filter_po_no = $("#filter_po_no").combogrid('getValue');
+        var filter_part_no = $("#filter_part_no").combogrid('getValue');
+        var filter_part_name = $("#filter_part_name").combogrid('getValue');
         var filter_suppliers = $("#filter_suppliers").combobox('getValue');
         var filter_categories = $("#filter_categories").combobox('getValue');
         var filter_status = $("#filter_status").combobox('getValue');
 
-        url = "?filter_from=" + filter_from + "&filter_to=" + filter_to + "&filter_from_update=" + filter_from_update + "&filter_to_update=" + filter_to_update + "&filter_po_no=" + filter_po_no + "&filter_suppliers=" + filter_suppliers + "&filter_status=" + filter_status + "&filter_categories=" + filter_categories;
+        url = "?filter_from=" + filter_from + "&filter_to=" + filter_to + "&filter_from_update=" + filter_from_update + "&filter_to_update=" + filter_to_update + "&filter_po_no=" + filter_po_no + "&filter_part_no=" + filter_part_no + "&filter_part_name=" + filter_part_name + "&filter_suppliers=" + filter_suppliers + "&filter_status=" + filter_status + "&filter_categories=" + filter_categories;
         window.location.assign('<?= base_url('purchase/purchase_orders/print/excel') ?>' + url);
     }
 
@@ -1176,6 +1371,7 @@
                 text: 'Save All',
                 iconCls: 'icon-ok',
                 handler: function() {
+                    var request_no = $("#request_no").combobox('getValue');
                     var po_date = $("#po_date").datebox('getValue');
                     var notes = $("#notes").textbox('getValue');
                     if (po_date == "") {
@@ -1206,9 +1402,16 @@
                                             var po_no = row.po_no;
                                             var supplier_id = row.supplier_id;
                                             var qty = row.qty;
+                                            var length = row.length;
+                                            var width = row.width;
+                                            var thickness = row.thickness;
+                                            var diameter = row.diameter;
+                                            var weight = row.weight;
+                                            var specification = row.specification;
+                                            var convertion = row.convertion;
                                             var discount = row.discount;
                                             var discount_nominal = row.discount_nominal;
-                                            var price = row.price;
+                                            var price = row.price_conv;
                                             var currency = row.currency;
                                             var total = row.total;
                                             var taxes = row.taxes;
@@ -1249,11 +1452,18 @@
                                                 data: 'item_rm_id=' + item_rm_id +
                                                     '&po_no=' + po_no +
                                                     '&supplier_id=' + supplier_id +
-                                                    '&request_no=' + row.request_no +
+                                                    '&request_no=' + request_no +
                                                     '&request_date=' + row.request_date +
                                                     '&request_name=' + row.request_name +
                                                     '&po_date=' + po_date +
                                                     '&qty=' + qty +
+                                                    '&length=' + length +
+                                                    '&width=' + width +
+                                                    '&thickness=' + thickness +
+                                                    '&diameter=' + diameter +
+                                                    '&weight=' + weight +
+                                                    '&specification=' + specification +
+                                                    '&convertion=' + convertion +
                                                     '&discount=' + discount +
                                                     '&discount_nominal=' + discount_nominal +
                                                     '&price=' + price +

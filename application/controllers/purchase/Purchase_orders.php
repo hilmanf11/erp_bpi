@@ -193,6 +193,8 @@ class Purchase_orders extends CI_Controller
             $filter_from_update = $this->input->get('filter_from_update');
             $filter_to_update   = $this->input->get('filter_to_update');
             $filter_po_no = $this->input->get('filter_po_no');
+            $filter_part_no = $this->input->get('filter_part_no');
+            $filter_part_name = $this->input->get('filter_part_name');
             $filter_suppliers = $this->input->get('filter_suppliers');
             $filter_categories = $this->input->get('filter_categories');
             $filter_status = $this->input->get('filter_status');
@@ -271,6 +273,8 @@ class Purchase_orders extends CI_Controller
                     $this->db->where('DATE(a.updated_date) <=', $filter_to_update);
                 }
                 $this->db->like('a.po_no', $filter_po_no);
+                $this->db->like('b.number', $filter_part_no);
+                $this->db->like('b.name', $filter_part_name);
                 $this->db->like('d.id', $filter_suppliers);
                 $this->db->like('b.item_category_id', $filter_categories);
                 $this->db->like('a.status', $filter_status);
@@ -434,7 +438,32 @@ class Purchase_orders extends CI_Controller
     public function datatable_updates()
     {
         $po_no = base64_decode($this->input->get('po_no'));
-        $this->db->select('a.*,  
+        $this->db->select('  
+            a.po_no,
+            a.length,
+            a.width,
+            a.thickness,
+            a.diameter,
+            a.qty,
+            a.discount,
+            a.discount_nominal,
+            e.price as price,
+            a.price as price_conv,
+            a.delivery_date,
+            a.remarks,
+            a.month_1,
+            a.month_2,
+            a.month_3,
+            a.month_4,
+            a.item_rm_id,
+            a.taxes,
+            a.specification,
+            a.convertion,
+            a.total,
+            a.type,
+            a.weight,
+            b.density,
+            b.kind,
             b.number as item_number, 
             b.name as item_name,
             b.uom,
@@ -461,7 +490,7 @@ class Purchase_orders extends CI_Controller
         $total_sub = 0;
         $obj = array();
         foreach ($records as $record) {
-            $total_sub += $record['amount'];
+            $total_sub += $record['total'];
             array_push($obj, $record);
         }
 
@@ -527,6 +556,13 @@ class Purchase_orders extends CI_Controller
                     "po_name" => $this->session->name,
                     "delivery_date" => $post['delivery_date'],
                     "qty" => $post['qty'],
+                    "length" => $post['length'],
+                    "width" => $post['width'],
+                    "thickness" => $post['thickness'],
+                    "diameter" => $post['diameter'],
+                    "weight" => $post['weight'],
+                    "specification" => $post['specification'],
+                    "convertion" => $post['convertion'],
                     "discount" => $post['discount'],
                     "discount_nominal" => $post['discount_nominal'],
                     "price" => $post['price'],
@@ -557,91 +593,211 @@ class Purchase_orders extends CI_Controller
         }
     }
     //UPDATE DATA
+    // dokumentasi : update tanpa dimensi
+    // public function update()
+    // {
+    //     if ($this->input->post()) {
+    //         $post = $this->input->post();
+
+    //         $items = $this->crud->read('item_rm', [], ['id' => $post['item_rm_id']]);
+    //         $purchaseOrder = $this->crud->read('purchase_orders', [], ["request_no" => $post['request_no'], "supplier_id" => $post['supplier_id'], "item_rm_id" => $items->id]);
+    //         $qty = @$purchaseOrder->qty;
+    //         $supplier_id = @$purchaseOrder->supplier_id;
+    //         $price = @$purchaseOrder->price;
+    //         $month_1 = @$purchaseOrder->month_1;
+    //         $month_2 = @$purchaseOrder->month_2;
+    //         $month_3 = @$purchaseOrder->month_3;
+    //         $month_4 = @$purchaseOrder->month_4;
+    //         $discount = @$purchaseOrder->discount;
+    //         $discount_nominal = @$purchaseOrder->discount_nominal;
+
+    //         if($qty == $post['qty'] && $supplier_id == $post['supplier_id'] && $price == $post['price'] && $month_1 == $post['month_1'] && $month_2 == $post['month_2'] && $month_3 == $post['month_3'] && $month_4 == $post['month_4'] && $discount == $post['discount'] && $discount_nominal == $post['discount_nominal']){
+    //             //Dokumentasi : update tidak meminta Approval
+    //                     $purchase_orders = $this->db->update('purchase_orders',["supplier_id" => $post['supplier_id'],
+    //                     "qty" => $post['qty'],
+    //                     "length" => $post['length'],
+    //                     "width" => $post['width'],
+    //                     "thickness" => $post['thickness'],
+    //                     "diameter" => $post['diameter'],
+    //                     "specification" => $post['specification'],
+    //                     "convertion" => $post['convertion'],
+    //                     "discount" => $post['discount'],
+    //                     "discount_nominal" => $post['discount_nominal'],
+    //                     "po_date" => $post['po_date'],
+    //                     "price" => $post['price'],
+    //                     "total" => $post['total'],
+    //                     "taxes" => $post['taxes'],
+    //                     "delivery_date" => $post['delivery_date'],
+    //                     "remarks" => $post['remarks'],
+    //                     "notes" => $post['notes'],
+    //                     "month_1" => $post['month_1'],
+    //                     "month_2" => $post['month_2'],
+    //                     "month_3" => $post['month_3'],
+    //                     "month_4" => $post['month_4'],
+    //                     "total_sub" => $post['total_sub'],
+    //                     "disc_pr" => $post['disc_pr'],
+    //                     "discount_total" => $post['discount_total'],
+    //                     "income_tax" => $post['income_tax'],
+    //                     "income_total" => $post['income_total'],
+    //                     "total_dp" => $post['total_dp'],
+    //                     "total_grand" => $post['total_grand'],
+    //                     "total_vat" => $post['total_vat'],
+    //                     "total_dpp" => $post['total_dpp'],
+    //                     "revision" => (@$purchaseOrder->revision + 1)
+    //                 ],["request_no" => $post['request_no'], "item_rm_id" => $items->id]);
+    //             //
+    //         } else{
+    //             $purchase_orders = $this->crud->update('purchase_orders',["request_no" => $post['request_no'],"item_rm_id" => $items->id],
+    //                 [   "supplier_id" => $post['supplier_id'],
+    //                     "qty" => $post['qty'],
+    //                     "length" => $post['length'],
+    //                     "width" => $post['width'],
+    //                     "thickness" => $post['thickness'],
+    //                     "diameter" => $post['diameter'],
+    //                     "specification" => $post['specification'],
+    //                     "convertion" => $post['convertion'],
+    //                     "discount" => $post['discount'],
+    //                     "discount_nominal" => $post['discount_nominal'],
+    //                     "po_date" => $post['po_date'],
+    //                     "price" => $post['price'],
+    //                     "total" => $post['total'],
+    //                     "taxes" => $post['taxes'],
+    //                     "delivery_date" => $post['delivery_date'],
+    //                     "remarks" => $post['remarks'],
+    //                     "notes" => $post['notes'],
+    //                     "month_1" => $post['month_1'],
+    //                     "month_2" => $post['month_2'],
+    //                     "month_3" => $post['month_3'],
+    //                     "month_4" => $post['month_4'],
+    //                     "total_sub" => $post['total_sub'],
+    //                     "disc_pr" => $post['disc_pr'],
+    //                     "discount_total" => $post['discount_total'],
+    //                     "income_tax" => $post['income_tax'],
+    //                     "income_total" => $post['income_total'],
+    //                     "total_dp" => $post['total_dp'],
+    //                     "total_grand" => $post['total_grand'],
+    //                     "total_vat" => $post['total_vat'],
+    //                     "total_dpp" => $post['total_dpp'],
+    //                     "status_price" => $post['status_price'],
+    //                     "revision" => (@$purchaseOrder->revision + 1)
+    //                 ]
+    //             );
+    //         }
+
+    //         $purchase_requests = $this->db->update('purchase_requests',["qty" => $post['qty']],["request_no" => $post['request_no'], "item_rm_id" => $items->id]);
+
+    //         echo $purchase_orders;
+    //     } else {
+    //         show_error("Cannot Process your request");
+    //     }
+    // }
+
     public function update()
     {
-        if ($this->input->post()) {
-            $post = $this->input->post();
-
-            $items = $this->crud->read('item_rm', [], ['id' => $post['item_rm_id']]);
-            $purchaseOrder = $this->crud->read('purchase_orders', [], ["request_no" => $post['request_no'], "supplier_id" => $post['supplier_id'], "item_rm_id" => $items->id]);
-            $qty = @$purchaseOrder->qty;
-            $supplier_id = @$purchaseOrder->supplier_id;
-            $price = @$purchaseOrder->price;
-            $month_1 = @$purchaseOrder->month_1;
-            $month_2 = @$purchaseOrder->month_2;
-            $month_3 = @$purchaseOrder->month_3;
-            $month_4 = @$purchaseOrder->month_4;
-            $discount = @$purchaseOrder->discount;
-            $discount_nominal = @$purchaseOrder->discount_nominal;
-
-            if($qty == $post['qty'] && $supplier_id == $post['supplier_id'] && $price == $post['price'] && $month_1 == $post['month_1'] && $month_2 == $post['month_2'] && $month_3 == $post['month_3'] && $month_4 == $post['month_4'] && $discount == $post['discount'] && $discount_nominal == $post['discount_nominal']){
-                //Dokumentasi : update tidak meminta Approval
-                        $purchase_orders = $this->db->update('purchase_orders',["supplier_id" => $post['supplier_id'],
-                        "qty" => $post['qty'],
-                        "discount" => $post['discount'],
-                        "discount_nominal" => $post['discount_nominal'],
-                        "po_date" => $post['po_date'],
-                        "price" => $post['price'],
-                        "total" => $post['total'],
-                        "taxes" => $post['taxes'],
-                        "delivery_date" => $post['delivery_date'],
-                        "remarks" => $post['remarks'],
-                        "notes" => $post['notes'],
-                        "month_1" => $post['month_1'],
-                        "month_2" => $post['month_2'],
-                        "month_3" => $post['month_3'],
-                        "month_4" => $post['month_4'],
-                        "total_sub" => $post['total_sub'],
-                        "disc_pr" => $post['disc_pr'],
-                        "discount_total" => $post['discount_total'],
-                        "income_tax" => $post['income_tax'],
-                        "income_total" => $post['income_total'],
-                        "total_dp" => $post['total_dp'],
-                        "total_grand" => $post['total_grand'],
-                        "total_vat" => $post['total_vat'],
-                        "total_dpp" => $post['total_dpp'],
-                        "revision" => (@$purchaseOrder->revision + 1)
-                    ],["request_no" => $post['request_no'], "item_rm_id" => $items->id]);
-                //
-            } else{
-                $purchase_orders = $this->crud->update('purchase_orders',["request_no" => $post['request_no'],"item_rm_id" => $items->id],
-                    [   "supplier_id" => $post['supplier_id'],
-                        "qty" => $post['qty'],
-                        "discount" => $post['discount'],
-                        "discount_nominal" => $post['discount_nominal'],
-                        "po_date" => $post['po_date'],
-                        "price" => $post['price'],
-                        "total" => $post['total'],
-                        "taxes" => $post['taxes'],
-                        "delivery_date" => $post['delivery_date'],
-                        "remarks" => $post['remarks'],
-                        "notes" => $post['notes'],
-                        "month_1" => $post['month_1'],
-                        "month_2" => $post['month_2'],
-                        "month_3" => $post['month_3'],
-                        "month_4" => $post['month_4'],
-                        "total_sub" => $post['total_sub'],
-                        "disc_pr" => $post['disc_pr'],
-                        "discount_total" => $post['discount_total'],
-                        "income_tax" => $post['income_tax'],
-                        "income_total" => $post['income_total'],
-                        "total_dp" => $post['total_dp'],
-                        "total_grand" => $post['total_grand'],
-                        "total_vat" => $post['total_vat'],
-                        "total_dpp" => $post['total_dpp'],
-                        "status_price" => $post['status_price'],
-                        "revision" => (@$purchaseOrder->revision + 1)
-                    ]
-                );
-            }
-
-            $purchase_requests = $this->db->update('purchase_requests',["qty" => $post['qty']],["request_no" => $post['request_no'], "item_rm_id" => $items->id]);
-
-            echo $purchase_orders;
-        } else {
-            show_error("Cannot Process your request");
+        if (!$this->input->post()) {
+            show_error("Cannot process your request");
+            return;
         }
+
+        $post = $this->input->post();
+
+        // var_dump($post);
+        // return;
+
+        $item = $this->crud->read('item_rm', [], ['id' => $post['item_rm_id']]);
+        if (!$item) {
+            show_error("Item not found");
+            return;
+        }
+
+        $isDimensionItem = (
+            floatval($post['length']) > 0 ||
+            floatval($post['width']) > 0 ||
+            floatval($post['thickness']) > 0 ||
+            floatval($post['diameter']) > 0
+        );
+
+        $where = [
+            'request_no' => $post['request_no'],
+            'item_rm_id' => $item->id
+        ];
+
+        if ($isDimensionItem) {
+            $where = array_merge($where, [
+                'length'    => $post['length'],
+                'width'     => $post['width'],
+                'thickness' => $post['thickness'],
+                'diameter'  => $post['diameter']
+            ]);
+        }
+
+        $existing = $this->crud->read('purchase_orders', [], $where);
+
+        $updateData = [
+            'supplier_id'      => $post['supplier_id'],
+            'qty'              => $post['qty'],
+            'length'           => $post['length'],
+            'width'            => $post['width'],
+            'thickness'        => $post['thickness'],
+            'diameter'         => $post['diameter'],
+            "weight"           => $post['weight'],
+            'specification'    => $post['specification'],
+            'convertion'       => $post['convertion'],
+            'discount'         => $post['discount'],
+            'discount_nominal' => $post['discount_nominal'],
+            'po_date'          => $post['po_date'],
+            'price'            => $post['price'],
+            'total'            => $post['total'],
+            'taxes'            => $post['taxes'],
+            'delivery_date'    => $post['delivery_date'],
+            'remarks'          => $post['remarks'],
+            'notes'            => $post['notes'],
+            'month_1'          => $post['month_1'],
+            'month_2'          => $post['month_2'],
+            'month_3'          => $post['month_3'],
+            'month_4'          => $post['month_4'],
+            'total_sub'        => $post['total_sub'],
+            'disc_pr'          => $post['disc_pr'],
+            'discount_total'   => $post['discount_total'],
+            'income_tax'       => $post['income_tax'],
+            'income_total'     => $post['income_total'],
+            'total_dp'         => $post['total_dp'],
+            'total_grand'      => $post['total_grand'],
+            'total_vat'        => $post['total_vat'],
+            'total_dpp'        => $post['total_dpp'],
+            'status_price'     => @$post['status_price'],
+            'revision'         => (isset($existing->revision) ? ($existing->revision + 1) : 1)
+        ];
+
+        $sameData = (
+            @$existing->qty == $post['qty'] &&
+            @$existing->supplier_id == $post['supplier_id'] &&
+            @$existing->price == $post['price'] &&
+            @$existing->month_1 == $post['month_1'] &&
+            @$existing->month_2 == $post['month_2'] &&
+            @$existing->month_3 == $post['month_3'] &&
+            @$existing->month_4 == $post['month_4'] &&
+            @$existing->discount == $post['discount'] &&
+            @$existing->discount_nominal == $post['discount_nominal']
+        );
+
+        if ($sameData) {
+            $result = $this->db->update('purchase_orders', $updateData, $where);
+        } else {
+            $result = $this->crud->update('purchase_orders', $where, $updateData);
+        }
+
+        $this->db->update('purchase_requests', [
+            'qty' => $post['qty']
+        ], $where);
+
+        echo json_encode([
+            'success' => (bool)$result,
+            'message' => $result ? 'Update Success' : 'Failed To Update',
+            'where_used' => $where 
+        ]);
     }
+
 
     public function update_approval()
     {
@@ -820,9 +976,11 @@ class Purchase_orders extends CI_Controller
         $hal = 1;
         $subtotal = 0;
         $judul = "PURCHASE ORDER"; 
+        // $hide_qty = false;
+        // $colspan = 9;
         for ($i = 0; $i < $page; $i++) {
-            $this->db->select('a.*, b.id as item_id, b.number as item_number, b.name as item_name, b.uom, c.currency, a.price, b.description, a.month_1, a.month_2, a.month_3, a.month_4, 
-            b.item_category_id as category_id, b.item_family_id as family_id');
+            $this->db->select('a.*, b.id as item_id, b.number as item_number, b.name as item_name, d.uom_default as uom, d.uom_inventory, b.kind, c.currency, a.price, b.description, a.month_1, a.month_2, a.month_3, a.month_4, 
+            b.item_category_id as category_id, b.item_family_id as family_id, b.size');
             $this->db->from('purchase_orders a');
             $this->db->join('item_rm b', 'a.item_rm_id = b.id');
             $this->db->join('suppliers c', 'a.supplier_id = c.id');
@@ -839,11 +997,17 @@ class Purchase_orders extends CI_Controller
                 $revision_date = $purchase_orders->created_date;
             }
 
-            foreach ($records as $row) {
-                if ($row['price'] == 1) {
-                    $judul = "DRAFT PURCHASE ORDER";
-                }
-            }
+            // foreach ($records as $row) {
+            //     if ($row['price'] == 1) {
+            //         $judul = "DRAFT PURCHASE ORDER";
+            //     }
+
+            //     if (strtoupper($row['size']) == "NO") {
+            //         $hide_qty = true;
+            //     }
+            // }
+
+            // $colspan = $hide_qty ? 7 : 9;
 
             $html .= '  <table style="width:100%;">
                             <tr>
@@ -931,31 +1095,44 @@ class Purchase_orders extends CI_Controller
                                         <td width="10">:</td>
                                         <td><b>' . @$supplier->email . '</b></td>
                                     </tr>
-                                </table>
+                                </table>';
+
+                                $html .= '
                                 <table id="customers">
                                     <tr>
                                         <th rowspan="2" width="30" style="text-align:center;">No</th>
                                         <th rowspan="2" width="150" style="text-align:center;">Product No</th>
                                         <th rowspan="2" width="150" style="text-align:center;">Product Name</th>
                                         <th rowspan="2" width="50" style="text-align:center;">Specification</th>
-                                        <th rowspan="2" width="50" style="text-align:center;">Qty</th>
-                                        <th rowspan="2" width="50" style="text-align:center;">Uom</th>
-                                        
+                                        <th rowspan="2" width="50" style="text-align:center;">Qty Unit</th>
+                                        <th rowspan="2" width="50" style="text-align:center;">Uom Unit</th>
+                                ';
+
+                                // // kolom hide
+                                // if (!$hide_qty) {
+                                //     $html .= '
+                                //         <th rowspan="2" width="50" style="text-align:center;">Qty</th>
+                                //         <th rowspan="2" width="50" style="text-align:center;">Uom</th>
+                                //     ';
+                                // }
+
+                                $html .= '
                                         <th rowspan="2" width="50" style="text-align:center;">Unit<br>Price</th>
                                         <th rowspan="2" width="50" style="text-align:center;">Currency</th>
                                         <th rowspan="2" width="50" style="text-align:center;">Discount</th>
                                         <th rowspan="2" width="50" style="text-align:center;">Amount</th>
                                         <th rowspan="2" width="80" style="text-align:center;">Delivery<br>Date</th>
                                         <th colspan="4" width="80" style="text-align:center;">Forecast</th>
+                                    </tr>
 
-                                        <tr>
-                                            <th width="80" style="text-align:center;">'.$month_1.'</th>
-                                            <th width="80" style="text-align:center;">'.$month_2.'</th>
-                                            <th width="80" style="text-align:center;">'.$month_3.'</th>
-                                            <th width="80" style="text-align:center;">'.$month_4.'</th>
-                                        </tr>
-                                        
-                                    </tr>';
+                                    <tr>
+                                        <th width="80" style="text-align:center;">'.$month_1.'</th>
+                                        <th width="80" style="text-align:center;">'.$month_2.'</th>
+                                        <th width="80" style="text-align:center;">'.$month_3.'</th>
+                                        <th width="80" style="text-align:center;">'.$month_4.'</th>
+                                    </tr>
+                                ';
+
             $row = 0;
             foreach ($records as $record) {
                 $subtotal += ($record['qty'] * $record['price']);
@@ -972,28 +1149,48 @@ class Purchase_orders extends CI_Controller
                     $number = $record['item_number'];
                     $name = $record['item_name'];
                 }
+
+                if ($record['kind'] == "TUBE") {
+                    $specification = $record['specification'] ." mm";
+                } else if ($record['kind'] == "CUBE") {
+                    $specification = $record['specification'] ." mm";
+                } else {
+                    $specification = "";
+                }
+
+                $qty_inventory = $record['qty'] * $record['convertion'];
                 
-                $html .= '  
-                            <tr>    
-                                <td style="text-align:center;">' . $no . '</td>
-                                <td>' . $number . '</td>
-                                <td><span style="font-size:10px;">' . $name . '</span></td>
-                                <td style="text-align:center;">' . $record['description'] . '</td>
-                                <td style="text-align:right;">' . number_format($record['qty'], 2) . '</td>
-                                <td style="text-align:center;">' . $record['uom'] . '</td>
-                                
-                                <td style="text-align:right;">' . number_format($record['price'], 2) . '</td>
-                                <td style="text-align:center;">' . $record['currency'] . '</td>
-                                <td style="text-align:center;">' . $record['discount_nominal'] . '</td>
-                                <td style="text-align:right;">' . number_format($record['total'], 2) . '</td>
-                                <td style="text-align:center;">' . $record['delivery_date'] . '</td>
-                                <td style="text-align:center;">' . $record['month_1'] . '</td>
-                                <td style="text-align:center;">' . $record['month_2'] . '</td>
-                                <td style="text-align:center;">' . $record['month_3'] . '</td>
-                                <td style="text-align:center;">' . $record['month_4'] . '</td>
-                            </tr>';
-                $row++;
-                $no++;
+                $html .= '<tr>
+                        <td style="text-align:center;">' . $no . '</td>
+                        <td>' . $number . '</td>
+                        <td><span style="font-size:10px;">' . $name . '</span></td>
+                        <td style="text-align:center;">' . $specification . '</td>
+                        <td style="text-align:right;">' . number_format($record['qty'], 2) . '</td>
+                        <td style="text-align:center;">' . $record['uom'] . '</td>';
+
+                    // kolom yang bisa disembunyikan
+                    // if (!$hide_qty) {
+                    //     $html .= '
+                    //     <td style="text-align:right;">' . number_format($qty_inventory, 2) . '</td>
+                    //     <td style="text-align:center;">' . $record['uom_inventory'] . '</td>';
+                    // }
+
+
+                    // kolom yang selalu ditampilkan
+                    $html .= '
+                        <td style="text-align:right;">' . number_format($record['price'], 2) . '</td>
+                        <td style="text-align:center;">' . $record['currency'] . '</td>
+                        <td style="text-align:center;">' . $record['discount_nominal'] . '</td>
+                        <td style="text-align:right;">' . number_format($record['total'], 2) . '</td>
+                        <td style="text-align:center;">' . $record['delivery_date'] . '</td>
+                        <td style="text-align:center;">' . $record['month_1'] . '</td>
+                        <td style="text-align:center;">' . $record['month_2'] . '</td>
+                        <td style="text-align:center;">' . $record['month_3'] . '</td>
+                        <td style="text-align:center;">' . $record['month_4'] . '</td>
+                    </tr>';
+
+                    $no++;
+                    $row++;
             }
             if (($i + 1) == $page) {
 
@@ -1029,7 +1226,7 @@ class Purchase_orders extends CI_Controller
                 }
 
                 $html .= '  <tr>
-                            <td style="vertical-align: top; text-align:left;" colspan="6" rowspan="8">
+                            <td style="vertical-align: top; text-align:left;" colspan="7" rowspan="8">
                                 <b>Note :</b> <br>' . implode('<br>', $note_content) . '
                             </td>
                         </tr>';
@@ -1179,6 +1376,8 @@ class Purchase_orders extends CI_Controller
         $filter_from_update = $this->input->get('filter_from_update');
         $filter_to_update   = $this->input->get('filter_to_update');
         $filter_po_no = $this->input->get('filter_po_no');
+        $filter_part_no = $this->input->get('filter_part_no');
+        $filter_part_name = $this->input->get('filter_part_name');
         $filter_suppliers = $this->input->get('filter_suppliers');
         $filter_categories = $this->input->get('filter_categories');
         $filter_status = $this->input->get('filter_status');
@@ -1210,6 +1409,8 @@ class Purchase_orders extends CI_Controller
             $this->db->where('a.updated_date <=', $filter_to_update);
         }
         $this->db->like('a.po_no', $filter_po_no);
+        $this->db->like('b.number', $filter_part_no);
+        $this->db->like('b.name', $filter_part_name);
         $this->db->like('d.id', $filter_suppliers);
         $this->db->like('a.status', $filter_status);
         $this->db->order_by('a.po_date', 'DESC');
