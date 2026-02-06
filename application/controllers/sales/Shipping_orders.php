@@ -181,6 +181,7 @@ class Shipping_orders extends CI_Controller
                         $this->db->join('checksheets c', 'b.checksheet_number = c.number');
                         $this->db->join('item_fg d', 'c.item_fg_id = d.id');
                         $this->db->where('a.label_divided', $checksheet_label);
+                        // $this->db->where('a.type', 'SUPPLY');
 
                         $totalRows = $this->db->count_all_results('', false);
                         $records = $this->db->get()->result_array();
@@ -191,6 +192,7 @@ class Shipping_orders extends CI_Controller
                             $this->db->join('new_barcode_fg b', 'a.reff = b.label_no');
                             $this->db->join('item_fg d', 'b.item_fg_id = d.id');
                             $this->db->where('a.label_divided', $checksheet_label);
+                            // $this->db->where('a.type', 'SUPPLY');
 
                             $totalRows = $this->db->count_all_results('', false);
                             $records = $this->db->get()->result_array();
@@ -205,77 +207,210 @@ class Shipping_orders extends CI_Controller
         }
     }
 
-    public function create()
+    // public function create()
+    // {
+    //     if ($this->input->post()) {
+    //         if ($this->form_validation->run() == TRUE) {
+    //             $post   = $this->input->post();
+
+    //             $delivery_order_no = $post['delivery_order_no'];
+    //             $item_fg_id = $post['item_fg_id'];
+    //             //$shipping_orders = $this->crud->read("shipping_orders", [], ["delivery_order_no" => $post['delivery_order_no'], "checksheet_label" => $post['checksheet_label']]);
+    //             $shipping_orders = $this->crud->read("shipping_orders", [], ["checksheet_label" => $post['checksheet_label']]);
+    //             $do_no = $this->crud->read("delivery_orders",[], ["delivery_order_no" => $post['delivery_order_no'], "item_fg_id" => $post['item_fg_id']]);                
+    //             $totalShipping = $this->crud->query("SELECT SUM(qty) as qty FROM shipping_orders WHERE delivery_order_no = '$delivery_order_no' and item_fg_id = '$item_fg_id'");
+                
+    //             $this->db->select("a.*");
+    //             $this->db->from('scan_item_receipts_fg a');
+    //             $this->db->join('wip_receipts d', 'a.checksheet_number = d.checksheet_number','left');
+    //             $this->db->join('sales_orders b', 'd.item_fg_id = b.item_fg_id','left');
+    //             $this->db->join('delivery_orders c', 'b.item_fg_id = c.item_fg_id and c.customer_id = b.customer_id','left');//ok
+    //             $this->db->where('a.checksheet_label', $post['checksheet_label']);
+    //             $this->db->group_by('a.checksheet_label');
+    //             $label_items = $this->db->get()->result_array();
+
+    //             // var_dump($post['qty']);
+    //             // var_dump($totalShipping[0]->qty);
+    //             // var_dump($do_no->qty_del);
+
+    //             if ($label_items) {
+    //                 if (!$shipping_orders) {
+
+    //                     if(round($post['qty'] + $totalShipping[0]->qty) <= round($do_no->qty_del)){
+    //                         $send = $this->crud->createNotLog('shipping_orders', $post);
+    //                         $this->crud->updateNotlog('scan_item_receipts_fg', ["checksheet_label" => $post['checksheet_label']], ["status" => "1"]);
+    //                         if(round($post['qty'] + $totalShipping[0]->qty) == round($do_no->qty_del)){
+    //                             $this->crud->updateNotlog('delivery_orders', ["delivery_order_no" => $post['delivery_order_no'], "item_fg_id" => $post['item_fg_id']], ["status_scan" => "1"]);
+    //                         }
+    //                         echo $send;
+    //                     } else {
+    //                         echo json_encode(array("title" => "More Then Qty", "message" => "Qty Label > Qty DO ", "theme" => "error"));
+    //                     }
+    //                 } else {
+    //                     echo json_encode(array("title" => "Available", "message" => "Label has been scan for Other Shipping, Please Scan with other Label", "theme" => "error"));
+    //                 }
+    //             } else {
+    //                 $this->db->select("e.*");
+    //                 $this->db->from('barcode_divides_fg e');
+    //                 $this->db->where('e.label_divided', $post['checksheet_label']);
+    //                 $barcode_items = $this->db->get()->result_array(); // Query kedua
+                
+    //                 if ($barcode_items) {
+    //                     if (!$shipping_orders) {
+    //                         if(round($post['qty'] + $totalShipping[0]->qty) <= round($do_no->qty_del)){
+    //                             $send = $this->crud->createNotLog('shipping_orders', $post);
+    //                             $this->crud->updateNotlog('barcode_divides_fg', ["label_divided" => $post['checksheet_label']], ["status" => "1"]);
+    //                             if(round($post['qty'] + $totalShipping[0]->qty) == round($do_no->qty_del)){
+    //                                 $this->crud->updateNotlog('delivery_orders', ["delivery_order_no" => $post['delivery_order_no'], "item_fg_id" => $post['item_fg_id']], ["status_scan" => "1"]);
+    //                             }                                
+    //                             echo $send;
+    //                         } else {
+    //                             echo json_encode(array("title" => "More Then Qty", "message" => "Qty Label > Qty DO ", "theme" => "error"));
+    //                         }
+    //                     } else {
+    //                         echo json_encode(array("title" => "Available", "message" => "Label has been scan for Other Shipping, Please Scan with other Label", "theme" => "error"));
+    //                     }
+    //                 } else {
+    //                     echo json_encode(array("title" => "Not Match", "message" => "Label does not match the list item", "theme" => "error"));
+    //                 }
+    //             }
+    //         } else {
+    //             show_error(validation_errors());
+    //         }
+    //     } else {
+    //         show_error("Cannot Process your request");
+    //     }
+    // }
+
+    function decimal_equal($a, $b, $scale = 2)
     {
-        if ($this->input->post()) {
-            if ($this->form_validation->run() == TRUE) {
-                $post   = $this->input->post();
+        return bccomp((string)$a, (string)$b, $scale) === 0;
+    }
 
-                $delivery_order_no = $post['delivery_order_no'];
-                $item_fg_id = $post['item_fg_id'];
-                $shipping_orders = $this->crud->read("shipping_orders", [], ["delivery_order_no" => $post['delivery_order_no'], "checksheet_label" => $post['checksheet_label']]);
-                $do_no = $this->crud->read("delivery_orders",[], ["delivery_order_no" => $post['delivery_order_no'], "item_fg_id" => $post['item_fg_id']]);                
-                $totalShipping = $this->crud->query("SELECT SUM(qty) as qty FROM shipping_orders WHERE delivery_order_no = '$delivery_order_no' and item_fg_id = '$item_fg_id'");
-                
-                $this->db->select("a.*");
-                $this->db->from('scan_item_receipts_fg a');
-                $this->db->join('wip_receipts d', 'a.checksheet_number = d.checksheet_number','left');
-                $this->db->join('sales_orders b', 'd.item_fg_id = b.item_fg_id','left');
-                $this->db->join('delivery_orders c', 'b.item_fg_id = c.item_fg_id and c.customer_id = b.customer_id','left');//ok
-                $this->db->where('a.checksheet_label', $post['checksheet_label']);
-                $this->db->group_by('a.checksheet_label');
-                $label_items = $this->db->get()->result_array();
+    function decimal_lte($a, $b, $scale = 2)
+    {
+        return bccomp((string)$a, (string)$b, $scale) <= 0;
+    }
 
-                // var_dump($post['qty']);
-                // var_dump($totalShipping[0]->qty);
-                // var_dump($do_no->qty_del);
+    public function create()//dokumentasi : Optimasi Create dengan Race Condition
+    {
+        if (!$this->input->post()) {
+            echo json_encode([
+                "title" => "Error",
+                "message" => "Cannot Process your request",
+                "theme" => "error"
+            ]);
+            return;
+        }
 
-                if ($label_items) {
-                    if (!$shipping_orders) {
+        if ($this->form_validation->run() !== TRUE) {
+            echo json_encode(["title" => "Error","message" => validation_errors(),"theme" => "error"]);
+            return;
+        }
 
-                        if(round($post['qty'] + $totalShipping[0]->qty) <= round($do_no->qty_del)){
-                            $send = $this->crud->create('shipping_orders', $post);
-                            $this->crud->update('scan_item_receipts_fg', ["checksheet_label" => $post['checksheet_label']], ["status" => "1"]);
-                            if(round($post['qty'] + $totalShipping[0]->qty) == round($do_no->qty_del)){
-                                $this->crud->update('delivery_orders', ["delivery_order_no" => $post['delivery_order_no'], "item_fg_id" => $post['item_fg_id']], ["status_scan" => "1"]);
-                            }
-                            echo $send;
-                        } else {
-                            echo json_encode(array("title" => "More Then Qty", "message" => "Qty Label > Qty DO ", "theme" => "error"));
-                        }
-                    } else {
-                        echo json_encode(array("title" => "Available", "message" => "Data Shipping Orders has been Scanning", "theme" => "error"));
-                    }
-                } else {
-                    $this->db->select("e.*");
-                    $this->db->from('barcode_divides_fg e');
-                    $this->db->where('e.label_divided', $post['checksheet_label']);
-                    $barcode_items = $this->db->get()->result_array(); // Query kedua
-                
-                    if ($barcode_items) {
-                        if (!$shipping_orders) {
-                            if(round($post['qty'] + $totalShipping[0]->qty) <= round($do_no->qty_del)){
-                                $send = $this->crud->create('shipping_orders', $post);
-                                $this->crud->update('barcode_divides_fg', ["label_divided" => $post['checksheet_label']], ["status" => "1"]);
-                                if(round($post['qty'] + $totalShipping[0]->qty) == round($do_no->qty_del)){
-                                    $this->crud->update('delivery_orders', ["delivery_order_no" => $post['delivery_order_no'], "item_fg_id" => $post['item_fg_id']], ["status_scan" => "1"]);
-                                }                                
-                                echo $send;
-                            } else {
-                                echo json_encode(array("title" => "More Then Qty", "message" => "Qty Label > Qty DO ", "theme" => "error"));
-                            }
-                        } else {
-                            echo json_encode(array("title" => "Available", "message" => "Data Shipping Orders has been Scanning", "theme" => "error"));
-                        }
-                    } else {
-                        echo json_encode(array("title" => "Not Match", "message" => "Label does not match the list item", "theme" => "error"));
-                    }
-                }
-            } else {
-                show_error(validation_errors());
+        $post = $this->input->post();
+        $delivery_order_no = $post['delivery_order_no'];
+        $item_fg_id        = $post['item_fg_id'];
+        $label             = $post['checksheet_label'];
+
+        $this->db->trans_begin();
+
+        try {
+
+            /** LOCK DO */
+            $do = $this->db->query(
+                "SELECT * FROM delivery_orders 
+                WHERE delivery_order_no = ? 
+                AND item_fg_id = ? 
+                FOR UPDATE",
+                [$delivery_order_no, $item_fg_id]
+            )->row();
+
+            if (!$do) {
+                throw new Exception("Item not found in Delivery Order", 404);
             }
-        } else {
-            show_error("Cannot Process your request");
+
+            /** DUPLICATE LABEL */
+            $exists = $this->crud->read("shipping_orders", [], ["checksheet_label" => $label]);
+            if ($exists) {
+                throw new Exception("Data Shipping Orders has been Scanning", 409);
+            }
+
+            /** VALIDASI LABEL */
+            $label_type = null;
+
+            $receipt = $this->db->where('checksheet_label', $label)
+                                ->get('scan_item_receipts_fg')
+                                ->row();
+
+            if ($receipt) {
+                $label_type = 'receipt';
+            } else {
+                $barcode = $this->db->where('label_divided', $label)
+                                    ->get('barcode_divides_fg')
+                                    ->row();
+
+                if ($barcode) {
+                    $label_type = 'barcode';
+                } else {
+                    throw new Exception("Label does not match the list item", 400);
+                }
+            }
+
+            /** INSERT SHIPPING */
+            $this->crud->createNotLog('shipping_orders', $post);
+
+            /** UPDATE LABEL */
+            if ($label_type === 'receipt') {
+                $this->crud->updateNotlog('scan_item_receipts_fg',['checksheet_label' => $label],['status' => '1']);
+            } else {
+                $this->crud->updateNotlog('barcode_divides_fg',['label_divided' => $label],['status' => '1']);
+            }
+
+            /** TOTAL QTY */
+            $total = $this->db->query(
+                "SELECT COALESCE(SUM(qty),0) qty 
+                FROM shipping_orders 
+                WHERE delivery_order_no = ? 
+                AND item_fg_id = ?",
+                [$delivery_order_no, $item_fg_id]
+            )->row()->qty;
+
+            if (!$this->decimal_lte($total, $do->qty_del, 2)) {
+                throw new Exception("Qty Label > Qty DO", 422);
+            }
+
+            if ($this->decimal_equal($total, $do->qty_del, 2)) {
+                $this->crud->updateNotlog('delivery_orders',['delivery_order_no' => $delivery_order_no, 'item_fg_id' => $item_fg_id],['status_scan' => '1']);
+            }
+
+            $this->db->trans_commit();
+
+            echo json_encode([
+                "title" => "Success",
+                "message" => "Shipping order created",
+                "theme" => "success"
+            ]);
+
+        } catch (Exception $e) {
+
+            $this->db->trans_rollback();
+
+            /** Mapping code → title frontend */
+            $titleMap = [
+                404 => "Not Registered",
+                400 => "Not Scanned In",
+                409 => "Available",
+                422 => "More Then Qty"
+            ];
+
+            $title = $titleMap[$e->getCode()] ?? "Error";
+
+            echo json_encode([
+                "title" => $title,
+                "message" => $e->getMessage(),
+                "theme" => "error"
+            ]);
         }
     }
 }
