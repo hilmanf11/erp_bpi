@@ -99,7 +99,12 @@ class Report_ar extends CI_Controller
 
         // Mengatasi "Double Counting" ambil start_date initial balance customers 
         $initial_data = $this->db->get_where('account_balance_customers', ['customer_id' => $customer_id])->row();
-        $initial_date = $initial_data->start_date; // Misal: 2025-12-31
+        if ($initial_data) {
+            $initial_date = $initial_data->start_date; 
+        } else {
+            // Jika tidak ada saldo awal tercatat, maka gunakan default date 
+            $initial_date = '2025-12-31'; 
+        }
         
         // Inisialisasi variabel untuk Query Builder
         $this->db->reset_query();
