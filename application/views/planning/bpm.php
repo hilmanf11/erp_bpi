@@ -15,6 +15,7 @@
             <th rowspan="2" data-options="field:'qty_actual',width:80,halign:'center',align:'right',formatter:numberformatQpa">Qty Scan</th>
             <th rowspan="2" data-options="field:'label',width:80,align:'center'">Qty Label</th>
             <th rowspan="2" data-options="field:'state',width:80,align:'left',formatter:BtnPrint">Print</th>
+            <th rowspan="2" data-options="field:'lot_no',width:100,align:'left'">Lot No</th>
             <th rowspan="2" data-options="field:'remarks',width:250,align:'left'">Remarks</th>
             <th colspan="2" data-options="field:'',width:100,halign:'center'"> Created</th>
             <th colspan="2" data-options="field:'',width:100,halign:'center'"> Updated</th>
@@ -421,18 +422,34 @@
             });
             editIndex = $('#dg2').datagrid('getRows').length - 1;
             $('#dg2').datagrid('selectRow', editIndex).datagrid('beginEdit', editIndex);
+
+            var ed = $('#dg2').datagrid('getEditor', {
+                index: editIndex,
+                field: 'lot_no'
+            });
+
+            var input = $(ed.target);
+            input.textbox({
+                onChange: function (newValue, oldValue) {
+                    if (newValue.length < 7) {
+                        toastr.error("Lot No Must 7 Character.");
+                        $(this).textbox('setValue', '');
+                    } else if (newValue.length > 7) {
+                        let trimmed = newValue.slice(0, 7);
+                        $(this).textbox('setValue', trimmed);
+                        toastr.warning("Lot No Must 7 Character: " + trimmed);
+                    }
+                }
+            });
         }
     }
 
     function removeit() {
-        if (endEditing()) {
-            var row = $('#dg2').datagrid('getSelected'); // Dapatkan baris yang dipilih
-            if (row) {
-                var rowIndex = $('#dg2').datagrid('getRowIndex', row); // Dapatkan index baris
-                $('#dg2').datagrid('deleteRow', rowIndex); // Hapus baris yang dipilih
-            }
-            editIndex = undefined; // Reset editIndex
+        if (editIndex == undefined) {
+            return
         }
+        $('#dg2').datagrid('cancelEdit', editIndex).datagrid('deleteRow', editIndex);
+        editIndex = undefined;
     }
 
     //Update Data
@@ -463,46 +480,87 @@
 
     //Delete Data
     function deleted() {
-        var rows = $('#dg').treegrid('getSelections');
-        if(rows.status != 1){
-            if (rows.length > 0) {
-                $.messager.confirm('Warning', 'Are you sure you want to delete this data?', function(r) {
-                    if (r) {
-                        for (var i = 0; i < rows.length; i++) {
-                            var row = rows[i];
-                            if (row.state == "closed") {
-                                toastr.error("Please Select Detail of BPM <br>");
-                            } else {
-                                $.ajax({
-                                    method: 'post',
-                                    url: '<?= base_url('planning/bpm/delete') ?>',
-                                    data: {
-                                        request_id: row.id,
-                                        request_no: row.request_no,
-                                        item_rm_id: row.item_rm_id
-                                    },
-                                    success: function(result) {
-                                        var result = eval('(' + result + ')');
-                                        $('#dg').treegrid('reload');
-                                    },
-                                    error: function(jqXHR, textStatus, errorThrown) {
-                                        toastr.error(jqXHR.statusText);
-                                        $.messager.alert("Error", jqXHR.statusText, 'error');
-                                    },
-                                    complete: function(data) {
-                                        $('#dg').treegrid('reload');
-                                    }
-                                });
-                            }
-                        }
-                    }
-                });
-            } else {
-                toastr.warning("Please select one of the data in the table first!", "Information");
-            }
-        } else {
-            toastr.warning("This data already close", "Information");
+        let rows = $('#dg').treegrid('getSelections');
+
+        if (rows.length === 0) {
+            toastr.warning("Please select one of the data in the table first!", "Information");
+            return;
         }
+
+        $.messager.confirm('Warning', 'Are you sure you want to delete this data?', function (r) {
+            if (!r) return;
+
+            // Tampilkan loading selama proses berlangsung
+            $.messager.progress({
+                title: 'Please Wait',
+                msg: 'Deleting data...'
+            });
+
+            let promises = [];
+
+            rows.forEach(row => {
+
+                if (row.state === "closed") {
+                    toastr.error("Please Select Detail of BPM <br>" + row.id);
+                    return;
+                }
+
+                // Wrapper promise untuk setiap row
+                let p = new Promise((resolve, reject) => {
+
+                    // Step 1: Check first
+                    $.ajax({
+                        method: 'POST',
+                        url: '<?= base_url('planning/bpm/checkReceipt') ?>',
+                        data: { request_id: row.id },
+                        success: function (resCheck) {
+
+                            let check = JSON.parse(resCheck);
+
+                            if (check.status === 'error') {
+                                toastr.error(check.message);
+                                return resolve(); // skip saja
+                            }
+
+                            // Step 2: Delete
+                            $.ajax({
+                                method: 'POST',
+                                url: '<?= base_url('planning/bpm/delete') ?>',
+                                data: {
+                                    request_id: row.id,
+                                    request_no: row.request_no,
+                                    item_rm_id: row.item_rm_id
+                                },
+                                success: function (resDelete) {
+                                    resolve();
+                                },
+                                error: function (xhr) {
+                                    toastr.error("Error: " + xhr.statusText);
+                                    resolve(); // tetap lanjut
+                                }
+                            });
+
+                        },
+                        error: function (xhr) {
+                            toastr.error("Error: " + xhr.statusText);
+                            resolve(); // tetap lanjut
+                        }
+                    });
+
+                });
+
+                promises.push(p);
+            });
+
+            // Eksekusi setelah semua selesai
+            Promise.all(promises).then(() => {
+                $.messager.progress('close'); // tutup loading
+                toastr.success("Selected data has been deleted");
+                $('#dg').treegrid('reload');
+                readReceiptNo();
+            });
+
+        });
     }
 
     function filter() {
@@ -608,7 +666,12 @@
                                 toastr.error(`Lot No must be 7 characters`);
                                 return;
                             }
-                            
+
+                            if (rows[i].label == 0) {
+                                toastr.error(`Row ${i + 1} has Label 0. Please correct it.`);
+                                return;
+                            }
+
                             if (rows[i].item_rm_id) {
                                 $.ajax({
                                     type: "post",

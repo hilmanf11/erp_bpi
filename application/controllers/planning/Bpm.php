@@ -70,7 +70,12 @@ class Bpm extends CI_Controller
         $records = $this->crud->query("SELECT a.id, a.number, a.name, a.uom, b.mpq 
         FROM item_rm a
         LEFT JOIN supplier_items b ON a.id = b.item_rm_id
-        WHERE b.share_order = '100' and a.item_category_id != 'C03' and a.number like '%$post%' or a.name like '$post'
+        WHERE a.status = '0' 
+            AND a.division = 'INJ' 
+            AND b.share_order = '100' 
+            AND item_category_id = 'C01' 
+            AND (item_family_id = 'P01' OR item_family_id = 'P02' OR item_family_id = 'P06') 
+            AND (a.number LIKE '%$post%' OR a.name LIKE '%$post%')
         ORDER BY `number` ASC");
         echo json_encode($records);
     }
@@ -216,6 +221,7 @@ class Bpm extends CI_Controller
                 $this->db->where('a.deleted', 0);
                 $this->db->where('a.request_no', $id);
                 $this->db->group_by('a.id');
+                $this->db->order_by('a.request_id', 'ASC');
                 if($filter_product_family != ""){
                     $this->db->where('b.item_family_id', $filter_product_family);
                 }
@@ -251,6 +257,7 @@ class Bpm extends CI_Controller
                         "qty_actual" => $record['qty_actual'],
                         "label" => $record['label'],
                         "uom" => $record['uom'],
+                        "lot_no" => $record['lot_no'],
                         "remarks" => $record['remarks'],
                         "status" => $status,
                         "created_by" => $record['created_by'],
@@ -278,6 +285,27 @@ class Bpm extends CI_Controller
             $autoID = sprintf("%03s", $urutan);
         }
         return $receipt_no . "-" . $autoID;
+    }
+
+    public function checkReceipt() {
+        $request_id = $this->input->post('request_id');
+
+        $sqlScan = $this->db->query("SELECT COUNT(*) as cnt FROM scan_item_bpm WHERE request_id = ?", [$request_id]);
+        $exists_scan = $sqlScan->row()->cnt;
+
+        $sqlIssue = $this->db->query("SELECT COUNT(*) as cnt FROM issued_material_details WHERE label_no LIKE ? ", [$request_id.'%']);
+        $exists_issue = $sqlIssue->row()->cnt;
+
+        if ($exists_scan > 0 || $exists_issue > 0) {
+            echo json_encode([
+                'status' => 'error',
+                'message' => 'Receipt Id cannot be Delete, Because this receipt already use for Transaction.'
+            ]);
+        } else {
+            echo json_encode([
+                'status' => 'ok'
+            ]);
+        }
     }
 
     public function create()
@@ -464,6 +492,7 @@ class Bpm extends CI_Controller
         $data = $this->input->post();
         $send = $this->crud->delete('bpm', ["request_id" => $data['request_id']]);
         $delete = $this->crud->delete('bpm_labels', ["request_id" => $data['request_id'], "item_rm_id" => $data['item_rm_id']]);
+        $delete2 = $this->crud->delete('scan_item_bpm', ["request_id" => $data['request_id'], "item_rm_id" => $data['item_rm_id']]);
         echo $send;
     }
 
