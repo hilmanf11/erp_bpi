@@ -103,19 +103,21 @@ class Supply_requestions extends CI_Controller
 
         $this->db->select('b.id, b.number, 
         b.name, 
-        d.qty, 
+        a.qty, 
         b.uom, 
         c.weight, 
         f.mpq,
         f.calculate, 
-        COALESCE(a.qty_purging, 0) as qty_purging');
-        $this->db->from('supply_sheets a');
+        e.composition, 
+        COALESCE(d.total_purging, 0) as qty_purging');
+        $this->db->from('item_ng a');
         $this->db->join('item_rm b', 'a.item_rm_id = b.id');
         $this->db->join('item_fg c', 'a.item_fg_id = c.id');
-        $this->db->join('item_ng d', 'a.item_rm_id = d.item_rm_id AND a.workorder = d.workorder', 'left');
+        $this->db->join('production_schedules d', 'a.workorder = d.wo_no', 'left');
         $this->db->join('supplier_items f', 'b.id = f.item_rm_id','left');
-        $this->db->where('a.workorder', $workorder);
-        $this->db->where('d.document', $document);
+        $this->db->join('bom e', 'e.item_fg_id = a.item_fg_id AND e.item_rm_id = a.item_rm_id','left');
+        $this->db->where('d.wo_no', $workorder);
+        $this->db->where('a.document', $document);
         $this->db->where('f.share_order', 100);
         $this->db->order_by('b.number', 'asc');
         $records = $this->db->get()->result_array();
@@ -127,11 +129,17 @@ class Supply_requestions extends CI_Controller
             $calculate = $record['calculate'];
             $qty_val = (float) $record['qty'];
             $qty_purging = (float) $record['qty_purging'];
+            $composition = (float) $record['composition'];
+
+            // var_dump($qty_val);
+            // var_dump($composition);
+            // var_dump($qty_purging);
+            // var_dump($mpq);
 
             if ($calculate == "NO") {
-                $qty = $qty_val + $qty_purging;
+                $qty = $qty_val;
             } else {
-                $qty = ceil(($qty_val + $qty_purging) / $mpq) * $mpq;
+                $qty = ceil($qty_val / $mpq) * $mpq;
             }
 
             $obj[] = array(
@@ -185,7 +193,8 @@ class Supply_requestions extends CI_Controller
             $id = $_POST['id'];
             if ($id === "0") {
                 //Select Query
-                $this->db->select("a.*, e.number as item_number, 
+                $this->db->select("a.*, 
+                e.number as item_number, 
                 e.name as item_name, 
                 b.uom,
                 COUNT(a.status) as total_status, 
@@ -208,7 +217,7 @@ class Supply_requestions extends CI_Controller
                 $this->db->join('(SELECT request_no, COUNT(status) as total_status_open FROM supply_requestions WHERE status = 0 GROUP BY request_no) i', 'a.request_no = i.request_no', 'left');        
                 // $this->db->join('uom d', 'b.uom_id = d.id');
                 $this->db->join('item_fg e', 'c.item_fg_id = e.id','left');
-                $this->db->join('item_ng f', 'a.document = f.document_scrap','left');
+                $this->db->join('item_ng f', 'a.document = f.document','left');
                 $this->db->where('a.deleted', 0);
                 // $this->db->where('a.status', 0);
                 // $this->db->like("a.status", $filter_status);
@@ -257,8 +266,8 @@ class Supply_requestions extends CI_Controller
                         "total_status" => $record['total_status'],
                         "total_status_open" => $record['total_status_open'],
                         "total_status_close" => $record['total_status_close'],
-                        "qty_wo" => $record['qty_wo'],
-                        "qty_ng" => $record['qty_ng'],
+                        // "qty_wo" => $record['qty_wo'],
+                        // "qty_ng" => $record['qty_ng'],
                         "shift" => $record['shift'],
                         "state" => "closed"
                     );
@@ -273,12 +282,14 @@ class Supply_requestions extends CI_Controller
                 b.number as item_number, 
                 b.name as item_name, 
                 b.uom,
+                COALESCE(f.qty_sh,0) as qty_wo,
+                COALESCE(f.qty_product,0) as qty_ng,
                 COALESCE(c.qty,0) as issued,
                 a.qty - COALESCE(c.qty,0) as outstanding');
                 $this->db->from('supply_requestions a');
                 $this->db->join('item_rm b', 'a.item_rm_id = b.id');
                 $this->db->join("(SELECT item_rm_id, request_no, COALESCE(SUM(qty),0) as qty FROM issued_material_details GROUP BY item_rm_id, request_no ) c",'a.request_no = c.request_no and a.item_rm_id = c.item_rm_id','left');
-                // $this->db->join('uom d', 'b.uom_id = d.id');
+                $this->db->join('item_ng f', 'a.document = f.document and a.item_rm_id = f.item_rm_id','left');
                 $this->db->where('a.deleted', 0);
                 // $this->db->where('a.status', 0);
                 $this->db->where('a.request_no', $id);
@@ -323,8 +334,8 @@ class Supply_requestions extends CI_Controller
         
                     // Menentukan status berdasarkan jumlah yang dikeluarkan dan jumlah yang diminta
                     $status = ($record['qty'] == ($record['issued'] + $issued_qty_crusher + $issued_qty_peletizing)) ? 'Close' : 'Open';
-                    $issued = $record['issued'] + $issued_qty_crusher + $issued_qty_peletizing;
-                    $outstanding = $record['qty'] - $issued;
+                    $issued = $record['issued'];
+                    $outstanding = $record['qty'] - ($issued + $issued_qty_crusher + $issued_qty_peletizing);
 
                     $arr[] = array(
                         "id" => $record['id'],
@@ -338,7 +349,11 @@ class Supply_requestions extends CI_Controller
                         "item_number" => $record['item_number'],
                         "item_name" => $record['item_name'],
                         "qty" => $record['qty'],
+                        "qty_wo" => $record['qty_wo'],
+                        "qty_ng" => $record['qty_ng'],
                         "issued" => $issued,
+                        "issued_qty_crusher" => $issued_qty_crusher,
+                        "issued_qty_peletizing" => $issued_qty_peletizing,
                         "outstanding" => $outstanding,
                         "uom" => $record['uom'],
                         "status" => $record['status'],
@@ -608,7 +623,7 @@ class Supply_requestions extends CI_Controller
                                             <td><b>' . @$kanban->period . '</b></td>
                                         </tr>
                                         <tr>
-                                            <td width="100">Work Order ID</td>
+                                            <td width="100">Work Order No</td>
                                             <td width="30">:</td>
                                             <td><b>' . @$kanban->workorder . '</b></td>
                                         </tr>
@@ -631,9 +646,9 @@ class Supply_requestions extends CI_Controller
                                 <table id="customers">
                                     <tr>
                                         <th>No</th>
-                                        <th>Product No</th>
-                                        <th>Product Name</th>
-                                        <th>Product Specification</th>
+                                        <th>Part No</th>
+                                        <th>Part Name</th>
+                                        <th>Part Specification</th>
                                         <th>Uom</th>
                                         <th>Qty</th>
                                         <th width="80">WHS Stock</th>
@@ -728,6 +743,7 @@ class Supply_requestions extends CI_Controller
         $this->db->from('config');
         $config = $this->db->get()->row();
         $this->db->select('a.workorder,
+        a.document,
         a.request_no, 
         a.request_date,
         a.request_name,
@@ -786,11 +802,14 @@ class Supply_requestions extends CI_Controller
                 <th>Product No</th>
                 <th>Product Name</th>
                 <th>Wo No</th>
+                <th>Document</th>
                 <th>Part No</th>
                 <th>Part Name</th>
                 <th>Qty</th>
                 <th>Uom</th>
-                <th>Isseud</th>
+                <th>Issued</th>
+                <th>Issued Oth <br> 1</th>
+                <th>Issued Oth <br> 2</th>
                 <th>Outstanding</th>
                 <th>Status</th>
             </tr>';
@@ -834,8 +853,8 @@ class Supply_requestions extends CI_Controller
 
             // Menentukan status berdasarkan jumlah yang dikeluarkan dan jumlah yang diminta
             $status = ($data['qty'] == ($data['qty_actual'] + $issued_qty_crusher + $issued_qty_peletizing)) ? 'Close' : 'Open';
-            $issued = $data['qty_actual'] + $issued_qty_crusher + $issued_qty_peletizing;
-            $outstanding = $data['qty'] - $issued;
+            $issued = $data['qty_actual'];
+            $outstanding = $data['qty'] - ($issued + $issued_qty_crusher + $issued_qty_peletizing);
            
 
             $html .= '<tr>
@@ -846,11 +865,14 @@ class Supply_requestions extends CI_Controller
                         <td>' . $data['item_fg_number'] . '</td>
                         <td>' . $data['item_fg_name'] . '</td>
                         <td>' . $data['workorder'] . '</td>
+                        <td>' . $data['document'] . '</td>
                         <td>' . $data['item_number'] . '</td>
                         <td>' . $data['item_name'] . '</td>
                         <td>' . $data['qty'] . '</td>
                         <td>' . $data['uom'] . '</td>
                         <td>' . number_format($issued, 2) . '</td>
+                        <td>' . number_format($issued_qty_crusher, 2) . '</td>
+                        <td>' . number_format($issued_qty_peletizing, 2) . '</td>
                         <td>' . number_format($outstanding, 2) . '</td>
                         <td>' . $status . '</td>
                     </tr>';

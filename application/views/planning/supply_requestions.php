@@ -11,12 +11,14 @@
             <th rowspan="2" data-options="field:'document',width:120,halign:'center'">Document</th>
             <th rowspan="2" data-options="field:'item_number',width:150,halign:'center'">Product No</th>
             <th rowspan="2" data-options="field:'item_name',width:150,halign:'center'">Product Name</th>
+            <th rowspan="2" data-options="field:'shift',width:80,align:'center'">Shift</th>
             <th rowspan="2" data-options="field:'uom',width:80,align:'center'">UoM</th>
             <th rowspan="2" data-options="field:'qty_wo',width:80,halign:'center',align:'right',formatter:numberformatQpa">Qty WO</th>
             <th rowspan="2" data-options="field:'qty_ng',width:80,halign:'center',align:'right',formatter:numberformatQpa">Qty NG</th>
-            <th rowspan="2" data-options="field:'shift',width:80,align:'center'">Shift</th>
             <th rowspan="2" data-options="field:'qty',width:80,halign:'center',align:'right',formatter:numberformatQpa">Qty</th>
             <th rowspan="2" data-options="field:'issued',width:80,halign:'center',align:'right',formatter:numberformatQpa">Issued</th>
+            <th rowspan="2" data-options="field:'issued_qty_crusher',width:80,halign:'center',align:'right',formatter:numberformatQpa">Issued Oth <br> 1</th>
+            <th rowspan="2" data-options="field:'issued_qty_peletizing',width:80,halign:'center',align:'right',formatter:numberformatQpa">Issued Oth <br> 2</th>
             <th rowspan="2" data-options="field:'outstanding',width:80,halign:'center',align:'right',formatter:numberformatQpa">Outstanding</th>
             <!-- <th rowspan="2" data-options="field:'status',width:80,align:'center',formatter:statusformat,styler:statusStyle">Status</th> -->
             <th colspan="2" data-options="field:'',width:100,halign:'center'"> Created</th>
