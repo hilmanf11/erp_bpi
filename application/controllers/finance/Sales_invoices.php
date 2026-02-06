@@ -1218,86 +1218,6 @@ class Sales_invoices extends CI_Controller
         }
     }
 
-    // Modifikasi: Bisa Ubah Kode Faktur Pajak dll non mandatory form walau sudah Journal Posting
-    // CREATE TABLE sales_invoice_logs (
-    //     log_id INT AUTO_INCREMENT PRIMARY KEY,
-    //     voucher_no VARCHAR(50) NOT NULL, -- Menggunakan nomor voucher sebagai referensi
-    //     user_name VARCHAR(100),          -- Nama user yang melakukan perubahan
-    //     change_date DATETIME DEFAULT CURRENT_TIMESTAMP,
-    //     field_name VARCHAR(50),          -- Kolom yang diubah (misal: no_seri_fp)
-    //     old_value TEXT,
-    //     new_value TEXT,
-    //     reason TEXT,                     -- Alasan perubahan dari user
-    // );
-
-    public function update_tax_info() 
-    {
-        // 1. Ambil data dari POST
-        $voucher = $this->input->post('voucher');
-        $reason = $this->input->post('reason');
-        $user = $this->session->userdata('user_name'); // Ambil dari session
-        
-        // 2. Ambil data lama dari database untuk perbandingan
-        $old_data = $this->db->get_where('sales_invoice', ['voucher' => $voucher])->row_array();
-        
-        // Validasi: Jika periode akuntansi sudah dikunci, hentikan proses
-        if ($old_data['is_locked'] == 1) {
-            echo json_encode(['success' => false, 'errorMsg' => 'Periode sudah dikunci!']);
-            return;
-        }
-
-        // 3. Definisikan kolom yang boleh diupdate (hanya metadata pajak/fasilitas)
-        $fields = [
-            'faktur_code', 'fp_pengganti', 'no_urut', 
-            'bc_no', 'keterangan_tambahan', 'cap_fasilitas'
-        ];
-
-        $update_data = [];
-        $logs = [];
-
-        foreach ($fields as $field) {
-            $new_val = $this->input->post($field);
-            
-            // Cek jika ada perbedaan antara data lama dan input baru
-            if ($new_val != $old_data[$field]) {
-                $update_data[$field] = $new_val;
-                
-                // Siapkan data untuk tabel log
-                $logs[] = [
-                    'voucher_no' => $voucher,
-                    'user_name'  => $user,
-                    'field_name' => $field,
-                    'old_value'  => $old_data[$field],
-                    'new_value'  => $new_val,
-                    'reason'     => $reason,
-                    'ip_address' => $this->input->ip_address()
-                ];
-            }
-        }
-
-        // 4. Eksekusi Database Transaction
-        if (!empty($update_data)) {
-            $this->db->trans_start();
-            
-            // Update tabel utama
-            $this->db->where('voucher', $voucher);
-            $this->db->update('sales_invoice', $update_data);
-            
-            // Simpan log perubahan (batch insert)
-            $this->db->insert_batch('sales_invoice_logs', $logs);
-            
-            $this->db->trans_complete();
-
-            if ($this->db->trans_status() === FALSE) {
-                echo json_encode(['success' => false, 'errorMsg' => 'Gagal menyimpan data ke database.']);
-            } else {
-                echo json_encode(['success' => true]);
-            }
-        } else {
-            echo json_encode(['success' => false, 'errorMsg' => 'Tidak ada perubahan data yang terdeteksi.']);
-        }
-    }
-
     public function deleteSingle()
     {
         $data = $this->input->post();
@@ -4391,18 +4311,19 @@ class Sales_invoices extends CI_Controller
             if (isset($groupedDetails[$faktur['invoice_number']])) {
                 $detailNode = $fakturNode->addChild('ListOfGoodService');
 
-                // Jika ada Product Name yang sama, maka dijadikan satu, qtynya dijumlahkan. (Bu Nina)
+                // Jika ada Product Name yang sama dan HARGA yang sama, maka dijadikan satu (Bu Nina)
                 $mergedItems = [];
                 foreach ($groupedDetails[$faktur['invoice_number']] as $detail) {
-                    // $key = $detail['item_name']; 
-                    $key = $detail['item_no'];      // Jika product namenya sama tetapi product nonya berbeda, maka qty dijumlahman krn dianggap item yg berbeda (Bu Nina)
+                    // Tambahkan price ke dalam key agar item dengan harga berbeda tidak digabung
+                    $key = $detail['item_no'] . '_' . $detail['price']; 
                     
                     if (isset($mergedItems[$key])) {
-                        // Jika item sudah ada, jumlahkan qty dan totalnya
+                        // Jika item dan harga sama, jumlahkan qty, total, dan discount
                         $mergedItems[$key]['qty'] += $detail['qty'];
                         $mergedItems[$key]['total'] += $detail['total'];
+                        $mergedItems[$key]['total_discount'] += $detail['total_discount']; // Jangan lupa jumlahkan diskon juga
                     } else {
-                        // Jika item belum ada, tambahkan ke array
+                        // Jika belum ada, buat entri baru
                         $mergedItems[$key] = $detail;
                     }
                 }
