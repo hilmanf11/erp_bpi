@@ -287,3 +287,8 @@ Add validation for handle multiple click and update checkEndingBalance ([f537f55
 
 ### [2026-02-06]
 - **kurniawan**: New Modul Generate Loadcap ([d55fb36f](https://github.com/hilmanf11/erp_bpi/commit/d55fb36f2dbc8922d13b1c8d1513c72381572391))
+
+### [2026-02-06]
+- **kurniawan**: Update Generate_mps.php
+
+add fallback 6 month ([13196cbe](https://github.com/hilmanf11/erp_bpi/commit/13196cbe8a2fbfa77708d0a3353614dfe30a7745))
