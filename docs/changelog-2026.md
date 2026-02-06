@@ -281,3 +281,6 @@ Add validation for handle multiple click and update checkEndingBalance ([f537f55
 
 ### [2026-02-06]
 - **Rizki Puji**: Revert: takeout local balance Journal list on Add Sales Invoice ([495f9d6e](https://github.com/hilmanf11/erp_bpi/commit/495f9d6edc8e1e1e2778cfa1279a65f6a33de2dc))
+
+### [2026-02-06]
+- **kurniawan**: Update Checksheets ([070c621a](https://github.com/hilmanf11/erp_bpi/commit/070c621ae7d05be8fde4857b874bbb24336675d4))
