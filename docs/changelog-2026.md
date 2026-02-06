@@ -269,3 +269,6 @@ Add validation for handle multiple click and update checkEndingBalance ([f537f55
 
 ### [2026-02-06]
 - **Rizki Puji**: Fixing: Bug get start-date begin balance Report AP and Report AR ([8a8c3bc3](https://github.com/hilmanf11/erp_bpi/commit/8a8c3bc3f2ee7ec273c3bd13c5e5513dd84d9c4f))
+
+### [2026-02-06]
+- **Rizki Puji**: Hotfix: bug eCORETAX product no different price on Sales Invoices ([3c61cd73](https://github.com/hilmanf11/erp_bpi/commit/3c61cd731933b11dc4d888056e23b502537f17dd))
