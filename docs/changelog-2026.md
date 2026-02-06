@@ -292,3 +292,8 @@ Add validation for handle multiple click and update checkEndingBalance ([f537f55
 - **kurniawan**: Update Generate_mps.php
 
 add fallback 6 month ([13196cbe](https://github.com/hilmanf11/erp_bpi/commit/13196cbe8a2fbfa77708d0a3353614dfe30a7745))
+
+### [2026-02-06]
+- **kurniawan**: Update Supply_materials.php
+
+add Query CR & PL ([618af0c4](https://github.com/hilmanf11/erp_bpi/commit/618af0c4d0b4abcde9710f76c217419321d64dc7))
