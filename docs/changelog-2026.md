@@ -305,3 +305,6 @@ add Query CR & PL ([618af0c4](https://github.com/hilmanf11/erp_bpi/commit/618af0
 - **kurniawan**: Update Crud.php
 
 Add UpdateNotLog in CRUD ([8b1c7876](https://github.com/hilmanf11/erp_bpi/commit/8b1c78762d430a7e3f1bad348937eaafe9b9b866))
+
+### [2026-02-06]
+- **Rizki Puji**: Feature: form Edit Non Mandatory Data Sales Invoices ([1a5f16d6](https://github.com/hilmanf11/erp_bpi/commit/1a5f16d69804d7c1113ea0c389a4f5227154233e))
