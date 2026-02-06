@@ -121,11 +121,12 @@
                 </div>
             </div>
         </fieldset>
-        <table id="dg_request" class="easyui-datagrid" style="width:100%;" title="Request Material List" idField="item_number">
+        <table id="dg_request" class="easyui-datagrid" style="width:100%;" title="Request Material List" idField="id">
             <thead>
                 <tr>
                     <th field="ck" checkbox="true"></th>
-                    <th hidden data-options="field:'id',width:150">Product ID</th>
+                    <th hidden data-options="field:'id',width:150">ID</th>
+                    <th hidden data-options="field:'item_rm_id',width:150">Product ID</th>
                     <th data-options="field:'number',width:150">Product No</th>
                     <th data-options="field:'name',width:100">Product Name</th>
                     <th data-options="field:'uom',width:60">UoM</th>
@@ -213,7 +214,26 @@
                     mode: 'remote',
                     multiple: true,
                     prompt: "Choose Item",
-                    columns: [
+                    fitColumns: true, // Menyesuaikan kolom secara otomatis
+                    // pagination: true, // Jika data besar, tambahkan pagination
+                    selectOnCheck: true, // Pilih baris ketika checkbox di-check
+                    checkOnSelect: true, // Centang checkbox ketika baris dipilih
+                    onHidePanel: function() {
+                        var g = $(this).combogrid('grid');
+                        var rows = g.datagrid('getSelections');
+                        var ids = [];
+                        var texts = [];
+
+                        $.each(rows, function(i, row) {
+                            ids.push(row.id);
+                            texts.push(row.number);
+                        });
+
+                        // Set ulang nilai agar hanya hasil pilihan yang muncul
+                        $(this).combogrid('setValues', ids);
+                        $(this).combogrid('setText', texts.join(', '));
+                    },
+                                    columns: [
                         [
                             {
                                 field: 'ck', // Kolom checkbox
@@ -283,10 +303,6 @@
                             }
                         ]
                     ],
-                    fitColumns: true, // Menyesuaikan kolom secara otomatis
-                    // pagination: true, // Jika data besar, tambahkan pagination
-                    selectOnCheck: true, // Pilih baris ketika checkbox di-check
-                    checkOnSelect: true, // Centang checkbox ketika baris dipilih
                 });
             }
         });
@@ -366,6 +382,10 @@
         if (filter_from == "" || filter_to == "" || memo_date == "" || type == "") {
             toastr.warning('Please Select Filters first', 'Required');
         } else {
+
+            $('#dg_request').datagrid('clearSelections');
+            $('#dg_request').datagrid('clearChecked');
+
             var final_url = url !== "" 
                 ? url 
                 : '<?= base_url('purchase/request_material_memo/datatablesTemp') ?>?filter_from=' + filter_from + '&filter_to=' + filter_to + '&filter_cutoff=' + filter_cutoff + '&item_rm_id=' + item_rm_id;
@@ -374,15 +394,23 @@
             $('#dg_request').datagrid({
                 url: final_url,
                 fitColumns: true,
-                onClickRow: function(rowIndex) {
+                onClickRow: function (rowIndex) {
                     if (lastIndex != rowIndex) {
-                        $(this).datagrid('endEdit', lastIndex);
-                        $(this).datagrid('beginEdit', rowIndex);
+                        $('#dg_request').datagrid('endEdit', lastIndex);
+                        $('#dg_request').datagrid('beginEdit', rowIndex);
+                        lastIndex = rowIndex;
                     }
-                    lastIndex = rowIndex;
                 },
-                onBeginEdit: function(rowIndex, row) {
-                    var editors = $('#dg_request').datagrid('getEditors', rowIndex);
+                onBeginEdit: function(index, row) {
+                    var ed = $(this).datagrid('getEditor', { index: index, field: 'objective' });
+                    if (ed && !$(ed.target).combobox('getValue')) {
+                        $(ed.target).combobox('setValue', 'maker'); // DOKUMENTASI : set default ke maker untuk menanggulangi user tidak input objective dan mengakibatkan data belum selsai edit 
+                    }
+                },
+                onLoadSuccess: function(data) {
+                    // 🔹 Pastikan juga setelah load data baru, selection benar-benar kosong
+                    $(this).datagrid('clearSelections');
+                    $(this).datagrid('clearChecked');
                 }
             });
         }
@@ -405,7 +433,7 @@
                 $("#type").combobox('disable');
                 $("#receipt_no").textbox('disable');
 
-                url_save = '<?= base_url('purchase/request_material_memo/update') ?>?id=' + btoa(row.ids);
+                url_save = "<?= base_url('purchase/request_material_memo/create') ?>";
 
                 setTimeout(function () {
                     suppressChange = true;
@@ -426,7 +454,6 @@
             toastr.warning("Please select one of the data in the table first!", "Information");
         }
     }
-
 
     //Delete Data
     function deleted() {
@@ -593,8 +620,27 @@
                     if (filter_from == "" || filter_to == "") {
                         toastr.warning("Please Select Filters first !", "Information");
                     } else {
+                        //untuk memastikan semua baris diakhiri edit-nya sebelum diambil datanya
+                        var rowsAll = $('#dg_request').datagrid('getRows');
+                        for (var i = 0; i < rowsAll.length; i++) {
+                            $('#dg_request').datagrid('endEdit', i);
+                        }
+
                         $('#dg_request').datagrid('acceptChanges');
-                        var rows = $('#dg_request').datagrid('getSelections');
+
+                        // Ambil data yang dicentang dan buat salinan agar tidak hilang setelah clear
+                        var rows = [...$('#dg_request').datagrid('getChecked')];
+                        console.log('Rows selected:', rows.length, rows);
+
+                        if (rows.length === 0) {
+                            toastr.warning("Please Select Item first!", "Information");
+                            return;
+                        }
+
+                        // Bersihkan tampilan (tidak mempengaruhi rows karena sudah disalin)
+                        $('#dg_request').datagrid('clearSelections');
+                        $('#dg_request').datagrid('clearChecked');
+
                         if (rows.length > 0) {
                             $.messager.confirm('Warning', 'Are you sure you want to save this data?', function(r) {
                                 if (r) {
@@ -610,6 +656,7 @@
                                             type: "post",
                                             url: url_save,
                                             data: {
+                                                id: row.id,
                                                 filter_from: filter_from,
                                                 filter_to: filter_to,
                                                 cutoff: cutoff,
@@ -626,7 +673,7 @@
                                                 max: row.max_stock,
                                                 qty: row.qty,
                                                 request_date: row.request_date,
-                                                item_rm_id: row.id,
+                                                item_rm_id: row.item_rm_id,
                                                 status: row.status,
                                                 remarks: row.remarks
                                             },

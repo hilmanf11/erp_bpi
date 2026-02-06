@@ -167,7 +167,7 @@ class Request_material_memo extends CI_Controller
 
         $filter_from_minus1 = date('Y-m-01', strtotime('-1 month', strtotime($filter_from)));
         $filter_to_minus1   = date('Y-m-t',  strtotime('-1 month', strtotime($filter_from)));
-
+        $post = isset($_POST['q']) ? $_POST['q'] : "";
         $query_main = "
         SELECT * FROM (    
             SELECT 
@@ -178,7 +178,7 @@ class Request_material_memo extends CI_Controller
                 b.name as prodfam, 
                 a.uom,
                 c.name as category_name,
-                COALESCE(m.supplier_name,'-') as supplier_name,
+                COALESCE(o.supplier_name,'-') as supplier_name,
                 COALESCE(l.need_1, 0) as plan_supply,
                 COALESCE(n.min, 0) as min,
                 COALESCE(n.max, 0) as max,
@@ -251,13 +251,14 @@ class Request_material_memo extends CI_Controller
                             WHERE a.share_order = 100 AND b.item_family_id IN('P01','P02','P06')
                         ) m ON a.id = m.item_rm_id
             LEFT JOIN (SELECT item_rm_id, min, max, leadtime FROM master_minmax WHERE status = 0 group by item_rm_id) n ON a.id = n.item_rm_id
-            LEFT JOIN (SELECT a.item_rm_id, SUM(COALESCE(a.qty, 0)) - SUM(COALESCE(b.qty_receipt, 0)) AS qty_os
-                            FROM (SELECT item_rm_id, po_no, SUM(qty) AS qty FROM purchase_orders WHERE STATUS = 0 AND po_date < '$filter_cutoff' GROUP BY item_rm_id, po_no) a
+            LEFT JOIN (SELECT a.item_rm_id, c.name as supplier_name, SUM(COALESCE(a.qty, 0)) - SUM(COALESCE(b.qty_receipt, 0)) AS qty_os
+                            FROM (SELECT item_rm_id, po_no, SUM(qty) AS qty, supplier_id FROM purchase_orders WHERE STATUS = 0 AND po_date <= '$filter_cutoff' GROUP BY item_rm_id, po_no) a
                             LEFT JOIN (
                                     SELECT item_rm_id, po_no, SUM(qty_receipt) AS qty_receipt 
                                     FROM purchase_order_receipts 
-                                    WHERE receipt_date < '$filter_cutoff' 
+                                    WHERE receipt_date <= '$filter_cutoff' 
                                     GROUP BY item_rm_id, po_no) b ON a.item_rm_id = b.item_rm_id AND a.po_no = b.po_no
+                            JOIN suppliers c ON a.supplier_id = c.id
                             GROUP BY a.item_rm_id
                         ) o ON a.id = o.item_rm_id
             LEFT JOIN (SELECT item_rm_id, MAX(total_qty) as total_qty
@@ -279,8 +280,13 @@ class Request_material_memo extends CI_Controller
             GROUP BY a.id
             ORDER BY c.name DESC, b.name DESC, a.number
         ) as query_main
-        WHERE status = 'UNDER'
-        ORDER BY supplier_name ASC";
+        WHERE status = 'UNDER'";
+
+        if ($post != "") {
+            $query_main .= " AND number LIKE '%" . $this->db->escape_like_str($post) . "%' ";
+        }
+
+        $query_main .= " ORDER BY supplier_name ASC";
     
         // Eksekusi query
         $records = $this->crud->query($query_main);
@@ -436,15 +442,15 @@ class Request_material_memo extends CI_Controller
         $query_main = "
         SELECT * FROM (    
             SELECT 
-                a.id,
+                a.id as item_rm_id,
                 a.number, 
                 a.name, 
                 a.division, 
                 b.name as prodfam, 
                 a.uom,
                 c.name as category_name,
-                COALESCE(m.supplier_name,'-') as supplier_name,
-                COALESCE(m.supplier_id,'-') as supplier_id,
+                COALESCE(o.supplier_name,'-') as supplier_name,
+                COALESCE(o.supplier_id,'-') as supplier_id,
                 COALESCE(m.maker,'-') as maker,
                 COALESCE(l.need_1, 0) as plan_supply,
                 COALESCE(n.min, 0) as min,
@@ -536,13 +542,14 @@ class Request_material_memo extends CI_Controller
                             WHERE a.share_order = 100 AND b.item_family_id IN('P01','P02','P06')
                         ) m ON a.id = m.item_rm_id
             LEFT JOIN (SELECT item_rm_id, min, max, leadtime FROM master_minmax WHERE status = 0 group by item_rm_id) n ON a.id = n.item_rm_id
-            LEFT JOIN (SELECT a.item_rm_id, a.po_no, SUM(COALESCE(a.qty, 0)) - SUM(COALESCE(b.qty_receipt, 0)) AS qty_os 
-                            FROM ( SELECT item_rm_id, po_no, SUM(qty) AS qty FROM purchase_orders WHERE STATUS = 0 AND po_date < '$filter_cutoff' GROUP BY item_rm_id, po_no ) a 
+            LEFT JOIN (SELECT a.item_rm_id, a.po_no, c.name as supplier_name, c.id as supplier_id, SUM(COALESCE(a.qty, 0)) - SUM(COALESCE(b.qty_receipt, 0)) AS qty_os 
+                            FROM ( SELECT item_rm_id, po_no, SUM(qty) AS qty, supplier_id FROM purchase_orders WHERE STATUS = 0 AND po_date <= '$filter_cutoff' GROUP BY item_rm_id, po_no ) a 
                             LEFT JOIN ( 
                                     SELECT item_rm_id, po_no, SUM(qty_receipt) AS qty_receipt 
                                     FROM purchase_order_receipts 
-                                    WHERE receipt_date < '$filter_cutoff' 
-                                    GROUP BY item_rm_id, po_no ) b ON a.item_rm_id = b.item_rm_id AND a.po_no = b.po_no 
+                                    WHERE receipt_date <= '$filter_cutoff' 
+                                    GROUP BY item_rm_id, po_no ) b ON a.item_rm_id = b.item_rm_id AND a.po_no = b.po_no
+                            JOIN suppliers c ON a.supplier_id = c.id         
                             GROUP BY a.item_rm_id, a.po_no
                         ) o ON a.id = o.item_rm_id
             LEFT JOIN (SELECT item_rm_id, MAX(total_qty) as total_qty
@@ -577,7 +584,10 @@ class Request_material_memo extends CI_Controller
     public function datatable_updates()
     {
         $memo_no = base64_decode($this->input->get('memo_no'));
-        $this->db->select('a.item_rm_id as id,
+        $this->db->select('a.id,
+                a.item_rm_id,
+                a.maker,
+                a.objective,
                 a.os_po as qty_os,
                 a.min as min_stock,
                 a.max as max_stock,
@@ -603,35 +613,60 @@ class Request_material_memo extends CI_Controller
         echo json_encode($records);
     }
 
+    // public function create()
+    // {
+    //     if ($this->input->post()) {
+    //         if ($this->form_validation->run() == TRUE) {
+    //             $post   = $this->input->post();
+    //             $send   = $this->crud->create('request_materials', $post);
+    //             echo $send;
+    //         } else {
+    //             show_error(validation_errors());
+    //         }
+    //     } else {
+    //         show_error("Cannot Process your request");
+    //     }
+    // }
+
     public function create()
     {
         if ($this->input->post()) {
-            if ($this->form_validation->run() == TRUE) {
-                $post   = $this->input->post();
-                $send   = $this->crud->create('request_materials', $post);
-                echo $send;
-            } else {
-                show_error(validation_errors());
+            $post = $this->input->post();
+            $id = $post['id'];
+            // var_dump($post);
+            // return;
+            
+            // Cek ID ada di database
+            $exists = false;
+            if (!empty($id)) {
+                $exists = $this->db->get_where('request_materials', ['id' => $id])->num_rows() > 0;
             }
-        } else {
-            show_error("Cannot Process your request");
+
+            if ($exists) {
+                $send = $this->crud->update('request_materials', ["id" => $id], $post);
+            } else {
+                unset($post['id']); 
+                $send = $this->crud->insert('request_materials', $post);
+            }
+
+            echo $send;
         }
     }
 
     //UPDATE DATA
-    public function update()
-    {
-        if ($this->input->post()) {
-            $id   = base64_decode($this->input->get('id'));
-            $post = $this->input->post();
-            // var_dump($post);
-            // return;
-            $send = $this->crud->update('request_materials', ["id" => $id], $post);
-            echo $send;
-        } else {
-            show_error("Cannot Process your request");
-        }
-    }
+    // public function update()
+    // {
+    //     if ($this->input->post()) {
+    //         $id   = base64_decode($this->input->get('id'));
+    //         $post = $this->input->post();
+    //         var_dump($post);
+    //         return;
+    //         $send = $this->crud->update('request_materials', ["id" => $id], $post);
+    //         echo $send;
+    //     } else {
+    //         show_error("Cannot Process your request");
+    //     }
+    // }
 
     public function delete()
     {
