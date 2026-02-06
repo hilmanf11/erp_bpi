@@ -36,7 +36,7 @@ class Report_outstanding_po extends CI_Controller
     {
         $post = isset($_POST['q']) ? $_POST['q'] : "";
         $send = $this->crud->query("SELECT a.*, b.name as item_family_name FROM item_rm a JOIN item_familys b ON a.item_family_id = b.id 
-        WHERE b.is_unread = 0 AND (a.number like '%$post%' or a.name like '$post')");
+        WHERE b.is_unread = 0 AND b.id NOT IN ('P05', 'P04') AND (a.number like '%$post%' or a.name like '$post')");
         echo json_encode($send);
     }
 
@@ -113,7 +113,7 @@ class Report_outstanding_po extends CI_Controller
         $this->db->select('a.*, SUM(a.qty) as qty_po, 
         b.number as supplier_number, 
         b.name as supplier_name, 
-        c.uom, 
+        e.uom_default as uom, 
         c.number as item_number, 
         c.name as item_name, 
         d.qty_receipt,
@@ -124,6 +124,7 @@ class Report_outstanding_po extends CI_Controller
         $this->db->join('item_rm c', 'a.item_rm_id = c.id');       
         $this->db->join('(SELECT po_no, COUNT(status) as total_status_complete FROM purchase_orders WHERE status = 2 GROUP BY po_no) h', 'a.po_no = h.po_no', 'left');
         $this->db->join('(SELECT po_no, item_rm_id, SUM(qty_receipt2) as qty_receipt FROM purchase_order_receipts GROUP BY po_no, item_rm_id) d', 'a.po_no = d.po_no AND a.item_rm_id = d.item_rm_id', 'left');        
+        $this->db->join('supplier_items e', 'a.item_rm_id = e.item_rm_id and a.supplier_id = e.supplier_id');
         $this->db->where('a.deleted', 0);
         $this->db->where("a.po_date between '$filter_from' and '$filter_to'");
         $this->db->like('a.supplier_id', $filter_supplier);
@@ -275,11 +276,12 @@ class Report_outstanding_po extends CI_Controller
         
             // DETAIL
             if ($filter_display == "DETAIL") {
-                $this->db->select('a.*, SUM(a.qty) as qty_po, d.qty_receipt, b.number as supplier_number, b.name as supplier_name, c.uom, c.number as item_number, c.name as item_name, a.status');
+                $this->db->select('a.*, SUM(a.qty) as qty_po, d.qty_receipt, b.number as supplier_number, b.name as supplier_name, e.uom_default as uom, c.number as item_number, c.name as item_name, a.status');
                 $this->db->from('purchase_orders a');
                 $this->db->join('suppliers b', 'a.supplier_id = b.id');
                 $this->db->join('item_rm c', 'a.item_rm_id = c.id');
-                $this->db->join('(SELECT po_no, item_rm_id, SUM(qty_receipt2) as qty_receipt FROM purchase_order_receipts GROUP BY po_no, item_rm_id) d', 'a.po_no = d.po_no AND a.item_rm_id = d.item_rm_id', 'left');        
+                $this->db->join('(SELECT po_no, item_rm_id, SUM(qty_receipt2) as qty_receipt FROM purchase_order_receipts GROUP BY po_no, item_rm_id) d', 'a.po_no = d.po_no AND a.item_rm_id = d.item_rm_id', 'left');
+                $this->db->join('supplier_items e', 'a.item_rm_id = e.item_rm_id and a.supplier_id = e.supplier_id');        
                 $this->db->where('a.deleted', 0);
                 $this->db->where("a.po_date between '$filter_from' and '$filter_to'");
                 $this->db->where('a.po_no', $po_no);
