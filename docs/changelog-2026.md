@@ -330,3 +330,6 @@ Add new Folder Modul Pricing ([6327c43e](https://github.com/hilmanf11/erp_bpi/co
 - **kurniawan**: Update Shipping_orders.php
 
 Optimation for Create with Race Condition ([c36c3c13](https://github.com/hilmanf11/erp_bpi/commit/c36c3c133784414578cba1df8637dd7e7123bf54))
+
+### [2026-02-06]
+- **Rizki Puji**: Feat: get Rate validation on save Journal Postings ([c617c543](https://github.com/hilmanf11/erp_bpi/commit/c617c5439796adbee34ed845be25d0e3463cef42))
