@@ -810,6 +810,7 @@
                     //var rows = $('#dg2').datagrid('getSelections');
                     var rows = $('#dg2').datagrid('getRows');
                     var totalrows = rows.length;
+                    var isRateValid = true; // Flag untuk menandai apakah data valid
 
                     // $.ajax({
                         // type: "post",
@@ -823,6 +824,20 @@
                             // }
 
                             if (rows.length > 0) {
+                                // Cek currency jika bukan IDR tapi rates bernilai 0 atau null
+                                for (var i = 0; i < totalrows; i++) {
+                                    if (rows[i].currency !== 'IDR' && (parseFloat(rows[i].rates) === 0 || rows[i].rates == null || rows[i].rates === '')) {
+                                        var errorMsg = "Failed! The exchange rate for currency " + rows[i].currency + " has not been updated!";                                        
+                                        toastr.error(errorMsg, "Exchange Rate Missing");
+                                        $.messager.alert("Error", errorMsg, 'error');
+                                        
+                                        isRateValid = false; // Set flag jadi false
+                                        break;
+                                    }
+                                }
+ 
+                                if (isValid) {
+                                // Hanya lanjutkan proses simpan jika isRateValid = true
                                 if(local_debit == local_credit){
                                     $.messager.confirm('Warning', 'Are you sure you want to save this data?', function(r) {
                                         if (r) {
@@ -910,6 +925,8 @@
                                     });
                                 } else {
                                     toastr.error("Debit & Credit Not Balance");
+                                }
+                                // End isRateValid
                                 }
                             } else {
                                 toastr.info("Please Checklist Posting");
