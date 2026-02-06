@@ -316,3 +316,6 @@ Add UpdateNotLog in CRUD ([8b1c7876](https://github.com/hilmanf11/erp_bpi/commit
 - **kurniawan**: New Modul Pricing
 
 Add new Folder Modul Pricing ([6327c43e](https://github.com/hilmanf11/erp_bpi/commit/6327c43e3db80d9ee5186102040f65f8e498fc7a))
+
+### [2026-02-06]
+- **kurniawan**: Update Request Material Memo ([3d7b4d88](https://github.com/hilmanf11/erp_bpi/commit/3d7b4d8893b492b8b490cd0f92081710e086a155))
