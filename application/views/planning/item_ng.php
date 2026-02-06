@@ -7,6 +7,7 @@
             <th rowspan="2" data-options="field:'document_scrap',width:150,halign:'center'">Scrap No</th>
             <th rowspan="2" data-options="field:'departement',width:120,halign:'center'">Departement</th>
             <th rowspan="2" data-options="field:'process',width:120,halign:'center'">Process</th>
+            <th rowspan="2" data-options="field:'kind',width:150,halign:'center'">Kind</th>
             <th rowspan="2" data-options="field:'type',width:150,halign:'center'">NG Type</th>
             <th rowspan="2" data-options="field:'workorder',width:150,halign:'center'">Work Order</th>
             <th rowspan="2" data-options="field:'product_no',width:150,halign:'center'">Product No</th>
@@ -30,12 +31,12 @@
     </thead>
 </table>
 
-<div id="toolbar" style="height: 260px;">
+<div id="toolbar" style="height: 200px;">
     <!-- <div style="width: 100%; display: grid; grid-template-columns: auto auto auto; grid-gap: 5px; display: flex;"> -->
     <div style="width: 100%;">
-        <fieldset style="width: 40%; border:2px solid #d0d0d0; margin-bottom: 5px; margin-top: 5px; border-radius:4px;">
+        <fieldset style="width: 80%; border:2px solid #d0d0d0; margin-bottom: 5px; margin-top: 5px; border-radius:4px;">
             <legend><b>Form Filter Data</b></legend>
-            <div style="float: left; width: 100%;">
+            <div style="width: 50%; float: left;">
                 <div class="fitem">
                     <span style="width:35%; display:inline-block;">Trans Date</span>
                     <input style="width:30%;" id="filter_from" class="easyui-datebox" data-options="formatter:myformatter,parser:myparser, editable:false">
@@ -46,6 +47,12 @@
                     <input style="width:60%;" id="filter_document" class="easyui-combobox">
                 </div>
                 <div class="fitem">
+                    <span style="width:35%; display:inline-block;"></span>
+                    <a href="javascript:;" class="easyui-linkbutton" onclick="filter()"><i class="fa fa-search"></i> Filter Data</a>
+                </div>
+            </div>
+            <div style="width: 50%; float: left;">
+                <div class="fitem">
                     <span style="width:35%; display:inline-block;">Product Family</span>
                     <input style="width:60%;" id="filter_family_id" class="easyui-combobox">
                 </div>
@@ -54,8 +61,13 @@
                     <input style="width:60%;" id="filter_item_fg_id" class="easyui-combogrid">
                 </div>
                 <div class="fitem">
-                    <span style="width:35%; display:inline-block;"></span>
-                    <a href="javascript:;" class="easyui-linkbutton" onclick="filter()"><i class="fa fa-search"></i> Filter Data</a>
+                    <span style="width:35%; display:inline-block;">Kind of NG</span>
+                        <select style="width:60%;" name="filter_kind" id="filter_kind" required="" panelHeight="auto" class="easyui-combobox">
+                            <option value="Ng Process Production">NG Process Production</option>
+                            <option value="Ng Setting">NG Setting</option>
+                            <option value="First Setting">First Setting</option>
+                            <option value="Ng for Req Material">Ng for Req Material</option>
+                        </select>
                 </div>
             </div>
         </fieldset>
@@ -100,8 +112,6 @@
                             <option value="Ng Process Production">NG Process Production</option>
                             <option value="Ng Setting">NG Setting</option>
                             <option value="First Setting">First Setting</option>
-                            <!-- <option value="ng_start_setting">NG Start Setting</option>
-                            <option value="ng_purging">NG Purging</option> -->
                             <option value="Ng for Req Material">Ng for Req Material</option>
                         </select>
                 </div>
@@ -169,7 +179,7 @@
                     <th data-options="field:'uom',width:80">Uom</th>
                     <th data-options="field:'stock',width:80">Qty</th>
                     <th data-options="field:'qty',width:100,editor: {type: 'numberbox', options: {required: true}}">NG</th>
-                    <th data-options="field:'scrap',width:100,editor: {type: 'numberbox', options: {required: true}}">Scrap</th>
+                    <th hidden data-options="field:'scrap',width:100,editor: {type: 'numberbox', options: {required: true}}">Scrap</th>
                     <th data-options="field:'balance',width:100,formatter:balanceFormatter">Balance</th>
                     <th data-options="field:'remarks',width:150,editor: {type: 'textbox', options: {required: true}}">Remarks</th>
                 </tr>
@@ -266,7 +276,7 @@
 
         var balance = stock - qty - scrap;
 
-        return balance;
+        return parseFloat(balance.toFixed(4));
     }
 
     // function addTable(wo_no) {
@@ -531,9 +541,10 @@
     // }
 
     function preview() {
-        var workorder = $("#workorder").textbox('getValue');
+        var workorder   = $("#workorder").textbox('getValue');
         var qty_product = $("#qty_product").textbox('getValue');
-        var qty_sh = $("#qty_sh").textbox('getValue');
+        var qty_sh      = $("#qty_sh").textbox('getValue');
+        var item_fg_id  = $("#item_fg_id").textbox('getValue');
         console.log(workorder);
 
         if (workorder == "" || qty_product == "") {
@@ -542,7 +553,7 @@
             var lastIndex;
             if (workorder != "") {
                 var dg = $('#dg2').datagrid({
-                    url: '<?= base_url('planning/item_ng/datatablesTemp') ?>?workorder=' + window.btoa(workorder) + '&qty_product=' + qty_product + '&qty_sh=' + qty_sh,
+                    url: '<?= base_url('planning/item_ng/datatablesTemp') ?>?workorder=' + window.btoa(workorder) + '&qty_product=' + qty_product + '&qty_sh=' + qty_sh + '&item_fg_id=' + window.btoa(item_fg_id),
                 });
             } else {
                 toastr.info('Please completed your data');
@@ -697,31 +708,18 @@
     }
 
     function filter() {
-
         var filter_from = $("#filter_from").datebox('getValue');
-
         var filter_to = $("#filter_to").datebox('getValue');
-
         var filter_document = $("#filter_document").combobox('getValue');
-
         var filter_family_id = $("#filter_family_id").combobox('getValue');
-
         var filter_item_fg_id = $("#filter_item_fg_id").combogrid('getValue');
-
-
-
-        url = "?filter_from=" + filter_from + "&filter_to=" + filter_to + "&filter_document=" + filter_document + "&filter_family_id" + filter_family_id + "&filter_item_fg_id=" + filter_item_fg_id;
-
+        var filter_kind = $("#filter_kind").combobox('getValue');
+        url = "?filter_from=" + filter_from + "&filter_to=" + filter_to + "&filter_document=" + filter_document + "&filter_family_id" + filter_family_id + "&filter_item_fg_id=" + filter_item_fg_id + "&filter_kind=" + filter_kind;
         $('#dg').datagrid({
-
             url: '<?= base_url('planning/item_ng/datatables') ?>' + url
-
         });
-
         $("#printout").contents().find('html').html("<center><br><br><br><b style='font-size:20px;'>Please Wait...</b></center>");
-
         $("#printout").attr('src', '<?= base_url('planning/item_ng/print') ?>' + url);
-
     }
 
     // UPLOAD DATA
@@ -743,8 +741,8 @@
         var filter_document = $("#filter_document").combobox('getValue');
         var filter_family_id = $("#filter_family_id").combobox('getValue');
         var filter_item_fg_id = $("#filter_item_fg_id").combogrid('getValue');
-
-        url = "?filter_from=" + filter_from + "&filter_to=" + filter_to + "&filter_document=" + filter_document + "&filter_family_id" + filter_family_id + "&filter_item_fg_id=" + filter_item_fg_id;
+        var filter_kind = $("#filter_kind").combobox('getValue');
+        url = "?filter_from=" + filter_from + "&filter_to=" + filter_to + "&filter_document=" + filter_document + "&filter_family_id" + filter_family_id + "&filter_item_fg_id=" + filter_item_fg_id + "&filter_kind=" + filter_kind;
 
         window.location.assign('<?= base_url('planning/item_ng/print/excel') ?>' + url);
     }
@@ -805,6 +803,7 @@
                         }, {
                             field: 'scrap',
                             title: 'Scrap',
+                            hidden: true,
                             halign: 'center',
                             width: 150
                         }, {
@@ -879,6 +878,7 @@
                     var document_scrap = $("#document_scrap").textbox('getValue');
                     var departement = $("#departement").textbox('getValue');
                     var process = $("#process").combogrid('getValue');
+                    var kind = $("#kind").combobox('getValue');
                     var type = $("#type").combobox('getText');
                     var workorder = $("#workorder").textbox('getValue');
                     var item_fg_id = $("#item_fg_id").textbox('getValue');
@@ -924,6 +924,7 @@
                                     document_scrap: document_scrap,
                                     departement: departement,
                                     process: process,
+                                    kind: kind,
                                     type: type,
                                     workorder: workorder,
                                     item_fg_id: item_fg_id,

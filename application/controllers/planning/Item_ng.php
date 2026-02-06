@@ -158,20 +158,42 @@ class Item_ng extends CI_Controller
         $workorder = base64_decode($this->input->get('workorder'));
         $qty_product = $this->input->get('qty_product');
         $qty_sh = $this->input->get('qty_sh');
+        $item_fg_id = base64_decode($this->input->get('item_fg_id'));
 
         //var_dump($workorder);
 
-        $this->db->select('b.id, b.number, b.name, b.uom, COALESCE(d.scrap, 0) as scrap, 
-        ROUND('.$qty_sh.' * COALESCE(c.composition, 1), 4) as qty, ROUND('.$qty_product.' * COALESCE(c.composition, 1), 4) as ng ');
-        $this->db->from('supply_sheets a');
+        // $this->db->select('b.id, 
+        // b.number, 
+        // b.name, 
+        // b.uom, 
+        // COALESCE(d.scrap, 0) as scrap, 
+        // ROUND('.$qty_sh.' * COALESCE(c.composition, 1), 4) as qty, 
+        // ROUND('.$qty_product.' * COALESCE(c.composition, 1), 4) as ng
+        // ');
+        // $this->db->from('supply_sheets a');
+        // $this->db->join('item_rm b', 'a.item_rm_id = b.id');
+        // $this->db->join('bom c', 'a.item_rm_id = c.item_rm_id and a.item_fg_id = c.item_fg_id','left');
+        // $this->db->join('(SELECT item_rm_id, wo_no, SUM(qty) as scrap FROM scraps GROUP BY item_rm_id, wo_no) d', 'a.item_rm_id = d.item_rm_id AND a.workorder = d.wo_no', 'left');
+        // $this->db->where('a.workorder',$workorder);
+        // $this->db->where('b.status', 0);
+        // $this->db->order_by('b.number', 'asc');
+        // $records = $this->db->get()->result_array();
+
+        $this->db->select('b.id, 
+        b.number, 
+        b.name, 
+        b.uom, 
+        ROUND('.$qty_sh.' * COALESCE(a.composition, 1), 4) as qty, 
+        ROUND('.$qty_product.' * COALESCE(a.composition, 1), 4) as ng
+        ');
+        $this->db->from('bom a');
         $this->db->join('item_rm b', 'a.item_rm_id = b.id');
-        $this->db->join('bom c', 'a.item_rm_id = c.item_rm_id and a.item_fg_id = c.item_fg_id','left');
-        $this->db->join('(SELECT item_rm_id, wo_no, SUM(qty) as scrap FROM scraps GROUP BY item_rm_id, wo_no) d', 'a.item_rm_id = d.item_rm_id AND a.workorder = d.wo_no', 'left');
-        $this->db->where('a.workorder',$workorder);
+        $this->db->join('item_fg c', 'a.item_fg_id = c.id');
         $this->db->where('b.status', 0);
+        $this->db->where('c.status', 0);
+        $this->db->where('c.id',$item_fg_id);
         $this->db->order_by('b.number', 'asc');
         $records = $this->db->get()->result_array();
-        //echo $this->db->last_query();
 
         $id = 1;
         $obj = []; 
@@ -184,7 +206,7 @@ class Item_ng extends CI_Controller
                 "stock" => $record['qty'],
                 "qty" => $record['ng'],
                 "uom" => $record['uom'],
-                "scrap" => $record['scrap']
+                "scrap" => 0
             );
             $id++;
         }
@@ -202,6 +224,7 @@ class Item_ng extends CI_Controller
             $filter_document = $this->input->get('filter_document');
             $filter_family_id = $this->input->get('filter_family_id');
             $filter_item_fg_id = $this->input->get('filter_item_fg_id');
+            $filter_kind = $this->input->get('filter_kind');
 
             $page = $this->input->post('page');
             $rows = $this->input->post('rows');
@@ -223,6 +246,7 @@ class Item_ng extends CI_Controller
             $this->db->like('a.document', $filter_document);
             $this->db->like('b.item_family_id', $filter_family_id);
             $this->db->like('c.id', $filter_item_fg_id);
+            $this->db->like('a.kind', $filter_kind);
             $this->db->group_by('a.document');
             $this->db->order_by('a.trans_date', 'DESC');
             $this->db->order_by('a.document', 'DESC');
@@ -560,6 +584,17 @@ class Item_ng extends CI_Controller
             } elseif ($data['kind'] === 'Ng for Req Material' && $production_schedule->status == 1) {
                 echo json_encode(["title"   => "Invalid","message" => "Workorder " . $data['workorder'] . " Already CLOSE, Cannot input Ng for Req Material","theme"   => "error"]);
                 //return;
+            } elseif (empty($data['kind'])) {
+                echo json_encode(["title"   => "Invalid","message" => "Kind " . $data['item_number'] . " is Empty","theme"   => "error"]);
+                //return;
+            } elseif (!in_array($data['kind'], [
+                'Ng Process Production',
+                'Ng Setting',
+                'First Setting',
+                'Ng for Req Material'
+            ])) {
+                echo json_encode(["title" => "Invalid", "message" => "Kind " . $data['kind'] . " not Valid for " . $data['item_number'] . " Please correct it. ", "theme" => "error"]);
+                return;
             }else{
 
                 // generate autonumber (satu nomor untuk semua row dalam upload ini)
@@ -618,7 +653,8 @@ class Item_ng extends CI_Controller
         $filter_to = $this->input->get('filter_to');
         $filter_document = $this->input->get('filter_document');
         $filter_family_id = $this->input->get('filter_family_id');
-        $filter_item_id = $this->input->get('filter_item_id');
+        $filter_item_fg_id = $this->input->get('filter_item_fg_id');
+        $filter_kind = $this->input->get('filter_kind');
 
         //Config
         $this->db->select('*');
@@ -636,7 +672,8 @@ class Item_ng extends CI_Controller
         }
         $this->db->like('a.document', $filter_document);
         $this->db->like('b.item_family_id', $filter_family_id);
-        $this->db->like('b.id', $filter_item_id);
+        $this->db->like('c.id', $filter_item_fg_id);
+        $this->db->like('a.kind', $filter_kind);
         $this->db->order_by('a.trans_date', 'DESC');
         $records = $this->db->get()->result_array();
 
@@ -669,6 +706,7 @@ class Item_ng extends CI_Controller
                     <th>Document No</th>
                     <th>Departement</th>
                     <th>Process</th>
+                    <th>Kind</th>
                     <th>NG Type</th>
                     <th>Work Order</th>
                     <th>Product No</th>
@@ -690,6 +728,7 @@ class Item_ng extends CI_Controller
                             <td>' . $data['document'] . '</td>
                             <td>' . $data['departement'] . '</td>
                             <td>' . $data['process'] . '</td>
+                            <td>' . $data['kind'] . '</td>
                             <td>' . $data['type'] . '</td>
                             <td>' . $data['workorder'] . '</td>
                             <td style="mso-number-format:\@;">' . $data['item_fg_number'] . '</td>
