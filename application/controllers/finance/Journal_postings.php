@@ -620,7 +620,7 @@ class Journal_postings extends CI_Controller
     }
 
     // Helper calculate row agar tidak berulang / don't repeat yourself (DRY) di datatablesTemp()
-    private function _calculate_row($source, $total, $type, $modul, $table) {
+    private function _calculate_row_sales($source, $total, $type, $modul, $table) {
         $currency   = $source['currency'];
         $trans_date = $source['trans_date'];
 
@@ -902,14 +902,14 @@ class Journal_postings extends CI_Controller
                     if (!empty($sales_invoices)) {
                         foreach ($sales_invoices as $si) {
                             $table = 'sales_invoice';
-                            $res = $this->_calculate_row($si, $si['total'], $si['account_type'], $modul, $table);
+                            $res = $this->_calculate_row_sales($si, $si['total'], $si['account_type'], $modul, $table);
                             $data[] = $res['row'];
                             $this->_update_grand($grand, $res['row']);
                         }
                     } else {
                         // JIKA TIDAK ADA DETAIL (Fallback ke data Journal)
                         $table = 'sales_invoice_journals';
-                        $res = $this->_calculate_row($journal, ($debit + $credit), ($debit > 0 ? "DEBIT" : "CREDIT"), $modul, $table);
+                        $res = $this->_calculate_row_sales($journal, ($debit + $credit), ($debit > 0 ? "DEBIT" : "CREDIT"), $modul, $table);
                         $data[] = $res['row'];
                         $this->_update_grand($grand, $res['row']);
                     }

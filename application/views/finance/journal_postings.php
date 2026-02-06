@@ -826,7 +826,7 @@
                             if (rows.length > 0) {
                                 // Cek currency jika bukan IDR tapi rates bernilai 0 atau null
                                 for (var i = 0; i < totalrows; i++) {
-                                    if (rows[i].currency !== 'IDR' && (parseFloat(rows[i].rates) === 0 || rows[i].rates == null || rows[i].rates === '')) {
+                                    if (rows[i].currency !== 'IDR' && (parseFloat(rows[i].rates) === 0 || parseFloat(rows[i].rates) === 1 || rows[i].rates == null || rows[i].rates === '')) {
                                         var errorMsg = "Failed! The exchange rate for currency " + rows[i].currency + " has not been updated!";                                        
                                         toastr.error(errorMsg, "Exchange Rate Missing");
                                         $.messager.alert("Error", errorMsg, 'error');
@@ -836,7 +836,7 @@
                                     }
                                 }
  
-                                if (isValid) {
+                                if (isRateValid) {
                                 // Hanya lanjutkan proses simpan jika isRateValid = true
                                 if(local_debit == local_credit){
                                     $.messager.confirm('Warning', 'Are you sure you want to save this data?', function(r) {
