@@ -325,3 +325,8 @@ Add new Folder Modul Pricing ([6327c43e](https://github.com/hilmanf11/erp_bpi/co
 
 ### [2026-02-06]
 - **kurniawan**: Update Report_delivery_schedules.php ([3802ec9d](https://github.com/hilmanf11/erp_bpi/commit/3802ec9db7fe74d10db05061b1dd14422cc089ef))
+
+### [2026-02-06]
+- **kurniawan**: Update Shipping_orders.php
+
+Optimation for Create with Race Condition ([c36c3c13](https://github.com/hilmanf11/erp_bpi/commit/c36c3c133784414578cba1df8637dd7e7123bf54))
