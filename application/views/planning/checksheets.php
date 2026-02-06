@@ -1195,12 +1195,21 @@
     }
 
     function recreateLabels(number, packing, qty, packing_qty) {
+        qty = parseFloat(qty);
+        packing_qty = parseFloat(packing_qty);
+
         var totalData = Math.ceil(qty / packing_qty);
         var counter = 1;
 
+        console.log("Total data:", totalData);
+
         function createNext(qty_balance, index) {
+            qty_balance = parseFloat(qty_balance);
+
             if (index <= totalData && qty_balance > 0) {
                 var qty_final = (qty_balance > packing_qty) ? packing_qty : qty_balance;
+
+                console.log(`Label ${index} → qty_balance: ${qty_balance}, qty_final: ${qty_final}`);
 
                 let url = '';
                 if (packing == 1 || packing == 3) {
@@ -1235,9 +1244,9 @@
             }
         }
 
+        // Panggilan pertama
         createNext(qty, counter);
     }
-
 
     function close_fc() {
         var rows = $('#dg').datagrid('getSelections');

@@ -134,8 +134,8 @@ class Checksheets extends CI_Controller
                         a.item_fg_name AS product_name, 
                         b.number AS product_no,
                         a.division as division,
-                        a.status_subcont,
-                        a.subcont_type
+                        b.status_subcont,
+                        b.subcont_type
                 FROM production_schedules a
                 JOIN item_fg b ON a.item_fg_id = b.id
                 LEFT JOIN supply_sheets c ON a.wo_no = c.workorder
@@ -149,6 +149,12 @@ class Checksheets extends CI_Controller
                         a.division = 'INJ' 
                         AND a.status_subcont = 'NO' 
                         AND c.status = 1 
+                        AND d.item_fg_id IS NULL
+                    )
+                    OR (
+                        a.division = 'INJ' 
+                        AND a.status_subcont = 'NO' 
+                        AND c.status = 2 
                         AND d.item_fg_id IS NULL
                     )
                     OR (
