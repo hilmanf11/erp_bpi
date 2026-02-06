@@ -178,6 +178,25 @@ class Crud extends CI_Model
         }
     }
 
+    function updateNotlog($table, $where, $values)
+    {
+        if ($this->session->username == "") {
+            return log_message('error', 'Your Session has been Expired');
+        }
+
+        $data = array_merge($values, [
+            'updated_by'   => $this->session->username,
+            'updated_date' => date('Y-m-d H:i:s')
+        ]);
+
+        $this->db->where($where);
+        if ($this->db->update($table, $data)) {
+            return true;
+        }
+
+        return false;
+    }
+
     function delete($table, $data)
     {
         if ($this->session->username != "") {
