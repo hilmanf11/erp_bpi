@@ -339,3 +339,6 @@ Optimation for Create with Race Condition ([c36c3c13](https://github.com/hilmanf
 
 ### [2026-02-09]
 - **Rizki Puji**: Style: loading indicator readJournalType on Add Journal Posting ([e4c044bc](https://github.com/hilmanf11/erp_bpi/commit/e4c044bc0dc463d4276383ff7da98d43b7be8b5b))
+
+### [2026-02-09]
+- **Rizki Puji**: Style: not found message readJournalType on Add Journal Posting ([3e3941d8](https://github.com/hilmanf11/erp_bpi/commit/3e3941d88b466af5fa1288e913cf87d9a3be5712))
