@@ -342,3 +342,6 @@ Optimation for Create with Race Condition ([c36c3c13](https://github.com/hilmanf
 
 ### [2026-02-09]
 - **Rizki Puji**: Style: not found message readJournalType on Add Journal Posting ([3e3941d8](https://github.com/hilmanf11/erp_bpi/commit/3e3941d88b466af5fa1288e913cf87d9a3be5712))
+
+### [2026-02-09]
+- **Rizki Puji**: Perf: fix rate local_debit local_debit on calculate Journal Add Sales Invoices ([ccb51d38](https://github.com/hilmanf11/erp_bpi/commit/ccb51d38ff0a8c4238115e35202d0a1cd500a570))
