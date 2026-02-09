@@ -1509,6 +1509,7 @@
                 $("#total_grand").numberbox('setValue', total_grand.toFixed(4));
                 
                 // AJAX untuk Exchange Rate
+                // Default rate=1
                 $.ajax({
                     type: "post",
                     url: "<?= base_url('finance/sales_invoices/readExchangeRates?currency=') ?>" + currency + "&trans_date=" + trans_date,
@@ -1541,6 +1542,8 @@
                         account_name: rows2[z].account_name,
                         debit: 0, // DIBUAT 0
                         credit: 0, // DIBUAT 0
+                        currency: currency,
+                        trans_date: trans_date,
                         flag: rows2[z].flag,
                     };
 

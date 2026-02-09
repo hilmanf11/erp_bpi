@@ -565,6 +565,7 @@ class Sales_invoices extends CI_Controller
                 
                 if (!isset($aggregated_invoices[$account_number])) {
                     $aggregated_invoices[$account_number] = [
+                        "rate" => $rate, // add rate untuk referensi
                         "debit" => 0, "credit" => 0, 
                         "local_debit" => 0, "local_credit" => 0
                     ];
@@ -582,7 +583,6 @@ class Sales_invoices extends CI_Controller
             foreach ($journals as $journal) {
                 $acc_no = $journal['account_number'];
                 
-                // Jika akun ada di data invoice terbaru, gunakan data terbaru (overwrite)
                 if (isset($aggregated_invoices[$acc_no])) {
                     $data = $aggregated_invoices[$acc_no];
                     $arr[] = [
@@ -597,8 +597,20 @@ class Sales_invoices extends CI_Controller
                     unset($aggregated_invoices[$acc_no]); 
                 } else {
                     // Jika tidak ada di data invoice baru, tetap pakai data jurnal lama
-                    $journal['local_debit'] = isset($journal['local_debit']) ? $journal['local_debit'] : 0;
-                    $journal['local_credit'] = isset($journal['local_credit']) ? $journal['local_credit'] : 0;
+                    $journal['local_debit'] = isset($journal['local_debit']) ? (float)$journal['local_debit'] : 0;
+                    $journal['local_credit'] = isset($journal['local_credit']) ? (float)$journal['local_credit'] : 0;
+                    
+                    // Jika debit ada tapi local_debit 0, ini indikasi data lama yang belum terkonversi
+                    // BUG FIX: Jika data lama tidak punya local_debit maka re-calculate, dan pastikan key tersebut ada agar tidak 'NaN' di frontend
+                    if ($journal['debit'] > 0 && $journal['local_debit'] == 0) {
+                        $def_currency = isset($sales_invoices_data[0]['currency']) ? $sales_invoices_data[0]['currency'] : 'IDR';
+                        $def_date = isset($sales_invoices_data[0]['trans_date']) ? $sales_invoices_data[0]['trans_date'] : date('Y-m-d');
+                        $rate = ($def_currency == 'IDR') ? 1 : (float)$this->getExchangeRate($def_currency, $def_date);
+                        
+                        $journal['local_debit'] = round($journal['debit'] * $rate, 2);
+                        $journal['local_credit'] = round($journal['credit'] * $rate, 2);
+                    }
+                    
                     $arr[] = $journal;
                 }
             }
