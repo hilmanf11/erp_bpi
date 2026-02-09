@@ -742,6 +742,8 @@
             </thead>
         </table>
 
+        <?php
+        /** -- existing
         <div style="width: 50%; float: left; margin-top:20px;">
             <a style="width: 100%;" class="easyui-linkbutton c2" onclick="addJournal()">Add to Journal</a>
             <br><br>
@@ -753,8 +755,33 @@
                 <input style="width:18%;" id="balance_credit" name="balance_credit" readonly class="easyui-numberbox" data-options="precision:2,groupSeparator:'.', decimalSeparator:','">
             </div>
         </div>
+        */
+        ?>
 
-        <div style="width: 30%; display: grid; grid-template-columns: auto auto auto; grid-gap: 5px; display: flex; float: right; margin-top:20px;">
+        <div style="display: flex; gap: 20px; align-items: flex-start; margin-top: 20px;">
+            <div style="flex: 65%;">
+                <div style="display: flex; gap: 10px; align-items: center; margin-bottom: 15px;">
+                    <div style="float: left; width: 30%; ">
+                        <a style="width: 90%; height: 50px; padding:10px;" class="easyui-linkbutton c2" onclick="addJournal()">Add to Journal</a>
+                    </div>
+                    <div style="float: left; width: 30%; border:4px solid green; padding:10px;" id="showExchange">
+                        <p style="font-size: 16px !important; margin:0;"><b style="font-size: 16px !important;" id="exchange"></b></p>
+                    </div>
+                </div>
+
+                <table id="dg3" class="easyui-datagrid" title="Journal Lists" style="width: 100%;" data-options="singleSelect: true" toolbar="#toolbar3">
+                </table>
+
+                <div class="fitem" style="margin-top: 10px; background: #f9f9f9; padding: 10px; border: 1px solid #ccc;">
+                    <b style="width:33%; display:inline-block;">BALANCE TOTAL</b>
+                    <input style="width:15%;" id="balance_debit" name="balance_debit" readonly class="easyui-numberbox" data-options="precision:2,groupSeparator:'.'">
+                    <input style="width:15%;" id="balance_credit" name="balance_credit" readonly class="easyui-numberbox" data-options="precision:2,groupSeparator:'.'">
+                    <input style="width:15%;" id="local_balance_debit" name="local_balance_debit" readonly class="easyui-numberbox" data-options="precision:2,groupSeparator:'.'">
+                    <input style="width:15%;" id="local_balance_credit" name="local_balance_credit" readonly class="easyui-numberbox" data-options="precision:2,groupSeparator:'.'">
+                </div>
+            </div>
+
+            <div style="flex: 35%;">
             <fieldset style="width:100%; border:1px solid #d0d0d0; margin-bottom: 10px; border-radius:4px;">
                 <div style="width: 100%; float: left;">
                     <div class="fitem">
@@ -809,6 +836,8 @@
                     </div>
                 </div>
             </fieldset>
+            </div>
+
         </div>
     </form>
 </div>
@@ -858,6 +887,7 @@
 
         $('#dg2').datagrid('loadData', []);
         $('#frm_insert').form('clear');
+        $("#showExchange").hide();
         
         $('#disc_pr').numberbox('setValue', 0); // initial discount 0
 
@@ -1414,6 +1444,24 @@
                 var vat_val = 0;
                 var pph_val = 0;
 
+                // Show Exchange Rate (inside Green Box like AR)
+                if (currency != "IDR") {
+                    $.ajax({
+                        type: "post",
+                        url: "<?= base_url('finance/sales_invoices/readExchangeRate') ?>",
+                        data: "trans_date=" + trans_date + "&currency=" + currency,
+                        dataType: "json",
+                        success: function(exchange) {
+                            console.log(exchange.label);
+                            console.log(exchange.amount);
+
+                            $("#rate").numberbox('setValue', exchange.amount);
+                            $("#exchange").html(exchange.label);
+                            $("#showExchange").show();
+                        }
+                    });
+                }
+
                 // 1. Hitung Total Invoice dari detail (Tidak Berubah)
                 for (let i = 0; i < totalrows; i++) {
                     var total_detail = parseFloat(rows[i].total) || 0;
@@ -1422,6 +1470,8 @@
                         account_number: rows[i].account_number,
                         account_name: rows[i].account_name,
                         account_type: rows[i].account_type,
+                        currency: rows[i].currency,
+                        trans_date: trans_date,
                         total: total_detail
                     }
                     
@@ -1971,7 +2021,7 @@
         }
     }
 
-    function addTable2(link = "") {
+    function addTable2_existing(link = "") {
         var lastIndex;
         var dg = $('#dg3').datagrid({
             url: link,
@@ -2070,6 +2120,108 @@
             }
         });
     }
+
+    function addTable2(link = "") {
+        var lastIndex;
+        var dg = $('#dg3').datagrid({
+            url: link,
+            singleSelect: true,
+            columns: [
+                // BARIS PERTAMA
+                [{
+                    field: 'account_number',
+                    width: 100,
+                    halign: 'center',
+                    title: "Account No",
+                    rowspan: 2,
+                    editor: {
+                        type: 'combogrid',
+                        options: {
+                            url: '<?= base_url('finance/account_coa/reads') ?>',
+                            panelWidth: 320,
+                            idField: 'account_number',
+                            textField: 'account_number',
+                            mode: 'remote',
+                            fitColumns: true,
+                            prompt: 'Choose Account No',
+                            columns: [[
+                                {field: 'account_number', title: 'Account No', width: 100},
+                                {field: 'account_name', title: 'Account Name', width: 200}
+                            ]],
+                            onSelect: function(value, rows) {
+                                var dg = $('#dg3');
+                                var row = dg.datagrid('getSelected');
+                                var rowIndex = dg.datagrid('getRowIndex', row);
+                                var ed = dg.datagrid('getEditor', { index: rowIndex, field: 'account_name' });
+                                $(ed.target).textbox('setValue', rows.account_name);
+                            }
+                        }
+                    }
+                }, {
+                    field: 'account_name',
+                    width: 250,
+                    halign: 'center',
+                    title: "Account Name",
+                    rowspan: 2,
+                    editor: { type: 'textbox', options: { readonly: true } }
+                }, {
+                    title: "Original Currency",
+                    colspan: 2, // Gabung 2 kolom (Debit & Credit)
+                    halign: 'center'
+                }, {
+                    title: "Local Currency",
+                    colspan: 2, // Gabung 2 kolom (Local Debit & Local Credit)
+                    halign: 'center'
+                }, {
+                    field: 'flag',
+                    width: 50,
+                    halign: 'center',
+                    title: "Order",
+                    rowspan: 2,
+                    editor: { type: 'numberbox', options: { required: true } }
+                }],
+                // BARIS KEDUA
+                [{
+                    field: 'debit',
+                    width: 110,
+                    halign: 'center',
+                    align: 'right',
+                    title: "Debit",
+                    formatter: numberformat,
+                    editor: { type: 'numberbox', options: { precision: 4 } }
+                }, {
+                    field: 'credit',
+                    width: 110,
+                    halign: 'center',
+                    align: 'right',
+                    title: "Credit",
+                    formatter: numberformat,
+                    editor: { type: 'numberbox', options: { precision: 4 } }
+                }, {
+                    field: 'local_debit',
+                    width: 110,
+                    halign: 'center',
+                    align: 'right',
+                    title: "Debit",
+                    formatter: numberformat,
+                    editor: { type: 'numberbox', options: { precision: 4 } }
+                }, {
+                    field: 'local_credit',
+                    width: 110,
+                    halign: 'center',
+                    align: 'right',
+                    title: "Credit",
+                    formatter: numberformat,
+                    editor: { type: 'numberbox', options: { precision: 4 } }
+                }]
+            ],
+            onClickCell: onClickCell2,
+            onBeginEdit: function(rowIndex, row) {
+                balance_journal();
+            }
+        });
+    }
+
     function balance_journal() {
         var rows = $('#dg3').datagrid('getRows');// journal
         var totalrows = rows.length;
@@ -2080,13 +2232,19 @@
         if (totalrows > 0) {
             var debit = 0;
             var credit = 0;
+            var local_debit = 0;
+            var local_credit = 0;
             for (let i = 0; i < totalrows; i++) {
                 debit += parseFloat(rows[i].debit);
                 credit += parseFloat(rows[i].credit);
+                local_debit += parseFloat(rows[i].local_debit);
+                local_credit += parseFloat(rows[i].local_credit);
             }
 
             $("#balance_debit").numberbox('setValue', debit);
             $("#balance_credit").numberbox('setValue', credit);
+            $("#local_balance_debit").numberbox('setValue', local_debit);
+            $("#local_balance_credit").numberbox('setValue', local_credit);
         }
     }
 
@@ -2487,6 +2645,7 @@
                     $("#dlg_insert").window('setTitle', "Update " + row.number);
                     
                     $('#frm_insert').form('load', row);
+                    $("#showExchange").hide();
 
                     // $("#trans_date").datebox('disable');
                     $("#number").textbox('disable');
@@ -2930,7 +3089,10 @@
         const taxes = parseFloat($("#taxes").numberbox('getValue')) || 0;
         const journalTypeId = $("#journal_type").combobox('getValue');
 
+        /** 
         if (!deliveryNoteNo || !transDate || !dueDate || !taxes) { // Check for empty values directly
+         */
+        if (!deliveryNoteNo || !transDate || !dueDate || (taxes === '' || taxes === null || typeof taxes === 'undefined') ) {
             toastr.info('Please complete all required data (Delivery Note, Trans Date, Due Date, Taxes).');
             return;
         }
@@ -4036,6 +4198,7 @@
             }],
         });
 
+        /** -- existing
         $("#journal_type").combobox({
             url: '<?= base_url('finance/journal_types/reads/' . base64_encode("PURCHASE INVOICING")) ?>',
             valueField: 'id',
@@ -4043,6 +4206,17 @@
             prompt: "Choose Journal Types",
             onSelect: function(row) {
                 addTable2('<?= base_url('finance/purchase_invoices/readJournal/') ?>' + window.btoa(row.id));
+            }
+        });
+        */
+
+        $("#journal_type").combobox({
+            url: '<?= base_url('finance/journal_types/reads/' . base64_encode("SALES INVOICING")) ?>',
+            valueField: 'id',
+            textField: 'name',
+            prompt: "Choose Journal Types",
+            onSelect: function(row) {
+                addTable2('<?= base_url('finance/sales_invoices/readJournal/') ?>' + window.btoa(row.id));
             }
         });
 

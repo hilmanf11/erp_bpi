@@ -515,99 +515,109 @@ class Sales_invoices extends CI_Controller
         $sales_invoices_data = json_decode(file_get_contents("json/sales_invoices.json"), true);
         $arr = [];
 
-        // Jika sales_invoice_journals.json TIDAK KOSONG
-        if (count($journals) == 0) {
+        // Jika sales_invoice_journals.json KOSONG
+        if (empty($journals) || count($journals) == 0) {
             $mergedData = [];
             $flag = 1;
             
             foreach ($sales_invoices_data as $jsonData) {
                 $account_number = $jsonData["account_number"];
                 $account_name = $jsonData["account_name"];
-                $total = $jsonData["total"];
+                $total = (float)$jsonData["total"];
+                $currency = $jsonData["currency"];
+                $trans_date = $jsonData["trans_date"];
 
-                // Inisialisasi entri jika belum ada
+                // Get Rate
+                $rate = ($currency == 'IDR') ? 1 : (float)$this->getExchangeRate($currency, $trans_date);
+
                 if (!isset($mergedData[$account_number])) {
                     $mergedData[$account_number] = [
                         "account_number" => $account_number,
                         "account_name" => $account_name,
                         "debit" => 0,
                         "credit" => 0,
+                        "local_debit"  => 0,
+                        "local_credit" => 0,
                         "flag" => $flag++, 
                     ];
                 }
 
-                // Tambahkan nilai ke Debit atau Credit yang sesuai
                 if ($jsonData['account_type'] == "DEBIT") {
                     $mergedData[$account_number]["debit"] += $total;
+                    $mergedData[$account_number]["local_debit"] += ($total * $rate); // Kalkulasi Local
                 } elseif ($jsonData['account_type'] == "CREDIT") {
                     $mergedData[$account_number]["credit"] += $total;
+                    $mergedData[$account_number]["local_credit"] += ($total * $rate); // Kalkulasi Local
                 }
             }
-
-            // Ubah hasil penggabungan menjadi array berindeks numerik
             $arr = array_values($mergedData);
 
         } else {
-            // --- Jika Jurnal SUDAH ADA (Membandingkan/Memperbarui) ---
-            
-            // 1. Agregasi data sales_invoices
+            // --- Jika Jurnal SUDAH ADA ---
             $aggregated_invoices = [];
             foreach ($sales_invoices_data as $jsonData) {
                 $account_number = $jsonData["account_number"];
-                $total = $jsonData["total"];
+                $total = (float)$jsonData["total"];
+                $currency = $jsonData["currency"];
+                $trans_date = $jsonData["trans_date"];
+
+                $rate = ($currency == 'IDR') ? 1 : (float)$this->getExchangeRate($currency, $trans_date);
                 
                 if (!isset($aggregated_invoices[$account_number])) {
-                    $aggregated_invoices[$account_number] = ["debit" => 0, "credit" => 0];
+                    $aggregated_invoices[$account_number] = [
+                        "debit" => 0, "credit" => 0, 
+                        "local_debit" => 0, "local_credit" => 0
+                    ];
                 }
 
                 if ($jsonData['account_type'] == "DEBIT") {
                     $aggregated_invoices[$account_number]["debit"] += $total;
+                    $aggregated_invoices[$account_number]["local_debit"] += ($total * $rate);
                 } elseif ($jsonData['account_type'] == "CREDIT") {
                     $aggregated_invoices[$account_number]["credit"] += $total;
+                    $aggregated_invoices[$account_number]["local_credit"] += ($total * $rate);
                 }
             }
 
-            // 2. Loop melalui jurnal yang sudah ada untuk memperbarui nilainya
             foreach ($journals as $journal) {
-                $account_number = $journal['account_number'];
-                $total_debit = $journal['debit'];
-                $total_credit = $journal['credit'];
+                $acc_no = $journal['account_number'];
                 
-                // Cari total baru dari aggregated_invoices dan lakukan overwrite
-                if (isset($aggregated_invoices[$account_number])) {
-                    $total_debit = $aggregated_invoices[$account_number]['debit'];
-                    $total_credit = $aggregated_invoices[$account_number]['credit'];
-                    
-                    // Hapus dari aggregated_invoices setelah diproses
-                    unset($aggregated_invoices[$account_number]); 
+                // Jika akun ada di data invoice terbaru, gunakan data terbaru (overwrite)
+                if (isset($aggregated_invoices[$acc_no])) {
+                    $data = $aggregated_invoices[$acc_no];
+                    $arr[] = [
+                        "account_number" => $acc_no,
+                        "account_name"   => $journal['account_name'],
+                        "debit"          => round($data['debit'], 4),
+                        "credit"         => round($data['credit'], 4),
+                        "local_debit"    => round($data['local_debit'], 2),
+                        "local_credit"   => round($data['local_credit'], 2),
+                        "flag"           => $journal['flag'],
+                    ];
+                    unset($aggregated_invoices[$acc_no]); 
+                } else {
+                    // Jika tidak ada di data invoice baru, tetap pakai data jurnal lama
+                    $journal['local_debit'] = isset($journal['local_debit']) ? $journal['local_debit'] : 0;
+                    $journal['local_credit'] = isset($journal['local_credit']) ? $journal['local_credit'] : 0;
+                    $arr[] = $journal;
                 }
-                
-                // Tambahkan ke array hasil
-                $arr[] = [
-                    "account_number" => $account_number,
-                    "account_name" => $journal['account_name'],
-                    "debit" => round($total_debit, 4),
-                    "credit" => round($total_credit, 4),
-                    "flag" => $journal['flag'],
-                ];
             }
             
-            // 3. Tambahkan akun-akun BARU
-            $flag_counter = count($journals) + 1;
-            foreach ($aggregated_invoices as $account_number => $data) {
-                $account_name = $this->getAccountNameFromInvoiceData($sales_invoices_data, $account_number);
-
+            // Tambahkan akun BARU yang belum ada di jurnal lama
+            $flag_counter = count($arr) + 1;
+            foreach ($aggregated_invoices as $acc_no => $data) {
+                $acc_name = $this->getAccountNameFromInvoiceData($sales_invoices_data, $acc_no);
                 $arr[] = [
-                    "account_number" => $account_number,
-                    "account_name" => $account_name,
-                    "debit" => round($data['debit'], 4),
-                    "credit" => round($data['credit'], 4),
-                    "flag" => $flag_counter++,
+                    "account_number" => $acc_no,
+                    "account_name"   => $acc_name,
+                    "debit"          => round($data['debit'], 4),
+                    "credit"         => round($data['credit'], 4),
+                    "local_debit"    => round($data['local_debit'], 2),
+                    "local_credit"   => round($data['local_credit'], 2),
+                    "flag"           => $flag_counter++,
                 ];
             }
         }
-        
-        // Output akhir hanya berupa array jurnal
         echo json_encode($arr);
     }
     // match account_number between json sales_invoice and journal
@@ -619,6 +629,22 @@ class Sales_invoices extends CI_Controller
             }
         }
         return "N/A";
+    }
+    private function getExchangeRate($currency, $trans_date) 
+    {
+        $this->db->select('middle, currency_from, currency_to');
+        $this->db->from('exchange_rates');
+        $this->db->where('currency_from', $currency);
+        $this->db->where('currency_to', 'IDR');
+        $this->db->where("'$trans_date' BETWEEN start_date AND end_date", null, false);
+        $query = $this->db->get()->row();
+
+        if ($query) {
+            $rate = $query->middle;
+        } else {
+            $rate = 0;
+        }
+        return $rate;
     }
 
     public function calculateJournal_existing()
