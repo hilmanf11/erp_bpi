@@ -1069,6 +1069,26 @@
                                 width: 250
                             }]
                         ],
+                        // Munculkan loading saat request dimulai
+                        onBeforeLoad: function(param) {
+                            $.messager.progress({
+                                title: 'Please waiting',
+                                msg: 'Loading journal types...'
+                            });
+                        },
+                        // Hilangkan loading saat data berhasil diterima
+                        onLoadSuccess: function(data) {
+                            $.messager.progress('close');
+                            
+                            if (data.total == 0) {
+                                toastr.info("There are no journals available for posting.");
+                            }
+                        },
+                        // Hilangkan loading dan beri peringatan jika terjadi error (network/server)
+                        onLoadError: function() {
+                            $.messager.progress('close');
+                            $.messager.alert("Error", "Failed to retrieve journal data from server.", 'error');
+                        },
                         onSelect: function(val, row) {
                             $("#company_name").combobox({
                                 url: '<?= base_url('finance/journal_postings/readCompany?modul=') ?>' + btoa(modul) + "&journal_date=" + btoa(journal_date) + "&journal_type=" + btoa(row.id),
