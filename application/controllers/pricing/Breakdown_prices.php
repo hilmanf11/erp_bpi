@@ -62,23 +62,21 @@ class Breakdown_prices extends CI_Controller
 
     public function get_quotation_number()
     {
-        $date = $this->input->post('date'); // Format yyyy-mm-dd dari datebox
+        $date = $this->input->post('date');
         $time = strtotime($date);
         $year = date('Y', $time);
         $shortYear = date('y', $time);
         $monthRomawi = $this->get_romawi(date('n', $time));
 
-        // Cari nomor urut terakhir berdasarkan tahun yang dipilih
         $this->db->select('quotation_number');
         $this->db->like('quotation_number', "/BPI-MKT/QUOT/", 'both');
         $this->db->like('quotation_number', "/$shortYear", 'after');
         $this->db->order_by('quotation_number', 'DESC');
         $this->db->limit(1);
-        $query = $this->db->get('breakdown_prices'); // GANTI dengan nama tabel Anda
+        $query = $this->db->get('breakdown_prices');
 
         if ($query->num_rows() > 0) {
             $last_no = $query->row()->quotation_number;
-            // Ambil bagian nomor urut (asumsi format: 120/BPI...)
             $parts = explode('/', $last_no);
             $next_val = intval($parts[0]) + 1;
         } else {
