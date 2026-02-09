@@ -345,3 +345,6 @@ Optimation for Create with Race Condition ([c36c3c13](https://github.com/hilmanf
 
 ### [2026-02-09]
 - **Rizki Puji**: Perf: fix rate local_debit local_debit on calculate Journal Add Sales Invoices ([ccb51d38](https://github.com/hilmanf11/erp_bpi/commit/ccb51d38ff0a8c4238115e35202d0a1cd500a570))
+
+### [2026-02-09]
+- **Rizki Puji**: Perf: bug fix local_debit local_debit on calculate Journal Add Sales Invoices ([6cb67956](https://github.com/hilmanf11/erp_bpi/commit/6cb679567d401deea8179ce1df5efd6b90035e4d))
