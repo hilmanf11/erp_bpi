@@ -336,3 +336,6 @@ Optimation for Create with Race Condition ([c36c3c13](https://github.com/hilmanf
 
 ### [2026-02-06]
 - **Rizki Puji**: Feat: fix validation Rate if not IDR on save Journal Postings ([9a643e7d](https://github.com/hilmanf11/erp_bpi/commit/9a643e7d9fdb2dae73b9345f77586466ce2aa60f))
+
+### [2026-02-09]
+- **Rizki Puji**: Style: loading indicator readJournalType on Add Journal Posting ([e4c044bc](https://github.com/hilmanf11/erp_bpi/commit/e4c044bc0dc463d4276383ff7da98d43b7be8b5b))
