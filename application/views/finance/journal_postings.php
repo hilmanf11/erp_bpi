@@ -1081,7 +1081,9 @@
                             $.messager.progress('close');
                             
                             if (data.total == 0) {
-                                toastr.info("There are no journals available for posting.");
+                                var messageNull = 'There are no journals available for posting on the selected Journal Date and Module.';
+                                toastr.info(messageNull);
+                                $.messager.alert("No Data Found", messageNull, 'info');
                             }
                         },
                         // Hilangkan loading dan beri peringatan jika terjadi error (network/server)
