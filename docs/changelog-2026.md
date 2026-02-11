@@ -357,3 +357,6 @@ Optimation for Create with Race Condition ([c36c3c13](https://github.com/hilmanf
 
 ### [2026-02-11]
 - **Rizki Puji**: Feat: fix bug NaN local balance Journal on Update Sales Invoices ([5315a78f](https://github.com/hilmanf11/erp_bpi/commit/5315a78ff985af01e63f153870026e8bdfa9237b))
+
+### [2026-02-11]
+- **Rizki Puji**: Feat: fix format comma and calculateJournal on Add/Update Sales Invoices ([402653c8](https://github.com/hilmanf11/erp_bpi/commit/402653c82484fd8a145f21a1c679e3b19d7ea156))
