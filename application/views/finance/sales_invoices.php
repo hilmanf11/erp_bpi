@@ -774,10 +774,17 @@
 
                 <div class="fitem" style="margin-top: 10px; background: #f9f9f9; padding: 10px; border: 1px solid #ccc;">
                     <b style="width:33%; display:inline-block;">BALANCE TOTAL</b>
+                    <input style="width:15%;" id="balance_debit" name="balance_debit" readonly class="easyui-numberbox" data-options="precision:2, groupSeparator:'.', decimalSeparator:','">
+                    <input style="width:15%;" id="balance_credit" name="balance_credit" readonly class="easyui-numberbox" data-options="precision:2, groupSeparator:'.', decimalSeparator:','">
+                    <input style="width:15%;" id="local_balance_debit" name="local_balance_debit" readonly class="easyui-numberbox" data-options="precision:2, groupSeparator:'.', decimalSeparator:','">
+                    <input style="width:15%;" id="local_balance_credit" name="local_balance_credit" readonly class="easyui-numberbox" data-options="precision:2, groupSeparator:'.', decimalSeparator:','">
+
+                    <?php /** -- existing bug comma
                     <input style="width:15%;" id="balance_debit" name="balance_debit" readonly class="easyui-numberbox" data-options="precision:2,groupSeparator:'.'">
                     <input style="width:15%;" id="balance_credit" name="balance_credit" readonly class="easyui-numberbox" data-options="precision:2,groupSeparator:'.'">
                     <input style="width:15%;" id="local_balance_debit" name="local_balance_debit" readonly class="easyui-numberbox" data-options="precision:2,groupSeparator:'.'">
                     <input style="width:15%;" id="local_balance_credit" name="local_balance_credit" readonly class="easyui-numberbox" data-options="precision:2,groupSeparator:'.'">
+                    */ ?>
                 </div>
             </div>
 

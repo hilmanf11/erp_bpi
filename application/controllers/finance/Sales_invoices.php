@@ -600,15 +600,20 @@ class Sales_invoices extends CI_Controller
                     $journal['local_debit'] = isset($journal['local_debit']) ? (float)$journal['local_debit'] : 0;
                     $journal['local_credit'] = isset($journal['local_credit']) ? (float)$journal['local_credit'] : 0;
                     
-                    // Jika debit ada tapi local_debit 0, ini indikasi data lama yang belum terkonversi
-                    // BUG FIX: Jika data lama tidak punya local_debit maka re-calculate, dan pastikan key tersebut ada agar tidak 'NaN' di frontend
-                    if ($journal['debit'] > 0 && $journal['local_debit'] == 0) {
+                    // FIX BUG VAT: Cek apakah Original Debit OR Credit punya nilai tapi Local-nya kosong
+                    $hasOriginalValue = ($journal['debit'] > 0 || $journal['credit'] > 0);
+                    $hasNoLocalValue = ($journal['local_debit'] == 0 && $journal['local_credit'] == 0);
+
+                    if ($hasOriginalValue && $hasNoLocalValue) {
+                        // Get currency dari invoice data (fallback ke IDR)
                         $def_currency = isset($sales_invoices_data[0]['currency']) ? $sales_invoices_data[0]['currency'] : 'IDR';
                         $def_date = isset($sales_invoices_data[0]['trans_date']) ? $sales_invoices_data[0]['trans_date'] : date('Y-m-d');
+                        
                         $rate = ($def_currency == 'IDR') ? 1 : (float)$this->getExchangeRate($def_currency, $def_date);
                         
-                        $journal['local_debit'] = round($journal['debit'] * $rate, 2);
-                        $journal['local_credit'] = round($journal['credit'] * $rate, 2);
+                        // Hitung ulang Debit & Credit
+                        $journal['local_debit'] = round((float)$journal['debit'] * $rate, 2);
+                        $journal['local_credit'] = round((float)$journal['credit'] * $rate, 2);
                     }
                     
                     $arr[] = $journal;
