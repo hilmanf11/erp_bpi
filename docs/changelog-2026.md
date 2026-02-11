@@ -351,3 +351,6 @@ Optimation for Create with Race Condition ([c36c3c13](https://github.com/hilmanf
 
 ### [2026-02-09]
 - **kurniawan**: Breakdown Price ([c3c6c996](https://github.com/hilmanf11/erp_bpi/commit/c3c6c9964c200d4171b6d30e9e66aee7da09937a))
+
+### [2026-02-11]
+- **Rizki Puji**: Feat: add validation taxes=0 and customer=local on Add Sales Invoices ([c0454379](https://github.com/hilmanf11/erp_bpi/commit/c045437941737d4398f28a3a3c38be6d6c149be7))
