@@ -2237,11 +2237,12 @@
             var credit = 0;
             var local_debit = 0;
             var local_credit = 0;
+
             for (let i = 0; i < totalrows; i++) {
-                debit += parseFloat(rows[i].debit);
-                credit += parseFloat(rows[i].credit);
-                local_debit += parseFloat(rows[i].local_debit);
-                local_credit += parseFloat(rows[i].local_credit);
+                debit += parseFloat(rows[i].debit || 0);
+                credit += parseFloat(rows[i].credit || 0);
+                local_debit += parseFloat(rows[i].local_debit || 0);
+                local_credit += parseFloat(rows[i].local_credit || 0);
             }
 
             $("#balance_debit").numberbox('setValue', debit);
@@ -3979,6 +3980,8 @@
                                                         account_name: rows2[z].account_name,
                                                         debit: rows2[z].debit,
                                                         credit: rows2[z].credit,
+                                                        local_debit: rows2[z].local_debit,
+                                                        local_credit: rows2[z].local_credit,
                                                         flag: rows2[z].flag,
                                                     });
                                                 }
