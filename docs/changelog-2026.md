@@ -360,3 +360,6 @@ Optimation for Create with Race Condition ([c36c3c13](https://github.com/hilmanf
 
 ### [2026-02-11]
 - **Rizki Puji**: Feat: fix format comma and calculateJournal on Add/Update Sales Invoices ([402653c8](https://github.com/hilmanf11/erp_bpi/commit/402653c82484fd8a145f21a1c679e3b19d7ea156))
+
+### [2026-02-11]
+- **Rizki Puji**: Style: fix format comma and local balance on Detail Sales Invoices ([68aa17a5](https://github.com/hilmanf11/erp_bpi/commit/68aa17a5055a82e1ae3ffeea21e31db32d8e80d0))
