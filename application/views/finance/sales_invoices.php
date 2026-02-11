@@ -413,68 +413,78 @@
             </thead>
         </table>
 
-        <div style="width: 50%; float: left; margin-top:20px;">
-            <a style="width: 100%;" class="easyui-linkbutton c2" disabled>Add to Journal</a>
-            <br><br>
-            <table id="dgDetailJournal" class="easyui-datagrid" title="Journal Lists" style="width: 100%;" data-options="singleSelect: true" toolbar="#toolbarDetailJournal"></table>
-
-            <div class="fitem">
-                <b style="width:45%; display:inline-block; padding-left: 50px;">BALANCE TOTAL</b>
-                <input style="width:18%;" id="d_balance_debit" name="balance_debit" class="easyui-numberbox" data-options="precision:2,groupSeparator:'.', decimalSeparator:','">
-                <input style="width:18%;" id="d_balance_credit" name="balance_credit" class="easyui-numberbox" data-options="precision:2,groupSeparator:'.', decimalSeparator:','">
-            </div>
-        </div>
-
-        <div style="width: 30%; display: grid; grid-template-columns: auto auto auto; grid-gap: 5px; display: flex; float: right; margin-top:20px;">
-            <fieldset style="width:100%; border:1px solid #d0d0d0; margin-bottom: 10px; border-radius:4px;">
-                <div style="width: 100%; float: left;">
-                    <div class="fitem">
-                        <b style="width:35%; display:inline-block;">TOTAL INVOICE</b>
-                        <input style="width:60%;" id="d_total_invoice" name="d_total_invoice" readonly class="easyui-numberbox" data-options="precision:2,groupSeparator:','">
-                    </div>
-                    <div class="fitem">
-                        <b style="width:35%; display:inline-block;">DISC %</b>
-                        <input style="width:10%;" id="d_disc_pr" name="d_disc_pr" value="0" class="easyui-numberbox" data-options="precision:2">
-                        <input style="width:50%; text-align:right;" id="d_discount" name="d_discount" class="easyui-numberbox" value="0" data-options="precision:2,groupSeparator:','">
-                    </div>
-                    <div class="fitem">
-                        <b style="width:35%; display:inline-block;">SUB TOTAL</b>
-                        <input style="width:60%;" id="d_total_sub" name="d_total_sub" readonly class="easyui-numberbox" data-options="precision:2,groupSeparator:','">
-                    </div>
-                    <div class="fitem">
-                        <b style="width:35%; display:inline-block;">DOWN PAYMENT %</b>
-                        <input style="width:10%;" id="d_disc_dp" name="d_disc_dp" value="0" class="easyui-numberbox" data-options="precision:2">
-                        <input style="width:50%; text-align:right;" id="d_down_payment" name="d_down_payment" class="easyui-numberbox" value="0" data-options="precision:2,groupSeparator:','">
-                    </div>
-                    <div class="fitem">
-                        <b style="width:35%; display:inline-block;">DPP</b>
-                        <input style="width:60%;" id="d_total_dpp" name="d_total_dpp" disabled class="easyui-numberbox" data-options="precision:2,groupSeparator:','">
-                    </div>
-                    <div class="fitem">
-                        <b style="width:35%; display:inline-block;">VAT</b>
-                        <input style="width:60%;" id="d_total_vat" name="d_total_vat" readonly class="easyui-numberbox" data-options="precision:2,groupSeparator:','">
-                    </div>
-                    <div class="fitem">
-                        <b style="width:35%; display:inline-block;">PPH</b>
-                        <input style="width:30%;" id="d_total_pph" name="d_total_pph" disabled class="easyui-numberbox" data-options="precision:2,groupSeparator:','">
-                        <select style="width:30%;" id="d_pph" name="d_pph" class="easyui-combobox" data-options="prompt: 'PPH'" panelHeight="auto">
-                            <option value="0">NON PPH</option>
-                            <!-- <option value="5">PPH 21</option> -->
-                            <option value="2">PPH 23</option>
-                            <option value="10">PPH 4(2)</option>
-                            <option value="10.0">Other Income</option>
-                        </select>
-                    </div>
-                    <div class="fitem">
-                        <b style="width:35%; display:inline-block;">GRAND TOTAL</b>
-                        <input style="width:60%;" id="d_total_grand" name="d_total_grand" readonly required class="easyui-numberbox" data-options="precision:2,groupSeparator:','">
-                    </div>
-                    <div class="fitem">
-                        <b style="width:35%; display:inline-block;">CONVERT IDR</b>
-                        <input style="width:60%;" id="d_total_local" name="d_total_local" disabled class="easyui-numberbox" data-options="precision:2,groupSeparator:','">
+        <div style="display: flex; gap: 20px; align-items: flex-start; margin-top: 20px; margin-bottom: 20px;">
+            <div style="flex: 65%;">
+                <div style="display: flex; gap: 10px; align-items: center; margin-bottom: 15px;">
+                    <a style="width: 200px; height: 40px; padding:10px;" class="easyui-linkbutton c2" disabled>Add to Journal</a>
+                    
+                    <div style="float: left; width: 30%; border:4px solid green; padding:10px;" id="d_showExchange">
+                        <p style="font-size: 16px !important; margin:0;"><b style="font-size: 16px !important;" id="d_exchange"></b></p>
                     </div>
                 </div>
-            </fieldset>
+
+                <table id="dgDetailJournal" class="easyui-datagrid" title="Journal Lists" style="width: 100%;" data-options="singleSelect: true" toolbar="#toolbarDetailJournal">
+                </table>
+
+                <div class="fitem" style="margin-top: 10px; background: #f9f9f9; padding: 10px; border: 1px solid #ccc;">
+                    <b style="width:30%; display:inline-block;">BALANCE TOTAL</b>
+                    <input style="width:16%;" id="d_balance_debit" name="d_balance_debit" readonly class="easyui-numberbox" data-options="precision:2,groupSeparator:'.', decimalSeparator:','">
+                    <input style="width:16%;" id="d_balance_credit" name="d_balance_credit" readonly class="easyui-numberbox" data-options="precision:2,groupSeparator:'.', decimalSeparator:','">
+                    <input style="width:16%;" id="d_local_balance_debit" name="d_local_balance_debit" readonly class="easyui-numberbox" data-options="precision:2,groupSeparator:'.', decimalSeparator:','">
+                    <input style="width:16%;" id="d_local_balance_credit" name="d_local_balance_credit" readonly class="easyui-numberbox" data-options="precision:2,groupSeparator:'.', decimalSeparator:','">
+                </div>
+            </div>
+
+            <div style="flex: 35%;">
+                <fieldset style="border:1px solid #d0d0d0; padding: 15px; border-radius:4px;">
+                    <legend><b>Summary</b></legend>
+                    <div class="fitem" style="margin-bottom: 5px;">
+                        <b style="width:40%; display:inline-block;">TOTAL INVOICE</b>
+                        <input style="width:55%;" id="d_total_invoice" name="d_total_invoice" readonly class="easyui-numberbox" data-options="precision:2,groupSeparator:','">
+                    </div>
+                    <div class="fitem" style="margin-bottom: 5px;">
+                        <b style="width:40%; display:inline-block;">DISC %</b>
+                        <input style="width:15%;" id="d_disc_pr" name="d_disc_pr" value="0" class="easyui-numberbox" data-options="precision:2">
+                        <input style="width:38%; text-align:right;" id="d_discount" name="d_discount" class="easyui-numberbox" value="0" data-options="precision:2,groupSeparator:','">
+                    </div>
+                    <div class="fitem" style="margin-bottom: 5px;">
+                        <b style="width:40%; display:inline-block;">SUB TOTAL</b>
+                        <input style="width:55%;" id="d_total_sub" name="d_total_sub" readonly class="easyui-numberbox" data-options="precision:2,groupSeparator:','">
+                    </div>
+                    <div class="fitem" style="margin-bottom: 5px;">
+                        <b style="width:40%; display:inline-block;">DP %</b>
+                        <input style="width:15%;" id="d_disc_dp" name="d_disc_dp" value="0" class="easyui-numberbox" data-options="precision:2">
+                        <input style="width:38%; text-align:right;" id="d_down_payment" name="d_down_payment" class="easyui-numberbox" value="0" data-options="precision:2,groupSeparator:','">
+                    </div>
+                    <div class="fitem" style="margin-bottom: 5px;">
+                        <b style="width:40%; display:inline-block;">DPP</b>
+                        <input style="width:55%;" id="d_total_dpp" name="d_total_dpp" disabled class="easyui-numberbox" data-options="precision:2,groupSeparator:','">
+                    </div>
+                    <div class="fitem" style="margin-bottom: 5px;">
+                        <b style="width:40%; display:inline-block;">VAT</b>
+                        <input style="width:43%;" id="d_total_vat" name="d_total_vat" class="easyui-numberbox">
+                        <input id="d_check_vat" name="d_check_vat" class="easyui-checkbox" data-options="{onChange:checkVAT}">
+                    </div>
+                    <div class="fitem" style="margin-bottom: 5px;">
+                        <b style="width:40%; display:inline-block;">PPH</b>
+                        <input style="width:25%;" id="d_total_pph" name="d_total_pph" disabled class="easyui-numberbox" data-options="precision:2,groupSeparator:','">
+                        <select style="width:28%;" id="d_pph" name="d_pph" class="easyui-combobox" data-options="prompt: 'PPH'" panelHeight="auto">
+                            <option value="0">NON</option>
+                            <option value="2">PPH 23</option>
+                            <option value="10">PPH 4(2)</option>
+                        </select>
+                    </div>
+                    <hr>
+                    <div class="fitem" style="margin-bottom: 5px;">
+                        <b style="width:40%; display:inline-block;">GRAND TOTAL</b>
+                        <input style="width:55%;" id="d_total_grand" name="d_total_grand" readonly required class="easyui-numberbox" data-options="precision:2,groupSeparator:','">
+                    </div>
+                    <div class="fitem">
+                        <b style="width:40%; display:inline-block;">CONVERT IDR</b>
+                        <input style="width:55%;" id="d_total_local" name="d_total_local" disabled class="easyui-numberbox" data-options="precision:2,groupSeparator:','">
+                    </div>
+                </fieldset>
+            </div>
         </div>
 
     </form>
@@ -2344,6 +2354,32 @@
                         }
                     }
                 }, {
+                    field: 'local_debit',
+                    width: 110,
+                    halign: 'center',
+                    title: "Local Debit",
+                    formatter: numberformat,
+                    editor: {
+                        type: 'numberbox',
+                        options: {
+                            precision: 4,
+                            readonly: true
+                        }
+                    }
+                }, {
+                    field: 'local_credit',
+                    width: 110,
+                    halign: 'center',
+                    title: "Local Credit",
+                    formatter: numberformat,
+                    editor: {
+                        type: 'numberbox',
+                        options: {
+                            precision: 4,
+                            readonly: true
+                        }
+                    }
+                }, {
                     field: 'flag',
                     width: 50,
                     halign: 'center',
@@ -2364,16 +2400,22 @@
 
                 let debit = 0;
                 let credit = 0;
+                let local_debit = 0;
+                let local_credit = 0;
 
                 if (totalrows > 0) {
                     for (let i = 0; i < totalrows; i++) {
                         debit += parseFloat(rows[i].debit || 0);
                         credit += parseFloat(rows[i].credit || 0);
+                        local_debit += parseFloat(rows[i].local_debit || 0);
+                        local_credit += parseFloat(rows[i].local_credit || 0);
                     }
                 }
                 
                 $("#d_balance_debit").numberbox('setValue', debit);
                 $("#d_balance_credit").numberbox('setValue', credit);
+                $("#d_local_balance_debit").numberbox('setValue', local_debit);
+                $("#d_local_balance_credit").numberbox('setValue', local_credit);
             }
         });
     }
@@ -4666,6 +4708,7 @@
             $("#dlg_detail").window('setTitle', "Detail of " + row.number);
             
             $('#frm_detail').form('load', row);
+            $("#d_showExchange").hide();
 
             $("#d_trans_date").datebox('disable');
             $("#d_trans_date").datebox('setValue', row.trans_date);
@@ -4761,6 +4804,26 @@
                     $(this).datagrid('refreshRow', index);
                 },
             });
+
+            var currency   = row.currency;
+            var trans_date = row.trans_date;
+
+            // Show Exchange Rate (inside Green Box like AR)
+            if (currency != "IDR") {
+                $.ajax({
+                    type: "post",
+                    url: "<?= base_url('finance/sales_invoices/readExchangeRate') ?>",
+                    data: "trans_date=" + trans_date + "&currency=" + currency,
+                    dataType: "json",
+                    success: function(exchange) {
+                        console.log(exchange.label);
+                        console.log(exchange.amount);
+
+                        $("#d_exchange").html(exchange.label);
+                        $("#d_showExchange").show();
+                    }
+                });
+            }
 
             addTableJournal('<?= base_url('finance/sales_invoices/readJournals/') ?>' + window.btoa(row.number));
 
