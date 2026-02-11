@@ -1070,7 +1070,7 @@
         var row = $('#dg').datagrid('getSelected');
         console.log("Data Loaded:",row);
 
-        url_save = '<?= base_url('finance/ap_payments/update') ?>';
+        url_save = '<?= base_url('finance/ap_payments/create') ?>';
 
         // preview button must disabled 
         $("#btnPreview").prop('disabled', true);
@@ -1997,7 +1997,6 @@
                                     endEditing2();
 
                                     if (totalrows > 0) {
-                                        requestData(totalrows, rows);
                                         $('#dlg_insert').dialog('close');
 
                                         Swal.fire({
@@ -2018,6 +2017,8 @@
                                             },
                                             success: function(result) {
                                                 if (totalrows2 > 0) {
+                                                    requestData(totalrows, rows);
+
                                                     for (let z = 0; z < totalrows2; z++) {
                                                         $.ajax({
                                                             type: "post",

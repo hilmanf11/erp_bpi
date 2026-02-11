@@ -894,10 +894,10 @@ class Ap_payments extends CI_Controller
                 $post['journal_type_id'] = $journal_type_id;
             }
             
-            if (@$post['id'] != "") {
-                $send = $this->crud->update('ap_payments', ["id" => $post['id']], $post);
-                echo $send;
-            } else {
+            // if (@$post['id'] != "") {
+            //     $send = $this->crud->update('ap_payments', ["id" => $post['id']], $post);
+            //     echo $send;
+            // } else {
                 $send = $this->crud->create('ap_payments', $post);
                 if ($send) {
                     if ($post['amount'] == $post['payment']) {
@@ -909,7 +909,7 @@ class Ap_payments extends CI_Controller
                     }
                 }
                 echo $send;
-            }
+            // }
         } else {
             show_error("Cannot Process your request");
         }
@@ -1052,6 +1052,7 @@ class Ap_payments extends CI_Controller
     public function deleteJournal()
     {
         $data = $this->input->post();
+        $send = $this->crud->delete('ap_payments', $data);
         $send = $this->crud->delete('ap_payment_journals', $data);
         echo $send;
     }
