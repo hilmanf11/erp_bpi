@@ -3080,8 +3080,31 @@
         return true;
     }
 
+    function validateTaxLogic() {
+        return new Promise((resolve) => {
+            const type = $("#type").textbox('getValue');
+            const taxes = parseFloat($("#taxes").numberbox('getValue')) || 0;
+
+            // Kondisi khusus yang butuh konfirmasi
+            if (taxes === 0 && type === 'LOCAL') {
+                $.messager.confirm('Confirm', 'The Rate Tax is 0% and Customer is Local. Are you sure want proceed?', function(r) {
+                    resolve(r); // r bernilai true jika klik 'Yes', false jika 'No'
+                });
+            } else {
+                // Jika tidak ada kondisi aneh, langsung izinkan (true)
+                resolve(true);
+            }
+        });
+    }
+
     // AI Optimasi Preview Data
+    /* -- existing
     function preview() {
+    */
+    // Mengubah handler menjadi async untuk menangani fungsi validateTax yang mengembalikan Promise.
+    // Menggunakan async/await agar eksekusi kode menunggu jawaban user dari dialog $.message.confirm (asynchronous)
+    async function preview() 
+    {
         const customerId = $("#customer_id").combogrid('getValue');
         const deliveryNoteNo = $("#delivery_note_no").combobox('getText');
         const transDate = $("#trans_date").datebox('getValue');
@@ -3089,7 +3112,7 @@
         const type = $("#type").textbox('getValue');
         let discount = parseFloat($("#discount").numberbox('getValue')) || 0;
         let downPayment = parseFloat($("#down_payment").numberbox('getValue')) || 0;
-        const taxes = parseFloat($("#taxes").numberbox('getValue')) || 0;
+        const taxes = parseFloat($("#taxes").numberbox('getValue'));
         const journalTypeId = $("#journal_type").combobox('getValue');
 
         /** 
@@ -3097,6 +3120,13 @@
          */
         if (!deliveryNoteNo || !transDate || !dueDate || (taxes === '' || taxes === null || typeof taxes === 'undefined') ) {
             toastr.info('Please complete all required data (Delivery Note, Trans Date, Due Date, Taxes).');
+            return;
+        }
+
+        // Validasi jika taxes=0 dan customer=local
+        const isTaxOk = await validateTaxLogic();
+        if (!isTaxOk) {
+            console.log("Preview canceled by user.");
             return;
         }
 
@@ -3742,7 +3772,21 @@
             buttons: [{
                 text: 'Save All',
                 iconCls: 'icon-ok',
+                /* -- existing
                 handler: function() {
+                */
+                // Mengubah handler menjadi async untuk menangani fungsi validateTax yang mengembalikan Promise.
+                // Menggunakan async/await agar eksekusi kode menunggu jawaban user dari dialog $.message.confirm (asynchronous)
+                handler: async function() {
+                    // CEGAH DOUBLE CLICK SEGERA
+                    if (isSubmitting) return;
+                    isSubmitting = true;
+                    var btn = $(this);
+                    btn.linkbutton('disable');
+                    setTimeout(function() {
+                        isSubmitting = false;
+                        btn.linkbutton('enable');
+                    }, 6000);
 
                     // --- validasi account_number call function validateDatagrid ---
                     var hasValidationError = false;
@@ -3762,15 +3806,14 @@
                     }
                     // --- Lanjutkan proses jika tidak ada error validasi ---
 
-                    if (isSubmitting) return; // cegah klik dobel
-                    
-                    isSubmitting = true;
-                    var btn = $(this);
-                    btn.linkbutton('disable');
-                    setTimeout(function() {
-                        isSubmitting = false;
+                    // Validasi jika taxes=0 dan customer=local
+                    const isTaxOk = await validateTaxLogic();
+                    if (!isTaxOk) {
+                        console.log("Save canceled by user.");
+                        isSubmitting = false; // Buka kunci jika user pilih 'No'
                         btn.linkbutton('enable');
-                    }, 5000);
+                        return;
+                    }
                     
                     var trans_date = $("#trans_date").datebox('getValue');
                     var number = $("#number").textbox('getValue');
