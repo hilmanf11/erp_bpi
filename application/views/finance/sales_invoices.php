@@ -1470,6 +1470,11 @@
                         data: "trans_date=" + trans_date + "&currency=" + currency,
                         dataType: "json",
                         success: function(exchange) {
+                            var rate = exchange.amount;
+                            if (!rate || isNaN(rate) || rate <= 0) {
+                                toastr.error("Rate Unavailable: Please set a valid rate for the active period.");
+                            }
+
                             console.log(exchange.label);
                             console.log(exchange.amount);
 
@@ -3123,6 +3128,42 @@
         });
     }
 
+    async function validateRateLogic() {
+        // Get Data untuk Validasi Rate
+        $('#dg2').datagrid('acceptChanges');
+        const rows = $('#dg2').datagrid('getRows');
+        const currency = (rows.length > 0 && rows[0].currency) ? rows[0].currency : 'IDR';
+        let trans_date = $("#trans_date").datebox('getValue');
+
+        // Jika IDR, anggap rate selalu valid (1)
+        if (currency === "IDR") {
+            return true;
+        }
+
+        try {
+            const exchange = await $.ajax({
+                type: "post",
+                url: "<?= base_url('finance/sales_invoices/readExchangeRate') ?>",
+                data: { trans_date: trans_date, currency: currency },
+                dataType: "json"
+            });
+
+            const rate = exchange ? exchange.amount : null;
+
+            if (!rate || isNaN(rate) || rate <= 0) {
+                toastr.error("Rate Unavailable: Please set a valid rate for the active period.");
+                return false; // Validasi gagal
+            }
+
+            console.log("Rate valid: ", rate);
+            return true; // Validasi berhasil
+
+        } catch (err) {
+            toastr.error("Error checking exchange rate.");
+            return false;
+        }
+    }
+
     // AI Optimasi Preview Data
     /* -- existing
     function preview() {
@@ -3632,6 +3673,8 @@
                 minimumFractionDigits: 2
             });
             return "<b>" + formatter.format(value) + "</b>";
+        } else {
+            return "<b>0,00</b>";
         }
     }
 
@@ -3830,13 +3873,21 @@
                         }
                         return;
                     }
-                    // --- Lanjutkan proses jika tidak ada error validasi ---
 
                     // Validasi jika taxes=0 dan customer=local
                     const isTaxOk = await validateTaxLogic();
                     if (!isTaxOk) {
                         console.log("Save canceled by user.");
                         isSubmitting = false; // Buka kunci jika user pilih 'No'
+                        btn.linkbutton('enable');
+                        return;
+                    }
+
+                    // Validasi Rate
+                    const isRateOk = await validateRateLogic();
+                    if (!isRateOk) {
+                        console.log("Rate unavailable.");
+                        isSubmitting = false;
                         btn.linkbutton('enable');
                         return;
                     }
