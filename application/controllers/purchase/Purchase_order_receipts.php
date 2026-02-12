@@ -1,6 +1,16 @@
 <?php
 date_default_timezone_set("Asia/Bangkok");
 defined('BASEPATH') or exit('No direct script access allowed');
+
+/**
+ * @property CI_Input $input
+ * @property CI_Output $output
+ * @property CI_Loader $load
+ * @property CI_Session $session
+ * @property CI_DB_query_builder $db
+ * @property CI_Form_validation $form_validation
+ * @property Crud $crud
+ */
 class Purchase_order_receipts extends CI_Controller
 {
     public function __construct()
@@ -354,7 +364,11 @@ class Purchase_order_receipts extends CI_Controller
             $id = $_POST['id'];
             if ($id === "0") {
                 $this->db->select('a.po_no, a.receipt_no, a.receipt_date, a.awb_no, a.awb_date, a.bc_kind, a.bc_document, a.bc_aju, a.bc_date, b.number as supplier_id, a.lotno, 
-                b.name as supplier_name, a.total_receipt as qty_receipt, a.total_label as qty_label, a.status, e.number as category_code, f.division, a.print, g.number as invoice_no');
+                b.name as supplier_name, a.total_receipt as qty_receipt, a.total_label as qty_label, e.number as category_code, f.division, a.print, g.number as invoice_no');
+                $this->db->select("(CASE 
+                    WHEN g.por_no IS NOT NULL AND LEFT(g.invoice_no, 6) != 'INVTMP' THEN 2 
+                    ELSE a.status
+                END) as status", FALSE);
                 $this->db->from('(SELECT *, sum(qty_label) as total_label, sum(qty_receipt) as total_receipt FROM purchase_order_receipts GROUP BY receipt_no ORDER BY status asc) a');
                 $this->db->join('suppliers b', 'a.supplier_id = b.id');
                 $this->db->join('purchase_orders c', 'a.po_no = c.po_no and a.item_rm_id = c.item_rm_id');
@@ -389,7 +403,13 @@ class Purchase_order_receipts extends CI_Controller
                     $this->db->where('f.division', $filter_division);
                 }
                 if ($filter_status_invoice !== "") { 
+                    if ($filter_status_invoice == 2) {
+                        // status 2 Temporary: Ada di invoice DAN bukan awalan INVTMP
+                        $this->db->where('g.por_no IS NOT NULL');
+                        $this->db->where("LEFT(g.invoice_no, 6) !=", "INVTMP");
+                    } else {
                     $this->db->where('a.status', $filter_status_invoice);
+                    }
                 }
                 if ($filter_lotno !== "") { 
                     $this->db->where('a.lotno', $filter_lotno);

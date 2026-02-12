@@ -3,6 +3,8 @@ defined('BASEPATH') or exit('No direct script access allowed');
 
 class Crud extends CI_Model
 {
+    protected $default;
+
     function __construct()
     {
         parent::__construct();

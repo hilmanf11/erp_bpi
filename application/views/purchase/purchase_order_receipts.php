@@ -6,7 +6,7 @@
             <th rowspan="2" data-options="field:'category_code',width:100,halign:'center',align:'center'">Category</th>
             <th rowspan="2" data-options="field:'division',width:100,halign:'center',align:'center'">Division</th>
             <th rowspan="2" data-options="field:'total_scan',width:80,align:'center',formatter:statusformat,styler:statusStyle">Status<br>POR</th>
-            <th rowspan="2" data-options="field:'status',width:80,align:'center',formatter:statusformatFinance,styler:statusStyleFinance">Status<br>Invoice</th>
+            <th rowspan="2" data-options="field:'status',width:80,align:'center',formatter:statusformatInvoice,styler:statusStyleInvoice">Status<br>Invoice</th>
             <th rowspan="2" data-options="field:'print',width:80,align:'center',formatter:statusformatFinance,styler:statusStyleFinance">Status<br>Print GRN</th>
             <th rowspan="2" data-options="field:'po_no',width:150,halign:'center'">PO No</th>
             <th rowspan="2" data-options="field:'receipt_date',width:100,halign:'center'">Receipt Date</th>
@@ -94,6 +94,7 @@
                         <option value="">Choose All</option>
                         <option value="0">OPEN</option>
                         <option value="1">CLOSE</option>
+                        <option value="2">TEMPORARY</option>
                     </select>
                 </div>
                 <div class="fitem">
@@ -1144,6 +1145,27 @@
             } else {
                 return 'background-color:#C8FFCC;';
             }
+        }
+    }
+
+    function statusformatInvoice(value, row) {
+        switch (parseInt(value)) {
+            case 1:
+                return "<b style='color:red;'>CLOSED</b>";
+            case 2:
+                return "<b style='color:green;'>TEMPORARY</b>";
+            default:
+                return "<b style='color:green;'>OPEN</b>";
+        }
+    }
+    function statusStyleInvoice(value, row, index) {
+        switch (parseInt(value)) {
+            case 1:
+                return 'background-color:#FFC8C8;';
+            case 2:
+                return 'background-color:#C8FFCC;';
+            default:
+                return 'background-color:#C8FFCC;';
         }
     }
 
