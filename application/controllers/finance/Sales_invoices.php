@@ -4212,11 +4212,14 @@ class Sales_invoices extends CI_Controller
             a.total, 
             a.total_discount, 
             a.taxes, 
+            a.currency,
+            g.middle as rate,
             f.description as uom,
             e.hs_code')
             ->from('sales_invoices a')
             ->join('item_fg e', 'a.item_fg_id = e.id')
             ->join('uom f', 'e.uom = f.name', 'left')
+            ->join('exchange_rates g', "(a.trans_date BETWEEN g.start_date AND g.end_date) AND (g.currency_from = a.currency)", 'left')
             ->where_in('a.number', $si_nos)
             ->order_by('a.number', 'ASC')
             ->get()->result_array();
@@ -4345,11 +4348,21 @@ class Sales_invoices extends CI_Controller
                     $product_no= htmlspecialchars($detail['product_no']);
                     $item_name = htmlspecialchars($detail['item_name']);
 
+                    // Gunakan Local Currency = Price * Rate (Bu Nina)
+                    $currency = $detail['currency'] ?? '';
+                    if ($currency != "IDR") {
+                        $rate = $detail['rate'] ?? 0;
+                    } else {
+                        $rate = 1;
+                    }
+
                     // Perbarui tag dengan nilai yang sudah digabungkan
                     $itemNode->addChild('Opt', 'A');
                     $itemNode->addChild('Code', $hs_code);
                     $itemNode->addChild('Name', $product_no . '/' . $item_name . $hs_code_item);
                     $itemNode->addChild('Unit', $uom);
+
+                    /** -- existing tanpa rate
                     $itemNode->addChild('Price', round($detail['price'], 2));
                     $itemNode->addChild('Qty', round($detail['qty'], 2)); // Gunakan qty yang sudah dijumlahkan
                     $itemNode->addChild('TotalDiscount', round($detail['total_discount'], 2));
@@ -4357,6 +4370,15 @@ class Sales_invoices extends CI_Controller
                     $itemNode->addChild('OtherTaxBase', round(11/12 * ($detail['total'] - $detail['total_discount']), 2)); // Gunakan total yang sudah dijumlahkan
                     $itemNode->addChild('VATRate', round($detail['taxes'], 2));
                     $itemNode->addChild('VAT', round((11/12 * ($detail['total'] - $detail['total_discount'])) * ($detail['taxes']/100), 2));
+                    // -- versi baru dikalikan dgn rate */
+                    $itemNode->addChild('Price', round($detail['price'] * $rate, 2));
+                    $itemNode->addChild('Qty', round($detail['qty'], 2));
+                    $itemNode->addChild('TotalDiscount', round($detail['total_discount'] * $rate, 2));
+                    $itemNode->addChild('TaxBase', round(($detail['total'] - $detail['total_discount']) * $rate, 2));
+                    $itemNode->addChild('OtherTaxBase', round(11/12 * ($detail['total'] - $detail['total_discount']) * $rate, 2));
+                    $itemNode->addChild('VATRate', round($detail['taxes'], 2));
+                    $itemNode->addChild('VAT', round((11/12 * ($detail['total'] - $detail['total_discount'])) * ($detail['taxes']/100) * $rate, 2));
+
                     $itemNode->addChild('STLGRate', 0);
                     $itemNode->addChild('STLG', 0);
                 }
