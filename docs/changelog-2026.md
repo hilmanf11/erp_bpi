@@ -366,3 +366,6 @@ Optimation for Create with Race Condition ([c36c3c13](https://github.com/hilmanf
 
 ### [2026-02-11]
 - **Rizki Puji**: Fixing: create update AP Payments Pak Hilman (backup dummy) ([445c7a79](https://github.com/hilmanf11/erp_bpi/commit/445c7a79ae6a1a2b1559cd81a6692c090b03f479))
+
+### [2026-02-12]
+- **Rizki Puji**: Fixing: revert style Summary and header journal on Detail Sales Invoices ([9d7e61c4](https://github.com/hilmanf11/erp_bpi/commit/9d7e61c414c1cafc69eadfcf71484c1551884e5a))
