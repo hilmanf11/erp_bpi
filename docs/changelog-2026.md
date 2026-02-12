@@ -372,3 +372,6 @@ Optimation for Create with Race Condition ([c36c3c13](https://github.com/hilmanf
 
 ### [2026-02-12]
 - **Rizki Puji**: Fixing: bug NaN local currency journal and rate validation Sales Invoices ([12a53275](https://github.com/hilmanf11/erp_bpi/commit/12a53275ee8e6e78808cb3f947dd606bfab95a9a))
+
+### [2026-02-12]
+- **Rizki Puji**: Fixing: eCoretax show local currency with rate on Sales Invoices ([344e7ad9](https://github.com/hilmanf11/erp_bpi/commit/344e7ad9f9c40669e99a8747d94c1c620e962e58))
