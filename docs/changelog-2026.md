@@ -369,3 +369,6 @@ Optimation for Create with Race Condition ([c36c3c13](https://github.com/hilmanf
 
 ### [2026-02-12]
 - **Rizki Puji**: Fixing: revert style Summary and header journal on Detail Sales Invoices ([9d7e61c4](https://github.com/hilmanf11/erp_bpi/commit/9d7e61c414c1cafc69eadfcf71484c1551884e5a))
+
+### [2026-02-12]
+- **Rizki Puji**: Fixing: bug NaN local currency journal and rate validation Sales Invoices ([12a53275](https://github.com/hilmanf11/erp_bpi/commit/12a53275ee8e6e78808cb3f947dd606bfab95a9a))
