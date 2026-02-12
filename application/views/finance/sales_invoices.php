@@ -435,53 +435,54 @@
                 </div>
             </div>
 
-            <div style="flex: 35%;">
-                <fieldset style="border:1px solid #d0d0d0; padding: 15px; border-radius:4px;">
-                    <legend><b>Summary</b></legend>
-                    <div class="fitem" style="margin-bottom: 5px;">
-                        <b style="width:40%; display:inline-block;">TOTAL INVOICE</b>
-                        <input style="width:55%;" id="d_total_invoice" name="d_total_invoice" readonly class="easyui-numberbox" data-options="precision:2,groupSeparator:','">
-                    </div>
-                    <div class="fitem" style="margin-bottom: 5px;">
-                        <b style="width:40%; display:inline-block;">DISC %</b>
-                        <input style="width:15%;" id="d_disc_pr" name="d_disc_pr" value="0" class="easyui-numberbox" data-options="precision:2">
-                        <input style="width:38%; text-align:right;" id="d_discount" name="d_discount" class="easyui-numberbox" value="0" data-options="precision:2,groupSeparator:','">
-                    </div>
-                    <div class="fitem" style="margin-bottom: 5px;">
-                        <b style="width:40%; display:inline-block;">SUB TOTAL</b>
-                        <input style="width:55%;" id="d_total_sub" name="d_total_sub" readonly class="easyui-numberbox" data-options="precision:2,groupSeparator:','">
-                    </div>
-                    <div class="fitem" style="margin-bottom: 5px;">
-                        <b style="width:40%; display:inline-block;">DP %</b>
-                        <input style="width:15%;" id="d_disc_dp" name="d_disc_dp" value="0" class="easyui-numberbox" data-options="precision:2">
-                        <input style="width:38%; text-align:right;" id="d_down_payment" name="d_down_payment" class="easyui-numberbox" value="0" data-options="precision:2,groupSeparator:','">
-                    </div>
-                    <div class="fitem" style="margin-bottom: 5px;">
-                        <b style="width:40%; display:inline-block;">DPP</b>
-                        <input style="width:55%;" id="d_total_dpp" name="d_total_dpp" disabled class="easyui-numberbox" data-options="precision:2,groupSeparator:','">
-                    </div>
-                    <div class="fitem" style="margin-bottom: 5px;">
-                        <b style="width:40%; display:inline-block;">VAT</b>
-                        <input style="width:43%;" id="d_total_vat" name="d_total_vat" class="easyui-numberbox">
-                        <input id="d_check_vat" name="d_check_vat" class="easyui-checkbox" data-options="{onChange:checkVAT}">
-                    </div>
-                    <div class="fitem" style="margin-bottom: 5px;">
-                        <b style="width:40%; display:inline-block;">PPH</b>
-                        <input style="width:25%;" id="d_total_pph" name="d_total_pph" disabled class="easyui-numberbox" data-options="precision:2,groupSeparator:','">
-                        <select style="width:28%;" id="d_pph" name="d_pph" class="easyui-combobox" data-options="prompt: 'PPH'" panelHeight="auto">
-                            <option value="0">NON</option>
-                            <option value="2">PPH 23</option>
-                            <option value="10">PPH 4(2)</option>
-                        </select>
-                    </div>
-                    <hr>
-                    <div class="fitem" style="margin-bottom: 5px;">
-                        <b style="width:40%; display:inline-block;">GRAND TOTAL</b>
-                        <input style="width:55%;" id="d_total_grand" name="d_total_grand" readonly required class="easyui-numberbox" data-options="precision:2,groupSeparator:','">
-                    </div>
-                    <div class="fitem">
-                        <b style="width:40%; display:inline-block;">CONVERT IDR</b>
-                        <input style="width:55%;" id="d_total_local" name="d_total_local" disabled class="easyui-numberbox" data-options="precision:2,groupSeparator:','">
+            <div style="width: 35%; display: grid; grid-template-columns: auto auto auto; grid-gap: 5px; display: flex; float: right; margin-top:20px;">
+                <fieldset style="width:100%; border:1px solid #d0d0d0; margin-bottom: 10px; border-radius:4px;">
+                    <div style="width: 100%; float: left;">
+                        <div class="fitem">
+                            <b style="width:35%; display:inline-block;">TOTAL INVOICE</b>
+                            <input style="width:60%;" id="d_total_invoice" name="d_total_invoice" readonly class="easyui-numberbox" data-options="precision:2,groupSeparator:','">
+                        </div>
+                        <div class="fitem">
+                            <b style="width:35%; display:inline-block;">DISC %</b>
+                            <input style="width:10%;" id="d_disc_pr" name="d_disc_pr" value="0" class="easyui-numberbox" data-options="precision:2">
+                            <input style="width:50%; text-align:right;" id="d_discount" name="d_discount" class="easyui-numberbox" value="0" data-options="precision:2,groupSeparator:','">
+                        </div>
+                        <div class="fitem">
+                            <b style="width:35%; display:inline-block;">SUB TOTAL</b>
+                            <input style="width:60%;" id="d_total_sub" name="d_total_sub" readonly class="easyui-numberbox" data-options="precision:2,groupSeparator:','">
+                        </div>
+                        <div class="fitem">
+                            <b style="width:35%; display:inline-block;">DOWN PAYMENT %</b>
+                            <input style="width:10%;" id="d_disc_dp" name="d_disc_dp" value="0" class="easyui-numberbox" data-options="precision:2">
+                            <input style="width:50%; text-align:right;" id="d_down_payment" name="d_down_payment" class="easyui-numberbox" value="0" data-options="precision:2,groupSeparator:','">
+                        </div>
+                        <div class="fitem">
+                            <b style="width:35%; display:inline-block;">DPP</b>
+                            <input style="width:60%;" id="d_total_dpp" name="d_total_dpp" disabled class="easyui-numberbox" data-options="precision:2,groupSeparator:','">
+                        </div>
+                        <div class="fitem">
+                            <b style="width:35%; display:inline-block;">VAT</b>
+                            <input style="width:60%;" id="d_total_vat" name="d_total_vat" readonly class="easyui-numberbox" data-options="precision:2,groupSeparator:','">
+                        </div>
+                        <div class="fitem">
+                            <b style="width:35%; display:inline-block;">PPH</b>
+                            <input style="width:30%;" id="d_total_pph" name="d_total_pph" disabled class="easyui-numberbox" data-options="precision:2,groupSeparator:','">
+                            <select style="width:30%;" id="d_pph" name="d_pph" class="easyui-combobox" data-options="prompt: 'PPH'" panelHeight="auto">
+                                <option value="0">NON PPH</option>
+                                <!-- <option value="5">PPH 21</option> -->
+                                <option value="2">PPH 23</option>
+                                <option value="10">PPH 4(2)</option>
+                                <option value="10.0">Other Income</option>
+                            </select>
+                        </div>
+                        <div class="fitem">
+                            <b style="width:35%; display:inline-block;">GRAND TOTAL</b>
+                            <input style="width:60%;" id="d_total_grand" name="d_total_grand" readonly required class="easyui-numberbox" data-options="precision:2,groupSeparator:','">
+                        </div>
+                        <div class="fitem">
+                            <b style="width:35%; display:inline-block;">CONVERT IDR</b>
+                            <input style="width:60%;" id="d_total_local" name="d_total_local" disabled class="easyui-numberbox" data-options="precision:2,groupSeparator:','">
+                        </div>
                     </div>
                 </fieldset>
             </div>
@@ -2276,15 +2277,16 @@
             url: link,
             singleSelect: true,
             columns: [
+                // BARIS PERTAMA
                 [{
                     field: 'account_number',
-                    width: 130,
+                    width: 100,
                     halign: 'center',
                     title: "Account No",
+                    rowspan: 2,
                     editor: {
                         type: 'combogrid',
                         options: {
-                            readonly: true,
                             url: '<?= base_url('finance/account_coa/reads') ?>',
                             panelWidth: 320,
                             idField: 'account_number',
@@ -2292,17 +2294,10 @@
                             mode: 'remote',
                             fitColumns: true,
                             prompt: 'Choose Account No',
-                            columns: [
-                                [{
-                                    field: 'account_number',
-                                    title: 'Account No',
-                                    width: 100
-                                }, {
-                                    field: 'account_name',
-                                    title: 'Account Name',
-                                    width: 200
-                                }]
-                            ],
+                            columns: [[
+                                {field: 'account_number', title: 'Account No', width: 100},
+                                {field: 'account_name', title: 'Account Name', width: 200}
+                            ]],
                             onSelect: function(value, rows) {
                                 var dg = $('#dgDetailJournal');
                                 var row = dg.datagrid('getSelected');
@@ -2318,80 +2313,61 @@
                     }
                 }, {
                     field: 'account_name',
-                    width: 230,
+                    width: 250,
                     halign: 'center',
                     title: "Account Name",
-                    editor: {
-                        type: 'textbox',
-                        options: {
-                            readonly: true
-                        }
-                    }
+                    rowspan: 2,
+                    editor: { type: 'textbox', options: { readonly: true } }
                 }, {
-                    field: 'debit',
-                    width: 110,
-                    halign: 'center',
-                    title: "Debit",
-                    formatter: numberformat,
-                    editor: {
-                        type: 'numberbox',
-                        options: {
-                            precision: 4,
-                            readonly: true
-                        }
-                    }
+                    title: "Original Currency",
+                    colspan: 2, // Gabung 2 kolom (Debit & Credit)
+                    halign: 'center'
                 }, {
-                    field: 'credit',
-                    width: 110,
-                    halign: 'center',
-                    title: "Credit",
-                    formatter: numberformat,
-                    editor: {
-                        type: 'numberbox',
-                        options: {
-                            precision: 4,
-                            readonly: true
-                        }
-                    }
-                }, {
-                    field: 'local_debit',
-                    width: 110,
-                    halign: 'center',
-                    title: "Local Debit",
-                    formatter: numberformat,
-                    editor: {
-                        type: 'numberbox',
-                        options: {
-                            precision: 4,
-                            readonly: true
-                        }
-                    }
-                }, {
-                    field: 'local_credit',
-                    width: 110,
-                    halign: 'center',
-                    title: "Local Credit",
-                    formatter: numberformat,
-                    editor: {
-                        type: 'numberbox',
-                        options: {
-                            precision: 4,
-                            readonly: true
-                        }
-                    }
+                    title: "Local Currency",
+                    colspan: 2, // Gabung 2 kolom (Local Debit & Local Credit)
+                    halign: 'center'
                 }, {
                     field: 'flag',
                     width: 50,
                     halign: 'center',
                     title: "Order",
-                    editor: {
-                        type: 'numberbox',
-                        options: {
-                            required: true,
-                            readonly: true
-                        }
-                    }
-                }, ],
+                    rowspan: 2,
+                    editor: { type: 'numberbox', options: { required: true } }
+                }],
+                // BARIS KEDUA
+                [{
+                    field: 'debit',
+                    width: 110,
+                    halign: 'center',
+                    align: 'right',
+                    title: "Debit",
+                    formatter: numberformat,
+                    editor: { type: 'numberbox', options: { precision: 4 } }
+                }, {
+                    field: 'credit',
+                    width: 110,
+                    halign: 'center',
+                    align: 'right',
+                    title: "Credit",
+                    formatter: numberformat,
+                    editor: { type: 'numberbox', options: { precision: 4 } }
+                }, {
+                    field: 'local_debit',
+                    width: 110,
+                    halign: 'center',
+                    align: 'right',
+                    title: "Debit",
+                    formatter: numberformat,
+                    editor: { type: 'numberbox', options: { precision: 4 } }
+                }, {
+                    field: 'local_credit',
+                    width: 110,
+                    halign: 'center',
+                    align: 'right',
+                    title: "Credit",
+                    formatter: numberformat,
+                    editor: { type: 'numberbox', options: { precision: 4 } }
+                }]
             ],
             onLoadSuccess: function(data) {
                 // hitung total debit dan credit journal 
