@@ -375,3 +375,6 @@ Optimation for Create with Race Condition ([c36c3c13](https://github.com/hilmanf
 
 ### [2026-02-12]
 - **Rizki Puji**: Fixing: eCoretax show local currency with rate on Sales Invoices ([344e7ad9](https://github.com/hilmanf11/erp_bpi/commit/344e7ad9f9c40669e99a8747d94c1c620e962e58))
+
+### [2026-02-12]
+- **Rizki Puji**: Feature: modifikasi status temporary Purchase Order Receipts added on Purchase Invoices ([3498e6f5](https://github.com/hilmanf11/erp_bpi/commit/3498e6f560d1a5ff705d0ed9e8d9237fbe38f1b8))
