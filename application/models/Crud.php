@@ -123,6 +123,54 @@ class Crud extends CI_Model
         }
     }
 
+    // CREATE BULK DATA
+    function create_batch($table, $values_array)
+    {
+        if ($this->session->username == "") {
+            return ["theme" => "error", "message" => "Session Expired"];
+        }
+
+        $final_data = [];
+        $current_username = $this->session->username;
+        $current_date = date('Y-m-d H:i:s');
+        
+        // Get AutoID
+        $start_id = $this->autoid($table);
+
+        foreach ($values_array as $index => $val) {
+            // Get ID berurutan secara manual dari start_id
+            if (empty($val['id'])) {
+                $new_id = (string)($start_id + $index);
+            } else {
+                $new_id = $val['id'];
+            }
+
+            $data = array_merge($val, [
+                "id"            => $new_id,
+                "created_by"    => $current_username,
+                "created_date"  => $current_date
+            ]);
+
+            $final_data[] = $data;
+        }
+
+        if (!empty($final_data)) {
+            $insert_batch = $this->db->insert_batch($table, $final_data);
+            if ($insert_batch) {
+                $this->logs("Create Batch", json_encode(["total_rows" => count($final_data)]), $table);
+                
+                // Approval ID per baris
+                foreach ($final_data as $row) {
+                    $this->approvals($table, $row['id']);
+                }
+
+                return ["title" => "Good Job", "message" => count($final_data) . " Data Saved Successfully", "theme" => "success"];
+            }
+        }
+
+        return ["theme" => "error", "message" => "Failed to save batch data"];
+    }
+
     function createNotLog($table, $values)
     {
         if ($this->session->username != "") {
