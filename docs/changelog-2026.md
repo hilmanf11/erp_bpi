@@ -381,3 +381,6 @@ Optimation for Create with Race Condition ([c36c3c13](https://github.com/hilmanf
 
 ### [2026-02-12]
 - **Rizki Puji**: Feature: fix get status temporary Purchase Order Receipts added to Purchase Invoices ([6872e1eb](https://github.com/hilmanf11/erp_bpi/commit/6872e1eb7eba4106b94f01cbe6cf612b9ca3874b))
+
+### [2026-02-13]
+- **Rizki Puji**: Perf: fixing Create/Update Bulk data AP Payments and Journals ([58067047](https://github.com/hilmanf11/erp_bpi/commit/58067047b1faa41d62451118e8af96308f3a8604))
