@@ -384,3 +384,6 @@ Optimation for Create with Race Condition ([c36c3c13](https://github.com/hilmanf
 
 ### [2026-02-13]
 - **Rizki Puji**: Perf: fixing Create/Update Bulk data AP Payments and Journals ([58067047](https://github.com/hilmanf11/erp_bpi/commit/58067047b1faa41d62451118e8af96308f3a8604))
+
+### [2026-02-16]
+- **kurniawan**: Update tmp_item_rm.xls ([45b3bd2e](https://github.com/hilmanf11/erp_bpi/commit/45b3bd2e1bd1565e6c718bbd735014fd15362195))
