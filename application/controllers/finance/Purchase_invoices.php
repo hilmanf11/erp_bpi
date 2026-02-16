@@ -164,6 +164,27 @@ class Purchase_invoices extends CI_Controller
             }
         }
 
+        // Account VAT 170.170.00 dan Grand Total 210.110.00 (Bu Nina)
+        if (empty($journals)) {
+            $specialAccounts = ['170.170.00', '210.110.00'];
+            $existingAccNums = array_column($arr, 'account_number');
+            $flag = 1;
+            foreach ($specialAccounts as $accNum) {
+                if (!in_array($accNum, $existingAccNums)) {
+                    $accInfo = $this->db->select('account_number, account_name')->from('account_coa')->where('account_number', $accNum)->get()->row_array();
+                    if ($accInfo) {
+                        $arr[] = [
+                            "account_number" => $accInfo['account_number'],
+                            "account_name"   => $accInfo['account_name'],
+                            "debit"          => 0,
+                            "credit"         => 0,
+                            "flag"           => $flag++,
+                        ];
+                    }
+                }
+            }
+        }
+
         echo json_encode($arr);
     }
 
@@ -271,6 +292,79 @@ class Purchase_invoices extends CI_Controller
     // }
 
     public function calculateJournal()
+    {
+        $journals = json_decode(file_get_contents("json/purchase_invoice_journals.json"), true) ?? [];
+        $jsonDatas = json_decode(file_get_contents("json/purchase_invoices.json"), true) ?? [];
+        
+        // prepare data array
+        $array2 = array(); 
+        $array1 = array();
+
+        if (count($journals) > 0 || count($jsonDatas) > 0) {
+            $flag = 1;
+            $mergedData = array();
+
+            foreach ($jsonDatas as $jsonData) {
+                $account_number = $jsonData["account_number"];
+                $total = $jsonData["total"];
+
+                if (isset($mergedData[$account_number])) {
+                    if ($jsonData['account_type'] == "DEBIT") {
+                        $mergedData[$account_number]["debit"] += $total;
+                    } elseif ($jsonData['account_type'] == "CREDIT") {
+                        $mergedData[$account_number]["credit"] += $total;
+                    }
+                } else {
+                    $mergedData[$account_number] = array(
+                        "account_number" => $account_number,
+                        "account_name"   => $jsonData["account_name"],
+                        "account_type"   => $jsonData["account_type"],
+                        "debit"          => ($jsonData['account_type'] == "DEBIT") ? $total : 0,
+                        "credit"         => ($jsonData['account_type'] == "CREDIT") ? $total : 0,
+                        "flag"           => $flag,
+                    );
+                }
+                $flag++;
+            }
+
+            $array1 = array_values($mergedData);
+
+            foreach ($journals as $journal) {
+                $array2[] = array(
+                    "account_number" => $journal['account_number'],
+                    "account_name"   => $journal['account_name'],
+                    "debit"          => round($journal['debit'] ?? 0, 2),
+                    "credit"         => round($journal['credit'] ?? 0, 2),
+                    "flag"           => $flag,
+                );
+                $flag++;
+            }
+
+            $existingAccountNumbers = array_column($array2, 'account_number');
+            foreach ($array1 as $item1) {
+                if (!in_array($item1['account_number'], $existingAccountNumbers)) {
+                    $array2[] = $item1;
+                }
+            }
+
+            foreach ($array2 as $i => $item2) {
+                foreach ($array1 as $item1) {
+                    if ($item2['account_number'] === $item1['account_number']) {
+                        $array2[$i] = array_merge($item2, $item1);
+                        break;
+                    }
+                }
+            }
+
+            usort($array2, function($a, $b) {
+                return $a['flag'] <=> $b['flag'];
+            });
+        }
+
+        echo json_encode($array2);
+    }
+
+    public function calculateJournal_existing()
     {
         $journals = json_decode(file_get_contents("json/purchase_invoice_journals.json"), true);
         $jsonDatas = json_decode(file_get_contents("json/purchase_invoices.json"), true);
