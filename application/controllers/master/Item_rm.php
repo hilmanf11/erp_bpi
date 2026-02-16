@@ -441,7 +441,8 @@ class Item_rm extends CI_Controller
             $category = $this->crud->read('item_categories', [], ["id" => $data['item_category_id']]);
             $product_family = $this->crud->read('item_familys', [], ["id" => $data['item_family_id']]);
             $product_family_sub = $this->crud->read('item_family_subs', [], ["id" => $data['item_sub_family_id']]);
-
+            $division = $this->crud->read('divisions', [], ["id" => $data['division']]);
+            
             // Validate required data first.
             if (empty($category)) {
                 echo json_encode(["title" => "Not Found", "message" => "Category " . $data['item_category_id'] . " Not Found", "theme" => "error"]);
@@ -449,6 +450,10 @@ class Item_rm extends CI_Controller
             }
             if (empty($product_family)) {
                 echo json_encode(["title" => "Not Found", "message" => "Product Family " . $data['item_family_id'] . " Not Found", "theme" => "error"]);
+                return;
+            }
+            if (empty($division)) {
+                echo json_encode(["title" => "Not Found", "message" => "Division " . $data['division'] . " Not Found", "theme" => "error"]);
                 return;
             }
             if (strtolower($data['action']) !== 'update' && !empty($item_rm)) {
@@ -479,7 +484,7 @@ class Item_rm extends CI_Controller
                 "number" => $data['number'],
                 "name" => $data['name'],
                 "uom" => $data['uom'],
-                "division" => $data['division'],
+                "division" => $division->number,
                 "item_category_id" => $data['item_category_id'],
                 "item_family_id" => $data['item_family_id'],
                 "color" => $data['color'],
@@ -614,46 +619,43 @@ class Item_rm extends CI_Controller
     //PRINT & EXCEL DATA
     public function print($option = "")
     {
-        if ($option == "excel") {
-            $format = date("Ymd");
-            
-            // Atur header untuk file Excel dengan encoding UTF-8
-            header('Content-Type: application/vnd.ms-excel; charset=UTF-8');
-            header("Content-Disposition: attachment; filename=item_rm_$format.xls");
-            
-            // Tambahkan Byte Order Mark (BOM) untuk membantu Excel mengenali encoding
-            // echo "\xEF\xBB\xBF";
-            // echo '<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />';
-        }
-
-        // Config
         $this->db->select('*');
         $this->db->from('config');
         $config = $this->db->get()->row();
 
-        // Ambil semua data dari database
         $this->db->select('a.*, b.name as item_category_name, c.name as item_family_name, d.number as item_sub_family_number');
         $this->db->from('item_rm a');
         $this->db->join('item_categories b', 'a.item_category_id = b.id');
         $this->db->join('item_familys c', 'a.item_family_id = c.id');
-        $this->db->join('item_family_subs d', 'a.item_sub_family_id = d.id','left');
+        $this->db->join('item_family_subs d', 'a.item_sub_family_id = d.id', 'left');
         $this->db->where('a.deleted', 0);
         $this->db->order_by('a.id', 'ASC');
         $records = $this->db->get()->result_array();
 
-        // Lakukan konversi encoding pada setiap string di dalam data
+        if ($option == "excel") {
+            $format = date("Ymd");
+            
+            // Membersihkan buffer agar tidak ada spasi kosong di awal file
+            if (ob_get_level()) ob_end_clean();
+
+            // Header HTTP untuk Excel
+            header('Content-Type: application/vnd.ms-excel; charset=UTF-8');
+            header("Content-Disposition: attachment; filename=item_rm_$format.xls");
+            header("Pragma: no-cache");
+            header("Expires: 0");
+
+            // --- PENTING: MENCETAK BOM UTF-8 AGAR SIMBOL DIAMETER TIDAK CORRUPT DI EXCEL ---
+            echo "\xEF\xBB\xBF";
+        }
+
+        // Pembersihan Data (Handling special characters & non-breaking spaces)
         $encoded_records = [];
         foreach ($records as $record) {
             $encoded_row = [];
             foreach ($record as $key => $value) {
-                // Hanya konversi jika nilainya adalah string
                 if (is_string($value)) {
-                    // Mengubah karakter URL-encoded menjadi spasi biasa
-                    $decoded_value = urldecode($value);
-                    $clean_value = str_replace("\xC2\xA0", " ", $decoded_value);
-                    
-                    // Konversi dari UTF-8 ke ISO-8859-1
-                    $encoded_row[$key] = iconv("UTF-8", "ISO-8859-1//TRANSLIT", $clean_value);
+                    // Mengubah spasi aneh (non-breaking space) menjadi spasi biasa
+                    $encoded_row[$key] = str_replace("\xC2\xA0", " ", $value);
                 } else {
                     $encoded_row[$key] = $value;
                 }
@@ -661,90 +663,93 @@ class Item_rm extends CI_Controller
             $encoded_records[] = $encoded_row;
         }
 
+        // Memulai Output HTML
         $html = '<html><head><title>Print Data</title></head><style>body {font-family: Arial, Helvetica, sans-serif;}#item_rm {border-collapse: collapse;width: 100%;font-size: 12px;}#item_rm td, #item_rm th {border: 1px solid #ddd;padding: 2px;}#item_rm tr:nth-child(even){background-color: #f2f2f2;}#item_rm tr:hover {background-color: #ddd;}#item_rm th {padding-top: 2px;padding-bottom: 2px;text-align: left;color: black;}</style><body>
-            <center>
-                <div style="float: left; font-size: 12px; text-align: left;">
-                    <table style="width: 100%;">
-                        <tr>
-                            <td width="50" style="font-size: 12px; vertical-align: top; text-align: center; vertical-align:jus margin-right:10px;">
-                                <img src="' . $config->favicon . '" width="30">
-                            </td>
-                            <td style="font-size: 14px; text-align: left; margin:2px;">
-                                <b>' . $config->name . '</b>
-                            </td>
-                        </tr>
-                    </table>
-                </div>
-                <div style="float: right; font-size: 12px; text-align: right;">
-                    Print Date ' . date("d M Y H:m:s") . ' <br>
-                    Print By ' . $this->session->username . '  
-                </div>
-                <br><br>
-                <div style="float: centet; font-size: 16px; text-align: center;">
-                    <h3>MASTER ITEM</h3>
-                </div>
-            </center>
+        <center>
+            <div style="float: left; font-size: 12px; text-align: left;">
+                <table style="width: 100%;">
+                    <tr>
+                        <td width="50" style="font-size: 12px; vertical-align: top; text-align: center; vertical-align:jus margin-right:10px;">
+                            <img src="' . $config->favicon . '" width="30">
+                        </td>
+                        <td style="font-size: 14px; text-align: left; margin:2px;">
+                            <b>' . $config->name . '</b>
+                        </td>
+                    </tr>
+                </table>
+            </div>
+            <div style="float: right; font-size: 12px; text-align: right;">
+                Print Date ' . date("d M Y H:m:s") . ' <br>
+                Print By ' . $this->session->username . '  
+            </div>
+            <br><br>
+            <div style="float: centet; font-size: 16px; text-align: center;">
+                <h3>MASTER ITEM</h3>
+            </div>
+        </center>
             
             <table id="item_rm" border="1">
-                <tr>
-                    <th width="20">No</th>
-                    <th>Product ID</th>
-                    <th>Product No.</th>
-                    <th>Part Name</th>
-                    <th>UOM</th>
-                    <th>Division</th>
-                    <th>Category</th>
-                    <th>Product Family</th>
-                    <th>Color</th>
-                    <th>Product Family Sub</th>
-                    <th>Account No.</th>
-                    <th>Account Name</th>
-                    <th>Kind</th>
-                    <th>Length</th>
-                    <th>Width</th>
-                    <th>Thickness</th>
-                    <th>Diameter</th>
-                    <th>Density</th>
-                    <th>Volume</th>
-                    <th>Weight GR</th>
-                    <th>Weight KG</th>
-                    <th>Description</th>
-                    <th>Supply</th>
-                    <th>Status</th>
-                </tr>';
+                <thead>
+                    <tr>
+                        <th>No</th>
+                        <th>Product ID</th>
+                        <th>Product No.</th>
+                        <th>Part Name</th>
+                        <th>UOM</th>
+                        <th>Division</th>
+                        <th>Category</th>
+                        <th>Product Family</th>
+                        <th>Color</th>
+                        <th>Product Family Sub</th>
+                        <th>Account No.</th>
+                        <th>Account Name</th>
+                        <th>Kind</th>
+                        <th>Length</th>
+                        <th>Width</th>
+                        <th>Thickness</th>
+                        <th>Diameter</th>
+                        <th>Density</th>
+                        <th>Volume</th>
+                        <th>Weight GR</th>
+                        <th>Weight KG</th>
+                        <th>Description</th>
+                        <th>Supply</th>
+                        <th>Status</th>
+                    </tr>
+                </thead>
+                <tbody>';
+                    
+                $no = 1;
+                foreach ($encoded_records as $data) {
+                    $html .= '<tr>';
+                    $html .= '<td align="center">' . $no++ . '</td>';
+                    $html .= '<td>' . $data['id'] . '</td>';
+                    $html .= '<td class="text-format">' . $data['number'] . '</td>';
+                    $html .= '<td class="text-format">' . $data['name'] . '</td>';
+                    $html .= '<td align="center">' . $data['uom'] . '</td>';
+                    $html .= '<td>' . $data['division'] . '</td>';
+                    $html .= '<td>' . $data['item_category_name'] . '</td>';
+                    $html .= '<td>' . $data['item_family_name'] . '</td>';
+                    $html .= '<td>' . $data['color'] . '</td>';
+                    $html .= '<td class="text-format">' . $data['item_sub_family_number'] . '</td>';
+                    $html .= '<td>' . $data['account_number'] . '</td>';
+                    $html .= '<td>' . $data['account_name'] . '</td>';
+                    $html .= '<td>' . $data['kind'] . '</td>';
+                    $html .= '<td>' . $data['length'] . '</td>';
+                    $html .= '<td>' . $data['width'] . '</td>';
+                    $html .= '<td>' . $data['thickness'] . '</td>';
+                    $html .= '<td>' . $data['diameter'] . '</td>';
+                    $html .= '<td>' . $data['density'] . '</td>';
+                    $html .= '<td>' . $data['volume'] . '</td>';
+                    $html .= '<td>' . $data['weight_gr'] . '</td>';
+                    $html .= '<td>' . $data['weight_kg'] . '</td>';
+                    $html .= '<td>' . $data['description'] . '</td>';
+                    $html .= '<td>' . $data['supply'] . '</td>';
+                    $html .= '<td>' . $data['status'] . '</td>';
+                    $html .= '</tr>';
+                }
                 
-        $no = 1;
-        // foreach data yang sudah dikonversi
-        foreach ($encoded_records as $data) {
-            $html .= '<tr>';
-            $html .= '<td>' . $no . '</td>';
-            $html .= '<td>' . $data['id'] . '</td>';
-            $html .= '<td style="mso-number-format:\@;">' . $data['number'] . '</td>';
-            $html .= '<td style="mso-number-format:\@;">' . $data['name'] . '</td>';
-            $html .= '<td>' . $data['uom'] . '</td>';
-            $html .= '<td>' . $data['division'] . '</td>';
-            $html .= '<td>' . $data['item_category_name'] . '</td>';
-            $html .= '<td>' . $data['item_family_name'] . '</td>';
-            $html .= '<td>' . $data['color'] . '</td>';
-            $html .= '<td>' . $data['item_sub_family_number'] . '</td>';
-            $html .= '<td>' . $data['account_number'] . '</td>';
-            $html .= '<td>' . $data['account_name'] . '</td>';
-            $html .= '<td>' . $data['kind'] . '</td>';
-            $html .= '<td>' . $data['length'] . '</td>';
-            $html .= '<td>' . $data['width'] . '</td>';
-            $html .= '<td>' . $data['thickness'] . '</td>';
-            $html .= '<td>' . $data['diameter'] . '</td>';
-            $html .= '<td>' . $data['volume'] . '</td>';
-            $html .= '<td>' . $data['density'] . '</td>';
-            $html .= '<td>' . $data['weight_gr'] . '</td>';
-            $html .= '<td>' . $data['weight_kg'] . '</td>';
-            $html .= '<td>' . $data['description'] . '</td>';
-            $html .= '<td>' . $data['supply'] . '</td>';
-            $html .= '<td>' . $data['status'] . '</td>';
-            $html .= '</tr>';
-            $no++;
-        }
-        $html .= '</table></body></html>';
+        $html .= '</tbody></table></body></html>';
         
         echo $html;
     }
