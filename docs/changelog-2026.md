@@ -390,3 +390,6 @@ Optimation for Create with Race Condition ([c36c3c13](https://github.com/hilmanf
 
 ### [2026-02-16]
 - **kurniawan**: Merge branch 'main' of https://github.com/hilmanf11/erp_bpi ([25d0f353](https://github.com/hilmanf11/erp_bpi/commit/25d0f353d6ffd93ee0d963458c1f3ff8f101520f))
+
+### [2026-02-16]
+- **Rizki Puji**: Fixing: bug array2 Calculate Journal on Purchase Invoices ([5662dd86](https://github.com/hilmanf11/erp_bpi/commit/5662dd86f8fcf912dcb3c223fbdd21b4114bc366))
