@@ -404,3 +404,6 @@ Update lock date ([d6b6ff25](https://github.com/hilmanf11/erp_bpi/commit/d6b6ff2
 
 ### [2026-02-18]
 - **Rizki Puji**: Fixing: bug partial paid and dropdown Purchase Invoice on AP Payments ([d4f83e1d](https://github.com/hilmanf11/erp_bpi/commit/d4f83e1d19aed55613084143cffef3eed9f42030))
+
+### [2026-02-18]
+- **Rizki Puji**: Feature: add controller eCoretax Refference data ([ce1fba35](https://github.com/hilmanf11/erp_bpi/commit/ce1fba35784478721ac2c33325ace89641b9f11b))
