@@ -2077,55 +2077,44 @@
                                                     url: "<?= base_url('finance/journal_postings/number/') ?>" + window.btoa(journalDate),
                                                     dataType: "html",
                                                     success: function(noGL) {
-                                                        console.log("GL No : ", noGL);
-                                                        var nomorGL = noGL;
-                                                        var rowsData = dataPosting.rows;
-                                                        var totalData = dataPosting.total;
-                                                        for (let no = 0; no < rowsData.length; no++) {
-                                                            // console.log(rowsData[no]);
-                                                            $.ajax({
-                                                                type: "post",
-                                                                url: '<?= base_url('finance/journal_postings/create') ?>',
-                                                                data: {
-                                                                    journal_date: journalDate,
-                                                                    modul: modul,
-                                                                    journal_type_id: journal_type_id,
-                                                                    number: nomorGL,
-                                                                    remarks: null,
-                                                                    trans_date: rowsData[no].trans_date,
-                                                                    document_no: rowsData[no].document_no,
-                                                                    invoice_no: rowsData[no].invoice_no,
-                                                                    company_name: rowsData[no].company_name,
-                                                                    account_number: rowsData[no].account_number,
-                                                                    account_name: rowsData[no].account_name,
-                                                                    description: rowsData[no].description,
-                                                                    currency: rowsData[no].currency,
-                                                                    original_debit: rowsData[no].original_debit,
-                                                                    original_credit: rowsData[no].original_credit,
-                                                                    rates: rowsData[no].rates,
-                                                                    local_debit: rowsData[no].local_debit,
-                                                                    local_credit: rowsData[no].local_credit
-                                                                },
-                                                                dataType: "json",
-                                                                success: function(responses) {
-                                                                    if (responses.theme == "success") {
-                                                                        console.log('Success auto-generate Posting Journals #' + no);
-                                                                    } else {
-                                                                        console.log('Failed! auto-generate Posting Journals #' + no);
-                                                                        console.log(responses);
-                                                                    }
+                                                        const payload = {
+                                                            number: noGL,
+                                                            journal_date: journalDate,
+                                                            modul: modul,
+                                                            journal_type_id: journal_type_id,
+                                                            details: dataPosting.rows 
+                                                        };
+
+                                                        $.ajax({
+                                                            type: "POST",
+                                                            url: '<?= base_url('finance/ap_payments/createPosting') ?>',
+                                                            data: JSON.stringify(payload),
+                                                            contentType: "application/json; charset=utf-8",
+                                                            dataType: "json",
+                                                            beforeSend: function() {
+                                                                Swal.fire({
+                                                                    title: 'Processing...',
+                                                                    text: 'Posting ' + payload.details.length + ' rows to General Ledger',
+                                                                    allowOutsideClick: false,
+                                                                    didOpen: () => { Swal.showLoading(); }
+                                                                });
+                                                            },
+                                                            success: function(response) {
+                                                                if (response.status === "success") {
+                                                                    Swal.fire({
+                                                                        title: "Good Job",
+                                                                        title: "Success Generate Posting Journal",
+                                                                        icon: "success",
+                                                                        text: "Data Successfully created to Posting Journal with code: " + nomorGL,
+                                                                        confirmButtonText: 'Done',
+                                                                        allowOutsideClick: false,
+                                                                    }).then(function() {
+                                                                        window.location.reload();
+                                                                    });
+                                                                } else {
+                                                                    Swal.fire("Failed", response.message, "error");
                                                                 }
-                                                            });
-                                                        }
-                                                        Swal.fire({
-                                                            title: "Good Job",
-                                                            title: "Success Generate Posting Journal",
-                                                            icon: "success",
-                                                            text: "Data Successfully created to Posting Journal with code: " + nomorGL,
-                                                            confirmButtonText: 'Done',
-                                                            allowOutsideClick: false,
-                                                        }).then(function() {
-                                                            window.location.reload();
+                                                            }
                                                         });
                                                     }
                                                 });

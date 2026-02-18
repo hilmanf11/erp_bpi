@@ -872,93 +872,99 @@ class Ap_payments extends CI_Controller
     }
 
     // CREATE DATA
+    // (Just Insert Batch without Approvals)
     public function create()
     {
         set_time_limit(300);
 
-        $jsonData = file_get_contents("php://input");
-        $post = json_decode($jsonData, true);
+        $request_body = file_get_contents('php://input');
+        $data = json_decode($request_body, true);
 
-        $header            = isset($post['header']) ? $post['header'] : [];
-        $combinedAp        = isset($post['combinedAp']) ? $post['combinedAp'] : [];
-        $combinedJournals  = isset($post['combinedJournals']) ? $post['combinedJournals'] : [];
-
-        if (empty($header) || (empty($combinedAp) && empty($combinedJournals))) {
-            echo json_encode(["title" => "Error", "message" => "Data incomplete", "theme" => "error"]);
+        if (empty($data)) {
+            echo json_encode(["theme" => "error", "message" => "No data received"]);
             return;
         }
 
+        $header   = $data['header'];
+        $payments = $data['combinedAp'];
+        $journals = $data['combinedJournals'];
+
+        // --- Auto ID AP ---
+        $today = date('Ymd');
+        $last_ap = $this->db->select_max('id')
+                    ->like('id', $today, 'after')
+                    ->get('ap_payments')->row();
+        $id = ($last_ap && $last_ap->id) ? (int) substr($last_ap->id, -6) : 0;
+
         $this->db->trans_start();
-        try {
-            // AP PAYMENTS
-            $newApData = [];
-            foreach ($combinedAp as $ap) {
-                unset($ap['account_name']);
+        
+        // AP Payments
+        $newApData = [];
+        $last_ap = $this->db->select_max('id')->like('id', $today, 'after')->get('ap_payments')->row();
+        $inc_ap = ($last_ap && $last_ap->id) ? (int) substr($last_ap->id, -6) : 0;
 
-                if (!empty($ap['id'])) {
-                    $this->crud->update('ap_payments', ["id" => $ap['id']], $ap);
-                } else {
-                    $newApData[] = $ap;
-                }
+        foreach ($payments as $ap) {
+            unset($ap['account_name'], $ap['trans_date']);
 
-                // Update status Purchase Invoice
-                $status = (isset($ap['balance']) && isset($ap['payment']) && $ap['balance'] == $ap['payment']) ? 1 : 0;
-                $this->db->update('purchase_invoices', ["status" => $status], ["number" => $ap['purchase_invoice']]);
-            }
+            // Logika Update status Purchase Invoice
+            $status = (isset($ap['balance']) && isset($ap['amount_paid']) && (float)$ap['balance'] == (float)$ap['amount_paid']) ? 1 : 0;
+            $this->db->update('purchase_invoices', ["status" => $status], ["number" => $ap['purchase_invoice']]);
 
-            if (!empty($newApData)) {
-                $this->crud->create_batch('ap_payments', $newApData);
-            }
-
-            // JOURNALS
-            if (!empty($combinedJournals)) {
-                $payment_no = $header['payment_no'];
-                
-                // Hapus journals sebelumnya (Cleanup)
-                $this->db->delete('ap_payment_journals', ['payment_no' => $payment_no]);
-                
-                $journal_batch = [];
-                foreach ($combinedJournals as $jIndex => $journal) {
-                    $journal_batch[] = [
-                        "id"             => null,
-                        "payment_no"     => $payment_no,
-                        "account_number" => isset($journal['account_number']) ? $journal['account_number'] : null,
-                        "account_name"   => isset($journal['account_name']) ? $journal['account_name'] : null,
-                        "description"    => isset($journal['description']) ? $journal['description'] : '',
-                        "exchange_rate"  => (float)($journal['exchange_rate'] ?? 1),
-                        "debit"          => (float)($journal['debit'] ?? 0),
-                        "credit"         => (float)($journal['credit'] ?? 0),
-                        "local_debit"    => (float)($journal['local_debit'] ?? 0),
-                        "local_credit"   => (float)($journal['local_credit'] ?? 0),
-                        "flag"           => isset($journal['flag']) ? $journal['flag'] : null,
-                        "created_by"     => $this->session->username,
-                        "created_date"   => date('Y-m-d H:i:s'),
-                    ];
-                }
-
-                if (!empty($journal_batch)) {
-                    // Gunakan insert_batch murni dari CI
-                    $res_jurnal = $this->crud->create_batch('ap_payment_journals', $journal_batch);
-                    
-                    if (!$res_jurnal) {
-                        // Jika gagal, tangkap pesan error database-nya
-                        $db_error = $this->db->error();
-                        throw new Exception("Failed to save Journal! " . $db_error['message']);
-                    }
-                }
-            }
-
-            $this->db->trans_complete();
-
-            if ($this->db->trans_status() === FALSE) {
-                echo json_encode(["title" => "Failed", "message" => "Database Error", "theme" => "error"]);
+            if (!empty($ap['id'])) {
+                // Jika ID ada, lakukan UPDATE
+                $this->db->update('ap_payments', $ap, ["id" => $ap['id']]);
             } else {
-                echo json_encode(["title" => "Good Job", "message" => "Data Saved Successfully!", "theme" => "success"]);
+                // Jika ID kosong, siapkan untuk INSERT BATCH
+                $inc_ap++;
+                $ap['id'] = $today . sprintf("%06d", $inc_ap);
+                $ap['payment_no'] = $header['payment_no'];
+                $newApData[] = $ap;
             }
+        }
 
-        } catch (Exception $e) {
-            $this->db->trans_rollback();
-            echo json_encode(["title" => "Error", "message" => $e->getMessage(), "theme" => "error"]);
+        if (!empty($newApData)) {
+            $this->db->insert_batch('ap_payments', $newApData);
+            $this->crud->logs("Create Batch", json_encode($newApData), 'ap_payments');
+        }
+
+
+        // AP_PAYMENT_JOURNALS
+        $batch_journals = [];
+        $latest_jr = $this->db->select_max('id')->like('id', $today, 'after')->get('ap_payment_journals')->row();
+        $id_journal = ($latest_jr && $latest_jr->id) ? (int) substr($latest_jr->id, -6) : 0;
+
+        // Hapus journals sebelumnya (Cleanup)
+        $this->db->delete('ap_payment_journals', ['payment_no' => $header['payment_no']]);
+
+        foreach ($journals as $j) {
+            $id_journal++;
+            $new_id_jr = $today . sprintf("%06d", $id_journal);
+            
+            $batch_journals[] = [
+                'id'             => $new_id_jr,
+                'payment_no'     => $header['payment_no'],
+                'account_number' => $j['account_number'] ?? null,
+                'account_name'   => $j['account_name'] ?? null,
+                "description"    => $j['description'] ?? null,
+                "exchange_rate"  => (float)($j['exchange_rate'] ?? 1),                
+                "debit"          => (float)($j['debit'] ?? 0),
+                "credit"         => (float)($j['credit'] ?? 0),
+                "local_debit"    => (float)($j['local_debit'] ?? 0),
+                "local_credit"   => (float)($j['local_credit'] ?? 0),
+                'flag'           => $j['flag'] ?? '0',
+                "created_by"     => $this->session->username,
+                "created_date"   => date('Y-m-d H:i:s'),
+            ];
+        }
+        if (!empty($batch_journals)) $this->db->insert_batch('ap_payment_journals', $batch_journals);
+        $this->crud->logs("Create Batch", json_encode($batch_journals), 'ap_payment_journals');
+
+        $this->db->trans_complete();
+
+        if ($this->db->trans_status() === FALSE) {
+            echo json_encode(["theme" => "error", "message" => "Database Error"]);
+        } else {
+            echo json_encode(["theme" => "success", "message" => "Successfully created Payment No: " . $header['payment_no']]);
         }
     }
 
@@ -1015,8 +1021,85 @@ class Ap_payments extends CI_Controller
         file_put_contents('json/ap_payment_journals.json', $jsonData2);
     }
 
+    // Create Journal Posting (Just Insert Batch without Approvals)
+    public function createPosting() 
+    {
+        $request_body = file_get_contents('php://input');
+        $post = json_decode($request_body, true);
+        $numberGL = $post['number'] ?? null;
+        $details = $post['details'] ?? [];
+        if (empty($details) && empty($number)) {
+            echo json_encode(["status" => "error", "message" => "No transactions found"]);
+            return;
+        }
+
+        // --- AUTO-INCREMENT ID ---
+        $today = date('Ymd');
+        $this->db->select_max('number');
+        $this->db->like('number', $today, 'after');
+        $last_query = $this->db->get('journal_postings')->row();
+        if ($last_query && $last_query->number) {
+            $last_increment = (int) substr($last_query->number, -6);
+        } else {
+            $last_increment = 0;
+        }
+        // -----------------------------------
+
+        $batch_data = [];
+        $total_debit = 0;
+        $total_credit = 0;
+
+        foreach ($details as $row) {
+            // Get autoID
+            $last_increment++;
+            $id = $today . sprintf("%06d", $last_increment);
+
+            $batch_data[] = [
+                "id"              => $id, // Nomor otomatis baru
+                "number"          => $numberGL,
+                "journal_date"    => $post['journal_date'],
+                "journal_type_id" => $post['journal_type_id'],
+                "trans_date"      => $row['trans_date'],
+                "document_no"     => $row['document_no'],
+                "invoice_no"      => $row['invoice_no'],
+                "company_name"    => $row['company_name'],
+                "account_number"  => $row['account_number'],
+                "account_name"    => $row['account_name'],
+                "description"     => $row['description'],
+                "currency"        => $row['currency'],
+                "original_debit"  => (float)$row['original_debit'],
+                "original_credit" => (float)$row['original_credit'],
+                "rates"           => (float)$row['rates'],
+                "local_debit"     => (float)$row['local_debit'],
+                "local_credit"    => (float)$row['local_credit'],
+                "modul"           => $post['modul'],
+                "created_date"      => date('Y-m-d H:i:s')
+            ];
+
+            $total_debit += (float)$row['original_debit'];
+            $total_credit += (float)$row['original_credit'];
+        }
+
+        // Validasi Balance
+        if (round($total_debit, 2) !== round($total_credit, 2)) {
+            echo json_encode(["status" => "error", "message" => "Unbalanced Journal!"]);
+            return;
+        }
+
+        $this->db->trans_start();
+        $this->db->insert_batch('journal_postings', $batch_data);
+        $this->crud->logs("Create Batch", json_encode($batch_data), 'journal_postings');
+        $this->db->trans_complete();
+
+        if ($this->db->trans_status() === FALSE) {
+            echo json_encode(["status" => "error", "message" => "Database Error"]);
+        } else {
+            echo json_encode(["status" => "success", "message" => count($batch_data) . " Jurnal berhasil diposting."]);
+        }
+    }
+
     // Create Journal Posting (pak Hilman)
-    public function createPosting()
+    public function createPostingOld()
     {
         $document_no = $this->input->post('payment_no');
 
