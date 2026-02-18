@@ -253,6 +253,7 @@ class Item_receipts_fg extends CI_Controller
                     $this->db->from('new_barcode_fg a');
                     $this->db->join('item_fg b', 'a.item_fg_id = b.id');
                     $this->db->where('a.label_no', $checksheet_label);
+                    $this->db->where('a.label_type !=', 'manual');
                     $this->db->group_by('a.label_no');
 
                     $totalRows = $this->db->count_all_results('', false);
@@ -361,51 +362,112 @@ class Item_receipts_fg extends CI_Controller
     //     }
     // }
 
+    // public function checkPackingDateLocked()
+    // {
+    //     $packing_date = $this->input->post('packing_date');
+    //     $checksheet_number  = $this->input->post('checksheet_number');
+    //     $checksheet_label  = $this->input->post('checksheet_label');
+
+    //     $this->db->order_by('lock_from', 'DESC');
+    //     $lock = $this->db->get('lsb_lock')->row();
+
+    //     if ($lock) {
+    //         // Cek apakah packing_date dalam rentang lock
+    //         if ($packing_date >= $lock->lock_from && $packing_date <= $lock->lock_to) {
+    //             $new_date = date('Y-m-d', strtotime('+1 month', strtotime($lock->lock_from)));
+
+    //             $this->db->update('checksheets', [
+    //                 "packing_date" => $new_date,
+    //                 "remarks" => "Adjust Packing Date"
+    //             ], ["number" => $checksheet_number]);
+
+    //             $this->db->update('new_barcode_fg', [
+    //                 "packing_date" => $new_date,
+    //                 "remarks" => "Adjust Packing Date"
+    //             ], ["label_no" => $checksheet_label]);
+
+    //             $this->db->update('scan_item_receipts_fg', [
+    //                 "packing_date" => $new_date
+    //             ], ["checksheet_label" => $checksheet_label]);
+
+    //             echo json_encode([
+    //                 "status" => true,
+    //                 "message" => "Packing date {$packing_date} adjusted to {$new_date} because period lock {$lock->period}",
+    //                 "new_date" => $new_date
+    //             ]);
+    //         } else {
+    //             // Kalau tidak dalam rentang, biarkan packing_date
+    //             echo json_encode([
+    //                 "status" => false,
+    //                 "message" => "Packing date not in lock period. Date remains the same.",
+    //                 "new_date" => $packing_date
+    //             ]);
+    //         }
+    //     } else {
+    //         echo json_encode([
+    //             "status" => false,
+    //             "message" => "Period Lock not found. Packing date remains the same.",
+    //             "new_date" => $packing_date
+    //         ]);
+    //     }
+    // }
+
     public function checkPackingDateLocked()
     {
         $packing_date = $this->input->post('packing_date');
         $checksheet_number  = $this->input->post('checksheet_number');
-        $checksheet_label  = $this->input->post('checksheet_label');
+        $checksheet_label   = $this->input->post('checksheet_label');
 
-        $this->db->order_by('lock_from', 'DESC');
+        // Ambil data lock yang paling terakhir/terbaru
+        $this->db->order_by('lock_to', 'DESC');
         $lock = $this->db->get('lsb_lock')->row();
 
         if ($lock) {
-            // Cek apakah packing_date dalam rentang lock
-            if ($packing_date >= $lock->lock_from && $packing_date <= $lock->lock_to) {
+            if ($packing_date <= $lock->lock_to) {
+                
                 $new_date = date('Y-m-d', strtotime('+1 month', strtotime($lock->lock_from)));
 
+                $this->db->trans_start();
+
+                // Update Tabel Checksheets
                 $this->db->update('checksheets', [
                     "packing_date" => $new_date,
-                    "remarks" => "Adjust Packing Date"
+                    "remarks"      => "Adjusted from $packing_date because period $lock->period is locked"
                 ], ["number" => $checksheet_number]);
 
+                // Update Tabel Barcode FG (Label)
                 $this->db->update('new_barcode_fg', [
                     "packing_date" => $new_date,
-                    "remarks" => "Adjust Packing Date"
+                    "remarks"      => "Adjusted from $packing_date because period $lock->period is locked"
                 ], ["label_no" => $checksheet_label]);
 
+                // Update Tabel Scan Receipt
                 $this->db->update('scan_item_receipts_fg', [
                     "packing_date" => $new_date
                 ], ["checksheet_label" => $checksheet_label]);
 
-                echo json_encode([
-                    "status" => true,
-                    "message" => "Packing date {$packing_date} adjusted to {$new_date} because period lock {$lock->period}",
-                    "new_date" => $new_date
-                ]);
+                $this->db->trans_complete();
+
+                if ($this->db->trans_status() === FALSE) {
+                    echo json_encode(["status" => false, "message" => "Database Error: Update failed."]);
+                } else {
+                    echo json_encode([
+                        "status" => true,
+                        "message" => "Packing date {$packing_date} adjusted to {$new_date} (Period {$lock->period} Locked)",
+                        "new_date" => $new_date
+                    ]);
+                }
             } else {
-                // Kalau tidak dalam rentang, biarkan packing_date
                 echo json_encode([
-                    "status" => false,
-                    "message" => "Packing date not in lock period. Date remains the same.",
+                    "status" => false, 
+                    "message" => "Date is valid (Current Period).",
                     "new_date" => $packing_date
                 ]);
             }
         } else {
             echo json_encode([
                 "status" => false,
-                "message" => "Period Lock not found. Packing date remains the same.",
+                "message" => "No Lock Period found.",
                 "new_date" => $packing_date
             ]);
         }
