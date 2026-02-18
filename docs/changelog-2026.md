@@ -393,3 +393,6 @@ Optimation for Create with Race Condition ([c36c3c13](https://github.com/hilmanf
 
 ### [2026-02-16]
 - **Rizki Puji**: Fixing: bug array2 Calculate Journal on Purchase Invoices ([5662dd86](https://github.com/hilmanf11/erp_bpi/commit/5662dd86f8fcf912dcb3c223fbdd21b4114bc366))
+
+### [2026-02-18]
+- **Rizki Puji**: Fixing: bug insert batch AP Payments and Auto Posting Journals ([5e64ad08](https://github.com/hilmanf11/erp_bpi/commit/5e64ad08841ab670186bd51238a97f4c59ff6f8d))
