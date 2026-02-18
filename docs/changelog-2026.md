@@ -401,3 +401,6 @@ Optimation for Create with Race Condition ([c36c3c13](https://github.com/hilmanf
 - **kurniawan**: Update Item_receipts_fg.php
 
 Update lock date ([d6b6ff25](https://github.com/hilmanf11/erp_bpi/commit/d6b6ff25990d083bee2788755d38df625954203a))
+
+### [2026-02-18]
+- **Rizki Puji**: Fixing: bug partial paid and dropdown Purchase Invoice on AP Payments ([d4f83e1d](https://github.com/hilmanf11/erp_bpi/commit/d4f83e1d19aed55613084143cffef3eed9f42030))
