@@ -396,3 +396,8 @@ Optimation for Create with Race Condition ([c36c3c13](https://github.com/hilmanf
 
 ### [2026-02-18]
 - **Rizki Puji**: Fixing: bug insert batch AP Payments and Auto Posting Journals ([5e64ad08](https://github.com/hilmanf11/erp_bpi/commit/5e64ad08841ab670186bd51238a97f4c59ff6f8d))
+
+### [2026-02-18]
+- **kurniawan**: Update Item_receipts_fg.php
+
+Update lock date ([d6b6ff25](https://github.com/hilmanf11/erp_bpi/commit/d6b6ff25990d083bee2788755d38df625954203a))
