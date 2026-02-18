@@ -1448,17 +1448,18 @@
     function preview(link = "") {
         var purchase_invoice = $("#purchase_invoice").combogrid('getText');
 
-        if (link == "") {
-            var linked = '<?= base_url('finance/ap_payments/datatablesTemp') ?>?purchase_invoice=' + window.btoa(purchase_invoice);
-        } else {
-            var linked = link;
-        }
+        var targetUrl = (link == "") ? '<?= base_url('finance/ap_payments/datatablesTemp') ?>' : link;
 
         if (purchase_invoice == "") {
             toastr.info('Please select purchase invoice');
         } else {
             var dg = $('#dg2').datagrid({
-                url: linked,
+                url: targetUrl,
+                method: 'get',
+                queryParams: {
+                    purchase_invoice: window.btoa(purchase_invoice),
+                    formMode: (formMode || null),
+                },
                 onBeforeEdit: function(index, row) {
                     row.editing = true;
                     $(this).datagrid('refreshRow', index);
@@ -1471,6 +1472,9 @@
                     row.editing = false;
                     $(this).datagrid('refreshRow', index);
                 },
+                onLoadError: function() {
+                    toastr.error('Failed to load data');
+                }
             });
         }
     }
@@ -3167,7 +3171,13 @@
                 // });
 
                 $("#purchase_invoice").combogrid({
-                    url: '<?= base_url('finance/ap_payments/readInvoiceType?supplier_id=') ?>' + supplier.id + "&payment_type=" + payment_type,
+                    url: '<?= base_url('finance/ap_payments/readInvoiceType') ?>',
+                    method: 'get',
+                    queryParams: {
+                        supplier_id: supplier.id,
+                        payment_type: payment_type,
+                        formMode: (formMode || null),
+                    },
                     panelWidth: 520,
                     idField: 'number',
                     textField: 'number',
@@ -3197,6 +3207,11 @@
                             title: 'Payment Due',
                             width: 100,
                             align: 'left'
+                        }, {
+                            field: 'balance',
+                            title: 'Balance to Pay',
+                            width: 100,
+                            align: 'right'
                         }]
                     ],
                     fitColumns: true, // Menyesuaikan kolom secara otomatis

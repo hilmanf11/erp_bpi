@@ -530,6 +530,36 @@ class Ap_payments extends CI_Controller
 
     public function readInvoiceType()
     {
+        $supplier_id  = $this->input->get('supplier_id');
+        $formMode     = $this->input->get('formMode');
+
+        $this->db->select('a.number, a.journal_type_id, a.trans_date, a.invoice_no, a.due_date');
+        $this->db->select("(SUM(CASE WHEN a.account_type = 'DEBIT' THEN a.total ELSE -a.total END) + a.total_vat - a.total_pph) as total_invoice", FALSE);
+        $this->db->select("IFNULL(pay.total_paid, 0) as total_paid", FALSE);
+        $this->db->from('purchase_invoices a');
+        $this->db->join('(SELECT purchase_invoice, SUM(payment) as total_paid FROM ap_payments GROUP BY purchase_invoice) pay', 'a.number = pay.purchase_invoice', 'LEFT');
+        $this->db->where('a.supplier_id', $supplier_id);
+        $this->db->where('a.status', 0); // Hanya status 0 (Open)
+        $this->db->where('a.deleted', 0);
+        $this->db->group_by('a.number');
+        // Sisa Pembayaran (Partial Paid) Balance: Total Invoice > Total yang sudah dibayar
+        if ($formMode == "add") {
+            $this->db->having('total_invoice > total_paid');
+        }
+        $records = $this->db->get()->result();
+
+        // Tambahkan nomor urut
+        foreach ($records as $key => $record) {
+            $record->no = $key + 1;
+            $record->balance = $record->total_invoice - $record->total_paid;
+        }
+
+        header('Content-Type: application/json');
+        echo json_encode($records);
+    }
+
+    public function readInvoiceType_existing()
+    {
         $supplier_id = $this->input->get('supplier_id');
         $payment_type = $this->input->get('payment_type');
 
@@ -645,7 +675,7 @@ class Ap_payments extends CI_Controller
         echo ""; // if trans_date or bank_code is not choosed
     }
 
-    public function datatablesTemp()
+    public function datatablesTemp1()
     {
         $purchase_invoice = base64_decode($this->input->get('purchase_invoice'));
         $purchase_invoice_ex = explode(",", $purchase_invoice);
@@ -744,6 +774,115 @@ class Ap_payments extends CI_Controller
 
         $arr['rows'] = $obj;
         $arr['total_payment'] = round($total_payment, 2);
+        die(json_encode($arr));
+    }
+
+    public function datatablesTemp()
+    {
+        $purchase_invoice = base64_decode($this->input->get('purchase_invoice'));
+        $purchase_invoice_ex = explode(",", $purchase_invoice);
+        $formMode = $this->input->get('formMode') ?? 'add';
+
+        $this->db->select("number, journal_type_id, invoice_no, currency, trans_date, account_number");
+        $this->db->select("(SUM(CASE WHEN account_type = 'DEBIT' THEN total ELSE -total END) + total_vat - total_pph) as total", FALSE);
+        $this->db->from('purchase_invoices');
+        $this->db->where('deleted', 0);
+        if ($formMode == "add") {
+            $this->db->where('status', 0);
+        }
+        $this->db->where_in('number', $purchase_invoice_ex);
+        $this->db->group_by('number');
+        $this->db->order_by('number', 'asc');
+        $records = $this->db->get()->result_array();
+
+        $obj = [];
+        $total_payment = 0;
+        foreach ($records as $record) {
+            $total_payment += $record['total'];
+            $journal_type_id = $record['journal_type_id'];
+            $number = $record['number'];
+
+            $account_number = $record['account_number'];
+            $account_name   = "";
+
+            // Get Account: Journal Setup -> Invoice Journal (AP) -> COA Default
+            $this->db->select('a.account_number, b.account_name');
+            $this->db->from('journal_setups a');
+            $this->db->join('account_coa b', 'a.account_number = b.account_number', 'LEFT');
+            $this->db->where(['a.journal_type_id' => $journal_type_id, 'a.ap_payment' => 'YES']);
+            $journal_setup = $this->db->get()->row();
+
+            if ($journal_setup) {
+                $account_number = $journal_setup->account_number;
+                $account_name   = $journal_setup->account_name;
+            } else {
+                // Cari dari purchase_invoice_journals (Account Payable)
+                $get_ap = $this->db->select('a.account_number, b.account_name')
+                    ->from('purchase_invoice_journals a')
+                    ->join('account_coa b', 'a.account_number = b.account_number')
+                    ->join('account_group_details c', 'c.id = b.account_group_detail_id')
+                    ->where('a.number', $number)
+                    ->like('c.name', 'Account Payable', 'after')
+                    ->where('b.status', 0)
+                    ->order_by('a.id', 'ASC')
+                    ->get()->row();
+
+                if ($get_ap) {
+                    $account_number = $get_ap->account_number;
+                    $account_name   = $get_ap->account_name;
+                } else {
+                    // Fallback ke COA Default
+                    $coa = $this->db->get_where('account_coa', ['account_number' => $record['account_number']])->row();
+                    $account_name = $coa->account_name ?? "";
+                }
+            }
+
+            // Get Exchange Rate
+            $exchange_rate = 1.00;
+            if ($record['currency'] !== "IDR") {
+                $rate_row = $this->db->get_where('exchange_rates', [
+                    'currency_from' => $record['currency'],
+                    'currency_to'   => 'IDR',
+                    'start_date <=' => $record['trans_date'],
+                    'end_date >='   => $record['trans_date']
+                ])->row();
+                $exchange_rate = $rate_row->middle ?? 0;
+            }
+
+            // Hitung Sisa Pembayaran (Balance)
+            $this->db->select_sum('payment');
+            $this->db->where('purchase_invoice', $number);
+            $ap_payment_row = $this->db->get('ap_payments')->row();
+            $paid = $ap_payment_row->payment ?? 0;
+            
+            $balance = $record['total'] - $paid;
+
+            // Jika Form ADD, hanya tampilkan yang balance > 0. Jika EDIT, tampilkan saja.
+            if ($formMode == 'add' && $balance >= 0) {
+                continue; 
+            }
+
+            $row_data = [
+                "trans_date"       => $record['trans_date'],
+                "purchase_invoice" => $record['number'],
+                "supplier_invoice" => $record['invoice_no'],
+                "currency"         => $record['currency'],
+                "rate"             => $exchange_rate,
+                "amount"           => (float)$record['total'],
+                "balance"          => (float)$balance,
+                "payment"          => (float)$balance,
+                "account_number"   => $account_number,
+                "account_name"     => $account_name,
+                "account_type"     => "DEBIT",
+            ];
+
+            $obj[] = $row_data;
+        }
+
+        $arr['rows'] = $obj;
+        $arr['total_payment'] = round($total_payment, 2);
+
+        header('Content-Type: application/json');
         die(json_encode($arr));
     }
 
