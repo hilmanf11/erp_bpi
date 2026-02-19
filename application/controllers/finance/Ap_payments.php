@@ -857,8 +857,8 @@ class Ap_payments extends CI_Controller
             
             $balance = $record['total'] - $paid;
 
-            // Jika Form ADD, hanya tampilkan yang balance > 0. Jika EDIT, tampilkan saja.
-            if ($formMode == 'add' && $balance >= 0) {
+            // Jika Form ADD, hanya tampilkan yang belum paid
+            if ($formMode == 'add' && $balance <= 0) {
                 continue; 
             }
 
