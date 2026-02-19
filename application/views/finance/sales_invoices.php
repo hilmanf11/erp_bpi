@@ -1012,6 +1012,18 @@
                     onLoadError: function() {
                         console.error("Failed to load faktur code.");
                     },
+                    onChange: function(newValue, oldValue) {
+                        // Trigger reload untuk Keterangan Tambahan dan Cap Fasilitas
+                        if (newValue == '07' || newValue == '08') {
+                            $('#keterangan_tambahan').combogrid('grid').datagrid('reload', {
+                                faktur_kode: newValue
+                            });
+
+                            $('#cap_fasilitas').combogrid('grid').datagrid('reload', {
+                                faktur_kode: newValue
+                            });
+                        }
+                    }
                     // onChange: function(newValue, oldValue) {
                     //     if (newValue !== '07') {
                     //         $('#keterangan_tambahan').combogrid('setValue', 'Tidak Ada').combogrid('options').required = false;
@@ -4581,7 +4593,8 @@
             onChange: function (newValue, oldValue) { calculatePPH(); }
         })
 
-        $('#keterangan_tambahan').combogrid({
+        // -- Existing : Keterangan Tambahan dan Cap Fasilitas
+        $('#keterangan_tambahan_old').combogrid({
             panelWidth: 600,
             idField: 'value',
             textField: 'description',
@@ -4600,7 +4613,7 @@
             editable: false,
         });
 
-        $('#cap_fasilitas').combogrid({
+        $('#cap_fasilitas_old').combogrid({
             panelWidth: 400,
             idField: 'value',
             textField: 'description',
@@ -4617,6 +4630,39 @@
             prompt: "Cap Fasilitas",
             editable: false,
         });
+
+        // Updated REF-Keterangan Tambahan (DJP)
+        $('#keterangan_tambahan').combogrid({
+            panelWidth: 600,
+            idField: 'value',
+            textField: 'description',
+            url: '<?php echo site_url("master/ecoretax_reference/getKeteranganData"); ?>',
+            method: 'get',
+            columns: [[
+                { field: 'value', title: 'Kode', width: 100 },
+                { field: 'description', title: 'Keterangan', width: 480 }
+            ]],
+            fitColumns: true,
+            prompt: "Keterangan Tambahan",
+            editable: false,
+        });
+
+        // Updated REF-CapFasilitas Tambahan (DJP)
+        $('#cap_fasilitas').combogrid({
+            panelWidth: 600,
+            idField: 'value',
+            textField: 'description',
+            url: '<?php echo site_url("master/ecoretax_reference/getCapFasilitasData"); ?>',
+            method: 'get',
+            columns: [[
+                { field: 'value', title: 'Kode', width: 100 },
+                { field: 'description', title: 'Keterangan', width: 480 }
+            ]],
+            fitColumns: true,
+            prompt: "Cap Fasilitas",
+            editable: false,
+        });
+
  
         $('#total_vat').numberbox({
             precision: 2,

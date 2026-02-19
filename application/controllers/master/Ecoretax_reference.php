@@ -25,7 +25,7 @@ class Ecoretax_reference extends CI_Controller
     
     function getKeteranganData() 
     {
-        $faktur_kode = $this->input->post('faktur_kode') ?? null;
+        $faktur_kode = $this->input->get('faktur_kode') ?? null;
         $data = [];
 
         $data_07 = [
@@ -89,7 +89,7 @@ class Ecoretax_reference extends CI_Controller
 
     function getCapFasilitasData() 
     {
-        $faktur_kode = $this->input->post('faktur_kode') ?? null;
+        $faktur_kode = $this->input->get('faktur_kode') ?? null;
         $data = [];
 
         $data_07 = [
@@ -127,7 +127,6 @@ class Ecoretax_reference extends CI_Controller
         ];
 
         $data_08 = [
-            ['value' => '', 'description' => 'Tidak Ada'],
             ['value' => 'TD.01101', 'description' => '1 - PPN Dibebaskan Sesuai PP Nomor 146 Tahun 2000 Sebagaimana Telah Diubah Dengan PP Nomor 38 Tahun 2003'],
             ['value' => 'TD.01102', 'description' => '2 - PPN Dibebaskan Sesuai PP Nomor 12 Tahun 2001 Sebagaimana Telah Beberapa Kali Diubah Terakhir Dengan PP Nomor 31 Tahun 2007'],
             ['value' => 'TD.01103', 'description' => '3 - PPN dibebaskan berdasarkan Peraturan Pemerintah Nomor 28 Tahun 2009'],
