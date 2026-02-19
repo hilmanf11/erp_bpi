@@ -410,3 +410,6 @@ Update lock date ([d6b6ff25](https://github.com/hilmanf11/erp_bpi/commit/d6b6ff2
 
 ### [2026-02-19]
 - **Rizki Puji**: Feature: dropdown cap fasilitas and keterangan ECORETAX on Sales Invoices ([77672cec](https://github.com/hilmanf11/erp_bpi/commit/77672ceccc1c3ab1557627cbd78b77e858a0b262))
+
+### [2026-02-19]
+- **Rizki Puji**: Feature: fix onchange default cap dan keterangan ECORETAX on Sales Invoices ([ef0f48b9](https://github.com/hilmanf11/erp_bpi/commit/ef0f48b9840e8b187b0b0dc9149985356c44f46f))
