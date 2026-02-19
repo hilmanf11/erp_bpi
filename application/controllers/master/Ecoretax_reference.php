@@ -75,12 +75,10 @@ class Ecoretax_reference extends CI_Controller
             ['value' => 'TD.00510', 'description' => '10 - BKP dan JKP tertentu'],
         ];
 
-        if ($faktur_kode === '07') {
-            $data = array_merge($data_07);
-        } elseif ($faktur_kode === '08') {
-            $data = array_merge($data_08);
+        if ($faktur_kode === '08') {
+            $data = $data_08;
         } else {
-            $data = array_merge($data_07, $data_08);
+            $data = $data_07;
         }
 
         header('Content-Type: application/json');
@@ -140,11 +138,14 @@ class Ecoretax_reference extends CI_Controller
         ];
 
         if ($faktur_kode === '07') {
-            $data = array_merge($data_07);
+            $data = $data_07;
         } elseif ($faktur_kode === '08') {
-            $data = array_merge($data_08);
+            $data = $data_08;
         } else {
-            $data = array_merge($data_07, $data_08);
+            // jika selain 07 dan 08, maka TD.01105 ini (Bu Nina)
+            $data = [
+                ['value' => 'TD.01105', 'description' => '5 - (Tidak ada Cap)']
+            ];
         }
 
         header('Content-Type: application/json');

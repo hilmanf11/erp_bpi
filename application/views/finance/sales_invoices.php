@@ -1012,18 +1012,6 @@
                     onLoadError: function() {
                         console.error("Failed to load faktur code.");
                     },
-                    onChange: function(newValue, oldValue) {
-                        // Trigger reload untuk Keterangan Tambahan dan Cap Fasilitas
-                        if (newValue == '07' || newValue == '08') {
-                            $('#keterangan_tambahan').combogrid('grid').datagrid('reload', {
-                                faktur_kode: newValue
-                            });
-
-                            $('#cap_fasilitas').combogrid('grid').datagrid('reload', {
-                                faktur_kode: newValue
-                            });
-                        }
-                    }
                     // onChange: function(newValue, oldValue) {
                     //     if (newValue !== '07') {
                     //         $('#keterangan_tambahan').combogrid('setValue', 'Tidak Ada').combogrid('options').required = false;
@@ -1251,6 +1239,7 @@
             }
         });
 
+        /** -- existing
         $("#faktur_code").combobox({
             onChange: function(newValue, oldValue) {
                 var fp_pengganti = $("#fp_pengganti").textbox('getValue');
@@ -1267,6 +1256,50 @@
                 }
                 $('#keterangan_tambahan').combogrid('resize'); // Perbarui UI agar perubahan terlihat
                 $('#cap_fasilitas').combogrid('resize');
+            }
+        });
+        */
+
+        $("#faktur_code").combobox({
+            onChange: function(newValue, oldValue) {
+                var fp_pengganti = $("#fp_pengganti").textbox('getValue');
+                
+                var kode_trans = newValue + fp_pengganti;
+                $("#kode_trans").textbox('setValue', kode_trans);
+
+                // Trigger reload untuk Keterangan Tambahan dan Cap Fasilitas
+                if (newValue == '07' || newValue == '08') {
+                    $('#keterangan_tambahan').combogrid('grid').datagrid('reload', {
+                        faktur_kode: newValue
+                    });
+
+                    $('#cap_fasilitas').combogrid('grid').datagrid('reload', {
+                        faktur_kode: newValue
+                    });
+                } else {
+                    $('#keterangan_tambahan').combogrid('grid').datagrid('reload', {
+                        faktur_kode: 0
+                    });
+
+                    $('#cap_fasilitas').combogrid('grid').datagrid('reload', {
+                        faktur_kode: 0
+                    });
+                }
+
+                // Set default value
+                if (newValue !== '07' && newValue !== '08') {
+                    $('#keterangan_tambahan').combogrid('setValue', '').combogrid('options').required = false;
+
+                    $('#cap_fasilitas').combogrid('setValue', 'TD.01105'); 
+                    $('#cap_fasilitas').combogrid('setText', '5 - (Tidak ada Cap)');
+                    $('#cap_fasilitas').combogrid('options').required = false;
+                } else {
+                    $('#keterangan_tambahan').combogrid('setValue', '').combogrid('options').required = false;
+                    $('#cap_fasilitas').combogrid('setValue', '').combogrid('options').required = false;
+                }
+                
+                $('#keterangan_tambahan').combogrid('validate');
+                $('#cap_fasilitas').combogrid('validate');
             }
         });
 
@@ -4630,6 +4663,7 @@
             prompt: "Cap Fasilitas",
             editable: false,
         });
+
 
         // Updated REF-Keterangan Tambahan (DJP)
         $('#keterangan_tambahan').combogrid({
