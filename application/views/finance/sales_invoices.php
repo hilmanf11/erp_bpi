@@ -3008,6 +3008,40 @@
                             
                             var kode_trans = newValue + fp_pengganti;
                             $("#kode_trans").textbox('setValue', kode_trans);
+
+                            // Trigger reload untuk Keterangan Tambahan dan Cap Fasilitas
+                            if (newValue == '07' || newValue == '08') {
+                                $('#keterangan_tambahan').combogrid('grid').datagrid('reload', {
+                                    faktur_kode: newValue
+                                });
+
+                                $('#cap_fasilitas').combogrid('grid').datagrid('reload', {
+                                    faktur_kode: newValue
+                                });
+                            } else {
+                                $('#keterangan_tambahan').combogrid('grid').datagrid('reload', {
+                                    faktur_kode: 0
+                                });
+
+                                $('#cap_fasilitas').combogrid('grid').datagrid('reload', {
+                                    faktur_kode: 0
+                                });
+                            }
+
+                            // Set default value
+                            if (newValue !== '07' && newValue !== '08') {
+                                $('#keterangan_tambahan').combogrid('setValue', '').combogrid('options').required = false;
+
+                                $('#cap_fasilitas').combogrid('setValue', 'TD.01105'); 
+                                $('#cap_fasilitas').combogrid('setText', '5 - (Tidak ada Cap)');
+                                $('#cap_fasilitas').combogrid('options').required = false;
+                            } else {
+                                $('#keterangan_tambahan').combogrid('setValue', '').combogrid('options').required = false;
+                                $('#cap_fasilitas').combogrid('setValue', '').combogrid('options').required = false;
+                            }
+
+                            $('#keterangan_tambahan').combogrid('validate');
+                            $('#cap_fasilitas').combogrid('validate');
                         }
                     });
 
@@ -4696,7 +4730,6 @@
             prompt: "Cap Fasilitas",
             editable: false,
         });
-
  
         $('#total_vat').numberbox({
             precision: 2,
