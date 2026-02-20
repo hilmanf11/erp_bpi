@@ -3485,4 +3485,12 @@
             return 'background-color:#FFC8C8;';
         }
     }
+
+    function statusformatInv(value, row) {
+        if (value == 0) {
+            return "<b style='color:green;'>PAYABLE</b>";
+        } else {
+            return "<b style='color:red;'>PAID</b>";
+        }
+    }
 </script>
