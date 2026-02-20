@@ -799,6 +799,7 @@ class Ap_payments extends CI_Controller
 
         $this->db->select("number, journal_type_id, invoice_no, currency, trans_date, account_number");
         $this->db->select("(SUM(CASE WHEN account_type = 'DEBIT' THEN total ELSE -total END) + total_vat - total_pph) as total", FALSE);
+        $this->db->select("status");
         $this->db->from('purchase_invoices');
         $this->db->where('deleted', 0);
         if ($formMode == "add") {
@@ -815,6 +816,7 @@ class Ap_payments extends CI_Controller
             $total_payment += $record['total'];
             $journal_type_id = $record['journal_type_id'];
             $number = $record['number'];
+            $pi_status = $record['status'];
 
             $account_number = $record['account_number'];
             $account_name   = "";
@@ -888,6 +890,7 @@ class Ap_payments extends CI_Controller
                 "account_number"   => $account_number,
                 "account_name"     => $account_name,
                 "account_type"     => "DEBIT",
+                "pi_status"        => $pi_status,
             ];
 
             $obj[] = $row_data;
