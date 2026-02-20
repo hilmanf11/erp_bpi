@@ -527,6 +527,63 @@ class Ap_payments extends CI_Controller
         echo json_encode($arr);
     }
 
+    public function readInvoiceDropdown()
+    {
+        $supplier_id = $this->input->get('supplier_id');
+        $formMode    = $this->input->get('formMode');
+        $payment_no  = $this->input->get('payment_no') ?? "";
+
+        $this->db->select('a.number, a.journal_type_id, a.trans_date, a.invoice_no, a.due_date');
+        $this->db->select("(SUM(CASE WHEN a.account_type = 'DEBIT' THEN a.total ELSE -a.total END) + a.total_vat - a.total_pph) as total_invoice", FALSE);
+        $this->db->select("IFNULL(pay.total_paid, 0) as total_paid", FALSE);
+        
+        if ($formMode == "update" && !empty($payment_no)) {
+            $this->db->select("IFNULL(SUM(this_pay.payment), 0) as current_payment_amount", FALSE);
+        }
+
+        $this->db->from('purchase_invoices a');
+        $this->db->join('(SELECT purchase_invoice, SUM(payment) as total_paid FROM ap_payments GROUP BY purchase_invoice) pay', 'a.number = pay.purchase_invoice', 'LEFT');
+        
+        if ($formMode == "update" && !empty($payment_no)) {
+            $this->db->join('ap_payments this_pay', "a.number = this_pay.purchase_invoice AND this_pay.payment_no = '$payment_no'", 'LEFT');
+        }
+
+        $this->db->where('a.supplier_id', $supplier_id);
+        $this->db->where('a.deleted', 0);
+
+        // Form Update: Tampil yang masih Open (status 0) ATAU yang sudah ada di payment ini
+        if ($formMode == "update" && !empty($payment_no)) {
+            $this->db->group_start();
+                $this->db->where('a.status', 0);
+                $this->db->or_where('this_pay.payment_no', $payment_no);
+            $this->db->group_end();
+            
+            $this->db->group_by('a.number');
+            $this->db->having("(total_invoice > total_paid) OR (current_payment_amount > 0)");
+        } else {
+            // Form Add: Murni hanya yang status 0 dan belum lunas
+            $this->db->where('a.status', 0);
+            $this->db->group_by('a.number');
+            $this->db->having('total_invoice > total_paid');
+        }
+
+        $records = $this->db->get()->result();
+
+        foreach ($records as $key => $record) {
+            $record->no = $key + 1;
+            // Hitung balance sisa
+            $record->balance = $record->total_invoice - $record->total_paid;
+            
+            // Fix balance untuk tampilan Update
+            if ($formMode == "update" && isset($record->current_payment_amount)) {
+                $record->balance += $record->current_payment_amount;
+            }
+        }
+
+        header('Content-Type: application/json');
+        echo json_encode($records);
+    }
+
     // public function readInvoiceType()
     // {
     //     $supplier_id = $this->input->get('supplier_id');
@@ -689,6 +746,7 @@ class Ap_payments extends CI_Controller
         echo ""; // if trans_date or bank_code is not choosed
     }
 
+    // Bug PI tidak tampil dan tanpa PI status
     public function datatablesTemp1()
     {
         $purchase_invoice = base64_decode($this->input->get('purchase_invoice'));
@@ -866,15 +924,31 @@ class Ap_payments extends CI_Controller
             }
 
             // Hitung Sisa Pembayaran (Balance)
-            $this->db->select_sum('payment');
-            $this->db->where('purchase_invoice', $number);
-            $ap_payment_row = $this->db->get('ap_payments')->row();
-            $paid = $ap_payment_row->payment ?? 0;
-            
-            $balance = $record['total'] - $paid;
+            $balance = 0;
+            $showRow = true;
 
-            // Jika Form ADD, hanya tampilkan yang belum paid
-            if ($formMode == 'add' && $balance <= 0) {
+            if ($record['status'] == '0') {
+                // Kondisi PI Belum Lunas show di ADD & UPDATE
+                $this->db->select_sum('payment');
+                $this->db->where('purchase_invoice', $number);
+                $ap_payment_row = $this->db->get('ap_payments')->row();
+                $paid = $ap_payment_row->payment ?? 0;
+                
+                $balance = (float)$record['total'] - (float)$paid;
+
+            } else if ($record['status'] == '1') {
+                // Kondisi PI Sudah Lunas:
+                if ($formMode == 'update') {
+                    // Tampil total real di form UPDATE
+                    $balance = (float)$record['total'];
+                } else {
+                    // Jangan tampil di form ADD
+                    $showRow = false;
+                }
+            }
+
+            // Filter tampilan berdasarkan formMode
+            if (!$showRow || ($formMode == 'add' && $balance <= 0)) {
                 continue; 
             }
 
@@ -1044,13 +1118,8 @@ class Ap_payments extends CI_Controller
         $header   = $data['header'];
         $payments = $data['combinedAp'];
         $journals = $data['combinedJournals'];
-
-        // --- Auto ID AP ---
-        $today = date('Ymd');
-        $last_ap = $this->db->select_max('id')
-                    ->like('id', $today, 'after')
-                    ->get('ap_payments')->row();
-        $id = ($last_ap && $last_ap->id) ? (int) substr($last_ap->id, -6) : 0;
+        $today    = date('Ymd');
+        $formMode = $header['formMode'] ?? 'add';
 
         // Get list account DP
         $account_coa = $this->db->select('account_number')
@@ -1059,16 +1128,30 @@ class Ap_payments extends CI_Controller
         $dp_accounts = array_column($account_coa, 'account_number');
 
         $this->db->trans_start();
-        
+
         // AP Payments
+        $current_payment_ids = [];
         $newApData = [];
         $last_ap = $this->db->select_max('id')->like('id', $today, 'after')->get('ap_payments')->row();
         $inc_ap = ($last_ap && $last_ap->id) ? (int) substr($last_ap->id, -6) : 0;
 
-        foreach ($payments as $ap) {
-            unset($ap['account_name'], $ap['trans_date']);
-            unset($ap['editing']); // hapus field sisa javascript editing table datagrid
+        // Get list PI number untuk update status PI nanti
+        $pi_before = $this->db->select('purchase_invoice')
+                            ->where('payment_no', $header['payment_no'])
+                            ->get('ap_payments')->result_array();
+        $affected_pi_list = array_column($pi_before, 'purchase_invoice');
 
+        foreach ($payments as $ap) {
+            $pi_status_check = $ap['pi_status'] ?? null;
+            $ap_id = $ap['id'] ?? null;
+
+            // Get PI Number
+            $affected_pi_list[] = $ap['purchase_invoice'];
+
+            // Unset field yg tidak ada di database
+            unset($ap['pi_status'], $ap['editing'], $ap['account_name'], $ap['trans_date']);
+
+            // Mapping field dari header
             $ap['supplier_id']     = $header['supplier_id'];
             $ap['journal_type_id'] = $header['journal_type_id'];
             $ap['payment_type']    = $header['payment_type'];
@@ -1079,77 +1162,82 @@ class Ap_payments extends CI_Controller
             $ap['cheque_no']       = $header['cheque_no'] ?? null;
             $ap['rate']            = $header['rate'];
             $ap['note']            = $header['note'] ?? null;
+            $ap['payment_no']      = $header['payment_no'];
 
-            if (!empty($ap['id'])) {
-                // Jika ID ada, lakukan UPDATE
+            if (!empty($ap_id)) {
+                // UPDATE Data existing
                 $ap['updated_by'] = $this->session->username;
                 $ap['updated_date'] = date('Y-m-d H:i:s');
-
-                $this->db->update('ap_payments', $ap, ["id" => $ap['id']]);
-                $this->update_pi_status($ap['purchase_invoice'], $header['payment_no'], $dp_accounts);
-
-                $this->crud->logs("Update", json_encode($ap), 'ap_payments');
+                
+                $this->db->update('ap_payments', $ap, ["id" => $ap_id]);
+                $current_payment_ids[] = $ap_id;
             } else {
-                // Jika ID kosong, siapkan untuk INSERT BATCH
-                $inc_ap++;
-                $ap['id'] = $today . sprintf("%06d", $inc_ap);
-                $ap['payment_no'] = $header['payment_no'];
-                $ap['created_by'] = $this->session->username;
-                $ap['created_date'] = date('Y-m-d H:i:s');
-
-                $newApData[] = $ap;
+                // INSERT Data baru (Hanya jika PI masih Open/0)
+                if ($pi_status_check == 0) {
+                    $inc_ap++;
+                    $ap['id'] = $today . sprintf("%06d", $inc_ap);
+                    $ap['created_by'] = $this->session->username;
+                    $ap['created_date'] = date('Y-m-d H:i:s');
+                    
+                    $newApData[] = $ap;
+                    $current_payment_ids[] = $ap['id'];
+                }
             }
         }
 
+        // Hapus baris yang dibuang user di UI
+        if ($formMode == 'update') {
+            $this->db->where('payment_no', $header['payment_no']);
+            if (!empty($current_payment_ids)) {
+                $this->db->where_not_in('id', $current_payment_ids);
+            }
+            $this->db->delete('ap_payments');
+        }
+
+        // Insert data baru (Batch)
         if (!empty($newApData)) {
             $this->db->insert_batch('ap_payments', $newApData);
-            $this->crud->logs("Create Batch", json_encode($newApData), 'ap_payments');
-
-            // Update status Purchase Invoice
-            $unique_pi = array_unique(array_column($newApData, 'purchase_invoice'));
-            foreach ($unique_pi as $pi_number) {
-                $this->update_pi_status($pi_number, $header['payment_no'], $dp_accounts);
-            }
         }
 
-
-        // AP_PAYMENT_JOURNALS
+        // --- PROSES JURNAL (REPLACE) ---
+        $this->db->delete('ap_payment_journals', ['payment_no' => $header['payment_no']]);
+        
         $batch_journals = [];
         $latest_jr = $this->db->select_max('id')->like('id', $today, 'after')->get('ap_payment_journals')->row();
         $id_journal = ($latest_jr && $latest_jr->id) ? (int) substr($latest_jr->id, -6) : 0;
 
-        // Hapus journals sebelumnya (Cleanup)
-        $this->db->delete('ap_payment_journals', ['payment_no' => $header['payment_no']]);
-
         foreach ($journals as $j) {
             $id_journal++;
-            $new_id_jr = $today . sprintf("%06d", $id_journal);
-            
             $batch_journals[] = [
-                'id'             => $new_id_jr,
+                'id'             => $today . sprintf("%06d", $id_journal),
                 'payment_no'     => $header['payment_no'],
                 'account_number' => $j['account_number'] ?? null,
                 'account_name'   => $j['account_name'] ?? null,
-                "description"    => $j['description'] ?? null,
-                "exchange_rate"  => (float)($j['exchange_rate'] ?? 1),                
-                "debit"          => (float)($j['debit'] ?? 0),
-                "credit"         => (float)($j['credit'] ?? 0),
-                "local_debit"    => (float)($j['local_debit'] ?? 0),
-                "local_credit"   => (float)($j['local_credit'] ?? 0),
+                'description'    => $j['description'] ?? null,
+                'exchange_rate'  => (float)($j['exchange_rate'] ?? 1),                
+                'debit'          => (float)($j['debit'] ?? 0),
+                'credit'         => (float)($j['credit'] ?? 0),
+                'local_debit'    => (float)($j['local_debit'] ?? 0),
+                'local_credit'   => (float)($j['local_credit'] ?? 0),
                 'flag'           => $j['flag'] ?? '0',
-                "created_by"     => $this->session->username,
-                "created_date"   => date('Y-m-d H:i:s'),
+                'created_by'     => $this->session->username,
+                'created_date'   => date('Y-m-d H:i:s'),
             ];
         }
         if (!empty($batch_journals)) $this->db->insert_batch('ap_payment_journals', $batch_journals);
-        $this->crud->logs("Create Batch", json_encode($batch_journals), 'ap_payment_journals');
+
+        // --- UPDATE AFFECTED PI NUMBER ---
+        $unique_pi = array_unique($affected_pi_list);
+        foreach ($unique_pi as $pi_number) {
+            $this->update_pi_status($pi_number, $header['payment_no'], $dp_accounts);
+        }
 
         $this->db->trans_complete();
 
         if ($this->db->trans_status() === FALSE) {
-            echo json_encode(["theme" => "error", "message" => "Database Error"]);
+            echo json_encode(["theme" => "error", "message" => "Database Transaction Failed"]);
         } else {
-            echo json_encode(["theme" => "success", "message" => "Successfully created Payment No: " . $header['payment_no']]);
+            echo json_encode(["theme" => "success", "message" => "Successfully processed Payment: " . $header['payment_no']]);
         }
     }
 
@@ -1157,8 +1245,8 @@ class Ap_payments extends CI_Controller
     private function update_pi_status($pi_number, $payment_no, $dp_accounts = []) 
     {
         $sql = "SELECT 
-                    (SUM(CASE WHEN account_type = 'DEBIT' THEN total ELSE -total END) + total_vat - total_pph) as total_bill,
-                    (SELECT IFNULL(SUM(payment), 0) FROM ap_payments WHERE purchase_invoice = ?) as total_paid
+                    ROUND((SUM(CASE WHEN account_type = 'DEBIT' THEN total ELSE -total END) + total_vat - total_pph), 2) as total_bill,
+                    (SELECT ROUND(IFNULL(SUM(payment), 0), 2) FROM ap_payments WHERE purchase_invoice = ?) as total_paid
                 FROM purchase_invoices 
                 WHERE number = ? 
                 GROUP BY number";
@@ -1166,23 +1254,22 @@ class Ap_payments extends CI_Controller
         $query = $this->db->query($sql, [$pi_number, $pi_number])->row();
 
         if ($query) {
-            $total_bill = round((float)$query->total_bill, 2);
-            $total_paid = round((float)$query->total_paid, 2);
+            $total_bill = (float)$query->total_bill;
+            $total_paid = (float)$query->total_paid;
 
             // Status PI: 1 jika Lunas, 0 jika belum atau partial
             $new_status = ($total_paid >= $total_bill) ? 1 : 0;
             $this->db->update('purchase_invoices', ['status' => $new_status], ['number' => $pi_number]);
 
             // Status DP
-            $status_dp = 0;
             if (!empty($dp_accounts)) {
                 $this->db->where('payment_no', $payment_no);
                 $this->db->where_in('account_number', $dp_accounts);
                 $count = $this->db->count_all_results('ap_payments');
 
                 $status_dp = ($count > 0) ? 1 : 0;
+                $this->db->update('ap_payments', ['status_dp' => $status_dp], ['payment_no' => $payment_no]);
             }
-            $this->db->update('ap_payments', ['status_dp' => $status_dp], ['payment_no' => $payment_no]);
         }
     }
 

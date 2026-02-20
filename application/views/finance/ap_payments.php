@@ -433,7 +433,19 @@
                             prompt: 'Choose Debit/Credit',
                             panelHeight: 'auto'
                         }}">Debit/Credit</th>
-                    <th data-options="field:'pi_status', width:100, align:'center', formatter:statusformatInv, hidden:true, editor:{type:'textbox', options:{readonly:true}}">Invoice Status</th>
+                        <th data-options="field:'pi_status', width:100, align:'center', hidden:true,
+                            formatter:statusformatInv, 
+                            editor:{
+                            type:'combobox',
+                            options:{
+                                readonly:true,
+                                data:[
+                                    {value:'0', text:'Payable'},
+                                    {value:'1', text:'Paid'}
+                                ],
+                                panelHeight:'auto',
+                                editable:false
+                            }}">Invoice Status</th>
                 </tr>
             </thead>
         </table>
@@ -1129,8 +1141,14 @@
                             //         $("#journal_type").combobox('setValue', row.journal_type);
                             //     },
                             // });
+                            // Dropdown Purchase Invoice change Form Mode to Update
+                            $('#purchase_invoice').combogrid('grid').datagrid('load', {
+                                supplier_id: row.supplier_id,
+                                payment_no: row.payment_no,
+                                formMode: 'update'
+                            });
                             
-                            $("#purchase_invoice").combogrid({
+                            $("#purchase_invoice_existing_update").combogrid({
                                 url: '<?= base_url('finance/ap_payments/readInvoicesUpdate/') ?>' + window.btoa(supplier.id),
                                 panelWidth: 250,
                                 idField: 'purchase_invoice',
@@ -3173,7 +3191,7 @@
                 //     }
                 // });
 
-                $("#purchase_invoice").combogrid({
+                $("#purchase_invoice_existing").combogrid({
                     url: '<?= base_url('finance/ap_payments/readInvoiceType') ?>',
                     method: 'get',
                     queryParams: {
@@ -3230,6 +3248,118 @@
                                 $("#journal_type").combobox('clear');
                             }
 
+                        }
+                    }
+                });
+
+                // --- DROPDOWN PURCHASE INVOICE NO. FOR CREATE AND UPDATE ---
+                var isCheckLock = false;
+                $("#purchase_invoice").combogrid({
+                    url: '<?= base_url("finance/ap_payments/readInvoiceDropdown") ?>',
+                    method: 'get',
+                    queryParams: {
+                        supplier_id: supplier.id,
+                        payment_type: payment_type,
+                        payment_no: ($("#payment_no").textbox('getValue') || ""),
+                        formMode: (typeof formMode !== 'undefined' ? formMode : 'add'),
+                    },
+                    panelWidth: 550,
+                    multiple: true,
+                    separator: ',', // Pemisah multiple dengan koma tanpa spasi
+                    idField: 'number',
+                    textField: 'number',
+                    mode: 'remote',
+                    multiple: true,
+                    prompt: "Choose Purchase Invoice No",
+                    fitColumns: true,
+                    selectOnCheck: true,
+                    checkOnSelect: true,
+                    columns: [[
+                        { field: 'ck', checkbox: true },
+                        { field: 'no', title: 'No', width: 40 },
+                        { field: 'number', title: 'Purchase Invoice No', width: 150, align: 'left' },
+                        { field: 'trans_date', title: 'PI Date', width: 100, align: 'left' },
+                        { field: 'due_date', title: 'Payment Due', width: 100, align: 'left' },
+                        { field: 'balance', title: 'Balance to Pay', width: 100, align: 'right', 
+                            formatter: function(value) {
+                                return value ? parseFloat(value).toLocaleString('id-ID') : 0;
+                            } 
+                        }
+                    ]],
+                    onLoadSuccess: function(data) {
+                        isLock = true; 
+
+                        // Jika formMode adalah 'add', tidak perlu checklist dari row selected.
+                        if (typeof formMode !== 'undefined' && formMode === 'update') 
+                        {
+                            var currentRow = (typeof row !== 'undefined' && row) ? row : $('#dg').datagrid('getSelected');
+                            if (currentRow && currentRow.purchase_invoices) {
+                                let selectedPurchaseInvoices = currentRow.purchase_invoices
+                                                                .split(',')
+                                                                .map(note => note.trim())
+                                                                .filter(note => note !== '');
+
+                                let grid = $('#purchase_invoice').combogrid('grid'); 
+                                
+                                if (grid) { 
+                                    const rowsData = data.rows || data;  
+                                    
+                                    for (let i = 0; i < rowsData.length; i++) { 
+                                        let currentData = rowsData[i].number; 
+                                        
+                                        if (selectedPurchaseInvoices.includes(currentData)) {
+                                            grid.datagrid('checkRow', i);
+                                        }
+                                    }
+                                    
+                                    $('#purchase_invoice').combogrid('setValues', selectedPurchaseInvoices);
+                                }
+                            }
+                        } else {
+                            console.log("Form Mode Add: Dropdown loaded with empty selection.");
+                        }
+
+                        setTimeout(function() { isLock = false; }, 500);
+                    },
+                    onCheck: function(index, rowData) {
+                        if (isCheckLock) return; // Proteksi Anti-Loop
+
+                        if (rowData.journal_type_id != null) {
+                            $("#journal_type").combobox('setValue', rowData.journal_type_id);
+                        } else {
+                            if (typeof formMode !== 'undefined' && formMode !== 'update') {
+                                toastr.info("The journal type on the purchase invoice is still empty");
+                                $("#journal_type").combobox('clear');
+                            }
+                        }
+                    },
+                    onUncheck: function(index, rowData) {
+                        if (isCheckLock) return; // Proteksi Anti-Loop
+
+                        let uncheckedPI = String(rowData.number).trim();
+                        var dg2 = $('#dg2');
+                        var rowsInDg2 = dg2.datagrid('getRows');
+                        let foundAndRemoved = false;
+
+                        // Iterasi terbalik untuk menghapus baris di dg2
+                        for (let i = rowsInDg2.length - 1; i >= 0; i--) {
+                            if (String(rowsInDg2[i].purchase_invoice).trim() === uncheckedPI) {
+                                dg2.datagrid('deleteRow', i);
+                                foundAndRemoved = true;
+                            }
+                        }
+
+                        if (foundAndRemoved) {
+                            $.messager.confirm('Confirm', 'Are you sure want to remove invoice ' + uncheckedPI + '?', function(r) {
+                                if (r) {
+                                    $.messager.alert("Warning", "<b>Please click Preview Data and Add To Journal again before Save All</b>", 'warning');
+                                } else {
+                                    // Jika user batal, checklist kembali baris tersebut (Gunakan lock)
+                                    isCheckLock = true;
+                                    $('#purchase_invoice').combogrid('grid').datagrid('checkRow', index);
+                                    setTimeout(function() { isCheckLock = false; }, 100);
+                                }
+                            });
                         }
                     }
                 });
