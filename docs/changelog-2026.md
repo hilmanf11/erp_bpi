@@ -430,3 +430,6 @@ Update lock date ([d6b6ff25](https://github.com/hilmanf11/erp_bpi/commit/d6b6ff2
 - **kurniawan**: Update Transaction RM
 
 add Specification ([d1a2cbe9](https://github.com/hilmanf11/erp_bpi/commit/d1a2cbe9b2a4ecd65f8cc103792d6af4d547b923))
+
+### [2026-02-20]
+- **Rizki Puji**: Fixing: AP Payments add PI status on List Invoice datagrid dg2 ([5dc09af8](https://github.com/hilmanf11/erp_bpi/commit/5dc09af840155aef01950199073faf96b1d7aa44))
