@@ -425,3 +425,8 @@ Update lock date ([d6b6ff25](https://github.com/hilmanf11/erp_bpi/commit/d6b6ff2
 
 ### [2026-02-20]
 - **Rizki Puji**: Fixing: Report Inventory WIP Standard Actual refer to Progress WIP ([9dd8748d](https://github.com/hilmanf11/erp_bpi/commit/9dd8748d17f9e36d675f2db57c6d624d6e89a9e0))
+
+### [2026-02-20]
+- **kurniawan**: Update Transaction RM
+
+add Specification ([d1a2cbe9](https://github.com/hilmanf11/erp_bpi/commit/d1a2cbe9b2a4ecd65f8cc103792d6af4d547b923))
