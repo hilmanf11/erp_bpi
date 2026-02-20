@@ -422,3 +422,6 @@ Update lock date ([d6b6ff25](https://github.com/hilmanf11/erp_bpi/commit/d6b6ff2
 
 ### [2026-02-20]
 - **Rizki Puji**: Fixing: bug create Posting and create or update AP Payments ([4afdd745](https://github.com/hilmanf11/erp_bpi/commit/4afdd7457bf1aba0ca9da4c0d7f96fe3068aa274))
+
+### [2026-02-20]
+- **Rizki Puji**: Fixing: Report Inventory WIP Standard Actual refer to Progress WIP ([9dd8748d](https://github.com/hilmanf11/erp_bpi/commit/9dd8748d17f9e36d675f2db57c6d624d6e89a9e0))
