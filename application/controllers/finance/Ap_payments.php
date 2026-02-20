@@ -1035,6 +1035,12 @@ class Ap_payments extends CI_Controller
                     ->get('ap_payments')->row();
         $id = ($last_ap && $last_ap->id) ? (int) substr($last_ap->id, -6) : 0;
 
+        // Get list account DP
+        $account_coa = $this->db->select('account_number')
+                        ->get_where('account_coa', ["account_group_detail_id" => "20240524000009"])
+                        ->result_array();
+        $dp_accounts = array_column($account_coa, 'account_number');
+
         $this->db->trans_start();
         
         // AP Payments
@@ -1044,19 +1050,36 @@ class Ap_payments extends CI_Controller
 
         foreach ($payments as $ap) {
             unset($ap['account_name'], $ap['trans_date']);
+            unset($ap['editing']); // hapus field sisa javascript editing table datagrid
 
-            // Logika Update status Purchase Invoice
-            $status = (isset($ap['balance']) && isset($ap['amount_paid']) && (float)$ap['balance'] == (float)$ap['amount_paid']) ? 1 : 0;
-            $this->db->update('purchase_invoices', ["status" => $status], ["number" => $ap['purchase_invoice']]);
+            $ap['supplier_id']     = $header['supplier_id'];
+            $ap['journal_type_id'] = $header['journal_type_id'];
+            $ap['payment_type']    = $header['payment_type'];
+            $ap['payment_date']    = $header['payment_date'];
+            $ap['payment_by']      = $header['payment_by'];
+            $ap['bank_account']    = $header['bank_account'];
+            $ap['total_payment']   = $header['total_payment'];
+            $ap['cheque_no']       = $header['cheque_no'] ?? null;
+            $ap['rate']            = $header['rate'];
+            $ap['note']            = $header['note'] ?? null;
 
             if (!empty($ap['id'])) {
                 // Jika ID ada, lakukan UPDATE
+                $ap['updated_by'] = $this->session->username;
+                $ap['updated_date'] = date('Y-m-d H:i:s');
+
                 $this->db->update('ap_payments', $ap, ["id" => $ap['id']]);
+                $this->update_pi_status($ap['purchase_invoice'], $header['payment_no'], $dp_accounts);
+
+                $this->crud->logs("Update", json_encode($ap), 'ap_payments');
             } else {
                 // Jika ID kosong, siapkan untuk INSERT BATCH
                 $inc_ap++;
                 $ap['id'] = $today . sprintf("%06d", $inc_ap);
                 $ap['payment_no'] = $header['payment_no'];
+                $ap['created_by'] = $this->session->username;
+                $ap['created_date'] = date('Y-m-d H:i:s');
+
                 $newApData[] = $ap;
             }
         }
@@ -1064,6 +1087,12 @@ class Ap_payments extends CI_Controller
         if (!empty($newApData)) {
             $this->db->insert_batch('ap_payments', $newApData);
             $this->crud->logs("Create Batch", json_encode($newApData), 'ap_payments');
+
+            // Update status Purchase Invoice
+            $unique_pi = array_unique(array_column($newApData, 'purchase_invoice'));
+            foreach ($unique_pi as $pi_number) {
+                $this->update_pi_status($pi_number, $header['payment_no'], $dp_accounts);
+            }
         }
 
 
@@ -1104,6 +1133,39 @@ class Ap_payments extends CI_Controller
             echo json_encode(["theme" => "error", "message" => "Database Error"]);
         } else {
             echo json_encode(["theme" => "success", "message" => "Successfully created Payment No: " . $header['payment_no']]);
+        }
+    }
+
+    // Set Status PI
+    private function update_pi_status($pi_number, $payment_no, $dp_accounts = []) 
+    {
+        $sql = "SELECT 
+                    (SUM(CASE WHEN account_type = 'DEBIT' THEN total ELSE -total END) + total_vat - total_pph) as total_bill,
+                    (SELECT IFNULL(SUM(payment), 0) FROM ap_payments WHERE purchase_invoice = ?) as total_paid
+                FROM purchase_invoices 
+                WHERE number = ? 
+                GROUP BY number";
+        
+        $query = $this->db->query($sql, [$pi_number, $pi_number])->row();
+
+        if ($query) {
+            $total_bill = round((float)$query->total_bill, 2);
+            $total_paid = round((float)$query->total_paid, 2);
+
+            // Status PI: 1 jika Lunas, 0 jika belum atau partial
+            $new_status = ($total_paid >= $total_bill) ? 1 : 0;
+            $this->db->update('purchase_invoices', ['status' => $new_status], ['number' => $pi_number]);
+
+            // Status DP
+            $status_dp = 0;
+            if (!empty($dp_accounts)) {
+                $this->db->where('payment_no', $payment_no);
+                $this->db->where_in('account_number', $dp_accounts);
+                $count = $this->db->count_all_results('ap_payments');
+
+                $status_dp = ($count > 0) ? 1 : 0;
+            }
+            $this->db->update('ap_payments', ['status_dp' => $status_dp], ['payment_no' => $payment_no]);
         }
     }
 
@@ -1167,22 +1229,18 @@ class Ap_payments extends CI_Controller
         $post = json_decode($request_body, true);
         $numberGL = $post['number'] ?? null;
         $details = $post['details'] ?? [];
-        if (empty($details) && empty($number)) {
-            echo json_encode(["status" => "error", "message" => "No transactions found"]);
+        if (empty($details) && empty($numberGL)) {
+            echo json_encode(["status" => "error", "message" => "No AP transactions found", "theme" => "error"]);
             return;
         }
 
         // --- AUTO-INCREMENT ID ---
         $today = date('Ymd');
-        $this->db->select_max('number');
-        $this->db->like('number', $today, 'after');
+        $this->db->select_max('id');
+        $this->db->like('id', $today, 'after');
         $last_query = $this->db->get('journal_postings')->row();
-        if ($last_query && $last_query->number) {
-            $last_increment = (int) substr($last_query->number, -6);
-        } else {
-            $last_increment = 0;
-        }
-        // -----------------------------------
+        // Casting ke int agar increment berjalan benar
+        $last_increment = ($last_query && $last_query->id) ? (int) substr($last_query->id, -6) : 0;
 
         $batch_data = [];
         $total_debit = 0;
@@ -1193,8 +1251,11 @@ class Ap_payments extends CI_Controller
             $last_increment++;
             $id = $today . sprintf("%06d", $last_increment);
 
+            $debit = (float)($row['original_debit'] ?? 0);
+            $credit = (float)($row['original_credit'] ?? 0);
+
             $batch_data[] = [
-                "id"              => $id, // Nomor otomatis baru
+                "id"              => $id, 
                 "number"          => $numberGL,
                 "journal_date"    => $post['journal_date'],
                 "journal_type_id" => $post['journal_type_id'],
@@ -1206,34 +1267,35 @@ class Ap_payments extends CI_Controller
                 "account_name"    => $row['account_name'],
                 "description"     => $row['description'],
                 "currency"        => $row['currency'],
-                "original_debit"  => (float)$row['original_debit'],
-                "original_credit" => (float)$row['original_credit'],
-                "rates"           => (float)$row['rates'],
-                "local_debit"     => (float)$row['local_debit'],
-                "local_credit"    => (float)$row['local_credit'],
+                "original_debit"  => $debit,
+                "original_credit" => $credit,
+                "rates"           => (float)($row['rates'] ?? 1),
+                "local_debit"     => (float)($row['local_debit'] ?? 0),
+                "local_credit"    => (float)($row['local_credit'] ?? 0),
                 "modul"           => $post['modul'],
-                "created_date"      => date('Y-m-d H:i:s')
+                "created_date"    => date('Y-m-d H:i:s'),
+                "created_by"      => $this->session->username
             ];
 
-            $total_debit += (float)$row['original_debit'];
-            $total_credit += (float)$row['original_credit'];
+            $total_debit += $debit;
+            $total_credit += $credit;
         }
 
-        // Validasi Balance
-        if (round($total_debit, 2) !== round($total_credit, 2)) {
-            echo json_encode(["status" => "error", "message" => "Unbalanced Journal!"]);
+        // Validasi Balance dengan toleransi selisih kecil (floating point issue)
+        if (abs(round($total_debit, 2) - round($total_credit, 2)) > 0.01) {
+            echo json_encode(["status" => "error", "message" => "Unbalanced Journal! Debit: $total_debit | Credit: $total_credit"]);
             return;
         }
 
         $this->db->trans_start();
         $this->db->insert_batch('journal_postings', $batch_data);
-        $this->crud->logs("Create Batch", json_encode($batch_data), 'journal_postings');
+        $this->crud->logs("Create Batch Posting", $numberGL, 'journal_postings');
         $this->db->trans_complete();
 
         if ($this->db->trans_status() === FALSE) {
-            echo json_encode(["status" => "error", "message" => "Database Error"]);
+            echo json_encode(["status" => "error", "message" => "Database Transaction Failed"]);
         } else {
-            echo json_encode(["status" => "success", "message" => count($batch_data) . " Jurnal berhasil diposting."]);
+            echo json_encode(["status" => "success", "message" => "Data successfully posted with code: " . $numberGL]);
         }
     }
 

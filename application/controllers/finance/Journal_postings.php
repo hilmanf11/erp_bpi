@@ -953,6 +953,8 @@ class Journal_postings extends CI_Controller
             $data = array();
             $gainLossData = null;
 
+            $checkCurrency = $journals[0]['currency'];
+
             foreach ($journals as $journal) {
                 $number = $journal['payment_no'];
                 $account_number = $journal['account_number'];
@@ -999,7 +1001,7 @@ class Journal_postings extends CI_Controller
             }
 
             // Gain (Loss) Sales Asset. 810.150.00 . Foreign Exchange A/P 
-            if ($journal['currency'] !== "IDR") {
+            if ($checkCurrency !== "IDR") {
                 if ($grand_local_debit !== $grand_local_credit) {
                     $difference = $grand_local_debit - $grand_local_credit;
                     $gainLossDebit = 0;

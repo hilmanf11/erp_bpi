@@ -2011,11 +2011,13 @@
                     var headerData = {
                         payment_no: $("#payment_no").textbox('getValue'),
                         payment_date: $("#payment_date").datebox('getValue'),
+                        payment_by: $("#payment_by").combobox('getValue'),
                         supplier_id: supplier_id,
                         payment_type: $("#payment_type").combobox('getValue'),
                         bank_account: $("#bank_account").combogrid('getValue'),
                         journal_type_id: $("#journal_type").combobox('getValue'),
                         total_payment: $("#total_payment").numberbox('getValue'),
+                        cheque_no: $("#cheque_no").textbox('getValue'),
                         rate: $("#rate").numberbox('getValue'),
                         note: $("#note").textbox('getValue')
                     };
@@ -2109,7 +2111,7 @@
                                                                         title: "Good Job",
                                                                         title: "Success Generate Posting Journal",
                                                                         icon: "success",
-                                                                        text: "Data Successfully created to Posting Journal with code: " + nomorGL,
+                                                                        text: response.message,
                                                                         confirmButtonText: 'Done',
                                                                         allowOutsideClick: false,
                                                                     }).then(function() {
