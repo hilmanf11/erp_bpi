@@ -40,7 +40,7 @@
                     <option value="DETAIL">DETAIL</option>
                 </select>
             </div>
-            <div class="fitem">
+            <div class="fitem" hidden>
                 <span style="width:35%; display:inline-block;">Workorder</span>
                 <input style="width:60%;" id="filter_workorder" class="easyui-combobox">
             </div>
@@ -160,6 +160,18 @@
                 $(e.data.target).combobox('clear').combobox('textbox').focus();
             }
         }],
+    });
+
+    $('#filter_display').combobox({
+        panelHeight: 'auto',
+        prompt: 'Choose Display',
+        onChange: function (newValue, oldValue) {
+            if (newValue === 'DETAIL') {
+                $('#filter_workorder').combobox('disable'); 
+            } else {
+                $('#filter_workorder').combobox('enable');
+            }
+        }
     });
 
     //Format Datepicker

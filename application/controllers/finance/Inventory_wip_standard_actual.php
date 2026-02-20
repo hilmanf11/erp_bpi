@@ -278,7 +278,7 @@ class Inventory_wip_standard_actual extends CI_Controller
         if ($option == "excel") {
             $format  = date("Ymd");
             header("Content-type: application/vnd-ms-excel");
-            header("Content-Disposition: attachment; filename=progress_wip_$format.xls");
+            header("Content-Disposition: attachment; filename=inventory_wip_standard_actual_$format.xls");
         }
         $filter_from = $this->input->get('filter_from');
         $filter_to   = $this->input->get('filter_to');
@@ -353,10 +353,20 @@ class Inventory_wip_standard_actual extends CI_Controller
             }
         }
 
-        $query_main = "
-                        select a.id,
+        // mengambil 'price' (standard price) dari standard_price_fg
+        $query_standard_price = "SELECT item_fg_id, currency, price 
+            FROM standard_price_fg 
+            WHERE '$filter_from' >= `start_date` AND '$filter_to' <= `end_date` 
+            GROUP BY item_fg_id";
+
+        $query_main = "SELECT a.id,
                         a.number,
                         a.name, 
+                        a.uom,
+                        a.type,
+                        b.number as division,
+                        COALESCE(sp.price, 0) as std_price,
+                        sp.currency AS standard_currency,
                         COALESCE(b.qty_wo,0) as qty_wo,
                         COALESCE(i.begin_balance,0) as begin_balance,
                         COALESCE(c.qty_actual,0) as qty_actual,
@@ -370,8 +380,11 @@ class Inventory_wip_standard_actual extends CI_Controller
                         COALESCE(g.qty_in_checksheet,0) + COALESCE(gb.initial_in,0) + COALESCE(gc.qty_in_wip_receipt,0) as qty_rfg,
                         COALESCE(h.qty_rfg_jasa,0) as rfg_jasa,
                         COALESCE(k.qty_adj_out,0) as qty_adj_out,
-                        COALESCE((COALESCE(i.begin_balance,0)) + COALESCE(c.qty_actual,0) + COALESCE(f.qty_subcont_jasa,0) +COALESCE(j.qty_adj_in,0) +COALESCE(c2.qty_wip,0) - COALESCE(ng_map.qty_ng,0) - COALESCE(g.qty_in_checksheet,0) - COALESCE(gb.initial_in,0) - COALESCE(gc.qty_in_wip_receipt,0) - COALESCE(h.qty_rfg_jasa,0)- COALESCE(k.qty_adj_out,0) - COALESCE(outmap.qty_output, 0), 0) as ending_balance
+                        COALESCE(k2.qty_ng_wip,0) as qty_ng_wip,
+                        COALESCE((COALESCE(i.begin_balance,0)) + COALESCE(c.qty_actual,0) + COALESCE(f.qty_subcont_jasa,0) +COALESCE(j.qty_adj_in,0) +COALESCE(c2.qty_wip,0) - COALESCE(ng_map.qty_ng,0) - COALESCE(g.qty_in_checksheet,0) - COALESCE(gb.initial_in,0) - COALESCE(gc.qty_in_wip_receipt,0) - COALESCE(h.qty_rfg_jasa,0)- COALESCE(k.qty_adj_out,0) - COALESCE(k2.qty_ng_wip,0) - COALESCE(outmap.qty_output, 0), 0) as ending_balance
                         FROM item_fg a
+                        LEFT JOIN divisions b ON a.division_id = b.id
+                        LEFT JOIN ($query_standard_price) sp ON a.id = sp.item_fg_id
                         LEFT JOIN (
                                     select aa.item_fg_id,sum(aa.qty_wo) as qty_wo FROM (
                                             select distinct item_fg_id, workorder, period, qty_wo FROM  supply_sheets where request_date between '$filter_from' AND '$filter_to' 
@@ -409,7 +422,7 @@ class Inventory_wip_standard_actual extends CI_Controller
 
                         LEFT JOIN (
                                     select aa.item_fg_id,sum(aa.qty_product) as qty_ng FROM (
-                                            select distinct document,item_fg_id, qty_product FROM  item_ng where trans_date between '$filter_from' AND '$filter_to' AND shift like '%$filter_shift%' AND created_by != 'PRD01'
+                                            select distinct document,item_fg_id, qty_product FROM  item_ng where trans_date between '$filter_from' AND '$filter_to' AND shift like '%$filter_shift%' AND kind LIKE 'Ng Process Production'
                                     ) aa group by aa.item_fg_id
                         ) d on a.id = d.item_fg_id
                         LEFT JOIN (
@@ -425,7 +438,7 @@ class Inventory_wip_standard_actual extends CI_Controller
                                     FROM item_ng 
                                     WHERE trans_date BETWEEN '$filter_from' AND '$filter_to'
                                     AND shift LIKE '%$filter_shift%'
-                                    AND created_by != 'PRD01'
+                                    AND kind LIKE 'Ng Process Production'
                                 ) aa 
                                 GROUP BY aa.item_fg_id
                             ) d
@@ -502,8 +515,14 @@ class Inventory_wip_standard_actual extends CI_Controller
                                     GROUP BY a.item_fg_id
                         ) k on a.id = k.item_fg_id
                         LEFT JOIN (
+                                    select a.item_fg_id,sum(a.qty) as qty_ng_wip 
+                                    FROM wip_adjustment_fg a
+                                    where a.request_date between '$filter_from' AND '$filter_to' and a.transaction_type='NG WIP'
+                                    GROUP BY a.item_fg_id
+                        ) k2 on a.id = k2.item_fg_id
+                        LEFT JOIN (
                                     SELECT a.id,
-                                        COALESCE(e.qty_balance_wip, 0) + COALESCE(c.qty_actual, 0) + COALESCE(c2.qty_wip, 0) + COALESCE(f.qty_subcont_jasa, 0) + COALESCE(j.qty_adj_in, 0) - COALESCE(ng_map.qty_ng,0) - COALESCE(g.qty_in_checksheet, 0) - COALESCE(gb.initial_in, 0) - COALESCE(gc.qty_in_wip_receipt, 0) - COALESCE(h.qty_rfg_jasa, 0) - COALESCE(k.qty_adj_out, 0) - COALESCE(outmap.qty_output, 0) AS begin_balance
+                                        COALESCE(e.qty_balance_wip, 0) + COALESCE(c.qty_actual, 0) + COALESCE(c2.qty_wip, 0) + COALESCE(f.qty_subcont_jasa, 0) + COALESCE(j.qty_adj_in, 0) - COALESCE(ng_map.qty_ng,0) - COALESCE(g.qty_in_checksheet, 0) - COALESCE(gb.initial_in, 0) - COALESCE(gc.qty_in_wip_receipt, 0) - COALESCE(h.qty_rfg_jasa, 0) - COALESCE(k.qty_adj_out, 0) - COALESCE(k2.qty_ng_wip, 0) - COALESCE(outmap.qty_output, 0) AS begin_balance
                                     FROM item_fg a
                                     -- qty_balance_wip pada 2025-04-30 (cutoff)
                                     LEFT JOIN (
@@ -598,7 +617,7 @@ class Inventory_wip_standard_actual extends CI_Controller
                                                 FROM item_ng 
                                                 WHERE trans_date >= '2025-05-01' AND trans_date < '$filter_from'
                                                 AND shift LIKE '%$filter_shift%'
-                                                AND created_by != 'PRD01'
+                                                AND kind LIKE 'Ng Process Production'
                                             ) aa 
                                             GROUP BY aa.item_fg_id
                                         ) d
@@ -662,6 +681,15 @@ class Inventory_wip_standard_actual extends CI_Controller
                                         AND transaction_type = 'ADJ OUT'
                                         GROUP BY item_fg_id
                                     ) k ON a.id = k.item_fg_id
+
+                                    LEFT JOIN (
+                                        SELECT item_fg_id, SUM(qty) AS qty_ng_wip
+                                        FROM wip_adjustment_fg
+                                        WHERE request_date >= '2025-05-01'
+                                        AND request_date < '$filter_from'
+                                        AND transaction_type = 'NG WIP'
+                                        GROUP BY item_fg_id
+                                    ) k2 ON a.id = k2.item_fg_id
                                 ) i ON a.id = i.id
                         WHERE a.type != 'RM'
                         AND a.status = 0
@@ -689,7 +717,7 @@ class Inventory_wip_standard_actual extends CI_Controller
                             </td>
                             <td style="font-size: 14px; text-align: left; margin:2px;">
                                 <b>' . $config->name . '</b><br>
-                                <small>'.$config->description.'</small>
+                                <small>' . $config->description . '</small>
                             </td>
                         </tr>
                     </table>
@@ -704,1094 +732,320 @@ class Inventory_wip_standard_actual extends CI_Controller
             </center>
             <br>';
 
+        // Build Table Header
         $html .= '<table id="customers" border="1" style="font-size: 11px;">
-                <tr>
-                    <th rowspan="2" width="20">No</th>
-                    <th rowspan="2" colspan="3">Product No</th>
-                    <th rowspan="2" colspan="2">Product Name</th>
-                    <th rowspan="2" colspan="2">Total WO Qty</th>
-                    <th rowspan="2">Begin Balance</th>
-                    <th colspan="2">Actual Production</th>
-                    <th rowspan="2">NG Process</th>
-                    <th rowspan="2">Total Production</th>
-                    <th rowspan="2">SubCont Jasa</th>
-                    <th rowspan="2">ADJ IN</th>
-                    <th rowspan="2">NG ASSY</th>
-                    <th rowspan="2">OUTPUT ASSY</th>
-                    <th rowspan="2">RFG</th>
-                    <th rowspan="2">RFG SubCont Jasa</th>
-                    <th rowspan="2">ADJ OUT</th>
-                    <th rowspan="2">Ending Balance</th>
+            <thead>
+                <tr style="background-color: #eee;">
+                    <th rowspan="5" width="20">No</th>
+                    <th rowspan="5" colspan="3">Product No</th>
+                    <th rowspan="5" colspan="2">Product Name</th>
+                    <th rowspan="5" colspan="2">UOM</th>
+                    <th rowspan="5" colspan="2">Division</th>
+
+                    <th colspan="24">SUMMARY</th>
+                    <th colspan="50">DETAIL</th>
                 </tr>
-                <tr>
-                    <th>Qty FG</th>
-                    <th>Qty WIP</th>
+                <tr style="background-color:#d5d5d5;">
+                    <th colspan="6">BEGIN</th>
+                    <th colspan="6">IN</th>
+                    <th colspan="6">OUT</th>
+                    <th colspan="6">ENDING</th>
+                    
+                    <th colspan="20">IN</th>
+                    <th colspan="30">OUT</th>
                 </tr>';
+
+        $html .= '<tr class="bg-yellow">
+                    <th rowspan="3" class="bg-grey">QTY</th>
+                    <th rowspan="2" colspan="2" style="background-color: #D1FFC6;">STANDARD</th>
+                    <th rowspan="2" colspan="2" style="background-color: #CFE6F9;">ACTUAL</th>
+                    <th rowspan="3">VARIANCE</th>
+
+                    <th rowspan="3" class="bg-grey">QTY</th>
+                    <th rowspan="2" colspan="2" style="background-color: #D1FFC6;">STANDARD</th>
+                    <th rowspan="2" colspan="2" style="background-color: #CFE6F9;">ACTUAL</th>
+                    <th rowspan="3">VARIANCE</th>
+
+                    <th rowspan="3" class="bg-grey">QTY</th>
+                    <th rowspan="2" colspan="2" style="background-color: #D1FFC6;">STANDARD</th>
+                    <th rowspan="2" colspan="2" style="background-color: #CFE6F9;">ACTUAL</th>
+                    <th rowspan="3">VARIANCE</th>
+
+                    <th rowspan="3" class="bg-grey">QTY</th>
+                    <th rowspan="2" colspan="2" style="background-color: #D1FFC6;">STANDARD</th>
+                    <th rowspan="2" colspan="2" style="background-color: #CFE6F9;">ACTUAL</th>
+                    <th rowspan="3">VARIANCE</th>
+
+
+                    <th colspan="5"> OUTPUT PROD. FG</th>
+                    <th colspan="5"> OUTPUT PROD. WIP</th>
+                    <th colspan="5"> SubCont Jasa</th>
+                    <th colspan="5"> ADJ IN</th>
+
+                    <th colspan="5"> NG ASSY</th>
+                    <th colspan="5"> NG WIP</th>
+                    <th colspan="5"> OUTPUT ASSY</th>
+                    <th colspan="5"> RFG</th>
+                    <th colspan="5"> RFG SubCont Jasa</th>
+                    <th colspan="5"> ADJ OUT</th>
+                </tr>';
+
+            $html .= '<tr>
+                <th rowspan="2" class="bg-grey">QTY</th>
+                <th colspan="2" style="background-color: #D1FFC6;">STANDARD</th>
+                <th colspan="2" style="background-color: #CFE6F9;">ACTUAL</th>
+
+                <th rowspan="2" class="bg-grey">QTY</th>
+                <th colspan="2" style="background-color: #D1FFC6;">STANDARD</th>
+                <th colspan="2" style="background-color: #CFE6F9;">ACTUAL</th>
+
+                <th rowspan="2" class="bg-grey">QTY</th>
+                <th colspan="2" style="background-color: #D1FFC6;">STANDARD</th>
+                <th colspan="2" style="background-color: #CFE6F9;">ACTUAL</th>
+
+                <th rowspan="2" class="bg-grey">QTY</th>
+                <th colspan="2" style="background-color: #D1FFC6;">STANDARD</th>
+                <th colspan="2" style="background-color: #CFE6F9;">ACTUAL</th>
+
+                <th rowspan="2" class="bg-grey">QTY</th>
+                <th colspan="2" style="background-color: #D1FFC6;">STANDARD</th>
+                <th colspan="2" style="background-color: #CFE6F9;">ACTUAL</th>
+
+                <th rowspan="2" class="bg-grey">QTY</th>
+                <th colspan="2" style="background-color: #D1FFC6;">STANDARD</th>
+                <th colspan="2" style="background-color: #CFE6F9;">ACTUAL</th>
+
+                <th rowspan="2" class="bg-grey">QTY</th>
+                <th colspan="2" style="background-color: #D1FFC6;">STANDARD</th>
+                <th colspan="2" style="background-color: #CFE6F9;">ACTUAL</th>
+
+                <th rowspan="2" class="bg-grey">QTY</th>
+                <th colspan="2" style="background-color: #D1FFC6;">STANDARD</th>
+                <th colspan="2" style="background-color: #CFE6F9;">ACTUAL</th>
+
+                <th rowspan="2" class="bg-grey">QTY</th>
+                <th colspan="2" style="background-color: #D1FFC6;">STANDARD</th>
+                <th colspan="2" style="background-color: #CFE6F9;">ACTUAL</th>
+
+                <th rowspan="2" class="bg-grey">QTY</th>
+                <th colspan="2" style="background-color: #D1FFC6;">STANDARD</th>
+                <th colspan="2" style="background-color: #CFE6F9;">ACTUAL</th>
+            </tr>';
+
+            $html .= '<tr>
+                    <th style="background-color: #D1FFC6;">PRICE</th>
+                    <th style="background-color: #D1FFC6;">AMOUNT</th>
+                    <th style="background-color: #CFE6F9;">PRICE</th>
+                    <th style="background-color: #CFE6F9;">AMOUNT</th>
+                    
+                    <th style="background-color: #D1FFC6;">PRICE</th>
+                    <th style="background-color: #D1FFC6;">AMOUNT</th>
+                    <th style="background-color: #CFE6F9;">PRICE</th>
+                    <th style="background-color: #CFE6F9;">AMOUNT</th>
+                    
+                    <th style="background-color: #D1FFC6;">PRICE</th>
+                    <th style="background-color: #D1FFC6;">AMOUNT</th>
+                    <th style="background-color: #CFE6F9;">PRICE</th>
+                    <th style="background-color: #CFE6F9;">AMOUNT</th>
+                    
+                    <th style="background-color: #D1FFC6;">PRICE</th>
+                    <th style="background-color: #D1FFC6;">AMOUNT</th>
+                    <th style="background-color: #CFE6F9;">PRICE</th>
+                    <th style="background-color: #CFE6F9;">AMOUNT</th>
+                    
+
+                    <th style="background-color: #D1FFC6;">PRICE</th>
+                    <th style="background-color: #D1FFC6;">AMOUNT</th>
+                    <th style="background-color: #CFE6F9;">PRICE</th>
+                    <th style="background-color: #CFE6F9;">AMOUNT</th>
+                    
+                    <th style="background-color: #D1FFC6;">PRICE</th>
+                    <th style="background-color: #D1FFC6;">AMOUNT</th>
+                    <th style="background-color: #CFE6F9;">PRICE</th>
+                    <th style="background-color: #CFE6F9;">AMOUNT</th>
+                    
+                    <th style="background-color: #D1FFC6;">PRICE</th>
+                    <th style="background-color: #D1FFC6;">AMOUNT</th>
+                    <th style="background-color: #CFE6F9;">PRICE</th>
+                    <th style="background-color: #CFE6F9;">AMOUNT</th>
+                    
+                    <th style="background-color: #D1FFC6;">PRICE</th>
+                    <th style="background-color: #D1FFC6;">AMOUNT</th>
+                    <th style="background-color: #CFE6F9;">PRICE</th>
+                    <th style="background-color: #CFE6F9;">AMOUNT</th>
+                    
+                    <th style="background-color: #D1FFC6;">PRICE</th>
+                    <th style="background-color: #D1FFC6;">AMOUNT</th>
+                    <th style="background-color: #CFE6F9;">PRICE</th>
+                    <th style="background-color: #CFE6F9;">AMOUNT</th>
+                    
+                    <th style="background-color: #D1FFC6;">PRICE</th>
+                    <th style="background-color: #D1FFC6;">AMOUNT</th>
+                    <th style="background-color: #CFE6F9;">PRICE</th>
+                    <th style="background-color: #CFE6F9;">AMOUNT</th>
+                    
+                    <th style="background-color: #D1FFC6;">PRICE</th>
+                    <th style="background-color: #D1FFC6;">AMOUNT</th>
+                    <th style="background-color: #CFE6F9;">PRICE</th>
+                    <th style="background-color: #CFE6F9;">AMOUNT</th>
+                    
+                    <th style="background-color: #D1FFC6;">PRICE</th>
+                    <th style="background-color: #D1FFC6;">AMOUNT</th>
+                    <th style="background-color: #CFE6F9;">PRICE</th>
+                    <th style="background-color: #CFE6F9;">AMOUNT</th>
+                    
+                    <th style="background-color: #D1FFC6;">PRICE</th>
+                    <th style="background-color: #D1FFC6;">AMOUNT</th>
+                    <th style="background-color: #CFE6F9;">PRICE</th>
+                    <th style="background-color: #CFE6F9;">AMOUNT</th>
+                    
+                    <th style="background-color: #D1FFC6;">PRICE</th>
+                    <th style="background-color: #D1FFC6;">AMOUNT</th>
+                    <th style="background-color: #CFE6F9;">PRICE</th>
+                    <th style="background-color: #CFE6F9;">AMOUNT</th>
+                </tr>
+            </thead>';
+
         $no = 1;
         foreach ($records as $record) {
             $item_fg_id = $record->id;
-            $html .= '  <tr>
-                            <td style="text-align:center">' . $no . '</td>
-                            <td colspan="3" style="mso-number-format:\@;">' . $record->number . '</td>
-                            <td colspan="2" style="mso-number-format:\@;">' . $record->name . '</td>
-                            <td colspan="2" style="text-align:right;">' . number_format($record->qty_wo, 2) . '</td>
-                            <td style="text-align:right;">' . number_format($record->begin_balance, 2) . '</td>
-                            <td style="text-align:right;">' . number_format($record->qty_actual, 2) . '</td>
-                            <td style="text-align:right;">' . number_format($record->qty_wip, 2) . '</td>
-                            <td style="text-align:right;">' . number_format($record->qty_ng, 2) . '</td>
-                            <td style="text-align:right;">' . number_format($record->total_production, 2) . '</td>
-                            <td style="text-align:right;">' . number_format($record->subconts_jasa, 2) . '</td>
-                            <td style="text-align:right;">' . number_format($record->qty_adj_in, 2) . '</td>
-                            <td style="text-align:right;">' . number_format($record->qty_ng_sa, 2) . '</td>
-                            <td style="text-align:right;">' . number_format($record->qty_output, 2) . '</td>
-                            <td style="text-align:right;">' . number_format($record->qty_rfg, 2) . '</td>
-                            <td style="text-align:right;">' . number_format($record->rfg_jasa, 2) . '</td>
-                            <td style="text-align:right;">' . number_format($record->qty_adj_out, 2) . '</td>
-                            <td style="text-align:right;">' . number_format($record->ending_balance, 2) . '</td>
-                        </tr>';
 
-            if ($filter_display == "DETAIL" && $filter_workorder !="" && $filter_items !="") {
-                $html .= '  <tr>
-                                <td colspan="23" style="background:#D1FFC6; font-size: 11px;"><b>DETAIL OF ' . $record->number . ' - ' . $record->name . '</b></td>
-                            </tr>';
-                $html .= '  <tr>
-                                <th rowspan="2" width="20"></th>
-                                <th rowspan="2" width="20">No</th>
-                                <th rowspan="2" >Product No</th>
-                                <th rowspan="2" >Product Name</th>
-                                <th rowspan="2" >Type</th>
-                                <th rowspan="2" >Trans Date</th>
-                                <th rowspan="2" >WO / Doc</th>
-                                <th rowspan="2" >WO Qty</th> 
-                                <th rowspan="2" >Begin Balance</th>
-                                <th colspan="2" >Actual Production</th>
-                                <th rowspan="2" >NG</th>
-                                <th rowspan="2" >Total Production</th>
-                                <th rowspan="2" >SubCont Jasa</th>
-                                <th rowspan="2" >ADJ IN</th>
-                                <th rowspan="2" >RFG</th>
-                                <th rowspan="2" >RFG SubCont Jasa</th>
-                                <th rowspan="2" >ADJ OUT</th>
-                                <th rowspan="2" >Ending Balance</th>
-                           </tr>
-                            <tr>
-                                <th>Qty FG</th>
-                                <th>Qty WIP</th>
-                            </tr>';
-
-                $nod = 1;
-                $begin = @$record->begin_balance;
-                $in_qty = 0;
-                $end_qty = 0;
-                $balance = 0;
-
-                $dataActualProductions = $this->crud->query("select * FROM output_productions where item_fg_id='$item_fg_id' and trans_date between '$filter_from' and '$filter_to'  AND shift like '%$filter_shift%' AND wo_no like '%$filter_workorder%'");
-
-                $dataNgs = $this->crud->query("
-                                                select aa.trans_date,aa.document,aa.item_fg_id,sum(aa.qty_product) as qty_ng FROM (
-                                                        select distinct trans_date,document,item_fg_id, qty_product FROM item_ng where item_fg_id='$item_fg_id' and trans_date between '$filter_from' and '$filter_to' AND shift like '%$filter_shift%' AND document like '%$filter_workorder%' AND created_by != 'PRD01'
-                                                ) aa group by aa.document,aa.trans_date,aa.item_fg_id
-                ");
-
-                $dataSubcontsJasas = $this->crud->query("
-                                                select aa.workorder,aa.request_date,aa.item_fg_id,sum(aa.qty_wo) as qty_subcont_jasa FROM (
-                                                        select distinct ax.request_date, ax.item_fg_id, ax.workorder, ax.period, ax.qty_wo 
-                                                        FROM supply_sheets ax 
-                                                        join item_fg ay on ax.item_fg_id=ay.id 
-                                                        where ax.item_fg_id='$item_fg_id' and ax.request_date between '$filter_from' and '$filter_to' and ay.status_subcont='YES' and ay.subcont_type='Jasa' AND ax.workorder like '%$filter_workorder%'
-                                                ) aa group by aa.workorder,aa.request_date,aa.item_fg_id
-                ");
-
-                $dataRfgSubcontsJasas = $this->crud->query("
-                                                select ab.packing_date as trans_date,ab.wo_no, ab.item_fg_id,sum(aa.qty) as qty_rfg 
-                                                FROM scan_item_receipts_fg aa 
-                                                JOIN checksheets ab on aa.checksheet_number = ab.number
-                                                where aa.item_fg_id='$item_fg_id' and ab.packing_date between '$filter_from' and '$filter_to' and ab.status_subcont='YES' AND ab.subcont_type='Jasa' and ab.shift like '%$filter_shift%'
-                                                GROUP BY ab.packing_date,ab.wo_no,ab.item_fg_id
-                ");
-
-                $dataAdjIns = $this->crud->query("
-                                                select *
-                                                FROM wip_adjustment_fg a
-                                                where a.item_fg_id='$item_fg_id' and a.request_date between '$filter_from' AND '$filter_to' and a.transaction_type='ADJ IN' AND request_no like '%$filter_workorder%'
-                ");
-
-                $dataAdjOuts = $this->crud->query("
-                                                select *
-                                                FROM wip_adjustment_fg a
-                                                where a.item_fg_id='$item_fg_id' and a.request_date between '$filter_from' AND '$filter_to' and a.transaction_type='ADJ OUT' AND request_no like '%$filter_workorder%'
-                ");
-
-                $receipts = $this->crud->query("
-                                                SELECT f.*, c.name as username, e.packing_date as trans_date, 'RECEIPT FG' AS receipt_type
-                                                FROM scan_item_receipts_fg f
-                                                JOIN checksheets e ON e.number = f.checksheet_number
-                                                LEFT JOIN users c ON f.created_by = c.username
-                                                WHERE e.item_fg_id = '$item_fg_id'  and DATE_FORMAT(e.packing_date, '%Y-%m-%d') between '$filter_from' and '$filter_to' and e.status_subcont='NO' and e.shift like '%$filter_shift%' and f.wo_no like '%$filter_workorder%'");
-
-                // $receiptsNB = $this->crud->query("
-                //                                 SELECT f.*, u.name as username ,f.packing_date as trans_date,'NEW BARCODE FG' AS receipt_type
-                //                                 FROM new_barcode_fg a
-                //                                 LEFT JOIN scan_item_receipts_fg f ON a.label_no = f.checksheet_label AND a.item_fg_id = f.item_fg_id
-                //                                 LEFT JOIN users u ON f.created_by = u.username
-                //                                 WHERE a.item_fg_id = '$item_fg_id'  AND DATE_FORMAT(a.packing_date, '%Y-%m-%d') BETWEEN '$filter_from' and '$filter_to' and f.wo_no like '%$filter_workorder%'");
-
-                $receiptsWIP = $this->crud->query("
-                                                SELECT a.*, u.name as username, 'WIP RECEIPT FG' AS receipt_type, a.document_no as checksheet_label
-                                                FROM wip_receipts a
-                                                LEFT JOIN users u ON a.created_by = u.username
-                                                WHERE a.item_fg_id = '$item_fg_id' AND a.division = 'MTS' AND DATE_FORMAT(a.trans_date, '%Y-%m-%d') BETWEEN '$filter_from' and '$filter_to' and a.wo_no like '%$filter_workorder%'");
-
-                $transFgs = $this->crud->query("
-                                                SELECT *
-                                                FROM transaction_fg a
-                                                WHERE a.transaction_kind = 'IN' AND a.transaction_type = 'RECEIPT FG' AND a.item_fg_id = '$item_fg_id' AND a.request_date BETWEEN '$filter_from' and '$filter_to' and a.request_no like '%$filter_workorder%'");
-
-                // Proses data berdasarkan tanggal
-                $all_data = [];
-
-                foreach ($dataActualProductions as $actualProduction) {//ada wo_no
-                    $all_data[] = [
-                        'type' => 'ACTUAL PRODUCTION',
-                        'date' => $actualProduction->trans_date,
-                        'wo_no' => $actualProduction->wo_no,
-                        'wo_qty' => $record->qty_wo,
-                        'actual_production' => $actualProduction->qty,
-                        'qty_wip' => $actualProduction->qty_wip,
-                        'ng' => 0,
-                        'subconts_jasa' => 0,
-                        'qty_adj_in' => 0,
-                        'rfg' => 0,
-                        'rfg_subconts_jasa' => 0,
-                        'qty_adj_out' => 0,
-                    ];
-                }
-
-                foreach ($dataNgs as $dataNg) {
-                    $all_data[] = [
-                        'type' => 'PRODUCT NG',
-                        'date' => $dataNg->trans_date,
-                        'wo_no' => $dataNg->document,
-                        'wo_qty' => $record->qty_wo,
-                        'actual_production' => 0,
-                        'qty_wip' => 0,
-                        'ng' => $dataNg->qty_ng,
-                        'subconts_jasa' => 0,
-                        'qty_adj_in' => 0,
-                        'rfg' => 0,
-                        'rfg_subconts_jasa' => 0,
-                        'qty_adj_out' => 0,
-                    ];
-                }
-
-                foreach ($dataSubcontsJasas as $dataSubcontsJasa) {
-                    $all_data[] = [
-                        'type' => 'SUBCONTS JASA',
-                        'date' => $dataSubcontsJasa->request_date,
-                        'wo_no' => $dataSubcontsJasa->workorder,
-                        'wo_qty' => $record->qty_wo,
-                        'actual_production' => 0,
-                        'qty_wip' => 0,
-                        'ng' => 0,
-                        'subconts_jasa' => $dataSubcontsJasa->qty_subcont_jasa,
-                        'qty_adj_in' => 0,
-                        'rfg' => 0,
-                        'rfg_subconts_jasa' => 0,
-                        'qty_adj_out' => 0,
-                    ];
-                }
-
-                foreach ($receipts as $receipt) {
-                    $all_data[] = [
-                        'type' => $receipt->receipt_type,
-                        'date' => $receipt->trans_date,
-                        'wo_no' => $receipt->wo_no,
-                        'wo_qty' => $record->qty_wo,
-                        'actual_production' => 0,
-                        'qty_wip' => 0,
-                        'ng' => 0,
-                        'subconts_jasa' => 0,
-                        'qty_adj_in' => 0,
-                        'rfg' => $receipt->qty,
-                        'rfg_subconts_jasa' => 0,
-                        'qty_adj_out' => 0,
-                    ];
-                }
-
-                // foreach ($receiptsNB as $receiptNB) {
-                //     $all_data[] = [
-                //         'type' => $receiptNB->receipt_type,
-                //         'date' => $receiptNB->trans_date,
-                //         'wo_no' => $receiptNB->wo_no,
-                //         'wo_qty' => $record->qty_wo,
-                //         'actual_production' => 0,
-                //         'qty_wip' => 0,
-                //         'ng' => 0,
-                //         'subconts_jasa' => 0,
-                //         'qty_adj_in' => 0,
-                //         'rfg' => $receiptNB->qty,
-                //         'rfg_subconts_jasa' => 0,
-                //         'qty_adj_out' => 0,
-                //     ];
-                // }
-
-                foreach ($receiptsWIP as $receiptWIP) {
-                    $all_data[] = [
-                        'type' => $receiptWIP->receipt_type,
-                        'date' => $receiptWIP->trans_date,
-                        'wo_no' => $receiptWIP->wo_no,
-                        'wo_qty' => $record->qty_wo,
-                        'actual_production' => 0,
-                        'qty_wip' => 0,
-                        'ng' => 0,
-                        'subconts_jasa' => 0,
-                        'qty_adj_in' => 0,
-                        'rfg' => $receiptWIP->qty,
-                        'rfg_subconts_jasa' => 0,
-                        'qty_adj_out' => 0,
-                    ];
-                }
-
-                foreach ($transFgs as $transFg) {
-                    $all_data[] = [
-                        'type' => 'TRANSACTION FG',
-                        'date' => $transFg->request_date,
-                        'wo_no' => $transFg->request_no,
-                        'wo_qty' => $record->qty_wo,
-                        'actual_production' => 0,
-                        'qty_wip' => 0,
-                        'ng' => 0,
-                        'subconts_jasa' => 0,
-                        'qty_adj_in' => 0,
-                        'rfg' => $transFg->qty,
-                        'rfg_subconts_jasa' => 0,
-                        'qty_adj_out' => 0,
-                    ];
-                }
-
-                foreach ($dataRfgSubcontsJasas  as $dataRfgSubcontsJasa) {
-                    $all_data[] = [
-                        'type' => 'RFG SUBCONTS JASA',
-                        'date' => $dataRfgSubcontsJasa->trans_date,
-                        'wo_no' => $dataRfgSubcontsJasa->wo_no,
-                        'wo_qty' => $record->qty_wo,
-                        'actual_production' => 0,
-                        'qty_wip' => 0,
-                        'ng' => 0,
-                        'subconts_jasa' => 0,
-                        'qty_adj_in' => 0,
-                        'rfg' => 0,
-                        'rfg_subconts_jasa' => $dataRfgSubcontsJasa->qty_rfg,
-                        'qty_adj_out' => 0,
-                    ];
-                }
-
-                foreach ($dataAdjIns  as $dataAdjIn) {
-                    $all_data[] = [
-                        'type' => $dataAdjIn->transaction_type,
-                        'date' => $dataAdjIn->request_date,
-                        'wo_no' => $dataAdjIn->request_no,
-                        'wo_qty' => $record->qty_wo,
-                        'actual_production' => 0,
-                        'qty_wip' => 0,
-                        'ng' => 0,
-                        'subconts_jasa' => 0,
-                        'qty_adj_in' => $dataAdjIn->qty,
-                        'rfg' => 0,
-                        'rfg_subconts_jasa' => 0,
-                        'qty_adj_out' => 0,
-                    ];
-                }
-
-                foreach ($dataAdjOuts  as $dataAdjOut) {
-                    $all_data[] = [
-                        'type' => $dataAdjOut->transaction_type,
-                        'date' => $dataAdjOut->request_date,
-                        'wo_no' => $dataAdjOut->request_no,
-                        'wo_qty' => $record->qty_wo,
-                        'actual_production' => 0,
-                        'qty_wip' => 0,
-                        'ng' => 0,
-                        'subconts_jasa' => 0,
-                        'qty_adj_in' => 0,
-                        'rfg' => 0,
-                        'rfg_subconts_jasa' => 0,
-                        'qty_adj_out' => $dataAdjOut->qty,
-                    ];
-                }
-
-                // Urutkan data berdasarkan tanggal
-                usort($all_data, function ($a, $b) {
-                    return strtotime($a['date']) - strtotime($b['date']);
-                });
-
-                $qty_wo_read = $this->crud->query("select qty FROM production_schedules where item_fg_id='$item_fg_id' and wo_no like '%$filter_workorder%'");
-                $qty_wo = 0;
-                if (!empty($qty_wo_read) && isset($qty_wo_read[0]->qty)) {
-                    $qty_wo = $qty_wo_read[0]->qty;
-                }
-
-                $total_actual_production = 0;
-                $total_qty_wip = 0;
-                $total_ng = 0;
-                $total_subconts_jasa = 0;
-                $total_qty_adj_in = 0;
-                $total_rfg = 0;
-                $total_rfg_subconts_jasa = 0;
-                $total_qty_adj_out = 0;
-
-                foreach ($all_data as $data) {
-                    $total_actual_production += $data['actual_production'];
-                    $total_qty_wip += $data['qty_wip'];
-                    $total_ng += $data['ng'];
-                    $total_subconts_jasa += $data['subconts_jasa'];
-                    $total_qty_adj_in += $data['qty_adj_in'];
-                    $total_rfg += $data['rfg'];
-                    $total_rfg_subconts_jasa += $data['rfg_subconts_jasa'];
-                    $total_qty_adj_out += $data['qty_adj_out'];
-                }
-
-                $total_production = $total_actual_production + $total_qty_wip + $total_ng;
-
-                // Buat header total sebelum data detail
-                $html .= '<tr style="background:#EEE; font-weight:bold;">
-                            <td></td>
-                            <td style="text-align:center">-</td>
-                            <td>' . $record->number  . '</td>
-                            <td>' . $record->name  . '</td>
-                            <td>-</td>
-                            <td>-</td>
-                            <td>' . $data['wo_no']  . '</td>
-                            <td style="text-align:right;">' . number_format($qty_wo, 2)  . '</td>
-                            <td style="text-align:right;">' . number_format($begin, 2)  . '</td>
-                            <td style="text-align:right;">' . number_format($total_actual_production, 2) . '</td>
-                            <td style="text-align:right;">' . number_format($total_qty_wip, 2) . '</td>
-                            <td style="text-align:right;">' . number_format($total_ng, 2) . '</td>
-                            <td style="text-align:right;">' . number_format($total_production, 2) . '</td>
-                            <td style="text-align:right;">' . number_format($total_subconts_jasa, 2) . '</td>
-                            <td style="text-align:right;">' . number_format($total_qty_adj_in, 2) . '</td>
-                            <td style="text-align:right;">' . number_format($total_rfg, 2) . '</td>
-                            <td style="text-align:right;">' . number_format($total_rfg_subconts_jasa, 2) . '</td>
-                            <td style="text-align:right;">' . number_format($total_qty_adj_out, 2) . '</td>
-                            <td></td>
-                        </tr>';
-
-                // Generate HTML
-                $nod = 1;
-                $balance = $begin;
-                foreach ($all_data as $data) {
-                    $total_production = $data['actual_production'] + $data['qty_wip'] + $data['ng'];
-                    $balance += $data['actual_production'] + $data['qty_wip'] + $data['subconts_jasa'] + $data['qty_adj_in'] - $data['rfg'] - $data['rfg_subconts_jasa'] - $data['qty_adj_out'];
-                    $html .= '  <tr>
-                                    <td></td>
-                                    <td style="text-align:center">' . $nod . '</td>
-                                    <td>' . $record->number  . '</td>
-                                    <td>' . $record->name  . '</td>
-                                    <td>' . $data['type']  . '</td>
-                                    <td>' . $data['date']  . '</td>
-                                    <td>' . $data['wo_no']  . '</td>
-                                    <td style="text-align:right;">' . number_format($qty_wo, 2)  . '</td>
-                                    <td style="text-align:right;">' . number_format($begin, 2)  . '</td>
-                                    <td style="text-align:right;">' . number_format($data['actual_production'], 2)  . '</td>
-                                    <td style="text-align:right;">' . number_format($data['qty_wip'], 2)  . '</td>
-                                    <td style="text-align:right;">' . number_format($data['ng'], 2)  . '</td>
-                                    <td style="text-align:right;">' . number_format($total_production, 2)  . '</td>
-                                    <td style="text-align:right;">' . number_format($data['subconts_jasa'], 2)  . '</td>
-                                    <td style="text-align:right;">' . number_format($data['qty_adj_in'], 2)  . '</td>
-                                    <td style="text-align:right;">' . number_format($data['rfg'], 2)  . '</td>
-                                    <td style="text-align:right;">' . number_format($data['rfg_subconts_jasa'], 2)  . '</td>
-                                    <td style="text-align:right;">' . number_format($data['qty_adj_out'], 2)  . '</td>
-                                    <td style="text-align:right;">' . number_format($balance, 2)  . '</td>
-                                </tr>';
-
-                    $begin = $balance;
-                    $nod++;
-                }
-            } elseif ($filter_display == "DETAIL" && $filter_workorder !="") {
-                $wos = $this->crud->query("
-                    SELECT DISTINCT a.item_fg_id, b.number, b.name , a.qty_wo
-                    FROM supply_sheets a 
-                    JOIN item_fg b ON a.item_fg_id = b.id 
-                    WHERE a.workorder LIKE '%$filter_workorder%'
-                ");
-
-                foreach ($wos as $record) {
-                    $item_fg_id = $record->item_fg_id;
-
-                    $html .= '  <tr>
-                                <td colspan="23" style="background:#D1FFC6; font-size: 11px;"><b>DETAIL OF ' . $record->number . ' - ' . $record->name . '</b></td>
-                            </tr>';
-                    $html .= '  <tr>
-                                    <th rowspan="2" width="20"></th>
-                                    <th rowspan="2" width="20">No</th>
-                                    <th rowspan="2" >Product No</th>
-                                    <th rowspan="2" >Product Name</th>
-                                    <th rowspan="2" >Type</th>
-                                    <th rowspan="2" >Trans Date</th>
-                                    <th rowspan="2" >WO / Doc</th>
-                                    <th rowspan="2" >WO Qty</th> 
-                                    <th rowspan="2" >Begin Balance</th>
-                                    <th colspan="2" >Actual Production</th>
-                                    <th rowspan="2" >NG</th>
-                                    <th rowspan="2" >Total Production</th>
-                                    <th rowspan="2" >SubCont Jasa</th>
-                                    <th rowspan="2" >ADJ IN</th>
-                                    <th rowspan="2" >RFG</th>
-                                    <th rowspan="2" >RFG SubCont Jasa</th>
-                                    <th rowspan="2" >ADJ OUT</th>
-                                    <th rowspan="2" >Ending Balance</th>
-                            </tr>
-                                <tr>
-                                    <th>Qty FG</th>
-                                    <th>Qty WIP</th>
-                                </tr>';
-
-                    $nod = 1;
-                    $begin = @$record->begin_balance;
-                    $in_qty = 0;
-                    $end_qty = 0;
-                    $balance = 0;
-
-                    $dataActualProductions = $this->crud->query("select * FROM output_productions where item_fg_id='$item_fg_id' and trans_date between '$filter_from' and '$filter_to'  AND shift like '%$filter_shift%' AND wo_no like '%$filter_workorder%'");
-
-                    $dataNgs = $this->crud->query("
-                                                    select aa.trans_date,aa.document,aa.item_fg_id,sum(aa.qty_product) as qty_ng FROM (
-                                                            select distinct trans_date,document,item_fg_id, qty_product FROM item_ng where item_fg_id='$item_fg_id' and trans_date between '$filter_from' and '$filter_to' AND shift like '%$filter_shift%' AND document like '%$filter_workorder%' AND created_by != 'PRD01'
-                                                    ) aa group by aa.document,aa.trans_date,aa.item_fg_id
-                    ");
-
-                    $dataSubcontsJasas = $this->crud->query("
-                                                    select aa.workorder,aa.request_date,aa.item_fg_id,sum(aa.qty_wo) as qty_subcont_jasa FROM (
-                                                            select distinct ax.request_date, ax.item_fg_id, ax.workorder, ax.period, ax.qty_wo 
-                                                            FROM supply_sheets ax 
-                                                            join item_fg ay on ax.item_fg_id=ay.id 
-                                                            where ax.item_fg_id='$item_fg_id' and ax.request_date between '$filter_from' and '$filter_to' and ay.status_subcont='YES' and ay.subcont_type='Jasa' AND ax.workorder like '%$filter_workorder%'
-                                                    ) aa group by aa.workorder,aa.request_date,aa.item_fg_id
-                    ");
-
-                    $dataRfgSubcontsJasas = $this->crud->query("
-                                                select ab.packing_date as trans_date,ab.wo_no, ab.item_fg_id,sum(aa.qty) as qty_rfg 
-                                                FROM scan_item_receipts_fg aa 
-                                                JOIN checksheets ab on aa.checksheet_number = ab.number
-                                                where aa.item_fg_id='$item_fg_id' and ab.packing_date between '$filter_from' and '$filter_to' and ab.status_subcont='YES' AND ab.subcont_type='Jasa' and ab.shift like '%$filter_shift%'
-                                                GROUP BY ab.packing_date,ab.wo_no,ab.item_fg_id
-                    ");
-
-                    $dataAdjIns = $this->crud->query("
-                                                    select *
-                                                    FROM wip_adjustment_fg a
-                                                    where a.item_fg_id='$item_fg_id' and a.request_date between '$filter_from' AND '$filter_to' and a.transaction_type='ADJ IN' AND request_no like '%$filter_workorder%'
-                    ");
-
-                    $dataAdjOuts = $this->crud->query("
-                                                    select *
-                                                    FROM wip_adjustment_fg a
-                                                    where a.item_fg_id='$item_fg_id' and a.request_date between '$filter_from' AND '$filter_to' and a.transaction_type='ADJ OUT' AND request_no like '%$filter_workorder%'
-                    ");
-
-                    $receipts = $this->crud->query("
-                                                    SELECT f.*, c.name as username, e.packing_date as trans_date, 'RECEIPT FG' AS receipt_type
-                                                    FROM scan_item_receipts_fg f
-                                                    JOIN checksheets e ON e.number = f.checksheet_number
-                                                    LEFT JOIN users c ON f.created_by = c.username
-                                                    WHERE e.item_fg_id = '$item_fg_id'  and DATE_FORMAT(e.packing_date, '%Y-%m-%d') between '$filter_from' and '$filter_to' and e.status_subcont='NO' and e.shift like '%$filter_shift%' and f.wo_no like '%$filter_workorder%'");
-
-                    // $receiptsNB = $this->crud->query("
-                    //                                 SELECT f.*, u.name as username ,f.packing_date as trans_date,'NEW BARCODE FG' AS receipt_type
-                    //                                 FROM new_barcode_fg a
-                    //                                 LEFT JOIN scan_item_receipts_fg f ON a.label_no = f.checksheet_label AND a.item_fg_id = f.item_fg_id
-                    //                                 LEFT JOIN users u ON f.created_by = u.username
-                    //                                 WHERE a.item_fg_id = '$item_fg_id'  AND DATE_FORMAT(a.packing_date, '%Y-%m-%d') BETWEEN '$filter_from' and '$filter_to' and f.wo_no like '%$filter_workorder%'");
-
-                    $receiptsWIP = $this->crud->query("
-                                                    SELECT a.*, u.name as username, 'WIP RECEIPT FG' AS receipt_type, a.document_no as checksheet_label
-                                                    FROM wip_receipts a
-                                                    LEFT JOIN users u ON a.created_by = u.username
-                                                    WHERE a.item_fg_id = '$item_fg_id' AND a.division = 'MTS' AND DATE_FORMAT(a.trans_date, '%Y-%m-%d') BETWEEN '$filter_from' and '$filter_to' and a.wo_no like '%$filter_workorder%'");
-
-                    $transFgs = $this->crud->query("
-                                                    SELECT *
-                                                    FROM transaction_fg a
-                                                    WHERE a.transaction_kind = 'IN' AND a.transaction_type = 'RECEIPT FG' AND a.item_fg_id = '$item_fg_id' AND a.request_date BETWEEN '$filter_from' and '$filter_to' and a.request_no like '%$filter_workorder%'");
-
-                    // Proses data berdasarkan tanggal
-                    $all_data = [];
-
-                    foreach ($dataActualProductions as $actualProduction) {//ada wo_no
-                        $all_data[] = [
-                            'type' => 'ACTUAL PRODUCTION',
-                            'date' => $actualProduction->trans_date,
-                            'wo_no' => $actualProduction->wo_no,
-                            'wo_qty' => $record->qty_wo,
-                            'actual_production' => $actualProduction->qty,
-                            'qty_wip' => $actualProduction->qty_wip,
-                            'ng' => 0,
-                            'subconts_jasa' => 0,
-                            'qty_adj_in' => 0,
-                            'rfg' => 0,
-                            'rfg_subconts_jasa' => 0,
-                            'qty_adj_out' => 0,
-                        ];
-                    }
-
-                    foreach ($dataNgs as $dataNg) {
-                        $all_data[] = [
-                            'type' => 'PRODUCT NG',
-                            'date' => $dataNg->trans_date,
-                            'wo_no' => $dataNg->document,
-                            'wo_qty' => $record->qty_wo,
-                            'actual_production' => 0,
-                            'qty_wip' => 0,
-                            'ng' => $dataNg->qty_ng,
-                            'subconts_jasa' => 0,
-                            'qty_adj_in' => 0,
-                            'rfg' => 0,
-                            'rfg_subconts_jasa' => 0,
-                            'qty_adj_out' => 0,
-                        ];
-                    }
-
-                    foreach ($dataSubcontsJasas as $dataSubcontsJasa) {
-                        $all_data[] = [
-                            'type' => 'SUBCONTS JASA',
-                            'date' => $dataSubcontsJasa->request_date,
-                            'wo_no' => $dataSubcontsJasa->workorder,
-                            'wo_qty' => $record->qty_wo,
-                            'actual_production' => 0,
-                            'qty_wip' => 0,
-                            'ng' => 0,
-                            'subconts_jasa' => $dataSubcontsJasa->qty_subcont_jasa,
-                            'qty_adj_in' => 0,
-                            'rfg' => 0,
-                            'rfg_subconts_jasa' => 0,
-                            'qty_adj_out' => 0,
-                        ];
-                    }
-
-                    foreach ($receipts as $receipt) {
-                        $all_data[] = [
-                            'type' => $receipt->receipt_type,
-                            'date' => $receipt->trans_date,
-                            'wo_no' => $receipt->wo_no,
-                            'wo_qty' => $record->qty_wo,
-                            'actual_production' => 0,
-                            'qty_wip' => 0,
-                            'ng' => 0,
-                            'subconts_jasa' => 0,
-                            'qty_adj_in' => 0,
-                            'rfg' => $receipt->qty,
-                            'rfg_subconts_jasa' => 0,
-                            'qty_adj_out' => 0,
-                        ];
-                    }
-
-                    // foreach ($receiptsNB as $receiptNB) {
-                    //     $all_data[] = [
-                    //         'type' => $receiptNB->receipt_type,
-                    //         'date' => $receiptNB->trans_date,
-                    //         'wo_no' => $receiptNB->wo_no,
-                    //         'wo_qty' => $record->qty_wo,
-                    //         'actual_production' => 0,
-                    //         'qty_wip' => 0,
-                    //         'ng' => 0,
-                    //         'subconts_jasa' => 0,
-                    //         'qty_adj_in' => 0,
-                    //         'rfg' => $receiptNB->qty,
-                    //         'rfg_subconts_jasa' => 0,
-                    //         'qty_adj_out' => 0,
-                    //     ];
-                    // }
-
-                    foreach ($receiptsWIP as $receiptWIP) {
-                        $all_data[] = [
-                            'type' => $receiptWIP->receipt_type,
-                            'date' => $receiptWIP->trans_date,
-                            'wo_no' => $receiptWIP->wo_no,
-                            'wo_qty' => $record->qty_wo,
-                            'actual_production' => 0,
-                            'qty_wip' => 0,
-                            'ng' => 0,
-                            'subconts_jasa' => 0,
-                            'qty_adj_in' => 0,
-                            'rfg' => $receiptWIP->qty,
-                            'rfg_subconts_jasa' => 0,
-                            'qty_adj_out' => 0,
-                        ];
-                    }
-
-                    foreach ($transFgs as $transFg) {
-                        $all_data[] = [
-                            'type' => 'TRANSACTION FG',
-                            'date' => $transFg->request_date,
-                            'wo_no' => $transFg->request_no,
-                            'wo_qty' => $record->qty_wo,
-                            'actual_production' => 0,
-                            'qty_wip' => 0,
-                            'ng' => 0,
-                            'subconts_jasa' => 0,
-                            'qty_adj_in' => 0,
-                            'rfg' => $transFg->qty,
-                            'rfg_subconts_jasa' => 0,
-                            'qty_adj_out' => 0,
-                        ];
-                    }
-
-                    foreach ($dataRfgSubcontsJasas  as $dataRfgSubcontsJasa) {
-                        $all_data[] = [
-                            'type' => 'RFG SUBCONTS JASA',
-                            'date' => $dataRfgSubcontsJasa->trans_date,
-                            'wo_no' => $dataRfgSubcontsJasa->wo_no,
-                            'wo_qty' => $record->qty_wo,
-                            'actual_production' => 0,
-                            'qty_wip' => 0,
-                            'ng' => 0,
-                            'subconts_jasa' => 0,
-                            'qty_adj_in' => 0,
-                            'rfg' => 0,
-                            'rfg_subconts_jasa' => $dataRfgSubcontsJasa->qty_rfg,
-                            'qty_adj_out' => 0,
-                        ];
-                    }
-
-                    foreach ($dataAdjIns  as $dataAdjIn) {
-                        $all_data[] = [
-                            'type' => $dataAdjIn->transaction_type,
-                            'date' => $dataAdjIn->request_date,
-                            'wo_no' => $dataAdjIn->request_no,
-                            'wo_qty' => $record->qty_wo,
-                            'actual_production' => 0,
-                            'qty_wip' => 0,
-                            'ng' => 0,
-                            'subconts_jasa' => 0,
-                            'qty_adj_in' => $dataAdjIn->qty,
-                            'rfg' => 0,
-                            'rfg_subconts_jasa' => 0,
-                            'qty_adj_out' => 0,
-                        ];
-                    }
-
-                    foreach ($dataAdjOuts  as $dataAdjOut) {
-                        $all_data[] = [
-                            'type' => $dataAdjOut->transaction_type,
-                            'date' => $dataAdjOut->request_date,
-                            'wo_no' => $dataAdjOut->request_no,
-                            'wo_qty' => $record->qty_wo,
-                            'actual_production' => 0,
-                            'qty_wip' => 0,
-                            'ng' => 0,
-                            'subconts_jasa' => 0,
-                            'qty_adj_in' => 0,
-                            'rfg' => 0,
-                            'rfg_subconts_jasa' => 0,
-                            'qty_adj_out' => $dataAdjOut->qty,
-                        ];
-                    }
-
-                    // Urutkan data berdasarkan tanggal
-                    usort($all_data, function ($a, $b) {
-                        return strtotime($a['date']) - strtotime($b['date']);
-                    });
-
-                    $qty_wo_read = $this->crud->query("select qty FROM production_schedules where item_fg_id='$item_fg_id' and wo_no like '%$filter_workorder%'");
-                    $qty_wo = 0;
-                    if (!empty($qty_wo_read) && isset($qty_wo_read[0]->qty)) {
-                        $qty_wo = $qty_wo_read[0]->qty;
-                    }
-
-                    $total_actual_production = 0;
-                    $total_qty_wip = 0;
-                    $total_ng = 0;
-                    $total_subconts_jasa = 0;
-                    $total_qty_adj_in = 0;
-                    $total_rfg = 0;
-                    $total_rfg_subconts_jasa = 0;
-                    $total_qty_adj_out = 0;
-
-                    foreach ($all_data as $data) {
-                        $total_actual_production += $data['actual_production'];
-                        $total_qty_wip += $data['qty_wip'];
-                        $total_ng += $data['ng'];
-                        $total_subconts_jasa += $data['subconts_jasa'];
-                        $total_qty_adj_in += $data['qty_adj_in'];
-                        $total_rfg += $data['rfg'];
-                        $total_rfg_subconts_jasa += $data['rfg_subconts_jasa'];
-                        $total_qty_adj_out += $data['qty_adj_out'];
-                    }
-
-                    $total_production = $total_actual_production + $total_qty_wip + $total_ng;
-
-                    // Buat header total sebelum data detail
-                    $html .= '<tr style="background:#EEE; font-weight:bold;">
-                                <td></td>
-                                <td style="text-align:center">-</td>
-                                <td>' . $record->number  . '</td>
-                                <td>' . $record->name  . '</td>
-                                <td>-</td>
-                                <td>-</td>
-                                <td>' . $data['wo_no']  . '</td>
-                                <td style="text-align:right;">' . number_format($qty_wo, 2)  . '</td>
-                                <td style="text-align:right;">' . number_format($begin, 2)  . '</td>
-                                <td style="text-align:right;">' . number_format($total_actual_production, 2) . '</td>
-                                <td style="text-align:right;">' . number_format($total_qty_wip, 2) . '</td>
-                                <td style="text-align:right;">' . number_format($total_ng, 2) . '</td>
-                                <td style="text-align:right;">' . number_format($total_production, 2) . '</td>
-                                <td style="text-align:right;">' . number_format($total_subconts_jasa, 2) . '</td>
-                                <td style="text-align:right;">' . number_format($total_qty_adj_in, 2) . '</td>
-                                <td style="text-align:right;">' . number_format($total_rfg, 2) . '</td>
-                                <td style="text-align:right;">' . number_format($total_rfg_subconts_jasa, 2) . '</td>
-                                <td style="text-align:right;">' . number_format($total_qty_adj_out, 2) . '</td>
-                                <td></td>
-                            </tr>';
-
-                    // Generate HTML
-                    $nod = 1;
-                    $balance = $begin;
-                    foreach ($all_data as $data) {
-                        $total_production = $data['actual_production'] + $data['qty_wip'] + $data['ng'];
-                        $balance += $data['actual_production'] + $data['qty_wip'] + $data['subconts_jasa'] + $data['qty_adj_in'] - $data['rfg'] - $data['rfg_subconts_jasa'] - $data['qty_adj_out'];
-                        $html .= '  <tr>
-                                        <td></td>
-                                        <td style="text-align:center">' . $nod . '</td>
-                                        <td>' . $record->number  . '</td>
-                                        <td>' . $record->name  . '</td>
-                                        <td>' . $data['type']  . '</td>
-                                        <td>' . $data['date']  . '</td>
-                                        <td>' . $data['wo_no']  . '</td>
-                                        <td style="text-align:right;">' . number_format($qty_wo, 2)  . '</td>
-                                        <td style="text-align:right;">' . number_format($begin, 2)  . '</td>
-                                        <td style="text-align:right;">' . number_format($data['actual_production'], 2)  . '</td>
-                                        <td style="text-align:right;">' . number_format($data['qty_wip'], 2)  . '</td>
-                                        <td style="text-align:right;">' . number_format($data['ng'], 2)  . '</td>
-                                        <td style="text-align:right;">' . number_format($total_production, 2)  . '</td>
-                                        <td style="text-align:right;">' . number_format($data['subconts_jasa'], 2)  . '</td>
-                                        <td style="text-align:right;">' . number_format($data['qty_adj_in'], 2)  . '</td>
-                                        <td style="text-align:right;">' . number_format($data['rfg'], 2)  . '</td>
-                                        <td style="text-align:right;">' . number_format($data['rfg_subconts_jasa'], 2)  . '</td>
-                                        <td style="text-align:right;">' . number_format($data['qty_adj_out'], 2)  . '</td>
-                                        <td style="text-align:right;">' . number_format($balance, 2)  . '</td>
-                                    </tr>';
-
-                        $begin = $balance;
-                        $nod++;
-                    }
-                }
-            } elseif ($filter_display == "DETAIL" && $filter_workorder == "") {
-                $html .= '  <tr>
-                                <td colspan="23" style="background:#D1FFC6; font-size: 11px;"><b>DETAIL OF ' . $record->number . ' - ' . $record->name . '</b></td>
-                            </tr>';
-                $html .= '  <tr>
-                                <th rowspan="2" width="20"></th>
-                                <th rowspan="2" width="20">No</th>
-                                <th rowspan="2" >Product No</th>
-                                <th rowspan="2" >Product Name</th>
-                                <th rowspan="2" >Type</th>
-                                <th rowspan="2" >Trans Date</th>
-                                <th rowspan="2" >WO / Doc</th>
-                                <th rowspan="2" >WO Qty</th> 
-                                <th rowspan="2" >Begin Balance</th>
-                                <th colspan="2" >Actual Production</th>
-                                <th rowspan="2" >NG</th>
-                                <th rowspan="2" >Total Production</th>
-                                <th rowspan="2" >SubCont Jasa</th>
-                                <th rowspan="2" >ADJ IN</th>
-                                <th rowspan="2" >RFG</th>
-                                <th rowspan="2" >RFG SubCont Jasa</th>
-                                <th rowspan="2" >ADJ OUT</th>
-                                <th rowspan="2" >Ending Balance</th>
-                           </tr>
-                            <tr>
-                                <th>Qty FG</th>
-                                <th>Qty WIP</th>
-                            </tr>';
-                $nod = 1;
-                $begin = @$record->begin_balance;
-                $in_qty = 0;
-                $end_qty = 0;
-                $balance = 0;
-
-                $dataActualProductions = $this->crud->query("select * FROM output_productions where item_fg_id='$item_fg_id' and trans_date between '$filter_from' and '$filter_to'  AND shift like '%$filter_shift%'");
-
-                $dataNgs = $this->crud->query("
-                                                select aa.trans_date,aa.document,aa.item_fg_id,sum(aa.qty_product) as qty_ng FROM (
-                                                        select distinct trans_date,document,item_fg_id, qty_product FROM item_ng where item_fg_id='$item_fg_id' and trans_date between '$filter_from' and '$filter_to' AND shift like '%$filter_shift%' AND created_by != 'PRD01'
-                                                ) aa group by aa.document,aa.trans_date,aa.item_fg_id
-                ");
-
-                $dataSubcontsJasas = $this->crud->query("
-                                                select aa.workorder,aa.request_date,aa.item_fg_id,sum(aa.qty_wo) as qty_subcont_jasa FROM (
-                                                        select distinct ax.request_date, ax.item_fg_id, ax.workorder, ax.period, ax.qty_wo 
-                                                        FROM supply_sheets ax 
-                                                        join item_fg ay on ax.item_fg_id=ay.id 
-                                                        where ax.item_fg_id='$item_fg_id' and ax.request_date between '$filter_from' and '$filter_to' and ay.status_subcont='YES' and ay.subcont_type='Jasa'
-                                                ) aa group by aa.workorder,aa.request_date,aa.item_fg_id
-                ");
-
-                $dataRfgSubcontsJasas = $this->crud->query("
-                                                select ab.packing_date as trans_date,ab.wo_no, ab.item_fg_id,sum(aa.qty) as qty_rfg 
-                                                FROM scan_item_receipts_fg aa 
-                                                JOIN checksheets ab on aa.checksheet_number = ab.number
-                                                where aa.item_fg_id='$item_fg_id' and ab.packing_date between '$filter_from' and '$filter_to' and ab.status_subcont='YES' AND ab.subcont_type='Jasa' and ab.shift like '%$filter_shift%'
-                                                GROUP BY ab.packing_date,ab.wo_no,ab.item_fg_id
-                ");
-
-                $dataAdjIns = $this->crud->query("
-                                                select *
-                                                FROM wip_adjustment_fg a
-                                                where a.item_fg_id='$item_fg_id' and a.request_date between '$filter_from' AND '$filter_to' and a.transaction_type='ADJ IN'
-                ");
-
-                $dataAdjOuts = $this->crud->query("
-                                                select *
-                                                FROM wip_adjustment_fg a
-                                                where a.item_fg_id='$item_fg_id' and a.request_date between '$filter_from' AND '$filter_to' and a.transaction_type='ADJ OUT'
-                ");
-
-               $receipts = $this->crud->query("
-                    SELECT f.*, c.name as username, e.packing_date as trans_date, 'RECEIPT FG' AS receipt_type
-                    FROM scan_item_receipts_fg f
-                    JOIN checksheets e ON e.number = f.checksheet_number
-                    LEFT JOIN users c ON f.created_by = c.username
-                    WHERE (
-                        e.item_fg_id = '$item_fg_id'
-                        OR e.item_fg_id IN (
-                            SELECT item_fg_id FROM item_fg_subs WHERE item_fg_sa_id = '$item_fg_id'
-                        )
-                    )
-                    AND DATE_FORMAT(e.packing_date, '%Y-%m-%d') BETWEEN '$filter_from' AND '$filter_to'
-                    AND e.status_subcont = 'NO'
-                    AND e.shift LIKE '%$filter_shift%'
-                ");
-
-                // $receiptsNB = $this->crud->query("
-                //                                 SELECT f.*, u.name as username ,f.packing_date as trans_date,'NEW BARCODE FG' AS receipt_type
-                //                                 FROM new_barcode_fg a
-                //                                 LEFT JOIN scan_item_receipts_fg f ON a.label_no = f.checksheet_label AND a.item_fg_id = f.item_fg_id
-                //                                 LEFT JOIN users u ON f.created_by = u.username
-                //                                 WHERE a.item_fg_id = '$item_fg_id'  AND DATE_FORMAT(a.packing_date, '%Y-%m-%d') BETWEEN '$filter_from' and '$filter_to'");
-
-                $receiptsWIP = $this->crud->query("
-                                                SELECT a.*, u.name as username, 'WIP RECEIPT FG' AS receipt_type, a.document_no as checksheet_label
-                                                FROM wip_receipts a
-                                                LEFT JOIN users u ON a.created_by = u.username
-                                                WHERE a.item_fg_id = '$item_fg_id' AND a.division = 'MTS' AND DATE_FORMAT(a.trans_date, '%Y-%m-%d') BETWEEN '$filter_from' and '$filter_to'");
-
-                $transFgs = $this->crud->query("
-                                                SELECT *
-                                                FROM transaction_fg a
-                                                WHERE a.transaction_kind = 'IN' AND a.transaction_type = 'RECEIPT FG' AND a.item_fg_id = '$item_fg_id' AND a.request_date BETWEEN '$filter_from' and '$filter_to'");
-
-                // Proses data berdasarkan tanggal
-                $all_data = [];
-
-                foreach ($dataActualProductions as $actualProduction) {
-                    $all_data[] = [
-                        'type' => 'ACTUAL PRODUCTION',
-                        'date' => $actualProduction->trans_date,
-                        'wo_no' => $actualProduction->wo_no,
-                        'wo_qty' => $record->qty_wo,
-                        'actual_production' => $actualProduction->qty,
-                        'qty_wip' => $actualProduction->qty_wip,
-                        'ng' => 0,
-                        'subconts_jasa' => 0,
-                        'qty_adj_in' => 0,
-                        'rfg' => 0,
-                        'rfg_subconts_jasa' => 0,
-                        'qty_adj_out' => 0,
-                    ];
-                }
-
-                foreach ($dataNgs as $dataNg) {
-                    $all_data[] = [
-                        'type' => 'PRODUCT NG',
-                        'date' => $dataNg->trans_date,
-                        'wo_no' => $dataNg->document,
-                        'wo_qty' => $record->qty_wo,
-                        'actual_production' => 0,
-                        'qty_wip' => 0,
-                        'ng' => $dataNg->qty_ng,
-                        'subconts_jasa' => 0,
-                        'qty_adj_in' => 0,
-                        'rfg' => 0,
-                        'rfg_subconts_jasa' => 0,
-                        'qty_adj_out' => 0,
-                    ];
-                }
-
-                foreach ($dataSubcontsJasas as $dataSubcontsJasa) {
-                    $all_data[] = [
-                        'type' => 'SUBCONTS JASA',
-                        'date' => $dataSubcontsJasa->request_date,
-                        'wo_no' => $dataSubcontsJasa->workorder,
-                        'wo_qty' => $record->qty_wo,
-                        'actual_production' => 0,
-                        'qty_wip' => 0,
-                        'ng' => 0,
-                        'subconts_jasa' => $dataSubcontsJasa->qty_subcont_jasa,
-                        'qty_adj_in' => 0,
-                        'rfg' => 0,
-                        'rfg_subconts_jasa' => 0,
-                        'qty_adj_out' => 0,
-                    ];
-                }
-
-                foreach ($receipts as $receipt) {
-                    $all_data[] = [
-                        'type' => $receipt->receipt_type,
-                        'date' => $receipt->trans_date,
-                        'wo_no' => $receipt->wo_no,
-                        'wo_qty' => $record->qty_wo,
-                        'actual_production' => 0,
-                        'qty_wip' => 0,
-                        'ng' => 0,
-                        'subconts_jasa' => 0,
-                        'qty_adj_in' => 0,
-                        'rfg' => $receipt->qty,
-                        'rfg_subconts_jasa' => 0,
-                        'qty_adj_out' => 0,
-                    ];
-                }
-
-                // foreach ($receiptsNB as $receiptNB) {
-                //     $all_data[] = [
-                //         'type' => $receiptNB->receipt_type,
-                //         'date' => $receiptNB->trans_date,
-                //         'wo_no' => $receiptNB->wo_no,
-                //         'wo_qty' => $record->qty_wo,
-                //         'actual_production' => 0,
-                //         'qty_wip' => 0,
-                //         'ng' => 0,
-                //         'subconts_jasa' => 0,
-                //         'qty_adj_in' => 0,
-                //         'rfg' => $receiptNB->qty,
-                //         'rfg_subconts_jasa' => 0,
-                //         'qty_adj_out' => 0,
-                //     ];
-                // }
-
-                foreach ($receiptsWIP as $receiptWIP) {
-                    $all_data[] = [
-                        'type' => $receiptWIP->receipt_type,
-                        'date' => $receiptWIP->trans_date,
-                        'wo_no' => $receiptWIP->wo_no,
-                        'wo_qty' => $record->qty_wo,
-                        'actual_production' => 0,
-                        'qty_wip' => 0,
-                        'ng' => 0,
-                        'subconts_jasa' => 0,
-                        'qty_adj_in' => 0,
-                        'rfg' => $receiptWIP->qty,
-                        'rfg_subconts_jasa' => 0,
-                        'qty_adj_out' => 0,
-                    ];
-                }
-
-                foreach ($transFgs as $transFg) {
-                    $all_data[] = [
-                        'type' => 'TRANSACTION FG',
-                        'date' => $transFg->request_date,
-                        'wo_no' => $transFg->request_no,
-                        'wo_qty' => $record->qty_wo,
-                        'actual_production' => 0,
-                        'qty_wip' => 0,
-                        'ng' => 0,
-                        'subconts_jasa' => 0,
-                        'qty_adj_in' => 0,
-                        'rfg' => $transFg->qty,
-                        'rfg_subconts_jasa' => 0,
-                        'qty_adj_out' => 0,
-                    ];
-                }
-
-                foreach ($dataRfgSubcontsJasas  as $dataRfgSubcontsJasa) {
-                    $all_data[] = [
-                        'type' => 'RFG SUBCONTS JASA',
-                        'date' => $dataRfgSubcontsJasa->trans_date,
-                        'wo_no' => $dataRfgSubcontsJasa->wo_no,
-                        'wo_qty' => $record->qty_wo,
-                        'actual_production' => 0,
-                        'qty_wip' => 0,
-                        'ng' => 0,
-                        'subconts_jasa' => 0,
-                        'qty_adj_in' => 0,
-                        'rfg' => 0,
-                        'rfg_subconts_jasa' => $dataRfgSubcontsJasa->qty_rfg,
-                        'qty_adj_out' => 0,
-                    ];
-                }
-
-                foreach ($dataAdjIns  as $dataAdjIn) {
-                    $all_data[] = [
-                        'type' => $dataAdjIn->transaction_type,
-                        'date' => $dataAdjIn->request_date,
-                        'wo_no' => $dataAdjIn->request_no,
-                        'wo_qty' => $record->qty_wo,
-                        'actual_production' => 0,
-                        'qty_wip' => 0,
-                        'ng' => 0,
-                        'subconts_jasa' => 0,
-                        'qty_adj_in' => $dataAdjIn->qty,
-                        'rfg' => 0,
-                        'rfg_subconts_jasa' => 0,
-                        'qty_adj_out' => 0,
-                    ];
-                }
-
-                foreach ($dataAdjOuts  as $dataAdjOut) {
-                    $all_data[] = [
-                        'type' => $dataAdjOut->transaction_type,
-                        'date' => $dataAdjOut->request_date,
-                        'wo_no' => $dataAdjOut->request_no,
-                        'wo_qty' => $record->qty_wo,
-                        'actual_production' => 0,
-                        'qty_wip' => 0,
-                        'ng' => 0,
-                        'subconts_jasa' => 0,
-                        'qty_adj_in' => 0,
-                        'rfg' => 0,
-                        'rfg_subconts_jasa' => 0,
-                        'qty_adj_out' => $dataAdjOut->qty,
-                    ];
-                }
-
-
-
-                // Urutkan data berdasarkan tanggal
-                usort($all_data, function ($a, $b) {
-                    return strtotime($a['date']) - strtotime($b['date']);
-                });
-
-                // Generate HTML
-                $nod = 1;
-                $balance = $begin;
-                foreach ($all_data as $data) {
-                    $total_production = $data['actual_production'] + $data['qty_wip'] + $data['ng'];
-                    $balance += $data['actual_production'] + $data['qty_wip'] + $data['subconts_jasa'] + $data['qty_adj_in'] - $data['rfg'] - $data['rfg_subconts_jasa'] - $data['qty_adj_out'];
-                    $html .= '  <tr>
-                                    <td></td>
-                                    <td style="text-align:center">' . $nod . '</td>
-                                    <td>' . $record->number  . '</td>
-                                    <td>' . $record->name  . '</td>
-                                    <td>' . $data['type']  . '</td>
-                                    <td>' . $data['date']  . '</td>
-                                    <td>' . $data['wo_no']  . '</td>
-                                    <td style="text-align:right;">' . number_format($data['wo_qty'], 2)  . '</td>
-                                    <td style="text-align:right;">' . number_format($begin, 2)  . '</td>
-                                    <td style="text-align:right;">' . number_format($data['actual_production'], 2)  . '</td>
-                                    <td style="text-align:right;">' . number_format($data['qty_wip'], 2)  . '</td>
-                                    <td style="text-align:right;">' . number_format($data['ng'], 2)  . '</td>
-                                    <td style="text-align:right;">' . number_format($total_production, 2)  . '</td>
-                                    <td style="text-align:right;">' . number_format($data['subconts_jasa'], 2)  . '</td>
-                                    <td style="text-align:right;">' . number_format($data['qty_adj_in'], 2)  . '</td>
-                                    <td style="text-align:right;">' . number_format($data['rfg'], 2)  . '</td>
-                                    <td style="text-align:right;">' . number_format($data['rfg_subconts_jasa'], 2)  . '</td>
-                                    <td style="text-align:right;">' . number_format($data['qty_adj_out'], 2)  . '</td>
-                                    <td style="text-align:right;">' . number_format($balance, 2)  . '</td>
-                                </tr>';
-
-                    $begin = $balance;
-                    $nod++;
-                }
+            $rate = 1;
+            if ($record->standard_currency == 'USD') {
+                $q_rate = $this->db->get_where('standard_exchange_rates', ['currency_from' => 'USD', 'start_date <=' => $filter_from, 'end_date >=' => $filter_to])->row();
+                $rate = $q_rate ? $q_rate->middle : 1;
             }
+
+            // standard Price
+            $std_p = (float)$record->std_price * $rate;
+            $act_p = 0; // actual price WIP belum diketahui
+
+            // Begin
+            $b_qty = (float)$record->begin_balance;
+            $b_std_amount = $b_qty * $std_p;
+            $b_act_amount = $b_qty * $std_p; // begin actual = std
+            $b_variance   = $b_act_amount - $b_std_amount;
+
+            $in_qty = $record->qty_actual + $record->qty_wip + $record->subconts_jasa + $record->qty_adj_in;
+            $out_qty = $record->qty_ng_sa + $record->qty_ng_wip + $record->qty_output + $record->qty_rfg + $record->rfg_jasa + $record->qty_adj_out;
+
+            // In
+            $in_std_amount = $in_qty * $std_p;
+            $in_act_amount = $in_qty * 0;
+            $in_variance   = $in_act_amount - $in_std_amount;
+
+            // Out 
+            $out_std_amount = $out_qty * $std_p;
+            $out_act_amount = $out_qty * 0;
+            $out_variance   = $out_act_amount - $out_std_amount;
+
+            // Ending
+            $e_qty = $record->ending_balance;
+            $e_std_amount = $e_qty * $std_p;
+            $e_act_amount = ($b_act_amount + $in_act_amount) - $out_act_amount;
+            $e_act_p = 0;
+            if ($e_qty > 0) {
+                $e_act_p = $e_act_amount / $e_qty;
+            }
+            $e_variance = $e_act_amount - $e_std_amount;
+
+            $html .= '  <tr>
+                <td style="text-align:center">' . $no . '</td>
+                <td colspan="3" style="mso-number-format:\@;">' . $record->number . '</td>
+                <td colspan="2" style="mso-number-format:\@;">' . $record->name . '</td>
+                <td colspan="2">' . $record->uom . '</td>
+                <td colspan="2">' . $record->division . '</td>
+
+                <td style="text-align:right;">' . number_format($record->begin_balance, 2) . '</td>
+                <td style="text-align:right;">' . number_format($std_p, 2) . '</td>
+                <td style="text-align:right;">' . number_format($b_std_amount, 2) . '</td>
+                <td style="text-align:right;">' . number_format($std_p, 2) . '</td>
+                <td style="text-align:right;">' . number_format($b_act_amount, 2) . '</td>
+                <td style="text-align:right;">' . number_format($b_variance, 2) . '</td>
+
+                <td style="text-align:right;">' . number_format($in_qty, 2) . '</td>
+                <td style="text-align:right;">' . number_format($std_p, 2) . '</td>
+                <td style="text-align:right;">' . number_format($in_std_amount, 2) . '</td>
+                <td style="text-align:right;">' . number_format($act_p, 2) . '</td>
+                <td style="text-align:right;">' . number_format($in_act_amount, 2) . '</td>
+                <td style="text-align:right;">' . number_format($in_variance, 2) . '</td>
+
+                <td style="text-align:right;">' . number_format($out_qty, 2) . '</td>
+                <td style="text-align:right;">' . number_format($std_p, 2) . '</td>
+                <td style="text-align:right;">' . number_format($out_std_amount, 2) . '</td>
+                <td style="text-align:right;">' . number_format($act_p, 2) . '</td>
+                <td style="text-align:right;">' . number_format($out_act_amount, 2) . '</td>
+                <td style="text-align:right;">' . number_format($out_variance, 2) . '</td>
+
+                <td style="text-align:right;">' . number_format($record->ending_balance, 2) . '</td>
+                <td style="text-align:right;">' . number_format($std_p, 2) . '</td>
+                <td style="text-align:right;">' . number_format($e_std_amount, 2) . '</td>
+                <td style="text-align:right;">' . number_format($e_act_p, 2) . '</td>
+                <td style="text-align:right;">' . number_format($e_act_amount, 2) . '</td>
+                <td style="text-align:right;">' . number_format($e_variance, 2) . '</td>
+                
+
+                <td style="text-align:right;">' . number_format($record->qty_actual, 2) . '</td>
+                <td style="text-align:right;">' . number_format($std_p, 2) . '</td>
+                <td style="text-align:right;">' . number_format($std_p * $record->qty_actual, 2) . '</td>
+                <td style="text-align:right;"></td>
+                <td style="text-align:right;"></td>
+                
+                <td style="text-align:right;">' . number_format($record->qty_wip, 2) . '</td>
+                <td style="text-align:right;">' . number_format($std_p, 2) . '</td>
+                <td style="text-align:right;">' . number_format($std_p * $record->qty_wip, 2) . '</td>
+                <td style="text-align:right;"></td>
+                <td style="text-align:right;"></td>
+                
+                <td style="text-align:right;">' . number_format($record->subconts_jasa, 2) . '</td>
+                <td style="text-align:right;">' . number_format($std_p, 2) . '</td>
+                <td style="text-align:right;">' . number_format($std_p * $record->subconts_jasa, 2) . '</td>
+                <td style="text-align:right;"></td>
+                <td style="text-align:right;"></td>
+
+                <td style="text-align:right;">' . number_format($record->qty_adj_in, 2) . '</td>
+                <td style="text-align:right;">' . number_format($std_p, 2) . '</td>
+                <td style="text-align:right;">' . number_format($std_p * $record->qty_adj_in, 2) . '</td>
+                <td style="text-align:right;"></td>
+                <td style="text-align:right;"></td>
+
+                <td style="text-align:right;">' . number_format($record->qty_ng_sa, 2) . '</td>
+                <td style="text-align:right;">' . number_format($std_p, 2) . '</td>
+                <td style="text-align:right;">' . number_format($std_p * $record->qty_ng_sa, 2) . '</td>
+                <td style="text-align:right;"></td>
+                <td style="text-align:right;"></td>
+
+                <td style="text-align:right;">' . number_format($record->qty_ng_wip, 2) . '</td>
+                <td style="text-align:right;">' . number_format($std_p, 2) . '</td>
+                <td style="text-align:right;">' . number_format($std_p * $record->qty_ng_wip, 2) . '</td>
+                <td style="text-align:right;"></td>
+                <td style="text-align:right;"></td>
+
+                <td style="text-align:right;">' . number_format($record->qty_output, 2) . '</td>
+                <td style="text-align:right;">' . number_format($std_p, 2) . '</td>
+                <td style="text-align:right;">' . number_format($std_p * $record->qty_output, 2) . '</td>
+                <td style="text-align:right;"></td>
+                <td style="text-align:right;"></td>
+
+                <td style="text-align:right;">' . number_format($record->qty_rfg, 2) . '</td>
+                <td style="text-align:right;">' . number_format($std_p, 2) . '</td>
+                <td style="text-align:right;">' . number_format($std_p * $record->qty_rfg, 2) . '</td>
+                <td style="text-align:right;"></td>
+                <td style="text-align:right;"></td>
+
+                <td style="text-align:right;">' . number_format($record->rfg_jasa, 2) . '</td>
+                <td style="text-align:right;">' . number_format($std_p, 2) . '</td>
+                <td style="text-align:right;">' . number_format($std_p * $record->rfg_jasa, 2) . '</td>
+                <td style="text-align:right;"></td>
+                <td style="text-align:right;"></td>
+
+                <td style="text-align:right;">' . number_format($record->qty_adj_out, 2) . '</td>
+                <td style="text-align:right;">' . number_format($std_p, 2) . '</td>
+                <td style="text-align:right;">' . number_format($std_p * $record->qty_adj_out, 2) . '</td>
+                <td style="text-align:right;"></td>
+                <td style="text-align:right;"></td>
+            </tr>';
+
             $no++;
         }
         $html .= '</table></body></html>';
