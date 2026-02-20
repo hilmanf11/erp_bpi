@@ -439,3 +439,6 @@ add Specification ([d1a2cbe9](https://github.com/hilmanf11/erp_bpi/commit/d1a2cb
 
 ### [2026-02-20]
 - **Rizki Puji**: Fixing: AP Payments add PI status on List Invoice datatablesTemp ([221a3789](https://github.com/hilmanf11/erp_bpi/commit/221a3789025dccc56810954bbef609e07da68749))
+
+### [2026-02-20]
+- **Rizki Puji**: Fixing: datatables balance and dropdown PI on AP Payments ([9411f052](https://github.com/hilmanf11/erp_bpi/commit/9411f05247f76c5bbfd3a3fd13836279fbe16658))
