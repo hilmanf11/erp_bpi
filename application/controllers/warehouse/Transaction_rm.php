@@ -59,7 +59,9 @@ class Transaction_rm extends CI_Controller
         $post = isset($_POST['q']) ? $_POST['q'] : "";
         $records = $this->crud->query("SELECT id, number, name, uom 
         FROM item_rm 
-        WHERE (item_category_id = 'C01' or (item_category_id = 'C09' AND item_family_id = 'P23')) and `number` like '%$post%' or `name` like '$post'
+        WHERE `number` like '%$post%' or `name` like '$post'
+        -- WHERE (item_category_id = 'C01' or (item_category_id = 'C09' AND item_family_id = 'P23')) and `number` like '%$post%' or `name` like '$post'
+
         ORDER BY `number` ASC");
         echo json_encode($records);
     }
@@ -237,6 +239,7 @@ class Transaction_rm extends CI_Controller
                         "item_name" => $record['item_name'],
                         "qty" => $record['qty'],
                         "uom" => $record['uom'],
+                        "specification" => $record['specification'],
                         "remarks" => $record['remarks'],
                         "transaction_type" => $record['transaction_type'],
                         "created_by" => $record['created_by'],
@@ -261,8 +264,9 @@ class Transaction_rm extends CI_Controller
                 } else {
                     $request_no = $post['request_no'];
                     $item_rm_id = $post['item_rm_id'];
+                    $specification = $post['specification'];
 
-                    $datas = $this->crud->reads('transaction_rm', [], ["request_no" => $request_no, "item_rm_id" => $item_rm_id]);
+                    $datas = $this->crud->reads('transaction_rm', [], ["request_no" => $request_no, "item_rm_id" => $item_rm_id, "specification" => $specification]);
 
                     if(count($datas) > 0){
                         $send = $this->crud->update('transaction_rm', ["request_no" => $request_no, "item_rm_id" => $item_rm_id], $post);
