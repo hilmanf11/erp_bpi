@@ -433,6 +433,7 @@
                             prompt: 'Choose Debit/Credit',
                             panelHeight: 'auto'
                         }}">Debit/Credit</th>
+                    <th data-options="field:'pi_status', width:100, align:'center', formatter:statusformatInv, hidden:true, editor:{type:'textbox', options:{readonly:true}}">Invoice Status</th>
                 </tr>
             </thead>
         </table>

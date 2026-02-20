@@ -44,6 +44,20 @@ class Ap_payments extends CI_Controller
     public function reads($number)
     {
         $payment_no = base64_decode($number);
+        $this->db->select('a.*, b.account_name, c.status as pi_status');
+        $this->db->from('ap_payments a');
+        $this->db->join('account_coa b', 'a.account_number = b.account_number', 'left');        
+        $this->db->join('purchase_invoices c', 'a.purchase_invoice = c.number', 'left');
+        $this->db->where('a.payment_no', $payment_no);
+        $records = $this->db->get()->result_array();
+
+        header('Content-Type: application/json');
+        die(json_encode($records));
+    }
+
+    public function reads_existing($number)
+    {
+        $payment_no = base64_decode($number);
         $this->db->select('a.*, b.account_name');
         $this->db->from('ap_payments a');
         $this->db->join('account_coa b', 'a.account_number = b.account_number', 'left');
