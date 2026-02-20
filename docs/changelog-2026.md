@@ -436,3 +436,6 @@ add Specification ([d1a2cbe9](https://github.com/hilmanf11/erp_bpi/commit/d1a2cb
 
 ### [2026-02-20]
 - **Rizki Puji**: Fixing: AP Payments add PI status on List Invoice style ([9c31b893](https://github.com/hilmanf11/erp_bpi/commit/9c31b8933d65307f0cfa2efb2b09e2621f3cd8f0))
+
+### [2026-02-20]
+- **Rizki Puji**: Fixing: AP Payments add PI status on List Invoice datatablesTemp ([221a3789](https://github.com/hilmanf11/erp_bpi/commit/221a3789025dccc56810954bbef609e07da68749))
