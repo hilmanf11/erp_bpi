@@ -419,3 +419,6 @@ Update lock date ([d6b6ff25](https://github.com/hilmanf11/erp_bpi/commit/d6b6ff2
 
 ### [2026-02-19]
 - **Rizki Puji**: Fixing: validate balance partial paid datatablesTemp on AP Payments ([755a52e9](https://github.com/hilmanf11/erp_bpi/commit/755a52e9f7a87e7c6c8295552a2d1a591298643b))
+
+### [2026-02-20]
+- **Rizki Puji**: Fixing: bug create Posting and create or update AP Payments ([4afdd745](https://github.com/hilmanf11/erp_bpi/commit/4afdd7457bf1aba0ca9da4c0d7f96fe3068aa274))
