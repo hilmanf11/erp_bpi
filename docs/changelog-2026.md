@@ -442,3 +442,8 @@ add Specification ([d1a2cbe9](https://github.com/hilmanf11/erp_bpi/commit/d1a2cb
 
 ### [2026-02-20]
 - **Rizki Puji**: Fixing: datatables balance and dropdown PI on AP Payments ([9411f052](https://github.com/hilmanf11/erp_bpi/commit/9411f05247f76c5bbfd3a3fd13836279fbe16658))
+
+## March 2026
+
+### [2026-03-03]
+- **Rizki Puji**: Fixing: input type NPWP on Customers ([60eb8dc4](https://github.com/hilmanf11/erp_bpi/commit/60eb8dc4d23c01e902edec63cb4ad7a11e5cf1ac))
