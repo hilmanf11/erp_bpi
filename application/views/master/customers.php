@@ -130,7 +130,7 @@
                 </div> 
                 <div class="fitem">
                     <span style="width:35%; display:inline-block;">NPWP</span>
-                    <input style="width:60%;" name="npwp" id="npwp" class="easyui-numberbox">
+                    <input style="width:60%;" name="npwp" id="npwp" class="easyui-textbox">
                 </div>
                 
                 <div class="fitem">
