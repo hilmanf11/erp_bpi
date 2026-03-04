@@ -57,6 +57,27 @@
     <?= $button ?>
 </div>
 
+
+<!-- Upload -->
+<div id="dlg_upload" class="easyui-dialog" title="Upload Data" data-options="closed: true,modal:true" style="width: 500px; padding:10px; top: 20px;">
+    <form id="frm_upload" method="post" enctype="multipart/form-data" novalidate>
+        <fieldset style="width:100%; border:1px solid #d0d0d0; margin-bottom: 10px; border-radius:4px; float: left;">
+            <legend><b>Form Data</b></legend>
+            <div class="fitem">
+                <span style="width:35%; display:inline-block;">File Upload</span>
+                <input name="file_upload" style="width: 60%;" required="" accept=".xls" id="file_excel" class="easyui-filebox">
+            </div>
+        </fieldset>
+    </form>
+    <span style="float: left; color:green;">SUCCESS : <b id="p_success">0</b></span><span style="float: right; color:red;"> FAILED : <b id="p_failed">0</b></span>
+    <div id="p_upload" class="easyui-progressbar" style="width:100%; margin-top: 10px;"></div>
+    <center><b id="p_start">0</b> Of <b id="p_finish">0</b></center>
+    <div id="p_remarks" title="History Upload" class="easyui-panel" style="width:100%; height:200px; padding:10px; margin-top: 10px;">
+        <ul id="remarks">
+        </ul>
+    </div>
+</div>
+
 <div class="easyui-panel" title="Print Preview" style="width:100%;padding:10px;">
     <iframe id="printout" src="" style="width: 100%; height:500px; border: 0;"></iframe>
 </div>
@@ -229,6 +250,126 @@
             }
         }
     });
+
+
+    // Upload Form
+    function upload() {
+        $('#dlg_upload').dialog('open');
+    }
+
+    // Download Template
+    function download_excel() {
+        window.location.assign('<?= base_url('template/tmp_inventory_rm_standard_actual.xls') ?>');
+    }
+
+    // Upload Data
+    $('#dlg_upload').dialog({
+        buttons: [{
+            text: 'List Failed',
+            handler: function() {
+                window.open('<?= base_url("finance/inventory_rm_standard_actual/uploadDownloadFailed") ?>', '_blank');
+            }
+        }, {
+            text: 'Upload',
+            iconCls: 'icon-ok',
+            handler: function() {
+                $('#frm_upload').form('submit', {
+                    url: '<?= base_url("finance/inventory_rm_standard_actual/upload") ?>',
+                    onSubmit: function() {
+                        if (!$(this).form('validate')) return false;
+                        
+                        $.messager.progress({
+                            title: 'Please Wait',
+                            msg: 'Importing Excel to Database'
+                        });
+                        return true;
+                    },
+                    success: function(result) {
+                        $.messager.progress('close');
+                        try {
+                            const response = typeof result === 'string' ? JSON.parse(result) : result;
+                            
+                            if (response.data && Array.isArray(response.data)) {
+                                // Reset tampilan progress sebelum mulai
+                                resetProgress(response.data.length);
+                                processUploadData(response.data);
+                            } else {
+                                $.messager.alert('Error', response.message || 'Invalid data format.', 'error');
+                            }
+                        } catch (e) {
+                            $.messager.alert('Error', 'Server Error: ' + result, 'error');
+                        }
+                    }
+                });
+            }
+        }]
+    });
+
+    function resetProgress(total) {
+        $('#p_upload').progressbar('setValue', 0);
+        $('#p_start').html(0);
+        $('#p_finish').html(total);
+        $('#p_success, #p_failed').html(0);
+        $('#p_remarks').empty();
+    }
+
+    function processUploadData(dataToUpload) {
+        const totalItems = dataToUpload.length;
+        let successfulCount = 0;
+        let failedCount = 0;
+
+        const processItem = (index) => {
+            if (index >= totalItems) {
+                $.messager.alert('Info', `Proses Selesai. Sukses: ${successfulCount}, Gagal: ${failedCount}`, 'info');
+                return;
+            }
+
+            const currentData = dataToUpload[index];
+            
+            $.ajax({
+                type: "POST",
+                url: "<?= base_url('finance/inventory_rm_standard_actual/uploadCreate') ?>",
+                data: { "data": currentData },
+                dataType: "json",
+                success: function(result) {
+                    let statusHtml = "";
+                    if (result.theme === "success") {
+                        successfulCount++;
+                        $('#p_success').html(successfulCount);
+                        statusHtml = `<span style='color: green;'><b>${result.title}</b>: ${result.message}</span><br>`;
+                    } else {
+                        failedCount++;
+                        $('#p_failed').html(failedCount);
+                        statusHtml = `<span style='color: red;'><b>${result.title}</b>: ${result.message}</span><br>`;
+                    }
+                    
+                    updateUI(index, totalItems, statusHtml);
+                    processItem(index + 1);
+                },
+                error: function(xhr) {
+                    failedCount++;
+                    $('#p_failed').html(failedCount);
+                    const errorMsg = `<span style='color: red;'><b>Error HTTP</b>: Terjadi kesalahan sistem.</span><br>`;
+                    
+                    updateUI(index, totalItems, errorMsg);
+                    processItem(index + 1);
+                }
+            });
+        };
+
+        function updateUI(index, total, htmlSnippet) {
+            const progressValue = Math.floor(((index + 1) / total) * 100);
+            $('#p_upload').progressbar('setValue', progressValue);
+            $('#p_start').html(index + 1);
+            
+            // Optimasi: Scroll otomatis ke bawah agar user melihat log terbaru
+            const remarks = $('#p_remarks');
+            remarks.append(htmlSnippet);
+            remarks.scrollTop(remarks[0].scrollHeight);
+        }
+
+        processItem(0);
+    }
 
 
     //Format Datepicker
