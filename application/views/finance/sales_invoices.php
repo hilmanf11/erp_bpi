@@ -4012,6 +4012,13 @@
                     var total_grand = $("#total_grand").numberbox('getValue');
                     var total_local = $("#total_local").numberbox('getValue');
 
+
+                    // Validasi Balance
+                    if (parseFloat(balance_debit).toFixed(2) !== parseFloat(balance_credit).toFixed(2)) {
+                        $.messager.alert('Warning', '<b>Balance Error!</b><br>Total Debit (' + balance_debit + ') must be equal to Total Credit (' + balance_credit + ').', 'warning');
+                        return false; // Hentikan proses, tidak lanjut ke submit
+                    }
+
                     if (parseFloat(balance_debit) == parseFloat(balance_credit)) {
                         if (due_date == "" || trans_date == "" || customer_id == "" || journal_type_id == "" || faktur_no.length != 17) {
 
