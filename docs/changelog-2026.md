@@ -447,3 +447,6 @@ add Specification ([d1a2cbe9](https://github.com/hilmanf11/erp_bpi/commit/d1a2cb
 
 ### [2026-03-03]
 - **Rizki Puji**: Fixing: input type NPWP on Customers ([60eb8dc4](https://github.com/hilmanf11/erp_bpi/commit/60eb8dc4d23c01e902edec63cb4ad7a11e5cf1ac))
+
+### [2026-03-04]
+- **Rizki Puji**: Hotfix: bug balance not same and MDS account on Sales Invoices ([a3cda44b](https://github.com/hilmanf11/erp_bpi/commit/a3cda44b56f11b8243b2b3f4a0e824b48eb1c21d))
