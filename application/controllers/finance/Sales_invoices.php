@@ -395,7 +395,7 @@ class Sales_invoices extends CI_Controller
     }
 
     // Autofill Journal Type by Division - Company Name
-    public function readJournalTypeByDivision()
+    public function readJournalTypeByDivision_existing()
     {
         $division = $this->input->post('division');
         $customer_id = $this->input->post('customer_id');
@@ -433,6 +433,51 @@ class Sales_invoices extends CI_Controller
         } else {
             echo json_encode([]);
         }
+    }
+
+    public function readJournalTypeByDivision()
+    {
+        $division = $this->input->post('division');
+        $customer_id = $this->input->post('customer_id');
+
+        $customer = $this->db->get_where('customers', ['id' => $customer_id])->row();
+        
+        if (empty($customer)) {
+            echo json_encode([]);
+            return;
+        }
+
+        // Normalisasi Nama Customer
+        $customer_name = strtolower($customer->name);
+        // Hapus PT, CV, titik, dan koma
+        $search_term = str_replace(['pt ', 'cv ', '.', ','], '', $customer_name);
+        $search_term = trim($search_term);
+
+        $this->db->select('id, name');
+        $this->db->from('journal_types');
+
+        // --- LOGIKA MULTI-DIVISION ---
+        $this->db->group_start();
+            if ($division == "MTS") {
+                // Jika input MTS, cari yang berawalan MDS ATAU MTS
+                $this->db->like('name', 'MDS', 'after');
+                $this->db->or_like('name', 'MTS', 'after');
+            } else {
+                // Jika selain MTS (misal: FIN, HRD), cari sesuai input
+                $this->db->like('name', $division, 'after');
+            }
+        $this->db->group_end();
+
+        // --- LOGIKA NAMA CUSTOMER ---
+        if (!empty($search_term)) {
+            $this->db->like('name', $search_term, 'both');
+        }
+
+        $result = $this->db->get()->row();
+
+        // die($this->db->last_query()); // Debugging: Buka comment jika data masih tidak muncul
+
+        echo json_encode($result ? $result : []);
     }
 
     public function readJournal($journal_type_id)
