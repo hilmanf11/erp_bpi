@@ -2,6 +2,13 @@
 date_default_timezone_set("Asia/Bangkok");
 defined('BASEPATH') or exit('No direct script access allowed');
 
+// Memastikan namespace dikenali
+use PhpOffice\PhpSpreadsheet\Spreadsheet;
+use PhpOffice\PhpSpreadsheet\Writer\Xlsx;
+use PhpOffice\PhpSpreadsheet\IOFactory;
+use PhpOffice\PhpSpreadsheet\Cell\DataType;
+use PhpOffice\PhpSpreadsheet\Shared\Date;
+
 /**
  * @property CI_Input $input
  * @property CI_Loader $load
@@ -109,6 +116,132 @@ class Inventory_rm_standard_actual extends CI_Controller
         $records = $this->db->get()->result_array();
         echo json_encode($records);
     }
+
+
+    // ----- UPLOAD DATA -----
+    public function upload()
+    {
+        header('Content-Type: application/json');
+
+        error_reporting(0);
+        require_once 'assets/vendors/excel_reader2.php';
+
+        try {
+            $target = basename($_FILES['file_upload']['name']);
+
+            if (!move_uploaded_file($_FILES['file_upload']['tmp_name'], $target)) {
+                echo json_encode(["title" => "Error", "message" => "Failed to upload file.", "theme" => "error"]);
+                return;
+            }
+
+            chmod($_FILES['file_upload']['name'], 0777);
+            $file = $_FILES['file_upload']['name'];
+            $data = new Spreadsheet_Excel_Reader($file, false);
+            $total_row = $data->rowcount($sheet_index = 0);
+
+            for ($i = 3; $i <= $total_row; $i++) {
+                // [^\x20-\x7E] menghapus semua karakter UTF-8 
+                $datas[] = [
+                    'part_no'     => preg_replace('/[^\x20-\x7E]/', '', $data->val($i, 2)),
+                    'cutoff_date' => preg_replace('/[^\x20-\x7E]/', '', $data->val($i, 3)),
+                    'uom'         => preg_replace('/[^\x20-\x7E]/', '', $data->val($i, 4)),
+                    'currency'    => preg_replace('/[^\x20-\x7E]/', '', $data->val($i, 5)),
+                    'qty'         => preg_replace('/[^\x20-\x7E]/', '', $data->val($i, 6)),
+                    'price'       => preg_replace('/[^\x20-\x7E]/', '', $data->val($i, 7)),
+                ];
+            }
+
+            $response = [
+                'total' => count($datas),
+                'data'  => $datas
+            ];
+            
+            echo json_encode($response);
+
+            unlink($_FILES['file_upload']['name']);
+
+        } catch (Exception $e) {
+            // Handle upload errors gracefully
+            http_response_code(500); // Set HTTP status code for server error
+            echo json_encode(["title" => "Error", "message" => "Error upload file! " . $e->getMessage(), "theme" => "error"]);
+        } finally {
+            // Ensure the temporary file is deleted even if an error occurs
+            if (isset($target) && file_exists($target)) {
+                unlink($target);
+            }
+        }
+    }
+
+    // Insert process from upload
+    public function uploadcreate()
+    {
+        if ($this->input->post()) {
+            $data = $this->input->post('data');
+
+            // check part_no
+            $item_rm = $this->db->select('id, number, name, number')->from('item_rm')->like('number', $data['part_no'])->get()->row();
+
+            if (empty($data['part_no']) && empty($data['cutoff_date']) && empty($data['uom']) && empty($data['qty']) && empty($data['price']) ) {
+                echo json_encode(array("title" => "Required", "message" => "All Data is Required!", "theme" => "error"));
+            
+            } elseif (empty($data['part_no'])) {
+                echo json_encode(array("title" => "Required", "message" => "Part No is Required!", "theme" => "error"));
+            
+            } elseif (empty($data['qty'])) {
+                echo json_encode(array("title" => "Required", "message" => "Qty of " . $data['part_no'] . " is Required!", "theme" => "error"));
+            
+            } elseif (empty($item_rm)) {
+                echo json_encode(array("title" => "Not Found", "message" => "Item of " . $data['part_no'] . " is Not Found!", "theme" => "error"));
+            
+            } else {
+                $cutoff_date = date("Y-m-d", strtotime($data['cutoff_date']));
+                
+                $dataFinal = [                    
+                    'part_no'     => $data['part_no'] ?? $item_rm->number,
+                    'cutoff_date' => $cutoff_date ?? date('Y-01-01'),
+                    'uom'         => $data['uom'],
+                    'currency'    => $data['currency'] ?? 'IDR',
+                    'qty'         => $data['qty'],
+                    'price'       => $data['price'],
+                    'upload'      => 'YES',
+                    'upload_date' => date('Y-m-d'),
+                ];
+
+                $send   = $this->crud->create('inventory_rm_actual', $dataFinal);
+                echo $send;
+            }
+        }
+    }
+    
+    public function uploadclearFailed()
+    {
+        @unlink('failed/inventory_rm_standard_actual.txt');
+    }
+
+    public function uploadcreateFailed()
+    {
+        if ($this->input->post()) {
+            $message = $this->input->post('message');
+            $textFailed = fopen('failed/inventory_rm_standard_actual.txt', 'a');
+            fwrite($textFailed, $message . "\n");
+            fclose($textFailed);
+        }
+    }
+
+    public function uploadDownloadFailed()
+    {
+        $file = "failed/inventory_rm_standard_actual.txt";
+
+        header('Content-Description: File Failed');
+        header('Content-Disposition: attachment; filename=' . basename($file));
+        header('Expires: 0');
+        header('Cache-Control: must-revalidate');
+        header('Pragma: public');
+        header('Content-Length: ' . @filesize($file));
+        header("Content-Type: text/plain");
+        @readfile($file);
+    }
+    // ----- END UPLOAD FUNCTIONS ----- 
 
     function customCss() 
     {
