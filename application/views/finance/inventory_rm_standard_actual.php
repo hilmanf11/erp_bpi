@@ -273,6 +273,12 @@
             text: 'Upload',
             iconCls: 'icon-ok',
             handler: function() {
+                //Clear File
+                $.ajax({
+                    url: "<?= base_url('finance/inventory_rm_standard_actual/uploadclearFailed') ?>",
+                    async: false // Gunakan async false agar log dipastikan clear sebelum submit
+                });
+
                 $('#frm_upload').form('submit', {
                     url: '<?= base_url("finance/inventory_rm_standard_actual/upload") ?>',
                     onSubmit: function() {
@@ -285,7 +291,6 @@
                         return true;
                     },
                     success: function(result) {
-                        $.messager.progress('close');
                         try {
                             const response = typeof result === 'string' ? JSON.parse(result) : result;
                             
@@ -314,17 +319,26 @@
     }
 
     function processUploadData(dataToUpload) {
+        if (!dataToUpload || dataToUpload.length === 0) {
+            $.messager.alert('Warning', 'No data to process.', 'warning');
+            return;
+        }
+
         const totalItems = dataToUpload.length;
         let successfulCount = 0;
         let failedCount = 0;
 
         const processItem = (index) => {
             if (index >= totalItems) {
-                $.messager.alert('Info', `Proses Selesai. Sukses: ${successfulCount}, Gagal: ${failedCount}`, 'info');
+                $.messager.progress('close');
+                
+                const message = `Upload complete. Success: ${successfulCount}, Failed: ${failedCount}`;
+                $.messager.alert('Info', message, 'info');
                 return;
             }
 
             const currentData = dataToUpload[index];
+            const excelRow = index + 1; 
             
             $.ajax({
                 type: "POST",
@@ -333,39 +347,66 @@
                 dataType: "json",
                 success: function(result) {
                     let statusHtml = "";
+
                     if (result.theme === "success") {
                         successfulCount++;
                         $('#p_success').html(successfulCount);
                         statusHtml = `<span style='color: green;'><b>${result.title}</b>: ${result.message}</span><br>`;
+                        finalizeStep(index, statusHtml);
                     } else {
                         failedCount++;
                         $('#p_failed').html(failedCount);
+                        
+                        // Pesan log gagal dengan nomor baris
+                        const errorMessage = `No.${excelRow}: ${result.message}`;
                         statusHtml = `<span style='color: red;'><b>${result.title}</b>: ${result.message}</span><br>`;
+                        
+                        // Simpan log gagal
+                        saveFailedLog(currentData, errorMessage, function() {
+                            finalizeStep(index, statusHtml);
+                        });
                     }
-                    
-                    updateUI(index, totalItems, statusHtml);
-                    processItem(index + 1);
                 },
-                error: function(xhr) {
+                error: function(xhr, status, error) {
                     failedCount++;
                     $('#p_failed').html(failedCount);
-                    const errorMsg = `<span style='color: red;'><b>Error HTTP</b>: Terjadi kesalahan sistem.</span><br>`;
-                    
-                    updateUI(index, totalItems, errorMsg);
-                    processItem(index + 1);
+                    const errorTitle = `<b style='color: red;'>Error</b> | HTTP Request Failed (${error})`;
+                    finalizeStep(index, errorTitle);
                 }
             });
         };
 
-        function updateUI(index, total, htmlSnippet) {
-            const progressValue = Math.floor(((index + 1) / total) * 100);
+        function finalizeStep(index, htmlStatus) {
+            $("#p_remarks").append(htmlStatus + "<br>");
+            
+            // Update Progress Bar & Counter
+            const progressValue = Math.floor(((index + 1) / totalItems) * 100);
             $('#p_upload').progressbar('setValue', progressValue);
             $('#p_start').html(index + 1);
+            $('#p_finish').html(totalItems); // Pastikan total juga tampil
             
-            // Optimasi: Scroll otomatis ke bawah agar user melihat log terbaru
-            const remarks = $('#p_remarks');
-            remarks.append(htmlSnippet);
-            remarks.scrollTop(remarks[0].scrollHeight);
+            // Auto scroll ke bawah (cross-browser compatible)
+            const d = $('#p_remarks');
+            d.scrollTop(d[0].scrollHeight);
+
+            // Rekursi: Proses item selanjutnya
+            processItem(index + 1);
+        }
+
+        function saveFailedLog(data, errorMessage, callback) {
+            $.ajax({
+                type: "POST",
+                url: "<?= base_url('finance/inventory_rm_standard_actual/uploadcreateFailed') ?>",
+                data: { 
+                    data: data, 
+                    message: errorMessage 
+                },
+                cache: false,
+                complete: function() {
+                    // Tetap panggil callback walau simpan log gagal agar proses upload tidak berhenti
+                    callback();
+                }
+            });
         }
 
         processItem(0);
