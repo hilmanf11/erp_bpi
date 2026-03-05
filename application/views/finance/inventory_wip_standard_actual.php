@@ -195,6 +195,7 @@
         }
     });
 
+
     // Upload Form
     function upload() {
         $('#dlg_upload').dialog('open');
@@ -203,6 +204,157 @@
     function download_excel() {
         window.location.assign('<?= base_url('template/tmp_inventory_wip_standard_actual.xls') ?>');
     }
+
+    // Upload Data
+    $('#dlg_upload').dialog({
+        buttons: [{
+            text: 'List Failed',
+            handler: function() {
+                window.open('<?= base_url("finance/inventory_wip_standard_actual/uploadDownloadFailed") ?>', '_blank');
+            }
+        }, {
+            text: 'Upload',
+            iconCls: 'icon-ok',
+            handler: function() {
+                //Clear File
+                $.ajax({
+                    url: "<?= base_url('finance/inventory_wip_standard_actual/uploadclearFailed') ?>",
+                    async: false // Gunakan async false agar log dipastikan clear sebelum submit
+                });
+
+                $('#frm_upload').form('submit', {
+                    url: '<?= base_url("finance/inventory_wip_standard_actual/upload") ?>',
+                    onSubmit: function() {
+                        if (!$(this).form('validate')) return false;
+                        
+                        $.messager.progress({
+                            title: 'Please Wait',
+                            msg: 'Importing Excel to Database'
+                        });
+                        return true;
+                    },
+                    success: function(result) {
+                        try {
+                            const response = typeof result === 'string' ? JSON.parse(result) : result;
+                            
+                            if (response.data && Array.isArray(response.data)) {
+                                // Reset tampilan progress sebelum mulai
+                                resetProgress(response.data.length);
+                                processUploadData(response.data);
+                            } else {
+                                $.messager.alert('Error', response.message || 'Invalid data format.', 'error');
+                            }
+                        } catch (e) {
+                            $.messager.alert('Error', 'Server Error: ' + result, 'error');
+                        }
+                    }
+                });
+            }
+        }]
+    });
+
+    function resetProgress(total) {
+        $('#p_upload').progressbar('setValue', 0);
+        $('#p_start').html(0);
+        $('#p_finish').html(total);
+        $('#p_success, #p_failed').html(0);
+        $('#p_remarks').empty();
+    }
+
+    function processUploadData(dataToUpload) {
+        if (!dataToUpload || dataToUpload.length === 0) {
+            $.messager.alert('Warning', 'No data to process.', 'warning');
+            return;
+        }
+
+        const totalItems = dataToUpload.length;
+        let successfulCount = 0;
+        let failedCount = 0;
+
+        const processItem = (index) => {
+            if (index >= totalItems) {
+                $.messager.progress('close');
+                
+                const message = `Upload complete. Success: ${successfulCount}, Failed: ${failedCount}`;
+                $.messager.alert('Info', message, 'info');
+                return;
+            }
+
+            const currentData = dataToUpload[index];
+            const excelRow = index + 1; 
+            
+            $.ajax({
+                type: "POST",
+                url: "<?= base_url('finance/inventory_wip_standard_actual/uploadCreate') ?>",
+                data: { "data": currentData },
+                dataType: "json",
+                success: function(result) {
+                    let statusHtml = "";
+
+                    if (result.theme === "success") {
+                        successfulCount++;
+                        $('#p_success').html(successfulCount);
+                        statusHtml = `<span style='color: green;'><b>${result.title}</b>: ${result.message}</span><br>`;
+                        finalizeStep(index, statusHtml);
+                    } else {
+                        failedCount++;
+                        $('#p_failed').html(failedCount);
+                        
+                        // Pesan log gagal dengan nomor baris
+                        const errorMessage = `No.${excelRow}: ${result.message}`;
+                        statusHtml = `<span style='color: red;'><b>${result.title}</b>: ${result.message}</span><br>`;
+                        
+                        // Simpan log gagal
+                        saveFailedLog(currentData, errorMessage, function() {
+                            finalizeStep(index, statusHtml);
+                        });
+                    }
+                },
+                error: function(xhr, status, error) {
+                    failedCount++;
+                    $('#p_failed').html(failedCount);
+                    const errorTitle = `<b style='color: red;'>Error</b> | HTTP Request Failed (${error})`;
+                    finalizeStep(index, errorTitle);
+                }
+            });
+        };
+
+        function finalizeStep(index, htmlStatus) {
+            $("#p_remarks").append(htmlStatus + "<br>");
+            
+            // Update Progress Bar & Counter
+            const progressValue = Math.floor(((index + 1) / totalItems) * 100);
+            $('#p_upload').progressbar('setValue', progressValue);
+            $('#p_start').html(index + 1);
+            $('#p_finish').html(totalItems); // Pastikan total juga tampil
+            
+            // Auto scroll ke bawah (cross-browser compatible)
+            const d = $('#p_remarks');
+            d.scrollTop(d[0].scrollHeight);
+
+            // Rekursi: Proses item selanjutnya
+            processItem(index + 1);
+        }
+
+        function saveFailedLog(data, errorMessage, callback) {
+            $.ajax({
+                type: "POST",
+                url: "<?= base_url('finance/inventory_wip_standard_actual/uploadcreateFailed') ?>",
+                data: { 
+                    data: data, 
+                    message: errorMessage 
+                },
+                cache: false,
+                complete: function() {
+                    // Tetap panggil callback walau simpan log gagal agar proses upload tidak berhenti
+                    callback();
+                }
+            });
+        }
+
+        processItem(0);
+    }
+
 
     //Format Datepicker
     function myformatter(date) {
