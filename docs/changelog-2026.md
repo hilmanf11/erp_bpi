@@ -453,3 +453,6 @@ add Specification ([d1a2cbe9](https://github.com/hilmanf11/erp_bpi/commit/d1a2cb
 
 ### [2026-03-05]
 - **Rizki Puji**: Fixing: account number from multiple account customers on Sales Invoices ([058ca955](https://github.com/hilmanf11/erp_bpi/commit/058ca955e625b6382f3011a2280319eb033c0be7))
+
+### [2026-03-05]
+- **Rizki Puji**: chore: Match script view Purchase Invoices with Live server ([b7cabb13](https://github.com/hilmanf11/erp_bpi/commit/b7cabb13caa67a21d19b42a430695c590d543226))
