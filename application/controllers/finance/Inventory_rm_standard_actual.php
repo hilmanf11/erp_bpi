@@ -179,7 +179,7 @@ class Inventory_rm_standard_actual extends CI_Controller
             $data = $this->input->post('data');
 
             // check part_no
-            $item_rm = $this->db->select('id, number, name, number')->from('item_rm')->like('number', $data['part_no'])->get()->row();
+            $item_rm = $this->db->select('id, number, name, number')->from('item_rm')->where('number', $data['part_no'])->get()->row();
 
             if (empty($data['part_no']) && empty($data['cutoff_date']) && empty($data['uom']) && empty($data['qty']) && empty($data['price']) ) {
                 echo json_encode(array("title" => "Required", "message" => "All Data is Required!", "theme" => "error"));
