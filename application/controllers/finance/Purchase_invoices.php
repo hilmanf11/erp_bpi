@@ -963,7 +963,7 @@ class Purchase_invoices extends CI_Controller
     }
 
     // AUTO INSERT TO FIXED ASSET (trigger from ajax)
-    function autoFixedAsset($number) 
+    function autoFixedAsset_bug_department($number) 
     {
         $pi_number = base64_decode($number);
         $main_pi = $this->db->select('account_number, currency, rate')->from('purchase_invoices')->where('number', $pi_number)->get()->row();
@@ -1161,6 +1161,164 @@ class Purchase_invoices extends CI_Controller
             echo json_encode(['success' => false, 'message' => 'Account Category is not Fixed Asset', 'theme' => 'error']);
         }
     }
+
+    public function autoFixedAsset($number) 
+    {
+        $pi_number = base64_decode($number);
+        $result = [];
+
+        $main_pi = $this->db->select('account_number, currency, rate, supplier_id')
+                ->from('purchase_invoices')
+                ->where('number', $pi_number)
+                ->get()->row();
+        if (!$main_pi) {
+            $result[] = ['success' => false, 'message' => "Main PI $pi_number not found."];
+            echo json_encode($result);
+            return;
+        }
+
+        // Get COA Category
+        $checkAccount = $this->db->select('account_group_details.name as group_name')
+            ->from('account_coa')
+            ->join('account_group_details', 'account_group_details.id = account_coa.account_group_detail_id', 'left')
+            ->where('account_coa.account_number', $main_pi->account_number)
+            ->get()->row();
+
+        // Jika bukan kategori Fixed Asset, kirim feedback
+        if (!$checkAccount || stripos($checkAccount->group_name, 'Fixed Asset') === false) {
+            $result[] = ['success' => false, 'message' => "Account is not categorized as Fixed Asset. Skip auto-insert."];
+            echo json_encode($result);
+            return;
+        }
+
+        
+        // Get Supplier Name
+        $suppliers = $this->db->get_where('suppliers', ['id' => $main_pi->supplier_id, 'deleted' => 0])->row();
+        $supplier_name = $suppliers->name ?? "";
+
+        // Get Semua Item Detail
+        $getAllPI = $this->db->select('*, YEAR(trans_date) as trans_year, MONTH(trans_date) as trans_month')
+            ->from('purchase_invoices')
+            ->where('number', $pi_number)
+            ->get()->result_array();
+
+        foreach ($getAllPI as $item) 
+        {
+            // --- FILTER DISKON & HARGA NOL ---
+            if (stripos($item['item_name'], 'diskon') !== false || $item['price'] <= 0) {
+                $result[] = ['success' => false, 'message' => "SKIPPED: Item '{$item['item_name']}' (Discount/Zero Price)."];
+                continue; 
+            }
+
+            // Get data Family & Department
+            $readItemFamily = $this->db->select('c.id as family_id, c.number as code, c.useful_life_of_asset_year as life')
+                ->from('item_rm b')
+                ->join('item_familys c', 'b.item_family_id = c.id')
+                ->where('b.id', $item['item_rm_id'])
+                ->get()->row();
+
+            $readDept = $this->db->select('b.department')
+                ->from('purchase_orders a')
+                ->join('purchase_requests b', 'a.request_no = b.request_no', 'left')
+                ->where('a.po_no', $item['po_no'])
+                ->get()->row();
+
+            $dept = $readDept->department ?? "N/A";
+            $family_id = $readItemFamily->family_id ?? null;
+            $life_year = $readItemFamily->life ?? 0;
+            $life_month = $life_year * 12;
+
+            // Hitung Rate & Cost Local
+            $rate = ($item['currency'] === "IDR") ? 1 : $item['rate'];
+            $cost_local     = $item['price'] * $rate;
+            $total_local    = $item['total'] * $rate;
+            $depreciation   = ($life_month > 0) ? ($cost_local / $life_month) : 0;
+            $expired_date   = date("Y-m-d", strtotime("+$life_month months", strtotime($item['trans_date'])));
+
+            // Check Existing
+            $existing = $this->db->get_where('asset_fixeds', [
+                'purchase_invoice_number' => $pi_number,
+                'item_rm_id'              => $item['item_rm_id'],
+                'trans_date'              => $item['trans_date'],
+                'cost'                    => $cost_local,
+                'total'                   => $total_local,
+            ])->row();
+
+            if ($existing) {
+                // Update
+                $update_data = [
+                    "asset_category_number"   => $family_id,
+                    "item_family_id"  => $family_id,
+                    "supplier_name"   => $supplier_name,
+                    "supplier_id"     => $main_pi->supplier_id,
+                    "account_number"  => $main_pi->account_number,
+                    "name"            => $item["item_name"],
+                    "uom"             => $item["uom"],
+                    "trans_date"      => $item['trans_date'],
+                    "usage_date"      => $item['trans_date'],
+                    "qty"             => 1,
+                    "cost"            => $cost_local,
+                    "currency"        => $item['currency'],
+                    "estimate_year"   => $life_year,
+                    "estimate_month"  => $life_month,
+                    "expired_date"    => $expired_date,
+                    "depreciation"    => $depreciation,
+                    "total"           => $total_local,
+                    "method"          => "Straightline",
+                    "remarks"         => "Auto-update Fixed Asset via Purchase Invoices",
+                    "department"          => $dept,
+                    "previous_department" => $dept,
+                ];
+                $this->crud->update('asset_fixeds', ['id' => $existing->id], $update_data);
+                $result[] = ['success' => true, 'message' => "Updated Asset: " . $item['item_name']];
+
+            } else {
+                // Insert Baru berdasarkan Qty
+                $asset_prefix = ($readItemFamily->code ?? "AST") . "." . $item['trans_year'] . "." . str_pad($item['trans_month'], 2, '0', STR_PAD_LEFT) . ".";
+                
+                // Get last counter
+                $last = $this->db->select_max('number', 'kode')->like('number', $asset_prefix, 'after')->get('asset_fixeds')->row();
+                $urutan = ($last && $last->kode) ? (int) substr($last->kode, -5) : 0;
+
+                for ($i = 0; $i < $item['qty']; $i++) {
+                    $urutan++;
+                    $asset_no = $asset_prefix . sprintf("%05d", $urutan);
+                    
+                    $insert_data = [
+                        "purchase_invoice_number" => $pi_number,
+                        "number"                  => $asset_no,
+                        "asset_category_number"   => $family_id,
+                        "item_family_id"  => $family_id,
+                        "supplier_name"   => $supplier_name,
+                        "supplier_id"     => $main_pi->supplier_id,
+                        "account_number"  => $main_pi->account_number,
+                        "item_rm_id"      => $item['item_rm_id'],
+                        "name"            => $item['item_name'],
+                        "uom"             => $item['uom'],
+                        "trans_date"      => $item['trans_date'],
+                        "usage_date"      => $item['trans_date'],
+                        "qty"             => 1,
+                        "cost"            => $cost_local,
+                        "currency"        => $item['currency'],
+                        "estimate_year"   => $life_year,
+                        "estimate_month"  => $life_month,
+                        "expired_date"    => $expired_date,
+                        "depreciation"    => $depreciation,
+                        "total"           => $total_local,
+                        "method"          => "Straightline",
+                        "remarks"         => "Auto-create Fixed Asset via Purchase Invoices",
+                        "department"          => $dept,
+                        "previous_department" => $dept,
+                    ];
+                    $this->crud->create('asset_fixeds', $insert_data);
+                }
+                $result[] = ['success' => true, 'message' => "Created " . $item['qty'] . " Asset(s) for " . $item['item_name']];
+            }
+        }
+
+        echo json_encode($result);
+    }
+
 
     public function create()
     {

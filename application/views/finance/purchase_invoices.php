@@ -2372,17 +2372,51 @@
                                                         requestData(total, json, jml + 1, value);
 
                                                         // ----- FITUR AUTO-CREATE FIXED ASSET -----
-                                                        if (jml == total) { // make-sure insert hanya dipanggil sekali / saat total sesuai
+                                                        if (jml == total) {
+                                                            // toastr.info('Processing Fixed Assets in background... (Please dont click anything for a while)', 'System');
+                                                            var loadingToast = toastr.info('Processing Fixed Assets in background... (Please dont click anything for a while)', 'System', {
+                                                                "tapToDismiss": false,
+                                                                "closeButton": false,
+                                                                "debug": false,
+                                                                "newestOnTop": false,
+                                                                "progressBar": true,
+                                                                "positionClass": "toast-top-right",
+                                                                "preventDuplicates": true,
+                                                                "onclick": null,
+                                                                "showDuration": "300",
+                                                                "hideDuration": "1000",
+                                                                "timeOut": "0",
+                                                                "extendedTimeOut": "0",
+                                                                "showEasing": "swing",
+                                                                "hideEasing": "linear",
+                                                                "showMethod": "fadeIn",
+                                                                "hideMethod": "fadeOut",
+                                                            });
+
                                                             var pi_number = $("#number").val();
                                                             $.ajax({
                                                                 method: 'post',
                                                                 url: '<?= base_url('finance/purchase_invoices/autoFixedAsset/') ?>' + window.btoa(pi_number),
                                                                 dataType: 'json',
                                                                 success: function(response_fixed_asset) {
-                                                                    console.log('Fixed Asset process finished.', response_fixed_asset);
+                                                                    toastr.clear(loadingToast);
+
+                                                                    // Tampilkan hasil proses asset via toastr saja
+                                                                    if (Array.isArray(response_fixed_asset)) {
+                                                                        $.each(response_fixed_asset, function(index, item) {
+                                                                            if (item.success) {
+                                                                                toastr.success(item.message, 'Fixed Asset');
+                                                                            } else {
+                                                                                // Untuk diskon atau info skip masuk ke sini
+                                                                                toastr.info(item.message, 'Fixed Asset info');
+                                                                            }
+                                                                        });
+                                                                    }
                                                                 },
                                                                 error: function(xhr, status, error) {
+                                                                    toastr.clear(loadingToast);
                                                                     console.error('Error in autoFixedAsset:', error);
+                                                                    toastr.error('Failed to process Fixed Asset automatically.');
                                                                 }
                                                             });
                                                         }
