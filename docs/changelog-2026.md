@@ -456,3 +456,6 @@ add Specification ([d1a2cbe9](https://github.com/hilmanf11/erp_bpi/commit/d1a2cb
 
 ### [2026-03-05]
 - **Rizki Puji**: chore: Match script view Purchase Invoices with Live server ([b7cabb13](https://github.com/hilmanf11/erp_bpi/commit/b7cabb13caa67a21d19b42a430695c590d543226))
+
+### [2026-03-05]
+- **Rizki Puji**: Hotfix: bug create/update Auto Fixed Assets on Purchase Invoices ([378d91e8](https://github.com/hilmanf11/erp_bpi/commit/378d91e83767d2d0d98ca8d37c0ca26794c11e3b))
