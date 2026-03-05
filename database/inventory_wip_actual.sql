@@ -34,7 +34,7 @@ CREATE TABLE `inventory_wip_actual` (
   `updated_by` varchar(50) DEFAULT NULL,
   `updated_date` datetime DEFAULT NULL,
   `deleted` tinyint(1) NOT NULL,
-  
+  `item_fg_id` VARCHAR(30) DEFAULT NULL,
   `part_no` varchar(30) DEFAULT NULL,
   `cutoff_date` date DEFAULT NULL,
   `uom` varchar(10) DEFAULT NULL,
@@ -55,6 +55,7 @@ ALTER TABLE `inventory_wip_actual`
   ADD PRIMARY KEY (`id`),
   ADD KEY `created_by` (`created_by`),
   ADD KEY `updated_by` (`updated_by`),
+  ADD KEY `item_fg_id` (`item_fg_id`),
   ADD KEY `part_no` (`part_no`);
 
 --

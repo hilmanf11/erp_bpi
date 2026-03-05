@@ -196,7 +196,8 @@ class Inventory_rm_standard_actual extends CI_Controller
             } else {
                 $cutoff_date = date("Y-m-d", strtotime($data['cutoff_date']));
                 
-                $dataFinal = [                    
+                $dataFinal = [
+                    'item_rm_id'  => $item_rm->id,
                     'part_no'     => $data['part_no'] ?? $item_rm->number,
                     'cutoff_date' => $cutoff_date ?? date('Y-01-01'),
                     'uom'         => $data['uom'],

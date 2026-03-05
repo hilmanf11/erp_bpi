@@ -118,7 +118,8 @@ class Inventory_fg_standard_actual extends CI_Controller
             } else {
                 $cutoff_date = date("Y-m-d", strtotime($data['cutoff_date']));
                 
-                $dataFinal = [                    
+                $dataFinal = [
+                    'item_fg_id'  => $item_fg->id,
                     'part_no'     => $data['part_no'] ?? $item_fg->number,
                     'cutoff_date' => $cutoff_date ?? date('Y-01-01'),
                     'uom'         => $data['uom'],
