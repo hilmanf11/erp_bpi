@@ -902,7 +902,12 @@ class Sales_invoices extends CI_Controller
         $this->db->join('item_fg b', 'd.item_fg_id = b.id');
         $this->db->join('customer_items c', 'd.customer_id = c.customer_id and d.item_fg_id = c.item_fg_id', 'left');
         $this->db->join('delivery_notes a', 'a.delivery_order_no = d.delivery_order_no and a.item_fg_id = d.item_fg_id');
+        
+        /** -- existing refer account number hanya satu 
         $this->db->join('customers e', 'a.customer_id = e.id');
+        -- Refisi: get account_number berdasarkan division multiple Account Setting Customers */
+        $this->db->join('customer_account_numbers e', 'a.customer_id = e.customer_id AND a.division = e.division', 'left');
+
         $this->db->join('sales_orders g', 'd.sales_order_no = g.sales_order_no and a.customer_id = g.customer_id and a.item_fg_id = g.item_fg_id and a.customer_order_no = g.customer_order_no', 'left');
         $this->db->join('sales_order_rm g2', 'd.sales_order_no_rm = g2.sales_order_no and a.customer_id = g2.customer_id and a.item_fg_id = g2.item_fg_id and a.customer_order_no = g2.customer_order_no', 'left');
         $this->db->join('item_familys h', 'b.type = h.number', 'left');
