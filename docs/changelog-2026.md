@@ -450,3 +450,6 @@ add Specification ([d1a2cbe9](https://github.com/hilmanf11/erp_bpi/commit/d1a2cb
 
 ### [2026-03-04]
 - **Rizki Puji**: Hotfix: bug balance not same and MDS account on Sales Invoices ([a3cda44b](https://github.com/hilmanf11/erp_bpi/commit/a3cda44b56f11b8243b2b3f4a0e824b48eb1c21d))
+
+### [2026-03-05]
+- **Rizki Puji**: Fixing: account number from multiple account customers on Sales Invoices ([058ca955](https://github.com/hilmanf11/erp_bpi/commit/058ca955e625b6382f3011a2280319eb033c0be7))
