@@ -14,6 +14,7 @@ use PhpOffice\PhpSpreadsheet\Shared\Date;
  * @property CI_Loader $load
  * @property CI_Session $session
  * @property CI_DB_query_builder $db
+ * @property CI_Output $output
  * @property Crud $crud
  */
 class Inventory_rm_standard_actual extends CI_Controller
@@ -479,6 +480,11 @@ class Inventory_rm_standard_actual extends CI_Controller
     // -------------- PRINT RECAP (HISTORY TRANSACTION INVENTORY RM) => LSB -------------
     public function print($option = "")
     {
+        if (!$this->db->table_exists('inventory_rm_actual')) {
+            echo "<pre> Database Error: Tabel Inventory RM Actual not found! Please contact admin.</pre>";
+            return false;
+        }
+
         if ($option == "excel") {
             $format  = date("Ymd");
             header("Content-type: application/vnd-ms-excel");
@@ -529,6 +535,10 @@ class Inventory_rm_standard_actual extends CI_Controller
                 COALESCE(n.qty, 0) as bpb_qty, 
                 COALESCE(m.qty, 0) as adj_out_qty,
 
+                -- ACTUAL FROM UPLOAD
+                COALESCE(actual.price, 0) as actual_price, 
+                COALESCE(actual.qty, 0) as actual_qty,
+
                 -- ACTUAL IN AMOUNT (Uang Riil dari PO)
                 COALESCE(act_in.total_actual_amt_in, 0) as total_actual_amt_in,                
                 d.max_receipt_date
@@ -536,6 +546,9 @@ class Inventory_rm_standard_actual extends CI_Controller
             JOIN item_familys b ON a.item_family_id = b.id AND b.number != 'FG'
             JOIN item_categories c ON a.item_category_id = c.id
             LEFT JOIN item_family_subs l ON a.item_sub_family_id = l.id
+
+            -- get actual from upload
+            LEFT JOIN inventory_rm_actual actual ON (actual.part_no = a.number OR actual.item_rm_id = a.id)
             
             -- get specification 
             LEFT JOIN (
@@ -936,7 +949,9 @@ class Inventory_rm_standard_actual extends CI_Controller
 
             // standard Price
             $std_p = (float)$record->standard_price * $rate;
+            $act_p = (float)$record->actual_price * 1; // IDR
 
+            /** --- existing
             // Begin
             $b_qty = (float)$record->begin_stock;
             $b_std_a = $b_qty * $std_p;
@@ -971,6 +986,30 @@ class Inventory_rm_standard_actual extends CI_Controller
             if ($o_qty > 0) {
                 $o_act_p = $o_act_a / $o_qty;
             }
+            $o_variance = $o_act_a - $o_std_a;
+            */
+            
+
+            // Begin
+            $b_qty      = (float)$record->actual_qty;
+            $b_std_a    = $b_qty * $std_p;
+            $b_act_a    = $b_qty * $act_p;
+            $b_variance = $b_act_a - $b_std_a;
+
+            // In
+            $i_qty = (float)$record->receipt_qty + (float)$record->bpm_qty + (float)$record->adj_in_qty;
+            $i_std_a = $i_qty * $std_p;
+            $i_act_p = (float)$record->actual_price;
+            $i_act_a = $i_qty * $i_act_p;
+            $i_variance = $i_act_a - $i_std_a;
+
+            $avg_act_p = (float)$record->actual_price; // Bukan Moving Average Price, Tapi Actual Price dari upload
+
+            // Out
+            $o_qty = (float)$record->qty_supply_sheet + (float)$record->qty_mat_request + (float)$record->qty_kanban + (float)$record->qty_kanban_sj + (float)$record->qty_kanban_sp + (float)$record->bpb_qty + (float)$record->adj_out_qty;
+            $o_std_a = $o_qty * $std_p;
+            $o_act_a = 0;
+            $o_act_p = (float)$record->actual_price;
             $o_variance = $o_act_a - $o_std_a;
 
             // Ending = (Begin + In) - Out
@@ -1063,7 +1102,7 @@ class Inventory_rm_standard_actual extends CI_Controller
                     <td align="right">'.number_format($b_qty, 2).'</td>
                     <td>'.number_format($std_p, 2).'</td>
                     <td>'.number_format($b_std_a, 2).'</td>
-                    <td>'.number_format($std_p, 2).'</td>
+                    <td>'.number_format($act_p, 2).'</td>
                     <td>'.number_format($b_act_a, 2).'</td>
                     <td>'.number_format($b_variance, 2).'</td>
                     
@@ -1250,6 +1289,11 @@ class Inventory_rm_standard_actual extends CI_Controller
     // -------------- PRINT DETAIL (INVENTORY RM) -------------
     public function print_detail($option = "")
     {
+        if (!$this->db->table_exists('inventory_rm_actual')) {
+            echo "<pre> Database Error: Tabel Inventory RM Actual not found! Please contact admin.</pre>";
+            return false;
+        }
+
         if ($option == "excel") {
             $format  = date("Ymd");
             header("Content-type: application/vnd-ms-excel");
@@ -1289,6 +1333,10 @@ class Inventory_rm_standard_actual extends CI_Controller
                 (COALESCE(d.qty_scan_in, 0) + COALESCE(e.qty_os_rm, 0) + COALESCE(f.qty_trans_rm_in, 0) + COALESCE(g.return_qty, 0) + COALESCE(k.qty_scan_bpm, 0)) AS qty_in,
                 (COALESCE(h.qty_issued, 0) + COALESCE(i.qty_trans_rm_out, 0)) AS qty_out,
 
+                -- ACTUAL FROM UPLOAD
+                COALESCE(actual.price, 0) as actual_price, 
+                COALESCE(actual.qty, 0) as actual_qty,
+
                 -- ACTUAL AMOUNT CALCULATION (JOIN TO PO)
                 COALESCE(calc_in.total_actual_in, 0) as actual_amount_in,
                 COALESCE(calc_out.total_actual_out, 0) as actual_amount_out,
@@ -1297,6 +1345,9 @@ class Inventory_rm_standard_actual extends CI_Controller
             JOIN item_familys b ON a.item_family_id = b.id AND b.number != 'FG'
             JOIN item_categories c ON a.item_category_id = c.id
             LEFT JOIN item_family_subs subfam ON a.item_sub_family_id = subfam.id
+
+            -- get actual from upload
+            LEFT JOIN inventory_rm_actual actual ON (actual.part_no = a.number OR actual.item_rm_id = a.id)
 
             -- get specification 
             LEFT JOIN (
@@ -1478,7 +1529,9 @@ class Inventory_rm_standard_actual extends CI_Controller
 
             // Summary Calculations
             $std_price_rate = $record->std_price * $rate;
+            $act_price_rate = $record->actual_price * 1; // IDR
             
+            /** --- existing
             $begin_qty = $record->begin_stock;
             $begin_std_amt = $begin_qty * $std_price_rate;
             $begin_act_amt = $begin_std_amt; // Sesuai permintaan: begin actual sama dengan std
@@ -1510,6 +1563,28 @@ class Inventory_rm_standard_actual extends CI_Controller
             if ($end_qty > 0) {
                 $end_act_price = $end_act_amt / $end_qty;
             }
+            */
+
+            $begin_qty       = $record->actual_qty + $record->begin_stock;
+            $begin_std_amt   = $begin_qty * $std_price_rate;
+            $begin_act_price = $act_price_rate;
+            $begin_act_amt   = $begin_qty * $begin_act_price;
+
+            $in_qty          = $record->qty_in;
+            $in_act_price    = $act_price_rate;
+            $in_std_amt      = $in_qty * $std_price_rate;
+            $in_act_amt      = $in_qty * $act_price_rate;
+
+            $out_qty         = $record->qty_out;
+            $out_act_price   = $act_price_rate;
+            $out_std_amt     = $out_qty * $std_price_rate;
+            $out_act_amt     = $out_qty * $act_price_rate;
+
+            $end_qty = ($begin_qty + $in_qty) - $out_qty;
+            $end_act_price = $act_price_rate;
+            $end_std_amt = ($begin_std_amt + $in_std_amt) - $out_std_amt;
+            $end_act_amt = ($begin_act_amt + $in_act_amt) - $out_act_amt;
+
 
             // Add to Grand Total
             foreach ($grandtotals as $key => $val) {
