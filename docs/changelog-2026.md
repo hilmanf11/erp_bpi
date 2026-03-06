@@ -462,3 +462,6 @@ add Specification ([d1a2cbe9](https://github.com/hilmanf11/erp_bpi/commit/d1a2cb
 
 ### [2026-03-06]
 - **Rizki Puji**: Feature: fix report Detail Inventory RM STD Actual ([5d08b02d](https://github.com/hilmanf11/erp_bpi/commit/5d08b02d03398d7ae8565029aa1c98854e15ff4b))
+
+### [2026-03-06]
+- **Rizki Puji**: Feature: fix update create upload and upload list on Inventory RM STD Actual ([0d4c41b7](https://github.com/hilmanf11/erp_bpi/commit/0d4c41b720b2fd6aecfeaeba36768336c0d7dc2d))
