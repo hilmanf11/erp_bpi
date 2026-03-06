@@ -459,3 +459,6 @@ add Specification ([d1a2cbe9](https://github.com/hilmanf11/erp_bpi/commit/d1a2cb
 
 ### [2026-03-05]
 - **Rizki Puji**: Hotfix: bug create/update Auto Fixed Assets on Purchase Invoices ([378d91e8](https://github.com/hilmanf11/erp_bpi/commit/378d91e83767d2d0d98ca8d37c0ca26794c11e3b))
+
+### [2026-03-06]
+- **Rizki Puji**: Feature: fix report Detail Inventory RM STD Actual ([5d08b02d](https://github.com/hilmanf11/erp_bpi/commit/5d08b02d03398d7ae8565029aa1c98854e15ff4b))
