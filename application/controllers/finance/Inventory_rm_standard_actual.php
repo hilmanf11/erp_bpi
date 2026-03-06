@@ -179,37 +179,53 @@ class Inventory_rm_standard_actual extends CI_Controller
         if ($this->input->post()) {
             $data = $this->input->post('data');
 
-            // check part_no
-            $item_rm = $this->db->select('id, number, name, number')->from('item_rm')->where('number', $data['part_no'])->get()->row();
+            // Check part_no
+            $item_rm = $this->db->select('id, number, name')->from('item_rm')->where('number', $data['part_no'])->get()->row();
 
-            if (empty($data['part_no']) && empty($data['cutoff_date']) && empty($data['uom']) && empty($data['qty']) && empty($data['price']) ) {
+            if (empty($data['part_no']) && empty($data['cutoff_date']) && empty($data['uom']) && empty($data['qty']) && empty($data['price'])) {
                 echo json_encode(array("title" => "Required", "message" => "All Data is Required!", "theme" => "error"));
-            
-            } elseif (empty($data['part_no'])) {
-                echo json_encode(array("title" => "Required", "message" => "Part No is Required!", "theme" => "error"));
-            
-            } elseif (empty($data['qty'])) {
-                echo json_encode(array("title" => "Required", "message" => "Qty of " . $data['part_no'] . " is Required!", "theme" => "error"));
-            
-            } elseif (empty($item_rm)) {
-                echo json_encode(array("title" => "Not Found", "message" => "Item of " . $data['part_no'] . " is Not Found!", "theme" => "error"));
-            
-            } else {
-                $cutoff_date = date("Y-m-d", strtotime($data['cutoff_date']));
-                
-                $dataFinal = [
-                    'item_rm_id'  => $item_rm->id,
-                    'part_no'     => $data['part_no'] ?? $item_rm->number,
-                    'cutoff_date' => $cutoff_date ?? date('Y-01-01'),
-                    'uom'         => $data['uom'],
-                    'currency'    => $data['currency'] ?? 'IDR',
-                    'qty'         => $data['qty'],
-                    'price'       => $data['price'],
-                    'upload'      => 'YES',
-                    'upload_date' => date('Y-m-d'),
-                ];
+                return;
+            }
+            if (empty($item_rm)) {
+                echo json_encode(array("title" => "Not Found", "message" => "Item " . $data['part_no'] . " is Not Found in Master Item!", "theme" => "error"));
+                return;
+            }
 
-                $send   = $this->crud->create('inventory_rm_actual', $dataFinal);
+            // Prepare Data
+            $cutoff_date = date("Y-m-d", strtotime($data['cutoff_date']));
+            $dataFinal = [
+                'item_rm_id'  => $item_rm->id,
+                'part_no'     => $data['part_no'],
+                'cutoff_date' => $cutoff_date,
+                'uom'         => $data['uom'],
+                'currency'    => $data['currency'] ?? 'IDR',
+                'qty'         => $data['qty'],
+                'price'       => $data['price'],
+                'upload'      => 'YES',
+                'upload_date' => date('Y-m-d'),
+            ];
+
+            // Check existing
+            $existing = $this->db->get_where('inventory_rm_actual', [
+                'item_rm_id'  => $item_rm->id,
+                'cutoff_date' => $cutoff_date,
+                'qty'         => $data['qty'],
+                'price'       => $data['price'],
+            ])->row();
+
+            if ($existing) {
+                // UPDATE jika sudah ada
+                $this->db->where('id', $existing->id);
+                $update = $this->db->update('inventory_rm_actual', $dataFinal);
+                
+                if ($update) {
+                    echo json_encode(array("title" => "Updated", "message" => "Data updated successfully!", "theme" => "success"));
+                } else {
+                    echo json_encode(array("title" => "Error", "message" => "Failed to update data!", "theme" => "error"));
+                }
+            } else {
+                // CREATE jika belum ada
+                $send = $this->crud->create('inventory_rm_actual', $dataFinal);
                 echo $send;
             }
         }
