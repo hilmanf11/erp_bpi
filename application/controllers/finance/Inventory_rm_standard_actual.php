@@ -178,6 +178,7 @@ class Inventory_rm_standard_actual extends CI_Controller
     {
         if ($this->input->post()) {
             $data = $this->input->post('data');
+            $user_session = $this->session->userdata('username') ?? $this->session->username; 
 
             // Check part_no
             $item_rm = $this->db->select('id, number, name')->from('item_rm')->where('number', $data['part_no'])->get()->row();
@@ -215,8 +216,18 @@ class Inventory_rm_standard_actual extends CI_Controller
 
             if ($existing) {
                 // UPDATE jika sudah ada
+                $dataUpdate = [
+                    'part_no'      => $data['part_no'],
+                    'uom'          => $data['uom'],
+                    'currency'     => $data['currency'] ?? 'IDR',
+                    'qty'          => $data['qty'],
+                    'price'        => $data['price'],
+                    'updated_by'   => $user_session,
+                    'updated_date' => date('Y-m-d H:i:s'),
+                ];
+
                 $this->db->where('id', $existing->id);
-                $update = $this->db->update('inventory_rm_actual', $dataFinal);
+                $update = $this->db->update('inventory_rm_actual', $dataUpdate);
                 
                 if ($update) {
                     echo json_encode(array("title" => "Updated", "message" => "Data updated successfully!", "theme" => "success"));
@@ -258,6 +269,33 @@ class Inventory_rm_standard_actual extends CI_Controller
         header('Content-Length: ' . @filesize($file));
         header("Content-Type: text/plain");
         @readfile($file);
+    }
+
+    public function get_upload_list()
+    {
+        $page = $this->input->post('page') ?? 1;
+        $rows = $this->input->post('rows') ?? 10;
+        $offset = ($page - 1) * $rows;
+
+        // Filter hanya yang berasal dari upload
+        $this->db->from('inventory_rm_actual');
+        $this->db->where('upload', 'YES');
+        $this->db->where('deleted', 0);
+
+        // Hitung total untuk pagination
+        $total = $this->db->count_all_results('', FALSE);
+
+        // Ambil data dengan limit
+        $this->db->order_by('upload_date', 'DESC');
+        $this->db->limit($rows, $offset);
+        $data = $this->db->get()->result();
+
+        $result = [
+            "total" => $total,
+            "rows" => $data
+        ];
+
+        echo json_encode($result);
     }
     // ----- END UPLOAD FUNCTIONS ----- 
 
@@ -2013,5 +2051,4 @@ class Inventory_rm_standard_actual extends CI_Controller
         $html .= '</table></body></html>';
         echo $html;
     }
-
 }
