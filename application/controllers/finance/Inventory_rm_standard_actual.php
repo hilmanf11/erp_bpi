@@ -1633,11 +1633,25 @@ class Inventory_rm_standard_actual extends CI_Controller
                 // 1. Inisialisasi awal detail produk
                 $nod = 1;
                 $running_qty_bal = (float)$record->begin_stock;
-                $running_act_amt_bal = (float)$record->begin_stock * $std_price_rate; // Begin Amount Actual
+                $running_act_amt_bal = (float)$record->begin_stock * (float)$act_price_rate;
 
                 // 2. Kumpulkan semua data transaksi ke dalam satu array
                 if ($filter_trans_type == '') {
                     //-------------- Awal Query disini----------------------------------//                    
+                    // UPLOADS
+                    $uploads = $this->crud->query("SELECT
+                            a.cutoff_date, 
+                            '-' as bc_kind, 
+                            '-' as bc_aju, 
+                            '-' as bc_document, 
+                            '-' as bc_date, 
+                            SUM(a.qty) as actual_qty,
+                            MAX(a.price) actual_price,
+                            a.created_by as username
+                        FROM inventory_rm_actual a 
+                        WHERE a.item_rm_id = '$item_rm_id' 
+                        GROUP BY a.item_rm_id, a.id");
+
                     //RECEIPT
                     $receipts = $this->crud->query("SELECT
                             a.receipt_date, 
@@ -1704,6 +1718,19 @@ class Inventory_rm_standard_actual extends CI_Controller
 
                     $all_data = [];
                     $actual_price_in = 0;
+
+                    // --- UPLOADS ---
+                    foreach ($uploads as $r) {
+                        $all_data[] = [
+                            'type'      => 'UPLOADS',
+                            'date'      => $r->cutoff_date,
+                            'username'  => $r->username,
+                            'qty_in'    => $r->actual_qty,
+                            'qty_out'   => 0,
+                            'actual_price_begin' => $r->actual_price,
+                            'doc1' => '-', 'doc2' => '-', 'doc3' => '-', 'doc4' => '-'
+                        ];
+                    }
 
                     // --- RECEIPT ---
                     foreach ($receipts as $r) {
@@ -1810,6 +1837,11 @@ class Inventory_rm_standard_actual extends CI_Controller
                     }
 
                     usort($all_data, function ($a, $b) {
+                        // Jika ada tipe UPLOADS, maka jadi paling atas (-1)
+                        if ($a['type'] === 'UPLOADS') return -1;
+                        if ($b['type'] === 'UPLOADS') return 1;
+
+                        // Transaksi lainnya diurutkan berdasarkan tanggal
                         return strtotime($a['date']) - strtotime($b['date']);
                     });
                 }
@@ -1882,25 +1914,18 @@ class Inventory_rm_standard_actual extends CI_Controller
                         </thead>';
 
                     foreach ($all_data as $data) {
-                        // Perhitungan Running Balance
+                        // Get balance sebelumnya untuk perhitungan balance saat ini
                         $prev_qty = $running_qty_bal;
                         $prev_amt = $running_act_amt_bal;
                         
+                        // Perhitungan Balance
                         $running_qty_bal += ($data['qty_in'] - $data['qty_out']);
                         
-                        // Logika Harga Aktual
-                        $row_price = (float)$data['actual_price_in'] > 0 ? (float)$data['actual_price_in'] * $rate : $std_price_rate;
+                        // Gunakan harga actual upload ($act_price_rate dari summary)
+                        $row_price = (float)$act_price_rate; 
                         
-                        // Hitung Amount IN dan OUT secara terpisah
                         $amt_in = $data['qty_in'] * $row_price;
-                        
-                        // Untuk OUT: Menggunakan Moving Average Sederhana (Total Amount / Total Qty)
-                        $amt_out = 0;
-                        if ($data['qty_out'] > 0) {
-                            $average_price = ($prev_qty > 0) ? ($prev_amt / $prev_qty) : $std_price_rate;
-                            $amt_out = $data['qty_out'] * $average_price;
-                        }
-
+                        $amt_out = $data['qty_out'] * $row_price;
                         $running_act_amt_bal += ($amt_in - $amt_out);
 
                         $html .= '<tr style="background:#fff;">
@@ -1917,29 +1942,29 @@ class Inventory_rm_standard_actual extends CI_Controller
                                     <td align="right">' . number_format($record->std_price, 2) . '</td>
                                     <td align="right">' . number_format($rate, 2) . '</td>
 
-                                    <td align="right" style="background:#f9f9f9;">' . number_format($prev_qty, 2) . '</td>
-                                    <td align="right" style="background:#f9f9f9;">' . number_format($std_price_rate, 2) . '</td>
-                                    <td align="right" style="background:#f9f9f9;">' . number_format($prev_amt, 2) . '</td>
-                                    <td align="right" style="background:#f9f9f9;">' . number_format($std_price_rate, 2) . '</td>
-                                    <td align="right" style="background:#f9f9f9;">' . number_format($prev_amt, 2) . '</td>
+                                    <td align="right">' . number_format($prev_qty, 2) . '</td>
+                                    <td align="right">' . number_format($std_price_rate, 2) . '</td>
+                                    <td align="right">' . number_format($prev_qty * $std_price_rate, 2) . '</td>
+                                    <td align="right">' . number_format($row_price, 2) . '</td>
+                                    <td align="right">' . number_format($prev_amt, 2) . '</td>
 
-                                    <td align="right" style="background:#efffef;">' . ($data['qty_in'] > 0 ? number_format($data['qty_in'], 2) : '-') . '</td>
-                                    <td align="right" style="background:#efffef;">' . ($data['qty_in'] > 0 ? number_format($std_price_rate, 2) : '-') . '</td>
-                                    <td align="right" style="background:#efffef;">' . ($data['qty_in'] > 0 ? number_format($data['qty_in'] * $std_price_rate, 2) : '-') . '</td>
-                                    <td align="right" style="background:#efffef; font-weight:bold;">' . ($data['qty_in'] > 0 ? number_format($row_price, 2) : '-') . '</td>
-                                    <td align="right" style="background:#efffef; font-weight:bold;">' . ($data['qty_in'] > 0 ? number_format($amt_in, 2) : '-') . '</td>
+                                    <td align="right">' . number_format($data['qty_in'], 2) . '</td>
+                                    <td align="right">' . number_format($std_price_rate, 2) . '</td>
+                                    <td align="right">' . number_format($data['qty_in'] * $std_price_rate, 2) . '</td>
+                                    <td align="right">' . number_format($row_price, 2) . '</td>
+                                    <td align="right">' . number_format($amt_in, 2) . '</td>
 
-                                    <td align="right" style="background:#fff2f2;">' . ($data['qty_out'] > 0 ? number_format($data['qty_out'], 2) : '-') . '</td>
-                                    <td align="right" style="background:#fff2f2;">' . ($data['qty_out'] > 0 ? number_format($std_price_rate, 2) : '-') . '</td>
-                                    <td align="right" style="background:#fff2f2;">' . ($data['qty_out'] > 0 ? number_format($data['qty_out'] * $std_price_rate, 2) : '-') . '</td>
-                                    <td align="right" style="background:#fff2f2; font-weight:bold;">' . ($data['qty_out'] > 0 ? number_format($amt_out / $data['qty_out'], 2) : '-') . '</td>
-                                    <td align="right" style="background:#fff2f2; font-weight:bold;">' . ($data['qty_out'] > 0 ? number_format($amt_out, 2) : '-') . '</td>
+                                    <td align="right">' . number_format($data['qty_out'], 2) . '</td>
+                                    <td align="right">' . number_format($std_price_rate, 2) . '</td>
+                                    <td align="right">' . number_format($data['qty_out'] * $std_price_rate, 2) . '</td>
+                                    <td align="right">' . number_format($row_price, 2) . '</td>
+                                    <td align="right">' . number_format($amt_out, 2) . '</td>
 
-                                    <td align="right" style="background:#fffbcc;">' . number_format($running_qty_bal, 2) . '</td>
-                                    <td align="right" style="background:#fffbcc;">' . number_format($std_price_rate, 2) . '</td>
-                                    <td align="right" style="background:#fffbcc;">' . number_format($running_qty_bal * $std_price_rate, 2) . '</td>
-                                    <td align="right" style="background:#fffbcc;">-</td>
-                                    <td align="right" style="background:#fffbcc;">' . number_format($running_act_amt_bal, 2) . '</td>
+                                    <td align="right">' . number_format($running_qty_bal, 2) . '</td>
+                                    <td align="right">' . number_format($std_price_rate, 2) . '</td>
+                                    <td align="right">' . number_format($running_qty_bal * $std_price_rate, 2) . '</td>
+                                    <td align="right">' . number_format($row_price, 2) . '</td>
+                                    <td align="right">' . number_format($running_act_amt_bal, 2) . '</td>
                                 </tr>';
                         $nod++;
                     }
