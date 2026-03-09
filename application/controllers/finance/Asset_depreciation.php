@@ -221,6 +221,54 @@ class Asset_depreciation extends CI_Controller
         echo json_encode(array("title" => "Success", "message" => "Data " . $post['asset_no'] . " " . $status_msg . " Successfully", "theme" => "success"));
     }
 
+    // create bug department
+    public function create_existing()
+    {
+        if ($this->input->post()) {
+            $post   = $this->input->post();
+            $asset_journals = $this->crud->read('asset_journals', [], ["asset_no" => $post['asset_no'], "periode" => $post['periode']]);
+
+            if (@$asset_journals->id != "") {
+                echo json_encode(array("title" => "Duplicate", "message" => "Asset No " . $post['asset_no'] . " in Period " . $post['periode'] . " Duplicate", "theme" => "error"));
+            } else {
+                $asset_categories = $this->crud->reads("asset_categories", [], ["number" => $post['item_family_id']]);
+
+                $send = json_encode(array("title" => "Not Found", "message" => "Asset Category " . $post['item_family_id'] . " Not Found", "theme" => "error"));
+
+                foreach ($asset_categories as $asset_category) 
+                {
+                    $total = $post['depreciation'];
+                    if ($asset_category->account_type == "DEBIT") {
+                        $debit = $total;
+                        $credit = 0;
+                    } else {
+                        $debit = 0;
+                        $credit = $total;
+                    }
+
+                    $data = array(
+                    "asset_category_number" => $post['asset_category_number'],
+                        "item_family_id"    => $post['item_family_id'],
+                        "asset_no"          => $post['asset_no'],
+                        "asset_name"        => $post['asset_name'],
+                        "periode"           => $post['periode'],
+                        "trans_date"        => $post['trans_date'],
+                        "account_number"    => $asset_category->account_number,
+                        "account_name"      => $asset_category->account_name,
+                        "debit"             => $debit,
+                        "credit"            => $credit,
+                    );
+
+                    $send = $this->crud->create('asset_journals', $data);
+                }
+
+                echo $send;
+            }
+        } else {
+            show_error("Cannot Process your request");
+        }
+    }
+
     // CALCULATE TOTAL PER JOURNAL ACCOUNT DEBIT/CREDIT
     public function calculate($category, $total)
     {
