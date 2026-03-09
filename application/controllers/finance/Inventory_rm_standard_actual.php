@@ -205,9 +205,11 @@ class Inventory_rm_standard_actual extends CI_Controller
                 $qty      = $sheet->getCell("F$i")->getValue();
                 $price    = $sheet->getCell("G$i")->getValue();
 
+                $cutoffDate = !empty($cutoff) ? Date::excelToDateTimeObject($cutoff)->format('Y-m-d') : date('Y-01-01');
+
                 $datas[] = [
                     'part_no'     => (string)$partNo,
-                    'cutoff_date' => (string)$cutoff,
+                    'cutoff_date' => (string)$cutoffDate,
                     'uom'         => (string)$uom,
                     'currency'    => (string)$currency,
                     'qty'         => $qty,
@@ -242,6 +244,18 @@ class Inventory_rm_standard_actual extends CI_Controller
 
             if (empty($data['part_no']) && empty($data['cutoff_date']) && empty($data['uom']) && empty($data['qty']) && empty($data['price'])) {
                 echo json_encode(array("title" => "Required", "message" => "All Data is Required!", "theme" => "error"));
+                return;
+            }
+            if (empty($data['part_no'])) {
+                echo json_encode(array("title" => "Required", "message" => "Part No is required!", "theme" => "error"));
+                return;
+            }
+            if (empty($data['qty'])) {
+                echo json_encode(array("title" => "Required", "message" => "Qty is required!", "theme" => "error"));
+                return;
+            }
+            if (empty($data['price'])) {
+                echo json_encode(array("title" => "Required", "message" => "Price is required!", "theme" => "error"));
                 return;
             }
             if (empty($item_rm)) {
