@@ -465,3 +465,6 @@ add Specification ([d1a2cbe9](https://github.com/hilmanf11/erp_bpi/commit/d1a2cb
 
 ### [2026-03-06]
 - **Rizki Puji**: Feature: fix update create upload and upload list on Inventory RM STD Actual ([0d4c41b7](https://github.com/hilmanf11/erp_bpi/commit/0d4c41b720b2fd6aecfeaeba36768336c0d7dc2d))
+
+### [2026-03-09]
+- **Rizki Puji**: Fixing: generate and create or update Asset Depreciation ([6828a697](https://github.com/hilmanf11/erp_bpi/commit/6828a6972fac5ee1c89a8a58c98b842b9ab5258d))
