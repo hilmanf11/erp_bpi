@@ -471,3 +471,6 @@ add Specification ([d1a2cbe9](https://github.com/hilmanf11/erp_bpi/commit/d1a2cb
 
 ### [2026-03-09]
 - **Rizki Puji**: Chore: backup create existing Asset Depreciation ([3ff12e5b](https://github.com/hilmanf11/erp_bpi/commit/3ff12e5b99159a05b82fb7141c9cbdd489cba76d))
+
+### [2026-03-09]
+- **Rizki Puji**: Hotfix: bug query reads View Purchase Invoice List on AP Payments ([140e36a0](https://github.com/hilmanf11/erp_bpi/commit/140e36a00f7406f50ba09fa1572a526a45b07e91))
