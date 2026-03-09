@@ -806,6 +806,12 @@
                     var local_debit = $("#local_debit").numberbox('getValue');
                     var local_credit = $("#local_credit").numberbox('getValue');
 
+                    // Validasi Balance
+                    if (parseFloat(local_debit).toFixed(2) !== parseFloat(local_credit).toFixed(2)) {
+                        $.messager.alert('Warning', '<b>Balance Error!</b><br>Total Debit (' + local_debit + ') must be equal to Total Credit (' + local_credit + ').', 'warning');
+                        return false; // Hentikan proses, tidak lanjut ke submit
+                    }
+
                     endEditing();
                     //var rows = $('#dg2').datagrid('getSelections');
                     var rows = $('#dg2').datagrid('getRows');

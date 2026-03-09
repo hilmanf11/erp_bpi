@@ -198,6 +198,7 @@
                             item_family_id: itemData.item_family_id,
                             asset_no: itemData.number,
                             asset_name: itemData.name,
+                            account_number: itemData.account_number,
                             depreciation: itemData.depreciation,
                             trans_date: itemData.trans_date,
                             periode: filter_year + "-" + filter_month,
