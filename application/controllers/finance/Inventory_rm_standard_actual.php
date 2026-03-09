@@ -120,7 +120,7 @@ class Inventory_rm_standard_actual extends CI_Controller
 
 
     // ----- UPLOAD DATA -----
-    public function upload()
+    public function upload_excel_old()
     {
         header('Content-Type: application/json');
 
@@ -170,6 +170,63 @@ class Inventory_rm_standard_actual extends CI_Controller
             if (isset($target) && file_exists($target)) {
                 unlink($target);
             }
+        }
+    }
+
+    public function upload()
+    {
+        if (ob_get_length()) ob_end_clean();
+        header('Content-Type: application/json');
+        
+        // Load PHPSpreadsheet autoloader
+        require_once 'assets/vendors/phpspreadsheet/vendor/autoload.php';
+
+        try {
+            if (!isset($_FILES['file_upload']) || $_FILES['file_upload']['error'] !== UPLOAD_ERR_OK) {
+                $msg = "File not found or an error occurred while uploading.";
+                echo json_encode(["title" => "Error", "message" => $msg, "theme" => "error"]);
+                return;
+            }
+
+            $tmpPath = $_FILES['file_upload']['tmp_name'];
+
+            // Membaca file menggunakan IOFactory
+            $spreadsheet = IOFactory::load($tmpPath);
+            $sheet = $spreadsheet->getActiveSheet();
+            $highestRow = $sheet->getHighestRow();
+            
+            $datas = [];
+            for ($i = 3; $i <= $highestRow; $i++) {
+                // Menggunakan PhpSpreadsheet agar simbol "Ø" tidak hilang
+                $partNo   = $sheet->getCell("B$i")->getValue();
+                $cutoff   = $sheet->getCell("C$i")->getValue();
+                $uom      = $sheet->getCell("D$i")->getValue();
+                $currency = $sheet->getCell("E$i")->getValue();
+                $qty      = $sheet->getCell("F$i")->getValue();
+                $price    = $sheet->getCell("G$i")->getValue();
+
+                $datas[] = [
+                    'part_no'     => (string)$partNo,
+                    'cutoff_date' => (string)$cutoff,
+                    'uom'         => (string)$uom,
+                    'currency'    => (string)$currency,
+                    'qty'         => $qty,
+                    'price'       => $price,
+                ];
+            }
+
+            echo json_encode([
+                "total" => count($datas),
+                "data"  => $datas
+            ]);
+
+        } catch (Exception $e) {
+            http_response_code(500);
+            echo json_encode([
+                "title"   => "Error",
+                "message" => "Failed to read Excel! " . $e->getMessage(),
+                "theme"   => "error"
+            ]);
         }
     }
 

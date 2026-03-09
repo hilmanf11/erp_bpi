@@ -341,7 +341,10 @@
                 $('#frm_upload').form('submit', {
                     url: '<?= base_url("finance/inventory_rm_standard_actual/upload") ?>',
                     onSubmit: function() {
-                        if (!$(this).form('validate')) return false;
+                        if (!$(this).form('validate')) {
+                            $.messager.alert('Warning', 'The form cannot be empty! Please choose a file first', 'warning');
+                            return false;
+                        }
                         
                         $.messager.progress({
                             title: 'Please Wait',
