@@ -1690,7 +1690,7 @@ class Inventory_rm_standard_actual extends CI_Controller
             }
             */
 
-            $begin_qty       = $record->actual_qty + $record->begin_stock;
+            $begin_qty       = (float)$record->actual_qty;  // Begin Balance = Qty dari upload saja
             $begin_std_amt   = $begin_qty * $std_price_rate;
             $begin_act_price = $act_price_rate;
             $begin_act_amt   = $begin_qty * $begin_act_price;
@@ -1712,9 +1712,11 @@ class Inventory_rm_standard_actual extends CI_Controller
 
 
             // Add to Grand Total
+            /* Comment agar tidak double counting
             foreach ($grandtotals as $key => $val) {
                 $grandtotals[$key] += ${$key};
             }
+            */
 
             $html .= '<tr>
                         <td align="center">'.$no.'</td>
@@ -1752,13 +1754,26 @@ class Inventory_rm_standard_actual extends CI_Controller
                         <td align="right">'.number_format($end_act_price, 2).'</td>
                         <td align="right">'.number_format($end_act_amt, 2).'</td>
                     </tr>';
-            
+
+            $running_qty_bal = 0; 
+            $running_act_amt_bal = 0;
+
             // (Logika Detail Transactions)
             if ($filter_display == "DETAIL") {
-                // 1. Inisialisasi awal detail produk
                 $nod = 1;
+                // Inisialisasi awal produk berdasarkan saldo upload
+                $running_qty_bal     = (float)$record->actual_qty; 
+                $running_act_amt_bal = (float)$record->actual_qty * (float)$act_price_rate;
+                
+                // Akumulasi BEGIN ke Grand Total (Hanya diambil sekali per item)
+                $grandtotals['begin_qty']     += (float)$record->actual_qty;
+                $grandtotals['begin_std_amt'] += ((float)$record->actual_qty * $std_price_rate);
+                $grandtotals['begin_act_amt'] += $running_act_amt_bal;
+
+                /** -- existing bug muncul QTY upload di In dan di Begin
                 $running_qty_bal = (float)$record->begin_stock;
                 $running_act_amt_bal = (float)$record->begin_stock * (float)$act_price_rate;
+                */
 
                 // 2. Kumpulkan semua data transaksi ke dalam satu array
                 if ($filter_trans_type == '') {
@@ -2038,21 +2053,43 @@ class Inventory_rm_standard_actual extends CI_Controller
                             </tr>
                         </thead>';
 
-                    foreach ($all_data as $data) {
-                        // Get balance sebelumnya untuk perhitungan balance saat ini
-                        $prev_qty = $running_qty_bal;
-                        $prev_amt = $running_act_amt_bal;
-                        
-                        // Perhitungan Balance
-                        $running_qty_bal += ($data['qty_in'] - $data['qty_out']);
-                        
-                        // Gunakan harga actual upload ($act_price_rate dari summary)
-                        $row_price = (float)$act_price_rate; 
-                        
-                        $amt_in = $data['qty_in'] * $row_price;
-                        $amt_out = $data['qty_out'] * $row_price;
-                        $running_act_amt_bal += ($amt_in - $amt_out);
+                    // --- PERBAIKAN LOGIKA LOOPING DETAIL (Bug Qty Upload ada di Begin dan In) ---
+                    $running_qty_bal = 0; 
+                    $running_act_amt_bal = 0;
+                    $first_upload_captured = false; 
 
+                    foreach ($all_data as $data) {
+                        if ($data['type'] === 'UPLOADS') {
+                            $current_begin_qty = (float)$data['qty_in'];
+                            $current_begin_amt = $current_begin_qty * (float)$data['actual_price_begin'];
+                            $current_in_qty = 0; 
+                            $current_in_amt = 0;
+                            $current_out_qty = 0;
+                            $current_out_amt = 0;
+                        } else {
+                            // Transaksi Harian (RECEIPT, ISSUED, dll)
+                            $current_begin_qty = $running_qty_bal;
+                            $current_begin_amt = $running_act_amt_bal;
+                            
+                            $current_in_qty  = (float)$data['qty_in'];
+                            $current_in_amt  = $current_in_qty * (float)$act_price_rate;
+                            $current_out_qty = (float)$data['qty_out'];
+                            $current_out_amt = $current_out_qty * (float)$act_price_rate;
+
+                            $running_qty_bal     += ($current_in_qty - $current_out_qty);
+                            $running_act_amt_bal += ($current_in_amt - $current_out_amt);
+
+                            // Akumulasi IN & OUT ke Grand Total (Hanya transaksi non-upload)
+                            $grandtotals['in_qty']      += $current_in_qty;
+                            $grandtotals['in_std_amt']  += ($current_in_qty * $std_price_rate);
+                            $grandtotals['in_act_amt']  += $current_in_amt;
+
+                            $grandtotals['out_qty']     += $current_out_qty;
+                            $grandtotals['out_std_amt'] += ($current_out_qty * $std_price_rate);
+                            $grandtotals['out_act_amt'] += $current_out_amt;
+                        }
+
+                        // Render ke HTML menggunakan variabel hasil logika di atas
                         $html .= '<tr style="background:#fff;">
                                     <td></td>
                                     <td align="center">' . $nod . '</td>
@@ -2067,32 +2104,37 @@ class Inventory_rm_standard_actual extends CI_Controller
                                     <td align="right">' . number_format($record->std_price, 2) . '</td>
                                     <td align="right">' . number_format($rate, 2) . '</td>
 
-                                    <td align="right">' . number_format($prev_qty, 2) . '</td>
+                                    <td align="right">' . number_format($current_begin_qty, 2) . '</td>
                                     <td align="right">' . number_format($std_price_rate, 2) . '</td>
-                                    <td align="right">' . number_format($prev_qty * $std_price_rate, 2) . '</td>
-                                    <td align="right">' . number_format($row_price, 2) . '</td>
-                                    <td align="right">' . number_format($prev_amt, 2) . '</td>
+                                    <td align="right">' . number_format($current_begin_qty * $std_price_rate, 2) . '</td>
+                                    <td align="right">' . number_format($act_price_rate, 2) . '</td>
+                                    <td align="right">' . number_format($current_begin_amt, 2) . '</td>
 
-                                    <td align="right">' . number_format($data['qty_in'], 2) . '</td>
+                                    <td align="right">' . number_format($current_in_qty, 2) . '</td>
                                     <td align="right">' . number_format($std_price_rate, 2) . '</td>
-                                    <td align="right">' . number_format($data['qty_in'] * $std_price_rate, 2) . '</td>
-                                    <td align="right">' . number_format($row_price, 2) . '</td>
-                                    <td align="right">' . number_format($amt_in, 2) . '</td>
+                                    <td align="right">' . number_format($current_in_qty * $std_price_rate, 2) . '</td>
+                                    <td align="right">' . number_format($act_price_rate, 2) . '</td>
+                                    <td align="right">' . number_format($current_in_amt, 2) . '</td>
 
-                                    <td align="right">' . number_format($data['qty_out'], 2) . '</td>
+                                    <td align="right">' . number_format($current_out_qty, 2) . '</td>
                                     <td align="right">' . number_format($std_price_rate, 2) . '</td>
-                                    <td align="right">' . number_format($data['qty_out'] * $std_price_rate, 2) . '</td>
-                                    <td align="right">' . number_format($row_price, 2) . '</td>
-                                    <td align="right">' . number_format($amt_out, 2) . '</td>
+                                    <td align="right">' . number_format($current_out_qty * $std_price_rate, 2) . '</td>
+                                    <td align="right">' . number_format($act_price_rate, 2) . '</td>
+                                    <td align="right">' . number_format($current_out_amt, 2) . '</td>
 
                                     <td align="right">' . number_format($running_qty_bal, 2) . '</td>
                                     <td align="right">' . number_format($std_price_rate, 2) . '</td>
                                     <td align="right">' . number_format($running_qty_bal * $std_price_rate, 2) . '</td>
-                                    <td align="right">' . number_format($row_price, 2) . '</td>
+                                    <td align="right">' . number_format($act_price_rate, 2) . '</td>
                                     <td align="right">' . number_format($running_act_amt_bal, 2) . '</td>
                                 </tr>';
                         $nod++;
                     }
+
+                    // Akumulasi ENDING ke Grand Total (Posisi terakhir saldo produk ini)
+                    $grandtotals['end_qty']     += $running_qty_bal;
+                    $grandtotals['end_std_amt'] += ($running_qty_bal * $std_price_rate);
+                    $grandtotals['end_act_amt'] += $running_act_amt_bal;
                 }
             }
 
