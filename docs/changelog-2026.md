@@ -474,3 +474,6 @@ add Specification ([d1a2cbe9](https://github.com/hilmanf11/erp_bpi/commit/d1a2cb
 
 ### [2026-03-09]
 - **Rizki Puji**: Hotfix: bug query reads View Purchase Invoice List on AP Payments ([140e36a0](https://github.com/hilmanf11/erp_bpi/commit/140e36a00f7406f50ba09fa1572a526a45b07e91))
+
+### [2026-03-09]
+- **Rizki Puji**: Fixing: upload special char with PHPSpreadsheet on Inventory RM STD Actual ([c546222f](https://github.com/hilmanf11/erp_bpi/commit/c546222f99ef41db7fcb859cb29ce909f23e7f36))
