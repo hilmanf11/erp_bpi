@@ -49,6 +49,7 @@ class Ap_payments extends CI_Controller
         $this->db->join('account_coa b', 'a.account_number = b.account_number', 'left');        
         $this->db->join('purchase_invoices c', 'a.purchase_invoice = c.number', 'left');
         $this->db->where('a.payment_no', $payment_no);
+        $this->db->group_by('a.id');
         $records = $this->db->get()->result_array();
 
         header('Content-Type: application/json');
