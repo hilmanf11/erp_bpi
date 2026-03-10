@@ -480,3 +480,6 @@ add Specification ([d1a2cbe9](https://github.com/hilmanf11/erp_bpi/commit/d1a2cb
 
 ### [2026-03-09]
 - **Rizki Puji**: Fixing: bug Qty from upload as Begin Qty on Inventory RM STD Actual ([2dbb80d5](https://github.com/hilmanf11/erp_bpi/commit/2dbb80d508071fd59f49fbb8e2b795849a11154f))
+
+### [2026-03-10]
+- **Rizki Puji**: Fixing: upload special char with PHPSpreadsheet on Inventory WIP STD Actual ([5e2ef213](https://github.com/hilmanf11/erp_bpi/commit/5e2ef2130fb8212f0efad0d1878bf577753f2d8f))
