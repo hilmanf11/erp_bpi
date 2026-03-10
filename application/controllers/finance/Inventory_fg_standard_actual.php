@@ -527,7 +527,7 @@ class Inventory_fg_standard_actual extends CI_Controller
         return $css;
     }
 
-    public function print($option = "") 
+    public function print_without_actual($option = "") 
     {
         if ($option == "excel") {
             $format  = date("Ymd");
@@ -550,7 +550,6 @@ class Inventory_fg_standard_actual extends CI_Controller
         // Config Logo & Name
         $config = $this->db->get('config')->row();
 
-        //------------------------------------ OPTIMIZED QUERY ----------------------------------//
 
         // mengambil 'price' (standard price) dari standard_price_fg
         $query_standard_price = "SELECT item_fg_id, currency, price 
@@ -1386,6 +1385,792 @@ class Inventory_fg_standard_actual extends CI_Controller
         $html .= '</table></body></html>';
         echo $html;
     }
+
+    public function print($option = "")
+    {
+        if (!$this->db->table_exists('inventory_fg_actual')) {
+            echo "<pre> Database Error: Tabel Inventory FG Actual not found! Please contact admin.</pre>";
+            return false;
+        }
+
+        if ($option == "excel") {
+            $format  = date("Ymd");
+            header("Content-type: application/vnd-ms-excel");
+            header("Content-Disposition: attachment; filename=history_transactions_fg_$format.xls");
+        }
+
+        $filter_from        = $this->input->get('filter_from');
+        $filter_to          = $this->input->get('filter_to');
+        $filter_items       = $this->input->get('filter_items');
+        $filter_division    = $this->input->get("filter_division");
+        $filter_display     = $this->input->get("filter_display");
+        $filter_trans_type  = $this->input->get("filter_trans_type");
+        
+        $start  = strtotime($filter_from);
+        $finish = strtotime($filter_to);
+
+        $display_title = ($filter_display == "DETAIL") ? '(DETAIL)' : '(RECAP)';
+
+        // Config Logo & Name
+        $config = $this->db->get('config')->row();
+
+        // Get Exchange Rates
+        $rates = $this->db->get_where('standard_exchange_rates', ['currency_from' => 'USD'])->result();
+        $rate_list = [];
+        foreach ($rates as $r) {
+            $rate_list[] = [
+                'start' => strtotime($r->start_date),
+                'end'   => strtotime($r->end_date),
+                'val'   => (float)$r->middle
+            ];
+        }
+
+        //------------------------------------ GET DATA ----------------------------------//
+
+        // Combine semua kategori Checksheet (Periode Berjalan)
+        $query_checksheet = "SELECT 
+                e.item_fg_id, 
+                SUM(f.qty) as qty_in_checksheet,
+                SUM(CASE WHEN e.status_subcont = 'NO' AND e.wo_no NOT LIKE '%RG-%' THEN f.qty ELSE 0 END) as qty_in_non_subcont,
+                SUM(CASE WHEN e.subcont_type = 'Jasa' AND e.wo_no NOT LIKE '%RG-%' THEN f.qty ELSE 0 END) as qty_in_subcont_jasa,
+                SUM(CASE WHEN e.subcont_type = 'Finished Good' AND e.wo_no NOT LIKE '%RG-%' THEN f.qty ELSE 0 END) as qty_in_subcont_fg,
+                SUM(CASE WHEN e.wo_no LIKE '%RG-%' THEN f.qty ELSE 0 END) as qty_in_repair_fg
+            FROM scan_item_receipts_fg f
+            JOIN checksheets e ON e.number = f.checksheet_number
+            WHERE e.packing_date BETWEEN '$filter_from' AND '$filter_to'
+            GROUP BY e.item_fg_id";
+
+        // Combine semua kategori Transaction FG (Periode Berjalan)
+        $query_trans_fg = "SELECT 
+                item_fg_id,
+                SUM(CASE WHEN transaction_kind = 'IN' THEN qty ELSE 0 END) as initial_in,
+                SUM(CASE WHEN transaction_kind = 'IN' AND transaction_type = 'ADJ IN STO' THEN qty ELSE 0 END) as initial_in_adj,
+                SUM(CASE WHEN transaction_kind = 'IN' AND transaction_type = 'RECEIPT FG' THEN qty ELSE 0 END) as initial_in_rfg,
+                SUM(CASE WHEN transaction_kind = 'OUT' THEN qty ELSE 0 END) as qty_out,
+                SUM(CASE WHEN transaction_kind = 'OUT' AND transaction_type = 'BPB' THEN qty ELSE 0 END) as qty_out_bpb,
+                SUM(CASE WHEN transaction_kind = 'OUT' AND transaction_type = 'ADJ OUT STO' THEN qty ELSE 0 END) as qty_out_adj
+            FROM transaction_fg
+            WHERE request_date BETWEEN '$filter_from' AND '$filter_to'
+            GROUP BY item_fg_id";
+
+        // Combine semua kategori Delivery Notes (Periode Berjalan)
+        $query_dn = "SELECT 
+                item_fg_id,
+                SUM(qty) as initial_out_g,
+                SUM(CASE WHEN trans_type = 'SALES' THEN qty ELSE 0 END) as qty_notes_sales,
+                SUM(CASE WHEN trans_type = 'RETURN' THEN qty ELSE 0 END) as qty_notes_return,
+                SUM(CASE WHEN trans_type = 'SAMPLE' THEN qty ELSE 0 END) as qty_notes_sample
+            FROM delivery_notes
+            WHERE delivery_note_date BETWEEN '$filter_from' AND '$filter_to'
+            GROUP BY item_fg_id";
+
+        // Sub-Query Stok Awal (Saldo Sblm Tanggal Filter)
+        $query_begin_stock = "SELECT 
+                a.id,
+                (COALESCE(qc2.qty, 0) + COALESCE(qnc2.qty, 0) + COALESCE(qti2.qty, 0) + COALESCE(qw2.qty, 0)) - 
+                (COALESCE(qto2.qty, 0) + COALESCE(qdn2.qty, 0) + COALESCE(qrep2.qty, 0)) as begin_stock
+            FROM item_fg a
+            LEFT JOIN (SELECT e.item_fg_id, SUM(f.qty) as qty FROM scan_item_receipts_fg f JOIN checksheets e ON e.number = f.checksheet_number WHERE e.packing_date < '$filter_from' GROUP BY 1) qc2 ON a.id = qc2.item_fg_id
+            LEFT JOIN (SELECT item_fg_id, SUM(qty) as qty FROM scan_item_receipts_fg WHERE type = 'NBFG' AND packing_date < '$filter_from' GROUP BY 1) qnc2 ON a.id = qnc2.item_fg_id
+            LEFT JOIN (SELECT item_fg_id, SUM(qty) as qty FROM transaction_fg WHERE transaction_kind = 'IN' AND request_date < '$filter_from' GROUP BY 1) qti2 ON a.id = qti2.item_fg_id
+            LEFT JOIN (SELECT item_fg_id, SUM(qty) as qty FROM transaction_fg WHERE transaction_kind = 'OUT' AND request_date < '$filter_from' GROUP BY 1) qto2 ON a.id = qto2.item_fg_id
+            LEFT JOIN (SELECT item_fg_id, SUM(qty) as qty FROM delivery_notes WHERE delivery_note_date < '$filter_from' GROUP BY 1) qdn2 ON a.id = qdn2.item_fg_id
+            LEFT JOIN (SELECT e.item_fg_id, SUM(f.qty) as qty FROM scan_repair_of_goods f JOIN repair_of_goods e ON e.document_no = f.document_no WHERE e.trans_date < '$filter_from' GROUP BY 1) qrep2 ON a.id = qrep2.item_fg_id
+            LEFT JOIN (SELECT item_fg_id, SUM(qty) as qty FROM wip_receipts WHERE division = 'MTS' AND trans_date < '$filter_from' GROUP BY 1) qw2 ON a.id = qw2.item_fg_id";
+
+        $query_scan_repair_of_goods = "SELECT e.item_fg_id, SUM(f.qty) as initial_out_h
+            FROM scan_repair_of_goods f
+            JOIN repair_of_goods e ON e.document_no = f.document_no and f.item_fg_id = e.item_fg_id
+            WHERE DATE_FORMAT(e.trans_date, '%Y-%m-%d') BETWEEN '$filter_from' AND '$filter_to'
+            GROUP BY f.item_fg_id";
+        
+        $query_qty_in_wip_receipt = "SELECT i.item_fg_id, SUM(i.qty) as qty_in_wip_receipt
+            FROM wip_receipts i
+            WHERE i.division = 'MTS'
+            AND i.trans_date BETWEEN '$filter_from' AND '$filter_to'
+            GROUP BY i.item_fg_id";
+        
+        $query_qty_in_no_checksheet = "SELECT i.item_fg_id, SUM(i.qty) as qty_in_no_checksheet
+        FROM scan_item_receipts_fg i
+        WHERE i.type = 'NBFG'
+        AND i.packing_date BETWEEN '$filter_from' AND '$filter_to'
+        GROUP BY i.item_fg_id";
+
+        // mengambil 'price' (standard price) dari standard_price_fg
+        $query_standard_price = "SELECT item_fg_id, currency, price 
+            FROM standard_price_fg 
+            WHERE '$filter_from' >= `start_date` AND '$filter_to' <= `end_date` 
+            GROUP BY item_fg_id";
+
+
+        $query_main = "SELECT 
+            a.id, a.number, a.name, a.uom, a.type,
+            divs.number as division,
+            COALESCE(bst.begin_stock, 0) AS begin_stock,
+            COALESCE(sp.price, 0) as std_price,
+            sp.currency AS standard_currency,
+            
+            -- Actual Price and Qty from upload
+            COALESCE(actual.price, 0) as actual_price, 
+            COALESCE(actual.qty, 0) as actual_qty,
+
+            -- Mutasi Masuk
+            COALESCE(qc.qty_in_non_subcont, 0) + COALESCE(tf.initial_in_rfg, 0) + COALESCE(qw.qty_in_wip_receipt, 0) as qty_rfg,
+            COALESCE(tf.initial_in, 0) as adj_in_qty,
+            COALESCE(tf.initial_in_adj, 0) as qty_in_adj,
+            COALESCE(tf.initial_in_rfg, 0) as qty_in_rfg,
+            COALESCE(qnc.qty_in_no_checksheet, 0) as qty_in_new_barcode,
+            COALESCE(qc.qty_in_non_subcont, 0) as qty_in_non_subcont,
+            COALESCE(qc.qty_in_subcont_jasa, 0) as qty_in_subcont_jasa,
+            COALESCE(qc.qty_in_subcont_fg, 0) as qty_in_subcont_fg,
+            COALESCE(qc.qty_in_repair_fg, 0) as qty_in_repair_fg,
+            
+            (COALESCE(qc.qty_in_checksheet, 0) + COALESCE(qnc.qty_in_no_checksheet, 0) + COALESCE(tf.initial_in, 0) + COALESCE(qw.qty_in_wip_receipt, 0)) AS qty_in,
+
+            -- Mutasi Keluar
+            COALESCE(tf.qty_out, 0) + COALESCE(dn.initial_out_g, 0) + COALESCE(qh.initial_out_h, 0) AS qty_out,
+            COALESCE(dn.qty_notes_sales, 0) as qty_out_sales,
+            COALESCE(dn.qty_notes_return, 0) as qty_out_return,
+            COALESCE(dn.qty_notes_sample, 0) as qty_out_sample,
+            COALESCE(qh.initial_out_h, 0) as qty_out_repair,
+            COALESCE(tf.qty_out, 0) as adj_out_qty,
+            COALESCE(tf.qty_out_bpb, 0) + COALESCE(qh.initial_out_h, 0) as qty_out_bpb,
+            COALESCE(tf.qty_out_adj, 0) as qty_out_adj,
+
+            -- End Stock
+            (COALESCE(bst.begin_stock, 0) + 
+            (COALESCE(qc.qty_in_checksheet, 0) + COALESCE(qnc.qty_in_no_checksheet, 0) + COALESCE(tf.initial_in, 0) + COALESCE(qw.qty_in_wip_receipt, 0)) - 
+            (COALESCE(tf.qty_out, 0) + COALESCE(dn.initial_out_g, 0) + COALESCE(qh.initial_out_h, 0))
+            ) AS end_stock
+
+        FROM item_fg a
+        LEFT JOIN divisions divs ON a.division_id = divs.id
+        LEFT JOIN inventory_fg_actual actual ON (actual.part_no = a.number OR actual.item_fg_id = a.id)
+        
+        LEFT JOIN ($query_standard_price) sp ON a.id = sp.item_fg_id
+        LEFT JOIN ($query_checksheet) qc ON a.id = qc.item_fg_id
+        LEFT JOIN ($query_trans_fg) tf ON a.id = tf.item_fg_id
+        LEFT JOIN ($query_dn) dn ON a.id = dn.item_fg_id
+        LEFT JOIN ($query_begin_stock) bst ON a.id = bst.id
+        LEFT JOIN ($query_qty_in_no_checksheet) qnc ON a.id = qnc.item_fg_id
+        LEFT JOIN ($query_scan_repair_of_goods) qh ON a.id = qh.item_fg_id
+        LEFT JOIN ($query_qty_in_wip_receipt) qw ON a.id = qw.item_fg_id
+
+        WHERE a.id LIKE '%$filter_items%' AND a.division_id LIKE '%$filter_division%'
+        ORDER BY a.number";
+
+        $records = $this->db->query($query_main)->result();
+
+        // Prepare HTML
+        //------------------------------------ HTML OUTPUT ----------------------------------//
+        $html = '<html><head><title>Inventory Report</title></head>';
+        $html .= $this->customCss();
+        $html .= '<body>
+            <center>
+                <div style="float: left; font-size: 12px; text-align: left;">
+                    <table style="width: 100%;">
+                        <tr>
+                            <td width="50" style="font-size: 12px; vertical-align: top; text-align: center; vertical-align:jus margin-right:10px;">
+                                <img src="' . $config->favicon . '" width="30">
+                            </td>
+                            <td style="font-size: 14px; text-align: left; margin:2px;">
+                                <b>' . $config->name . '</b><br>
+                                <small>'.$config->description.'</small>
+                            </td>
+                        </tr>
+                    </table>
+                </div>
+                <div style="float: right; font-size: 12px; text-align: right;">
+                    Print Date ' . date("d M Y H:i:s") . ' <br>
+                    Print By ' . $this->session->username . '  
+                </div>
+                <br><br><br>
+                <h3 style="margin:0;">INVENTORY FG STANDARD AND ACTUAL <i>' . $display_title . '</i> </h3>
+                <small>PERIOD : <b>' . $filter_from . '</b> To <b>' . $filter_to . '</b></small>
+            </center>
+            <br>';
+
+        $html .= '<table id="customers" border="1" style="font-size: 11px;">
+            <thead>
+                <tr style="background-color: #eee;">
+                    <th rowspan="5" width="20">No</th>
+                    <th rowspan="5">Product No</th>
+                    <th rowspan="5">Product Name</th>
+                    <th rowspan="5">UOM</th>
+                    <th rowspan="5">Type</th>
+                    
+                    <th colspan="24">SUMMARY</th>
+                    <th colspan="55">DETAIL</th>
+                </tr>
+
+                <tr style="background-color:#d5d5d5;">
+                    <th colspan="6" width="100">BEGIN</th>
+                    <th colspan="6" width="100">IN</th>
+                    <th colspan="6" width="100">OUT</th>
+                    <th colspan="6" width="100">ENDING</th>
+
+                    <th colspan="15">IN</th>
+                    <th colspan="40">OUT</th>
+                </tr>';
+
+        // SUMMARY & DETAIL
+        $html .= '<tr class="bg-yellow">
+                <th rowspan="3" class="bg-grey">QTY</th>
+                <th rowspan="2" colspan="2" style="background-color: #D1FFC6;">STANDARD</th>
+                <th rowspan="2" colspan="2" style="background-color: #CFE6F9;">ACTUAL</th>
+                <th rowspan="3">VARIANCE</th>
+
+                <th rowspan="3" class="bg-grey">QTY</th>
+                <th rowspan="2" colspan="2" style="background-color: #D1FFC6;">STANDARD</th>
+                <th rowspan="2" colspan="2" style="background-color: #CFE6F9;">ACTUAL</th>
+                <th rowspan="3">VARIANCE</th>
+
+                <th rowspan="3" class="bg-grey">QTY</th>
+                <th rowspan="2" colspan="2" style="background-color: #D1FFC6;">STANDARD</th>
+                <th rowspan="2" colspan="2" style="background-color: #CFE6F9;">ACTUAL</th>
+                <th rowspan="3">VARIANCE</th>
+
+                <th rowspan="3" class="bg-grey">QTY</th>
+                <th rowspan="2" colspan="2" style="background-color: #D1FFC6;">STANDARD</th>
+                <th rowspan="2" colspan="2" style="background-color: #CFE6F9;">ACTUAL</th>
+                <th rowspan="3">VARIANCE</th>
+
+
+                <th colspan="5" >IN RFG</th>
+                <th colspan="5">IN REPAIR FG</th>
+                <th colspan="5">NEW BARCODE</th>
+                <th colspan="5">SUBCONT FG</th>
+                <th colspan="5">SUBCONT JASA</th>
+                <th colspan="5">ADJ STO</th>
+
+                <th colspan="5">OUT SJ</th>
+                <th colspan="5">OUT BPB</th>
+                <th colspan="5">OUT RETUR<br>TKG</th>
+                <th colspan="5">OUT SAMPLE</th>
+                <th colspan="5">OUT ADJ<br>(STO)</th>
+            </tr>';
+
+        $html .= '<tr>
+            <th rowspan="2" class="bg-grey">QTY</th>
+            <th colspan="2" style="background-color: #D1FFC6;">STANDARD</th>
+            <th colspan="2" style="background-color: #CFE6F9;">ACTUAL</th>
+            
+            <th rowspan="2" class="bg-grey">QTY</th>
+            <th colspan="2" style="background-color: #D1FFC6;">STANDARD</th>
+            <th colspan="2" style="background-color: #CFE6F9;">ACTUAL</th>
+
+            <th rowspan="2" class="bg-grey">QTY</th>
+            <th colspan="2" style="background-color: #D1FFC6;">STANDARD</th>
+            <th colspan="2" style="background-color: #CFE6F9;">ACTUAL</th>
+
+            <th rowspan="2" class="bg-grey">QTY</th>
+            <th colspan="2" style="background-color: #D1FFC6;">STANDARD</th>
+            <th colspan="2" style="background-color: #CFE6F9;">ACTUAL</th>
+
+            <th rowspan="2" class="bg-grey">QTY</th>
+            <th colspan="2" style="background-color: #D1FFC6;">STANDARD</th>
+            <th colspan="2" style="background-color: #CFE6F9;">ACTUAL</th>
+
+            <th rowspan="2" class="bg-grey">QTY</th>
+            <th colspan="2" style="background-color: #D1FFC6;">STANDARD</th>
+            <th colspan="2" style="background-color: #CFE6F9;">ACTUAL</th>
+
+            <th rowspan="2" class="bg-grey">QTY</th>
+            <th colspan="2" style="background-color: #D1FFC6;">STANDARD</th>
+            <th colspan="2" style="background-color: #CFE6F9;">ACTUAL</th>
+
+            <th rowspan="2" class="bg-grey">QTY</th>
+            <th colspan="2" style="background-color: #D1FFC6;">STANDARD</th>
+            <th colspan="2" style="background-color: #CFE6F9;">ACTUAL</th>
+
+            <th rowspan="2" class="bg-grey">QTY</th>
+            <th colspan="2" style="background-color: #D1FFC6;">STANDARD</th>
+            <th colspan="2" style="background-color: #CFE6F9;">ACTUAL</th>
+
+            <th rowspan="2" class="bg-grey">QTY</th>
+            <th colspan="2" style="background-color: #D1FFC6;">STANDARD</th>
+            <th colspan="2" style="background-color: #CFE6F9;">ACTUAL</th>
+
+            <th rowspan="2" class="bg-grey">QTY</th>
+            <th colspan="2" style="background-color: #D1FFC6;">STANDARD</th>
+            <th colspan="2" style="background-color: #CFE6F9;">ACTUAL</th>
+        </tr>';
+
+        $html .= '<tr>
+            <th style="background-color: #D1FFC6;">PRICE</th>
+            <th style="background-color: #D1FFC6;">AMOUNT</th>
+            <th style="background-color: #CFE6F9;">PRICE</th>
+            <th style="background-color: #CFE6F9;">AMOUNT</th>
+            
+            <th style="background-color: #D1FFC6;">PRICE</th>
+            <th style="background-color: #D1FFC6;">AMOUNT</th>
+            <th style="background-color: #CFE6F9;">PRICE</th>
+            <th style="background-color: #CFE6F9;">AMOUNT</th>
+            
+            <th style="background-color: #D1FFC6;">PRICE</th>
+            <th style="background-color: #D1FFC6;">AMOUNT</th>
+            <th style="background-color: #CFE6F9;">PRICE</th>
+            <th style="background-color: #CFE6F9;">AMOUNT</th>
+            
+            <th style="background-color: #D1FFC6;">PRICE</th>
+            <th style="background-color: #D1FFC6;">AMOUNT</th>
+            <th style="background-color: #CFE6F9;">PRICE</th>
+            <th style="background-color: #CFE6F9;">AMOUNT</th>
+
+
+            <th style="background-color: #D1FFC6;">PRICE</th>
+            <th style="background-color: #D1FFC6;">AMOUNT</th>
+            <th style="background-color: #CFE6F9;">PRICE</th>
+            <th style="background-color: #CFE6F9;">AMOUNT</th>
+            
+            <th style="background-color: #D1FFC6;">PRICE</th>
+            <th style="background-color: #D1FFC6;">AMOUNT</th>
+            <th style="background-color: #CFE6F9;">PRICE</th>
+            <th style="background-color: #CFE6F9;">AMOUNT</th>
+            
+            <th style="background-color: #D1FFC6;">PRICE</th>
+            <th style="background-color: #D1FFC6;">AMOUNT</th>
+            <th style="background-color: #CFE6F9;">PRICE</th>
+            <th style="background-color: #CFE6F9;">AMOUNT</th>
+            
+            <th style="background-color: #D1FFC6;">PRICE</th>
+            <th style="background-color: #D1FFC6;">AMOUNT</th>
+            <th style="background-color: #CFE6F9;">PRICE</th>
+            <th style="background-color: #CFE6F9;">AMOUNT</th>
+            
+            <th style="background-color: #D1FFC6;">PRICE</th>
+            <th style="background-color: #D1FFC6;">AMOUNT</th>
+            <th style="background-color: #CFE6F9;">PRICE</th>
+            <th style="background-color: #CFE6F9;">AMOUNT</th>
+            
+            <th style="background-color: #D1FFC6;">PRICE</th>
+            <th style="background-color: #D1FFC6;">AMOUNT</th>
+            <th style="background-color: #CFE6F9;">PRICE</th>
+            <th style="background-color: #CFE6F9;">AMOUNT</th>
+            
+            <th style="background-color: #D1FFC6;">PRICE</th>
+            <th style="background-color: #D1FFC6;">AMOUNT</th>
+            <th style="background-color: #CFE6F9;">PRICE</th>
+            <th style="background-color: #CFE6F9;">AMOUNT</th>
+            
+            <th style="background-color: #D1FFC6;">PRICE</th>
+            <th style="background-color: #D1FFC6;">AMOUNT</th>
+            <th style="background-color: #CFE6F9;">PRICE</th>
+            <th style="background-color: #CFE6F9;">AMOUNT</th>
+            
+            <th style="background-color: #D1FFC6;">PRICE</th>
+            <th style="background-color: #D1FFC6;">AMOUNT</th>
+            <th style="background-color: #CFE6F9;">PRICE</th>
+            <th style="background-color: #CFE6F9;">AMOUNT</th>
+            
+            <th style="background-color: #D1FFC6;">PRICE</th>
+            <th style="background-color: #D1FFC6;">AMOUNT</th>
+            <th style="background-color: #CFE6F9;">PRICE</th>
+            <th style="background-color: #CFE6F9;">AMOUNT</th>
+            
+            <th style="background-color: #D1FFC6;">PRICE</th>
+            <th style="background-color: #D1FFC6;">AMOUNT</th>
+            <th style="background-color: #CFE6F9;">PRICE</th>
+            <th style="background-color: #CFE6F9;">AMOUNT</th>
+        </tr>';
+        $html .= '</thead><tbody>';
+
+        
+        $rate = 1;
+        /** 
+        // Find Rate from rate list (mengurangi N+1 query)
+        $target_date = strtotime($filter_to);
+        foreach ($rate_list as $r) {
+            if ($target_date >= $r['start'] && $target_date <= $r['end']) {
+                $rate = $r['val'];
+                break;
+            }
+        }
+        */
+
+        $no = 1;
+        $total_b_qty = 0;
+        $total_i_qty = 0;
+        $total_o_qty = 0;
+        $total_e_qty = 0;
+
+        $total_b_std_amount = 0;
+        $total_i_std_amount = 0;
+        $total_o_std_amount = 0;
+        $total_e_std_amount = 0;
+
+        $total_b_act_amount = 0;
+        $total_i_act_amount = 0;
+        $total_o_act_amount = 0;
+        $total_e_act_amount = 0;
+
+        // IN Details
+        $total_rfg             = 0;
+        $total_in_repair_fg    = 0;
+        $total_in_new_barcode  = 0;
+        $total_in_subcont_fg   = 0;
+        $total_in_subcont_jasa = 0;
+        $total_in_adj          = 0;
+        
+        $total_std_rfg             = 0;
+        $total_std_in_repair_fg    = 0;
+        $total_std_in_new_barcode  = 0;
+        $total_std_in_subcont_fg   = 0;
+        $total_std_in_subcont_jasa = 0;
+        $total_std_in_adj          = 0;
+        
+        $total_act_rfg             = 0;
+        $total_act_in_repair_fg    = 0;
+        $total_act_in_new_barcode  = 0;
+        $total_act_in_subcont_fg   = 0;
+        $total_act_in_subcont_jasa = 0;
+        $total_act_in_adj          = 0;
+        
+        // OUT Details
+        $total_out_sales  = 0;
+        $total_out_bpb    = 0;
+        $total_out_return = 0;
+        $total_out_sample = 0;
+        $total_out_adj    = 0;
+
+        $total_std_out_sales  = 0;
+        $total_std_out_bpb    = 0;
+        $total_std_out_return = 0;
+        $total_std_out_sample = 0;
+        $total_std_out_adj    = 0;
+
+        $total_act_out_sales  = 0;
+        $total_act_out_bpb    = 0;
+        $total_act_out_return = 0;
+        $total_act_out_sample = 0;
+        $total_act_out_adj    = 0;
+
+        foreach ($records as $record) {
+            // Get Price
+            $std_price = (float)$record->std_price * $rate;
+            $act_price = (float)$record->actual_price * 1; // IDR
+
+            // Get QTY
+            $b_qty = (float)$record->actual_qty; // $record->begin_stock;
+            $i_qty = (float)$record->qty_in;
+            $o_qty = (float)$record->qty_out;
+            $e_qty = ($b_qty + $i_qty) - $o_qty;
+
+            // Begin
+            $b_std_amount = $b_qty * $std_price;
+            $b_act_amount = $b_qty * $act_price;
+            $b_variance   = $b_act_amount - $b_std_amount;
+
+            // IN
+            $i_std_amount = $i_qty * $std_price;
+            $i_act_amount = $i_qty * $act_price;
+            $i_variance   = $i_act_amount - $i_std_amount;
+
+            // OUT
+            $o_std_amount = $o_qty * $std_price;
+            $o_act_amount = $o_qty * $act_price;
+            $o_variance   = $o_act_amount - $o_std_amount;
+
+            // Ending
+            $e_std_amount = $e_qty * $std_price;
+            $e_act_amount = $e_qty * $act_price;
+            $e_variance   = $e_act_amount - $e_std_amount;
+
+
+            // IN Details            
+            $std_rfg             = $record->qty_rfg * $std_price;
+            $std_in_repair_fg    = $record->qty_in_repair_fg * $std_price;
+            $std_in_new_barcode  = $record->qty_in_new_barcode * $std_price;
+            $std_in_subcont_fg   = $record->qty_in_subcont_fg * $std_price;
+            $std_in_subcont_jasa = $record->qty_in_subcont_jasa * $std_price;
+            $std_in_adj          = $record->qty_in_adj * $std_price;
+            
+            $act_rfg             = $record->qty_rfg * $act_price;
+            $act_in_repair_fg    = $record->qty_in_repair_fg * $act_price;
+            $act_in_new_barcode  = $record->qty_in_new_barcode * $act_price;
+            $act_in_subcont_fg   = $record->qty_in_subcont_fg * $act_price;
+            $act_in_subcont_jasa = $record->qty_in_subcont_jasa * $act_price;
+            $act_in_adj          = $record->qty_in_adj * $act_price;
+            
+            // OUT Details
+            $std_out_sales  = $record->qty_out_sales * $std_price;
+            $std_out_bpb    = $record->qty_out_bpb * $std_price;
+            $std_out_return = $record->qty_out_return * $std_price;
+            $std_out_sample = $record->qty_out_sample * $std_price;
+            $std_out_adj    = $record->qty_out_adj * $std_price;
+
+            $act_out_sales  = $record->qty_out_sales * $act_price;
+            $act_out_bpb    = $record->qty_out_bpb * $act_price;
+            $act_out_return = $record->qty_out_return * $act_price;
+            $act_out_sample = $record->qty_out_sample * $act_price;
+            $act_out_adj    = $record->qty_out_adj * $act_price;
+
+            $html .= '  <tr>
+                    <td style="text-align:center">' . $no . '</td>
+                    <td style="mso-number-format:\@;">' . $record->number . '</td>
+                    <td style="mso-number-format:\@;">' . $record->name . '</td>
+                    <td>' . $record->uom . '</td>
+                    <td>' . $record->type . '</td>
+                    
+                    <td style="text-align:right;">' . number_format($b_qty, 2) . '</td>
+                    <td style="text-align:right;">' . number_format($std_price, 2) . '</td>
+                    <td style="text-align:right;">' . number_format($b_std_amount, 2) . '</td>
+                    <td style="text-align:right;">' . number_format($act_price, 2) . '</td>
+                    <td style="text-align:right;">' . number_format($b_act_amount, 2) . '</td>
+                    <td style="text-align:right;">' . number_format($b_variance, 2) . '</td>
+                    
+                    <td style="text-align:right;">' . number_format($i_qty, 2) . '</td>
+                    <td style="text-align:right;">' . number_format($std_price, 2) . '</td>
+                    <td style="text-align:right;">' . number_format($i_std_amount, 2) . '</td>
+                    <td style="text-align:right;">' . number_format($act_price, 2) . '</td>
+                    <td style="text-align:right;">' . number_format($i_act_amount, 2) . '</td>
+                    <td style="text-align:right;">' . number_format($i_variance, 2) . '</td>
+                    
+                    <td style="text-align:right;">' . number_format($o_qty, 2) . '</td>
+                    <td style="text-align:right;">' . number_format($std_price, 2) . '</td>
+                    <td style="text-align:right;">' . number_format($o_std_amount, 2) . '</td>
+                    <td style="text-align:right;">' . number_format($act_price, 2) . '</td>
+                    <td style="text-align:right;">' . number_format($o_act_amount, 2) . '</td>
+                    <td style="text-align:right;">' . number_format($o_variance, 2) . '</td>
+                    
+                    <td style="text-align:right;">' . number_format($e_qty, 2) . '</td>
+                    <td style="text-align:right;">' . number_format($std_price, 2) . '</td>
+                    <td style="text-align:right;">' . number_format($e_std_amount, 2) . '</td>
+                    <td style="text-align:right;">' . number_format($act_price, 2) . '</td>
+                    <td style="text-align:right;">' . number_format($e_act_amount, 2) . '</td>
+                    <td style="text-align:right;">' . number_format($e_variance, 2) . '</td>
+                    
+                    <td style="text-align:right;">' . number_format($record->qty_rfg, 2) . '</td>
+                    <td style="text-align:right;">' . number_format($std_price, 2) . '</td>
+                    <td style="text-align:right;">' . number_format($std_rfg, 2) . '</td>
+                    <td style="text-align:right;">' . number_format($act_price, 2) . '</td>
+                    <td style="text-align:right;">' . number_format($act_rfg, 2) . '</td>
+                    
+                    <td style="text-align:right;">' . number_format($record->qty_in_repair_fg, 2) . '</td>
+                    <td style="text-align:right;">' . number_format($std_price, 2) . '</td>
+                    <td style="text-align:right;">' . number_format($std_in_repair_fg, 2) . '</td>
+                    <td style="text-align:right;">' . number_format($act_price, 2) . '</td>
+                    <td style="text-align:right;">' . number_format($act_in_repair_fg, 2) . '</td>
+                    
+                    <td style="text-align:right;">' . number_format($record->qty_in_new_barcode, 2) . '</td>
+                    <td style="text-align:right;">' . number_format($std_price, 2) . '</td>
+                    <td style="text-align:right;">' . number_format($std_in_new_barcode, 2) . '</td>
+                    <td style="text-align:right;">' . number_format($act_price, 2) . '</td>
+                    <td style="text-align:right;">' . number_format($act_in_new_barcode, 2) . '</td>
+                    
+                    <td style="text-align:right;">' . number_format($record->qty_in_subcont_fg, 2) . '</td>
+                    <td style="text-align:right;">' . number_format($std_price, 2) . '</td>
+                    <td style="text-align:right;">' . number_format($std_in_subcont_fg, 2) . '</td>
+                    <td style="text-align:right;">' . number_format($act_price, 2) . '</td>
+                    <td style="text-align:right;">' . number_format($act_in_subcont_fg, 2) . '</td>
+                    
+                    <td style="text-align:right;">' . number_format($record->qty_in_subcont_jasa, 2) . '</td>
+                    <td style="text-align:right;">' . number_format($std_price, 2) . '</td>
+                    <td style="text-align:right;">' . number_format($std_in_subcont_jasa, 2) . '</td>
+                    <td style="text-align:right;">' . number_format($act_price, 2) . '</td>
+                    <td style="text-align:right;">' . number_format($act_in_subcont_jasa, 2) . '</td>
+                    
+                    <td style="text-align:right;">' . number_format($record->qty_in_adj, 2) . '</td>
+                    <td style="text-align:right;">' . number_format($std_price, 2) . '</td>
+                    <td style="text-align:right;">' . number_format($std_in_adj, 2) . '</td>
+                    <td style="text-align:right;">' . number_format($act_price, 2) . '</td>
+                    <td style="text-align:right;">' . number_format($act_in_adj, 2) . '</td>
+
+
+                    <td style="text-align:right;">' . number_format($record->qty_out_sales, 2) . '</td>
+                    <td style="text-align:right;">' . number_format($std_price, 2) . '</td>
+                    <td style="text-align:right;">' . number_format($std_out_sales, 2) . '</td>
+                    <td style="text-align:right;">' . number_format($act_price, 2) . '</td>
+                    <td style="text-align:right;">' . number_format($act_out_sales, 2) . '</td>
+                    
+                    <td style="text-align:right;">' . number_format($record->qty_out_bpb, 2) . '</td>
+                    <td style="text-align:right;">' . number_format($std_price, 2) . '</td>
+                    <td style="text-align:right;">' . number_format($std_out_bpb, 2) . '</td>
+                    <td style="text-align:right;">' . number_format($act_price, 2) . '</td>
+                    <td style="text-align:right;">' . number_format($act_out_bpb, 2) . '</td>
+                    
+                    <td style="text-align:right;">' . number_format($record->qty_out_return, 2) . '</td>
+                    <td style="text-align:right;">' . number_format($std_price, 2) . '</td>
+                    <td style="text-align:right;">' . number_format($std_out_return, 2) . '</td>
+                    <td style="text-align:right;">' . number_format($act_price, 2) . '</td>
+                    <td style="text-align:right;">' . number_format($act_out_return, 2) . '</td>
+                    
+                    <td style="text-align:right;">' . number_format($record->qty_out_sample, 2) . '</td>
+                    <td style="text-align:right;">' . number_format($std_price, 2) . '</td>
+                    <td style="text-align:right;">' . number_format($std_out_sample, 2) . '</td>
+                    <td style="text-align:right;">' . number_format($act_price, 2) . '</td>
+                    <td style="text-align:right;">' . number_format($act_out_sample, 2) . '</td>
+                    
+                    <td style="text-align:right;">' . number_format($record->qty_out_adj, 2) . '</td>
+                    <td style="text-align:right;">' . number_format($std_price, 2) . '</td>
+                    <td style="text-align:right;">' . number_format($std_out_adj, 2) . '</td>
+                    <td style="text-align:right;">' . number_format($act_price, 2) . '</td>
+                    <td style="text-align:right;">' . number_format($act_out_adj, 2) . '</td>
+                </tr>
+            </tbody>';
+
+            // Total Summary
+            $total_b_qty += $b_qty;
+            $total_i_qty += $i_qty;
+            $total_o_qty += $o_qty;
+            $total_e_qty += $e_qty;
+
+            $total_b_std_amount += $b_std_amount;
+            $total_i_std_amount += $i_std_amount;
+            $total_o_std_amount += $o_std_amount;
+            $total_e_std_amount += $e_std_amount;
+
+            $total_b_act_amount += $b_act_amount;
+            $total_i_act_amount += $i_act_amount;
+            $total_o_act_amount += $o_act_amount;
+            $total_e_act_amount += $e_act_amount;
+            
+            // Total IN Details
+            $total_rfg             += $record->qty_rfg;
+            $total_in_repair_fg    += $record->qty_in_repair_fg;
+            $total_in_new_barcode  += $record->qty_in_new_barcode;
+            $total_in_subcont_fg   += $record->qty_in_subcont_fg;
+            $total_in_subcont_jasa += $record->qty_in_subcont_jasa;
+            $total_in_adj          += $record->qty_in_adj;
+
+            $total_std_rfg             += $std_rfg;
+            $total_std_in_repair_fg    += $std_in_repair_fg;
+            $total_std_in_new_barcode  += $std_in_new_barcode;
+            $total_std_in_subcont_fg   += $std_in_subcont_fg;
+            $total_std_in_subcont_jasa += $std_in_subcont_jasa;
+            $total_std_in_adj          += $std_in_adj;
+            
+            $total_act_rfg             += $act_rfg;
+            $total_act_in_repair_fg    += $act_in_repair_fg;
+            $total_act_in_new_barcode  += $act_in_new_barcode;
+            $total_act_in_subcont_fg   += $act_in_subcont_fg;
+            $total_act_in_subcont_jasa += $act_in_subcont_jasa;
+            $total_act_in_adj          += $act_in_adj;
+            
+            // Total OUT Details
+            $total_out_sales  += $record->qty_out_sales;
+            $total_out_bpb    += $record->qty_out_bpb;
+            $total_out_return += $record->qty_out_return;
+            $total_out_sample += $record->qty_out_sample;
+            $total_out_adj    += $record->qty_out_adj;
+
+            $total_std_out_sales  += $std_out_sales;
+            $total_std_out_bpb    += $std_out_bpb;
+            $total_std_out_return += $std_out_return;
+            $total_std_out_sample += $std_out_sample;
+            $total_std_out_adj    += $std_out_adj;
+
+            $total_act_out_sales  += $act_out_sales;
+            $total_act_out_bpb    += $act_out_bpb;
+            $total_act_out_return += $act_out_return;
+            $total_act_out_sample += $act_out_sample;
+            $total_act_out_adj    += $act_out_adj;
+        }
+
+        $html .= '<tfooter>
+        <tr style="font-weight:bold;">
+            <td colspan="5" style="text-align:right;"><b>GRAND TOTAL</b></td>
+            <td style="text-align:right;">' . number_format($total_b_qty, 2) . '</td>
+            <td style="text-align:right;"></td>
+            <td style="text-align:right;">' . number_format($total_b_std_amount, 2) . '</td>
+            <td style="text-align:right;"></td>
+            <td style="text-align:right;">' . number_format($total_b_act_amount, 2) . '</td>
+            <td style="text-align:right;"></td>
+
+            <td style="text-align:right;">' . number_format($total_i_qty, 2) . '</td>
+            <td style="text-align:right;"></td>
+            <td style="text-align:right;">' . number_format($total_i_std_amount, 2) . '</td>
+            <td style="text-align:right;"></td>
+            <td style="text-align:right;">' . number_format($total_i_act_amount, 2) . '</td>
+            <td style="text-align:right;"></td>
+
+            <td style="text-align:right;">' . number_format($total_o_qty, 2) . '</td>
+            <td style="text-align:right;"></td>
+            <td style="text-align:right;">' . number_format($total_o_std_amount, 2) . '</td>
+            <td style="text-align:right;"></td>
+            <td style="text-align:right;">' . number_format($total_o_act_amount, 2) . '</td>
+            <td style="text-align:right;"></td>
+
+            <td style="text-align:right;">' . number_format($total_e_qty, 2) . '</td>
+            <td style="text-align:right;"></td>
+            <td style="text-align:right;">' . number_format($total_e_std_amount, 2) . '</td>
+            <td style="text-align:right;"></td>
+            <td style="text-align:right;">' . number_format($total_e_act_amount, 2) . '</td>
+            <td style="text-align:right;"></td>
+
+
+            <td style="text-align:right;">' . number_format($total_rfg, 2) . '</td>
+            <td style="text-align:right;"></td>
+            <td style="text-align:right;">' . number_format($total_std_rfg, 2) . '</td>
+            <td style="text-align:right;"></td>
+            <td style="text-align:right;">' . number_format($total_act_rfg, 2) . '</td>
+
+            <td style="text-align:right;">' . number_format($total_in_repair_fg, 2) . '</td>
+            <td style="text-align:right;"></td>
+            <td style="text-align:right;">' . number_format($total_std_in_repair_fg, 2) . '</td>
+            <td style="text-align:right;"></td>
+            <td style="text-align:right;">' . number_format($total_act_in_repair_fg, 2) . '</td>
+
+            <td style="text-align:right;">' . number_format($total_in_new_barcode, 2) . '</td>
+            <td style="text-align:right;"></td>
+            <td style="text-align:right;">' . number_format($total_std_in_new_barcode, 2) . '</td>
+            <td style="text-align:right;"></td>
+            <td style="text-align:right;">' . number_format($total_act_in_new_barcode, 2) . '</td>
+
+            <td style="text-align:right;">' . number_format($total_in_subcont_fg, 2) . '</td>
+            <td style="text-align:right;"></td>
+            <td style="text-align:right;">' . number_format($total_std_in_subcont_fg, 2) . '</td>
+            <td style="text-align:right;"></td>
+            <td style="text-align:right;">' . number_format($total_act_in_subcont_fg, 2) . '</td>
+
+            <td style="text-align:right;">' . number_format($total_in_subcont_jasa, 2) . '</td>
+            <td style="text-align:right;"></td>
+            <td style="text-align:right;">' . number_format($total_std_in_subcont_jasa, 2) . '</td>
+            <td style="text-align:right;"></td>
+            <td style="text-align:right;">' . number_format($total_act_in_subcont_jasa, 2) . '</td>
+
+            <td style="text-align:right;">' . number_format($total_in_adj, 2) . '</td>
+            <td style="text-align:right;"></td>
+            <td style="text-align:right;">' . number_format($total_std_in_adj, 2) . '</td>
+            <td style="text-align:right;"></td>
+            <td style="text-align:right;">' . number_format($total_act_in_adj, 2) . '</td>
+            
+            <td style="text-align:right;">' . number_format($total_out_sales, 2) . '</td>
+            <td style="text-align:right;"></td>
+            <td style="text-align:right;">' . number_format($total_std_out_sales, 2) . '</td>
+            <td style="text-align:right;"></td>
+            <td style="text-align:right;">' . number_format($total_act_out_sales, 2) . '</td>
+
+            <td style="text-align:right;">' . number_format($total_out_bpb, 2) . '</td>
+            <td style="text-align:right;"></td>
+            <td style="text-align:right;">' . number_format($total_std_out_bpb, 2) . '</td>
+            <td style="text-align:right;"></td>
+            <td style="text-align:right;">' . number_format($total_act_out_bpb, 2) . '</td>
+
+            <td style="text-align:right;">' . number_format($total_out_return, 2) . '</td>
+            <td style="text-align:right;"></td>
+            <td style="text-align:right;">' . number_format($total_std_out_return, 2) . '</td>
+            <td style="text-align:right;"></td>
+            <td style="text-align:right;">' . number_format($total_act_out_return, 2) . '</td>
+
+            <td style="text-align:right;">' . number_format($total_out_sample, 2) . '</td>
+            <td style="text-align:right;"></td>
+            <td style="text-align:right;">' . number_format($total_std_out_sample, 2) . '</td>
+            <td style="text-align:right;"></td>
+            <td style="text-align:right;">' . number_format($total_act_out_sample, 2) . '</td>
+
+            <td style="text-align:right;">' . number_format($total_out_adj, 2) . '</td>
+            <td style="text-align:right;"></td>
+            <td style="text-align:right;">' . number_format($total_std_out_adj, 2) . '</td>
+            <td style="text-align:right;"></td>
+            <td style="text-align:right;">' . number_format($total_act_out_adj, 2) . '</td>
+        </tr>
+        </tfooter>';
+
+        $html .= '</table></body></html>';
+        echo $html;
+    }
+
 
     public function print_detail($option = "")
     {
