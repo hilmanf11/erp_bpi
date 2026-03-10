@@ -354,7 +354,17 @@
                     },
                     success: function(result) {
                         try {
-                            const response = typeof result === 'string' ? JSON.parse(result) : result;
+                            let cleanResult = result;
+                            
+                            // Jika result mengandung tag HTML (error PHP), coba ambil JSON-nya saja
+                            if (typeof result === 'string' && result.includes('<')) {
+                                const jsonMatch = result.match(/\{[\s\S]*\}|\[[\s\S]*\]/);
+                                if (jsonMatch) {
+                                    cleanResult = jsonMatch[0];
+                                }
+                            }
+
+                            const response = typeof cleanResult === 'string' ? JSON.parse(cleanResult) : cleanResult;
                             
                             if (response.data && Array.isArray(response.data)) {
                                 // Reset tampilan progress sebelum mulai
@@ -364,7 +374,9 @@
                                 $.messager.alert('Error', response.message || 'Invalid data format.', 'error');
                             }
                         } catch (e) {
-                            $.messager.alert('Error', 'Server Error: ' + result, 'error');
+                            // Tampilkan pesan error yang lebih user-friendly daripada dump HTML
+                            console.error("Original Result:", result);
+                            $.messager.alert('Error', 'The system failed to read the data. Ensure the Date Format and another fields in Excel is correct.', 'error');
                         }
                     }
                 });
