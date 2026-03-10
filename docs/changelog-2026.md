@@ -483,3 +483,6 @@ add Specification ([d1a2cbe9](https://github.com/hilmanf11/erp_bpi/commit/d1a2cb
 
 ### [2026-03-10]
 - **Rizki Puji**: Fixing: upload special char with PHPSpreadsheet on Inventory WIP STD Actual ([5e2ef213](https://github.com/hilmanf11/erp_bpi/commit/5e2ef2130fb8212f0efad0d1878bf577753f2d8f))
+
+### [2026-03-10]
+- **Rizki Puji**: Fixing: bug upload format date and float on Inventory RM STD Actual (Bu Nina) ([2d9281a8](https://github.com/hilmanf11/erp_bpi/commit/2d9281a86769d6191fecb7c4aeed3596934244b3))
