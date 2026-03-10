@@ -1070,10 +1070,6 @@ class Inventory_fg_standard_actual extends CI_Controller
 
             // Exchange Rate Logic
             $rate = 1;
-            if ($record->standard_currency == 'USD' && !empty($record->max_receipt_date)) {
-                $q_rate = $this->db->get_where('standard_exchange_rates', ['currency_from'=>'USD','start_date <='=>$record->max_receipt_date,'end_date >='=>$record->max_receipt_date])->row();
-                $rate = $q_rate ? $q_rate->middle : 1;
-            }
 
             // standard Price
             $std_p = (float)$record->std_price * $rate;
