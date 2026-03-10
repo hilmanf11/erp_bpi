@@ -3,6 +3,13 @@ error_reporting(0);
 date_default_timezone_set("Asia/Bangkok");
 defined('BASEPATH') or exit('No direct script access allowed');
 
+// Library Excel PhpOffice
+use PhpOffice\PhpSpreadsheet\Spreadsheet;
+use PhpOffice\PhpSpreadsheet\Writer\Xlsx;
+use PhpOffice\PhpSpreadsheet\IOFactory;
+use PhpOffice\PhpSpreadsheet\Cell\DataType;
+use PhpOffice\PhpSpreadsheet\Shared\Date;
+
 /**
  * @property CI_Input $input
  * @property CI_Output $output
@@ -48,7 +55,7 @@ class Inventory_wip_standard_actual extends CI_Controller
 
 
     // ----- UPLOAD DATA -----
-    public function upload()
+    public function upload_excel_old()
     {
         header('Content-Type: application/json');
 
@@ -101,42 +108,140 @@ class Inventory_wip_standard_actual extends CI_Controller
         }
     }
 
+    public function upload()
+    {
+        if (ob_get_length()) ob_end_clean();
+        header('Content-Type: application/json');
+        
+        // Load PHPSpreadsheet autoloader
+        require_once 'assets/vendors/phpspreadsheet/vendor/autoload.php';
+
+        try {
+            if (!isset($_FILES['file_upload']) || $_FILES['file_upload']['error'] !== UPLOAD_ERR_OK) {
+                $msg = "File not found or an error occurred while uploading.";
+                echo json_encode(["title" => "Error", "message" => $msg, "theme" => "error"]);
+                return;
+            }
+
+            $tmpPath = $_FILES['file_upload']['tmp_name'];
+
+            // Membaca file menggunakan IOFactory
+            $spreadsheet = IOFactory::load($tmpPath);
+            $sheet = $spreadsheet->getActiveSheet();
+            $highestRow = $sheet->getHighestRow();
+            
+            $datas = [];
+            for ($i = 3; $i <= $highestRow; $i++) {
+                // Menggunakan PhpSpreadsheet agar simbol "Ø" tidak hilang
+                $partNo   = $sheet->getCell("B$i")->getValue();
+                $cutoff   = $sheet->getCell("C$i")->getValue();
+                $uom      = $sheet->getCell("D$i")->getValue();
+                $currency = $sheet->getCell("E$i")->getValue();
+                $qty      = $sheet->getCell("F$i")->getValue();
+                $price    = $sheet->getCell("G$i")->getValue();
+
+                $cutoffDate = !empty($cutoff) ? Date::excelToDateTimeObject($cutoff)->format('Y-m-d') : date('Y-01-01');
+
+                $datas[] = [
+                    'part_no'     => (string)$partNo,
+                    'cutoff_date' => (string)$cutoffDate,
+                    'uom'         => (string)$uom,
+                    'currency'    => (string)$currency,
+                    'qty'         => $qty,
+                    'price'       => $price,
+                ];
+            }
+
+            echo json_encode([
+                "total" => count($datas),
+                "data"  => $datas
+            ]);
+
+        } catch (Exception $e) {
+            http_response_code(500);
+            echo json_encode([
+                "title"   => "Error",
+                "message" => "Failed to read Excel! " . $e->getMessage(),
+                "theme"   => "error"
+            ]);
+        }
+    }
+
     // Insert process from upload
     public function uploadcreate()
     {
         if ($this->input->post()) {
             $data = $this->input->post('data');
+            $user_session = $this->session->userdata('username') ?? $this->session->username; 
 
             // check part_no
-            $item_fg = $this->db->select('id, number, name, number')->from('item_fg')->where('number', $data['part_no'])->get()->row();
+            $item_fg = $this->db->select('id, number, name')->from('item_fg')->where('number', $data['part_no'])->get()->row();
 
             if (empty($data['part_no']) && empty($data['cutoff_date']) && empty($data['uom']) && empty($data['qty']) && empty($data['price']) ) {
                 echo json_encode(array("title" => "Required", "message" => "All Data is Required!", "theme" => "error"));
-            
-            } elseif (empty($data['part_no'])) {
-                echo json_encode(array("title" => "Required", "message" => "Part No is Required!", "theme" => "error"));
-            
-            } elseif (empty($data['qty'])) {
-                echo json_encode(array("title" => "Required", "message" => "Qty of " . $data['part_no'] . " is Required!", "theme" => "error"));
-            
-            } elseif (empty($item_fg)) {
-                echo json_encode(array("title" => "Not Found", "message" => "Item of " . $data['part_no'] . " is Not Found!", "theme" => "error"));
-            
-            } else {
-                $cutoff_date = date("Y-m-d", strtotime($data['cutoff_date']));
-                
-                $dataFinal = [
-                    'item_fg_id'  => $item_fg->id,
-                    'part_no'     => $data['part_no'] ?? $item_fg->number,
-                    'cutoff_date' => $cutoff_date ?? date('Y-01-01'),
-                    'uom'         => $data['uom'],
-                    'currency'    => $data['currency'] ?? 'IDR',
-                    'qty'         => $data['qty'],
-                    'price'       => $data['price'],
-                    'upload'      => 'YES',
-                    'upload_date' => date('Y-m-d'),
+                return;
+            }
+            if (empty($data['part_no'])) {
+                echo json_encode(array("title" => "Required", "message" => "Part No is required!", "theme" => "error"));
+                return;
+            }
+            if (empty($data['qty'])) {
+                echo json_encode(array("title" => "Required", "message" => "Qty is required!", "theme" => "error"));
+                return;
+            }
+            if (empty($data['price'])) {
+                echo json_encode(array("title" => "Required", "message" => "Price is required!", "theme" => "error"));
+                return;
+            }
+            if (empty($item_fg)) {
+                echo json_encode(array("title" => "Not Found", "message" => "Item " . $data['part_no'] . " is Not Found in Master Item!", "theme" => "error"));
+                return;
+            }
+
+            // Prepare Data
+            $cutoff_date = date("Y-m-d", strtotime($data['cutoff_date']));
+            $dataFinal = [
+                'item_fg_id'  => $item_fg->id,
+                'part_no'     => $data['part_no'],
+                'cutoff_date' => $cutoff_date,
+                'uom'         => $data['uom'],
+                'currency'    => $data['currency'] ?? 'IDR',
+                'qty'         => $data['qty'],
+                'price'       => $data['price'],
+                'upload'      => 'YES',
+                'upload_date' => date('Y-m-d'),
+            ];
+
+            // Check existing
+            $existing = $this->db->get_where('inventory_wip_actual', [
+                'item_fg_id'  => $item_fg->id,
+                'cutoff_date' => $cutoff_date,
+                'qty'         => $data['qty'],
+                'price'       => $data['price'],
+            ])->row();
+
+            if ($existing) {
+                // UPDATE jika sudah ada
+                $dataUpdate = [
+                    'part_no'      => $data['part_no'],
+                    'uom'          => $data['uom'],
+                    'currency'     => $data['currency'] ?? 'IDR',
+                    'qty'          => $data['qty'],
+                    'price'        => $data['price'],
+                    'updated_by'   => $user_session,
+                    'updated_date' => date('Y-m-d H:i:s'),
                 ];
 
+                $this->db->where('id', $existing->id);
+                $update = $this->db->update('inventory_wip_actual', $dataUpdate);
+                
+                if ($update) {
+                    echo json_encode(array("title" => "Updated", "message" => "Data updated successfully!", "theme" => "success"));
+                } else {
+                    echo json_encode(array("title" => "Error", "message" => "Failed to update data!", "theme" => "error"));
+                }
+            } else {
+                // CREATE jika belum ada
                 $send   = $this->crud->create('inventory_wip_actual', $dataFinal);
                 echo $send;
             }
@@ -170,6 +275,33 @@ class Inventory_wip_standard_actual extends CI_Controller
         header('Content-Length: ' . @filesize($file));
         header("Content-Type: text/plain");
         @readfile($file);
+    }
+
+    public function get_upload_list()
+    {
+        $page = $this->input->post('page') ?? 1;
+        $rows = $this->input->post('rows') ?? 10;
+        $offset = ($page - 1) * $rows;
+
+        // Filter hanya yang berasal dari upload
+        $this->db->from('inventory_wip_actual');
+        $this->db->where('upload', 'YES');
+        $this->db->where('deleted', 0);
+
+        // Hitung total untuk pagination
+        $total = $this->db->count_all_results('', FALSE);
+
+        // Ambil data dengan limit
+        $this->db->order_by('upload_date', 'DESC');
+        $this->db->limit($rows, $offset);
+        $data = $this->db->get()->result();
+
+        $result = [
+            "total" => $total,
+            "rows" => $data
+        ];
+
+        echo json_encode($result);
     }
     // ----- END UPLOAD FUNCTIONS ----- 
 

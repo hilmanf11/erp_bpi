@@ -47,6 +47,7 @@
         </div>
     </fieldset>
     <?= $button ?>
+    <a href="javascript:void(0)" class="easyui-linkbutton" data-options="plain:true" onclick="openUploadList()"><i class="fa fa-table"></i> List Uploaded Data</a>
 </div>
 
 
@@ -68,6 +69,43 @@
         <ul id="remarks">
         </ul>
     </div>
+</div>
+
+<div id="dlg_upload_list" class="easyui-dialog" title="Uploaded Data List" 
+    data-options="closed: true, modal:true, iconCls:'icon-search'" 
+    style="width: 1100px; height: 550px; padding:10px;">
+    
+    <table id="dg_upload_list" class="easyui-datagrid" style="width:100%; height:100%"
+           data-options="
+                singleSelect: true,
+                pagination: true,
+                rownumbers: true,
+                fitColumns: false, 
+                nowrap: true,
+                url: '<?php echo base_url('finance/inventory_wip_standard_actual/get_upload_list'); ?>'
+           ">
+        <thead>
+            <tr style="text-align: center;">
+                <th field="item_fg_id" rowspan="2" width="150">Item ID</th>
+                <th field="part_no" rowspan="2" width="150">Part No</th>
+                <th field="uom" rowspan="2" width="60" data-options="align:'center'">UOM</th>
+                <th field="qty" rowspan="2" width="100" data-options="align:'center'">Qty</th>
+                <th field="price" rowspan="2" width="120" data-options="align:'center'">Price</th>
+                <th field="currency" rowspan="2" width="60" data-options="align:'center'">CCY</th>
+                <th field="cutoff_date" rowspan="2" width="100" data-options="align:'center'">Cutoff Date</th>
+                <th field="upload_date" rowspan="2" width="100" data-options="align:'center'">Upload Date</th>
+                
+                <th colspan="2">Created</th>
+                <th colspan="2">Updated</th>
+            </tr>
+            <tr>
+                <th field="created_by" width="120" data-options="align:'center'">By</th>
+                <th field="created_date" width="150" data-options="align:'center'">Date</th>
+                <th field="updated_by" width="120" data-options="align:'center'">By</th>
+                <th field="updated_date" width="150" data-options="align:'center'">Date</th>
+            </tr>
+        </thead>
+    </table>
 </div>
 
 <div class="easyui-panel" title="Print Preview" style="width:100%;padding:10px;">
@@ -205,6 +243,27 @@
         window.location.assign('<?= base_url('template/tmp_inventory_wip_standard_actual.xls') ?>');
     }
 
+    function openUploadList() {
+        $('#dlg_upload_list').dialog('open').dialog('center');
+        
+        // Aktifkan filter pada datagrid
+        $('#dg_upload_list').datagrid('enableFilter', [
+            {
+                field:'qty',
+                type:'numberbox',
+                options:{precision:2},
+                op:['equal','notequal','less','greater']
+            },
+            {
+                field:'price',
+                type:'numberbox',
+                options:{precision:4},
+                op:['equal','less','greater']
+            }
+        ]);
+    }
+
+
     // Upload Data
     $('#dlg_upload').dialog({
         buttons: [{
@@ -225,7 +284,10 @@
                 $('#frm_upload').form('submit', {
                     url: '<?= base_url("finance/inventory_wip_standard_actual/upload") ?>',
                     onSubmit: function() {
-                        if (!$(this).form('validate')) return false;
+                        if (!$(this).form('validate')) {
+                            $.messager.alert('Warning', 'The form cannot be empty! Please choose a file first', 'warning');
+                            return false;
+                        }
                         
                         $.messager.progress({
                             title: 'Please Wait',
@@ -274,6 +336,7 @@
         const processItem = (index) => {
             if (index >= totalItems) {
                 $.messager.progress('close');
+                $('#dg_upload_list').datagrid('reload'); // reload list upload
                 
                 const message = `Upload complete. Success: ${successfulCount}, Failed: ${failedCount}`;
                 $.messager.alert('Info', message, 'info');
