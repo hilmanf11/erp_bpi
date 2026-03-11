@@ -486,3 +486,6 @@ add Specification ([d1a2cbe9](https://github.com/hilmanf11/erp_bpi/commit/d1a2cb
 
 ### [2026-03-10]
 - **Rizki Puji**: Fixing: bug upload format date and float on Inventory RM STD Actual (Bu Nina) ([2d9281a8](https://github.com/hilmanf11/erp_bpi/commit/2d9281a86769d6191fecb7c4aeed3596934244b3))
+
+### [2026-03-11]
+- **Rizki Puji**: Chore: remove rates N+1 query on report Inventory STD Actual (RM FG) ([ea0ac7aa](https://github.com/hilmanf11/erp_bpi/commit/ea0ac7aadfcd4e9d66c76be404224a26fba0101f))
