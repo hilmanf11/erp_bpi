@@ -130,18 +130,32 @@ class Inventory_fg_standard_actual extends CI_Controller
                 $cutoff   = $sheet->getCell("C$i")->getValue();
                 $uom      = $sheet->getCell("D$i")->getValue();
                 $currency = $sheet->getCell("E$i")->getValue();
-                $qty      = $sheet->getCell("F$i")->getValue();
-                $price    = $sheet->getCell("G$i")->getValue();
+                $qty      = $sheet->getCell("F$i")->getOldCalculatedValue() ?? $sheet->getCell("F$i")->getValue();
+                $price    = $sheet->getCell("G$i")->getOldCalculatedValue() ?? $sheet->getCell("G$i")->getValue();
 
-                $cutoffDate = !empty($cutoff) ? Date::excelToDateTimeObject($cutoff)->format('Y-m-d') : date('Y-01-01');
+                // Validasi Date Format
+                try {
+                    if (is_numeric($cutoff)) {
+                        $cutoffDate = \PhpOffice\PhpSpreadsheet\Shared\Date::excelToDateTimeObject($cutoff)->format('Y-m-d');
+                    
+                    } elseif (!empty($cutoff) && strtotime($cutoff)) {
+                        // Jika ternyata formatnya string tanggal (misal: "2024-01-01")
+                        $cutoffDate = date('Y-m-d', strtotime($cutoff));
+                    
+                    } else {
+                        $cutoffDate = date('Y-01-01'); 
+                    }
+                } catch (Exception $e) {
+                    $cutoffDate = date('Y-01-01');
+                }
 
                 $datas[] = [
                     'part_no'     => (string)$partNo,
-                    'cutoff_date' => (string)$cutoffDate,
+                    'cutoff_date' => $cutoffDate,
                     'uom'         => (string)$uom,
                     'currency'    => (string)$currency,
-                    'qty'         => $qty,
-                    'price'       => $price,
+                    'qty'         => (float)$qty,
+                    'price'       => (float)$price,
                 ];
             }
 
