@@ -2445,48 +2445,6 @@ class Inventory_fg_standard_actual extends CI_Controller
         $total_e_act_amount = 0;
 
 
-        // Get Detail Mutasi Semua Item (UNION ALL)
-        $sql_detail = "
-            SELECT f.item_fg_id, 'RECEIPT FG' as type, u.name as username, e.packing_date as date, 
-                f.wo_no, f.checksheet_label as label, f.qty as qty_in, 0 as qty_out, 0 as price
-            FROM scan_item_receipts_fg f
-            JOIN checksheets e ON e.number = f.checksheet_number
-            LEFT JOIN users u ON f.created_by = u.username
-            WHERE e.packing_date BETWEEN '$filter_from' AND '$filter_to'
-            
-            UNION ALL
-            
-            SELECT a.item_fg_id, 'WIP RECEIPT' as type, u.name as username, a.trans_date as date, 
-                a.wo_no, a.document_no as label, a.qty as qty_in, 0 as qty_out, 0 as price
-            FROM wip_receipts a
-            LEFT JOIN users u ON a.created_by = u.username
-            WHERE a.division = 'MTS' AND a.trans_date BETWEEN '$filter_from' AND '$filter_to'
-            
-            UNION ALL
-            
-            SELECT a.item_fg_id, 'DELIVERY NOTE' as type, d.name as username, a.delivery_note_date as date, 
-                a.delivery_order_no as wo_no, a.delivery_note_no as label, 0 as qty_in, a.qty as qty_out, so.price
-            FROM delivery_notes a
-            JOIN users d ON a.created_by = d.username
-            LEFT JOIN sales_orders so ON so.sales_order_no = a.sales_order_no
-            WHERE a.delivery_note_date BETWEEN '$filter_from' AND '$filter_to'
-            
-            UNION ALL
-            
-            SELECT a.item_fg_id, a.transaction_type as type, b.name as username, a.request_date as date, 
-                '-' as wo_no, a.request_no as label, 
-                IF(a.transaction_kind = 'IN', a.qty, 0), IF(a.transaction_kind = 'OUT', a.qty, 0), 0
-            FROM transaction_fg a
-            JOIN users b ON a.created_by = b.username
-            WHERE a.request_date BETWEEN '$filter_from' AND '$filter_to'
-        ";
-        
-        $all_details = $this->crud->query($sql_detail);
-        $mapped_details = [];
-        foreach ($all_details as $det) {
-            $mapped_details[$det->item_fg_id][] = $det;
-        }
-
         foreach ($records as $record) {
             $item_fg_id  = $record->id;
             $currency = $record->standard_currency;
@@ -2577,31 +2535,13 @@ class Inventory_fg_standard_actual extends CI_Controller
 
 
             // DETAILS
-            $nod = 1;
-            $begin = $record->actual_qty; // $record->begin_stock;
-            $price = @$record->std_price;
-            $currency = @$record->currency;
-            $in_qty  = 0;
-            $end_qty = 0;
-            $balance = 0;
-            $rate = 1;
+            $grandtotals = [
+                'begin_qty' => 0, 'begin_std_amt' => 0, 'begin_act_amt' => 0,
+                'in_qty'    => 0, 'in_std_amt'    => 0, 'in_act_amt'    => 0,
+                'out_qty'   => 0, 'out_std_amt'   => 0, 'out_act_amt'   => 0,
+                'end_qty'   => 0, 'end_std_amt'   => 0, 'end_act_amt'   => 0
+            ];
 
-            if ($currency == 'USD') {
-                if (empty($receipt_date)) {
-                    $rate = 0;
-                } else {
-                    $this->db->where('currency_from', 'USD');
-                    $this->db->where('start_date <=', $receipt_date);
-                    $this->db->where('end_date >=', $receipt_date);
-                    $query = $this->db->get('standard_exchange_rates');
-
-                    if ($query->num_rows() > 0) {
-                        $rate = $query->row()->middle;
-                    }
-                }
-            }
-
-            // UPLOADS
             $uploads = $this->crud->query("SELECT a.*,
                     a.cutoff_date as trans_date,
                     SUM(a.qty) as actual_qty,
@@ -2673,7 +2613,7 @@ class Inventory_fg_standard_actual extends CI_Controller
                     'date'      => $up->trans_date,
                     'wo_no'     => '-',
                     'label'     => '-',
-                    'qty_in'    => $up->actual_qty,
+                    'qty_in'    => 0, // $up->actual_qty,
                     'qty_out'   => 0,
                     'price'     => $up->actual_price,
                 ];
@@ -2833,13 +2773,51 @@ class Inventory_fg_standard_actual extends CI_Controller
                 </thead>';
 
             $nod = 1;
+            $begin = $record->actual_qty;
+            $price = $std_price;
             $balance = $begin;
+
+            $std_price_rate = (float)$record->std_price * $rate;
+            $act_price_rate = (float)$record->actual_price * $rate;
+
+            $running_qty_bal     = (float)$record->actual_qty; 
+            $running_act_amt_bal = $running_qty_bal * $act_price_rate;
+            $running_std_amt_bal = $running_qty_bal * $std_price_rate;
+
+            $grandtotals['begin_qty']     += $running_qty_bal;
+            $grandtotals['begin_std_amt'] += $running_std_amt_bal;
+            $grandtotals['begin_act_amt'] += $running_act_amt_bal;
 
             foreach ($all_data as $data) {
                 $wo_no = (isset($data['wo_no']) && !in_array($data['wo_no'], ['undefined', 'null', ''])) ? $data['wo_no'] : '-';
                 $act_price = $record->actual_price ?? 0;
+
+                $current_date = $data['date']; // Tanggal transaksi
+                $rate = ($currency == 'USD') ? $get_rate($current_date) : 1;
                 
-                $balance += $data['qty_in'] - $data['qty_out'];
+                if ($data['type'] === 'UPLOADS') {
+                    // Jangan tambah in/out karena sudah masuk saldo awal (begin)
+                    $current_begin_qty = (float)$data['qty_in'];
+                    $current_in_qty    = 0;
+                    $current_out_qty   = 0;
+                } else {
+                    $current_begin_qty = $running_qty_bal;
+                    $current_in_qty    = (float)$data['qty_in'];
+                    $current_out_qty   = (float)$data['qty_out'];
+
+                    // Update saldo berjalan
+                    $running_qty_bal     += ($current_in_qty - $current_out_qty);
+                    $running_act_amt_bal += ($current_in_qty - $current_out_qty) * $act_price_rate;
+
+                    // Akumulasi transaksi harian ke Grand Total
+                    $grandtotals['in_qty']      += $current_in_qty;
+                    $grandtotals['in_std_amt']   += ($current_in_qty * $std_price_rate);
+                    $grandtotals['in_act_amt']   += ($current_in_qty * $act_price_rate);
+
+                    $grandtotals['out_qty']     += $current_out_qty;
+                    $grandtotals['out_std_amt']  += ($current_out_qty * $std_price_rate);
+                    $grandtotals['out_act_amt']  += ($current_out_qty * $act_price_rate);
+                }
 
                 $html .= '  <tr>
                     <td></td>
@@ -2853,11 +2831,11 @@ class Inventory_fg_standard_actual extends CI_Controller
                     <td style="text-align:right;">' . number_format($price, 2) . '</td>
                     <td style="text-align:right;">' . number_format($rate, 2) . '</td>
 
-                    <td style="text-align:right;">' . number_format($begin, 2) . '</td>
+                    <td style="text-align:right;">' . number_format($current_begin_qty, 2) . '</td>
                     <td style="text-align:right;">' . number_format($rate * $price, 2) . '</td>
-                    <td style="text-align:right;">' . number_format(($rate * $price) * $begin, 2) . '</td>
+                    <td style="text-align:right;">' . number_format(($rate * $price) * ($data['type'] === 'UPLOADS' ? $begin : ($balance - ($data['qty_in'] - $data['qty_out']))), 2) . '</td>
                     <td style="text-align:right;">' . number_format($rate * $act_price, 2) . '</td>
-                    <td style="text-align:right;">' . number_format(($rate * $act_price) * $begin, 2) . '</td>
+                    <td style="text-align:right;">' . number_format(($rate * $act_price) * ($data['type'] === 'UPLOADS' ? $begin : ($balance - ($data['qty_in'] - $data['qty_out']))), 2) . '</td>
 
                     <td style="text-align:right;">' . number_format($data['qty_in'], 2) . '</td>
                     <td style="text-align:right;">' . number_format($rate * $price, 2) . '</td>
@@ -2878,38 +2856,43 @@ class Inventory_fg_standard_actual extends CI_Controller
                     <td style="text-align:right;">' . number_format(($rate * $price) * $balance, 2) . '</td>
                 </tr>';
 
-                $begin = $balance;
                 $nod++;
             }
+
+            // Akumulasi ENDING ke Grand Total
+            $grandtotals['end_qty']     += $running_qty_bal;
+            $grandtotals['end_std_amt'] += ($running_qty_bal * $std_price_rate);
+            $grandtotals['end_act_amt'] += $running_act_amt_bal;
         }
 
         $html .= '<tfooter>
-        <tr style="font-weight:bold;">
-            <td colspan="12" style="text-align:right;"><b>GRAND TOTAL (Summary)</b></td>
-            <td style="text-align:right;">' . number_format($total_b_qty, 2) . '</td>
-            <td style="text-align:right;"></td>
-            <td style="text-align:right;">' . number_format($total_b_std_amount, 2) . '</td>
-            <td style="text-align:right;"></td>
-            <td style="text-align:right;">' . number_format($total_b_act_amount, 2) . '</td>
+            <tr style="background:#eee; font-weight:bold;">
+                <td colspan="12" align="right">GRAND TOTAL</td>
+                
+                <td align="right">' . number_format($grandtotals['begin_qty'], 2) . '</td>
+                <td></td>
+                <td align="right">' . number_format($grandtotals['begin_std_amt'], 2) . '</td>
+                <td></td>
+                <td align="right">' . number_format($grandtotals['begin_act_amt'], 2) . '</td>
 
-            <td style="text-align:right;">' . number_format($total_i_qty, 2) . '</td>
-            <td style="text-align:right;"></td>
-            <td style="text-align:right;">' . number_format($total_i_std_amount, 2) . '</td>
-            <td style="text-align:right;"></td>
-            <td style="text-align:right;">' . number_format($total_i_act_amount, 2) . '</td>
+                <td align="right">' . number_format($grandtotals['in_qty'], 2) . '</td>
+                <td></td>
+                <td align="right">' . number_format($grandtotals['in_std_amt'], 2) . '</td>
+                <td></td>
+                <td align="right">' . number_format($grandtotals['in_act_amt'], 2) . '</td>
 
-            <td style="text-align:right;">' . number_format($total_o_qty, 2) . '</td>
-            <td style="text-align:right;"></td>
-            <td style="text-align:right;">' . number_format($total_o_std_amount, 2) . '</td>
-            <td style="text-align:right;"></td>
-            <td style="text-align:right;">' . number_format($total_o_act_amount, 2) . '</td>
+                <td align="right">' . number_format($grandtotals['out_qty'], 2) . '</td>
+                <td></td>
+                <td align="right">' . number_format($grandtotals['out_std_amt'], 2) . '</td>
+                <td></td>
+                <td align="right">' . number_format($grandtotals['out_act_amt'], 2) . '</td>
 
-            <td style="text-align:right;">' . number_format($total_e_qty, 2) . '</td>
-            <td style="text-align:right;"></td>
-            <td style="text-align:right;">' . number_format($total_e_std_amount, 2) . '</td>
-            <td style="text-align:right;"></td>
-            <td style="text-align:right;">' . number_format($total_e_act_amount, 2) . '</td>
-        </tr>
+                <td align="right">' . number_format($grandtotals['end_qty'], 2) . '</td>
+                <td></td>
+                <td align="right">' . number_format($grandtotals['end_std_amt'], 2) . '</td>
+                <td></td>
+                <td align="right">' . number_format($grandtotals['end_act_amt'], 2) . '</td>
+            </tr>
         </tfooter>';
 
         $html .= '</table></body></html>';
@@ -3574,5 +3557,4 @@ class Inventory_fg_standard_actual extends CI_Controller
         $html .= '</table></body></html>';
         echo $html;
     }
-
 }
