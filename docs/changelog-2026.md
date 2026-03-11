@@ -489,3 +489,6 @@ add Specification ([d1a2cbe9](https://github.com/hilmanf11/erp_bpi/commit/d1a2cb
 
 ### [2026-03-11]
 - **Rizki Puji**: Chore: remove rates N+1 query on report Inventory STD Actual (RM FG) ([ea0ac7aa](https://github.com/hilmanf11/erp_bpi/commit/ea0ac7aadfcd4e9d66c76be404224a26fba0101f))
+
+### [2026-03-11]
+- **Rizki Puji**: Fixing: grand total report Details Inventory FG STD Actual ([ed9672a2](https://github.com/hilmanf11/erp_bpi/commit/ed9672a29499a75ff8efbea31a93e2023d587ea9))
