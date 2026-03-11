@@ -69,7 +69,15 @@
 </div>
 
 <div id="dlg_upload_list" class="easyui-dialog" title="Uploaded Data List" 
-    data-options="closed: true, modal:true, iconCls:'icon-search'" 
+    data-options="
+        closed: true,
+        modal: true,
+        iconCls: 'icon-search',
+        resizable: true,
+        maximizable: true,
+        onOpen: function(){
+            $(this).dialog('center');
+        }"
     style="width: 1100px; height: 550px; padding:10px;">
     
     <table id="dg_upload_list" class="easyui-datagrid" style="width:100%; height:100%"

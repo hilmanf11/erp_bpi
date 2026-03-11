@@ -1400,6 +1400,7 @@ class Inventory_fg_standard_actual extends CI_Controller
         $filter_items       = $this->input->get('filter_items');
         $filter_division    = $this->input->get("filter_division");
         $filter_display     = $this->input->get("filter_display");
+        $filter_type        = $this->input->get("filter_type");
         $filter_trans_type  = $this->input->get("filter_trans_type");
         
         $start  = strtotime($filter_from);
@@ -1412,14 +1413,13 @@ class Inventory_fg_standard_actual extends CI_Controller
 
         // Get Exchange Rates
         $rates = $this->db->get_where('standard_exchange_rates', ['currency_from' => 'USD'])->result();
-        $rate_list = [];
-        foreach ($rates as $r) {
-            $rate_list[] = [
-                'start' => strtotime($r->start_date),
-                'end'   => strtotime($r->end_date),
-                'val'   => (float)$r->middle
-            ];
-        }
+        $get_rate = function($date) use ($rates) {
+            if (empty($date)) return 1.0;
+            foreach ($rates as $r) {
+                if ($date >= $r->start_date && $date <= $r->end_date) return (float)$r->middle;
+            }
+            return 1.0;
+        };
 
         //------------------------------------ GET DATA ----------------------------------//
 
@@ -1553,11 +1553,11 @@ class Inventory_fg_standard_actual extends CI_Controller
         LEFT JOIN ($query_qty_in_wip_receipt) qw ON a.id = qw.item_fg_id
 
         WHERE a.id LIKE '%$filter_items%' AND a.division_id LIKE '%$filter_division%'
+        AND a.type LIKE '%$filter_type%'
         ORDER BY a.number";
 
         $records = $this->db->query($query_main)->result();
 
-        // Prepare HTML
         //------------------------------------ HTML OUTPUT ----------------------------------//
         $html = '<html><head><title>Inventory Report</title></head>';
         $html .= $this->customCss();
@@ -1771,19 +1771,6 @@ class Inventory_fg_standard_actual extends CI_Controller
         </tr>';
         $html .= '</thead><tbody>';
 
-        
-        $rate = 1;
-        /** 
-        // Find Rate from rate list (mengurangi N+1 query)
-        $target_date = strtotime($filter_to);
-        foreach ($rate_list as $r) {
-            if ($target_date >= $r['start'] && $target_date <= $r['end']) {
-                $rate = $r['val'];
-                break;
-            }
-        }
-        */
-
         $no = 1;
         $total_b_qty = 0;
         $total_i_qty = 0;
@@ -1842,6 +1829,10 @@ class Inventory_fg_standard_actual extends CI_Controller
         $total_act_out_adj    = 0;
 
         foreach ($records as $record) {
+            $item_fg_id  = $record->id;
+            $currency = $record->standard_currency;
+            $rate     = 1; // IDR
+
             // Get Price
             $std_price = (float)$record->std_price * $rate;
             $act_price = (float)$record->actual_price * 1; // IDR
@@ -2169,6 +2160,763 @@ class Inventory_fg_standard_actual extends CI_Controller
 
 
     public function print_detail($option = "")
+    {
+        if (!$this->db->table_exists('inventory_fg_actual')) {
+            echo "<pre> Database Error: Tabel Inventory FG Actual not found! Please contact admin.</pre>";
+            return false;
+        }
+
+        if ($option == "excel") {
+            $format  = date("Ymd");
+            header("Content-type: application/vnd-ms-excel");
+            header("Content-Disposition: attachment; filename=history_transactions_fg_$format.xls");
+        }
+
+        $filter_from        = $this->input->get('filter_from');
+        $filter_to          = $this->input->get('filter_to');
+        $filter_items       = $this->input->get('filter_items');
+        $filter_division    = $this->input->get("filter_division");
+        $filter_display     = $this->input->get("filter_display");
+        $filter_type        = $this->input->get("filter_type");
+        $filter_trans_type  = $this->input->get("filter_trans_type");
+        
+        $start  = strtotime($filter_from);
+        $finish = strtotime($filter_to);
+
+        $display_title = ($filter_display == "DETAIL") ? '(DETAIL)' : '(RECAP)';
+
+        // Config Logo & Name
+        $config = $this->db->get('config')->row();
+
+        // Get Exchange Rates
+        $rates = $this->db->get_where('standard_exchange_rates', ['currency_from' => 'USD'])->result();
+        $get_rate = function($date) use ($rates) {
+            if (empty($date)) return 1.0;
+            foreach ($rates as $r) {
+                if ($date >= $r->start_date && $date <= $r->end_date) return (float)$r->middle;
+            }
+            return 1.0;
+        };
+
+        //------------------------------------ GET DATA ----------------------------------//
+
+        // Combine semua kategori Checksheet (Periode Berjalan)
+        $query_checksheet = "SELECT 
+                e.item_fg_id, 
+                SUM(f.qty) as qty_in_checksheet,
+                SUM(CASE WHEN e.status_subcont = 'NO' AND e.wo_no NOT LIKE '%RG-%' THEN f.qty ELSE 0 END) as qty_in_non_subcont,
+                SUM(CASE WHEN e.subcont_type = 'Jasa' AND e.wo_no NOT LIKE '%RG-%' THEN f.qty ELSE 0 END) as qty_in_subcont_jasa,
+                SUM(CASE WHEN e.subcont_type = 'Finished Good' AND e.wo_no NOT LIKE '%RG-%' THEN f.qty ELSE 0 END) as qty_in_subcont_fg,
+                SUM(CASE WHEN e.wo_no LIKE '%RG-%' THEN f.qty ELSE 0 END) as qty_in_repair_fg
+            FROM scan_item_receipts_fg f
+            JOIN checksheets e ON e.number = f.checksheet_number
+            WHERE e.packing_date BETWEEN '$filter_from' AND '$filter_to'
+            GROUP BY e.item_fg_id";
+
+        // Combine semua kategori Transaction FG (Periode Berjalan)
+        $query_trans_fg = "SELECT 
+                item_fg_id,
+                SUM(CASE WHEN transaction_kind = 'IN' THEN qty ELSE 0 END) as initial_in,
+                SUM(CASE WHEN transaction_kind = 'IN' AND transaction_type = 'ADJ IN STO' THEN qty ELSE 0 END) as initial_in_adj,
+                SUM(CASE WHEN transaction_kind = 'IN' AND transaction_type = 'RECEIPT FG' THEN qty ELSE 0 END) as initial_in_rfg,
+                SUM(CASE WHEN transaction_kind = 'OUT' THEN qty ELSE 0 END) as qty_out,
+                SUM(CASE WHEN transaction_kind = 'OUT' AND transaction_type = 'BPB' THEN qty ELSE 0 END) as qty_out_bpb,
+                SUM(CASE WHEN transaction_kind = 'OUT' AND transaction_type = 'ADJ OUT STO' THEN qty ELSE 0 END) as qty_out_adj
+            FROM transaction_fg
+            WHERE request_date BETWEEN '$filter_from' AND '$filter_to'
+            GROUP BY item_fg_id";
+
+        // Combine semua kategori Delivery Notes (Periode Berjalan)
+        $query_dn = "SELECT 
+                item_fg_id,
+                SUM(qty) as initial_out_g,
+                SUM(CASE WHEN trans_type = 'SALES' THEN qty ELSE 0 END) as qty_notes_sales,
+                SUM(CASE WHEN trans_type = 'RETURN' THEN qty ELSE 0 END) as qty_notes_return,
+                SUM(CASE WHEN trans_type = 'SAMPLE' THEN qty ELSE 0 END) as qty_notes_sample
+            FROM delivery_notes
+            WHERE delivery_note_date BETWEEN '$filter_from' AND '$filter_to'
+            GROUP BY item_fg_id";
+
+        // Sub-Query Stok Awal (Saldo Sblm Tanggal Filter)
+        $query_begin_stock = "SELECT 
+                a.id,
+                (COALESCE(qc2.qty, 0) + COALESCE(qnc2.qty, 0) + COALESCE(qti2.qty, 0) + COALESCE(qw2.qty, 0)) - 
+                (COALESCE(qto2.qty, 0) + COALESCE(qdn2.qty, 0) + COALESCE(qrep2.qty, 0)) as begin_stock
+            FROM item_fg a
+            LEFT JOIN (SELECT e.item_fg_id, SUM(f.qty) as qty FROM scan_item_receipts_fg f JOIN checksheets e ON e.number = f.checksheet_number WHERE e.packing_date < '$filter_from' GROUP BY 1) qc2 ON a.id = qc2.item_fg_id
+            LEFT JOIN (SELECT item_fg_id, SUM(qty) as qty FROM scan_item_receipts_fg WHERE type = 'NBFG' AND packing_date < '$filter_from' GROUP BY 1) qnc2 ON a.id = qnc2.item_fg_id
+            LEFT JOIN (SELECT item_fg_id, SUM(qty) as qty FROM transaction_fg WHERE transaction_kind = 'IN' AND request_date < '$filter_from' GROUP BY 1) qti2 ON a.id = qti2.item_fg_id
+            LEFT JOIN (SELECT item_fg_id, SUM(qty) as qty FROM transaction_fg WHERE transaction_kind = 'OUT' AND request_date < '$filter_from' GROUP BY 1) qto2 ON a.id = qto2.item_fg_id
+            LEFT JOIN (SELECT item_fg_id, SUM(qty) as qty FROM delivery_notes WHERE delivery_note_date < '$filter_from' GROUP BY 1) qdn2 ON a.id = qdn2.item_fg_id
+            LEFT JOIN (SELECT e.item_fg_id, SUM(f.qty) as qty FROM scan_repair_of_goods f JOIN repair_of_goods e ON e.document_no = f.document_no WHERE e.trans_date < '$filter_from' GROUP BY 1) qrep2 ON a.id = qrep2.item_fg_id
+            LEFT JOIN (SELECT item_fg_id, SUM(qty) as qty FROM wip_receipts WHERE division = 'MTS' AND trans_date < '$filter_from' GROUP BY 1) qw2 ON a.id = qw2.item_fg_id";
+
+        $query_scan_repair_of_goods = "SELECT e.item_fg_id, SUM(f.qty) as initial_out_h
+            FROM scan_repair_of_goods f
+            JOIN repair_of_goods e ON e.document_no = f.document_no and f.item_fg_id = e.item_fg_id
+            WHERE DATE_FORMAT(e.trans_date, '%Y-%m-%d') BETWEEN '$filter_from' AND '$filter_to'
+            GROUP BY f.item_fg_id";
+        
+        $query_qty_in_wip_receipt = "SELECT i.item_fg_id, SUM(i.qty) as qty_in_wip_receipt
+            FROM wip_receipts i
+            WHERE i.division = 'MTS'
+            AND i.trans_date BETWEEN '$filter_from' AND '$filter_to'
+            GROUP BY i.item_fg_id";
+        
+        $query_qty_in_no_checksheet = "SELECT i.item_fg_id, SUM(i.qty) as qty_in_no_checksheet
+        FROM scan_item_receipts_fg i
+        WHERE i.type = 'NBFG'
+        AND i.packing_date BETWEEN '$filter_from' AND '$filter_to'
+        GROUP BY i.item_fg_id";
+
+        // mengambil 'price' (standard price) dari standard_price_fg
+        $query_standard_price = "SELECT item_fg_id, currency, price 
+            FROM standard_price_fg 
+            WHERE '$filter_from' >= `start_date` AND '$filter_to' <= `end_date` 
+            GROUP BY item_fg_id";
+
+
+        $query_main = "SELECT 
+            a.id, a.number, a.name, a.uom, a.type,
+            divs.number as division,
+            COALESCE(bst.begin_stock, 0) AS begin_stock,
+            COALESCE(sp.price, 0) as std_price,
+            sp.currency AS standard_currency,
+            
+            -- Actual Price and Qty from upload
+            COALESCE(actual.price, 0) as actual_price, 
+            COALESCE(actual.qty, 0) as actual_qty,
+
+            -- Mutasi Masuk
+            COALESCE(qc.qty_in_non_subcont, 0) + COALESCE(tf.initial_in_rfg, 0) + COALESCE(qw.qty_in_wip_receipt, 0) as qty_rfg,
+            COALESCE(tf.initial_in, 0) as adj_in_qty,
+            COALESCE(tf.initial_in_adj, 0) as qty_in_adj,
+            COALESCE(tf.initial_in_rfg, 0) as qty_in_rfg,
+            COALESCE(qnc.qty_in_no_checksheet, 0) as qty_in_new_barcode,
+            COALESCE(qc.qty_in_non_subcont, 0) as qty_in_non_subcont,
+            COALESCE(qc.qty_in_subcont_jasa, 0) as qty_in_subcont_jasa,
+            COALESCE(qc.qty_in_subcont_fg, 0) as qty_in_subcont_fg,
+            COALESCE(qc.qty_in_repair_fg, 0) as qty_in_repair_fg,
+            
+            (COALESCE(qc.qty_in_checksheet, 0) + COALESCE(qnc.qty_in_no_checksheet, 0) + COALESCE(tf.initial_in, 0) + COALESCE(qw.qty_in_wip_receipt, 0)) AS qty_in,
+
+            -- Mutasi Keluar
+            COALESCE(tf.qty_out, 0) + COALESCE(dn.initial_out_g, 0) + COALESCE(qh.initial_out_h, 0) AS qty_out,
+            COALESCE(dn.qty_notes_sales, 0) as qty_out_sales,
+            COALESCE(dn.qty_notes_return, 0) as qty_out_return,
+            COALESCE(dn.qty_notes_sample, 0) as qty_out_sample,
+            COALESCE(qh.initial_out_h, 0) as qty_out_repair,
+            COALESCE(tf.qty_out, 0) as adj_out_qty,
+            COALESCE(tf.qty_out_bpb, 0) + COALESCE(qh.initial_out_h, 0) as qty_out_bpb,
+            COALESCE(tf.qty_out_adj, 0) as qty_out_adj,
+
+            -- End Stock
+            (COALESCE(bst.begin_stock, 0) + 
+            (COALESCE(qc.qty_in_checksheet, 0) + COALESCE(qnc.qty_in_no_checksheet, 0) + COALESCE(tf.initial_in, 0) + COALESCE(qw.qty_in_wip_receipt, 0)) - 
+            (COALESCE(tf.qty_out, 0) + COALESCE(dn.initial_out_g, 0) + COALESCE(qh.initial_out_h, 0))
+            ) AS end_stock
+
+        FROM item_fg a
+        LEFT JOIN divisions divs ON a.division_id = divs.id
+        LEFT JOIN inventory_fg_actual actual ON (actual.part_no = a.number OR actual.item_fg_id = a.id)
+        
+        LEFT JOIN ($query_standard_price) sp ON a.id = sp.item_fg_id
+        LEFT JOIN ($query_checksheet) qc ON a.id = qc.item_fg_id
+        LEFT JOIN ($query_trans_fg) tf ON a.id = tf.item_fg_id
+        LEFT JOIN ($query_dn) dn ON a.id = dn.item_fg_id
+        LEFT JOIN ($query_begin_stock) bst ON a.id = bst.id
+        LEFT JOIN ($query_qty_in_no_checksheet) qnc ON a.id = qnc.item_fg_id
+        LEFT JOIN ($query_scan_repair_of_goods) qh ON a.id = qh.item_fg_id
+        LEFT JOIN ($query_qty_in_wip_receipt) qw ON a.id = qw.item_fg_id
+
+        WHERE a.id LIKE '%$filter_items%' AND a.division_id LIKE '%$filter_division%'
+        AND a.type LIKE '%$filter_type%'
+        ORDER BY a.number";
+
+        $records = $this->db->query($query_main)->result();
+
+        //------------------------------------ HTML OUTPUT ----------------------------------//
+        $html = '<html><head><title>Inventory Report</title></head>';
+        $html .= $this->customCss();
+        $html .= '<body>
+            <center>
+                <div style="float: left; font-size: 12px; text-align: left;">
+                    <table style="width: 100%;">
+                        <tr>
+                            <td width="50" style="font-size: 12px; vertical-align: top; text-align: center; vertical-align:jus margin-right:10px;">
+                                <img src="' . $config->favicon . '" width="30">
+                            </td>
+                            <td style="font-size: 14px; text-align: left; margin:2px;">
+                                <b>' . $config->name . '</b><br>
+                                <small>'.$config->description.'</small>
+                            </td>
+                        </tr>
+                    </table>
+                </div>
+                <div style="float: right; font-size: 12px; text-align: right;">
+                    Print Date ' . date("d M Y H:i:s") . ' <br>
+                    Print By ' . $this->session->username . '  
+                </div>
+                <br><br><br>
+                <h3 style="margin:0;">INVENTORY FG STANDARD AND ACTUAL <i>' . $display_title . '</i> </h3>
+                <small>PERIOD : <b>' . $filter_from . '</b> To <b>' . $filter_to . '</b></small>
+            </center>
+            <br>';
+
+        // Build Table Header
+        $html .= '<table id="customers" border="1" style="font-size: 11px;">
+            <thead>
+                <tr style="background-color:#eee;">
+                    <th rowspan="4" width="20">No</th>
+                    <th rowspan="4" colspan="3">Product No</th>
+                    <th rowspan="4" colspan="2">Product Name</th>
+                    <th rowspan="4">Uom</th>
+                    <th rowspan="4">Division</th>
+                    <th rowspan="4">Product Family</th>
+                    <th rowspan="4">Type</th>
+                    <th rowspan="4">Currency</th>
+                    <th rowspan="4">Rate</th>
+
+                    <th colspan="20">SUMMARY</th>
+                </tr>
+                
+                <tr style="background-color:#d5d5d5;">
+                    <th colspan="5" >BEGIN</th>
+                    <th colspan="5" width="100">IN</th>
+                    <th colspan="5" width="100">OUT</th>
+                    <th colspan="5" width="100">BALANCE</th>
+                </tr>
+
+                <tr>
+                    <th width="80" rowspan="2">QTY</th>
+                    <th colspan="2" style="background-color: #D1FFC6;">STANDARD</th>
+                    <th colspan="2" style="background-color: #CFE6F9;">ACTUAL</th>
+                    
+                    <th width="80" rowspan="2">QTY</th>
+                    <th colspan="2" style="background-color: #D1FFC6;">STANDARD</th>
+                    <th colspan="2" style="background-color: #CFE6F9;">ACTUAL</th>
+                    
+                    <th width="80" rowspan="2">QTY</th>
+                    <th colspan="2" style="background-color: #D1FFC6;">STANDARD</th>
+                    <th colspan="2" style="background-color: #CFE6F9;">ACTUAL</th>
+                    
+                    <th width="80" rowspan="2">QTY</th>
+                    <th colspan="2" style="background-color: #D1FFC6;">STANDARD</th>
+                    <th colspan="2" style="background-color: #CFE6F9;">ACTUAL</th>
+                </tr>
+
+                <tr>
+                    <th style="background-color: #D1FFC6;">PRICE</th>
+                    <th style="background-color: #D1FFC6;">AMOUNT</th>
+                    <th style="background-color: #CFE6F9;">PRICE</th>
+                    <th style="background-color: #CFE6F9;">AMOUNT</th>
+
+                    <th style="background-color: #D1FFC6;">PRICE</th>
+                    <th style="background-color: #D1FFC6;">AMOUNT</th>
+                    <th style="background-color: #CFE6F9;">PRICE</th>
+                    <th style="background-color: #CFE6F9;">AMOUNT</th>
+                    
+                    <th style="background-color: #D1FFC6;">PRICE</th>
+                    <th style="background-color: #D1FFC6;">AMOUNT</th>
+                    <th style="background-color: #CFE6F9;">PRICE</th>
+                    <th style="background-color: #CFE6F9;">AMOUNT</th>
+                    
+                    <th style="background-color: #D1FFC6;">PRICE</th>
+                    <th style="background-color: #D1FFC6;">AMOUNT</th>
+                    <th style="background-color: #CFE6F9;">PRICE</th>
+                    <th style="background-color: #CFE6F9;">AMOUNT</th>
+                </tr>
+            </thead>';
+
+        $no = 1;
+        $total_b_qty = 0;
+        $total_i_qty = 0;
+        $total_o_qty = 0;
+        $total_e_qty = 0;
+
+        $total_b_std_amount = 0;
+        $total_i_std_amount = 0;
+        $total_o_std_amount = 0;
+        $total_e_std_amount = 0;
+
+        $total_b_act_amount = 0;
+        $total_i_act_amount = 0;
+        $total_o_act_amount = 0;
+        $total_e_act_amount = 0;
+
+
+        // Get Detail Mutasi Semua Item (UNION ALL)
+        $sql_detail = "
+            SELECT f.item_fg_id, 'RECEIPT FG' as type, u.name as username, e.packing_date as date, 
+                f.wo_no, f.checksheet_label as label, f.qty as qty_in, 0 as qty_out, 0 as price
+            FROM scan_item_receipts_fg f
+            JOIN checksheets e ON e.number = f.checksheet_number
+            LEFT JOIN users u ON f.created_by = u.username
+            WHERE e.packing_date BETWEEN '$filter_from' AND '$filter_to'
+            
+            UNION ALL
+            
+            SELECT a.item_fg_id, 'WIP RECEIPT' as type, u.name as username, a.trans_date as date, 
+                a.wo_no, a.document_no as label, a.qty as qty_in, 0 as qty_out, 0 as price
+            FROM wip_receipts a
+            LEFT JOIN users u ON a.created_by = u.username
+            WHERE a.division = 'MTS' AND a.trans_date BETWEEN '$filter_from' AND '$filter_to'
+            
+            UNION ALL
+            
+            SELECT a.item_fg_id, 'DELIVERY NOTE' as type, d.name as username, a.delivery_note_date as date, 
+                a.delivery_order_no as wo_no, a.delivery_note_no as label, 0 as qty_in, a.qty as qty_out, so.price
+            FROM delivery_notes a
+            JOIN users d ON a.created_by = d.username
+            LEFT JOIN sales_orders so ON so.sales_order_no = a.sales_order_no
+            WHERE a.delivery_note_date BETWEEN '$filter_from' AND '$filter_to'
+            
+            UNION ALL
+            
+            SELECT a.item_fg_id, a.transaction_type as type, b.name as username, a.request_date as date, 
+                '-' as wo_no, a.request_no as label, 
+                IF(a.transaction_kind = 'IN', a.qty, 0), IF(a.transaction_kind = 'OUT', a.qty, 0), 0
+            FROM transaction_fg a
+            JOIN users b ON a.created_by = b.username
+            WHERE a.request_date BETWEEN '$filter_from' AND '$filter_to'
+        ";
+        
+        $all_details = $this->crud->query($sql_detail);
+        $mapped_details = [];
+        foreach ($all_details as $det) {
+            $mapped_details[$det->item_fg_id][] = $det;
+        }
+
+        foreach ($records as $record) {
+            $item_fg_id  = $record->id;
+            $currency = $record->standard_currency;
+            $rate     = 1; // IDR
+
+            // Get Price
+            $std_price = (float)$record->std_price * $rate;
+            $act_price = (float)$record->actual_price * $rate;
+
+            // Get QTY
+            $b_qty = (float)$record->actual_qty; // $record->begin_stock;
+            $i_qty = (float)$record->qty_in;
+            $o_qty = (float)$record->qty_out;
+            $e_qty = ($b_qty + $i_qty) - $o_qty;
+
+            // Begin
+            $b_std_amount = $b_qty * $std_price;
+            $b_act_amount = $b_qty * $act_price;
+            $b_variance   = $b_act_amount - $b_std_amount;
+
+            // IN
+            $i_std_amount = $i_qty * $std_price;
+            $i_act_amount = $i_qty * $act_price;
+            $i_variance   = $i_act_amount - $i_std_amount;
+
+            // OUT
+            $o_std_amount = $o_qty * $std_price;
+            $o_act_amount = $o_qty * $act_price;
+            $o_variance   = $o_act_amount - $o_std_amount;
+
+            // Ending
+            $e_std_amount = $e_qty * $std_price;
+            $e_act_amount = $e_qty * $act_price;
+            $e_variance   = $e_act_amount - $e_std_amount;
+
+
+            $html .= '  <tr>
+                    <td style="text-align:center">' . $no . '</td>
+                    <td colspan="3" style="mso-number-format:\@;">' . $record->number . '</td>
+                    <td colspan="2" style="mso-number-format:\@;">' . $record->name . '</td>
+                    <td>' . $record->uom . '</td>
+                    <td>' . $record->division . '</td>
+                    <td>FINISH GOOD</td>
+                    <td>' . $record->type . '</td>
+                    <td style="text-align:center;">' . $record->standard_currency . '</td>
+                    <td style="text-align:right;">' . number_format($rate, 2) . '</td>
+                    
+                    <td style="text-align:right;">' . number_format($b_qty, 2) . '</td>
+                    <td style="text-align:right;">' . number_format($std_price, 2) . '</td>
+                    <td style="text-align:right;">' . number_format($b_std_amount, 2) . '</td>
+                    <td style="text-align:right;">' . number_format($act_price, 2) . '</td>
+                    <td style="text-align:right;">' . number_format($b_act_amount, 2) . '</td>
+                    
+                    <td style="text-align:right;">' . number_format($i_qty, 2) . '</td>
+                    <td style="text-align:right;">' . number_format($std_price, 2) . '</td>
+                    <td style="text-align:right;">' . number_format($i_std_amount, 2) . '</td>
+                    <td style="text-align:right;">' . number_format($act_price, 2) . '</td>
+                    <td style="text-align:right;">' . number_format($i_act_amount, 2) . '</td>
+                    
+                    <td style="text-align:right;">' . number_format($o_qty, 2) . '</td>
+                    <td style="text-align:right;">' . number_format($std_price, 2) . '</td>
+                    <td style="text-align:right;">' . number_format($o_std_amount, 2) . '</td>
+                    <td style="text-align:right;">' . number_format($act_price, 2) . '</td>
+                    <td style="text-align:right;">' . number_format($o_act_amount, 2) . '</td>
+                    
+                    <td style="text-align:right;">' . number_format($e_qty, 2) . '</td>
+                    <td style="text-align:right;">' . number_format($std_price, 2) . '</td>
+                    <td style="text-align:right;">' . number_format($e_std_amount, 2) . '</td>
+                    <td style="text-align:right;">' . number_format($act_price, 2) . '</td>
+                    <td style="text-align:right;">' . number_format($e_act_amount, 2) . '</td>
+                </tr>';
+
+            // Total Summary
+            $total_b_qty += $b_qty;
+            $total_i_qty += $i_qty;
+            $total_o_qty += $o_qty;
+            $total_e_qty += $e_qty;
+
+            $total_b_std_amount += $b_std_amount;
+            $total_i_std_amount += $i_std_amount;
+            $total_o_std_amount += $o_std_amount;
+            $total_e_std_amount += $e_std_amount;
+
+            $total_b_act_amount += $b_act_amount;
+            $total_i_act_amount += $i_act_amount;
+            $total_o_act_amount += $o_act_amount;
+            $total_e_act_amount += $e_act_amount;
+
+
+            // DETAILS
+            $nod = 1;
+            $begin = $record->actual_qty; // $record->begin_stock;
+            $price = @$record->std_price;
+            $currency = @$record->currency;
+            $in_qty  = 0;
+            $end_qty = 0;
+            $balance = 0;
+            $rate = 1;
+
+            if ($currency == 'USD') {
+                if (empty($receipt_date)) {
+                    $rate = 0;
+                } else {
+                    $this->db->where('currency_from', 'USD');
+                    $this->db->where('start_date <=', $receipt_date);
+                    $this->db->where('end_date >=', $receipt_date);
+                    $query = $this->db->get('standard_exchange_rates');
+
+                    if ($query->num_rows() > 0) {
+                        $rate = $query->row()->middle;
+                    }
+                }
+            }
+
+            // UPLOADS
+            $uploads = $this->crud->query("SELECT a.*,
+                    a.cutoff_date as trans_date,
+                    SUM(a.qty) as actual_qty,
+                    MAX(a.price) actual_price,
+                    a.created_by as username,
+                    'UPLOADS' AS receipt_type
+                FROM inventory_fg_actual a 
+                WHERE a.item_fg_id = '$item_fg_id' 
+                GROUP BY a.item_fg_id, a.id");
+            
+            $receipts = $this->crud->query("SELECT f.*, c.name as username, e.packing_date as trans_date, 'RECEIPT FG' AS receipt_type
+                    FROM scan_item_receipts_fg f
+                    JOIN checksheets e ON e.number = f.checksheet_number
+                    LEFT JOIN users c ON f.created_by = c.username
+                    WHERE e.item_fg_id = '$item_fg_id' 
+                    and DATE_FORMAT(e.packing_date, '%Y-%m-%d') between '$filter_from' and '$filter_to'");
+
+            $receiptsNB = $this->crud->query("SELECT f.*, u.name as username ,f.packing_date as trans_date,'NEW BARCODE FG' AS receipt_type
+                    FROM new_barcode_fg a
+                    LEFT JOIN scan_item_receipts_fg f ON a.label_no = f.checksheet_label AND a.item_fg_id = f.item_fg_id
+                    LEFT JOIN users u ON f.created_by = u.username
+                    WHERE a.item_fg_id = '$item_fg_id' 
+                    AND DATE_FORMAT(a.packing_date, '%Y-%m-%d') BETWEEN '$filter_from' and '$filter_to'");
+
+            $receiptsWIP = $this->crud->query("SELECT a.*, u.name as username, 'RECEIPT FG' AS receipt_type, a.document_no as checksheet_label
+                    FROM wip_receipts a
+                    LEFT JOIN users u ON a.created_by = u.username
+                    WHERE a.item_fg_id = '$item_fg_id' AND a.division = 'MTS'
+                    AND DATE_FORMAT(a.trans_date, '%Y-%m-%d') BETWEEN '$filter_from' and '$filter_to'");
+
+            $delivery_notes = $this->crud->query("SELECT a.*, d.name AS username, so.price as act_price
+                FROM delivery_notes a
+                JOIN users d ON a.created_by = d.username
+                LEFT JOIN sales_orders so ON so.sales_order_no = a.sales_order_no
+                WHERE a.item_fg_id = '$item_fg_id'
+                AND a.delivery_note_date BETWEEN '$filter_from' AND '$filter_to'");
+
+            $transactions = $this->crud->query("SELECT
+                a.request_date,
+                a.transaction_type,
+                a.transaction_kind,
+                a.request_no,
+                a.qty,
+                b.name AS username
+                FROM transaction_fg a
+                JOIN users b ON a.created_by = b.username
+                WHERE a.item_fg_id = '$item_fg_id'
+                AND a.request_date BETWEEN '$filter_from' AND '$filter_to'");
+
+            $scan_repair_of_goods = $this->crud->query("SELECT f.wo_no, 
+                f.document_no, 
+                f.qty, 
+                c.name AS username, 
+                e.trans_date AS trans_date, 
+                'REPAIR OF GOODS' AS receipt_type
+                FROM scan_repair_of_goods f
+                LEFT JOIN repair_of_goods e ON e.document_no = f.document_no and f.item_fg_id = e.item_fg_id
+                LEFT JOIN users c ON f.created_by = c.username
+                WHERE f.item_fg_id = '$item_fg_id'
+                AND DATE_FORMAT(e.trans_date, '%Y-%m-%d') BETWEEN '$filter_from' AND '$filter_to'");
+
+            // Proses data berdasarkan tanggal
+            $all_data = [];
+
+            foreach ($uploads as $up) {
+                $all_data[] = [
+                    'type'      => $up->receipt_type,
+                    'username'  => $up->username,
+                    'date'      => $up->trans_date,
+                    'wo_no'     => '-',
+                    'label'     => '-',
+                    'qty_in'    => $up->actual_qty,
+                    'qty_out'   => 0,
+                    'price'     => $up->actual_price,
+                ];
+            }
+
+            // Gabungkan data receipts
+            foreach ($receipts as $receipt) {
+                $all_data[] = [
+                    'type'      => $receipt->receipt_type,
+                    'username'  => $receipt->username,
+                    'date'      => $receipt->trans_date,
+                    'wo_no'     => $receipt->wo_no,
+                    'label'     => $receipt->checksheet_label,
+                    'qty_in'    => $receipt->qty,
+                    'qty_out'   => 0,
+                    'price'     => 0,
+                ];
+            }
+
+            foreach ($receiptsNB as $receiptNB) {
+                $all_data[] = [
+                    'type'      => $receiptNB->receipt_type,
+                    'username'  => $receiptNB->username,
+                    'date'      => $receiptNB->trans_date,
+                    'wo_no'     => $receiptNB->wo_no,
+                    'label'     => $receiptNB->checksheet_label,
+                    'qty_in'    => $receiptNB->qty,
+                    'qty_out'   => 0,
+                    'price'     => 0,
+                ];
+            }
+
+            foreach ($receiptsWIP as $receiptWIP) {
+                $all_data[] = [
+                    'type'      => $receiptWIP->receipt_type,
+                    'username'  => $receiptWIP->username,
+                    'date'      => $receiptWIP->trans_date,
+                    'wo_no'     => $receiptWIP->wo_no,
+                    'label'     => $receiptWIP->checksheet_label,
+                    'qty_in'    => $receiptWIP->qty,
+                    'qty_out'   => 0,
+                    'price'     => 0,
+                ];
+            }
+
+            // Gabungkan data delivery notes
+            foreach ($delivery_notes as $delivery_note) {
+                $all_data[] = [
+                    'type'      => 'DELIVERY NOTE',
+                    'username'  => $delivery_note->username,
+                    'date'      => $delivery_note->delivery_note_date,
+                    'wo_no'     => $delivery_note->delivery_order_no,
+                    'label'     => $delivery_note->delivery_note_no,
+                    'qty_in'    => 0,
+                    'qty_out'   => $delivery_note->qty,
+                    'price'     => $delivery_note->act_price,
+                ];
+            }
+
+            // Gabungkan data transactions
+            foreach ($transactions as $transaction) {
+                $all_data[] = [
+                    'type'      => $transaction->transaction_type,
+                    'username'  => $transaction->username,
+                    'date'      => $transaction->request_date,
+                    'wo_no'     => '-',
+                    'label'     => $transaction->request_no,
+                    'qty_in'    => $transaction->transaction_kind == 'IN' ? $transaction->qty : 0,
+                    'qty_out'   => $transaction->transaction_kind == 'OUT' ? $transaction->qty : 0,
+                    'price'     => 0,
+                ];
+            }
+
+            foreach ($scan_repair_of_goods as $scan_repair_of_good) {
+                $all_data[] = [
+                    'type'      => $scan_repair_of_good->receipt_type,
+                    'username'  => $scan_repair_of_good->username,
+                    'date'      => $scan_repair_of_good->trans_date,
+                    'wo_no'     => $scan_repair_of_good->wo_no,
+                    'label'     => $scan_repair_of_good->document_no,
+                    'qty_in'    => 0,
+                    'qty_out'   => $scan_repair_of_good->qty,
+                    'price'     => 0,
+                ];
+            }
+
+            usort($all_data, function ($a, $b) {
+                // Jika ada tipe UPLOADS, maka jadi paling atas (-1)
+                if ($a['type'] === 'UPLOADS') return -1;
+                if ($b['type'] === 'UPLOADS') return 1;
+
+                // Transaksi lainnya diurutkan berdasarkan tanggal
+                return strtotime($a['date']) - strtotime($b['date']);
+            });
+
+            $html .= '  <tr>
+                            <td colspan="32" style="background:#D1FFC6; font-size: 11px;"><b>DETAIL OF ' . $record->number . ' - ' . $record->name . '</b></td>
+                        </tr>';
+            $html .= '<thead>
+                    <tr>
+                        <th rowspan="3" width="20"></th>
+                        <th rowspan="3" width="20">No</th>
+                        <th rowspan="3">Trans Type</th>
+                        <th rowspan="3">Created By</th>
+                        <th rowspan="3">Trans Date</th>
+                        <th rowspan="3">WO / DO</th>
+                        <th rowspan="3" colspan="3" >Doc. No</th>
+                        <th rowspan="3">CCY</th>
+                        <th rowspan="3">Price</th>
+                        <th rowspan="3">Rate</th>
+
+                        <th colspan="5">BEGIN</th>
+                        <th colspan="5">IN</th>
+                        <th colspan="5">OUT</th>
+                        <th colspan="5">BALANCE</th>
+                    </tr>
+                    
+                    <tr>
+                        <th width="80" rowspan="2">QTY</th>
+                        <th colspan="2" style="background-color: #D1FFC6;">STANDARD</th>
+                        <th colspan="2" style="background-color: #CFE6F9;">ACTUAL</th>
+                        
+                        <th width="80" rowspan="2">QTY</th>
+                        <th colspan="2" style="background-color: #D1FFC6;">STANDARD</th>
+                        <th colspan="2" style="background-color: #CFE6F9;">ACTUAL</th>
+                        
+                        <th width="80" rowspan="2">QTY</th>
+                        <th colspan="2" style="background-color: #D1FFC6;">STANDARD</th>
+                        <th colspan="2" style="background-color: #CFE6F9;">ACTUAL</th>
+                        
+                        <th width="80" rowspan="2">QTY</th>
+                        <th colspan="2" style="background-color: #D1FFC6;">STANDARD</th>
+                        <th colspan="2" style="background-color: #CFE6F9;">ACTUAL</th>
+                    </tr>
+
+                    <tr>
+                        <th style="background-color: #D1FFC6;">PRICE</th>
+                        <th style="background-color: #D1FFC6;">AMOUNT</th>
+                        <th style="background-color: #CFE6F9;">PRICE</th>
+                        <th style="background-color: #CFE6F9;">AMOUNT</th>
+
+                        <th style="background-color: #D1FFC6;">PRICE</th>
+                        <th style="background-color: #D1FFC6;">AMOUNT</th>
+                        <th style="background-color: #CFE6F9;">PRICE</th>
+                        <th style="background-color: #CFE6F9;">AMOUNT</th>
+                        
+                        <th style="background-color: #D1FFC6;">PRICE</th>
+                        <th style="background-color: #D1FFC6;">AMOUNT</th>
+                        <th style="background-color: #CFE6F9;">PRICE</th>
+                        <th style="background-color: #CFE6F9;">AMOUNT</th>
+                        
+                        <th style="background-color: #D1FFC6;">PRICE</th>
+                        <th style="background-color: #D1FFC6;">AMOUNT</th>
+                        <th style="background-color: #CFE6F9;">PRICE</th>
+                        <th style="background-color: #CFE6F9;">AMOUNT</th>
+                    </tr>
+                </thead>';
+
+            $nod = 1;
+            $balance = $begin;
+
+            foreach ($all_data as $data) {
+                $wo_no = (isset($data['wo_no']) && !in_array($data['wo_no'], ['undefined', 'null', ''])) ? $data['wo_no'] : '-';
+                $act_price = $record->actual_price ?? 0;
+                
+                $balance += $data['qty_in'] - $data['qty_out'];
+
+                $html .= '  <tr>
+                    <td></td>
+                    <td style="text-align:center">' . $nod . '</td>
+                    <td>' . $data['type'] . '</td>
+                    <td>' . $data['username'] . '</td>
+                    <td>' . $data['date'] . '</td>
+                    <td>' . $wo_no . '</td>
+                    <td colspan="3">' . $data['label'] . '</td>
+                    <td style="text-align:center;">' . $currency . '</td>
+                    <td style="text-align:right;">' . number_format($price, 2) . '</td>
+                    <td style="text-align:right;">' . number_format($rate, 2) . '</td>
+
+                    <td style="text-align:right;">' . number_format($begin, 2) . '</td>
+                    <td style="text-align:right;">' . number_format($rate * $price, 2) . '</td>
+                    <td style="text-align:right;">' . number_format(($rate * $price) * $begin, 2) . '</td>
+                    <td style="text-align:right;">' . number_format($rate * $act_price, 2) . '</td>
+                    <td style="text-align:right;">' . number_format(($rate * $act_price) * $begin, 2) . '</td>
+
+                    <td style="text-align:right;">' . number_format($data['qty_in'], 2) . '</td>
+                    <td style="text-align:right;">' . number_format($rate * $price, 2) . '</td>
+                    <td style="text-align:right;">' . number_format(($rate * $price) * $data['qty_in'], 2) . '</td>
+                    <td style="text-align:right;">' . number_format($rate * $act_price, 2) . '</td>
+                    <td style="text-align:right;">' . number_format(($rate * $act_price) * $data['qty_in'], 2) . '</td>
+
+                    <td style="text-align:right;">' . number_format($data['qty_out'], 2) . '</td>
+                    <td style="text-align:right;">' . number_format($rate * $price, 2) . '</td>
+                    <td style="text-align:right;">' . number_format(($rate * $price) * $data['qty_out'], 2) . '</td>
+                    <td style="text-align:right;">' . number_format($rate * $act_price, 2) . '</td>
+                    <td style="text-align:right;">' . number_format(($rate * $price) * $data['qty_out'], 2) . '</td>
+
+                    <td style="text-align:right;">' . number_format($balance, 2) . '</td>
+                    <td style="text-align:right;">' . number_format($rate * $price, 2) . '</td>
+                    <td style="text-align:right;">' . number_format(($rate * $price) * $balance, 2) . '</td>
+                    <td style="text-align:right;">' . number_format($rate * $act_price, 2) . '</td>
+                    <td style="text-align:right;">' . number_format(($rate * $price) * $balance, 2) . '</td>
+                </tr>';
+
+                $begin = $balance;
+                $nod++;
+            }
+        }
+
+        $html .= '<tfooter>
+        <tr style="font-weight:bold;">
+            <td colspan="12" style="text-align:right;"><b>GRAND TOTAL (Summary)</b></td>
+            <td style="text-align:right;">' . number_format($total_b_qty, 2) . '</td>
+            <td style="text-align:right;"></td>
+            <td style="text-align:right;">' . number_format($total_b_std_amount, 2) . '</td>
+            <td style="text-align:right;"></td>
+            <td style="text-align:right;">' . number_format($total_b_act_amount, 2) . '</td>
+
+            <td style="text-align:right;">' . number_format($total_i_qty, 2) . '</td>
+            <td style="text-align:right;"></td>
+            <td style="text-align:right;">' . number_format($total_i_std_amount, 2) . '</td>
+            <td style="text-align:right;"></td>
+            <td style="text-align:right;">' . number_format($total_i_act_amount, 2) . '</td>
+
+            <td style="text-align:right;">' . number_format($total_o_qty, 2) . '</td>
+            <td style="text-align:right;"></td>
+            <td style="text-align:right;">' . number_format($total_o_std_amount, 2) . '</td>
+            <td style="text-align:right;"></td>
+            <td style="text-align:right;">' . number_format($total_o_act_amount, 2) . '</td>
+
+            <td style="text-align:right;">' . number_format($total_e_qty, 2) . '</td>
+            <td style="text-align:right;"></td>
+            <td style="text-align:right;">' . number_format($total_e_std_amount, 2) . '</td>
+            <td style="text-align:right;"></td>
+            <td style="text-align:right;">' . number_format($total_e_act_amount, 2) . '</td>
+        </tr>
+        </tfooter>';
+
+        $html .= '</table></body></html>';
+        echo $html;
+    }
+
+    public function print_detail_without_actual($option = "")
     {
         if ($option == "excel") {
             $format  = date("Ymd");
@@ -2826,4 +3574,5 @@ class Inventory_fg_standard_actual extends CI_Controller
         $html .= '</table></body></html>';
         echo $html;
     }
+
 }
