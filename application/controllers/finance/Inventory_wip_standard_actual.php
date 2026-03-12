@@ -3831,6 +3831,16 @@ class Inventory_wip_standard_actual extends CI_Controller
                 </thead>';
                 
             // GET TRANSACTIONS
+            $uploads = $this->crud->query("SELECT a.*,
+                    a.cutoff_date as trans_date,
+                    SUM(a.qty) as actual_qty,
+                    MAX(a.price) actual_price,
+                    a.created_by as username,
+                    'UPLOADS' AS receipt_type
+                FROM inventory_wip_actual a 
+                WHERE a.item_fg_id = '$item_fg_id' 
+                GROUP BY a.item_fg_id, a.id");
+
             $dataActualProductions = $this->crud->query("SELECT *, created_by as username 
                 FROM output_productions 
                 where item_fg_id = '$item_fg_id' 
@@ -3904,13 +3914,24 @@ class Inventory_wip_standard_actual extends CI_Controller
             // Proses data 
             $all_data = [];
 
+            foreach ($uploads as $up) {
+                $all_data[] = [
+                    'type'     => 'UPLOADS',
+                    'date'     => $up->trans_date,
+                    'wo_no'    => '-',
+                    'qty_in'   => 0, // 0 karena biasanya sudah masuk ke Saldo Awal (Begin)
+                    'qty_out'  => 0,
+                    'username' => $up->username,
+                ];
+            }
+
             foreach ($dataActualProductions as $actualProduction) {
                 $all_data[] = [
-                    'type' => 'ACTUAL PRODUCTION',
-                    'date' => $actualProduction->trans_date,
-                    'wo_no' => $actualProduction->wo_no,
-                    'qty_in' => $actualProduction->qty,
-                    'qty_out' => 0,
+                    'type'     => 'ACTUAL PRODUCTION',
+                    'date'     => $actualProduction->trans_date,
+                    'wo_no'    => $actualProduction->wo_no,
+                    'qty_in'   => $actualProduction->qty,
+                    'qty_out'  => 0,
                     'username' => $actualProduction->username,
                 ];
             }
@@ -4005,11 +4026,17 @@ class Inventory_wip_standard_actual extends CI_Controller
 
             // Urutkan data berdasarkan tanggal
             usort($all_data, function ($a, $b) {
+                // Jika ada tipe UPLOADS, maka jadi paling atas (-1)
+                if ($a['type'] === 'UPLOADS') return -1;
+                if ($b['type'] === 'UPLOADS') return 1;
+
+                // Transaksi lainnya diurutkan berdasarkan tanggal
                 return strtotime($a['date']) - strtotime($b['date']);
             });
 
             // Generate HTML
             $nod = 1;
+            $begin = $record->actual_qty;
             $balance = $begin;
 
             foreach ($all_data as $data) {
@@ -4089,5 +4116,4 @@ class Inventory_wip_standard_actual extends CI_Controller
         $html .= '</table></body></html>';
         echo $html;
     }
-
 }
