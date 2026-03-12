@@ -1236,6 +1236,46 @@ class Inventory_wip_standard_actual extends CI_Controller
         $total_o_act_amount   = 0;
         $total_e_act_amount   = 0;
 
+        $total_qty_actual     = 0;
+        $total_std_qty_actual = 0;
+        $total_act_qty_actual = 0;
+        
+        $total_qty_wip        = 0;
+        $total_std_qty_wip    = 0;
+        $total_act_qty_wip    = 0;
+        
+        $total_subconts_jasa     = 0;
+        $total_std_subconts_jasa = 0;
+        $total_act_subconts_jasa = 0;
+
+        $total_qty_adj_in     = 0;
+        $total_std_qty_adj_in = 0;
+        $total_act_qty_adj_in = 0;
+
+        $total_qty_ng_sa      = 0;
+        $total_std_qty_ng_sa  = 0;
+        $total_act_qty_ng_sa  = 0;
+
+        $total_qty_ng_wip     = 0;
+        $total_std_qty_ng_wip = 0;
+        $total_act_qty_ng_wip = 0;
+
+        $total_qty_output     = 0;
+        $total_std_qty_output = 0;
+        $total_act_qty_output = 0;
+
+        $total_qty_rfg        = 0;
+        $total_std_qty_rfg    = 0;
+        $total_act_qty_rfg    = 0;
+
+        $total_rfg_jasa       = 0;
+        $total_std_rfg_jasa   = 0;
+        $total_act_rfg_jasa   = 0;
+
+        $total_qty_adj_out     = 0;
+        $total_std_qty_adj_out = 0;
+        $total_act_qty_adj_out = 0;
+
         foreach ($records as $record) {
             $item_fg_id = $record->id;
             $currency   = $record->standard_currency;
@@ -1385,6 +1425,47 @@ class Inventory_wip_standard_actual extends CI_Controller
             $total_e_std_amount += $e_std_amount;
             $total_e_act_amount += $e_act_amount;
 
+            // Details
+            $total_qty_actual += ($record->qty_actual);
+            $total_std_qty_actual += ($std_p * $record->qty_actual);
+            $total_act_qty_actual += ($act_p * $record->qty_actual);
+            
+            $total_qty_wip += ($record->qty_wip);
+            $total_std_qty_wip += ($std_p * $record->qty_wip);
+            $total_act_qty_wip += ($act_p * $record->qty_wip);
+            
+            $total_subconts_jasa += ($record->subconts_jasa);
+            $total_std_subconts_jasa += ($std_p * $record->subconts_jasa);
+            $total_act_subconts_jasa += ($act_p * $record->subconts_jasa);
+
+            $total_qty_adj_in += ($record->qty_adj_in);
+            $total_std_qty_adj_in += ($std_p * $record->qty_adj_in);
+            $total_act_qty_adj_in += ($act_p * $record->qty_adj_in);
+
+            $total_qty_ng_sa += ($record->qty_ng_sa);
+            $total_std_qty_ng_sa += ($std_p * $record->qty_ng_sa);
+            $total_act_qty_ng_sa += ($act_p * $record->qty_ng_sa);
+
+            $total_qty_ng_wip += ($record->qty_ng_wip);
+            $total_std_qty_ng_wip += ($std_p * $record->qty_ng_wip);
+            $total_act_qty_ng_wip += ($act_p * $record->qty_ng_wip);
+
+            $total_qty_output += ($record->qty_output);
+            $total_std_qty_output += ($std_p * $record->qty_output);
+            $total_act_qty_output += ($act_p * $record->qty_output);
+
+            $total_qty_rfg += ($record->qty_rfg);
+            $total_std_qty_rfg += ($std_p * $record->qty_rfg);
+            $total_act_qty_rfg += ($act_p * $record->qty_rfg);
+
+            $total_rfg_jasa += ($record->rfg_jasa);
+            $total_std_rfg_jasa += ($std_p * $record->rfg_jasa);
+            $total_act_rfg_jasa += ($act_p * $record->rfg_jasa);
+
+            $total_qty_adj_out += ($record->qty_adj_out);
+            $total_std_qty_adj_out += ($std_p * $record->qty_adj_out);
+            $total_act_qty_adj_out += ($act_p * $record->qty_adj_out);
+            
             $no++;
         }
 
@@ -1419,8 +1500,67 @@ class Inventory_wip_standard_actual extends CI_Controller
                 <td style="text-align:right;">'.number_format($total_e_act_amount, 2).'</td>
                 <td></td>
 
-                <td colspan="50"></td> 
+                <td style="text-align:right;">' . number_format($total_qty_actual, 2) . '</td>
+                <td></td>
+                <td style="text-align:right;">' . number_format($total_std_qty_actual, 2) . '</td>
+                <td></td>
+                <td style="text-align:right;">' . number_format($total_act_qty_actual, 2) . '</td>
+                
+                <td style="text-align:right;">' . number_format($total_qty_wip, 2) . '</td>
+                <td></td>
+                <td style="text-align:right;">' . number_format($total_std_qty_wip, 2) . '</td>
+                <td></td>
+                <td style="text-align:right;">' . number_format($total_act_qty_wip, 2) . '</td>
+                
+                <td style="text-align:right;">' . number_format($total_subconts_jasa, 2) . '</td>
+                <td></td>
+                <td style="text-align:right;">' . number_format($total_std_subconts_jasa, 2) . '</td>
+                <td></td>
+                <td style="text-align:right;">' . number_format($total_act_subconts_jasa, 2) . '</td>
+
+                <td style="text-align:right;">' . number_format($total_qty_adj_in, 2) . '</td>
+                <td></td>
+                <td style="text-align:right;">' . number_format($total_std_qty_adj_in, 2) . '</td>
+                <td></td>
+                <td style="text-align:right;">' . number_format($total_act_qty_adj_in, 2) . '</td>
+
+                <td style="text-align:right;">' . number_format($total_qty_ng_sa, 2) . '</td>
+                <td></td>
+                <td style="text-align:right;">' . number_format($total_std_qty_ng_sa, 2) . '</td>
+                <td></td>
+                <td style="text-align:right;">' . number_format($total_act_qty_ng_sa, 2) . '</td>
+
+                <td style="text-align:right;">' . number_format($total_qty_ng_wip, 2) . '</td>
+                <td></td>
+                <td style="text-align:right;">' . number_format($total_std_qty_ng_wip, 2) . '</td>
+                <td></td>
+                <td style="text-align:right;">' . number_format($total_act_qty_ng_wip, 2) . '</td>
+
+                <td style="text-align:right;">' . number_format($total_qty_output, 2) . '</td>
+                <td></td>
+                <td style="text-align:right;">' . number_format($total_std_qty_output, 2) . '</td>
+                <td></td>
+                <td style="text-align:right;">' . number_format($total_act_qty_output, 2) . '</td>
+
+                <td style="text-align:right;">' . number_format($total_qty_rfg, 2) . '</td>
+                <td></td>
+                <td style="text-align:right;">' . number_format($total_std_qty_rfg, 2) . '</td>
+                <td></td>
+                <td style="text-align:right;">' . number_format($total_act_qty_rfg, 2) . '</td>
+
+                <td style="text-align:right;">' . number_format($total_rfg_jasa, 2) . '</td>
+                <td></td>
+                <td style="text-align:right;">' . number_format($total_std_rfg_jasa, 2) . '</td>
+                <td></td>
+                <td style="text-align:right;">' . number_format($total_act_rfg_jasa, 2) . '</td>
+
+                <td style="text-align:right;">' . number_format($total_qty_adj_out, 2) . '</td>
+                <td></td>
+                <td style="text-align:right;">' . number_format($total_std_qty_adj_out, 2) . '</td>
+                <td></td>
+                <td style="text-align:right;">' . number_format($total_act_qty_adj_out, 2) . '</td>
             </tr>';
+
         $html .= '</table></body></html>';
         echo $html;
     }
