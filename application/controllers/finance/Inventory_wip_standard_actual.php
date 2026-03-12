@@ -551,15 +551,15 @@ class Inventory_wip_standard_actual extends CI_Controller
 
     public function print($option = "")
     {
-        if (!$this->db->table_exists('inventory_fg_actual')) {
-            echo "<pre> Database Error: Tabel Inventory FG Actual not found! Please contact admin.</pre>";
+        if (!$this->db->table_exists('inventory_wip_actual')) {
+            echo "<pre> Database Error: Tabel Inventory WIP Actual not found! Please contact admin.</pre>";
             return false;
         }
 
         if ($option == "excel") {
             $format  = date("Ymd");
             header("Content-type: application/vnd-ms-excel");
-            header("Content-Disposition: attachment; filename=history_transactions_fg_$format.xls");
+            header("Content-Disposition: attachment; filename=history_transactions_wip_$format.xls");
         }
 
         $filter_from      = $this->input->get('filter_from');
@@ -588,6 +588,10 @@ class Inventory_wip_standard_actual extends CI_Controller
             return 1.0;
         };
 
+        //------------------------------------ GET DATA ----------------------------------//
+
+        // Mengambil tanggal 1 Januari tahun berjalan
+        $dynamic_cutoff = date('Y-01-01');
 
         $exclude_ids = [
             'BPIFG-INJ08240009',
@@ -614,6 +618,16 @@ class Inventory_wip_standard_actual extends CI_Controller
         // Filter Division
         if (!empty($filter_division)) {
             $where_extra .= " AND a.division_id LIKE '%$filter_division%'";
+        }
+
+        // Filter Shift
+        $where_shift    = ""; 
+        $where_shift_b  = "";
+        $where_shift_ab = "";
+        if ($filter_shift !== "" && $filter_shift !== null) {
+            $where_shift    = " shift = " . (int)$filter_shift;
+            $where_shift_b  = " b.shift = " . (int)$filter_shift;
+            $where_shift_ab = " ab.shift = " . (int)$filter_shift;
         }
     
         // Filter Items (langsung atau dari WO)
@@ -684,15 +698,22 @@ class Inventory_wip_standard_actual extends CI_Controller
 
             LEFT JOIN ($query_standard_price) sp ON a.id = sp.item_fg_id
             LEFT JOIN (
-                        select aa.item_fg_id,sum(aa.qty_wo) as qty_wo FROM (
-                                select distinct item_fg_id, workorder, period, qty_wo FROM  supply_sheets where request_date between '$filter_from' AND '$filter_to' 
-                        ) aa group by aa.item_fg_id
+                SELECT 
+                    item_fg_id, 
+                    SUM(qty_wo) as qty_wo 
+                FROM (
+                    SELECT item_fg_id, workorder, qty_wo 
+                    FROM supply_sheets 
+                    WHERE request_date BETWEEN '$filter_from' AND '$filter_to'
+                    GROUP BY item_fg_id, workorder, qty_wo
+                ) aa 
+                GROUP BY item_fg_id
             ) b on a.id = b.item_fg_id
             LEFT JOIN (
-                        select item_fg_id, sum(qty) as qty_actual FROM output_productions where trans_date between '$filter_from' AND '$filter_to'  AND shift like '%$filter_shift%' group by item_fg_id
+                        select item_fg_id, sum(qty) as qty_actual FROM output_productions where trans_date between '$filter_from' AND '$filter_to' $where_shift group by item_fg_id
             ) c on a.id = c.item_fg_id
             LEFT JOIN (
-                        select item_fg_id, sum(qty_wip) as qty_wip FROM output_productions where trans_date between '$filter_from' AND '$filter_to'  AND shift like '%$filter_shift%' group by item_fg_id
+                        select item_fg_id, sum(qty_wip) as qty_wip FROM output_productions where trans_date between '$filter_from' AND '$filter_to' $where_shift group by item_fg_id
             ) c2 on a.id = c2.item_fg_id
 
             LEFT JOIN (
@@ -711,7 +732,7 @@ class Inventory_wip_standard_actual extends CI_Controller
                         SUM(qty_wip) AS qty_wip
                     FROM output_productions
                     WHERE trans_date BETWEEN '$filter_from' AND '$filter_to'
-                    AND shift LIKE '%$filter_shift%'
+                    $where_shift
                     GROUP BY item_fg_id
                 ) p ON sub.item_fg_id = p.item_fg_id   -- PARENT
                 
@@ -720,7 +741,7 @@ class Inventory_wip_standard_actual extends CI_Controller
 
             LEFT JOIN (
                         select aa.item_fg_id,sum(aa.qty_product) as qty_ng FROM (
-                                select distinct document,item_fg_id, qty_product FROM  item_ng where trans_date between '$filter_from' AND '$filter_to' AND shift like '%$filter_shift%' AND kind LIKE 'Ng Process Production'
+                                select distinct document,item_fg_id, qty_product FROM  item_ng where trans_date between '$filter_from' AND '$filter_to' $where_shift AND kind LIKE 'Ng Process Production'
                         ) aa group by aa.item_fg_id
             ) d on a.id = d.item_fg_id
             LEFT JOIN (
@@ -735,7 +756,7 @@ class Inventory_wip_standard_actual extends CI_Controller
                         SELECT DISTINCT document, item_fg_id, qty_product 
                         FROM item_ng 
                         WHERE trans_date BETWEEN '$filter_from' AND '$filter_to'
-                        AND shift LIKE '%$filter_shift%'
+                        $where_shift
                         AND kind LIKE 'Ng Process Production'
                     ) aa 
                     GROUP BY aa.item_fg_id
@@ -764,9 +785,9 @@ class Inventory_wip_standard_actual extends CI_Controller
                         SUM(a.qty) AS qty_rfg
                     FROM scan_item_receipts_fg a
                     JOIN checksheets b ON b.number = a.checksheet_number
-                    WHERE DATE_FORMAT(b.packing_date, '%Y-%m-%d') BETWEEN '$filter_from' AND '$filter_to' 
+                    WHERE b.packing_date BETWEEN '$filter_from' AND '$filter_to' 
                         AND b.status_subcont='NO' 
-                        AND b.shift LIKE '%$filter_shift%'
+                        $where_shift_b
                     GROUP BY b.item_fg_id
                 ) main
                 GROUP BY main.id
@@ -797,7 +818,7 @@ class Inventory_wip_standard_actual extends CI_Controller
                         select aa.item_fg_id,sum(aa.qty) as qty_rfg_jasa 
                         FROM scan_item_receipts_fg aa 
                         JOIN checksheets ab on aa.checksheet_number = ab.number
-                        where ab.packing_date between '$filter_from' AND '$filter_to' and ab.subcont_type='Jasa' and ab.shift like '%$filter_shift%'
+                        where ab.packing_date between '$filter_from' AND '$filter_to' and ab.subcont_type='Jasa' $where_shift_ab
                         GROUP BY ab.item_fg_id
             ) h on a.id = h.item_fg_id
             LEFT JOIN (
@@ -826,7 +847,7 @@ class Inventory_wip_standard_actual extends CI_Controller
                         LEFT JOIN (
                             SELECT item_fg_id, SUM(qty) AS qty_balance_wip
                             FROM wip_balances_fg
-                            WHERE trans_date = '2025-04-30'
+                            WHERE trans_date >= '$dynamic_cutoff'
                             GROUP BY item_fg_id
                         ) e ON a.id = e.item_fg_id
 
@@ -834,16 +855,16 @@ class Inventory_wip_standard_actual extends CI_Controller
                         LEFT JOIN (
                             SELECT item_fg_id, SUM(qty) AS qty_actual
                             FROM output_productions
-                            WHERE trans_date >= '2025-05-01' AND trans_date < '$filter_from'
-                            AND shift LIKE '%$filter_shift%'
+                            WHERE trans_date >= '$dynamic_cutoff' AND trans_date < '$filter_from'
+                            $where_shift
                             GROUP BY item_fg_id
                         ) c ON a.id = c.item_fg_id
 
                         LEFT JOIN (
                             SELECT item_fg_id, SUM(qty_wip) AS qty_wip
                             FROM output_productions
-                            WHERE trans_date >= '2025-05-01' AND trans_date < '$filter_from'
-                            AND shift LIKE '%$filter_shift%'
+                            WHERE trans_date >= '$dynamic_cutoff' AND trans_date < '$filter_from'
+                            $where_shift
                             GROUP BY item_fg_id
                         ) c2 ON a.id = c2.item_fg_id
 
@@ -862,9 +883,9 @@ class Inventory_wip_standard_actual extends CI_Controller
                                     SUM(qty) AS qty_actual,
                                     SUM(qty_wip) AS qty_wip
                                 FROM output_productions
-                                WHERE trans_date >= '2025-05-01'
+                                WHERE trans_date >= '$dynamic_cutoff'
                                 AND trans_date < '$filter_from'
-                                AND shift LIKE '%$filter_shift%'
+                                $where_shift
                                 GROUP BY item_fg_id
                             ) p ON sub.item_fg_id = p.item_fg_id   -- PARENT
                             
@@ -877,7 +898,7 @@ class Inventory_wip_standard_actual extends CI_Controller
                                 SELECT DISTINCT ax.item_fg_id, ax.workorder, ax.period, ax.qty_wo
                                 FROM supply_sheets ax
                                 JOIN item_fg ay ON ax.item_fg_id = ay.id
-                                WHERE ax.request_date >= '2025-05-01' AND ax.request_date < '$filter_from'
+                                WHERE ax.request_date >= '$dynamic_cutoff' AND ax.request_date < '$filter_from'
                                 AND ay.status_subcont = 'YES' AND ay.subcont_type = 'Jasa'
                             ) aa
                             GROUP BY aa.item_fg_id
@@ -893,10 +914,10 @@ class Inventory_wip_standard_actual extends CI_Controller
                                     SUM(a.qty) AS qty_rfg
                                 FROM scan_item_receipts_fg a
                                 JOIN checksheets b ON b.number = a.checksheet_number
-                                WHERE DATE_FORMAT(b.packing_date, '%Y-%m-%d') >= '2025-05-01'
+                                WHERE DATE_FORMAT(b.packing_date, '%Y-%m-%d') >= '$dynamic_cutoff'
                                 AND DATE_FORMAT(b.packing_date, '%Y-%m-%d') < '$filter_from'
                                 AND b.status_subcont = 'NO'
-                                AND b.shift LIKE '%$filter_shift%'
+                                $where_shift_b
                                 GROUP BY b.item_fg_id
                             ) main
                             GROUP BY main.id
@@ -913,8 +934,8 @@ class Inventory_wip_standard_actual extends CI_Controller
                                 FROM (
                                     SELECT DISTINCT document, item_fg_id, qty_product 
                                     FROM item_ng 
-                                    WHERE trans_date >= '2025-05-01' AND trans_date < '$filter_from'
-                                    AND shift LIKE '%$filter_shift%'
+                                    WHERE trans_date >= '$dynamic_cutoff' AND trans_date < '$filter_from'
+                                    $where_shift
                                     AND kind LIKE 'Ng Process Production'
                                 ) aa 
                                 GROUP BY aa.item_fg_id
@@ -927,7 +948,7 @@ class Inventory_wip_standard_actual extends CI_Controller
                             SELECT item_fg_id, SUM(qty) AS qty_in_no_checksheet
                             FROM scan_item_receipts_fg
                             WHERE type = 'NBFG'
-                            AND packing_date >= '2025-05-01'
+                            AND packing_date >= '$dynamic_cutoff'
                             AND packing_date < '$filter_from'
                             GROUP BY item_fg_id
                         ) ga ON a.id = ga.item_fg_id
@@ -937,7 +958,7 @@ class Inventory_wip_standard_actual extends CI_Controller
                             FROM transaction_fg
                             WHERE transaction_kind = 'IN'
                             AND transaction_type = 'RECEIPT FG'
-                            AND request_date >= '2025-05-01'
+                            AND request_date >= '$dynamic_cutoff'
                             AND request_date < '$filter_from'
                             GROUP BY item_fg_id
                         ) gb ON a.id = gb.item_fg_id
@@ -946,7 +967,7 @@ class Inventory_wip_standard_actual extends CI_Controller
                             SELECT item_fg_id, SUM(qty) AS qty_in_wip_receipt
                             FROM wip_receipts
                             WHERE division = 'MTS'
-                            AND trans_date >= '2025-05-01'
+                            AND trans_date >= '$dynamic_cutoff' 
                             AND trans_date < '$filter_from'
                             GROUP BY item_fg_id
                         ) gc ON a.id = gc.item_fg_id
@@ -955,17 +976,17 @@ class Inventory_wip_standard_actual extends CI_Controller
                             SELECT ab.item_fg_id, SUM(aa.qty) AS qty_rfg_jasa
                             FROM scan_item_receipts_fg aa
                             JOIN checksheets ab ON aa.checksheet_number = ab.number
-                            WHERE ab.packing_date >= '2025-05-01'
+                            WHERE ab.packing_date >= '$dynamic_cutoff' 
                             AND ab.packing_date < '$filter_from'
                             AND ab.subcont_type = 'Jasa'
-                            AND ab.shift LIKE '%$filter_shift%'
+                            $where_shift_ab
                             GROUP BY ab.item_fg_id
                         ) h ON a.id = h.item_fg_id
 
                         LEFT JOIN (
                             SELECT item_fg_id, SUM(qty) AS qty_adj_in
                             FROM wip_adjustment_fg
-                            WHERE request_date >= '2025-05-01'
+                            WHERE request_date >= '$dynamic_cutoff' 
                             AND request_date < '$filter_from'
                             AND transaction_type = 'ADJ IN'
                             GROUP BY item_fg_id
@@ -974,7 +995,7 @@ class Inventory_wip_standard_actual extends CI_Controller
                         LEFT JOIN (
                             SELECT item_fg_id, SUM(qty) AS qty_adj_out
                             FROM wip_adjustment_fg
-                            WHERE request_date >= '2025-05-01'
+                            WHERE request_date >= '$dynamic_cutoff' 
                             AND request_date < '$filter_from'
                             AND transaction_type = 'ADJ OUT'
                             GROUP BY item_fg_id
@@ -983,7 +1004,7 @@ class Inventory_wip_standard_actual extends CI_Controller
                         LEFT JOIN (
                             SELECT item_fg_id, SUM(qty) AS qty_ng_wip
                             FROM wip_adjustment_fg
-                            WHERE request_date >= '2025-05-01'
+                            WHERE request_date >= '$dynamic_cutoff' 
                             AND request_date < '$filter_from'
                             AND transaction_type = 'NG WIP'
                             GROUP BY item_fg_id
@@ -995,9 +1016,6 @@ class Inventory_wip_standard_actual extends CI_Controller
             $where_extra
             AND a.id NOT IN ($exclude_str)
             ORDER BY a.number";
-
-        // echo $query_main;
-        // die();
 
         $records = $this->crud->query($query_main);
 
@@ -1203,6 +1221,21 @@ class Inventory_wip_standard_actual extends CI_Controller
             </thead>';
 
         $no = 1;
+        $total_b_qty   = 0;
+        $total_i_qty   = 0;
+        $total_o_qty   = 0;
+        $total_e_qty   = 0;
+
+        $total_b_std_amount   = 0;
+        $total_i_std_amount   = 0;
+        $total_o_std_amount   = 0;
+        $total_e_std_amount   = 0;
+
+        $total_b_act_amount   = 0;
+        $total_i_act_amount   = 0;
+        $total_o_act_amount   = 0;
+        $total_e_act_amount   = 0;
+
         foreach ($records as $record) {
             $item_fg_id = $record->id;
             $currency   = $record->standard_currency;
@@ -1335,10 +1368,59 @@ class Inventory_wip_standard_actual extends CI_Controller
                 <td style="text-align:right;">' . number_format($act_p * $record->qty_adj_out, 2) . '</td>
             </tr>';
 
+
+            $total_b_qty += $b_qty;
+            $total_b_std_amount += $b_std_amount;
+            $total_b_act_amount += $b_act_amount;
+
+            $total_i_qty += $in_qty;
+            $total_i_std_amount += $in_std_amount;
+            $total_i_act_amount += $in_act_amount;
+
+            $total_o_qty += $out_qty;
+            $total_o_std_amount += $out_std_amount;
+            $total_o_act_amount += $out_act_amount;
+
+            $total_e_qty += $e_qty;
+            $total_e_std_amount += $e_std_amount;
+            $total_e_act_amount += $e_act_amount;
+
             $no++;
         }
 
 
+        $html .= '<tr style="background-color: #eee; font-weight: bold;">
+                <td colspan="10" style="text-align:right;">GRAND TOTAL</td>
+                <td style="text-align:right;">'.number_format($total_b_qty, 2).'</td>
+                <td></td>
+                <td style="text-align:right;">'.number_format($total_b_std_amount, 2).'</td>
+                <td></td>
+                <td style="text-align:right;">'.number_format($total_b_act_amount, 2).'</td>
+                <td></td>
+
+                <td style="text-align:right;">'.number_format($total_i_qty, 2).'</td>
+                <td></td>
+                <td style="text-align:right;">'.number_format($total_i_std_amount, 2).'</td>
+                <td></td>
+                <td style="text-align:right;">'.number_format($total_i_act_amount, 2).'</td>
+                <td></td>
+
+                <td style="text-align:right;">'.number_format($total_o_qty, 2).'</td>
+                <td></td>
+                <td style="text-align:right;">'.number_format($total_o_std_amount, 2).'</td>
+                <td></td>
+                <td style="text-align:right;">'.number_format($total_o_act_amount, 2).'</td>
+                <td></td>
+
+                <td style="text-align:right;">'.number_format($total_e_qty, 2).'</td>
+                <td></td>
+                <td style="text-align:right;">'.number_format($total_e_std_amount, 2).'</td>
+                <td></td>
+                <td style="text-align:right;">'.number_format($total_e_act_amount, 2).'</td>
+                <td></td>
+
+                <td colspan="50"></td> 
+            </tr>';
         $html .= '</table></body></html>';
         echo $html;
     }
@@ -1536,7 +1618,7 @@ class Inventory_wip_standard_actual extends CI_Controller
                                     SUM(a.qty) AS qty_rfg
                                 FROM scan_item_receipts_fg a
                                 JOIN checksheets b ON b.number = a.checksheet_number
-                                WHERE DATE_FORMAT(b.packing_date, '%Y-%m-%d') BETWEEN '$filter_from' AND '$filter_to' 
+                                WHERE b.packing_date BETWEEN '$filter_from' AND '$filter_to'
                                     AND b.status_subcont='NO' 
                                     AND b.shift LIKE '%$filter_shift%'
                                 GROUP BY b.item_fg_id
