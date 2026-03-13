@@ -1451,6 +1451,25 @@ class Inventory_rm_standard_actual extends CI_Controller
         $this->db->from('config');
         $config = $this->db->get()->row();
 
+        // Get Exchange Rates
+        $rates = $this->db->get_where('standard_exchange_rates', ['currency_from' => 'USD'])->result();
+        $get_rate = function($date) use ($rates) {
+            if (empty($date)) return 1.0;
+            foreach ($rates as $r) {
+                if ($date >= $r->start_date && $date <= $r->end_date) return (float)$r->middle;
+            }
+            return 1.0;
+        };
+
+        // Get cutoff_date terbaru yang tidak melebihi filter_from
+        $cutoff_data  = $this->db->select('cutoff_date')
+                        ->where('cutoff_date <=', $filter_from)
+                        ->order_by('cutoff_date', 'DESC')
+                        ->limit(1)
+                        ->get('inventory_rm_actual')
+                        ->row();
+        $start_system = ($cutoff_data) ? $cutoff_data->cutoff_date : '2026-01-01';
+
         //------------------------------------ GET DATA AND CALCULATIONS ----------------------------------//
 
         $query_main = "SELECT 
@@ -1483,6 +1502,7 @@ class Inventory_rm_standard_actual extends CI_Controller
 
             -- get actual from upload
             LEFT JOIN inventory_rm_actual actual ON (actual.part_no = a.number OR actual.item_rm_id = a.id)
+                AND actual.cutoff_date = '$start_system' -- perbaikan perhitungan begin qty per bulan
 
             -- get specification 
             LEFT JOIN (
@@ -1650,55 +1670,11 @@ class Inventory_rm_standard_actual extends CI_Controller
 
         foreach ($records as $record) {
             $item_rm_id = $record->id;
-
-            // Exchange Rate Logic
             $rate = 1;
-            if ($record->currency == 'USD' && !empty($record->receipt_date)) {
-                $rate_query = $this->db->get_where('standard_exchange_rates', [
-                    'currency_from' => 'USD',
-                    'start_date <=' => $record->receipt_date,
-                    'end_date >=' => $record->receipt_date
-                ])->row();
-                $rate = $rate_query ? $rate_query->middle : 1;
-            }
 
             // Summary Calculations
             $std_price_rate = $record->std_price * $rate;
             $act_price_rate = $record->actual_price * 1; // IDR
-            
-            /** --- existing
-            $begin_qty = $record->begin_stock;
-            $begin_std_amt = $begin_qty * $std_price_rate;
-            $begin_act_amt = $begin_std_amt; // Sesuai permintaan: begin actual sama dengan std
-            $begin_act_price = $std_price_rate; // Sesuai permintaan: begin actual sama dengan std
-
-            $in_qty = $record->qty_in;
-            $in_std_amt = $in_qty * $std_price_rate;
-            $in_act_amt = $record->actual_amount_in * $rate;
-
-            $in_act_price = 0;
-            if ($in_qty > 0) {
-                $in_act_price = $in_act_amt / $in_qty;
-            }
-
-            $out_qty = $record->qty_out;
-            $out_std_amt = $out_qty * $std_price_rate;
-            $out_act_amt = $record->actual_amount_out * $rate;
-
-            $out_act_price = 0;
-            if ($out_qty > 0) {
-                $out_act_price = $out_act_amt / $out_qty;
-            }
-
-            $end_qty = ($begin_qty + $in_qty) - $out_qty;
-            $end_std_amt = ($begin_std_amt + $in_std_amt) - $out_std_amt;
-            $end_act_amt = ($begin_act_amt + $in_act_amt) - $out_act_amt;
-
-            $end_act_price = 0;
-            if ($end_qty > 0) {
-                $end_act_price = $end_act_amt / $end_qty;
-            }
-            */
 
             $begin_qty       = (float)$record->actual_qty;  // Begin Balance = Qty dari upload saja
             $begin_std_amt   = $begin_qty * $std_price_rate;
@@ -1719,14 +1695,6 @@ class Inventory_rm_standard_actual extends CI_Controller
             $end_act_price = $act_price_rate;
             $end_std_amt = ($begin_std_amt + $in_std_amt) - $out_std_amt;
             $end_act_amt = ($begin_act_amt + $in_act_amt) - $out_act_amt;
-
-
-            // Add to Grand Total
-            /* Comment agar tidak double counting
-            foreach ($grandtotals as $key => $val) {
-                $grandtotals[$key] += ${$key};
-            }
-            */
 
             $html .= '<tr>
                         <td align="center">'.$no.'</td>
@@ -1769,7 +1737,6 @@ class Inventory_rm_standard_actual extends CI_Controller
             $running_act_amt_bal = 0;
 
             // (Logika Detail Transactions)
-            if ($filter_display == "DETAIL") {
                 $nod = 1;
                 // Inisialisasi awal produk berdasarkan saldo upload
                 $running_qty_bal     = (float)$record->actual_qty; 
@@ -1780,28 +1747,8 @@ class Inventory_rm_standard_actual extends CI_Controller
                 $grandtotals['begin_std_amt'] += ((float)$record->actual_qty * $std_price_rate);
                 $grandtotals['begin_act_amt'] += $running_act_amt_bal;
 
-                /** -- existing bug muncul QTY upload di In dan di Begin
-                $running_qty_bal = (float)$record->begin_stock;
-                $running_act_amt_bal = (float)$record->begin_stock * (float)$act_price_rate;
-                */
 
-                // 2. Kumpulkan semua data transaksi ke dalam satu array
                 if ($filter_trans_type == '') {
-                    //-------------- Awal Query disini----------------------------------//                    
-                    // UPLOADS
-                    $uploads = $this->crud->query("SELECT
-                            a.cutoff_date, 
-                            '-' as bc_kind, 
-                            '-' as bc_aju, 
-                            '-' as bc_document, 
-                            '-' as bc_date, 
-                            SUM(a.qty) as actual_qty,
-                            MAX(a.price) actual_price,
-                            a.created_by as username
-                        FROM inventory_rm_actual a 
-                        WHERE a.item_rm_id = '$item_rm_id' 
-                        GROUP BY a.item_rm_id, a.id");
-
                     //RECEIPT
                     $receipts = $this->crud->query("SELECT
                             a.receipt_date, 
@@ -1868,19 +1815,6 @@ class Inventory_rm_standard_actual extends CI_Controller
 
                     $all_data = [];
                     $actual_price_in = 0;
-
-                    // --- UPLOADS ---
-                    foreach ($uploads as $r) {
-                        $all_data[] = [
-                            'type'      => 'UPLOADS',
-                            'date'      => $r->cutoff_date,
-                            'username'  => $r->username,
-                            'qty_in'    => $r->actual_qty,
-                            'qty_out'   => 0,
-                            'actual_price_begin' => $r->actual_price,
-                            'doc1' => '-', 'doc2' => '-', 'doc3' => '-', 'doc4' => '-'
-                        ];
-                    }
 
                     // --- RECEIPT ---
                     foreach ($receipts as $r) {
@@ -1986,12 +1920,8 @@ class Inventory_rm_standard_actual extends CI_Controller
                         ];
                     }
 
+                    // Transaksi diurutkan berdasarkan tanggal
                     usort($all_data, function ($a, $b) {
-                        // Jika ada tipe UPLOADS, maka jadi paling atas (-1)
-                        if ($a['type'] === 'UPLOADS') return -1;
-                        if ($b['type'] === 'UPLOADS') return 1;
-
-                        // Transaksi lainnya diurutkan berdasarkan tanggal
                         return strtotime($a['date']) - strtotime($b['date']);
                     });
                 }
@@ -2063,20 +1993,11 @@ class Inventory_rm_standard_actual extends CI_Controller
                             </tr>
                         </thead>';
 
-                    // --- PERBAIKAN LOGIKA LOOPING DETAIL (Bug Qty Upload ada di Begin dan In) ---
                     $running_qty_bal = 0; 
                     $running_act_amt_bal = 0;
                     $first_upload_captured = false; 
 
                     foreach ($all_data as $data) {
-                        if ($data['type'] === 'UPLOADS') {
-                            $current_begin_qty = (float)$data['qty_in'];
-                            $current_begin_amt = $current_begin_qty * (float)$data['actual_price_begin'];
-                            $current_in_qty = 0; 
-                            $current_in_amt = 0;
-                            $current_out_qty = 0;
-                            $current_out_amt = 0;
-                        } else {
                             // Transaksi Harian (RECEIPT, ISSUED, dll)
                             $current_begin_qty = $running_qty_bal;
                             $current_begin_amt = $running_act_amt_bal;
@@ -2097,7 +2018,6 @@ class Inventory_rm_standard_actual extends CI_Controller
                             $grandtotals['out_qty']     += $current_out_qty;
                             $grandtotals['out_std_amt'] += ($current_out_qty * $std_price_rate);
                             $grandtotals['out_act_amt'] += $current_out_amt;
-                        }
 
                         // Render ke HTML menggunakan variabel hasil logika di atas
                         $html .= '<tr style="background:#fff;">
@@ -2145,7 +2065,6 @@ class Inventory_rm_standard_actual extends CI_Controller
                     $grandtotals['end_qty']     += $running_qty_bal;
                     $grandtotals['end_std_amt'] += ($running_qty_bal * $std_price_rate);
                     $grandtotals['end_act_amt'] += $running_act_amt_bal;
-                }
             }
 
             $no++;
