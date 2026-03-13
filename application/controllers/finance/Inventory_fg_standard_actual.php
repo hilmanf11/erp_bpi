@@ -2518,6 +2518,12 @@ class Inventory_fg_standard_actual extends CI_Controller
         $total_o_act_amount = 0;
         $total_e_act_amount = 0;
 
+        $grandtotals = [
+            'b_qty' => 0, 'b_std' => 0, 'b_act' => 0,
+            'i_qty' => 0, 'i_std' => 0, 'i_act' => 0,
+            'o_qty' => 0, 'o_std' => 0, 'o_act' => 0,
+            'e_qty' => 0, 'e_std' => 0, 'e_act' => 0,
+        ];
 
         foreach ($records as $record) {
             $item_fg_id  = $record->id;
@@ -2612,13 +2618,6 @@ class Inventory_fg_standard_actual extends CI_Controller
 
 
             // DETAILS
-            $grandtotals = [
-                'begin_qty' => 0, 'begin_std_amt' => 0, 'begin_act_amt' => 0,
-                'in_qty'    => 0, 'in_std_amt'    => 0, 'in_act_amt'    => 0,
-                'out_qty'   => 0, 'out_std_amt'   => 0, 'out_act_amt'   => 0,
-                'end_qty'   => 0, 'end_std_amt'   => 0, 'end_act_amt'   => 0
-            ];
-
             $receipts = $this->crud->query("SELECT f.*, c.name as username, e.packing_date as trans_date, 'RECEIPT FG' AS receipt_type
                     FROM scan_item_receipts_fg f
                     JOIN checksheets e ON e.number = f.checksheet_number
@@ -2826,6 +2825,11 @@ class Inventory_fg_standard_actual extends CI_Controller
             $mutation_before   = (float)$record->begin_stock;
             $running_qty_bal = $actual_upload_qty + $mutation_before;
 
+            // Akumulasi ke Grand Total (Kolom BEGIN)
+            $grandtotals['b_qty'] += $running_qty_bal;
+            $grandtotals['b_std'] += ($running_qty_bal * $std_price);
+            $grandtotals['b_act'] += ($running_qty_bal * $act_price);
+
             $is_upload_month = (date('Y-m', strtotime($start_system)) == date('Y-m', strtotime($filter_from)));
 
             // Tampilkan Baris Kuning HANYA jika ini adalah bulan Upload
@@ -2916,37 +2920,50 @@ class Inventory_fg_standard_actual extends CI_Controller
                         <td style="text-align:right;">' . number_format($running_qty_bal * $act_price, 2) . '</td>
                     </tr>';
                 $nod++;
+
+                // Akumulasi ke Grand Total (IN & OUT)
+                $grandtotals['i_qty'] += $trans_in;
+                $grandtotals['i_std'] += ($trans_in * $std_price);
+                $grandtotals['i_act'] += ($trans_in * $act_price);
+                $grandtotals['o_qty'] += $trans_out;
+                $grandtotals['o_std'] += ($trans_out * $std_price);
+                $grandtotals['o_act'] += ($trans_out * $act_price);
             }
 
+            // Akumulasi ke Grand Total (Kolom ENDING/BALANCE)
+            $grandtotals['e_qty'] += $running_qty_bal;
+            $grandtotals['e_std'] += ($running_qty_bal * $std_price);
+            $grandtotals['e_act'] += ($running_qty_bal * $act_price);
+
+            $no++;
         }
 
-        $html .= '<tfooter>
+       $html .= '<tfooter>
             <tr style="background:#eee; font-weight:bold;">
                 <td colspan="12" align="right">GRAND TOTAL</td>
-                
-                <td align="right">' . number_format($grandtotals['begin_qty'], 2) . '</td>
+                <td align="right">' . number_format($grandtotals['b_qty'], 2) . '</td>
                 <td></td>
-                <td align="right">' . number_format($grandtotals['begin_std_amt'], 2) . '</td>
+                <td align="right">' . number_format($grandtotals['b_std'], 2) . '</td>
                 <td></td>
-                <td align="right">' . number_format($grandtotals['begin_act_amt'], 2) . '</td>
+                <td align="right">' . number_format($grandtotals['b_act'], 2) . '</td>
 
-                <td align="right">' . number_format($grandtotals['in_qty'], 2) . '</td>
+                <td align="right">' . number_format($grandtotals['i_qty'], 2) . '</td>
                 <td></td>
-                <td align="right">' . number_format($grandtotals['in_std_amt'], 2) . '</td>
+                <td align="right">' . number_format($grandtotals['i_std'], 2) . '</td>
                 <td></td>
-                <td align="right">' . number_format($grandtotals['in_act_amt'], 2) . '</td>
+                <td align="right">' . number_format($grandtotals['i_act'], 2) . '</td>
 
-                <td align="right">' . number_format($grandtotals['out_qty'], 2) . '</td>
+                <td align="right">' . number_format($grandtotals['o_qty'], 2) . '</td>
                 <td></td>
-                <td align="right">' . number_format($grandtotals['out_std_amt'], 2) . '</td>
+                <td align="right">' . number_format($grandtotals['o_std'], 2) . '</td>
                 <td></td>
-                <td align="right">' . number_format($grandtotals['out_act_amt'], 2) . '</td>
+                <td align="right">' . number_format($grandtotals['o_act'], 2) . '</td>
 
-                <td align="right">' . number_format($grandtotals['end_qty'], 2) . '</td>
+                <td align="right">' . number_format($grandtotals['e_qty'], 2) . '</td>
                 <td></td>
-                <td align="right">' . number_format($grandtotals['end_std_amt'], 2) . '</td>
+                <td align="right">' . number_format($grandtotals['e_std'], 2) . '</td>
                 <td></td>
-                <td align="right">' . number_format($grandtotals['end_act_amt'], 2) . '</td>
+                <td align="right">' . number_format($grandtotals['e_act'], 2) . '</td>
             </tr>
         </tfooter>';
 
