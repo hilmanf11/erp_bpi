@@ -1505,7 +1505,6 @@ class Inventory_fg_standard_actual extends CI_Controller
             (COALESCE(qc2.qty, 0) + COALESCE(qnc2.qty, 0) + COALESCE(qti2.qty, 0) + COALESCE(qw2.qty, 0)) - 
             (COALESCE(qto2.qty, 0) + COALESCE(qdn2.qty, 0) + COALESCE(qrep2.qty, 0)) as begin_stock
         FROM item_fg a
-        -- Filter ditambahkan: hanya ambil transaksi SETELAH tanggal upload awal (2026-01-01)
         LEFT JOIN (SELECT e.item_fg_id, SUM(f.qty) as qty FROM scan_item_receipts_fg f JOIN checksheets e ON e.number = f.checksheet_number WHERE e.packing_date >= '$start_system' AND e.packing_date < '$filter_from' GROUP BY 1) qc2 ON a.id = qc2.item_fg_id
         LEFT JOIN (SELECT item_fg_id, SUM(qty) as qty FROM scan_item_receipts_fg WHERE type = 'NBFG' AND packing_date >= '$start_system' AND packing_date < '$filter_from' GROUP BY 1) qnc2 ON a.id = qnc2.item_fg_id
         LEFT JOIN (SELECT item_fg_id, SUM(qty) as qty FROM transaction_fg WHERE transaction_kind = 'IN' AND request_date >= '$start_system' AND request_date < '$filter_from' GROUP BY 1) qti2 ON a.id = qti2.item_fg_id
@@ -1883,6 +1882,7 @@ class Inventory_fg_standard_actual extends CI_Controller
             $actual_upload_qty = (float)$record->actual_qty;
             $mutation_before = (float)$record->begin_stock;
             $b_qty = $actual_upload_qty + $mutation_before;
+
             $i_qty = (float)$record->qty_in;
             $o_qty = (float)$record->qty_out;
             $e_qty = ($b_qty + $i_qty) - $o_qty;
@@ -2242,6 +2242,15 @@ class Inventory_fg_standard_actual extends CI_Controller
             return 1.0;
         };
 
+        // Get cutoff_date terbaru yang tidak melebihi filter_from
+        $cutoff_data  = $this->db->select('cutoff_date')
+                        ->where('cutoff_date <=', $filter_from)
+                        ->order_by('cutoff_date', 'DESC')
+                        ->limit(1)
+                        ->get('inventory_fg_actual')
+                        ->row();
+        $start_system = ($cutoff_data) ? $cutoff_data->cutoff_date : '2026-01-01';
+
         //------------------------------------ GET DATA ----------------------------------//
 
         // Combine semua kategori Checksheet (Periode Berjalan)
@@ -2282,6 +2291,7 @@ class Inventory_fg_standard_actual extends CI_Controller
             GROUP BY item_fg_id";
 
         // Sub-Query Stok Awal (Saldo Sblm Tanggal Filter)
+        /** -- existing
         $query_begin_stock = "SELECT 
                 a.id,
                 (COALESCE(qc2.qty, 0) + COALESCE(qnc2.qty, 0) + COALESCE(qti2.qty, 0) + COALESCE(qw2.qty, 0)) - 
@@ -2294,6 +2304,22 @@ class Inventory_fg_standard_actual extends CI_Controller
             LEFT JOIN (SELECT item_fg_id, SUM(qty) as qty FROM delivery_notes WHERE delivery_note_date < '$filter_from' GROUP BY 1) qdn2 ON a.id = qdn2.item_fg_id
             LEFT JOIN (SELECT e.item_fg_id, SUM(f.qty) as qty FROM scan_repair_of_goods f JOIN repair_of_goods e ON e.document_no = f.document_no WHERE e.trans_date < '$filter_from' GROUP BY 1) qrep2 ON a.id = qrep2.item_fg_id
             LEFT JOIN (SELECT item_fg_id, SUM(qty) as qty FROM wip_receipts WHERE division = 'MTS' AND trans_date < '$filter_from' GROUP BY 1) qw2 ON a.id = qw2.item_fg_id";
+        */
+        
+        // PERBAIKAN: Get data setelah cutoff_date dan sebelum filter_from untuk carry-over QTY
+        $query_begin_stock = "SELECT 
+            a.id,
+            (COALESCE(qc2.qty, 0) + COALESCE(qnc2.qty, 0) + COALESCE(qti2.qty, 0) + COALESCE(qw2.qty, 0)) - 
+            (COALESCE(qto2.qty, 0) + COALESCE(qdn2.qty, 0) + COALESCE(qrep2.qty, 0)) as begin_stock
+        FROM item_fg a
+        LEFT JOIN (SELECT e.item_fg_id, SUM(f.qty) as qty FROM scan_item_receipts_fg f JOIN checksheets e ON e.number = f.checksheet_number WHERE e.packing_date >= '$start_system' AND e.packing_date < '$filter_from' GROUP BY 1) qc2 ON a.id = qc2.item_fg_id
+        LEFT JOIN (SELECT item_fg_id, SUM(qty) as qty FROM scan_item_receipts_fg WHERE type = 'NBFG' AND packing_date >= '$start_system' AND packing_date < '$filter_from' GROUP BY 1) qnc2 ON a.id = qnc2.item_fg_id
+        LEFT JOIN (SELECT item_fg_id, SUM(qty) as qty FROM transaction_fg WHERE transaction_kind = 'IN' AND request_date >= '$start_system' AND request_date < '$filter_from' GROUP BY 1) qti2 ON a.id = qti2.item_fg_id
+        LEFT JOIN (SELECT item_fg_id, SUM(qty) as qty FROM transaction_fg WHERE transaction_kind = 'OUT' AND request_date >= '$start_system' AND request_date < '$filter_from' GROUP BY 1) qto2 ON a.id = qto2.item_fg_id
+        LEFT JOIN (SELECT item_fg_id, SUM(qty) as qty FROM delivery_notes WHERE delivery_note_date >= '$start_system' AND delivery_note_date < '$filter_from' GROUP BY 1) qdn2 ON a.id = qdn2.item_fg_id
+        LEFT JOIN (SELECT e.item_fg_id, SUM(f.qty) as qty FROM scan_repair_of_goods f JOIN repair_of_goods e ON e.document_no = f.document_no WHERE e.trans_date >= '$start_system' AND e.trans_date < '$filter_from' GROUP BY 1) qrep2 ON a.id = qrep2.item_fg_id
+        LEFT JOIN (SELECT item_fg_id, SUM(qty) as qty FROM wip_receipts WHERE division = 'MTS' AND trans_date >= '$start_system' AND trans_date < '$filter_from' GROUP BY 1) qw2 ON a.id = qw2.item_fg_id";
+
 
         $query_scan_repair_of_goods = "SELECT e.item_fg_id, SUM(f.qty) as initial_out_h
             FROM scan_repair_of_goods f
@@ -2330,6 +2356,9 @@ class Inventory_fg_standard_actual extends CI_Controller
             -- Actual Price and Qty from upload
             COALESCE(actual.price, 0) as actual_price, 
             COALESCE(actual.qty, 0) as actual_qty,
+            actual.currency as upload_currency,
+            actual.created_by as upload_by,
+            actual.upload_date,
 
             -- Mutasi Masuk
             COALESCE(qc.qty_in_non_subcont, 0) + COALESCE(tf.initial_in_rfg, 0) + COALESCE(qw.qty_in_wip_receipt, 0) as qty_rfg,
@@ -2363,6 +2392,7 @@ class Inventory_fg_standard_actual extends CI_Controller
         FROM item_fg a
         LEFT JOIN divisions divs ON a.division_id = divs.id
         LEFT JOIN inventory_fg_actual actual ON (actual.part_no = a.number OR actual.item_fg_id = a.id)
+            AND actual.cutoff_date = '$start_system' -- perbaikan perhitungan begin qty per bulan
         
         LEFT JOIN ($query_standard_price) sp ON a.id = sp.item_fg_id
         LEFT JOIN ($query_checksheet) qc ON a.id = qc.item_fg_id
@@ -2499,7 +2529,10 @@ class Inventory_fg_standard_actual extends CI_Controller
             $act_price = (float)$record->actual_price * $rate;
 
             // Get QTY
-            $b_qty = (float)$record->actual_qty; // $record->begin_stock;
+            $actual_upload_qty = (float)$record->actual_qty;
+            $mutation_before = (float)$record->begin_stock;
+            $b_qty = $actual_upload_qty + $mutation_before;
+
             $i_qty = (float)$record->qty_in;
             $o_qty = (float)$record->qty_out;
             $e_qty = ($b_qty + $i_qty) - $o_qty;
@@ -2586,16 +2619,6 @@ class Inventory_fg_standard_actual extends CI_Controller
                 'end_qty'   => 0, 'end_std_amt'   => 0, 'end_act_amt'   => 0
             ];
 
-            $uploads = $this->crud->query("SELECT a.*,
-                    a.cutoff_date as trans_date,
-                    SUM(a.qty) as actual_qty,
-                    MAX(a.price) actual_price,
-                    a.created_by as username,
-                    'UPLOADS' AS receipt_type
-                FROM inventory_fg_actual a 
-                WHERE a.item_fg_id = '$item_fg_id' 
-                GROUP BY a.item_fg_id, a.id");
-            
             $receipts = $this->crud->query("SELECT f.*, c.name as username, e.packing_date as trans_date, 'RECEIPT FG' AS receipt_type
                     FROM scan_item_receipts_fg f
                     JOIN checksheets e ON e.number = f.checksheet_number
@@ -2649,19 +2672,6 @@ class Inventory_fg_standard_actual extends CI_Controller
 
             // Proses data berdasarkan tanggal
             $all_data = [];
-
-            foreach ($uploads as $up) {
-                $all_data[] = [
-                    'type'      => $up->receipt_type,
-                    'username'  => $up->username,
-                    'date'      => $up->trans_date,
-                    'wo_no'     => '-',
-                    'label'     => '-',
-                    'qty_in'    => 0, // $up->actual_qty,
-                    'qty_out'   => 0,
-                    'price'     => $up->actual_price,
-                ];
-            }
 
             // Gabungkan data receipts
             foreach ($receipts as $receipt) {
@@ -2745,11 +2755,6 @@ class Inventory_fg_standard_actual extends CI_Controller
             }
 
             usort($all_data, function ($a, $b) {
-                // Jika ada tipe UPLOADS, maka jadi paling atas (-1)
-                if ($a['type'] === 'UPLOADS') return -1;
-                if ($b['type'] === 'UPLOADS') return 1;
-
-                // Transaksi lainnya diurutkan berdasarkan tanggal
                 return strtotime($a['date']) - strtotime($b['date']);
             });
 
@@ -2816,97 +2821,103 @@ class Inventory_fg_standard_actual extends CI_Controller
                     </tr>
                 </thead>';
 
+            // PERBAIKAN: Saldo awal baris detail adalah saldo upload + mutasi carry-over sebelum filter_from
+            $actual_upload_qty = (float)$record->actual_qty;
+            $mutation_before   = (float)$record->begin_stock;
+            $running_qty_bal = $actual_upload_qty + $mutation_before;
+
+            $is_upload_month = (date('Y-m', strtotime($start_system)) == date('Y-m', strtotime($filter_from)));
+
+            // Tampilkan Baris Kuning HANYA jika ini adalah bulan Upload
+            if ($is_upload_month) {
+                $html .= '<tr style="background: #fffbf1">
+                        <td></td>
+                        <td style="text-align:center">#</td>
+                        <td>UPLOAD</td>
+                        <td>' . $record->upload_by . '</td>
+                        <td>' . $record->upload_date . '</td>
+                        <td>-</td>
+                        <td colspan="3">BEGIN BALANCE (UPLOAD)</td>
+                        <td style="text-align:center;">' . $record->upload_currency . '</td>
+                        <td style="text-align:right;">' . number_format($std_price, 2) . '</td>
+                        <td style="text-align:right;">' . number_format($rate, 2) . '</td>
+
+                        <td style="text-align:right;">' . number_format($actual_upload_qty, 2) . '</td>
+                        <td style="text-align:right;">' . number_format($std_price, 2) . '</td>
+                        <td style="text-align:right;">' . number_format($actual_upload_qty * $std_price, 2) . '</td>
+                        <td style="text-align:right;">' . number_format($act_price, 2) . '</td>
+                        <td style="text-align:right;">' . number_format($actual_upload_qty * $act_price, 2) . '</td>
+
+                        <td style="text-align:right;">0.00</td>
+                        <td style="text-align:right;">0.00</td>
+                        <td style="text-align:right;">0.00</td>
+                        <td style="text-align:right;">0.00</td>
+                        <td style="text-align:right;">0.00</td>
+
+                        <td style="text-align:right;">0.00</td>
+                        <td style="text-align:right;">0.00</td>
+                        <td style="text-align:right;">0.00</td>
+                        <td style="text-align:right;">0.00</td>
+                        <td style="text-align:right;">0.00</td>
+
+                        <td style="text-align:right;">' . number_format($actual_upload_qty, 2) . '</td>
+                        <td style="text-align:right;">' . number_format($std_price, 2) . '</td>
+                        <td style="text-align:right;">' . number_format($actual_upload_qty * $std_price, 2) . '</td>
+                        <td style="text-align:right;">' . number_format($act_price, 2) . '</td>
+                        <td style="text-align:right;">' . number_format($actual_upload_qty * $act_price, 2) . '</td>
+                    </tr>';
+            } 
+
             $nod = 1;
-            $begin = $record->actual_qty;
-            $price = $std_price;
-            $balance = $begin;
-
-            $std_price_rate = (float)$record->std_price * $rate;
-            $act_price_rate = (float)$record->actual_price * $rate;
-
-            $running_qty_bal     = (float)$record->actual_qty; 
-            $running_act_amt_bal = $running_qty_bal * $act_price_rate;
-            $running_std_amt_bal = $running_qty_bal * $std_price_rate;
-
-            $grandtotals['begin_qty']     += $running_qty_bal;
-            $grandtotals['begin_std_amt'] += $running_std_amt_bal;
-            $grandtotals['begin_act_amt'] += $running_act_amt_bal;
-
             foreach ($all_data as $data) {
-                $wo_no = (isset($data['wo_no']) && !in_array($data['wo_no'], ['undefined', 'null', ''])) ? $data['wo_no'] : '-';
-                $act_price = $record->actual_price ?? 0;
-
-                $current_date = $data['date']; // Tanggal transaksi
-                $rate = ($currency == 'USD') ? $get_rate($current_date) : 1;
+                $trans_in  = (float)$data['qty_in'];
+                $trans_out = (float)$data['qty_out'];
                 
-                if ($data['type'] === 'UPLOADS') {
-                    // Jangan tambah in/out karena sudah masuk saldo awal (begin)
-                    $current_begin_qty = (float)$data['qty_in'];
-                    $current_in_qty    = 0;
-                    $current_out_qty   = 0;
-                } else {
-                    $current_begin_qty = $running_qty_bal;
-                    $current_in_qty    = (float)$data['qty_in'];
-                    $current_out_qty   = (float)$data['qty_out'];
+                // Simpan saldo sebelum transaksi untuk kolom "BEGIN" di baris ini
+                $row_begin_qty = $running_qty_bal;
+                
+                // Update Running Balance untuk baris ini
+                $running_qty_bal += ($trans_in - $trans_out);
 
-                    // Update saldo berjalan
-                    $running_qty_bal     += ($current_in_qty - $current_out_qty);
-                    $running_act_amt_bal += ($current_in_qty - $current_out_qty) * $act_price_rate;
+                $html .= '<tr>
+                        <td></td>
+                        <td style="text-align:center">' . $nod . '</td>
+                        <td>' . $data['type'] . '</td>
+                        <td>' . $data['username'] . '</td>
+                        <td>' . $data['date'] . '</td>
+                        <td>' . ($data['wo_no'] ?: '-') . '</td>
+                        <td colspan="3">' . $data['label'] . '</td>
+                        <td style="text-align:center;">' . $currency . '</td>
+                        <td style="text-align:right;">' . number_format($std_price, 2) . '</td>
+                        <td style="text-align:right;">' . number_format($rate, 2) . '</td>
 
-                    // Akumulasi transaksi harian ke Grand Total
-                    $grandtotals['in_qty']      += $current_in_qty;
-                    $grandtotals['in_std_amt']   += ($current_in_qty * $std_price_rate);
-                    $grandtotals['in_act_amt']   += ($current_in_qty * $act_price_rate);
+                        <td style="text-align:right;">' . number_format($row_begin_qty, 2) . '</td>
+                        <td style="text-align:right;">' . number_format($std_price, 2) . '</td>
+                        <td style="text-align:right;">' . number_format($row_begin_qty * $std_price, 2) . '</td>
+                        <td style="text-align:right;">' . number_format($act_price, 2) . '</td>
+                        <td style="text-align:right;">' . number_format($row_begin_qty * $act_price, 2) . '</td>
 
-                    $grandtotals['out_qty']     += $current_out_qty;
-                    $grandtotals['out_std_amt']  += ($current_out_qty * $std_price_rate);
-                    $grandtotals['out_act_amt']  += ($current_out_qty * $act_price_rate);
-                }
+                        <td style="text-align:right;">' . number_format($trans_in, 2) . '</td>
+                        <td style="text-align:right;">' . number_format($std_price, 2) . '</td>
+                        <td style="text-align:right;">' . number_format($trans_in * $std_price, 2) . '</td>
+                        <td style="text-align:right;">' . number_format($act_price, 2) . '</td>
+                        <td style="text-align:right;">' . number_format($trans_in * $act_price, 2) . '</td>
 
-                $html .= '  <tr>
-                    <td></td>
-                    <td style="text-align:center">' . $nod . '</td>
-                    <td>' . $data['type'] . '</td>
-                    <td>' . $data['username'] . '</td>
-                    <td>' . $data['date'] . '</td>
-                    <td>' . $wo_no . '</td>
-                    <td colspan="3">' . $data['label'] . '</td>
-                    <td style="text-align:center;">' . $currency . '</td>
-                    <td style="text-align:right;">' . number_format($price, 2) . '</td>
-                    <td style="text-align:right;">' . number_format($rate, 2) . '</td>
+                        <td style="text-align:right;">' . number_format($trans_out, 2) . '</td>
+                        <td style="text-align:right;">' . number_format($std_price, 2) . '</td>
+                        <td style="text-align:right;">' . number_format($trans_out * $std_price, 2) . '</td>
+                        <td style="text-align:right;">' . number_format($act_price, 2) . '</td>
+                        <td style="text-align:right;">' . number_format($trans_out * $act_price, 2) . '</td>
 
-                    <td style="text-align:right;">' . number_format($current_begin_qty, 2) . '</td>
-                    <td style="text-align:right;">' . number_format($rate * $price, 2) . '</td>
-                    <td style="text-align:right;">' . number_format(($rate * $price) * ($data['type'] === 'UPLOADS' ? $begin : ($balance - ($data['qty_in'] - $data['qty_out']))), 2) . '</td>
-                    <td style="text-align:right;">' . number_format($rate * $act_price, 2) . '</td>
-                    <td style="text-align:right;">' . number_format(($rate * $act_price) * ($data['type'] === 'UPLOADS' ? $begin : ($balance - ($data['qty_in'] - $data['qty_out']))), 2) . '</td>
-
-                    <td style="text-align:right;">' . number_format($data['qty_in'], 2) . '</td>
-                    <td style="text-align:right;">' . number_format($rate * $price, 2) . '</td>
-                    <td style="text-align:right;">' . number_format(($rate * $price) * $data['qty_in'], 2) . '</td>
-                    <td style="text-align:right;">' . number_format($rate * $act_price, 2) . '</td>
-                    <td style="text-align:right;">' . number_format(($rate * $act_price) * $data['qty_in'], 2) . '</td>
-
-                    <td style="text-align:right;">' . number_format($data['qty_out'], 2) . '</td>
-                    <td style="text-align:right;">' . number_format($rate * $price, 2) . '</td>
-                    <td style="text-align:right;">' . number_format(($rate * $price) * $data['qty_out'], 2) . '</td>
-                    <td style="text-align:right;">' . number_format($rate * $act_price, 2) . '</td>
-                    <td style="text-align:right;">' . number_format(($rate * $price) * $data['qty_out'], 2) . '</td>
-
-                    <td style="text-align:right;">' . number_format($balance, 2) . '</td>
-                    <td style="text-align:right;">' . number_format($rate * $price, 2) . '</td>
-                    <td style="text-align:right;">' . number_format(($rate * $price) * $balance, 2) . '</td>
-                    <td style="text-align:right;">' . number_format($rate * $act_price, 2) . '</td>
-                    <td style="text-align:right;">' . number_format(($rate * $price) * $balance, 2) . '</td>
-                </tr>';
-
+                        <td style="text-align:right; font-weight:bold;">' . number_format($running_qty_bal, 2) . '</td>
+                        <td style="text-align:right;">' . number_format($std_price, 2) . '</td>
+                        <td style="text-align:right;">' . number_format($running_qty_bal * $std_price, 2) . '</td>
+                        <td style="text-align:right;">' . number_format($act_price, 2) . '</td>
+                        <td style="text-align:right;">' . number_format($running_qty_bal * $act_price, 2) . '</td>
+                    </tr>';
                 $nod++;
             }
 
-            // Akumulasi ENDING ke Grand Total
-            $grandtotals['end_qty']     += $running_qty_bal;
-            $grandtotals['end_std_amt'] += ($running_qty_bal * $std_price_rate);
-            $grandtotals['end_act_amt'] += $running_act_amt_bal;
         }
 
         $html .= '<tfooter>
