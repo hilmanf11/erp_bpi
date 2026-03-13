@@ -1435,6 +1435,15 @@ class Inventory_fg_standard_actual extends CI_Controller
             return 1.0;
         };
 
+        // Get cutoff_date terbaru yang tidak melebihi filter_from
+        $cutoff_data  = $this->db->select('cutoff_date')
+                        ->where('cutoff_date <=', $filter_from)
+                        ->order_by('cutoff_date', 'DESC')
+                        ->limit(1)
+                        ->get('inventory_fg_actual')
+                        ->row();
+        $start_system = ($cutoff_data) ? $cutoff_data->cutoff_date : '2026-01-01';
+
         //------------------------------------ GET DATA ----------------------------------//
 
         // Combine semua kategori Checksheet (Periode Berjalan)
@@ -1475,6 +1484,7 @@ class Inventory_fg_standard_actual extends CI_Controller
             GROUP BY item_fg_id";
 
         // Sub-Query Stok Awal (Saldo Sblm Tanggal Filter)
+        /** -- existing
         $query_begin_stock = "SELECT 
                 a.id,
                 (COALESCE(qc2.qty, 0) + COALESCE(qnc2.qty, 0) + COALESCE(qti2.qty, 0) + COALESCE(qw2.qty, 0)) - 
@@ -1487,6 +1497,23 @@ class Inventory_fg_standard_actual extends CI_Controller
             LEFT JOIN (SELECT item_fg_id, SUM(qty) as qty FROM delivery_notes WHERE delivery_note_date < '$filter_from' GROUP BY 1) qdn2 ON a.id = qdn2.item_fg_id
             LEFT JOIN (SELECT e.item_fg_id, SUM(f.qty) as qty FROM scan_repair_of_goods f JOIN repair_of_goods e ON e.document_no = f.document_no WHERE e.trans_date < '$filter_from' GROUP BY 1) qrep2 ON a.id = qrep2.item_fg_id
             LEFT JOIN (SELECT item_fg_id, SUM(qty) as qty FROM wip_receipts WHERE division = 'MTS' AND trans_date < '$filter_from' GROUP BY 1) qw2 ON a.id = qw2.item_fg_id";
+        */
+        
+        // PERBAIKAN: Get data setelah cutoff_date dan sebelum filter_from untuk carry-over QTY
+        $query_begin_stock = "SELECT 
+            a.id,
+            (COALESCE(qc2.qty, 0) + COALESCE(qnc2.qty, 0) + COALESCE(qti2.qty, 0) + COALESCE(qw2.qty, 0)) - 
+            (COALESCE(qto2.qty, 0) + COALESCE(qdn2.qty, 0) + COALESCE(qrep2.qty, 0)) as begin_stock
+        FROM item_fg a
+        -- Filter ditambahkan: hanya ambil transaksi SETELAH tanggal upload awal (2026-01-01)
+        LEFT JOIN (SELECT e.item_fg_id, SUM(f.qty) as qty FROM scan_item_receipts_fg f JOIN checksheets e ON e.number = f.checksheet_number WHERE e.packing_date >= '$start_system' AND e.packing_date < '$filter_from' GROUP BY 1) qc2 ON a.id = qc2.item_fg_id
+        LEFT JOIN (SELECT item_fg_id, SUM(qty) as qty FROM scan_item_receipts_fg WHERE type = 'NBFG' AND packing_date >= '$start_system' AND packing_date < '$filter_from' GROUP BY 1) qnc2 ON a.id = qnc2.item_fg_id
+        LEFT JOIN (SELECT item_fg_id, SUM(qty) as qty FROM transaction_fg WHERE transaction_kind = 'IN' AND request_date >= '$start_system' AND request_date < '$filter_from' GROUP BY 1) qti2 ON a.id = qti2.item_fg_id
+        LEFT JOIN (SELECT item_fg_id, SUM(qty) as qty FROM transaction_fg WHERE transaction_kind = 'OUT' AND request_date >= '$start_system' AND request_date < '$filter_from' GROUP BY 1) qto2 ON a.id = qto2.item_fg_id
+        LEFT JOIN (SELECT item_fg_id, SUM(qty) as qty FROM delivery_notes WHERE delivery_note_date >= '$start_system' AND delivery_note_date < '$filter_from' GROUP BY 1) qdn2 ON a.id = qdn2.item_fg_id
+        LEFT JOIN (SELECT e.item_fg_id, SUM(f.qty) as qty FROM scan_repair_of_goods f JOIN repair_of_goods e ON e.document_no = f.document_no WHERE e.trans_date >= '$start_system' AND e.trans_date < '$filter_from' GROUP BY 1) qrep2 ON a.id = qrep2.item_fg_id
+        LEFT JOIN (SELECT item_fg_id, SUM(qty) as qty FROM wip_receipts WHERE division = 'MTS' AND trans_date >= '$start_system' AND trans_date < '$filter_from' GROUP BY 1) qw2 ON a.id = qw2.item_fg_id";
+
 
         $query_scan_repair_of_goods = "SELECT e.item_fg_id, SUM(f.qty) as initial_out_h
             FROM scan_repair_of_goods f
@@ -1556,6 +1583,7 @@ class Inventory_fg_standard_actual extends CI_Controller
         FROM item_fg a
         LEFT JOIN divisions divs ON a.division_id = divs.id
         LEFT JOIN inventory_fg_actual actual ON (actual.part_no = a.number OR actual.item_fg_id = a.id)
+            AND actual.cutoff_date = '$start_system' -- perbaikan perhitungan begin qty per bulan
         
         LEFT JOIN ($query_standard_price) sp ON a.id = sp.item_fg_id
         LEFT JOIN ($query_checksheet) qc ON a.id = qc.item_fg_id
@@ -1852,7 +1880,9 @@ class Inventory_fg_standard_actual extends CI_Controller
             $act_price = (float)$record->actual_price * 1; // IDR
 
             // Get QTY
-            $b_qty = (float)$record->actual_qty; // $record->begin_stock;
+            $actual_upload_qty = (float)$record->actual_qty;
+            $mutation_before = (float)$record->begin_stock;
+            $b_qty = $actual_upload_qty + $mutation_before;
             $i_qty = (float)$record->qty_in;
             $o_qty = (float)$record->qty_out;
             $e_qty = ($b_qty + $i_qty) - $o_qty;
