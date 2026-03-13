@@ -492,3 +492,6 @@ add Specification ([d1a2cbe9](https://github.com/hilmanf11/erp_bpi/commit/d1a2cb
 
 ### [2026-03-11]
 - **Rizki Puji**: Fixing: grand total report Details Inventory FG STD Actual ([ed9672a2](https://github.com/hilmanf11/erp_bpi/commit/ed9672a29499a75ff8efbea31a93e2023d587ea9))
+
+### [2026-03-13]
+- **Rizki Puji**: Fixing: actual qty from upload on report Detail Inventory WIP STD Actual ([d9254dcb](https://github.com/hilmanf11/erp_bpi/commit/d9254dcbc64174595ae9cfacf8a932c0c39b8e58))
