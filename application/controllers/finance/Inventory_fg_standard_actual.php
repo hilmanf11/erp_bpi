@@ -1937,7 +1937,7 @@ class Inventory_fg_standard_actual extends CI_Controller
             $act_out_adj    = $record->qty_out_adj * $act_price;
 
             $html .= '  <tr>
-                    <td style="text-align:center">' . $no . '</td>
+                    <td style="text-align:center">' . $no++ . '</td>
                     <td style="mso-number-format:\@;">' . $record->number . '</td>
                     <td style="mso-number-format:\@;">' . $record->name . '</td>
                     <td>' . $record->uom . '</td>
@@ -2205,6 +2205,8 @@ class Inventory_fg_standard_actual extends CI_Controller
 
     public function print_detail($option = "")
     {
+        set_time_limit(300);
+
         if (!$this->db->table_exists('inventory_fg_actual')) {
             echo "<pre> Database Error: Tabel Inventory FG Actual not found! Please contact admin.</pre>";
             return false;
@@ -2525,6 +2527,21 @@ class Inventory_fg_standard_actual extends CI_Controller
             'e_qty' => 0, 'e_std' => 0, 'e_act' => 0,
         ];
 
+        // OPTIMASI: Get All Data Receipts
+        $all_receipts = $this->db->query("SELECT f.*, c.name as username, e.packing_date as trans_date, e.item_fg_id
+            FROM scan_item_receipts_fg f
+            JOIN checksheets e ON e.number = f.checksheet_number
+            LEFT JOIN users c ON f.created_by = c.username
+            WHERE e.packing_date BETWEEN '$filter_from' AND '$filter_to'")
+            ->result();
+
+        // Mapping data berdasarkan item_fg_id agar mudah diakses di dalam loop
+        $receipts_by_item = [];
+        foreach ($all_receipts as $r) {
+            $receipts_by_item[$r->item_fg_id][] = $r;
+        }
+
+
         foreach ($records as $record) {
             $item_fg_id  = $record->id;
             $currency = $record->standard_currency;
@@ -2565,7 +2582,7 @@ class Inventory_fg_standard_actual extends CI_Controller
 
 
             $html .= '  <tr>
-                    <td style="text-align:center">' . $no . '</td>
+                    <td style="text-align:center">' . $no++ . '</td>
                     <td colspan="3" style="mso-number-format:\@;">' . $record->number . '</td>
                     <td colspan="2" style="mso-number-format:\@;">' . $record->name . '</td>
                     <td>' . $record->uom . '</td>
@@ -2618,12 +2635,16 @@ class Inventory_fg_standard_actual extends CI_Controller
 
 
             // DETAILS
+            /** OPTIMASI: dipindah ke sebelum loop karena error Maximum execution time of 120 seconds 
             $receipts = $this->crud->query("SELECT f.*, c.name as username, e.packing_date as trans_date, 'RECEIPT FG' AS receipt_type
                     FROM scan_item_receipts_fg f
                     JOIN checksheets e ON e.number = f.checksheet_number
                     LEFT JOIN users c ON f.created_by = c.username
                     WHERE e.item_fg_id = '$item_fg_id' 
                     and DATE_FORMAT(e.packing_date, '%Y-%m-%d') between '$filter_from' and '$filter_to'");
+            */
+            // Get data dari array hasi mapping
+            $receipts = isset($receipts_by_item[$item_fg_id]) ? $receipts_by_item[$item_fg_id] : [];
 
             $receiptsNB = $this->crud->query("SELECT f.*, u.name as username ,f.packing_date as trans_date,'NEW BARCODE FG' AS receipt_type
                     FROM new_barcode_fg a
@@ -2675,7 +2696,7 @@ class Inventory_fg_standard_actual extends CI_Controller
             // Gabungkan data receipts
             foreach ($receipts as $receipt) {
                 $all_data[] = [
-                    'type'      => $receipt->receipt_type,
+                    'type'      => $receipt->type,
                     'username'  => $receipt->username,
                     'date'      => $receipt->trans_date,
                     'wo_no'     => $receipt->wo_no,
@@ -2934,8 +2955,6 @@ class Inventory_fg_standard_actual extends CI_Controller
             $grandtotals['e_qty'] += $running_qty_bal;
             $grandtotals['e_std'] += ($running_qty_bal * $std_price);
             $grandtotals['e_act'] += ($running_qty_bal * $act_price);
-
-            $no++;
         }
 
        $html .= '<tfooter>
