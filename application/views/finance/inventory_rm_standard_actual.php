@@ -303,7 +303,12 @@
     function openUploadList() {
         $('#dlg_upload_list').dialog('open').dialog('center');
         
-        // Aktifkan filter pada datagrid
+        $('#dg_upload_list').datagrid({
+            method: 'post',
+            remoteFilter: true,     // filter hit ke URL backend
+            clientPaging: false,    // pagination dilakukan di server
+        });
+
         $('#dg_upload_list').datagrid('enableFilter', [
             {
                 field:'qty',
