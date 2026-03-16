@@ -1306,35 +1306,38 @@ class Inventory_wip_standard_actual extends CI_Controller
             $currency   = $record->standard_currency;
             $rate = 1;
 
-            // standard Price
+            // Get Price
             $std_price = (float)$record->std_price * $rate;
-            $act_price = (float)$record->actual_price * $rate;
+            $act_price = (float)$record->actual_price * 1; // IDR
+
+            // Get QTY
+            $actual_upload_qty = (float)$record->actual_qty;
+            $mutation_before = (float)$record->begin_stock;
+            $b_qty = $actual_upload_qty + $mutation_before;
+
+            $i_qty = (float)$record->qty_actual + $record->qty_wip + $record->subconts_jasa + $record->qty_adj_in;
+            $o_qty = (float)$record->qty_ng_sa + $record->qty_ng_wip + $record->qty_output + $record->qty_rfg + $record->rfg_jasa + $record->qty_adj_out;
+            $e_qty = ($b_qty + $i_qty) - $o_qty;
 
             // Begin
-            $b_qty = (float)$record->actual_qty;
             $b_std_amount = $b_qty * $std_price;
             $b_act_amount = $b_qty * $act_price;
             $b_variance   = $b_act_amount - $b_std_amount;
 
-            $in_qty = $record->qty_actual + $record->qty_wip + $record->subconts_jasa + $record->qty_adj_in;
-            $out_qty = $record->qty_ng_sa + $record->qty_ng_wip + $record->qty_output + $record->qty_rfg + $record->rfg_jasa + $record->qty_adj_out;
+            // IN
+            $i_std_amount = $i_qty * $std_price;
+            $i_act_amount = $i_qty * $act_price;
+            $i_variance   = $i_act_amount - $i_std_amount;
 
-            // In
-            $in_std_amount = $in_qty * $std_price;
-            $in_act_amount = $in_qty * $act_price;
-            $in_variance   = $in_act_amount - $in_std_amount;
-
-            // Out 
-            $out_std_amount = $out_qty * $std_price;
-            $out_act_amount = $out_qty * $act_price;
-            $out_variance   = $out_act_amount - $out_std_amount;
+            // OUT
+            $o_std_amount = $o_qty * $std_price;
+            $o_act_amount = $o_qty * $act_price;
+            $o_variance   = $o_act_amount - $o_std_amount;
 
             // Ending
-            $e_qty = $record->ending_balance;
             $e_std_amount = $e_qty * $std_price;
-            $e_act_p = $act_price;
-            $e_act_amount = ($b_act_amount + $in_act_amount) - $out_act_amount;
-            $e_variance = $e_act_amount - $e_std_amount;
+            $e_act_amount = $e_qty * $act_price;
+            $e_variance   = $e_act_amount - $e_std_amount;
 
             $html .= '  <tr>
                 <td style="text-align:center">' . $no . '</td>
@@ -1350,24 +1353,24 @@ class Inventory_wip_standard_actual extends CI_Controller
                 <td style="text-align:right;">' . number_format($b_act_amount, 2) . '</td>
                 <td style="text-align:right;">' . number_format($b_variance, 2) . '</td>
 
-                <td style="text-align:right;">' . number_format($in_qty, 2) . '</td>
+                <td style="text-align:right;">' . number_format($i_qty, 2) . '</td>
                 <td style="text-align:right;">' . number_format($std_price, 2) . '</td>
-                <td style="text-align:right;">' . number_format($in_std_amount, 2) . '</td>
+                <td style="text-align:right;">' . number_format($i_std_amount, 2) . '</td>
                 <td style="text-align:right;">' . number_format($act_price, 2) . '</td>
-                <td style="text-align:right;">' . number_format($in_act_amount, 2) . '</td>
-                <td style="text-align:right;">' . number_format($in_variance, 2) . '</td>
+                <td style="text-align:right;">' . number_format($i_act_amount, 2) . '</td>
+                <td style="text-align:right;">' . number_format($i_variance, 2) . '</td>
 
-                <td style="text-align:right;">' . number_format($out_qty, 2) . '</td>
+                <td style="text-align:right;">' . number_format($o_qty, 2) . '</td>
                 <td style="text-align:right;">' . number_format($std_price, 2) . '</td>
-                <td style="text-align:right;">' . number_format($out_std_amount, 2) . '</td>
+                <td style="text-align:right;">' . number_format($o_std_amount, 2) . '</td>
                 <td style="text-align:right;">' . number_format($act_price, 2) . '</td>
-                <td style="text-align:right;">' . number_format($out_act_amount, 2) . '</td>
-                <td style="text-align:right;">' . number_format($out_variance, 2) . '</td>
+                <td style="text-align:right;">' . number_format($o_act_amount, 2) . '</td>
+                <td style="text-align:right;">' . number_format($o_variance, 2) . '</td>
 
                 <td style="text-align:right;">' . number_format($record->ending_balance, 2) . '</td>
                 <td style="text-align:right;">' . number_format($std_price, 2) . '</td>
                 <td style="text-align:right;">' . number_format($e_std_amount, 2) . '</td>
-                <td style="text-align:right;">' . number_format($e_act_p, 2) . '</td>
+                <td style="text-align:right;">' . number_format($e_act_amount, 2) . '</td>
                 <td style="text-align:right;">' . number_format($e_act_amount, 2) . '</td>
                 <td style="text-align:right;">' . number_format($e_variance, 2) . '</td>
                 
@@ -1438,13 +1441,13 @@ class Inventory_wip_standard_actual extends CI_Controller
             $total_b_std_amount += $b_std_amount;
             $total_b_act_amount += $b_act_amount;
 
-            $total_i_qty += $in_qty;
-            $total_i_std_amount += $in_std_amount;
-            $total_i_act_amount += $in_act_amount;
+            $total_i_qty += $i_qty;
+            $total_i_std_amount += $i_std_amount;
+            $total_i_act_amount += $i_act_amount;
 
-            $total_o_qty += $out_qty;
-            $total_o_std_amount += $out_std_amount;
-            $total_o_act_amount += $out_act_amount;
+            $total_o_qty += $o_qty;
+            $total_o_std_amount += $o_std_amount;
+            $total_o_act_amount += $o_act_amount;
 
             $total_e_qty += $e_qty;
             $total_e_std_amount += $e_std_amount;
