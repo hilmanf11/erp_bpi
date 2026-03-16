@@ -607,10 +607,16 @@ class Inventory_wip_standard_actual extends CI_Controller
             return 1.0;
         };
 
-        //------------------------------------ GET DATA ----------------------------------//
+        // Get cutoff_date terbaru yang tidak melebihi filter_from
+        $cutoff_data  = $this->db->select('cutoff_date')
+                        ->where('cutoff_date <=', $filter_from)
+                        ->order_by('cutoff_date', 'DESC')
+                        ->limit(1)
+                        ->get('inventory_fg_actual')
+                        ->row();
+        $start_system = ($cutoff_data) ? $cutoff_data->cutoff_date : '2026-01-01';
 
-        // Mengambil tanggal 1 Januari tahun berjalan
-        $dynamic_cutoff = date('Y-01-01');
+        //------------------------------------ GET DATA ----------------------------------//
 
         $exclude_ids = [
             'BPIFG-INJ08240009',
@@ -866,7 +872,7 @@ class Inventory_wip_standard_actual extends CI_Controller
                         LEFT JOIN (
                             SELECT item_fg_id, SUM(qty) AS qty_balance_wip
                             FROM wip_balances_fg
-                            WHERE trans_date >= '$dynamic_cutoff'
+                            WHERE trans_date >= '$start_system'
                             GROUP BY item_fg_id
                         ) e ON a.id = e.item_fg_id
 
@@ -874,7 +880,7 @@ class Inventory_wip_standard_actual extends CI_Controller
                         LEFT JOIN (
                             SELECT item_fg_id, SUM(qty) AS qty_actual
                             FROM output_productions
-                            WHERE trans_date >= '$dynamic_cutoff' AND trans_date < '$filter_from'
+                            WHERE trans_date >= '$start_system' AND trans_date < '$filter_from'
                             $where_shift
                             GROUP BY item_fg_id
                         ) c ON a.id = c.item_fg_id
@@ -882,7 +888,7 @@ class Inventory_wip_standard_actual extends CI_Controller
                         LEFT JOIN (
                             SELECT item_fg_id, SUM(qty_wip) AS qty_wip
                             FROM output_productions
-                            WHERE trans_date >= '$dynamic_cutoff' AND trans_date < '$filter_from'
+                            WHERE trans_date >= '$start_system' AND trans_date < '$filter_from'
                             $where_shift
                             GROUP BY item_fg_id
                         ) c2 ON a.id = c2.item_fg_id
@@ -902,7 +908,7 @@ class Inventory_wip_standard_actual extends CI_Controller
                                     SUM(qty) AS qty_actual,
                                     SUM(qty_wip) AS qty_wip
                                 FROM output_productions
-                                WHERE trans_date >= '$dynamic_cutoff'
+                                WHERE trans_date >= '$start_system'
                                 AND trans_date < '$filter_from'
                                 $where_shift
                                 GROUP BY item_fg_id
@@ -917,7 +923,7 @@ class Inventory_wip_standard_actual extends CI_Controller
                                 SELECT DISTINCT ax.item_fg_id, ax.workorder, ax.period, ax.qty_wo
                                 FROM supply_sheets ax
                                 JOIN item_fg ay ON ax.item_fg_id = ay.id
-                                WHERE ax.request_date >= '$dynamic_cutoff' AND ax.request_date < '$filter_from'
+                                WHERE ax.request_date >= '$start_system' AND ax.request_date < '$filter_from'
                                 AND ay.status_subcont = 'YES' AND ay.subcont_type = 'Jasa'
                             ) aa
                             GROUP BY aa.item_fg_id
@@ -933,7 +939,7 @@ class Inventory_wip_standard_actual extends CI_Controller
                                     SUM(a.qty) AS qty_rfg
                                 FROM scan_item_receipts_fg a
                                 JOIN checksheets b ON b.number = a.checksheet_number
-                                WHERE DATE_FORMAT(b.packing_date, '%Y-%m-%d') >= '$dynamic_cutoff'
+                                WHERE DATE_FORMAT(b.packing_date, '%Y-%m-%d') >= '$start_system'
                                 AND DATE_FORMAT(b.packing_date, '%Y-%m-%d') < '$filter_from'
                                 AND b.status_subcont = 'NO'
                                 $where_shift_b
@@ -953,7 +959,7 @@ class Inventory_wip_standard_actual extends CI_Controller
                                 FROM (
                                     SELECT DISTINCT document, item_fg_id, qty_product 
                                     FROM item_ng 
-                                    WHERE trans_date >= '$dynamic_cutoff' AND trans_date < '$filter_from'
+                                    WHERE trans_date >= '$start_system' AND trans_date < '$filter_from'
                                     $where_shift
                                     AND kind LIKE 'Ng Process Production'
                                 ) aa 
@@ -967,7 +973,7 @@ class Inventory_wip_standard_actual extends CI_Controller
                             SELECT item_fg_id, SUM(qty) AS qty_in_no_checksheet
                             FROM scan_item_receipts_fg
                             WHERE type = 'NBFG'
-                            AND packing_date >= '$dynamic_cutoff'
+                            AND packing_date >= '$start_system'
                             AND packing_date < '$filter_from'
                             GROUP BY item_fg_id
                         ) ga ON a.id = ga.item_fg_id
@@ -977,7 +983,7 @@ class Inventory_wip_standard_actual extends CI_Controller
                             FROM transaction_fg
                             WHERE transaction_kind = 'IN'
                             AND transaction_type = 'RECEIPT FG'
-                            AND request_date >= '$dynamic_cutoff'
+                            AND request_date >= '$start_system'
                             AND request_date < '$filter_from'
                             GROUP BY item_fg_id
                         ) gb ON a.id = gb.item_fg_id
@@ -986,7 +992,7 @@ class Inventory_wip_standard_actual extends CI_Controller
                             SELECT item_fg_id, SUM(qty) AS qty_in_wip_receipt
                             FROM wip_receipts
                             WHERE division = 'MTS'
-                            AND trans_date >= '$dynamic_cutoff' 
+                            AND trans_date >= '$start_system' 
                             AND trans_date < '$filter_from'
                             GROUP BY item_fg_id
                         ) gc ON a.id = gc.item_fg_id
@@ -995,7 +1001,7 @@ class Inventory_wip_standard_actual extends CI_Controller
                             SELECT ab.item_fg_id, SUM(aa.qty) AS qty_rfg_jasa
                             FROM scan_item_receipts_fg aa
                             JOIN checksheets ab ON aa.checksheet_number = ab.number
-                            WHERE ab.packing_date >= '$dynamic_cutoff' 
+                            WHERE ab.packing_date >= '$start_system' 
                             AND ab.packing_date < '$filter_from'
                             AND ab.subcont_type = 'Jasa'
                             $where_shift_ab
@@ -1005,7 +1011,7 @@ class Inventory_wip_standard_actual extends CI_Controller
                         LEFT JOIN (
                             SELECT item_fg_id, SUM(qty) AS qty_adj_in
                             FROM wip_adjustment_fg
-                            WHERE request_date >= '$dynamic_cutoff' 
+                            WHERE request_date >= '$start_system' 
                             AND request_date < '$filter_from'
                             AND transaction_type = 'ADJ IN'
                             GROUP BY item_fg_id
@@ -1014,7 +1020,7 @@ class Inventory_wip_standard_actual extends CI_Controller
                         LEFT JOIN (
                             SELECT item_fg_id, SUM(qty) AS qty_adj_out
                             FROM wip_adjustment_fg
-                            WHERE request_date >= '$dynamic_cutoff' 
+                            WHERE request_date >= '$start_system' 
                             AND request_date < '$filter_from'
                             AND transaction_type = 'ADJ OUT'
                             GROUP BY item_fg_id
@@ -1023,7 +1029,7 @@ class Inventory_wip_standard_actual extends CI_Controller
                         LEFT JOIN (
                             SELECT item_fg_id, SUM(qty) AS qty_ng_wip
                             FROM wip_adjustment_fg
-                            WHERE request_date >= '$dynamic_cutoff' 
+                            WHERE request_date >= '$start_system' 
                             AND request_date < '$filter_from'
                             AND transaction_type = 'NG WIP'
                             GROUP BY item_fg_id
@@ -1301,32 +1307,32 @@ class Inventory_wip_standard_actual extends CI_Controller
             $rate = 1;
 
             // standard Price
-            $std_p = (float)$record->std_price * $rate;
-            $act_p = (float)$record->actual_price * $rate;
+            $std_price = (float)$record->std_price * $rate;
+            $act_price = (float)$record->actual_price * $rate;
 
             // Begin
             $b_qty = (float)$record->actual_qty;
-            $b_std_amount = $b_qty * $std_p;
-            $b_act_amount = $b_qty * $act_p;
+            $b_std_amount = $b_qty * $std_price;
+            $b_act_amount = $b_qty * $act_price;
             $b_variance   = $b_act_amount - $b_std_amount;
 
             $in_qty = $record->qty_actual + $record->qty_wip + $record->subconts_jasa + $record->qty_adj_in;
             $out_qty = $record->qty_ng_sa + $record->qty_ng_wip + $record->qty_output + $record->qty_rfg + $record->rfg_jasa + $record->qty_adj_out;
 
             // In
-            $in_std_amount = $in_qty * $std_p;
-            $in_act_amount = $in_qty * $act_p;
+            $in_std_amount = $in_qty * $std_price;
+            $in_act_amount = $in_qty * $act_price;
             $in_variance   = $in_act_amount - $in_std_amount;
 
             // Out 
-            $out_std_amount = $out_qty * $std_p;
-            $out_act_amount = $out_qty * $act_p;
+            $out_std_amount = $out_qty * $std_price;
+            $out_act_amount = $out_qty * $act_price;
             $out_variance   = $out_act_amount - $out_std_amount;
 
             // Ending
             $e_qty = $record->ending_balance;
-            $e_std_amount = $e_qty * $std_p;
-            $e_act_p = $act_p;
+            $e_std_amount = $e_qty * $std_price;
+            $e_act_p = $act_price;
             $e_act_amount = ($b_act_amount + $in_act_amount) - $out_act_amount;
             $e_variance = $e_act_amount - $e_std_amount;
 
@@ -1338,28 +1344,28 @@ class Inventory_wip_standard_actual extends CI_Controller
                 <td colspan="2">' . $record->division . '</td>
 
                 <td style="text-align:right;">' . number_format($b_qty, 2) . '</td>
-                <td style="text-align:right;">' . number_format($std_p, 2) . '</td>
+                <td style="text-align:right;">' . number_format($std_price, 2) . '</td>
                 <td style="text-align:right;">' . number_format($b_std_amount, 2) . '</td>
-                <td style="text-align:right;">' . number_format($act_p, 2) . '</td>
+                <td style="text-align:right;">' . number_format($act_price, 2) . '</td>
                 <td style="text-align:right;">' . number_format($b_act_amount, 2) . '</td>
                 <td style="text-align:right;">' . number_format($b_variance, 2) . '</td>
 
                 <td style="text-align:right;">' . number_format($in_qty, 2) . '</td>
-                <td style="text-align:right;">' . number_format($std_p, 2) . '</td>
+                <td style="text-align:right;">' . number_format($std_price, 2) . '</td>
                 <td style="text-align:right;">' . number_format($in_std_amount, 2) . '</td>
-                <td style="text-align:right;">' . number_format($act_p, 2) . '</td>
+                <td style="text-align:right;">' . number_format($act_price, 2) . '</td>
                 <td style="text-align:right;">' . number_format($in_act_amount, 2) . '</td>
                 <td style="text-align:right;">' . number_format($in_variance, 2) . '</td>
 
                 <td style="text-align:right;">' . number_format($out_qty, 2) . '</td>
-                <td style="text-align:right;">' . number_format($std_p, 2) . '</td>
+                <td style="text-align:right;">' . number_format($std_price, 2) . '</td>
                 <td style="text-align:right;">' . number_format($out_std_amount, 2) . '</td>
-                <td style="text-align:right;">' . number_format($act_p, 2) . '</td>
+                <td style="text-align:right;">' . number_format($act_price, 2) . '</td>
                 <td style="text-align:right;">' . number_format($out_act_amount, 2) . '</td>
                 <td style="text-align:right;">' . number_format($out_variance, 2) . '</td>
 
                 <td style="text-align:right;">' . number_format($record->ending_balance, 2) . '</td>
-                <td style="text-align:right;">' . number_format($std_p, 2) . '</td>
+                <td style="text-align:right;">' . number_format($std_price, 2) . '</td>
                 <td style="text-align:right;">' . number_format($e_std_amount, 2) . '</td>
                 <td style="text-align:right;">' . number_format($e_act_p, 2) . '</td>
                 <td style="text-align:right;">' . number_format($e_act_amount, 2) . '</td>
@@ -1367,64 +1373,64 @@ class Inventory_wip_standard_actual extends CI_Controller
                 
 
                 <td style="text-align:right;">' . number_format($record->qty_actual, 2) . '</td>
-                <td style="text-align:right;">' . number_format($std_p, 2) . '</td>
-                <td style="text-align:right;">' . number_format($std_p * $record->qty_actual, 2) . '</td>
-                <td style="text-align:right;">' . number_format($act_p, 2) . '</td>
-                <td style="text-align:right;">' . number_format($act_p * $record->qty_actual, 2) . '</td>
+                <td style="text-align:right;">' . number_format($std_price, 2) . '</td>
+                <td style="text-align:right;">' . number_format($std_price * $record->qty_actual, 2) . '</td>
+                <td style="text-align:right;">' . number_format($act_price, 2) . '</td>
+                <td style="text-align:right;">' . number_format($act_price * $record->qty_actual, 2) . '</td>
                 
                 <td style="text-align:right;">' . number_format($record->qty_wip, 2) . '</td>
-                <td style="text-align:right;">' . number_format($std_p, 2) . '</td>
-                <td style="text-align:right;">' . number_format($std_p * $record->qty_wip, 2) . '</td>
-                <td style="text-align:right;">' . number_format($act_p, 2) . '</td>
-                <td style="text-align:right;">' . number_format($act_p * $record->qty_wip, 2) . '</td>
+                <td style="text-align:right;">' . number_format($std_price, 2) . '</td>
+                <td style="text-align:right;">' . number_format($std_price * $record->qty_wip, 2) . '</td>
+                <td style="text-align:right;">' . number_format($act_price, 2) . '</td>
+                <td style="text-align:right;">' . number_format($act_price * $record->qty_wip, 2) . '</td>
                 
                 <td style="text-align:right;">' . number_format($record->subconts_jasa, 2) . '</td>
-                <td style="text-align:right;">' . number_format($std_p, 2) . '</td>
-                <td style="text-align:right;">' . number_format($std_p * $record->subconts_jasa, 2) . '</td>
-                <td style="text-align:right;">' . number_format($act_p, 2) . '</td>
-                <td style="text-align:right;">' . number_format($act_p * $record->subconts_jasa, 2) . '</td>
+                <td style="text-align:right;">' . number_format($std_price, 2) . '</td>
+                <td style="text-align:right;">' . number_format($std_price * $record->subconts_jasa, 2) . '</td>
+                <td style="text-align:right;">' . number_format($act_price, 2) . '</td>
+                <td style="text-align:right;">' . number_format($act_price * $record->subconts_jasa, 2) . '</td>
 
                 <td style="text-align:right;">' . number_format($record->qty_adj_in, 2) . '</td>
-                <td style="text-align:right;">' . number_format($std_p, 2) . '</td>
-                <td style="text-align:right;">' . number_format($std_p * $record->qty_adj_in, 2) . '</td>
-                <td style="text-align:right;">' . number_format($act_p, 2) . '</td>
-                <td style="text-align:right;">' . number_format($act_p * $record->qty_adj_in, 2) . '</td>
+                <td style="text-align:right;">' . number_format($std_price, 2) . '</td>
+                <td style="text-align:right;">' . number_format($std_price * $record->qty_adj_in, 2) . '</td>
+                <td style="text-align:right;">' . number_format($act_price, 2) . '</td>
+                <td style="text-align:right;">' . number_format($act_price * $record->qty_adj_in, 2) . '</td>
 
                 <td style="text-align:right;">' . number_format($record->qty_ng_sa, 2) . '</td>
-                <td style="text-align:right;">' . number_format($std_p, 2) . '</td>
-                <td style="text-align:right;">' . number_format($std_p * $record->qty_ng_sa, 2) . '</td>
-                <td style="text-align:right;">' . number_format($act_p, 2) . '</td>
-                <td style="text-align:right;">' . number_format($act_p * $record->qty_ng_sa, 2) . '</td>
+                <td style="text-align:right;">' . number_format($std_price, 2) . '</td>
+                <td style="text-align:right;">' . number_format($std_price * $record->qty_ng_sa, 2) . '</td>
+                <td style="text-align:right;">' . number_format($act_price, 2) . '</td>
+                <td style="text-align:right;">' . number_format($act_price * $record->qty_ng_sa, 2) . '</td>
 
                 <td style="text-align:right;">' . number_format($record->qty_ng_wip, 2) . '</td>
-                <td style="text-align:right;">' . number_format($std_p, 2) . '</td>
-                <td style="text-align:right;">' . number_format($std_p * $record->qty_ng_wip, 2) . '</td>
-                <td style="text-align:right;">' . number_format($act_p, 2) . '</td>
-                <td style="text-align:right;">' . number_format($act_p * $record->qty_ng_wip, 2) . '</td>
+                <td style="text-align:right;">' . number_format($std_price, 2) . '</td>
+                <td style="text-align:right;">' . number_format($std_price * $record->qty_ng_wip, 2) . '</td>
+                <td style="text-align:right;">' . number_format($act_price, 2) . '</td>
+                <td style="text-align:right;">' . number_format($act_price * $record->qty_ng_wip, 2) . '</td>
 
                 <td style="text-align:right;">' . number_format($record->qty_output, 2) . '</td>
-                <td style="text-align:right;">' . number_format($std_p, 2) . '</td>
-                <td style="text-align:right;">' . number_format($std_p * $record->qty_output, 2) . '</td>
-                <td style="text-align:right;">' . number_format($act_p, 2) . '</td>
-                <td style="text-align:right;">' . number_format($act_p * $record->qty_output, 2) . '</td>
+                <td style="text-align:right;">' . number_format($std_price, 2) . '</td>
+                <td style="text-align:right;">' . number_format($std_price * $record->qty_output, 2) . '</td>
+                <td style="text-align:right;">' . number_format($act_price, 2) . '</td>
+                <td style="text-align:right;">' . number_format($act_price * $record->qty_output, 2) . '</td>
 
                 <td style="text-align:right;">' . number_format($record->qty_rfg, 2) . '</td>
-                <td style="text-align:right;">' . number_format($std_p, 2) . '</td>
-                <td style="text-align:right;">' . number_format($std_p * $record->qty_rfg, 2) . '</td>
-                <td style="text-align:right;">' . number_format($act_p, 2) . '</td>
-                <td style="text-align:right;">' . number_format($act_p * $record->qty_rfg, 2) . '</td>
+                <td style="text-align:right;">' . number_format($std_price, 2) . '</td>
+                <td style="text-align:right;">' . number_format($std_price * $record->qty_rfg, 2) . '</td>
+                <td style="text-align:right;">' . number_format($act_price, 2) . '</td>
+                <td style="text-align:right;">' . number_format($act_price * $record->qty_rfg, 2) . '</td>
 
                 <td style="text-align:right;">' . number_format($record->rfg_jasa, 2) . '</td>
-                <td style="text-align:right;">' . number_format($std_p, 2) . '</td>
-                <td style="text-align:right;">' . number_format($std_p * $record->rfg_jasa, 2) . '</td>
-                <td style="text-align:right;">' . number_format($act_p, 2) . '</td>
-                <td style="text-align:right;">' . number_format($act_p * $record->rfg_jasa, 2) . '</td>
+                <td style="text-align:right;">' . number_format($std_price, 2) . '</td>
+                <td style="text-align:right;">' . number_format($std_price * $record->rfg_jasa, 2) . '</td>
+                <td style="text-align:right;">' . number_format($act_price, 2) . '</td>
+                <td style="text-align:right;">' . number_format($act_price * $record->rfg_jasa, 2) . '</td>
 
                 <td style="text-align:right;">' . number_format($record->qty_adj_out, 2) . '</td>
-                <td style="text-align:right;">' . number_format($std_p, 2) . '</td>
-                <td style="text-align:right;">' . number_format($std_p * $record->qty_adj_out, 2) . '</td>
-                <td style="text-align:right;">' . number_format($act_p, 2) . '</td>
-                <td style="text-align:right;">' . number_format($act_p * $record->qty_adj_out, 2) . '</td>
+                <td style="text-align:right;">' . number_format($std_price, 2) . '</td>
+                <td style="text-align:right;">' . number_format($std_price * $record->qty_adj_out, 2) . '</td>
+                <td style="text-align:right;">' . number_format($act_price, 2) . '</td>
+                <td style="text-align:right;">' . number_format($act_price * $record->qty_adj_out, 2) . '</td>
             </tr>';
 
 
@@ -1446,44 +1452,44 @@ class Inventory_wip_standard_actual extends CI_Controller
 
             // Details
             $total_qty_actual += ($record->qty_actual);
-            $total_std_qty_actual += ($std_p * $record->qty_actual);
-            $total_act_qty_actual += ($act_p * $record->qty_actual);
+            $total_std_qty_actual += ($std_price * $record->qty_actual);
+            $total_act_qty_actual += ($act_price * $record->qty_actual);
             
             $total_qty_wip += ($record->qty_wip);
-            $total_std_qty_wip += ($std_p * $record->qty_wip);
-            $total_act_qty_wip += ($act_p * $record->qty_wip);
+            $total_std_qty_wip += ($std_price * $record->qty_wip);
+            $total_act_qty_wip += ($act_price * $record->qty_wip);
             
             $total_subconts_jasa += ($record->subconts_jasa);
-            $total_std_subconts_jasa += ($std_p * $record->subconts_jasa);
-            $total_act_subconts_jasa += ($act_p * $record->subconts_jasa);
+            $total_std_subconts_jasa += ($std_price * $record->subconts_jasa);
+            $total_act_subconts_jasa += ($act_price * $record->subconts_jasa);
 
             $total_qty_adj_in += ($record->qty_adj_in);
-            $total_std_qty_adj_in += ($std_p * $record->qty_adj_in);
-            $total_act_qty_adj_in += ($act_p * $record->qty_adj_in);
+            $total_std_qty_adj_in += ($std_price * $record->qty_adj_in);
+            $total_act_qty_adj_in += ($act_price * $record->qty_adj_in);
 
             $total_qty_ng_sa += ($record->qty_ng_sa);
-            $total_std_qty_ng_sa += ($std_p * $record->qty_ng_sa);
-            $total_act_qty_ng_sa += ($act_p * $record->qty_ng_sa);
+            $total_std_qty_ng_sa += ($std_price * $record->qty_ng_sa);
+            $total_act_qty_ng_sa += ($act_price * $record->qty_ng_sa);
 
             $total_qty_ng_wip += ($record->qty_ng_wip);
-            $total_std_qty_ng_wip += ($std_p * $record->qty_ng_wip);
-            $total_act_qty_ng_wip += ($act_p * $record->qty_ng_wip);
+            $total_std_qty_ng_wip += ($std_price * $record->qty_ng_wip);
+            $total_act_qty_ng_wip += ($act_price * $record->qty_ng_wip);
 
             $total_qty_output += ($record->qty_output);
-            $total_std_qty_output += ($std_p * $record->qty_output);
-            $total_act_qty_output += ($act_p * $record->qty_output);
+            $total_std_qty_output += ($std_price * $record->qty_output);
+            $total_act_qty_output += ($act_price * $record->qty_output);
 
             $total_qty_rfg += ($record->qty_rfg);
-            $total_std_qty_rfg += ($std_p * $record->qty_rfg);
-            $total_act_qty_rfg += ($act_p * $record->qty_rfg);
+            $total_std_qty_rfg += ($std_price * $record->qty_rfg);
+            $total_act_qty_rfg += ($act_price * $record->qty_rfg);
 
             $total_rfg_jasa += ($record->rfg_jasa);
-            $total_std_rfg_jasa += ($std_p * $record->rfg_jasa);
-            $total_act_rfg_jasa += ($act_p * $record->rfg_jasa);
+            $total_std_rfg_jasa += ($std_price * $record->rfg_jasa);
+            $total_act_rfg_jasa += ($act_price * $record->rfg_jasa);
 
             $total_qty_adj_out += ($record->qty_adj_out);
-            $total_std_qty_adj_out += ($std_p * $record->qty_adj_out);
-            $total_act_qty_adj_out += ($act_p * $record->qty_adj_out);
+            $total_std_qty_adj_out += ($std_price * $record->qty_adj_out);
+            $total_act_qty_adj_out += ($act_price * $record->qty_adj_out);
             
             $no++;
         }
@@ -3115,6 +3121,8 @@ class Inventory_wip_standard_actual extends CI_Controller
 
     public function print_detail($option = "") 
     {
+        set_time_limit(300);
+
         if (!$this->db->table_exists('inventory_wip_actual')) {
             echo "<pre> Database Error: Tabel Inventory WIP Actual not found! Please contact admin.</pre>";
             return false;
@@ -3152,10 +3160,16 @@ class Inventory_wip_standard_actual extends CI_Controller
             return 1.0;
         };
 
-        //------------------------------------ GET DATA ----------------------------------//
+        // Get cutoff_date terbaru yang tidak melebihi filter_from
+        $cutoff_data  = $this->db->select('cutoff_date')
+                        ->where('cutoff_date <=', $filter_from)
+                        ->order_by('cutoff_date', 'DESC')
+                        ->limit(1)
+                        ->get('inventory_fg_actual')
+                        ->row();
+        $start_system = ($cutoff_data) ? $cutoff_data->cutoff_date : '2026-01-01';
 
-        // Mengambil tanggal 1 Januari tahun berjalan
-        $dynamic_cutoff = date('Y-01-01');
+        //------------------------------------ GET DATA ----------------------------------//
 
         $exclude_ids = [
             'BPIFG-INJ08240009',
@@ -3411,7 +3425,7 @@ class Inventory_wip_standard_actual extends CI_Controller
                         LEFT JOIN (
                             SELECT item_fg_id, SUM(qty) AS qty_balance_wip
                             FROM wip_balances_fg
-                            WHERE trans_date >= '$dynamic_cutoff'
+                            WHERE trans_date >= '$start_system'
                             GROUP BY item_fg_id
                         ) e ON a.id = e.item_fg_id
 
@@ -3419,7 +3433,7 @@ class Inventory_wip_standard_actual extends CI_Controller
                         LEFT JOIN (
                             SELECT item_fg_id, SUM(qty) AS qty_actual
                             FROM output_productions
-                            WHERE trans_date >= '$dynamic_cutoff' AND trans_date < '$filter_from'
+                            WHERE trans_date >= '$start_system' AND trans_date < '$filter_from'
                             $where_shift
                             GROUP BY item_fg_id
                         ) c ON a.id = c.item_fg_id
@@ -3427,7 +3441,7 @@ class Inventory_wip_standard_actual extends CI_Controller
                         LEFT JOIN (
                             SELECT item_fg_id, SUM(qty_wip) AS qty_wip
                             FROM output_productions
-                            WHERE trans_date >= '$dynamic_cutoff' AND trans_date < '$filter_from'
+                            WHERE trans_date >= '$start_system' AND trans_date < '$filter_from'
                             $where_shift
                             GROUP BY item_fg_id
                         ) c2 ON a.id = c2.item_fg_id
@@ -3447,7 +3461,7 @@ class Inventory_wip_standard_actual extends CI_Controller
                                     SUM(qty) AS qty_actual,
                                     SUM(qty_wip) AS qty_wip
                                 FROM output_productions
-                                WHERE trans_date >= '$dynamic_cutoff'
+                                WHERE trans_date >= '$start_system'
                                 AND trans_date < '$filter_from'
                                 $where_shift
                                 GROUP BY item_fg_id
@@ -3462,7 +3476,7 @@ class Inventory_wip_standard_actual extends CI_Controller
                                 SELECT DISTINCT ax.item_fg_id, ax.workorder, ax.period, ax.qty_wo
                                 FROM supply_sheets ax
                                 JOIN item_fg ay ON ax.item_fg_id = ay.id
-                                WHERE ax.request_date >= '$dynamic_cutoff' AND ax.request_date < '$filter_from'
+                                WHERE ax.request_date >= '$start_system' AND ax.request_date < '$filter_from'
                                 AND ay.status_subcont = 'YES' AND ay.subcont_type = 'Jasa'
                             ) aa
                             GROUP BY aa.item_fg_id
@@ -3478,7 +3492,7 @@ class Inventory_wip_standard_actual extends CI_Controller
                                     SUM(a.qty) AS qty_rfg
                                 FROM scan_item_receipts_fg a
                                 JOIN checksheets b ON b.number = a.checksheet_number
-                                WHERE DATE_FORMAT(b.packing_date, '%Y-%m-%d') >= '$dynamic_cutoff'
+                                WHERE DATE_FORMAT(b.packing_date, '%Y-%m-%d') >= '$start_system'
                                 AND DATE_FORMAT(b.packing_date, '%Y-%m-%d') < '$filter_from'
                                 AND b.status_subcont = 'NO'
                                 $where_shift_b
@@ -3498,7 +3512,7 @@ class Inventory_wip_standard_actual extends CI_Controller
                                 FROM (
                                     SELECT DISTINCT document, item_fg_id, qty_product 
                                     FROM item_ng 
-                                    WHERE trans_date >= '$dynamic_cutoff' AND trans_date < '$filter_from'
+                                    WHERE trans_date >= '$start_system' AND trans_date < '$filter_from'
                                     $where_shift
                                     AND kind LIKE 'Ng Process Production'
                                 ) aa 
@@ -3512,7 +3526,7 @@ class Inventory_wip_standard_actual extends CI_Controller
                             SELECT item_fg_id, SUM(qty) AS qty_in_no_checksheet
                             FROM scan_item_receipts_fg
                             WHERE type = 'NBFG'
-                            AND packing_date >= '$dynamic_cutoff'
+                            AND packing_date >= '$start_system'
                             AND packing_date < '$filter_from'
                             GROUP BY item_fg_id
                         ) ga ON a.id = ga.item_fg_id
@@ -3522,7 +3536,7 @@ class Inventory_wip_standard_actual extends CI_Controller
                             FROM transaction_fg
                             WHERE transaction_kind = 'IN'
                             AND transaction_type = 'RECEIPT FG'
-                            AND request_date >= '$dynamic_cutoff'
+                            AND request_date >= '$start_system'
                             AND request_date < '$filter_from'
                             GROUP BY item_fg_id
                         ) gb ON a.id = gb.item_fg_id
@@ -3531,7 +3545,7 @@ class Inventory_wip_standard_actual extends CI_Controller
                             SELECT item_fg_id, SUM(qty) AS qty_in_wip_receipt
                             FROM wip_receipts
                             WHERE division = 'MTS'
-                            AND trans_date >= '$dynamic_cutoff' 
+                            AND trans_date >= '$start_system' 
                             AND trans_date < '$filter_from'
                             GROUP BY item_fg_id
                         ) gc ON a.id = gc.item_fg_id
@@ -3540,7 +3554,7 @@ class Inventory_wip_standard_actual extends CI_Controller
                             SELECT ab.item_fg_id, SUM(aa.qty) AS qty_rfg_jasa
                             FROM scan_item_receipts_fg aa
                             JOIN checksheets ab ON aa.checksheet_number = ab.number
-                            WHERE ab.packing_date >= '$dynamic_cutoff' 
+                            WHERE ab.packing_date >= '$start_system' 
                             AND ab.packing_date < '$filter_from'
                             AND ab.subcont_type = 'Jasa'
                             $where_shift_ab
@@ -3550,7 +3564,7 @@ class Inventory_wip_standard_actual extends CI_Controller
                         LEFT JOIN (
                             SELECT item_fg_id, SUM(qty) AS qty_adj_in
                             FROM wip_adjustment_fg
-                            WHERE request_date >= '$dynamic_cutoff' 
+                            WHERE request_date >= '$start_system' 
                             AND request_date < '$filter_from'
                             AND transaction_type = 'ADJ IN'
                             GROUP BY item_fg_id
@@ -3559,7 +3573,7 @@ class Inventory_wip_standard_actual extends CI_Controller
                         LEFT JOIN (
                             SELECT item_fg_id, SUM(qty) AS qty_adj_out
                             FROM wip_adjustment_fg
-                            WHERE request_date >= '$dynamic_cutoff' 
+                            WHERE request_date >= '$start_system' 
                             AND request_date < '$filter_from'
                             AND transaction_type = 'ADJ OUT'
                             GROUP BY item_fg_id
@@ -3568,7 +3582,7 @@ class Inventory_wip_standard_actual extends CI_Controller
                         LEFT JOIN (
                             SELECT item_fg_id, SUM(qty) AS qty_ng_wip
                             FROM wip_adjustment_fg
-                            WHERE request_date >= '$dynamic_cutoff' 
+                            WHERE request_date >= '$start_system' 
                             AND request_date < '$filter_from'
                             AND transaction_type = 'NG WIP'
                             GROUP BY item_fg_id
@@ -3581,7 +3595,7 @@ class Inventory_wip_standard_actual extends CI_Controller
             AND a.id NOT IN ($exclude_str)
             ORDER BY a.number";
 
-        $records = $this->crud->query($query_main);
+        $records = $this->db->query($query_main)->result();
 
         //------------------------------------ HTML OUTPUT ----------------------------------//
         $html = '<html><head><title>Inventory Report</title></head>';
@@ -3696,32 +3710,32 @@ class Inventory_wip_standard_actual extends CI_Controller
             $rate = 1;
 
             // standard Price
-            $std_p = (float)$record->std_price * $rate;
-            $act_p = (float)$record->actual_price * $rate;
+            $std_price = (float)$record->std_price * $rate;
+            $act_price = (float)$record->actual_price * $rate;
 
             // Begin
             $b_qty = (float)$record->actual_qty;
-            $b_std_amount = $b_qty * $std_p;
-            $b_act_amount = $b_qty * $act_p;
+            $b_std_amount = $b_qty * $std_price;
+            $b_act_amount = $b_qty * $act_price;
             $b_variance   = $b_act_amount - $b_std_amount;
 
             $in_qty = $record->qty_actual + $record->qty_wip + $record->subconts_jasa + $record->qty_adj_in;
             $out_qty = $record->qty_ng_sa + $record->qty_ng_wip + $record->qty_output + $record->qty_rfg + $record->rfg_jasa + $record->qty_adj_out;
 
             // In
-            $in_std_amount = $in_qty * $std_p;
-            $in_act_amount = $in_qty * $act_p;
+            $in_std_amount = $in_qty * $std_price;
+            $in_act_amount = $in_qty * $act_price;
             $in_variance   = $in_act_amount - $in_std_amount;
 
             // Out 
-            $out_std_amount = $out_qty * $std_p;
-            $out_act_amount = $out_qty * $act_p;
+            $out_std_amount = $out_qty * $std_price;
+            $out_act_amount = $out_qty * $act_price;
             $out_variance   = $out_act_amount - $out_std_amount;
 
             // Ending
             $e_qty = $record->ending_balance;
-            $e_std_amount = $e_qty * $std_p;
-            $e_act_p = $act_p;
+            $e_std_amount = $e_qty * $std_price;
+            $e_act_p = $act_price;
             $e_act_amount = ($b_act_amount + $in_act_amount) - $out_act_amount;
             $e_variance = $e_act_amount - $e_std_amount;
 
@@ -3736,25 +3750,25 @@ class Inventory_wip_standard_actual extends CI_Controller
                 <td>' . number_format($rate, 2) . '</td>
 
                 <td style="text-align:right;">' . number_format($b_qty, 2) . '</td>
-                <td style="text-align:right;">' . number_format($std_p, 2) . '</td>
+                <td style="text-align:right;">' . number_format($std_price, 2) . '</td>
                 <td style="text-align:right;">' . number_format($b_std_amount, 2) . '</td>
-                <td style="text-align:right;">' . number_format($act_p, 2) . '</td>
+                <td style="text-align:right;">' . number_format($act_price, 2) . '</td>
                 <td style="text-align:right;">' . number_format($b_act_amount, 2) . '</td>
 
                 <td style="text-align:right;">' . number_format($in_qty, 2) . '</td>
-                <td style="text-align:right;">' . number_format($std_p, 2) . '</td>
+                <td style="text-align:right;">' . number_format($std_price, 2) . '</td>
                 <td style="text-align:right;">' . number_format($in_std_amount, 2) . '</td>
-                <td style="text-align:right;">' . number_format($act_p, 2) . '</td>
+                <td style="text-align:right;">' . number_format($act_price, 2) . '</td>
                 <td style="text-align:right;">' . number_format($in_act_amount, 2) . '</td>
 
                 <td style="text-align:right;">' . number_format($out_qty, 2) . '</td>
-                <td style="text-align:right;">' . number_format($std_p, 2) . '</td>
+                <td style="text-align:right;">' . number_format($std_price, 2) . '</td>
                 <td style="text-align:right;">' . number_format($out_std_amount, 2) . '</td>
-                <td style="text-align:right;">' . number_format($act_p, 2) . '</td>
+                <td style="text-align:right;">' . number_format($act_price, 2) . '</td>
                 <td style="text-align:right;">' . number_format($out_act_amount, 2) . '</td>
 
                 <td style="text-align:right;">' . number_format($record->ending_balance, 2) . '</td>
-                <td style="text-align:right;">' . number_format($std_p, 2) . '</td>
+                <td style="text-align:right;">' . number_format($std_price, 2) . '</td>
                 <td style="text-align:right;">' . number_format($e_std_amount, 2) . '</td>
                 <td style="text-align:right;">' . number_format($e_act_p, 2) . '</td>
                 <td style="text-align:right;">' . number_format($e_act_amount, 2) . '</td>
@@ -3778,12 +3792,12 @@ class Inventory_wip_standard_actual extends CI_Controller
             $total_e_act_amount += $e_act_amount;
 
 
-            // DETAILS
+            // DETAILS            
             $grandtotals = [
-                'begin_qty' => 0, 'begin_std_amt' => 0, 'begin_act_amt' => 0,
-                'in_qty'    => 0, 'in_std_amt'    => 0, 'in_act_amt'    => 0,
-                'out_qty'   => 0, 'out_std_amt'   => 0, 'out_act_amt'   => 0,
-                'end_qty'   => 0, 'end_std_amt'   => 0, 'end_act_amt'   => 0
+                'b_qty' => 0, 'b_std' => 0, 'b_act' => 0,
+                'i_qty' => 0, 'i_std' => 0, 'i_act' => 0,
+                'o_qty' => 0, 'o_std' => 0, 'o_act' => 0,
+                'e_qty' => 0, 'e_std' => 0, 'e_act' => 0,
             ];
 
             $html .= '<tr>
@@ -3850,16 +3864,6 @@ class Inventory_wip_standard_actual extends CI_Controller
                 </thead>';
                 
             // GET TRANSACTIONS
-            $uploads = $this->crud->query("SELECT a.*,
-                    a.cutoff_date as trans_date,
-                    SUM(a.qty) as actual_qty,
-                    MAX(a.price) actual_price,
-                    a.created_by as username,
-                    'UPLOADS' AS receipt_type
-                FROM inventory_wip_actual a 
-                WHERE a.item_fg_id = '$item_fg_id' 
-                GROUP BY a.item_fg_id, a.id");
-
             $dataActualProductions = $this->crud->query("SELECT *, created_by as username 
                 FROM output_productions 
                 where item_fg_id = '$item_fg_id' 
@@ -3932,17 +3936,6 @@ class Inventory_wip_standard_actual extends CI_Controller
 
             // Proses data 
             $all_data = [];
-
-            foreach ($uploads as $up) {
-                $all_data[] = [
-                    'type'     => 'UPLOADS',
-                    'date'     => $up->trans_date,
-                    'wo_no'    => '-',
-                    'qty_in'   => 0, // 0 karena biasanya sudah masuk ke Saldo Awal (Begin)
-                    'qty_out'  => 0,
-                    'username' => $up->username,
-                ];
-            }
 
             foreach ($dataActualProductions as $actualProduction) {
                 $all_data[] = [
@@ -4053,84 +4046,151 @@ class Inventory_wip_standard_actual extends CI_Controller
                 return strtotime($a['date']) - strtotime($b['date']);
             });
 
-            // Generate HTML
+            // PERBAIKAN: Saldo awal baris detail adalah saldo upload + mutasi carry-over sebelum filter_from
+            $actual_upload_qty = (float)$record->actual_qty;
+            $mutation_before   = (float)$record->begin_stock;
+            $running_qty_bal = $actual_upload_qty + $mutation_before;
+
+            // Akumulasi ke Grand Total (Kolom BEGIN)
+            $grandtotals['b_qty'] += $running_qty_bal;
+            $grandtotals['b_std'] += ($running_qty_bal * $std_price);
+            $grandtotals['b_act'] += ($running_qty_bal * $act_price);
+
+            $is_upload_month = (date('Y-m', strtotime($start_system)) == date('Y-m', strtotime($filter_from)));
+
+            // Tampilkan Baris Kuning HANYA jika ini adalah bulan Upload
+            if ($is_upload_month) {
+                $html .= '<tr style="background: #fffbf1">
+                    <td></td>
+                    <td style="text-align:center">#</td>
+                    <td>UPLOAD</td>
+                    <td>' . $record->upload_by . '</td>
+                    <td>' . $record->upload_date . '</td>
+                    <td>BEGIN BALANCE (UPLOAD)</td>
+                    <td style="text-align:right;">' . number_format($std_price, 2) . '</td>
+                    <td style="text-align:center;">' . $record->upload_currency . '</td>
+                    <td style="text-align:right;">' . number_format($rate, 2) . '</td>
+
+                    <td style="text-align:right;">' . number_format($actual_upload_qty, 2) . '</td>
+                    <td style="text-align:right;">' . number_format($std_price, 2) . '</td>
+                    <td style="text-align:right;">' . number_format($actual_upload_qty * $std_price, 2) . '</td>
+                    <td style="text-align:right;">' . number_format($act_price, 2) . '</td>
+                    <td style="text-align:right;">' . number_format($actual_upload_qty * $act_price, 2) . '</td>
+
+                    <td style="text-align:right;">0.00</td>
+                    <td style="text-align:right;">0.00</td>
+                    <td style="text-align:right;">0.00</td>
+                    <td style="text-align:right;">0.00</td>
+                    <td style="text-align:right;">0.00</td>
+
+                    <td style="text-align:right;">0.00</td>
+                    <td style="text-align:right;">0.00</td>
+                    <td style="text-align:right;">0.00</td>
+                    <td style="text-align:right;">0.00</td>
+                    <td style="text-align:right;">0.00</td>
+
+                    <td style="text-align:right;">' . number_format($actual_upload_qty, 2) . '</td>
+                    <td style="text-align:right;">' . number_format($std_price, 2) . '</td>
+                    <td style="text-align:right;">' . number_format($actual_upload_qty * $std_price, 2) . '</td>
+                    <td style="text-align:right;">' . number_format($act_price, 2) . '</td>
+                    <td style="text-align:right;">' . number_format($actual_upload_qty * $act_price, 2) . '</td>
+                </tr>';
+            }
+
             $nod = 1;
-            $begin = $record->actual_qty;
-            $balance = $begin;
-
             foreach ($all_data as $data) {
-                $balance += $data['qty_in'] - $data['qty_out'];
+                $trans_in  = (float)$data['qty_in'];
+                $trans_out = (float)$data['qty_out'];
+                
+                // Simpan saldo sebelum transaksi untuk kolom "BEGIN" di baris ini
+                $row_begin_qty = $running_qty_bal;
+                
+                // Update Running Balance untuk baris ini
+                $running_qty_bal += ($trans_in - $trans_out);
+
                 $html .= '  <tr>
-                                <td></td>
-                                <td style="text-align:center">' . $nod . '</td>
-                                <td>' . $data['type'] . '</td>
-                                <td>' . $data['username'] . '</td>
-                                <td>' . $data['date'] . '</td>
-                                <td>' . $data['wo_no'] . '</td>
-                                <td style="text-align:right;">' . number_format($std_p, 2) . '</td>
-                                <td style="text-align:center;">' . $currency . '</td>
-                                <td style="text-align:right;">' . number_format($rate, 2) . '</td>
+                        <td></td>
+                        <td style="text-align:center">' . $nod . '</td>
+                        <td>' . $data['type'] . '</td>
+                        <td>' . $data['username'] . '</td>
+                        <td>' . $data['date'] . '</td>
+                        <td>' . $data['wo_no'] . '</td>
+                        <td style="text-align:right;">' . number_format($std_price, 2) . '</td>
+                        <td style="text-align:center;">' . $currency . '</td>
+                        <td style="text-align:right;">' . number_format($rate, 2) . '</td>
 
-
-                                <td style="text-align:right;">' . number_format($begin, 2) . '</td>
-                                <td style="text-align:right;">' . number_format($std_p, 2) . '</td>
-                                <td style="text-align:right;">' . number_format(($std_p) * $begin, 2) . '</td>
-                                <td style="text-align:right;">' . number_format($act_p, 2) . '</td>
-                                <td style="text-align:right;">' . number_format(($act_p) * $begin, 2) . '</td>
-                                
-                                <td style="text-align:right;">' . number_format($data['qty_in'], 2) . '</td>
-                                <td style="text-align:right;">' . number_format($std_p, 2) . '</td>
-                                <td style="text-align:right;">' . number_format(($std_p) * $data['qty_in'], 2) . '</td>
-                                <td style="text-align:right;">' . number_format($act_p, 2) . '</td>
-                                <td style="text-align:right;">' . number_format(($act_p) * $data['qty_in'], 2) . '</td>
-                                
-                                <td style="text-align:right;">' . number_format($data['qty_out'], 2) . '</td>
-                                <td style="text-align:right;">' . number_format($std_p, 2) . '</td>
-                                <td style="text-align:right;">' . number_format(($std_p) * $data['qty_out'], 2) . '</td>
-                                <td style="text-align:right;">' . number_format($act_p, 2) . '</td>
-                                <td style="text-align:right;">' . number_format(($act_p) * $data['qty_out'], 2) . '</td>
-                                
-                                <td style="text-align:right;">' . number_format($balance, 2) . '</td>
-                                <td style="text-align:right;">' . number_format($std_p, 2) . '</td>
-                                <td style="text-align:right;">' . number_format(($std_p) * $balance, 2) . '</td>
-                                <td style="text-align:right;">' . number_format($act_p, 2) . '</td>
-                                <td style="text-align:right;">' . number_format(($act_p) * $balance, 2) . '</td>
-                            </tr>';
-
-                $begin = $balance;
+                        <td style="text-align:right;">' . number_format($row_begin_qty, 2) . '</td>
+                        <td style="text-align:right;">' . number_format($std_price, 2) . '</td>
+                        <td style="text-align:right;">' . number_format($row_begin_qty * $std_price, 2) . '</td>
+                        <td style="text-align:right;">' . number_format($act_price, 2) . '</td>
+                        <td style="text-align:right;">' . number_format($row_begin_qty * $act_price, 2) . '</td>
+                        
+                        <td style="text-align:right;">' . number_format($trans_in, 2) . '</td>
+                        <td style="text-align:right;">' . number_format($std_price, 2) . '</td>
+                        <td style="text-align:right;">' . number_format($trans_in * $std_price, 2) . '</td>
+                        <td style="text-align:right;">' . number_format($act_price, 2) . '</td>
+                        <td style="text-align:right;">' . number_format($trans_in * $act_price, 2) . '</td>
+                        
+                        <td style="text-align:right;">' . number_format($trans_out, 2) . '</td>
+                        <td style="text-align:right;">' . number_format($std_price, 2) . '</td>
+                        <td style="text-align:right;">' . number_format($trans_out * $std_price, 2) . '</td>
+                        <td style="text-align:right;">' . number_format($act_price, 2) . '</td>
+                        <td style="text-align:right;">' . number_format($trans_out * $act_price, 2) . '</td>
+                        
+                        <td style="text-align:right; font-weight:bold;">' . number_format($running_qty_bal, 2) . '</td>
+                        <td style="text-align:right;">' . number_format($std_price, 2) . '</td>
+                        <td style="text-align:right;">' . number_format($running_qty_bal * $std_price, 2) . '</td>
+                        <td style="text-align:right;">' . number_format($act_price, 2) . '</td>
+                        <td style="text-align:right;">' . number_format($running_qty_bal * $act_price, 2) . '</td>
+                    </tr>';
                 $nod++;
+
+                // Akumulasi ke Grand Total (IN & OUT)
+                $grandtotals['i_qty'] += $trans_in;
+                $grandtotals['i_std'] += ($trans_in * $std_price);
+                $grandtotals['i_act'] += ($trans_in * $act_price);
+                $grandtotals['o_qty'] += $trans_out;
+                $grandtotals['o_std'] += ($trans_out * $std_price);
+                $grandtotals['o_act'] += ($trans_out * $act_price);
             }
             
             $no++;
+
+            // Akumulasi ke Grand Total (Kolom ENDING/BALANCE)
+            $grandtotals['e_qty'] += $running_qty_bal;
+            $grandtotals['e_std'] += ($running_qty_bal * $std_price);
+            $grandtotals['e_act'] += ($running_qty_bal * $act_price);
         }
 
 
-        $html .= '<tr style="background-color: #eee; font-weight: bold;">
-                <td colspan="8" style="text-align:right;">GRAND TOTAL</td>
-                <td style="text-align:right;">'.number_format($total_b_qty, 2).'</td>
+        $html .= '<tfooter>
+            <tr style="background:#eee; font-weight:bold;">
+                <td colspan="9" align="right">GRAND TOTAL</td>
+                <td align="right">' . number_format($grandtotals['b_qty'], 2) . '</td>
                 <td></td>
-                <td style="text-align:right;">'.number_format($total_b_std_amount, 2).'</td>
+                <td align="right">' . number_format($grandtotals['b_std'], 2) . '</td>
                 <td></td>
-                <td style="text-align:right;">'.number_format($total_b_act_amount, 2).'</td>
+                <td align="right">' . number_format($grandtotals['b_act'], 2) . '</td>
 
-                <td style="text-align:right;">'.number_format($total_i_qty, 2).'</td>
+                <td align="right">' . number_format($grandtotals['i_qty'], 2) . '</td>
                 <td></td>
-                <td style="text-align:right;">'.number_format($total_i_std_amount, 2).'</td>
+                <td align="right">' . number_format($grandtotals['i_std'], 2) . '</td>
                 <td></td>
-                <td style="text-align:right;">'.number_format($total_i_act_amount, 2).'</td>
+                <td align="right">' . number_format($grandtotals['i_act'], 2) . '</td>
 
-                <td style="text-align:right;">'.number_format($total_o_qty, 2).'</td>
+                <td align="right">' . number_format($grandtotals['o_qty'], 2) . '</td>
                 <td></td>
-                <td style="text-align:right;">'.number_format($total_o_std_amount, 2).'</td>
+                <td align="right">' . number_format($grandtotals['o_std'], 2) . '</td>
                 <td></td>
-                <td style="text-align:right;">'.number_format($total_o_act_amount, 2).'</td>
+                <td align="right">' . number_format($grandtotals['o_act'], 2) . '</td>
 
-                <td style="text-align:right;">'.number_format($total_e_qty, 2).'</td>
+                <td align="right">' . number_format($grandtotals['e_qty'], 2) . '</td>
                 <td></td>
-                <td style="text-align:right;">'.number_format($total_e_std_amount, 2).'</td>
+                <td align="right">' . number_format($grandtotals['e_std'], 2) . '</td>
                 <td></td>
-                <td style="text-align:right;">'.number_format($total_e_act_amount, 2).'</td>
-            </tr>';
+                <td align="right">' . number_format($grandtotals['e_act'], 2) . '</td>
+            </tr>
+        </tfooter>';
 
         $html .= '</table></body></html>';
         echo $html;
