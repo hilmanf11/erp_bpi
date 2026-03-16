@@ -612,7 +612,7 @@ class Inventory_wip_standard_actual extends CI_Controller
                         ->where('cutoff_date <=', $filter_from)
                         ->order_by('cutoff_date', 'DESC')
                         ->limit(1)
-                        ->get('inventory_fg_actual')
+                        ->get('inventory_wip_actual')
                         ->row();
         $start_system = ($cutoff_data) ? $cutoff_data->cutoff_date : '2026-01-01';
 
@@ -1042,7 +1042,7 @@ class Inventory_wip_standard_actual extends CI_Controller
             AND a.id NOT IN ($exclude_str)
             ORDER BY a.number";
 
-        $records = $this->crud->query($query_main);
+        $records = $this->db->query($query_main)->result();
 
         //------------------------------------ HTML OUTPUT ----------------------------------//
         $html = '<html><head><title>Inventory Report</title></head>';
@@ -2756,7 +2756,7 @@ class Inventory_wip_standard_actual extends CI_Controller
                     <th width="80">QTY</th>
                     <th width="80">PRICE</th>
                     <th width="80">AMOUNT</th>
-                </tr';
+                </tr>';
         $no = 1;
         $totalBeginStock = 0;
         $totalBeginAmount = 0;
@@ -3165,7 +3165,7 @@ class Inventory_wip_standard_actual extends CI_Controller
                         ->where('cutoff_date <=', $filter_from)
                         ->order_by('cutoff_date', 'DESC')
                         ->limit(1)
-                        ->get('inventory_fg_actual')
+                        ->get('inventory_wip_actual')
                         ->row();
         $start_system = ($cutoff_data) ? $cutoff_data->cutoff_date : '2026-01-01';
 
