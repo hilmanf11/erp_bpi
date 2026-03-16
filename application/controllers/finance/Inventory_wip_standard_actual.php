@@ -293,28 +293,47 @@ class Inventory_wip_standard_actual extends CI_Controller
 
     public function get_upload_list()
     {
-        $page = $this->input->post('page') ?? 1;
-        $rows = $this->input->post('rows') ?? 10;
+        // Get parameter POST dari EasyUI
+        $page   = $this->input->post('page') ?? 1;
+        $rows   = $this->input->post('rows') ?? 10;
         $offset = ($page - 1) * $rows;
 
-        // Filter hanya yang berasal dari upload
+        // Get filter yang diketik user
+        $filterRules = $this->input->post('filterRules');
+
         $this->db->from('inventory_wip_actual');
         $this->db->where('upload', 'YES');
         $this->db->where('deleted', 0);
 
-        // Hitung total untuk pagination
+        // --- PROSES FILTER DARI SEARCH BOX ---
+        if (!empty($filterRules)) {
+            $rules = json_decode($filterRules);
+            foreach ($rules as $rule) {
+                $field = $rule->field;
+                $value = $rule->value;
+
+                if ($value != '') {
+                    // Gunakan like untuk pencarian string/part number
+                    $this->db->like($field, $value);
+                }
+            }
+        }
+
+        // Hitung total data SETELAH filter (Gunakan FALSE agar query tidak reset)
         $total = $this->db->count_all_results('', FALSE);
 
-        // Ambil data dengan limit
+        // Get data sesuai pagination
         $this->db->order_by('upload_date', 'DESC');
         $this->db->limit($rows, $offset);
         $data = $this->db->get()->result();
 
         $result = [
-            "total" => $total,
-            "rows" => $data
+            "total" => (int)$total,
+            "page"  => (int)$page,
+            "rows"  => $data,
         ];
 
+        header('Content-Type: application/json');
         echo json_encode($result);
     }
     // ----- END UPLOAD FUNCTIONS ----- 
