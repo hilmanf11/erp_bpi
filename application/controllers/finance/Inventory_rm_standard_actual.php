@@ -643,6 +643,25 @@ class Inventory_rm_standard_actual extends CI_Controller
         // Config Logo & Name
         $config = $this->db->get('config')->row();
 
+        // Get Exchange Rates
+        $rates = $this->db->get_where('standard_exchange_rates', ['currency_from' => 'USD'])->result();
+        $get_rate = function($date) use ($rates) {
+            if (empty($date)) return 1.0;
+            foreach ($rates as $r) {
+                if ($date >= $r->start_date && $date <= $r->end_date) return (float)$r->middle;
+            }
+            return 1.0;
+        };
+
+        // Get cutoff_date terbaru yang tidak melebihi filter_from
+        $cutoff_data  = $this->db->select('cutoff_date')
+                        ->where('cutoff_date <=', $filter_from)
+                        ->order_by('cutoff_date', 'DESC')
+                        ->limit(1)
+                        ->get('inventory_rm_actual')
+                        ->row();
+        $start_system = ($cutoff_data) ? $cutoff_data->cutoff_date : '2026-01-01';
+
         //------------------------------------ OPTIMIZED QUERY ----------------------------------//
         $query = "SELECT
                 a.id, 
@@ -714,15 +733,20 @@ class Inventory_rm_standard_actual extends CI_Controller
             LEFT JOIN (SELECT b.item_rm_id, SUM(a.qty) AS qty_scan_in, MAX(b.receipt_date) as max_receipt_date FROM scan_item_receipts a JOIN purchase_order_receipts b ON a.receipt_id = b.receipt_id WHERE b.receipt_date BETWEEN '$filter_from' AND '$filter_to' GROUP BY b.item_rm_id) d ON a.id = d.item_rm_id
 
             -- Begin Stock Lookup
-            LEFT JOIN (SELECT a.id, a.number, ((COALESCE(b.qty_scan_in, 0) + COALESCE(c.qty_os_rm, 0) + COALESCE(d.qty_trans_rm_in, 0) + COALESCE(e.return_qty, 0) + COALESCE(h.qty_scan_bpm, 0)) - (COALESCE(f.qty_issued, 0) + COALESCE(g.qty_trans_rm_out, 0))) AS begin_stock
+            -- PERBAIKAN: Carry Over Calculation (Sejak Cutoff s/d H-1 Filter From)
+            LEFT JOIN (
+                SELECT 
+                    a.id, 
+                    (COALESCE(b.q_in,0) + COALESCE(c.q_in,0) + COALESCE(d.q_in,0) + COALESCE(e.q_in,0) + COALESCE(h.q_in,0)) - 
+                    (COALESCE(f.q_out,0) + COALESCE(g.q_out,0)) as begin_stock
                 FROM item_rm a
-                LEFT JOIN (SELECT b.item_rm_id, SUM(a.qty) AS qty_scan_in FROM scan_item_receipts a JOIN purchase_order_receipts b ON a.receipt_id = b.receipt_id WHERE b.receipt_date < '$filter_from'  GROUP BY b.item_rm_id) b ON a.id = b.item_rm_id
-                LEFT JOIN (SELECT item_rm_id, SUM(qty) AS qty_os_rm FROM os_rm WHERE trans_date < '$filter_from' GROUP BY item_rm_id) c ON a.id = c.item_rm_id
-                LEFT JOIN (SELECT item_rm_id, SUM(qty) AS qty_trans_rm_in FROM transaction_rm WHERE request_date < '$filter_from' AND transaction_kind = 'IN' GROUP BY item_rm_id) d ON a.id = d.item_rm_id
-                LEFT JOIN (SELECT a.item_rm_id, SUM(c.qty) as return_qty FROM return_materials a JOIN return_material_labels b ON a.return_id = b.return_id JOIN scan_item_receipts c ON a.return_id = c.receipt_id AND b.label_no = c.label_no WHERE a.return_date < '$filter_from' GROUP BY a.item_rm_id) e ON a.id = e.item_rm_id
-                LEFT JOIN (SELECT item_rm_id, SUM(qty) AS qty_issued FROM issued_material_details WHERE created_date < '$filter_from' GROUP BY item_rm_id) f ON a.id = f.item_rm_id
-                LEFT JOIN (SELECT item_rm_id, SUM(qty) AS qty_trans_rm_out FROM transaction_rm WHERE request_date < '$filter_from' AND transaction_kind = 'OUT' GROUP BY item_rm_id) g ON a.id = g.item_rm_id
-                LEFT JOIN (SELECT item_rm_id, SUM(qty) AS qty_scan_bpm FROM scan_item_bpm WHERE DATE_FORMAT(request_date, '%Y-%m-%d') < '$filter_from' GROUP BY item_rm_id) h ON a.id = h.item_rm_id
+                LEFT JOIN (SELECT b.item_rm_id, SUM(a.qty) as q_in FROM scan_item_receipts a JOIN purchase_order_receipts b ON a.receipt_id = b.receipt_id WHERE b.receipt_date >= '$start_system' AND b.receipt_date < '$filter_from' GROUP BY 1) b ON a.id = b.item_rm_id
+                LEFT JOIN (SELECT x.item_rm_id, SUM(x.qty) as q_in FROM os_rm x WHERE x.trans_date >= '$start_system' AND x.trans_date < '$filter_from' GROUP BY 1) c ON a.id = c.item_rm_id
+                LEFT JOIN (SELECT x.item_rm_id, SUM(x.qty) as q_in FROM transaction_rm x WHERE x.transaction_kind = 'IN' AND x.request_date >= '$start_system' AND x.request_date < '$filter_from' GROUP BY 1) d ON a.id = d.item_rm_id
+                LEFT JOIN (SELECT x.item_rm_id, SUM(c.qty) as q_in FROM return_materials x JOIN scan_item_receipts c ON x.return_id = c.receipt_id WHERE x.return_date >= '$start_system' AND x.return_date < '$filter_from' GROUP BY 1) e ON a.id = e.item_rm_id
+                LEFT JOIN (SELECT x.item_rm_id, SUM(x.qty) as q_out FROM issued_material_details x WHERE x.created_date >= '$start_system' AND x.created_date < '$filter_from' GROUP BY 1) f ON a.id = f.item_rm_id
+                LEFT JOIN (SELECT x.item_rm_id, SUM(x.qty) as q_out FROM transaction_rm x WHERE x.transaction_kind = 'OUT' AND x.request_date >= '$start_system' AND x.request_date < '$filter_from' GROUP BY 1) g ON a.id = g.item_rm_id
+                LEFT JOIN (SELECT x.item_rm_id, SUM(x.qty) as q_in FROM scan_item_bpm x WHERE x.request_date >= '$start_system' AND x.request_date < '$filter_from' GROUP BY 1) h ON a.id = h.item_rm_id
             ) x ON a.id = x.id
 
             -- BPM
@@ -1422,13 +1446,8 @@ class Inventory_rm_standard_actual extends CI_Controller
     }
 
     // -------------- PRINT DETAIL (INVENTORY RM) -------------
-    public function print_detail($option = "")
+    public function print_detail_without_actual($option = "")
     {
-        if (!$this->db->table_exists('inventory_rm_actual')) {
-            echo "<pre> Database Error: Tabel Inventory RM Actual not found! Please contact admin.</pre>";
-            return false;
-        }
-
         if ($option == "excel") {
             $format  = date("Ymd");
             header("Content-type: application/vnd-ms-excel");
@@ -1451,25 +1470,6 @@ class Inventory_rm_standard_actual extends CI_Controller
         $this->db->from('config');
         $config = $this->db->get()->row();
 
-        // Get Exchange Rates
-        $rates = $this->db->get_where('standard_exchange_rates', ['currency_from' => 'USD'])->result();
-        $get_rate = function($date) use ($rates) {
-            if (empty($date)) return 1.0;
-            foreach ($rates as $r) {
-                if ($date >= $r->start_date && $date <= $r->end_date) return (float)$r->middle;
-            }
-            return 1.0;
-        };
-
-        // Get cutoff_date terbaru yang tidak melebihi filter_from
-        $cutoff_data  = $this->db->select('cutoff_date')
-                        ->where('cutoff_date <=', $filter_from)
-                        ->order_by('cutoff_date', 'DESC')
-                        ->limit(1)
-                        ->get('inventory_rm_actual')
-                        ->row();
-        $start_system = ($cutoff_data) ? $cutoff_data->cutoff_date : '2026-01-01';
-
         //------------------------------------ GET DATA AND CALCULATIONS ----------------------------------//
 
         $query_main = "SELECT 
@@ -1487,10 +1487,6 @@ class Inventory_rm_standard_actual extends CI_Controller
                 (COALESCE(d.qty_scan_in, 0) + COALESCE(e.qty_os_rm, 0) + COALESCE(f.qty_trans_rm_in, 0) + COALESCE(g.return_qty, 0) + COALESCE(k.qty_scan_bpm, 0)) AS qty_in,
                 (COALESCE(h.qty_issued, 0) + COALESCE(i.qty_trans_rm_out, 0)) AS qty_out,
 
-                -- ACTUAL FROM UPLOAD
-                COALESCE(actual.price, 0) as actual_price, 
-                COALESCE(actual.qty, 0) as actual_qty,
-
                 -- ACTUAL AMOUNT CALCULATION (JOIN TO PO)
                 COALESCE(calc_in.total_actual_in, 0) as actual_amount_in,
                 COALESCE(calc_out.total_actual_out, 0) as actual_amount_out,
@@ -1499,10 +1495,6 @@ class Inventory_rm_standard_actual extends CI_Controller
             JOIN item_familys b ON a.item_family_id = b.id AND b.number != 'FG'
             JOIN item_categories c ON a.item_category_id = c.id
             LEFT JOIN item_family_subs subfam ON a.item_sub_family_id = subfam.id
-
-            -- get actual from upload
-            LEFT JOIN inventory_rm_actual actual ON (actual.part_no = a.number OR actual.item_rm_id = a.id)
-                AND actual.cutoff_date = '$start_system' -- perbaikan perhitungan begin qty per bulan
 
             -- get specification 
             LEFT JOIN (
@@ -1670,31 +1662,57 @@ class Inventory_rm_standard_actual extends CI_Controller
 
         foreach ($records as $record) {
             $item_rm_id = $record->id;
+
+            // Exchange Rate Logic
             $rate = 1;
+            if ($record->currency == 'USD' && !empty($record->receipt_date)) {
+                $rate_query = $this->db->get_where('standard_exchange_rates', [
+                    'currency_from' => 'USD',
+                    'start_date <=' => $record->receipt_date,
+                    'end_date >=' => $record->receipt_date
+                ])->row();
+                $rate = $rate_query ? $rate_query->middle : 1;
+            }
 
             // Summary Calculations
             $std_price_rate = $record->std_price * $rate;
-            $act_price_rate = $record->actual_price * 1; // IDR
+            
+            $begin_qty = $record->begin_stock;
+            $begin_std_amt = $begin_qty * $std_price_rate;
+            $begin_act_amt = $begin_std_amt; // Sesuai permintaan: begin actual sama dengan std
+            $begin_act_price = $std_price_rate; // Sesuai permintaan: begin actual sama dengan std
 
-            $begin_qty       = (float)$record->actual_qty;  // Begin Balance = Qty dari upload saja
-            $begin_std_amt   = $begin_qty * $std_price_rate;
-            $begin_act_price = $act_price_rate;
-            $begin_act_amt   = $begin_qty * $begin_act_price;
+            $in_qty = $record->qty_in;
+            $in_std_amt = $in_qty * $std_price_rate;
+            $in_act_amt = $record->actual_amount_in * $rate;
 
-            $in_qty          = $record->qty_in;
-            $in_act_price    = $act_price_rate;
-            $in_std_amt      = $in_qty * $std_price_rate;
-            $in_act_amt      = $in_qty * $act_price_rate;
+            $in_act_price = 0;
+            if ($in_qty > 0) {
+                $in_act_price = $in_act_amt / $in_qty;
+            }
 
-            $out_qty         = $record->qty_out;
-            $out_act_price   = $act_price_rate;
-            $out_std_amt     = $out_qty * $std_price_rate;
-            $out_act_amt     = $out_qty * $act_price_rate;
+            $out_qty = $record->qty_out;
+            $out_std_amt = $out_qty * $std_price_rate;
+            $out_act_amt = $record->actual_amount_out * $rate;
+
+            $out_act_price = 0;
+            if ($out_qty > 0) {
+                $out_act_price = $out_act_amt / $out_qty;
+            }
 
             $end_qty = ($begin_qty + $in_qty) - $out_qty;
-            $end_act_price = $act_price_rate;
             $end_std_amt = ($begin_std_amt + $in_std_amt) - $out_std_amt;
             $end_act_amt = ($begin_act_amt + $in_act_amt) - $out_act_amt;
+
+            $end_act_price = 0;
+            if ($end_qty > 0) {
+                $end_act_price = $end_act_amt / $end_qty;
+            }
+
+            // Add to Grand Total
+            foreach ($grandtotals as $key => $val) {
+                $grandtotals[$key] += ${$key};
+            }
 
             $html .= '<tr>
                         <td align="center">'.$no.'</td>
@@ -1732,22 +1750,686 @@ class Inventory_rm_standard_actual extends CI_Controller
                         <td align="right">'.number_format($end_act_price, 2).'</td>
                         <td align="right">'.number_format($end_act_amt, 2).'</td>
                     </tr>';
+            
+            // (Logika Detail Transactions)
+            if ($filter_display == "DETAIL") {
+                // 1. Inisialisasi awal detail produk
+                $nod = 1;
+                $running_qty_bal = (float)$record->begin_stock;
+                $running_act_amt_bal = (float)$record->begin_stock * $std_price_rate; // Begin Amount Actual
+
+                // 2. Kumpulkan semua data transaksi ke dalam satu array
+                if ($filter_trans_type == '') {
+                    //-------------- Awal Query disini----------------------------------//                    
+                    //RECEIPT
+                    $receipts = $this->crud->query("SELECT
+                            a.receipt_date, 
+                            a.bc_kind, 
+                            a.bc_aju, 
+                            a.bc_document, 
+                            a.bc_date, 
+                            SUM(b.qty) as qty_receipt,
+                            MAX(po.price) actual_price_in,
+                            c.name as username
+                        FROM purchase_order_receipts a 
+                        JOIN scan_item_receipts b ON a.receipt_id = b.receipt_id
+                        JOIN users c ON a.created_by = c.username 
+                        LEFT JOIN purchase_orders po ON a.po_no = po.po_no AND a.item_rm_id = po.item_rm_id
+                        WHERE a.item_rm_id = '$item_rm_id' and a.receipt_date between '$filter_from' and '$filter_to'
+                        GROUP BY a.bc_kind, a.bc_aju, a.bc_document, a.bc_date, a.receipt_id");
+
+                    //ISSUED
+                    $issueds = $this->crud->query("SELECT created_by, qty, created_date, label_no, request_no FROM issued_material_details WHERE item_rm_id = '$item_rm_id' and DATE_FORMAT(created_date, '%Y-%m-%d') between '$filter_from' and '$filter_to'");
+
+                    //RETURN
+                    $returns = $this->crud->query("SELECT
+                            a.return_no,
+                            a.return_id,
+                            a.return_name,
+                            a.return_date,
+                            b.label_no,
+                            b.qty,
+                            d.name as username
+                        FROM return_materials a 
+                        JOIN return_material_labels b ON a.return_id = b.return_id
+                        JOIN scan_item_receipts c ON a.return_id = c.receipt_id
+                        JOIN users d ON a.created_by = d.username
+                        WHERE a.item_rm_id = '$item_rm_id' and a.return_date between '$filter_from' and '$filter_to'
+                        GROUP BY b.label_no");
+
+                    // //OS RM
+                    $os_rms = $this->crud->query("SELECT created_by, created_date, qty FROM os_rm WHERE item_rm_id = '$item_rm_id' and DATE_FORMAT(trans_date, '%Y-%m-%d') between '$filter_from' and '$filter_to'");
+
+                    //SCAN BPM
+                    $bpm_scans = $this->crud->query("SELECT 
+                        created_by, 
+                        qty, 
+                        created_date, 
+                        label, 
+                        request_date, 
+                        request_id 
+                        FROM scan_item_bpm 
+                        WHERE item_rm_id = '$item_rm_id' and DATE_FORMAT(request_date, '%Y-%m-%d') between '$filter_from' and '$filter_to'");
+
+                    // // TRANSACTION RM (IN and OUT)
+                    $transactions = $this->crud->query("SELECT
+                            a.request_date,
+                            a.transaction_type,
+                            a.transaction_kind,
+                            a.request_no,
+                            a.qty,
+                            b.name as username
+                        FROM transaction_rm a
+                        JOIN users b ON a.created_by = b.username
+                        WHERE a.item_rm_id = '$item_rm_id' and a.request_date between '$filter_from' and '$filter_to'");
+
+                    //-------------- Akhir query disini----------------------------------//
+
+                    $all_data = [];
+                    $actual_price_in = 0;
+
+                    // --- RECEIPT ---
+                    foreach ($receipts as $r) {
+                        $actual_price_in = $r->actual_price_in;
+
+                        $all_data[] = [
+                            'type' => 'RECEIPT',
+                            'date' => $r->receipt_date,
+                            'username' => $r->username,
+                            'qty_in' => $r->qty_receipt,
+                            'qty_out' => 0,
+                            'actual_price_in' => $actual_price_in,
+                            'doc1' => $r->bc_kind,
+                            'doc2' => $r->bc_aju,
+                            'doc3' => $r->bc_document,
+                            'doc4' => $r->bc_date
+                        ];
+                    }
+
+                    // --- ISSUED ---
+                    foreach ($issueds as $i) {
+                        $user = $this->crud->read("users", [], ["username" => $i->created_by]);
+                        $all_data[] = [
+                            'type' => 'ISSUED',
+                            'date' => $i->created_date,
+                            'username' => $user->name,
+                            'qty_in' => 0,
+                            'qty_out' => $i->qty,
+                            'actual_price_in' => $actual_price_in,
+                            'doc1' => '-',
+                            'doc2' => $i->label_no,
+                            'doc3' => $i->request_no,
+                            'doc4' => '-'
+                        ];
+                    }
+
+                    // --- RETURN ---
+                    foreach ($returns as $r) {
+                        $all_data[] = [
+                            'type' => 'RETURN',
+                            'date' => $r->return_date,
+                            'username' => $r->username,
+                            'qty_in' => $r->qty,
+                            'qty_out' => 0,
+                            'actual_price_in' => $actual_price_in,
+                            'doc1' => '-',
+                            'doc2' => $r->label_no,
+                            'doc3' => $r->return_no,
+                            'doc4' => '-'
+                        ];
+                    }
+
+                    // --- OS RM ---
+                    foreach ($os_rms as $o) {
+                        $user = $this->crud->read("users", [], ["username" => $o->created_by]);
+                        $all_data[] = [
+                            'type' => 'OS RM',
+                            'date' => $o->created_date,
+                            'username' => $user->name,
+                            'qty_in' => $o->qty,
+                            'qty_out' => 0,
+                            'actual_price_in' => $actual_price_in,
+                            'doc1' => '-',
+                            'doc2' => '-',
+                            'doc3' => '-',
+                            'doc4' => '-'
+                        ];
+                    }
+
+                    // --- SCAN BPM ---
+                    foreach ($bpm_scans as $b) {
+                        $user = $this->crud->read("users", [], ["username" => $b->created_by]);
+                        $all_data[] = [
+                            'type' => 'BPM',
+                            'date' => $b->created_date,
+                            'username' => $user->name,
+                            'qty_in' => $b->qty,
+                            'qty_out' => 0,
+                            'actual_price_in' => $actual_price_in,
+                            'doc1' => '-',
+                            'doc2' => $b->label,
+                            'doc3' => $b->request_id,
+                            'doc4' => $b->request_date
+                        ];
+                    }
+
+                    // --- TRANSACTION ---
+                    foreach ($transactions as $t) {
+                        $qty_in = $t->transaction_kind == 'IN' ? $t->qty : 0;
+                        $qty_out = $t->transaction_kind == 'OUT' ? $t->qty : 0;
+
+                        $all_data[] = [
+                            'type' => $t->transaction_type,
+                            'date' => $t->request_date,
+                            'username' => $t->username,
+                            'qty_in' => $qty_in,
+                            'qty_out' => $qty_out,
+                            'actual_price_in' => $actual_price_in,
+                            'doc1' => '-',
+                            'doc2' => '-',
+                            'doc3' => $t->request_no,
+                            'doc4' => '-'
+                        ];
+                    }
+
+                    usort($all_data, function ($a, $b) {
+                        return strtotime($a['date']) - strtotime($b['date']);
+                    });
+                }
+                
+                if (!empty($all_data)) {
+                    // Baris judul detail
+                    $html .= '<tr>
+                                <td colspan="32" style="background:#D1FFC6; font-size: 11px;"><b>DETAIL OF ' . $record->number . ' - ' . $record->name . '</b></td>
+                            </tr>';
+                    $html .= '<thead>
+                            <tr>
+                                <th rowspan="3" width="20"></th>
+                                <th rowspan="3" width="20">No</th>
+                                <th rowspan="3">Trans Type</th>
+                                <th rowspan="3">Created By</th>
+                                <th rowspan="3">Transaction Date</th>
+                                <th rowspan="3">Custom. Kind</th>
+                                <th rowspan="3">Custom. No</th>
+                                <th rowspan="3">Doc. No</th>
+                                <th rowspan="3">Custom. Date</th>
+                                <th rowspan="3">CCY</th>
+                                <th rowspan="3">Price</th>
+                                <th rowspan="3">Rate</th>
+
+                                <th colspan="5">BEGIN</th>
+                                <th colspan="5">IN</th>
+                                <th colspan="5">OUT</th>
+                                <th colspan="5">BALANCE</th>
+                            </tr>
+                            
+                            <tr>
+                                <th width="80" rowspan="2">QTY</th>
+                                <th colspan="2" style="background-color: #D1FFC6;">STANDARD</th>
+                                <th colspan="2" style="background-color: #CFE6F9;">ACTUAL</th>
+                                
+                                <th width="80" rowspan="2">QTY</th>
+                                <th colspan="2" style="background-color: #D1FFC6;">STANDARD</th>
+                                <th colspan="2" style="background-color: #CFE6F9;">ACTUAL</th>
+                                
+                                <th width="80" rowspan="2">QTY</th>
+                                <th colspan="2" style="background-color: #D1FFC6;">STANDARD</th>
+                                <th colspan="2" style="background-color: #CFE6F9;">ACTUAL</th>
+                                
+                                <th width="80" rowspan="2">QTY</th>
+                                <th colspan="2" style="background-color: #D1FFC6;">STANDARD</th>
+                                <th colspan="2" style="background-color: #CFE6F9;">ACTUAL</th>
+                            </tr>
+
+                            <tr>
+                                <th style="background-color: #D1FFC6;">PRICE</th>
+                                <th style="background-color: #D1FFC6;">AMOUNT</th>
+                                <th style="background-color: #CFE6F9;">PRICE</th>
+                                <th style="background-color: #CFE6F9;">AMOUNT</th>
+
+                                <th style="background-color: #D1FFC6;">PRICE</th>
+                                <th style="background-color: #D1FFC6;">AMOUNT</th>
+                                <th style="background-color: #CFE6F9;">PRICE</th>
+                                <th style="background-color: #CFE6F9;">AMOUNT</th>
+                                
+                                <th style="background-color: #D1FFC6;">PRICE</th>
+                                <th style="background-color: #D1FFC6;">AMOUNT</th>
+                                <th style="background-color: #CFE6F9;">PRICE</th>
+                                <th style="background-color: #CFE6F9;">AMOUNT</th>
+                                
+                                <th style="background-color: #D1FFC6;">PRICE</th>
+                                <th style="background-color: #D1FFC6;">AMOUNT</th>
+                                <th style="background-color: #CFE6F9;">PRICE</th>
+                                <th style="background-color: #CFE6F9;">AMOUNT</th>
+                            </tr>
+                        </thead>';
+
+                    foreach ($all_data as $data) {
+                        // Perhitungan Running Balance
+                        $prev_qty = $running_qty_bal;
+                        $prev_amt = $running_act_amt_bal;
+                        
+                        $running_qty_bal += ($data['qty_in'] - $data['qty_out']);
+                        
+                        // Logika Harga Aktual
+                        $row_price = (float)$data['actual_price_in'] > 0 ? (float)$data['actual_price_in'] * $rate : $std_price_rate;
+                        
+                        // Hitung Amount IN dan OUT secara terpisah
+                        $amt_in = $data['qty_in'] * $row_price;
+                        
+                        // Untuk OUT: Menggunakan Moving Average Sederhana (Total Amount / Total Qty)
+                        $amt_out = 0;
+                        if ($data['qty_out'] > 0) {
+                            $average_price = ($prev_qty > 0) ? ($prev_amt / $prev_qty) : $std_price_rate;
+                            $amt_out = $data['qty_out'] * $average_price;
+                        }
+
+                        $running_act_amt_bal += ($amt_in - $amt_out);
+
+                        $html .= '<tr style="background:#fff;">
+                                    <td></td>
+                                    <td align="center">' . $nod . '</td>
+                                    <td>' . $data['type'] . '</td>
+                                    <td>' . $data['username'] . '</td>
+                                    <td align="center">' . date("d-m-Y", strtotime($data['date'])) . '</td>
+                                    <td>' . $data['doc1'] . '</td>
+                                    <td>' . $data['doc2'] . '</td>
+                                    <td>' . $data['doc3'] . '</td>
+                                    <td>' . $data['doc4'] . '</td>
+                                    <td align="center">' . $record->currency . '</td>
+                                    <td align="right">' . number_format($record->std_price, 2) . '</td>
+                                    <td align="right">' . number_format($rate, 2) . '</td>
+
+                                    <td align="right" style="background:#f9f9f9;">' . number_format($prev_qty, 2) . '</td>
+                                    <td align="right" style="background:#f9f9f9;">' . number_format($std_price_rate, 2) . '</td>
+                                    <td align="right" style="background:#f9f9f9;">' . number_format($prev_amt, 2) . '</td>
+                                    <td align="right" style="background:#f9f9f9;">' . number_format($std_price_rate, 2) . '</td>
+                                    <td align="right" style="background:#f9f9f9;">' . number_format($prev_amt, 2) . '</td>
+
+                                    <td align="right" style="background:#efffef;">' . ($data['qty_in'] > 0 ? number_format($data['qty_in'], 2) : '-') . '</td>
+                                    <td align="right" style="background:#efffef;">' . ($data['qty_in'] > 0 ? number_format($std_price_rate, 2) : '-') . '</td>
+                                    <td align="right" style="background:#efffef;">' . ($data['qty_in'] > 0 ? number_format($data['qty_in'] * $std_price_rate, 2) : '-') . '</td>
+                                    <td align="right" style="background:#efffef; font-weight:bold;">' . ($data['qty_in'] > 0 ? number_format($row_price, 2) : '-') . '</td>
+                                    <td align="right" style="background:#efffef; font-weight:bold;">' . ($data['qty_in'] > 0 ? number_format($amt_in, 2) : '-') . '</td>
+
+                                    <td align="right" style="background:#fff2f2;">' . ($data['qty_out'] > 0 ? number_format($data['qty_out'], 2) : '-') . '</td>
+                                    <td align="right" style="background:#fff2f2;">' . ($data['qty_out'] > 0 ? number_format($std_price_rate, 2) : '-') . '</td>
+                                    <td align="right" style="background:#fff2f2;">' . ($data['qty_out'] > 0 ? number_format($data['qty_out'] * $std_price_rate, 2) : '-') . '</td>
+                                    <td align="right" style="background:#fff2f2; font-weight:bold;">' . ($data['qty_out'] > 0 ? number_format($amt_out / $data['qty_out'], 2) : '-') . '</td>
+                                    <td align="right" style="background:#fff2f2; font-weight:bold;">' . ($data['qty_out'] > 0 ? number_format($amt_out, 2) : '-') . '</td>
+
+                                    <td align="right" style="background:#fffbcc;">' . number_format($running_qty_bal, 2) . '</td>
+                                    <td align="right" style="background:#fffbcc;">' . number_format($std_price_rate, 2) . '</td>
+                                    <td align="right" style="background:#fffbcc;">' . number_format($running_qty_bal * $std_price_rate, 2) . '</td>
+                                    <td align="right" style="background:#fffbcc;">-</td>
+                                    <td align="right" style="background:#fffbcc;">' . number_format($running_act_amt_bal, 2) . '</td>
+                                </tr>';
+                        $nod++;
+                    }
+                }
+            }
+
+            $no++;
+        }
+
+        // Grand Total Row
+        $html .= '<tr style="background:#eee; font-weight:bold;">
+                    <td colspan="12" align="right">GRAND TOTAL</td>
+                    <td align="right">'.number_format($grandtotals['begin_qty'], 2).'</td><td></td>
+                    <td align="right">'.number_format($grandtotals['begin_std_amt'], 2).'</td><td></td>
+                    <td align="right">'.number_format($grandtotals['begin_act_amt'], 2).'</td>
+                    
+                    <td align="right">'.number_format($grandtotals['in_qty'], 2).'</td><td></td>
+                    <td align="right">'.number_format($grandtotals['in_std_amt'], 2).'</td><td></td>
+                    <td align="right">'.number_format($grandtotals['in_act_amt'], 2).'</td>
+                    
+                    <td align="right">'.number_format($grandtotals['out_qty'], 2).'</td><td></td>
+                    <td align="right">'.number_format($grandtotals['out_std_amt'], 2).'</td><td></td>
+                    <td align="right">'.number_format($grandtotals['out_act_amt'], 2).'</td>
+                    
+                    <td align="right">'.number_format($grandtotals['end_qty'], 2).'</td><td></td>
+                    <td align="right">'.number_format($grandtotals['end_std_amt'], 2).'</td><td></td>
+                    <td align="right">'.number_format($grandtotals['end_act_amt'], 2).'</td>
+                </tr>';
+
+        $html .= '</table></body></html>';
+        echo $html;
+    }
+
+    public function print_detail($option = "")
+    {
+        if (!$this->db->table_exists('inventory_rm_actual')) {
+            echo "<pre> Database Error: Tabel Inventory RM Actual not found! Please contact admin.</pre>";
+            return false;
+        }
+
+        if ($option == "excel") {
+            $format  = date("Ymd");
+            header("Content-type: application/vnd-ms-excel");
+            header("Content-Disposition: attachment; filename=inventory_rm_standard_actual_$format.xls");
+        }
+
+        $filter_from = $this->input->get('filter_from');
+        $filter_to   = $this->input->get('filter_to');
+        $filter_item_category = $this->input->get('filter_item_category');
+        $filter_item_family = $this->input->get('filter_item_family');
+        $filter_items = $this->input->get('filter_items');
+        $filter_display = $this->input->get("filter_display");
+        $filter_division = $this->input->get('filter_division');
+        $filter_trans_type = $this->input->get('filter_trans_type');
+
+        $display_title = ($filter_display == "DETAIL") ? '(DETAIL)' : '(RECAP)';
+
+        // Config Logo & Name
+        $config = $this->db->get('config')->row();
+
+        // Get Exchange Rates
+        $rates = $this->db->get_where('standard_exchange_rates', ['currency_from' => 'USD'])->result();
+        $get_rate = function($date) use ($rates) {
+            if (empty($date)) return 1.0;
+            foreach ($rates as $r) {
+                if ($date >= $r->start_date && $date <= $r->end_date) return (float)$r->middle;
+            }
+            return 1.0;
+        };
+
+        // Get cutoff_date terbaru yang tidak melebihi filter_from
+        $cutoff_data  = $this->db->select('cutoff_date')
+                        ->where('cutoff_date <=', $filter_from)
+                        ->order_by('cutoff_date', 'DESC')
+                        ->limit(1)
+                        ->get('inventory_rm_actual')
+                        ->row();
+        $start_system = ($cutoff_data) ? $cutoff_data->cutoff_date : '2026-01-01';
+
+        //------------------------------------ GET DATA AND CALCULATIONS ----------------------------------//
+
+        $query_main = "SELECT 
+                a.id, a.number, a.name, a.division, a.uom,
+                b.name as prodfam, 
+                subfam.name as sub_prodfam,
+                c.name as category_name,
+                item_spec.specification,
+
+                COALESCE(aa.price, 0) as std_price,
+                COALESCE(aa.currency, '-') as currency,
+                COALESCE(j.begin_stock, 0) AS begin_stock,
+                
+                -- QTY IN & OUT
+                (COALESCE(d.qty_scan_in, 0) + COALESCE(e.qty_os_rm, 0) + COALESCE(f.qty_trans_rm_in, 0) + COALESCE(g.return_qty, 0) + COALESCE(k.qty_scan_bpm, 0)) AS qty_in,
+                (COALESCE(h.qty_issued, 0) + COALESCE(i.qty_trans_rm_out, 0)) AS qty_out,
+
+                -- ACTUAL FROM UPLOAD
+                COALESCE(actual.price, 0) as actual_price, 
+                COALESCE(actual.qty, 0) as actual_qty,
+                actual.currency as upload_currency,
+                actual.created_by as upload_by,
+                actual.upload_date,
+
+                -- ACTUAL AMOUNT CALCULATION (JOIN TO PO)
+                COALESCE(calc_in.total_actual_in, 0) as actual_amount_in,
+                COALESCE(calc_out.total_actual_out, 0) as actual_amount_out,
+                d.receipt_date -- used for rate lookup
+            FROM item_rm a
+            JOIN item_familys b ON a.item_family_id = b.id AND b.number != 'FG'
+            JOIN item_categories c ON a.item_category_id = c.id
+            LEFT JOIN item_family_subs subfam ON a.item_sub_family_id = subfam.id
+
+            -- get actual from upload
+            LEFT JOIN inventory_rm_actual actual ON (actual.part_no = a.number OR actual.item_rm_id = a.id)
+                AND actual.cutoff_date = '$start_system' -- perbaikan perhitungan begin qty per bulan
+
+            -- get specification 
+            LEFT JOIN (
+                SELECT a.item_rm_id, f.specification, c.size 
+                FROM purchase_order_receipts a
+                LEFT JOIN item_rm c ON a.item_rm_id = c.id
+                LEFT JOIN purchase_orders f ON a.po_no = f.po_no AND a.item_rm_id = f.item_rm_id and (a.item_rm_id = f.item_rm_id or a.specification = f.specification)
+            ) item_spec ON item_spec.item_rm_id = a.id
+            
+            -- Standard Price
+            LEFT JOIN (SELECT item_rm_id, currency, price from standard_price_rm where '$filter_from' >= `start_date` and '$filter_to' <= `end_date`) aa on a.id = aa.item_rm_id
+
+            -- QTY IN Logic
+            LEFT JOIN (SELECT MAX(b.receipt_date) AS receipt_date, b.item_rm_id, SUM(a.qty) AS qty_scan_in FROM scan_item_receipts a JOIN purchase_order_receipts b ON a.receipt_id = b.receipt_id WHERE b.receipt_date BETWEEN '$filter_from' AND '$filter_to' GROUP BY b.item_rm_id) d ON a.id = d.item_rm_id
+            
+            -- ACTUAL AMOUNT IN (Logic: Sum of Qty Scan * PO Price)
+            LEFT JOIN (
+                SELECT pr.item_rm_id, SUM(sr.qty * po.price) as total_actual_in
+                FROM purchase_order_receipts pr
+                JOIN scan_item_receipts sr ON pr.receipt_id = sr.receipt_id
+                JOIN purchase_orders po ON pr.po_no = po.po_no AND pr.item_rm_id = po.item_rm_id
+                WHERE pr.receipt_date BETWEEN '$filter_from' AND '$filter_to'
+                GROUP BY pr.item_rm_id
+            ) calc_in ON a.id = calc_in.item_rm_id
+
+            -- ACTUAL AMOUNT OUT (Logic: Sum of Issued Qty * PO Price)
+            LEFT JOIN (
+                SELECT imd.item_rm_id, SUM(imd.qty * po.price) as total_actual_out
+                FROM issued_material_details imd
+                LEFT JOIN (SELECT item_rm_id, MAX(price) as price FROM purchase_orders GROUP BY item_rm_id) po ON imd.item_rm_id = po.item_rm_id
+                WHERE DATE_FORMAT(imd.created_date, '%Y-%m-%d') BETWEEN '$filter_from' AND '$filter_to'
+                GROUP BY imd.item_rm_id
+            ) calc_out ON a.id = calc_out.item_rm_id
+
+            -- Query pendukung (e, f, g, h, i, k, j)
+            LEFT JOIN (SELECT item_rm_id, SUM(qty) AS qty_os_rm FROM os_rm WHERE trans_date BETWEEN '$filter_from' AND '$filter_to' GROUP BY item_rm_id) e ON a.id = e.item_rm_id
+            LEFT JOIN (SELECT item_rm_id, SUM(qty) AS qty_trans_rm_in FROM transaction_rm WHERE request_date BETWEEN '$filter_from' AND '$filter_to' AND transaction_kind = 'IN' GROUP BY item_rm_id) f ON a.id = f.item_rm_id
+            LEFT JOIN (SELECT a.item_rm_id, SUM(c.qty) as return_qty FROM return_materials a JOIN return_material_labels b ON a.return_id = b.return_id JOIN scan_item_receipts c ON a.return_id = c.receipt_id AND b.label_no = c.label_no WHERE a.return_date BETWEEN '$filter_from' AND '$filter_to' GROUP BY a.item_rm_id) g ON a.id = g.item_rm_id
+            LEFT JOIN (SELECT item_rm_id, SUM(qty) AS qty_issued FROM issued_material_details WHERE DATE_FORMAT(created_date, '%Y-%m-%d') BETWEEN '$filter_from' AND '$filter_to' GROUP BY item_rm_id) h ON a.id = h.item_rm_id
+            LEFT JOIN (SELECT item_rm_id, SUM(qty) AS qty_trans_rm_out FROM transaction_rm WHERE request_date BETWEEN '$filter_from' AND '$filter_to' AND transaction_kind = 'OUT' GROUP BY item_rm_id) i ON a.id = i.item_rm_id
+            LEFT JOIN (SELECT item_rm_id, SUM(qty) AS qty_scan_bpm FROM scan_item_bpm WHERE DATE_FORMAT(request_date, '%Y-%m-%d') BETWEEN '$filter_from' AND '$filter_to' GROUP BY item_rm_id) k ON a.id = k.item_rm_id
+            
+            -- BEGIN STOCK Logic (Query j)
+            /** -- existing
+            LEFT JOIN (SELECT a.id, ((COALESCE(b.qty_scan_in, 0) + COALESCE(c.qty_os_rm, 0) + COALESCE(d.qty_trans_rm_in, 0) + COALESCE(e.return_qty, 0) + COALESCE(h.qty_scan_bpm, 0)) - (COALESCE(f.qty_issued, 0) + COALESCE(g.qty_trans_rm_out, 0))) AS begin_stock
+                    FROM item_rm a
+                    LEFT JOIN (SELECT b.item_rm_id, SUM(a.qty) AS qty_scan_in FROM scan_item_receipts a JOIN purchase_order_receipts b ON a.receipt_id = b.receipt_id WHERE b.receipt_date < '$filter_from' GROUP BY b.item_rm_id) b ON a.id = b.item_rm_id
+                    LEFT JOIN (SELECT item_rm_id, SUM(qty) AS qty_os_rm FROM os_rm WHERE trans_date < '$filter_from' GROUP BY item_rm_id) c ON a.id = c.item_rm_id
+                    LEFT JOIN (SELECT item_rm_id, SUM(qty) AS qty_trans_rm_in FROM transaction_rm WHERE request_date < '$filter_from' AND transaction_kind = 'IN' GROUP BY item_rm_id) d ON a.id = d.item_rm_id
+                    LEFT JOIN (SELECT a.item_rm_id, SUM(c.qty) as return_qty FROM return_materials a JOIN return_material_labels b ON a.return_id = b.return_id JOIN scan_item_receipts c ON a.return_id = c.receipt_id AND b.label_no = c.label_no WHERE a.return_date < '$filter_from' GROUP BY a.item_rm_id) e ON a.id = e.item_rm_id
+                    LEFT JOIN (SELECT item_rm_id, SUM(qty) AS qty_issued FROM issued_material_details WHERE created_date < '$filter_from' GROUP BY item_rm_id) f ON a.id = f.item_rm_id
+                    LEFT JOIN (SELECT item_rm_id, SUM(qty) AS qty_trans_rm_out FROM transaction_rm WHERE request_date < '$filter_from' AND transaction_kind = 'OUT' GROUP BY item_rm_id) g ON a.id = g.item_rm_id
+                    LEFT JOIN (SELECT item_rm_id, SUM(qty) AS qty_scan_bpm FROM scan_item_bpm WHERE DATE_FORMAT(request_date, '%Y-%m-%d') < '$filter_from' GROUP BY item_rm_id) h ON a.id = h.item_rm_id
+            ) j ON a.id = j.id
+            */
+
+            -- PERBAIKAN: Get data setelah cutoff_date dan sebelum filter_from untuk carry-over QTY
+            LEFT JOIN (
+                SELECT 
+                    a.id, 
+                    (COALESCE(b.q_in,0) + COALESCE(c.q_in,0) + COALESCE(d.q_in,0) + COALESCE(e.q_in,0) + COALESCE(h.q_in,0)) - 
+                    (COALESCE(f.q_out,0) + COALESCE(g.q_out,0)) as begin_stock
+                FROM item_rm a
+                LEFT JOIN (SELECT b.item_rm_id, SUM(a.qty) as q_in FROM scan_item_receipts a JOIN purchase_order_receipts b ON a.receipt_id = b.receipt_id WHERE b.receipt_date >= '$start_system' AND b.receipt_date < '$filter_from' GROUP BY 1) b ON a.id = b.item_rm_id
+                LEFT JOIN (SELECT x.item_rm_id, SUM(x.qty) as q_in FROM os_rm x WHERE x.trans_date >= '$start_system' AND x.trans_date < '$filter_from' GROUP BY 1) c ON a.id = c.item_rm_id
+                LEFT JOIN (SELECT x.item_rm_id, SUM(x.qty) as q_in FROM transaction_rm x WHERE x.transaction_kind = 'IN' AND x.request_date >= '$start_system' AND x.request_date < '$filter_from' GROUP BY 1) d ON a.id = d.item_rm_id
+                LEFT JOIN (SELECT x.item_rm_id, SUM(c.qty) as q_in FROM return_materials x JOIN scan_item_receipts c ON x.return_id = c.receipt_id WHERE x.return_date >= '$start_system' AND x.return_date < '$filter_from' GROUP BY 1) e ON a.id = e.item_rm_id
+                LEFT JOIN (SELECT x.item_rm_id, SUM(x.qty) as q_out FROM issued_material_details x WHERE x.created_date >= '$start_system' AND x.created_date < '$filter_from' GROUP BY 1) f ON a.id = f.item_rm_id
+                LEFT JOIN (SELECT x.item_rm_id, SUM(x.qty) as q_out FROM transaction_rm x WHERE x.transaction_kind = 'OUT' AND x.request_date >= '$start_system' AND x.request_date < '$filter_from' GROUP BY 1) g ON a.id = g.item_rm_id
+                LEFT JOIN (SELECT x.item_rm_id, SUM(x.qty) as q_in FROM scan_item_bpm x WHERE x.request_date >= '$start_system' AND x.request_date < '$filter_from' GROUP BY 1) h ON a.id = h.item_rm_id
+            ) j ON a.id = j.id
+
+            WHERE c.id LIKE '%$filter_item_category%'
+            AND b.number LIKE '%$filter_item_family%'
+            AND a.id LIKE '%$filter_items%'
+            AND a.division LIKE '%$filter_division%'
+            GROUP BY a.id
+            ORDER BY c.name DESC, b.name DESC, a.number";
+
+        $records = $this->crud->query($query_main);
+
+        $html = '<html><head><title>Inventory Report</title></head>';
+        $html .= $this->customCss();
+        $html .= '<body>
+                <center>
+                <div style="float: left; font-size: 12px; text-align: left;">
+                    <table style="width: 100%;">
+                        <tr>
+                            <td width="50" style="font-size: 12px; vertical-align: top; text-align: center; vertical-align:jus margin-right:10px;">
+                                <img src="' . $config->favicon . '" width="30">
+                            </td>
+                            <td></td>
+                            <td style="font-size: 14px; text-align: left; margin:2px;">
+                                <b>' . $config->name . '</b><br>
+                                <small>' . $config->description . '</small>
+                            </td>
+                        </tr>
+                    </table>
+                </div>
+                <div style="float: right; font-size: 12px; text-align: right;">
+                    Print Date ' . date("d M Y H:i:s") . ' <br>
+                    Print By ' . $this->session->username . '  
+                </div>
+                <br><br><br>
+                <h3 style="margin:0;">INVENTORY RM STANDARD AND ACTUAL <i>' . $display_title . '</i> </h3>
+                <small>PERIOD : <b>' . $filter_from . '</b> To <b>' . $filter_to . '</b></small>
+            </center>
+            <br>';
+        
+        // Build Table Header
+        $html .= '<table id="customers" border="1" style="font-size: 11px;">
+            <thead>
+                <tr style="background-color:#eee;">
+                    <th rowspan="4" width="20">No</th>
+                    <th rowspan="4" colspan="3">Product No</th>
+                    <th rowspan="4">Product Name</th>
+                    <th rowspan="4">Uom</th>
+                    <th rowspan="4">Division</th>
+                    <th rowspan="4">Category</th>
+                    <th rowspan="4">Product Family</th>
+                    <th rowspan="4">Specification</th>
+                    <th rowspan="4">Currency</th>
+                    <th rowspan="4">Rate</th>
+
+                    <th colspan="20">SUMMARY</th>
+                </tr>
+                
+                <tr style="background-color:#d5d5d5;">
+                    <th colspan="5" >BEGIN</th>
+                    <th colspan="5" width="100">IN</th>
+                    <th colspan="5" width="100">OUT</th>
+                    <th colspan="5" width="100">BALANCE</th>
+                </tr>
+
+                <tr>
+                    <th width="80" rowspan="2">QTY</th>
+                    <th colspan="2" style="background-color: #D1FFC6;">STANDARD</th>
+                    <th colspan="2" style="background-color: #CFE6F9;">ACTUAL</th>
+                    
+                    <th width="80" rowspan="2">QTY</th>
+                    <th colspan="2" style="background-color: #D1FFC6;">STANDARD</th>
+                    <th colspan="2" style="background-color: #CFE6F9;">ACTUAL</th>
+                    
+                    <th width="80" rowspan="2">QTY</th>
+                    <th colspan="2" style="background-color: #D1FFC6;">STANDARD</th>
+                    <th colspan="2" style="background-color: #CFE6F9;">ACTUAL</th>
+                    
+                    <th width="80" rowspan="2">QTY</th>
+                    <th colspan="2" style="background-color: #D1FFC6;">STANDARD</th>
+                    <th colspan="2" style="background-color: #CFE6F9;">ACTUAL</th>
+                </tr>
+
+                <tr>
+                    <th style="background-color: #D1FFC6;">PRICE</th>
+                    <th style="background-color: #D1FFC6;">AMOUNT</th>
+                    <th style="background-color: #CFE6F9;">PRICE</th>
+                    <th style="background-color: #CFE6F9;">AMOUNT</th>
+
+                    <th style="background-color: #D1FFC6;">PRICE</th>
+                    <th style="background-color: #D1FFC6;">AMOUNT</th>
+                    <th style="background-color: #CFE6F9;">PRICE</th>
+                    <th style="background-color: #CFE6F9;">AMOUNT</th>
+                    
+                    <th style="background-color: #D1FFC6;">PRICE</th>
+                    <th style="background-color: #D1FFC6;">AMOUNT</th>
+                    <th style="background-color: #CFE6F9;">PRICE</th>
+                    <th style="background-color: #CFE6F9;">AMOUNT</th>
+                    
+                    <th style="background-color: #D1FFC6;">PRICE</th>
+                    <th style="background-color: #D1FFC6;">AMOUNT</th>
+                    <th style="background-color: #CFE6F9;">PRICE</th>
+                    <th style="background-color: #CFE6F9;">AMOUNT</th>
+                </tr>
+            </thead>';
+
+        $no = 1;
+        $grandtotals = [
+            'b_qty' => 0, 'b_std' => 0, 'b_act' => 0,
+            'i_qty' => 0, 'i_std' => 0, 'i_act' => 0,
+            'o_qty' => 0, 'o_std' => 0, 'o_act' => 0,
+            'e_qty' => 0, 'e_std' => 0, 'e_act' => 0,
+        ];
+
+        foreach ($records as $record) {
+            $item_rm_id = $record->id;
+            $rate = 1;
+
+            // Summary Calculations
+            $std_price = $record->std_price * $rate;
+            $act_price = $record->actual_price * 1; // IDR
+
+            $begin_qty       = (float)$record->actual_qty;  // Begin Balance = Qty dari upload saja
+            $begin_std_amt   = $begin_qty * $std_price;
+            $begin_act_price = $act_price;
+            $begin_act_amt   = $begin_qty * $begin_act_price;
+
+            $in_qty          = $record->qty_in;
+            $in_act_price    = $act_price;
+            $in_std_amt      = $in_qty * $std_price;
+            $in_act_amt      = $in_qty * $act_price;
+
+            $out_qty         = $record->qty_out;
+            $out_act_price   = $act_price;
+            $out_std_amt     = $out_qty * $std_price;
+            $out_act_amt     = $out_qty * $act_price;
+
+            $end_qty = ($begin_qty + $in_qty) - $out_qty;
+            $end_act_price = $act_price;
+            $end_std_amt = ($begin_std_amt + $in_std_amt) - $out_std_amt;
+            $end_act_amt = ($begin_act_amt + $in_act_amt) - $out_act_amt;
+
+            $html .= '<tr>
+                        <td align="center">'.$no.'</td>
+                        <td colspan="3">'.$record->number.'</td>
+                        <td>'.$record->name.'</td>
+                        <td>'.$record->uom.'</td>
+                        <td>'.$record->division.'</td>
+                        <td>'.$record->category_name.'</td>
+                        <td>'.$record->prodfam.'</td>
+                        <td>'.$record->specification.'</td>
+                        <td align="center">'.$record->currency.'</td>
+                        <td align="right">'.number_format($rate, 2).'</td>
+                        
+                        <td align="right">'.number_format($begin_qty, 2).'</td>
+                        <td align="right">'.number_format($std_price, 2).'</td>
+                        <td align="right">'.number_format($begin_std_amt, 2).'</td>
+                        <td align="right">'.number_format($begin_act_price, 2).'</td>
+                        <td align="right">'.number_format($begin_act_amt, 2).'</td>
+
+                        <td align="right">'.number_format($in_qty, 2).'</td>
+                        <td align="right">'.number_format($std_price, 2).'</td>
+                        <td align="right">'.number_format($in_std_amt, 2).'</td>
+                        <td align="right">'.number_format($in_act_price, 2).'</td>
+                        <td align="right">'.number_format($in_act_amt, 2).'</td>
+
+                        <td align="right">'.number_format($out_qty, 2).'</td>
+                        <td align="right">'.number_format($std_price, 2).'</td>
+                        <td align="right">'.number_format($out_std_amt, 2).'</td>
+                        <td align="right">'.number_format($out_act_price, 2).'</td>
+                        <td align="right">'.number_format($out_act_amt, 2).'</td>
+
+                        <td align="right">'.number_format($end_qty, 2).'</td>
+                        <td align="right">'.number_format($std_price, 2).'</td>
+                        <td align="right">'.number_format($end_std_amt, 2).'</td>
+                        <td align="right">'.number_format($end_act_price, 2).'</td>
+                        <td align="right">'.number_format($end_act_amt, 2).'</td>
+                    </tr>';
 
             $running_qty_bal = 0; 
             $running_act_amt_bal = 0;
 
             // (Logika Detail Transactions)
-                $nod = 1;
-                // Inisialisasi awal produk berdasarkan saldo upload
-                $running_qty_bal     = (float)$record->actual_qty; 
-                $running_act_amt_bal = (float)$record->actual_qty * (float)$act_price_rate;
-                
-                // Akumulasi BEGIN ke Grand Total (Hanya diambil sekali per item)
-                $grandtotals['begin_qty']     += (float)$record->actual_qty;
-                $grandtotals['begin_std_amt'] += ((float)$record->actual_qty * $std_price_rate);
-                $grandtotals['begin_act_amt'] += $running_act_amt_bal;
-
-
                 if ($filter_trans_type == '') {
                     //RECEIPT
                     $receipts = $this->crud->query("SELECT
@@ -1997,27 +2679,68 @@ class Inventory_rm_standard_actual extends CI_Controller
                     $running_act_amt_bal = 0;
                     $first_upload_captured = false; 
 
+                    // PERBAIKAN: Saldo awal baris detail adalah saldo upload + mutasi carry-over sebelum filter_from
+                    $actual_upload_qty = (float)$record->actual_qty;
+                    $mutation_before   = (float)$record->begin_stock;
+                    $running_qty_bal = $actual_upload_qty + $mutation_before;
+
+                    // Akumulasi ke Grand Total (Kolom BEGIN)
+                    $grandtotals['b_qty'] += $running_qty_bal;
+                    $grandtotals['b_std'] += ($running_qty_bal * $std_price);
+                    $grandtotals['b_act'] += ($running_qty_bal * $act_price);
+
+                    $is_upload_month = (date('Y-m', strtotime($start_system)) == date('Y-m', strtotime($filter_from)));
+
+                    // Tampilkan Baris Kuning HANYA jika ini adalah bulan Upload
+                    if ($is_upload_month) {
+                        $html .= '<tr style="background: #fffbf1">
+                            <td></td>
+                            <td style="text-align:center">#</td>
+                            <td>UPLOAD</td>
+                            <td>' . $record->upload_by . '</td>
+                            <td>' . $record->upload_date . '</td>
+                            <td colspan="4">BEGIN BALANCE (UPLOAD)</td>
+                            <td style="text-align:center;">' . $record->upload_currency . '</td>
+                            <td style="text-align:right;">' . number_format($std_price, 2) . '</td>
+                            <td style="text-align:right;">' . number_format($rate, 2) . '</td>
+
+                            <td style="text-align:right;">' . number_format($actual_upload_qty, 2) . '</td>
+                            <td style="text-align:right;">' . number_format($std_price, 2) . '</td>
+                            <td style="text-align:right;">' . number_format($actual_upload_qty * $std_price, 2) . '</td>
+                            <td style="text-align:right;">' . number_format($act_price, 2) . '</td>
+                            <td style="text-align:right;">' . number_format($actual_upload_qty * $act_price, 2) . '</td>
+
+                            <td style="text-align:right;">0.00</td>
+                            <td style="text-align:right;">0.00</td>
+                            <td style="text-align:right;">0.00</td>
+                            <td style="text-align:right;">0.00</td>
+                            <td style="text-align:right;">0.00</td>
+
+                            <td style="text-align:right;">0.00</td>
+                            <td style="text-align:right;">0.00</td>
+                            <td style="text-align:right;">0.00</td>
+                            <td style="text-align:right;">0.00</td>
+                            <td style="text-align:right;">0.00</td>
+
+                            <td style="text-align:right;">' . number_format($actual_upload_qty, 2) . '</td>
+                            <td style="text-align:right;">' . number_format($std_price, 2) . '</td>
+                            <td style="text-align:right;">' . number_format($actual_upload_qty * $std_price, 2) . '</td>
+                            <td style="text-align:right;">' . number_format($act_price, 2) . '</td>
+                            <td style="text-align:right;">' . number_format($actual_upload_qty * $act_price, 2) . '</td>
+                        </tr>';
+                    }
+
+                    $nod = 1;
                     foreach ($all_data as $data) {
-                            // Transaksi Harian (RECEIPT, ISSUED, dll)
-                            $current_begin_qty = $running_qty_bal;
-                            $current_begin_amt = $running_act_amt_bal;
+                        $trans_in  = (float)$data['qty_in'];
+                        $trans_out = (float)$data['qty_out'];
+
+                        // Simpan saldo sebelum transaksi untuk kolom "BEGIN" di baris ini
+                        $row_begin_qty = $running_qty_bal;
+                        
+                        // Update Running Balance untuk baris ini
+                        $running_qty_bal += ($trans_in - $trans_out);
                             
-                            $current_in_qty  = (float)$data['qty_in'];
-                            $current_in_amt  = $current_in_qty * (float)$act_price_rate;
-                            $current_out_qty = (float)$data['qty_out'];
-                            $current_out_amt = $current_out_qty * (float)$act_price_rate;
-
-                            $running_qty_bal     += ($current_in_qty - $current_out_qty);
-                            $running_act_amt_bal += ($current_in_amt - $current_out_amt);
-
-                            // Akumulasi IN & OUT ke Grand Total (Hanya transaksi non-upload)
-                            $grandtotals['in_qty']      += $current_in_qty;
-                            $grandtotals['in_std_amt']  += ($current_in_qty * $std_price_rate);
-                            $grandtotals['in_act_amt']  += $current_in_amt;
-
-                            $grandtotals['out_qty']     += $current_out_qty;
-                            $grandtotals['out_std_amt'] += ($current_out_qty * $std_price_rate);
-                            $grandtotals['out_act_amt'] += $current_out_amt;
 
                         // Render ke HTML menggunakan variabel hasil logika di atas
                         $html .= '<tr style="background:#fff;">
@@ -2033,62 +2756,81 @@ class Inventory_rm_standard_actual extends CI_Controller
                                     <td align="center">' . $record->currency . '</td>
                                     <td align="right">' . number_format($record->std_price, 2) . '</td>
                                     <td align="right">' . number_format($rate, 2) . '</td>
+                                    
+                                    <td style="text-align:right;">' . number_format($row_begin_qty, 2) . '</td>
+                                    <td style="text-align:right;">' . number_format($std_price, 2) . '</td>
+                                    <td style="text-align:right;">' . number_format($row_begin_qty * $std_price, 2) . '</td>
+                                    <td style="text-align:right;">' . number_format($act_price, 2) . '</td>
+                                    <td style="text-align:right;">' . number_format($row_begin_qty * $act_price, 2) . '</td>
 
-                                    <td align="right">' . number_format($current_begin_qty, 2) . '</td>
-                                    <td align="right">' . number_format($std_price_rate, 2) . '</td>
-                                    <td align="right">' . number_format($current_begin_qty * $std_price_rate, 2) . '</td>
-                                    <td align="right">' . number_format($act_price_rate, 2) . '</td>
-                                    <td align="right">' . number_format($current_begin_amt, 2) . '</td>
+                                    <td style="text-align:right;">' . number_format($trans_in, 2) . '</td>
+                                    <td style="text-align:right;">' . number_format($std_price, 2) . '</td>
+                                    <td style="text-align:right;">' . number_format($trans_in * $std_price, 2) . '</td>
+                                    <td style="text-align:right;">' . number_format($act_price, 2) . '</td>
+                                    <td style="text-align:right;">' . number_format($trans_in * $act_price, 2) . '</td>
 
-                                    <td align="right">' . number_format($current_in_qty, 2) . '</td>
-                                    <td align="right">' . number_format($std_price_rate, 2) . '</td>
-                                    <td align="right">' . number_format($current_in_qty * $std_price_rate, 2) . '</td>
-                                    <td align="right">' . number_format($act_price_rate, 2) . '</td>
-                                    <td align="right">' . number_format($current_in_amt, 2) . '</td>
+                                    <td style="text-align:right;">' . number_format($trans_out, 2) . '</td>
+                                    <td style="text-align:right;">' . number_format($std_price, 2) . '</td>
+                                    <td style="text-align:right;">' . number_format($trans_out * $std_price, 2) . '</td>
+                                    <td style="text-align:right;">' . number_format($act_price, 2) . '</td>
+                                    <td style="text-align:right;">' . number_format($trans_out * $act_price, 2) . '</td>
 
-                                    <td align="right">' . number_format($current_out_qty, 2) . '</td>
-                                    <td align="right">' . number_format($std_price_rate, 2) . '</td>
-                                    <td align="right">' . number_format($current_out_qty * $std_price_rate, 2) . '</td>
-                                    <td align="right">' . number_format($act_price_rate, 2) . '</td>
-                                    <td align="right">' . number_format($current_out_amt, 2) . '</td>
-
-                                    <td align="right">' . number_format($running_qty_bal, 2) . '</td>
-                                    <td align="right">' . number_format($std_price_rate, 2) . '</td>
-                                    <td align="right">' . number_format($running_qty_bal * $std_price_rate, 2) . '</td>
-                                    <td align="right">' . number_format($act_price_rate, 2) . '</td>
-                                    <td align="right">' . number_format($running_act_amt_bal, 2) . '</td>
+                                    <td style="text-align:right; font-weight:bold;">' . number_format($running_qty_bal, 2) . '</td>
+                                    <td style="text-align:right;">' . number_format($std_price, 2) . '</td>
+                                    <td style="text-align:right;">' . number_format($running_qty_bal * $std_price, 2) . '</td>
+                                    <td style="text-align:right;">' . number_format($act_price, 2) . '</td>
+                                    <td style="text-align:right;">' . number_format($running_qty_bal * $act_price, 2) . '</td>
                                 </tr>';
                         $nod++;
+
+                        
+                        // Akumulasi ke Grand Total (IN & OUT)
+                        $grandtotals['i_qty'] += $trans_in;
+                        $grandtotals['i_std'] += ($trans_in * $std_price);
+                        $grandtotals['i_act'] += ($trans_in * $act_price);
+                        $grandtotals['o_qty'] += $trans_out;
+                        $grandtotals['o_std'] += ($trans_out * $std_price);
+                        $grandtotals['o_act'] += ($trans_out * $act_price);
                     }
 
-                    // Akumulasi ENDING ke Grand Total (Posisi terakhir saldo produk ini)
-                    $grandtotals['end_qty']     += $running_qty_bal;
-                    $grandtotals['end_std_amt'] += ($running_qty_bal * $std_price_rate);
-                    $grandtotals['end_act_amt'] += $running_act_amt_bal;
+                    // Akumulasi ke Grand Total (Kolom ENDING/BALANCE)
+                    $grandtotals['e_qty'] += $running_qty_bal;
+                    $grandtotals['e_std'] += ($running_qty_bal * $std_price);
+                    $grandtotals['e_act'] += ($running_qty_bal * $act_price);
             }
 
             $no++;
         }
 
         // Grand Total Row
-        $html .= '<tr style="background:#eee; font-weight:bold;">
-                    <td colspan="12" align="right">GRAND TOTAL</td>
-                    <td align="right">'.number_format($grandtotals['begin_qty'], 2).'</td><td></td>
-                    <td align="right">'.number_format($grandtotals['begin_std_amt'], 2).'</td><td></td>
-                    <td align="right">'.number_format($grandtotals['begin_act_amt'], 2).'</td>
-                    
-                    <td align="right">'.number_format($grandtotals['in_qty'], 2).'</td><td></td>
-                    <td align="right">'.number_format($grandtotals['in_std_amt'], 2).'</td><td></td>
-                    <td align="right">'.number_format($grandtotals['in_act_amt'], 2).'</td>
-                    
-                    <td align="right">'.number_format($grandtotals['out_qty'], 2).'</td><td></td>
-                    <td align="right">'.number_format($grandtotals['out_std_amt'], 2).'</td><td></td>
-                    <td align="right">'.number_format($grandtotals['out_act_amt'], 2).'</td>
-                    
-                    <td align="right">'.number_format($grandtotals['end_qty'], 2).'</td><td></td>
-                    <td align="right">'.number_format($grandtotals['end_std_amt'], 2).'</td><td></td>
-                    <td align="right">'.number_format($grandtotals['end_act_amt'], 2).'</td>
-                </tr>';
+        $html .= '<tfooter>
+            <tr style="background:#eee; font-weight:bold;">
+                <td colspan="12" align="right">GRAND TOTAL</td>
+                <td align="right">' . number_format($grandtotals['b_qty'], 2) . '</td>
+                <td></td>
+                <td align="right">' . number_format($grandtotals['b_std'], 2) . '</td>
+                <td></td>
+                <td align="right">' . number_format($grandtotals['b_act'], 2) . '</td>
+
+                <td align="right">' . number_format($grandtotals['i_qty'], 2) . '</td>
+                <td></td>
+                <td align="right">' . number_format($grandtotals['i_std'], 2) . '</td>
+                <td></td>
+                <td align="right">' . number_format($grandtotals['i_act'], 2) . '</td>
+
+                <td align="right">' . number_format($grandtotals['o_qty'], 2) . '</td>
+                <td></td>
+                <td align="right">' . number_format($grandtotals['o_std'], 2) . '</td>
+                <td></td>
+                <td align="right">' . number_format($grandtotals['o_act'], 2) . '</td>
+
+                <td align="right">' . number_format($grandtotals['e_qty'], 2) . '</td>
+                <td></td>
+                <td align="right">' . number_format($grandtotals['e_std'], 2) . '</td>
+                <td></td>
+                <td align="right">' . number_format($grandtotals['e_act'], 2) . '</td>
+            </tr>
+        </tfooter>';
 
         $html .= '</table></body></html>';
         echo $html;
