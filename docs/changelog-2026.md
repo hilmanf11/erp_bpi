@@ -495,3 +495,6 @@ add Specification ([d1a2cbe9](https://github.com/hilmanf11/erp_bpi/commit/d1a2cb
 
 ### [2026-03-13]
 - **Rizki Puji**: Fixing: actual qty from upload on report Detail Inventory WIP STD Actual ([d9254dcb](https://github.com/hilmanf11/erp_bpi/commit/d9254dcbc64174595ae9cfacf8a932c0c39b8e58))
+
+### [2026-03-17]
+- **Rizki Puji**: Fixing: query carry-over balance on report Recap Inventory WIP STD Actual ([b00f206b](https://github.com/hilmanf11/erp_bpi/commit/b00f206b8189a6aaff67851b37c1ba607c0f67b7))
