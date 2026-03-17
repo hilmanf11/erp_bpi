@@ -2185,10 +2185,111 @@ class Inventory_rm_standard_actual extends CI_Controller
             <td align="right">'.number_format($total_act_adjout, 2).'</td>
         </tr>';
 
+        $dataSave = [];
+
+        $dataSave["filter_from"]          = $filter_from;
+        $dataSave["filter_to"]            = $filter_to;
+        $dataSave["filter_items"]         = $filter_items;
+        $dataSave["filter_display"]       = $filter_display;
+        $dataSave["filter_division"]      = $filter_division;
+        $dataSave["filter_item_family"]   = $filter_item_family;
+        $dataSave["filter_item_category"] = $filter_item_category;
+        $dataSave["cutoff_date"]          = $start_system;
+
+        $dataSave["total_b_qty"] = $total_b_qty;
+        $dataSave["total_std_b"] = $total_std_b;
+        $dataSave["total_act_b"] = $total_act_b;
+        
+        $dataSave["total_i_qty"] = $total_i_qty;
+        $dataSave["total_std_i"] = $total_std_i;
+        $dataSave["total_act_i"] = $total_act_i;
+        
+        $dataSave["total_o_qty"] = $total_o_qty;
+        $dataSave["total_std_o"] = $total_std_o;
+        $dataSave["total_act_o"] = $total_act_o;
+        
+        $dataSave["total_e_qty"] = $total_e_qty;
+        $dataSave["total_std_e"] = $total_std_e;
+        $dataSave["total_act_e"] = $total_act_e;
+        
+        $dataSave["total_receipt_qty"]  = $total_receipt_qty;
+        $dataSave["total_std_purchase"] = $total_std_purchase;
+        $dataSave["total_act_purchase"] = $total_act_purchase;
+        
+        $dataSave["total_bpm_qty"] = $total_bpm_qty;
+        $dataSave["total_std_bpm"] = $total_std_bpm;
+        $dataSave["total_act_bpm"] = $total_act_bpm;
+        
+        $dataSave["total_adj_in_qty"] = $total_adj_in_qty;
+        $dataSave["total_std_adjin"]  = $total_std_adjin;
+        $dataSave["total_act_adjin"]  = $total_act_adjin;
+        
+        $dataSave["total_qty_supply_sheet"] = $total_qty_supply_sheet;
+        $dataSave["total_std_supply"] = $total_std_supply;
+        $dataSave["total_act_supply"] = $total_act_supply;
+        
+        $dataSave["total_qty_mat_request"] = $total_qty_mat_request;
+        $dataSave["total_std_req"] = $total_std_req;
+        $dataSave["total_act_req"] = $total_act_req;
+        
+        $dataSave["total_qty_kanban"] = $total_qty_kanban;
+        $dataSave["total_std_kanban"] = $total_std_kanban;
+        $dataSave["total_act_kanban"] = $total_act_kanban;
+        
+        $dataSave["total_qty_kanban_sj"] = $total_qty_kanban_sj;
+        $dataSave["total_std_kanban_sj"] = $total_std_kanban_sj;
+        $dataSave["total_act_kanban_sj"] = $total_act_kanban_sj;
+        
+        $dataSave["total_qty_kanban_sp"] = $total_qty_kanban_sp;
+        $dataSave["total_std_kanban_sp"] = $total_std_kanban_sp;
+        $dataSave["total_act_kanban_sp"] = $total_act_kanban_sp;
+        
+        $dataSave["total_bpb_qty"] = $total_bpb_qty;
+        $dataSave["total_std_bpb"] = $total_std_bpb;
+        $dataSave["total_act_bpb"] = $total_act_bpb;
+        
+        $dataSave["total_adj_out_qty"] = $total_adj_out_qty;
+        $dataSave["total_std_adjout"]  = $total_std_adjout;
+        $dataSave["total_act_adjout"]  = $total_act_adjout;
+
+        // Insert summary data for Journal Posting
+        $insertJournal = $this->save_summary($dataSave);
+
         $html .= '</table></body></html>';
         echo $html;
     }
 
+    public function save_summary($dataSave) 
+    {
+        if (!$this->db->table_exists('inventory_rm_summary')) {
+            echo "<pre> Database Error: Tabel Inventory RM Summary not found for Posting Journal! Please contact admin.</pre>";
+            return false;
+        }
+
+        // Cek apakah periode ini sudah pernah disimpan (mencegah duplikat)
+        $exists = $this->db->get_where('inventory_rm_summary', [
+            'filter_from' => $dataSave['filter_from'],
+            'filter_to'   => $dataSave['filter_to'],
+            'deleted'     => 0,
+        ])->row();
+
+        // Hanya proses jika tidak ada data (Belum Check Lock Finance)
+        if (!$exists) {
+            // Generate Number (Contoh: SUM-RM-202603171400)
+            $number = "SUM-RM-" . date('YmdHis');
+
+            // Prepare Data ID and Number
+            $dataSave['id']           = $this->crud->autoid('inventory_rm_summary');
+            $dataSave['number']       = $number;
+            $dataSave['created_by']   = $this->session->username;
+            $dataSave['created_date'] = date('Y-m-d H:i:s');
+
+            $insert = $this->crud->create('inventory_rm_summary', $dataSave);
+            // if ($insert) {
+            //     echo json_encode(['status' => true, 'msg' => 'Data Saved Successfully!']);
+            // }
+        }
+    }
 
     // -------------- PRINT DETAIL (INVENTORY RM) -------------
     public function print_detail_without_actual($option = "")
