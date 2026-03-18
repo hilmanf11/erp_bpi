@@ -330,6 +330,63 @@ class Ar_receipts extends CI_Controller
         echo json_encode($data);
     }
 
+    public function readInvoiceDropdown()
+    {
+        $customer_id = $this->input->get('customer_id');
+        $formMode    = $this->input->get('formMode');
+        $receipt_no  = $this->input->get('receipt_no') ?? "";
+
+        $this->db->select('a.number, a.journal_type_id, a.trans_date, a.customer_order_no, a.due_date');
+        $this->db->select("(SUM(CASE WHEN a.account_type = 'DEBIT' THEN a.total ELSE -a.total END) + a.total_vat - a.total_pph) as total_invoice", FALSE);
+        $this->db->select("IFNULL(pay.total_paid, 0) as total_paid", FALSE);
+        
+        if ($formMode == "update" && !empty($receipt_no)) {
+            $this->db->select("IFNULL(SUM(this_pay.receipt), 0) as current_receipt_amount", FALSE);
+        }
+
+        $this->db->from('sales_invoices a');
+        $this->db->join('(SELECT sales_invoice, SUM(receipt) as total_paid FROM ar_receipts GROUP BY sales_invoice) pay', 'a.number = pay.sales_invoice', 'LEFT');
+        
+        if ($formMode == "update" && !empty($receipt_no)) {
+            $this->db->join('ar_receipts this_pay', "a.number = this_pay.sales_invoice AND this_pay.receipt_no = '$receipt_no'", 'LEFT');
+        }
+
+        $this->db->where('a.customer_id', $customer_id);
+        $this->db->where('a.deleted', 0);
+
+        // Form Update: Tampil yang masih Open (status 0) ATAU yang sudah ada di receipt ini
+        if ($formMode == "update" && !empty($receipt_no)) {
+            $this->db->group_start();
+                $this->db->where('a.status', 0);
+                $this->db->or_where('this_pay.receipt_no', $receipt_no);
+            $this->db->group_end();
+            
+            $this->db->group_by('a.number');
+            $this->db->having("(total_invoice > total_paid) OR (current_receipt_amount > 0)");
+        } else {
+            // Form Add: Murni hanya yang status 0 dan belum lunas
+            $this->db->where('a.status', 0);
+            $this->db->group_by('a.number');
+            $this->db->having('total_invoice > total_paid');
+        }
+
+        $records = $this->db->get()->result();
+
+        foreach ($records as $key => $record) {
+            $record->no = $key + 1;
+            // Hitung balance sisa
+            $record->balance = $record->total_invoice - $record->total_paid;
+            
+            // Fix balance untuk tampilan Update
+            if ($formMode == "update" && isset($record->current_receipt_amount)) {
+                $record->balance += $record->current_receipt_amount;
+            }
+        }
+
+        header('Content-Type: application/json');
+        echo json_encode($records);
+    }
+
     public function readDp()
     {
         $customer_id = $this->input->post('customer_id');
