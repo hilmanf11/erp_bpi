@@ -330,6 +330,7 @@ class Ar_receipts extends CI_Controller
         echo json_encode($data);
     }
 
+    // public function readInvoiceDropdown_with_this_receipt()
     public function readInvoiceDropdown()
     {
         $customer_id = $this->input->get('customer_id');
@@ -381,6 +382,71 @@ class Ar_receipts extends CI_Controller
             if ($formMode == "update" && isset($record->current_receipt_amount)) {
                 $record->balance += $record->current_receipt_amount;
             }
+        }
+
+        header('Content-Type: application/json');
+        echo json_encode($records);
+    }
+
+    public function readInvoiceDropdown_without_this_receipt()
+    {
+        $customer_id = $this->input->get('customer_id');
+        $formMode    = $this->input->get('formMode');
+        $receipt_no  = $this->input->get('receipt_no') ?? "";
+
+        $this->db->select('a.number, a.journal_type_id, a.trans_date, a.customer_order_no, a.due_date, a.sales_order_no');
+        
+        // 1. Hitung Total Invoice Bersih
+        $this->db->select("SUM(CASE WHEN a.account_type = 'DEBIT' THEN a.total ELSE -a.total END) + a.total_vat - a.total_pph as net_invoice", FALSE);
+        
+        // 2. Hitung Pembayaran dari receipt LAIN (exclude receipt ini)
+        $this->db->select("IFNULL(pay.total_paid_others, 0) as total_paid_others", FALSE);
+
+        $this->db->from('sales_invoices a');
+        
+        // Join untuk mencari pembayaran selain dari receipt_no ini
+        $join_pay = "(SELECT sales_invoice, SUM(receipt) as total_paid_others 
+                    FROM ar_receipts 
+                    WHERE receipt_no != '$receipt_no' 
+                    GROUP BY sales_invoice) pay";
+        $this->db->join($join_pay, 'a.number = pay.sales_invoice', 'LEFT');
+
+        // --- PERBAIKAN DI SINI: JOIN UNTUK CEK EKSISTENSI DI RECEIPT INI ---
+        $this->db->select("IFNULL(this_pay.receipt, 0) as current_receipt_amount", FALSE);
+        $this->db->join('ar_receipts this_pay', "a.number = this_pay.sales_invoice AND this_pay.receipt_no = '$receipt_no'", 'LEFT');
+
+        $this->db->where('a.customer_id', $customer_id);
+        $this->db->where('a.deleted', 0);
+
+        if ($formMode == "update" && !empty($receipt_no)) {
+            // Logika: Tampilkan jika statusnya 0 (masih piutang) 
+            // ATAU jika dia bagian dari receipt_no yang sedang kita edit sekarang
+            $this->db->group_start();
+                $this->db->where('a.status', 0); 
+                $this->db->or_where('this_pay.receipt_no', $receipt_no);
+            $this->db->group_end();
+        } else {
+            $this->db->where('a.status', 0);
+        }
+
+        $this->db->group_by('a.number');
+        
+        // LOGIKA HAVING:
+        // Invoice muncul jika (Net - Bayar Lain) > 0 
+        // Artinya masih ada sisa hutang yang bisa dibayar (termasuk hutang yang sedang kita bayar di receipt ini)
+        $this->db->having("(net_invoice - total_paid_others) > 0");
+
+        $records = $this->db->get()->result();
+
+        foreach ($records as $key => $record) {
+            $record->no = $key + 1;
+            
+            // Sisa piutang yang tersedia untuk dibayar di receipt ini
+            $calculated_balance = $record->net_invoice - $record->total_paid_others;
+            
+            $record->amount  = round($record->net_invoice, 2); 
+            $record->balance = round($calculated_balance, 2);
+            $record->receipt = round($calculated_balance, 2);
         }
 
         header('Content-Type: application/json');
@@ -447,7 +513,7 @@ class Ar_receipts extends CI_Controller
         echo ""; // if trans_date or bank_code is not choosed
     }
 
-    public function datatablesTemp()
+    public function datatablesTemp_existing()
     {
         $sales_invoice = base64_decode($this->input->get('sales_invoice'));
         $sales_invoice_ex = explode(",", $sales_invoice);
@@ -483,6 +549,63 @@ class Ar_receipts extends CI_Controller
                 "account_number" => @$journal[0]->account_number,
                 "account_name" => @$journal[0]->account_name,
                 "account_type" => "CREDIT",
+            );
+        }
+
+        $arr['rows'] = $obj;
+        $arr['total_receipt'] = round($total_receipt, 2);
+        die(json_encode($arr));
+    }
+
+    public function datatablesTemp()
+    {
+        $sales_invoice = base64_decode($this->input->get('sales_invoice'));
+        $sales_invoice_ex = explode(",", $sales_invoice);
+
+        $this->db->select("a.*, a.total_grand as receipt");
+        $this->db->from('sales_invoices a');
+        $this->db->where('a.deleted', 0);
+
+        // Filter UTAMA: Harus ada dalam list nomor invoice yang dipilih
+        if (!empty($sales_invoice)) {
+            $this->db->where_in('a.number', $sales_invoice_ex);
+        } else {
+            // Jika input kosong, kirim baris kosong agar tidak menarik semua data
+            $this->db->where('a.number', '0'); 
+        }
+
+        // Filter TAMBAHAN: Status harus 0 (Open) OR SI memang bagian dari invoice yang sedang diproses
+        $this->db->group_start();
+            $this->db->where('a.status', 0);
+            $this->db->or_where_in('a.number', $sales_invoice_ex); 
+        $this->db->group_end();
+
+        $this->db->group_by('a.number');
+        $this->db->order_by('a.number', 'asc');
+
+        $records = $this->db->get()->result_array();
+
+        $obj = [];
+        $total_receipt = 0;
+        foreach ($records as $record) {
+            $total_receipt += $record['receipt'];
+            $journal_type_id = $record['journal_type_id'];
+
+            $journal = $this->crud->query("SELECT a.*, a.flag, b.account_name FROM journal_setups a 
+            JOIN account_coa b ON a.account_number = b.account_number 
+            WHERE a.journal_type_id = '$journal_type_id' AND a.ar_receipt = 'YES'");
+
+            $obj[] = array(
+                "sales_invoice" => $record['number'],
+                "so_number"     => $record['sales_order_no'],
+                "description"   => $record['customer_order_no'],
+                "currency"      => $record['currency'],
+                "amount"        => $record['receipt'],
+                "balance"       => $record['receipt'],
+                "receipt"       => $record['receipt'],
+                "account_number" => @$journal[0]->account_number,
+                "account_name"  => @$journal[0]->account_name,
+                "account_type"  => "CREDIT",
             );
         }
 
@@ -563,10 +686,10 @@ class Ar_receipts extends CI_Controller
             if ($this->form_validation->run() == TRUE) {
                 $post = $this->input->post();
 
-                if (@$post['id'] != "") {
-                    $send = $this->crud->update('ar_receipts', ["id" => $post['id']], $post);
-                    echo $send;
-                } else {
+                // if (@$post['id'] != "") {
+                //     $send = $this->crud->update('ar_receipts', ["id" => $post['id']], $post);
+                //     echo $send;
+                // } else {
                     $send = $this->crud->create('ar_receipts', $post);
                     if ($send) {
                         if ($post['amount'] == $post['receipt']) {
@@ -579,7 +702,7 @@ class Ar_receipts extends CI_Controller
                     }
 
                     echo $send;
-                }
+                // }
             } else {
                 show_error(validation_errors());
             }
@@ -640,6 +763,7 @@ class Ar_receipts extends CI_Controller
     public function deleteJournal()
     {
         $data = $this->input->post();
+        $send = $this->crud->delete('ar_receipts', $data);
         $send = $this->crud->delete('ar_receipt_journals', $data);
         echo $send;
     }
