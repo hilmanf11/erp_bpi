@@ -504,3 +504,6 @@ add Specification ([d1a2cbe9](https://github.com/hilmanf11/erp_bpi/commit/d1a2cb
 
 ### [2026-03-25]
 - **Rizki Puji**: Fixing: validate balance local credit debit AR Receipts ([e8afab95](https://github.com/hilmanf11/erp_bpi/commit/e8afab959a6c4c3baf4d8391f1833270d7381c64))
+
+### [2026-03-25]
+- **Rizki Puji**: Fixing: Export Excel format separator on Sales Invoices ([2dfdf3e2](https://github.com/hilmanf11/erp_bpi/commit/2dfdf3e249b96fc54a81c8bc66e65cdf28a93a83))
