@@ -4027,17 +4027,22 @@ class Sales_invoices extends CI_Controller
                     <th>Debit/Credit</th>
                     <th>Created By</th>
                 </tr>';
+        // Helper format separator decimal
+        $fmt = function($val, $ccy_or_dec) {
+            // Set jumlah desimal
+            if (is_string($ccy_or_dec)) {
+                $dec = ($ccy_or_dec == 'IDR') ? 2 : 4;
+            } else {
+                $dec = $ccy_or_dec;
+            }
+
+            // Gunakan format 'Fixed' agar Excel yang menentukan pemisah desimalnya agar sesuai regional setting komputer user.
+            return 'style="text-align:right; mso-number-format:\'Fixed\';"' . '>' . (float)$val;
+        };
+
         $no = 1;
         foreach ($records as $data) {
-            // Helper format separator decimal
-            $fmt = function($val, $ccy) {
-                $format = ($ccy == 'IDR') ? 2 : 4;
-                $excel_format = ($ccy == 'IDR') ? '0\.00' : '0\.0000';
-
-                return 'style="text-align:right; mso-number-format:\'' . $excel_format . '\';"' . '>' . number_format((float)$val, $format, '.', '');
-            };
-
-            // Calculate Grand Total di luar string agar tidak semrawut
+            // Calculate Grand Total
             $grand_total = (float)$data['total_sub'] + (float)$data['total_vat'] - (float)$data['total_pph'];
             $currency = $data['currency'] ?? 'IDR';
 
