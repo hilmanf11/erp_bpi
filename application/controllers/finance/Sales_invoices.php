@@ -3444,7 +3444,7 @@ class Sales_invoices extends CI_Controller
         die($html);
     } 
 
-    public function print($option = "")
+    public function print_existing($option = "")
     {
         if ($option == "excel") {
             $format  = date("Ymd");
@@ -3594,6 +3594,160 @@ class Sales_invoices extends CI_Controller
         $html .= '</table></body></html>';
         echo $html;
     }
+
+    public function print($option = "")
+    {
+        if ($option == "excel") {
+            $format  = date("Ymd");
+            header("Content-type: application/vnd.ms-excel");
+            header("Content-Disposition: attachment; filename=sales_invoices_$format.xls");
+            header("Pragma: no-cache");
+            header("Expires: 0");
+        }
+
+        $filter_type             = base64_decode($this->input->get('filter_type'));
+        $filter_trans_date_from  = base64_decode($this->input->get('filter_trans_date_from'));
+        $filter_trans_date_to    = base64_decode($this->input->get('filter_trans_date_to'));
+        $filter_due_date_from    = base64_decode($this->input->get('filter_due_date_from'));
+        $filter_due_date_to      = base64_decode($this->input->get('filter_due_date_to'));
+        $filter_sales_invoice    = base64_decode($this->input->get('filter_sales_invoice'));
+        $filter_delivery_note_no = base64_decode($this->input->get('filter_delivery_note_no'));
+        $filter_customer         = base64_decode($this->input->get('filter_customer'));
+        $filter_faktur_no        = base64_decode($this->input->get('filter_faktur_no'));
+        $filter_status           = base64_decode($this->input->get('filter_status'));
+
+        // if no filter_type, then get data per this month same as datatables()
+        $date_from = date("Y-m-01");
+        $date_to = date("Y-m-t");
+
+        // Config
+        $config = $this->db->get('config')->row();
+
+        // Get Sales Invoices
+        $this->db->select('a.*, b.name as customer_name');
+        $this->db->from('sales_invoices a');
+        $this->db->join('customers b', 'a.customer_id = b.id');
+        if ($filter_type == "PID") {
+            $this->db->where("a.trans_date between '$filter_trans_date_from' and '$filter_trans_date_to'");
+        } elseif ($filter_type == "PAY") {
+            $this->db->where("a.due_date between '$filter_due_date_from' and '$filter_due_date_to'");
+        } else {
+            $this->db->where("a.trans_date between '$date_from' and '$date_to'");
+        }
+        $this->db->like('a.number', $filter_sales_invoice);
+        $this->db->like('a.delivery_note_no', $filter_delivery_note_no);
+        $this->db->like('a.customer_id', $filter_customer);
+        $this->db->like('a.faktur_no', $filter_faktur_no);
+        $this->db->like('a.status', $filter_status);
+        $this->db->order_by('a.status', 'ASC');
+        $this->db->order_by('a.trans_date', 'DESC');
+        $this->db->group_by('a.number');
+        $records = $this->db->get()->result_array();
+
+        $html = '<html><head><title>Print Data</title></head><style>body {font-family: Arial, Helvetica, sans-serif;}#customers {border-collapse: collapse;width: 100%;font-size: 12px;}#customers td, #customers th {border: 1px solid #ddd;padding: 2px;}#customers tr:nth-child(even){background-color: #f2f2f2;}#customers tr:hover {background-color: #ddd;}#customers th {padding-top: 2px;padding-bottom: 2px;text-align: center;color: black;}</style><body>
+            <center>
+                <div style="float: left; font-size: 12px; text-align: left;">
+                    <table style="width: 100%;">
+                        <tr>
+                            <td width="50" style="font-size: 12px; vertical-align: top; text-align: center; vertical-align:jus margin-right:10px;">
+                                <img src="' . $config->favicon . '" width="30">
+                            </td>
+                            <td style="font-size: 14px; text-align: left; margin:2px;">
+                                <b>' . $config->name . '</b><br>
+                                <small>REPORT SALES INVOICING</small><br>
+                            </td>
+                        </tr>
+                    </table>
+                </div>
+                <div style="float: right; font-size: 12px; text-align: right;">
+                    Print Date ' . date("d M Y H:i:s") . ' <br>
+                    Print By ' . $this->session->username . '  
+                </div>
+            </center>
+            <br><br><br><br>
+            
+            <table id="customers" border="1">
+                <tr>
+                    <th width="20">No</th>
+                    <th>Sales Invoice No</th>
+                    <th>Supplier Name</th>
+                    <th>Trans Date</th>
+                    <th>Due Date</th>
+                    <th>Total Invoice</th>
+                    <th>Discount</th>
+                    <th>Sub Total</th>
+                    <th>VAT</th>
+                    <th>PPH 23</th>
+                    <th colspan="2">Grand Total</th>
+                </tr>';
+
+        $no = 1;
+        foreach ($records as $data) {
+            $number = $data['number'];
+
+            $this->db->select('a.*');
+            $this->db->from('sales_invoices a');
+            $this->db->join('customers b', 'a.customer_id = b.id');
+            $this->db->where('a.number', $number);
+            $this->db->order_by('a.status', 'ASC');
+            $this->db->order_by('a.trans_date', 'DESC');
+            $details = $this->db->get()->result_array();
+
+            $html .= '  <tr>
+                            <td style="text-align:center">' . $no . '</td>
+                            <td>' . $data['number'] . '</td>
+                            <td>' . $data['customer_name'] . '</td>
+                            <td>' . $data['trans_date'] . '</td>
+                            <td>' . $data['due_date'] . '</td>
+                            <td style="text-align:right; mso-number-format:\@;">' . number_format($data['total_invoice'], 4, '.', '') . '</td>
+                            <td style="text-align:right; mso-number-format:\@;">' . number_format($data['discount'], 4, '.', '') . '</td>
+                            <td style="text-align:right; mso-number-format:\@;">' . number_format($data['total_sub'], 4, '.', '') . '</td>
+                            <td style="text-align:right; mso-number-format:\@;">' . number_format($data['total_vat'], 4, '.', '') . '</td>
+                            <td style="text-align:right; mso-number-format:\@;">' . number_format($data['total_pph'], 4, '.', '') . '</td>
+                            <td style="text-align:right; mso-number-format:\@;" colspan="2">' . number_format($data['total_grand'], 4, '.', '') . ' </td>
+                        </tr>';
+
+            $html .= '<tr>
+                        <td colspan="11" style="background:#D1FFC6;"><b>DETAIL OF ' . $data['number'] . '</b></td>
+                    </tr>
+                    <tr>
+                        <th width="20"></th>
+                        <th>DN No</th>
+                        <th>SO No</th>
+                        <th>Customer Order No</th>
+                        <th>Product No</th>
+                        <th>Product Name</th>
+                        <th>Qty</th>
+                        <th>UoM</th>
+                        <th>Currency</th>
+                        <th>Unit Price</th>
+                        <th>Amount</th>
+                    </tr>';
+
+            foreach ($details as $detail) {
+                $format = ($detail['currency'] == 'IDR') ? 2 : 4;
+
+                $html .= '<tr>
+                        <td></td>
+                        <td>' . $detail['delivery_note_no'] . '</td>
+                        <td>' . $detail['sales_order_no'] . '</td>
+                        <td>' . $detail['customer_order_no'] . '</td>
+                        <td>' . $detail['item_no'] . '</td>
+                        <td>' . $detail['item_name'] . '</td>
+                        <td style="text-align:right">' . number_format($detail['qty'], 2, '.', '') . '</td>
+                        <td>' . $detail['uom'] . '</td>
+                        <td>' . $detail['currency'] . '</td>
+                        <td style="text-align:right">' . number_format($detail['price'], $format, '.', '') . '</td>
+                        <td style="text-align:right">' . number_format($detail['total'], $format, '.', '') . '</td>
+                    </tr>';
+            }
+            $no++;
+        }
+        $html .= '</table></body></html>';
+        echo $html;
+    }
+
+
 
     public function print_summary($option = "")
     {
