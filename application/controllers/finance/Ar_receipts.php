@@ -330,8 +330,73 @@ class Ar_receipts extends CI_Controller
         echo json_encode($data);
     }
 
-    // public function readInvoiceDropdown_with_this_receipt()
     public function readInvoiceDropdown()
+    {
+        $customer_id = $this->input->get('customer_id');
+        $formMode    = $this->input->get('formMode');
+        $receipt_no  = $this->input->get('receipt_no') ?? "";
+
+        // 1. Ambil total_grand langsung sebagai total_invoice
+        $this->db->select('a.number, a.journal_type_id, a.trans_date, a.customer_order_no, a.due_date, a.total_grand as total_invoice');
+        
+        // 2. Hitung total yang sudah dibayar (SUM dari ar_receipts)
+        $this->db->select("IFNULL(pay.total_paid, 0) as total_paid", FALSE);
+        
+        // 3. Jika Update, ambil nilai yang sedang dibayar di receipt ini
+        if ($formMode == "update" && !empty($receipt_no)) {
+            $this->db->select("IFNULL(this_pay.receipt, 0) as current_receipt_amount", FALSE);
+        }
+
+        $this->db->from('sales_invoices a');
+
+        // Join untuk total bayar keseluruhan
+        $this->db->join('(SELECT sales_invoice, SUM(receipt) as total_paid FROM ar_receipts GROUP BY sales_invoice) pay', 'a.number = pay.sales_invoice', 'LEFT');
+        
+        // Join khusus untuk receipt saat ini (mode update)
+        if ($formMode == "update" && !empty($receipt_no)) {
+            $this->db->join('ar_receipts this_pay', "a.number = this_pay.sales_invoice AND this_pay.receipt_no = '$receipt_no'", 'LEFT');
+        }
+
+        $this->db->where('a.customer_id', $customer_id);
+        $this->db->where('a.deleted', 0);
+
+        if ($formMode == "update" && !empty($receipt_no)) {
+            $this->db->group_start();
+                $this->db->where('a.status', 0);
+                $this->db->or_where('this_pay.receipt_no', $receipt_no);
+            $this->db->group_end();
+            
+            $this->db->group_by('a.number');
+            // Pastikan invoice muncul jika masih ada sisa ATAU memang SI bagian dari receipt ini
+            $this->db->having("(total_invoice > total_paid) OR (current_receipt_amount > 0)");
+        } else {
+            $this->db->where('a.status', 0);
+            $this->db->group_by('a.number');
+            $this->db->having('total_invoice > total_paid');
+        }
+
+        $records = $this->db->get()->result();
+
+        foreach ($records as $key => $record) {
+            $record->no = $key + 1;
+            
+            // HITUNG BALANCE (Sisa Piutang)
+            // Rumus: Total Invoice - (Total Bayar - Bayar Saat Ini)
+            // Ini supaya balance kembali ke angka "sebelum dibayar oleh receipt ini"
+            $total_paid_others = (float)$record->total_paid - (isset($record->current_receipt_amount) ? (float)$record->current_receipt_amount : 0);
+            $balance_real = (float)$record->total_invoice - $total_paid_others;
+
+            $record->amount  = round((float)$record->total_invoice, 2);
+            $record->balance = round($balance_real, 2);
+            $record->receipt = round($balance_real, 2); // Default angka bayar
+        }
+
+        header('Content-Type: application/json');
+        echo json_encode($records);
+    }
+
+    public function readInvoiceDropdown_with_this_receipt()
+    // public function readInvoiceDropdown()
     {
         $customer_id = $this->input->get('customer_id');
         $formMode    = $this->input->get('formMode');
@@ -639,6 +704,8 @@ class Ar_receipts extends CI_Controller
             //Select Query
             $this->db->select('a.*, c.number as gl_no, b.name as customer_name');
             $this->db->select("'view' as details");
+            // --- Concat untuk tampil multiple SI di dropdown frontend ---
+            $this->db->select("GROUP_CONCAT(DISTINCT REPLACE(a.sales_invoice, ' ', '') SEPARATOR ',') as sales_invoices");
             $this->db->from('ar_receipts a');
             $this->db->join('customers b', 'a.customer_id = b.id');
             $this->db->join('journal_postings c', 'a.receipt_no = c.document_no', 'left');

@@ -952,7 +952,6 @@
                     
                     $("#receipt_type").combobox('disable');
                     $("#customer_id").combogrid('disable');
-                    $("#customer_id").combogrid('disable');
                     /** -- Modifikasi Update bisa tambah SI 
                     $("#sales_invoice").combobox('disable');
                     */
@@ -2170,7 +2169,7 @@
                     method: 'get',
                     queryParams: {
                         customer_id: customer.id,
-                        receipt_type: receipt_type,
+                        receipt_type: ($("#receipt_type").combobox('getValue') || ""),
                         receipt_no: ($("#receipt_no").textbox('getValue') || ""),
                         formMode: (typeof formMode !== 'undefined' ? formMode : 'add'),
                     },
@@ -2198,7 +2197,7 @@
                         }
                     ]],
                     onLoadSuccess: function(data) {
-                        isLock = true; 
+                        isCheckLock = true;
 
                         // Jika formMode adalah 'add', tidak perlu checklist dari row selected.
                         if (typeof formMode !== 'undefined' && formMode === 'update') 
@@ -2230,7 +2229,7 @@
                             console.log("Form Mode Add: Dropdown loaded with empty selection.");
                         }
 
-                        setTimeout(function() { isLock = false; }, 500);
+                        setTimeout(function() { isCheckLock = false; }, 500);
                     },
                     onCheck: function(index, rowData) {
                         if (isCheckLock) return; // Proteksi Anti-Loop
@@ -2250,24 +2249,36 @@
                         let uncheckedPI = String(rowData.number).trim();
                         var dg2 = $('#dg2');
                         var rowsInDg2 = dg2.datagrid('getRows');
-                        let foundAndRemoved = false;
-
-                        // Iterasi terbalik untuk menghapus baris di dg2
-                        for (let i = rowsInDg2.length - 1; i >= 0; i--) {
+                        
+                        // Cari dulu apakah data tersebut ada di dg2 (tanpa menghapus)
+                        let targetIndex = -1;
+                        for (let i = 0; i < rowsInDg2.length; i++) {
                             if (String(rowsInDg2[i].sales_invoice).trim() === uncheckedPI) {
-                                dg2.datagrid('deleteRow', i);
-                                foundAndRemoved = true;
+                                targetIndex = i;
+                                break;
                             }
                         }
 
-                        if (foundAndRemoved) {
+                        // Jika ditemukan, baru tanya konfirmasi
+                        if (targetIndex !== -1) {
                             $.messager.confirm('Confirm', 'Are you sure want to remove invoice ' + uncheckedPI + '?', function(r) {
                                 if (r) {
+                                    // USER SETUJU: Hapus dari dg2
+                                    dg2.datagrid('deleteRow', targetIndex);
+                                    
                                     $.messager.alert("Warning", "<b>Please click Preview Data and Add To Journal again before Save All</b>", 'warning');
                                 } else {
-                                    // Jika user batal, checklist kembali baris tersebut (Gunakan lock)
+                                    // USER BATAL: Kembalikan checklist di combogrid
                                     isCheckLock = true;
                                     $('#sales_invoice').combogrid('grid').datagrid('checkRow', index);
+                                    
+                                    // Tambahkan setValues agar teks di input box tetap sinkron
+                                    var currentValues = $('#sales_invoice').combogrid('getValues');
+                                    if (currentValues.indexOf(uncheckedPI) === -1) {
+                                        currentValues.push(uncheckedPI);
+                                        $('#sales_invoice').combogrid('setValues', currentValues);
+                                    }
+                                    
                                     setTimeout(function() { isCheckLock = false; }, 100);
                                 }
                             });
@@ -2355,7 +2366,11 @@
             $("#d_receipt_type").textbox('setValue', row.receipt_type);
             $("#d_receipt_date").datebox('setValue', row.receipt_date);
             $("#d_customer_name").textbox('setValue', row.customer_name);
+
+            /** -- existing
             $("#d_sales_invoice").textbox('setValue', row.sales_invoice);
+            */
+            $("#d_sales_invoice").textbox('setValue', row.sales_invoices); // tampil multiple number
             
             $("#d_bank_account").textbox('setValue', row.bank_account);
             $("#d_receipt_by").textbox('setValue', row.receipt_by);
