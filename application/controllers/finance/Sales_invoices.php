@@ -4029,6 +4029,52 @@ class Sales_invoices extends CI_Controller
                 </tr>';
         $no = 1;
         foreach ($records as $data) {
+            // Helper format separator decimal
+            $fmt = function($val, $ccy) {
+                $format = ($ccy == 'IDR') ? 2 : 4;
+                $excel_format = ($ccy == 'IDR') ? '0\.00' : '0\.0000';
+
+                return 'style="text-align:right; mso-number-format:\'' . $excel_format . '\';"' . '>' . number_format((float)$val, $format, '.', '');
+            };
+
+            // Calculate Grand Total di luar string agar tidak semrawut
+            $grand_total = (float)$data['total_sub'] + (float)$data['total_vat'] - (float)$data['total_pph'];
+            $currency = $data['currency'] ?? 'IDR';
+
+            $html .= '  <tr>
+                <td>' . $no . '</td>
+                <td>' . $data['journal_type_name'] . '</td>
+                <td>' . $data['number'] . '</td>
+                <td>' . $data['customer_name'] . '</td>
+                <td>' . $data['trans_date'] . '</td>
+                <td>' . $data['due_date'] . '</td>
+                <td>' . $data['payment_term'] . '</td>
+                
+                <td ' . $fmt($data['total_sub'], $currency) . '</td>
+                <td ' . $fmt($data['total_vat'], $currency) . '</td>
+                <td ' . $fmt($data['total_pph'], $currency) . '</td>
+                <td ' . $fmt($grand_total, $currency) . '</td>
+
+                <td>' . $data['remarks'] . '</td>
+                <td>' . $data['delivery_note_no'] . '</td>
+                <td>' . $data['sales_order_no'] . '</td>
+                <td>' . $data['customer_order_no'] . '</td>
+                <td>' . $data['item_no'] . '</td>
+                <td>' . $data['item_name'] . '</td>
+                <td>' . $data['uom'] . '</td>
+                
+                <td ' . $fmt($data['qty'], $currency) . '</td>
+                <td>' . $data['currency'] . '</td>
+                <td ' . $fmt($data['price'], $currency) . '</td>
+                <td ' . $fmt($data['total'], $currency) . '</td>
+                
+                <td>' . $data['account_number'] . '</td>
+                <td>' . $data['account_name'] . '</td>
+                <td>' . $data['account_type'] . '</td>
+                <td>' . $data['created_by'] . '</td>
+            </tr>';
+
+            /** -- existing
             $html .= '  <tr>
                             <td style="text-align:center">' . $no . '</td>
                             <td>' . $data['journal_type_name'] . '</td>
@@ -4057,12 +4103,15 @@ class Sales_invoices extends CI_Controller
                             <td>' . $data['account_type'] . '</td>
                             <td>' . $data['created_by'] . '</td>
                         </tr>';
+            */
+
             $no++;
         }
 
         $html .= '</table></body></html>';
         echo $html;
     }
+
 
     public function printJournal($option = "")
     {
