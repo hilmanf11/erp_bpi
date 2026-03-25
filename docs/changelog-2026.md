@@ -498,3 +498,6 @@ add Specification ([d1a2cbe9](https://github.com/hilmanf11/erp_bpi/commit/d1a2cb
 
 ### [2026-03-17]
 - **Rizki Puji**: Fixing: query carry-over balance on report Recap Inventory WIP STD Actual ([b00f206b](https://github.com/hilmanf11/erp_bpi/commit/b00f206b8189a6aaff67851b37c1ba607c0f67b7))
+
+### [2026-03-25]
+- **Rizki Puji**: Feature: query Concat multi Sales Invoice dropdown on AR Receipts ([ee707787](https://github.com/hilmanf11/erp_bpi/commit/ee707787c2ea0c68cc176ff5ba5655d087bd38e6))
