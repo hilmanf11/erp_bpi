@@ -501,3 +501,6 @@ add Specification ([d1a2cbe9](https://github.com/hilmanf11/erp_bpi/commit/d1a2cb
 
 ### [2026-03-25]
 - **Rizki Puji**: Feature: query Concat multi Sales Invoice dropdown on AR Receipts ([ee707787](https://github.com/hilmanf11/erp_bpi/commit/ee707787c2ea0c68cc176ff5ba5655d087bd38e6))
+
+### [2026-03-25]
+- **Rizki Puji**: Fixing: validate balance local credit debit AR Receipts ([e8afab95](https://github.com/hilmanf11/erp_bpi/commit/e8afab959a6c4c3baf4d8391f1833270d7381c64))
