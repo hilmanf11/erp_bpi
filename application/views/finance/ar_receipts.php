@@ -1438,7 +1438,6 @@
                 iconCls: 'icon-ok',
                 handler: function() {
 
-                                        // --- validasi account_number call function validateDatagrid ---
                     var hasValidationError = false;
                     if (!validateDatagrid('#dg2', "AR Receipt Lists")) { // Validasi AP Payment Lists (#dg2)
                         hasValidationError = true;
@@ -1457,6 +1456,34 @@
                     // --- Lanjutkan proses jika tidak ada error validasi ---
 
                     if (isSubmitting) return; // cegah klik dobel
+                    
+                    // Validasi Balance
+                    if (parseFloat($("#balance_debit").numberbox('getValue')) !== parseFloat($("#balance_credit").numberbox('getValue'))) {
+                        toastr.error("Balance Debit and Credit do not match!");
+                        return;
+                    }
+
+                    $('#dg2').datagrid('acceptChanges');
+                    $('#dg3').datagrid('acceptChanges');
+                    
+                    var rowsPayment = $('#dg2').datagrid('getRows');
+                    var rowsJournal = $('#dg3').datagrid('getRows');
+
+                    if (rowsPayment.length === 0) {
+                        toastr.warning("Please select your data in table first");
+                        return;
+                    }
+
+                    if (rowsJournal.length <= 0) {
+                        toastr.error("Please calculate journal first!");
+                        return false;
+                    }
+
+                    var totalData = rowsPayment.length + rowsJournal.length;
+                    if (totalData <= 0) {
+                        toastr.error("There is no data to submit. Please re-check");
+                        return false;
+                    }
                     
                     isSubmitting = true;
                     var btn = $(this);
