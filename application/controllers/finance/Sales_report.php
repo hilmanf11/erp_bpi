@@ -1,6 +1,17 @@
 <?php
 date_default_timezone_set("Asia/Bangkok");
 defined('BASEPATH') or exit('No direct script access allowed');
+
+/**
+ * @property CI_Input $input
+ * @property CI_Output $output
+ * @property CI_Loader $load
+ * @property CI_Session $session
+ * @property CI_DB_query_builder $db
+ * @property CI_Form_validation $form_validation
+ * @property Crud $crud
+ * @property Convertcurrency $convertcurrency
+ */
 class Sales_report extends CI_Controller
 {
     public function __construct()
@@ -90,6 +101,7 @@ class Sales_report extends CI_Controller
                 a.item_fg_id,
                 b.number AS item_fg_number,
                 b.name AS item_fg_name,
+                s.number AS sales_invoice_no,
                 COALESCE(a.sales_order_no, a.sales_order_no_rm) AS sales_order_no,
                 a.customer_order_no,
                 a.uom,
@@ -109,6 +121,7 @@ class Sales_report extends CI_Controller
                 LEFT JOIN customers c ON a.customer_id = c.id
                 LEFT JOIN sales_orders d ON a.sales_order_no = d.sales_order_no and a.item_fg_id = d.item_fg_id
                 LEFT JOIN sales_order_rm e ON a.sales_order_no_rm = e.sales_order_no and a.item_fg_id = e.item_fg_id
+                LEFT JOIN sales_invoices s ON s.delivery_note_no = a.delivery_note_no and s.item_fg_id = a.item_fg_id
                 WHERE a.customer_id LIKE '%$filter_customer_id%' and a.division LIKE '%$filter_division%' and a.item_fg_id LIKE '%$filter_item_fg_id%' 
                 and a.delivery_note_no LIKE '%$filter_delivery_notes%' and DATE_FORMAT(a.delivery_note_date, '%Y-%m-%d') BETWEEN '$filter_from' and '$filter_to' AND a.trans_type = 'SALES'
                 GROUP BY a.id  
@@ -161,6 +174,7 @@ class Sales_report extends CI_Controller
                         <th width="20">No</th>
                         <th width="250">Customer Name</th>
                         <th>Division</th>
+                        <th>Sales Invoice No.</th>
                         <th width="150">Delivery Note No</th>
                         <th width="100">Delivery Note Date</th>
                         <th witth="150">Product ID</th>
@@ -201,6 +215,7 @@ class Sales_report extends CI_Controller
                                 <td style="text-align:center">' . $no . '</td>
                                 <td>' . $record->customer_name . '</td>
                                 <td style="text-align:center">' . $record->division . '</td>
+                                <td>' . $record->sales_invoice_no . '</td>
                                 <td>' . $record->delivery_note_no . '</td>
                                 <td>' . $record->delivery_note_date . '</td>
                                 <td>' . $record->item_fg_id . '</td>
