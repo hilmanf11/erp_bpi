@@ -516,3 +516,6 @@ add Specification ([d1a2cbe9](https://github.com/hilmanf11/erp_bpi/commit/d1a2cb
 
 ### [2026-03-26]
 - **Rizki Puji**: Hotfix: match script Sales Invoices and separator excel to live ([bfa3c26c](https://github.com/hilmanf11/erp_bpi/commit/bfa3c26cb21c2369b737bea7c06255024b94322b))
+
+### [2026-03-26]
+- **Rizki Puji**: Feature: add column Purchase and Invoice No on Purchase Report ([4bd7470d](https://github.com/hilmanf11/erp_bpi/commit/4bd7470d98e65253edc3ef8600e0f144ad6e1caa))
