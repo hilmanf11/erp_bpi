@@ -513,3 +513,6 @@ add Specification ([d1a2cbe9](https://github.com/hilmanf11/erp_bpi/commit/d1a2cb
 
 ### [2026-03-26]
 - **Rizki Puji**: Feature: add column Sales Invoice No on Sales Report ([d2160103](https://github.com/hilmanf11/erp_bpi/commit/d2160103aa473a0fb7d0ea79d0b75ee0dcabad18))
+
+### [2026-03-26]
+- **Rizki Puji**: Hotfix: match script Sales Invoices and separator excel to live ([bfa3c26c](https://github.com/hilmanf11/erp_bpi/commit/bfa3c26cb21c2369b737bea7c06255024b94322b))

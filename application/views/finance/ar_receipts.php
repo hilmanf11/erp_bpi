@@ -955,7 +955,7 @@
                     /** -- Modifikasi Update bisa tambah SI 
                     $("#sales_invoice").combobox('disable');
                     */
-                    
+
                     $("#showExchange").hide();
 
                     var receipt_by = $("#receipt_by").combobox('getValue');
@@ -1532,6 +1532,7 @@
                                     endEditing2();
 
                                     if (totalrows > 0) {
+                                        requestData(totalrows, rows);
                                         $('#dlg_insert').dialog('close');
 
                                         Swal.fire({
@@ -1552,8 +1553,6 @@
                                             },
                                             success: function(result) {
                                                 if (totalrows2 > 0) {
-                                                    requestData(totalrows, rows);
-                                                    
                                                     for (let z = 0; z < totalrows2; z++) {
                                                         $.ajax({
                                                             type: "post",
