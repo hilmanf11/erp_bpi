@@ -71,6 +71,9 @@
                         <option value="CURRENCY REVALUATION">CURRENCY REVALUATION</option>
                         <option value="ADJUSTMENT">ADJUSTMENT</option>
                         <option value="CLOSING JOURNAL">CLOSING JOURNAL</option>
+                        <option value="INVENTORY RM">INVENTORY RM</option>
+                        <option value="INVENTORY FG">INVENTORY FG</option>
+                        <option value="INVENTORY WIP">INVENTORY WIP</option>
                     </select>
                 </div>
                 <div class="fitem">
@@ -118,6 +121,9 @@
                         <option value="CURRENCY REVALUATION">CURRENCY REVALUATION</option>
                         <option value="ADJUSTMENT">ADJUSTMENT</option>
                         <option value="CLOSING JOURNAL">CLOSING JOURNAL</option>
+                        <option value="INVENTORY RM">INVENTORY RM</option>
+                        <option value="INVENTORY FG">INVENTORY FG</option>
+                        <option value="INVENTORY WIP">INVENTORY WIP</option>
                     </select>
                 </div>
                 <div class="fitem">
