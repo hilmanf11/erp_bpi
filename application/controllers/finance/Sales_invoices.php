@@ -3844,6 +3844,21 @@ class Sales_invoices extends CI_Controller
                     <th>PPH 23</th>
                     <th colspan="2">Grand Total</th>
                 </tr>';
+
+        // Helper format separator decimal
+        $fmt = function($val, $ccy_or_dec) {
+            if (is_string($ccy_or_dec)) {
+                $dec = ($ccy_or_dec == 'IDR') ? 2 : 4;
+            } else {
+                $dec = (int)$ccy_or_dec;
+            }
+
+            // Format '0.0000' (tanpa # dan tanpa koma di depan) 
+            $excel_mask = '0.' . str_repeat('0', $dec);
+
+            return 'style="text-align:right; mso-number-format:\'' . $excel_mask . '\';"' . '>' . (float)$val;
+        };
+
         $no = 1;
         foreach ($records as $data) {
             $number = $data['number'];
@@ -3864,13 +3879,13 @@ class Sales_invoices extends CI_Controller
                             <td>' . $data['customer_name'] . '</td>
                             <td>' . $data['trans_date'] . '</td>
                             <td>' . $data['due_date'] . '</td>
-                            <td style="text-align:right;">' . number_format($data['total_sub'], 4) . '</td>
-                            <td style="text-align:right;">' . number_format($data['total_vat'], 4) . '</td>
-                            <td style="text-align:right;">' . number_format($data['total_pph'], 4) . '</td>
-                            <td colspan="2" style="text-align:right;">' . number_format($data['total_grand'], 4) . '</td>
+                            <td ' . $fmt($data['total_sub'], 4) . '</td>
+                            <td ' . $fmt($data['total_vat'], 4) . '</td>
+                            <td ' . $fmt($data['total_pph'], 4) . '</td>
+                            <td colspan="2" ' . $fmt($data['total_grand'], 4) . '</td>
                         </tr>';
             $html .= '  <tr>
-                            <td colspan="11" style="background:#D1FFC6;"><b>DETAIL OF ' . $data['number'] . '</b></td>
+                            <td colspan="10" style="background:#D1FFC6;"><b>DETAIL OF ' . $data['number'] . '</b></td>
                         </tr>
                         <tr>
                             <th width="20"></th>
@@ -3894,11 +3909,11 @@ class Sales_invoices extends CI_Controller
                                 <td style="text-align:center">' . $nod . '</td>
                                 <td>' . $detail['item_no'] . '</td>
                                 <td>' . $detail['item_name'] . '</td>
-                                <td style="text-align:right">' . number_format($detail['qty'], 2, ',', '.') . '</td>
+                                <td ' . $fmt($detail['qty'], 2) . '</td>
                                 <td>' . $detail['uom'] . '</td>
                                 <td>' . $detail['currency'] . '</td>
-                                <td style="text-align:right">' . number_format($detail['price'], $decimal_no, '.', ',') . '</td>
-                                <td style="text-align:right">' . number_format(($detail['price'] * $detail['qty']), 2, ",", ".") . '</td>
+                                <td ' . $fmt($detail['price'], $decimal_no) . '</td>
+                                <td ' . $fmt(($detail['price'] * $detail['qty']), 2) . '</td>
 
                             </tr>';
                 $nod++;
