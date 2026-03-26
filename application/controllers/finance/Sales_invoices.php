@@ -4248,8 +4248,25 @@ class Sales_invoices extends CI_Controller
                     <th>Debit</th>
                     <th>Credit</th>
                 </tr>';
+
+        // Helper format separator decimal
+        $fmt = function($val, $ccy_or_dec) {
+            if (is_string($ccy_or_dec)) {
+                $dec = ($ccy_or_dec == 'IDR') ? 2 : 4;
+            } else {
+                $dec = (int)$ccy_or_dec;
+            }
+
+            // Format '0.0000' (tanpa # dan tanpa koma di depan)
+            $excel_mask = '0.' . str_repeat('0', $dec);
+
+            return 'style="text-align:right; mso-number-format:\'' . $excel_mask . '\';"' . '>' . (float)$val;
+        };
+
         $no = 1;
         foreach ($records as $data) {
+            $currency = $data['currency'] ?? 'IDR';
+
             $html .= '  <tr>
                             <td style="text-align:center">' . $no . '</td>
                             <td>' . $data['journal_type_name'] . '</td>
@@ -4260,8 +4277,8 @@ class Sales_invoices extends CI_Controller
                             <td>' . $data['currency'] . '</td>
                             <td>' . $data['account_number'] . '</td>
                             <td>' . $data['account_name'] . '</td>
-                            <td>' . $data['debit'] . '</td>
-                            <td>' . $data['credit'] . '</td>
+                            <td ' . $fmt($data['debit'], $currency) . '</td>
+                            <td ' . $fmt($data['credit'], $currency) . '</td>
                         </tr>';
             $no++;
         }
