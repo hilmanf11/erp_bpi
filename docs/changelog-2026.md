@@ -510,3 +510,6 @@ add Specification ([d1a2cbe9](https://github.com/hilmanf11/erp_bpi/commit/d1a2cb
 
 ### [2026-03-26]
 - **Rizki Puji**: Fixing: format separator decimal Export Excel Summary on Sales Invoices ([db08e3d4](https://github.com/hilmanf11/erp_bpi/commit/db08e3d4e8aafd1feb73a3b084e6dca41457386c))
+
+### [2026-03-26]
+- **Rizki Puji**: Feature: add column Sales Invoice No on Sales Report ([d2160103](https://github.com/hilmanf11/erp_bpi/commit/d2160103aa473a0fb7d0ea79d0b75ee0dcabad18))
