@@ -113,7 +113,7 @@ class Purchase_report extends CI_Controller
                 LEFT JOIN item_categories e ON b.item_category_id = e.id
                 LEFT JOIN suppliers f ON d.supplier_id = f.id
                 LEFT JOIN supplier_items g ON d.item_rm_id = g.item_rm_id and d.supplier_id = g.supplier_id
-                LEFT JOIN purchase_invoices pi ON pi.po_no = a.po_no and pi.item_rm_id = a.item_rm_id
+                LEFT JOIN purchase_invoices pi ON pi.por_no = a.receipt_no and pi.item_rm_id = a.item_rm_id
                 WHERE a.supplier_id LIKE '%$filter_supplier_id%' and b.division LIKE '%$filter_division%' and 
                 DATE_FORMAT(a.receipt_date, '%Y-%m-%d') BETWEEN '$filter_from' and '$filter_to' and b.item_category_id LIKE '%$filter_category_id%' and 
                 b.name LIKE '%$filter_item_rm_name%' and b.number LIKE '%$filter_item_rm_number%'
