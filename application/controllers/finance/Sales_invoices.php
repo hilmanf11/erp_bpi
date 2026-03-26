@@ -3748,7 +3748,6 @@ class Sales_invoices extends CI_Controller
     }
 
 
-
     public function print_summary($option = "")
     {
         if ($option == "excel") {
@@ -4027,17 +4026,19 @@ class Sales_invoices extends CI_Controller
                     <th>Debit/Credit</th>
                     <th>Created By</th>
                 </tr>';
+
         // Helper format separator decimal
         $fmt = function($val, $ccy_or_dec) {
-            // Set jumlah desimal
             if (is_string($ccy_or_dec)) {
                 $dec = ($ccy_or_dec == 'IDR') ? 2 : 4;
             } else {
-                $dec = $ccy_or_dec;
+                $dec = (int)$ccy_or_dec;
             }
 
-            // Gunakan format 'Fixed' agar Excel yang menentukan pemisah desimalnya agar sesuai regional setting komputer user.
-            return 'style="text-align:right; mso-number-format:\'Fixed\';"' . '>' . (float)$val;
+            // Format '0.0000' (tanpa # dan tanpa koma di depan) 
+            $excel_mask = '0.' . str_repeat('0', $dec);
+
+            return 'style="text-align:right; mso-number-format:\'' . $excel_mask . '\';"' . '>' . (float)$val;
         };
 
         $no = 1;
@@ -4116,7 +4117,6 @@ class Sales_invoices extends CI_Controller
         $html .= '</table></body></html>';
         echo $html;
     }
-
 
     public function printJournal($option = "")
     {
