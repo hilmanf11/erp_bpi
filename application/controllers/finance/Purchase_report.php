@@ -1,6 +1,17 @@
 <?php
 date_default_timezone_set("Asia/Bangkok");
 defined('BASEPATH') or exit('No direct script access allowed');
+
+/**
+ * @property CI_Input $input
+ * @property CI_Output $output
+ * @property CI_Loader $load
+ * @property CI_Session $session
+ * @property CI_DB_query_builder $db
+ * @property CI_Form_validation $form_validation
+ * @property Crud $crud
+ * @property Convertcurrency $convertcurrency
+ */
 class Purchase_report extends CI_Controller
 {
     public function __construct()
@@ -78,6 +89,8 @@ class Purchase_report extends CI_Controller
                     b.number as item_rm_number,
                     b.name as item_rm_name,
                     a.qty_receipt2 as qty_receipt,
+                    pi.number as purchase_invoice_no,
+                    pi.invoice_no,
                     f.currency,
                     g.uom_default as uom,
                     b.division,
@@ -100,6 +113,7 @@ class Purchase_report extends CI_Controller
                 LEFT JOIN item_categories e ON b.item_category_id = e.id
                 LEFT JOIN suppliers f ON d.supplier_id = f.id
                 LEFT JOIN supplier_items g ON d.item_rm_id = g.item_rm_id and d.supplier_id = g.supplier_id
+                LEFT JOIN purchase_invoices pi ON pi.po_no = a.po_no and pi.item_rm_id = a.item_rm_id
                 WHERE a.supplier_id LIKE '%$filter_supplier_id%' and b.division LIKE '%$filter_division%' and 
                 DATE_FORMAT(a.receipt_date, '%Y-%m-%d') BETWEEN '$filter_from' and '$filter_to' and b.item_category_id LIKE '%$filter_category_id%' and 
                 b.name LIKE '%$filter_item_rm_name%' and b.number LIKE '%$filter_item_rm_number%'
@@ -160,6 +174,8 @@ class Purchase_report extends CI_Controller
                 <table id="customers" border="1" style="font-size: 11px;">
                     <tr>
                         <th width="20">No</th>
+                        <th width="150">Purchase Invoice No</th>
+                        <th width="150">Invoice No</th>
                         <th width="150">Receipt No</th>
                         <th width="60">Category</th>
                         <th>Division</th>
@@ -177,6 +193,7 @@ class Purchase_report extends CI_Controller
                         <th>Exchange Rate</th>
                         <th>Amount (IDR)</th>
                     </tr>';
+
             $no = 1;
             $totalAmount = 0;
             $totalAmountIDR = 0;
@@ -200,6 +217,8 @@ class Purchase_report extends CI_Controller
 
                 $html .= '  <tr>
                                 <td style="text-align:center;">' . $no . '</td>
+                                <td>' . $record->purchase_invoice_no . '</td>
+                                <td>' . $record->invoice_no . '</td>
                                 <td>' . $record->receipt_no . '</td>
                                 <td style="text-align:center;">' . $record->category_number . '</td>
                                 <td style="text-align:center;">' . $record->division . '</td>
