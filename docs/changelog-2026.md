@@ -522,3 +522,6 @@ add Specification ([d1a2cbe9](https://github.com/hilmanf11/erp_bpi/commit/d1a2cb
 
 ### [2026-03-26]
 - **Rizki Puji**: Hotfix: match script Report COGS with live ([42fd2c3b](https://github.com/hilmanf11/erp_bpi/commit/42fd2c3b2ffb09a730fb3d1a963a49a6f706fce0))
+
+### [2026-03-26]
+- **Rizki Puji**: Feature: fix query join receipt_no on Purchase Report ([63e8826d](https://github.com/hilmanf11/erp_bpi/commit/63e8826d3cd8448838a337795fff4a0cb9c0664f))
