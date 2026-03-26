@@ -1,6 +1,17 @@
 <?php
 date_default_timezone_set("Asia/Bangkok");
 defined('BASEPATH') or exit('No direct script access allowed');
+
+/**
+ * @property CI_Input $input
+ * @property CI_Output $output
+ * @property CI_Loader $load
+ * @property CI_Session $session
+ * @property CI_DB_query_builder $db
+ * @property CI_Form_validation $form_validation
+ * @property Crud $crud
+ * @property Convertcurrency $convertcurrency
+ */
 class Report_cogs extends CI_Controller
 {
     public function __construct()
