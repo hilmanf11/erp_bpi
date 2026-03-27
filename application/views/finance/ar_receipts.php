@@ -1042,6 +1042,7 @@
     var editIndex = undefined;
 
     function preview(link = "") {
+        var receipt_no = $("#receipt_no").textbox('getValue');
         var sales_invoice = $("#sales_invoice").combogrid('getText');
 
         if (link == "") {
@@ -1055,6 +1056,12 @@
         } else {
             var dg = $('#dg2').datagrid({
                 url: linked,
+                method: 'get',
+                queryParams: {
+                    receipt_no: window.btoa(receipt_no),
+                    sales_invoice: window.btoa(sales_invoice),
+                    formMode: (formMode || null),
+                },
                 onClickRow: function(rowIndex) {
                     if (editIndex != rowIndex) {
                         $(this).datagrid('endEdit', editIndex);
@@ -1073,6 +1080,9 @@
                 onCancelEdit: function(index, row) {
                     row.editing = false;
                     $(this).datagrid('refreshRow', index);
+                },
+                onLoadError: function() {
+                    toastr.error('Failed to load data');
                 },
             });
         }

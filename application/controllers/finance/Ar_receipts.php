@@ -500,7 +500,8 @@ class Ar_receipts extends CI_Controller
         die(json_encode($arr));
     }
 
-    public function datatablesTemp()
+    // Bug duplicate Sales Invoice Number (Bu Nina)
+    public function datatablesTemp1()
     {
         $sales_invoice = base64_decode($this->input->get('sales_invoice'));
         $sales_invoice_ex = explode(",", $sales_invoice);
@@ -556,6 +557,78 @@ class Ar_receipts extends CI_Controller
         $arr['total_receipt'] = round($total_receipt, 2);
         die(json_encode($arr));
     }
+
+    public function datatablesTemp()
+    {
+        $sales_invoice = base64_decode($this->input->get('sales_invoice'));
+        $sales_invoice_ex = explode(",", $sales_invoice);
+        $formMode = $this->input->get('formMode') ?? 'add';
+        $receipt_no = base64_decode($this->input->get('receipt_no')) ?? "";
+
+        // Gunakan query yang bersih tanpa join ar_receipts di awal untuk mencegah duplikat baris
+        $this->db->select("a.*");
+        $this->db->from('sales_invoices a');
+        $this->db->where('a.deleted', 0);
+        $this->db->where_in('a.number', $sales_invoice_ex);
+
+        if ($formMode == "add") {
+            $this->db->where('a.status', 0);
+        }
+        
+        $this->db->group_by('a.number');
+        $this->db->order_by('a.number', 'asc');
+        $records = $this->db->get()->result_array();
+
+        $obj = [];
+        $total_receipt_header = 0;
+
+        foreach ($records as $record) {
+            $number = $record['number'];
+            $journal_type_id = $record['journal_type_id'];
+
+            // 1. Hitung total yang sudah dibayar (Kecuali receipt ini jika mode update)
+            $this->db->select_sum('receipt');
+            $this->db->where('sales_invoice', $number);
+            if ($formMode == 'update' && !empty($receipt_no)) {
+                $this->db->where('receipt_no !=', $receipt_no);
+            }
+            $paid_row = $this->db->get('ar_receipts')->row();
+            $total_paid_others = $paid_row->receipt ?? 0;
+
+            // 2. Hitung Balance Real
+            $amount = (float)$record['total_grand'];
+            $balance = $amount - (float)$total_paid_others;
+
+            // 3. Ambil Setup Akun Jurnal (Gunakan Join manual atau query tunggal)
+            $journal = $this->db->select('a.account_number, b.account_name')
+                ->from('journal_setups a')
+                ->join('account_coa b', 'a.account_number = b.account_number')
+                ->where(['a.journal_type_id' => $journal_type_id, 'a.ar_receipt' => 'YES'])
+                ->get()->row();
+
+            $obj[] = array(
+                "sales_invoice"  => $record['number'],
+                "so_number"      => $record['sales_order_no'],
+                "description"    => $record['customer_order_no'],
+                "currency"       => $record['currency'],
+                "amount"         => $amount,
+                "balance"        => $balance,
+                "receipt"        => $balance, // Nilai default yang diisi ke grid
+                "account_number" => @$journal->account_number,
+                "account_name"   => @$journal->account_name,
+                "account_type"   => "CREDIT",
+            );
+
+            $total_receipt_header += $balance;
+        }
+
+        $arr['rows'] = $obj;
+        $arr['total_receipt'] = round($total_receipt_header, 2);
+        
+        header('Content-Type: application/json');
+        die(json_encode($arr));
+    }
+
 
     public function datatables($details = "")
     {
