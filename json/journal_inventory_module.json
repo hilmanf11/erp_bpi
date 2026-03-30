@@ -1,0 +1,9 @@
+[
+    {"id": "PURCHASE ORDER RECEIPT", "text": "PURCHASE ORDER RECEIPT", "group": "IN"},
+    {"id": "BPM", "text": "BPM", "group": "IN"},
+    {"id": "ADJ STO (IN)", "text": "ADJ STO (IN)", "group": "IN"},
+    {"id": "SUPPLY SHEET", "text": "SUPPLY SHEET", "group": "OUT"},
+    {"id": "MATERIAL REQUISITION", "text": "MATERIAL REQUISITION", "group": "OUT"},
+    {"id": "NON SUPPLY SHEET", "text": "NON SUPPLY SHEET", "group": "OUT"},
+    {"id": "ADJ STO (OUT)", "text": "ADJ STO (OUT)", "group": "OUT"}
+]
