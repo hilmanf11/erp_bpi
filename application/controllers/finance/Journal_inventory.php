@@ -90,12 +90,10 @@ class Journal_inventory extends CI_Controller
         $journal_date = @base64_decode($get['journal_date']);
         $transaction_from = date("Y-m-01", strtotime($journal_date));
         $transaction_to = date("Y-m-t", strtotime($journal_date));
-        $transaction_from_ex = date("Y-m", strtotime(@base64_decode($get['journal_date'])));
-        $transaction_to_ex = date("Y-m", strtotime(@base64_decode($get['journal_date'])));
         $journal_type = base64_decode($get['journal_type']);
         $company_id = base64_decode($get['company_id']);
 
-        if ($modul == "PURCHASE ORDER RECEIPTS") {
+        if ($modul == "PURCHASE ORDER RECEIPT") {
             $this->db->select('a.number');
             $this->db->from('purchase_order_receipts a');
             $this->db->join('journal_inventory b', 'a.number = b.document_no', 'left');

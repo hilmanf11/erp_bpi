@@ -90,8 +90,8 @@
         <thead>
             <tr>
                 <th rowspan="2" data-options="field:'trans_date',width:100,halign:'center'">Trans Date</th>
-                <th rowspan="2" data-options="field:'document_no',width:150,halign:'center'">Document No</th>
-                <th rowspan="2" data-options="field:'invoice_no',width:150,halign:'center'">Invoice No</th>
+                <th rowspan="2" data-options="field:'document_no',width:150,halign:'center'">Document No.</th>
+                <th rowspan="2" data-options="field:'invoice_no',width:150,halign:'center'">Invoice No.</th>
                 <th rowspan="2" data-options="field:'company_name',width:200,halign:'center'">Company Name</th>
                 <th rowspan="2" data-options="field:'account_number',width:100,halign:'center'">Account No</th>
                 <th rowspan="2" data-options="field:'account_name',width:200,halign:'center'">Account Name</th>
@@ -113,7 +113,10 @@
 
 
 <!-- Insert -->
-<div id="dlg_insert" class="easyui-dialog" title="Add New Posting Journal Inventory" data-options="closed:true, modal:true" style="width: 100%; min-height:500px; padding:10px;">
+<div id="dlg_insert" class="easyui-dialog" title="Add New Posting Journal Inventory" 
+    data-options="closed:true, modal:true, resizable:true" 
+    style="width: 98%; height: 520px; padding:10px; overflow-y: auto;">
+
     <form id="frm_insert" method="post" novalidate>
         <fieldset style="width:70%; border:1px solid #d0d0d0; margin-bottom: 10px; border-radius:4px; float: left;" id="fieldset">
             <legend><b>Form Data</b></legend>
@@ -161,7 +164,7 @@
                     <input style="width:60%;" name="company_name" id="company_name" class="easyui-combobox">
                 </div>
                 <div class="fitem">
-                    <span style="width:35%; display:inline-block;">Document No</span>
+                    <span style="width:35%; display:inline-block;">Document No.</span>
                     <input style="width:60%;" name="document_no" id="document_no" class="easyui-combogrid">
                 </div>
                 <div class="fitem">
@@ -193,7 +196,7 @@
                     <th hidden rowspan="2" data-options="field:'flag',width:100,editor: {type: 'textbox'}">Flag</th>
                     <th hidden rowspan="2" data-options="field:'id',width:150,editor: {type: 'textbox'}">ID</th>
                     <th rowspan="2" data-options="field:'trans_date',width:100,editor: {type: 'datebox',options: {formatter: myformatter,parser: myparser}}">Trans Date</th>
-                    <th rowspan="2" data-options="field:'document_no',width:160,editor: {type: 'textbox', options: {required: true}}">Document No</th>
+                    <th rowspan="2" data-options="field:'document_no',width:160,editor: {type: 'textbox', options: {required: true}}">Document No.</th>
                     <th rowspan="2" data-options="field:'invoice_no',width:120,editor: {type: 'textbox', options: {required: true}}">Invoice No</th>
                     <th rowspan="2" data-options="field:'company_name',width:200, editor: {
                         type: 'combobox',
@@ -345,17 +348,39 @@
     }
 
     function preview() {
-        var journal_date = $("#journal_date").datebox('getValue');
-        // var transaction_to = $("#transaction_to").datebox('getValue');
-        var modul = $("#modul").combobox('getValue');
-        var company_id = $("#company_name").combobox('getValue');
-        var document_no = $("#document_no").combogrid('getText');
-        var journal_type = $("#journal_type").datebox('getValue');
+        // 1. Ambil semua value dalam satu objek agar rapi
+        const data = {
+            journal_date: $("#journal_date").datebox('getValue'),
+            division:     $("#division").combobox('getValue'),
+            type:         $("#type").combobox('getValue'),
+            modul:        $("#modul").combobox('getValue'),
+            company_id:   $("#company_name").combobox('getValue'),
+            document_no:  $("#document_no").combogrid('getValues'), 
+            journal_type: $("#journal_type").combobox('getValue'),
+        };
 
-        if (modul == "" || (jQuery.inArray(modul, ['PURCHASE INVOICING','SALES INVOICING','AP PAYMENT','AR RECEIPT']) >= 0 && document_no == "")) {
-            toastr.info('Please Choose Modul and Document No');
-        } else {
+        // Mapping field ke label agar user-friendly untuk pesan error
+        const requiredFields = [
+            { field: data.journal_date, label: 'Journal Date' },
+            { field: data.division,     label: 'Division' },
+            { field: data.type,         label: 'Type' },
+            { field: data.modul,        label: 'Module' },
+            { field: data.company_id,   label: 'Company' },
+            { field: data.document_no,  label: 'Document No.' },
+        ];
 
+        // Validasi menggunakan loop agar pesan toastr lebih spesifik
+        let isValid = true;
+        for (let item of requiredFields) {
+            if (!item.field || (Array.isArray(item.field) && item.field.length === 0)) {
+                toastr.info(`Please choose ${item.label} first!`);
+                isValid = false;
+                break;
+            }
+        }
+
+        // Input Form Valid
+        if (isValid) {
             $.ajax({
                 method: 'post',
                 url: '<?= base_url('finance/journal_postings/datatablesCheck') ?>',
@@ -469,7 +494,7 @@
     }
 
     function editrow(target) {
-        var modul = $("#modul").combobox('getValue')
+        var modul = $("#modul").combobox('getValue');
 
         if(modul == "ADJUSTMENT"){
             $('#dg2').datagrid('selectRow', getRowIndex(target));
@@ -720,6 +745,55 @@
             }]
         };
         $('#filter_division, #division').combobox(divisionConfig);
+
+        $("#document_no").combogrid({
+            panelWidth: 250,
+            idField: 'number',
+            textField: 'number',
+            multiple: true,
+            mode: 'remote',
+            fitColumns: true,
+            prompt: "Choose Document No.",
+            columns: [[
+                { field: 'ck', checkbox: true },
+                { field: 'number', title: 'Document No.', width: 150 }
+            ]]
+        });
+
+        $("#company_name").combobox({
+            url: '<?= base_url('finance/journal_inventory/readCompany') ?>',
+            valueField: 'company_id',
+            textField: 'company_name',
+            prompt: "Choose Company Name",
+            onSelect: function(rowcom) {
+                var valModul = $("#modul").combobox('getValue');
+                var valDate  = $("#journal_date").datebox('getValue');
+
+                // Reset document_no
+                $("#document_no").combogrid('clear');
+                
+                var targetUrl = '<?= base_url('finance/journal_inventory/readModul') ?>';
+                var g = $("#document_no").combogrid('grid');
+                
+                g.datagrid({
+                    url: targetUrl,
+                    queryParams: {
+                        modul: btoa(valModul),
+                        journal_date: btoa(valDate),
+                        company_id: btoa(rowcom.company_id)
+                    },
+                    onLoadSuccess: function(data) {
+                        if (data && data.theme === "error") {
+                            toastr.error(data.message, data.title);
+                            $(this).datagrid('loadData', []); 
+                        }
+                    },
+                    onLoadError: function() {
+                        toastr.error("Failed to fetch data from server", "Server Error");
+                    }
+                });
+            }
+        });
 
     });
 
