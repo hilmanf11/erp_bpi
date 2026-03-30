@@ -153,8 +153,10 @@ class Journal_inventory extends CI_Controller
             $offset = ($page - 1) * $rows;
             $result = array();
             //Select Query
-            $this->db->select('a.journal_date, a.number, a.journal_type_id, b.name as journal_type_name, a.modul, a.remarks, a.currency, a.rates, a.posting,
-                a.created_by, a.created_date, a.updated_by, a.updated_date, a.approved, a.approved_to, a.approved_by, a.approved_date,
+            $this->db->select('a.journal_date, a.number, a.journal_type_id, b.name as journal_type_name, 
+                a.document_no, a.modul, a.remarks, a.currency, a.rates, a.posting,
+                a.created_by, a.created_date, a.updated_by, a.updated_date, 
+                a.approved, a.approved_to, a.approved_by, a.approved_date,
                 SUM(a.original_debit) as original_debit, 
                 SUM(a.original_credit) as original_credit, 
                 SUM(a.local_debit) as local_debit, 
