@@ -161,7 +161,7 @@
             <div style="width:50%; float:left;">
                 <div class="fitem">
                     <span style="width:35%; display:inline-block;">Company Name</span>
-                    <input style="width:60%;" name="company_name" id="company_name" class="easyui-combobox">
+                    <input style="width:60%;" name="company_name" id="company_name" class="easyui-combogrid">
                 </div>
                 <div class="fitem">
                     <span style="width:35%; display:inline-block;">Document No.</span>
@@ -314,6 +314,311 @@
 <iframe id="printout" src="<?= base_url('finance/journal_inventory/print') ?>" style="width: 100%;" hidden></iframe>
 
 <script>
+    function getFilterParams() {
+        var params = {
+            filter_from: $("#filter_from").datebox('getValue'),
+            filter_to: $("#filter_to").datebox('getValue'),
+            filter_journal_type: $("#filter_journal_type").combogrid('getValue'),
+            filter_type: $("#filter_type").combobox('getValue'),
+            filter_modul: $("#filter_modul").combobox('getValue'),
+            filter_voucher: $("#filter_voucher").textbox('getValue')
+        };
+
+        var queryString = "";
+        for (var key in params) {
+            // Pastikan nilai adalah string dan tidak null/undefined sebelum btoa
+            var val = (params[key] || "").toString(); 
+            queryString += "&" + key + "=" + window.btoa(val);
+        }
+        return queryString;
+    }
+
+    function filter() {
+        var urlParams = getFilterParams();
+
+        $('#dg').datagrid({
+            url: '<?= base_url('finance/journal_inventory/datatables') ?>?' + urlParams,
+            pagination: true,
+            rownumbers: true,
+            fit:true,
+        });
+
+        // Update preview printout
+        $("#printout").contents().find('html').html("<center><br><br><br><b style='font-size:20px;'>Loading Preview...</b></center>");
+        $("#printout").attr('src', '<?= base_url('finance/journal_inventory/print') ?>?' + urlParams);
+    }
+
+    function pdf() {
+        // Pastikan iframe sudah ter-load dengan filter terakhir
+        $("#printout").get(0).contentWindow.print();
+    }
+
+    function excel() {
+        var urlParams = getFilterParams();
+        window.location.assign('<?= base_url('finance/journal_inventory/print/excel') ?>?' + urlParams);
+    }
+
+    //NOMOR AUTOMATIC
+    function number(journal_date) {
+        var dateValue = journal_date ? journal_date : "<?= date('Y-m-d') ?>";
+        
+        $.ajax({
+            type: "post",
+            url: "<?= base_url('finance/journal_inventory/number/') ?>" + window.btoa(dateValue),
+            dataType: "html",
+            success: function(result) {
+                if ($("#number").length > 0) {
+                    $("#number").textbox('setValue', result.trim());
+                }
+            },
+            error: function(xhr, status, error) {
+                console.error("Error fetching number: ", error);
+            }
+        });
+    }
+
+    //RELOAD
+    function reload() {
+        window.location.reload();
+    }
+
+
+
+    $(function() {
+        let masterModules = [];
+
+        // Load JSON Module
+        $.getJSON('<?= base_url("json/journal_inventory_module.json"); ?>', function(data) {
+            masterModules = data;
+            refreshModuleCombo(''); 
+        });
+
+        function refreshModuleCombo(selectedGroup) {
+            const filtered = !selectedGroup 
+                ? masterModules 
+                : masterModules.filter(item => item.group === selectedGroup);
+
+            const finalData = [{ id: '', text: 'Choose All', group: '' }, ...filtered];
+            
+            // Update kedua id (filter_modul dan modul) sekaligus
+            $('#filter_modul, #modul').each(function() {
+                if ($(this).length) {
+                    $(this).combobox('loadData', finalData).combobox('setValue', '');
+                }
+            });
+        }
+
+        // Listener untuk Type (Grouping IN/OUT)
+        $('#filter_type, #type').combobox({
+            onSelect: (rec) => refreshModuleCombo(rec.value),
+            onChange: (val) => { if(!val) refreshModuleCombo(''); }
+        });
+
+        // Inisialisasi awal
+        filter();
+        
+        // Listener Tanggal Jurnal
+        $("#journal_date").datebox({
+            onChange: (val) => number(val)
+        });
+
+        $("#filter_journal_type").combogrid({
+            url: '<?= base_url('finance/journal_inventory/readJournalType') ?>',
+            panelWidth: 450,
+            idField: 'id',
+            textField: 'name',
+            mode: 'remote',
+            delay: 300,
+            fitColumns: true,
+            prompt: "Choose Journal Type",
+            onBeforeLoad: function(param) {
+                var selectedModul = $("#filter_modul").combobox('getValue');
+                if (selectedModul) {
+                    param.modul = window.btoa(selectedModul);
+                }
+            },
+            columns: [[
+                { field: 'number', title: 'Code', width: 90, halign: 'center', align: 'center' },
+                { field: 'name', title: 'Journal Type Name', width: 250, halign: 'center' },
+                { field: 'status', title: 'D/C', width: 60, halign: 'center', align: 'center' }
+            ]],
+            icons: [{
+                iconCls: 'icon-clear',
+                handler: function(e) {
+                    $(e.data.target).combogrid('clear').combogrid('textbox').focus();
+                }
+            }],
+        });
+
+        // Get Division
+        const divisionConfig = {
+            url: '<?= base_url('master/divisions/reads'); ?>',
+            valueField: 'number',
+            textField: 'number',
+            panelHeight: 'auto',
+            prompt: 'Choose Division',
+            editable: false,
+            icons: [{
+                iconCls: 'icon-clear',
+                handler: function(e) {
+                    $(e.data.target).combobox('clear').combobox('textbox').focus();
+                }
+            }]
+        };
+        $('#filter_division, #division').combobox(divisionConfig);
+
+        $("#document_no").combogrid({
+            panelWidth: 450,
+            idField: 'document_no',
+            textField: 'document_no',
+            multiple: true,
+            selectOnCheck: true,
+            checkOnSelect: true,
+            mode: 'remote',
+            fitColumns: true,
+            prompt: "Choose Document No.",
+            columns: [[
+                { field: 'ck', checkbox: true },
+                { field: 'document_no', title: 'Document No.', width: 250 },
+            ]]
+        });
+
+        $("#company_name").combogrid({
+            url: '<?= base_url('finance/journal_inventory/readCompany') ?>',
+            idField: 'company_id',
+            textField: 'company_name',
+            mode: 'remote',
+            fitColumns: true,
+            panelWidth: 400,
+            prompt: "Choose Company Name",
+            columns: [[
+                {field: 'company_id', title: 'ID', width: 100},
+                {field: 'company_name', title: 'Company Name', width: 250}
+            ]],
+            onSelect: function(index, rowcom) {
+                // console.log("Index:", index, "Data:", rowcom);
+                var valModul = $("#modul").combobox('getValue');
+                var valDate  = $("#journal_date").datebox('getValue');
+                var valJType = $("#journal_type").val() || ""; 
+
+                if (!valModul || valModul === "") {
+                    toastr.warning("Please select Modul first!");
+                    
+                    var target = $(this);
+                    setTimeout(function(){
+                        target.combogrid('clear');
+                    }, 100);
+                    
+                    return false;
+                }
+
+                $("#document_no").combogrid('clear');
+                var targetUrl = '<?= base_url('finance/journal_inventory/readModul') ?>';
+                var g = $("#document_no").combogrid('grid');
+                
+                g.datagrid({
+                    url: targetUrl,
+                    method: 'POST',
+                    idField: 'document_no',
+                    singleSelect: false,
+                    selectOnCheck: true,
+                    checkOnSelect: true,
+                    queryParams: {
+                        modul: btoa(valModul),
+                        journal_date: btoa(valDate),
+                        company_id: btoa(rowcom.company_id),
+                        journal_type: btoa(valJType),
+                    },
+                    onLoadSuccess: function(data) {
+                        if (data && data.theme === "error") {
+                            toastr.error(data.message, data.title);
+                            $("#company_name").combogrid('clear');
+                        }
+                    }
+                });
+            }
+        });
+
+    });
+
+    // DETAILS
+    function btnDetails(val, row) {
+        var details = "viewDetails('" + row.number + "')";
+        return '<a class="btn btn-primary w-100" onClick="' + details + '" style="pointer-events: visible; opacity:1;"><i class="fa fa-eye"></i> View</a>';
+    }
+
+    function viewDetails(number) {
+        $("#dlg_detail").window('open');
+        $("#dlg_detail").window('setTitle', "Detail of " + number);
+
+        $('#dg3').datagrid({
+            url: '<?= base_url('finance/journal_inventory/datatableDetails?number=') ?>' + btoa(number),
+            pagination: false,
+            rownumbers: true,
+            remoteFilter: true,
+        }).datagrid('enableFilter');
+    }
+
+    
+
+    // FORMAT DATE PERIOD
+    function myformatter(date) {
+        var y = date.getFullYear();
+        var m = date.getMonth() + 1;
+        var d = date.getDate();
+        return y + '-' + (m < 10 ? ('0' + m) : m) + '-' + (d < 10 ? ('0' + d) : d);
+    }
+
+    function myparser(s) {
+        if (!s) return new Date();
+        var ss = (s.split('-'));
+        var y = parseInt(ss[0], 10);
+        var m = parseInt(ss[1], 10);
+        var d = parseInt(ss[2], 10);
+        if (!isNaN(y) && !isNaN(m) && !isNaN(d)) {
+            return new Date(y, m - 1, d);
+        } else {
+            return new Date();
+        }
+    }
+
+    // FORMAT COLUMNS MAIN DATATABLE
+    function numberformatDefault(value, row) {
+        if (value != null) {
+            const formatter = new Intl.NumberFormat('id-ID', {
+                minimumFractionDigits: 2
+            });
+            return "<b>" + formatter.format(value) + "</b>";
+        }
+    }
+
+    function numberformatDefaultIdr(value, row){
+        if (value != null) {
+            const formatter = new Intl.NumberFormat('id-ID', {
+                minimumFractionDigits: 2
+            });
+            return "<b>" + formatter.format(value) + "</b>";
+        }
+    }
+
+    function approvedFormat(value, row) {
+        if (row.approved_to == "" || row.approved_to == null) {
+            return "<b style='color:green;'>APPROVED</b>";
+        } else {
+            return "<b style='color:red;'>CHECKING</b>";
+        }
+    }
+
+    function approvedStyle(value, row, index) {
+        if (row.approved_to == "" || row.approved_to == null) {
+            return 'background-color:#C8FFCC;';
+        } else {
+            return 'background-color:#FFC8C8;';
+        }
+    }
+
+
+    // FORM INSERT OR UPDATE
     function add() {
         $('#frm_insert').form('clear');        
         $('#dlg_insert').dialog('open').dialog('center');
@@ -324,7 +629,7 @@
         if ($("#modul").length) $("#modul").combobox('enable'); 
 
         $("#journal_type").combogrid('enable'); 
-        $("#company_name").combobox('enable');  
+        $("#company_name").combogrid('enable');  
         $("#document_no").combogrid('enable');  
         $("#number").textbox('enable');         
         $("#preview").linkbutton('enable');
@@ -348,69 +653,78 @@
     }
 
     function preview() {
-        // 1. Ambil semua value dalam satu objek agar rapi
-        const data = {
+        const params = {
             journal_date: $("#journal_date").datebox('getValue'),
             division:     $("#division").combobox('getValue'),
             type:         $("#type").combobox('getValue'),
             modul:        $("#modul").combobox('getValue'),
-            company_id:   $("#company_name").combobox('getValue'),
-            document_no:  $("#document_no").combogrid('getValues'), 
-            journal_type: $("#journal_type").combobox('getValue'),
+            company_id:   $("#company_name").combogrid('getValue'),
+            document_no:  $("#document_no").combogrid('getValues'), // Ini mengembalikan Array [DOC1, DOC2]
+            journal_type: ($("#journal_type").val() || ""),
         };
 
-        // Mapping field ke label agar user-friendly untuk pesan error
+        // Mapping untuk validasi
         const requiredFields = [
-            { field: data.journal_date, label: 'Journal Date' },
-            { field: data.division,     label: 'Division' },
-            { field: data.type,         label: 'Type' },
-            { field: data.modul,        label: 'Module' },
-            { field: data.company_id,   label: 'Company' },
-            { field: data.document_no,  label: 'Document No.' },
+            { val: params.journal_date, label: 'Journal Date' },
+            { val: params.division,     label: 'Division' },
+            { val: params.type,         label: 'Type' },
+            { val: params.modul,        label: 'Module' },
+            { val: params.company_id,   label: 'Company' },
+            { val: params.document_no,  label: 'Document No.' },
         ];
 
         // Validasi menggunakan loop agar pesan toastr lebih spesifik
         let isValid = true;
         for (let item of requiredFields) {
-            if (!item.field || (Array.isArray(item.field) && item.field.length === 0)) {
+            if (!item.val || (Array.isArray(item.val) && item.val.length === 0)) {
                 toastr.info(`Please choose ${item.label} first!`);
                 isValid = false;
                 break;
             }
         }
 
-        // Input Form Valid
         if (isValid) {
+            // Konversi Multiple document_no menjadi string dipisah koma
+            const docNoStr = params.document_no.join(',');
+
             $.ajax({
                 method: 'post',
-                url: '<?= base_url('finance/journal_postings/datatablesCheck') ?>',
+                url: '<?= base_url('finance/journal_inventory/datatablesCheck') ?>',
                 data: {
-                    journal_date: journal_date,
-                    modul: modul,
-                    journal_type: journal_type,
-                    company_id: company_id,
-                    document_no: document_no,
+                    journal_date: params.journal_date,
+                    modul: params.modul,
+                    journal_type: params.journal_type,
+                    company_id: params.company_id,
+                    document_no: docNoStr,
                 },
                 success: function(result) {
-                    if(result == 0){
-                        var lastIndex;
-                        var dg = $('#dg2').datagrid({
-                            url: '<?= base_url('finance/journal_postings/datatablesTemp') ?>?journal_date=' + window.btoa(journal_date) +
-                                "&modul=" + window.btoa(modul) +
-                                "&journal_type=" + window.btoa(journal_type) +
-                                "&company_id=" + window.btoa(company_id) +
-                                "&document_no=" + window.btoa(document_no),
-                            onLoadSuccess: function(data){
-                                $("#local_debit").numberbox('setValue', data['footer'][0].local_debit);
-                                $("#local_credit").numberbox('setValue', data['footer'][0].local_credit);
+                    // Gunakan == 0 jika response dari server adalah string/int 0
+                    if (result == 0) {
+                        $('#dg2').datagrid({
+                            // Gunakan method POST pada datagrid agar parameter tidak bocor di URL 
+                            // dan tidak terkena limitasi karakter URL (karena DOC NO bisa banyak)
+                            url: '<?= base_url('finance/journal_inventory/datatablesTemp') ?>',
+                            method: 'post',
+                            queryParams: {
+                                journal_date: window.btoa(params.journal_date),
+                                modul: window.btoa(params.modul),
+                                journal_type: window.btoa(params.journal_type),
+                                company_id: window.btoa(params.company_id),
+                                document_no: window.btoa(docNoStr)
+                            },
+                            onLoadSuccess: function(data) {
+                                if (data && data.footer && data.footer.length > 0) {
+                                    $("#local_debit").numberbox('setValue', data.footer[0].local_debit);
+                                    $("#local_credit").numberbox('setValue', data.footer[0].local_credit);
+                                }
                             }
                         });
-                    }else{
-                        toastr.error("This Modul " + modul + " has been created");
+                    } else {
+                        toastr.error("This Modul " + params.modul + " has been created");
                     }
                 },
-                error: function(jqXHR, textStatus, errorThrown) {
-                    toastr.error(jqXHR.statusText);
+                error: function(jqXHR) {
+                    toastr.error("Error: " + jqXHR.statusText);
                 },
             });
         }
@@ -571,7 +885,7 @@
             if (r) {
                 $.ajax({
                     method: 'post',
-                    url: '<?= base_url('finance/journal_postings/delete') ?>',
+                    url: '<?= base_url('finance/journal_inventory/delete') ?>',
                     data: {
                         id: id,
                     },
@@ -590,285 +904,4 @@
         });
     }
 
-
-
-
-    function getFilterParams() {
-        var params = {
-            filter_from: $("#filter_from").datebox('getValue'),
-            filter_to: $("#filter_to").datebox('getValue'),
-            filter_journal_type: $("#filter_journal_type").combogrid('getValue'),
-            filter_type: $("#filter_type").combobox('getValue'),
-            filter_modul: $("#filter_modul").combobox('getValue'),
-            filter_voucher: $("#filter_voucher").textbox('getValue')
-        };
-
-        var queryString = "";
-        for (var key in params) {
-            // Pastikan nilai adalah string dan tidak null/undefined sebelum btoa
-            var val = (params[key] || "").toString(); 
-            queryString += "&" + key + "=" + window.btoa(val);
-        }
-        return queryString;
-    }
-
-    function filter() {
-        var urlParams = getFilterParams();
-
-        $('#dg').datagrid({
-            url: '<?= base_url('finance/journal_inventory/datatables') ?>?' + urlParams,
-            pagination: true,
-            rownumbers: true,
-            fit:true,
-        });
-
-        // Update preview printout
-        $("#printout").contents().find('html').html("<center><br><br><br><b style='font-size:20px;'>Loading Preview...</b></center>");
-        $("#printout").attr('src', '<?= base_url('finance/journal_inventory/print') ?>?' + urlParams);
-    }
-
-    function pdf() {
-        // Pastikan iframe sudah ter-load dengan filter terakhir
-        $("#printout").get(0).contentWindow.print();
-    }
-
-    function excel() {
-        var urlParams = getFilterParams();
-        window.location.assign('<?= base_url('finance/journal_inventory/print/excel') ?>?' + urlParams);
-    }
-
-    //NOMOR AUTOMATIC
-    function number(journal_date) {
-        var dateValue = journal_date ? journal_date : "<?= date('Y-m-d') ?>";
-        
-        $.ajax({
-            type: "post",
-            url: "<?= base_url('finance/journal_inventory/number/') ?>" + window.btoa(dateValue),
-            dataType: "html",
-            success: function(result) {
-                if ($("#number").length > 0) {
-                    $("#number").textbox('setValue', result.trim());
-                }
-            },
-            error: function(xhr, status, error) {
-                console.error("Error fetching number: ", error);
-            }
-        });
-    }
-
-    //RELOAD
-    function reload() {
-        window.location.reload();
-    }
-
-
-
-    $(function() {
-        let masterModules = [];
-
-        // Load JSON Module
-        $.getJSON('<?= base_url("json/journal_inventory_module.json"); ?>', function(data) {
-            masterModules = data;
-            refreshModuleCombo(''); 
-        });
-
-        function refreshModuleCombo(selectedGroup) {
-            const filtered = !selectedGroup 
-                ? masterModules 
-                : masterModules.filter(item => item.group === selectedGroup);
-
-            const finalData = [{ id: '', text: 'Choose All', group: '' }, ...filtered];
-            
-            // Update kedua id (filter_modul dan modul) sekaligus
-            $('#filter_modul, #modul').each(function() {
-                if ($(this).length) {
-                    $(this).combobox('loadData', finalData).combobox('setValue', '');
-                }
-            });
-        }
-
-        // Listener untuk Type (Grouping IN/OUT)
-        $('#filter_type, #type').combobox({
-            onSelect: (rec) => refreshModuleCombo(rec.value),
-            onChange: (val) => { if(!val) refreshModuleCombo(''); }
-        });
-
-        // Inisialisasi awal
-        filter();
-        
-        // Listener Tanggal Jurnal
-        $("#journal_date").datebox({
-            onChange: (val) => number(val)
-        });
-
-        $("#filter_journal_type").combogrid({
-            url: '<?= base_url('finance/journal_inventory/readJournalType') ?>',
-            panelWidth: 450,
-            idField: 'id',
-            textField: 'name',
-            mode: 'remote',
-            delay: 300,
-            fitColumns: true,
-            prompt: "Choose Journal Type",
-            onBeforeLoad: function(param) {
-                var selectedModul = $("#filter_modul").combobox('getValue');
-                if (selectedModul) {
-                    param.modul = window.btoa(selectedModul);
-                }
-            },
-            columns: [[
-                { field: 'number', title: 'Code', width: 90, halign: 'center', align: 'center' },
-                { field: 'name', title: 'Journal Type Name', width: 250, halign: 'center' },
-                { field: 'status', title: 'D/C', width: 60, halign: 'center', align: 'center' }
-            ]],
-            icons: [{
-                iconCls: 'icon-clear',
-                handler: function(e) {
-                    $(e.data.target).combogrid('clear').combogrid('textbox').focus();
-                }
-            }],
-        });
-
-        // Get Division
-        const divisionConfig = {
-            url: '<?= base_url('master/divisions/reads'); ?>',
-            valueField: 'number',
-            textField: 'number',
-            panelHeight: 'auto',
-            prompt: 'Choose Division',
-            editable: false,
-            icons: [{
-                iconCls: 'icon-clear',
-                handler: function(e) {
-                    $(e.data.target).combobox('clear').combobox('textbox').focus();
-                }
-            }]
-        };
-        $('#filter_division, #division').combobox(divisionConfig);
-
-        $("#document_no").combogrid({
-            panelWidth: 250,
-            idField: 'number',
-            textField: 'number',
-            multiple: true,
-            mode: 'remote',
-            fitColumns: true,
-            prompt: "Choose Document No.",
-            columns: [[
-                { field: 'ck', checkbox: true },
-                { field: 'number', title: 'Document No.', width: 150 }
-            ]]
-        });
-
-        $("#company_name").combobox({
-            url: '<?= base_url('finance/journal_inventory/readCompany') ?>',
-            valueField: 'company_id',
-            textField: 'company_name',
-            prompt: "Choose Company Name",
-            onSelect: function(rowcom) {
-                var valModul = $("#modul").combobox('getValue');
-                var valDate  = $("#journal_date").datebox('getValue');
-
-                // Reset document_no
-                $("#document_no").combogrid('clear');
-                
-                var targetUrl = '<?= base_url('finance/journal_inventory/readModul') ?>';
-                var g = $("#document_no").combogrid('grid');
-                
-                g.datagrid({
-                    url: targetUrl,
-                    queryParams: {
-                        modul: btoa(valModul),
-                        journal_date: btoa(valDate),
-                        company_id: btoa(rowcom.company_id)
-                    },
-                    onLoadSuccess: function(data) {
-                        if (data && data.theme === "error") {
-                            toastr.error(data.message, data.title);
-                            $(this).datagrid('loadData', []); 
-                        }
-                    },
-                    onLoadError: function() {
-                        toastr.error("Failed to fetch data from server", "Server Error");
-                    }
-                });
-            }
-        });
-
-    });
-
-    // DETAILS
-    function btnDetails(val, row) {
-        var details = "viewDetails('" + row.number + "')";
-        return '<a class="btn btn-primary w-100" onClick="' + details + '" style="pointer-events: visible; opacity:1;"><i class="fa fa-eye"></i> View</a>';
-    }
-
-    function viewDetails(number) {
-        $("#dlg_detail").window('open');
-        $("#dlg_detail").window('setTitle', "Detail of " + number);
-
-        $('#dg3').datagrid({
-            url: '<?= base_url('finance/journal_inventory/datatableDetails?number=') ?>' + btoa(number),
-            pagination: false,
-            rownumbers: true,
-            remoteFilter: true,
-        }).datagrid('enableFilter');
-    }
-
-
-    // FORMAT DATE PERIOD
-    function myformatter(date) {
-        var y = date.getFullYear();
-        var m = date.getMonth() + 1;
-        var d = date.getDate();
-        return y + '-' + (m < 10 ? ('0' + m) : m) + '-' + (d < 10 ? ('0' + d) : d);
-    }
-
-    function myparser(s) {
-        if (!s) return new Date();
-        var ss = (s.split('-'));
-        var y = parseInt(ss[0], 10);
-        var m = parseInt(ss[1], 10);
-        var d = parseInt(ss[2], 10);
-        if (!isNaN(y) && !isNaN(m) && !isNaN(d)) {
-            return new Date(y, m - 1, d);
-        } else {
-            return new Date();
-        }
-    }
-
-    // FORMAT COLUMNS MAIN DATATABLE
-    function numberformatDefault(value, row) {
-        if (value != null) {
-            const formatter = new Intl.NumberFormat('id-ID', {
-                minimumFractionDigits: 2
-            });
-            return "<b>" + formatter.format(value) + "</b>";
-        }
-    }
-
-    function numberformatDefaultIdr(value, row){
-        if (value != null) {
-            const formatter = new Intl.NumberFormat('id-ID', {
-                minimumFractionDigits: 2
-            });
-            return "<b>" + formatter.format(value) + "</b>";
-        }
-    }
-
-    function approvedFormat(value, row) {
-        if (row.approved_to == "" || row.approved_to == null) {
-            return "<b style='color:green;'>APPROVED</b>";
-        } else {
-            return "<b style='color:red;'>CHECKING</b>";
-        }
-    }
-
-    function approvedStyle(value, row, index) {
-        if (row.approved_to == "" || row.approved_to == null) {
-            return 'background-color:#C8FFCC;';
-        } else {
-            return 'background-color:#FFC8C8;';
-        }
-    }
 </script>

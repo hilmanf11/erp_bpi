@@ -85,53 +85,174 @@ class Journal_inventory extends CI_Controller
 
     public function readModul()
     {
-        $get = $this->input->get();
-        $modul = base64_decode($get['modul']);
-        $journal_date = @base64_decode($get['journal_date']);
-        $transaction_from = date("Y-m-01", strtotime($journal_date));
-        $transaction_to = date("Y-m-t", strtotime($journal_date));
-        $journal_type = base64_decode($get['journal_type']);
-        $company_id = base64_decode($get['company_id']);
+        $post = $this->input->post();
 
-        if ($modul == "PURCHASE ORDER RECEIPT") {
-            $this->db->select('a.number');
+        $modul        = base64_decode($post['modul'] ?? '');
+        $journal_date = base64_decode($post['journal_date'] ?? '');
+        $journal_type = base64_decode($post['journal_type'] ?? '');
+        $company_id   = base64_decode($post['company_id'] ?? '');
+
+        // Set Period 1 month
+        $transaction_from = !empty($journal_date) ? date("Y-m-01", strtotime($journal_date)) : date("Y-m-01");
+        $transaction_to   = !empty($journal_date) ? date("Y-m-t", strtotime($journal_date)) : date("Y-m-t");
+
+        $records = [];
+
+        if ($modul == "PURCHASE ORDER RECEIPT") 
+        {
+            $this->db->select('a.receipt_no as document_no, a.supplier_id');
             $this->db->from('purchase_order_receipts a');
-            $this->db->join('journal_inventory b', 'a.number = b.document_no', 'left');
-            $this->db->where('a.trans_date >=', $transaction_from);
-            $this->db->where('a.trans_date <=', $transaction_to);
-            $this->db->where('b.journal_type_id', $journal_type);
+            $this->db->join('journal_inventory b', 'a.receipt_no = b.document_no', 'left');
+            
             $this->db->where('a.supplier_id', $company_id);
+            $this->db->where('a.receipt_date >=', $transaction_from);
+            $this->db->where('a.receipt_date <=', $transaction_to);
+            
+            // Filter agar hanya dokumen yang belum dijurnal yang muncul
             $this->db->where('b.document_no', NULL);
-            $this->db->group_by('a.number');
-            $this->db->order_by('a.number', 'asc');
+
+            $this->db->group_by('a.receipt_no');
+            $this->db->order_by('a.receipt_no', 'asc');
+            
             $records = $this->db->get()->result_array();
-            echo json_encode($records);
-        } else {
-            echo json_encode([]);
         }
+
+        header('Content-Type: application/json');
+        echo json_encode($records);
     }
+
 
     public function datatablesTemp()
     {
-        $get = $this->input->get();
-        $journal_date = @base64_decode($get['journal_date']);
-        $transaction_from = date("Y-m-01", strtotime($journal_date));
-        $transaction_to = date("Y-m-t", strtotime($journal_date));
-        $transaction_from_ex = date("Y-m", strtotime(@base64_decode($get['journal_date'])));
-        $transaction_to_ex = date("Y-m", strtotime(@base64_decode($get['journal_date'])));
-        $modul = base64_decode($get['modul']);
-        $company_id = base64_decode($get['company_id']);
-        $document_no = explode(",", base64_decode($get['document_no']));
+        $post = $this->input->post();
 
-        $journal_type = null;
-        if ($modul == "ASSET") {
-            $journal_type = base64_decode($get['journal_type']);
+        $modul        = base64_decode($post['modul'] ?? '');
+        $journal_date = base64_decode($post['journal_date'] ?? '');
+        $journal_type = base64_decode($post['journal_type'] ?? '');
+        $company_id   = base64_decode($post['company_id'] ?? '');
+        $document_no   = base64_decode($post['document_no'] ?? '');
+        
+        // Validasi: Jika document_no kosong, hentikan proses agar tidak error SQL
+        $document_no_multiple = array_filter(array_map('trim', explode(',', $document_no)));
+        if (empty($document_no_multiple)) {
+            echo json_encode(["total" => 0, "rows" => [], "footer" => []]);
+            return;
         }
 
-        $start = strtotime($transaction_from);
-        $finish = strtotime($transaction_to);
+        // Set Period 1 month
+        $transaction_from = !empty($journal_date) ? date("Y-m-01", strtotime($journal_date)) : date("Y-m-01");
+        $transaction_to   = !empty($journal_date) ? date("Y-m-t", strtotime($journal_date)) : date("Y-m-t");
 
-        echo json_encode([]);
+        // Get Exchange Rates
+        $all_rates = $this->db->get('standard_exchange_rates')->result();
+        $get_rate = function($date, $currency) use ($all_rates) {
+            if (empty($date) || $currency == "IDR") return 1.0;
+            foreach ($all_rates as $r) {
+                if ($currency == $r->currency_from && $date >= $r->start_date && $date <= $r->end_date) {
+                    return (float)$r->middle;
+                }
+            }
+            return 1.0; // Default rate
+        };
+        
+        $result = [];
+
+        if ($modul == "PURCHASE ORDER RECEIPT") {
+            // Debit: Raw Material Injection
+            $acc_debit = $this->db->get_where('account_coa', ['account_number' => '150.110.00'])->row();
+            // Credit: Accrual Raw Materials
+            $acc_credit = $this->db->get_where('account_coa', ['account_number' => '220.190.00'])->row();
+
+            // Get Query Utama
+            $this->db->select("
+                a.receipt_no as document_no, a.receipt_date as trans_date, a.po_no as invoice_no,
+                c.name as item_name, COUNT(a.item_rm_id) as total_item,
+                b.name as supplier_name, b.currency, 
+                a.qty_receipt2 as qty, f.price, f.discount
+            ");
+            // Rumus Total: SUM((Qty * Price) * (1 - Disc/100))
+            $this->db->select("SUM((a.qty_receipt2 * f.price) * (1 - (COALESCE(f.discount, 0) / 100))) as total_original", FALSE);
+
+            $this->db->from('purchase_order_receipts a');
+            $this->db->join('suppliers b', 'a.supplier_id = b.id');
+            $this->db->join('item_rm c', 'a.item_rm_id = c.id');
+            $this->db->join('purchase_orders f', "a.po_no = f.po_no AND a.item_rm_id = f.item_rm_id", 'left');
+            $this->db->where('a.supplier_id', $company_id);
+            $this->db->where('a.receipt_date >=', $transaction_from);
+            $this->db->where('a.receipt_date <=', $transaction_to);
+            $this->db->where_in('a.receipt_no', $document_no_multiple);
+            
+            // GROUP BY agar 1 POR jadi 1 baris data di PHP
+            $this->db->group_by('a.receipt_no');
+            $this->db->order_by('a.receipt_no', 'asc'); 
+
+            $records = $this->db->get()->result_array();
+
+            $data = [];
+            $grand_total_debit  = 0;
+            $grand_total_credit = 0;
+
+            foreach ($records as $row) {
+                $current_rate = $get_rate($row['trans_date'], $row['currency']);
+                
+                $amount_original = $row['total_original'] ?? 0;
+                $amount_local = round($amount_original * $current_rate, 2);
+
+                // Description
+                if ((int)$row['total_item'] > 1) {
+                    $description = $row['document_no'] . " | " . $row['supplier_name'];
+                } else {
+                    $description = $row['item_name'] . " | " . $row['document_no'] . " | " . $row['supplier_name'];
+                }
+
+                // --- DEBIT ---
+                $data[] = [
+                    "trans_date"      => $row['trans_date'],
+                    "document_no"     => $row['document_no'],
+                    "invoice_no"      => $row['invoice_no'],
+                    "company_name"    => $row['supplier_name'],
+                    "account_number"  => $acc_debit->account_number,
+                    "account_name"    => $acc_debit->account_name,
+                    "description"     => $description,
+                    "currency"        => $row['currency'],
+                    "rates"           => $current_rate,
+                    "original_debit"  => $amount_original,
+                    "original_credit" => 0,
+                    "local_debit"     => $amount_local,
+                    "local_credit"    => 0
+                ];
+
+                // --- CREDIT ---
+                $data[] = [
+                    "trans_date"      => $row['trans_date'],
+                    "document_no"     => $row['document_no'],
+                    "invoice_no"      => $row['invoice_no'],
+                    "company_name"    => $row['supplier_name'],
+                    "account_number"  => $acc_credit->account_number,
+                    "account_name"    => $acc_credit->account_name,
+                    "description"     => $description,
+                    "currency"        => $row['currency'],
+                    "rates"           => $current_rate,
+                    "original_debit"  => 0,
+                    "original_credit" => $amount_original,
+                    "local_debit"     => 0,
+                    "local_credit"    => $amount_local
+                ];
+
+                $grand_total_debit += $amount_local;
+                $grand_total_credit += $amount_local;
+            }
+
+            $footer[] = [
+                "local_debit"  => $grand_total_debit,
+                "local_credit" => $grand_total_credit
+            ];
+
+            $result = (["total" => count($data), "rows" => $data, "footer" => $footer]);
+        }
+
+        header('Content-Type: application/json');
+        echo json_encode($result);
     }
 
     public function datatables()
