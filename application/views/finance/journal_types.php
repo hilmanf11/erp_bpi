@@ -63,6 +63,10 @@
                     <option value="AP PAYMENT">AP PAYMENT</option>
                     <option value="AR RECEIPT">AR RECEIPT</option>
                     <option value="ASSET">ASSET</option>
+                    <!-- Journal Inventory -->
+                    <option value="PURCHASE ORDER RECEIPT">PURCHASE ORDER RECEIPT</option>
+                    <option value="BPM">BPM</option>
+                    <option value="TRANSACTION RM">TRANSACTION RM</option>
                 </select>
             </div>
             <div class="fitem">
