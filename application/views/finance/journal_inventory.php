@@ -42,6 +42,11 @@
                 </div>
 
                 <div class="fitem">
+                    <span style="width:35%; display:inline-block;">Category</span>
+                    <input style="width:60%;" id="filter_item_category" class="easyui-combobox">
+                </div>
+
+                <div class="fitem">
                     <span style="width:35%; display:inline-block;">Voucher No</span>
                     <input style="width:60%;" id="filter_voucher" class="easyui-combobox" />
                 </div>
@@ -319,6 +324,8 @@
             filter_journal_type: $("#filter_journal_type").combogrid('getValue'),
             filter_type: $("#filter_type").combobox('getValue'),
             filter_modul: $("#filter_modul").combobox('getValue'),
+            filter_division: $("#filter_division").combobox('getValue'),
+            filter_item_category: $("#filter_item_category").combobox('getValue'),
             filter_voucher: $("#filter_voucher").textbox('getValue')
         };
 
@@ -438,7 +445,7 @@
             columns: [[
                 { field: 'number', title: 'Code', width: 90, halign: 'center', align: 'center' },
                 { field: 'name', title: 'Journal Type Name', width: 250, halign: 'center' },
-                { field: 'status', title: 'D/C', width: 60, halign: 'center', align: 'center' }
+                { field: 'module', title: 'Module', width: 200, halign: 'center' },
             ]],
             icons: [{
                 iconCls: 'icon-clear',
@@ -447,6 +454,20 @@
                 }
             }],
         });
+
+        $("#filter_item_category").combobox({
+            url: '<?= base_url('master/item_categories/reads') ?>',
+            valueField: 'id',
+            textField: 'name',
+            prompt: "Select Categories",
+            icons: [{
+                iconCls: 'icon-clear',
+                handler: function(e) {
+                    $(e.data.target).combobox('clear').combobox('textbox').focus();
+                }
+            }],
+        });
+
 
         // Get Division
         const divisionConfig = {
@@ -510,7 +531,7 @@
                 }
 
                 $("#document_no").combogrid('clear');
-                var targetUrl = '<?= base_url('finance/journal_inventory/readModul') ?>';
+                var targetUrl = '<?= base_url('finance/journal_inventory/readDocumentNo') ?>';
                 var g = $("#document_no").combogrid('grid');
                 
                 g.datagrid({

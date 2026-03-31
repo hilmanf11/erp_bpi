@@ -83,7 +83,7 @@ class Journal_inventory extends CI_Controller
         echo json_encode($records); 
     }
 
-    public function readModul()
+    public function readDocumentNo()
     {
         $post = $this->input->post();
 
@@ -276,30 +276,50 @@ class Journal_inventory extends CI_Controller
     public function datatables()
     {
         if ($this->input->post()) {
-            $filter_from = base64_decode($this->input->get('filter_from'));
-            $filter_to = base64_decode($this->input->get('filter_to'));
-            $filter_journal_type = base64_decode($this->input->get('filter_journal_type'));
-            $filter_modul = base64_decode($this->input->get('filter_modul'));
-            $filter_voucher = base64_decode($this->input->get('filter_voucher'));
+            $filter_from            = base64_decode($this->input->get('filter_from')) ?? null;
+            $filter_to              = base64_decode($this->input->get('filter_to')) ?? null;
+            $filter_journal_type    = base64_decode($this->input->get('filter_journal_type')) ?? null;
+            $filter_modul           = base64_decode($this->input->get('filter_modul')) ?? null;
+            $filter_division        = base64_decode($this->input->get('filter_division')) ?? null;
+            $filter_voucher         = base64_decode($this->input->get('filter_voucher')) ?? null;
+            $filter_item_category   = base64_decode($this->input->get('filter_item_category')) ?? null;
 
+            //Pagination 1-10
             $page = $this->input->post('page');
             $rows = $this->input->post('rows');
-            //Pagination 1-10
             $page   = isset($page) ? intval($page) : 1;
             $rows   = isset($rows) ? intval($rows) : 10;
             $offset = ($page - 1) * $rows;
             $result = array();
+
+            // --- Get POR, division, and category ---
+            $this->db->select('
+                por.receipt_no, 
+                item.id, 
+                item.name, 
+                item.division, 
+                item.item_category_id,
+                jenis.number AS category_code');
+            $this->db->from('purchase_order_receipts por');
+            $this->db->join('item_rm item', 'por.item_rm_id = item.id');
+            $this->db->join("item_categories jenis", "jenis.id = item.item_category_id", "left");
+            $this->db->where('por.status', 0);
+            $sub_por = $this->db->get_compiled_select();
+
             //Select Query
             $this->db->select('a.journal_date, a.number, a.journal_type_id, b.name as journal_type_name, 
                 a.document_no, a.modul, a.remarks, a.currency, a.rates, a.posting,
                 a.created_by, a.created_date, a.updated_by, a.updated_date, 
                 a.approved, a.approved_to, a.approved_by, a.approved_date,
+                c.division, c.item_category_id, c.category_code,
                 SUM(a.original_debit) as original_debit, 
                 SUM(a.original_credit) as original_credit, 
                 SUM(a.local_debit) as local_debit, 
                 SUM(a.local_credit) as local_credit');
             $this->db->from('journal_inventory a');
             $this->db->join('journal_types b', 'a.journal_type_id = b.id', 'left');
+            $this->db->join("($sub_por) c", "a.document_no = c.receipt_no", 'left', FALSE);
+
             if ($filter_from != "" && $filter_to != "") {
                 $this->db->where("a.journal_date BETWEEN '$filter_from' and '$filter_to'");
             }
@@ -312,15 +332,20 @@ class Journal_inventory extends CI_Controller
             if ($filter_voucher != "") {
                 $this->db->like('a.number', $filter_voucher);
             }
+            if ($filter_item_category != "") {
+                $this->db->like('c.item_category_id', $filter_item_category);
+            }
+            if ($filter_division != "") {
+                $this->db->like('c.division', $filter_division);
+            }
             $this->db->group_by('a.number');
             $this->db->order_by('a.journal_date', 'asc');
 
             //Total Data
             $totalRows = $this->db->count_all_results('', false);
-            //Limit 1 - 10
             $this->db->limit($rows, $offset);
-            //Get Data Array
             $records = $this->db->get()->result_array();
+
             //Mapping Data
             $result['total'] = $totalRows;
             $result = array_merge($result, ['rows' => $records]);
