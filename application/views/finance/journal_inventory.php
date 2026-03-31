@@ -148,11 +148,6 @@
                     </select>
                 </div>
 
-                <div class="fitem" hidden>
-                    <span style="width:35%; display:inline-block;">Journal Type</span>
-                    <input style="width:60%;" name="journal_type_id" id="journal_type" class="easyui-combogrid">
-                </div>
-
                 <div class="fitem">
                     <span style="width:35%; display:inline-block;"></span>
                     <a href="javascript:;" class="easyui-linkbutton" id="preview" onclick="preview()"><i class="fa fa-search"></i> Preview Data</a>
@@ -196,8 +191,11 @@
                     <th hidden rowspan="2" data-options="field:'flag',width:100,editor: {type: 'textbox'}">Flag</th>
                     <th hidden rowspan="2" data-options="field:'id',width:150,editor: {type: 'textbox'}">ID</th>
                     <th rowspan="2" data-options="field:'trans_date',width:100,editor: {type: 'datebox',options: {formatter: myformatter,parser: myparser}}">Trans Date</th>
+
                     <th rowspan="2" data-options="field:'document_no',width:160,editor: {type: 'textbox', options: {required: true}}">Document No.</th>
                     <th rowspan="2" data-options="field:'invoice_no',width:120,editor: {type: 'textbox', options: {required: true}}">Invoice No</th>
+                    <th rowspan="2" data-options="field:'journal_type_id',width:200,editor: {type: 'textbox', options: {required: true}}">Journal Type ID</th>
+
                     <th rowspan="2" data-options="field:'company_name',width:200, editor: {
                         type: 'combobox',
                         options: {
@@ -471,7 +469,7 @@
             panelWidth: 450,
             idField: 'document_no',
             textField: 'document_no',
-            multiple: true,
+            multiple: false,
             selectOnCheck: true,
             checkOnSelect: true,
             mode: 'remote',
@@ -499,7 +497,6 @@
                 // console.log("Index:", index, "Data:", rowcom);
                 var valModul = $("#modul").combobox('getValue');
                 var valDate  = $("#journal_date").datebox('getValue');
-                var valJType = $("#journal_type").val() || ""; 
 
                 if (!valModul || valModul === "") {
                     toastr.warning("Please select Modul first!");
@@ -527,7 +524,6 @@
                         modul: btoa(valModul),
                         journal_date: btoa(valDate),
                         company_id: btoa(rowcom.company_id),
-                        journal_type: btoa(valJType),
                     },
                     onLoadSuccess: function(data) {
                         if (data && data.theme === "error") {
@@ -628,7 +624,6 @@
         
         if ($("#modul").length) $("#modul").combobox('enable'); 
 
-        $("#journal_type").combogrid('enable'); 
         $("#company_name").combogrid('enable');  
         $("#document_no").combogrid('enable');  
         $("#number").textbox('enable');         
@@ -660,7 +655,6 @@
             modul:        $("#modul").combobox('getValue'),
             company_id:   $("#company_name").combogrid('getValue'),
             document_no:  $("#document_no").combogrid('getValues'), // Ini mengembalikan Array [DOC1, DOC2]
-            journal_type: ($("#journal_type").val() || ""),
         };
 
         // Mapping untuk validasi
@@ -693,7 +687,6 @@
                 data: {
                     journal_date: params.journal_date,
                     modul: params.modul,
-                    journal_type: params.journal_type,
                     company_id: params.company_id,
                     document_no: docNoStr,
                 },
@@ -708,7 +701,6 @@
                             queryParams: {
                                 journal_date: window.btoa(params.journal_date),
                                 modul: window.btoa(params.modul),
-                                journal_type: window.btoa(params.journal_type),
                                 company_id: window.btoa(params.company_id),
                                 document_no: window.btoa(docNoStr)
                             },
@@ -720,7 +712,7 @@
                             }
                         });
                     } else {
-                        toastr.error("This Modul " + params.modul + " has been created");
+                        toastr.error("This Document No. in Modul " + params.modul + " has been created");
                     }
                 },
                 error: function(jqXHR) {
@@ -904,4 +896,79 @@
         });
     }
 
+    // CREATE
+    $('#dlg_insert').dialog({
+        buttons: [{
+            text: 'Save All',
+            iconCls: 'icon-ok',
+            handler: function() {
+                // Get data Header
+                const voucher_no   = $("#number").textbox('getValue');
+                const journal_date = $("#journal_date").datebox('getValue');
+                const modul        = $("#modul").combobox('getValue');
+                const company_id   = $("#company_name").combogrid('getValue');
+                const remarks      = $("#remarks").textbox('getValue');
+                const local_debit  = $("#local_debit").numberbox('getValue');
+                const local_credit = $("#local_credit").numberbox('getValue');
+
+                // Get semua data Posting dari Datagrid Preview (#dg2)
+                const rows = $('#dg2').datagrid('getRows');
+                if (rows.length === 0) {
+                    toastr.warning("No data to save. Please preview first.");
+                    return false;
+                }
+
+                // Validasi Balance
+                if (parseFloat(local_debit).toFixed(2) !== parseFloat(local_credit).toFixed(2)) {
+                    $.messager.alert('Warning', '<b>Balance Error!</b><br>Total Debit (' + local_debit + ') must be equal to Total Credit (' + local_credit + ').', 'warning');
+                    return false;
+                }
+
+                // Confirm Save
+                $.messager.confirm('Confirm', 'Are you sure you want to save ' + rows.length + ' rows of journal?', function(r) {
+                    if (r) {
+                        Swal.fire({
+                            title: 'Saving Data...',
+                            html: 'Please wait while we process your request',
+                            allowOutsideClick: false,
+                            didOpen: () => { Swal.showLoading(); }
+                        });
+
+                        // Send ALL data dalam satu request (tidak recursive satu per satu)
+                        $.ajax({
+                            type: "post",
+                            url: '<?= base_url('finance/journal_inventory/create') ?>',
+                            data: {
+                                voucher_no: voucher_no,
+                                journal_date: journal_date,
+                                modul: modul,
+                                company_id: company_id,
+                                remarks: remarks,
+                                details: JSON.stringify(rows)
+                            },
+                            dataType: 'json',
+                            success: function(res) {
+                                Swal.close();
+                                if (res.theme === 'success') {
+                                    toastr.success(res.message);
+                                    Swal.fire('Success', res.message, 'success');
+
+                                    $('#dlg_insert').dialog('close');
+                                    $('#dg').datagrid('reload');
+                                } else {
+                                    Swal.fire('Error', res.message, 'error');
+                                }
+
+                                $('#dlg_insert').dialog('close');
+                            },
+                            error: function(xhr) {
+                                Swal.close();
+                                toastr.error("Server Error: " + xhr.statusText);
+                            }
+                        });
+                    }
+                });
+            }
+        }]
+    });
 </script>

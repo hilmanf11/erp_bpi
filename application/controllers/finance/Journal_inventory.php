@@ -154,6 +154,19 @@ class Journal_inventory extends CI_Controller
             }
             return 1.0; // Default rate
         };
+
+        // Get Journal Types
+        $all_journal_types = $this->db->get('journal_types')->result();
+        $find_journal_type = function($module, $acc_no) use ($all_journal_types) {
+            if (empty($module) || empty($acc_no)) return null;
+            
+            foreach ($all_journal_types as $jt) {
+                if (trim($jt->module) == trim($module) && trim($jt->account_number) == trim($acc_no)) {
+                    return $jt->id;
+                }
+            }
+            return null;
+        };
         
         $result = [];
 
@@ -163,47 +176,36 @@ class Journal_inventory extends CI_Controller
             // Credit: Accrual Raw Materials
             $acc_credit = $this->db->get_where('account_coa', ['account_number' => '220.190.00'])->row();
 
-            // Get Query Utama
+            // Journal Type ID
+            $debit_jt_id  = $find_journal_type($modul, $acc_debit->account_number);
+            $credit_jt_id = $find_journal_type($modul, $acc_credit->account_number);
+
             $this->db->select("
                 a.receipt_no as document_no, a.receipt_date as trans_date, a.po_no as invoice_no,
-                c.name as item_name, COUNT(a.item_rm_id) as total_item,
-                b.name as supplier_name, b.currency, 
+                c.name as item_name, b.name as supplier_name, b.currency, 
                 a.qty_receipt2 as qty, f.price, f.discount
             ");
-            // Rumus Total: SUM((Qty * Price) * (1 - Disc/100))
-            $this->db->select("SUM((a.qty_receipt2 * f.price) * (1 - (COALESCE(f.discount, 0) / 100))) as total_original", FALSE);
+            // Debit per item
+            $this->db->select("((a.qty_receipt2 * f.price) * (1 - (COALESCE(f.discount, 0) / 100))) as item_total_original", FALSE);
 
             $this->db->from('purchase_order_receipts a');
             $this->db->join('suppliers b', 'a.supplier_id = b.id');
             $this->db->join('item_rm c', 'a.item_rm_id = c.id');
             $this->db->join('purchase_orders f', "a.po_no = f.po_no AND a.item_rm_id = f.item_rm_id", 'left');
-            $this->db->where('a.supplier_id', $company_id);
-            $this->db->where('a.receipt_date >=', $transaction_from);
-            $this->db->where('a.receipt_date <=', $transaction_to);
             $this->db->where_in('a.receipt_no', $document_no_multiple);
-            
-            // GROUP BY agar 1 POR jadi 1 baris data di PHP
-            $this->db->group_by('a.receipt_no');
             $this->db->order_by('a.receipt_no', 'asc'); 
 
             $records = $this->db->get()->result_array();
 
             $data = [];
-            $grand_total_debit  = 0;
+            $summary_credit = [];
+            $grand_total_debit = 0;
             $grand_total_credit = 0;
 
             foreach ($records as $row) {
                 $current_rate = $get_rate($row['trans_date'], $row['currency']);
-                
-                $amount_original = $row['total_original'] ?? 0;
+                $amount_original = $row['item_total_original'] ?? 0;
                 $amount_local = round($amount_original * $current_rate, 2);
-
-                // Description
-                if ((int)$row['total_item'] > 1) {
-                    $description = $row['document_no'] . " | " . $row['supplier_name'];
-                } else {
-                    $description = $row['item_name'] . " | " . $row['document_no'] . " | " . $row['supplier_name'];
-                }
 
                 // --- DEBIT ---
                 $data[] = [
@@ -211,9 +213,10 @@ class Journal_inventory extends CI_Controller
                     "document_no"     => $row['document_no'],
                     "invoice_no"      => $row['invoice_no'],
                     "company_name"    => $row['supplier_name'],
+                    "journal_type_id" => $debit_jt_id,
                     "account_number"  => $acc_debit->account_number,
                     "account_name"    => $acc_debit->account_name,
-                    "description"     => $description,
+                    "description"     => $row['item_name'] . " | " . $row['document_no'] . " | " . $row['supplier_name'],
                     "currency"        => $row['currency'],
                     "rates"           => $current_rate,
                     "original_debit"  => $amount_original,
@@ -223,24 +226,39 @@ class Journal_inventory extends CI_Controller
                 ];
 
                 // --- CREDIT ---
+                if (!isset($summary_credit[$row['document_no']])) {
+                    $summary_credit[$row['document_no']] = [
+                        'total_orig'   => 0,
+                        'total_local'  => 0,
+                        'row_data'     => $row,
+                        'rate'         => $current_rate
+                    ];
+                }
+                $summary_credit[$row['document_no']]['total_orig']  += $amount_original;
+                $summary_credit[$row['document_no']]['total_local'] += $amount_local;
+                
+                $grand_total_debit += $amount_local;
+            }
+
+            // CREDIT PER DOCUMENT NO.
+            foreach ($summary_credit as $doc_no => $val) {
                 $data[] = [
-                    "trans_date"      => $row['trans_date'],
-                    "document_no"     => $row['document_no'],
-                    "invoice_no"      => $row['invoice_no'],
-                    "company_name"    => $row['supplier_name'],
+                    "trans_date"      => $val['row_data']['trans_date'],
+                    "document_no"     => $doc_no,
+                    "invoice_no"      => $val['row_data']['invoice_no'],
+                    "company_name"    => $val['row_data']['supplier_name'],
+                    "journal_type_id" => $credit_jt_id,
                     "account_number"  => $acc_credit->account_number,
                     "account_name"    => $acc_credit->account_name,
-                    "description"     => $description,
-                    "currency"        => $row['currency'],
-                    "rates"           => $current_rate,
+                    "description"     => $doc_no . " | " . $val['row_data']['supplier_name'],
+                    "currency"        => $val['row_data']['currency'],
+                    "rates"           => $val['rate'],
                     "original_debit"  => 0,
-                    "original_credit" => $amount_original,
+                    "original_credit" => $val['total_orig'],
                     "local_debit"     => 0,
-                    "local_credit"    => $amount_local
+                    "local_credit"    => $val['total_local']
                 ];
-
-                $grand_total_debit += $amount_local;
-                $grand_total_credit += $amount_local;
+                $grand_total_credit += $val['total_local'];
             }
 
             $footer[] = [
@@ -248,7 +266,7 @@ class Journal_inventory extends CI_Controller
                 "local_credit" => $grand_total_credit
             ];
 
-            $result = (["total" => count($data), "rows" => $data, "footer" => $footer]);
+            $result = ["total" => count($data), "rows" => $data, "footer" => $footer];
         }
 
         header('Content-Type: application/json');
@@ -466,20 +484,58 @@ class Journal_inventory extends CI_Controller
 
     public function create()
     {
-        if ($this->input->post()) {
+        $post = $this->input->post();
+        $details = json_decode($post['details'], true);
 
-            $post = $this->input->post();
-            $period = date("Ym", strtotime($post['trans_date']));
+        if (empty($details)) {
+            echo json_encode(['title' => 'Error', 'message' => 'No detail data received', 'theme' => 'error']);
+            return;
+        }
 
-            if(empty($post['id'])){
-                $send = $this->crud->create('journal_inventory', $post);
-            }else{
-                $send = $this->crud->update('journal_inventory', ["id" => $post['id']], $post);
+        $this->db->trans_begin();
+
+        try {
+            foreach ($details as $row) {
+                $autoID = $this->crud->autoid('journal_inventory'); 
+
+                $data_insert = [
+                    'id' => $autoID,
+                    'number'          => $post['voucher_no'],
+                    'journal_date'    => $post['journal_date'],
+                    'journal_type_id' => $row['journal_type_id'],
+                    'trans_date'      => $row['trans_date'],
+                    'document_no'     => $row['document_no'],
+                    'invoice_no'      => $row['invoice_no'],
+                    'account_number'  => $row['account_number'],
+                    'account_name'    => $row['account_name'],
+                    'description'     => $row['description'],
+                    'original_debit'  => $row['original_debit'],
+                    'original_credit' => $row['original_credit'],
+                    'local_debit'     => $row['local_debit'],
+                    'local_credit'    => $row['local_credit'],
+                    'rates'           => $row['rates'],
+                    'currency'        => $row['currency'],
+                    'company_name'    => $row['company_name'],
+                    'company_id'      => $post['company_id'],
+                    'modul'           => $post['modul'],
+                    'remarks'         => $post['remarks'],
+                    'created_date'    => date('Y-m-d H:i:s'),
+                    'created_by'      => $this->session->username,
+                ];
+                
+                $this->db->insert('journal_inventory', $data_insert);
             }
 
-            echo $send;
-        } else {
-            show_error("Cannot Process your request");
+            if ($this->db->trans_status() === FALSE) {
+                throw new Exception("Database transaction failed");
+            } else {
+                $this->db->trans_commit();
+                echo json_encode(['title' => 'Success', 'message' => 'Journal saved successfully', 'theme' => 'success']);
+            }
+
+        } catch (Exception $e) {
+            $this->db->trans_rollback();
+            echo json_encode(['title' => 'Error', 'message' => $e->getMessage(), 'theme' => 'success']);
         }
     }
 
