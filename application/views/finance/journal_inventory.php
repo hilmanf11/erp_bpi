@@ -88,9 +88,8 @@
     </thead>
 </table>
 
-
 <!-- Detail -->
-<div id="dlg_detail" class="easyui-window" title="Journal Detail" data-options="closed: true,modal:true" style="width: 800px; height: 500px; top: 20px; left:10px;">
+<div id="dlg_detail" class="easyui-window" title="Journal Detail" data-options="closed: true,modal:true" style="width: 80%; height: 500px; top: 20px; left:10px;">
     <table id="dg3" class="easyui-datagrid" style="width:100%;" showFooter="true">
         <thead>
             <tr>

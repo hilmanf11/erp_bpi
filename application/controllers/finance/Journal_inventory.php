@@ -22,6 +22,8 @@ class Journal_inventory extends CI_Controller
         $this->load->library('session');
         $this->load->library('Ciqrcode');
         $this->load->model('crud');
+
+        $this->_check_table_exist();
     }
 
     public function index()
@@ -37,6 +39,13 @@ class Journal_inventory extends CI_Controller
             $this->load->view('finance/journal_inventory');
         } else {
             redirect('error_access');
+        }
+    }
+
+    // Fungsi Private untuk validasi tabel
+    private function _check_table_exist() {
+        if (!$this->db->table_exists('journal_inventory')) {
+            die("<pre style='font-size:14pt;'> Database Error: Tabel 'journal_inventory' not found! Please contact admin.</pre>");
         }
     }
 
@@ -692,5 +701,4 @@ class Journal_inventory extends CI_Controller
             return number_format($value, $decimal, ",", ".");
         }
     }
-
 }
