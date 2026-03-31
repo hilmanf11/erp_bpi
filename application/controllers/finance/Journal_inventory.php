@@ -313,6 +313,7 @@ class Journal_inventory extends CI_Controller
             $this->db->join('item_rm item', 'por.item_rm_id = item.id');
             $this->db->join("item_categories jenis", "jenis.id = item.item_category_id", "left");
             $this->db->where('por.status', 0);
+            $this->db->group_by('por.receipt_no');
             $sub_por = $this->db->get_compiled_select();
 
             //Select Query
@@ -579,7 +580,6 @@ class Journal_inventory extends CI_Controller
         $send = $this->crud->delete('journal_inventory', $data);
         echo $send;
     }
-
 
     // PRINT 
     public function print($option = "")
