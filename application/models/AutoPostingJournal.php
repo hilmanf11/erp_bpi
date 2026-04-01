@@ -71,127 +71,140 @@ class Autopostingjournal extends CI_Model {
     // PURCHASE ORDER RECEIPT
     private function _process_por($receipt_no) 
     {
-        // Debit: Raw Material Injection
-        $acc_debit  = $this->db->get_where('account_coa', ['account_number' => '150.110.00'])->row();
-        // Credit: Accrual Raw Materials
-        $acc_credit = $this->db->get_where('account_coa', ['account_number' => '220.190.00'])->row();
+        // DB Transactions (Pak Angga)
+        $this->db->trans_begin();
 
-        if (!$acc_debit || !$acc_credit) return false;
+        try {
+            // Debit: Raw Material Injection
+            $acc_debit  = $this->db->get_where('account_coa', ['account_number' => '150.110.00'])->row();
+            // Credit: Accrual Raw Materials
+            $acc_credit = $this->db->get_where('account_coa', ['account_number' => '220.190.00'])->row();
 
-        // Journal Type ID
-        $debit_jt_id  = $this->journal_type("PURCHASE ORDER RECEIPT", $acc_debit->account_number);
-        $credit_jt_id = $this->journal_type("PURCHASE ORDER RECEIPT", $acc_credit->account_number);
+            if (!$acc_debit || !$acc_credit) {
+                throw new Exception("Account COA not found (150.110.00 or 220.190.00)");
+            }
 
-        // Get status Scan POR
-        $subquery = "(SELECT receipt_id, SUM(`status`) as total_scan 
-            FROM purchase_order_labels 
-            GROUP BY receipt_id) lbl";
+            // Journal Type ID
+            $debit_jt_id  = $this->journal_type("PURCHASE ORDER RECEIPT", $acc_debit->account_number);
+            $credit_jt_id = $this->journal_type("PURCHASE ORDER RECEIPT", $acc_credit->account_number);
 
-        // Get Data POR (Query Detail per Item)
-        $this->db->select("
-            a.receipt_no as document_no, 
-            a.receipt_date as trans_date, 
-            a.po_no as invoice_no,
-            a.item_rm_id,
-            c.name as item_name, 
-            b.name as supplier_name, 
-            b.currency, 
-            a.supplier_id,
-            a.qty_receipt2 as qty, 
-            f.price, 
-            f.discount,
-            lbl.total_scan
-        ");
-        // Rumus Total per Item (Debit)
-        $this->db->select("((a.qty_receipt2 * f.price) * (1 - (COALESCE(f.discount, 0) / 100))) as item_total_original", FALSE);
+            if (!$debit_jt_id || !$credit_jt_id) {
+                throw new Exception("Journal Type Mapping not found for module PURCHASE ORDER RECEIPT");
+            }
 
-        $this->db->from('purchase_order_receipts a');
-        $this->db->join('suppliers b', 'a.supplier_id = b.id');
-        $this->db->join('item_rm c', 'a.item_rm_id = c.id');
-        $this->db->join('purchase_orders f', "a.po_no = f.po_no AND a.item_rm_id = f.item_rm_id", 'left');
-        $this->db->join($subquery, "a.receipt_no = lbl.receipt_id", "inner");
+            // Get status Scan POR
+            $subquery = "(SELECT receipt_id, SUM(`status`) as total_scan 
+                FROM purchase_order_labels 
+                GROUP BY receipt_id) lbl";
 
-        // Filter & Order
-        $this->db->where('a.receipt_no', $receipt_no);
-        $this->db->where('lbl.total_scan >', 0);        // POR sudah di-scan = closed
-        $this->db->where('a.print', 1);                 // POR GRN = closed
-        $this->db->order_by('a.receipt_no', 'asc');
+            $this->db->select("
+                a.receipt_no as document_no, a.receipt_date as trans_date, a.po_no as invoice_no,
+                a.item_rm_id, c.name as item_name, b.name as supplier_name, b.currency, 
+                a.supplier_id, a.qty_receipt2 as qty, f.price, f.discount, lbl.total_scan
+            ");
+            $this->db->select("((a.qty_receipt2 * f.price) * (1 - (COALESCE(f.discount, 0) / 100))) as item_total_original", FALSE);
+            $this->db->from('purchase_order_receipts a');
+            $this->db->join('suppliers b', 'a.supplier_id = b.id');
+            $this->db->join('item_rm c', 'a.item_rm_id = c.id');
+            $this->db->join('purchase_orders f', "a.po_no = f.po_no AND a.item_rm_id = f.item_rm_id", 'left');
+            $this->db->join($subquery, "a.receipt_no = lbl.receipt_id", "inner");
+            $this->db->where('a.receipt_no', $receipt_no);
+            $this->db->where('lbl.total_scan >', 0);
+            $this->db->where('a.print', 1);
 
-        $records = $this->db->get()->result_array();
+            $records = $this->db->get()->result_array();
 
-        if (empty($records)) return false;
+            if (empty($records)) {
+                throw new Exception("No records found for Receipt No: $receipt_no or document not closed (Scan/Print)");
+            }
 
-        // Prepare Data & Voucher Number
-        $this->db->trans_start();
-        $voucher_no = $this->_generate_voucher_no($records[0]['receipt_date']);
-        $total_orig_all = 0;
-        $total_local_all = 0;
+            $voucher_no = $this->_generate_voucher_no($records[0]['trans_date']);
+            $total_orig_all = 0;
+            $total_local_all = 0;
 
-        foreach ($records as $row) {
-            $rate = $this->_get_internal_rate($row['receipt_date'], $row['currency']);
-            $amount_original = (float)$row['item_total_original'];
-            $amount_local = round($amount_original * $rate, 2);
+            foreach ($records as $row) {
+                $rate = $this->_get_internal_rate($row['trans_date'], $row['currency']);
+                $amount_original = (float)$row['item_total_original'];
+                $amount_local = round($amount_original * $rate, 2);
 
-            $autoID = $this->crud->autoid('journal_inventory'); 
+                $data_debit = [
+                    'number'          => $voucher_no,
+                    'journal_date'    => $row['trans_date'],
+                    "journal_type_id" => $debit_jt_id,
+                    'trans_date'      => date('Y-m-d'),
+                    'document_no'     => $row['document_no'],
+                    'invoice_no'      => $row['invoice_no'],
+                    'account_number'  => $acc_debit->account_number,
+                    'account_name'    => $acc_debit->account_name,
+                    'description'     => $row['item_name'] . " | " . $row['document_no'] . " | " . $row['supplier_name'],
+                    'original_debit'  => $amount_original,
+                    'original_credit' => 0,
+                    'local_debit'     => $amount_local,
+                    'local_credit'    => 0,
+                    'rates'           => $rate,
+                    'currency'        => $row['currency'],
+                    'company_name'    => $row['supplier_name'],
+                    'company_id'      => $row['supplier_id'],
+                    'modul'           => "PURCHASE ORDER RECEIPT",
+                    'remarks'         => "Auto Posting Journal",
+                    'created_date'    => date('Y-m-d H:i:s'),
+                    'created_by'      => $this->session->username ? $this->session->username : 'SYSTEM',
+                ];
 
-            // INSERT DEBIT (Per Item)
-            $this->db->insert('journal_inventory', [
-                'id'              => $autoID,
+                if (!$this->db->insert('journal_inventory', $data_debit)) {
+                    $db_error = $this->db->error();
+                    throw new Exception("Database Error (Debit): " . $db_error['message']);
+                }
+
+                $total_orig_all += $amount_original;
+                $total_local_all += $amount_local;
+            }
+
+            // INSERT CREDIT
+            $data_credit = [
                 'number'          => $voucher_no,
-                'journal_date'    => $row['receipt_date'],
-                "journal_type_id" => $debit_jt_id,
-                'trans_date'      => date('Y-m-d'), // tanggal auto posting
-                'document_no'     => $row['document_no'],
-                'invoice_no'      => $row['invoice_no'],
-                'account_number'  => $acc_debit->account_number,
-                'account_name'    => $acc_debit->account_name,
-                'description'     => $row['item_name'] . " | " . $row['document_no'] . " | " . $row['supplier_name'],
-                'original_debit'  => $amount_original,
-                'original_credit' => 0,
-                'local_debit'     => $amount_local,
-                'local_credit'    => 0,
-                'rates'           => $rate,
-                'currency'        => $row['currency'],
-                'company_name'    => $row['supplier_name'],
-                'company_id'      => $row['supplier_id'],
+                'journal_date'    => $records[0]['trans_date'],
+                "journal_type_id" => $credit_jt_id,
+                'trans_date'      => date('Y-m-d'),
+                'document_no'     => $records[0]['document_no'],
+                'invoice_no'      => $records[0]['invoice_no'],
+                'account_number'  => $acc_credit->account_number,
+                'account_name'    => $acc_credit->account_name,
+                'description'     => $records[0]['document_no'] . " | " . $records[0]['supplier_name'],
+                'original_debit'  => 0,
+                'original_credit' => $total_orig_all,
+                'local_debit'     => 0,
+                'local_credit'    => $total_local_all,
+                'rates'           => $this->_get_internal_rate($records[0]['trans_date'], $records[0]['currency']),
+                'currency'        => $records[0]['currency'],
+                'company_name'    => $records[0]['supplier_name'],
+                'company_id'      => $records[0]['supplier_id'],
                 'modul'           => "PURCHASE ORDER RECEIPT",
                 'remarks'         => "Auto Posting Journal",
                 'created_date'    => date('Y-m-d H:i:s'),
-                'created_by'      => $this->session->username,
-            ]);
+                'created_by'      => $this->session->username ? $this->session->username : 'SYSTEM',
+            ];
 
-            $total_orig_all += $amount_original;
-            $total_local_all += $amount_local;
+            if (!$this->db->insert('journal_inventory', $data_credit)) {
+                $db_error = $this->db->error();
+                throw new Exception("Database Error (Credit): " . $db_error['message']);
+            }
+
+            // Jika semua oke, commit
+            if ($this->db->trans_status() === FALSE) {
+                throw new Exception("Transaction Failed");
+            } else {
+                $this->db->trans_commit();
+                return ['status' => true, 'message' => 'Success'];
+            }
+
+        } catch (Exception $e) {
+            // Rollback jika terjadi error
+            $this->db->trans_rollback();
+            $msg = "Error in _process_por line " . $e->getLine() . ": " . $e->getMessage();
+            log_message('error', $msg);
+            return ['status' => false, 'message' => $msg];
         }
-
-        // INSERT CREDIT (Accumulation per Document)
-        $this->db->insert('journal_inventory', [
-            'id'              => $this->crud->autoid('journal_inventory'),
-            'number'          => $voucher_no,
-            'journal_date'    => $records[0]['receipt_date'],
-            "journal_type_id" => $credit_jt_id,
-            'trans_date'      => date('Y-m-d'), // tanggal auto posting
-            'document_no'     => $records[0]['document_no'],
-            'invoice_no'      => $records[0]['invoice_no'],
-            'account_number'  => $acc_credit->account_number,
-            'account_name'    => $acc_credit->account_name,
-            'description'     => $records[0]['document_no'] . " | " . $records[0]['supplier_name'],
-            'original_debit'  => 0,
-            'original_credit' => $total_orig_all,
-            'local_debit'     => 0,
-            'local_credit'    => $total_local_all,
-            'rates'           => $this->_get_internal_rate($records[0]['receipt_date'], $records[0]['currency']),
-            'currency'        => $records[0]['currency'],
-            'company_name'    => $records[0]['supplier_name'],
-            'company_id'      => $records[0]['supplier_id'],
-            'modul'           => "PURCHASE ORDER RECEIPT",
-            'remarks'         => "Auto Posting Journal",
-            'created_date'    => date('Y-m-d H:i:s'),
-            'created_by'      => $this->session->username,
-        ]);
-
-        $this->db->trans_complete();
-        return $this->db->trans_status();
     }
 
     // Get Rate
