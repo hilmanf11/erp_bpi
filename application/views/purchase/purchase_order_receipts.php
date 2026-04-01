@@ -617,7 +617,7 @@
     //     }
     // }
 
-    function print_receiving_note() {
+    function print_receiving_note_existing() {
         var receipt_no = $("#filter_receipt_no").combobox('getValue');
         if (receipt_no == "") {
             toastr.warning("Please select Receipt No!", "Information");
@@ -668,6 +668,110 @@
             });
         }
     }
+
+    // Optimasi Print Receiving Note with Auto Posting Journal
+    function print_receiving_note() {
+        var receipt_no = $("#filter_receipt_no").combobox('getValue');
+        if (receipt_no == "") {
+            toastr.warning("Please select Receipt No!", "Information");
+            return;
+        }
+
+        // --- Prepare tab kosong agar tidak diblokir Popup Blocker (Perbaikan Bug tidak bisa open new tab) ---
+        var printWindow = window.open('', '_blank');
+        printWindow.document.write('<html><head><title>Loading...</title></head><body><h3>Please wait, generating document...</h3></body></html>');
+
+        Swal.fire({
+            title: 'Validating Data...',
+            allowOutsideClick: false,
+            didOpen: () => { Swal.showLoading(); }
+        });
+
+        $.ajax({
+            type: "post",
+            url: "<?= base_url('purchase/purchase_order_receipts/checkLabel/') ?>" + window.btoa(receipt_no),
+            dataType: "json",
+            success: function (response) {
+                // Validasi Kategori RM
+                if (response.category === 'C01' && response.qty_label != response.label_no) {
+                    Swal.close();
+                    printWindow.close();
+                    toastr.error("The labels haven't been scanned yet for category RM");
+                    return;
+                }
+
+                // --- Run checkItems untuk update status ---
+                $.ajax({
+                    type: "post",
+                    url: "<?= base_url('purchase/purchase_order_receipts/checkItems/') ?>" + window.btoa(receipt_no),
+                    dataType: "json",
+                    success: function (res) {
+                        processPrintAndJournal(receipt_no, printWindow, "Success");
+                    },
+                    error: function() {
+                        processPrintAndJournal(receipt_no, printWindow, "Warning: Items check failed but proceeding to print.");
+                    }
+                });
+            },
+            error: function() {
+                Swal.close();
+                printWindow.close();
+                toastr.error("Connection error while checking labels.");
+            }
+        });
+    }
+
+    // Handling Print & Modal Journal
+    function processPrintAndJournal(receipt_no, printWindow, message) {
+        Swal.close();
+        
+        // Update URL open new tab 
+        printWindow.location.href = "<?= base_url('purchase/purchase_order_receipts/print_receiving/') ?>" + window.btoa(receipt_no);
+
+        // Konfirmasi Posting Jurnal
+        Swal.fire({
+            title: "Add Posting Journal?",
+            text: "Document printed. Do you want to generate the Posting Journal now?",
+            icon: "question",
+            showCancelButton: true,
+            confirmButtonText: 'Yes, Add to Journal!',
+            cancelButtonText: 'Later',
+            allowOutsideClick: false
+        }).then((swalRes) => {
+            if (swalRes.isConfirmed) {
+                Swal.fire({
+                    title: 'Processing',
+                    html: 'Auto Posting Journal Inventory...',
+                    allowOutsideClick: false,
+                    didOpen: () => { Swal.showLoading(); }
+                });
+                exec_autoposting(receipt_no);
+            }
+        });
+    }
+
+    // Helper untuk eksekusi Auto Posting Journal Inventory
+    function exec_autoposting(receipt_no) {
+        $.ajax({
+            type: "post",
+            url: "<?= base_url('finance/journal_inventory/autoPostingJournal/') ?>" + window.btoa(receipt_no),
+            data: { modul: "PURCHASE ORDER RECEIPT" },
+            dataType: "json",
+            success: function(response) {
+                Swal.close();
+                if (response.status === 'success') {
+                    toastr.success(response.message || "Success", "Auto Posting Success");
+                } else {
+                    Swal.fire("Information", response.message, "info");
+                }
+            },
+            error: function(xhr) {
+                Swal.close();
+                toastr.error("Failed to connect to Auto Posting server");
+            }
+        });
+    }
+
 
     function reload() {
         window.location.reload();

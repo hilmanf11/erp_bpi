@@ -10,6 +10,7 @@ defined('BASEPATH') or exit('No direct script access allowed');
  * @property CI_DB_query_builder $db
  * @property CI_Form_validation $form_validation
  * @property Crud $crud
+ * @property AutoPostingJournal $autopostingjournal
  */
 class Journal_inventory extends CI_Controller
 {
@@ -23,6 +24,7 @@ class Journal_inventory extends CI_Controller
         $this->load->library('Ciqrcode');
         $this->load->model('crud');
 
+        $this->load->model('autopostingjournal');
         $this->_check_table_exist();
     }
 
@@ -98,7 +100,6 @@ class Journal_inventory extends CI_Controller
 
         $modul        = base64_decode($post['modul'] ?? '');
         $journal_date = base64_decode($post['journal_date'] ?? '');
-        $journal_type = base64_decode($post['journal_type'] ?? '');
         $company_id   = base64_decode($post['company_id'] ?? '');
 
         // Set Period 1 month
@@ -138,7 +139,6 @@ class Journal_inventory extends CI_Controller
 
         $modul        = base64_decode($post['modul'] ?? '');
         $journal_date = base64_decode($post['journal_date'] ?? '');
-        $journal_type = base64_decode($post['journal_type'] ?? '');
         $company_id   = base64_decode($post['company_id'] ?? '');
         $document_no   = base64_decode($post['document_no'] ?? '');
         
@@ -190,19 +190,39 @@ class Journal_inventory extends CI_Controller
             $debit_jt_id  = $find_journal_type($modul, $acc_debit->account_number);
             $credit_jt_id = $find_journal_type($modul, $acc_credit->account_number);
 
+            // Get status Scan POR
+            $subquery = "(SELECT receipt_id, SUM(`status`) as total_scan 
+                FROM purchase_order_labels 
+                GROUP BY receipt_id) lbl";
+
+            // Get Data POR (Query Detail per Item)
             $this->db->select("
-                a.receipt_no as document_no, a.receipt_date as trans_date, a.po_no as invoice_no,
-                c.name as item_name, b.name as supplier_name, b.currency, 
-                a.qty_receipt2 as qty, f.price, f.discount
+                a.receipt_no as document_no, 
+                a.receipt_date as trans_date, 
+                a.po_no as invoice_no,
+                a.item_rm_id,
+                c.name as item_name, 
+                b.name as supplier_name, 
+                b.currency, 
+                a.supplier_id,
+                a.qty_receipt2 as qty, 
+                f.price, 
+                f.discount,
+                lbl.total_scan
             ");
-            // Debit per item
+            // Rumus Total per Item (Debit)
             $this->db->select("((a.qty_receipt2 * f.price) * (1 - (COALESCE(f.discount, 0) / 100))) as item_total_original", FALSE);
 
             $this->db->from('purchase_order_receipts a');
             $this->db->join('suppliers b', 'a.supplier_id = b.id');
             $this->db->join('item_rm c', 'a.item_rm_id = c.id');
             $this->db->join('purchase_orders f', "a.po_no = f.po_no AND a.item_rm_id = f.item_rm_id", 'left');
+            $this->db->join($subquery, "a.receipt_no = lbl.receipt_id", "inner");
+
+            // Filter & Order
             $this->db->where_in('a.receipt_no', $document_no_multiple);
+            $this->db->where('lbl.total_scan >', 0);        // POR sudah di-scan = closed
+            $this->db->where('a.print', 1);                 // POR GRN = closed
             $this->db->order_by('a.receipt_no', 'asc'); 
 
             $records = $this->db->get()->result_array();
@@ -518,6 +538,7 @@ class Journal_inventory extends CI_Controller
         echo json_encode($result);    
     }
 
+    // INSERT MANUAL
     public function create()
     {
         $post = $this->input->post();
@@ -535,7 +556,7 @@ class Journal_inventory extends CI_Controller
                 $autoID = $this->crud->autoid('journal_inventory'); 
 
                 $data_insert = [
-                    'id' => $autoID,
+                    'id'              => $autoID,
                     'number'          => $post['voucher_no'],
                     'journal_date'    => $post['journal_date'],
                     'journal_type_id' => $row['journal_type_id'],
@@ -554,7 +575,7 @@ class Journal_inventory extends CI_Controller
                     'company_name'    => $row['company_name'],
                     'company_id'      => $post['company_id'],
                     'modul'           => $post['modul'],
-                    'remarks'         => $post['remarks'],
+                    'remarks'         => $post['remarks'] ?? null,
                     'created_date'    => date('Y-m-d H:i:s'),
                     'created_by'      => $this->session->username,
                 ];
@@ -572,6 +593,21 @@ class Journal_inventory extends CI_Controller
         } catch (Exception $e) {
             $this->db->trans_rollback();
             echo json_encode(['title' => 'Error', 'message' => $e->getMessage(), 'theme' => 'success']);
+        }
+    }
+
+    // INSERT VIA AUTO-POSTING
+    public function autoPostingJournal($receipt_no_b64) 
+    {
+        $receipt_no = base64_decode($receipt_no_b64);
+        $modul = $this->input->post("modul");
+        
+        $post = $this->autopostingjournal->inventory($modul, $receipt_no);
+        
+        if ($post) {
+            echo json_encode(['status' => 'success', 'message' => "Journal for $receipt_no has been posted."]);
+        } else {
+            echo json_encode(['status' => 'info', 'message' => "Journal already exists or posting failed."]);
         }
     }
 

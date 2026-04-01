@@ -1,25 +1,26 @@
 <?php
 defined('BASEPATH') OR exit('No direct script access allowed');
 
-class AutoPostingJournal extends CI_Model {
+class Autopostingjournal extends CI_Model {
 
     public function __construct() 
     {
         parent::__construct();
+        $this->load->model('crud');
     }
 
     /**
-     * Auto Posting Journal
+     * Auto Posting Journal Inventory
      * @param string $modul Modul Name
      * @param string $document_no Document Number (Receipt No, Request No, etc)
      */
-    public function index($modul, $document_no) 
+    public function inventory($modul, $document_no) 
     {
         if (empty($modul) || empty($document_no)) return false;
 
         // Check if the document has been journaled before
         if ($this->_is_already_posted($modul, $document_no)) {
-            log_message('debug', "Auto Posting: $document_no for module $modul has been posted. Skip.");
+            log_message('debug', "$document_no for module $modul has been posted before. Skip.");
             return true; 
         }
 
@@ -53,6 +54,20 @@ class AutoPostingJournal extends CI_Model {
         return ($check > 0);
     }
 
+    // Get Journal Types
+    private function journal_type($module, $acc_no) 
+    {
+        $all_journal_types = $this->db->get('journal_types')->result();
+        if (empty($module) || empty($acc_no)) return null;
+        
+        foreach ($all_journal_types as $jt) {
+            if (trim($jt->module) == trim($module) && trim($jt->account_number) == trim($acc_no)) {
+                return $jt->id;
+            }
+        }
+        return null;
+    }
+
     // PURCHASE ORDER RECEIPT
     private function _process_por($receipt_no) 
     {
@@ -63,17 +78,45 @@ class AutoPostingJournal extends CI_Model {
 
         if (!$acc_debit || !$acc_credit) return false;
 
+        // Journal Type ID
+        $debit_jt_id  = $this->journal_type("PURCHASE ORDER RECEIPT", $acc_debit->account_number);
+        $credit_jt_id = $this->journal_type("PURCHASE ORDER RECEIPT", $acc_credit->account_number);
+
+        // Get status Scan POR
+        $subquery = "(SELECT receipt_id, SUM(`status`) as total_scan 
+            FROM purchase_order_labels 
+            GROUP BY receipt_id) lbl";
+
         // Get Data POR (Query Detail per Item)
         $this->db->select("
-            a.receipt_no, a.receipt_date, a.po_no,
-            b.name as supplier_name, b.currency, c.name as item_name,
-            ((a.qty_receipt2 * f.price) * (1 - (COALESCE(f.discount, 0) / 100))) as amount_orig
-        ", FALSE);
+            a.receipt_no as document_no, 
+            a.receipt_date as trans_date, 
+            a.po_no as invoice_no,
+            a.item_rm_id,
+            c.name as item_name, 
+            b.name as supplier_name, 
+            b.currency, 
+            a.supplier_id,
+            a.qty_receipt2 as qty, 
+            f.price, 
+            f.discount,
+            lbl.total_scan
+        ");
+        // Rumus Total per Item (Debit)
+        $this->db->select("((a.qty_receipt2 * f.price) * (1 - (COALESCE(f.discount, 0) / 100))) as item_total_original", FALSE);
+
         $this->db->from('purchase_order_receipts a');
         $this->db->join('suppliers b', 'a.supplier_id = b.id');
         $this->db->join('item_rm c', 'a.item_rm_id = c.id');
         $this->db->join('purchase_orders f', "a.po_no = f.po_no AND a.item_rm_id = f.item_rm_id", 'left');
+        $this->db->join($subquery, "a.receipt_no = lbl.receipt_id", "inner");
+
+        // Filter & Order
         $this->db->where('a.receipt_no', $receipt_no);
+        $this->db->where('lbl.total_scan >', 0);        // POR sudah di-scan = closed
+        $this->db->where('a.print', 1);                 // POR GRN = closed
+        $this->db->order_by('a.receipt_no', 'asc');
+
         $records = $this->db->get()->result_array();
 
         if (empty($records)) return false;
@@ -86,43 +129,63 @@ class AutoPostingJournal extends CI_Model {
 
         foreach ($records as $row) {
             $rate = $this->_get_internal_rate($row['receipt_date'], $row['currency']);
-            $amt_orig = (float)$row['amount_orig'];
-            $amt_local = round($amt_orig * $rate, 2);
+            $amount_original = (float)$row['item_total_original'];
+            $amount_local = round($amount_original * $rate, 2);
+
+            $autoID = $this->crud->autoid('journal_inventory'); 
 
             // INSERT DEBIT (Per Item)
             $this->db->insert('journal_inventory', [
+                'id'              => $autoID,
                 'number'          => $voucher_no,
                 'journal_date'    => $row['receipt_date'],
-                'document_no'     => $row['receipt_no'],
+                "journal_type_id" => $debit_jt_id,
+                'trans_date'      => date('Y-m-d'), // tanggal auto posting
+                'document_no'     => $row['document_no'],
+                'invoice_no'      => $row['invoice_no'],
                 'account_number'  => $acc_debit->account_number,
-                'description'     => "Auto: " . $row['item_name'] . " | " . $row['receipt_no'],
-                'original_debit'  => $amt_orig,
+                'account_name'    => $acc_debit->account_name,
+                'description'     => $row['item_name'] . " | " . $row['document_no'] . " | " . $row['supplier_name'],
+                'original_debit'  => $amount_original,
                 'original_credit' => 0,
-                'local_debit'     => $amt_local,
+                'local_debit'     => $amount_local,
                 'local_credit'    => 0,
                 'rates'           => $rate,
+                'currency'        => $row['currency'],
+                'company_name'    => $row['supplier_name'],
+                'company_id'      => $row['supplier_id'],
                 'modul'           => "PURCHASE ORDER RECEIPT",
+                'remarks'         => "Auto Posting Journal",
                 'created_date'    => date('Y-m-d H:i:s'),
                 'created_by'      => $this->session->username,
             ]);
 
-            $total_orig_all += $amt_orig;
-            $total_local_all += $amt_local;
+            $total_orig_all += $amount_original;
+            $total_local_all += $amount_local;
         }
 
         // INSERT CREDIT (Accumulation per Document)
         $this->db->insert('journal_inventory', [
+            'id'              => $this->crud->autoid('journal_inventory'),
             'number'          => $voucher_no,
             'journal_date'    => $records[0]['receipt_date'],
-            'document_no'     => $records[0]['receipt_no'],
+            "journal_type_id" => $credit_jt_id,
+            'trans_date'      => date('Y-m-d'), // tanggal auto posting
+            'document_no'     => $records[0]['document_no'],
+            'invoice_no'      => $records[0]['invoice_no'],
             'account_number'  => $acc_credit->account_number,
-            'description'     => "Auto: Hutang Temp | " . $records[0]['receipt_no'],
+            'account_name'    => $acc_credit->account_name,
+            'description'     => $records[0]['document_no'] . " | " . $records[0]['supplier_name'],
             'original_debit'  => 0,
             'original_credit' => $total_orig_all,
             'local_debit'     => 0,
             'local_credit'    => $total_local_all,
             'rates'           => $this->_get_internal_rate($records[0]['receipt_date'], $records[0]['currency']),
+            'currency'        => $records[0]['currency'],
+            'company_name'    => $records[0]['supplier_name'],
+            'company_id'      => $records[0]['supplier_id'],
             'modul'           => "PURCHASE ORDER RECEIPT",
+            'remarks'         => "Auto Posting Journal",
             'created_date'    => date('Y-m-d H:i:s'),
             'created_by'      => $this->session->username,
         ]);
