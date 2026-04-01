@@ -489,7 +489,7 @@
             panelWidth: 450,
             idField: 'document_no',
             textField: 'document_no',
-            multiple: false,
+            multiple: true,
             selectOnCheck: true,
             checkOnSelect: true,
             mode: 'remote',
@@ -991,4 +991,74 @@
             }
         }]
     });
+
+    // DELETE
+    function deleted() {
+        var rows = $('#dg').datagrid('getSelections');
+        
+        if (rows.length > 0) {
+            $.messager.confirm('Warning', 'Are you sure you want to delete ' + rows.length + ' selected data?', function(r) {
+                if (r) {
+                    // Get all nomor voucher dan cek locking period
+                    var numbers = [];
+                    var journal_dates = [];
+                    
+                    for (var i = 0; i < rows.length; i++) {
+                        numbers.push(rows[i].number);
+                        journal_dates.push(rows[i].journal_date);
+                    }
+
+                    // Check Lock Period
+                    $.ajax({
+                        type: "post",
+                        url: "<?= base_url('closing/locks/checkLock') ?>",
+                        data: {
+                            period: journal_dates[0],       // cek tanggal baris pertama saja
+                            menus_id: "<?= $menus_id ?>"
+                        },
+                        dataType: "json",
+                        success: function (lock) {
+                            if (lock.total > 0) {
+                                toastr.error("This period is locked by Accounting. Cannot delete data.");
+                                return false;
+                            }
+
+                            // Proses Delete Massal jika tidak ter-lock
+                            Swal.fire({
+                                title: 'Deleting Data...',
+                                allowOutsideClick: false,
+                                didOpen: () => { Swal.showLoading(); }
+                            });
+
+                            $.ajax({
+                                method: 'post',
+                                url: '<?= base_url('finance/journal_inventory/delete') ?>',
+                                data: { 
+                                    voucher_numbers: numbers,
+                                },
+                                dataType: 'json',
+                                success: function(result) {
+                                    Swal.close();
+                                    if (result.theme === 'success') {
+                                        toastr.success(result.message);
+                                        $('#dg').datagrid('reload');
+                                        $('#dg').datagrid('clearSelections');
+                                    } else {
+                                        Swal.fire("Error", result.message, "error");
+                                    }
+                                },
+                                error: function(jqXHR) {
+                                    Swal.close();
+                                    toastr.error("Server Error: " + jqXHR.statusText);
+                                }
+                            });
+                        }
+                    });
+                }
+            });
+        } else {
+            toastr.warning("Please select at least one data in the table first!", "Information");
+        }
+    }
+
 </script>

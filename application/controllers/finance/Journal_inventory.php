@@ -110,6 +110,7 @@ class Journal_inventory extends CI_Controller
         if ($modul == "PURCHASE ORDER RECEIPT") 
         {
             $this->db->select('a.receipt_no as document_no, a.supplier_id');
+            $this->db->select('a.receipt_date as trans_date');
             $this->db->from('purchase_order_receipts a');
             $this->db->join('journal_inventory b', 'a.receipt_no = b.document_no', 'left');
             
@@ -576,10 +577,31 @@ class Journal_inventory extends CI_Controller
 
     public function delete()
     {
-        $data = $this->input->post();
-        $send = $this->crud->delete('journal_inventory', $data);
-        echo $send;
+        $voucher_numbers = $this->input->post('voucher_numbers');
+        if (empty($voucher_numbers)) {
+            echo json_encode(['status' => 'error', 'message' => 'No voucher selected']);
+            return;
+        }
+
+        $this->db->trans_begin();
+
+        try {
+            $this->db->where_in('number', $voucher_numbers);
+            $this->db->delete('journal_inventory');
+
+            if ($this->db->trans_status() === FALSE) {
+                throw new Exception("Failed to delete journal entries from database.");
+            }
+
+            $this->db->trans_commit();
+            echo json_encode(['title' => 'Success', 'theme' => 'success', 'message' => 'Data deleted successfully']);
+
+        } catch (Exception $e) {
+            $this->db->trans_rollback();
+            echo json_encode(['title' => 'Error', 'theme' => 'error', 'message' => $e->getMessage()]);
+        }
     }
+
 
     // PRINT 
     public function print($option = "")
