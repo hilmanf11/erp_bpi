@@ -24,7 +24,7 @@
                 </div>
             </div>
             <div style="width:50%; float:left;">
-                <div class="fitem">
+                <div class="fitem" hidden>
                     <span style="width:35%; display:inline-block;">Type</span>
                     <select style="width:60%;" id="filter_type" class="easyui-combobox" data-options="editable:false, panelHeight:'auto'">
                         <option value="">Choose All</option>
@@ -135,7 +135,7 @@
                     <input style="width:60%;" id="division" class="easyui-combobox" required>
                 </div>
                 
-                <div class="fitem">
+                <div class="fitem" hidden>
                     <span style="width:35%; display:inline-block;">Type</span>
                     <select style="width:60%;" id="type" name="type" class="easyui-combobox" data-options="editable:false, panelHeight:'auto'" required>
                         <option value="">Choose All</option>
