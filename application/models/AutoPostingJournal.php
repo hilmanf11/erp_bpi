@@ -109,8 +109,11 @@ class Autopostingjournal extends CI_Model {
             $this->db->join('purchase_orders f', "a.po_no = f.po_no AND a.item_rm_id = f.item_rm_id", 'left');
             $this->db->join($subquery, "a.receipt_no = lbl.receipt_id", "inner");
             $this->db->where('a.receipt_no', $receipt_no);
-            $this->db->where('lbl.total_scan >', 0);
-            $this->db->where('a.print', 1);
+            /** -- sementara di takeout: validasi di luar query
+            $this->db->where('lbl.total_scan >', 0);        // POR sudah di-scan = closed
+            $this->db->where('a.print', 1);                 // POR GRN = closed
+            */
+            $this->db->order_by('a.receipt_no', 'asc'); 
 
             $records = $this->db->get()->result_array();
 

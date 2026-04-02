@@ -681,7 +681,6 @@
         const requiredFields = [
             { val: params.journal_date, label: 'Journal Date' },
             { val: params.division,     label: 'Division' },
-            { val: params.type,         label: 'Type' },
             { val: params.modul,        label: 'Module' },
             { val: params.company_id,   label: 'Company' },
             { val: params.document_no,  label: 'Document No.' },

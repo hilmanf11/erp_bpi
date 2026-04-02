@@ -221,8 +221,10 @@ class Journal_inventory extends CI_Controller
 
             // Filter & Order
             $this->db->where_in('a.receipt_no', $document_no_multiple);
+            /** -- sementara di takeout: validasi di luar query
             $this->db->where('lbl.total_scan >', 0);        // POR sudah di-scan = closed
             $this->db->where('a.print', 1);                 // POR GRN = closed
+            */
             $this->db->order_by('a.receipt_no', 'asc'); 
 
             $records = $this->db->get()->result_array();
