@@ -1,6 +1,20 @@
 <?php
 date_default_timezone_set("Asia/Bangkok");
 defined('BASEPATH') or exit('No direct script access allowed');
+
+use PhpOffice\PhpSpreadsheet\IOFactory;
+use PhpOffice\PhpSpreadsheet\Shared\Date;
+
+/**
+ * @property CI_Input $input
+ * @property CI_Output $output
+ * @property CI_Loader $load
+ * @property CI_Session $session
+ * @property CI_DB_query_builder $db
+ * @property CI_Form_validation $form_validation
+ * @property Crud $crud
+ * @property Bank_reconciliation $bank_reconciliation
+ */
 class Report_bank_reconciliation extends CI_Controller
 {
     public function __construct()
@@ -11,8 +25,6 @@ class Report_bank_reconciliation extends CI_Controller
         $this->load->library('form_validation');
         $this->load->library('session');
         $this->load->model('crud');
-        //Validasi Form
-        $this->form_validation->set_rules('item_id', 'Product No', 'required|min_length[1]|max_length[50]');
     }
 
     public function index()
@@ -32,6 +44,131 @@ class Report_bank_reconciliation extends CI_Controller
 
     // GET PAYLOAD FOR UPLOAD DATA
     public function upload()
+    {
+        if (ob_get_length()) ob_end_clean();
+        header('Content-Type: application/json');
+        
+        // Load PHPSpreadsheet
+        require_once 'assets/vendors/phpspreadsheet/vendor/autoload.php';
+
+        try {
+            if (!isset($_FILES['file_upload']) || $_FILES['file_upload']['error'] !== UPLOAD_ERR_OK) {
+                throw new Exception("File not found or upload error.");
+            }
+
+            $filter_account_number = $this->input->post("filter_account_number");
+            $filter_bank_account = $this->input->post("filter_bank_account");
+            $filter_from = $this->input->post("filter_from");
+            $filter_to = $this->input->post("filter_to");
+
+            $tmpPath = $_FILES['file_upload']['tmp_name'];
+            $spreadsheet = IOFactory::load($tmpPath);
+            $sheet = $spreadsheet->getActiveSheet();
+            $highestRow = $sheet->getHighestRow();
+
+            // Get Data Header (Metadata) dari Excel
+            $dataBank = [
+                'bank_account' => $sheet->getCell("C3")->getValue(),
+                'start_date'   => $this->_formatExcelDate($sheet->getCell("C4")->getValue()),
+                'end_date'     => $this->_formatExcelDate($sheet->getCell("C5")->getValue()),
+                'currency'     => $sheet->getCell("C6")->getValue(),
+            ];
+
+            if (empty($dataBank['bank_account'])) {
+                echo json_encode(array("title" => "Error", "message" => "Bank Account is required!", "theme" => "error"));
+                return;
+            }
+
+            // VALIDASI: Cocokkan Excel dengan Filter
+            if (strtotime($filter_from) !== strtotime($dataBank['start_date']) || 
+                strtotime($filter_to) !== strtotime($dataBank['end_date'])) {
+                echo json_encode(["title" => "Not Matched", "message" => "Failed! Period in Excel ({$dataBank['start_date']} to {$dataBank['end_date']}) does not match selection.", "theme" => "error"]);
+                return;
+            }
+
+            if ($filter_bank_account !== $dataBank['bank_account']) {
+                echo json_encode(["title" => "Not Matched", "message" => "Failed! Bank Account in file is different.", "theme" => "error"]);
+                return;
+            }
+
+            // check available account_bank
+            $account_banks = $this->crud->read('account_banks', [], ["bank_account" => $dataBank['bank_account']]);
+            if (empty($account_banks->bank_account)) {
+                echo json_encode(array("title" => "Not Found", "message" => "Bank Account Of " . $dataBank['bank_account'] ." Is Not Found", "theme" => "error"));
+                return;
+            }
+
+            // PROSES DELETE (Panggil Model)
+            $this->load->model('bank_reconciliation');
+            $deleteStatus = $this->bank_reconciliation->replace_existing_data([
+                'bank_account'   => $filter_bank_account,
+                'account_number' => $filter_account_number,
+                'from'           => $filter_from,
+                'to'             => $filter_to
+            ]);
+
+            // PARSING DATA
+            $datas = [];
+            for ($i = 10; $i <= $highestRow; $i++) {
+                $rawDate = $sheet->getCell("B$i")->getValue();
+                if (empty($rawDate)) continue; // Lewati baris kosong
+
+                $datas[] = [
+                    'account_number' => $account_banks->account_number,
+                    'bank_account'   => $account_banks->bank_account,
+                    'start_date'     => $filter_from,
+                    'end_date'       => $filter_to,
+                    'currency'       => 'IDR',
+                    'source'         => 'upload',
+                    'posting_date'   => $this->_formatExcelDate($rawDate, true),
+                    'remark'         => htmlspecialchars($sheet->getCell("C$i")->getValue()),
+                    'debit'          => (float) str_replace(',', '', $sheet->getCell("D$i")->getValue() ?? 0),
+                    'credit'         => (float) str_replace(',', '', $sheet->getCell("E$i")->getValue() ?? 0),
+                    'result'         => null,   // Reconcile matched or not matched
+                    'status'         => 0,      // 1=Reconciliation, 0=Not yet
+                    'created_date'   => date('Y-m-d H:i:s'),
+                    'created_by'     => $this->session->username,
+                ];
+            }
+
+            // INSERT - Optimasi latency
+            $processResults = $this->bank_reconciliation->batch_insert_with_log($datas);
+
+            echo json_encode([
+                "title"           => "Upload Processed",
+                "delete_existing" => $deleteStatus,     // Status penghapusan data lama
+                "results"         => $processResults,   // Status per baris (Success / Failed)
+                "total"           => count($datas),
+                "total_success"   => count(array_filter($processResults, function($r){ return $r['theme'] == 'success'; })),
+            ]);
+
+        } catch (Exception $e) {
+            echo json_encode([
+                "title"   => "Error",
+                "message" => $e->getMessage(),
+                "theme"   => "error"
+            ]);
+        }
+    }
+
+    /**
+     * Helper Private untuk konversi tanggal PhpSpreadsheet
+     */
+    private function _formatExcelDate($value, $withTime = false) {
+        if (empty($value)) return null;
+        
+        try {
+            if (is_numeric($value)) {
+                $format = $withTime ? 'Y-m-d H:i:s' : 'Y-m-d';
+                return Date::excelToDateTimeObject($value)->format($format);
+            }
+            return date($withTime ? 'Y-m-d H:i:s' : 'Y-m-d', strtotime($value));
+        } catch (Exception $e) {
+            return null;
+        }
+    }
+
+    public function upload_existing()
     {
         ini_set('display_errors', 0);
         ini_set('display_startup_errors', 0);
@@ -94,7 +231,7 @@ class Report_bank_reconciliation extends CI_Controller
             $this->db->where("end_date BETWEEN '$filter_from' AND '$filter_to'");
             $deletePeriod = $this->db->delete('bank_reconciliation');
 
-            if ($this->db->affected_rows() > 0) {
+            if ($deletePeriod) {
                 $deleteStatus = ["title" => "Good Job", "message" => "Data Updated Successfully", "theme" => "success"];
                 $dataBefore = $this->crud->read('bank_reconciliation', [], ['bank_account' => $filter_bank_account, 'account_number' => $filter_account_number, 'start_date' => $filter_from, 'end_date' => $filter_to]);
                 $this->crud->logs("Delete", json_encode($dataBefore), 'bank_reconciliation');

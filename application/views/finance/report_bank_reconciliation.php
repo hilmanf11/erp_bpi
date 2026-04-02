@@ -116,6 +116,89 @@
                 text: 'Upload',
                 iconCls: 'icon-ok',
                 handler: function() {
+                    if (!$('#frm_upload').form('validate')) {
+                        toastr.error("File is required!");
+                        return;
+                    }
+
+                    $.messager.progress({
+                        title: 'Please wait',
+                        msg: 'Importing and processing data...'
+                    });
+
+                    $('#frm_upload').form('submit', {
+                        url: '<?= base_url('finance/report_bank_reconciliation/upload') ?>',
+                        queryParams: {
+                            filter_account_number: $('#filter_account_number').val(),
+                            filter_bank_account: $('#filter_bank_account').val(),
+                            filter_from: $('#filter_from').val(),
+                            filter_to: $('#filter_to').val()
+                        },
+                        success: function(result) {
+                            $.messager.progress('close');
+
+                            // Membersihkan log gagal di DB
+                            $.ajax({ url: "<?= base_url('finance/report_bank_reconciliation/uploadclearFailed') ?>" });
+
+                            try {
+                                // Parsing JSON dengan pembersihan whitespace/BOM
+                                var cleanResult = result.substring(result.indexOf('{'), result.lastIndexOf('}') + 1);
+                                var json = JSON.parse(cleanResult);
+
+                                // Check ada results (hasil insert per baris)
+                                if (json.results && Array.isArray(json.results)) {
+                                    var logHtml = "";
+
+                                    // Show status penghapusan data lama (System Log)
+                                    if (json.delete_existing) {
+                                        var delColor = json.delete_existing.theme === "success" ? "orange" : "blue";
+                                        logHtml += `<b style='color: ${delColor};'>[SYSTEM] ${json.delete_existing.title} :</b> ${json.delete_existing.message}<br><hr>`;
+                                    }
+
+                                    // Show hasil per baris dari array results
+                                    json.results.forEach(function(item) {
+                                        var color = item.theme === "success" ? "green" : "red";
+                                        logHtml += `<b style='color: ${color};'>Good Job</b> | ${item.message} (Row ${item.row})<br>`;
+                                    });
+
+                                    $("#p_remarks").html(logHtml);
+                                    $('#p_upload').progressbar('setValue', 100);
+                                    
+                                    // Show ringkasan sukses
+                                    toastr.success(`Processing finished. ${json.total_success} rows saved.`);
+
+                                } else if (json.title === "Not Matched") {
+                                    // Kasus jika validasi bank/periode di awal sudah gagal
+                                    toastr.error(json.message);
+                                    $.messager.alert('Error', json.message, 'error');
+                                } else {
+                                    // Kasus error tak terduga lainnya
+                                    $.messager.alert('Error', json.message || 'Unknown error occurred', 'error');
+                                }
+                            } catch (e) {
+                                console.error("Parse Error:", e, "Raw:", result);
+                                $.messager.alert('Error', 'Failed to read server response. Ensure the file format is correct.', 'error');
+                            }
+                        },
+                        onLoadError: function() {
+                            $.messager.progress('close');
+                            $.messager.alert('Error', 'Network Error. Please try again.', 'error');
+                        }
+                    });
+                }
+            }]
+        });
+
+        $('#dlg_upload_existing').dialog({
+            buttons: [{
+                text: 'List Failed',
+                handler: function() {
+                    window.open('<?= base_url('finance/report_bank_reconciliation/uploadDownloadFailed') ?>', '_blank');
+                }
+            }, {
+                text: 'Upload',
+                iconCls: 'icon-ok',
+                handler: function() {
                     // Memastikan form valid sebelum submit
                     if (!$('#frm_upload').form('validate')) {
                         toastr.error("File is required! Please choose file (.xls) before click Upload.");
