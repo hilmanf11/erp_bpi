@@ -1566,10 +1566,19 @@
                     total_dpp = parseFloat(Math.abs(total_sub_discount - down_payment) * 0);
                 }
 
+                console.log("TOTAL DPP ", total_dpp);
+                $("#total_dpp").numberbox('setValue', total_dpp);
+
+                var disc_tax = parseFloat(total_dpp * (taxes / 100)); // Total PPN
+                $("#total_vat").numberbox('setValue', disc_tax.toFixed(4));
+                $("#check_vat").checkbox('uncheck');
+                
+                /** -- Dokumentasi : Bug get VAT (Bu Nina 2026-04-02) 
                 // var disc_tax = parseFloat(total_dpp * (taxes / 100)); // Total PPN
                 // $("#total_vat").numberbox('setValue', disc_tax.toFixed(4));
                 var disc_tax = parseFloat($("#total_vat").numberbox('getValue')); // Total PPN
                 $("#check_vat").checkbox('uncheck');
+                */
 
                 var total_pph = parseFloat($("#total_pph").numberbox('getValue')) || 0;
                 
