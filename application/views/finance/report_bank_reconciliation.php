@@ -401,6 +401,49 @@
 
     //DOWNLOAD TEMPLATE UPLOAD
     function download_excel() {
+        var filter_bank_account = $("#filter_bank_account").combobox('getValue');
+
+        if (filter_bank_account !== "") {
+            
+            $.messager.progress({ title: 'Please wait', msg: 'Preparing template...' });
+
+            $.ajax({
+                type: "GET",
+                url: "<?= base_url('finance/report_bank_reconciliation/template') ?>",
+                data: { 
+                    filter_bank_account: filter_bank_account,
+                },
+                success: function(response) {
+                    $.messager.progress('close');
+
+                    try {
+                        // Cek apakah response itu JSON (berarti error) atau string URL
+                        if (response.includes('{')) {
+                            var json = JSON.parse(response);
+                            $.messager.alert(json.title, json.message, 'error');
+                        } else {
+                            // Jika response adalah plain string URL path
+                            window.location.assign(response.trim());
+                        }
+                    } catch (e) {
+                        // Jika bukan JSON, langsung download (asumsi response adalah URL)
+                        window.location.assign(response.trim());
+                    }
+                },
+                error: function() {
+                    $.messager.progress('close');
+                    $.messager.alert("Error", "Failed to connect to server", 'error');
+                }
+            });
+            
+        } else {
+            var errorMsg = "Please choose the Bank Account first!";
+            toastr.warning(errorMsg);
+            $.messager.alert("Warning", errorMsg, 'warning');
+        }
+    }
+
+    function download_excel_existing() {
         window.location.assign('<?= base_url('template/tmp_bank_reconciliation.xls') ?>');
     }
 

@@ -42,6 +42,36 @@ class Report_bank_reconciliation extends CI_Controller
         }
     }
 
+    // Download Template
+    public function template() 
+    {
+        $filter_bank_account = $this->input->get('filter_bank_account');
+
+        // Ambil data bank
+        $account_banks = $this->crud->read('account_banks', [], ["bank_account" => $filter_bank_account]);
+        
+        if (empty($account_banks)) {
+            // Return JSON jika error agar ditangkap catch/if di JS
+            echo json_encode(array("title" => "Not Found", "message" => "Bank Account not found", "theme" => "error"));
+            return;
+        }
+
+        // Tentukan Path (Gunakan FCPATH atau path relatif jika ingin lebih aman, 
+        // tapi base_url sudah cukup untuk window.location.assign)
+        $bank_code = $account_banks->bank_code;
+
+        if (strpos($bank_code, "MDR") !== false) {
+            $path = base_url('template/tmp_bank_mdr.xls');
+        } elseif (strpos($bank_code, "RSN") !== false) {
+            $path = base_url('template/tmp_bank_rsn.xls');
+        } else {
+            $path = base_url('template/tmp_bank_reconciliation.xls');
+        }
+        
+        // Kirim plain text URL
+        echo $path;
+    }
+
     // GET PAYLOAD FOR UPLOAD DATA
     public function upload()
     {
