@@ -537,3 +537,6 @@ add New Folder NPD ([75d2b6d1](https://github.com/hilmanf11/erp_bpi/commit/75d2b
 - **kurniawan**: Pricing
 
 Modification and new Module ([4031319f](https://github.com/hilmanf11/erp_bpi/commit/4031319ff41a5952859788375572924f79dfeb67))
+
+### [2026-04-02]
+- **Rizki Puji**: Feature: fix upload insert batch and add modal Bank Reconciliation ([2d0fb0b1](https://github.com/hilmanf11/erp_bpi/commit/2d0fb0b1995a1d81a649e511f92eaf5185025969))
