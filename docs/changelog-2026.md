@@ -532,3 +532,8 @@ add Specification ([d1a2cbe9](https://github.com/hilmanf11/erp_bpi/commit/d1a2cb
 - **kurniawan**: Folder NPD
 
 add New Folder NPD ([75d2b6d1](https://github.com/hilmanf11/erp_bpi/commit/75d2b6d14c869fa0efd4f83760b3554cd57372d6))
+
+### [2026-04-02]
+- **kurniawan**: Pricing
+
+Modification and new Module ([4031319f](https://github.com/hilmanf11/erp_bpi/commit/4031319ff41a5952859788375572924f79dfeb67))
