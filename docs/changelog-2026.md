@@ -525,3 +525,10 @@ add Specification ([d1a2cbe9](https://github.com/hilmanf11/erp_bpi/commit/d1a2cb
 
 ### [2026-03-26]
 - **Rizki Puji**: Feature: fix query join receipt_no on Purchase Report ([63e8826d](https://github.com/hilmanf11/erp_bpi/commit/63e8826d3cd8448838a337795fff4a0cb9c0664f))
+
+## April 2026
+
+### [2026-04-02]
+- **kurniawan**: Folder NPD
+
+add New Folder NPD ([75d2b6d1](https://github.com/hilmanf11/erp_bpi/commit/75d2b6d14c869fa0efd4f83760b3554cd57372d6))
