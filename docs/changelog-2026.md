@@ -540,3 +540,6 @@ Modification and new Module ([4031319f](https://github.com/hilmanf11/erp_bpi/com
 
 ### [2026-04-02]
 - **Rizki Puji**: Feature: fix upload insert batch and add modal Bank Reconciliation ([2d0fb0b1](https://github.com/hilmanf11/erp_bpi/commit/2d0fb0b1995a1d81a649e511f92eaf5185025969))
+
+### [2026-04-02]
+- **kurniawan**: Update Report_history_transactions.php ([039ea6b8](https://github.com/hilmanf11/erp_bpi/commit/039ea6b8c0441b3618817453bd09572ebed278f6))
