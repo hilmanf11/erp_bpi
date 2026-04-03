@@ -409,7 +409,8 @@ class Purchase_orders extends CI_Controller
                     a.price,
                     a.status, 
                     g.number as category_code, 
-                    (a.qty * a.price) as total_price');
+                    (a.qty * a.price) as total_price,
+                    e.item_supplier');
                 $this->db->from('purchase_orders a');
                 $this->db->join('item_rm b', 'a.item_rm_id = b.id');
                 $this->db->join('item_familys c', 'b.item_family_id= c.id');
