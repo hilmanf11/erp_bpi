@@ -79,7 +79,7 @@ class Supplier_items extends CI_Controller
         $item_rm_id = $this->input->get('item_rm_id');
         $item_family_id = $this->input->get('item_family_id');
 
-        $this->db->select('b.*, c.number as item_number, a.mpq, a.moq, a.price, a.share_order, a.uom_default');
+        $this->db->select('b.*, c.number as item_number, a.mpq, a.moq, a.price, a.share_order, a.uom_default, a.item_supplier');
         $this->db->from('supplier_items a');
         $this->db->join('suppliers b', 'a.supplier_id = b.id');
         $this->db->join('item_rm c', 'a.item_rm_id = c.id');
@@ -153,6 +153,7 @@ class Supplier_items extends CI_Controller
             a.uom_inventory,
             c.weight_kg,
             a.calculate,
+            a.remark,
             b.number as supplier_number, 
             b.name as supplier_name, 
             b.currency as suppliers_currency, 
@@ -290,6 +291,7 @@ class Supplier_items extends CI_Controller
                 "uom_inventory" => $post['uom_inventory'],
                 "weight_kg" => $post['weight_kg'],
                 "calculate" => $post['calculate'],
+                "remark" => $post['remark'],
             );
 
             $send = $this->crud->update('supplier_items', ["id" => $id], $dataFinal);
