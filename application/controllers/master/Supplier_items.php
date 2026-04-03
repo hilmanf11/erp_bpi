@@ -79,7 +79,7 @@ class Supplier_items extends CI_Controller
         $item_rm_id = $this->input->get('item_rm_id');
         $item_family_id = $this->input->get('item_family_id');
 
-        $this->db->select('b.*, c.number as item_number, a.mpq, a.moq, a.price, a.share_order, a.uom_default, a.item_supplier');
+        $this->db->select('b.*, c.number as item_number, a.mpq, a.moq, a.price, a.share_order, a.uom_default, a.item_supplier, a.remark');
         $this->db->from('supplier_items a');
         $this->db->join('suppliers b', 'a.supplier_id = b.id');
         $this->db->join('item_rm c', 'a.item_rm_id = c.id');
@@ -339,7 +339,8 @@ class Supplier_items extends CI_Controller
                 'valid_date' => $data->val($i, 12),
                 'safety_stock' => $data->val($i, 13),
                 'uom_default' => $data->val($i, 14),
-                'calculate' => $data->val($i, 15)
+                'calculate' => $data->val($i, 15),
+                'remark' => $data->val($i, 16)
             );
         }
         $datas['total'] = count($datas);
@@ -408,6 +409,7 @@ class Supplier_items extends CI_Controller
                 "uom_inventory" => $uom,
                 "weight_kg" => $weight_kg,
                 "calculate" => $data['calculate'],
+                "remark" => $data['remark'],
             );
 
             if (@$supplier_items->supplier_id != "") {
