@@ -554,3 +554,6 @@ add Item Supplier ([cf82acf5](https://github.com/hilmanf11/erp_bpi/commit/cf82ac
 
 ### [2026-04-03]
 - **kurniawan**: Update Supplier Items ([33397a6a](https://github.com/hilmanf11/erp_bpi/commit/33397a6a474e230df6ea9f93d14580bde1926e9a))
+
+### [2026-04-03]
+- **kurniawan**: Update Supplier_items.php ([295c1c6a](https://github.com/hilmanf11/erp_bpi/commit/295c1c6a52929d6be0aa787eff954fc95128d5a2))
