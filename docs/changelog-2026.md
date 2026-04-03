@@ -551,3 +551,6 @@ Modification and new Module ([4031319f](https://github.com/hilmanf11/erp_bpi/com
 - **kurniawan**: Update Purchase Orders
 
 add Item Supplier ([cf82acf5](https://github.com/hilmanf11/erp_bpi/commit/cf82acf5f1b24586a770f81ad51d8b27ad3cbfd4))
+
+### [2026-04-03]
+- **kurniawan**: Update Supplier Items ([33397a6a](https://github.com/hilmanf11/erp_bpi/commit/33397a6a474e230df6ea9f93d14580bde1926e9a))
