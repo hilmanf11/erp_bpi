@@ -543,3 +543,17 @@ Modification and new Module ([4031319f](https://github.com/hilmanf11/erp_bpi/com
 
 ### [2026-04-02]
 - **kurniawan**: Update Report_history_transactions.php ([039ea6b8](https://github.com/hilmanf11/erp_bpi/commit/039ea6b8c0441b3618817453bd09572ebed278f6))
+
+### [2026-04-02]
+- **Rizki Puji**: Fixing: Bug get VAT and DPP on Sales Invoices (Bu Nina case Yamaha) ([b58004c6](https://github.com/hilmanf11/erp_bpi/commit/b58004c6588b04e8a1e30b48421657b3067e3310))
+
+### [2026-04-03]
+- **kurniawan**: Update Purchase Orders
+
+add Item Supplier ([cf82acf5](https://github.com/hilmanf11/erp_bpi/commit/cf82acf5f1b24586a770f81ad51d8b27ad3cbfd4))
+
+### [2026-04-03]
+- **kurniawan**: Update Supplier Items ([33397a6a](https://github.com/hilmanf11/erp_bpi/commit/33397a6a474e230df6ea9f93d14580bde1926e9a))
+
+### [2026-04-03]
+- **kurniawan**: Update Supplier_items.php ([295c1c6a](https://github.com/hilmanf11/erp_bpi/commit/295c1c6a52929d6be0aa787eff954fc95128d5a2))
