@@ -557,3 +557,6 @@ add Item Supplier ([cf82acf5](https://github.com/hilmanf11/erp_bpi/commit/cf82ac
 
 ### [2026-04-03]
 - **kurniawan**: Update Supplier_items.php ([295c1c6a](https://github.com/hilmanf11/erp_bpi/commit/295c1c6a52929d6be0aa787eff954fc95128d5a2))
+
+### [2026-04-07]
+- **Rizki Puji**: Fixing: bug price between Sales Orders and Sales Invoices ([27cfc59d](https://github.com/hilmanf11/erp_bpi/commit/27cfc59d455f9fb0d03112354d24907089e23f67))
