@@ -840,7 +840,8 @@ class Sales_invoices extends CI_Controller
         echo $datenow . "-" . $autoID;
     }
 
-    public function datatablesTemp()
+    // Bug different price between SO and SI (Bu Nina 2026-04-06)
+    public function datatablesTemp_existing()
     {
         // $delivery_note_no = base64_decode($this->input->get('delivery_note_no'));
         $delivery_note_no = explode(",", base64_decode($this->input->get('delivery_note_no')));
@@ -1001,6 +1002,94 @@ class Sales_invoices extends CI_Controller
         $arr['rows'] = @$obj;
         $arr['total_sub'] = "$total_sub";
         die(json_encode($arr));
+    }
+
+    // Optimized Query
+    public function datatablesTemp()
+    {
+        $delivery_note_no = explode(",", base64_decode($this->input->get('delivery_note_no')));
+        $division = $this->input->get('division');
+
+        $this->db->select('
+            a.delivery_note_no, 
+            a.customer_order_no,  
+            a.division,
+            a.customer_id,
+            COALESCE(NULLIF(d.sales_order_no, ""), d.sales_order_no_rm) as display_so_no,
+            a.item_fg_id, 
+            b.number as item_number, 
+            b.name as item_name, 
+            b.uom, 
+            c.currency, 
+            d.qty_del as qty,
+            
+            /* Prioritas Harga: SO Utama -> SO RM -> 0 */
+            COALESCE(g.price, g2.price, 0) as price,
+            (d.qty_del * COALESCE(g.price, g2.price, 0)) as total,
+            
+            /* Prioritas Account: Account Division -> Account Default Customer */
+            COALESCE(e.account_number, cust.account_number) as final_account_number,
+            COALESCE(e.account_name, cust.account_name) as final_account_name,
+            
+            j.id as si_id
+        ');
+
+        $this->db->from('delivery_orders d');
+        $this->db->join('item_fg b', 'd.item_fg_id = b.id');
+        $this->db->join('delivery_notes a', 'a.delivery_order_no = d.delivery_order_no and a.item_fg_id = d.item_fg_id');
+        $this->db->join('customers cust', 'a.customer_id = cust.id', 'left');
+        $this->db->join('customer_items c', 'd.customer_id = c.customer_id and d.item_fg_id = c.item_fg_id', 'left');
+        
+        /* Join Account berdasarkan Divisi */
+        $this->db->join('customer_account_numbers e', 'a.customer_id = e.customer_id AND e.division = ' . $this->db->escape($division), 'left');
+
+        /* Join Price dari SO atau SO RM */
+        $this->db->join('sales_orders g', 'd.sales_order_no = g.sales_order_no AND a.item_fg_id = g.item_fg_id', 'left');
+        $this->db->join('sales_order_rm g2', 'd.sales_order_no_rm = g2.sales_order_no AND a.item_fg_id = g2.item_fg_id', 'left');
+        
+        $this->db->join('sales_invoices j', 'a.delivery_note_no = j.delivery_note_no and a.item_fg_id = j.item_fg_id', 'left');
+
+        $this->db->where_in('a.delivery_note_no', $delivery_note_no);
+        
+        /* Grouping untuk menghindari duplikasi */
+        $this->db->group_by(['a.delivery_note_no', 'a.item_fg_id', 'display_so_no', 'a.id']);
+        $this->db->order_by('a.delivery_note_no', 'asc');
+
+        $records = $this->db->get()->result_array();
+
+        $obj = [];
+        $total_sub = 0;
+
+        foreach ($records as $record) {
+            $total_sub += (float)$record['total'];
+
+            $obj[] = [
+                "id"                => $record['si_id'],
+                "delivery_note_no"  => $record['delivery_note_no'],
+                "sales_order_no"    => $record['display_so_no'],
+                "customer_order_no" => $record['customer_order_no'],
+                "item_fg_id"        => $record['item_fg_id'],
+                "item_no"           => $record['item_number'],
+                "item_name"         => $record['item_name'],
+                "uom"               => $record['uom'],
+                "currency"          => $record['currency'],
+                "qty"               => $record['qty'],
+                "price"             => $record['price'],
+                "total"             => $record['total'],
+                "account_number"    => $record['final_account_number'],
+                "account_name"      => $record['final_account_name'],
+                "account_type"      => "CREDIT",
+            ];
+        }
+
+        $arr = [
+            'rows' => $obj,
+            'total_sub' => number_format($total_sub, 2, '.', '')
+        ];
+
+        header('Content-Type: application/json');
+        echo json_encode($arr);
+        exit;
     }
 
     public function datatables($details = "")
