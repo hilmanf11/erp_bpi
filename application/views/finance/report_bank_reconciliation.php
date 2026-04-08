@@ -484,7 +484,7 @@
     }
 
     //DOWNLOAD TEMPLATE UPLOAD
-    function download_excel() {
+    function download_excel_per_bank() {
         var filter_bank_account = $("#filter_bank_account").combobox('getValue');
 
         if (filter_bank_account !== "") {
@@ -527,7 +527,7 @@
         }
     }
 
-    function download_excel_existing() {
+    function download_excel() {
         window.location.assign('<?= base_url('template/tmp_bank_reconciliation.xls') ?>');
     }
 

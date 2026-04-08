@@ -42,6 +42,27 @@ class Report_bank_reconciliation extends CI_Controller
         }
     }
 
+    // Konversi tanggal PhpSpreadsheet
+    private function _formatExcelDate($value, $withTime = false, $defaultYear = null) {
+        if (empty($value)) return null;
+
+        // Jika nilai adalah angka murni (Excel Serial Date)
+        if (is_numeric($value)) {
+            return \PhpOffice\PhpSpreadsheet\Shared\Date::excelToDateTimeObject($value)
+                ->format($withTime ? 'Y-m-d H:i:s' : 'Y-m-d');
+        }
+
+        // Jika nilai adalah string seperti "02/03"
+        if (strlen($value) <= 5 && strpos($value, '/') !== false) {
+            $year = $defaultYear ?? date('Y'); // Gunakan tahun dari parameter atau tahun sekarang
+            $cleanDate = str_replace('/', '-', $value . '/' . $year);
+            return date('Y-m-d', strtotime($cleanDate));
+        }
+
+        // Default strtotime untuk format string lainnya
+        return date($withTime ? 'Y-m-d H:i:s' : 'Y-m-d', strtotime(str_replace('/', '-', $value)));
+    }
+
     // Download Template
     public function template() 
     {
@@ -181,23 +202,6 @@ class Report_bank_reconciliation extends CI_Controller
         }
     }
 
-    /**
-     * Helper Private untuk konversi tanggal PhpSpreadsheet
-     */
-    private function _formatExcelDate($value, $withTime = false) {
-        if (empty($value)) return null;
-        
-        try {
-            if (is_numeric($value)) {
-                $format = $withTime ? 'Y-m-d H:i:s' : 'Y-m-d';
-                return Date::excelToDateTimeObject($value)->format($format);
-            }
-            return date($withTime ? 'Y-m-d H:i:s' : 'Y-m-d', strtotime($value));
-        } catch (Exception $e) {
-            return null;
-        }
-    }
-
 
     public function upload()
     {
@@ -210,19 +214,23 @@ class Report_bank_reconciliation extends CI_Controller
             $fileExt = strtolower(pathinfo($fileName, PATHINFO_EXTENSION));
 
             // --- VALIDASI AWAL & ROUTING ---
-            
+            $account_banks = $this->crud->read('account_banks', [], ["bank_account" => $filter_bank_account]);
+            if (empty($account_banks)) {
+                throw new Exception("Bank Account is not registered in the system.");
+            }
+
             // Khusus: RESONA (Wajib Excel)
-            if ($filter_bank_account == '01034312008') {
-                if (!in_array($fileExt, ['xls', 'xlsx'])) {
-                    throw new Exception("Resona Statement must be an Excel file (.xls, .xlsx)");
+            if (substr($account_banks->bank_code, 0, 3) === "RSN") {
+                    if (!in_array($fileExt, ['xls', 'xlsx'])) {
+                    throw new Exception("This Bank Statement must be an Excel file (.xls, .xlsx)");
                 }
                 return $this->_upload_resona(); // Panggil fungsi internal khusus Resona
             }
 
-            // Khusus: MDR (Wajib CSV)
-            if ($filter_bank_account == '156001664700') { // Ganti dengan nomor rekening MDR Anda
+            // Khusus: MANDIRI (Wajib CSV)
+            if (substr($account_banks->bank_code, 0, 3) === "MDR") {
                 if ($fileExt !== 'csv') {
-                    throw new Exception("MDR Statement must be a CSV file (.csv)");
+                    throw new Exception("This Bank Statement must be a CSV file (.csv)");
                 }
                 return $this->_upload_mdr(); // Panggil fungsi internal khusus MDR
             }
@@ -538,12 +546,6 @@ class Report_bank_reconciliation extends CI_Controller
                     $send = $this->crud->create('bank_reconciliation', $dataFinal);
                     echo $send;
 
-                    // validasi posting_date mutasi berbeda dengan periode yang dipilih
-                    // if ( date("Y-m", strtotime($dataFinal['start_date'])) !== date("Y-m", strtotime($dataFinal['posting_date'])) ) {
-                    //     echo json_encode(array("title" => "Caution!", "message" => "Data added, but the Trans Date does not same as Period Date!", "theme" => "warning"));
-                    // } else {
-                    //     echo $send;
-                    // }
                 }
             }
 
