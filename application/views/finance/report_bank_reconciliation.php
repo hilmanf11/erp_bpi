@@ -42,7 +42,16 @@
             <legend><b>Form Data</b></legend>
             <div class="fitem">
                 <span style="width:35%; display:inline-block;">File Upload</span>
+                <!-- existing only upload excel
                 <input name="file_upload" style="width: 60%;" required="" accept=".xls" id="file_excel" class="easyui-filebox">
+                -->
+                <input name="file_upload" 
+                    id="file_upload" 
+                    class="easyui-filebox" 
+                    style="width: 60%;" 
+                    data-options="prompt:'Choose a file...', buttonText: 'Browse'"
+                    required="true" 
+                    accept=".xls,.xlsx,.csv,application/vnd.ms-excel,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,text/csv">
             </div>
         </fieldset>
     </form>
@@ -190,14 +199,18 @@
                                     
                                     // Ringkasan Toastr
                                     if (json.total_success > 0) {
-                                        toastr.success(`Berhasil! ${json.total_success} dari ${json.total_success} baris tersimpan.`);
+                                        toastr.success(`Data saved successfully!`, "Success");
                                     } else {
-                                        toastr.warning("The process is complete, but no rows are saved.");
+                                        toastr.warning("The process is complete, but no rows are saved.", "Failed");
                                     }
 
                                 } else {
                                     // Kasus sukses tanpa results array (jarang terjadi tapi untuk jaga-jaga)
-                                    toastr.success(json.message || "Process Successful");
+                                    if (json.theme == "error") {
+                                        toastr.error(json.message, json.title);
+                                    } else {
+                                        toastr.success(json.message || "Process Successful", "Success");
+                                    }
                                 }
 
                             } catch (e) {
