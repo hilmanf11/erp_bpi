@@ -3,6 +3,7 @@ date_default_timezone_set("Asia/Bangkok");
 defined('BASEPATH') or exit('No direct script access allowed');
 
 use PhpOffice\PhpSpreadsheet\IOFactory;
+use PhpOffice\PhpSpreadsheet\Reader\Csv;
 use PhpOffice\PhpSpreadsheet\Shared\Date;
 
 /**
@@ -67,12 +68,12 @@ class Report_bank_reconciliation extends CI_Controller
     {
         if (empty($rawDate)) return date('Y-m-d H:i:s');
 
-        // 1. Jika berupa angka serial Excel (Numeric)
+        // Jika berupa angka serial Excel (Numeric)
         if (is_numeric($rawDate)) {
             return \PhpOffice\PhpSpreadsheet\Shared\Date::excelToDateTimeObject($rawDate)->format('Y-m-d H:i:s');
         }
 
-        // 2. Jika berupa String (e.g., "01 April 2026 12:13:03")
+        // Jika berupa String (e.g., "01 April 2026 12:13:03")
         // Konversi nama bulan Indonesia ke Inggris agar bisa dibaca strtotime
         $bulan_indo = ['Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni', 'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'];
         $bulan_eng  = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
@@ -244,7 +245,7 @@ class Report_bank_reconciliation extends CI_Controller
             // Khusus: RESONA (Wajib Excel)
             if (substr($account_banks->bank_code, 0, 3) === "RSN") {
                     if (!in_array($fileExt, ['xls', 'xlsx'])) {
-                    throw new Exception("This Bank Statement must be an Excel file (.xls, .xlsx)");
+                    throw new Exception("The selected Bank Account only accepts Excel file (.xls, .xlsx)");
                 }
                 return $this->_upload_resona(); // Panggil fungsi internal khusus Resona
             }
@@ -252,9 +253,9 @@ class Report_bank_reconciliation extends CI_Controller
             // Khusus: MANDIRI (Wajib CSV)
             if (substr($account_banks->bank_code, 0, 3) === "MDR") {
                 if ($fileExt !== 'csv') {
-                    throw new Exception("This Bank Statement must be a CSV file (.csv)");
+                    throw new Exception("The selected Bank Account only accepts CSV files (.csv).");
                 }
-                return $this->_upload_mdr(); // Panggil fungsi internal khusus MDR
+                return $this->_upload_mandiri(); // Panggil fungsi internal khusus Mandiri
             }
 
             // Default: Bank lainnya
@@ -405,7 +406,7 @@ class Report_bank_reconciliation extends CI_Controller
     }
 
     // Import Bank Mandiri
-    private function _upload_mdr()
+    private function _upload_mandiri()
     {
         if (ob_get_length()) ob_end_clean();
         header('Content-Type: application/json');
@@ -416,27 +417,53 @@ class Report_bank_reconciliation extends CI_Controller
                 throw new Exception("File not found or upload error.");
             }
 
-            // Ambil filter dari post
             $filter_bank_account   = $this->input->post("filter_bank_account");
             $filter_from           = $this->input->post("filter_from");
             $filter_to             = $this->input->post("filter_to");
             $filter_account_number = $this->input->post("filter_account_number");
 
             $tmpPath     = $_FILES['file_upload']['tmp_name'];
-            $spreadsheet = IOFactory::load($tmpPath);
-            $sheet       = $spreadsheet->getActiveSheet();
+            $extension   = strtolower(pathinfo($_FILES['file_upload']['name'], PATHINFO_EXTENSION));
+
+            // Load Spreadsheet (Handle CSV atau Excel)
+            if ($extension == 'csv') {
+                // Buat reader khusus CSV
+                $reader = IOFactory::createReader('Csv');
+                if ($reader instanceof Csv) {
+                    $reader->setDelimiter(';'); 
+                    $reader->setEnclosure('"');
+                }
+
+                $spreadsheet = $reader->load($tmpPath);
+            } else {
+                $spreadsheet = IOFactory::load($tmpPath);
+            }
             
+            $sheet = $spreadsheet->getActiveSheet();
+            $this->load->model('bank_reconciliation');
+
+            // Hapus data lama SEBELUM generate ID baru
+            $deleteStatus = $this->bank_reconciliation->replace_existing_data([
+                'bank_account'   => $filter_bank_account,
+                'account_number' => $filter_account_number,
+                'from'           => $filter_from,
+                'to'             => $filter_to
+            ]);
+
             $highestRow  = $sheet->getHighestRow();
             $datas       = [];
 
             // --- PROSES TRANSAKSI (Mulai baris 2) ---
             for ($i = 2; $i <= $highestRow; $i++) {
-                $accountNo = $sheet->getCell("A$i")->getValue();
+                // Gunakan getFormattedValue agar angka panjang tidak jadi format scientific (e.g. 1.56E+12)
+                $accountNo = preg_replace('/[^0-9]/', '', (string)$sheet->getCell("A$i")->getFormattedValue());
+                
                 if (empty($accountNo)) continue;
 
                 // Match bank account dari filter dengan bank account di dalam excel
-                if (trim((string)$accountNo) !== trim((string)$filter_bank_account) ) {
-                    echo json_encode(["title" => "Not Matched", "message" => "Bank Account inside the file is Not Match with the selected data!", "theme" => "error"]);
+                $bank_account = preg_replace('/[^0-9]/', '', $filter_bank_account);
+                if ($accountNo !== $bank_account) {
+                    echo json_encode(["title" => "Not Matched", "message" => "Bank Account inside the file (" . $accountNo . ") is Not Match with the selected data!", "theme" => "error"]);
                     return;
                 }
                 
@@ -444,25 +471,22 @@ class Report_bank_reconciliation extends CI_Controller
                 $rawDate = $sheet->getCell("C$i")->getValue();
                 $postingDate = $this->_formatMandiriDate($rawDate);
 
-                // Gabungkan Remarks dan AdditionalDesc jika perlu
+                // Get Remarks (D) dan AdditionalDesc (E)
                 $remarks = $sheet->getCell("D$i")->getValue();
                 $addDesc = $sheet->getCell("E$i")->getValue();
-                $fullRemark = trim((string)$remarks) . " " . trim((string)$addDesc);
-                
-                // Bersihkan double spasi yang biasanya ada di data Mandiri
-                $cleanRemark = preg_replace('/\s+/', ' ', $fullRemark);
+                $cleanRemark = preg_replace('/\s+/', ' ', trim((string)$remarks . " " . $addDesc));
 
                 $datas[] = [
                     'account_number' => $filter_account_number,
                     'bank_account'   => $filter_bank_account,
                     'start_date'     => $filter_from,
                     'end_date'       => $filter_to,
-                    'currency'       => $sheet->getCell("B$i")->getValue() ?? 'IDR',
+                    'currency'       => 'IDR',
                     'source'         => 'upload',
                     'posting_date'   => $postingDate,
                     'remark'         => htmlspecialchars($cleanRemark),
-                    'credit'         => abs((float) str_replace(',', '', $sheet->getCell("F$i")->getValue() ?? 0)),
-                    'debit'          => abs((float) str_replace(',', '', $sheet->getCell("G$i")->getValue() ?? 0)),
+                    'credit'         => abs((float) str_replace(',', '', $sheet->getCell("F$i")->getCalculatedValue() ?? 0)),
+                    'debit'          => abs((float) str_replace(',', '', $sheet->getCell("G$i")->getCalculatedValue() ?? 0)),
                     'status'         => 0,
                     'created_date'   => date('Y-m-d H:i:s'),
                     'created_by'     => $this->session->username,
@@ -474,15 +498,6 @@ class Report_bank_reconciliation extends CI_Controller
             }
 
             // --- EXECUTE DATABASE ---
-            $this->load->model('bank_reconciliation');
-            
-            $deleteStatus = $this->bank_reconciliation->replace_existing_data([
-                'bank_account'   => $filter_bank_account,
-                'account_number' => $filter_account_number,
-                'from'           => $filter_from,
-                'to'             => $filter_to
-            ]);
-
             $processResults = $this->bank_reconciliation->batch_insert_with_log($datas);
 
             echo json_encode([
