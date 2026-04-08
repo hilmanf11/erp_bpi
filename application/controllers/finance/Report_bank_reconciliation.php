@@ -73,7 +73,7 @@ class Report_bank_reconciliation extends CI_Controller
     }
 
     // GET PAYLOAD FOR UPLOAD DATA
-    public function upload()
+    public function upload_default()
     {
         if (ob_get_length()) ob_end_clean();
         header('Content-Type: application/json');
@@ -195,6 +195,188 @@ class Report_bank_reconciliation extends CI_Controller
             return date($withTime ? 'Y-m-d H:i:s' : 'Y-m-d', strtotime($value));
         } catch (Exception $e) {
             return null;
+        }
+    }
+
+
+    public function upload()
+    {
+        if (ob_get_length()) ob_end_clean();
+        header('Content-Type: application/json');
+
+        try {
+            $filter_bank_account = $this->input->post("filter_bank_account");
+            $fileName = $_FILES['file_upload']['name'] ?? '';
+            $fileExt = strtolower(pathinfo($fileName, PATHINFO_EXTENSION));
+
+            // --- VALIDASI AWAL & ROUTING ---
+            
+            // Khusus: RESONA (Wajib Excel)
+            if ($filter_bank_account == '01034312008') {
+                if (!in_array($fileExt, ['xls', 'xlsx'])) {
+                    throw new Exception("Resona Statement must be an Excel file (.xls, .xlsx)");
+                }
+                return $this->_upload_resona(); // Panggil fungsi internal khusus Resona
+            }
+
+            // Khusus: MDR (Wajib CSV)
+            if ($filter_bank_account == '156001664700') { // Ganti dengan nomor rekening MDR Anda
+                if ($fileExt !== 'csv') {
+                    throw new Exception("MDR Statement must be a CSV file (.csv)");
+                }
+                return $this->_upload_mdr(); // Panggil fungsi internal khusus MDR
+            }
+
+            // Default: Bank lainnya
+            return $this->upload_default();
+
+        } catch (Exception $e) {
+            echo json_encode(["title" => "Error", "message" => $e->getMessage(), "theme" => "error"]);
+        }
+    }
+
+    // Import Bank Mandiri
+    private function _upload_mdr()
+    {
+
+    }
+
+    // Import Bank Resona
+    private function _upload_resona()
+    {
+        if (ob_get_length()) ob_end_clean();
+        header('Content-Type: application/json');
+        require_once 'assets/vendors/phpspreadsheet/vendor/autoload.php';
+
+        try {
+            if (!isset($_FILES['file_upload']) || $_FILES['file_upload']['error'] !== UPLOAD_ERR_OK) {
+                throw new Exception("File not found or upload error.");
+            }
+
+            // Ambil filter dari post
+            $filter_bank_account   = $this->input->post("filter_bank_account");
+            $filter_from           = $this->input->post("filter_from");
+            $filter_to             = $this->input->post("filter_to");
+            $filter_account_number = $this->input->post("filter_account_number");
+
+            $tmpPath     = $_FILES['file_upload']['tmp_name'];
+            $spreadsheet = \PhpOffice\PhpSpreadsheet\IOFactory::load($tmpPath);
+            $sheet       = $spreadsheet->getActiveSheet();
+
+            // --- VALIDASI METADATA LANGSUNG DARI CELL ---
+            $filter_bank_account = preg_replace('/[^0-9]/', '', $this->input->post("filter_bank_account"));
+            $rawCellJ5 = (string)$sheet->getCell("J5")->getValue();
+            $fileBankAccount = preg_replace('/[^0-9]/', '', $rawCellJ5);
+
+            $fileStart       = $this->_formatExcelDate($sheet->getCell("J13")->getValue());
+            $fileEnd         = $this->_formatExcelDate($sheet->getCell("O13")->getValue());
+            
+            // Metadata tambahan
+            $fileOrgUnit     = $sheet->getCell("J15")->getValue();
+            $fileProductName = $sheet->getCell("J17")->getValue();
+
+            // VALIDASI: Cocokkan isi Excel dengan Filter User
+            if ($fileBankAccount !== $filter_bank_account) {
+                throw new Exception("Account in Excel ({$fileBankAccount}) does not match selection ({$filter_bank_account})!");
+            }
+
+            if (strtotime($filter_from) !== strtotime($fileStart) || strtotime($filter_to) !== strtotime($fileEnd)) {
+                throw new Exception("Period in Excel ({$fileStart} to {$fileEnd}) does not match selection!");
+            }
+
+            // --- GET DATA REKENING DARI DATABASE ---
+            $account_banks = $this->crud->read('account_banks', [], ["bank_account" => $filter_bank_account]);
+            if (empty($account_banks)) {
+                throw new Exception("Bank Account is not registered in the system.");
+            }
+
+            // --- PROSES TRANSAKSI (START BARIS 21) ---
+            $highestRow   = $sheet->getHighestRow();
+            $startDataRow = 21;
+            $datas        = [];
+
+            for ($i = $startDataRow; $i <= $highestRow; $i++) {
+                // Ambil range kolom B sampai AE untuk antisipasi shifting yang jauh
+                $rangeData = $sheet->rangeToArray("B$i:AE$i", NULL, TRUE, FALSE)[0];
+                
+                // Bersihkan baris dari element null atau string kosong di bagian akhir
+                $row = array_values(array_filter($rangeData, function($val) {
+                    return !is_null($val) && trim((string)$val) !== '';
+                }));
+
+                // A. Skip jika baris kosong
+                if (empty($row)) continue;
+
+                // B. Hapus baris "Total" (Cek di seluruh kolom baris tersebut)
+                $cleanRow = array_map(function($val) { return trim(strtolower((string)$val)); }, $row);
+                if (in_array('total', $cleanRow)) continue;
+
+                // C. Handling Column Shifting & Mapping Data
+                // Logika: 3 nilai numerik terakhir selalu Balance, Credit, Debit
+                if (count($row) >= 6) {
+                    $rawBalance = array_pop($row);
+                    $rawCredit  = array_pop($row);
+                    $rawDebit   = array_pop($row);
+                    
+                    // Ambil tanggal posting (biasanya kolom B atau C di Excel asli)
+                    // Di array $row kita (hasil range B:AE), B adalah index 0, C adalah index 1
+                    $posting_date = $this->_formatExcelDate($rangeData[1] ?? $rangeData[0], true);
+                    
+                    // Sisa kolom di tengah digabung menjadi Remark
+                    // Kita slice mulai dari index 3 (asumsi No, PostDate, EffDate sudah terlewati)
+                    $descParts = array_slice($row, 3);
+                    $desc      = implode(" ", $descParts);
+                    
+                    // D. Push ke Datas (Ubah negatif jadi positif dengan abs)
+                    $datas[] = [
+                        'account_number' => $account_banks->account_number,
+                        'bank_account'   => $account_banks->bank_account,
+                        'start_date'     => $filter_from,
+                        'end_date'       => $filter_to,
+                        'currency'       => 'IDR',
+                        'source'         => 'upload',
+                        'posting_date'   => $posting_date,
+                        'remark'         => htmlspecialchars((string)$desc),
+                        'debit'          => abs((float) str_replace(',', '', $rawDebit ?? 0)),
+                        'credit'         => abs((float) str_replace(',', '', $rawCredit ?? 0)),
+                        'status'         => 0,
+                        'created_date'   => date('Y-m-d H:i:s'),
+                        'created_by'     => $this->session->username,
+                    ];
+                }
+            }
+
+            if (empty($datas)) {
+                throw new Exception("No valid transaction data found after header data.");
+            }
+
+            // --- EXECUTE DATABASE ---
+            $this->load->model('bank_reconciliation');
+            
+            // Ganti data lama sesuai kriteria filter
+            $deleteStatus = $this->bank_reconciliation->replace_existing_data([
+                'bank_account'   => $filter_bank_account,
+                'account_number' => $filter_account_number,
+                'from'           => $filter_from,
+                'to'             => $filter_to
+            ]);
+
+            // Insert Batch
+            $processResults = $this->bank_reconciliation->batch_insert_with_log($datas);
+
+            echo json_encode([
+                "title"           => "Resona Upload Success",
+                "delete_existing" => $deleteStatus,
+                "total_success"   => count($datas),
+                "results"         => $processResults,
+            ]);
+
+        } catch (Exception $e) {
+            echo json_encode([
+                "title"   => "Error", 
+                "message" => $e->getMessage(), 
+                "theme"   => "error"
+            ]);
         }
     }
 

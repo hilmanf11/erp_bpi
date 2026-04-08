@@ -128,6 +128,89 @@
 
                     $('#frm_upload').form('submit', {
                         url: '<?= base_url('finance/report_bank_reconciliation/upload') ?>',
+                        onSubmit: function(param) {
+                            // Ambil data dari filter luar form
+                            param.filter_account_number = $('#filter_account_number').val();
+                            param.filter_bank_account    = $('#filter_bank_account').val();
+                            param.filter_from            = $('#filter_from').val();
+                            param.filter_to              = $('#filter_to').val();
+
+                            // Validasi client-side sederhana sebelum kirim
+                            if (!param.filter_bank_account || !param.filter_from || !param.filter_to) {
+                                toastr.error("Filter Bank dan Periode harus diisi!");
+                                return false;
+                            }
+
+                            $.messager.progress({
+                                title: 'Please wait',
+                                msg: 'The system is validating and processing the data...'
+                            });
+                            return true;
+                        },
+                        success: function(result) {
+                            $.messager.progress('close');
+
+                            // Membersihkan log gagal di DB
+                            $.ajax({ url: "<?= base_url('finance/report_bank_reconciliation/uploadclearFailed') ?>" });
+
+                            try {
+                                // Parsing JSON dengan pembersihan whitespace/BOM atau teks sampah di luar bracket {}
+                                var firstBracket = result.indexOf('{');
+                                var lastBracket = result.lastIndexOf('}');
+                                if (firstBracket === -1 || lastBracket === -1) throw "Invalid JSON Response";
+                                
+                                var cleanResult = result.substring(firstBracket, lastBracket + 1);
+                                var json = JSON.parse(cleanResult);
+
+                                if (json.title === "Error") {
+                                    // Menangani Exception dari throw new Exception di PHP (Validasi routing/bank)
+                                    $.messager.alert('Validation Error', json.message, 'error');
+                                    return;
+                                }
+
+                                // Jika sampai sini, berarti masuk ke proses insert (Results dari batch_insert_with_log)
+                                if (json.results && Array.isArray(json.results)) {
+                                    var logHtml = "";
+
+                                    // Show old data deletion status (System Log)
+                                    if (json.delete_existing) {
+                                        var delColor = json.delete_existing.theme === "success" ? "#ff9800" : "#2196f3"; // Orange/Blue
+                                        logHtml += `<b style='color: ${delColor};'>[SYSTEM] ${json.delete_existing.title} :</b> ${json.delete_existing.message}<br><hr>`;
+                                    }
+
+                                    // Render log per baris
+                                    json.results.forEach(function(item) {
+                                        var color = item.theme === "success" ? "green" : "red";
+                                        var title = item.theme === "success" ? "Good Job" : "Failed";
+                                        logHtml += `${title} | <b style='color: ${color};'>Row ${item.row}</b>: ${item.message}<br>`;
+                                    });
+
+                                    $("#p_remarks").html(logHtml);
+                                    $('#p_upload').progressbar('setValue', 100);
+                                    
+                                    // Ringkasan Toastr
+                                    if (json.total_success > 0) {
+                                        toastr.success(`Berhasil! ${json.total_success} dari ${json.total_success} baris tersimpan.`);
+                                    } else {
+                                        toastr.warning("The process is complete, but no rows are saved.");
+                                    }
+
+                                } else {
+                                    // Kasus sukses tanpa results array (jarang terjadi tapi untuk jaga-jaga)
+                                    toastr.success(json.message || "Process Successful");
+                                }
+
+                            } catch (e) {
+                                console.error("Detail Error:", e, "Raw Result:", result);
+                                $.messager.alert('System Error', 'Failed to read server response. Ensure the file conforms to the rules (Resona: Excel, MDR: CSV).', 'error');
+                            }
+                        }
+                    });
+
+
+                    /** -- only excel ---
+                    $('#frm_upload').form('submit', {
+                        url: '<?= base_url('finance/report_bank_reconciliation/upload') ?>',
                         queryParams: {
                             filter_account_number: $('#filter_account_number').val(),
                             filter_bank_account: $('#filter_bank_account').val(),
@@ -185,6 +268,7 @@
                             $.messager.alert('Error', 'Network Error. Please try again.', 'error');
                         }
                     });
+                    */
                 }
             }]
         });
