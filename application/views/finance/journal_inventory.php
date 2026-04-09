@@ -36,7 +36,7 @@
                 <div class="fitem">
                     <span style="width:35%; display:inline-block;">Modul</span>
                     <select style="width:60%;" id="filter_modul" class="easyui-combobox" 
-                        data-options="editable:false, valueField:'id', textField:'text', 
+                        data-options="editable:true, valueField:'id', textField:'text', 
                             groupField:'group',panelHeight:'auto'">
                     </select>
                 </div>
@@ -119,36 +119,40 @@
 <!-- Insert -->
 <div id="dlg_insert" class="easyui-dialog" title="Add New Posting Journal Inventory" 
     data-options="closed:true, modal:true, resizable:true" 
-    style="width: 98%; height: 520px; padding:10px; overflow-y: auto;">
+    style="width: 98%; height: 520px; padding:15px; overflow-y: auto;">
 
     <form id="frm_insert" method="post" novalidate>
-        <fieldset style="width:70%; border:1px solid #d0d0d0; margin-bottom: 10px; border-radius:4px; float: left;" id="fieldset">
-            <legend><b>Form Data</b></legend>
-            <div style="width:50%; float:left;">
-                <div class="fitem">
-                    <span style="width:35%; display:inline-block;">Journal Date</span>
-                    <input style="width:30%;" name="journal_date" id="journal_date" required="" class="easyui-datebox" data-options="formatter:myformatter,parser:myparser, editable:false">
+        <fieldset style="width:100%; border:1px solid #d0d0d0; margin-bottom: 15px; border-radius:4px; box-sizing: border-box;">
+            <legend style="padding: 0 10px;"><b>Form Data</b></legend>
+            
+            <div style="width:50%; float:left; padding-right: 10px; box-sizing: border-box;">
+                <div class="fitem" style="margin-bottom: 8px;">
+                    <label style="width:35%; display:inline-block;">Journal Date <span style="color:red">*</span></label>
+                    <input style="width:60%;" name="journal_date" id="journal_date" 
+                           class="easyui-datebox" data-options="formatter:myformatter,parser:myparser, editable:false, required:true">
                 </div>
 
-                <div class="fitem">
-                    <span style="width:35%; display:inline-block;">Division</span>
-                    <input style="width:60%;" id="division" class="easyui-combobox" required>
+                <div class="fitem" style="margin-bottom: 8px;">
+                    <label style="width:35%; display:inline-block;">Division <span style="color:red">*</span></label>
+                    <input style="width:60%;" id="division" class="easyui-combobox" 
+                           data-options="required:true, editable:false, panelHeight:'auto'">
                 </div>
                 
-                <div class="fitem" hidden>
-                    <span style="width:35%; display:inline-block;">Type</span>
-                    <select style="width:60%;" id="type" name="type" class="easyui-combobox" data-options="editable:false, panelHeight:'auto'" required>
+                <div class="fitem" style="margin-bottom: 8px;" hidden>
+                    <label style="width:35%; display:inline-block;">Type</label>
+                    <select style="width:60%;" id="type" name="type" class="easyui-combobox" 
+                            data-options="editable:false, panelHeight:'auto'">
                         <option value="">Choose All</option>
                         <option value="IN">IN</option>
                         <option value="OUT">OUT</option>
                     </select>
                 </div>
 
-                <div class="fitem">
-                    <span style="width:35%; display:inline-block;">Modul</span>
+                <div class="fitem" style="margin-bottom: 8px;">
+                    <label style="width:35%; display:inline-block;">Modul <span style="color:red">*</span></label>
                     <select style="width:60%;" id="modul" name="modul" class="easyui-combobox" 
-                        data-options="editable:false, valueField:'id', textField:'text', 
-                            groupField:'group',panelHeight:'auto'" required>
+                        data-options="editable:true, valueField:'id', textField:'text', 
+                                    groupField:'group', panelHeight:'auto', required:true">
                     </select>
                 </div>
 
@@ -157,34 +161,36 @@
                     <a href="javascript:;" class="easyui-linkbutton" id="preview" onclick="preview()"><i class="fa fa-search"></i> Preview Data</a>
                 </div>
             </div>
-            <div style="width:50%; float:left;">
-                <div class="fitem">
-                    <span style="width:35%; display:inline-block;">Company Name</span>
-                    <input style="width:60%;" name="company_name" id="company_name" class="easyui-combogrid">
+
+            <div style="width:50%; float:left; padding-left: 10px; box-sizing: border-box;">
+                <div class="fitem" style="margin-bottom: 8px;">
+                    <label style="width:35%; display:inline-block;">Company Name <span style="color:red">*</span></label>
+                    <input style="width:60%;" name="company_name" id="company_name" class="easyui-combogrid" 
+                           data-options="required:true">
                 </div>
-                <div class="fitem">
-                    <span style="width:35%; display:inline-block;">Document No.</span>
-                    <input style="width:60%;" name="document_no" id="document_no" class="easyui-combogrid">
+                
+                <div class="fitem" style="margin-bottom: 8px;">
+                    <label style="width:35%; display:inline-block;">Document No. <span style="color:red">*</span></label>
+                    <input style="width:60%;" name="document_no" id="document_no" class="easyui-combogrid" 
+                           data-options="required:true">
                 </div>
-                <div class="fitem">
-                    <span style="width:35%; display:inline-block;">Vourcher No</span>
-                    <input style="width:60%;" name="number" id="number" readonly class="easyui-textbox">
+                
+                <div class="fitem" style="margin-bottom: 8px;">
+                    <label style="width:35%; display:inline-block;">Voucher No</label>
+                    <input style="width:60%;" name="number" id="number" class="easyui-textbox" 
+                        data-options="readonly:true, prompt:'Auto-generated after preview'">
                 </div>
+
                 <div class="fitem">
-                    <span style="width:35%; display:inline-block;">Remarks</span>
+                    <label style="width:35%; display:inline-block;">Remarks</label>
                     <input style="width:60%;" name="remarks" id="remarks" class="easyui-textbox">
                 </div>
 
-                <!-- Buat Validasi -->
-                <div class="fitem" hidden>
-                    <span style="width:35%; display:inline-block;">Local Debit</span>
-                    <input style="width:60%;" id="local_debit" disabled class="easyui-numberbox">
-                </div>
-                <div class="fitem" hidden>
-                    <span style="width:35%; display:inline-block;">Local Credit</span>
-                    <input style="width:60%;" id="local_credit" disabled class="easyui-numberbox">
-                </div>
+                <input type="hidden" id="local_debit" class="easyui-numberbox">
+                <input type="hidden" id="local_credit" class="easyui-numberbox">
             </div>
+            
+            <div style="clear:both;"></div>
         </fieldset>
 
         <table id="dg2" class="easyui-datagrid" style="width:100%;" title="Journal Posting List" data-options="singleSelect: false" toolbar="#toolbar2" rownumbers="true" , idField="number" showFooter="true">
@@ -362,25 +368,6 @@
         window.location.assign('<?= base_url('finance/journal_inventory/print/excel') ?>?' + urlParams);
     }
 
-    //NOMOR AUTOMATIC
-    function number(journal_date) {
-        var dateValue = journal_date ? journal_date : "<?= date('Y-m-d') ?>";
-        
-        $.ajax({
-            type: "post",
-            url: "<?= base_url('finance/journal_inventory/number/') ?>" + window.btoa(dateValue),
-            dataType: "html",
-            success: function(result) {
-                if ($("#number").length > 0) {
-                    $("#number").textbox('setValue', result.trim());
-                }
-            },
-            error: function(xhr, status, error) {
-                console.error("Error fetching number: ", error);
-            }
-        });
-    }
-
     //RELOAD
     function reload() {
         window.location.reload();
@@ -389,43 +376,7 @@
 
 
     $(function() {
-        let masterModules = [];
-
-        // Load JSON Module
-        $.getJSON('<?= base_url("json/journal_inventory_module.json"); ?>', function(data) {
-            masterModules = data;
-            refreshModuleCombo(''); 
-        });
-
-        function refreshModuleCombo(selectedGroup) {
-            const filtered = !selectedGroup 
-                ? masterModules 
-                : masterModules.filter(item => item.group === selectedGroup);
-
-            const finalData = [{ id: '', text: 'Choose All', group: '' }, ...filtered];
-            
-            // Update kedua id (filter_modul dan modul) sekaligus
-            $('#filter_modul, #modul').each(function() {
-                if ($(this).length) {
-                    $(this).combobox('loadData', finalData).combobox('setValue', '');
-                }
-            });
-        }
-
-        // Listener untuk Type (Grouping IN/OUT)
-        $('#filter_type, #type').combobox({
-            onSelect: (rec) => refreshModuleCombo(rec.value),
-            onChange: (val) => { if(!val) refreshModuleCombo(''); }
-        });
-
-        // Inisialisasi awal
-        filter();
-        
-        // Listener Tanggal Jurnal
-        $("#journal_date").datebox({
-            onChange: (val) => number(val)
-        });
-
+        // --- JOURNAL TYPE ---
         $("#filter_journal_type").combogrid({
             url: '<?= base_url('finance/journal_inventory/readJournalType') ?>',
             panelWidth: 450,
@@ -454,6 +405,7 @@
             }],
         });
 
+        // --- CATEGORY ---
         $("#filter_item_category").combobox({
             url: '<?= base_url('master/item_categories/reads') ?>',
             valueField: 'id',
@@ -467,40 +419,42 @@
             }],
         });
 
-
-        // Get Division
-        const divisionConfig = {
+        // --- DIVISION ---
+        $('#division, #filter_division').combobox({
             url: '<?= base_url('master/divisions/reads'); ?>',
             valueField: 'number',
             textField: 'number',
             panelHeight: 'auto',
             prompt: 'Choose Division',
             editable: false,
-            icons: [{
-                iconCls: 'icon-clear',
-                handler: function(e) {
-                    $(e.data.target).combobox('clear').combobox('textbox').focus();
-                }
-            }]
-        };
-        $('#filter_division, #division').combobox(divisionConfig);
-
-        $("#document_no").combogrid({
-            panelWidth: 450,
-            idField: 'document_no',
-            textField: 'document_no',
-            multiple: true,
-            selectOnCheck: true,
-            checkOnSelect: true,
-            mode: 'remote',
-            fitColumns: true,
-            prompt: "Choose Document No.",
-            columns: [[
-                { field: 'ck', checkbox: true },
-                { field: 'document_no', title: 'Document No.', width: 250 },
-            ]]
         });
 
+        // --- MODUL ---
+        $("#modul, #filter_modul").combogrid({
+            url: '<?= base_url("json/journal_inventory_module.json"); ?>',
+            panelWidth: 400,
+            idField: 'id',
+            textField: 'text',
+            mode: 'local',
+            fitColumns: true,
+            prompt: "Choose Modul...",
+            filter: function(q, row){
+                var opts = $(this).combogrid('options');
+                return row[opts.textField].toLowerCase().indexOf(q.toLowerCase()) >= 0;
+            },
+
+            columns: [[
+                {field: 'group', title: 'Type', width: 60, align: 'center'},
+                {field: 'text', title: 'Module Name', width: 250}
+            ]],
+            onChange: function(newValue) {
+                // Reset company & doc jika modul berubah
+                $("#company_name").combogrid('clear');
+                $("#document_no").combogrid('clear');
+            }
+        });
+
+        // --- COMPANY NAME ---
         $("#company_name").combogrid({
             url: '<?= base_url('finance/journal_inventory/readCompany') ?>',
             idField: 'company_id',
@@ -513,48 +467,46 @@
                 {field: 'company_id', title: 'ID', width: 100},
                 {field: 'company_name', title: 'Company Name', width: 250}
             ]],
-            onSelect: function(index, rowcom) {
-                // console.log("Index:", index, "Data:", rowcom);
-                var valModul = $("#modul").combobox('getValue');
-                var valDate  = $("#journal_date").datebox('getValue');
+            onSelect: function(index, row) {
+                const valModul = $("#modul").combogrid('getValue');
+                const valDate  = $("#journal_date").datebox('getValue');
 
-                if (!valModul || valModul === "") {
-                    toastr.warning("Please select Modul first!");
-                    
-                    var target = $(this);
-                    setTimeout(function(){
-                        target.combogrid('clear');
-                    }, 100);
-                    
-                    return false;
+                if (!valModul || !valDate) {
+                    toastr.warning("Please select Journal Date and Modul first!");
+                    $(this).combogrid('clear');
+                    return;
                 }
 
-                $("#document_no").combogrid('clear');
-                var targetUrl = '<?= base_url('finance/journal_inventory/readDocumentNo') ?>';
-                var g = $("#document_no").combogrid('grid');
-                
-                g.datagrid({
-                    url: targetUrl,
-                    method: 'POST',
-                    idField: 'document_no',
-                    singleSelect: false,
-                    selectOnCheck: true,
-                    checkOnSelect: true,
-                    queryParams: {
-                        modul: btoa(valModul),
-                        journal_date: btoa(valDate),
-                        company_id: btoa(rowcom.company_id),
-                    },
-                    onLoadSuccess: function(data) {
-                        if (data && data.theme === "error") {
-                            toastr.error(data.message, data.title);
-                            $("#company_name").combogrid('clear');
-                        }
-                    }
+                // Reload Document No Grid
+                const g = $("#document_no").combogrid('grid');
+                g.datagrid('load', {
+                    modul: btoa(valModul),
+                    journal_date: btoa(valDate),
+                    company_id: btoa(row.company_id)
                 });
             }
         });
 
+        // --- DOCUMENT NO ---
+        $("#document_no").combogrid({
+            url: '<?= base_url('finance/journal_inventory/readDocumentNo') ?>',
+            method: 'POST',
+            panelWidth: 450,
+            idField: 'document_no',
+            textField: 'document_no',
+            multiple: true,
+            required: true,
+            mode: 'remote', // Penting agar bisa menerima parameter dari load
+            fitColumns: true,
+            prompt: "Choose Document No.",
+            columns: [[
+                { field: 'ck', checkbox: true },
+                { field: 'document_no', title: 'Document No.', width: 250 },
+            ]]
+        });
+
+        // Initial Data On Load Page
+        filter();
     });
 
     // DETAILS
@@ -697,6 +649,21 @@
         }
 
         if (isValid) {
+            // GL No.
+            $.ajax({
+                type: "post",
+                url: "<?= base_url('finance/journal_inventory/number/') ?>" + window.btoa(params.journal_date),
+                dataType: "html",
+                success: function(result) {
+                    if ($("#number").length > 0) {
+                        $("#number").textbox('setValue', result.trim());
+                    }
+                },
+                error: function(xhr, status, error) {
+                    console.error("Error fetching number: ", error);
+                }
+            });
+
             // Konversi Multiple document_no menjadi string dipisah koma
             const docNoStr = params.document_no.join(',');
 
