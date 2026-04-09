@@ -15,14 +15,36 @@ class Breakdown_prices extends CI_Controller
         //Validasi Form
         $this->form_validation->set_rules('item_fg_id', 'Product No.', 'required|min_length[1]|max_length[20]|is_unique[breakdown_prices.item_fg_id]');
     }
+    // public function index()
+    // {
+    //     if (empty($this->session->username)) {
+    //         redirect('error_session');
+    //     } elseif ($this->checkuserAccess($this->id_menu()) > 0) {
+    //         $data['button'] = $this->getbutton($this->id_menu());
+    //         $this->load->view('template/header', $data);
+    //         $this->load->view('pricing/breakdown_prices');
+    //     } else {
+    //         redirect('error_access');
+    //     }
+    // }
+
+    //HALAMAN UTAMA
+    //INDEX untuk kebutuhan NPD
     public function index()
     {
         if (empty($this->session->username)) {
             redirect('error_session');
-        } elseif ($this->checkuserAccess($this->id_menu()) > 0) {
-            $data['button'] = $this->getbutton($this->id_menu());
+        }
+        
+        $url_menu_id = $this->input->get('menu_id');
+        $active_menu = (!empty($url_menu_id)) ? $url_menu_id : $this->id_menu();
+
+        if ($this->checkuserAccess($active_menu) > 0) {
+            // Ambil button agar tidak ada error undefined variable
+            $data['button'] = $this->getbutton($active_menu);
+
             $this->load->view('template/header', $data);
-            $this->load->view('pricing/breakdown_prices');
+            $this->load->view('pricing/breakdown_prices', $data);
         } else {
             redirect('error_access');
         }
@@ -385,8 +407,10 @@ class Breakdown_prices extends CI_Controller
             cp.*, 
             ifg.color as color_fg,
             
-            COALESCE(f_vg.name, cp.part_name_vg) as name_vg, ir_vg.color as color_vg,
-            COALESCE(f_mb.name, cp.part_name_mb) as name_mb, ir_mb.color as color_mb,
+            COALESCE(f_vg.name, cp.part_name_vg) as name_vg, 
+            ir_vg.color as color_vg,
+            COALESCE(f_mb.name, cp.part_name_mb) as name_mb, 
+            ir_mb.color as color_mb,
             ir_cp.color as color_cp,
 
             s_vg.name as maker_vg,

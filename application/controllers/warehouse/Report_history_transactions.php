@@ -126,11 +126,11 @@ class Report_history_transactions extends CI_Controller
 
     public function readItemFamilys()
     {
+        $excluded_ids = ['P08', 'P05', 'P49'];
         $this->db->select('*');
         $this->db->from('item_familys');
-        $this->db->where('id !=', "P08"); 
+        $this->db->where_not_in('id', $excluded_ids);
         $this->db->where('deleted', 0);
-        // $this->db->where("item_category_id", $item_category_id);
         $this->db->order_by('name', 'ASC');
         $records = $this->db->get()->result_array();
         echo json_encode($records);
@@ -461,6 +461,7 @@ class Report_history_transactions extends CI_Controller
         AND b.number LIKE '%$filter_item_family%'
         AND a.id LIKE '%$filter_items%'
         AND a.division LIKE '%$filter_division%'
+        AND a.item_category_id NOT IN ('C06','C11')
         GROUP BY a.id
         ORDER BY c.name DESC, b.name DESC, a.number";
 
@@ -520,8 +521,8 @@ class Report_history_transactions extends CI_Controller
              <thead>
                 <tr>
                     <th width="20">No</th>
-                    <th colspan="3">Product No</th>
-                    <th colspan="2">Product Name</th>
+                    <th colspan="3">Part No</th>
+                    <th colspan="2">Part Name</th>
                     <th>Uom</th>
                     <th>Division</th>
                     <th>Category</th>
@@ -1047,7 +1048,8 @@ class Report_history_transactions extends CI_Controller
                             a.bc_date, 
                             a.lotno,
                             SUM(b.qty) as qty_receipt,
-                            c.name as username
+                            c.name as username,
+                            COALESCE(a.specification,'-') as specification
                         FROM purchase_order_receipts a 
                         JOIN scan_item_receipts b ON a.receipt_id = b.receipt_id
                         JOIN users c ON a.created_by = c.username
@@ -1060,6 +1062,7 @@ class Report_history_transactions extends CI_Controller
                             $html .= '  <tr>
                                             <td></td>
                                             <td style="text-align:center">' . $nod . '</td>
+                                            <td>' . $receipt->specification . '</td>
                                             <td>RECEIPT</td>
                                             <td>' . $receipt->username . '</td>
                                             <td>' . $receipt->receipt_date . '</td>
@@ -1086,7 +1089,8 @@ class Report_history_transactions extends CI_Controller
                             a.transaction_kind,
                             a.request_no,
                             a.qty,
-                            b.name as username
+                            b.name as username,
+                            COALESCE(a.specification,'-') as specification
                         FROM transaction_rm a
                         JOIN users b ON a.created_by = b.username
                         WHERE a.item_rm_id = '$item_rm_id' and a.transaction_type = 'ADJ IN STO' and a.request_date between '$filter_from' and '$filter_to'
@@ -1100,6 +1104,7 @@ class Report_history_transactions extends CI_Controller
                             $html .= '  <tr>
                                             <td></td>
                                             <td style="text-align:center">' . $nod . '</td>
+                                            <td>' . $transaction->specification . '</td>
                                             <td>ADJ IN STO</td>
                                             <td>' . $transaction->username . '</td>
                                             <td>' . date("Y-m-d", strtotime($transaction->request_date)) . '</td>
@@ -1125,7 +1130,6 @@ class Report_history_transactions extends CI_Controller
                         }
                     }
 
-
                     if ($filter_trans_type == 'BPM') {
                         //TRANSACTION
                         $transactions = $this->crud->query("SELECT
@@ -1134,7 +1138,8 @@ class Report_history_transactions extends CI_Controller
                             a.transaction_kind,
                             a.request_no,
                             a.qty,
-                            b.name as username
+                            b.name as username,
+                            COALESCE(a.specification,'-') as specification
                         FROM transaction_rm a
                         JOIN users b ON a.created_by = b.username
                         WHERE a.item_rm_id = '$item_rm_id' and a.transaction_type = 'BPM' and a.request_date between '$filter_from' and '$filter_to'
@@ -1148,6 +1153,7 @@ class Report_history_transactions extends CI_Controller
                             $html .= '  <tr>
                                             <td></td>
                                             <td style="text-align:center">' . $nod . '</td>
+                                            <td>' . $transaction->specification . '</td>
                                             <td>BPM</td>
                                             <td>' . $transaction->username . '</td>
                                             <td>' . date("Y-m-d", strtotime($transaction->request_date)) . '</td>
@@ -1182,6 +1188,7 @@ class Report_history_transactions extends CI_Controller
                                 $html .= '  <tr>
                                                 <td></td>
                                                 <td style="text-align:center">' . $nod . '</td>
+                                                <td>' . $transaction->specification . '</td>
                                                 <td>BPM</td>
                                                 <td>' . $user->name . '</td>
                                                 <td>' . date("Y-m-d", strtotime($transaction->request_date)) . '</td>
@@ -1209,7 +1216,8 @@ class Report_history_transactions extends CI_Controller
                             a.transaction_kind,
                             a.request_no,
                             a.qty,
-                            b.name as username
+                            b.name as username,
+                            COALESCE(a.specification,'-') as specification
                         FROM transaction_rm a
                         JOIN users b ON a.created_by = b.username
                         WHERE a.item_rm_id = '$item_rm_id' and a.transaction_type = 'ADJ OUT STO' and a.request_date between '$filter_from' and '$filter_to'
@@ -1223,6 +1231,7 @@ class Report_history_transactions extends CI_Controller
                             $html .= '  <tr>
                                             <td></td>
                                             <td style="text-align:center">' . $nod . '</td>
+                                            <td>' . $transaction->specification . '</td>
                                             <td>ADJ OUT STO</td>
                                             <td>' . $transaction->username . '</td>
                                             <td>' . date("Y-m-d", strtotime($transaction->request_date)) . '</td>
@@ -1256,7 +1265,8 @@ class Report_history_transactions extends CI_Controller
                             a.transaction_kind,
                             a.request_no,
                             a.qty,
-                            b.name as username
+                            b.name as username,
+                            COALESCE(a.specification,'-') as specification
                         FROM transaction_rm a
                         JOIN users b ON a.created_by = b.username
                         WHERE a.item_rm_id = '$item_rm_id' and a.transaction_type = 'BPB' and a.request_date between '$filter_from' and '$filter_to'
@@ -1270,6 +1280,7 @@ class Report_history_transactions extends CI_Controller
                             $html .= '  <tr>
                                             <td></td>
                                             <td style="text-align:center">' . $nod . '</td>
+                                            <td>' . $transaction->specification . '</td>
                                             <td>BPB</td>
                                             <td>' . $transaction->username . '</td>
                                             <td>' . date("Y-m-d", strtotime($transaction->request_date)) . '</td>
@@ -1303,7 +1314,8 @@ class Report_history_transactions extends CI_Controller
                             a.transaction_kind,
                             a.request_no,
                             a.qty,
-                            b.name as username
+                            b.name as username,
+                            COALESCE(a.specification,'-') as specification
                         FROM transaction_rm a
                         JOIN users b ON a.created_by = b.username
                         WHERE a.item_rm_id = '$item_rm_id' and a.transaction_type = 'KANBAN WO' and a.request_date between '$filter_from' and '$filter_to'
@@ -1317,6 +1329,7 @@ class Report_history_transactions extends CI_Controller
                             $html .= '  <tr>
                                             <td></td>
                                             <td style="text-align:center">' . $nod . '</td>
+                                            <td>' . $transaction->specification . '</td>
                                             <td>KANBAN WO</td>
                                             <td>' . $transaction->username . '</td>
                                             <td>' . date("Y-m-d", strtotime($transaction->request_date)) . '</td>
@@ -1351,7 +1364,8 @@ class Report_history_transactions extends CI_Controller
                             a.created_date, 
                             a.label_no, 
                             a.request_no,
-                            c.lotno
+                            c.lotno,
+                            COALESCE(c.specification,'-') as specification
                         FROM issued_material_details a 
                         JOIN purchase_order_labels b ON a.label_no = b.label_no
                         JOIN purchase_order_receipts c ON b.receipt_id = c.receipt_id
@@ -1366,7 +1380,8 @@ class Report_history_transactions extends CI_Controller
                             a.created_date, 
                             a.label_no, 
                             a.request_no,
-                            c.lot_no as lotno
+                            c.lot_no as lotno,
+                            '-' as specification
                         FROM issued_material_details a
                         JOIN bpm_labels b ON a.label_no = b.label_no
                         JOIN bpm c ON b.request_id = c.request_id
@@ -1381,7 +1396,8 @@ class Report_history_transactions extends CI_Controller
                             a.created_date, 
                             a.label_no, 
                             a.request_no,
-                            COALESCE(c.lotno,'-') as lotno
+                            COALESCE(c.lotno,'-') as lotno,
+                            '-' as specification
                         FROM issued_material_details a 
                         JOIN barcode_divides b ON a.label_no = b.label_divided
                         LEFT JOIN purchase_order_receipts c ON b.reff = c.receipt_id
@@ -1397,7 +1413,8 @@ class Report_history_transactions extends CI_Controller
                             a.created_date, 
                             a.label_no, 
                             a.request_no,
-                            '-' as lotno
+                            '-' as lotno,
+                            '-' as specification
                         FROM issued_material_details a 
                         JOIN new_barcode b ON a.label_no = b.label_no
                         WHERE a.item_rm_id = '$item_rm_id' 
@@ -1620,6 +1637,7 @@ class Report_history_transactions extends CI_Controller
         AND b.number LIKE '%$filter_item_family%' 
         AND a.id LIKE '%$filter_items%' 
         AND a.division LIKE '%$filter_division%' 
+        AND a.item_category_id NOT IN ('C06','C11')
         GROUP BY a.id
         ORDER BY c.name DESC, b.name DESC, a.number");
 
@@ -1651,8 +1669,8 @@ class Report_history_transactions extends CI_Controller
             <table id="customers" border="1" style="font-size: 11px;">
                 <tr>
                     <th rowspan="2" width="20">No</th>
-                    <th rowspan="2">Product No</th>
-                    <th rowspan="2">Product Name</th>
+                    <th rowspan="2">Part No</th>
+                    <th rowspan="2">Part Name</th>
                     <th rowspan="2">Uom</th>
                     <th rowspan="2">Division</th>
                     <th rowspan="2">Category</th>
@@ -1912,7 +1930,11 @@ class Report_history_transactions extends CI_Controller
 
         -- LEFT JOIN transaction_rm i ON a.id = i.item_rm_id AND i.request_date between '$filter_from' and '$filter_to'
         
-        WHERE c.id like '%$filter_item_category%' and b.number like '%$filter_item_family%' and a.id like '%$filter_items%' and a.division like '%$filter_division%' 
+        WHERE c.id like '%$filter_item_category%' 
+        AND b.number like '%$filter_item_family%' 
+        AND a.id like '%$filter_items%' 
+        AND a.division like '%$filter_division%' 
+        AND a.item_category_id NOT IN ('C06','C11')
         GROUP BY a.id
         ORDER BY c.name DESC, b.name DESC, a.number");
 

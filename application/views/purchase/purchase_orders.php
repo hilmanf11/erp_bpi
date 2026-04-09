@@ -15,6 +15,7 @@
             <th rowspan="2" data-options="field:'supplier_name',width:200,halign:'center'">Supplier</th>
             <th rowspan="2" data-options="field:'item_number',width:150,halign:'center'">Product No</th>
             <th rowspan="2" data-options="field:'item_name',width:200,halign:'center'">Product Name</th>
+            <th rowspan="2" data-options="field:'item_supplier',width:200,halign:'center'">Supplier Product</th>
             <th rowspan="2" data-options="field:'specification',width:200,halign:'center'">Specification</th>
             <th rowspan="2" data-options="field:'mpq',width:80,halign:'center',align:'right',formatter:numberformatDefault">MPQ</th>
             <th rowspan="2" data-options="field:'moq',width:80,halign:'center',align:'right',formatter:numberformatDefault">MOQ</th>
@@ -355,6 +356,17 @@
                                 readonly: true,
                                 halign: 'center',
                                 title: "Product Name"
+                             }, {//2
+                                field: 'item_supplier',
+                                width: 150,
+                                halign: 'center',
+                                title: "Supplier Product",
+                                editor: {
+                                    type: 'textbox',
+                                    options: {
+                                        readonly: true
+                                    }
+                                }
                             }, {
                                 field: 'length',
                                 width: 80,
@@ -392,7 +404,7 @@
                                 readonly: true,
                                 halign: 'center',
                                 title: "Product <br>Family"
-                            }, {//2
+                            }, {//3
                                 field: 'uom_default',
                                 width: 80,
                                 readonly: true,
@@ -401,7 +413,7 @@
                                 editor: {
                                     type: 'textbox'
                                 }
-                            }, {//3
+                            }, {//4
                                 field: 'supplier_number',
                                 width: 250,
                                 halign: 'center',
@@ -409,7 +421,7 @@
                                 editor: {
                                     type: 'combogrid'
                                 }
-                            }, {//4
+                            }, {//5
                                 field: 'supplier_id',
                                 hidden: true,
                                 width: 250,
@@ -418,7 +430,7 @@
                                 editor: {
                                     type: 'textbox',
                                 }
-                            }, {//5
+                            }, {//6
                                 field: 'mpq',
                                 width: 80,
                                 halign: 'center',
@@ -431,7 +443,7 @@
                                         precision: 2
                                     }
                                 }
-                            }, {//6
+                            }, {//7
                                 field: 'moq',
                                 width: 80,
                                 halign: 'center',
@@ -444,7 +456,7 @@
                                         precision: 2
                                     }
                                 }
-                            }, {//7
+                            }, {//8
                                 field: 'qty',
                                 width: 80,
                                 halign: 'center',
@@ -455,7 +467,7 @@
                                         precision: 2
                                     }
                                 }
-                            }, {//8
+                            }, {//9
                                 field: 'currency',
                                 width: 80,
                                 halign: 'center',
@@ -466,7 +478,7 @@
                                         readonly: true,
                                     }
                                 }
-                            }, {//9
+                            }, {//10
                                 field: 'discount',
                                 width: 80,
                                 halign: 'center',
@@ -477,7 +489,7 @@
                                         precision: 2
                                     }
                                 }
-                             }, {//10
+                             }, {//11
                                 field: 'discount_nominal',
                                 width: 80,
                                 halign: 'center',
@@ -488,7 +500,7 @@
                                         precision: 2
                                     }
                                 }
-                            }, {//11
+                            }, {//12
                                 field: 'price',
                                 width: 100,
                                 halign: 'center',
@@ -502,7 +514,7 @@
                                         precision: 2
                                     }
                                 }
-                            }, {//12
+                            }, {//13
                                 field: 'price_conv',
                                 width: 100,
                                 halign: 'center',
@@ -516,7 +528,7 @@
                                         precision: 2
                                     }
                                 }
-                            }, {//13
+                            }, {//14
                                 field: 'total',
                                 width: 100,
                                 halign: 'center',
@@ -530,7 +542,7 @@
                                         precision: 2
                                     }
                                 }
-                            }, {//14
+                            }, {//15
                                 field: 'delivery_date',
                                 width: 120,
                                 halign: 'center',
@@ -544,7 +556,7 @@
                                         // required: true
                                     }
                                 }
-                            }, {//15
+                            }, {//16
                                 field: 'remarks',
                                 width: 200,
                                 halign: 'center',
@@ -552,7 +564,7 @@
                                 editor: {
                                     type: 'textbox'
                                 }
-                            }, {//16
+                            }, {//17
                                 field: 'month_1',
                                 width: 80,
                                 align: 'center',
@@ -563,7 +575,7 @@
                                         required: true,
                                     }
                                 }
-                            }, {//17
+                            }, {//18
                                 field: 'month_2',
                                 width: 80,
                                 align: 'center',
@@ -571,7 +583,7 @@
                                 editor: {
                                     type: 'numberbox',
                                 }
-                            }, {//18
+                            }, {//19
                                 field: 'month_3',
                                 width: 80,
                                 align: 'center',
@@ -579,7 +591,7 @@
                                 editor: {
                                     type: 'numberbox',
                                 }
-                            }, {//19
+                            }, {//20
                                 field: 'month_4',
                                 width: 80,
                                 align: 'center',
@@ -587,7 +599,7 @@
                                 editor: {
                                     type: 'numberbox',
                                 }
-                            },{//20
+                            },{//21
                                 field: 'item_rm_id',
                                 width: 150,
                                 hidden: true,
@@ -596,7 +608,7 @@
                                 editor: {
                                     type: 'textbox',
                                 }
-                            },{//21
+                            },{//22
                                 field: 'taxes',
                                 width: 150,
                                 hidden: true,
@@ -605,7 +617,7 @@
                                 editor: {
                                     type: 'textbox',
                                 }
-                            },{//22
+                            },{//23
                                 field: 'type',
                                 width: 150,
                                 // hidden: true,
@@ -614,7 +626,7 @@
                                 editor: {
                                     type: 'textbox',
                                 }
-                            },{//23
+                            },{//24
                                 field: 'specification',
                                 width: 150,
                                 hidden: true,
@@ -635,7 +647,7 @@
                                 hidden: true,
                                 halign: 'center',
                                 title: "Weight"
-                             },{//24
+                             },{//25
                                 field: 'convertion',
                                 width: 100,
                                 //hidden: true,
@@ -664,12 +676,12 @@
                         },
                         onBeginEdit: function(rowIndex, row) {
                             var editors = $('#dg_request').datagrid('getEditors', rowIndex);
-                            var item_rm_id = $(editors[20].target).textbox('getValue');
-                            var supplier_id = $(editors[3].target);
+                            var item_rm_id = $(editors[21].target).textbox('getValue');
+                            var supplier_id = $(editors[4].target);
                             var po_date = $("#po_date").datebox('getValue');
                             var total_sub = $("#total_sub").numberbox('getValue');
                             
-                            var delivery_date = $(editors[14].target);
+                            var delivery_date = $(editors[15].target);
 
                             var length = row.length || "";
                             var width = row.width || "";
@@ -677,61 +689,61 @@
 
                             if (length && width && thickness) {
                                 var spec = length + " x " + width + " x " + thickness;
-                                if (editors[23]) {
-                                    $(editors[23].target).textbox('setValue', spec);
+                                if (editors[24]) {
+                                    $(editors[24].target).textbox('setValue', spec);
                                 }
                             }
 
-                            $(editors[7].target).numberbox({
+                            $(editors[8].target).numberbox({
                                 onChange: function() {
-                                    var qty = $(editors[7].target).numberbox('getValue');
-                                    var discount_nominal = $(editors[10].target).numberbox('getValue');
-                                    var price = $(editors[12].target).numberbox('getValue');
+                                    var qty = $(editors[8].target).numberbox('getValue');
+                                    var discount_nominal = $(editors[11].target).numberbox('getValue');
+                                    var price = $(editors[13].target).numberbox('getValue');
                                     var total = ((qty * price)-(discount_nominal));
-                                    editors[13].target.numberbox('setValue', total);
+                                    editors[14].target.numberbox('setValue', total);
                                 }
                             });
 
                             let isUpdatingFromPercent = false;
                             let isUpdatingFromNominal = false;
 
-                            $(editors[9].target).numberbox({
+                            $(editors[10].target).numberbox({
                                 onChange: function () {
                                     if (isUpdatingFromNominal) return; // Hindari loop silang
 
                                     isUpdatingFromPercent = true;
 
-                                    var qty = parseFloat($(editors[7].target).numberbox('getValue')) || 0;
-                                    var discount = parseFloat($(editors[9].target).numberbox('getValue')) || 0;
-                                    var price = parseFloat($(editors[11].target).numberbox('getValue')) || 0;
+                                    var qty = parseFloat($(editors[8].target).numberbox('getValue')) || 0;
+                                    var discount = parseFloat($(editors[10].target).numberbox('getValue')) || 0;
+                                    var price = parseFloat($(editors[12].target).numberbox('getValue')) || 0;
 
                                     var sub_total = qty * price;
                                     var discount_nominal = (discount / 100) * sub_total;
                                     var total = sub_total - discount_nominal;
 
-                                    $(editors[10].target).numberbox('setValue', discount_nominal.toFixed(2));
-                                    $(editors[13].target).numberbox('setValue', total.toFixed(2));
+                                    $(editors[11].target).numberbox('setValue', discount_nominal.toFixed(2));
+                                    $(editors[14].target).numberbox('setValue', total.toFixed(2));
 
                                     isUpdatingFromPercent = false;
                                 }
                             });
 
-                            $(editors[10].target).numberbox({
+                            $(editors[11].target).numberbox({
                                 onChange: function () {
                                     if (isUpdatingFromPercent) return; // Hindari loop silang
 
                                     isUpdatingFromNominal = true;
 
-                                    var qty = parseFloat($(editors[7].target).numberbox('getValue')) || 0;
-                                    var discount_nominal = parseFloat($(editors[10].target).numberbox('getValue')) || 0;
-                                    var price = parseFloat($(editors[11].target).numberbox('getValue')) || 0;
+                                    var qty = parseFloat($(editors[8].target).numberbox('getValue')) || 0;
+                                    var discount_nominal = parseFloat($(editors[11].target).numberbox('getValue')) || 0;
+                                    var price = parseFloat($(editors[12].target).numberbox('getValue')) || 0;
 
                                     var sub_total = qty * price;
                                     var disc_pr = sub_total > 0 ? (discount_nominal / sub_total) * 100 : 0;
                                     var total = sub_total - discount_nominal;
 
-                                    $(editors[9].target).numberbox('setValue', disc_pr.toFixed(2));
-                                    $(editors[13].target).numberbox('setValue', total.toFixed(2));
+                                    $(editors[10].target).numberbox('setValue', disc_pr.toFixed(2));
+                                    $(editors[14].target).numberbox('setValue', total.toFixed(2));
 
                                     isUpdatingFromNominal = false;
                                 }
@@ -761,7 +773,7 @@
                                 onLoadSuccess: function(supp) {
                                     console.log("Data Loaded: ", supp);
 
-                                    var currentSupplierID = $(editors[4].target).textbox('getValue');
+                                    var currentSupplierID = $(editors[5].target).textbox('getValue');
 
                                     if (currentSupplierID) {
                                         // Jika dalam mode edit, cari supplier berdasarkan ID
@@ -792,27 +804,28 @@
 
                             // Fungsi untuk mengupdate field lain saat memilih supplier
                             function updateSupplierFields(supplier) {
-                                $(editors[2].target).textbox('setValue', supplier.uom_default);
-                                $(editors[3].target).combogrid('setValue', supplier.name);
-                                $(editors[4].target).textbox('setValue', supplier.id);
-                                $(editors[5].target).textbox('setValue', supplier.mpq);
-                                $(editors[6].target).textbox('setValue', supplier.moq);
-                                $(editors[8].target).textbox('setValue', supplier.currency);
-                                $(editors[9].target).textbox('setValue', 0);
+                                $(editors[3].target).textbox('setValue', supplier.uom_default);
+                                $(editors[4].target).combogrid('setValue', supplier.name);
+                                $(editors[5].target).textbox('setValue', supplier.id);
+                                $(editors[6].target).textbox('setValue', supplier.mpq);
+                                $(editors[7].target).textbox('setValue', supplier.moq);
+                                $(editors[9].target).textbox('setValue', supplier.currency);
                                 $(editors[10].target).textbox('setValue', 0);
-                                $(editors[11].target).numberbox('setValue', supplier.price);
-                                $(editors[21].target).textbox('setValue', supplier.vat); // Tambahkan ini agar VAT juga diset
-                                $(editors[22].target).textbox('setValue', supplier.type); // Supplier Type
+                                $(editors[11].target).textbox('setValue', 0);
+                                $(editors[12].target).numberbox('setValue', supplier.price);
+                                $(editors[22].target).textbox('setValue', supplier.vat); // Tambahkan ini agar VAT juga diset
+                                $(editors[23].target).textbox('setValue', supplier.type); // Supplier Type
+                                $(editors[2].target).textbox('setValue', supplier.item_supplier); // Supplier Type
                                 // Menghitung total harga setelah diskon
-                                var qty = parseFloat($(editors[7].target).numberbox('getValue')) || 0;
-                                var price = parseFloat($(editors[11].target).numberbox('getValue')) || 0;
-                                var discount = parseFloat($(editors[9].target).numberbox('getValue')) || 0;
-                                var convertion = parseFloat($(editors[24].target).numberbox('getValue')) || 1;
+                                var qty = parseFloat($(editors[8].target).numberbox('getValue')) || 0;
+                                var price = parseFloat($(editors[12].target).numberbox('getValue')) || 0;
+                                var discount = parseFloat($(editors[10].target).numberbox('getValue')) || 0;
+                                var convertion = parseFloat($(editors[25].target).numberbox('getValue')) || 1;
                                 var totalDiscountedPrice = (qty * (convertion * price)) - ((qty * (convertion * price)) * (discount / 100));
                                 var price_conv = convertion * price;
 
-                                $(editors[12].target).numberbox('setValue', price_conv);
-                                $(editors[13].target).numberbox('setValue', totalDiscountedPrice);
+                                $(editors[13].target).numberbox('setValue', price_conv);
+                                $(editors[14].target).numberbox('setValue', totalDiscountedPrice);
                             }
 
                             delivery_date.add(delivery_date).datebox({

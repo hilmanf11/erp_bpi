@@ -36,6 +36,7 @@
             <th rowspan="2" data-options="field:'suppliers_currency',width:100,halign:'center'">Currency</th>
             <th rowspan="2" data-options="field:'calculate',width:100,halign:'center'">Calculate <br>MPQ</th>
             <th rowspan="2" data-options="field:'status_item',width:100,align:'center', styler:cellStyler, formatter:cellFormatter">Status</th>
+            <th rowspan="2" data-options="field:'remark',width:100,halign:'center'">Remark</th>
             <th colspan="2" data-options="field:'',width:100,halign:'center'"> Created</th>
             <th colspan="2" data-options="field:'',width:100,halign:'center'"> Updated</th>
         </tr>
@@ -162,6 +163,12 @@
                 <div class="fitem">
                     <span style="width:35%; display:inline-block;">Calculate MPQ</span>
                     <input style="width:60%;" name="calculate" id="calculate" class="easyui-textbox">
+                </div>
+                <div class="fitem">
+                    <span style="width:35%; display:inline-block;">Remark</span>
+                    <select style="width:60%;" name="remark" id="remark" panelHeight="auto" class="easyui-combobox">
+                        <option value="Price Before Discount">Price Before Discount</option>
+                    </select>
                 </div>
             </div>
         </fieldset>
@@ -457,6 +464,24 @@
                                 },
                                 {
                                     name: "NO"
+                                },
+                            ]
+                        }
+                    }
+                }, {
+                    field: 'remark',
+                    width: 120,
+                    halign: 'center',
+                    title: "Remark",
+                    editor: {
+                        type: 'combobox',
+                        options: {
+                            valueField: 'name',
+                            textField: 'name',
+                            prompt: 'Choose Remark',
+                            panelHeight: true,
+                            data: [{
+                                    name: "Price Before Discount"
                                 },
                             ]
                         }
@@ -829,7 +854,8 @@
                                     uom_default: rows[i].uom_default,
                                     uom_inventory: rows[i].uom_inventory,
                                     weight_kg: rows[i].weight_kg,
-                                    calculate: rows[i].calculate
+                                    calculate: rows[i].calculate,
+                                    remark: rows[i].remark
                                 },
                                 dataType: "json",
                                 success: function(result) {

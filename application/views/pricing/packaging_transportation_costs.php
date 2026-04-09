@@ -220,11 +220,11 @@
                         </div>
                         <div class="fitem">
                             <span style="width:35%; display:inline-block;">Qty Usage</span>
-                            <input style="width:60%;" name="qty_usage" id="qty_usage" required="" class="easyui-numberbox">
+                            <input style="width:60%;" name="qty_usage" id="qty_usage"  class="easyui-numberbox">
                         </div>
                         <div class="fitem">
                             <span style="width:35%; display:inline-block;">Packing Quantity Standart</span>
-                            <input style="width:60%;" name="qty_packing_standart" id="qty_packing_standart" required="" class="easyui-numberbox">
+                            <input style="width:60%;" name="qty_packing_standart" id="qty_packing_standart" class="easyui-numberbox">
                         </div>
                         <div class="fitem">
                             <span style="width:35%; display:inline-block;">Price</span>
@@ -364,12 +364,7 @@
                     <div class="form-row">
                         <div class="fitem">
                             <span style="width:35%; display:inline-block;">Packing Box</span> 
-                            <select style="width:60%;" name="packing_box" id="packing_box" required="" class="easyui-combobox" panelHeight="auto">
-                                <option value="" selected disabled>Choose Packing Box</option>
-                                <option value="Returnable Box">Returnable Box</option>
-                                <option value="Carton Box">Carton Box</option>
-                                <option value="Palet">Palet</option>
-                            </select>
+                            <input style="width:60%;" name="packing_box" id="packing_box" readonly class="easyui-textbox">
                         </div>
                         <div class="fitem">
                             <span style="width:35%; display:inline-block;">Vol/M</span>
@@ -453,11 +448,11 @@
                     <div class="form-row">
                         <div class="fitem" hidden>
                             <span style="width:35%; display:inline-block;">Box Id</span>
-                            <input style="width:60%;" name="box_id" id="box_id" required class="easyui-textbox">
+                            <input style="width:60%;" name="box_id" id="box_id" readonly class="easyui-textbox">
                         </div>
                         <div class="fitem">
                             <span style="width:35%; display:inline-block;">Box Name</span>
-                            <input style="width:60%;" name="box_name" id="box_name" required class="easyui-combogrid">
+                            <input style="width:60%;" name="box_name" id="box_name" readonly class="easyui-textbox">
                         </div>
                         <div class="fitem">
                             <span style="width:35%; display:inline-block;">Code</span>
@@ -841,39 +836,21 @@
             }
         });
 
-        $('#adjustment, #price_layer, #qty_packing_standart').numberbox({
-            onChange: function () {
-                calculateAdjustmentAndPart();
+        $('#qty_usage, #adjustment, #price_layer').numberbox({
+            onChange: function() {
+                calculateTotalPricing();
             }
         });
 
-        $('#qty_usage').numberbox({
+        $('#qty_foam, #price_foam, #adjustment_foam').numberbox({
             onChange: function () {
-                calculatePartOnly();
+                calculateTotalFoam();
             }
         });
 
-        $('#adjustment_foam, #price_foam').numberbox({
+        $('#qty_tape, #price_tape, #adjustment_tape, #length').numberbox({
             onChange: function () {
-                calculateAdjustmentAndPartFoam();
-            }
-        });
-
-        $('#qty_foam').numberbox({
-            onChange: function () {
-                calculatePartOnlyFoam();
-            }
-        });
-
-        $('#adjustment_tape, #price_tape, #length').numberbox({
-            onChange: function () {
-                calculateAdjustmentAndPartTape();
-            }
-        });
-
-        $('#qty_tape').numberbox({
-            onChange: function () {
-                calculatePartOnlyTape();
+                calculateTotalTape();
             }
         });
 
@@ -895,12 +872,6 @@
             }
         });
 
-        $('#storage_pos, #storage_duration, #box_price, #month').numberbox({
-            onChange: function () {
-                calculateBoxCalculation();
-            }
-        });
-
         $('#price_part, #price_part_1, #price_part_2, #price_part_foam, #price_part_tape, #price_part_box').numberbox({
             onChange: function () {
                 calculateTotalPackingCost();
@@ -915,6 +886,7 @@
 
         $('#qty_packing_standart').numberbox({
             onChange: function () {
+                calculateTotalPricing();
                 calculateNeedPartDay();
                 calculateArmadaCapacity();
             }
@@ -938,160 +910,80 @@
             }
         });
 
-        $('#packing_box').combobox({
-            onChange: function (newValue) {
-                // 1. Reset input fisik (yang bisa diisi user) berdasarkan tipe
-                if (newValue === "Returnable Box") {
-                    $('#palet_price').numberbox('setValue', 0);
-                    $('#mpq_price').numberbox('setValue', 0);
-                } 
-                else if (newValue === "Carton Box") {
-                    $('#palet_price').numberbox('setValue', 0);
-                    // Reset input yang hanya milik Returnable
-                    $('#storage_pos').numberbox('setValue', 0);
-                    $('#storage_duration').numberbox('setValue', 0);
-                    $('#volume').numberbox('setValue', 0);
-                    $('#month').numberbox('setValue', 0);
-                } 
-                else if (newValue === "Palet") {
-                    $('#box_price').numberbox('setValue', 0);
-                    // Reset input yang hanya milik Returnable
-                    $('#storage_pos').numberbox('setValue', 0);
-                    $('#storage_duration').numberbox('setValue', 0);
-                    $('#volume').numberbox('setValue', 0);
-                    $('#month').numberbox('setValue', 0);
-                }
-
-                // 2. Jalankan kalkulasi untuk mereset field readonly (total, planning, dll)
+        $('#palet_price, #mpq_price').numberbox({
+            onChange: function () {
                 calculateBoxCalculation();
             }
         });
 
-        $('#palet_price, #mpq_price').numberbox({
+        $('#storage_pos, #storage_duration, #box_price, #month').numberbox({
             onChange: function () {
                 calculateBoxCalculation();
             }
         });
     });
 
-    function calculateAdjustmentAndPart() {
+    function calculateTotalPricing() {
         var qtyUsage     = parseFloat($('#qty_usage').numberbox('getValue')) || 0;
         var priceLayer   = parseFloat($('#price_layer').numberbox('getValue')) || 0;
         var adjustment   = parseFloat($('#adjustment').numberbox('getValue')) || 0;
         var qtyPacking   = parseFloat($('#qty_packing_standart').numberbox('getValue')) || 0;
 
-        // reset
-        $('#price_adjustment').numberbox('setValue', 0);
-        $('#price_part').numberbox('setValue', 0);
+        var calculatedAdj = priceLayer + (priceLayer * (adjustment / 100));
+        $('#price_adjustment').numberbox('setValue', calculatedAdj.toFixed(2));
 
-        if (adjustment <= 0 || priceLayer <= 0) {
-            return;
-        }
+        console.log(calculatedAdj);
 
-        var priceAdjustment = priceLayer + (priceLayer * (adjustment / 100));
-        $('#price_adjustment').numberbox('setValue', priceAdjustment.toFixed(2));
-
-        if (qtyUsage > 0 && qtyPacking > 0) {
-            var pricePart = (qtyUsage * priceAdjustment) / qtyPacking;
+        if (qtyPacking > 0) { 
+            var pricePart = (qtyUsage * calculatedAdj) / qtyPacking; 
             $('#price_part').numberbox('setValue', pricePart.toFixed(2));
+        } else {
+            $('#price_part').numberbox('setValue', 0);
         }
     }
 
-    function calculateAdjustmentAndPartFoam() {
-        var qtyUsage    = parseFloat($('#qty_foam').numberbox('getValue')) || 0;
-        var priceLayer  = parseFloat($('#price_foam').numberbox('getValue')) || 0;
-        var adjustment  = parseFloat($('#adjustment_foam').numberbox('getValue')) || 0;
+    function calculateTotalFoam() {
+        var qtyUsage   = parseFloat($('#qty_foam').numberbox('getValue')) || 0;
+        var priceBase  = parseFloat($('#price_foam').numberbox('getValue')) || 0;
+        var adjustment = parseFloat($('#adjustment_foam').numberbox('getValue')) || 0;
 
-        // reset
-        $('#price_adjustment_foam').numberbox('setValue', 0);
-        $('#price_part_foam').numberbox('setValue', 0);
+        // STEP 1: Hitung Price Adjustment (Tetap muncul meski adjustment 0)
+        var calculatedAdj = priceBase + (priceBase * (adjustment / 100));
+        $('#price_adjustment_foam').numberbox('setValue', calculatedAdj.toFixed(2));
 
-        if (adjustment <= 0 || priceLayer <= 0) {
-            return;
-        }
-
-        var priceAdjustment = priceLayer + (priceLayer * (adjustment / 100));
-        $('#price_adjustment_foam').numberbox('setValue', priceAdjustment.toFixed(2));
-
-        if (qtyUsage > 0) {
-            var pricePart = qtyUsage * priceAdjustment;
+        // STEP 2: Hitung Price Part
+        if (qtyUsage > 0 && calculatedAdj > 0) {
+            var pricePart = qtyUsage * calculatedAdj;
             $('#price_part_foam').numberbox('setValue', pricePart.toFixed(2));
+        } else {
+            $('#price_part_foam').numberbox('setValue', 0);
         }
     }
 
-    function calculateAdjustmentAndPartTape() {
-        var priceLayer = parseFloat($('#price_tape').numberbox('getValue')) || 0;
+    function calculateTotalTape() {
+        var priceBase  = parseFloat($('#price_tape').numberbox('getValue')) || 0;
         var adjustment = parseFloat($('#adjustment_tape').numberbox('getValue')) || 0;
         var length     = parseFloat($('#length').numberbox('getValue')) || 0;
         var qtyUsage   = parseFloat($('#qty_tape').numberbox('getValue')) || 0;
 
-        // reset output
-        $('#price_adjustment_tape').numberbox('setValue', 0);
-        $('#price_mm_tape').numberbox('setValue', 0);
-        $('#price_part_tape').numberbox('setValue', 0);
+        // STEP 1: Hitung Price Adjustment
+        var calculatedAdj = priceBase + (priceBase * (adjustment / 100));
+        $('#price_adjustment_tape').numberbox('setValue', calculatedAdj.toFixed(2));
 
-        if (priceLayer <= 0 || adjustment <= 0) {
-            return;
+        // STEP 2: Hitung Price per MM (Hanya jika length > 0 untuk hindari pembagian nol)
+        var priceMm = 0;
+        if (length > 0) {
+            priceMm = calculatedAdj / (length * 1000);
         }
-
-        // price adjustment
-        var priceAdjustment = priceLayer + (priceLayer * (adjustment / 100));
-        $('#price_adjustment_tape').numberbox('setValue', priceAdjustment.toFixed(2));
-
-        if (length <= 0) {
-            return;
-        }
-
-        // price per mm
-        var priceMm = priceAdjustment / (length * 1000);
         $('#price_mm_tape').numberbox('setValue', priceMm.toFixed(6));
 
-        // price per part
-        if (qtyUsage > 0) {
+        // STEP 3: Hitung Price Part
+        if (qtyUsage > 0 && priceMm > 0) {
             var pricePart = qtyUsage * priceMm;
             $('#price_part_tape').numberbox('setValue', pricePart.toFixed(2));
-        }
-        
-    }
-
-    function calculatePartOnly() {
-        var qtyUsage        = parseFloat($('#qty_usage').numberbox('getValue')) || 0;
-        var priceAdjustment = parseFloat($('#price_adjustment').numberbox('getValue')) || 0;
-        var qtyPacking      = parseFloat($('#qty_packing_standart').numberbox('getValue')) || 0;
-
-        if (priceAdjustment <= 0 || qtyUsage <= 0 || qtyPacking <= 0) {
-            $('#price_part').numberbox('setValue', 0);
-            return;
-        }
-
-        var pricePart = (qtyUsage * priceAdjustment) / qtyPacking;
-        $('#price_part').numberbox('setValue', pricePart.toFixed(2));
-    }
-
-    function calculatePartOnlyFoam() {
-        var qtyUsage         = parseFloat($('#qty_foam').numberbox('getValue')) || 0;
-        var priceAdjustment  = parseFloat($('#price_adjustment_foam').numberbox('getValue')) || 0;
-
-        if (priceAdjustment <= 0 || qtyUsage <= 0) {
-            $('#price_part_foam').numberbox('setValue', 0);
-            return;
-        }
-
-        var pricePart = qtyUsage * priceAdjustment;
-        $('#price_part_foam').numberbox('setValue', pricePart.toFixed(2));
-    }
-
-    function calculatePartOnlyTape() {
-        var qtyUsage = parseFloat($('#qty_tape').numberbox('getValue')) || 0;
-        var priceMm  = parseFloat($('#price_mm_tape').numberbox('getValue')) || 0;
-
-        if (qtyUsage <= 0 || priceMm <= 0) {
+        } else {
             $('#price_part_tape').numberbox('setValue', 0);
-            return;
         }
-
-        var pricePart = qtyUsage * priceMm;
-        $('#price_part_tape').numberbox('setValue', pricePart.toFixed(2));
     }
 
     function calculatePolybag(index) {
@@ -1128,7 +1020,7 @@
     }
 
     function calculateBoxCalculation() {
-        var packingType     = $('#packing_box').combobox('getValue');
+        var packingType     = $('#packing_box').textbox('getValue');
         var needBoxDay      = parseFloat($('#need_box_day').numberbox('getValue')) || 0;
         var storagePos      = parseFloat($('#storage_pos').numberbox('getValue')) || 0;
         var storageDuration = parseFloat($('#storage_duration').numberbox('getValue')) || 0;
@@ -1146,7 +1038,7 @@
         $('#planning').numberbox('setValue', 0);
         $('#price_part_box').numberbox('setValue', 0);
 
-        if (packingType === "Returnable Box") {
+        if (packingType === "REUSEABLE BOX") {
             if (needBoxDay > 0) {
                 var needPosDay = needBoxDay * storagePos;
                 $('#need_pos_day').numberbox('setValue', needPosDay.toFixed(2));
@@ -1169,13 +1061,13 @@
                 }
             }
         } 
-        else if (packingType === "Carton Box") {
+        else if (packingType === "CARTON") {
             if (mpqPrice > 0) {
                 var pricePartBox = boxPrice / mpqPrice;
                 $('#price_part_box').numberbox('setValue', pricePartBox.toFixed(2));
             }
         } 
-        else if (packingType === "Palet") {
+        else if (packingType === "PALET") {
             if (mpqPrice > 0) {
                 var pricePartBox = paletPrice / mpqPrice;
                 $('#price_part_box').numberbox('setValue', pricePartBox.toFixed(2));
@@ -1332,7 +1224,7 @@
     });
 
     $('#item_fg_number').combogrid({
-        url: '<?= base_url('npd/item_fg_npd/reads'); ?>',
+        url: '<?= base_url('pricing/packaging_transportation_costs/readFG'); ?>',
         panelWidth: 500,
         idField: 'number',
         textField: 'number',
@@ -1363,6 +1255,41 @@
         onSelect: function(value, rows) {
             $('#item_fg_id').textbox('setValue', rows.id);
             $('#item_fg_name').textbox('setValue', rows.name);
+            $('#packing_box').textbox('setValue', rows.box_kind_name); 
+
+            if (rows.box_kind_name === "REUSEABLE BOX") {
+                $('#palet_price').numberbox('setValue', 0);
+                $('#mpq_price').numberbox('setValue', 0); // Reuseable tidak pakai MPQ Price
+            } 
+            else if (rows.box_kind_name === "CARTON") {
+                $('#palet_price').numberbox('setValue', 0);
+                
+                // Reset input milik Reuseable
+                $('#storage_pos').numberbox('setValue', 0);
+                $('#storage_duration').numberbox('setValue', 0);
+                $('#volume').numberbox('setValue', 0);
+                $('#month').numberbox('setValue', 0);
+            } 
+            else if (rows.box_kind_name === "PALET") {
+                $('#box_price').numberbox('setValue', 0);
+                
+                // Reset input milik Reuseable
+                $('#storage_pos').numberbox('setValue', 0);
+                $('#storage_duration').numberbox('setValue', 0);
+                $('#volume').numberbox('setValue', 0);
+                $('#month').numberbox('setValue', 0);
+            }
+
+            calculateBoxCalculation();
+
+            $('#box_id').textbox('setValue', rows.box_id); 
+            $('#box_name').textbox('setValue', rows.box_name); 
+            $('#box_code').textbox('setValue', rows.box_code); 
+            $('#box_length').textbox('setValue', rows.box_length); 
+            $('#box_width').textbox('setValue', rows.box_width); 
+            $('#box_height').textbox('setValue', rows.box_height); 
+            $('#color').textbox('setValue', rows.box_color); 
+             
         }
     });
 
@@ -1462,51 +1389,6 @@
             $('#vehicle_width').textbox('setValue', rows.dimension_l);
             $('#vehicle_height').textbox('setValue', rows.dimension_t);
 
-        }
-    }); 
-
-    $('#box_name').combogrid({
-        url: '<?= base_url('master/item_boxs/reads'); ?>',
-        panelWidth: 600,
-        idField: 'name',
-        textField: 'name',
-        mode: 'remote',
-        fitColumns: true,
-        prompt: 'Choose Box',
-        columns: [
-            [{
-                field: 'name',
-                title: 'Box Name',
-                width: 120
-            }, {
-                field: 'code',
-                title: 'Box Code',
-                width: 80
-            }, {
-                field: 'length',
-                title: 'Length',
-                width: 100
-            }, {
-                field: 'width',
-                title: 'Width',
-                width: 100
-            }, {
-                field: 'height',
-                title: 'Height',
-                width: 100
-             }, {
-                field: 'color',
-                title: 'Color',
-                width: 100
-            }]
-        ],
-        onSelect: function(value, rows) {
-            $('#box_id').textbox('setValue', rows.id);
-            $('#box_code').textbox('setValue', rows.code);
-            $('#box_length').textbox('setValue', rows.length);
-            $('#box_width').textbox('setValue', rows.width);
-            $('#box_height').textbox('setValue', rows.height);
-            $('#color').textbox('setValue', rows.color);
         }
     }); 
 

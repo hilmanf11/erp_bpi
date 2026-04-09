@@ -525,3 +525,41 @@ add Specification ([d1a2cbe9](https://github.com/hilmanf11/erp_bpi/commit/d1a2cb
 
 ### [2026-03-26]
 - **Rizki Puji**: Feature: fix query join receipt_no on Purchase Report ([63e8826d](https://github.com/hilmanf11/erp_bpi/commit/63e8826d3cd8448838a337795fff4a0cb9c0664f))
+
+## April 2026
+
+### [2026-04-02]
+- **kurniawan**: Folder NPD
+
+add New Folder NPD ([75d2b6d1](https://github.com/hilmanf11/erp_bpi/commit/75d2b6d14c869fa0efd4f83760b3554cd57372d6))
+
+### [2026-04-02]
+- **kurniawan**: Pricing
+
+Modification and new Module ([4031319f](https://github.com/hilmanf11/erp_bpi/commit/4031319ff41a5952859788375572924f79dfeb67))
+
+### [2026-04-02]
+- **Rizki Puji**: Feature: fix upload insert batch and add modal Bank Reconciliation ([2d0fb0b1](https://github.com/hilmanf11/erp_bpi/commit/2d0fb0b1995a1d81a649e511f92eaf5185025969))
+
+### [2026-04-02]
+- **kurniawan**: Update Report_history_transactions.php ([039ea6b8](https://github.com/hilmanf11/erp_bpi/commit/039ea6b8c0441b3618817453bd09572ebed278f6))
+
+### [2026-04-02]
+- **Rizki Puji**: Fixing: Bug get VAT and DPP on Sales Invoices (Bu Nina case Yamaha) ([b58004c6](https://github.com/hilmanf11/erp_bpi/commit/b58004c6588b04e8a1e30b48421657b3067e3310))
+
+### [2026-04-03]
+- **kurniawan**: Update Purchase Orders
+
+add Item Supplier ([cf82acf5](https://github.com/hilmanf11/erp_bpi/commit/cf82acf5f1b24586a770f81ad51d8b27ad3cbfd4))
+
+### [2026-04-03]
+- **kurniawan**: Update Supplier Items ([33397a6a](https://github.com/hilmanf11/erp_bpi/commit/33397a6a474e230df6ea9f93d14580bde1926e9a))
+
+### [2026-04-03]
+- **kurniawan**: Update Supplier_items.php ([295c1c6a](https://github.com/hilmanf11/erp_bpi/commit/295c1c6a52929d6be0aa787eff954fc95128d5a2))
+
+### [2026-04-07]
+- **Rizki Puji**: Fixing: bug price between Sales Orders and Sales Invoices ([27cfc59d](https://github.com/hilmanf11/erp_bpi/commit/27cfc59d455f9fb0d03112354d24907089e23f67))
+
+### [2026-04-09]
+- **Rizki Puji**: Feature: Reconcile process and fix replace existing on Bank Reconciliation ([cb28b265](https://github.com/hilmanf11/erp_bpi/commit/cb28b265b532edd6d82a22cf48fb274f8976a855))

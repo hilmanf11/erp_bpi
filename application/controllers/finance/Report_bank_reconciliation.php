@@ -1,6 +1,21 @@
 <?php
 date_default_timezone_set("Asia/Bangkok");
 defined('BASEPATH') or exit('No direct script access allowed');
+
+use PhpOffice\PhpSpreadsheet\IOFactory;
+use PhpOffice\PhpSpreadsheet\Reader\Csv;
+use PhpOffice\PhpSpreadsheet\Shared\Date;
+
+/**
+ * @property CI_Input $input
+ * @property CI_Output $output
+ * @property CI_Loader $load
+ * @property CI_Session $session
+ * @property CI_DB_query_builder $db
+ * @property CI_Form_validation $form_validation
+ * @property Crud $crud
+ * @property Bank_reconciliation $bank_reconciliation
+ */
 class Report_bank_reconciliation extends CI_Controller
 {
     public function __construct()
@@ -11,8 +26,6 @@ class Report_bank_reconciliation extends CI_Controller
         $this->load->library('form_validation');
         $this->load->library('session');
         $this->load->model('crud');
-        //Validasi Form
-        $this->form_validation->set_rules('item_id', 'Product No', 'required|min_length[1]|max_length[50]');
     }
 
     public function index()
@@ -30,8 +43,476 @@ class Report_bank_reconciliation extends CI_Controller
         }
     }
 
+    // Konversi tanggal PhpSpreadsheet
+    private function _formatExcelDate($value, $withTime = false, $defaultYear = null) {
+        if (empty($value)) return null;
+
+        // Jika nilai adalah angka murni (Excel Serial Date)
+        if (is_numeric($value)) {
+            return \PhpOffice\PhpSpreadsheet\Shared\Date::excelToDateTimeObject($value)
+                ->format($withTime ? 'Y-m-d H:i:s' : 'Y-m-d');
+        }
+
+        // Jika nilai adalah string seperti "02/03"
+        if (strlen($value) <= 5 && strpos($value, '/') !== false) {
+            $year = $defaultYear ?? date('Y'); // Gunakan tahun dari parameter atau tahun sekarang
+            $cleanDate = str_replace('/', '-', $value . '/' . $year);
+            return date('Y-m-d', strtotime($cleanDate));
+        }
+
+        // Default strtotime untuk format string lainnya
+        return date($withTime ? 'Y-m-d H:i:s' : 'Y-m-d', strtotime(str_replace('/', '-', $value)));
+    }
+
+    private function _formatMandiriDate($rawDate) 
+    {
+        if (empty($rawDate)) return date('Y-m-d H:i:s');
+
+        // Jika berupa angka serial Excel (Numeric)
+        if (is_numeric($rawDate)) {
+            return \PhpOffice\PhpSpreadsheet\Shared\Date::excelToDateTimeObject($rawDate)->format('Y-m-d H:i:s');
+        }
+
+        // Jika berupa String (e.g., "01 April 2026 12:13:03")
+        // Konversi nama bulan Indonesia ke Inggris agar bisa dibaca strtotime
+        $bulan_indo = ['Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni', 'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'];
+        $bulan_eng  = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
+        
+        $cleanDate = str_replace($bulan_indo, $bulan_eng, $rawDate);
+        
+        // Pastikan hasil akhirnya YYYY-MM-DD HH:mm:ss
+        $timestamp = strtotime($cleanDate);
+        
+        return ($timestamp) ? date('Y-m-d H:i:s', $timestamp) : date('Y-m-d H:i:s');
+    }
+
+    // Download Template
+    public function template() 
+    {
+        $filter_bank_account = $this->input->get('filter_bank_account');
+
+        // Ambil data bank
+        $account_banks = $this->crud->read('account_banks', [], ["bank_account" => $filter_bank_account]);
+        
+        if (empty($account_banks)) {
+            // Return JSON jika error agar ditangkap catch/if di JS
+            echo json_encode(array("title" => "Not Found", "message" => "Bank Account not found", "theme" => "error"));
+            return;
+        }
+
+        // Tentukan Path (Gunakan FCPATH atau path relatif jika ingin lebih aman, 
+        // tapi base_url sudah cukup untuk window.location.assign)
+        $bank_code = $account_banks->bank_code;
+
+        if (strpos($bank_code, "MDR") !== false) {
+            $path = base_url('template/tmp_bank_mdr.xls');
+        } elseif (strpos($bank_code, "RSN") !== false) {
+            $path = base_url('template/tmp_bank_rsn.xls');
+        } else {
+            $path = base_url('template/tmp_bank_reconciliation.xls');
+        }
+        
+        // Kirim plain text URL
+        echo $path;
+    }
+
     // GET PAYLOAD FOR UPLOAD DATA
+    public function upload_default()
+    {
+        if (ob_get_length()) ob_end_clean();
+        header('Content-Type: application/json');
+        
+        // Load PHPSpreadsheet
+        require_once 'assets/vendors/phpspreadsheet/vendor/autoload.php';
+
+        try {
+            if (!isset($_FILES['file_upload']) || $_FILES['file_upload']['error'] !== UPLOAD_ERR_OK) {
+                throw new Exception("File not found or upload error.");
+            }
+
+            $filter_account_number = $this->input->post("filter_account_number");
+            $filter_bank_account = $this->input->post("filter_bank_account");
+            $filter_from = $this->input->post("filter_from");
+            $filter_to = $this->input->post("filter_to");
+
+            $tmpPath = $_FILES['file_upload']['tmp_name'];
+            $spreadsheet = IOFactory::load($tmpPath);
+            $sheet = $spreadsheet->getActiveSheet();
+            $highestRow = $sheet->getHighestRow();
+
+            // Get Data Header (Metadata) dari Excel
+            $dataBank = [
+                'bank_account' => $sheet->getCell("C3")->getValue(),
+                'start_date'   => $this->_formatExcelDate($sheet->getCell("C4")->getValue()),
+                'end_date'     => $this->_formatExcelDate($sheet->getCell("C5")->getValue()),
+                'currency'     => $sheet->getCell("C6")->getValue(),
+            ];
+
+            if (empty($dataBank['bank_account'])) {
+                echo json_encode(array("title" => "Error", "message" => "Bank Account is required!", "theme" => "error"));
+                return;
+            }
+
+            // VALIDASI: Cocokkan Excel dengan Filter
+            if (strtotime($filter_from) !== strtotime($dataBank['start_date']) || 
+                strtotime($filter_to) !== strtotime($dataBank['end_date'])) {
+                echo json_encode(["title" => "Not Matched", "message" => "Failed! Period in Excel ({$dataBank['start_date']} to {$dataBank['end_date']}) does not match selection.", "theme" => "error"]);
+                return;
+            }
+
+            if ($filter_bank_account !== $dataBank['bank_account']) {
+                echo json_encode(["title" => "Not Matched", "message" => "Failed! Bank Account in file is different.", "theme" => "error"]);
+                return;
+            }
+
+            // check available account_bank
+            $account_banks = $this->crud->read('account_banks', [], ["bank_account" => $dataBank['bank_account']]);
+            if (empty($account_banks->bank_account)) {
+                echo json_encode(array("title" => "Not Found", "message" => "Bank Account Of " . $dataBank['bank_account'] ." Is Not Found", "theme" => "error"));
+                return;
+            }
+
+            // PROSES DELETE (Panggil Model)
+            $this->load->model('bank_reconciliation');
+            $deleteStatus = $this->bank_reconciliation->replace_existing_data([
+                'bank_account'   => $filter_bank_account,
+                'account_number' => $filter_account_number,
+                'from'           => $filter_from,
+                'to'             => $filter_to
+            ]);
+
+            // PARSING DATA
+            $datas = [];
+            for ($i = 10; $i <= $highestRow; $i++) {
+                $rawDate = $sheet->getCell("B$i")->getValue();
+                if (empty($rawDate)) continue; // Lewati baris kosong
+
+                $datas[] = [
+                    'account_number' => $account_banks->account_number,
+                    'bank_account'   => $account_banks->bank_account,
+                    'start_date'     => $filter_from,
+                    'end_date'       => $filter_to,
+                    'currency'       => 'IDR',
+                    'source'         => 'upload',
+                    'posting_date'   => $this->_formatExcelDate($rawDate, true),
+                    'remark'         => htmlspecialchars($sheet->getCell("C$i")->getValue()),
+                    'debit'          => (float) str_replace(',', '', $sheet->getCell("D$i")->getValue() ?? 0),
+                    'credit'         => (float) str_replace(',', '', $sheet->getCell("E$i")->getValue() ?? 0),
+                    'result'         => null,   // Reconcile matched or not matched
+                    'status'         => 0,      // 1=Reconciliation, 0=Not yet
+                    'created_date'   => date('Y-m-d H:i:s'),
+                    'created_by'     => $this->session->username,
+                ];
+            }
+
+            // INSERT - Optimasi latency
+            $processResults = $this->bank_reconciliation->batch_insert_with_log($datas);
+
+            echo json_encode([
+                "title"           => "Upload Processed",
+                "delete_existing" => $deleteStatus,     // Status penghapusan data lama
+                "results"         => $processResults,   // Status per baris (Success / Failed)
+                "total"           => count($datas),
+                "total_success"   => count(array_filter($processResults, function($r){ return $r['theme'] == 'success'; })),
+            ]);
+
+        } catch (Exception $e) {
+            echo json_encode([
+                "title"   => "Error",
+                "message" => $e->getMessage(),
+                "theme"   => "error"
+            ]);
+        }
+    }
+
+
     public function upload()
+    {
+        if (ob_get_length()) ob_end_clean();
+        header('Content-Type: application/json');
+
+        try {
+            $filter_bank_account = $this->input->post("filter_bank_account");
+            $fileName = $_FILES['file_upload']['name'] ?? '';
+            $fileExt = strtolower(pathinfo($fileName, PATHINFO_EXTENSION));
+
+            // --- VALIDASI AWAL & ROUTING ---
+            $account_banks = $this->crud->read('account_banks', [], ["bank_account" => $filter_bank_account]);
+            if (empty($account_banks)) {
+                throw new Exception("Bank Account is not registered in the system.");
+            }
+
+            // Khusus: RESONA (Wajib Excel)
+            if (substr($account_banks->bank_code, 0, 3) === "RSN") {
+                    if (!in_array($fileExt, ['xls', 'xlsx'])) {
+                    throw new Exception("The selected Bank Account only accepts Excel file (.xls, .xlsx)");
+                }
+                return $this->_upload_resona(); // Panggil fungsi internal khusus Resona
+            }
+
+            // Khusus: MANDIRI (Wajib CSV)
+            if (substr($account_banks->bank_code, 0, 3) === "MDR") {
+                if ($fileExt !== 'csv') {
+                    throw new Exception("The selected Bank Account only accepts CSV files (.csv).");
+                }
+                return $this->_upload_mandiri(); // Panggil fungsi internal khusus Mandiri
+            }
+
+            // Default: Bank lainnya
+            return $this->upload_default();
+
+        } catch (Exception $e) {
+            echo json_encode(["title" => "Error", "message" => $e->getMessage(), "theme" => "error"]);
+        }
+    }
+
+    // Import Bank Resona
+    private function _upload_resona()
+    {
+        if (ob_get_length()) ob_end_clean();
+        header('Content-Type: application/json');
+        require_once 'assets/vendors/phpspreadsheet/vendor/autoload.php';
+
+        try {
+            if (!isset($_FILES['file_upload']) || $_FILES['file_upload']['error'] !== UPLOAD_ERR_OK) {
+                throw new Exception("File not found or upload error.");
+            }
+
+            // Ambil filter dari post
+            $filter_bank_account   = $this->input->post("filter_bank_account");
+            $filter_from           = $this->input->post("filter_from");
+            $filter_to             = $this->input->post("filter_to");
+            $filter_account_number = $this->input->post("filter_account_number");
+
+            $tmpPath     = $_FILES['file_upload']['tmp_name'];
+            $spreadsheet = IOFactory::load($tmpPath);
+            $sheet       = $spreadsheet->getActiveSheet();
+
+            // --- VALIDASI METADATA LANGSUNG DARI CELL ---
+            $filter_bank_account = preg_replace('/[^0-9]/', '', $this->input->post("filter_bank_account"));
+            $rawCellJ5 = (string)$sheet->getCell("J5")->getValue();
+            $fileBankAccount = preg_replace('/[^0-9]/', '', $rawCellJ5);
+
+            $fileStart       = $this->_formatExcelDate($sheet->getCell("J13")->getValue());
+            $fileEnd         = $this->_formatExcelDate($sheet->getCell("O13")->getValue());
+            
+            // Metadata tambahan
+            $fileOrgUnit     = $sheet->getCell("J15")->getValue();
+            $fileProductName = $sheet->getCell("J17")->getValue();
+
+            // VALIDASI: Cocokkan isi Excel dengan Filter User
+            if ($fileBankAccount !== $filter_bank_account) {
+                throw new Exception("Account in Excel ({$fileBankAccount}) does not match selection ({$filter_bank_account})!");
+            }
+
+            if (strtotime($filter_from) !== strtotime($fileStart) || strtotime($filter_to) !== strtotime($fileEnd)) {
+                throw new Exception("Period in Excel ({$fileStart} to {$fileEnd}) does not match selection!");
+            }
+
+            // --- GET DATA REKENING DARI DATABASE ---
+            $account_banks = $this->crud->read('account_banks', [], ["bank_account" => $filter_bank_account]);
+            if (empty($account_banks)) {
+                throw new Exception("Bank Account is not registered in the system.");
+            }
+
+            // --- PROSES TRANSAKSI (START BARIS 21) ---
+            $highestRow   = $sheet->getHighestRow();
+            $startDataRow = 21;
+            $datas        = [];
+
+            // Handling Column Shifting & Mapping Data
+            for ($i = $startDataRow; $i <= $highestRow; $i++) {
+                // Ambil range kolom B sampai AE untuk antisipasi shifting yang jauh
+                $rangeData = $sheet->rangeToArray("B$i:AE$i", NULL, TRUE, FALSE)[0];
+                
+                $row = array_values(array_filter($rangeData, function($val) {
+                    return !is_null($val) && trim((string)$val) !== '';
+                }));
+
+                if (empty($row)) continue;
+
+                $cleanRow = array_map(function($val) { return trim(strtolower((string)$val)); }, $row);
+                if (in_array('total', $cleanRow)) continue;
+
+                // Logika: 3 nilai numerik terakhir selalu Balance, Credit, Debit
+                if (count($row) >= 6) {
+                    $rawBalance = array_pop($row);
+                    $rawCredit  = array_pop($row);
+                    $rawDebit   = array_pop($row);
+                    
+                    // Ambil tanggal posting (biasanya kolom B atau C di Excel asli)
+                    $posting_date = $this->_formatExcelDate($rangeData[1] ?? $rangeData[0], true);
+                    
+                    // Sisa kolom di tengah digabung menjadi Remark
+                    $descParts = array_slice($row, 2);
+                    $desc      = implode(" ", $descParts);
+                    
+                    $datas[] = [
+                        'account_number' => $account_banks->account_number,
+                        'bank_account'   => $account_banks->bank_account,
+                        'start_date'     => $filter_from,
+                        'end_date'       => $filter_to,
+                        'currency'       => 'IDR',
+                        'source'         => 'upload',
+                        'posting_date'   => $posting_date,
+                        'remark'         => htmlspecialchars((string)$desc),
+                        'debit'          => abs((float) str_replace(',', '', $rawDebit ?? 0)),
+                        'credit'         => abs((float) str_replace(',', '', $rawCredit ?? 0)),
+                        'status'         => 0,
+                        'created_date'   => date('Y-m-d H:i:s'),
+                        'created_by'     => $this->session->username,
+                    ];
+                }
+            }
+
+            if (empty($datas)) {
+                throw new Exception("No valid transaction data found after header data.");
+            }
+
+            // --- EXECUTE DATABASE ---
+            $this->load->model('bank_reconciliation');
+            
+            $deleteStatus = $this->bank_reconciliation->replace_existing_data([
+                'bank_account'   => $filter_bank_account,
+                'account_number' => $filter_account_number,
+                'from'           => $filter_from,
+                'to'             => $filter_to
+            ]);
+
+            // Insert Batch
+            $processResults = $this->bank_reconciliation->batch_insert_with_log($datas);
+
+            echo json_encode([
+                "title"           => "Resona Upload Success",
+                "delete_existing" => $deleteStatus,
+                "total_success"   => count($datas),
+                "results"         => $processResults,
+            ]);
+
+        } catch (Exception $e) {
+            echo json_encode([
+                "title"   => "Error", 
+                "message" => $e->getMessage(), 
+                "theme"   => "error"
+            ]);
+        }
+    }
+
+    // Import Bank Mandiri
+    private function _upload_mandiri()
+    {
+        if (ob_get_length()) ob_end_clean();
+        header('Content-Type: application/json');
+
+        if (!function_exists('mime_content_type')) {
+            function mime_content_type($filename) {
+                return 'text/plain'; // Fallback manual untuk CSV
+            }
+        }
+
+        require_once 'assets/vendors/phpspreadsheet/vendor/autoload.php';
+
+        try {
+            if (!isset($_FILES['file_upload']) || $_FILES['file_upload']['error'] !== UPLOAD_ERR_OK) {
+                throw new Exception("File not found or upload error.");
+            }
+
+            $filter_bank_account   = $this->input->post("filter_bank_account");
+            $filter_from           = $this->input->post("filter_from");
+            $filter_to             = $this->input->post("filter_to");
+            $filter_account_number = $this->input->post("filter_account_number");
+
+            $tmpPath     = $_FILES['file_upload']['tmp_name'];
+            $extension   = strtolower(pathinfo($_FILES['file_upload']['name'], PATHINFO_EXTENSION));
+
+            // Load Spreadsheet (Handle CSV atau Excel)
+            if ($extension == 'csv') {
+                // Buat reader khusus CSV
+                $reader = IOFactory::createReader('Csv');
+                if ($reader instanceof Csv) {
+                    $reader->setDelimiter(';'); 
+                    $reader->setEnclosure('"');
+                }
+
+                $spreadsheet = $reader->load($tmpPath);
+            } else {
+                $spreadsheet = IOFactory::load($tmpPath);
+            }
+            
+            $sheet = $spreadsheet->getActiveSheet();
+            $this->load->model('bank_reconciliation');
+
+            // Hapus data lama SEBELUM generate ID baru
+            $deleteStatus = $this->bank_reconciliation->replace_existing_data([
+                'bank_account'   => $filter_bank_account,
+                'account_number' => $filter_account_number,
+                'from'           => $filter_from,
+                'to'             => $filter_to
+            ]);
+
+            $highestRow  = $sheet->getHighestRow();
+            $datas       = [];
+
+            // --- PROSES TRANSAKSI (Mulai baris 2) ---
+            for ($i = 2; $i <= $highestRow; $i++) {
+                // Gunakan getFormattedValue agar angka panjang tidak jadi format scientific (e.g. 1.56E+12)
+                $accountNo = preg_replace('/[^0-9]/', '', (string)$sheet->getCell("A$i")->getFormattedValue());
+                
+                if (empty($accountNo)) continue;
+
+                // Match bank account dari filter dengan bank account di dalam excel
+                $bank_account = preg_replace('/[^0-9]/', '', $filter_bank_account);
+                if ($accountNo !== $bank_account) {
+                    echo json_encode(["title" => "Not Matched", "message" => "Bank Account inside the file (" . $accountNo . ") is Not Match with the selected data!", "theme" => "error"]);
+                    return;
+                }
+                
+                // Format Posting Date (Contoh: "01 April 2026 12:13:03")
+                $rawDate = $sheet->getCell("C$i")->getValue();
+                $postingDate = $this->_formatMandiriDate($rawDate);
+
+                // Get Remarks (D) dan AdditionalDesc (E)
+                $remarks = $sheet->getCell("D$i")->getValue();
+                $addDesc = $sheet->getCell("E$i")->getValue();
+                $cleanRemark = preg_replace('/\s+/', ' ', trim((string)$remarks . " " . $addDesc));
+
+                $datas[] = [
+                    'account_number' => $filter_account_number,
+                    'bank_account'   => $filter_bank_account,
+                    'start_date'     => $filter_from,
+                    'end_date'       => $filter_to,
+                    'currency'       => 'IDR',
+                    'source'         => 'upload',
+                    'posting_date'   => $postingDate,
+                    'remark'         => htmlspecialchars($cleanRemark),
+                    'credit'         => abs((float) str_replace(',', '', $sheet->getCell("F$i")->getCalculatedValue() ?? 0)),
+                    'debit'          => abs((float) str_replace(',', '', $sheet->getCell("G$i")->getCalculatedValue() ?? 0)),
+                    'status'         => 0,
+                    'created_date'   => date('Y-m-d H:i:s'),
+                    'created_by'     => $this->session->username,
+                ];
+            }
+
+            if (empty($datas)) {
+                throw new Exception("No valid transaction data found in this file.");
+            }
+
+            // --- EXECUTE DATABASE ---
+            $processResults = $this->bank_reconciliation->batch_insert_with_log($datas);
+
+            echo json_encode([
+                "title"           => "Upload Data Success",
+                "delete_existing" => $deleteStatus,
+                "total_success"   => count($datas),
+                "results"         => $processResults,
+            ]);
+
+        } catch (Exception $e) {
+            echo json_encode(["title" => "Error", "message" => $e->getMessage(), "theme" => "error"]);
+        }
+    }
+
+    public function upload_existing()
     {
         ini_set('display_errors', 0);
         ini_set('display_startup_errors', 0);
@@ -94,7 +575,7 @@ class Report_bank_reconciliation extends CI_Controller
             $this->db->where("end_date BETWEEN '$filter_from' AND '$filter_to'");
             $deletePeriod = $this->db->delete('bank_reconciliation');
 
-            if ($this->db->affected_rows() > 0) {
+            if ($deletePeriod) {
                 $deleteStatus = ["title" => "Good Job", "message" => "Data Updated Successfully", "theme" => "success"];
                 $dataBefore = $this->crud->read('bank_reconciliation', [], ['bank_account' => $filter_bank_account, 'account_number' => $filter_account_number, 'start_date' => $filter_from, 'end_date' => $filter_to]);
                 $this->crud->logs("Delete", json_encode($dataBefore), 'bank_reconciliation');
@@ -189,17 +670,13 @@ class Report_bank_reconciliation extends CI_Controller
                     $send = $this->crud->create('bank_reconciliation', $dataFinal);
                     echo $send;
 
-                    // validasi posting_date mutasi berbeda dengan periode yang dipilih
-                    // if ( date("Y-m", strtotime($dataFinal['start_date'])) !== date("Y-m", strtotime($dataFinal['posting_date'])) ) {
-                    //     echo json_encode(array("title" => "Caution!", "message" => "Data added, but the Trans Date does not same as Period Date!", "theme" => "warning"));
-                    // } else {
-                    //     echo $send;
-                    // }
                 }
             }
 
         }
     }
+
+
 
     public function getJournal($filter_from, $filter_to, $filter_account_number)
     {
@@ -324,6 +801,7 @@ class Report_bank_reconciliation extends CI_Controller
                 "local_balance"     => $local_balance,
                 "local_debit"       => $journal['local_debit'],
                 "local_credit"      => $journal['local_credit'],
+                'result'            => '',
                 "status_recheck"    => $status_recheck,
             ];
             
@@ -446,6 +924,7 @@ class Report_bank_reconciliation extends CI_Controller
                 "balance"        => $ori_balance,
                 "debit"          => $bank['debit'],
                 "credit"         => $bank['credit'],
+                "result"         => $bank['result'],
                 "status_recheck" => $status_recheck,
             ];
             
@@ -468,6 +947,394 @@ class Report_bank_reconciliation extends CI_Controller
             'bank_mutations' => $bankMutations,
         ];
         return $result;
+    }
+
+    // RECONCILIATION PROCESS
+    public function reconcile()
+    {
+        header('Content-Type: application/json');
+        
+        $filter_from = $this->input->post("filter_from");
+        $filter_to = $this->input->post("filter_to");
+        $filter_account_number = $this->input->post("filter_account_number");
+
+        // Get data 
+        $dataJournal = $this->getJournal($filter_from, $filter_to, $filter_account_number);
+        $dataMutation = $this->getBankMutation($filter_from, $filter_to, $filter_account_number);
+
+        // Validasi Mutasi Bank (Harus di-upload dulu)
+        if (empty($dataMutation['bank_mutations'])) {
+            echo json_encode(array(
+                "title" => "Bank Data Missing", 
+                "message" => "Bank mutation for this account for the period have not been uploaded. Please upload first!", 
+                "theme" => "error"
+            ));
+            return;
+        }
+
+        // Validasi Journal ERP
+        if (empty($dataJournal['journal_transactions'])) {
+            echo json_encode(array(
+                "title" => "ERP Data Missing", 
+                "message" => "ERP journal data not found for this period.", 
+                "theme" => "error"
+            ));
+            return;
+        }
+
+        $matched_journal_ids = [];
+        $count_matched = 0;
+
+        // Core Reconciliation Logic
+        foreach ($dataMutation['bank_mutations'] as $bank_entry) {
+            $found = false;
+            foreach ($dataJournal['journal_transactions'] as $journal_entry) {
+                
+                if (in_array($journal_entry['id'], $matched_journal_ids)) continue;
+
+                $j_date = date("Y-m-d", strtotime($journal_entry['trans_date']));
+                $b_date = date("Y-m-d", strtotime($bank_entry['posting_date']));
+
+                // Ambil nominal absolut untuk perbandingan
+                $b_debit  = (float)$bank_entry['debit'];
+                $b_credit = (float)$bank_entry['credit'];
+                $j_debit  = (float)$journal_entry['original_debit'];
+                $j_credit = (float)$journal_entry['original_credit'];
+
+                $debit_match  = (abs($j_debit - $b_debit) < 0.01) && $j_credit == 0 && $b_credit == 0;
+                $credit_match = (abs($j_credit - $b_credit) < 0.01) && $j_debit == 0 && $b_debit == 0;
+
+                if ($j_date == $b_date && ($debit_match || $credit_match)) {
+                    // UPDATE RESULT
+                    $this->db->update('bank_reconciliation', ['result' => 'matched'], ['id' => $bank_entry['id']]);
+                    $this->db->update('bank_reconciliation', ['result' => 'matched'], ['id' => $journal_entry['id']]);
+                    
+                    $matched_journal_ids[] = $journal_entry['id'];
+                    $count_matched++;
+                    $found = true;
+                    break;
+                }
+            }
+
+            if (!$found) {
+                $this->db->update('bank_reconciliation', ['result' => 'not matched'], ['id' => $bank_entry['id']]);
+            }
+        }
+
+        // Update sisa journal yang tidak matched
+        foreach ($dataJournal['journal_transactions'] as $journal_entry) {
+            if (!in_array($journal_entry['id'], $matched_journal_ids)) {
+                $this->db->update('bank_reconciliation', ['result' => 'not matched'], ['id' => $journal_entry['id']]);
+            }
+        }
+
+        echo json_encode([
+            "title" => "Reconciliation Complete",
+            "message" => "Processed. Found $count_matched matched transactions.",
+            "theme" => "success"
+        ]);
+    }
+
+    // PRINT WITHOUT RECONCILE PROCESS
+    public function print_without_reconcile($option = "")
+    {
+        if ($option == "excel") {
+            $format  = date("Ymd");
+            header("Content-type: application/vnd-ms-excel");
+            header("Content-Disposition: attachment; filename=bank_reconciliation_$format.xls");
+        }
+
+        $filter_from = base64_decode($this->input->get("filter_from"));
+        $filter_to   = base64_decode($this->input->get("filter_to"));
+        $filter_account_number   = base64_decode($this->input->get("filter_account_number"));       
+
+        if (empty($filter_from) || !strtotime($filter_from)) {
+            show_error('Invalid "filter_from" date parameter.');
+            return;
+        }
+        if (empty($filter_to) || !strtotime($filter_to)) {
+            show_error('Invalid "filter_to" date parameter.');
+            return;
+        }
+        if (empty($filter_account_number)) {
+            show_error('Bank Account is required.');
+            return;
+        }
+
+        //Config
+        $this->db->select('*');
+        $this->db->from('config');
+        $config = $this->db->get()->row();
+
+        // Bank Account
+        $this->db->select('*');
+        $this->db->from('account_banks');
+        $this->db->where('account_number', $filter_account_number);
+        $dataBank = $this->db->get()->row();
+
+        // GET DATA JOURNAL 
+        $dataJournal = $this->getJournal($filter_from, $filter_to, $filter_account_number);
+        $dataMutation = $this->getBankMutation($filter_from, $filter_to, $filter_account_number);
+        
+        $all_transactions = [];
+
+        // Data Bank
+        foreach ($dataMutation['bank_mutations'] as $bank) {
+            $type = ($bank['result'] == 'matched') ? 'matched' : 'unmatched_bank';
+            
+            // Cari pasangan journal jika matched
+            $journal_pair = null;
+            if ($type == 'matched') {
+                foreach ($dataJournal['journal_transactions'] as $journal) {
+                    // Cocokkan berdasarkan kriteria yang sama dengan fungsi reconcile (Tanggal & Nominal)
+                    if ($journal['result'] == 'matched' && 
+                        date("Y-m-d", strtotime($journal['trans_date'])) == date("Y-m-d", strtotime($bank['posting_date'])) &&
+                        (abs((float)$journal['original_debit'] - (float)$bank['debit']) < 0.01) &&
+                        (abs((float)$journal['original_credit'] - (float)$bank['credit']) < 0.01)
+                    ) {
+                        $journal_pair = $journal;
+                        break;
+                    }
+                }
+            }
+
+            if ($type == 'matched' && $journal_pair) {
+                $all_transactions[] = [
+                    'type' => 'matched',
+                    'data' => [
+                        'bank_data' => $bank,
+                        'journal_data' => $journal_pair
+                    ],
+                    'sort_date' => date("Y-m-d", strtotime($bank['posting_date']))
+                ];
+            } elseif ($type == 'unmatched_bank') {
+                $all_transactions[] = [
+                    'type' => 'unmatched_bank',
+                    'data' => $bank,
+                    'sort_date' => date("Y-m-d", strtotime($bank['posting_date']))
+                ];
+            }
+        }
+
+        // Sisa Journal yang tidak matched
+        foreach ($dataJournal['journal_transactions'] as $journal) {
+            if ($journal['result'] != 'matched') {
+                $all_transactions[] = [
+                    'type' => 'unmatched_journal',
+                    'data' => $journal,
+                    'sort_date' => date("Y-m-d", strtotime($journal['trans_date']))
+                ];
+            }
+        }
+
+        // Sortir berdasarkan sort_date
+        usort($all_transactions, function($a, $b) {
+            return strtotime($a['sort_date']) - strtotime($b['sort_date']);
+        });
+
+        
+        // PRINT
+        $html = "";
+        $html .= '<html>
+                <head>
+                <title>Bank Reconciliation - '. date("F Y", strtotime($filter_to)).'</title>';
+        $html .= $this->customTable();
+        $html .= '</head><body>';
+
+        $html .= '<div class="header-section clearfix">
+                    <div id="print-header-container">
+                        <header class="header-section">
+                            <table width="100%">
+                                <tr>
+                                    <td width="30">
+                                        <img src="' . htmlspecialchars($config->favicon ?? "") . '" width="30" alt="Logo">
+                                    </td>
+                                    <td width="60%">
+                                        <div class="logo-text">
+                                            <p>
+                                                <b>' . htmlspecialchars($config->name ?? 'Company Name Not Set') . '</b> <br>
+                                                <small>' . htmlspecialchars($config->description ?? 'Description Not Set') . '</small>
+                                            </p>
+                                        </div>
+                                    </td>
+                                    <td>&nbsp;</td>
+                                    <td>&nbsp;</td>
+                                    <td>&nbsp;</td>
+                                    <td>&nbsp;</td>
+                                    <td>&nbsp;</td>
+                                    <td width="40%" align="right">
+                                        <div class="print-info">
+                                            Print Date ' . date("d M Y H:i:s") . ' <br>
+                                            Print By ' . htmlspecialchars($this->session->username) . '
+                                        </div>
+                                    </td>
+                                </tr>
+                            </table>
+                        </header>
+                    </div>';
+
+        $html .= '<div class="report-title">
+                    <h3>BANK RECONCILIATION</h3>
+                    </div>
+                <br>
+                <div class="two-panel-section">
+                    <table width="100%" border="0">
+                        <tr>
+                            <td width="50%">
+                                <table> 
+                                    <tr>
+                                        <td>&nbsp;</td>
+                                        <td width="50%">Cut off Date</td>
+                                        <td><b>' . htmlspecialchars(date("d M Y", strtotime($filter_from))) . '</b> to <b> ' . htmlspecialchars(date("d M Y", strtotime($filter_to))) . ' </b></td>
+                                    </tr>
+                                    <tr>
+                                        <td>&nbsp;</td>
+                                        <td width="50%">Bank Account</td>
+                                        <td><b>' . htmlspecialchars($dataBank->bank_account) . '</b></td>
+                                    </tr>
+                                    <tr>
+                                        <td>&nbsp;</td>
+                                        <td width="50%">Bank Name</td>
+                                        <td>' . htmlspecialchars($dataBank->bank_name) . '</td>
+                                    </tr>
+                                    <tr>
+                                        <td>&nbsp;</td>
+                                        <td width="50%">Currency</td>
+                                        <td>' . htmlspecialchars($dataBank->currency) . '</td>
+                                    </tr>
+                                    <tr>
+                                        <td>&nbsp;</td>
+                                        <td width="50%">Opening Balance</td>
+                                        <td>' . $this->formatIDR($dataBank->balance) . '</td>
+                                    </tr>
+                                </table>
+                            </td>
+                            <td>&nbsp;</td>
+                            <td width="50%">
+                                <table class="table-custom-summary">
+                                    <thead>
+                                        <tr>
+                                            <th style="text-align: left;">Summary</th>
+                                            <th>Bank</th>
+                                            <th>ERP</th>
+                                            <th>DIFF</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <tr>
+                                            <td>Opening Balance</td>
+                                            <td class="text-right">' . $this->formatIDR($dataMutation['bank_summary']['open_ori_balance']) . '</td> 
+                                            <td class="text-right">' . $this->formatIDR($dataJournal['journal_summary']['open_ori_balance']) . '</td>
+                                            ' . $this->balanceDiff($dataMutation['bank_summary']['open_ori_balance'], $dataJournal['journal_summary']['open_ori_balance']) . ' 
+                                        </tr>
+                                        <tr>
+                                            <td>Debit</td>
+                                            <td class="text-right">' . $this->formatIDR($dataMutation['bank_summary']['grand_ori_debit']) . '</td>
+                                            <td class="text-right">' . $this->formatIDR($dataJournal['journal_summary']['grand_ori_debit']) . '</td>
+                                            ' . $this->balanceDiff($dataMutation['bank_summary']['grand_ori_debit'], $dataJournal['journal_summary']['grand_ori_debit']) . '  
+                                        </tr>
+                                        <tr>
+                                            <td>Credit</td>
+                                            <td class="text-right">' . $this->formatIDR($dataMutation['bank_summary']['grand_ori_credit']) . '</td> 
+                                            <td class="text-right">' . $this->formatIDR($dataJournal['journal_summary']['grand_ori_credit']) . '</td>
+                                            ' . $this->balanceDiff($dataMutation['bank_summary']['grand_ori_credit'], $dataJournal['journal_summary']['grand_ori_credit']) . '  
+                                        </tr>
+                                        <tr>
+                                            <td>Ending Balance</td>
+                                            <td class="text-right">' . $this->formatIDR($dataMutation['bank_summary']['ending_ori_balance']) . '</td>
+                                            <td class="text-right">' . $this->formatIDR($dataJournal['journal_summary']['ending_ori_balance']) . '</td>
+                                            ' . $this->balanceDiff($dataMutation['bank_summary']['ending_ori_balance'], $dataJournal['journal_summary']['ending_ori_balance']) . ' 
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </td>
+                        </tr>
+                    </table>
+                </div>
+                <br>';
+
+        $html .= '<table id="customers">
+                <thead>
+                    <tr>
+                        <th>No.</th>
+                        <th>Source</th>
+                        <th>Posting Date</th>
+                        <th>Remark</th>
+                        <th class="text-end">Debit</th>
+                        <th class="text-end">Credit</th>
+                        <th class="text-end">Balance</th>
+                        <th>Results</th>
+                        <th>Status</th>
+                    </tr>
+                </thead>
+                <tbody>';
+
+        // --- Render Table Body ---
+        $no = 1;
+        foreach ($all_transactions as $transaction) {
+            if ($transaction['type'] == 'matched') {
+                $matched = $transaction['data'];
+                $html .= '<tr>
+                            <td rowspan="2" align="center">' . $no . '</td>
+                            <td>Bank</td>
+                            <td>' . $matched['bank_data']['posting_date'] . '</td>
+                            <td>' . $matched['bank_data']['remark'] . '</td>
+                            <td align="right">' . $this->formatIDR($matched['bank_data']['debit']) . '</td>
+                            <td align="right">' . $this->formatIDR($matched['bank_data']['credit']) . '</td>
+                            <td align="right">' . $this->formatIDR($matched['bank_data']['balance']) . '</td>
+                            <td rowspan="2" align="center" style="color:green; font-weight:bold;">' . $matched['bank_data']['result'] . '</td>
+                            <td rowspan="2" align="center">' . $this->statusRecheck($matched['journal_data']['status_recheck'] ?? 0) . '</td>
+                        </tr>
+                        <tr>
+                            <td>ERP</td>
+                            <td>' . $matched['journal_data']['trans_date'] . '</td>
+                            <td>' . $matched['journal_data']['description'] . '</td>
+                            <td align="right">' . $this->formatIDR($matched['journal_data']['original_debit']) . '</td>
+                            <td align="right">' . $this->formatIDR($matched['journal_data']['original_credit']) . '</td>
+                            <td align="right">' . $this->formatIDR($matched['journal_data']['ori_balance']) . '</td>
+                        </tr>';
+            } elseif ($transaction['type'] == 'unmatched_bank') {
+                $rowBank = $transaction['data'];
+                $html .= '<tr>
+                            <td rowspan="2" align="center">' . $no . '</td>
+                            <td>Bank</td>
+                            <td>' . $rowBank['posting_date'] . '</td>
+                            <td>' . $rowBank['remark'] . '</td>
+                            <td align="right">' . $this->formatIDR($rowBank['debit']) . '</td>
+                            <td align="right">' . $this->formatIDR($rowBank['credit']) . '</td>
+                            <td align="right">' . $this->formatIDR($rowBank['balance']) . '</td>
+                            <td rowspan="2" align="center" style="color:red; font-weight:bold;">' . $rowBank['result'] . '</td>
+                            <td rowspan="2" align="center">' . $this->statusRecheck($rowBank['status_recheck'] ?? 0) . '</td>
+                        </tr>
+                        <tr>
+                            <td>ERP</td>
+                            <td colspan="5" bgcolor="#eeeeee" style="color:#999; text-align:center;">No matching ERP data found</td>
+                        </tr>';
+            } elseif ($transaction['type'] == 'unmatched_journal') {
+                $rowJournal = $transaction['data'];
+                $html .= '<tr>
+                            <td rowspan="2" align="center">' . $no . '</td>
+                            <td>Bank</td>
+                            <td colspan="5" bgcolor="#eeeeee" style="color:#999; text-align:center;">No matching Bank data found</td>
+                            <td rowspan="2" align="center" style="color:red; font-weight:bold;">' . $rowJournal['result'] . '</td>
+                            <td rowspan="2" align="center">' . $this->statusRecheck($rowJournal['status_recheck'] ?? 0) . '</td>
+                        </tr>
+                        <tr>
+                            <td>ERP</td>
+                            <td>' . $rowJournal['trans_date'] . '</td>
+                            <td>' . $rowJournal['description'] . '</td>
+                            <td align="right">' . $this->formatIDR($rowJournal['original_debit']) . '</td>
+                            <td align="right">' . $this->formatIDR($rowJournal['original_credit']) . '</td>
+                            <td align="right">' . $this->formatIDR($rowJournal['ori_balance']) . '</td>
+                        </tr>';
+            }
+            $no++;
+        }
+
+        $html .= '</tbody></table>';
+        $html .= '</body></html>';
+
+        echo $html;
     }
 
     //PRINT & EXCEL DATA

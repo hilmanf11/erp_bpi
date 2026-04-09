@@ -30,8 +30,7 @@
         </div>
 
     </fieldset>
-    <!-- <a href="javascript:;" class="easyui-linkbutton" style="padding: 5px;" onclick="reconcile()"> Reconcile </a> -->
-    <a href="javascript:;" class="easyui-linkbutton" style="padding: 5px;" onclick="filter()"> Reconcile </a> <!-- bisa langsung di print -->
+    <a href="javascript:;" class="easyui-linkbutton" style="padding: 5px;" onclick="reconcile()"> Reconcile </a>
     <?= $button ?>
 </div>
 
@@ -42,7 +41,16 @@
             <legend><b>Form Data</b></legend>
             <div class="fitem">
                 <span style="width:35%; display:inline-block;">File Upload</span>
+                <!-- existing only upload excel
                 <input name="file_upload" style="width: 60%;" required="" accept=".xls" id="file_excel" class="easyui-filebox">
+                -->
+                <input name="file_upload" 
+                    id="file_upload" 
+                    class="easyui-filebox" 
+                    style="width: 60%;" 
+                    data-options="prompt:'Choose a file...', buttonText: 'Browse'"
+                    required="true" 
+                    accept=".xls,.xlsx,.csv,application/vnd.ms-excel,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,text/csv">
             </div>
         </fieldset>
     </form>
@@ -116,6 +124,115 @@
                 text: 'Upload',
                 iconCls: 'icon-ok',
                 handler: function() {
+                    if (!$('#frm_upload').form('validate')) {
+                        toastr.error("File is required!");
+                        return;
+                    }
+
+                    $.messager.progress({
+                        title: 'Please wait',
+                        msg: 'Importing and processing data...'
+                    });
+
+                    $('#frm_upload').form('submit', {
+                        url: '<?= base_url('finance/report_bank_reconciliation/upload') ?>',
+                        onSubmit: function(param) {
+                            // Ambil data dari filter luar form
+                            param.filter_account_number = $('#filter_account_number').val();
+                            param.filter_bank_account    = $('#filter_bank_account').val();
+                            param.filter_from            = $('#filter_from').val();
+                            param.filter_to              = $('#filter_to').val();
+
+                            // Validasi client-side sederhana sebelum kirim
+                            if (!param.filter_bank_account || !param.filter_from || !param.filter_to) {
+                                toastr.error("Filter Bank dan Periode harus diisi!");
+                                return false;
+                            }
+
+                            $.messager.progress({
+                                title: 'Please wait',
+                                msg: 'The system is validating and processing the data...'
+                            });
+                            return true;
+                        },
+                        success: function(result) {
+                            $.messager.progress('close');
+
+                            // Membersihkan log gagal di DB
+                            $.ajax({ url: "<?= base_url('finance/report_bank_reconciliation/uploadclearFailed') ?>" });
+
+                            try {
+                                // Parsing JSON dengan pembersihan whitespace/BOM atau teks sampah di luar bracket {}
+                                var firstBracket = result.indexOf('{');
+                                var lastBracket = result.lastIndexOf('}');
+                                if (firstBracket === -1 || lastBracket === -1) throw "Invalid JSON Response";
+                                
+                                var cleanResult = result.substring(firstBracket, lastBracket + 1);
+                                var json = JSON.parse(cleanResult);
+
+                                if (json.title === "Error") {
+                                    // Menangani Exception dari throw new Exception di PHP (Validasi routing/bank)
+                                    $.messager.alert('Validation Error', json.message, 'error');
+                                    return;
+                                }
+
+                                // Jika sampai sini, berarti masuk ke proses insert (Results dari batch_insert_with_log)
+                                if (json.results && Array.isArray(json.results)) {
+                                    var logHtml = "";
+
+                                    // Show old data deletion status (System Log)
+                                    if (json.delete_existing) {
+                                        var delColor = json.delete_existing.theme === "success" ? "#ff9800" : "#2196f3"; // Orange/Blue
+                                        logHtml += `<b style='color: ${delColor};'>[SYSTEM] ${json.delete_existing.title} :</b> ${json.delete_existing.message}<br><hr>`;
+                                    }
+
+                                    // Render log per baris
+                                    json.results.forEach(function(item) {
+                                        var color = item.theme === "success" ? "green" : "red";
+                                        var title = item.theme === "success" ? "Good Job" : "Failed";
+                                        logHtml += `${title} | <b style='color: ${color};'>Row ${item.row}</b>: ${item.message}<br>`;
+                                    });
+
+                                    $("#p_remarks").html(logHtml);
+                                    $('#p_upload').progressbar('setValue', 100);
+                                    
+                                    // Ringkasan Toastr
+                                    if (json.total_success > 0) {
+                                        toastr.success(`Data saved successfully!`, "Success");
+                                    } else {
+                                        toastr.warning("The process is complete, but no rows are saved.", "Failed");
+                                    }
+
+                                } else {
+                                    // Kasus sukses tanpa results array (jarang terjadi tapi untuk jaga-jaga)
+                                    if (json.theme == "error") {
+                                        toastr.error(json.message, json.title);
+                                    } else {
+                                        toastr.success(json.message || "Process Successful", "Success");
+                                    }
+                                }
+
+                            } catch (e) {
+                                console.error("Detail Error:", e, "Raw Result:", result);
+                                $.messager.alert('System Error', 'Failed to read server response. Ensure the file conforms to the rules (Resona: Excel, MDR: CSV).', 'error');
+                            }
+                        }
+                    });
+
+                }
+            }]
+        });
+
+        $('#dlg_upload_existing').dialog({
+            buttons: [{
+                text: 'List Failed',
+                handler: function() {
+                    window.open('<?= base_url('finance/report_bank_reconciliation/uploadDownloadFailed') ?>', '_blank');
+                }
+            }, {
+                text: 'Upload',
+                iconCls: 'icon-ok',
+                handler: function() {
                     // Memastikan form valid sebelum submit
                     if (!$('#frm_upload').form('validate')) {
                         toastr.error("File is required! Please choose file (.xls) before click Upload.");
@@ -151,12 +268,12 @@
                                     var json = JSON.parse(result);
                                 } catch (e) {
                                     console.error("Gagal parse JSON: ", e);
-                                    $.messager.alert('Error', 'Gagal memproses data dari server! Format data tidak valid. Silakan update atau ganti <b>browser</b> yang anda gunakan.', 'error');
+                                    $.messager.alert('Error', 'Failed to process data from server! The data format is invalid. Please update or change your browser.', 'error');
                                     return;
                                 }
                             } else {
                                 // Jika respons kosong atau tidak valid, tampilkan pesan error yang jelas
-                                $.messager.alert('Error', 'Server mengembalikan respons tidak valid. Silakan update atau ganti <b>browser</b> yang anda gunakan.', 'error');
+                                $.messager.alert('Error', 'The server returned an invalid response. Please update or change your browser.', 'error');
                                 console.error("Server response was empty or invalid JSON:", result);
                                 return;
                             }
@@ -171,7 +288,7 @@
                         },
                         onLoadError: function() {
                             $.messager.progress('close');
-                            $.messager.alert('Error', 'Gagal melakukan upload. Periksa koneksi atau coba lagi.', 'error');
+                            $.messager.alert('Error', 'Upload failed. Check your connection and try again.', 'error');
                         }
                     });
                 }
@@ -244,7 +361,7 @@
                     // Tangani error jika AJAX request gagal
                     failedCount++;
                     $('#p_failed').html(failedCount);
-                    var title = `<b style='color: red;'>Error</b> | Gagal mengirim data ke server.`;
+                    var title = `<b style='color: red;'>Error</b> | Failed to send data to server.`;
                     $("#p_remarks").append(title + "<br>");
                     
                     // Lanjutkan ke item berikutnya meskipun ada error
@@ -257,11 +374,23 @@
 
     // RECONCILE
     function reconcile() {
+        const filterData = {
+            "filter_account_number": $('#filter_account_number').val(),
+            "filter_bank_account": $('#filter_bank_account').val(),
+            "filter_from": $('#filter_from').val(),
+            "filter_to": $('#filter_to').val()
+        };
+
+        if (!filterData.filter_account_number || !filterData.filter_from) {
+            Swal.fire('Oops!', 'Please select the account and period first.', 'warning');
+            return;
+        }
+
         Swal.fire({
-            title: 'Please Wait...',
+            title: 'Reconciling Data...',
+            text: 'Please wait, the system is matching the transaction.',
             showConfirmButton: false,
             allowOutsideClick: false,
-            allowEscapeKey: false,
             didOpen: () => {
                 Swal.showLoading();
             },
@@ -269,54 +398,89 @@
 
         $.ajax({
             type: "POST",
-            async: true,
             url: '<?= base_url('finance/report_bank_reconciliation/reconcile') ?>',
-            data: {
-                "filter_account_number": $('#filter_account_number').val(),
-                "filter_bank_account": $('#filter_bank_account').val(),
-                "filter_from": $('#filter_from').val(),
-                "filter_to": $('#filter_to').val()
-            },
-            cache: false,
-            success: function(result) {
+            data: filterData,
+            dataType: "json",
+            success: function(response) {
                 Swal.close();
-                
-                $("#printout").contents().find('html').html("<center><br><br><br> " +result+ " </center>");
 
-                // try {
-                //     var json = JSON.parse(result);
-                // } catch (e) {
-                //     console.error("Gagal parse JSON: ", e);
-                //     console.log(result);
-                //     $.messager.alert('Error', 'Gagal memproses data dari server! Format data tidak valid. Silakan update atau ganti <b>browser</b> yang anda gunakan.', 'error');
-                //     return;
-                // }
-                    
-                // if (json.title !== "Error") {
-                        
-                //     $("#printout").contents().find('html').html("<center><br><br><br> " +result+ " </center>");
-                    
-                // } else {
-                //     var json = JSON.parse(result);
-                //     Swal.fire({
-                //             title: json.message,
-                //         icon: json.theme,
-                //         confirmButtonText: 'OK',
-                //         allowOutsideClick: false,
-                //     }).then(function() {
-                //         // window.location.reload();
-                //     });
-                // }
+                if (response.theme === "success" || response.title === "Reconciliation Complete") {
+                    Swal.fire({
+                        icon: 'success',
+                        title: response.title,
+                        text: response.message,
+                        timer: 2000,
+                        showConfirmButton: false
+                    });
+
+                    // Refresh Tampilan Laporan
+                    reconcile_print(); 
+                } else {
+                    Swal.fire(response.title, response.message, 'error');
+                }
             },
-            onLoadError: function() {
-                $.messager.progress('close');
-                $.messager.alert('Error', 'Gagal melakukan upload. Periksa koneksi atau coba lagi.', 'error');
+            error: function(xhr, status, error) {
+                Swal.close();
+                console.error(xhr.responseText);
+                Swal.fire('Error', 'Failed to reconcile. Please check the server log.', 'error');
             }
         });
+    }
+
+    function reconcile_print() {
+        const from = btoa($('#filter_from').val());
+        const to = btoa($('#filter_to').val());
+        const acc = btoa($('#filter_account_number').val());
         
+        // Update src iframe agar menampilkan hasil matched yang baru
+        const url = "<?= base_url('finance/report_bank_reconciliation/print?filter_from=') ?>" + from + "&filter_to=" + to + "&filter_account_number=" + acc;
+        $("#printout").attr('src', url);
     }
 
     //DOWNLOAD TEMPLATE UPLOAD
+    function download_excel_per_bank() {
+        var filter_bank_account = $("#filter_bank_account").combobox('getValue');
+
+        if (filter_bank_account !== "") {
+            
+            $.messager.progress({ title: 'Please wait', msg: 'Preparing template...' });
+
+            $.ajax({
+                type: "GET",
+                url: "<?= base_url('finance/report_bank_reconciliation/template') ?>",
+                data: { 
+                    filter_bank_account: filter_bank_account,
+                },
+                success: function(response) {
+                    $.messager.progress('close');
+
+                    try {
+                        // Cek apakah response itu JSON (berarti error) atau string URL
+                        if (response.includes('{')) {
+                            var json = JSON.parse(response);
+                            $.messager.alert(json.title, json.message, 'error');
+                        } else {
+                            // Jika response adalah plain string URL path
+                            window.location.assign(response.trim());
+                        }
+                    } catch (e) {
+                        // Jika bukan JSON, langsung download (asumsi response adalah URL)
+                        window.location.assign(response.trim());
+                    }
+                },
+                error: function() {
+                    $.messager.progress('close');
+                    $.messager.alert("Error", "Failed to connect to server", 'error');
+                }
+            });
+            
+        } else {
+            var errorMsg = "Please choose the Bank Account first!";
+            toastr.warning(errorMsg);
+            $.messager.alert("Warning", errorMsg, 'warning');
+        }
+    }
+
     function download_excel() {
         window.location.assign('<?= base_url('template/tmp_bank_reconciliation.xls') ?>');
     }

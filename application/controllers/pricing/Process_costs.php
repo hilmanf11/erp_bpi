@@ -179,6 +179,33 @@ class Process_costs extends CI_Controller
         }
     }
 
+    public function getPackagingVolume() 
+    {
+        $item_fg_id = $this->input->post('item_fg_id');
+        $p_month    = $this->input->post('p_month');
+        $p_year     = $this->input->post('p_year');
+
+        $this->db->select('volume');
+        $this->db->from('packaging_transportation_costs');
+        $this->db->where('item_fg_id', $item_fg_id);
+        $this->db->where('p_month', $p_month);
+        $this->db->where('p_year', $p_year);
+        
+        $query = $this->db->get()->row();
+
+        if ($query) {
+            echo json_encode([
+                'status' => 'success', 
+                'volume' => $query->volume
+            ]);
+        } else {
+            echo json_encode([
+                'status' => 'error', 
+                'message' => 'Data tidak ditemukan'
+            ]);
+        }
+    }
+
     public function datatables()
     {
         if ($this->input->post()) {

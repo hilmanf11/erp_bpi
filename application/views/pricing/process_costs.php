@@ -571,6 +571,26 @@
         ]
     });
 
+    $('#p_month').combobox({
+        url: '<?= base_url('pricing/process_costs/readPeriod/month'); ?>',
+        valueField: 'id',
+        textField: 'name',
+        prompt: 'Choose Months',
+        onChange: function(newValue, oldValue) {
+            getPackagingVolume();
+        }
+    });
+
+    $('#p_year').combobox({
+        url: '<?= base_url('pricing/process_costs/readPeriod/year'); ?>',
+        valueField: 'id',
+        textField: 'name',
+        prompt: 'Choose Years',
+        onChange: function(newValue, oldValue) {
+            getPackagingVolume();
+        }
+    });
+
     $('#item_fg_number').combogrid({
         url: '<?= base_url('pricing/process_costs/readItems'); ?>',
         panelWidth: 500,
@@ -610,8 +630,39 @@
             initRateYear(row.toonage);
             initMatYear(item_fg_id);
             initMatMonth(item_fg_id);
+
+            getPackagingVolume();
         }
     });
+
+    function getPackagingVolume() {
+        let p_month = $('#p_month').combobox('getValue');
+        let p_year  = $('#p_year').combobox('getValue');
+        let item_fg_id = $('#item_fg_id').textbox('getValue');
+
+        if (p_month !== "" && p_year !== "" && item_fg_id !== "") {
+            $.ajax({
+                url: '<?= base_url('pricing/process_costs/getPackagingVolume'); ?>',
+                type: 'POST',
+                data: {
+                    item_fg_id: item_fg_id,
+                    p_month: p_month,
+                    p_year: p_year
+                },
+                dataType: 'json',
+                success: function(response) {
+                    if (response.status === 'success') {
+                        $('#volume').numberbox('setValue', response.volume);
+                    } else {
+                        $('#volume').numberbox('setValue', 0);
+                    }
+                },
+                error: function() {
+                    console.log("Gagal mengambil data volume.");
+                }
+            });
+        }
+    }
 
     function initRateYear(toonage) {
         $('#rate_year').combobox({
@@ -760,20 +811,6 @@
         onSelect: function(value, rows) {
             $('#customer_id').textbox('setValue', rows.id);
         }
-    });
-
-    $('#p_month').combobox({
-        url: '<?= base_url('pricing/process_costs/readPeriod/month'); ?>',
-        valueField: 'id',
-        textField: 'name',
-        prompt: 'Choose Months',
-    });
-
-    $('#p_year').combobox({
-        url: '<?= base_url('pricing/process_costs/readPeriod/year'); ?>',
-        valueField: 'id',
-        textField: 'name',
-        prompt: 'Choose Years',
     });
 
     function calculateTotalProcessCost() {
