@@ -38,32 +38,37 @@ class Bank_reconciliation extends CI_Model
         // DB Transaction (Pak Angga)
         $this->db->trans_start();
 
-        $where_clause = [
+        // Get Header ID yang sesuai dengan periode dan akun
+        $this->db->select('id');
+        $this->db->where([
             'bank_account'   => $filters['bank_account'],
             'account_number' => $filters['account_number'],
             'start_date'     => $filters['from'],
             'end_date'       => $filters['to']
-        ];
+        ]);
+        $headerQuery = $this->db->get('bank_reconciliation');
+        $headers = $headerQuery->result();
 
-        // Get data lama untuk log sebelum dihapus
-        $this->db->where($where_clause);
-        $this->db->where("DATE_FORMAT(posting_date, '%Y-%m-%d') BETWEEN '{$filters['from']}' AND '{$filters['to']}'");
-        $query = $this->db->get('bank_reconciliation');
-        $dataBefore = $query->result();
+        if (!empty($headers)) {
+            $headerIds = array_column($headers, 'id');
 
-        if ($query->num_rows() > 0) {
-            // Hapus dengan kriteria yang sama persis
-            $this->db->where($where_clause);
-            $this->db->where("DATE_FORMAT(posting_date, '%Y-%m-%d') BETWEEN '{$filters['from']}' AND '{$filters['to']}'");
+            // Ambil data transaksi lama untuk LOG sebelum dihapus
+            $this->db->where_in('id', $headerIds);
+            $dataBefore = $this->db->get('bank_reconciliation')->result();
+
+            // Hapus Detail Transaksi
+            $this->db->where_in('id', $headerIds);
             $this->db->delete('bank_reconciliation');
 
-            $affected = $this->db->affected_rows();
-            
+            // Hapus Header
+            $this->db->where_in('id', $headerIds);
+            $this->db->delete('bank_reconciliation');
+
             $this->db->trans_complete();
 
-            if ($this->db->trans_status() !== FALSE && $affected > 0) {
-                $this->crud->logs("Delete", json_encode($dataBefore), 'bank_reconciliation');
-                return ["title" => "Info", "message" => "Existing data found and replaced.", "theme" => "success"];
+            if ($this->db->trans_status() !== FALSE) {
+                $this->crud->logs("Delete", json_encode($dataBefore), 'bank_reconciliation_replaced');
+                return ["title" => "Success", "message" => "Old data for this period has been replaced.", "theme" => "success"];
             }
         }
 
