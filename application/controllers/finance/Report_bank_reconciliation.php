@@ -410,6 +410,13 @@ class Report_bank_reconciliation extends CI_Controller
     {
         if (ob_get_length()) ob_end_clean();
         header('Content-Type: application/json');
+
+        if (!function_exists('mime_content_type')) {
+            function mime_content_type($filename) {
+                return 'text/plain'; // Fallback manual untuk CSV
+            }
+        }
+
         require_once 'assets/vendors/phpspreadsheet/vendor/autoload.php';
 
         try {
