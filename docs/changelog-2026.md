@@ -560,3 +560,6 @@ add Item Supplier ([cf82acf5](https://github.com/hilmanf11/erp_bpi/commit/cf82ac
 
 ### [2026-04-07]
 - **Rizki Puji**: Fixing: bug price between Sales Orders and Sales Invoices ([27cfc59d](https://github.com/hilmanf11/erp_bpi/commit/27cfc59d455f9fb0d03112354d24907089e23f67))
+
+### [2026-04-09]
+- **Rizki Puji**: Feature: Reconcile process and fix replace existing on Bank Reconciliation ([cb28b265](https://github.com/hilmanf11/erp_bpi/commit/cb28b265b532edd6d82a22cf48fb274f8976a855))
