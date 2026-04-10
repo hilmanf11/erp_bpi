@@ -67,6 +67,62 @@ class Journal_inventory extends CI_Controller
         echo $datenow . $autoID;
     }
 
+    public function readModul()
+    {
+        $search = $this->input->post('q');
+        $process_type  = $this->input->post('process_type');
+
+        $this->db->select('*');
+        $this->db->from('journal_inventory_modules');
+
+        if ($search) {
+            $this->db->group_start();
+            $this->db->like('name', $search);
+            $this->db->or_like('id', $search);
+            $this->db->group_end();
+        }
+
+        if ($process_type) {
+            $this->db->where('process_type', $process_type);
+        }
+
+        $this->db->order_by('name', 'asc');
+        $records = $this->db->get()->result_array();
+        
+        echo json_encode($records);
+    }
+
+    public function saveModul()
+    {
+        $id = $this->input->post('id');
+        $is_edit = !empty($id);
+
+        $data = [
+            'name'            => strtoupper(trim($this->input->post('name'))),
+            'category_number' => $this->input->post('category_number'),
+            'process_type'    => $this->input->post('process_type'),
+            'description'     => $this->input->post('description'),
+            'status'          => $this->input->post('status'),
+            'updated_by'      => $this->session->username,
+            'updated_date'    => date('Y-m-d H:i:s'),
+            'status'          => 1, // default
+        ];
+        
+        // Validasi create new
+        if (!$is_edit) {
+            $data['created_by'] = $this->session->username;
+        } else {
+            $data['id'] = $id;
+        }
+
+        $save = $this->autopostingjournal->save_modul_master($data);
+
+        if ($save) {
+            echo json_encode(['status' => 'success', 'message' => 'Module saved successfully!']);
+        } else {
+            echo json_encode(['status' => 'error', 'message' => 'Database error when saving module.']);
+        }
+    }
 
     public function readJournalType()
     {

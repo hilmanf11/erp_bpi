@@ -13,7 +13,7 @@
                     <input style="width:60%;" id="filter_journal_type" class="easyui-combogrid">
                 </div>
 
-                <div class="fitem">
+                <div class="fitem" hidden>
                     <span style="width:35%; display:inline-block;">Division</span>
                     <input style="width:60%;" id="filter_division" class="easyui-combobox">
                 </div>
@@ -21,6 +21,7 @@
                 <div class="fitem">
                     <span style="width:35%; display:inline-block;"></span>
                     <a href="javascript:;" class="easyui-linkbutton" onclick="filter()"><i class="fa fa-search"></i> Filter Data</a>
+                    <a href="javascript:;" class="easyui-linkbutton" onclick="addModul()"><i class="fa fa-plus"></i> Add Modul</a>
                 </div>
             </div>
             <div style="width:50%; float:left;">
@@ -41,7 +42,7 @@
                     </select>
                 </div>
 
-                <div class="fitem">
+                <div class="fitem" hidden>
                     <span style="width:35%; display:inline-block;">Category</span>
                     <input style="width:60%;" id="filter_item_category" class="easyui-combobox">
                 </div>
@@ -50,6 +51,7 @@
                     <span style="width:35%; display:inline-block;">Voucher No</span>
                     <input style="width:60%;" id="filter_voucher" class="easyui-combobox" />
                 </div>
+
             </div>
         </fieldset>
         <?= $button ?>
@@ -87,6 +89,53 @@
         </tr>
     </thead>
 </table>
+
+
+<!-- Journal Inventory Modul -->
+<div id="dlg_modul" class="easyui-dialog" title="Master Data Journal Inventory Module" 
+    data-options="closed:true, modal:true, resizable:true" 
+    style="width: 600px; height: auto; padding:15px;">
+
+    <form id="frm_modul" method="post" novalidate>
+        <fieldset style="width:100%; border:1px solid #d0d0d0; margin-bottom: 10px; border-radius:4px; box-sizing: border-box;">
+            <legend style="padding: 0 10px;"><b>Module Configuration</b></legend>
+            
+            <div style="padding: 10px;">
+                <div class="fitem" style="margin-bottom: 10px;">
+                    <label style="width:35%; display:inline-block;">Category <span style="color:red">*</span></label>
+                    <select style="width:60%;" name="category" id="modul_category" class="easyui-combobox" 
+                            data-options="required:true, editable:false, panelHeight:'auto'">
+                        <option value="RM">RAW MATERIAL (RM)</option>
+                        <option value="WIP">WORK IN PROCESS (WIP)</option>
+                        <option value="FG">FINISHED GOODS (FG)</option>
+                    </select>
+                </div>
+
+                <div class="fitem" style="margin-bottom: 10px;">
+                    <label style="width:35%; display:inline-block;">Process Type <span style="color:red">*</span></label>
+                    <select style="width:60%;" name="process_type" id="modul_process_type" class="easyui-combobox" 
+                            data-options="required:true, editable:false, panelHeight:'auto'">
+                        <option value="IN">IN</option>
+                        <option value="OUT">OUT</option>
+                    </select>
+                </div>
+
+                <div class="fitem" style="margin-bottom: 10px;">
+                    <label style="width:35%; display:inline-block;">Module Name <span style="color:red">*</span></label>
+                    <input style="width:60%;" name="name" id="modul_name" class="easyui-textbox" data-options="required:true">
+                </div>
+
+            </div>
+        </fieldset>
+
+        <div style="text-align:right; margin-top:10px;">
+            <a href="javascript:void(0)" class="easyui-linkbutton" iconCls="icon-save" onclick="saveModul()" style="width:90px">Save</a>
+            <a href="javascript:void(0)" class="easyui-linkbutton" iconCls="icon-cancel" onclick="javascript:$('#dlg_modul').dialog('close')" style="width:90px">Cancel</a>
+        </div>
+    </form>
+</div>
+
+
 
 <!-- Detail -->
 <div id="dlg_detail" class="easyui-window" title="Journal Detail" data-options="closed: true,modal:true" style="width: 80%; height: 500px; top: 20px; left:10px;">
@@ -375,6 +424,7 @@
 
 
 
+    // Onload Page
     $(function() {
         // --- JOURNAL TYPE ---
         $("#filter_journal_type").combogrid({
@@ -395,7 +445,7 @@
             columns: [[
                 { field: 'number', title: 'Code', width: 90, halign: 'center', align: 'center' },
                 { field: 'name', title: 'Journal Type Name', width: 250, halign: 'center' },
-                { field: 'module', title: 'Module', width: 200, halign: 'center' },
+                { field: 'module', title: 'Modul', width: 200, halign: 'center' },
             ]],
             icons: [{
                 iconCls: 'icon-clear',
@@ -431,26 +481,38 @@
 
         // --- MODUL ---
         $("#modul, #filter_modul").combogrid({
-            url: '<?= base_url("json/journal_inventory_module.json"); ?>',
-            panelWidth: 400,
-            idField: 'id',
-            textField: 'text',
-            mode: 'local',
+            url: '<?= base_url("finance/journal_inventory/readModul"); ?>',
+            panelWidth: 500,
+            idField: 'name',
+            textField: 'name',
+            mode: 'remote',
             fitColumns: true,
-            prompt: "Choose Modul...",
-            filter: function(q, row){
-                var opts = $(this).combogrid('options');
-                return row[opts.textField].toLowerCase().indexOf(q.toLowerCase()) >= 0;
-            },
-
+            prompt: "Choose Modul",
             columns: [[
-                {field: 'group', title: 'Type', width: 60, align: 'center'},
-                {field: 'text', title: 'Module Name', width: 250}
+                {field: 'process_type', title: 'Type', width: 60, align: 'center', 
+                    formatter: function(value){
+                        return value == 'IN' ? '<b style="color:green">IN</b>' : '<b style="color:red">OUT</b>';
+                    }
+                },
+                {field: 'name', title: 'Module Name', width: 200},
+                {field: 'category_number', title: 'Category', width: 150},
             ]],
+            onBeforeLoad: function(param) {
+                if($(this).attr('id') === 'modul'){
+                    var cat  = $("#modul_category_number").combobox('getValue');
+                    var proc = $("#modul_process_type").combobox('getValue');
+                    if(cat) param.category_number = cat;
+                    if(proc) param.process_type = proc;
+                }
+            },
             onChange: function(newValue) {
-                // Reset company & doc jika modul berubah
-                $("#company_name").combogrid('clear');
-                $("#document_no").combogrid('clear');
+                if($(this).attr('id') === 'modul'){
+                    $("#company_name").combogrid('clear');
+                    $("#document_no").combogrid('clear');
+                    
+                    var valDate = $("#journal_date").datebox('getValue');
+                    if(valDate && typeof number === "function") number(valDate);
+                }
             }
         });
 
@@ -495,7 +557,6 @@
             idField: 'document_no',
             textField: 'document_no',
             multiple: true,
-            required: true,
             mode: 'remote', // Penting agar bisa menerima parameter dari load
             fitColumns: true,
             prompt: "Choose Document No.",
@@ -507,6 +568,14 @@
 
         // Initial Data On Load Page
         filter();
+
+        // Input Modul Name
+        $('#modul_name').textbox('textbox').bind('keyup', function(e) {
+            var val = $(this).val();
+            var newVal = val.toUpperCase();
+            $('#modul_name').textbox('setValue', newVal);
+        });
+
     });
 
     // DETAILS
@@ -526,8 +595,6 @@
             remoteFilter: true,
         }).datagrid('enableFilter');
     }
-
-    
 
     // FORMAT DATE PERIOD
     function myformatter(date) {
@@ -585,6 +652,35 @@
         }
     }
 
+    function addModul() {
+        $('#dlg_modul').dialog('open').dialog('center');
+        $('#frm_modul').form('clear');
+        // Set default value jika perlu
+        $('#modul_category').combobox('setValue', 'RM');
+        $('#modul_tr_type').combobox('setValue', 'IN');
+    }
+
+    function saveModul() {
+        $('#frm_modul').form('submit', {
+            url: '<?= base_url('finance/journal_inventory/saveModul') ?>',
+            onSubmit: function() {
+                return $(this).form('validate'); // Cek field required
+            },
+            success: function(result) {
+                var res = JSON.parse(result);
+                if (res.status === 'success') {
+                    toastr.success(res.message, 'Success');
+                    $('#dlg_modul').dialog('close');
+                    // Refresh combogrid modul di dlg_insert jika sedang terbuka
+                    $('#modul').combogrid('grid').datagrid('reload');
+                } else {
+                    toastr.error(res.message, 'Error');
+                }
+            }
+        });
+    }
+
+
 
     // FORM INSERT OR UPDATE
     function add() {
@@ -633,7 +729,7 @@
         const requiredFields = [
             { val: params.journal_date, label: 'Journal Date' },
             { val: params.division,     label: 'Division' },
-            { val: params.modul,        label: 'Module' },
+            { val: params.modul,        label: 'Modul' },
             { val: params.company_id,   label: 'Company' },
             { val: params.document_no,  label: 'Document No.' },
         ];
@@ -680,8 +776,6 @@
                     // Gunakan == 0 jika response dari server adalah string/int 0
                     if (result == 0) {
                         $('#dg2').datagrid({
-                            // Gunakan method POST pada datagrid agar parameter tidak bocor di URL 
-                            // dan tidak terkena limitasi karakter URL (karena DOC NO bisa banyak)
                             url: '<?= base_url('finance/journal_inventory/datatablesTemp') ?>',
                             method: 'post',
                             queryParams: {
@@ -691,9 +785,14 @@
                                 document_no: window.btoa(docNoStr)
                             },
                             onLoadSuccess: function(data) {
-                                if (data && data.footer && data.footer.length > 0) {
+                                if (data && data > 0 && data.footer && data.footer.length > 0) {
                                     $("#local_debit").numberbox('setValue', data.footer[0].local_debit);
                                     $("#local_credit").numberbox('setValue', data.footer[0].local_credit);
+                                } else {
+                                    toastr.warning("Requirements not met", "Failed");
+
+                                    $.messager.alert('Warning', 'Requirements not met: Cannot generate journal for this Document No. Please check again.', 'warning');
+                                    return;
                                 }
                             }
                         });
