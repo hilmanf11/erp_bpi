@@ -97,22 +97,34 @@ class Autopostingjournal extends CI_Model {
                 FROM purchase_order_labels 
                 GROUP BY receipt_id) lbl";
 
+            // Get Data POR (Query Detail per Item)
             $this->db->select("
-                a.receipt_no as document_no, a.receipt_date as trans_date, a.po_no as invoice_no,
-                a.item_rm_id, c.name as item_name, b.name as supplier_name, b.currency, 
-                a.supplier_id, a.qty_receipt2 as qty, f.price, f.discount, lbl.total_scan
+                a.receipt_no as document_no, 
+                a.receipt_date as trans_date, 
+                a.po_no as invoice_no,
+                a.item_rm_id,
+                c.name as item_name, 
+                b.name as supplier_name, 
+                b.currency, 
+                a.supplier_id,
+                a.qty_receipt2 as qty, 
+                f.price, 
+                f.discount,
             ");
+            // Rumus Total per Item (Debit)
             $this->db->select("((a.qty_receipt2 * f.price) * (1 - (COALESCE(f.discount, 0) / 100))) as item_total_original", FALSE);
+            $this->db->select('lbl.total_scan');
+
             $this->db->from('purchase_order_receipts a');
             $this->db->join('suppliers b', 'a.supplier_id = b.id');
             $this->db->join('item_rm c', 'a.item_rm_id = c.id');
             $this->db->join('purchase_orders f', "a.po_no = f.po_no AND a.item_rm_id = f.item_rm_id", 'left');
-            $this->db->join($subquery, "a.receipt_no = lbl.receipt_id", "inner");
-            $this->db->where('a.receipt_no', $receipt_no);
-            /** -- sementara di takeout: validasi di luar query
+            $this->db->join($subquery, "a.receipt_id = lbl.receipt_id", "inner");
+
+            // Filter & Order
+            $this->db->where_in('a.receipt_no', $receipt_no);
             $this->db->where('lbl.total_scan >', 0);        // POR sudah di-scan = closed
             $this->db->where('a.print', 1);                 // POR GRN = closed
-            */
             $this->db->order_by('a.receipt_no', 'asc'); 
 
             $records = $this->db->get()->result_array();

@@ -11,6 +11,7 @@ defined('BASEPATH') or exit('No direct script access allowed');
  * @property CI_Form_validation $form_validation
  * @property Crud $crud
  * @property AutoPostingJournal $autopostingjournal
+ * @property M_journal_inventory $m_journal_inventory
  */
 class Journal_inventory extends CI_Controller
 {
@@ -22,9 +23,11 @@ class Journal_inventory extends CI_Controller
         $this->load->library('form_validation');
         $this->load->library('session');
         $this->load->library('Ciqrcode');
-        $this->load->model('crud');
 
+        $this->load->model('crud');
         $this->load->model('autopostingjournal');
+        $this->load->model('m_journal_inventory');
+
         $this->_check_table_exist();
     }
 
@@ -115,7 +118,7 @@ class Journal_inventory extends CI_Controller
             $data['id'] = $id;
         }
 
-        $save = $this->autopostingjournal->save_modul_master($data);
+        $save = $this->m_journal_inventory->save_modul_master($data);
 
         if ($save) {
             echo json_encode(['status' => 'success', 'message' => 'Module saved successfully!']);
@@ -666,13 +669,23 @@ class Journal_inventory extends CI_Controller
         $receipt_no = base64_decode($receipt_no_b64);
         $modul = $this->input->post("modul");
         
-        $post = $this->autopostingjournal->inventory($modul, $receipt_no);
-        
-        if ($post) {
-            echo json_encode(['status' => 'success', 'message' => "Journal for $receipt_no has been posted."]);
-        } else {
-            echo json_encode(['status' => 'info', 'message' => "Journal already exists or posting failed."]);
+        // Validasi input awal
+        if (empty($receipt_no) || empty($modul)) {
+            echo json_encode(['status' => 'error', 'message' => 'Document No or Module is missing.']);
+            return;
         }
+
+        $result = $this->autopostingjournal->inventory($modul, $receipt_no);
+        
+        // Check if result error and not return array
+        if (!is_array($result)) {
+            $result = [
+                'status' => false,
+                'message' => 'Internal Server Error: Model did not return an array. Result: ' . var_export($result, true)
+            ];
+        }
+
+        return $this->output->set_content_type('application/json')->set_output(json_encode($result));
     }
 
     public function delete()
