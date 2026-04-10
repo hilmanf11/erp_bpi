@@ -103,7 +103,7 @@
             <div style="padding: 10px;">
                 <div class="fitem" style="margin-bottom: 10px;">
                     <label style="width:35%; display:inline-block;">Category <span style="color:red">*</span></label>
-                    <select style="width:60%;" name="category" id="modul_category" class="easyui-combobox" 
+                    <select style="width:60%;" name="category_number" id="modul_category_number" class="easyui-combobox" 
                             data-options="required:true, editable:false, panelHeight:'auto'">
                         <option value="RM">RAW MATERIAL (RM)</option>
                         <option value="WIP">WORK IN PROCESS (WIP)</option>
@@ -129,8 +129,8 @@
         </fieldset>
 
         <div style="text-align:right; margin-top:10px;">
-            <a href="javascript:void(0)" class="easyui-linkbutton" iconCls="icon-save" onclick="saveModul()" style="width:90px">Save</a>
-            <a href="javascript:void(0)" class="easyui-linkbutton" iconCls="icon-cancel" onclick="javascript:$('#dlg_modul').dialog('close')" style="width:90px">Cancel</a>
+            <a href="javascript:void(0)" class="easyui-linkbutton" onclick="saveModul()" style="width:90px">Save</a>
+            <a href="javascript:void(0)" class="easyui-linkbutton" onclick="javascript:$('#dlg_modul').dialog('close')" style="width:90px">Cancel</a>
         </div>
     </form>
 </div>
@@ -556,14 +556,21 @@
             panelWidth: 450,
             idField: 'document_no',
             textField: 'document_no',
-            multiple: true,
-            mode: 'remote', // Penting agar bisa menerima parameter dari load
+            multiple: false,
+            singleSelect: true,
+            selectOnCheck: false,
+            checkOnSelect: false,
+            mode: 'remote',
             fitColumns: true,
             prompt: "Choose Document No.",
             columns: [[
-                { field: 'ck', checkbox: true },
-                { field: 'document_no', title: 'Document No.', width: 250 },
-            ]]
+                { field: 'document_no', title: 'Document No.', width: 250, halign: 'center' },
+            ]],
+            onSelect: function(index, row) {
+                if(typeof preview === "function") {
+                    preview(); 
+                }
+            }
         });
 
         // Initial Data On Load Page
@@ -670,9 +677,10 @@
                 var res = JSON.parse(result);
                 if (res.status === 'success') {
                     toastr.success(res.message, 'Success');
+
                     $('#dlg_modul').dialog('close');
-                    // Refresh combogrid modul di dlg_insert jika sedang terbuka
                     $('#modul').combogrid('grid').datagrid('reload');
+                    $('#filter_modul').combogrid('grid').datagrid('reload');
                 } else {
                     toastr.error(res.message, 'Error');
                 }
@@ -785,14 +793,25 @@
                                 document_no: window.btoa(docNoStr)
                             },
                             onLoadSuccess: function(data) {
-                                if (data && data > 0 && data.footer && data.footer.length > 0) {
-                                    $("#local_debit").numberbox('setValue', data.footer[0].local_debit);
-                                    $("#local_credit").numberbox('setValue', data.footer[0].local_credit);
-                                } else {
-                                    toastr.warning("Requirements not met", "Failed");
+                                if (data && data.rows && data.rows.length > 0) {
+                                    
+                                    // Cek apakah ada data footer untuk mengambil total debit/credit
+                                    if (data.footer && data.footer.length > 0) {
+                                        $("#local_debit").numberbox('setValue', data.footer[0].local_debit);
+                                        $("#local_credit").numberbox('setValue', data.footer[0].local_credit);
+                                    } else {
+                                        // Jika baris ada tapi footer tidak ada, set ke 0 agar tidak menyimpan nilai lama
+                                        $("#local_debit").numberbox('setValue', 0);
+                                        $("#local_credit").numberbox('setValue', 0);
+                                    }
 
+                                } else {
+                                    // Jika rows kosong atau data null, baru tampilkan pesan error
+                                    $("#local_debit").numberbox('setValue', 0);
+                                    $("#local_credit").numberbox('setValue', 0);
+                                    
+                                    toastr.warning("Requirements not met", "Failed");
                                     $.messager.alert('Warning', 'Requirements not met: Cannot generate journal for this Document No. Please check again.', 'warning');
-                                    return;
                                 }
                             }
                         });

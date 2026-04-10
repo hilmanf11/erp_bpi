@@ -166,11 +166,19 @@ class Journal_inventory extends CI_Controller
 
         if ($modul == "PURCHASE ORDER RECEIPT") 
         {
+            // Get status Scan POR
+            $subquery = "(SELECT receipt_id, SUM(`status`) as total_scan 
+                FROM purchase_order_labels 
+                GROUP BY receipt_id) lbl";
+            
             $this->db->select('a.receipt_no as document_no, a.supplier_id');
             $this->db->select('a.receipt_date as trans_date');
             $this->db->from('purchase_order_receipts a');
             $this->db->join('journal_inventory b', 'a.receipt_no = b.document_no', 'left');
+            $this->db->join($subquery, "a.receipt_id = lbl.receipt_id", "inner");
             
+            $this->db->where('lbl.total_scan >', 0);        // POR sudah di-scan = closed
+            $this->db->where('a.print', 1);                 // POR GRN = closed
             $this->db->where('a.supplier_id', $company_id);
             $this->db->where('a.receipt_date >=', $transaction_from);
             $this->db->where('a.receipt_date <=', $transaction_to);
