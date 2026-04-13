@@ -671,8 +671,8 @@
 
     // Optimasi Print Receiving Note with Auto Posting Journal
     function print_receiving_note() {
-        var receipt_no = $("#filter_receipt_no").combobox('getValue');
-        if (receipt_no == "") {
+        const receiptNo = $("#filter_receipt_no").combobox('getValue');
+        if (receiptNo == "") {
             toastr.warning("Please select Receipt No!", "Information");
             return;
         }
@@ -689,7 +689,7 @@
 
         $.ajax({
             type: "post",
-            url: "<?= base_url('purchase/purchase_order_receipts/checkLabel/') ?>" + window.btoa(receipt_no),
+            url: "<?= base_url('purchase/purchase_order_receipts/checkLabel/') ?>" + window.btoa(receiptNo),
             dataType: "json",
             success: function (response) {
                 // Validasi Kategori RM
@@ -703,13 +703,13 @@
                 // --- Run checkItems untuk update status ---
                 $.ajax({
                     type: "post",
-                    url: "<?= base_url('purchase/purchase_order_receipts/checkItems/') ?>" + window.btoa(receipt_no),
+                    url: "<?= base_url('purchase/purchase_order_receipts/checkItems/') ?>" + window.btoa(receiptNo),
                     dataType: "json",
                     success: function (res) {
-                        processPrintAndJournal(receipt_no, printWindow, "Success");
+                        processPrintAndJournal(receiptNo, printWindow, "Success");
                     },
                     error: function() {
-                        processPrintAndJournal(receipt_no, printWindow, "Warning: Items check failed but proceeding to print.");
+                        processPrintAndJournal(receiptNo, printWindow, "Warning: Items check failed but proceeding to print.");
                     }
                 });
             },
@@ -722,11 +722,11 @@
     }
 
     // Handling Print & Modal Journal
-    function processPrintAndJournal(receipt_no, printWindow, message) {
+    function processPrintAndJournal(receiptNo, printWindow, message) {
         Swal.close();
         
         // Update URL open new tab 
-        printWindow.location.href = "<?= base_url('purchase/purchase_order_receipts/print_receiving/') ?>" + window.btoa(receipt_no);
+        printWindow.location.href = "<?= base_url('purchase/purchase_order_receipts/print_receiving/') ?>" + window.btoa(receiptNo);
 
         // Check Journal Inventory
         const now_date = new Date().toISOString().split('T')[0];
@@ -736,16 +736,17 @@
             data: {
                 journal_date: now_date,
                 modul: "PURCHASE ORDER RECEIPT",
-                document_no: receipt_no,
+                document_no: receiptNo,
             },
             dataType: "json",
             success: function(response) {
                 if (response.status === true) {
                     // BOLEH POSTING
-                    postingJournalValidate();
+                    postingJournalValidate(receiptNo);
                 } else {
                     // SUDAH ADA / ERROR
-                    Swal.fire("Information", response.message, "info");
+                    toastr.info(message, "Print Receiving Note", "info");
+                    toastr.info(response.message, "Auto Posting Journal", "info");
                 }
             },
             error: function(xhr) {
@@ -755,7 +756,7 @@
         });
     }
 
-    function postingJournalValidate() {
+    function postingJournalValidate(receiptNo) {
         // Konfirmasi Posting Jurnal
         Swal.fire({
             title: "Add Posting Journal?",
@@ -773,7 +774,7 @@
                     allowOutsideClick: false,
                     didOpen: () => { Swal.showLoading(); }
                 });
-                exec_autoposting(receipt_no);
+                exec_autoposting(receiptNo);
             }
         });
     }
@@ -790,7 +791,7 @@
                 if (response.status === 'success') {
                     toastr.success(response.message || "Success", "Auto Posting Success");
                 } else {
-                    Swal.fire("Information", response.message, "info");
+                    Swal.fire("Failed", response.message, "error");
                 }
             },
             error: function(xhr) {

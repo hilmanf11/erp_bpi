@@ -461,7 +461,7 @@ class Journal_inventory extends CI_Controller
             $document_no  = $post['document_no'] ?? '';
 
             if (empty($modul) || empty($document_no)) {
-                throw new Exception("Parameter Modul atau Document No tidak lengkap.");
+                throw new Exception("Module or Document No. parameters are incomplete.");
             }
 
             // Set Period
@@ -469,8 +469,8 @@ class Journal_inventory extends CI_Controller
             $transaction_from = date("Y-m-01", $ref_date);
             $transaction_to   = date("Y-m-t", $ref_date);
 
-            // Query Check (Gunakan select(1) agar lebih ringan karena hanya butuh hitung baris)
-            $this->db->select('1');
+            // Query Check Exist
+            $this->db->select('*');
             $this->db->from('journal_inventory');
             $this->db->where('modul', $modul);
             $this->db->where('document_no', $document_no);

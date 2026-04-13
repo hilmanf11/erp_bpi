@@ -92,7 +92,7 @@ class Autopostingjournal extends CI_Model {
             $credit_jt_id = $this->journal_type("PURCHASE ORDER RECEIPT", $acc_credit->account_number);
 
             if (!$debit_jt_id || !$credit_jt_id) {
-                throw new Exception("Journal Type Mapping not found for module PURCHASE ORDER RECEIPT");
+                throw new Exception("Journal Type Account NOT FOUND for module PURCHASE ORDER RECEIPT! Please add Journal Types");
             }
 
             // Get status Scan POR
@@ -219,7 +219,7 @@ class Autopostingjournal extends CI_Model {
         } catch (Exception $e) {
             // Rollback jika terjadi error
             $this->db->trans_rollback();
-            $msg = "Error in _process_por line " . $e->getLine() . ": " . $e->getMessage();
+            $msg = "Error: " . $e->getMessage();
             log_message('error', $msg);
             return ['status' => false, 'message' => $msg];
         }
