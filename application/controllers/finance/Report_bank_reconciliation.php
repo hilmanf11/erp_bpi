@@ -334,7 +334,7 @@ class Report_bank_reconciliation extends CI_Controller
                 $cleanRow = array_map(function($val) { return trim(strtolower((string)$val)); }, $row);
                 if (in_array('total', $cleanRow)) continue;
 
-                // Logika: 3 nilai numerik terakhir selalu Balance, Credit, Debit
+                // Mapping 3 nilai numerik terakhir selalu Balance, Credit, Debit
                 if (count($row) >= 6) {
                     $rawBalance = array_pop($row);
                     $rawCredit  = array_pop($row);
@@ -356,8 +356,15 @@ class Report_bank_reconciliation extends CI_Controller
                         'source'         => 'upload',
                         'posting_date'   => $posting_date,
                         'remark'         => htmlspecialchars((string)$desc),
+                        
+                        /** --- TUKAR POSISI ---
                         'debit'          => abs((float) str_replace(',', '', $rawDebit ?? 0)),
                         'credit'         => abs((float) str_replace(',', '', $rawCredit ?? 0)),
+                        */
+                        // Jika pada template posisinya Debit, maka pada output Bank Reconciliation posisinya di Credit dan begitu sebaliknya
+                        'credit'         => abs((float) str_replace(',', '', $rawDebit ?? 0)), 
+                        'debit'          => abs((float) str_replace(',', '', $rawCredit ?? 0)),
+                        
                         'status'         => 0,
                         'created_date'   => date('Y-m-d H:i:s'),
                         'created_by'     => $this->session->username,
@@ -485,8 +492,15 @@ class Report_bank_reconciliation extends CI_Controller
                     'source'         => 'upload',
                     'posting_date'   => $postingDate,
                     'remark'         => htmlspecialchars($cleanRemark),
+
+                    /** --- TUKAR POSISI ---
                     'credit'         => abs((float) str_replace(',', '', $sheet->getCell("F$i")->getCalculatedValue() ?? 0)),
                     'debit'          => abs((float) str_replace(',', '', $sheet->getCell("G$i")->getCalculatedValue() ?? 0)),
+                    */
+                    // Jika pada template posisinya Debit, maka pada output Bank Reconciliation posisinya di Credit dan begitu sebaliknya
+                    'debit'           => abs((float) str_replace(',', '', $sheet->getCell("F$i")->getCalculatedValue() ?? 0)),
+                    'credit'          => abs((float) str_replace(',', '', $sheet->getCell("G$i")->getCalculatedValue() ?? 0)),
+                    
                     'status'         => 0,
                     'created_date'   => date('Y-m-d H:i:s'),
                     'created_by'     => $this->session->username,
