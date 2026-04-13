@@ -201,6 +201,7 @@ class Receipt_crusher extends CI_Controller
                         "id" => $record['request_no'],
                         "request_no" => $record['request_no'],
                         "request_date" => $record['request_date'],
+                        "shift" => $record['shift'],
                         "request_name" => $record['request_name'],
                         "item_rm_id" => $record['item_rm_id'],
                         "item_fg_id" => $record['item_fg_id'],
@@ -244,10 +245,12 @@ class Receipt_crusher extends CI_Controller
                         $status = '0';
                     }
 
+
                     $arr[] = array(
                         "id" => $record['request_id'],
                         "request_no" => $record['request_no'],
                         "request_date" => $record['request_date'],
+                        "shift" => $record['shift'],
                         "request_name" => $record['request_name'],
                         "item_rm_id" => $record['item_rm_id'],
                         "item_number" => $record['item_number'],
@@ -259,6 +262,7 @@ class Receipt_crusher extends CI_Controller
                         "lot_no" => $record['lot_no'],
                         "remarks" => $record['remarks'],
                         "status" => $status,
+                        "print" => $record['print'],
                         "created_by" => $record['created_by'],
                         "created_date" => $record['created_date'],
                         "updated_by" => $record['updated_by'],
@@ -312,6 +316,23 @@ class Receipt_crusher extends CI_Controller
             }
         } else {
             show_error("Cannot Process your request");
+        }
+    }
+
+    public function save_reprint_reason() {
+        $request_id = $this->input->post('request_id');
+        $reason = $this->input->post('reason');
+    
+        // Update reason di tabel checksheets di mana checksheet_number = number
+        $this->db->set('reason', $reason);
+        $this->db->set('print', 1);
+        $this->db->where('request_id', $request_id);
+        $this->db->update('receipt_crusher');
+    
+        if ($this->db->affected_rows() > 0) {
+            echo json_encode(['status' => 'success']);
+        } else {
+            echo json_encode(['status' => 'error', 'message' => 'Failed to update reason']);
         }
     }
 

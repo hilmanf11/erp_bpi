@@ -5,7 +5,8 @@
             <th rowspan="2" data-options="field:'request_no',halign:'center',width:190">Transaction No</th>
             <th rowspan="2" data-options="field:'request_date',width:120,halign:'center'">Transaction Date</th>
             <th rowspan="2" data-options="field:'request_name',width:120,halign:'center'">Requester</th>
-            <th rowspan="2" data-options="field:'transaction_type',width:150,halign:'center',align:'center'">Type</th>
+            <th rowspan="2" data-options="field:'transaction_type',width:200,halign:'center'">Type</th>
+            <th rowspan="2" data-options="field:'customer_name',width:200,halign:'center'">Customer</th>
             <th rowspan="2" data-options="field:'item_box_name',width:150,halign:'center'">Box Name</th>
             <th rowspan="2" data-options="field:'item_box_code',width:100,halign:'center'">Box Code</th>
             <th rowspan="2" data-options="field:'item_box_size',width:150,halign:'center'">Size</th>
@@ -53,6 +54,10 @@
                 <div class="fitem">
                     <span style="width:35%; display:inline-block;">Transaction Type</span>
                     <input style="width:60%;" id="filter_transaction_type" class="easyui-combobox">
+                </div>
+                <div class="fitem">
+                    <span style="width:35%; display:inline-block;">Customer</span>
+                    <input style="width:60%;" id="filter_customer_name" class="easyui-combogrid">
                 </div>
             </div>
         </fieldset>
@@ -428,8 +433,10 @@
         var filter_from = $("#filter_from").datebox('getValue');
         var filter_to = $("#filter_to").datebox('getValue');
         var filter_transaction_type = $("#filter_transaction_type").combobox('getValue');
+        var filter_customer_name = $("#filter_customer_name").combogrid('getValue');
 
-        url = "?&filter_request_no=" + filter_request_no + "&filter_box_name=" + btoa(filter_box_name) + "&filter_from=" + filter_from + "&filter_to=" + filter_to + "&filter_transaction_type=" + filter_transaction_type;
+        url = "?&filter_request_no=" + filter_request_no + "&filter_box_name=" + btoa(filter_box_name) + "&filter_from=" + filter_from + 
+        "&filter_to=" + filter_to + "&filter_transaction_type=" + filter_transaction_type + "&filter_customer_name=" + filter_customer_name;
 
         $('#dg').treegrid({
             url: '<?= base_url('warehouse/transaction_boxs/datatables') ?>' + url
@@ -448,8 +455,10 @@
         var filter_from = $("#filter_from").datebox('getValue');
         var filter_to = $("#filter_to").datebox('getValue');
         var filter_transaction_type = $("#filter_transaction_type").combobox('getValue');
+        var filter_customer_name = $("#filter_customer_name").combogrid('getValue');
 
-        url = "?&filter_request_no=" + filter_request_no + "&filter_box_name=" + btoa(filter_box_name) + "&filter_from=" + filter_from + "&filter_to=" + filter_to + "&filter_transaction_type=" + filter_transaction_type;
+        url = "?&filter_request_no=" + filter_request_no + "&filter_box_name=" + btoa(filter_box_name) + "&filter_from=" + filter_from + 
+        "&filter_to=" + filter_to + "&filter_transaction_type=" + filter_transaction_type + "&filter_customer_name=" + filter_customer_name;
         window.location.assign('<?= base_url('warehouse/transaction_boxs/print/excel') ?>' + url);
     }
 
@@ -594,6 +603,37 @@
                 }]
             ],
              icons: [{
+                iconCls: 'icon-clear',
+                handler: function(e) {
+                    $(e.data.target).combogrid('clear').combogrid('textbox').focus();
+                }
+            }],
+        });
+
+        $('#filter_customer_name').combogrid({
+            url: '<?= base_url('master/customers/reads'); ?>',
+            panelWidth: 500,
+            idField: 'name',
+            textField: 'name',
+            mode: 'remote',
+            fitColumns: true,
+            prompt: "Choose Customer",
+            columns: [
+                [{
+                    field: 'id',
+                    title: 'Customer ID',
+                    width: 150
+                }, {
+                    field: 'number',
+                    title: 'Customer Code',
+                    width: 150
+                }, {
+                    field: 'name',
+                    title: 'Customer Name',
+                    width: 200
+                }, ]
+            ],
+            icons: [{
                 iconCls: 'icon-clear',
                 handler: function(e) {
                     $(e.data.target).combogrid('clear').combogrid('textbox').focus();

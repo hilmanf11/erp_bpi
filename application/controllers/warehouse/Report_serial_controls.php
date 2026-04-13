@@ -73,31 +73,88 @@ class Report_serial_controls extends CI_Controller
         $filter_do_no = base64_decode($this->input->get("filter_do_no"));
         $filter_dn_no = base64_decode($this->input->get("filter_dn_no"));
         $filter_serial_no = base64_decode($this->input->get("filter_serial_no"));
+        $filter_from = base64_decode($this->input->get("filter_from"));
+        $filter_to = base64_decode($this->input->get("filter_to"));
 
         //Config
         $this->db->select('*');
         $this->db->from('config');
         $config = $this->db->get()->row();
+        
+        $this->db->select('
+            a.delivery_order_no,
+            h.delivery_note_no,
+            b.name AS customer_name,
+            c.number AS item_no,
+            c.name AS item_name,
+            a.delivery_order_date,
+            a.sales_order_no,
+            f.checksheet_label,
+            f.qty,
+            ps.lot_no,
+            ch.prod_date,
+            ch.packing_date
+        ');
 
-        $this->db->select('a.delivery_order_no, h.delivery_note_no, b.name as customer_name, c.number as item_no, 
-        c.name as item_name, a.delivery_order_date, a.sales_order_no, f.checksheet_label, f.qty');
         $this->db->from('delivery_orders a');
         $this->db->join('customers b', 'a.customer_id = b.id');
         $this->db->join('item_fg c', 'a.item_fg_id = c.id');
         $this->db->join('delivery_notes h', 'a.delivery_order_no = h.delivery_order_no', 'left');
-        $this->db->join('shipping_orders f', 'a.delivery_order_no = f.delivery_order_no and a.sales_order_no = f.sales_order_no and a.item_fg_id = f.item_fg_id', 'left');
-        $this->db->like('a.customer_id', $filter_customer);
-        $this->db->like('a.item_fg_id', $filter_product_no);
-        $this->db->like('a.delivery_order_no ', $filter_do_no);
-        // if($filter_dn_no != ""){
-        //     $this->db->like('h.delivery_note_no', $filter_dn_no);
-        // }
-        // if($filter_serial_no != ""){
-        //     $this->db->like('f.checksheet_label', $filter_serial_no);
-        // }
+        $this->db->join(
+            'shipping_orders f',
+            'a.delivery_order_no = f.delivery_order_no 
+            AND a.sales_order_no = f.sales_order_no 
+            AND a.item_fg_id = f.item_fg_id',
+            'left'
+        );
+        $this->db->join(
+            'barcode_divides_fg bdf',
+            'bdf.label_divided = f.checksheet_label',
+            'left'
+        );
+        $this->db->join(
+            'wip_receipt_labels wrl',
+            'wrl.checksheet_label = COALESCE(bdf.reff, f.checksheet_label)',
+            'left'
+        );
+        $this->db->join(
+            'wip_receipt_boxs wrb',
+            'wrb.checksheet_label = COALESCE(bdf.reff, f.checksheet_label)',
+            'left'
+        );
+        $this->db->join(
+            'checksheets ch',
+            'ch.number = COALESCE(wrl.checksheet_number, wrb.checksheet_number)',
+            'left'
+        );
+        $this->db->join(
+            'production_schedules ps',
+            'ps.wo_no = ch.wo_no',
+            'left'
+        );
+
+
+        /* FILTER */
+        if ($filter_customer != '') {
+            $this->db->where('a.customer_id', $filter_customer);
+        }
+
+        if ($filter_product_no != '') {
+            $this->db->where('a.item_fg_id', $filter_product_no);
+        }
+
+        if ($filter_do_no != '') {
+            $this->db->like('a.delivery_order_no', $filter_do_no);
+        }
+
+        if ($filter_from != '' && $filter_to != '') {
+            $this->db->where('a.delivery_order_date >=', $filter_from);
+            $this->db->where('a.delivery_order_date <=', $filter_to);
+        }
+
         $this->db->order_by('a.delivery_order_no', 'ASC');
         $this->db->order_by('f.checksheet_label', 'ASC');
-        $this->db->group_by('f.checksheet_label');
+
         $records = $this->db->get()->result_array();
 
         $html = '<html><head><title>Print Data</title></head><style>body {font-family: Arial, Helvetica, sans-serif;}#customers {border-collapse: collapse;width: 100%;font-size: 12px;}#customers td, #customers th {border: 1px solid #ddd;padding: 2px;}#customers tr:nth-child(even){background-color: #f2f2f2;}#customers tr:hover {background-color: #ddd;}#customers th {padding-top: 2px;padding-bottom: 2px;text-align: center;color: black;}</style><body>
@@ -130,12 +187,15 @@ class Report_serial_controls extends CI_Controller
                 <th>Delivery Note</th>
                 <th>Delivery Order</th>
                 <th>Trans Date</th>
+                <th>Prod Date</th>
+                <th>Packing Date</th>
                 <th>Sales Order</th>
                 <th>Customer</th>
                 <th>Product No</th>
                 <th>Product Name</th>
                 <th>Serial No</th>
                 <th>Qty</th>
+                <th>Lot NO</th>
             </tr>';
         $no = 1;
         foreach ($records as $data) {
@@ -144,12 +204,15 @@ class Report_serial_controls extends CI_Controller
                             <td>' . $data['delivery_note_no'] . '</td>
                             <td>' . $data['delivery_order_no'] . '</td>
                             <td>' . $data['delivery_order_date'] . '</td>
+                            <td>' . $data['prod_date'] . '</td>
+                            <td>' . $data['packing_date'] . '</td>
                             <td>' . $data['sales_order_no'] . '</td>
                             <td>' . $data['customer_name'] . '</td>
                             <td>' . $data['item_no'] . '</td>
                             <td>' . $data['item_name'] . '</td>
                             <td>' . $data['checksheet_label'] . '</td>
                             <td>' . number_format($data['qty'], 2) . '</td>
+                            <td>' . $data['lot_no'] . '</td>
                         </tr>';
             $no++;
         }

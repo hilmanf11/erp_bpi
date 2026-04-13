@@ -4,7 +4,9 @@
             <th rowspan="2" field="ck" checkbox="true"></th>
             <th rowspan="2" data-options="field:'id',halign:'center',width:190">Doc No</th>
             <th rowspan="2" data-options="field:'status',width:80,align:'center',formatter:statusformat,styler:statusStyle">Status</th>
+            <th rowspan="2" data-options="field:'print',width:80,align:'center',formatter:statusformat,styler:statusStyle">Status Print</th>
             <th rowspan="2" data-options="field:'request_date',width:120,halign:'center'">Request Date</th>
+            <th rowspan="2" data-options="field:'shift',width:80,halign:'center'">Shift</th>
             <th rowspan="2" data-options="field:'request_name',width:120,halign:'center'">Requester</th>
             <th rowspan="2" data-options="field:'item_number',width:150,halign:'center'">Part No</th>
             <th rowspan="2" data-options="field:'item_name',width:150,halign:'center'">Part Name</th>
@@ -77,7 +79,7 @@
     <a href="javascript:void(0)" class="easyui-linkbutton" data-options="plain:true" onclick="removeit()"><i class="fa fa-times"></i> Remove</a>
 </div>
 <!-- Insert & Update -->
-<div id="dlg_insert" class="easyui-dialog" title="Add New" data-options="closed: true,modal:true" style="width: 1000px; height: 600px; padding:10px; top: 20px;">
+<div id="dlg_insert" class="easyui-dialog" title="Add New" data-options="closed: true,modal:true" style="width: 1200px; height: 600px; padding:10px; top: 20px;">
     <form id="frm_insert" method="post" novalidate>
         <fieldset style="width:100%; border:1px solid #d0d0d0; margin-bottom: 10px; border-radius:4px; float: left;">
             <legend><b>Form Data</b></legend>
@@ -869,18 +871,60 @@
         }
     }
 
+    // function printConfirmation(id) {
+    //     swal.fire({
+    //         title: 'Confirmation',
+    //         text: 'Are you sure want print this Label',
+    //         icon: 'question',
+    //         showCancelButton: true,
+    //         confirmButtonText: 'YES',
+    //         cancelButtonText: 'CANCEL'
+    //     }).then((result) => {
+    //         if (result.isConfirmed) {
+    //             // Jika pengguna menekan tombol "Ya", lakukan pencetakan
+    //             window.open('<?= base_url('warehouse/receipt_crusher/print_label/') ?>' + window.btoa(id), '_blank');
+    //         } else {
+    //             window.location.reload();
+    //         }
+    //     });
+    // }
+
     function printConfirmation(id) {
         swal.fire({
             title: 'Confirmation',
-            text: 'Are you sure want print this Label',
+            text: 'Please Input Reprint Reason:',
+            input: 'text',
+            inputLabel: 'Reprint Reason',
+            inputPlaceholder: 'Type here...',
             icon: 'question',
             showCancelButton: true,
             confirmButtonText: 'YES',
-            cancelButtonText: 'CANCEL'
+            cancelButtonText: 'CANCEL',
+            preConfirm: (inputValue) => {
+                if (!inputValue) {
+                    swal.showValidationMessage('Please Input Reprint Reason');
+                }
+                return inputValue;
+            }
         }).then((result) => {
             if (result.isConfirmed) {
-                // Jika pengguna menekan tombol "Ya", lakukan pencetakan
-                window.open('<?= base_url('warehouse/receipt_crusher/print_label/') ?>' + window.btoa(id), '_blank');
+                const additionalInfo = result.value;
+
+                // Kirim data ke server untuk disimpan ke database
+                $.ajax({
+                    url: '<?= base_url('warehouse/receipt_crusher/save_reprint_reason') ?>', // Endpoint untuk simpan ke database
+                    method: 'POST',
+                    data: {
+                        request_id: id,
+                        reason: additionalInfo
+                    },
+                    success: function(response) {
+                         window.open('<?= base_url('warehouse/receipt_crusher/print_label/') ?>' + window.btoa(id), '_blank');
+                    },
+                    error: function(xhr, status, error) {
+                        swal.fire('Error', 'Failed to save reason: ' + error, 'error');
+                    }
+                });
             } else {
                 window.location.reload();
             }
