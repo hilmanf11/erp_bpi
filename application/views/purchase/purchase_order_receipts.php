@@ -728,6 +728,34 @@
         // Update URL open new tab 
         printWindow.location.href = "<?= base_url('purchase/purchase_order_receipts/print_receiving/') ?>" + window.btoa(receipt_no);
 
+        // Check Journal Inventory
+        const now_date = new Date().toISOString().split('T')[0];
+        $.ajax({
+            type: "post",
+            url: "<?= base_url('finance/journal_inventory/datatablesCheck/') ?>",
+            data: {
+                journal_date: now_date,
+                modul: "PURCHASE ORDER RECEIPT",
+                document_no: receipt_no,
+            },
+            dataType: "json",
+            success: function(response) {
+                if (response.status === true) {
+                    // BOLEH POSTING
+                    postingJournalValidate();
+                } else {
+                    // SUDAH ADA / ERROR
+                    Swal.fire("Information", response.message, "info");
+                }
+            },
+            error: function(xhr) {
+                Swal.close();
+                toastr.error("Failed to connect to Auto Posting server");
+            }
+        });
+    }
+
+    function postingJournalValidate() {
         // Konfirmasi Posting Jurnal
         Swal.fire({
             title: "Add Posting Journal?",

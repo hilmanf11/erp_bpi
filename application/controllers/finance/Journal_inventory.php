@@ -453,32 +453,42 @@ class Journal_inventory extends CI_Controller
 
     public function datatablesCheck()
     {
-        $post = $this->input->post();
+        try {
+            $post = $this->input->post();
 
-        $journal_date = $post['journal_date'];
-        $transaction_to = date("Y-m-t", strtotime($journal_date));
-        $modul = $post['modul'];
-        $company_id = $post['company_id'];
+            $modul        = $post['modul'] ?? '';
+            $journal_date = $post['journal_date'] ?? '';
+            $document_no  = $post['document_no'] ?? '';
 
-        if(!empty($post['document_no'])){
-            $document_no = explode(",", $post['document_no']);
-        }else{
-            $document_no = array();
-        }
+            if (empty($modul) || empty($document_no)) {
+                throw new Exception("Parameter Modul atau Document No tidak lengkap.");
+            }
 
-        $this->db->select('*');
-        $this->db->from('journal_inventory');
-        $this->db->where('journal_date', $transaction_to);
-        $this->db->where('modul', $modul);
-        if(count($document_no) > 0){
-            $this->db->where_in('document_no', $document_no);
-        }
-        $totalRows = $this->db->count_all_results('', false);
+            // Set Period
+            $ref_date = !empty($journal_date) ? strtotime($journal_date) : time();
+            $transaction_from = date("Y-m-01", $ref_date);
+            $transaction_to   = date("Y-m-t", $ref_date);
 
-        if($totalRows > 0){
-            echo 1;
-        }else{
-            echo 0;
+            // Query Check (Gunakan select(1) agar lebih ringan karena hanya butuh hitung baris)
+            $this->db->select('1');
+            $this->db->from('journal_inventory');
+            $this->db->where('modul', $modul);
+            $this->db->where('document_no', $document_no);
+            $this->db->where('journal_date >=', $transaction_from);
+            $this->db->where('journal_date <=', $transaction_to);
+            
+            $exists = $this->db->count_all_results();
+
+            // Jika exists == 0, berarti BOLEH posting (return true)
+            if ($exists === 0) {
+                echo json_encode(['status' => true, 'message' => 'Ready to post']);
+            } else {
+                echo json_encode(['status' => false, 'message' => "Document $document_no has already been journaled in this period."]);
+            }
+
+        } catch (Exception $e) {
+            log_message('error', "datatablesCheck Error: " . $e->getMessage());
+            echo json_encode(['status' => false, 'message' => 'Internal Server Error: ' . $e->getMessage()]);
         }
     }
 

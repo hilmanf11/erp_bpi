@@ -21,7 +21,10 @@ class Autopostingjournal extends CI_Model {
         // Check if the document has been journaled before
         if ($this->_is_already_posted($modul, $document_no)) {
             log_message('debug', "$document_no for module $modul has been posted before. Skip.");
-            return true; 
+            return [
+                'status'  => false, 
+                'message' => "Skip: Document $document_no has already been posted to Journal."
+            ]; 
         }
 
         switch ($modul) {
