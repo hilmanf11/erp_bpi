@@ -76,7 +76,7 @@ class Report_history_transaction_boxs extends CI_Controller
         if ($option == "excel") {
             $format  = date("Ymd");
             header("Content-type: application/vnd-ms-excel");
-            header("Content-Disposition: attachment; filename=history_transactions_rm_$format.xls");
+            header("Content-Disposition: attachment; filename=history_transactions_boxs_$format.xls");
         }
         //------------------------------------ Opsi print berakhir disini------------------------------------------------------//
 
@@ -86,6 +86,7 @@ class Report_history_transaction_boxs extends CI_Controller
         $filter_display = $this->input->get("filter_display");
         $filter_division = $this->input->get('filter_division');
         $filter_trans_type = $this->input->get('filter_trans_type');
+        $filter_customer_name = $this->input->get('filter_customer_name');
 
         $start = strtotime($filter_from);
         $finish = strtotime($filter_to);
@@ -112,502 +113,686 @@ class Report_history_transaction_boxs extends CI_Controller
         
         //------------------------------------ Mengambil data dari Tabel Config berakhir disini----------------------------------//
 
-        $query_main = "SELECT
-            a.id,
-            a.name,
-            a.code,
-            a.color,
-            -- BEGIN EMPTY
-            SUM(CASE 
-                WHEN t.request_date < '$filter_from' 
-                    AND t.transaction_type = 'ADJ IN STO - EMPTY' 
-                THEN t.qty
-                WHEN t.request_date < '$filter_from' 
-                    AND t.transaction_type = 'ADJ OUT STO - EMPTY' 
-                THEN -t.qty
-                ELSE 0 
-            END) AS empty_begin,
+        if ($filter_display != "RECAP CUSTOMER") {
 
-            -- BEGIN WIP/FG
-            SUM(CASE 
-                WHEN t.request_date < '$filter_from' 
-                    AND t.transaction_type = 'ADJ IN STO - WIP/FG' 
-                THEN t.qty
-                WHEN t.request_date < '$filter_from' 
-                    AND t.transaction_type = 'ADJ OUT STO - WIP/FG' 
-                THEN -t.qty
-                ELSE 0 
-            END) AS wip_begin,
+            $query_main = "SELECT
+                a.id,
+                a.name,
+                a.code,
+                a.color,
+                -- BEGIN EMPTY
+                SUM(CASE 
+                    WHEN t.request_date < '$filter_from' 
+                        AND t.transaction_type = 'ADJ IN STO - EMPTY' 
+                    THEN t.qty
+                    WHEN t.request_date < '$filter_from' 
+                        AND t.transaction_type = 'ADJ OUT STO - EMPTY' 
+                    THEN -t.qty
+                    ELSE 0 
+                END) AS empty_begin,
 
-            -- BEGIN SUPP/CUST
-            SUM(CASE 
-                WHEN t.request_date < '$filter_from' 
-                    AND t.transaction_type = 'ADJ IN STO - SUPPLIER/CUST' 
-                THEN t.qty
-                WHEN t.request_date < '$filter_from' 
-                    AND t.transaction_type = 'ADJ OUT STO - SUPPLIER/CUST' 
-                THEN -t.qty
-                ELSE 0 
-            END) AS supp_begin,
+                -- BEGIN WIP/FG
+                SUM(CASE 
+                    WHEN t.request_date < '$filter_from' 
+                        AND t.transaction_type = 'ADJ IN STO - WIP/FG' 
+                    THEN t.qty
+                    WHEN t.request_date < '$filter_from' 
+                        AND t.transaction_type = 'ADJ OUT STO - WIP/FG' 
+                    THEN -t.qty
+                    ELSE 0 
+                END) AS wip_begin,
 
-            -- EMPTY IN/OUT
-            SUM(CASE 
-                WHEN t.request_date BETWEEN '$filter_from' AND '$filter_to'
-                    AND (
-                        (t.transaction_type NOT LIKE 'ADJ%STO%' AND t.transaction_to = 'EMPTY')
-                        OR t.transaction_type = 'ADJ IN STO - EMPTY'
-                    )
-                THEN t.qty ELSE 0 END
-            ) AS empty_in,
+                -- BEGIN SUPP/CUST
+                SUM(CASE 
+                    WHEN t.request_date < '$filter_from' 
+                        AND t.transaction_type = 'ADJ IN STO - SUPPLIER/CUST' 
+                    THEN t.qty
+                    WHEN t.request_date < '$filter_from' 
+                        AND t.transaction_type = 'ADJ OUT STO - SUPPLIER/CUST' 
+                    THEN -t.qty
+                    ELSE 0 
+                END) AS supp_begin,
 
-            SUM(CASE 
-                WHEN t.request_date BETWEEN '$filter_from' AND '$filter_to'
-                    AND (
-                        (t.transaction_type NOT LIKE 'ADJ%STO%' AND t.transaction_from = 'EMPTY')
-                        OR t.transaction_type = 'ADJ OUT STO - EMPTY'
-                    )
-                THEN t.qty ELSE 0 END
-            ) AS empty_out,
-
-            -- WIP IN/OUT
-            SUM(CASE 
-                WHEN t.request_date BETWEEN '$filter_from' AND '$filter_to'
-                    AND (
-                        (t.transaction_type NOT LIKE 'ADJ%STO%' AND t.transaction_to = 'WIP/FG')
-                        OR t.transaction_type = 'ADJ IN STO - WIP/FG'
-                    )
-                THEN t.qty ELSE 0 END
-            ) AS wip_in,
-
-            (
+                -- EMPTY IN/OUT
                 SUM(CASE 
                     WHEN t.request_date BETWEEN '$filter_from' AND '$filter_to'
                         AND (
-                            (t.transaction_type NOT LIKE 'ADJ%STO%' AND t.transaction_from = 'WIP/FG')
-                            OR t.transaction_type = 'ADJ OUT STO - WIP/FG'
+                            (t.transaction_type NOT LIKE 'ADJ%STO%' AND t.transaction_to = 'EMPTY')
+                            OR t.transaction_type = 'ADJ IN STO - EMPTY'
                         )
                     THEN t.qty ELSE 0 END
-                )  
-                +   
-                -- OUT dari DN boxs
+                ) AS empty_in,
+
+                SUM(CASE 
+                    WHEN t.request_date BETWEEN '$filter_from' AND '$filter_to'
+                        AND (
+                            (t.transaction_type NOT LIKE 'ADJ%STO%' AND t.transaction_from = 'EMPTY')
+                            OR t.transaction_type = 'ADJ OUT STO - EMPTY'
+                        )
+                    THEN t.qty ELSE 0 END
+                ) AS empty_out,
+
+                -- WIP IN/OUT
+                SUM(CASE 
+                    WHEN t.request_date BETWEEN '$filter_from' AND '$filter_to'
+                        AND (
+                            (t.transaction_type NOT LIKE 'ADJ%STO%' AND t.transaction_to = 'WIP/FG')
+                            OR t.transaction_type = 'ADJ IN STO - WIP/FG'
+                        )
+                    THEN t.qty ELSE 0 END
+                ) AS wip_in,
+
+                (
+                    SUM(CASE 
+                        WHEN t.request_date BETWEEN '$filter_from' AND '$filter_to'
+                            AND (
+                                (t.transaction_type NOT LIKE 'ADJ%STO%' AND t.transaction_from = 'WIP/FG')
+                                OR t.transaction_type = 'ADJ OUT STO - WIP/FG'
+                            )
+                        THEN t.qty ELSE 0 END
+                    )  
+                    +   
+                    -- OUT dari DN boxs
+                        IFNULL(dn.dn_in, 0)
+                )AS wip_out,
+
+                -- SUPP/CUST IN (gabung dengan DN)
+                (
+                    -- IN dari transaksi normal
+                    SUM(CASE 
+                        WHEN t.request_date BETWEEN '$filter_from' AND '$filter_to'
+                            AND (
+                                (t.transaction_type NOT LIKE 'ADJ%' AND t.transaction_to = 'SUPPLIER/CUST')
+                                OR t.transaction_type = 'ADJ IN STO - SUPPLIER/CUST'
+                            )
+                        THEN t.qty ELSE 0 END
+                    )
+                    +
+                    -- IN dari DN boxs
                     IFNULL(dn.dn_in, 0)
-            )AS wip_out,
+                ) AS supp_in,
 
-            -- SUPP/CUST IN (gabung dengan DN)
-            (
-                -- IN dari transaksi normal
+                -- SUPP/CUST OUT
                 SUM(CASE 
                     WHEN t.request_date BETWEEN '$filter_from' AND '$filter_to'
                         AND (
-                            (t.transaction_type NOT LIKE 'ADJ%' AND t.transaction_to = 'SUPPLIER/CUST')
-                            OR t.transaction_type = 'ADJ IN STO - SUPPLIER/CUST'
+                            (t.transaction_type NOT LIKE 'ADJ%' AND t.transaction_from = 'SUPPLIER/CUST')
+                            OR t.transaction_type = 'ADJ OUT STO - SUPPLIER/CUST'
+                            OR t.transaction_type IN ('Receipt from cust/sup (emp)', 'Receipt from cust/sup (full)')
                         )
                     THEN t.qty ELSE 0 END
-                )
-                +
-                -- IN dari DN boxs
-                IFNULL(dn.dn_in, 0)
-            ) AS supp_in,
+                ) AS supp_out
 
-            -- SUPP/CUST OUT
-            SUM(CASE 
-                WHEN t.request_date BETWEEN '$filter_from' AND '$filter_to'
-                    AND (
-                        (t.transaction_type NOT LIKE 'ADJ%' AND t.transaction_from = 'SUPPLIER/CUST')
-                        OR t.transaction_type = 'ADJ OUT STO - SUPPLIER/CUST'
-                        OR t.transaction_type IN ('Receipt from cust/sup (emp)', 'Receipt from cust/sup (full)')
-                    )
-                THEN t.qty ELSE 0 END
-            ) AS supp_out
+            FROM item_boxs a
+            LEFT JOIN transaction_boxs t ON a.id = t.item_box_id
 
-        FROM item_boxs a
-        LEFT JOIN transaction_boxs t ON a.id = t.item_box_id
+            LEFT JOIN (
+                SELECT item_box_id, SUM(qty) AS dn_in
+                FROM dn_boxs
+                WHERE transaction_date BETWEEN '$filter_from' AND '$filter_to'
+                GROUP BY item_box_id
+            ) dn ON dn.item_box_id = a.id
 
-        LEFT JOIN (
-            SELECT item_box_id, SUM(qty) AS dn_in
-            FROM dn_boxs
-            WHERE transaction_date BETWEEN '$filter_from' AND '$filter_to'
-            GROUP BY item_box_id
-        ) dn ON dn.item_box_id = a.id
+            WHERE a.id LIKE '%$filter_items%'
+            GROUP BY a.id, a.name, a.code, a.color
+            ORDER BY a.id ASC";
 
-        WHERE a.id LIKE '%$filter_items%'
-        GROUP BY a.id, a.name, a.code, a.color
-        ORDER BY a.id ASC";
-
-        // Eksekusi query
-        $records = $this->crud->query($query_main);
-
-        $html = '<html><head><title>Print Data</title></head>
-            <style>
-                body {font-family: Arial, Helvetica, sans-serif;}#customers {border-collapse: collapse;width: 100%;font-size: 12px;}#customers td, #customers th {border: 1px solid #ddd;padding: 2px;}#customers tr:nth-child(even){background-color: #f2f2f2;}#customers tr:hover {background-color: #ddd;}#customers th {padding-top: 2px;padding-bottom: 2px;text-align: center;color: black;}
-                /* Style khusus untuk media cetak */
-                @media print {
-                    #customers thead {
-                        display: table-header-group;
-                    }
-                    #customers tbody tr {
-                        page-break-inside: avoid;
-                    }
-                }
-            </style><body>
-            <center>
-                <div style="float: left; font-size: 12px; text-align: left;">
-                    <table style="width: 100%;">
-                        <tr>
-                            <td width="50" style="font-size: 12px; vertical-align: top; text-align: center; vertical-align:jus margin-right:10px;">
-                                <img src="' . $config->favicon . '" width="30">
-                            </td>
-                            <td style="font-size: 14px; text-align: left; margin:2px;">
-                                <b>' . $config->name . '</b><br>
-                                <small>'.$config->description.'</small>
-                            </td>
-                        </tr>
-                    </table>
-                </div>';
-                
-        if ($option == "excel") {
-            $html .= '<div style="float: right; font-size: 12px; text-align: right;">
-                        Print Date ' . date("d M Y H:i:s") . ' <br>
-                        Print By ' . $this->session->username . '  
-                    </div>';
-        } else {
-            $html .= '<div style="float: right; font-size: 12px; text-align: right;">
-                        Print Date ' . date("d M Y H:i:s") . ' <br>
-                        Print By ' . $this->session->username . '  
-                    </div>
-                <br><br>';
-        }
-        
-        $html .= '<br><br>
-                <h3 style="margin:0;">HISTORY TRANSACTION BOX</h3>
-                <small>PERIOD : <b>' . $filter_from . '</b> To <b>' . $filter_to . '</b></small>
-            </center>
-            <br><br>
+            // Eksekusi query
+            $records = $this->crud->query($query_main);
             
-            <table id="customers" border="1" style="font-size: 11px;">
-             <thead>
-                <tr>
-                    <th rowspan="3" width="20">No</th>
-                    <th rowspan="3">Id Box</th>
-                    <th rowspan="3">Name</th>
-                    <th rowspan="3">Box Code</th>
-                    <th rowspan="3">Color</th>
-                    <th rowspan="3">Begin</th>
-                    <th colspan="8">BPI</th>
-                    <th colspan="4">-</th>
-                    <th colspan="5" rowspan="3">BALANCE</th>
-                </tr>
-                <tr>
-                    <th colspan="4">EMPTY BOX</th>
-                    <th colspan="4">WIP/FG</th>
-                    <th colspan="4">SUPPLIER/CUSTOMER</th>
-                </tr>
-                <tr>
-                    <th>BEGIN</th>
-                    <th>IN</th>
-                    <th>OUT</th>
-                    <th>ENDING</th>
-                    <th>BEGIN</th>
-                    <th>IN</th>
-                    <th>OUT</th>
-                    <th>ENDING</th>
-                    <th>BEGIN</th>
-                    <th>IN</th>
-                    <th>OUT</th>
-                    <th>ENDING</th>
-                </tr>
-             </thead>';
-
-
-        $no = 1;
-        $totalBeginStock = 0;
-        $totalIn = 0;
-        $totalOut = 0;
-        $totalBpi = 0;
-        $totalPlant1 = 0;
-        $totalEndingStock = 0;
-        $totalIto = 0;
-
-        function isAdjustmentSTO($type) {
-            return (stripos($type, 'ADJ') !== false && stripos($type, 'STO') !== false);
-        }
-
-        foreach ($records as $record) {
-                $item_box_id = $record->id;
-                $empty_balance = $record->empty_begin + $record->empty_in - $record->empty_out;
-                $wip_balance   = $record->wip_begin + $record->wip_in - $record->wip_out;
-                $supp_balance  = $record->supp_begin + $record->supp_in - $record->supp_out;
-                $total_begin_utama = $record->empty_begin + $record->wip_begin + $record->supp_begin;
-                $total_balance_utama = $empty_balance + $wip_balance + $supp_balance;
-                // $totalBeginStock += $total_begin_utama;
+            $html = '<html><head><title>Print Data</title></head>
+                <style>
+                    body {font-family: Arial, Helvetica, sans-serif;}#customers {border-collapse: collapse;width: 100%;font-size: 12px;}#customers td, #customers th {border: 1px solid #ddd;padding: 2px;}#customers tr:nth-child(even){background-color: #f2f2f2;}#customers tr:hover {background-color: #ddd;}#customers th {padding-top: 2px;padding-bottom: 2px;text-align: center;color: black;}
+                    /* Style khusus untuk media cetak */
+                    @media print {
+                        #customers thead {
+                            display: table-header-group;
+                        }
+                        #customers tbody tr {
+                            page-break-inside: avoid;
+                        }
+                    }
+                </style><body>
+                <center>
+                    <div style="float: left; font-size: 12px; text-align: left;">
+                        <table style="width: 100%;">
+                            <tr>
+                                <td width="50" style="font-size: 12px; vertical-align: top; text-align: center; vertical-align:jus margin-right:10px;">
+                                    <img src="' . $config->favicon . '" width="30">
+                                </td>
+                                <td style="font-size: 14px; text-align: left; margin:2px;">
+                                    <b>' . $config->name . '</b><br>
+                                    <small>'.$config->description.'</small>
+                                </td>
+                            </tr>
+                        </table>
+                    </div>';
+                    
+            if ($option == "excel") {
+                $html .= '<div style="float: right; font-size: 12px; text-align: right;">
+                            Print Date ' . date("d M Y H:i:s") . ' <br>
+                            Print By ' . $this->session->username . '  
+                        </div>';
+            } else {
+                $html .= '<div style="float: right; font-size: 12px; text-align: right;">
+                            Print Date ' . date("d M Y H:i:s") . ' <br>
+                            Print By ' . $this->session->username . '  
+                        </div>
+                    <br><br>';
+            }
+            
+            $html .= '<br><br>
+                    <h3 style="margin:0;">HISTORY TRANSACTION BOX</h3>
+                    <small>PERIOD : <b>' . $filter_from . '</b> To <b>' . $filter_to . '</b></small>
+                </center>
+                <br><br>
                 
-                $html .= '<tr>
-                            <td style="text-align:center">' . $no . '</td>
-                            <td>' . $record->id . '</td>
-                            <td>' . $record->name . '</td>
-                            <td>' . $record->code . '</td>
-                            <td>' . $record->color . '</td>
-                            <td style="text-align:right">' . number_format($total_begin_utama) . '</td>
-                            <td style="text-align:right">' . number_format($record->empty_begin) . '</td>
-                            <td style="text-align:right">' . number_format($record->empty_in) . '</td>
-                            <td style="text-align:right">' . number_format($record->empty_out) . '</td>
-                            <td style="text-align:right">' . number_format($empty_balance) . '</td>
-                            <td style="text-align:right">' . number_format($record->wip_begin) . '</td>
-                            <td style="text-align:right">' . number_format($record->wip_in) . '</td>
-                            <td style="text-align:right">' . number_format($record->wip_out) . '</td>
-                            <td style="text-align:right">' . number_format($wip_balance) . '</td>
-                            <td style="text-align:right">' . number_format($record->supp_begin) . '</td>
-                            <td style="text-align:right">' . number_format($record->supp_in) . '</td>
-                            <td style="text-align:right">' . number_format($record->supp_out) . '</td>
-                            <td style="text-align:right">' . number_format($supp_balance) . '</td>
-                            <td style="text-align:center" colspan="5" >' . number_format($total_balance_utama) . '</td>
-                        </tr>';
-
-            if ($filter_display == "DETAIL") {
-                $html .= '
-                        <tr>
-                            <td colspan="23" style="background:#D1FFC6; font-size: 11px;"><b>DETAIL OF ' . $record->name . ' - ' . $record->color . '</b></td>
-                        </tr>
-                        <tr>
-                            <th rowspan="3" width="20"></th>
-                            <th rowspan="3" width="20">No</th>
-                            <th rowspan="3">Id Box</th>
-                            <th rowspan="3">Name</th>
-                            <th rowspan="3">Box Code</th>
-                            <th rowspan="3">Color</th>
-                            <th rowspan="3">Type Transaction</th>
-                            <th rowspan="3">Description</th>
-                            <th rowspan="3">Date</th>
-                            <th rowspan="3">Begin</th>
-                            <th colspan="8">BPI</th>
-                            <th colspan="4">-</th>
-                            <th rowspan="3">BALANCE</th>
-                        </tr>
-                        <tr>
-                            <th colspan="4">EMPTY BOX</th>
-                            <th colspan="4">WIP/FG</th>
-                            <th colspan="4">SUPPLIER/CUSTOMER</th>
-                        </tr>
-                        <tr>
-                            <th>BEGIN</th>
-                            <th>IN</th>
-                            <th>OUT</th>
-                            <th>ENDING</th>
-                            <th>BEGIN</th>
-                            <th>IN</th>
-                            <th>OUT</th>
-                            <th>ENDING</th>
-                            <th>BEGIN</th>
-                            <th>IN</th>
-                            <th>OUT</th>
-                            <th>ENDING</th>
-                        </tr>';
-
-                    $nod = 1;
-
-                    // --- Ambil nilai begin per area dari recap utama
-                    $begin_empty = $record->empty_begin ?? 0;
-                    $begin_wip   = $record->wip_begin ?? 0;
-                    $begin_supp  = $record->supp_begin ?? 0;
-                    $balance     = $begin_empty + $begin_wip + $begin_supp;
-                    if ($filter_trans_type == 'Choose All' ) {
-                        //-------------- Awal Query disini----------------------------------//                    
-                        $detail = $this->crud->query("SELECT
-                                a.id,
-                                a.name,
-                                a.code,
-                                a.color,
-                                t.transaction_type AS type,
-                                t.request_date AS date,
-                                d.remarks AS `desc`,
-                                t.qty,
-                                t.transaction_to,
-                                t.transaction_from,
-                                t.created_date,
-                                0 AS is_dn
-                            FROM item_boxs a
-                            LEFT JOIN transaction_boxs t ON a.id = t.item_box_id
-                            JOIN master_transaction_boxs d ON t.transaction_id = d.id
-                            WHERE a.id = '$item_box_id'
-                            AND t.request_date BETWEEN '$filter_from' AND '$filter_to'
-
-                            UNION ALL
-
-                            -- DN dianggap sebagai transaksi OUT dari WIP/FG dan IN ke SUPPLIER/CUST
-                            SELECT
-                                a.id,
-                                a.name,
-                                a.code,
-                                a.color,
-                                'DN to Cust/Sup' AS type,
-                                dn.transaction_date AS date,
-                                'FROM WIP/FG TO SUPPLIER/CUST' AS `desc`,
-                                dn.qty,
-                                'SUPPLIER/CUST' AS transaction_to,
-                                'WIP/FG' AS transaction_from,
-                                dn.created_date,
-                                1 AS is_dn
-                            FROM dn_boxs dn
-                            JOIN item_boxs a ON dn.item_box_id = a.id
-                            LEFT JOIN customers c ON dn.customer_id = c.id
-                            WHERE a.id = '$item_box_id' 
-                            AND dn.transaction_date BETWEEN '$filter_from' AND '$filter_to'
-
-                            ORDER BY date ASC, created_date ASC
-                        ");
-                        
-                        // --- Dalam bagian foreach ($detail as $row) ---
-                        foreach ($detail as $row) {
-                            // Default 0
-                            $empty_in = $empty_out = 0;
-                            $wip_in = $wip_out = 0;
-                            $supp_in = $supp_out = 0;
-
-                            // === EMPTY ===
-                            if (
-                                ($row->transaction_to == 'EMPTY' && !isAdjustmentSTO($row->type))
-                                || $row->type == 'ADJ IN STO - EMPTY'
-                            ) $empty_in = $row->qty;
-
-                            if (
-                                ($row->transaction_from == 'EMPTY' && !isAdjustmentSTO($row->type))
-                                || $row->type == 'ADJ OUT STO - EMPTY'
-                            ) $empty_out = $row->qty;
+                <table id="customers" border="1" style="font-size: 11px;">
+                <thead>
+                    <tr>
+                        <th rowspan="3" width="20">No</th>
+                        <th rowspan="3">Id Box</th>
+                        <th rowspan="3">Name</th>
+                        <th rowspan="3">Box Code</th>
+                        <th rowspan="3">Color</th>
+                        <th rowspan="3">Begin</th>
+                        <th colspan="8">BPI</th>
+                        <th colspan="4">-</th>
+                        <th colspan="5" rowspan="3">BALANCE</th>
+                    </tr>
+                    <tr>
+                        <th colspan="4">EMPTY BOX</th>
+                        <th colspan="4">WIP/FG</th>
+                        <th colspan="4">SUPPLIER/CUSTOMER</th>
+                    </tr>
+                    <tr>
+                        <th>BEGIN</th>
+                        <th>IN</th>
+                        <th>OUT</th>
+                        <th>ENDING</th>
+                        <th>BEGIN</th>
+                        <th>IN</th>
+                        <th>OUT</th>
+                        <th>ENDING</th>
+                        <th>BEGIN</th>
+                        <th>IN</th>
+                        <th>OUT</th>
+                        <th>ENDING</th>
+                    </tr>
+                </thead>';
 
 
-                            // === WIP / FG ===
-                            if (
-                                ($row->transaction_to == 'WIP/FG' && !isAdjustmentSTO($row->type))
-                                || $row->type == 'ADJ IN STO - WIP/FG'
-                            ) $wip_in = $row->qty;
+            $no = 1;
+            $totalBeginStock = 0;
+            $totalIn = 0;
+            $totalOut = 0;
+            $totalBpi = 0;
+            $totalPlant1 = 0;
+            $totalEndingStock = 0;
+            $totalIto = 0;
 
-                            if (
-                                ($row->transaction_from == 'WIP/FG' && !isAdjustmentSTO($row->type))
-                                || $row->type == 'ADJ OUT STO - WIP/FG'
-                                || ($row->is_dn == 1)  // dari DN keluar dari WIP/FG
-                            ) $wip_out = $row->qty;
+            function isAdjustmentSTO($type) {
+                return (stripos($type, 'ADJ') !== false && stripos($type, 'STO') !== false);
+            }
 
-
-                            // === SUPPLIER / CUSTOMER ===
-                            if (
-                                ($row->transaction_to == 'SUPPLIER/CUST' && !isAdjustmentSTO($row->type))
-                                || $row->type == 'ADJ IN STO - SUPPLIER/CUST'
-                                || ($row->is_dn == 1)  // dari DN masuk ke SUPP/CUST
-                            ) $supp_in = $row->qty;
-
-                            if (
-                                ($row->transaction_from == 'SUPPLIER/CUST' && !isAdjustmentSTO($row->type))
-                                || $row->type == 'ADJ OUT STO - SUPPLIER/CUST'
-                                || in_array($row->type, ['Receipt from cust/sup (emp)', 'Receipt from cust/sup (full)'])
-                            ) $supp_out = $row->qty;
-
-
-                            // === Hitung Ending ===
-                            $end_empty = $begin_empty + $empty_in - $empty_out;
-                            $end_wip   = $begin_wip   + $wip_in   - $wip_out;
-                            $end_supp  = $begin_supp  + $supp_in  - $supp_out;
-                            $balance   = $end_empty + $end_wip + $end_supp;
-
-                            // === Output ke tabel HTML ===
-                            $html .= '<tr>
-                                <td></td>
-                                <td style="text-align:center">' . $nod . '</td>
-                                <td>' . $row->id . '</td>
-                                <td>' . $row->name . '</td>
-                                <td>' . $row->code . '</td>
-                                <td>' . $row->color . '</td>
-                                <td>' . $row->type . '</td>
-                                <td>' . $row->desc . '</td>
-                                <td>' . date("Y-m-d", strtotime($row->date)) . '</td>
-                                <td style="text-align:right;">' . number_format($begin_empty + $begin_wip + $begin_supp) . '</td>
-
-                                <!-- EMPTY -->
-                                <td style="text-align:right;">' . number_format($begin_empty) . '</td>
-                                <td style="text-align:right;">' . number_format($empty_in) . '</td>
-                                <td style="text-align:right;">' . number_format($empty_out) . '</td>
-                                <td style="text-align:right;">' . number_format($end_empty) . '</td>
-
-                                <!-- WIP / FG -->
-                                <td style="text-align:right;">' . number_format($begin_wip) . '</td>
-                                <td style="text-align:right;">' . number_format($wip_in) . '</td>
-                                <td style="text-align:right;">' . number_format($wip_out) . '</td>
-                                <td style="text-align:right;">' . number_format($end_wip) . '</td>
-
-                                <!-- SUPPLIER / CUSTOMER -->
-                                <td style="text-align:right;">' . number_format($begin_supp) . '</td>
-                                <td style="text-align:right;">' . number_format($supp_in) . '</td>
-                                <td style="text-align:right;">' . number_format($supp_out) . '</td>
-                                <td style="text-align:right;">' . number_format($end_supp) . '</td>
-
-                                <!-- BALANCE -->
-                                <td style="text-align:right;">' . number_format($balance) . '</td>
+            foreach ($records as $record) {
+                    $item_box_id = $record->id;
+                    $empty_balance = $record->empty_begin + $record->empty_in - $record->empty_out;
+                    $wip_balance   = $record->wip_begin + $record->wip_in - $record->wip_out;
+                    $supp_balance  = $record->supp_begin + $record->supp_in - $record->supp_out;
+                    $total_begin_utama = $record->empty_begin + $record->wip_begin + $record->supp_begin;
+                    $total_balance_utama = $empty_balance + $wip_balance + $supp_balance;
+                    // $totalBeginStock += $total_begin_utama;
+                    
+                    $html .= '<tr>
+                                <td style="text-align:center">' . $no . '</td>
+                                <td>' . $record->id . '</td>
+                                <td>' . $record->name . '</td>
+                                <td>' . $record->code . '</td>
+                                <td>' . $record->color . '</td>
+                                <td style="text-align:right">' . number_format($total_begin_utama) . '</td>
+                                <td style="text-align:right">' . number_format($record->empty_begin) . '</td>
+                                <td style="text-align:right">' . number_format($record->empty_in) . '</td>
+                                <td style="text-align:right">' . number_format($record->empty_out) . '</td>
+                                <td style="text-align:right">' . number_format($empty_balance) . '</td>
+                                <td style="text-align:right">' . number_format($record->wip_begin) . '</td>
+                                <td style="text-align:right">' . number_format($record->wip_in) . '</td>
+                                <td style="text-align:right">' . number_format($record->wip_out) . '</td>
+                                <td style="text-align:right">' . number_format($wip_balance) . '</td>
+                                <td style="text-align:right">' . number_format($record->supp_begin) . '</td>
+                                <td style="text-align:right">' . number_format($record->supp_in) . '</td>
+                                <td style="text-align:right">' . number_format($record->supp_out) . '</td>
+                                <td style="text-align:right">' . number_format($supp_balance) . '</td>
+                                <td style="text-align:center" colspan="5" >' . number_format($total_balance_utama) . '</td>
+                            </tr>';
+                if ($filter_display == "DETAIL") {
+                    $html .= '
+                            <tr>
+                                <td colspan="23" style="background:#D1FFC6; font-size: 11px;"><b>DETAIL OF ' . $record->name . ' - ' . $record->color . '</b></td>
+                            </tr>
+                            <tr>
+                                <th rowspan="3" width="20"></th>
+                                <th rowspan="3" width="20">No</th>
+                                <th rowspan="3">Id Box</th>
+                                <th rowspan="3">Name</th>
+                                <th rowspan="3">Box Code</th>
+                                <th rowspan="3">Color</th>
+                                <th rowspan="3">Type Transaction</th>
+                                <th rowspan="3">Description</th>
+                                <th rowspan="3">Date</th>
+                                <th rowspan="3">Begin</th>
+                                <th colspan="8">BPI</th>
+                                <th colspan="4">-</th>
+                                <th rowspan="3">BALANCE</th>
+                            </tr>
+                            <tr>
+                                <th colspan="4">EMPTY BOX</th>
+                                <th colspan="4">WIP/FG</th>
+                                <th colspan="4">SUPPLIER/CUSTOMER</th>
+                            </tr>
+                            <tr>
+                                <th>BEGIN</th>
+                                <th>IN</th>
+                                <th>OUT</th>
+                                <th>ENDING</th>
+                                <th>BEGIN</th>
+                                <th>IN</th>
+                                <th>OUT</th>
+                                <th>ENDING</th>
+                                <th>BEGIN</th>
+                                <th>IN</th>
+                                <th>OUT</th>
+                                <th>ENDING</th>
                             </tr>';
 
-                            // Update saldo awal untuk baris berikutnya
-                            $begin_empty = $end_empty;
-                            $begin_wip   = $end_wip;
-                            $begin_supp  = $end_supp;
+                        $nod = 1;
 
-                            $nod++;
+                        // --- Ambil nilai begin per area dari recap utama
+                        $begin_empty = $record->empty_begin ?? 0;
+                        $begin_wip   = $record->wip_begin ?? 0;
+                        $begin_supp  = $record->supp_begin ?? 0;
+                        $balance     = $begin_empty + $begin_wip + $begin_supp;
+                        if ($filter_trans_type == 'Choose All' ) {
+                            //-------------- Awal Query disini----------------------------------//                    
+                            $detail = $this->crud->query("SELECT
+                                    a.id,
+                                    a.name,
+                                    a.code,
+                                    a.color,
+                                    t.transaction_type AS type,
+                                    t.request_date AS date,
+                                    d.remarks AS `desc`,
+                                    t.qty,
+                                    t.transaction_to,
+                                    t.transaction_from,
+                                    t.created_date,
+                                    0 AS is_dn
+                                FROM item_boxs a
+                                LEFT JOIN transaction_boxs t ON a.id = t.item_box_id
+                                JOIN master_transaction_boxs d ON t.transaction_id = d.id
+                                WHERE a.id = '$item_box_id'
+                                AND t.request_date BETWEEN '$filter_from' AND '$filter_to'
+
+                                UNION ALL
+
+                                -- DN dianggap sebagai transaksi OUT dari WIP/FG dan IN ke SUPPLIER/CUST
+                                SELECT
+                                    a.id,
+                                    a.name,
+                                    a.code,
+                                    a.color,
+                                    'DN to Cust/Sup' AS type,
+                                    dn.transaction_date AS date,
+                                    'FROM WIP/FG TO SUPPLIER/CUST' AS `desc`,
+                                    dn.qty,
+                                    'SUPPLIER/CUST' AS transaction_to,
+                                    'WIP/FG' AS transaction_from,
+                                    dn.created_date,
+                                    1 AS is_dn
+                                FROM dn_boxs dn
+                                JOIN item_boxs a ON dn.item_box_id = a.id
+                                LEFT JOIN customers c ON dn.customer_id = c.id
+                                WHERE a.id = '$item_box_id' 
+                                AND dn.transaction_date BETWEEN '$filter_from' AND '$filter_to'
+
+                                ORDER BY date ASC, created_date ASC
+                            ");
+                            
+                            // --- Dalam bagian foreach ($detail as $row) ---
+                            foreach ($detail as $row) {
+                                // Default 0
+                                $empty_in = $empty_out = 0;
+                                $wip_in = $wip_out = 0;
+                                $supp_in = $supp_out = 0;
+
+                                // === EMPTY ===
+                                if (
+                                    ($row->transaction_to == 'EMPTY' && !isAdjustmentSTO($row->type))
+                                    || $row->type == 'ADJ IN STO - EMPTY'
+                                ) $empty_in = $row->qty;
+
+                                if (
+                                    ($row->transaction_from == 'EMPTY' && !isAdjustmentSTO($row->type))
+                                    || $row->type == 'ADJ OUT STO - EMPTY'
+                                ) $empty_out = $row->qty;
+
+
+                                // === WIP / FG ===
+                                if (
+                                    ($row->transaction_to == 'WIP/FG' && !isAdjustmentSTO($row->type))
+                                    || $row->type == 'ADJ IN STO - WIP/FG'
+                                ) $wip_in = $row->qty;
+
+                                if (
+                                    ($row->transaction_from == 'WIP/FG' && !isAdjustmentSTO($row->type))
+                                    || $row->type == 'ADJ OUT STO - WIP/FG'
+                                    || ($row->is_dn == 1)  // dari DN keluar dari WIP/FG
+                                ) $wip_out = $row->qty;
+
+
+                                // === SUPPLIER / CUSTOMER ===
+                                if (
+                                    ($row->transaction_to == 'SUPPLIER/CUST' && !isAdjustmentSTO($row->type))
+                                    || $row->type == 'ADJ IN STO - SUPPLIER/CUST'
+                                    || ($row->is_dn == 1)  // dari DN masuk ke SUPP/CUST
+                                ) $supp_in = $row->qty;
+
+                                if (
+                                    ($row->transaction_from == 'SUPPLIER/CUST' && !isAdjustmentSTO($row->type))
+                                    || $row->type == 'ADJ OUT STO - SUPPLIER/CUST'
+                                    || in_array($row->type, ['Receipt from cust/sup (emp)', 'Receipt from cust/sup (full)'])
+                                ) $supp_out = $row->qty;
+
+
+                                // === Hitung Ending ===
+                                $end_empty = $begin_empty + $empty_in - $empty_out;
+                                $end_wip   = $begin_wip   + $wip_in   - $wip_out;
+                                $end_supp  = $begin_supp  + $supp_in  - $supp_out;
+                                $balance   = $end_empty + $end_wip + $end_supp;
+
+                                // === Output ke tabel HTML ===
+                                $html .= '<tr>
+                                    <td></td>
+                                    <td style="text-align:center">' . $nod . '</td>
+                                    <td>' . $row->id . '</td>
+                                    <td>' . $row->name . '</td>
+                                    <td>' . $row->code . '</td>
+                                    <td>' . $row->color . '</td>
+                                    <td>' . $row->type . '</td>
+                                    <td>' . $row->desc . '</td>
+                                    <td>' . date("Y-m-d", strtotime($row->date)) . '</td>
+                                    <td style="text-align:right;">' . number_format($begin_empty + $begin_wip + $begin_supp) . '</td>
+
+                                    <!-- EMPTY -->
+                                    <td style="text-align:right;">' . number_format($begin_empty) . '</td>
+                                    <td style="text-align:right;">' . number_format($empty_in) . '</td>
+                                    <td style="text-align:right;">' . number_format($empty_out) . '</td>
+                                    <td style="text-align:right;">' . number_format($end_empty) . '</td>
+
+                                    <!-- WIP / FG -->
+                                    <td style="text-align:right;">' . number_format($begin_wip) . '</td>
+                                    <td style="text-align:right;">' . number_format($wip_in) . '</td>
+                                    <td style="text-align:right;">' . number_format($wip_out) . '</td>
+                                    <td style="text-align:right;">' . number_format($end_wip) . '</td>
+
+                                    <!-- SUPPLIER / CUSTOMER -->
+                                    <td style="text-align:right;">' . number_format($begin_supp) . '</td>
+                                    <td style="text-align:right;">' . number_format($supp_in) . '</td>
+                                    <td style="text-align:right;">' . number_format($supp_out) . '</td>
+                                    <td style="text-align:right;">' . number_format($end_supp) . '</td>
+
+                                    <!-- BALANCE -->
+                                    <td style="text-align:right;">' . number_format($balance) . '</td>
+                                </tr>';
+
+                                // Update saldo awal untuk baris berikutnya
+                                $begin_empty = $end_empty;
+                                $begin_wip   = $end_wip;
+                                $begin_supp  = $end_supp;
+
+                                $nod++;
+                            }
                         }
-                    }
-            
-                    if ($filter_trans_type == 'RECEIPT') {
-                        //RECEIPT
-                        $receipts = $this->crud->query("SELECT
-                            a.receipt_date, 
-                            a.bc_kind, 
-                            a.receipt_no,
-                            a.bc_document, 
-                            a.bc_date, 
-                            a.lotno,
-                            SUM(b.qty) as qty_receipt,
-                            c.name as username
-                        FROM purchase_order_receipts a 
-                        JOIN scan_item_receipts b ON a.receipt_id = b.receipt_id
-                        JOIN users c ON a.created_by = c.username
-                        WHERE a.item_rm_id = '$item_rm_id' and a.receipt_date between '$filter_from' and '$filter_to'
-                        GROUP BY a.bc_kind, a.bc_aju, a.bc_document, a.bc_date, a.receipt_id
-                        ORDER BY a.receipt_date");
-            
-                        foreach ($receipts as $receipt) {
-                            $balance = ($begin + ($receipt->qty_receipt - $end_qty));
-                            $html .= '  <tr>
-                                            <td></td>
-                                            <td style="text-align:center">' . $nod . '</td>
-                                            <td>RECEIPT</td>
-                                            <td>' . $receipt->username . '</td>
-                                            <td>' . $receipt->receipt_date . '</td>
-                                            <td>' . $receipt->bc_kind . '</td>
-                                            <td>' . $receipt->receipt_no . '</td>
-                                            <td>' . $receipt->lotno . '</td>
-                                            <td>' . $receipt->bc_document . '</td>
-                                            <td>' . $receipt->bc_date . '</td>
-                                            <td style="text-align:right;">' . number_format($begin, 2) . '</td>
-                                            <td style="text-align:right;">' . number_format($receipt->qty_receipt, 2) . '</td>
-                                            <td style="text-align:right;">' . number_format(0)  . '</td>
-                                            <td style="text-align:right;">' . number_format($balance, 2)  . '</td>
-                                        </tr>';
-                            $begin += $receipt->qty_receipt;
-                            $nod++;
-                        }
-                    }
+                
+                        // if ($filter_trans_type == 'RECEIPT') {
+                        //     //RECEIPT
+                        //     $receipts = $this->crud->query("SELECT
+                        //         a.receipt_date, 
+                        //         a.bc_kind, 
+                        //         a.receipt_no,
+                        //         a.bc_document, 
+                        //         a.bc_date, 
+                        //         a.lotno,
+                        //         SUM(b.qty) as qty_receipt,
+                        //         c.name as username
+                        //     FROM purchase_order_receipts a 
+                        //     JOIN scan_item_receipts b ON a.receipt_id = b.receipt_id
+                        //     JOIN users c ON a.created_by = c.username
+                        //     WHERE a.item_rm_id = '$item_rm_id' and a.receipt_date between '$filter_from' and '$filter_to'
+                        //     GROUP BY a.bc_kind, a.bc_aju, a.bc_document, a.bc_date, a.receipt_id
+                        //     ORDER BY a.receipt_date");
+                
+                        //     foreach ($receipts as $receipt) {
+                        //         $balance = ($begin + ($receipt->qty_receipt - $end_qty));
+                        //         $html .= '  <tr>
+                        //                         <td></td>
+                        //                         <td style="text-align:center">' . $nod . '</td>
+                        //                         <td>RECEIPT</td>
+                        //                         <td>' . $receipt->username . '</td>
+                        //                         <td>' . $receipt->receipt_date . '</td>
+                        //                         <td>' . $receipt->bc_kind . '</td>
+                        //                         <td>' . $receipt->receipt_no . '</td>
+                        //                         <td>' . $receipt->lotno . '</td>
+                        //                         <td>' . $receipt->bc_document . '</td>
+                        //                         <td>' . $receipt->bc_date . '</td>
+                        //                         <td style="text-align:right;">' . number_format($begin, 2) . '</td>
+                        //                         <td style="text-align:right;">' . number_format($receipt->qty_receipt, 2) . '</td>
+                        //                         <td style="text-align:right;">' . number_format(0)  . '</td>
+                        //                         <td style="text-align:right;">' . number_format($balance, 2)  . '</td>
+                        //                     </tr>';
+                        //         $begin += $receipt->qty_receipt;
+                        //         $nod++;
+                        //     }
+                        // }
+                }
+                $no++;
             }
-            $no++;
         }
 
-        // $html .= '<tr>
-        //     <td colspan="10" style="text-align:right;"><b>GRAND TOTAL</b></td>
-        //     <td style="text-align:right;">' . number_format($totalBeginStock, 2) . '</td>
-        //     <td style="text-align:right;">' . number_format($totalIn, 2) . '</td>
-        //     <td style="text-align:right;">' . number_format($totalOut, 2) . '</td>
-        //     <td style="text-align:right;">' . number_format($totalEndingStock, 2) . '</td>
-        //     <td style="text-align:right;">' . number_format($totalBpi, 2) . '</td>
-        //     <td style="text-align:right;">' . number_format($totalPlant1, 2) . '</td>
-        //     <td style="text-align:right;">-</td>
-        // </tr>
-        // </tbody>';
-      
+        if ($filter_display == "RECAP CUSTOMER") {
+
+            $query_main = "SELECT
+    a.id,
+    a.name,
+    a.code,
+    a.color,
+    cu.name AS customer_name,
+
+    /* BEGIN */
+    SUM(
+        CASE 
+            WHEN t.request_date < '$filter_from'
+                 AND t.transaction_from = cu.name
+                 AND t.transaction_type IN ('ADJ IN STO - SUPPLIER/CUST', 'ADJ OUT STO - SUPPLIER/CUST')
+            THEN 
+                CASE 
+                    WHEN t.transaction_type = 'ADJ IN STO - SUPPLIER/CUST' THEN t.qty
+                    WHEN t.transaction_type = 'ADJ OUT STO - SUPPLIER/CUST' THEN -t.qty
+                END
+            ELSE 0
+        END
+    ) AS supp_begin,
+
+    /* IN = transaksi + dn */
+    (
+        SUM(
+            CASE
+                WHEN t.request_date BETWEEN '$filter_from' AND '$filter_to'
+                     AND t.transaction_from = cu.name
+                     AND (
+                        (t.transaction_type NOT LIKE 'ADJ%' AND t.transaction_to = 'SUPPLIER/CUST')
+                        OR t.transaction_type = 'ADJ IN STO - SUPPLIER/CUST'
+                     )
+                THEN t.qty ELSE 0
+            END
+        )
+        + IFNULL(dn.dn_in, 0)
+    ) AS supp_in,
+
+    /* OUT */
+    SUM(
+        CASE
+            WHEN t.request_date BETWEEN '$filter_from' AND '$filter_to'
+                 AND t.transaction_from = cu.name
+                 AND (
+                    (t.transaction_type NOT LIKE 'ADJ%' AND t.transaction_from = 'SUPPLIER/CUST')
+                    OR t.transaction_type = 'ADJ OUT STO - SUPPLIER/CUST'
+                    OR t.transaction_type IN ('Receipt from cust/sup (emp)', 'Receipt from cust/sup (full)')
+                 )
+            THEN t.qty ELSE 0
+        END
+    ) AS supp_out
+
+FROM item_boxs a
+
+LEFT JOIN transaction_boxs t 
+    ON a.id = t.item_box_id
+
+/* PASTIKAN 1 TRANSAKSI MATCH KE 1 CUSTOMER SAJA */
+LEFT JOIN customers cu 
+    ON cu.name = t.transaction_from
+
+/* DN per customer */
+LEFT JOIN (
+    SELECT 
+        dn.item_box_id,
+        dn.customer_id,
+        SUM(dn.qty) AS dn_in
+    FROM dn_boxs dn
+    WHERE dn.transaction_date BETWEEN '$filter_from' AND '$filter_to'
+    GROUP BY dn.item_box_id, dn.customer_id
+) dn 
+    ON dn.item_box_id = a.id 
+    AND dn.customer_id = cu.id   /* <-- paling penting */
+
+WHERE 1=1
+    AND (a.id LIKE '%$filter_items%' OR '$filter_items' = '')
+    AND (cu.name LIKE '%$filter_customer_name%' OR '$filter_customer_name' = '')
+
+GROUP BY 
+    a.id, a.name, a.code, a.color, cu.name
+
+HAVING cu.name IS NOT NULL    /* supaya hanya item yg punya customer tampil */
+
+ORDER BY 
+    a.id ASC, cu.name ASC";
+
+            // Eksekusi query
+            $records = $this->crud->query($query_main);
+            
+            $html = '<html><head><title>Print Data</title></head>
+                <style>
+                    body {font-family: Arial, Helvetica, sans-serif;}#customers {border-collapse: collapse;width: 100%;font-size: 12px;}#customers td, #customers th {border: 1px solid #ddd;padding: 2px;}#customers tr:nth-child(even){background-color: #f2f2f2;}#customers tr:hover {background-color: #ddd;}#customers th {padding-top: 2px;padding-bottom: 2px;text-align: center;color: black;}
+                    /* Style khusus untuk media cetak */
+                    @media print {
+                        #customers thead {
+                            display: table-header-group;
+                        }
+                        #customers tbody tr {
+                            page-break-inside: avoid;
+                        }
+                    }
+                </style><body>
+                <center>
+                    <div style="float: left; font-size: 12px; text-align: left;">
+                        <table style="width: 100%;">
+                            <tr>
+                                <td width="50" style="font-size: 12px; vertical-align: top; text-align: center; vertical-align:jus margin-right:10px;">
+                                    <img src="' . $config->favicon . '" width="30">
+                                </td>
+                                <td style="font-size: 14px; text-align: left; margin:2px;">
+                                    <b>' . $config->name . '</b><br>
+                                    <small>'.$config->description.'</small>
+                                </td>
+                            </tr>
+                        </table>
+                    </div>';
+                    
+            if ($option == "excel") {
+                $html .= '<div style="float: right; font-size: 12px; text-align: right;">
+                            Print Date ' . date("d M Y H:i:s") . ' <br>
+                            Print By ' . $this->session->username . '  
+                        </div>';
+            } else {
+                $html .= '<div style="float: right; font-size: 12px; text-align: right;">
+                            Print Date ' . date("d M Y H:i:s") . ' <br>
+                            Print By ' . $this->session->username . '  
+                        </div>
+                    <br><br>';
+            }
+            
+            $html .= '<br><br>
+                    <h3 style="margin:0;">HISTORY TRANSACTION BOX</h3>
+                    <small>PERIOD : <b>' . $filter_from . '</b> To <b>' . $filter_to . '</b></small>
+                </center>
+                <br><br>
+                
+                <table id="customers" border="1" style="font-size: 11px;">
+                <thead>
+                    <tr>
+                        <th rowspan="3" width="20">No</th>
+                        <th rowspan="3">Id Box</th>
+                        <th rowspan="3">Name</th>
+                        <th rowspan="3">Customer</th>
+                        <th rowspan="3">Box Code</th>
+                        <th rowspan="3">Color</th>
+                        <th colspan="4">-</th>
+                    </tr>
+                    <tr>
+                        <th colspan="4">SUPPLIER/CUSTOMER</th>
+                    </tr>
+                    <tr>
+                        <th>BEGIN</th>
+                        <th>IN</th>
+                        <th>OUT</th>
+                        <th>ENDING</th>
+                    </tr>
+                </thead>';
+
+
+            $no = 1;
+            $totalBeginStock = 0;
+            $totalIn = 0;
+            $totalOut = 0;
+            $totalBpi = 0;
+            $totalPlant1 = 0;
+            $totalEndingStock = 0;
+            $totalIto = 0;
+
+            function isAdjustmentSTO($type) {
+                return (stripos($type, 'ADJ') !== false && stripos($type, 'STO') !== false);
+            }
+
+            foreach ($records as $record) {
+                    $item_box_id = $record->id;
+                    $supp_balance  = $record->supp_begin + $record->supp_in - $record->supp_out;
+                    
+                    $html .= '<tr>
+                                <td style="text-align:center">' . $no . '</td>
+                                <td>' . $record->id . '</td>
+                                <td>' . $record->name . '</td>
+                                <td>' . $record->customer_name . '</td>
+                                <td>' . $record->code . '</td>
+                                <td>' . $record->color . '</td>
+                                <td style="text-align:right">' . number_format($record->supp_begin) . '</td>
+                                <td style="text-align:right">' . number_format($record->supp_in) . '</td>
+                                <td style="text-align:right">' . number_format($record->supp_out) . '</td>
+                                <td style="text-align:right">' . number_format($supp_balance) . '</td>
+                            </tr>';
+                $no++;
+            }
+        }
+
         $html .= '</table></body></html>';
         echo $html;
     }
@@ -617,7 +802,7 @@ class Report_history_transaction_boxs extends CI_Controller
         if ($option == "excel") {
             $format  = date("Ymd");
             header("Content-type: application/vnd-ms-excel");
-            header("Content-Disposition: attachment; filename=history_transactions_rm_$format.xls");
+            header("Content-Disposition: attachment; filename=history_transactions_boxs_$format.xls");
         }
         //------------------------------------ Opsi print berakhir disini------------------------------------------------------//
 

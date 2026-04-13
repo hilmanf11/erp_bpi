@@ -128,6 +128,7 @@ class Transaction_boxs extends CI_Controller
             $filter_from = $this->input->get('filter_from');
             $filter_to = $this->input->get('filter_to');
             $filter_transaction_type = $this->input->get('filter_transaction_type');
+            $filter_customer_name = $this->input->get('filter_customer_name');
 
             $page = $this->input->post('page');
             $rows = $this->input->post('rows');
@@ -140,7 +141,7 @@ class Transaction_boxs extends CI_Controller
 
             if ($id === "0") {
                 //Select Query
-                $this->db->select('a.*, c.name as item_box_name, c.color as item_box_color, c.code as item_box_code, c.size as item_box_size, c.uom');
+                $this->db->select('a.*, c.name as item_box_name, c.color as item_box_color, c.code as item_box_code, c.size as item_box_size, c.uom, COALESCE(a.transaction_from, "-") as customer_name');
                 $this->db->from('transaction_boxs a');
                 $this->db->join('item_boxs c', 'a.item_box_id = c.id', 'left');
                 $this->db->where('a.deleted', 0);
@@ -157,6 +158,9 @@ class Transaction_boxs extends CI_Controller
                 }
                 if($filter_transaction_type != ""){
                     $this->db->where('a.transaction_type', $filter_transaction_type);
+                }
+                if($filter_customer_name != ""){
+                    $this->db->where('a.transaction_from', $filter_customer_name);
                 }
                 $this->db->group_by('a.request_no');
                 $this->db->order_by('a.request_date', 'DESC');
@@ -176,6 +180,7 @@ class Transaction_boxs extends CI_Controller
                         "transaction_id" => $record['transaction_id'],
                         "remarks" => $record['remarks'],
                         "status" => $record['status'],
+                        "customer_name" => $record['transaction_from'],
                         "state" => "closed"
                     );
                 }
@@ -276,6 +281,7 @@ class Transaction_boxs extends CI_Controller
         $filter_from  = $this->input->get('filter_from');
         $filter_to = $this->input->get('filter_to');
         $filter_transaction_type = $this->input->get('filter_transaction_type');
+        $filter_customer_name = $this->input->get('filter_customer_name');
 
         //Config
         $this->db->select('*');
@@ -297,6 +303,9 @@ class Transaction_boxs extends CI_Controller
         }
         if($filter_transaction_type != ""){
             $this->db->where('a.transaction_type', $filter_transaction_type);
+        }
+        if($filter_customer_name != ""){
+            $this->db->where('a.transaction_from', $filter_customer_name);
         }
         $this->db->order_by('a.request_no', 'DESC');
         $records = $this->db->get()->result_array();
@@ -329,6 +338,8 @@ class Transaction_boxs extends CI_Controller
                 <th>Request Date</th>
                 <th>Requester</th>
                 <th>Type</th>
+                <th>From</th>
+                <th>To</th>
                 <th>Box Name</th>
                 <th>Box Code</th>
                 <th>Box Color</th>
@@ -344,6 +355,8 @@ class Transaction_boxs extends CI_Controller
                         <td>' . $data['request_date'] . '</td>
                         <td>' . $data['request_name'] . '</td>
                         <td>' . $data['transaction_type'] . '</td>
+                        <td>' . $data['transaction_from'] . '</td>
+                        <td>' . $data['transaction_to'] . '</td>
                         <td style="mso-number-format:\@;">' . $data['item_box_name'] . '</td>
                         <td style="mso-number-format:\@;">' . $data['item_box_code'] . '</td>
                         <td style="mso-number-format:\@;">' . $data['item_box_color'] . '</td>

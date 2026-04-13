@@ -29,9 +29,14 @@
                 <select style="width:60%;" id="filter_display" class="easyui-combobox" panelHeight="auto">
                     <option value="RECAP">RECAP</option>
                     <option value="DETAIL">DETAIL</option>
+                    <option value="RECAP CUSTOMER">RECAP CUSTOMER</option>
                 </select>
             </div>
             <div class="fitem">
+                <span style="width:35%; display:inline-block;">Customer</span>
+                <input style="width:60%;" id="filter_customer_name" class="easyui-combogrid" disabled>
+            </div>
+            <div class="fitem" hidden>
                 <span style="width:35%; display:inline-block;">Trans Type</span>
                 <select style="width:60%;" id="filter_trans_type" class="easyui-combobox" panelHeight="auto" disabled>
                     <option value="">Choose All</option>
@@ -48,8 +53,7 @@
 
     </fieldset>
     <?= $button ?>
-    <!-- <a href="javascript:;" class="easyui-linkbutton" data-options="plain:true" onclick="excel_lsb()"><i class="fa fa-file"></i> Export LSB</a>
-    <a href="javascript:;" class="easyui-linkbutton" data-options="plain:true" onclick="excel_detail_transaction()"><i class="fa fa-file"></i> Export Detail Transaction</a> -->
+    <a href="javascript:;" class="easyui-linkbutton" data-options="plain:true" onclick="recap_cust_excel()"><i class="fa fa-file"></i> Excel Recap Customer</a>
 
 </div>
 
@@ -79,7 +83,10 @@
         var filter_display = $("#filter_display").combobox('getValue');
         var filter_trans_type = $("#filter_trans_type").combobox('getValue');
         var filter_division = $("#filter_division").combobox('getValue');
-        url = "?filter_from=" + filter_from + "&filter_to=" + filter_to + "&filter_items=" + filter_items + "&filter_display=" + filter_display + "&filter_trans_type=" + filter_trans_type + "&filter_division=" + filter_division;
+        var filter_customer_name = $("#filter_customer_name").combogrid('getValue');
+
+        url = "?filter_from=" + filter_from + "&filter_to=" + filter_to + "&filter_items=" + filter_items + "&filter_display=" + filter_display + 
+        "&filter_trans_type=" + filter_trans_type + "&filter_division=" + filter_division + "&filter_customer_name=" + filter_customer_name;
         $("#printout").contents().find('html').html("<center><br><br><br><b style='font-size:20px;'>Please Wait...</b></center>");
         $("#printout").attr('src', '<?= base_url('warehouse/report_history_transaction_boxs/print') ?>' + url);
     }
@@ -103,7 +110,10 @@
         var filter_display = $("#filter_display").combobox('getValue');
         var filter_trans_type = $("#filter_trans_type").combobox('getValue');
         var filter_division = $("#filter_division").combobox('getValue');
-        var url = "?filter_from=" + filter_from + "&filter_to=" + filter_to + "&filter_items=" + filter_items + "&filter_display=" + filter_display + "&filter_trans_type=" + filter_trans_type + "&filter_division=" + filter_division;
+        var filter_customer_name = $("#filter_customer_name").combogrid('getValue');
+        
+        url = "?filter_from=" + filter_from + "&filter_to=" + filter_to + "&filter_items=" + filter_items + "&filter_display=" + filter_display + 
+        "&filter_trans_type=" + filter_trans_type + "&filter_division=" + filter_division + "&filter_customer_name=" + filter_customer_name;
 
         // Tampilkan overlay
         $("#loadingOverlay").show();
@@ -118,7 +128,7 @@
     }
 
 
-    function filter_recap_cust_excel() {
+    function recap_cust_excel() {
         var filter_from = $("#filter_from").datebox('getValue');
         var filter_to = $("#filter_to").datebox('getValue');
         var filter_items = $("#filter_items").combogrid('getValue');
@@ -185,12 +195,24 @@
         prompt: 'Choose Division',
     });
 
+    // $("#filter_display").combobox({
+    //     onChange: function(display){
+    //         if(display === 'DETAIL'){
+    //             $('#filter_trans_type').combobox('enable');
+    //         } else {
+    //             $('#filter_trans_type').combobox('disable');
+    //         }
+    //     }
+    // });
+
     $("#filter_display").combobox({
         onChange: function(display){
-            if(display === 'DETAIL'){
-                $('#filter_trans_type').combobox('enable');
+            if(display === 'RECAP CUSTOMER'){
+                $('#filter_customer_name').combobox('enable');
+                // $('#filter_items').combobox('disable');
             } else {
-                $('#filter_trans_type').combobox('disable');
+                $('#filter_customer_name').combobox('disable');
+                // $('#filter_items').combobox('enable');
             }
         }
     });
@@ -200,6 +222,37 @@
         valueField: 'trans_type',
         textField: 'trans_type',
         prompt: "Choose Type",
+    });
+
+    $('#filter_customer_name').combogrid({
+        url: '<?= base_url('master/customers/reads'); ?>',
+        panelWidth: 500,
+        idField: 'name',
+        textField: 'name',
+        mode: 'remote',
+        fitColumns: true,
+        prompt: "Choose Customer",
+        columns: [
+            [{
+                field: 'id',
+                title: 'Customer ID',
+                width: 150
+            }, {
+                field: 'number',
+                title: 'Customer Code',
+                width: 150
+            }, {
+                field: 'name',
+                title: 'Customer Name',
+                width: 200
+            }, ]
+        ],
+        icons: [{
+            iconCls: 'icon-clear',
+            handler: function(e) {
+                $(e.data.target).combogrid('clear').combogrid('textbox').focus();
+            }
+        }],
     });
 
     //Format Datepicker

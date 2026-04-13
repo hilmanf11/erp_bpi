@@ -129,10 +129,10 @@ class Dn_boxs extends CI_Controller
             $get = $this->input->get();
             $filter_from = $this->input->get('filter_from');
             $filter_to = $this->input->get('filter_to');
-            $filter_division = $this->input->get('filter_division');
             $filter_document_no = $this->input->get('filter_document_no');
             $filter_box_name = $this->input->get('filter_box_name');
             $filter_status = $this->input->get('filter_status');
+            $filter_customer_id = $this->input->get('filter_customer_id');
 
             $page = $this->input->post('page');
             $rows = $this->input->post('rows');
@@ -150,9 +150,9 @@ class Dn_boxs extends CI_Controller
                 $this->db->where('a.transaction_date >=', $filter_from);
                 $this->db->where('a.transaction_date <=', $filter_to);
             }
-            // if ($filter_division != "") {
-            //     $this->db->where('a.division', $filter_division);
-            // }
+            if ($filter_customer_id != "") {
+                $this->db->where('a.customer_id', $filter_customer_id);
+            }
             if ($filter_document_no != "") {
                 $this->db->where('a.document_no', $filter_document_no);
             }
@@ -422,60 +422,43 @@ class Dn_boxs extends CI_Controller
         if ($option == "excel") {
             $format  = date("Ymd");
             header("Content-type: application/vnd-ms-excel");
-            header("Content-Disposition: attachment; filename=dn_crusher_$format.xls");
+            header("Content-Disposition: attachment; filename=dn_boxs_$format.xls");
         }
 
         $get = $this->input->get();
         $filter_from = $this->input->get('filter_from');
         $filter_to = $this->input->get('filter_to');
-        $filter_division = $this->input->get('filter_division');
         $filter_document_no = $this->input->get('filter_document_no');
-        $filter_transfer_from = $this->input->get('filter_transfer_from');
-        $filter_transfer_to = $this->input->get('filter_transfer_to');
         $filter_box_name = $this->input->get('filter_box_name');
-        $filter_item_category = $this->input->get('filter_item_category');
-        $filter_item_family = $this->input->get('filter_item_family');
         $filter_status = $this->input->get('filter_status');
-
+        $filter_customer_id = $this->input->get('filter_customer_id');
 
         //Config
         $this->db->select('*');
         $this->db->from('config');
         $config = $this->db->get()->row();
 
-        $this->db->select("a.*, b.number as item_number, b.name as item_name, b.uom, c.name as family_name, d.name as category_name");
+        $this->db->select("a.*, b.code as item_code, b.name as item_name, b.uom, e.name as customer_name");
         $this->db->from('dn_boxs a');
         $this->db->join('item_boxs b', 'a.item_box_id = b.id', 'left');
-        $this->db->join('item_familys c', 'b.item_family_id = c.id', 'left');
-        $this->db->join('item_categories d', 'b.item_category_id = d.id', 'left');
+        $this->db->join('customers e', 'a.customer_id = e.id', 'left');
         if ($filter_from != "" or $filter_to != "") {
             $this->db->where('a.transaction_date >=', $filter_from);
             $this->db->where('a.transaction_date <=', $filter_to);
         }
-        if ($filter_division != "") {
-            $this->db->where('a.division', $filter_division);
+        if ($filter_customer_id != "") {
+            $this->db->where('a.customer_id', $filter_customer_id);
         }
         if ($filter_document_no != "") {
             $this->db->where('a.document_no', $filter_document_no);
         }
-        if ($filter_transfer_from != "") {
-            $this->db->where('a.transfer_from', $filter_transfer_from);
-        }
-        if ($filter_transfer_to != "") {
-            $this->db->where('a.transfer_to', $filter_transfer_to);
-        }
         if ($filter_box_name != "") {
             $this->db->where('a.item_box_id', $filter_box_name);
         }
-        if ($filter_item_category != "") {
-            $this->db->where('b.item_category_id', $filter_item_category);
-        }
-        if ($filter_item_family != "") {
-            $this->db->where('b.item_family_id', $filter_item_family);
-        }
+        
         $this->db->order_by('a.id', 'ASC');
         $records = $this->db->get()->result_array();
-        $html = '<html><head><title>Print Data</title></head><style>body {font-family: Arial, Helvetica, sans-serif;}#dn_crusher {border-collapse: collapse;width: 100%;font-size: 12px;}#dn_crusher td, #dn_crusher th {border: 1px solid #ddd;padding: 2px;}#dn_crusher tr:nth-child(even){background-color: #f2f2f2;}#dn_crusher tr:hover {background-color: #ddd;}#dn_crusher th {padding-top: 2px;padding-bottom: 2px;text-align: left;color: black;}</style><body>
+        $html = '<html><head><title>Print Data</title></head><style>body {font-family: Arial, Helvetica, sans-serif;}#dn_boxs {border-collapse: collapse;width: 100%;font-size: 12px;}#dn_boxs td, #dn_boxs th {border: 1px solid #ddd;padding: 2px;}#dn_boxs tr:nth-child(even){background-color: #f2f2f2;}#dn_boxs tr:hover {background-color: #ddd;}#dn_boxs th {padding-top: 2px;padding-bottom: 2px;text-align: left;color: black;}</style><body>
         <center>
             <div style="float: left; font-size: 12px; text-align: left;">
                 <table style="width: 100%;">
@@ -499,14 +482,15 @@ class Dn_boxs extends CI_Controller
             </div>
         </center>
         
-        <table id="dn_crusher" border="1">
+        <table id="dn_boxs" border="1">
             <tr>
                 <th width="20">No</th>
                 <th>Document No</th>
+                <th>Customer Name</th>
                 <th>Division</th>
                 <th>Trans Date</th>
-                <th>Part Number</th>
-                <th>Part Name</th>
+                <th>Box Name</th>
+                <th>Box Code</th>
                 <th>Qty</th>
                 <th>Remarks</th>
             </tr>';
@@ -515,10 +499,11 @@ class Dn_boxs extends CI_Controller
             $html .= '<tr>
                     <td>' . $no . '</td>
                     <td>' . $data['document_no'] . '</td>
+                    <td>' . $data['customer_name'] . '</td>
                     <td>' . $data['division'] . '</td>
-                    <td>' . $data['trans_date'] . '</td>
-                    <td style="mso-number-format:\@;">' . $data['item_number'] . '</td>
+                    <td>' . $data['transaction_date'] . '</td>
                     <td style="mso-number-format:\@;">' . $data['item_name'] . '</td>
+                    <td style="mso-number-format:\@;">' . $data['item_code'] . '</td>
                     <td>' . $data['qty'] . '</td>
                     <td>' . $data['remarks'] . '</td>';
             $no++;
@@ -532,6 +517,7 @@ class Dn_boxs extends CI_Controller
         $dn_boxs_total = $this->crud->reads('dn_boxs', [], ["document_no" => base64_decode($document_no)]);
         $dn_boxss = $this->crud->read('dn_boxs', [], ["document_no" => base64_decode($document_no)]);
         $customer_address = $this->crud->read('customer_address', [], ["customer_id" => $dn_boxss->customer_id, "plant" => $dn_boxss->plant]);
+        $customers = $this->crud->read('customers', [], ["id" => $dn_boxss->customer_id]);
 
         $config = $this->db->get('config')->row();
         $config_iso = $this->db->get('config_iso')->row();
@@ -581,7 +567,7 @@ class Dn_boxs extends CI_Controller
         
         
         //Config Page
-        $rows = 8;
+        $rows = 15;
         $page = ceil(count($dn_boxs_total) / $rows);
         //Generate QRcode
         $this->createQrcode($dn_boxss->document_no, "assets/image/qrcode/");
@@ -645,7 +631,7 @@ class Dn_boxs extends CI_Controller
             $this->db->join('item_boxs b', 'a.item_box_id = b.id', 'left');
             $this->db->where('a.document_no', base64_decode($document_no));
             $this->db->order_by('b.name', 'asc');
-            $this->db->limit(8, ($i * 8));
+            $this->db->limit(15, ($i * 15));
             $this->db->order_by('a.id', 'ASC');
 
             $records = $this->db->get()->result_array();
@@ -692,21 +678,27 @@ class Dn_boxs extends CI_Controller
                                     <br>
                                     <h3 style="margin:0;"><u>'.$judul.'</u></h3>
                                     <small>NO : ' . @$dn_boxss->document_no . '</small>
+                                    <br>
+                                    <br>
                                 </center>
                                 <table style="width:100%; font-size:12px; margin-bottom:10px;">
                                     <tr>
-                                        <td width="80">Ship to</td>
-                                        <td width="10">:</td>
-                                        <td width="30%"><b>' . @$customer_address->address . '</b></td>
-                                        <td style="text-align:right; padding-right: 20px;" rowspan="7">
-                                            Page <b>' . $hal  . '</b> of <b> ' . $page . '</b><br><br>
-                                            Transaction Date:<br><b>' . date("d F Y", strtotime($dn_boxss->transaction_date)) . '</b><br>
-                                        </td>
+                                        <td width="10%">Customer</td>
+                                        <td width="5%">:</td>
+                                        <td width="30%"><b>' . @$customers->name . '</b></td>
+                                        <td width="30%" style="text-align:right;">Page <b>' . $hal  . '</b> of <b> ' . $page . '</b></td>
                                     </tr>
                                     <tr>
-                                        <td width="50">Doc No</td>
-                                        <td width="10">:</td>
+                                        <td>Ship to</td>
+                                        <td>:</td>
+                                        <td><b>' . @$customer_address->address . '</b></td>
+                                        <td style="text-align:right;">Transaction Date:</td>
+                                    </tr>
+                                    <tr>
+                                        <td>Doc No</td>
+                                        <td>:</td>
                                         <td><b>' . @$dn_boxss->document_no . '</b></td>
+                                        <td style="text-align:right;"><b>' . date("d F Y", strtotime($dn_boxss->transaction_date)) . '</b></td>
                                     </tr>
                                 </table>
                                 <table id="customers">

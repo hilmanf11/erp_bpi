@@ -28,6 +28,28 @@ class Report_history_transactions_other_component extends CI_Controller
         }
     }
 
+    public function readsItem()
+    {
+        $post = isset($_POST['q']) ? $_POST['q'] : "";
+        $send = $this->crud->query("SELECT a.*, b.name as item_family_name FROM item_rm a JOIN item_familys b ON a.item_family_id = b.id WHERE (a.number like '%$post%' or a.name like '$post') AND (a.item_category_id = 'C06' OR (a.division = 'INJ' AND a.item_category_id = 'C11' AND a.item_family_id = 'P05'))");
+        echo json_encode($send);
+    }
+
+    public function readsItems($id)
+    {
+        $post = isset($_POST['q']) ? $_POST['q'] : "";
+        $send = $this->crud->query("SELECT a.*, b.name as item_family_name FROM item_rm a JOIN item_familys b ON a.item_family_id = b.id WHERE a.item_family_id like '%$id%'");
+        echo json_encode($send);
+    }
+
+    public function readsnotfg()
+    {
+        $post = isset($_POST['q']) ? $_POST['q'] : "";
+        $send = $this->crud->query("SELECT * FROM item_categories WHERE name LIKE '%$post%' AND number != 'FG' AND id IN ('C06','C11') AND `status` = '0'");
+        // $send = $this->crud->reads('item_categories', ["name" => $post]);
+        echo json_encode($send);
+    }
+
     public function readEndingStock()
     {
         if ($this->input->post()) {
@@ -147,7 +169,7 @@ class Report_history_transactions_other_component extends CI_Controller
             a.uom,
             c.name as category_name,
             ifs.name as prodfam_sub_name,
-            COALESCE(j.begin_stock) AS begin_stock,
+            COALESCE(j.begin_stock, 0) AS begin_stock,
             (COALESCE(d.qty_scan_in, 0) + COALESCE(e.qty_trans_other_in, 0) + COALESCE(f.qty_trans_other_adj_in, 0) + COALESCE(g.qty_in_pur, 0)) AS qty_in,
             (COALESCE(h.qty_trans_other_out, 0) + COALESCE(i.qty_trans_other_adj_out, 0) + COALESCE(k.qty_scan_out, 0) + COALESCE(l.qty_dn_scrap, 0) + COALESCE(m.qty_issued, 0)) AS qty_out,
             (COALESCE(begin_whs.begin_bpi, 0) + COALESCE(y.in_bpi,0) - COALESCE(y.out_bpi,0) + COALESCE(d_bpi.qty_scan_in_bpi, 0)) AS qty_bpi,
@@ -160,8 +182,8 @@ class Report_history_transactions_other_component extends CI_Controller
         LEFT JOIN (SELECT item_rm_id, SUM(qty) AS qty_scan_in FROM scan_item_receipt_crusher WHERE request_date BETWEEN '$filter_from' AND '$filter_to' GROUP BY item_rm_id) d ON a.id = d.item_rm_id
         LEFT JOIN (SELECT b.item_rm_id, SUM(a.qty) AS qty_scan_in_bpi FROM scan_item_receipts a JOIN purchase_order_receipts b ON a.receipt_id = b.receipt_id WHERE b.receipt_date BETWEEN '$filter_from' AND '$filter_to' AND a.plant = 'BPI' GROUP BY b.item_rm_id) d_bpi ON a.id = d_bpi.item_rm_id
         LEFT JOIN (SELECT b.item_rm_id, SUM(a.qty) AS qty_scan_in_plant1 FROM scan_item_receipts a JOIN purchase_order_receipts b ON a.receipt_id = b.receipt_id WHERE b.receipt_date BETWEEN '$filter_from' AND '$filter_to' AND a.plant = 'PLANT 1' GROUP BY b.item_rm_id) d_plant1 ON a.id = d_plant1.item_rm_id
-        LEFT JOIN (SELECT item_rm_id, SUM(qty) AS qty_trans_other_in FROM transaction_other_component WHERE request_date AND transaction_type = 'ITEM IN' BETWEEN '$filter_from' AND '$filter_to' GROUP BY item_rm_id) e ON a.id = e.item_rm_id
-        LEFT JOIN (SELECT item_rm_id, SUM(qty) AS qty_trans_other_adj_in FROM transaction_other_component WHERE request_date AND transaction_type = 'ADJ IN' BETWEEN '$filter_from' AND '$filter_to' GROUP BY item_rm_id) f ON a.id = f.item_rm_id
+        LEFT JOIN (SELECT item_rm_id, SUM(qty) AS qty_trans_other_in FROM transaction_other_component WHERE request_date BETWEEN '$filter_from' AND '$filter_to' AND transaction_type = 'ITEM IN' GROUP BY item_rm_id) e ON a.id = e.item_rm_id
+        LEFT JOIN (SELECT item_rm_id, SUM(qty) AS qty_trans_other_adj_in FROM transaction_other_component WHERE request_date BETWEEN '$filter_from' AND '$filter_to' AND transaction_type = 'ADJ IN' GROUP BY item_rm_id) f ON a.id = f.item_rm_id
         LEFT JOIN (
             SELECT 
                 item_id,
@@ -205,17 +227,17 @@ class Report_history_transactions_other_component extends CI_Controller
             ) combined
             GROUP BY item_id, number
         ) g ON a.id = g.item_id
-        LEFT JOIN (SELECT item_rm_id, SUM(qty) AS qty_trans_other_out FROM transaction_other_component WHERE request_date AND transaction_type = 'ITEM OUT' BETWEEN '$filter_from' AND '$filter_to' GROUP BY item_rm_id) h ON a.id = h.item_rm_id
-        LEFT JOIN (SELECT item_rm_id, SUM(qty) AS qty_trans_other_adj_out FROM transaction_other_component WHERE request_date AND transaction_type = 'ADJ OUT' BETWEEN '$filter_from' AND '$filter_to' GROUP BY item_rm_id) i ON a.id = i.item_rm_id
+        LEFT JOIN (SELECT item_rm_id, SUM(qty) AS qty_trans_other_out FROM transaction_other_component WHERE request_date BETWEEN '$filter_from' AND '$filter_to' AND transaction_type = 'ITEM OUT'  GROUP BY item_rm_id) h ON a.id = h.item_rm_id
+        LEFT JOIN (SELECT item_rm_id, SUM(qty) AS qty_trans_other_adj_out FROM transaction_other_component WHERE request_date BETWEEN '$filter_from' AND '$filter_to' AND transaction_type = 'ADJ OUT' GROUP BY item_rm_id) i ON a.id = i.item_rm_id
         LEFT JOIN (SELECT item_rm_id, SUM(qty) AS qty_scan_out FROM scan_dn_crusher WHERE created_date BETWEEN '$filter_from' AND '$filter_to' GROUP BY item_rm_id) k ON a.id = k.item_rm_id
         LEFT JOIN (SELECT item_rm_id, SUM(qty) AS qty_dn_scrap FROM dn_scrap WHERE transaction_date BETWEEN '$filter_from' AND '$filter_to' GROUP BY item_rm_id) l ON a.id = l.item_rm_id
-        LEFT JOIN (SELECT item_rm_id, SUM(qty) AS qty_issued FROM issued_material_details WHERE created_date and type = 'Other' BETWEEN '$filter_from' AND '$filter_to' GROUP BY item_rm_id) m ON a.id = m.item_rm_id
+        LEFT JOIN (SELECT item_rm_id, SUM(qty) AS qty_issued FROM issued_material_details WHERE created_date >= '$filter_from' AND created_date < DATE_ADD('$filter_to', INTERVAL 1 DAY) and type = 'Other' GROUP BY item_rm_id) m ON a.id = m.item_rm_id
 
         LEFT JOIN (SELECT a.id, a.number, (COALESCE(d.qty_scan_in, 0) + COALESCE(e.qty_trans_other_in, 0) + COALESCE(f.qty_trans_other_adj_in, 0) + COALESCE(g.qty_in_pur, 0)) - (COALESCE(h.qty_trans_other_out, 0) + COALESCE(i.qty_trans_other_adj_out, 0) + COALESCE(k.qty_scan_out, 0) + COALESCE(l.qty_dn_scrap, 0) + COALESCE(m.qty_issued, 0)) AS begin_stock
                         FROM item_rm a
-                        LEFT JOIN (SELECT item_rm_id, SUM(qty) AS qty_scan_in FROM scan_item_receipt_crusher WHERE request_date < '$filter_from' GROUP BY item_rm_id) d ON a.id = d.item_rm_id
-                        LEFT JOIN (SELECT item_rm_id, SUM(qty) AS qty_trans_other_in FROM transaction_other_component WHERE request_date AND transaction_type = 'ITEM IN' < '$filter_from' GROUP BY item_rm_id) e ON a.id = e.item_rm_id
-                        LEFT JOIN (SELECT item_rm_id, SUM(qty) AS qty_trans_other_adj_in FROM transaction_other_component WHERE request_date AND transaction_type = 'ADJ IN' < '$filter_from' GROUP BY item_rm_id) f ON a.id = f.item_rm_id
+                        LEFT JOIN (SELECT item_rm_id, SUM(qty) AS qty_scan_in FROM scan_item_receipt_crusher WHERE request_date <= '$filter_from' GROUP BY item_rm_id) d ON a.id = d.item_rm_id
+                        LEFT JOIN (SELECT item_rm_id, SUM(qty) AS qty_trans_other_in FROM transaction_other_component WHERE request_date <= '$filter_from' AND transaction_type = 'ITEM IN' GROUP BY item_rm_id) e ON a.id = e.item_rm_id
+                        LEFT JOIN (SELECT item_rm_id, SUM(qty) AS qty_trans_other_adj_in FROM transaction_other_component WHERE request_date <= '$filter_from' AND transaction_type = 'ADJ IN' GROUP BY item_rm_id) f ON a.id = f.item_rm_id
                         LEFT JOIN (
                             SELECT 
                                 item_id,
@@ -229,7 +251,7 @@ class Report_history_transactions_other_component extends CI_Controller
                                 FROM input_crushing ic
                                 JOIN item_rm b ON ic.item_rm_id = b.id
                                 LEFT JOIN item_family_subs c ON b.item_sub_family_id = c.id
-                                WHERE ic.trans_date BETWEEN '$filter_from' AND '$filter_to'
+                                WHERE ic.trans_date <= '$filter_from'
                                 GROUP BY b.id, b.number
 
                                 UNION ALL
@@ -254,16 +276,16 @@ class Report_history_transactions_other_component extends CI_Controller
                                     OR (c.id = 'PS004' AND pur.number = 'PUR-PP')
                                     OR (c.id = 'PS001' AND pur.number = 'PUR-PVC')
                                 )
-                                AND ic.trans_date < '$filter_from'
+                                AND ic.trans_date <= '$filter_from'
                                 GROUP BY pur.id, pur.number
                             ) combined
                             GROUP BY item_id, number
                         ) g ON a.id = g.item_id
-                        LEFT JOIN (SELECT item_rm_id, SUM(qty) AS qty_trans_other_out FROM transaction_other_component WHERE request_date AND transaction_type = 'ITEM OUT' < '$filter_from' GROUP BY item_rm_id) h ON a.id = h.item_rm_id
-                        LEFT JOIN (SELECT item_rm_id, SUM(qty) AS qty_trans_other_adj_out FROM transaction_other_component WHERE request_date AND transaction_type = 'ADJ OUT' < '$filter_from' GROUP BY item_rm_id) i ON a.id = i.item_rm_id
-                        LEFT JOIN (SELECT item_rm_id, SUM(qty) AS qty_scan_out FROM scan_dn_crusher WHERE created_date < '$filter_from' GROUP BY item_rm_id) k ON a.id = k.item_rm_id
-                        LEFT JOIN (SELECT item_rm_id, SUM(qty) AS qty_dn_scrap FROM dn_scrap WHERE transaction_date < '$filter_from' GROUP BY item_rm_id) l ON a.id = l.item_rm_id
-                        LEFT JOIN (SELECT item_rm_id, SUM(qty) AS qty_issued FROM issued_material_details WHERE created_date and type = 'Other' < '$filter_from' GROUP BY item_rm_id) m ON a.id = m.item_rm_id
+                        LEFT JOIN (SELECT item_rm_id, SUM(qty) AS qty_trans_other_out FROM transaction_other_component WHERE request_date <= '$filter_from' AND transaction_type = 'ITEM OUT' GROUP BY item_rm_id) h ON a.id = h.item_rm_id
+                        LEFT JOIN (SELECT item_rm_id, SUM(qty) AS qty_trans_other_adj_out FROM transaction_other_component WHERE request_date <= '$filter_from' AND transaction_type = 'ADJ OUT' GROUP BY item_rm_id) i ON a.id = i.item_rm_id
+                        LEFT JOIN (SELECT item_rm_id, SUM(qty) AS qty_scan_out FROM scan_dn_crusher WHERE created_date <= '$filter_from' GROUP BY item_rm_id) k ON a.id = k.item_rm_id
+                        LEFT JOIN (SELECT item_rm_id, SUM(qty) AS qty_dn_scrap FROM dn_scrap WHERE transaction_date <= '$filter_from' GROUP BY item_rm_id) l ON a.id = l.item_rm_id
+                        LEFT JOIN (SELECT item_rm_id, SUM(qty) AS qty_issued FROM issued_material_details WHERE created_date <= '$filter_from' and type = 'Other' GROUP BY item_rm_id) m ON a.id = m.item_rm_id
                     ) j ON a.id = j.id
 
         LEFT JOIN (

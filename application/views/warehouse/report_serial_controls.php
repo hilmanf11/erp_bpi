@@ -3,6 +3,11 @@
         <legend><b>Form Filter Data</b></legend>
         <div style="width: 50%; float: left;">
             <div class="fitem">
+                <span style="width:35%; display:inline-block;">Trans Date</span>
+                <input style="width:30%;" id="filter_from" value="<?= date("Y-m-01") ?>" class="easyui-datebox" data-options="prompt:'Start Date',formatter:myformatter,parser:myparser, editable:false">
+                <input style="width:30%;" id="filter_to" value="<?= date("Y-m-t") ?>" class="easyui-datebox" data-options="prompt:'Finish Date',formatter:myformatter,parser:myparser, editable:false">
+            </div>
+            <div class="fitem">
                 <span style="width:35%; display:inline-block;">Customer</span>
                 <input style="width:60%;" id="filter_customer" class="easyui-combobox">
             </div>
@@ -40,6 +45,8 @@
 
 <script>
     function filter() {
+        var filter_from = $("#filter_from").datebox("getValue");
+        var filter_to = $("#filter_to").datebox("getValue");
         var filter_customer = $("#filter_customer").combobox("getValue");
         var filter_product_no = $("#filter_product_no").combogrid("getValue");
         var filter_do_no = $("#filter_do_no").combobox("getValue");
@@ -50,7 +57,9 @@
             "&filter_product_no=" + filter_product_no +
             "&filter_do_no=" + window.btoa(filter_do_no) +
             "&filter_dn_no=" + window.btoa(filter_dn_no) +
-            "&filter_serial_no=" + window.btoa(filter_serial_no);
+            "&filter_serial_no=" + window.btoa(filter_serial_no) +
+            "&filter_from=" + window.btoa(filter_from) +
+            "&filter_to=" + window.btoa(filter_to);
 
         if (filter_customer == "" && filter_serial_no == "") {
             toastr.warning("Please select Customer or Serial No!");
@@ -61,6 +70,8 @@
     }
 
     function excel() {
+        var filter_from = $("#filter_from").datebox("getValue");
+        var filter_to = $("#filter_to").datebox("getValue");
         var filter_customer = $("#filter_customer").combobox("getValue");
         var filter_product_no = $("#filter_product_no").combogrid("getValue");
         var filter_do_no = $("#filter_do_no").combobox("getValue");
@@ -71,7 +82,9 @@
             "&filter_product_no=" + filter_product_no +
             "&filter_do_no=" + window.btoa(filter_do_no) +
             "&filter_dn_no=" + window.btoa(filter_dn_no) +
-            "&filter_serial_no=" + window.btoa(filter_serial_no);
+            "&filter_serial_no=" + window.btoa(filter_serial_no) +
+            "&filter_from=" + window.btoa(filter_from) +
+            "&filter_to=" + window.btoa(filter_to);
 
         if (filter_customer == "" && filter_serial_no == "") {
             toastr.warning("Please select Customer or Serial No!");

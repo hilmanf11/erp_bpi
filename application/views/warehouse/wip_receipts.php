@@ -4,8 +4,8 @@
             <th rowspan="2" field="ck" checkbox="true"></th>
             <th rowspan="2" data-options="field:'document_no',width:200,align:'center'">Document No</th>
             <th rowspan="2" data-options="field:'division',width:80,align:'center'">Division</th>
-            <th rowspan="2" data-options="field:'trans_date',width:100,align:'center'">Trans Date</th>
-            <th rowspan="2" data-options="field:'prod_date',width:100,align:'center'">Production <br>Date</th>
+            <th rowspan="2" data-options="field:'trans_date',width:100,align:'center'">Receiving Date</th>
+            <th rowspan="2" data-options="field:'prod_date',width:150,align:'center'">Packing Date</th>
             <th rowspan="2" data-options="field:'shift',width:80,align:'center'">Shift</th>
             <th rowspan="2" data-options="field:'status',width:80,align:'center',formatter:statusformat,styler:statusStyle">Status</th>
             <th colspan="2" data-options="field:'',width:100,halign:'center'"> Created</th>
@@ -65,14 +65,30 @@
                     <span style="width:35%; display:inline-block;">Product No</span>
                     <input style="width:60%;" id="filter_item_fg_id" class="easyui-combogrid">
                 </div>
-            </div>
-            <div style="width: 30%; float: left;">
                 <div class="fitem">
                     <span style="width:35%; display:inline-block;">Status</span>
                     <select style="width:60%;" id="filter_status" class="easyui-combobox" panelHeight="auto">
                         <option value="">Choose All</option>
                         <option value="0">Open</option>
                         <option value="1">Close</option>
+                    </select>
+                </div>
+            </div>
+            <div style="width: 30%; float: left;">
+                <div class="fitem">
+                    <span style="width:35%; display:inline-block;">Status Subcont</span>
+                    <select style="width:60%;" id="filter_status_subcont" class="easyui-combobox" panelHeight="auto">
+                        <option value="">Select All</option>
+                        <option value="YES">YES</option>
+                        <option value="NO">NO</option>
+                    </select>
+                </div>
+                <div class="fitem">
+                    <span style="width:35%; display:inline-block;">Subcont TYpe</span>
+                    <select style="width:60%;" id="filter_subcont_type" class="easyui-combobox" panelHeight="auto">
+                        <option value="">Select All</option>
+                        <option value="Jasa">Jasa</option>
+                        <option value="Finished Good">Finished Good</option>
                     </select>
                 </div>
                 <div class="fitem">
@@ -146,6 +162,8 @@
                     <th data-options="field:'packing_qty',width:100,editor: {type: 'numberbox', options: {required: true}}">MPQ, Qty/Box</th>
                     <th data-options="field:'label',width:100,formatter:labelFormatter">Label Qty</th> -->
                     <th data-options="field:'remarks',width:150,editor: {type: 'textbox', options: {required: true}}">Remarks</th>
+                    <th hidden data-options="field:'status_subcont',width:150,editor: {type: 'textbox', options: {required: true}}">Status Subcont</th>
+                    <th hidden data-options="field:'subcont_type',width:150,editor: {type: 'textbox', options: {required: true}}">Subcont Type</th>
                 </tr>
             </thead>
         </table>
@@ -358,10 +376,13 @@
         var filter_division = $("#filter_division").combobox('getValue');
         var filter_shift = $("#filter_shift").combobox('getValue');
         var filter_status = $("#filter_status").combobox('getValue');
+        var filter_status_subcont = $("#filter_status_subcont").combobox('getValue');
+        var filter_subcont_type = $("#filter_subcont_type").combobox('getValue');
         var filter_checksheet_number = $("#filter_checksheet_number").combobox('getValue');
 
         url = "?filter_from=" + filter_from + "&filter_to=" + filter_to + "&filter_checksheet=" + filter_checksheet +
             "&filter_document_no=" + filter_document_no + "&filter_item_fg_id=" + filter_item_fg_id + "&filter_shift=" + filter_shift + "&filter_status=" + filter_status +
+            "&filter_status_subcont=" + filter_status_subcont + "&filter_subcont_type=" + filter_subcont_type +
             "&filter_checksheet_number=" + filter_checksheet_number + "&filter_division=" + filter_division;
 
         $('#dg').datagrid({
@@ -383,12 +404,15 @@
         var filter_document_no = $("#filter_document_no").combobox('getValue');
         var filter_division = $("#filter_division").combobox('getValue');
         var filter_shift = $("#filter_shift").combobox('getValue');
+        var filter_status_subcont = $("#filter_status_subcont").combobox('getValue');
+        var filter_subcont_type = $("#filter_subcont_type").combobox('getValue');
         var filter_status = $("#filter_status").combobox('getValue');
 
         var filter_checksheet_number = $("#filter_checksheet_number").combobox('getValue');
 
         url = "?filter_from=" + filter_from + "&filter_to=" + filter_to + "&filter_checksheet=" + filter_checksheet +
             "&filter_document_no=" + filter_document_no + "&filter_item_fg_id=" + filter_item_fg_id + "&filter_shift=" + filter_shift + "&filter_status=" + filter_status +
+            "&filter_status_subcont=" + filter_status_subcont + "&filter_subcont_type=" + filter_subcont_type +
             "&filter_checksheet_number=" + filter_checksheet_number + "&filter_division=" + filter_division;
 
         window.location.assign('<?= base_url('warehouse/wip_receipts/print/excel') ?>' + url);
@@ -457,7 +481,17 @@
                             field: 'lot_no',
                             title: 'Lot No',
                             halign: 'center',
-                            width: 100
+                            width: 100,
+                        }, {
+                            field: 'status_subcont',
+                            title: 'Status Subcont',
+                            halign: 'center',
+                            width: 100,
+                        }, {
+                            field: 'subcont_type',
+                            title: 'Subcont Type',
+                            halign: 'center',
+                            width: 100,
                         }, {
                             field: 'status',
                             title: 'Status',
@@ -736,7 +770,9 @@
                                         label: rows[i].label,
                                         packing: rows[i].packing,
                                         packing_qty: rows[i].packing_qty,
-                                        remarks: rows[i].remarks
+                                        remarks: rows[i].remarks,
+                                        status_subcont: rows[i].status_subcont,
+                                        subcont_type: rows[i].subcont_type
                                     },
                                     dataType: "json",
                                     success: function(result) {
@@ -885,7 +921,12 @@
 
     $("#prod_date").datebox({
         onSelect: function(date) {
-            var formattedDate = date.getFullYear() + "-" + (date.getMonth() + 1) + "-" + date.getDate();
+            // Format ke YYYY-MM-DD dengan leading zero
+            var y = date.getFullYear();
+            var m = date.getMonth() + 1;
+            var d = date.getDate();
+            var formattedDate = y + '-' + (m < 10 ? ('0' + m) : m) + '-' + (d < 10 ? ('0' + d) : d);
+            
             loadShifts(formattedDate);
         }
     });
