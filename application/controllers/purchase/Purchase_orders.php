@@ -185,6 +185,26 @@ class Purchase_orders extends CI_Controller
         }
     }
 
+    public function datatableHistories()
+    {
+        if ($this->input->get()) {
+            $po_no = base64_decode($this->input->get('po_no'));
+            $item_rm_id = base64_decode($this->input->get('item_rm_id'));
+            $specification = base64_decode($this->input->get('specification'));
+
+            $this->db->select('a.*, b.number as part_number');
+            $this->db->from('purchase_order_histories a');
+            $this->db->join('item_rm b','a.item_rm_id = b.id');
+            $this->db->where('a.po_no', $po_no);
+            $this->db->where('a.item_rm_id', $item_rm_id);
+            $this->db->where('a.specification', $specification);
+            $this->db->order_by('a.created_date', 'ASC');
+            $records = $this->db->get()->result_array();
+
+            echo json_encode($records);
+        }
+    }
+
     public function datatables()
     {
         if ($this->input->post()) {
@@ -448,6 +468,7 @@ class Purchase_orders extends CI_Controller
             a.qty,
             a.discount,
             a.discount_nominal,
+            a.item_supplier,
             e.price as price,
             a.price as price_conv,
             a.delivery_date,
@@ -468,6 +489,7 @@ class Purchase_orders extends CI_Controller
             b.number as item_number, 
             b.name as item_name,
             b.uom,
+            b.item_category_id,
             d.id as supplier_id, 
             d.number as supplier_number, 
             d.name as supplier_name,
@@ -548,6 +570,7 @@ class Purchase_orders extends CI_Controller
 
                 $data = array(
                     "supplier_id" => $post['supplier_id'],
+                    "item_supplier" => $post['item_supplier'],
                     "item_rm_id" => $items->id,
                     "request_no" => $post['request_no'],
                     "request_date" => $post['request_date'],
@@ -693,6 +716,108 @@ class Purchase_orders extends CI_Controller
     //     }
     // }
 
+    // public function update()
+    // {
+    //     if (!$this->input->post()) {
+    //         show_error("Cannot process your request");
+    //         return;
+    //     }
+
+    //     $post = $this->input->post();
+
+    //     // var_dump($post);
+    //     // return;
+
+    //     $item = $this->crud->read('item_rm', [], ['id' => $post['item_rm_id']]);
+    //     if (!$item) {
+    //         show_error("Item not found");
+    //         return;
+    //     }
+
+    //     $isDimensionItem = (
+    //         floatval($post['length']) > 0 ||
+    //         floatval($post['width']) > 0 ||
+    //         floatval($post['thickness']) > 0 ||
+    //         floatval($post['diameter']) > 0
+    //     );
+
+    //     $where = [
+    //         'request_no' => $post['request_no'],
+    //         'item_rm_id' => $item->id
+    //     ];
+
+    //     if ($isDimensionItem) {
+    //         $where = array_merge($where, [
+    //             'length'    => $post['length'],
+    //             'width'     => $post['width'],
+    //             'thickness' => $post['thickness'],
+    //             'diameter'  => $post['diameter']
+    //         ]);
+    //     }
+
+    //     $existing = $this->crud->read('purchase_orders', [], $where);
+
+    //     $updateData = [
+    //         'supplier_id'      => $post['supplier_id'],
+    //         'qty'              => $post['qty'],
+    //         'length'           => $post['length'],
+    //         'width'            => $post['width'],
+    //         'thickness'        => $post['thickness'],
+    //         'diameter'         => $post['diameter'],
+    //         "weight"           => $post['weight'],
+    //         'specification'    => $post['specification'],
+    //         'convertion'       => $post['convertion'],
+    //         'discount'         => $post['discount'],
+    //         'discount_nominal' => $post['discount_nominal'],
+    //         'po_date'          => $post['po_date'],
+    //         'price'            => $post['price'],
+    //         'total'            => $post['total'],
+    //         'taxes'            => $post['taxes'],
+    //         'delivery_date'    => $post['delivery_date'],
+    //         'remarks'          => $post['remarks'],
+    //         'notes'            => $post['notes'],
+    //         'month_1'          => $post['month_1'],
+    //         'month_2'          => $post['month_2'],
+    //         'month_3'          => $post['month_3'],
+    //         'month_4'          => $post['month_4'],
+    //         'total_sub'        => $post['total_sub'],
+    //         'disc_pr'          => $post['disc_pr'],
+    //         'discount_total'   => $post['discount_total'],
+    //         'income_tax'       => $post['income_tax'],
+    //         'income_total'     => $post['income_total'],
+    //         'total_dp'         => $post['total_dp'],
+    //         'total_grand'      => $post['total_grand'],
+    //         'total_vat'        => $post['total_vat'],
+    //         'total_dpp'        => $post['total_dpp'],
+    //         'status_price'     => @$post['status_price'],
+    //         'revision'         => (isset($existing->revision) ? ($existing->revision + 1) : 1)
+    //     ];
+
+    //     $sameData = (
+    //         @$existing->qty == $post['qty'] &&
+    //         @$existing->supplier_id == $post['supplier_id'] &&
+    //         @$existing->price == $post['price'] &&
+    //         @$existing->discount == $post['discount'] &&
+    //         @$existing->discount_nominal == $post['discount_nominal']
+    //     );
+
+    //     if ($sameData) {
+    //         $result = $this->db->update('purchase_orders', $updateData, $where);
+    //     } else {
+    //         $result = $this->crud->update('purchase_orders', $where, $updateData);
+    //     }
+
+    //     $this->db->update('purchase_requests', [
+    //         'qty' => $post['qty']
+    //     ], $where);
+
+    //     echo json_encode([
+    //         'success' => (bool)$result,
+    //         'message' => $result ? 'Update Success' : 'Failed To Update',
+    //         'where_used' => $where 
+    //     ]);
+    // }
+
     public function update()
     {
         if (!$this->input->post()) {
@@ -701,9 +826,6 @@ class Purchase_orders extends CI_Controller
         }
 
         $post = $this->input->post();
-
-        // var_dump($post);
-        // return;
 
         $item = $this->crud->read('item_rm', [], ['id' => $post['item_rm_id']]);
         if (!$item) {
@@ -722,6 +844,13 @@ class Purchase_orders extends CI_Controller
             'request_no' => $post['request_no'],
             'item_rm_id' => $item->id
         ];
+        $wherePR = [
+            'request_no' => $post['request_no'],
+            'item_rm_id' => $item->id
+        ];
+        if (isset($post['specification'])) {
+            $where['specification'] = $post['specification'];
+        }
 
         if ($isDimensionItem) {
             $where = array_merge($where, [
@@ -733,72 +862,204 @@ class Purchase_orders extends CI_Controller
         }
 
         $existing = $this->crud->read('purchase_orders', [], $where);
-
-        $updateData = [
-            'supplier_id'      => $post['supplier_id'],
-            'qty'              => $post['qty'],
-            'length'           => $post['length'],
-            'width'            => $post['width'],
-            'thickness'        => $post['thickness'],
-            'diameter'         => $post['diameter'],
-            "weight"           => $post['weight'],
-            'specification'    => $post['specification'],
-            'convertion'       => $post['convertion'],
-            'discount'         => $post['discount'],
-            'discount_nominal' => $post['discount_nominal'],
-            'po_date'          => $post['po_date'],
-            'price'            => $post['price'],
-            'total'            => $post['total'],
-            'taxes'            => $post['taxes'],
-            'delivery_date'    => $post['delivery_date'],
-            'remarks'          => $post['remarks'],
-            'notes'            => $post['notes'],
-            'month_1'          => $post['month_1'],
-            'month_2'          => $post['month_2'],
-            'month_3'          => $post['month_3'],
-            'month_4'          => $post['month_4'],
-            'total_sub'        => $post['total_sub'],
-            'disc_pr'          => $post['disc_pr'],
-            'discount_total'   => $post['discount_total'],
-            'income_tax'       => $post['income_tax'],
-            'income_total'     => $post['income_total'],
-            'total_dp'         => $post['total_dp'],
-            'total_grand'      => $post['total_grand'],
-            'total_vat'        => $post['total_vat'],
-            'total_dpp'        => $post['total_dpp'],
-            'status_price'     => @$post['status_price'],
-            'revision'         => (isset($existing->revision) ? ($existing->revision + 1) : 1)
-        ];
-
-        $sameData = (
-            @$existing->qty == $post['qty'] &&
-            @$existing->supplier_id == $post['supplier_id'] &&
-            @$existing->price == $post['price'] &&
-            @$existing->month_1 == $post['month_1'] &&
-            @$existing->month_2 == $post['month_2'] &&
-            @$existing->month_3 == $post['month_3'] &&
-            @$existing->month_4 == $post['month_4'] &&
-            @$existing->discount == $post['discount'] &&
-            @$existing->discount_nominal == $post['discount_nominal']
-        );
-
-        if ($sameData) {
-            $result = $this->db->update('purchase_orders', $updateData, $where);
-        } else {
-            $result = $this->crud->update('purchase_orders', $where, $updateData);
+        if (!$existing) {
+            show_error("Data Purchase Order tidak ditemukan (Atau spesifikasi tidak cocok)");
+            return;
         }
 
-        $this->db->update('purchase_requests', [
-            'qty' => $post['qty']
-        ], $where);
+        // =======================================================
+        // 1. STERILISASI ANGKA & TANGGAL & TEXT
+        // =======================================================
+        $post_qty       = floatval(str_replace(',', '', @$post['qty']));
+        $post_price     = floatval(str_replace(',', '', @$post['price']));
+        $post_disc      = floatval(str_replace(',', '', @$post['discount']));
+        $post_disc_nom  = floatval(str_replace(',', '', @$post['discount_nominal']));
+        $post_inc_tax   = floatval(str_replace(',', '', @$post['income_tax'])); 
+        
+        // Month Data - Disterilisasi sebagai angka
+        $post_month_1   = floatval(str_replace(',', '', @$post['month_1']));
+        $post_month_2   = floatval(str_replace(',', '', @$post['month_2']));
+        $post_month_3   = floatval(str_replace(',', '', @$post['month_3']));
+        $post_month_4   = floatval(str_replace(',', '', @$post['month_4']));
 
+        $post_item_supplier = (isset($post['item_supplier']) && $post['item_supplier'] !== 'undefined') ? $post['item_supplier'] : '';
+
+        $old_qty        = floatval(@$existing->qty);
+        $old_price      = floatval(@$existing->price);
+        $old_disc       = floatval(@$existing->discount);
+        $old_disc_nom   = floatval(@$existing->discount_nominal);
+        $old_inc_tax    = floatval(@$existing->income_tax);
+        
+        $old_month_1    = floatval(@$existing->month_1);
+        $old_month_2    = floatval(@$existing->month_2);
+        $old_month_3    = floatval(@$existing->month_3);
+        $old_month_4    = floatval(@$existing->month_4);
+
+        $old_item_supplier = @$existing->item_supplier;
+
+        // =======================================================
+        // 2. CEK PENDING APPROVAL
+        // =======================================================
+        $isPendingApproval = false;
+        
+        if (isset($existing->approved_to) && trim($existing->approved_to) !== '' && trim($existing->approved_to) !== '0') {
+            $isPendingApproval = true;
+        }
+
+        // =======================================================
+        // 3. VALIDASI KRITIS (Butuh CRUD Approval?)
+        // =======================================================
+        $sameData = (
+            $old_qty == $post_qty &&
+            @$existing->supplier_id == $post['supplier_id'] &&
+            $old_price == $post_price &&
+            $old_disc == $post_disc &&
+            $old_disc_nom == $post_disc_nom &&
+            $old_item_supplier == $post_item_supplier &&
+            $old_month_1 == $post_month_1 &&
+            $old_month_2 == $post_month_2 &&
+            $old_month_3 == $post_month_3 &&
+            $old_month_4 == $post_month_4
+        );
+        $isApprovalRequired = !$sameData; 
+
+        // =======================================================
+        // 4. GENERATE REMARK HISTORY LOG
+        // =======================================================
+        $changes_log = []; 
+        if ($old_qty != $post_qty) { $changes_log[] = "Change Qty {$old_qty} to {$post_qty}"; }
+        if ($old_price != $post_price) { $changes_log[] = "Change Price {$old_price} to {$post_price}"; }
+        if ($old_disc != $post_disc) { $changes_log[] = "Change Discount {$old_disc} to {$post_disc}"; }
+        if ($old_disc_nom != $post_disc_nom) { $changes_log[] = "Change Disc Nominal {$old_disc_nom} to {$post_disc_nom}"; }
+        if (@$existing->supplier_id != $post['supplier_id']) { $changes_log[] = "Change Supplier " . @$existing->supplier_id . " to " . $post['supplier_id']; }
+        if ($old_item_supplier != $post_item_supplier) { 
+            $old_log = $old_item_supplier ?: 'None';
+            $new_log = $post_item_supplier ?: 'None';
+            $changes_log[] = "Change Item Supplier {$old_log} to {$new_log}"; 
+        }
+        
+        // Log untuk Month 1-4
+        if ($old_month_1 != $post_month_1) { $changes_log[] = "Change Month 1 {$old_month_1} to {$post_month_1}"; }
+        if ($old_month_2 != $post_month_2) { $changes_log[] = "Change Month 2 {$old_month_2} to {$post_month_2}"; }
+        if ($old_month_3 != $post_month_3) { $changes_log[] = "Change Month 3 {$old_month_3} to {$post_month_3}"; }
+        if ($old_month_4 != $post_month_4) { $changes_log[] = "Change Month 4 {$old_month_4} to {$post_month_4}"; }
+        
+        $remark_revision_text = implode(", ", $changes_log);
+
+        // =======================================================
+        // 5. DETEKSI PERUBAHAN NON-KRITIS
+        // =======================================================
+        // [INFO] month_1, 2, 3, 4 sudah DIHAPUS dari sini karena sudah pindah jadi Data Kritis!
+        $itemFields = ['length', 'width', 'thickness', 'diameter', 'weight', 'convertion', 'total', 'taxes', 'delivery_date', 'remarks'];
+        
+        $isItemChanged = false;
+        foreach ($itemFields as $field) {
+            if (isset($post[$field]) && @$existing->$field != $post[$field]) { $isItemChanged = true; break; }
+        }
+
+        $isHeaderChanged = false;
+        if ($old_inc_tax != $post_inc_tax) { $isHeaderChanged = true; }
+        if (isset($post['po_date']) && date('Y-m-d', strtotime(@$existing->po_date)) != date('Y-m-d', strtotime($post['po_date']))) { 
+            $isHeaderChanged = true; 
+        }
+
+        // =======================================================
+        // 6. SUSUN DATA UPDATE
+        // =======================================================
+        $updateData = [];
+        $calculatedFields = ['total_sub', 'disc_pr', 'discount_total', 'total_vat', 'total_dpp', 'income_total', 'total_dp', 'total_grand'];
+        $allFieldsToUpdate = array_merge(['supplier_id', 'specification', 'po_date'], $itemFields, $calculatedFields);
+        
+        foreach ($allFieldsToUpdate as $field) {
+            if (isset($post[$field])) { $updateData[$field] = $post[$field]; }
+        }
+        
+        $updateData['qty'] = $post_qty;
+        $updateData['price'] = $post_price;
+        $updateData['discount'] = $post_disc;
+        $updateData['discount_nominal'] = $post_disc_nom;
+        $updateData['income_tax'] = $post_inc_tax;
+        $updateData['item_supplier'] = $post_item_supplier;
+        
+        // Simpan Month 1-4
+        $updateData['month_1'] = $post_month_1;
+        $updateData['month_2'] = $post_month_2;
+        $updateData['month_3'] = $post_month_3;
+        $updateData['month_4'] = $post_month_4;
+
+        // =======================================================
+        // 7. KENAIKAN REVISI & UPDATE REMARK 
+        // =======================================================
+        $final_revision = isset($existing->revision) ? (int)$existing->revision : 0;
+
+        if (!$isPendingApproval) {
+            if ($isItemChanged || $isApprovalRequired) {
+                $final_revision++;
+                $updateData['revision'] = $final_revision;
+
+            } else if (!$isItemChanged && !$isApprovalRequired && $isHeaderChanged) {
+                $final_revision++;
+                $updateData['revision'] = $final_revision;
+
+                $this->db->set('revision', 'revision + 1', FALSE);
+                $this->db->where('request_no', $post['request_no']);
+                $this->db->where('item_rm_id !=', $item->id);
+                $this->db->update('purchase_orders');
+            }
+
+            if ($isApprovalRequired && !empty($remark_revision_text)) {
+                $updateData['remark_revision'] = $remark_revision_text;
+            }
+        }
+
+        // =======================================================
+        // 8. EKSEKUSI UPDATE DATABASE 
+        // =======================================================
+        if ($isApprovalRequired) {
+            $result = $this->crud->update('purchase_orders', $where, $updateData);
+        } else {
+            $result = $this->db->update('purchase_orders', $updateData, $where);
+        }
+
+        if ($isApprovalRequired && isset($post['qty'])) {
+            $this->db->update('purchase_requests', ['qty' => $post_qty], $wherePR);
+        }
+
+        // =======================================================
+        // 9. SIMPAN KE HISTORY TABLE (DIBLOKIR JIKA PENDING)
+        // =======================================================
+        if (!$isPendingApproval && $isApprovalRequired && !empty($remark_revision_text)) {
+            $historyData = [
+                'request_no'       => $post['request_no'],
+                'po_no'            => isset($post['po_no']) ? $post['po_no'] : @$existing->po_no,
+                'qty'              => $post_qty,
+                'price'            => $post_price,
+                'discount'         => $post_disc,
+                'discount_nominal' => $post_disc_nom,
+                'specification'    => isset($post['specification']) ? $post['specification'] : '',
+                'item_rm_id'       => $item->id,
+                'month_1'          => $post_month_1,
+                'month_2'          => $post_month_2,
+                'month_3'          => $post_month_3,
+                'month_4'          => $post_month_4,
+                'remarks'          => $remark_revision_text,
+                'revision'         => $final_revision,
+            ];
+            
+            $this->crud->create('purchase_order_histories', $historyData);
+        }
+
+        // =======================================================
+        // 10. OUTPUT RESPONSE
+        // =======================================================
         echo json_encode([
             'success' => (bool)$result,
-            'message' => $result ? 'Update Success' : 'Failed To Update',
-            'where_used' => $where 
+            'message' => $result ? 'Update Success' : 'Failed To Update / No Changes',
+            'where_used' => $where,
+            'remark' => (!$isPendingApproval) ? $remark_revision_text : 'Blocked (Pending)',
+            'debug_is_pending' => $isPendingApproval
         ]);
     }
-
 
     public function update_approval()
     {

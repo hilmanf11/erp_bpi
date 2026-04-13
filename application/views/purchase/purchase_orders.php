@@ -29,7 +29,9 @@
             <th rowspan="2" data-options="field:'notes',width:80,align:'center'">Note</th>
             <th rowspan="2" data-options="field:'revision',width:80,align:'center'">Revision</th>
             <th rowspan="2" data-options="field:'remarks',width:100,halign:'center'">Remarks</th>
+            <th rowspan="2" data-options="field:'remark_revision',width:150,halign:'center'">Remark Revision</th>
             <th colspan="4" data-options="field:'',width:100,halign:'center'"> Forecast</th>
+            <th rowspan="2" data-options="field:'btn',width:100,halign:'center',align:'right',formatter:btnHistories">History</th>
             <th colspan="2" data-options="field:'',width:100,halign:'center'"> Created</th>
             <th colspan="2" data-options="field:'',width:100,halign:'center'"> Updated</th>
         </tr>
@@ -177,6 +179,26 @@
     </form>
 </div>
 
+<!-- Detail Histories -->
+<div id="dlg_history" class="easyui-dialog" title="PO Histories" data-options="closed: true,modal:true" style="width: 1250px; height: 300px; top: 20px;">
+    <table id="dg_history" class="easyui-datagrid" style="width:100%;">
+        <thead>
+            <tr>
+                <th data-options="field:'request_no',width:130,halign:'center'">Request No</th>
+                <th data-options="field:'po_no',width:150,halign:'center'">PO NO</th>
+                <th data-options="field:'part_number',width:150,halign:'center'">Part Number</th>
+                <th data-options="field:'qty',width:80,halign:'center'">Qty</th>
+                <th data-options="field:'specification',width:140,halign:'center'">Specification</th>
+                <th data-options="field:'price',width:80,halign:'center',formatter: numberformat">Price</th>
+                <th data-options="field:'discount',width:100,halign:'center'">Disc</th>
+                <th data-options="field:'discount_nominal',width:100,halign:'center'">Disc Nominal</th>
+                <th data-options="field:'created_by',width:100,halign:'center'">Cerated By</th>
+                <th data-options="field:'created_date',width:120,halign:'center'">Created Date</th>
+            </tr>
+        </thead>
+    </table>
+</div>
+
 <!-- UPDATE SIGNATURE -->
 <div id="dlg_approval" class="easyui-dialog" title="Edit Signature" data-options="closed: true,modal:true" style="width: 400px; padding:10px; top: 20px;">
     <form id="frm_approval" method="post" novalidate>
@@ -263,26 +285,20 @@
         }, 100);
     }
 
-
-
-
-    //EDIT DATA
     function update() {
         var row = $('#dg').treegrid('getSelected');
         if (row) {
-            console.log("Update :",row);
-            console.log("row.convertion", row.convertion);
             if (row.datatable == "1") {
                 if (row.status_pi == "0" || row.status_pi == null ) {
                     $('#dlg_insert').dialog('open');
-                    $('#frm_insert').form('load', row);
+                    
+                    // Ini akan mengisi seluruh form secara otomatis, termasuk diskon & tax dari DB
+                    $('#frm_insert').form('load', row); 
+                    
                     $('#frm_calculate').show();
                     $("#btnPreview").linkbutton('disable');
-                    
-                    setTimeout(function() { 
-                        $('#income_total').numberbox('setValue', row.income_total);
-                        $('#discount_total').numberbox('setValue', row.discount_total);
-                    }, 1000);
+
+                    // HAPUS blok setTimeout di sini! Langsung saja panggil preview.
 
                     preview('<?= base_url('purchase/purchase_orders/datatable_updates') ?>?po_no=' + btoa(row.po_no));
                 } else {
@@ -295,8 +311,37 @@
             toastr.warning("Please select one of the data in the table first!", "Information");
         }
     }
-    
 
+    //EDIT DATA
+    // function update() {
+    //     var row = $('#dg').treegrid('getSelected');
+    //     if (row) {
+    //         console.log("Update :",row);
+    //         console.log("row.convertion", row.convertion);
+    //         if (row.datatable == "1") {
+    //             if (row.status_pi == "0" || row.status_pi == null ) {
+    //                 $('#dlg_insert').dialog('open');
+    //                 $('#frm_insert').form('load', row);
+    //                 $('#frm_calculate').show();
+    //                 $("#btnPreview").linkbutton('disable');
+                    
+    //                 setTimeout(function() { 
+    //                     $('#income_total').numberbox('setValue', row.income_total);
+    //                     $('#discount_total').numberbox('setValue', row.discount_total);
+    //                 }, 1000);
+
+    //                 preview('<?= base_url('purchase/purchase_orders/datatable_updates') ?>?po_no=' + btoa(row.po_no));
+    //             } else {
+    //                 toastr.error("You cannot update this data, because status PI in POR is closed");
+    //             }
+    //         } else {
+    //             toastr.error("Please Select Header of PO <br>" + row.po_no);
+    //         }
+    //     } else {
+    //         toastr.warning("Please select one of the data in the table first!", "Information");
+    //     }
+    // }
+    
     function preview(url = "") {
         var request_no = $("#request_no").combobox('getValue');
         var po_date = $("#po_date").datebox('getValue');
@@ -553,7 +598,7 @@
                                         formatter: myformatter,
                                         parser: myparser,
                                         editable: true,
-                                        // required: true
+                                        required: true
                                     }
                                 }
                             }, {//16
@@ -815,7 +860,7 @@
                                 $(editors[12].target).numberbox('setValue', supplier.price);
                                 $(editors[22].target).textbox('setValue', supplier.vat); // Tambahkan ini agar VAT juga diset
                                 $(editors[23].target).textbox('setValue', supplier.type); // Supplier Type
-                                $(editors[2].target).textbox('setValue', supplier.item_supplier); // Supplier Type
+                                $(editors[2].target).textbox('setValue', supplier.item_supplier);
                                 // Menghitung total harga setelah diskon
                                 var qty = parseFloat($(editors[8].target).numberbox('getValue')) || 0;
                                 var price = parseFloat($(editors[12].target).numberbox('getValue')) || 0;
@@ -826,6 +871,15 @@
 
                                 $(editors[13].target).numberbox('setValue', price_conv);
                                 $(editors[14].target).numberbox('setValue', totalDiscountedPrice);
+
+                                if (supplier.remark && supplier.remark.trim() !== "") {
+        
+                                    if (supplier.remark.toLowerCase().includes("price before discount")) {
+                                        toastr.info("This item have Price Before Discount", "Information", {timeOut: 5000});
+                                    } else {
+                                        toastr.info("Remark: " + supplier.remark, "Information", {timeOut: 5000});
+                                    }
+                                }
                             }
 
                             delivery_date.add(delivery_date).datebox({
@@ -842,7 +896,7 @@
                         },
                         onLoadSuccess: function() {
                             var rows = $('#dg_request').datagrid('getRows');
-                            console.log(rows);
+                            console.log("dari Onload",rows);
                             endEditing();
 
                             for (var i = 0; i < rows.length; i++) {
@@ -883,9 +937,14 @@
                             if (totalrows > 0) {
                                 var total_subs = 0;
                                 var selected_tax = 0;
+                                var has_c07 = false;
                                 
                                 for (let i = 0; i < totalrows; i++) {
                                     total_subs += parseFloat(rows[i].total);
+
+                                    if (rows[i].item_category_id === 'C07') {
+                                        has_c07 = true;
+                                    }
                                 }
 
                                 if (rows.length > 0) {
@@ -894,7 +953,32 @@
                                 }
 
                                 $("#total_sub").numberbox('setValue', total_subs);
-                                calculateTotal(total_subs, 0, 0, 0, 0, tax, type);
+
+                                var current_income_tax = parseFloat($("#income_tax").numberbox('getValue')) || 0;
+
+                                if (has_c07 && current_income_tax === 0) {
+                                    $("#income_tax").numberbox('setValue', 2);
+                                    current_income_tax = 2; 
+                                    toastr.info("Income Tax auto-filled to 2% for category C07");
+                                }
+
+                                // ==========================================
+                                // PENCEGAHAN BENTROK (BACA NILAI DARI FORM)
+                                // ==========================================
+                                // 1. Ambil nilai diskon dan DP yang terbawa dari database saat Update
+                                var current_disc_pr = parseFloat($("#disc_pr").numberbox('getValue')) || 0;
+                                var current_discount_total = parseFloat($("#discount_total").numberbox('getValue')) || 0;
+                                var current_total_dp = parseFloat($("#total_dp").numberbox('getValue')) || 0;
+
+                                // 2. Beritahu sistem apakah user sebelumnya memakai diskon Persen atau Nominal
+                                if (current_discount_total > 0 && current_disc_pr === 0) {
+                                    lastChanged = 'discount_total'; // Mengunci agar fungsi hitung tidak merusak nominal
+                                } else if (current_disc_pr > 0) {
+                                    lastChanged = 'disc_pr';
+                                }
+
+                                // 3. Panggil kalkulator dengan parameter ASLI dari form, BUKAN angka 0
+                                calculateTotal(total_subs, current_disc_pr, current_discount_total, current_income_tax, current_total_dp, tax, type);
 
                                 $("#disc_pr").numberbox({
                                     onChange: function () {
@@ -1413,6 +1497,7 @@
 
                                             var item_rm_id = row.item_rm_id;//item_number
                                             var po_no = row.po_no;
+                                            var item_supplier = row.item_supplier;
                                             var supplier_id = row.supplier_id;
                                             var qty = row.qty;
                                             var length = row.length;
@@ -1464,6 +1549,7 @@
                                                 url: url_save,
                                                 data: 'item_rm_id=' + item_rm_id +
                                                     '&po_no=' + po_no +
+                                                    '&item_supplier=' + item_supplier +
                                                     '&supplier_id=' + supplier_id +
                                                     '&request_no=' + request_no +
                                                     '&request_date=' + row.request_date +
@@ -1775,4 +1861,25 @@
             type
         );
     }
+
+    function btnHistories(val, row) {
+        if (row.item_rm_id && row.item_rm_id !== '') {
+            var po_no = row.po_no ? row.po_no : '';
+            var item_id = row.item_rm_id ? row.item_rm_id : '';
+            var spec = row.specification ? row.specification.replace(/'/g, "\\'").replace(/"/g, '&quot;') : '';
+            var history = "viewHistories('" + po_no + "', '" + item_id + "', '" + spec + "')";
+            return '<a href="javascript:void(0)" class="btn btn-primary w-100" onClick="' + history + '" style="pointer-events: visible; opacity:1; color:white; text-decoration:none;"><i class="fa fa-eye"></i> View</a>';
+        }
+        return '';
+    }
+
+    function viewHistories(po_no, item_rm_id, specification) {
+        $("#dlg_history").dialog('open');
+        $('#dg_history').datagrid({
+            url: '<?= base_url('purchase/purchase_orders/datatableHistories?po_no=') ?>' + btoa(po_no) + "&item_rm_id=" + btoa(item_rm_id) + "&specification=" + btoa(specification),
+            pagination: false,
+            rownumbers: true,
+        });
+    }
+
 </script>
