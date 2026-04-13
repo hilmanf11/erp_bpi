@@ -563,3 +563,8 @@ add Item Supplier ([cf82acf5](https://github.com/hilmanf11/erp_bpi/commit/cf82ac
 
 ### [2026-04-09]
 - **Rizki Puji**: Feature: Reconcile process and fix replace existing on Bank Reconciliation ([cb28b265](https://github.com/hilmanf11/erp_bpi/commit/cb28b265b532edd6d82a22cf48fb274f8976a855))
+
+### [2026-04-13]
+- **kurniawan**: Update Dn_boxs.php
+
+Update DN Boxs ([19a901aa](https://github.com/hilmanf11/erp_bpi/commit/19a901aaaf9053d675e7059b32546dcc4edc2627))
