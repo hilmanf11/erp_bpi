@@ -574,3 +574,6 @@ Update DN Boxs ([19a901aa](https://github.com/hilmanf11/erp_bpi/commit/19a901aaa
 
 ### [2026-04-13]
 - **kurniawan**: Update wip_receipts.php ([a772e1fb](https://github.com/hilmanf11/erp_bpi/commit/a772e1fb9c131b43bcda1afb42235f33269a25d7))
+
+### [2026-04-13]
+- **kurniawan**: Update Supplier_items.php ([23d8c36f](https://github.com/hilmanf11/erp_bpi/commit/23d8c36f30259d38b284e2b8be6816050be8b07e))
