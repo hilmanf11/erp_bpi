@@ -453,7 +453,6 @@ class Journal_inventory extends CI_Controller
             $filter_to              = base64_decode($this->input->get('filter_to')) ?? null;
             $filter_journal_type    = base64_decode($this->input->get('filter_journal_type')) ?? null;
             $filter_modul           = base64_decode($this->input->get('filter_modul')) ?? null;
-            $filter_division        = base64_decode($this->input->get('filter_division')) ?? null;
             $filter_voucher         = base64_decode($this->input->get('filter_voucher')) ?? null;
             $filter_item_category   = base64_decode($this->input->get('filter_item_category')) ?? null;
 
@@ -465,7 +464,6 @@ class Journal_inventory extends CI_Controller
             $offset = ($page - 1) * $rows;
             $result = array();
 
-            // --- Get POR, division, and category ---
             $this->db->select('
                 por.receipt_no, 
                 item.id, 
@@ -508,9 +506,6 @@ class Journal_inventory extends CI_Controller
             }
             if ($filter_item_category != "") {
                 $this->db->like('c.item_category_id', $filter_item_category);
-            }
-            if ($filter_division != "") {
-                $this->db->like('c.division', $filter_division);
             }
             $this->db->group_by('a.number');
             $this->db->order_by('a.journal_date', 'asc');

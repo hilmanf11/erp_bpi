@@ -7,7 +7,6 @@ class Autopostingjournal extends CI_Model {
     {
         parent::__construct();
         $this->load->model('crud');
-        $this->load->model('m_journal_inventory');
     }
 
     /**

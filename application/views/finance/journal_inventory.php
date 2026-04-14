@@ -13,11 +13,6 @@
                     <input style="width:60%;" id="filter_journal_type" class="easyui-combogrid">
                 </div>
 
-                <div class="fitem" hidden>
-                    <span style="width:35%; display:inline-block;">Division</span>
-                    <input style="width:60%;" id="filter_division" class="easyui-combobox">
-                </div>
-
                 <div class="fitem">
                     <span style="width:35%; display:inline-block;"></span>
                     <a href="javascript:;" class="easyui-linkbutton" onclick="filter()"><i class="fa fa-search"></i> Filter Data</a>
@@ -181,12 +176,6 @@
                            class="easyui-datebox" data-options="formatter:myformatter,parser:myparser, editable:false, required:true">
                 </div>
 
-                <div class="fitem" style="margin-bottom: 8px;">
-                    <label style="width:35%; display:inline-block;">Division <span style="color:red">*</span></label>
-                    <input style="width:60%;" id="division" class="easyui-combobox" 
-                           data-options="required:true, editable:false, panelHeight:'auto'">
-                </div>
-                
                 <div class="fitem" style="margin-bottom: 8px;" hidden>
                     <label style="width:35%; display:inline-block;">Type</label>
                     <select style="width:60%;" id="type" name="type" class="easyui-combobox" 
@@ -378,7 +367,6 @@
             filter_journal_type: $("#filter_journal_type").combogrid('getValue'),
             filter_type: $("#filter_type").combobox('getValue'),
             filter_modul: $("#filter_modul").combobox('getValue'),
-            filter_division: $("#filter_division").combobox('getValue'),
             filter_item_category: $("#filter_item_category").combobox('getValue'),
             filter_voucher: $("#filter_voucher").textbox('getValue')
         };
@@ -467,16 +455,6 @@
                     $(e.data.target).combobox('clear').combobox('textbox').focus();
                 }
             }],
-        });
-
-        // --- DIVISION ---
-        $('#division, #filter_division').combobox({
-            url: '<?= base_url('master/divisions/reads'); ?>',
-            valueField: 'number',
-            textField: 'number',
-            panelHeight: 'auto',
-            prompt: 'Choose Division',
-            editable: false,
         });
 
         // --- MODUL ---
@@ -726,7 +704,6 @@
     function preview() {
         const params = {
             journal_date: $("#journal_date").datebox('getValue'),
-            division:     $("#division").combobox('getValue'),
             type:         $("#type").combobox('getValue'),
             modul:        $("#modul").combobox('getValue'),
             company_id:   $("#company_name").combogrid('getValue'),
@@ -736,7 +713,6 @@
         // Mapping untuk validasi
         const requiredFields = [
             { val: params.journal_date, label: 'Journal Date' },
-            { val: params.division,     label: 'Division' },
             { val: params.modul,        label: 'Modul' },
             { val: params.company_id,   label: 'Company' },
             { val: params.document_no,  label: 'Document No.' },
@@ -768,9 +744,6 @@
                 }
             });
 
-            // Konversi Multiple document_no menjadi string dipisah koma
-            const docNoStr = params.document_no.join(',');
-
             $.ajax({
                 method: 'post',
                 url: '<?= base_url('finance/journal_inventory/datatablesCheck') ?>',
@@ -778,11 +751,12 @@
                     journal_date: params.journal_date,
                     modul: params.modul,
                     company_id: params.company_id,
-                    document_no: docNoStr,
+                    document_no: params.company_id,
                 },
+                dataType: 'json',
                 success: function(result) {
-                    // Gunakan == 0 jika response dari server adalah string/int 0
-                    if (result == 0) {
+                    // check data existing di journal_inventory
+                    if (result.status === true) {
                         $('#dg2').datagrid({
                             url: '<?= base_url('finance/journal_inventory/datatablesTemp') ?>',
                             method: 'post',
@@ -790,7 +764,7 @@
                                 journal_date: window.btoa(params.journal_date),
                                 modul: window.btoa(params.modul),
                                 company_id: window.btoa(params.company_id),
-                                document_no: window.btoa(docNoStr)
+                                document_no: window.btoa(params.document_no)
                             },
                             onLoadSuccess: function(data) {
                                 if (data && data.rows && data.rows.length > 0) {
@@ -815,6 +789,7 @@
                                 }
                             }
                         });
+                    
                     } else {
                         toastr.error("This Document No. in Modul " + params.modul + " has been created");
                     }
