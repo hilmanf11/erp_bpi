@@ -158,6 +158,7 @@ class Shipping_orders extends CI_Controller
                 $this->db->from('new_barcode_fg a');
                 $this->db->join('item_fg b', 'a.item_fg_id = b.id');
                 $this->db->where('a.label_no', $checksheet_label);
+                $this->db->where('a.label_type !=', 'manual');
                 $this->db->group_by('a.label_no');
 
                 $totalRows = $this->db->count_all_results('', false);

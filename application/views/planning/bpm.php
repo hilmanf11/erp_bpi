@@ -557,7 +557,6 @@
                 $.messager.progress('close'); // tutup loading
                 toastr.success("Selected data has been deleted");
                 $('#dg').treegrid('reload');
-                readReceiptNo();
             });
 
         });
