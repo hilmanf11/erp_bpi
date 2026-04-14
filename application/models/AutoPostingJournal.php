@@ -30,7 +30,7 @@ class Autopostingjournal extends CI_Model {
 
         switch ($modul) {
             case "PURCHASE ORDER RECEIPT":
-                return $this->_process_por($document_no);
+                return $this->_process_por($modul, $document_no);
                 break;
 
             case "BPM":
@@ -173,7 +173,7 @@ class Autopostingjournal extends CI_Model {
      ---------------------------------------------- */
 
     // PURCHASE ORDER RECEIPT
-    private function _process_por($receipt_no) 
+    private function _process_por($modul, $receipt_no) 
     {
         // DB Transactions (Pak Angga)
         $this->db->trans_begin();
@@ -265,7 +265,7 @@ class Autopostingjournal extends CI_Model {
                     'currency'        => $row['currency'],
                     'company_name'    => $row['supplier_name'],
                     'company_id'      => $row['supplier_id'],
-                    'modul'           => "PURCHASE ORDER RECEIPT",
+                    'modul'           => $modul,
                     'remarks'         => "Auto Posting Journal",
                     'created_date'    => date('Y-m-d H:i:s'),
                     'created_by'      => $this->session->username ? $this->session->username : 'SYSTEM',
@@ -300,7 +300,7 @@ class Autopostingjournal extends CI_Model {
                 'currency'        => $records[0]['currency'],
                 'company_name'    => $records[0]['supplier_name'],
                 'company_id'      => $records[0]['supplier_id'],
-                'modul'           => "PURCHASE ORDER RECEIPT",
+                'modul'           => $modul,
                 'remarks'         => "Auto Posting Journal",
                 'created_date'    => date('Y-m-d H:i:s'),
                 'created_by'      => $this->session->username ? $this->session->username : 'SYSTEM',
@@ -404,7 +404,7 @@ class Autopostingjournal extends CI_Model {
                     'currency'        => $currency,
                     'company_name'    => $row['supplier_name'],
                     'company_id'      => $row['supplier_id'],
-                    'modul'           => "PURCHASE ORDER RECEIPT",
+                    'modul'           => $modul,
                     'remarks'         => "Auto Posting Journal",
                     'created_date'    => date('Y-m-d H:i:s'),
                     'created_by'      => $this->session->username ? $this->session->username : 'SYSTEM',
@@ -439,7 +439,7 @@ class Autopostingjournal extends CI_Model {
                 'currency'        => $currency,
                 'company_name'    => $records[0]['supplier_name'],
                 'company_id'      => $records[0]['supplier_id'],
-                'modul'           => "PURCHASE ORDER RECEIPT",
+                'modul'           => $modul,
                 'remarks'         => "Auto Posting Journal",
                 'created_date'    => date('Y-m-d H:i:s'),
                 'created_by'      => $this->session->username ? $this->session->username : 'SYSTEM',
