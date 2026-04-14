@@ -61,7 +61,7 @@ class Autopostingjournal extends CI_Model {
     }
 
     // Get Journal Types
-    private function journal_type($module, $acc_no) 
+    public function journal_type($module, $acc_no) 
     {
         $all_journal_types = $this->db->get('journal_types')->result();
         if (empty($module) || empty($acc_no)) return null;
@@ -75,7 +75,7 @@ class Autopostingjournal extends CI_Model {
     }
 
     // Get Rate
-    private function _get_internal_rate($date, $currency) {
+    public function get_rate($date, $currency) {
         if ($currency == "IDR") return 1.0;
         $r = $this->db->get_where('standard_exchange_rates', [
             'currency_from' => $currency,
@@ -86,7 +86,7 @@ class Autopostingjournal extends CI_Model {
     }
 
     // Get Price RM
-    private function _get_price_rm($journal_date, $item_rm_id) 
+    public function get_price_rm($journal_date, $item_rm_id) 
     {
         $ref_date = !empty($journal_date) ? strtotime($journal_date) : time();
         $transaction_from = date("Y-m-01", $ref_date);
@@ -102,7 +102,7 @@ class Autopostingjournal extends CI_Model {
     }
 
     // Get Price FG
-    private function _get_price_fg($journal_date, $item_fg_id) 
+    public function get_price_fg($journal_date, $item_fg_id) 
     {
         $ref_date = !empty($journal_date) ? strtotime($journal_date) : time();
         $transaction_from = date("Y-m-01", $ref_date);
@@ -241,7 +241,7 @@ class Autopostingjournal extends CI_Model {
             $total_local_all = 0;
 
             foreach ($records as $row) {
-                $rate = $this->_get_internal_rate($row['trans_date'], $row['currency']);
+                $rate = $this->get_rate($row['trans_date'], $row['currency']);
                 $amount_original = (float)$row['item_total_original'];
                 $amount_local = round($amount_original * $rate, 2);
 
@@ -295,7 +295,7 @@ class Autopostingjournal extends CI_Model {
                 'original_credit' => $total_orig_all,
                 'local_debit'     => 0,
                 'local_credit'    => $total_local_all,
-                'rates'           => $this->_get_internal_rate($records[0]['trans_date'], $records[0]['currency']),
+                'rates'           => $this->get_rate($records[0]['trans_date'], $records[0]['currency']),
                 'currency'        => $records[0]['currency'],
                 'company_name'    => $records[0]['supplier_name'],
                 'company_id'      => $records[0]['supplier_id'],
@@ -378,8 +378,8 @@ class Autopostingjournal extends CI_Model {
 
             foreach ($records as $row) 
             {
-                $rate  = $this->_get_internal_rate($row['request_date'], $currency);
-                $price = $this->_get_price_rm($row['request_date'], $row['item_rm_id']);
+                $rate  = $this->get_rate($row['request_date'], $currency);
+                $price = $this->get_price_rm($row['request_date'], $row['item_rm_id']);
 
                 $amount_original = (float)$row['qty'] * $price;
                 $amount_local = round($amount_original * $rate, 2);
@@ -434,7 +434,7 @@ class Autopostingjournal extends CI_Model {
                 'original_credit' => $total_orig_all,
                 'local_debit'     => 0,
                 'local_credit'    => $total_local_all,
-                'rates'           => $this->_get_internal_rate($records[0]['request_date'], $currency),
+                'rates'           => $this->get_rate($records[0]['request_date'], $currency),
                 'currency'        => $currency,
                 'company_name'    => $records[0]['supplier_name'],
                 'company_id'      => $records[0]['supplier_id'],

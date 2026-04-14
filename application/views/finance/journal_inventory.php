@@ -292,9 +292,8 @@
                     <th colspan="3" data-options="field:'',width:100">Local Currency</th>
                 </tr>
                 <tr>
-                    <th data-options="field:'original_debit',width:120,halign:'center',align:'right',formatter:numberformatDefault,editor: {type: 'numberbox', options: {required: true, precision:2}}">Debit</th>
-                    <th data-options="field:'original_credit',width:120,halign:'center',align:'right',formatter:numberformatDefault,editor: {type: 'numberbox', options: {required: true, precision:2}}">Credit</th>
-                    <th data-options="field:'currency',width:80, editor: {
+                    <th data-options="field:'currency', width:80, halign:'center', align:'center', 
+                    editor: {
                         type: 'combobox',
                         options: {
                             url: '<?= base_url('master/currencies/reads') ?>',
@@ -343,6 +342,8 @@
                                 }
                             }
                         }}">Currency</th>
+                    <th data-options="field:'original_debit',width:120,halign:'center',align:'right',formatter:numberformatDefault,editor: {type: 'numberbox', options: {required: true, precision:2}}">Debit</th>
+                    <th data-options="field:'original_credit',width:120,halign:'center',align:'right',formatter:numberformatDefault,editor: {type: 'numberbox', options: {required: true, precision:2}}">Credit</th>
                     <th data-options="field:'rates',width:100,halign:'center',align:'right',formatter:numberformatDefault,editor: {type: 'numberbox', options: {required: true, precision:2}}">Rates</th>
                     <th data-options="field:'local_debit',width:120,halign:'center',align:'right',formatter:numberformatDefaultIdr,editor: {type: 'numberbox', options: {required: true, precision:2}}">Debit</th>
                     <th data-options="field:'local_credit',width:120,halign:'center',align:'right',formatter:numberformatDefaultIdr,editor: {type: 'numberbox', options: {required: true, precision:2}}">Credit</th>

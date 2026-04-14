@@ -194,6 +194,18 @@ class Journal_inventory extends CI_Controller
             
             $records = $this->db->get()->result_array();
         }
+        elseif ($modul == "BPM") 
+        {
+            // Get BPM
+            $this->db->select('a.request_no as document_no, a.request_date as trans_date');
+            $this->db->from('bpm a');
+            $this->db->where('a.status', 1); // BPM status=closed
+            $this->db->where('a.deleted', 0);
+            $this->db->group_by('a.request_no');
+            $this->db->order_by('a.request_date', 'DESC');
+
+            $records = $this->db->get()->result_array();
+        }
 
         header('Content-Type: application/json');
         echo json_encode($records);
@@ -440,6 +452,121 @@ class Journal_inventory extends CI_Controller
             ];
 
             $result = ["total" => count($data), "rows" => $data, "footer" => $footer];
+        }
+        elseif ($modul == "BPM") 
+        {
+            // Debit: Raw Material Injection
+            $acc_debit  = $this->db->get_where('account_coa', ['account_number' => '150.110.00'])->row();
+            // Credit: Accrual Raw Materials
+            $acc_credit = $this->db->get_where('account_coa', ['account_number' => '150.210.00'])->row();
+
+            if (!$acc_debit || !$acc_credit) {
+                throw new Exception("Account COA not found (150.110.00 or 150.210.00)");
+            }
+
+            // Journal Type ID
+            $debit_jt_id  = $this->autopostingjournal->journal_type($modul, $acc_debit->account_number);
+            $credit_jt_id = $this->autopostingjournal->journal_type($modul, $acc_credit->account_number);
+
+            if (!$debit_jt_id || !$credit_jt_id) {
+                throw new Exception("Journal Type Account NOT FOUND for module $modul! Please add Journal Types");
+            }
+
+            // Get BPM
+            $this->db->select('a.*, b.number as item_number, b.name as item_name, b.uom, COALESCE(SUM(c.qty),0) as qty_actual');
+            $this->db->select("'' as supplier_id, '' as supplier_name");
+            $this->db->select("'IDR' as currency");
+
+            $this->db->from('bpm a');
+            $this->db->join('item_rm b', 'a.item_rm_id = b.id');
+            $this->db->join('scan_item_bpm c', 'a.request_id = c.request_id and a.item_rm_id = c.item_rm_id','left');
+
+            $this->db->where('a.status', 1); // BPM status=closed
+            $this->db->where('a.deleted', 0);
+            $this->db->where('a.request_no', $document_no);
+            $this->db->group_by('a.id');
+            $this->db->order_by('a.request_id', 'ASC');
+
+            $records = $this->db->get()->result_array();
+
+            if (empty($records)) {
+                throw new Exception("No records found for Request No: $document_no or document not closed (Scan/Print)");
+            }
+
+            $currency        = "IDR"; // default
+            $data_combine    = [];
+            $total_orig_all  = 0;
+            $total_local_all = 0;
+
+            foreach ($records as $row) 
+            {
+                $rate  = $this->autopostingjournal->get_rate($row['request_date'], $currency);
+                $price = $this->autopostingjournal->get_price_rm($row['request_date'], $row['item_rm_id']);
+
+                $amount_original = (float)$row['qty'] * $price;
+                $amount_local = round($amount_original * $rate, 2);
+
+                $data_combine[] = [
+                    'journal_date'    => $row['request_date'],
+                    "journal_type_id" => $debit_jt_id,
+                    'trans_date'      => date('Y-m-d'),
+                    'document_no'     => $row['request_no'],
+                    'invoice_no'      => $row['request_id'],
+                    'account_number'  => $acc_debit->account_number,
+                    'account_name'    => $acc_debit->account_name,
+                    'description'     => $row['item_name'] . " | " . $row['request_no'] . " | " . $row['supplier_name'],
+                    'original_debit'  => $amount_original,
+                    'original_credit' => 0,
+                    'local_debit'     => $amount_local,
+                    'local_credit'    => 0,
+                    'rates'           => $rate,
+                    'currency'        => $currency,
+                    'company_name'    => $row['supplier_name'],
+                    'company_id'      => $row['supplier_id'],
+                    'modul'           => $modul,
+                    'remarks'         => "Auto Posting Journal",
+                    'created_date'    => date('Y-m-d H:i:s'),
+                    'created_by'      => $this->session->username ? $this->session->username : 'SYSTEM',
+                ];
+
+                $total_orig_all += $amount_original;
+                $total_local_all += $amount_local;
+            }
+
+            // Data CREDIT
+            $data_combine[] = [
+                'journal_date'    => $records[0]['request_date'],
+                "journal_type_id" => $credit_jt_id,
+                'trans_date'      => date('Y-m-d'),
+                'document_no'     => $records[0]['request_no'],
+                'invoice_no'      => $records[0]['request_id'],
+                'account_number'  => $acc_credit->account_number,
+                'account_name'    => $acc_credit->account_name,
+                'description'     => $records[0]['request_no'] . " | " . $records[0]['supplier_name'],
+                'original_debit'  => 0,
+                'original_credit' => $total_orig_all,
+                'local_debit'     => 0,
+                'local_credit'    => $total_local_all,
+                'rates'           => $this->autopostingjournal->get_rate($records[0]['request_date'], $currency),
+                'currency'        => $currency,
+                'company_name'    => $records[0]['supplier_name'],
+                'company_id'      => $records[0]['supplier_id'],
+                'modul'           => $modul,
+                'remarks'         => "Auto Posting Journal",
+                'created_date'    => date('Y-m-d H:i:s'),
+                'created_by'      => $this->session->username ? $this->session->username : 'SYSTEM',
+            ];
+
+            $footer[] = [
+                "currency"        => "TOTAL",
+                "original_debit"  => $total_orig_all,
+                "original_credit" => $total_orig_all,
+                "rate"            => null,
+                "local_debit"     => $total_local_all,
+                "local_credit"    => $total_local_all,
+            ];
+
+            $result = ["total" => count($data_combine), "rows" => $data_combine, "footer" => $footer];    
         }
 
         header('Content-Type: application/json');
