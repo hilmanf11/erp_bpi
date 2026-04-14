@@ -783,8 +783,11 @@
     function exec_autoposting(receipt_no) {
         $.ajax({
             type: "post",
-            url: "<?= base_url('finance/journal_inventory/autoPostingJournal/') ?>" + window.btoa(receipt_no),
-            data: { modul: "PURCHASE ORDER RECEIPT" },
+            url: "<?= base_url('finance/journal_inventory/execute_auto_journal/') ?>",
+            data: { 
+                modul: "PURCHASE ORDER RECEIPT",
+                document_no: receipt_no,
+            },
             dataType: "json",
             success: function(response) {
                 Swal.close();

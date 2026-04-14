@@ -200,6 +200,73 @@ class Journal_inventory extends CI_Controller
     }
 
 
+    // Check Status Can Be Posting Journal Inventory
+    public function validate_posting_eligibility() 
+    {
+        try {
+            $post = $this->input->post();
+
+            $modul       = $post['modul'] ?? '';
+            $document_no = $post['document_no'] ?? '';
+            $item_rm_id  = $post['item_rm_id'] ?? '';
+
+            if (empty($modul) || empty($document_no)) {
+                throw new Exception("Module or Document No. parameters are incomplete.");
+            }
+
+            $result = false;
+
+            if ($modul == "PURCHASE ORDER RECEIPT") 
+            {
+                // Check POR
+                $this->db->select('print');
+                $por = $this->db->get_where('purchase_order_receipts', ['receipt_no' => $document_no])->row();
+                if ($por && $por->print == 1) $result = true;
+            }
+            elseif ($modul == "BPM") 
+            {
+                // Get data BPM
+                $bpm = $this->db->get_where('bpm', [
+                    "request_no" => $document_no, 
+                    "item_rm_id" => $item_rm_id,
+                ])->row();
+
+                if (!$bpm) {
+                    throw new Exception("BPM Not Found! ID: $document_no");
+                }
+
+                // Hitung Total Scan
+                $this->db->select_sum('qty');
+                $this->db->where([
+                    "request_no" => $document_no, 
+                    "item_rm_id" => $item_rm_id,
+                ]);
+                $scanResult = $this->db->get('scan_item_bpm')->row();
+                $totalScanQty = $scanResult->qty ?? 0;
+
+                // Check BPM
+                $is_fully_scanned = (round($totalScanQty, 2) >= round($bpm->qty, 2));
+                $is_status_closed = ($bpm->status == "1");
+
+                if ($is_status_closed || $is_fully_scanned) {
+                    $result = true;
+                }
+            }
+
+            // Response
+            if ($result) {
+                echo json_encode(['status' => true, 'message' => 'Ready to post']);
+            } else {
+                echo json_encode(['status' => false, 'message' => "Document $document_no does not meet the criteria (Scan not complete or status open)."]);
+            }
+
+        } catch (Exception $e) {
+            log_message('error', "checkStatus Error: " . $e->getMessage());
+            echo json_encode(['status' => false, 'message' => $e->getMessage()]);
+        }
+    }
+
+    // Get temporary data
     public function datatablesTemp()
     {
         $post = $this->input->post();
@@ -674,10 +741,10 @@ class Journal_inventory extends CI_Controller
     }
 
     // INSERT VIA AUTO-POSTING
-    public function autoPostingJournal($receipt_no_b64) 
+    public function execute_auto_journal() 
     {
-        $receipt_no = base64_decode($receipt_no_b64);
         $modul = $this->input->post("modul");
+        $receipt_no = $this->input->post("document_no");
         
         // Validasi input awal
         if (empty($receipt_no) || empty($modul)) {

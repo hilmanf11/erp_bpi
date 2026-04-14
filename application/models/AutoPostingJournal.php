@@ -42,7 +42,10 @@ class Autopostingjournal extends CI_Model {
             
             default:
                 log_message('error', "AutoPosting: Module $modul not found.");
-                return false;
+                return [
+                    'status'  => false, 
+                    'message' => "Failed to Auto Journal: Module $modul is not found."
+                ]; 
         }
     }
 
@@ -70,6 +73,51 @@ class Autopostingjournal extends CI_Model {
         }
         return null;
     }
+
+    // Get Rate
+    private function _get_internal_rate($date, $currency) {
+        if ($currency == "IDR") return 1.0;
+        $r = $this->db->get_where('standard_exchange_rates', [
+            'currency_from' => $currency,
+            'start_date <=' => $date,
+            'end_date >='   => $date
+        ])->row();
+        return ($r) ? (float)$r->middle : 1.0;
+    }
+
+    // Auto Generate Voucher Number
+    private function _generate_voucher_no($journal_date) 
+    {
+        // Check if the date needs to be decoded (if from AJAX) or used directly
+        $raw_date = (base64_encode(base64_decode($journal_date, true)) === $journal_date) 
+                    ? base64_decode($journal_date) 
+                    : $journal_date;
+
+        $prefix = "GLINV" . date("ym", strtotime($raw_date));
+        
+        $this->db->select_max('number', 'kode');
+        $this->db->like('number', $prefix, 'after');
+        $query = $this->db->get('journal_inventory');
+        
+        $row = $query->row();
+        $last_number = $row->kode;
+
+        if ($last_number == NULL) {
+            $autoID = "0001";
+        } else {
+            $urutan = (int) substr($last_number, -4);
+            $urutan++;
+            $autoID = sprintf("%04d", $urutan);
+        }
+
+        return $prefix . $autoID;
+    }
+
+
+
+    /**
+     * Proses Posting Journal Inventory per Modul
+     */
 
     // PURCHASE ORDER RECEIPT
     private function _process_por($receipt_no) 
@@ -222,79 +270,6 @@ class Autopostingjournal extends CI_Model {
             $msg = "Error: " . $e->getMessage();
             log_message('error', $msg);
             return ['status' => false, 'message' => $msg];
-        }
-    }
-
-    // Get Rate
-    private function _get_internal_rate($date, $currency) {
-        if ($currency == "IDR") return 1.0;
-        $r = $this->db->get_where('standard_exchange_rates', [
-            'currency_from' => $currency,
-            'start_date <=' => $date,
-            'end_date >='   => $date
-        ])->row();
-        return ($r) ? (float)$r->middle : 1.0;
-    }
-
-    // Auto Generate Voucher Number
-    private function _generate_voucher_no($journal_date) 
-    {
-        // Check if the date needs to be decoded (if from AJAX) or used directly
-        $raw_date = (base64_encode(base64_decode($journal_date, true)) === $journal_date) 
-                    ? base64_decode($journal_date) 
-                    : $journal_date;
-
-        $prefix = "GLINV" . date("ym", strtotime($raw_date));
-        
-        $this->db->select_max('number', 'kode');
-        $this->db->like('number', $prefix, 'after');
-        $query = $this->db->get('journal_inventory');
-        
-        $row = $query->row();
-        $last_number = $row->kode;
-
-        if ($last_number == NULL) {
-            $autoID = "0001";
-        } else {
-            $urutan = (int) substr($last_number, -4);
-            $urutan++;
-            $autoID = sprintf("%04d", $urutan);
-        }
-
-        return $prefix . $autoID;
-    }
-
-
-    // JOURNAL INVENTORY 
-    private function _generate_module_id() 
-    {
-        $date = date('Ymd');
-        $prefix = $date;
-        
-        $this->db->select_max('id', 'last_id');
-        $this->db->like('id', $prefix, 'after');
-        $query = $this->db->get('journal_inventory_modules')->row();
-        
-        if ($query->last_id) {
-            // Ambil 6 digit terakhir, lalu tambah 1
-            $last_increment = (int) substr($query->last_id, -6);
-            $new_increment = str_pad($last_increment + 1, 6, '0', STR_PAD_LEFT);
-        } else {
-            $new_increment = '000001';
-        }
-        
-        return $prefix . $new_increment;
-    }
-
-    public function save_modul_master($data, $is_edit = false)
-    {
-        if ($is_edit) {
-            $this->db->where('id', $data['id']);
-            return $this->db->update('journal_inventory_modules', $data);
-        } else {
-            // Generate ID hanya jika data baru
-            $data['id'] = $this->_generate_module_id();
-            return $this->db->insert('journal_inventory_modules', $data);
         }
     }
 
