@@ -220,12 +220,12 @@
         if (data.total > 0) {
             const first_row = data.rows[0];
             const now_date = new Date().toISOString().split('T')[0];
-            postingJournalValidate(first_row.request_no, first_row.item_rm_id, now_date);
+            validate_eligibility(first_row.request_no, first_row.item_rm_id, now_date);
         }
     }
     
     // Validasi Auto Posting Journal
-    function postingJournalValidate(request_no, item_rm_id, journal_date) {
+    function validate_eligibility(request_no, item_rm_id, journal_date) {
         $.ajax({
             type: "POST",
             url: "<?= base_url('finance/journal_inventory/validate_posting_eligibility') ?>",
@@ -239,31 +239,16 @@
             success: function(response) {
 
                 if (response.status === true) {                    
-                    // Konfirmasi Posting Jurnal
-                    Swal.fire({
-                        title: "Add Posting Journal?",
-                        text: "Document printed. Do you want to generate the Posting Journal now?",
-                        icon: "question",
-                        showCancelButton: true,
-                        confirmButtonText: 'Yes, Add to Journal!',
-                        cancelButtonText: 'Later',
-                        allowOutsideClick: false
-                    }).then((swalRes) => {
-                        if (swalRes.isConfirmed) {
-                            Swal.fire({
-                                title: 'Processing',
-                                html: 'Auto Posting Journal Inventory...',
-                                allowOutsideClick: false,
-                                didOpen: () => { Swal.showLoading(); }
-                            });
-                            exec_autoposting(request_no);
-                        }
-                    });
-
+                    // Auto posting Journal Inventory tanpa validasi
+                    exec_autoposting(request_no);
                 } else {
                     // Belum layak posting journal
-                    toastr.info(response.message, "Failed to Auto Journal");
+                    toastr.info(response.message, "Failed to Auto Posting Journal");
                 }
+            },
+            error: function(xhr) {
+                Swal.close();
+                toastr.error("Failed to connect to Auto Posting server");
             }
         });
     }
@@ -281,9 +266,9 @@
             success: function(response) {
                 Swal.close();
                 if (response.status === true) { 
-                    toastr.success(response.message || "Success", "Auto Posting Success");
+                    toastr.success(response.message || "Success", "Auto Posting Journal Success");
                 } else {
-                    Swal.fire("Failed", response.message, "error");
+                    toastr.info(response.message, "Failed to Auto Posting Journal");
                 }
             },
             error: function(xhr) {

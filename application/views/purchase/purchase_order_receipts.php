@@ -721,6 +721,9 @@
         });
     }
 
+
+    /** --- Auto Posting Journal Inventory --- */
+
     // Handling Print & Modal Journal
     function processPrintAndJournal(receiptNo, printWindow, message) {
         Swal.close();
@@ -740,9 +743,16 @@
             },
             dataType: "json",
             success: function(response) {
+                toastr.info(message, "Print Receiving Note", "info");
+                
                 if (response.status === true) {
                     // BOLEH POSTING
+                    exec_autoposting(receiptNo);
+
+                    /** auto posting dengan popup konfirmasi:
                     postingJournalValidate(receiptNo);
+                    */
+
                 } else {
                     // SUDAH ADA / ERROR
                     toastr.info(message, "Print Receiving Note", "info");
@@ -792,9 +802,9 @@
             success: function(response) {
                 Swal.close();
                 if (response.status === true) {
-                    toastr.success(response.message || "Success", "Auto Posting Success");
+                    toastr.success(response.message || "Success", "Auto Posting Journal Success");
                 } else {
-                    Swal.fire("Failed", response.message, "error");
+                    toastr.info(response.message, "Failed to Auto Posting Journal");
                 }
             },
             error: function(xhr) {
@@ -803,6 +813,9 @@
             }
         });
     }
+
+    /** --- END - Auto Posting Journal Inventory --- */
+
 
 
     function reload() {
