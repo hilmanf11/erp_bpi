@@ -586,3 +586,6 @@ Update DN Boxs ([19a901aa](https://github.com/hilmanf11/erp_bpi/commit/19a901aaa
 
 ### [2026-04-14]
 - **kurniawan**: Update Script ([3292926d](https://github.com/hilmanf11/erp_bpi/commit/3292926d33d562e9818a02aed7fe757435c17029))
+
+### [2026-04-14]
+- **kurniawan**: Update Shipping_orders.php ([e8a01603](https://github.com/hilmanf11/erp_bpi/commit/e8a01603b8bab1243610abe3fab28bb0f4c1a603))
