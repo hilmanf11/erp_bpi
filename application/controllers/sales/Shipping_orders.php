@@ -283,6 +283,128 @@ class Shipping_orders extends CI_Controller
     //     }
     // }
 
+    // public function create()//dokumentasi : Optimasi Create dengan Race Condition
+    // {
+    //     if (!$this->input->post()) {
+    //         echo json_encode([
+    //             "title" => "Error",
+    //             "message" => "Cannot Process your request",
+    //             "theme" => "error"
+    //         ]);
+    //         return;
+    //     }
+
+    //     if ($this->form_validation->run() !== TRUE) {
+    //         echo json_encode(["title" => "Error","message" => validation_errors(),"theme" => "error"]);
+    //         return;
+    //     }
+
+    //     $post = $this->input->post();
+    //     $delivery_order_no = $post['delivery_order_no'];
+    //     $item_fg_id        = $post['item_fg_id'];
+    //     $label             = $post['checksheet_label'];
+
+    //     $this->db->trans_begin();
+
+    //     try {
+
+    //         /** LOCK DO */
+    //         $do = $this->db->query(
+    //             "SELECT * FROM delivery_orders 
+    //             WHERE delivery_order_no = ? 
+    //             AND item_fg_id = ? 
+    //             FOR UPDATE",
+    //             [$delivery_order_no, $item_fg_id]
+    //         )->row();
+
+    //         if (!$do) {
+    //             throw new Exception("Item not found in Delivery Order", 404);
+    //         }
+
+    //         /** DUPLICATE LABEL */
+    //         $exists = $this->crud->read("shipping_orders", [], ["checksheet_label" => $label]);
+    //         if ($exists) {
+    //             throw new Exception("Data Shipping Orders has been Scanning", 409);
+    //         }
+
+    //         /** VALIDASI LABEL */
+    //         $label_type = null;
+
+    //         $receipt = $this->db->where('checksheet_label', $label)
+    //                             ->get('scan_item_receipts_fg')
+    //                             ->row();
+
+    //         if ($receipt) {
+    //             $label_type = 'receipt';
+    //         } else {
+    //             $barcode = $this->db->where('label_divided', $label)
+    //                                 ->get('barcode_divides_fg')
+    //                                 ->row();
+
+    //             if ($barcode) {
+    //                 $label_type = 'barcode';
+    //             } else {
+    //                 throw new Exception("Label does not match the list item", 400);
+    //             }
+    //         }
+
+    //         /** INSERT SHIPPING */
+    //         $this->crud->createNotLog('shipping_orders', $post);
+
+    //         /** UPDATE LABEL */
+    //         if ($label_type === 'receipt') {
+    //             $this->crud->updateNotlog('scan_item_receipts_fg',['checksheet_label' => $label],['status' => '1']);
+    //         } else {
+    //             $this->crud->updateNotlog('barcode_divides_fg',['label_divided' => $label],['status' => '1']);
+    //         }
+
+    //         /** TOTAL QTY */
+    //         $total = $this->db->query(
+    //             "SELECT COALESCE(SUM(qty),0) qty 
+    //             FROM shipping_orders 
+    //             WHERE delivery_order_no = ? 
+    //             AND item_fg_id = ?",
+    //             [$delivery_order_no, $item_fg_id]
+    //         )->row()->qty;
+
+    //         if (!$this->decimal_lte($total, $do->qty_del, 2)) {
+    //             throw new Exception("Qty Label > Qty DO", 422);
+    //         }
+
+    //         if ($this->decimal_equal($total, $do->qty_del, 2)) {
+    //             $this->crud->updateNotlog('delivery_orders',['delivery_order_no' => $delivery_order_no, 'item_fg_id' => $item_fg_id],['status_scan' => '1']);
+    //         }
+
+    //         $this->db->trans_commit();
+
+    //         echo json_encode([
+    //             "title" => "Success",
+    //             "message" => "Shipping order created",
+    //             "theme" => "success"
+    //         ]);
+
+    //     } catch (Exception $e) {
+
+    //         $this->db->trans_rollback();
+
+    //         /** Mapping code → title frontend */
+    //         $titleMap = [
+    //             404 => "Not Registered",
+    //             400 => "Not Scanned In",
+    //             409 => "Available",
+    //             422 => "More Then Qty"
+    //         ];
+
+    //         $title = $titleMap[$e->getCode()] ?? "Error";
+
+    //         echo json_encode([
+    //             "title" => $title,
+    //             "message" => $e->getMessage(),
+    //             "theme" => "error"
+    //         ]);
+    //     }
+    // }
+
     function decimal_equal($a, $b, $scale = 2)
     {
         return bccomp((string)$a, (string)$b, $scale) === 0;
@@ -293,14 +415,10 @@ class Shipping_orders extends CI_Controller
         return bccomp((string)$a, (string)$b, $scale) <= 0;
     }
 
-    public function create()//dokumentasi : Optimasi Create dengan Race Condition
+    public function create()//dokumentasi : penambahan fitur FIFO
     {
         if (!$this->input->post()) {
-            echo json_encode([
-                "title" => "Error",
-                "message" => "Cannot Process your request",
-                "theme" => "error"
-            ]);
+            echo json_encode(["title" => "Error","message" => "Cannot Process your request","theme" => "error"]);
             return;
         }
 
@@ -321,51 +439,167 @@ class Shipping_orders extends CI_Controller
             /** LOCK DO */
             $do = $this->db->query(
                 "SELECT * FROM delivery_orders 
-                WHERE delivery_order_no = ? 
-                AND item_fg_id = ? 
-                FOR UPDATE",
+                WHERE delivery_order_no = ? AND item_fg_id = ? FOR UPDATE",
                 [$delivery_order_no, $item_fg_id]
             )->row();
 
-            if (!$do) {
-                throw new Exception("Item not found in Delivery Order", 404);
-            }
+            if (!$do) { throw new Exception("Item not found in Delivery Order", 404); }
 
             /** DUPLICATE LABEL */
             $exists = $this->crud->read("shipping_orders", [], ["checksheet_label" => $label]);
-            if ($exists) {
-                throw new Exception("Data Shipping Orders has been Scanning", 409);
-            }
+            if ($exists) { throw new Exception("Data Shipping Orders has been Scanning", 409); }
 
-            /** VALIDASI LABEL */
-            $label_type = null;
+            /** =========================================================
+             * 1. PENCARI JEJAK: Temukan Packing Date dari label yang di-scan
+             * ========================================================= */
+            $current_packing_date = null;
+            $table_to_update = null;
+            $column_to_update = null;
 
-            $receipt = $this->db->where('checksheet_label', $label)
-                                ->get('scan_item_receipts_fg')
-                                ->row();
-
-            if ($receipt) {
-                $label_type = 'receipt';
-            } else {
-                $barcode = $this->db->where('label_divided', $label)
-                                    ->get('barcode_divides_fg')
-                                    ->row();
-
-                if ($barcode) {
-                    $label_type = 'barcode';
-                } else {
-                    throw new Exception("Label does not match the list item", 400);
+            // A. Cek di New Barcode FG (Tambah filter != manual)
+            $nbfg = $this->db->select('packing_date')
+                             ->where('label_no', $label)
+                             ->where('label_type !=', 'manual') 
+                             ->get('new_barcode_fg')->row();
+                             
+            if ($nbfg) {
+                $current_packing_date = $nbfg->packing_date;
+                $table_to_update = 'new_barcode_fg';
+                $column_to_update = 'label_no';
+            } 
+            else {
+                // B. Cek di Barcode Divides FG
+                $divide = $this->db->where('label_divided', $label)->get('barcode_divides_fg')->row();
+                if ($divide) {
+                    $table_to_update = 'barcode_divides_fg';
+                    $column_to_update = 'label_divided';
+                    
+                    // Cari Induknya (Checksheet atau New Barcode?)
+                    $parent_cs = $this->db->query("
+                        SELECT c.packing_date FROM checksheets c
+                        JOIN (
+                            SELECT checksheet_number, checksheet_label FROM wip_receipt_boxs
+                            UNION ALL
+                            SELECT checksheet_number, checksheet_label FROM wip_receipt_labels
+                        ) w ON w.checksheet_number = c.number
+                        WHERE w.checksheet_label = ?
+                    ", [$divide->reff])->row();
+                    
+                    if ($parent_cs) { $current_packing_date = $parent_cs->packing_date; } 
+                    else {
+                        // Tambah filter != manual di sini juga
+                        $parent_nb = $this->db->select('packing_date')
+                                              ->where('label_no', $divide->reff)
+                                              ->where('label_type !=', 'manual')
+                                              ->get('new_barcode_fg')->row();
+                                              
+                        if ($parent_nb) { $current_packing_date = $parent_nb->packing_date; }
+                    }
+                } 
+                else {
+                    // C. Cek di Scan Item Receipts (Undivided Checksheet Label)
+                    $cs_label = $this->db->query("
+                        SELECT c.packing_date FROM checksheets c
+                        JOIN (
+                            SELECT checksheet_number, checksheet_label FROM wip_receipt_boxs
+                            UNION ALL
+                            SELECT checksheet_number, checksheet_label FROM wip_receipt_labels
+                        ) w ON w.checksheet_number = c.number
+                        WHERE w.checksheet_label = ?
+                    ", [$label])->row();
+                    
+                    if ($cs_label) {
+                        $current_packing_date = $cs_label->packing_date;
+                        $table_to_update = 'scan_item_receipts_fg';
+                        $column_to_update = 'checksheet_label';
+                    }
                 }
             }
 
-            /** INSERT SHIPPING */
+            if (!$current_packing_date) {
+                throw new Exception("Label origin or Packing Date not found (Or Label is Manual)!", 400);
+            }
+
+            /** =========================================================
+             * 2. VALIDASI FIFO (UNIVERSAL QUERY UNION)
+             * ========================================================= */
+            $fifo_violation = $this->db->query("
+                SELECT source_label, packing_date, doc_no 
+                FROM (
+                    -- Sumber 1: Checksheet Utuh (Box & Labels)
+                    SELECT 
+                        w.checksheet_label AS source_label, 
+                        c.packing_date, 
+                        c.number AS doc_no
+                    FROM (
+                        SELECT checksheet_number, checksheet_label FROM wip_receipt_boxs
+                        UNION ALL
+                        SELECT checksheet_number, checksheet_label FROM wip_receipt_labels
+                    ) w
+                    JOIN checksheets c ON w.checksheet_number = c.number
+                    WHERE c.item_fg_id = ?
+                    
+                    UNION ALL
+                    
+                    -- Sumber 2: New Barcode Utuh (Filter != manual)
+                    SELECT 
+                        n.label_no AS source_label, 
+                        n.packing_date, 
+                        'NEW BARCODE' AS doc_no
+                    FROM new_barcode_fg n
+                    WHERE n.item_fg_id = ?
+                    AND n.label_type != 'manual'
+                    
+                    UNION ALL
+                    
+                    -- Sumber 3: Barcode Divides (Pecahan dari Checksheet)
+                    SELECT 
+                        d.label_divided AS source_label, 
+                        c.packing_date, 
+                        c.number AS doc_no
+                    FROM barcode_divides_fg d
+                    JOIN (
+                        SELECT checksheet_number, checksheet_label FROM wip_receipt_boxs
+                        UNION ALL
+                        SELECT checksheet_number, checksheet_label FROM wip_receipt_labels
+                    ) w ON d.reff = w.checksheet_label
+                    JOIN checksheets c ON w.checksheet_number = c.number
+                    WHERE c.item_fg_id = ?
+                    
+                    UNION ALL
+                    
+                    -- Sumber 4: Barcode Divides (Pecahan dari New Barcode, Filter != manual)
+                    SELECT 
+                        d.label_divided AS source_label, 
+                        n.packing_date, 
+                        'NEW BARCODE' AS doc_no
+                    FROM barcode_divides_fg d
+                    JOIN new_barcode_fg n ON d.reff = n.label_no
+                    WHERE n.item_fg_id = ?
+                    AND n.label_type != 'manual'
+                ) AS all_stok
+                WHERE packing_date < ?
+                AND source_label NOT IN (SELECT checksheet_label FROM shipping_orders)
+                AND source_label NOT IN (SELECT reff FROM barcode_divides_fg) 
+                ORDER BY packing_date ASC
+                LIMIT 1
+            ", [$item_fg_id, $item_fg_id, $item_fg_id, $item_fg_id, $current_packing_date])->row();
+
+            if ($fifo_violation) {
+                $old_date = date('d-M-Y', strtotime($fifo_violation->packing_date));
+                $old_doc = $fifo_violation->doc_no;
+                $old_label = $fifo_violation->source_label;
+                throw new Exception("FIFO Alert! Please scan in sequence Packing Date : {$old_date} | Doc: {$old_doc} | Label: {$old_label}", 406);
+            }
+
+            /** =========================================================
+             * 3. INSERT & UPDATE
+             * ========================================================= */
             $this->crud->createNotLog('shipping_orders', $post);
 
-            /** UPDATE LABEL */
-            if ($label_type === 'receipt') {
-                $this->crud->updateNotlog('scan_item_receipts_fg',['checksheet_label' => $label],['status' => '1']);
-            } else {
-                $this->crud->updateNotlog('barcode_divides_fg',['label_divided' => $label],['status' => '1']);
+            // Update status label secara dinamis berdasarkan tabel asalnya
+            if ($table_to_update) {
+                $this->crud->updateNotlog($table_to_update, [$column_to_update => $label], ['status' => '1']);
             }
 
             /** TOTAL QTY */
@@ -387,31 +621,22 @@ class Shipping_orders extends CI_Controller
 
             $this->db->trans_commit();
 
-            echo json_encode([
-                "title" => "Success",
-                "message" => "Shipping order created",
-                "theme" => "success"
-            ]);
+            echo json_encode(["title" => "Success", "message" => "Shipping order created", "theme" => "success"]);
 
         } catch (Exception $e) {
-
             $this->db->trans_rollback();
 
-            /** Mapping code → title frontend */
             $titleMap = [
                 404 => "Not Registered",
                 400 => "Not Scanned In",
+                406 => "FIFO Violation", // Alarm FIFO!
                 409 => "Available",
                 422 => "More Then Qty"
             ];
 
             $title = $titleMap[$e->getCode()] ?? "Error";
 
-            echo json_encode([
-                "title" => $title,
-                "message" => $e->getMessage(),
-                "theme" => "error"
-            ]);
+            echo json_encode(["title" => $title, "message" => $e->getMessage(), "theme" => "error"]);
         }
     }
 }
