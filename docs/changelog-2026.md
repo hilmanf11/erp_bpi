@@ -583,3 +583,6 @@ Update DN Boxs ([19a901aa](https://github.com/hilmanf11/erp_bpi/commit/19a901aaa
 
 ### [2026-04-13]
 - **Rizki Puji**: Fixing: change position debit credit data upload Bank Reconciliation ([8212a647](https://github.com/hilmanf11/erp_bpi/commit/8212a647e2da13e770044cfbb4eea7bbe8eb2cb5))
+
+### [2026-04-14]
+- **kurniawan**: Update Script ([3292926d](https://github.com/hilmanf11/erp_bpi/commit/3292926d33d562e9818a02aed7fe757435c17029))
