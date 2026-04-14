@@ -99,6 +99,10 @@
                             $('#dg').datagrid({
                                 url: '<?= base_url('warehouse/scan_item_bpm/getDeliveryOrders?request_no=') ?>' + request_no,
                                 rownumbers: true
+                                , onLoadSuccess: function(data) {
+                                    // Jika ada data di table grid, maka validasi auto journal inventory
+                                    scanResultValidate(data);
+                                }
                             });
 
                             $("#label").focus();
@@ -168,6 +172,10 @@
                             $('#dg').datagrid({
                                 url: '<?= base_url('warehouse/scan_item_bpm/getDeliveryOrders?request_no=') ?>' + request_no,
                                 rownumbers: true
+                                , onLoadSuccess: function(data) {
+                                    // Jika ada data di table grid, maka validasi auto journal inventory
+                                    scanResultValidate(data);
+                                }
                             });
                         } else {
                             serialNotFound.play();
@@ -203,4 +211,86 @@
             return 'background-color:#FFC8C8;';
         }
     }
+
+
+    /** --- Auto Posting Journal Inventory --- */
+
+    // Validasi Hasil Scan
+    function scanResultValidate(data) {
+        if (data.total > 0) {
+            const first_row = data.rows[0];
+            const now_date = new Date().toISOString().split('T')[0];
+            postingJournalValidate(first_row.request_no, first_row.item_rm_id, now_date);
+        }
+    }
+    
+    // Validasi Auto Posting Journal
+    function postingJournalValidate(request_no, item_rm_id, journal_date) {
+        $.ajax({
+            type: "POST",
+            url: "<?= base_url('finance/journal_inventory/validate_posting_eligibility') ?>",
+            data: {
+                modul: "BPM",
+                document_no: request_no,
+                item_rm_id: item_rm_id,
+                journal_date: journal_date
+            },
+            dataType: "json",
+            success: function(response) {
+
+                if (response.status === true) {                    
+                    // Konfirmasi Posting Jurnal
+                    Swal.fire({
+                        title: "Add Posting Journal?",
+                        text: "Document printed. Do you want to generate the Posting Journal now?",
+                        icon: "question",
+                        showCancelButton: true,
+                        confirmButtonText: 'Yes, Add to Journal!',
+                        cancelButtonText: 'Later',
+                        allowOutsideClick: false
+                    }).then((swalRes) => {
+                        if (swalRes.isConfirmed) {
+                            Swal.fire({
+                                title: 'Processing',
+                                html: 'Auto Posting Journal Inventory...',
+                                allowOutsideClick: false,
+                                didOpen: () => { Swal.showLoading(); }
+                            });
+                            exec_autoposting(request_no);
+                        }
+                    });
+
+                } else {
+                    // Belum layak posting journal
+                    toastr.info(response.message, "Failed to Auto Journal");
+                }
+            }
+        });
+    }
+
+    // Helper untuk eksekusi Auto Posting Journal Inventory
+    function exec_autoposting(document_no) {
+        $.ajax({
+            type: "post",
+            url: "<?= base_url('finance/journal_inventory/execute_auto_journal/') ?>",
+            data: { 
+                modul: "BPM",
+                document_no: document_no,
+            },
+            dataType: "json",
+            success: function(response) {
+                Swal.close();
+                if (response.status === true) { 
+                    toastr.success(response.message || "Success", "Auto Posting Success");
+                } else {
+                    Swal.fire("Failed", response.message, "error");
+                }
+            },
+            error: function(xhr) {
+                Swal.close();
+                toastr.error("Failed to connect to Auto Posting server");
+            }
+        });
+    }
+
 </script>

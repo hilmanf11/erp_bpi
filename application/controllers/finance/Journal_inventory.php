@@ -225,31 +225,40 @@ class Journal_inventory extends CI_Controller
             }
             elseif ($modul == "BPM") 
             {
-                // Get data BPM
-                $bpm = $this->db->get_where('bpm', [
-                    "request_no" => $document_no, 
-                    "item_rm_id" => $item_rm_id,
-                ])->row();
+                // Get Total Qty yang Diminta untuk SELURUH item dalam 1 request_no
+                $this->db->select_sum('qty', 'total_request');
+                $this->db->select_sum('status', 'total_status'); // Untuk cek status closed per baris
+                $this->db->where('request_no', $document_no);
+                $this->db->where('deleted', 0);
+                $bpm_summary = $this->db->get('bpm')->row();
 
-                if (!$bpm) {
-                    throw new Exception("BPM Not Found! ID: $document_no");
+                if (!$bpm_summary || $bpm_summary->total_request == 0) {
+                    throw new Exception("BPM Data not found or empty for Request No: $document_no");
                 }
 
-                // Hitung Total Scan
-                $this->db->select_sum('qty');
-                $this->db->where([
-                    "request_no" => $document_no, 
-                    "item_rm_id" => $item_rm_id,
-                ]);
-                $scanResult = $this->db->get('scan_item_bpm')->row();
-                $totalScanQty = $scanResult->qty ?? 0;
+                // Get Total Qty yang SUDAH di-scan
+                $this->db->select_sum('qty', 'total_scan');
+                $this->db->where('request_no', $document_no);
+                $scan_summary = $this->db->get('scan_item_bpm')->row();
+                $total_scan_qty = $scan_summary->total_scan ?? 0;
 
-                // Check BPM
-                $is_fully_scanned = (round($totalScanQty, 2) >= round($bpm->qty, 2));
-                $is_status_closed = ($bpm->status == "1");
+                // Get Jumlah Baris Item di BPM
+                $total_items = $this->db->where(['request_no' => $document_no, 'deleted' => 0])
+                                ->from('bpm')
+                                ->count_all_results();
 
-                if ($is_status_closed || $is_fully_scanned) {
+                // Validate Eligibility
+                $check = new stdClass();
+                
+                // Dokumen dianggap closed jika semua baris item statusnya '1'
+                $check->is_all_closed = ($bpm_summary->total_status >= $total_items); 
+                $check->is_fully_scanned = (round($total_scan_qty, 2) >= round($bpm_summary->total_request, 2));
+
+                if ($check->is_all_closed || $check->is_fully_scanned) {
                     $result = true;
+                } else {
+                    $diff = round($bpm_summary->total_request - $total_scan_qty, 2);
+                    throw new Exception("Document not ready. Still need $diff qty to be scanned.");
                 }
             }
 

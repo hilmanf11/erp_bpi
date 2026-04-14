@@ -1,6 +1,16 @@
 <?php
 date_default_timezone_set("Asia/Bangkok");
 defined('BASEPATH') or exit('No direct script access allowed');
+
+/**
+ * @property CI_Input $input
+ * @property CI_Output $output
+ * @property CI_Loader $load
+ * @property CI_Session $session
+ * @property CI_DB_query_builder $db
+ * @property CI_Form_validation $form_validation
+ * @property Crud $crud
+ */
 class Scan_item_bpm extends CI_Controller
 {
     public function __construct()
@@ -37,6 +47,7 @@ class Scan_item_bpm extends CI_Controller
             a.request_id, 
             a.request_date, 
             b.uom, 
+            b.id as item_rm_id,
             b.number as item_number, 
             b.name as item_name, 
             a.qty, 

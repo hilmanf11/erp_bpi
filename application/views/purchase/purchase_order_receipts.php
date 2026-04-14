@@ -791,7 +791,7 @@
             dataType: "json",
             success: function(response) {
                 Swal.close();
-                if (response.status === 'success') {
+                if (response.status === true) {
                     toastr.success(response.message || "Success", "Auto Posting Success");
                 } else {
                     Swal.fire("Failed", response.message, "error");
