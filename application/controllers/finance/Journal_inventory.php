@@ -73,7 +73,7 @@ class Journal_inventory extends CI_Controller
     public function readModul()
     {
         $search = $this->input->post('q');
-        $process_type  = $this->input->post('process_type');
+        $kind   = $this->input->post('kind');
 
         $this->db->select('*');
         $this->db->from('journal_inventory_modules');
@@ -85,8 +85,8 @@ class Journal_inventory extends CI_Controller
             $this->db->group_end();
         }
 
-        if ($process_type) {
-            $this->db->where('process_type', $process_type);
+        if ($kind) {
+            $this->db->where('kind', $kind);
         }
 
         $this->db->order_by('name', 'asc');
@@ -103,12 +103,12 @@ class Journal_inventory extends CI_Controller
         $data = [
             'name'            => strtoupper(trim($this->input->post('name'))),
             'category_number' => $this->input->post('category_number'),
-            'process_type'    => $this->input->post('process_type'),
+            'kind'            => $this->input->post('kind'),
             'description'     => $this->input->post('description'),
-            'status'          => $this->input->post('status'),
             'updated_by'      => $this->session->username,
             'updated_date'    => date('Y-m-d H:i:s'),
             'status'          => 1, // default
+            'require_company_id' => $this->input->post('require_company_id') ?? 0, // wajib input company_id
         ];
         
         // Validasi create new
@@ -201,6 +201,7 @@ class Journal_inventory extends CI_Controller
             $this->db->from('bpm a');
             $this->db->where('a.status', 1); // BPM status=closed
             $this->db->where('a.deleted', 0);
+            $this->db->where('a.request_no NOT IN (SELECT document_no FROM journal_inventory)'); // Get yang belum di journal
             $this->db->group_by('a.request_no');
             $this->db->order_by('a.request_date', 'DESC');
 

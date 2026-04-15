@@ -108,7 +108,7 @@
 
                 <div class="fitem" style="margin-bottom: 10px;">
                     <label style="width:35%; display:inline-block;">Process Type <span style="color:red">*</span></label>
-                    <select style="width:60%;" name="process_type" id="modul_process_type" class="easyui-combobox" 
+                    <select style="width:60%;" name="kind" id="modul_kind" class="easyui-combobox" 
                             data-options="required:true, editable:false, panelHeight:'auto'">
                         <option value="IN">IN</option>
                         <option value="OUT">OUT</option>
@@ -118,6 +118,23 @@
                 <div class="fitem" style="margin-bottom: 10px;">
                     <label style="width:35%; display:inline-block;">Module Name <span style="color:red">*</span></label>
                     <input style="width:60%;" name="name" id="modul_name" class="easyui-textbox" data-options="required:true">
+                </div>
+
+                <div class="fitem" style="margin-bottom: 10px;">
+                    <label style="width:35%; display:inline-block;">Company ID Required <span style="color:red">*</span></label>
+                    <input class="easyui-switchbutton" 
+                        name="require_company_id" 
+                        id="modul_require_company_id" 
+                        style="width:100px;" 
+                        data-options="
+                                onText:'Yes',
+                                offText:'No',
+                                value:'1',
+                                checked:false,
+                                onChange:function(checked){
+                                    $(this).switchbutton('setValue', checked ? '1' : '0');
+                                }
+                        ">
                 </div>
 
             </div>
@@ -188,10 +205,17 @@
 
                 <div class="fitem" style="margin-bottom: 8px;">
                     <label style="width:35%; display:inline-block;">Modul <span style="color:red">*</span></label>
-                    <select style="width:60%;" id="modul" name="modul" class="easyui-combobox" 
+                    <select style="width:60%;" id="modul" name="modul" class="easyui-combogrid" 
                         data-options="editable:true, valueField:'id', textField:'text', 
                                     groupField:'group', panelHeight:'auto', required:true">
                     </select>
+                </div>
+
+                <div class="fitem" style="margin-bottom: 8px;">
+                    <label style="width:35%; display:inline-block;">
+                        Company Name <span id="star_company" style="color:red">*</span>
+                    </label>
+                    <input style="width:60%;" name="company_name" id="company_name" class="easyui-combogrid">
                 </div>
 
                 <div class="fitem">
@@ -201,11 +225,6 @@
             </div>
 
             <div style="width:50%; float:left; padding-left: 10px; box-sizing: border-box;">
-                <div class="fitem" style="margin-bottom: 8px;">
-                    <label style="width:35%; display:inline-block;">Company Name <span style="color:red">*</span></label>
-                    <input style="width:60%;" name="company_name" id="company_name" class="easyui-combogrid" 
-                           data-options="required:true">
-                </div>
                 
                 <div class="fitem" style="margin-bottom: 8px;">
                     <label style="width:35%; display:inline-block;">Document No. <span style="color:red">*</span></label>
@@ -468,7 +487,7 @@
             fitColumns: true,
             prompt: "Choose Modul",
             columns: [[
-                {field: 'process_type', title: 'Type', width: 60, align: 'center', 
+                {field: 'kind', title: 'Type', width: 60, align: 'center', 
                     formatter: function(value){
                         return value == 'IN' ? '<b style="color:green">IN</b>' : '<b style="color:red">OUT</b>';
                     }
@@ -479,18 +498,56 @@
             onBeforeLoad: function(param) {
                 if($(this).attr('id') === 'modul'){
                     var cat  = $("#modul_category_number").combobox('getValue');
-                    var proc = $("#modul_process_type").combobox('getValue');
+                    var proc = $("#modul_kind").combobox('getValue');
                     if(cat) param.category_number = cat;
-                    if(proc) param.process_type = proc;
+                    if(proc) param.kind = proc;
                 }
             },
             onChange: function(newValue) {
                 if($(this).attr('id') === 'modul'){
+                    // Get data baris yang dipilih
+                    var g = $(this).combogrid('grid');
+                    var row = g.datagrid('getSelected');
+                    
+                    // Reset fields
                     $("#company_name").combogrid('clear');
                     $("#document_no").combogrid('clear');
+
+                    // Validate Company Name
+                    if (row) {
+                        if (row.require_company_id == 1) {
+                            // Wajib diisi & Aktif
+                            $("#company_name").combogrid('enable');
+                            $("#company_name").combogrid('options').required = true;
+                            $("#company_name").combogrid('textbox').validatebox('options').required = true;
+                            $('#star_company').show();
+                        } else {
+                            // Tidak wajib & Nonaktif
+                            $("#company_name").combogrid('disable');
+                            $("#company_name").combogrid('options').required = false;
+                            $("#company_name").combogrid('textbox').validatebox('options').required = false;
+                            $('#star_company').hide();
+                        }
+                        // Refresh validasi easyui
+                        $("#company_name").combogrid('validate');
+                    }
                     
                     var valDate = $("#journal_date").datebox('getValue');
                     if(valDate && typeof number === "function") number(valDate);
+
+                    // Load Document No.
+                    if (row && row.require_company_id == 0) {
+                        var valDate = $("#journal_date").datebox('getValue');
+                        if (valDate) {
+                            var gd = $("#document_no").combogrid('grid');
+                            gd.datagrid('load', {
+                                modul: btoa(newValue),
+                                journal_date: btoa(valDate),
+                                company_id: btoa(''),
+                            });
+                        }
+                    }
+                    
                 }
             }
         });
@@ -673,11 +730,12 @@
     function add() {
         $('#frm_insert').form('clear');        
         $('#dlg_insert').dialog('open').dialog('center');
+        $('#dg2').datagrid('reload');
 
         $("#journal_date").datebox('setValue', "<?= date("Y-m-d") ?>");
         $("#journal_date").datebox('enable');
         
-        if ($("#modul").length) $("#modul").combobox('enable'); 
+        if ($("#modul").length) $("#modul").combogrid('enable'); 
 
         $("#company_name").combogrid('enable');  
         $("#document_no").combogrid('enable');  
@@ -717,10 +775,10 @@
         
         $('#frm_insert').form('load', row);
         $("#journal_date").datebox('disable');
-        $("#modul").datebox('disable');
-        $("#company_name").datebox('disable');
-        $("#document_no").datebox('disable');
-        $("#number").datebox('disable');
+        $("#modul").combogrid('disable');
+        $("#company_name").combogrid('disable');
+        $("#document_no").combogrid('disable');
+        $("#number").textbox('disable');
         $("#preview").linkbutton('disable');
         
         // Datatable
@@ -730,30 +788,13 @@
     function preview() {
         const params = {
             journal_date: $("#journal_date").datebox('getValue'),
-            type:         $("#type").combobox('getValue'),
-            modul:        $("#modul").combobox('getValue'),
+            modul:        $("#modul").combogrid('getValue'),
             company_id:   $("#company_name").combogrid('getValue'),
-            document_no:  $("#document_no").combogrid('getValues'), // Ini mengembalikan Array [DOC1, DOC2]
+            document_no:  $("#document_no").combogrid('getValue'),
         };
 
-        // Mapping untuk validasi
-        const requiredFields = [
-            { val: params.journal_date, label: 'Journal Date' },
-            { val: params.modul,        label: 'Modul' },
-            { val: params.company_id,   label: 'Company' },
-            { val: params.document_no,  label: 'Document No.' },
-        ];
-
-        // Validasi menggunakan loop agar pesan toastr lebih spesifik
-        let isValid = true;
-        for (let item of requiredFields) {
-            if (!item.val || (Array.isArray(item.val) && item.val.length === 0)) {
-                toastr.info(`Please choose ${item.label} first!`);
-                isValid = false;
-                break;
-            }
-        }
-
+        var isValid = validateParams();
+        
         if (isValid) {
             // GL No.
             $.ajax({
@@ -777,7 +818,7 @@
                     journal_date: params.journal_date,
                     modul: params.modul,
                     company_id: params.company_id,
-                    document_no: params.company_id,
+                    document_no: params.document_no,
                 },
                 dataType: 'json',
                 success: function(result) {
@@ -827,6 +868,39 @@
         }
     }
 
+    function validateParams() {
+        // Get Modul
+        const selectedModul = $("#modul").combogrid('grid').datagrid('getSelected');
+        const requireCompany = selectedModul ? selectedModul.require_company_id : 0;
+
+        const params = {
+            journal_date: $("#journal_date").datebox('getValue'),
+            modul:        $("#modul").combogrid('getValue'),
+            company_id:   $("#company_name").combogrid('getValue'),
+            document_no:  $("#document_no").combogrid('getValue'), 
+        };
+
+        const requiredFields = [
+            { val: params.journal_date, label: 'Journal Date' },
+            { val: params.modul,        label: 'Modul' },
+            { val: params.document_no,  label: 'Document No.' },
+        ];
+
+        // Push Company ke validasi HANYA jika require_company_id == 1
+        if (requireCompany == 1) {
+            requiredFields.push({ val: params.company_id, label: 'Company' });
+        }
+
+        for (let item of requiredFields) {
+            if (!item.val || (Array.isArray(item.val) && item.val.length === 0)) {
+                toastr.info(`Please choose ${item.label} first!`);
+                return false;
+            }
+        }
+
+        return true; // Return true jika semua validasi lolos
+    }
+
     var editIndex = undefined;
 
     function endEditing() {
@@ -843,7 +917,7 @@
     }
 
     function onClickCell(index, field) {
-        var modul = $("#modul").combobox('getValue');
+        var modul = $("#modul").combogrid('getValue');
 
         if(modul == "ADJUSTMENT"){
             if (editIndex != index) {
@@ -862,7 +936,7 @@
     }
 
     function append() {
-        var modul = $("#modul").combobox('getValue');
+        var modul = $("#modul").combogrid('getValue');
         var journal_date = $("#journal_date").datebox('getValue');
 
         if(modul == "ADJUSTMENT"){
@@ -905,7 +979,7 @@
     }
 
     function editrow(target) {
-        var modul = $("#modul").combobox('getValue');
+        var modul = $("#modul").combogrid('getValue');
 
         if(modul == "ADJUSTMENT"){
             $('#dg2').datagrid('selectRow', getRowIndex(target));
@@ -1011,7 +1085,7 @@
                 const voucher_no   = $("#number").textbox('getValue');
                 const document_no  = $("#document_no").textbox('getValue');
                 const journal_date = $("#journal_date").datebox('getValue');
-                const modul        = $("#modul").combobox('getValue');
+                const modul        = $("#modul").combogrid('getValue');
                 const company_id   = $("#company_name").combogrid('getValue');
                 const remarks      = $("#remarks").textbox('getValue');
                 const local_debit  = $("#local_debit").numberbox('getValue');
@@ -1058,7 +1132,17 @@
                                 Swal.close();
                                 if (res.theme === 'success') {
                                     toastr.success(res.message);
-                                    Swal.fire('Success', res.message, 'success');
+
+                                    Swal.fire({
+                                        title: res.message,
+                                        icon: res.theme,
+                                        confirmButtonText: 'Ok',
+                                        allowOutsideClick: false,
+                                    }).then((result) => {
+                                        if (result.isConfirmed) {
+                                            window.location.reload();
+                                        }
+                                    });
 
                                     $('#dlg_insert').dialog('close');
                                     $('#dg').datagrid('reload');
@@ -1066,6 +1150,7 @@
                                     Swal.fire('Error', res.message, 'error');
                                 }
 
+                                $('#dg2').datagrid('reload');
                                 $('#dlg_insert').dialog('close');
                             },
                             error: function(xhr) {
