@@ -817,7 +817,7 @@ class Journal_inventory extends CI_Controller
     public function create()
     {
         $post = $this->input->post();
-        $details = json_decode($post['details'], true);
+        $details = json_decode($post['details'] ?? '[]', true);
 
         if (empty($details)) {
             echo json_encode(['title' => 'Error', 'message' => 'No detail data received', 'theme' => 'error']);
@@ -827,6 +827,13 @@ class Journal_inventory extends CI_Controller
         $this->db->trans_begin();
 
         try {
+            // validate exist = true
+            $is_duplicated = $this->autopostingjournal->check_duplicate_entry($post['modul'], $post['document_no']);
+            
+            if ($is_duplicated) {
+                throw new Exception("Document Number " . $post['document_no'] . " has already been journaled for module " . $post['modul']);
+            }
+
             foreach ($details as $row) {
                 $autoID = $this->crud->autoid('journal_inventory'); 
 
@@ -837,7 +844,7 @@ class Journal_inventory extends CI_Controller
                     'journal_type_id' => $row['journal_type_id'],
                     'trans_date'      => $row['trans_date'],
                     'document_no'     => $row['document_no'],
-                    'invoice_no'      => $row['invoice_no'],
+                    'invoice_no'      => $row['invoice_no'] ?? '-',
                     'account_number'  => $row['account_number'],
                     'account_name'    => $row['account_name'],
                     'description'     => $row['description'],
@@ -847,15 +854,18 @@ class Journal_inventory extends CI_Controller
                     'local_credit'    => $row['local_credit'],
                     'rates'           => $row['rates'],
                     'currency'        => $row['currency'],
-                    'company_name'    => $row['company_name'],
-                    'company_id'      => $post['company_id'],
+                    'company_name'    => $row['company_name'] ?? '-',
+                    'company_id'      => $post['company_id'] ?? null,
                     'modul'           => $post['modul'],
                     'remarks'         => $post['remarks'] ?? null,
                     'created_date'    => date('Y-m-d H:i:s'),
                     'created_by'      => $this->session->username,
                 ];
                 
-                $this->db->insert('journal_inventory', $data_insert);
+                if (!$this->db->insert('journal_inventory', $data_insert)) {
+                    $err = $this->db->error();
+                    throw new Exception("Insert Failed: " . $err['message']);
+                }
             }
 
             if ($this->db->trans_status() === FALSE) {
@@ -867,7 +877,7 @@ class Journal_inventory extends CI_Controller
 
         } catch (Exception $e) {
             $this->db->trans_rollback();
-            echo json_encode(['title' => 'Error', 'message' => $e->getMessage(), 'theme' => 'success']);
+            echo json_encode(['title' => 'Failed', 'message' => $e->getMessage(), 'theme' => 'error']);
         }
     }
 

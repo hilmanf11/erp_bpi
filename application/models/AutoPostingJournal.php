@@ -19,7 +19,7 @@ class Autopostingjournal extends CI_Model {
         if (empty($modul) || empty($document_no)) return false;
 
         // Check if the document has been journaled before
-        if ($this->_is_already_posted($modul, $document_no)) {
+        if ($this->check_duplicate_entry($modul, $document_no)) {
             log_message('debug', "$document_no for module $modul has been posted before. Skip.");
             return [
                 'status'  => false, 
@@ -50,7 +50,7 @@ class Autopostingjournal extends CI_Model {
     }
 
     // Journal Duplication Protection
-    private function _is_already_posted($modul, $doc_no) 
+    public function check_duplicate_entry($modul, $doc_no) 
     {
         $check = $this->db->get_where('journal_inventory', [
             'modul' => $modul,

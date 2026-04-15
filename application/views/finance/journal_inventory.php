@@ -669,7 +669,7 @@
 
 
 
-    // FORM INSERT OR UPDATE
+    // CREATE
     function add() {
         $('#frm_insert').form('clear');        
         $('#dlg_insert').dialog('open').dialog('center');
@@ -701,6 +701,31 @@
             },
         });
     }
+
+
+    // UPDATE
+    function update() {
+        var row = $('#dg').datagrid('getSelected');
+        
+        if (!row) {
+            toastr.warning("Please select one of the data in the table first!", "Information");
+            return;
+        }
+        
+        $('#dlg_insert').dialog('open');
+        $("#dlg_insert").window('setTitle', "Update " + row.number);
+        
+        $('#frm_insert').form('load', row);
+        $("#journal_date").datebox('disable');
+        $("#modul").datebox('disable');
+        $("#company_name").datebox('disable');
+        $("#document_no").datebox('disable');
+        $("#number").datebox('disable');
+        $("#preview").linkbutton('disable');
+        
+        // Datatable
+    }
+
 
     function preview() {
         const params = {
@@ -984,6 +1009,7 @@
             handler: function() {
                 // Get data Header
                 const voucher_no   = $("#number").textbox('getValue');
+                const document_no  = $("#document_no").textbox('getValue');
                 const journal_date = $("#journal_date").datebox('getValue');
                 const modul        = $("#modul").combobox('getValue');
                 const company_id   = $("#company_name").combogrid('getValue');
@@ -1020,6 +1046,7 @@
                             url: '<?= base_url('finance/journal_inventory/create') ?>',
                             data: {
                                 voucher_no: voucher_no,
+                                document_no: document_no,
                                 journal_date: journal_date,
                                 modul: modul,
                                 company_id: company_id,
