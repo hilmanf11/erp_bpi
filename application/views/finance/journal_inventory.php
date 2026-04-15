@@ -98,7 +98,7 @@
             <div style="padding: 10px;">
                 <div class="fitem" style="margin-bottom: 10px;">
                     <label style="width:35%; display:inline-block;">Category <span style="color:red">*</span></label>
-                    <select style="width:60%;" name="category_number" id="modul_category_number" class="easyui-combobox" 
+                    <select style="width:60%;" name="category" id="modul_category" class="easyui-combobox" 
                             data-options="required:true, editable:false, panelHeight:'auto'">
                         <option value="RM">RAW MATERIAL (RM)</option>
                         <option value="WIP">WORK IN PROCESS (WIP)</option>
@@ -123,8 +123,8 @@
                 <div class="fitem" style="margin-bottom: 10px;">
                     <label style="width:35%; display:inline-block;">Company ID Required <span style="color:red">*</span></label>
                     <input class="easyui-switchbutton" 
-                        name="require_company_id" 
-                        id="modul_require_company_id" 
+                        name="is_company_required" 
+                        id="modul_is_company_required" 
                         style="width:100px;" 
                         data-options="
                                 onText:'Yes',
@@ -493,13 +493,13 @@
                     }
                 },
                 {field: 'name', title: 'Module Name', width: 200},
-                {field: 'category_number', title: 'Category', width: 150},
+                {field: 'category', title: 'Category', width: 150},
             ]],
             onBeforeLoad: function(param) {
                 if($(this).attr('id') === 'modul'){
-                    var cat  = $("#modul_category_number").combobox('getValue');
+                    var cat  = $("#modul_category").combobox('getValue');
                     var proc = $("#modul_kind").combobox('getValue');
-                    if(cat) param.category_number = cat;
+                    if(cat) param.category = cat;
                     if(proc) param.kind = proc;
                 }
             },
@@ -515,7 +515,7 @@
 
                     // Validate Company Name
                     if (row) {
-                        if (row.require_company_id == 1) {
+                        if (row.is_company_required == 1) {
                             // Wajib diisi & Aktif
                             $("#company_name").combogrid('enable');
                             $("#company_name").combogrid('options').required = true;
@@ -536,7 +536,7 @@
                     if(valDate && typeof number === "function") number(valDate);
 
                     // Load Document No.
-                    if (row && row.require_company_id == 0) {
+                    if (row && row.is_company_required == 0) {
                         var valDate = $("#journal_date").datebox('getValue');
                         if (valDate) {
                             var gd = $("#document_no").combogrid('grid');
@@ -871,7 +871,7 @@
     function validateParams() {
         // Get Modul
         const selectedModul = $("#modul").combogrid('grid').datagrid('getSelected');
-        const requireCompany = selectedModul ? selectedModul.require_company_id : 0;
+        const requireCompany = selectedModul ? selectedModul.is_company_required : 0;
 
         const params = {
             journal_date: $("#journal_date").datebox('getValue'),
@@ -886,7 +886,7 @@
             { val: params.document_no,  label: 'Document No.' },
         ];
 
-        // Push Company ke validasi HANYA jika require_company_id == 1
+        // Push Company ke validasi HANYA jika is_company_required == 1
         if (requireCompany == 1) {
             requiredFields.push({ val: params.company_id, label: 'Company' });
         }

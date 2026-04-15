@@ -36,8 +36,12 @@ class Autopostingjournal extends CI_Model {
                 return $this->_process_bpm($modul, $document_no);
                 break;
 
-            case "ADJ STO (IN)":
-                // return $this->_process_adj_sto_in($document_no);
+            case "ADJ IN STO":
+                return $this->_process_adj_sto($modul, $document_no);
+                break;
+
+            case "ADJ OUT STO":
+                return $this->_process_adj_sto($modul, $document_no);
                 break;
             
             default:
@@ -466,4 +470,136 @@ class Autopostingjournal extends CI_Model {
         }
     }
 
+    private function _process_adj_sto($modul, $document_no) 
+    {
+        $this->db->trans_begin();
+
+        try {
+            // Debit: Raw Material Injection
+            $acc_debit  = $this->db->get_where('account_coa', ['account_number' => '150.110.00'])->row();
+            // Credit: Accrual Raw Materials
+            $acc_credit = $this->db->get_where('account_coa', ['account_number' => '510.220.00'])->row();
+
+            if (!$acc_debit || !$acc_credit) {
+                throw new Exception("Account COA not found (150.110.00 or 510.220.00)");
+            }
+
+            // Journal Type ID
+            $debit_jt_id  = $this->journal_type("TRANSACTION RM", $acc_debit->account_number);
+            $credit_jt_id = $this->journal_type("TRANSACTION RM", $acc_credit->account_number);
+
+            if (!$debit_jt_id || !$credit_jt_id) {
+                throw new Exception("Journal Type Account NOT FOUND for module $modul! Please add Journal Types");
+            }
+
+            // Get Transaction
+            $this->db->select('a.*, c.number as item_number, c.name as item_name, c.uom');
+            $this->db->select("'' as supplier_name, '' as supplier_id");
+            $this->db->from('transaction_rm a');
+            $this->db->join('item_rm c', 'a.item_rm_id = c.id', 'left');
+            $this->db->where('a.deleted', 0);
+            $this->db->where('a.request_no', $document_no);
+            $this->db->group_by('a.id');
+            $this->db->order_by('a.request_no', 'ASC');
+
+            $records = $this->db->get()->result_array();
+
+            if (empty($records)) {
+                throw new Exception("No records found for Request No: $document_no or document not closed (Scan/Print)");
+            }
+
+            $voucher_no      = $this->_generate_voucher_no($records[0]['request_date']);
+            $currency        = "IDR"; // default
+            $total_orig_all  = 0;
+            $total_local_all = 0;
+
+            foreach ($records as $row) 
+            {
+                $rate  = $this->get_rate($row['request_date'], $currency);
+                $price = $this->get_price_rm($row['request_date'], $row['item_rm_id']);
+
+                $amount_original = (float)$row['qty'] * $price;
+                $amount_local = round($amount_original * $rate, 2);
+
+                $data_debit = [
+                    'id'              => $this->_generate_journal_id(),
+                    'number'          => $voucher_no,
+                    'journal_date'    => $row['request_date'],
+                    "journal_type_id" => $debit_jt_id,
+                    'trans_date'      => date('Y-m-d'),
+                    'document_no'     => $row['request_no'],
+                    'invoice_no'      => $row['request_id'] ?? '-',
+                    'account_number'  => $acc_debit->account_number,
+                    'account_name'    => $acc_debit->account_name,
+                    'description'     => $row['item_name'] . " | " . $row['request_no'] . " | " . $row['supplier_name'],
+                    'original_debit'  => $amount_original,
+                    'original_credit' => 0,
+                    'local_debit'     => $amount_local,
+                    'local_credit'    => 0,
+                    'rates'           => $rate,
+                    'currency'        => $currency,
+                    'company_name'    => $row['supplier_name'],
+                    'company_id'      => $row['supplier_id'],
+                    'modul'           => $modul,
+                    'remarks'         => "Auto Posting Journal",
+                    'created_date'    => date('Y-m-d H:i:s'),
+                    'created_by'      => $this->session->username ? $this->session->username : 'SYSTEM',
+                ];
+
+                if (!$this->db->insert('journal_inventory', $data_debit)) {
+                    $db_error = $this->db->error();
+                    throw new Exception("Database Error (Debit): " . $db_error['message']);
+                }
+
+                $total_orig_all += $amount_original;
+                $total_local_all += $amount_local;
+            }
+
+            // INSERT CREDIT
+            $data_credit = [
+                'id'              => $this->_generate_journal_id(),
+                'number'          => $voucher_no,
+                'journal_date'    => $records[0]['request_date'],
+                "journal_type_id" => $credit_jt_id,
+                'trans_date'      => date('Y-m-d'),
+                'document_no'     => $records[0]['request_no'],
+                'invoice_no'      => $records[0]['request_id'] ?? '-',
+                'account_number'  => $acc_credit->account_number,
+                'account_name'    => $acc_credit->account_name,
+                'description'     => $records[0]['request_no'] . " | " . $records[0]['supplier_name'],
+                'original_debit'  => 0,
+                'original_credit' => $total_orig_all,
+                'local_debit'     => 0,
+                'local_credit'    => $total_local_all,
+                'rates'           => $this->get_rate($records[0]['request_date'], $currency),
+                'currency'        => $currency,
+                'company_name'    => $records[0]['supplier_name'],
+                'company_id'      => $records[0]['supplier_id'],
+                'modul'           => $modul,
+                'remarks'         => "Auto Posting Journal",
+                'created_date'    => date('Y-m-d H:i:s'),
+                'created_by'      => $this->session->username ? $this->session->username : 'SYSTEM',
+            ];
+
+            if (!$this->db->insert('journal_inventory', $data_credit)) {
+                $db_error = $this->db->error();
+                throw new Exception("Database Error (Credit): " . $db_error['message']);
+            }
+
+            // Jika semua oke, commit
+            if ($this->db->trans_status() === FALSE) {
+                throw new Exception("Transaction Failed");
+            } else {
+                $this->db->trans_commit();
+                return ['status' => true, 'message' => 'Success'];
+            }
+
+        } catch (Exception $e) {
+            // Rollback jika terjadi error
+            $this->db->trans_rollback();
+            $msg = "Error: " . $e->getMessage();
+            log_message('error', $msg);
+            return ['status' => false, 'message' => $msg];
+        }
+    }
 }

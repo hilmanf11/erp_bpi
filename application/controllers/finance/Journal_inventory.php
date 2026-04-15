@@ -102,13 +102,14 @@ class Journal_inventory extends CI_Controller
 
         $data = [
             'name'            => strtoupper(trim($this->input->post('name'))),
-            'category_number' => $this->input->post('category_number'),
+            'category'        => $this->input->post('category'),
             'kind'            => $this->input->post('kind'),
+            'ref_id'          => $this->input->post('ref_id'),
             'description'     => $this->input->post('description'),
             'updated_by'      => $this->session->username,
-            'updated_date'    => date('Y-m-d H:i:s'),
+            'updated_date'    => null,
             'status'          => 1, // default
-            'require_company_id' => $this->input->post('require_company_id') ?? 0, // wajib input company_id
+            'is_company_required' => $this->input->post('is_company_required') ?? 0, // wajib input company_id
         ];
         
         // Validasi create new
@@ -204,6 +205,15 @@ class Journal_inventory extends CI_Controller
             $this->db->where('a.request_no NOT IN (SELECT document_no FROM journal_inventory)'); // Get yang belum di journal
             $this->db->group_by('a.request_no');
             $this->db->order_by('a.request_date', 'DESC');
+
+            $records = $this->db->get()->result_array();
+        }
+        elseif ($modul == "ADJ IN STO" || $modul == "ADJ OUT STO") 
+        {
+            $this->db->select('a.request_no as document_no, a.request_date as trans_date');
+            $this->db->from('transaction_rm a');
+            $this->db->where('a.deleted', 0);
+            $this->db->where('a.request_no NOT IN (SELECT document_no FROM journal_inventory)');
 
             $records = $this->db->get()->result_array();
         }
