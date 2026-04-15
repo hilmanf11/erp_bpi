@@ -78,6 +78,17 @@ class Autopostingjournal extends CI_Model {
         return null;
     }
 
+    public function journal_type_kind($module, $acc_no, $type) 
+    {
+        if (empty($type)) return null;
+        $jt = $this->db->get_where('journal_types', [
+            'account_number' => $acc_no,
+            'type'           => $type,
+            'module'         => $module,
+        ])->row();
+        return ($jt) ? $jt->id : null;
+    }
+
     // Get Rate
     public function get_rate($date, $currency) {
         if ($currency == "IDR") return 1.0;
@@ -211,6 +222,7 @@ class Autopostingjournal extends CI_Model {
                 a.po_no as invoice_no,
                 a.item_rm_id,
                 c.name as item_name, 
+                c.number as item_no,
                 b.name as supplier_name, 
                 b.currency, 
                 a.supplier_id,
@@ -249,6 +261,9 @@ class Autopostingjournal extends CI_Model {
                 $amount_original = (float)$row['item_total_original'];
                 $amount_local = round($amount_original * $rate, 2);
 
+                $supplier_name = !empty($row['supplier_name']) ? $row['supplier_name'] . " | " : "";
+                $description   = $supplier_name . $receipt_no . " | " . $row['invoice_no'] . " | " . $row['item_no'] . " | " . $row['item_name'];
+
                 $data_debit = [
                     'id'              => $this->_generate_journal_id(),
                     'number'          => $voucher_no,
@@ -259,12 +274,12 @@ class Autopostingjournal extends CI_Model {
                     'invoice_no'      => $row['invoice_no'],
                     'account_number'  => $acc_debit->account_number,
                     'account_name'    => $acc_debit->account_name,
-                    'description'     => $row['item_name'] . " | " . $row['document_no'] . " | " . $row['supplier_name'],
                     'original_debit'  => $amount_original,
                     'original_credit' => 0,
                     'local_debit'     => $amount_local,
                     'local_credit'    => 0,
                     'rates'           => $rate,
+                    'description'     => $description,
                     'currency'        => $row['currency'],
                     'company_name'    => $row['supplier_name'],
                     'company_id'      => $row['supplier_id'],
@@ -283,6 +298,10 @@ class Autopostingjournal extends CI_Model {
                 $total_local_all += $amount_local;
             }
 
+
+            $supplier_name = !empty($records[0]['supplier_name']) ? $records[0]['supplier_name'] . " | " : "";
+            $description   = $supplier_name . $receipt_no . " | " . $records[0]['invoice_no'] . " | " . $records[0]['item_no'] . " | " . $records[0]['item_name'];
+
             // INSERT CREDIT
             $data_credit = [
                 'id'              => $this->_generate_journal_id(),
@@ -291,15 +310,15 @@ class Autopostingjournal extends CI_Model {
                 "journal_type_id" => $credit_jt_id,
                 'trans_date'      => date('Y-m-d'),
                 'document_no'     => $records[0]['document_no'],
-                'invoice_no'      => $records[0]['invoice_no'],
+                'invoice_no'      => $records[0]['invoice_no'] ?? '',
                 'account_number'  => $acc_credit->account_number,
                 'account_name'    => $acc_credit->account_name,
-                'description'     => $records[0]['document_no'] . " | " . $records[0]['supplier_name'],
                 'original_debit'  => 0,
                 'original_credit' => $total_orig_all,
                 'local_debit'     => 0,
                 'local_credit'    => $total_local_all,
                 'rates'           => $this->get_rate($records[0]['trans_date'], $records[0]['currency']),
+                'description'     => $description,
                 'currency'        => $records[0]['currency'],
                 'company_name'    => $records[0]['supplier_name'],
                 'company_id'      => $records[0]['supplier_id'],
@@ -356,6 +375,7 @@ class Autopostingjournal extends CI_Model {
 
             // Get BPM
             $this->db->select('a.*, b.number as item_number, b.name as item_name, b.uom, COALESCE(SUM(c.qty),0) as qty_actual');
+            $this->db->select('b.number as item_no, a.receipt_id as invoice_no');
             $this->db->select("'' as supplier_id, '' as supplier_name");
             $this->db->select("'IDR' as currency");
 
@@ -388,6 +408,9 @@ class Autopostingjournal extends CI_Model {
                 $amount_original = (float)$row['qty'] * $price;
                 $amount_local = round($amount_original * $rate, 2);
 
+                $supplier_name = !empty($row['supplier_name']) ? $row['supplier_name'] . " | " : "";
+                $description   = $supplier_name . $document_no . " | " . $row['invoice_no'] . " | " . $row['item_no'] . " | " . $row['item_name'];
+
                 $data_debit = [
                     'id'              => $this->_generate_journal_id(),
                     'number'          => $voucher_no,
@@ -395,15 +418,15 @@ class Autopostingjournal extends CI_Model {
                     "journal_type_id" => $debit_jt_id,
                     'trans_date'      => date('Y-m-d'),
                     'document_no'     => $row['request_no'],
-                    'invoice_no'      => $row['request_id'],
+                    'invoice_no'      => $row['request_id'] ?? '',
                     'account_number'  => $acc_debit->account_number,
                     'account_name'    => $acc_debit->account_name,
-                    'description'     => $row['item_name'] . " | " . $row['request_no'] . " | " . $row['supplier_name'],
                     'original_debit'  => $amount_original,
                     'original_credit' => 0,
                     'local_debit'     => $amount_local,
                     'local_credit'    => 0,
                     'rates'           => $rate,
+                    'description'     => $description,
                     'currency'        => $currency,
                     'company_name'    => $row['supplier_name'],
                     'company_id'      => $row['supplier_id'],
@@ -422,6 +445,10 @@ class Autopostingjournal extends CI_Model {
                 $total_local_all += $amount_local;
             }
 
+
+            $supplier_name = !empty($records[0]['supplier_name']) ? $records[0]['supplier_name'] . " | " : "";
+            $description   = $supplier_name . $document_no . " | " . $records[0]['invoice_no'] . " | " . $records[0]['item_no'] . " | " . $records[0]['item_name'];
+
             // INSERT CREDIT
             $data_credit = [
                 'id'              => $this->_generate_journal_id(),
@@ -433,12 +460,12 @@ class Autopostingjournal extends CI_Model {
                 'invoice_no'      => $records[0]['request_id'],
                 'account_number'  => $acc_credit->account_number,
                 'account_name'    => $acc_credit->account_name,
-                'description'     => $records[0]['request_no'] . " | " . $records[0]['supplier_name'],
                 'original_debit'  => 0,
                 'original_credit' => $total_orig_all,
                 'local_debit'     => 0,
                 'local_credit'    => $total_local_all,
                 'rates'           => $this->get_rate($records[0]['request_date'], $currency),
+                'description'     => $description,
                 'currency'        => $currency,
                 'company_name'    => $records[0]['supplier_name'],
                 'company_id'      => $records[0]['supplier_id'],
@@ -484,9 +511,17 @@ class Autopostingjournal extends CI_Model {
                 throw new Exception("Account COA not found (150.110.00 or 510.220.00)");
             }
 
+            // Validasi Type / Kind
+            $module = "TRANSACTION RM";
+            if ($modul == "ADJ IN STO") {
+                $kind = "IN";
+            } elseif ($modul == "ADJ OUT STO") {
+                $kind = "OUT";
+            }
+
             // Journal Type ID
-            $debit_jt_id  = $this->journal_type("TRANSACTION RM", $acc_debit->account_number);
-            $credit_jt_id = $this->journal_type("TRANSACTION RM", $acc_credit->account_number);
+            $debit_jt_id  = $this->journal_type_kind($module, $acc_debit->account_number, $kind);
+            $credit_jt_id = $this->journal_type_kind($module, $acc_credit->account_number, $kind);
 
             if (!$debit_jt_id || !$credit_jt_id) {
                 throw new Exception("Journal Type Account NOT FOUND for module $modul! Please add Journal Types");
@@ -494,6 +529,7 @@ class Autopostingjournal extends CI_Model {
 
             // Get Transaction
             $this->db->select('a.*, c.number as item_number, c.name as item_name, c.uom');
+            $this->db->select('c.number as item_no, a.remarks as invoice_no');
             $this->db->select("'' as supplier_name, '' as supplier_id");
             $this->db->from('transaction_rm a');
             $this->db->join('item_rm c', 'a.item_rm_id = c.id', 'left');
@@ -521,6 +557,9 @@ class Autopostingjournal extends CI_Model {
                 $amount_original = (float)$row['qty'] * $price;
                 $amount_local = round($amount_original * $rate, 2);
 
+                $supplier_name = !empty($row['supplier_name']) ? $row['supplier_name'] . " | " : "";
+                $description   = $supplier_name . $document_no . " | " . $row['invoice_no'] . " | " . $row['item_no'] . " | " . $row['item_name'];
+
                 $data_debit = [
                     'id'              => $this->_generate_journal_id(),
                     'number'          => $voucher_no,
@@ -528,15 +567,15 @@ class Autopostingjournal extends CI_Model {
                     "journal_type_id" => $debit_jt_id,
                     'trans_date'      => date('Y-m-d'),
                     'document_no'     => $row['request_no'],
-                    'invoice_no'      => $row['request_id'] ?? '-',
+                    'invoice_no'      => $row['request_id'] ?? '',
                     'account_number'  => $acc_debit->account_number,
                     'account_name'    => $acc_debit->account_name,
-                    'description'     => $row['item_name'] . " | " . $row['request_no'] . " | " . $row['supplier_name'],
                     'original_debit'  => $amount_original,
                     'original_credit' => 0,
                     'local_debit'     => $amount_local,
                     'local_credit'    => 0,
                     'rates'           => $rate,
+                    'description'     => $description,
                     'currency'        => $currency,
                     'company_name'    => $row['supplier_name'],
                     'company_id'      => $row['supplier_id'],
@@ -555,6 +594,10 @@ class Autopostingjournal extends CI_Model {
                 $total_local_all += $amount_local;
             }
 
+
+            $supplier_name = !empty($records[0]['supplier_name']) ? $records[0]['supplier_name'] . " | " : "";
+            $description   = $supplier_name . $document_no . " | " . $records[0]['invoice_no'] . " | " . $records[0]['item_no'] . " | " . $records[0]['item_name'];
+
             // INSERT CREDIT
             $data_credit = [
                 'id'              => $this->_generate_journal_id(),
@@ -566,12 +609,12 @@ class Autopostingjournal extends CI_Model {
                 'invoice_no'      => $records[0]['request_id'] ?? '-',
                 'account_number'  => $acc_credit->account_number,
                 'account_name'    => $acc_credit->account_name,
-                'description'     => $records[0]['request_no'] . " | " . $records[0]['supplier_name'],
                 'original_debit'  => 0,
                 'original_credit' => $total_orig_all,
                 'local_debit'     => 0,
                 'local_credit'    => $total_local_all,
                 'rates'           => $this->get_rate($records[0]['request_date'], $currency),
+                'description'     => $description,
                 'currency'        => $currency,
                 'company_name'    => $records[0]['supplier_name'],
                 'company_id'      => $records[0]['supplier_id'],

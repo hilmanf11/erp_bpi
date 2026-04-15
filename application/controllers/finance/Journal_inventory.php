@@ -579,6 +579,132 @@ class Journal_inventory extends CI_Controller
 
             $result = ["total" => count($data_combine), "rows" => $data_combine, "footer" => $footer];    
         }
+        elseif ($modul == "ADJ IN STO" || $modul == "ADJ OUT STO") 
+        {
+            // Debit: Raw Material Injection
+            $acc_debit  = $this->db->get_where('account_coa', ['account_number' => '150.110.00'])->row();
+            // Credit: Accrual Raw Materials
+            $acc_credit = $this->db->get_where('account_coa', ['account_number' => '510.220.00'])->row();
+
+            if (!$acc_debit || !$acc_credit) {
+                throw new Exception("Account COA not found (150.110.00 or 510.220.00)");
+            }
+
+            // Validasi Type / Kind
+            $module = "TRANSACTION RM";
+            if ($modul == "ADJ IN STO") {
+                $kind = "IN";
+            } elseif ($modul == "ADJ OUT STO") {
+                $kind = "OUT";
+            }
+
+            // Journal Type ID
+            $debit_jt_id  = $this->autopostingjournal->journal_type_kind($module, $acc_debit->account_number, $kind);
+            $credit_jt_id = $this->autopostingjournal->journal_type_kind($module, $acc_credit->account_number, $kind);
+
+            if (!$debit_jt_id || !$credit_jt_id) {
+                throw new Exception("Journal Type Account NOT FOUND for module $modul! Please add Journal Types");
+            }
+
+            // Get Transaction
+            $this->db->select('a.*, c.number as item_number, c.name as item_name, c.uom');
+            $this->db->select('c.number as item_no, a.remarks as invoice_no');
+            $this->db->select("'' as supplier_name, '' as supplier_id");
+            $this->db->from('transaction_rm a');
+            $this->db->join('item_rm c', 'a.item_rm_id = c.id', 'left');
+            $this->db->where('a.deleted', 0);
+            $this->db->where('a.request_no', $document_no);
+            $this->db->group_by('a.id');
+            $this->db->order_by('a.request_no', 'ASC');
+
+            $records = $this->db->get()->result_array();
+
+            if (empty($records)) {
+                throw new Exception("No records found for Request No: $document_no or document not closed (Scan/Print)");
+            }
+
+            $currency        = "IDR"; // default
+            $data_combine    = [];
+            $total_orig_all  = 0;
+            $total_local_all = 0;
+
+            foreach ($records as $row) 
+            {
+                $rate  = $this->autopostingjournal->get_rate($row['request_date'], $currency);
+                $price = $this->autopostingjournal->get_price_rm($row['request_date'], $row['item_rm_id']);
+
+                $amount_original = (float)$row['qty'] * $price;
+                $amount_local = round($amount_original * $rate, 2);
+
+                $supplier_name = !empty($row['supplier_name']) ? $row['supplier_name'] . " | " : "";
+                $description   = $supplier_name . $document_no . " | " . $row['invoice_no'] . " | " . $row['item_no'] . " | " . $row['item_name'];
+
+                $data_combine[] = [
+                    'journal_date'    => $row['request_date'],
+                    "journal_type_id" => $debit_jt_id,
+                    'trans_date'      => date('Y-m-d'),
+                    'document_no'     => $row['request_no'],
+                    'invoice_no'      => $row['request_id'] ?? '',
+                    'account_number'  => $acc_debit->account_number,
+                    'account_name'    => $acc_debit->account_name,
+                    'original_debit'  => $amount_original,
+                    'original_credit' => 0,
+                    'local_debit'     => $amount_local,
+                    'local_credit'    => 0,
+                    'rates'           => $rate,
+                    'description'     => $description,
+                    'currency'        => $currency,
+                    'company_name'    => $row['supplier_name'],
+                    'company_id'      => $row['supplier_id'],
+                    'modul'           => $modul,
+                    'remarks'         => "Auto Posting Journal",
+                    'created_date'    => date('Y-m-d H:i:s'),
+                    'created_by'      => $this->session->username ? $this->session->username : 'SYSTEM',
+                ];
+
+                $total_orig_all += $amount_original;
+                $total_local_all += $amount_local;
+            }
+
+
+            $supplier_name = !empty($records[0]['supplier_name']) ? $records[0]['supplier_name'] . " | " : "";
+            $description   = $supplier_name . $document_no . " | " . $records[0]['invoice_no'] . " | " . $records[0]['item_no'] . " | " . $records[0]['item_name'];
+
+            // INSERT CREDIT
+            $data_combine[] = [
+                'journal_date'    => $records[0]['request_date'],
+                "journal_type_id" => $credit_jt_id,
+                'trans_date'      => date('Y-m-d'),
+                'document_no'     => $records[0]['request_no'],
+                'invoice_no'      => $records[0]['request_id'] ?? '-',
+                'account_number'  => $acc_credit->account_number,
+                'account_name'    => $acc_credit->account_name,
+                'original_debit'  => 0,
+                'original_credit' => $total_orig_all,
+                'local_debit'     => 0,
+                'local_credit'    => $total_local_all,
+                'rates'           => $this->autopostingjournal->get_rate($records[0]['request_date'], $currency),
+                'description'     => $description,
+                'currency'        => $currency,
+                'company_name'    => $records[0]['supplier_name'],
+                'company_id'      => $records[0]['supplier_id'],
+                'modul'           => $modul,
+                'remarks'         => "Auto Posting Journal",
+                'created_date'    => date('Y-m-d H:i:s'),
+                'created_by'      => $this->session->username ? $this->session->username : 'SYSTEM',
+            ];
+
+            $footer[] = [
+                "currency"        => "TOTAL",
+                "original_debit"  => $total_orig_all,
+                "original_credit" => $total_orig_all,
+                "rate"            => null,
+                "local_debit"     => $total_local_all,
+                "local_credit"    => $total_local_all,
+            ];
+
+            $result = ["total" => count($data_combine), "rows" => $data_combine, "footer" => $footer];  
+        }
 
         header('Content-Type: application/json');
         echo json_encode($result);
