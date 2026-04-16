@@ -45,7 +45,7 @@ class Autopostingjournal extends CI_Model {
                 break;
             
             case "SUPPLY SHEETS":
-                // return $this->_process_supply_sheets($modul, $document_no);
+                return $this->_process_supply_sheets($modul, $document_no);
                 break;
             
             case "NON SUPPLY SHEETS":
@@ -310,6 +310,10 @@ class Autopostingjournal extends CI_Model {
                 $total_local_all += $amount_local;
             }
 
+            // validasi total
+            if ($total_local_all <= 0 || $total_orig_all <= 0) {
+                throw new Exception("Transaction amount is zero! Posting Journal canceled.");
+            }
 
             $supplier_name = !empty($records[0]['supplier_name']) ? $records[0]['supplier_name'] . " | " : "";
             $description   = $supplier_name . $receipt_no . " | " . $records[0]['invoice_no'] . " | " . $records[0]['item_no'] . " | " . $records[0]['item_name'];
@@ -457,6 +461,10 @@ class Autopostingjournal extends CI_Model {
                 $total_local_all += $amount_local;
             }
 
+            // validasi total
+            if ($total_local_all <= 0 || $total_orig_all <= 0) {
+                throw new Exception("Transaction amount is zero! Posting Journal canceled.");
+            }
 
             $supplier_name = !empty($records[0]['supplier_name']) ? $records[0]['supplier_name'] . " | " : "";
             $description   = $supplier_name . $document_no . " | " . $records[0]['invoice_no'] . " | " . $records[0]['item_no'] . " | " . $records[0]['item_name'];
@@ -606,6 +614,10 @@ class Autopostingjournal extends CI_Model {
                 $total_local_all += $amount_local;
             }
 
+            // validasi total
+            if ($total_local_all <= 0 || $total_orig_all <= 0) {
+                throw new Exception("Transaction amount is zero! Posting Journal canceled.");
+            }
 
             $supplier_name = !empty($records[0]['supplier_name']) ? $records[0]['supplier_name'] . " | " : "";
             $description   = $supplier_name . $document_no . " | " . $records[0]['invoice_no'] . " | " . $records[0]['item_no'] . " | " . $records[0]['item_name'];
@@ -657,4 +669,195 @@ class Autopostingjournal extends CI_Model {
             return ['status' => false, 'message' => $msg];
         }
     }
+
+
+    private function _process_supply_sheets($modul, $document_no) 
+    {
+        $this->db->trans_begin();
+
+        try {
+            // Debit: Raw Material Injection
+            $acc_debit  = $this->db->get_where('account_coa', ['account_number' => '150.210.00'])->row();
+            // Credit: Accrual Raw Materials
+            $acc_credit = $this->db->get_where('account_coa', ['account_number' => '150.110.00'])->row();
+
+            if (!$acc_debit || !$acc_credit) {
+                throw new Exception("Account COA not found (150.210.00 or 150.110.00)");
+            }
+
+            // Journal Type ID
+            $debit_jt_id  = $this->journal_type($modul, $acc_debit->account_number);
+            $credit_jt_id = $this->journal_type($modul, $acc_credit->account_number);
+
+            if (!$debit_jt_id || !$credit_jt_id) {
+                throw new Exception("Journal Type Account NOT FOUND for module $modul! Please add Journal Types");
+            }
+
+            // Get Transaction
+            $this->db->select('a.*, b.number as item_number, b.name as item_name, a.mpq, a.qty_wo, l.lotnos,
+                c.id as item_rm_id,
+                c.number as item_no, 
+                c.number as item_rm_no, 
+                c.name as item_rm_name, 
+                j.name as item_rm_family, 
+                f.recyle, 
+                COALESCE(((f.recyle/100) * a.qty_req),0) as req_qty_crusher, 
+                a.qty_purging as qty_purging, 
+                (CASE WHEN g.uom_soft is null THEN d.name ELSE h.name END) as uom,
+                (CASE WHEN g.uom_soft is null THEN f.composition ELSE (f.composition * g.convertion) END) as composition,
+                COALESCE(i.qty_issued, 0) as qty_issued,
+                f.composition, 
+                COALESCE(SUM(k.qty),0) as qty_actual,
+                round((CASE WHEN g.uom_soft is null THEN f.composition ELSE (f.composition * g.convertion) END) * e.qty, 4) as need
+            ');
+            $this->db->select("'' as supplier_id, '' as supplier_name");
+
+            $this->db->from('supply_sheets a');
+            $this->db->join('item_fg b', 'a.item_fg_id = b.id');
+            $this->db->join('item_rm c', 'a.item_rm_id = c.id');
+            $this->db->join('uom d', 'c.uom = d.name');
+            $this->db->join('production_schedules e', 'a.workorder = e.wo_no and a.item_fg_id = e.item_fg_id');
+            $this->db->join('bom f', 'a.item_fg_id = f.item_fg_id and a.item_rm_id = f.item_rm_id', 'LEFT');
+            $this->db->join('convertions g', 'a.item_rm_id = g.item_rm_id', 'left');
+            $this->db->join('uom h', 'g.uom_soft = h.name', 'left');
+            $this->db->join("(SELECT request_no, item_rm_id, SUM(qty) as qty_issued FROM issued_material_details GROUP BY request_no, item_rm_id) i", "i.request_no = a.request_no and i.item_rm_id = c.id", "LEFT");
+            $this->db->join('item_familys j', 'c.item_family_id = j.id', 'left');
+            $this->db->join('issued_material_details k', 'a.request_no = k.request_no and a.item_rm_id = k.item_rm_id','left');
+            $this->db->join("(
+                    SELECT 
+                        a.request_no,
+                        a.item_rm_id, 
+                        GROUP_CONCAT(DISTINCT d.lotno ORDER BY d.lotno SEPARATOR ', ') AS lotnos
+                    FROM supply_sheets a
+                    LEFT JOIN issued_material_details b ON a.request_no = b.request_no AND a.item_rm_id = b.item_rm_id
+                    LEFT JOIN purchase_order_labels c ON c.label_no = b.label_no
+                    LEFT JOIN purchase_order_receipts d ON d.receipt_id = c.receipt_id
+                    GROUP BY a.request_no, a.item_rm_id
+                    UNION
+                    SELECT 
+                        a.request_no,
+                        a.item_rm_id, 
+                        GROUP_CONCAT(DISTINCT d.lot_no ORDER BY d.lot_no SEPARATOR ', ') AS lotnos
+                    FROM supply_sheets a
+                    LEFT JOIN issued_material_details b ON a.request_no = b.request_no AND a.item_rm_id = b.item_rm_id
+                    LEFT JOIN bpm_labels c ON c.label_no = b.label_no
+                    LEFT JOIN bpm d ON d.request_id = c.request_id
+                    GROUP BY a.request_no, a.item_rm_id
+                ) l", "a.request_no = l.request_no AND a.item_rm_id = l.item_rm_id", "left");
+            $this->db->where('a.deleted', 0);
+            $this->db->where('a.status', 1);
+            $this->db->where('a.request_no', $document_no);
+
+            $records = $this->db->get()->result_array();
+
+            if (empty($records)) {
+                throw new Exception("No records found for Request No: $document_no or document not closed (Scan/Print)");
+            }
+
+            $voucher_no      = $this->_generate_voucher_no($records[0]['request_date']);
+            $currency        = "IDR"; // default
+            $total_orig_all  = 0;
+            $total_local_all = 0;
+
+            foreach ($records as $row) 
+            {
+                $rate  = $this->get_rate($row['request_date'], $currency);
+                $price = $this->get_price_rm($row['request_date'], $row['item_rm_id']);
+
+                $amount_original = (float)$row['qty_issued'] * $price;
+                $amount_local = round($amount_original * $rate, 2);
+
+                $supplier_name = !empty($row['supplier_name']) ? $row['supplier_name'] . " | " : "";
+                $description   = $supplier_name . $document_no . " | " . $row['workorder'] . " | " . $row['item_no'] . " | " . $row['item_name'];
+
+                $data_debit = [
+                    'id'              => $this->_generate_journal_id(),
+                    'number'          => $voucher_no,
+                    'journal_date'    => $row['request_date'] ?? '',
+                    "journal_type_id" => $debit_jt_id,
+                    'trans_date'      => date('Y-m-d'),
+                    'document_no'     => $row['request_no'] ?? '',
+                    'invoice_no'      => $row['workorder'] ?? '',
+                    'account_number'  => $acc_debit->account_number,
+                    'account_name'    => $acc_debit->account_name,
+                    'original_debit'  => $amount_original,
+                    'original_credit' => 0,
+                    'local_debit'     => $amount_local,
+                    'local_credit'    => 0,
+                    'rates'           => $rate,
+                    'description'     => $description,
+                    'currency'        => $currency,
+                    'company_name'    => $row['supplier_name'] ?? '',
+                    'company_id'      => $row['supplier_id'] ?? '',
+                    'modul'           => $modul,
+                    'remarks'         => "Auto Posting Journal",
+                    'created_date'    => date('Y-m-d H:i:s'),
+                    'created_by'      => $this->session->username ? $this->session->username : 'SYSTEM',
+                ];
+
+                if (!$this->db->insert('journal_inventory', $data_debit)) {
+                    $db_error = $this->db->error();
+                    throw new Exception("Database Error (Debit): " . $db_error['message']);
+                }
+
+                $total_orig_all += $amount_original;
+                $total_local_all += $amount_local;
+            }
+
+            // validasi total
+            if ($total_local_all <= 0 || $total_orig_all <= 0) {
+                throw new Exception("Transaction amount is zero! Posting Journal canceled.");
+            }
+
+            $supplier_name = !empty($records[0]['supplier_name']) ? $records[0]['supplier_name'] . " | " : "";
+            $description   = $supplier_name . $document_no . " | " . $records[0]['workorder'] . " | " . $records[0]['item_no'] . " | " . $records[0]['item_name'];
+
+            // INSERT CREDIT
+            $data_credit = [
+                'id'              => $this->_generate_journal_id(),
+                'number'          => $voucher_no,
+                'journal_date'    => $records[0]['request_date'] ?? '',
+                "journal_type_id" => $credit_jt_id,
+                'trans_date'      => date('Y-m-d'),
+                'document_no'     => $records[0]['request_no'] ?? '',
+                'invoice_no'      => $records[0]['workorder'] ?? '',
+                'account_number'  => $acc_credit->account_number,
+                'account_name'    => $acc_credit->account_name,
+                'original_debit'  => 0,
+                'original_credit' => $total_orig_all,
+                'local_debit'     => 0,
+                'local_credit'    => $total_local_all,
+                'rates'           => $this->get_rate($records[0]['request_date'], $currency),
+                'description'     => $description,
+                'currency'        => $currency,
+                'company_name'    => $records[0]['supplier_name'] ?? '',
+                'company_id'      => $records[0]['supplier_id'] ?? '',
+                'modul'           => $modul,
+                'remarks'         => "Auto Posting Journal",
+                'created_date'    => date('Y-m-d H:i:s'),
+                'created_by'      => $this->session->username ? $this->session->username : 'SYSTEM',
+            ];
+
+            if (!$this->db->insert('journal_inventory', $data_credit)) {
+                $db_error = $this->db->error();
+                throw new Exception("Database Error (Credit): " . $db_error['message']);
+            }
+
+            // Jika semua oke, commit
+            if ($this->db->trans_status() === FALSE) {
+                throw new Exception("Transaction Failed");
+            } else {
+                $this->db->trans_commit();
+                return ['status' => true, 'message' => 'Success'];
+            }
+
+        } catch (Exception $e) {
+            // Rollback jika terjadi error
+            $this->db->trans_rollback();
+            $msg = "Error: " . $e->getMessage();
+            log_message('error', $msg);
+            return ['status' => false, 'message' => $msg];
+        }
+    }
+
 }

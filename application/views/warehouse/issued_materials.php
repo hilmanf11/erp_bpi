@@ -301,6 +301,13 @@
                                 });
                             }
 
+
+                            // Validasi Auto Posting Journal Inventory
+                            const first_row = json.rows[0];
+                            const now_date = new Date().toISOString().split('T')[0];
+                            validate_eligibility(request_no, first_row.item_rm_id, now_date);
+
+
                             if(request_no != ""){
                                 $('#dg').datagrid({
                                     url: '<?= base_url('warehouse/issued_materials/datatables?request_no=') ?>' + window.btoa(request_no),
@@ -463,4 +470,63 @@
         remoteFilter: true,
         rownumbers: true
     }).datagrid('enableFilter');
+
+
+
+    /** --- Auto Posting Journal Inventory --- */
+
+    // Validasi Auto Posting Journal
+    function validate_eligibility(request_no, item_rm_id, journal_date) {
+        $.ajax({
+            type: "POST",
+            url: "<?= base_url('finance/journal_inventory/validate_posting_eligibility') ?>",
+            data: {
+                modul: "SUPPLY SHEETS",
+                document_no: request_no,
+                item_rm_id: item_rm_id,
+                journal_date: journal_date
+            },
+            dataType: "json",
+            success: function(response) {
+
+                if (response.status === true) {                    
+                    // Auto posting Journal Inventory tanpa validasi
+                    exec_autoposting(request_no);
+                } else {
+                    // Belum layak posting journal
+                    toastr.info(response.message, "Failed to Auto Posting Journal");
+                }
+            },
+            error: function(xhr) {
+                Swal.close();
+                toastr.error("Failed to connect to Auto Posting server");
+            }
+        });
+    }
+
+    // Helper untuk eksekusi Auto Posting Journal Inventory
+    function exec_autoposting(document_no) {
+        $.ajax({
+            type: "post",
+            url: "<?= base_url('finance/journal_inventory/execute_auto_journal/') ?>",
+            data: { 
+                modul: "SUPPLY SHEETS",
+                document_no: document_no,
+            },
+            dataType: "json",
+            success: function(response) {
+                Swal.close();
+                if (response.status === true) { 
+                    toastr.success(response.message || "Success", "Auto Posting Journal Success");
+                } else {
+                    toastr.info(response.message, "Failed to Auto Posting Journal");
+                }
+            },
+            error: function(xhr) {
+                Swal.close();
+                toastr.error("Failed to connect to Auto Posting server");
+            }
+        });
+    }
+
 </script>
