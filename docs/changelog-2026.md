@@ -589,3 +589,8 @@ Update DN Boxs ([19a901aa](https://github.com/hilmanf11/erp_bpi/commit/19a901aaa
 
 ### [2026-04-14]
 - **kurniawan**: Update Shipping_orders.php ([e8a01603](https://github.com/hilmanf11/erp_bpi/commit/e8a01603b8bab1243610abe3fab28bb0f4c1a603))
+
+### [2026-04-16]
+- **kurniawan**: Update Calendars.php
+
+Change Sunday can be edit ([a91b0388](https://github.com/hilmanf11/erp_bpi/commit/a91b0388d4750d05be52467e126aafa002b3feb3))
