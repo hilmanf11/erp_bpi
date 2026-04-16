@@ -55,6 +55,7 @@
                 <span style="width:35%; display:inline-block;">Type</span>
                 <input style="width:60%;" name="type" id="type" required="" class="easyui-textbox">
             </div>
+
             <div class="fitem">
                 <span style="width:35%; display:inline-block;">Module</span>
                 <select style="width:60%;" name="module" id="module" panelHeight="auto" required="" class="easyui-combobox">
@@ -67,8 +68,12 @@
                     <option value="PURCHASE ORDER RECEIPT">PURCHASE ORDER RECEIPT</option>
                     <option value="BPM">BPM</option>
                     <option value="TRANSACTION RM">TRANSACTION RM</option>
+                    <option value="SUPPLY SHEETS">SUPPLY SHEETS</option>
+                    <option value="NON SUPPLY SHEETS">NON SUPPLY SHEETS</option>
+                    <option value="MATERIAL REQUEST">MATERIAL REQUEST</option>
                 </select>
             </div>
+
             <div class="fitem">
                 <span style="width:35%; display:inline-block;">Default Account</span>
                 <input style="width:60%;" name="account_number" id="account_number" required="" class="easyui-combogrid">

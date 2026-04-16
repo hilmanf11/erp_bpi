@@ -44,6 +44,18 @@ class Autopostingjournal extends CI_Model {
                 return $this->_process_adj_sto($modul, $document_no);
                 break;
             
+            case "SUPPLY SHEETS":
+                // return $this->_process_supply_sheets($modul, $document_no);
+                break;
+            
+            case "NON SUPPLY SHEETS":
+                // return $this->_process_non_supply_sheets($modul, $document_no);
+                break;
+            
+            case "MATERIAL REQUESTION":
+                // return $this->_process_material_requestion($modul, $document_no);
+                break;
+            
             default:
                 log_message('error', "AutoPosting: Module $modul not found.");
                 return [

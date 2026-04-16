@@ -284,6 +284,12 @@ class Journal_inventory extends CI_Controller
                     throw new Exception("Document not ready. Still need $diff qty to be scanned.");
                 }
             }
+            elseif ($modul == "SUPPLY SHEETS") 
+            {
+                // Check Supply Sheets
+                $supply_sheets = $this->db->get_where('supply_sheets', ['request_no' => $document_no])->row();
+                if ($supply_sheets && $supply_sheets->status == 1) $result = true;
+            }
 
             // Response
             if ($result) {
