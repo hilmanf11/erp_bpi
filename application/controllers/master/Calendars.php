@@ -26,6 +26,43 @@ class Calendars extends CI_Controller
         }
     }
 
+    // public function hkw()//dekumentasi : perhitungan hkw sunday tidak bisa di edit
+    // {
+    //     $bulan = $this->input->post('month');
+    //     $tahun = $this->input->post('year');
+
+    //     if ($bulan == "" or $tahun == "") {
+    //         $bulan = date('m');
+    //         $tahun = date('Y');
+    //     }
+
+    //     $hari = "01";
+    //     $jumlahhari = date("t", mktime(0, 0, 0, $bulan, $hari, $tahun));
+    //     $s = date("w", mktime(0, 0, 0, $bulan, 1, $tahun));
+
+    //     $hkw = 0;
+    //     for ($d = 1; $d <= $jumlahhari; $d++) {
+    //         $tanggal = $tahun . "-" . $bulan . "-" . $d;
+    //         $this->db->select('remarks');
+    //         $this->db->from('calendars');
+    //         $this->db->where('deleted', 0);
+    //         $this->db->where('working_date', $tanggal);
+    //         $data = $this->db->get()->result_array();
+
+    //         $hkw += 1;
+
+    //         if (@$data[0]['remarks'] != "") {
+    //             $hkw -= 1;
+    //         }
+
+    //         if (date("l", mktime(0, 0, 0, $bulan, $d, $tahun)) == "Sunday") {
+    //             $hkw -= 1;
+    //         }
+    //     }
+
+    //     echo $hkw;
+    // }
+
     public function hkw()
     {
         $bulan = $this->input->post('month');
@@ -49,14 +86,17 @@ class Calendars extends CI_Controller
             $this->db->where('working_date', $tanggal);
             $data = $this->db->get()->result_array();
 
-            $hkw += 1;
+            $is_sunday = (date("l", mktime(0, 0, 0, $bulan, $d, $tahun)) == "Sunday");
+            $has_remark = (@$data[0]['remarks'] != "");
 
-            if (@$data[0]['remarks'] != "") {
-                $hkw -= 1;
-            }
-
-            if (date("l", mktime(0, 0, 0, $bulan, $d, $tahun)) == "Sunday") {
-                $hkw -= 1;
+            if ($is_sunday) {
+                if ($has_remark) {
+                    $hkw += 1;
+                }
+            } else {
+                if (!$has_remark) {
+                    $hkw += 1;
+                }
             }
         }
 
@@ -140,18 +180,22 @@ class Calendars extends CI_Controller
             $this->db->where('working_date', $tanggal);
             $data = $this->db->get()->result_array();
 
-            //Mengatur tampilan 
+            $is_sunday = (date("l", mktime(0, 0, 0, $bulan, $d, $tahun)) == "Sunday");
+            $has_remark = (@$data[0]['remarks'] != "");
+
+            // Mengatur tampilan default
             $style = "background:white !important;";
             $checkbox = "<input hidden checked class='checked' type='checkbox' value='" . $d . "' name='days[]' style='float: left; width: 20px;'/>";
             $note = "<textarea rows='2' name='remarks[]'>" . @$data[0]['remarks'] . "</textarea>";
 
-            if (@$data[0]['remarks'] != "") {
+            if ($is_sunday) {
                 $style = "background:#FFDADA !important;";
-            }
-
-            if (date("l", mktime(0, 0, 0, $bulan, $d, $tahun)) == "Sunday") {
-                $style = "background:#FFDADA !important;";
-                $note = "<textarea rows='2' hidden name='remarks[]'></textarea>";
+                // untuk rubah background hari libur
+                if ($has_remark) { $style = "background:#D4EDDA !important;"; }
+            } else {
+                if ($has_remark) {
+                    $style = "background:#FFDADA !important;";
+                }
             }
 
             $html .= "  <td align=center style='" . $style . "' valign=middle>
@@ -160,7 +204,6 @@ class Calendars extends CI_Controller
                             $note
                         </td>";
 
-            //Jika Sudah seminggu
             if (date("w", mktime(0, 0, 0, $bulan, $d, $tahun)) == 6) {
                 $html .= "</tr>";
             }

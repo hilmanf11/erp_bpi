@@ -184,7 +184,14 @@
         $('#request_no').focus();
         $('#request_no').keypress(function(e) {
             if (e.which == 13) {
-                var request_no = $(this).val();
+                // Handle spasi awal dan akhir
+                var request_no = $(this).val().trim();
+
+                if (request_no === "") {
+                    toastr.warning("Request No cannot be empty!", "Warning");
+                    return false;
+                }
+                
                 $.ajax({
                     type: "POST",
                     url: "<?= base_url('warehouse/issued_materials/getSupplySheet') ?>",
