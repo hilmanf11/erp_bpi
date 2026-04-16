@@ -152,9 +152,8 @@ class Generate_mps extends CI_Controller
                     AND revision = (
                         SELECT MAX(revision)
                         FROM os_mpp m2
-                        WHERE m2.item_fg_id = os_mpp.item_fg_id
-                            AND m2.p_month = '$filter_month'
-                            AND m2.p_year = '$filter_year'
+                        WHERE m2.p_month = '$filter_month'
+                        AND m2.p_year = '$filter_year'
                     )
                     GROUP BY item_fg_id
                 ) d",
@@ -1205,6 +1204,7 @@ class Generate_mps extends CI_Controller
                 <th style="text-align:center;" rowspan="2" width="20">No</th>
                 <th style="text-align:center;" rowspan="2" width="100">PRODUCT NO</th>
                 <th style="text-align:center;" rowspan="2" width="150">PRODUCT CUSTOMER</th>
+                <th style="text-align:center;" rowspan="2" width="100">CUSTOMER</th>
                 <th style="text-align:center;" rowspan="2" width="100">DESCRIPTION</th>
                 <th style="text-align:center;" rowspan="2" width="100">TYPE</th>
                 <th style="text-align:center;" rowspan="2" width="100">MPQ</th>
@@ -1238,11 +1238,12 @@ class Generate_mps extends CI_Controller
         //                     <th colspan="100" style="text-align:left;"><b>' . $customer_name . '</b></th>
         //                 </tr>';
             //Select Full
-            $this->db->select('a.*, e.number as item_fg_number, e.name as item_fg_name, e.number_customer, e.mpq, e.type');
+            $this->db->select('a.*, e.number as item_fg_number, e.name as item_fg_name, e.number_customer, e.mpq, e.type,
+            GROUP_CONCAT(DISTINCT c.number ORDER BY c.number ASC SEPARATOR ", ") as all_customers');
             $this->db->from('generate_mps a');
             $this->db->join('generate_mps_details b', 'a.p_month = b.p_month and a.p_year = b.p_year and a.revision = b.revision and a.item_fg_id = b.item_fg_id');
-            // $this->db->join('customers c', 'a.customer_id = c.id');
-            // $this->db->join('customer_items d', 'a.customer_id = d.customer_id and a.item_fg_id = d.item_fg_id', 'left');
+            $this->db->join('customer_items d', 'a.item_fg_id = d.item_fg_id', 'left');
+            $this->db->join('customers c', 'd.customer_id = c.id', 'left');
             $this->db->join('item_fg e', 'a.item_fg_id = e.id');
             if ($filter_month != "" or $filter_year != "") {
                 $this->db->where('a.p_month', $filter_month);
@@ -1262,6 +1263,7 @@ class Generate_mps extends CI_Controller
                             <td style="text-align:center;">' . $no . '</td>
                             <td style="mso-number-format:\@;">' . $data['item_fg_number'] . '</td>
                             <td style="mso-number-format:\@;">' . $data['number_customer'] . '</td>
+                            <td>' . $data['all_customers'] . '</td>
                             <td>' . $data['item_fg_name'] . '</td>
                             <td>' . $data['type'] . '</td>
                             <td>' . $data['mpq'] . '</td>
