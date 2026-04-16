@@ -44,12 +44,12 @@ class Autopostingjournal extends CI_Model {
                 return $this->_process_adj_sto($modul, $document_no);
                 break;
             
-            case "SUPPLY SHEETS":
+            case "SUPPLY SHEET":
                 return $this->_process_supply_sheets($modul, $document_no);
                 break;
             
-            case "NON SUPPLY SHEETS":
-                // return $this->_process_non_supply_sheets($modul, $document_no);
+            case "NON SUPPLY SHEET":
+                return $this->_process_non_supply_sheets($modul, $document_no);
                 break;
             
             case "MATERIAL REQUESTION":
@@ -671,6 +671,7 @@ class Autopostingjournal extends CI_Model {
     }
 
 
+    // Supply Sheet
     private function _process_supply_sheets($modul, $document_no) 
     {
         $this->db->trans_begin();
@@ -860,4 +861,184 @@ class Autopostingjournal extends CI_Model {
         }
     }
 
+    private function _process_non_supply_sheets($modul, $document_no) 
+    {   
+        $this->db->trans_begin();
+
+        try {
+            $check_sm = $this->db->get_where('supply_materials', ['request_no' => $document_no])->row();
+            if (!$check_sm) {
+                throw new Exception("Non Supply Sheet not found");
+            }
+
+            
+            /** Validasi Type :
+             * - Issued Production = Kanban PRD
+             * - Issued Customer = Subcont Barang
+             * - Issued Subcont = Subcont Jasa
+             */
+            $supply_type = strtolower($check_sm->type) ?? '';
+
+            if ($supply_type == strtolower("Issued Production")) {
+                $kind = "KANBAN PRD";
+                $acc_debit  = $this->db->get_where('account_coa', ['account_number' => '150.210.00'])->row();
+                $acc_credit = $this->db->get_where('account_coa', ['account_number' => '150.110.00'])->row();
+
+            } elseif ($supply_type == strtolower("Issued Customer")) {
+                $kind = "KANBAN SUBCONT BARANG";
+                $acc_debit  = $this->db->get_where('account_coa', ['account_number' => '510.110.00'])->row();
+                $acc_credit = $this->db->get_where('account_coa', ['account_number' => '150.110.00'])->row();
+
+            } elseif ($supply_type == strtolower("Issued Subcont")) {
+                $kind = "KANBAN SUBCONT JASA";
+                $acc_debit  = $this->db->get_where('account_coa', ['account_number' => '150.210.00'])->row();
+                $acc_credit = $this->db->get_where('account_coa', ['account_number' => '150.110.00'])->row();
+
+            } else {
+                throw new Exception("Type is not defined for this document of NON SUPPLY SHEET");
+            }
+
+            if (!$acc_debit || !$acc_credit) {
+                throw new Exception("Account COA not found");
+            }
+
+            // Journal Type ID
+            $debit_jt_id  = $this->journal_type_kind($modul, $acc_debit->account_number, $kind);
+            $credit_jt_id = $this->journal_type_kind($modul, $acc_credit->account_number, $kind);
+
+            if (!$debit_jt_id || !$credit_jt_id) {
+                throw new Exception("Journal Type Account NOT FOUND for module $modul! Please add Journal Types");
+            }
+
+            // Get Transaction
+            $this->db->select('a.*, b.number as item_number, b.name as item_name, b.uom, COALESCE(SUM(c.qty),0) as qty_actual, l.lotnos');
+            $this->db->select("b.number as item_no");
+            $this->db->select("'' as supplier_id, '' as supplier_name");
+
+            $this->db->from('supply_materials a');
+            $this->db->join('item_rm b', 'a.item_rm_id = b.id');
+            $this->db->join('issued_material_details c', 'a.request_no = c.request_no and a.item_rm_id = c.item_rm_id','left');
+            $this->db->join('(SELECT a.request_no,a.item_rm_id, GROUP_CONCAT(DISTINCT d.lotno ORDER BY d.lotno SEPARATOR ", ") as lotnos
+                FROM supply_materials a
+                LEFT JOIN issued_material_details b ON a.request_no = b.request_no and a.item_rm_id = b.item_rm_id
+                LEFT JOIN purchase_order_labels c ON c.label_no = b.label_no
+                LEFT JOIN purchase_order_receipts d ON d.receipt_id = c.receipt_id
+                GROUP BY a.request_no , a.item_rm_id) l', 'a.request_no =l.request_no and a.item_rm_id = l.item_rm_id', 'left');
+
+            $this->db->where('a.deleted', 0);
+            $this->db->where('a.status', 1);
+            $this->db->where('a.request_no', $document_no);
+            $this->db->group_by('a.id');
+
+            $records = $this->db->get()->result_array();
+
+            if (empty($records)) {
+                throw new Exception("No records found for Request No: $document_no or document not closed (Scan/Print)");
+            }
+
+            $voucher_no      = $this->_generate_voucher_no($records[0]['request_date']);
+            $currency        = "IDR"; // default
+            $total_orig_all  = 0;
+            $total_local_all = 0;
+
+            foreach ($records as $row) 
+            {
+                $rate  = $this->get_rate($row['request_date'], $currency);
+                $price = $this->get_price_rm($row['request_date'], $row['item_rm_id']);
+
+                $amount_original = (float)$row['qty'] * $price;
+                $amount_local = round($amount_original * $rate, 2);
+
+                $supplier_name = !empty($row['supplier_name']) ? $row['supplier_name'] . " | " : "";
+                $description   = $supplier_name . $document_no . " | " . $row['workorder'] . " | " . $row['item_no'] . " | " . $row['item_name'];
+
+                $data_debit = [
+                    'id'              => $this->_generate_journal_id(),
+                    'number'          => $voucher_no,
+                    'journal_date'    => $row['request_date'] ?? '',
+                    "journal_type_id" => $debit_jt_id,
+                    'trans_date'      => date('Y-m-d'),
+                    'document_no'     => $row['request_no'] ?? '',
+                    'invoice_no'      => $row['workorder'] ?? '',
+                    'account_number'  => $acc_debit->account_number,
+                    'account_name'    => $acc_debit->account_name,
+                    'original_debit'  => $amount_original,
+                    'original_credit' => 0,
+                    'local_debit'     => $amount_local,
+                    'local_credit'    => 0,
+                    'rates'           => $rate,
+                    'description'     => $description,
+                    'currency'        => $currency,
+                    'company_name'    => $row['supplier_name'] ?? '',
+                    'company_id'      => $row['supplier_id'] ?? '',
+                    'modul'           => $modul,
+                    'remarks'         => "Auto Posting Journal",
+                    'created_date'    => date('Y-m-d H:i:s'),
+                    'created_by'      => $this->session->username ? $this->session->username : 'SYSTEM',
+                ];
+
+                if (!$this->db->insert('journal_inventory', $data_debit)) {
+                    $db_error = $this->db->error();
+                    throw new Exception("Database Error (Debit): " . $db_error['message']);
+                }
+
+                $total_orig_all += $amount_original;
+                $total_local_all += $amount_local;
+            }
+
+            // validasi total
+            if ($total_local_all <= 0 || $total_orig_all <= 0) {
+                throw new Exception("Transaction amount is zero! Posting Journal canceled.");
+            }
+
+            $supplier_name = !empty($records[0]['supplier_name']) ? $records[0]['supplier_name'] . " | " : "";
+            $description   = $supplier_name . $document_no . " | " . $records[0]['workorder'] . " | " . $records[0]['item_no'] . " | " . $records[0]['item_name'];
+
+            // INSERT CREDIT
+            $data_credit = [
+                'id'              => $this->_generate_journal_id(),
+                'number'          => $voucher_no,
+                'journal_date'    => $records[0]['request_date'] ?? '',
+                "journal_type_id" => $credit_jt_id,
+                'trans_date'      => date('Y-m-d'),
+                'document_no'     => $records[0]['request_no'] ?? '',
+                'invoice_no'      => $records[0]['workorder'] ?? '',
+                'account_number'  => $acc_credit->account_number,
+                'account_name'    => $acc_credit->account_name,
+                'original_debit'  => 0,
+                'original_credit' => $total_orig_all,
+                'local_debit'     => 0,
+                'local_credit'    => $total_local_all,
+                'rates'           => $this->get_rate($records[0]['request_date'], $currency),
+                'description'     => $description,
+                'currency'        => $currency,
+                'company_name'    => $records[0]['supplier_name'] ?? '',
+                'company_id'      => $records[0]['supplier_id'] ?? '',
+                'modul'           => $modul,
+                'remarks'         => "Auto Posting Journal",
+                'created_date'    => date('Y-m-d H:i:s'),
+                'created_by'      => $this->session->username ? $this->session->username : 'SYSTEM',
+            ];
+
+            if (!$this->db->insert('journal_inventory', $data_credit)) {
+                $db_error = $this->db->error();
+                throw new Exception("Database Error (Credit): " . $db_error['message']);
+            }
+
+            // Jika semua oke, commit
+            if ($this->db->trans_status() === FALSE) {
+                throw new Exception("Transaction Failed");
+            } else {
+                $this->db->trans_commit();
+                return ['status' => true, 'message' => 'Success'];
+            }
+
+        } catch (Exception $e) {
+            // Rollback jika terjadi error
+            $this->db->trans_rollback();
+            $msg = "Error: " . $e->getMessage();
+            log_message('error', $msg);
+            return ['status' => false, 'message' => $msg];
+        }
+    }
 }

@@ -68,8 +68,8 @@
                     <option value="PURCHASE ORDER RECEIPT">PURCHASE ORDER RECEIPT</option>
                     <option value="BPM">BPM</option>
                     <option value="TRANSACTION RM">TRANSACTION RM</option>
-                    <option value="SUPPLY SHEETS">SUPPLY SHEETS</option>
-                    <option value="NON SUPPLY SHEETS">NON SUPPLY SHEETS</option>
+                    <option value="SUPPLY SHEET">SUPPLY SHEET</option>
+                    <option value="NON SUPPLY SHEET">NON SUPPLY SHEET</option>
                     <option value="MATERIAL REQUEST">MATERIAL REQUEST</option>
                 </select>
             </div>

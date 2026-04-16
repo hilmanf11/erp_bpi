@@ -239,6 +239,13 @@ class Journal_inventory extends CI_Controller
 
             $result = false;
 
+            // validate exist = true
+            $is_duplicated = $this->autopostingjournal->check_duplicate_entry($post['modul'], $post['document_no']);
+            
+            if ($is_duplicated) {
+                throw new Exception("Document Number " . $post['document_no'] . " has already been journaled for module " . $post['modul']);
+            }
+
             if ($modul == "PURCHASE ORDER RECEIPT") 
             {
                 // Check POR
@@ -284,10 +291,22 @@ class Journal_inventory extends CI_Controller
                     throw new Exception("Document not ready. Still need $diff qty to be scanned.");
                 }
             }
-            elseif ($modul == "SUPPLY SHEETS") 
+            elseif ($modul == "SUPPLY SHEET") 
             {
-                // Check Supply Sheets
+                // Check Status = Issued
                 $supply_sheets = $this->db->get_where('supply_sheets', ['request_no' => $document_no])->row();
+                if ($supply_sheets && $supply_sheets->status == 1) $result = true;
+            }
+            elseif ($modul == "NON SUPPLY SHEET") 
+            {
+                // Check Status = Issued
+                $supply_sheets = $this->db->get_where('supply_materials', ['request_no' => $document_no])->row();
+                if ($supply_sheets && $supply_sheets->status == 1) $result = true;
+            }
+            elseif ($modul == "MATERIAL REQUESTION") 
+            {
+                // Check Status = Issued
+                $supply_sheets = $this->db->get_where('supply_requestions', ['request_no' => $document_no])->row();
                 if ($supply_sheets && $supply_sheets->status == 1) $result = true;
             }
 

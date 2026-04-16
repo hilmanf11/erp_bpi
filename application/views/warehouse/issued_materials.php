@@ -231,7 +231,12 @@
                             $('#dg').datagrid({
                                 url: '<?= base_url('warehouse/issued_materials/datatables?request_no=') ?>' + window.btoa(request_no),
                                 rownumbers: true
+                                , onLoadSuccess: function(data) {
+                                    // Jika ada data di table grid, maka validasi auto journal inventory
+                                    scanResultValidate(data);
+                                }
                             });
+
                         } else {
                             toastr.warning("Supply Sheet not found!");
                             $("#request_no").val('');
@@ -301,17 +306,14 @@
                                 });
                             }
 
-
-                            // Validasi Auto Posting Journal Inventory
-                            const first_row = json.rows[0];
-                            const now_date = new Date().toISOString().split('T')[0];
-                            validate_eligibility(request_no, first_row.item_rm_id, now_date);
-
-
                             if(request_no != ""){
                                 $('#dg').datagrid({
                                     url: '<?= base_url('warehouse/issued_materials/datatables?request_no=') ?>' + window.btoa(request_no),
                                     rownumbers: true
+                                    , onLoadSuccess: function(data) {
+                                        // Jika ada data di table grid, maka validasi auto journal inventory
+                                        scanResultValidate(data);
+                                    }
                                 });
                             }
                             
@@ -475,13 +477,35 @@
 
     /** --- Auto Posting Journal Inventory --- */
 
+    // Validasi Hasil Scan
+    function scanResultValidate(data) {
+        var request_no_value = $('#request_no').val(); 
+
+        if (data.total > 0) {
+            const first_row = data.rows[0];
+            const now_date = new Date().toISOString().split('T')[0];
+            validate_eligibility(request_no_value, first_row.item_rm_id, now_date);
+        }
+    }
+
     // Validasi Auto Posting Journal
     function validate_eligibility(request_no, item_rm_id, journal_date) {
+
+        var request_no_value = $('#request_no').val(); 
+
+        // Check code untuk get module name menggunakan NILAI string-nya
+        var module_name = validate_issued_module(request_no_value);
+        if (!module_name) {
+            console.log("Unknown module prefix for: ", request_no_value);
+            toastr.info("Prefix tidak dikenal atau input kosong", "Gagal Auto Posting");
+            return;
+        }
+
         $.ajax({
             type: "POST",
             url: "<?= base_url('finance/journal_inventory/validate_posting_eligibility') ?>",
             data: {
-                modul: "SUPPLY SHEETS",
+                modul: module_name,
                 document_no: request_no,
                 item_rm_id: item_rm_id,
                 journal_date: journal_date
@@ -506,11 +530,22 @@
 
     // Helper untuk eksekusi Auto Posting Journal Inventory
     function exec_autoposting(document_no) {
+
+        var request_no_value = $('#request_no').val(); 
+
+        // Check code untuk get module name menggunakan NILAI string-nya
+        var module_name = validate_issued_module(request_no_value);
+        if (!module_name) {
+            console.log("Unknown module prefix for: ", request_no_value);
+            toastr.info("Prefix tidak dikenal atau input kosong", "Gagal Auto Posting");
+            return;
+        }
+
         $.ajax({
             type: "post",
             url: "<?= base_url('finance/journal_inventory/execute_auto_journal/') ?>",
             data: { 
-                modul: "SUPPLY SHEETS",
+                modul: module_name,
                 document_no: document_no,
             },
             dataType: "json",
@@ -527,6 +562,23 @@
                 toastr.error("Failed to connect to Auto Posting server");
             }
         });
+    }
+
+    // Check code document_no untuk get module name
+    function validate_issued_module(request_no) {
+        if (!request_no) return null;
+        
+        let doc_str = String(request_no);
+
+        const modules = [
+            { code: "SH", module: "SUPPLY SHEET" },
+            { code: "REQ", module: "NON SUPPLY SHEET" },
+            { code: "PRQ", module: "MATERIAL REQUESTION" }
+        ];
+
+        const match = modules.find(m => doc_str.toUpperCase().startsWith(m.code));
+        
+        return match ? match.module : null;
     }
 
 </script>
