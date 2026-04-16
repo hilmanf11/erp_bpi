@@ -49,6 +49,26 @@ class Inventory_report extends CI_Controller
         $start = strtotime($filter_from);
         $finish = strtotime($filter_to);
 
+        $div_id = null;
+        $div_number = null;
+
+        // if (!empty($filter_division_raw)) {
+        //     $this->db->group_start()
+        //             ->where('id', $filter_division_raw)
+        //             ->or_where('number', $filter_division_raw)
+        //             ->group_end();
+        //     $div_data = $this->db->get('divisions')->row();
+
+        //     if ($div_data) {
+        //         $div_id = $div_data->id;         // FG
+        //         $div_number = $div_data->number; // RM
+        //     } else {
+        //         // Jika tidak ketemu di tabel (fallback/jaga-jaga)
+        //         $div_id = $filter_division_raw;
+        //         $div_number = $filter_division_raw;
+        //     }
+        // }
+
         if($filter_report_category == ""){
             //Config
             $this->db->select('*');
@@ -243,7 +263,7 @@ class Inventory_report extends CI_Controller
                             LEFT JOIN (SELECT item_rm_id, SUM(qty) AS qty_scan_bpm FROM scan_item_bpm WHERE DATE_FORMAT(request_date, '%Y-%m-%d') < '$filter_from' GROUP BY item_rm_id) h ON a.id = h.item_rm_id
                         ) j ON a.id = j.id
             WHERE c.id LIKE '%$filter_item_category%'
-            AND b.number LIKE '%$filter_item_family%'
+            AND b.number IN ('VG', 'MB','CP','SM')
             AND a.division LIKE '%$filter_division%'
             AND a.item_category_id NOT IN ('C06','C11')
             GROUP BY a.id
@@ -412,6 +432,9 @@ class Inventory_report extends CI_Controller
             $config = $this->db->get('config')->row();
             $username = $this->session->userdata('username') ? $this->session->userdata('username') : 'System';
 
+            $divisions = $this->crud->read('divisions', [], ["id" => $filter_division]);
+            $division_number = $divisions->number;
+
             // 2. MASTER ITEM & HARGA
             $price_query = "
                 SELECT a.id, a.number, a.name, a.uom, COALESCE(k.price, 0) as price
@@ -423,7 +446,7 @@ class Inventory_report extends CI_Controller
                 LEFT JOIN item_categories p ON a.item_category_id = p.id 
                 LEFT JOIN item_familys o ON a.item_family_id = o.id
                 WHERE p.id LIKE '%$filter_item_category%' 
-                AND a.division LIKE '%$filter_division%' 
+                AND a.division LIKE '%$division_number%' 
                 AND (o.number LIKE '%$filter_item_family%' OR o.number IS NULL)
                 ORDER BY a.number ASC";
             $records = $this->db->query($price_query)->result();
@@ -953,7 +976,7 @@ class Inventory_report extends CI_Controller
                     ) j ON a.id = j.id
 
         WHERE c.id LIKE '%$filter_item_category%'
-        AND b.number LIKE '%$filter_item_family%'
+        AND b.number IN ('VG', 'MB','CP','SM')
         AND a.division LIKE '%$division_number%'
         AND a.item_category_id NOT IN ('C06','C11')
         GROUP BY a.id
@@ -1211,8 +1234,25 @@ class Inventory_report extends CI_Controller
         ];
     }
 
-    private function getSummaryWIPx($filter_from, $filter_to, $filter_division)
+    private function getSummaryWIP($filter_from, $filter_to, $filter_division)
     {
+        $exclude_ids = [
+            'BPIFG-INJ08240009',
+            'BPIFG-INJ01250007',
+            'BPIFG-INJ08240029',
+            'BPIFG-INJ08240027',
+            'BPIFG-INJ08240024',
+            'BPIFG-INJ08240030',
+            'BPIFG-INJ08240026',
+            'BPIFG-INJ01250013',
+            'BPIFG-INJ08240031',
+            'BPIFG-INJ08240025',
+            'BPIFG-INJ08240028',
+            'BPIFG-INJ01250012'
+        ];
+
+        $exclude_str = "'" . implode("','", $exclude_ids) . "'";
+
         $query_main = "
                         select a.id,
                         a.number,
@@ -1225,16 +1265,18 @@ class Inventory_report extends CI_Controller
                         COALESCE(i.begin_balance,0) as begin_balance,
                         COALESCE(c.qty_actual,0) as qty_actual,
                         COALESCE(c2.qty_wip,0) as qty_wip,
+                        COALESCE(outmap.qty_output, 0) AS qty_output,
+                        COALESCE(k3.qty_ng_wip, 0) as qty_ng_wip,
                         COALESCE(j2.qty_adj_in,0) as qty_adj_in,
                         COALESCE(d.qty_ng,0) as qty_ng,
-                        COALESCE((COALESCE(c.qty_actual,0)+COALESCE(d.qty_ng,0)),0) as total_production,
+                        COALESCE((COALESCE(c.qty_actual,0)+COALESCE(d.qty_ng,0)+COALESCE(c2.qty_wip,0)),0) as total_production,
                         COALESCE(f.qty_subcont_jasa,0) as subconts_jasa,
                         COALESCE(g.qty_in_checksheet,0) + COALESCE(gb.initial_in,0) + COALESCE(gc.qty_in_wip_receipt,0) as rfg,
                         COALESCE(h.qty_rfg_jasa,0) as rfg_jasa,
                         COALESCE(c.qty_actual,0) + COALESCE(f.qty_subcont_jasa,0) + COALESCE(c2.qty_wip,0) + COALESCE(j2.qty_adj_in,0) as qty_in,
-                        COALESCE(ng_map.qty_ng,0) + COALESCE(g.qty_in_checksheet,0) + COALESCE(gb.initial_in,0) + COALESCE(gc.qty_in_wip_receipt,0) + COALESCE(h.qty_rfg_jasa,0) + COALESCE(k2.qty_adj_out,0) as qty_out,
+                        COALESCE(ng_map.qty_ng,0) + COALESCE(g.qty_in_checksheet,0) + COALESCE(gb.initial_in,0) + COALESCE(gc.qty_in_wip_receipt,0) + COALESCE(h.qty_rfg_jasa,0) + COALESCE(k2.qty_adj_out,0) + COALESCE(k3.qty_ng_wip, 0) + COALESCE(outmap.qty_output, 0) as qty_out,
                         COALESCE((COALESCE(i.begin_balance,0)) + COALESCE(c.qty_actual,0) + COALESCE(f.qty_subcont_jasa,0) + COALESCE(j2.qty_adj_in,0) + COALESCE(c2.qty_wip,0) - 
-                               COALESCE(ng_map.qty_ng,0) - COALESCE(g.qty_in_checksheet,0) + COALESCE(gb.initial_in,0) + COALESCE(gc.qty_in_wip_receipt,0) + COALESCE(h.qty_rfg_jasa,0) + COALESCE(k2.qty_adj_out,0), 0) as ending_balance
+                               COALESCE(ng_map.qty_ng,0) - COALESCE(g.qty_in_checksheet,0) - COALESCE(gb.initial_in,0) - COALESCE(gc.qty_in_wip_receipt,0) - COALESCE(h.qty_rfg_jasa,0) - COALESCE(k2.qty_adj_out,0) - COALESCE(k3.qty_ng_wip,0) - COALESCE(outmap.qty_output, 0), 0) as ending_balance
                         FROM item_fg a
                         LEFT JOIN (
                                     select aa.item_fg_id,sum(aa.qty_wo) as qty_wo FROM (
@@ -1248,8 +1290,29 @@ class Inventory_report extends CI_Controller
                                     select item_fg_id, sum(qty_wip) as qty_wip FROM output_productions where trans_date between '$filter_from' AND '$filter_to'   group by item_fg_id
                         ) c2 on a.id = c2.item_fg_id
                         LEFT JOIN (
+                            SELECT 
+                                sub.item_fg_sa_id AS item_fg_id,
+                                SUM(
+                                    COALESCE(p.qty_actual, 0) + 
+                                    COALESCE(p.qty_wip, 0)
+                                ) AS qty_output
+                            FROM item_fg_subs sub
+                            
+                            LEFT JOIN (
+                                SELECT 
+                                    item_fg_id,
+                                    SUM(qty) AS qty_actual,
+                                    SUM(qty_wip) AS qty_wip
+                                FROM output_productions
+                                WHERE trans_date BETWEEN '$filter_from' AND '$filter_to'
+                                GROUP BY item_fg_id
+                            ) p ON sub.item_fg_id = p.item_fg_id   -- PARENT
+                            
+                            GROUP BY sub.item_fg_sa_id
+                        ) outmap ON a.id = outmap.item_fg_id
+                        LEFT JOIN (
                                     select aa.item_fg_id,sum(aa.qty_product) as qty_ng FROM (
-                                            select distinct item_fg_id, qty_product FROM  item_ng where trans_date between '$filter_from' AND '$filter_to' 
+                                            select distinct item_fg_id, qty_product FROM  item_ng where trans_date between '$filter_from' AND '$filter_to' AND kind LIKE 'Ng Process Production'
                                     ) aa group by aa.item_fg_id
                         ) d on a.id = d.item_fg_id
                         LEFT JOIN (
@@ -1265,7 +1328,7 @@ class Inventory_report extends CI_Controller
                                     FROM item_ng 
                                     WHERE trans_date BETWEEN '$filter_from' AND '$filter_to'
                                     
-                                    AND created_by != 'PRD01'
+                                    AND kind LIKE 'Ng Process Production'
                                 ) aa 
                                 GROUP BY aa.item_fg_id
                             ) d
@@ -1353,8 +1416,14 @@ class Inventory_report extends CI_Controller
                                     GROUP BY a.item_fg_id
                         ) k2 on a.id = k2.item_fg_id
                         LEFT JOIN (
+                                    select a.item_fg_id,sum(a.qty) as qty_ng_wip 
+                                    FROM wip_adjustment_fg a
+                                    where a.request_date between '$filter_from' AND '$filter_to' and a.transaction_type='NG WIP'
+                                    GROUP BY a.item_fg_id
+                        ) k3 on a.id = k3.item_fg_id
+                        LEFT JOIN (
                                     SELECT a.id,
-                                        COALESCE(e.qty_balance_wip, 0) + COALESCE(c.qty_actual, 0)  + COALESCE(c2.qty_wip, 0) + COALESCE(f.qty_subcont_jasa, 0) + COALESCE(j.qty_adj_in, 0) - COALESCE(ng_map.qty_ng,0) - COALESCE(g.qty_in_checksheet, 0) - COALESCE(gb.initial_in, 0) - COALESCE(gc.qty_in_wip_receipt, 0) - COALESCE(h.qty_rfg_jasa, 0) - COALESCE(k.qty_adj_out, 0) AS begin_balance
+                                        COALESCE(e.qty_balance_wip, 0) + COALESCE(c.qty_actual, 0)  + COALESCE(c2.qty_wip, 0) + COALESCE(f.qty_subcont_jasa, 0) + COALESCE(j.qty_adj_in, 0) - COALESCE(ng_map.qty_ng,0) - COALESCE(g.qty_in_checksheet, 0) - COALESCE(gb.initial_in, 0) - COALESCE(gc.qty_in_wip_receipt, 0) - COALESCE(h.qty_rfg_jasa, 0) - COALESCE(k.qty_adj_out, 0) - COALESCE(k3.qty_ng_wip, 0) - COALESCE(outmap.qty_output, 0) AS begin_balance
                                     FROM item_fg a
                                     -- qty_balance_wip pada 2025-04-30 (cutoff)
                                     LEFT JOIN (
@@ -1380,6 +1449,29 @@ class Inventory_report extends CI_Controller
                                         
                                         GROUP BY item_fg_id
                                     ) c2 ON a.id = c2.item_fg_id
+
+                                    LEFT JOIN (
+                                        SELECT 
+                                            sub.item_fg_sa_id AS item_fg_id,
+                                            SUM(
+                                                COALESCE(p.qty_actual, 0) +
+                                                COALESCE(p.qty_wip, 0)
+                                            ) AS qty_output
+                                        FROM item_fg_subs sub
+                                        
+                                        LEFT JOIN (
+                                            SELECT 
+                                                item_fg_id,
+                                                SUM(qty) AS qty_actual,
+                                                SUM(qty_wip) AS qty_wip
+                                            FROM output_productions
+                                            WHERE trans_date >= '2025-05-01'
+                                            AND trans_date < '$filter_from'
+                                            GROUP BY item_fg_id
+                                        ) p ON sub.item_fg_id = p.item_fg_id   -- PARENT
+                                        
+                                        GROUP BY sub.item_fg_sa_id
+                                    ) outmap ON a.id = outmap.item_fg_id
 
                                     LEFT JOIN (
                                         SELECT aa.item_fg_id, SUM(aa.qty_wo) AS qty_subcont_jasa
@@ -1436,7 +1528,7 @@ class Inventory_report extends CI_Controller
                                                 SELECT DISTINCT document, item_fg_id, qty_product 
                                                 FROM item_ng 
                                                 WHERE trans_date >= '2025-05-01' AND trans_date < '$filter_from'
-                                                AND created_by != 'PRD01'
+                                                AND kind LIKE 'Ng Process Production'
                                             ) aa 
                                             GROUP BY aa.item_fg_id
                                         ) d
@@ -1499,10 +1591,22 @@ class Inventory_report extends CI_Controller
                                         AND transaction_type = 'ADJ OUT'
                                         GROUP BY item_fg_id
                                     ) k ON a.id = k.item_fg_id
+
+                                    LEFT JOIN (
+                                        SELECT item_fg_id, SUM(qty) AS qty_ng_wip
+                                        FROM wip_adjustment_fg
+                                        WHERE request_date >= '2025-05-01'
+                                        AND request_date < '$filter_from'
+                                        AND transaction_type = 'NG WIP'
+                                        GROUP BY item_fg_id
+                                    ) k3 ON a.id = k3.item_fg_id
                         ) i ON a.id = i.id
                         LEFT JOIN divisions j on a.division_id = j.id
                         LEFT JOIN (SELECT item_fg_id, currency, price from standard_price_fg where '$filter_from' >= `start_date` and '$filter_to' <= `end_date`) k on a.id = k.item_fg_id
-                        WHERE a.type != 'RM' AND a.division_id LIKE '%$filter_division%' AND a.status = 0 AND a.id != 'BPIFG-INJ08240009'
+                        WHERE a.type != 'RM' 
+                        AND a.status = 0 
+                        AND a.division_id != 'DIV02'
+                        AND a.id NOT IN ($exclude_str)
                         ORDER BY a.number
         ";
 
@@ -1558,6 +1662,168 @@ class Inventory_report extends CI_Controller
             'totalAmountEndingStock' => $totalAmountEndingStock ?? 0
         ];
     }
+
+    //UJI COBA 3
+    // private function getQtyMap($query, $keyField, $valueField) {
+    //     $result = $this->db->query($query)->result_array();
+    //     $map = [];
+    //     foreach ($result as $row) {
+    //         $map[$row[$keyField]] = (float)$row[$valueField];
+    //     }
+    //     return $map;
+    // }
+
+    // private function getSummaryWIP($filter_from, $filter_to, $filter_division, $filter_item_category = "", $filter_item_family = "", $currency = "IDR")
+    // {
+    //     $from_q = $this->db->escape($filter_from);
+    //     $to_plus_1 = $this->db->escape($filter_to . ' 23:59:59');
+
+    //     $divisions = $this->crud->read('divisions', [], ["id" => $filter_division]);
+    //     $division_number = $divisions->number;
+
+    //     // 1. Ambil Data Master Item
+    //     $price_query = "
+    //         SELECT a.id, a.number, a.name, k.price
+    //         FROM item_rm a
+    //         LEFT JOIN (
+    //             SELECT item_fg_id, price FROM standard_price_fg 
+    //             WHERE start_date <= $from_q AND end_date >= $from_q
+    //         ) k ON a.id = k.item_fg_id
+    //         LEFT JOIN item_categories p ON a.item_category_id = p.id 
+    //         LEFT JOIN item_familys o ON a.item_family_id = o.id
+    //         WHERE p.id LIKE '%$filter_item_category%' 
+    //         AND a.division LIKE '%$division_number%' 
+    //         AND (o.number LIKE '%$filter_item_family%' OR o.number IS NULL)
+    //         ORDER BY a.number ASC";
+
+    //     $main_data = $this->db->query($price_query)->result_array();
+
+    //     // 2. Mapping Number -> ID untuk pencarian Child (CR-/PL-)
+    //     $all_items_raw = $this->db->query("SELECT id, number FROM item_rm")->result_array();
+    //     $numberToId = [];
+    //     foreach ($all_items_raw as $i) { 
+    //         $numberToId[$i['number']] = $i['id']; 
+    //     }
+
+    //     // --- 3. SALDO AWAL (History < $from_q) ---
+        
+    //     // QSS Awal (Khusus logika Parent-Child di Saldo Awal)
+    //     $qss_raw = $this->getQtyMap("SELECT item_rm_id, SUM(qty) as qty FROM issued_material_details WHERE created_date < $from_q AND (request_no LIKE '%SH-%' OR request_no LIKE '%PRQ-%') GROUP BY item_rm_id", 'item_rm_id', 'qty');
+        
+    //     $qsns     = $this->getQtyMap("SELECT a.item_rm_id, SUM(a.qty) as qty FROM issued_material_details a JOIN supply_materials b ON a.request_no = b.request_no AND a.item_rm_id = b.item_rm_id WHERE a.created_date < $from_q AND a.request_no LIKE '%REQ-%' AND b.type = 'Issued Production' GROUP BY a.item_rm_id", 'item_rm_id', 'qty');
+    //     $qtrb     = $this->getQtyMap("SELECT item_rm_id, SUM(qty) as qty FROM transaction_rm WHERE transaction_type='BPB' AND request_date < $from_q GROUP BY item_rm_id", 'item_rm_id', 'qty');
+    //     $qtrk     = $this->getQtyMap("SELECT item_rm_id, SUM(qty) as qty FROM transaction_rm WHERE transaction_type='KANBAN WO' AND request_date < $from_q GROUP BY item_rm_id", 'item_rm_id', 'qty');
+    //     $qiw      = $this->getQtyMap("SELECT item_rm_id, SUM(qty) as qty FROM issued_material_details WHERE created_date < $from_q AND type LIKE '%WIP%' GROUP BY item_rm_id", 'item_rm_id', 'qty');
+    //     $qm       = $this->getQtyMap("SELECT item_rm_id, SUM(qty) as qty FROM issued_material_details WHERE created_date < $from_q AND request_no LIKE '%PRQ-%' GROUP BY item_rm_id", 'item_rm_id', 'qty');
+    //     $qai      = $this->getQtyMap("SELECT item_rm_id, SUM(qty) as qty FROM transaction_wip WHERE transaction_type='ADJ IN' AND request_date < $from_q GROUP BY item_rm_id", 'item_rm_id', 'qty');
+        
+    //     $qbw      = $this->getQtyMap("SELECT item_rm_id, SUM(qty) as qty FROM bpm WHERE status='1' AND request_date < $from_q GROUP BY item_rm_id", 'item_rm_id', 'qty');
+    //     $qtrbpm   = $this->getQtyMap("SELECT item_rm_id, SUM(qty) as qty FROM transaction_rm WHERE transaction_type='BPM' AND request_date < $from_q GROUP BY item_rm_id", 'item_rm_id', 'qty');
+        
+    //     // RFG Awal (Saldo Awal OUT dari Produksi)
+    //     $rfg_awal_sql = "
+    //         SELECT bom.item_rm_id, SUM(t.total_qty * bom.composition) as qty FROM (
+    //             SELECT b.item_fg_id, SUM(a.qty) total_qty FROM scan_item_receipts_fg a JOIN checksheets b ON b.number = a.checksheet_number WHERE b.packing_date < $from_q GROUP BY b.item_fg_id
+    //             UNION ALL SELECT a.item_fg_id, SUM(a.qty) FROM scan_item_receipts_fg a WHERE a.type = 'NBFG' AND a.packing_date < $from_q GROUP BY a.item_fg_id
+    //             UNION ALL SELECT item_fg_id, SUM(qty) FROM transaction_fg WHERE transaction_kind = 'IN' AND transaction_type = 'RECEIPT FG' AND request_date < $from_q GROUP BY item_fg_id
+    //             UNION ALL SELECT item_fg_id, SUM(qty) FROM wip_receipts WHERE division = 'MTS' AND trans_date < $from_q GROUP BY item_fg_id
+    //         ) t JOIN bom ON bom.item_fg_id = t.item_fg_id GROUP BY bom.item_rm_id";
+    //     $qr_all_awal = $this->getQtyMap($rfg_awal_sql, 'item_rm_id', 'qty');
+
+    //     $qin      = $this->getQtyMap("SELECT b.item_rm_id, SUM(b.composition * d.qty_ng) as qty FROM bom b JOIN (SELECT aa.item_fg_id, SUM(aa.qty_product) AS qty_ng FROM (SELECT DISTINCT document, item_fg_id, qty_product FROM item_ng WHERE trans_date < $from_q) aa GROUP BY aa.item_fg_id) d ON b.item_fg_id = d.item_fg_id GROUP BY b.item_rm_id", 'item_rm_id', 'qty');
+    //     $qtwo     = $this->getQtyMap("SELECT item_rm_id, SUM(qty) as qty FROM transaction_wip WHERE transaction_type='ADJ OUT' AND request_date < $from_q GROUP BY item_rm_id", 'item_rm_id', 'qty');
+
+    //     // --- 4. PERIODE BERJALAN ($from s/d $to) ---
+        
+    //     $curr_in_sh   = $this->getQtyMap("SELECT item_rm_id, SUM(qty) as qty FROM issued_material_details WHERE created_date >= $from_q AND created_date <= $to_plus_1 AND request_no LIKE '%SH-%' GROUP BY item_rm_id", 'item_rm_id', 'qty');
+    //     $curr_in_prq  = $this->getQtyMap("SELECT item_rm_id, SUM(qty) as qty FROM issued_material_details WHERE created_date >= $from_q AND created_date <= $to_plus_1 AND request_no LIKE '%PRQ-%' GROUP BY item_rm_id", 'item_rm_id', 'qty');
+    //     $curr_in_ns   = $this->getQtyMap("SELECT a.item_rm_id, SUM(a.qty) as qty FROM issued_material_details a JOIN supply_materials b ON a.request_no = b.request_no AND a.item_rm_id = b.item_rm_id WHERE a.created_date >= $from_q AND a.created_date <= $to_plus_1 AND a.request_no LIKE '%REQ-%' AND b.type = 'Issued Production' GROUP BY a.item_rm_id", 'item_rm_id', 'qty');
+    //     $curr_in_bpb  = $this->getQtyMap("SELECT item_rm_id, SUM(qty) as qty FROM transaction_rm WHERE transaction_type='BPB' AND request_date >= $from_q AND request_date <= $to_plus_1 GROUP BY item_rm_id", 'item_rm_id', 'qty');
+    //     $curr_in_kb   = $this->getQtyMap("SELECT item_rm_id, SUM(qty) as qty FROM transaction_rm WHERE transaction_type='KANBAN WO' AND request_date >= $from_q AND request_date <= $to_plus_1 GROUP BY item_rm_id", 'item_rm_id', 'qty');
+    //     $curr_in_wip  = $this->getQtyMap("SELECT item_rm_id, SUM(qty) as qty FROM issued_material_details WHERE created_date >= $from_q AND created_date <= $to_plus_1 AND type LIKE '%WIP%' GROUP BY item_rm_id", 'item_rm_id', 'qty');
+    //     $curr_in_adj  = $this->getQtyMap("SELECT item_rm_id, SUM(qty) as qty FROM transaction_wip WHERE transaction_type='ADJ IN' AND request_date >= $from_q AND request_date <= $to_plus_1 GROUP BY item_rm_id", 'item_rm_id', 'qty');
+
+    //     $curr_out_whs = $this->getQtyMap("SELECT item_rm_id, SUM(qty) as qty FROM bpm WHERE status='1' AND request_date >= $from_q AND request_date <= $to_plus_1 GROUP BY item_rm_id", 'item_rm_id', 'qty');
+    //     $curr_out_bpm = $this->getQtyMap("SELECT item_rm_id, SUM(qty) as qty FROM transaction_rm WHERE transaction_type='BPM' AND request_date >= $from_q AND request_date <= $to_plus_1 GROUP BY item_rm_id", 'item_rm_id', 'qty');
+        
+    //     // RFG Periode Berjalan
+    //     $rfg_curr_sql = "
+    //         SELECT bom.item_rm_id, SUM(t.total_qty * bom.composition) as qty FROM (
+    //             SELECT b.item_fg_id, SUM(a.qty) total_qty FROM scan_item_receipts_fg a JOIN checksheets b ON b.number = a.checksheet_number WHERE b.packing_date >= $from_q AND b.packing_date <= $to_plus_1 GROUP BY b.item_fg_id
+    //             UNION ALL SELECT a.item_fg_id, SUM(a.qty) FROM scan_item_receipts_fg a WHERE a.type = 'NBFG' AND a.packing_date >= $from_q AND a.packing_date <= $to_plus_1 GROUP BY a.item_fg_id
+    //             UNION ALL SELECT item_fg_id, SUM(qty) FROM transaction_fg WHERE transaction_kind = 'IN' AND transaction_type = 'RECEIPT FG' AND request_date >= $from_q AND request_date <= $to_plus_1 GROUP BY item_fg_id
+    //             UNION ALL SELECT item_fg_id, SUM(qty) FROM wip_receipts WHERE division = 'MTS' AND trans_date >= $from_q AND trans_date <= $to_plus_1 GROUP BY item_fg_id
+    //         ) t JOIN bom ON bom.item_fg_id = t.item_fg_id GROUP BY bom.item_rm_id";
+    //     $curr_out_rfg = $this->getQtyMap($rfg_curr_sql, 'item_rm_id', 'qty');
+
+    //     // NG Periode Berjalan (Pemisahan sesuai SQL Asli)
+    //     $curr_out_ng_other = $this->getQtyMap("SELECT b.item_rm_id, SUM(b.composition * d.qty_ng) as qty FROM bom b JOIN (SELECT aa.item_fg_id, SUM(aa.qty_product) AS qty_ng FROM (SELECT DISTINCT document, item_fg_id, qty_product FROM item_ng WHERE trans_date >= $from_q AND trans_date <= $to_plus_1 AND kind LIKE 'Ng Process Production') aa GROUP BY aa.item_fg_id) d ON b.item_fg_id = d.item_fg_id GROUP BY b.item_rm_id", 'item_rm_id', 'qty');
+    //     $curr_out_ng_proc  = $this->getQtyMap("SELECT b.item_rm_id, SUM(b.composition * d.qty_ng) as qty FROM bom b JOIN (SELECT aa.item_fg_id, SUM(aa.qty_product) AS qty_ng FROM (SELECT DISTINCT document, item_fg_id, qty_product FROM item_ng WHERE trans_date >= $from_q AND trans_date <= $to_plus_1 AND created_by != 'PRD01') aa GROUP BY aa.item_fg_id) d ON b.item_fg_id = d.item_fg_id GROUP BY b.item_rm_id", 'item_rm_id', 'qty');
+    //     $curr_out_adj      = $this->getQtyMap("SELECT item_rm_id, SUM(qty) as qty FROM transaction_wip WHERE transaction_type='ADJ OUT' AND request_date >= $from_q AND request_date <= $to_plus_1 GROUP BY item_rm_id", 'item_rm_id', 'qty');
+
+    //     // 5. EXCHANGE RATE
+    //     $rate = 1;
+    //     if ($currency == 'USD') {
+    //         $q_rate = $this->db->query("SELECT middle FROM standard_exchange_rates WHERE currency_from = 'USD' AND start_date <= $from_q AND end_date >= $from_q LIMIT 1")->row();
+    //         $rate = $q_rate ? (float)$q_rate->middle : 0;
+    //     }
+
+    //     // 6. FINAL CALCULATION
+    //     $t = ['totalBegin'=>0, 'totalBeginAmount'=>0, 'totalIn'=>0, 'totalAmountIn'=>0, 'totalOut'=>0, 'totalAmountOut'=>0, 'totalEndingStock'=>0, 'totalAmountEndingStock'=>0];
+
+    //     foreach ($main_data as $row) {
+
+    //     if ($num == 'NOMOR_ITEM_YANG_SALAH') {
+    //         echo "Item: $num | Begin: $begin | In: $qty_in | Out: $qty_out | End: $ending <br>";
+    //     }
+    //         $id  = $row['id'];
+    //         $num = $row['number'];
+    //         $prc = (float)$row['price'];
+            
+    //         // Cari ID Child
+    //         $id_cr = $numberToId["CR-".$num] ?? null;
+    //         $id_pl = $numberToId["PL-".$num] ?? null;
+
+    //         // Cek apakah item ini sendiri adalah Child (CR- atau PL-) 
+    //         // Menggantikan str_starts_with untuk kompatibilitas PHP 5.6 / 7.x
+    //         $is_child = (substr($num, 0, 3) === 'CR-' || substr($num, 0, 3) === 'PL-');
+
+    //         // --- SALDO AWAL ---
+    //         $qss_total = ($qss_raw[$id] ?? 0);
+            
+    //         // Jika BUKAN item child, maka serap history milik child-nya
+    //         if (!$is_child) {
+    //             $qss_total += ($qss_raw[$id_cr] ?? 0) + ($qss_raw[$id_pl] ?? 0);
+    //         }
+
+    //         $begin = ($qss_total + ($qsns[$id] ?? 0) + ($qtrb[$id] ?? 0) + ($qtrk[$id] ?? 0) + ($qiw[$id] ?? 0) + ($qm[$id] ?? 0) + ($qai[$id] ?? 0))
+    //                 - (($qbw[$id] ?? 0) + ($qtrbpm[$id] ?? 0) + ($qr_all_awal[$id] ?? 0) + ($qin[$id] ?? 0) + ($qtwo[$id] ?? 0));
+
+    //         // --- QTY IN ---
+    //         $qty_other = 0;
+    //         if (!$is_child) {
+    //             $qty_other = ($curr_in_sh[$id_cr] ?? 0) + ($curr_in_prq[$id_cr] ?? 0) + ($curr_in_sh[$id_pl] ?? 0) + ($curr_in_prq[$id_pl] ?? 0);
+    //         }
+            
+    //         $qty_in = ($curr_in_sh[$id] ?? 0) + ($curr_in_ns[$id] ?? 0) + ($curr_in_bpb[$id] ?? 0) + ($curr_in_kb[$id] ?? 0) + ($curr_in_wip[$id] ?? 0) + ($curr_in_prq[$id] ?? 0) + ($curr_in_adj[$id] ?? 0) + $qty_other;
+
+    //         // --- SISANYA TETAP SAMA ---
+    //         $qty_out = ($curr_out_whs[$id] ?? 0) + ($curr_out_bpm[$id] ?? 0) + ($curr_out_rfg[$id] ?? 0) + ($curr_out_ng_other[$id] ?? 0) + ($curr_out_ng_proc[$id] ?? 0) + ($curr_out_adj[$id] ?? 0);
+    //         $ending = ($begin + $qty_in) - $qty_out;
+
+    //         // Akumulasi Totals
+    //         $t['totalBegin']              += $begin;
+    //         $t['totalBeginAmount']        += $begin * $prc * $rate;
+    //         $t['totalIn']                 += $qty_in;
+    //         $t['totalAmountIn']           += $qty_in * $prc * $rate;
+    //         $t['totalOut']                += $qty_out;
+    //         $t['totalAmountOut']          += $qty_out * $prc * $rate;
+    //         $t['totalEndingStock']        += $ending;
+    //         $t['totalAmountEndingStock']  += $ending * $prc * $rate;
+    //     }
+
+    //     return $t;
+    // }
 
     //UJI COBA 1
     // private function getQtyMap($query, $keyField, $valueField) {
@@ -2012,163 +2278,4 @@ class Inventory_report extends CI_Controller
 
     //     return $t;
     // }
-
-    //UJI COBA 3
-    private function getQtyMap($query, $keyField, $valueField) {
-        $result = $this->db->query($query)->result_array();
-        $map = [];
-        foreach ($result as $row) {
-            $map[$row[$keyField]] = (float)$row[$valueField];
-        }
-        return $map;
-    }
-
-    private function getSummaryWIP($filter_from, $filter_to, $filter_division, $filter_item_category = "", $filter_item_family = "", $currency = "IDR")
-    {
-        $from_q = $this->db->escape($filter_from);
-        $to_plus_1 = $this->db->escape($filter_to . ' 23:59:59');
-
-        // 1. Ambil Data Master Item
-        $price_query = "
-            SELECT a.id, a.number, a.name, k.price
-            FROM item_rm a
-            LEFT JOIN (
-                SELECT item_fg_id, price FROM standard_price_fg 
-                WHERE start_date <= $from_q AND end_date >= $from_q
-            ) k ON a.id = k.item_fg_id
-            LEFT JOIN item_categories p ON a.item_category_id = p.id 
-            LEFT JOIN item_familys o ON a.item_family_id = o.id
-            WHERE p.id LIKE '%$filter_item_category%' 
-            AND a.division LIKE '%$filter_division%' 
-            AND (o.number LIKE '%$filter_item_family%' OR o.number IS NULL)
-            ORDER BY a.number ASC";
-
-        $main_data = $this->db->query($price_query)->result_array();
-
-        // 2. Mapping Number -> ID untuk pencarian Child (CR-/PL-)
-        $all_items_raw = $this->db->query("SELECT id, number FROM item_rm")->result_array();
-        $numberToId = [];
-        foreach ($all_items_raw as $i) { 
-            $numberToId[$i['number']] = $i['id']; 
-        }
-
-        // --- 3. SALDO AWAL (History < $from_q) ---
-        
-        // QSS Awal (Khusus logika Parent-Child di Saldo Awal)
-        $qss_raw = $this->getQtyMap("SELECT item_rm_id, SUM(qty) as qty FROM issued_material_details WHERE created_date < $from_q AND (request_no LIKE '%SH-%' OR request_no LIKE '%PRQ-%') GROUP BY item_rm_id", 'item_rm_id', 'qty');
-        
-        $qsns     = $this->getQtyMap("SELECT a.item_rm_id, SUM(a.qty) as qty FROM issued_material_details a JOIN supply_materials b ON a.request_no = b.request_no AND a.item_rm_id = b.item_rm_id WHERE a.created_date < $from_q AND a.request_no LIKE '%REQ-%' AND b.type = 'Issued Production' GROUP BY a.item_rm_id", 'item_rm_id', 'qty');
-        $qtrb     = $this->getQtyMap("SELECT item_rm_id, SUM(qty) as qty FROM transaction_rm WHERE transaction_type='BPB' AND request_date < $from_q GROUP BY item_rm_id", 'item_rm_id', 'qty');
-        $qtrk     = $this->getQtyMap("SELECT item_rm_id, SUM(qty) as qty FROM transaction_rm WHERE transaction_type='KANBAN WO' AND request_date < $from_q GROUP BY item_rm_id", 'item_rm_id', 'qty');
-        $qiw      = $this->getQtyMap("SELECT item_rm_id, SUM(qty) as qty FROM issued_material_details WHERE created_date < $from_q AND type LIKE '%WIP%' GROUP BY item_rm_id", 'item_rm_id', 'qty');
-        $qm       = $this->getQtyMap("SELECT item_rm_id, SUM(qty) as qty FROM issued_material_details WHERE created_date < $from_q AND request_no LIKE '%PRQ-%' GROUP BY item_rm_id", 'item_rm_id', 'qty');
-        $qai      = $this->getQtyMap("SELECT item_rm_id, SUM(qty) as qty FROM transaction_wip WHERE transaction_type='ADJ IN' AND request_date < $from_q GROUP BY item_rm_id", 'item_rm_id', 'qty');
-        
-        $qbw      = $this->getQtyMap("SELECT item_rm_id, SUM(qty) as qty FROM bpm WHERE status='1' AND request_date < $from_q GROUP BY item_rm_id", 'item_rm_id', 'qty');
-        $qtrbpm   = $this->getQtyMap("SELECT item_rm_id, SUM(qty) as qty FROM transaction_rm WHERE transaction_type='BPM' AND request_date < $from_q GROUP BY item_rm_id", 'item_rm_id', 'qty');
-        
-        // RFG Awal (Saldo Awal OUT dari Produksi)
-        $rfg_awal_sql = "
-            SELECT bom.item_rm_id, SUM(t.total_qty * bom.composition) as qty FROM (
-                SELECT b.item_fg_id, SUM(a.qty) total_qty FROM scan_item_receipts_fg a JOIN checksheets b ON b.number = a.checksheet_number WHERE b.packing_date < $from_q GROUP BY b.item_fg_id
-                UNION ALL SELECT a.item_fg_id, SUM(a.qty) FROM scan_item_receipts_fg a WHERE a.type = 'NBFG' AND a.packing_date < $from_q GROUP BY a.item_fg_id
-                UNION ALL SELECT item_fg_id, SUM(qty) FROM transaction_fg WHERE transaction_kind = 'IN' AND transaction_type = 'RECEIPT FG' AND request_date < $from_q GROUP BY item_fg_id
-                UNION ALL SELECT item_fg_id, SUM(qty) FROM wip_receipts WHERE division = 'MTS' AND trans_date < $from_q GROUP BY item_fg_id
-            ) t JOIN bom ON bom.item_fg_id = t.item_fg_id GROUP BY bom.item_rm_id";
-        $qr_all_awal = $this->getQtyMap($rfg_awal_sql, 'item_rm_id', 'qty');
-
-        $qin      = $this->getQtyMap("SELECT b.item_rm_id, SUM(b.composition * d.qty_ng) as qty FROM bom b JOIN (SELECT aa.item_fg_id, SUM(aa.qty_product) AS qty_ng FROM (SELECT DISTINCT document, item_fg_id, qty_product FROM item_ng WHERE trans_date < $from_q) aa GROUP BY aa.item_fg_id) d ON b.item_fg_id = d.item_fg_id GROUP BY b.item_rm_id", 'item_rm_id', 'qty');
-        $qtwo     = $this->getQtyMap("SELECT item_rm_id, SUM(qty) as qty FROM transaction_wip WHERE transaction_type='ADJ OUT' AND request_date < $from_q GROUP BY item_rm_id", 'item_rm_id', 'qty');
-
-        // --- 4. PERIODE BERJALAN ($from s/d $to) ---
-        
-        $curr_in_sh   = $this->getQtyMap("SELECT item_rm_id, SUM(qty) as qty FROM issued_material_details WHERE created_date >= $from_q AND created_date <= $to_plus_1 AND request_no LIKE '%SH-%' GROUP BY item_rm_id", 'item_rm_id', 'qty');
-        $curr_in_prq  = $this->getQtyMap("SELECT item_rm_id, SUM(qty) as qty FROM issued_material_details WHERE created_date >= $from_q AND created_date <= $to_plus_1 AND request_no LIKE '%PRQ-%' GROUP BY item_rm_id", 'item_rm_id', 'qty');
-        $curr_in_ns   = $this->getQtyMap("SELECT a.item_rm_id, SUM(a.qty) as qty FROM issued_material_details a JOIN supply_materials b ON a.request_no = b.request_no AND a.item_rm_id = b.item_rm_id WHERE a.created_date >= $from_q AND a.created_date <= $to_plus_1 AND a.request_no LIKE '%REQ-%' AND b.type = 'Issued Production' GROUP BY a.item_rm_id", 'item_rm_id', 'qty');
-        $curr_in_bpb  = $this->getQtyMap("SELECT item_rm_id, SUM(qty) as qty FROM transaction_rm WHERE transaction_type='BPB' AND request_date >= $from_q AND request_date <= $to_plus_1 GROUP BY item_rm_id", 'item_rm_id', 'qty');
-        $curr_in_kb   = $this->getQtyMap("SELECT item_rm_id, SUM(qty) as qty FROM transaction_rm WHERE transaction_type='KANBAN WO' AND request_date >= $from_q AND request_date <= $to_plus_1 GROUP BY item_rm_id", 'item_rm_id', 'qty');
-        $curr_in_wip  = $this->getQtyMap("SELECT item_rm_id, SUM(qty) as qty FROM issued_material_details WHERE created_date >= $from_q AND created_date <= $to_plus_1 AND type LIKE '%WIP%' GROUP BY item_rm_id", 'item_rm_id', 'qty');
-        $curr_in_adj  = $this->getQtyMap("SELECT item_rm_id, SUM(qty) as qty FROM transaction_wip WHERE transaction_type='ADJ IN' AND request_date >= $from_q AND request_date <= $to_plus_1 GROUP BY item_rm_id", 'item_rm_id', 'qty');
-
-        $curr_out_whs = $this->getQtyMap("SELECT item_rm_id, SUM(qty) as qty FROM bpm WHERE status='1' AND request_date >= $from_q AND request_date <= $to_plus_1 GROUP BY item_rm_id", 'item_rm_id', 'qty');
-        $curr_out_bpm = $this->getQtyMap("SELECT item_rm_id, SUM(qty) as qty FROM transaction_rm WHERE transaction_type='BPM' AND request_date >= $from_q AND request_date <= $to_plus_1 GROUP BY item_rm_id", 'item_rm_id', 'qty');
-        
-        // RFG Periode Berjalan
-        $rfg_curr_sql = "
-            SELECT bom.item_rm_id, SUM(t.total_qty * bom.composition) as qty FROM (
-                SELECT b.item_fg_id, SUM(a.qty) total_qty FROM scan_item_receipts_fg a JOIN checksheets b ON b.number = a.checksheet_number WHERE b.packing_date >= $from_q AND b.packing_date <= $to_plus_1 GROUP BY b.item_fg_id
-                UNION ALL SELECT a.item_fg_id, SUM(a.qty) FROM scan_item_receipts_fg a WHERE a.type = 'NBFG' AND a.packing_date >= $from_q AND a.packing_date <= $to_plus_1 GROUP BY a.item_fg_id
-                UNION ALL SELECT item_fg_id, SUM(qty) FROM transaction_fg WHERE transaction_kind = 'IN' AND transaction_type = 'RECEIPT FG' AND request_date >= $from_q AND request_date <= $to_plus_1 GROUP BY item_fg_id
-                UNION ALL SELECT item_fg_id, SUM(qty) FROM wip_receipts WHERE division = 'MTS' AND trans_date >= $from_q AND trans_date <= $to_plus_1 GROUP BY item_fg_id
-            ) t JOIN bom ON bom.item_fg_id = t.item_fg_id GROUP BY bom.item_rm_id";
-        $curr_out_rfg = $this->getQtyMap($rfg_curr_sql, 'item_rm_id', 'qty');
-
-        // NG Periode Berjalan (Pemisahan sesuai SQL Asli)
-        $curr_out_ng_other = $this->getQtyMap("SELECT b.item_rm_id, SUM(b.composition * d.qty_ng) as qty FROM bom b JOIN (SELECT aa.item_fg_id, SUM(aa.qty_product) AS qty_ng FROM (SELECT DISTINCT document, item_fg_id, qty_product FROM item_ng WHERE trans_date >= $from_q AND trans_date <= $to_plus_1 AND kind LIKE 'Ng Process Production') aa GROUP BY aa.item_fg_id) d ON b.item_fg_id = d.item_fg_id GROUP BY b.item_rm_id", 'item_rm_id', 'qty');
-        $curr_out_ng_proc  = $this->getQtyMap("SELECT b.item_rm_id, SUM(b.composition * d.qty_ng) as qty FROM bom b JOIN (SELECT aa.item_fg_id, SUM(aa.qty_product) AS qty_ng FROM (SELECT DISTINCT document, item_fg_id, qty_product FROM item_ng WHERE trans_date >= $from_q AND trans_date <= $to_plus_1 AND created_by != 'PRD01') aa GROUP BY aa.item_fg_id) d ON b.item_fg_id = d.item_fg_id GROUP BY b.item_rm_id", 'item_rm_id', 'qty');
-        $curr_out_adj      = $this->getQtyMap("SELECT item_rm_id, SUM(qty) as qty FROM transaction_wip WHERE transaction_type='ADJ OUT' AND request_date >= $from_q AND request_date <= $to_plus_1 GROUP BY item_rm_id", 'item_rm_id', 'qty');
-
-        // 5. EXCHANGE RATE
-        $rate = 1;
-        if ($currency == 'USD') {
-            $q_rate = $this->db->query("SELECT middle FROM standard_exchange_rates WHERE currency_from = 'USD' AND start_date <= $from_q AND end_date >= $from_q LIMIT 1")->row();
-            $rate = $q_rate ? (float)$q_rate->middle : 0;
-        }
-
-        // 6. FINAL CALCULATION
-        $t = ['totalBegin'=>0, 'totalBeginAmount'=>0, 'totalIn'=>0, 'totalAmountIn'=>0, 'totalOut'=>0, 'totalAmountOut'=>0, 'totalEndingStock'=>0, 'totalAmountEndingStock'=>0];
-
-        foreach ($main_data as $row) {
-
-        if ($num == 'NOMOR_ITEM_YANG_SALAH') {
-            echo "Item: $num | Begin: $begin | In: $qty_in | Out: $qty_out | End: $ending <br>";
-        }
-            $id  = $row['id'];
-            $num = $row['number'];
-            $prc = (float)$row['price'];
-            
-            // Cari ID Child
-            $id_cr = $numberToId["CR-".$num] ?? null;
-            $id_pl = $numberToId["PL-".$num] ?? null;
-
-            // Cek apakah item ini sendiri adalah Child (CR- atau PL-) 
-            // Menggantikan str_starts_with untuk kompatibilitas PHP 5.6 / 7.x
-            $is_child = (substr($num, 0, 3) === 'CR-' || substr($num, 0, 3) === 'PL-');
-
-            // --- SALDO AWAL ---
-            $qss_total = ($qss_raw[$id] ?? 0);
-            
-            // Jika BUKAN item child, maka serap history milik child-nya
-            if (!$is_child) {
-                $qss_total += ($qss_raw[$id_cr] ?? 0) + ($qss_raw[$id_pl] ?? 0);
-            }
-
-            $begin = ($qss_total + ($qsns[$id] ?? 0) + ($qtrb[$id] ?? 0) + ($qtrk[$id] ?? 0) + ($qiw[$id] ?? 0) + ($qm[$id] ?? 0) + ($qai[$id] ?? 0))
-                    - (($qbw[$id] ?? 0) + ($qtrbpm[$id] ?? 0) + ($qr_all_awal[$id] ?? 0) + ($qin[$id] ?? 0) + ($qtwo[$id] ?? 0));
-
-            // --- QTY IN ---
-            $qty_other = 0;
-            if (!$is_child) {
-                $qty_other = ($curr_in_sh[$id_cr] ?? 0) + ($curr_in_prq[$id_cr] ?? 0) + ($curr_in_sh[$id_pl] ?? 0) + ($curr_in_prq[$id_pl] ?? 0);
-            }
-            
-            $qty_in = ($curr_in_sh[$id] ?? 0) + ($curr_in_ns[$id] ?? 0) + ($curr_in_bpb[$id] ?? 0) + ($curr_in_kb[$id] ?? 0) + ($curr_in_wip[$id] ?? 0) + ($curr_in_prq[$id] ?? 0) + ($curr_in_adj[$id] ?? 0) + $qty_other;
-
-            // --- SISANYA TETAP SAMA ---
-            $qty_out = ($curr_out_whs[$id] ?? 0) + ($curr_out_bpm[$id] ?? 0) + ($curr_out_rfg[$id] ?? 0) + ($curr_out_ng_other[$id] ?? 0) + ($curr_out_ng_proc[$id] ?? 0) + ($curr_out_adj[$id] ?? 0);
-            $ending = ($begin + $qty_in) - $qty_out;
-
-            // Akumulasi Totals
-            $t['totalBegin']              += $begin;
-            $t['totalBeginAmount']        += $begin * $prc * $rate;
-            $t['totalIn']                 += $qty_in;
-            $t['totalAmountIn']           += $qty_in * $prc * $rate;
-            $t['totalOut']                += $qty_out;
-            $t['totalAmountOut']          += $qty_out * $prc * $rate;
-            $t['totalEndingStock']        += $ending;
-            $t['totalAmountEndingStock']  += $ending * $prc * $rate;
-        }
-
-        return $t;
-    }
 }
