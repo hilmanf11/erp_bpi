@@ -575,6 +575,11 @@
                             }
                         }
 
+
+                        // Validate Auto Posting Journal Inventory
+                        exec_autoposting(transaction_type, request_no);
+
+
                         Swal.fire({
                             title: "Data Saved Successfully",
                             icon: "success",
@@ -805,5 +810,34 @@
         } else {
             return 'background-color:#C8FFCC;';
         }
+    }
+
+
+
+    /** --- Auto Posting Journal Inventory --- */
+
+    // Helper untuk eksekusi Auto Posting Journal Inventory
+    function exec_autoposting(transaction_type, document_no) {
+        $.ajax({
+            type: "post",
+            url: "<?= base_url('finance/journal_inventory/execute_auto_journal/') ?>",
+            data: { 
+                modul: transaction_type,
+                document_no: document_no,
+            },
+            dataType: "json",
+            success: function(response) {
+                Swal.close();
+                if (response.status === true) { 
+                    toastr.success(response.message || "Success", "Auto Posting Journal Success");
+                } else {
+                    toastr.info(response.message, "Failed to Auto Posting Journal");
+                }
+            },
+            error: function(xhr) {
+                Swal.close();
+                toastr.error("Failed to connect to Auto Posting server");
+            }
+        });
     }
 </script>

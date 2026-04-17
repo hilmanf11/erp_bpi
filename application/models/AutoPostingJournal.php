@@ -53,7 +53,11 @@ class Autopostingjournal extends CI_Model {
                 break;
             
             case "MATERIAL REQUESTION":
-                // return $this->_process_material_requestion($modul, $document_no);
+                return $this->_process_material_requestion($modul, $document_no);
+                break;
+
+            case "IN SUBCONT JASA":
+                return $this->_process_wip_adjustment_fg("WIP ADJUSTMENT FG", $document_no);
                 break;
             
             default:
@@ -112,6 +116,11 @@ class Autopostingjournal extends CI_Model {
         return ($r) ? (float)$r->middle : 1.0;
     }
 
+    /** 
+     * Get Standard Price
+     * jika pricenya 0 atau tidak terdaftar pada standard price maka amount debit/credit akan 0, jika amount 0 tidak bisa diposting. (Bu Nina)
+     */
+
     // Get Price RM
     public function get_price_rm($journal_date, $item_rm_id) 
     {
@@ -125,7 +134,7 @@ class Autopostingjournal extends CI_Model {
             'end_date >='   => $transaction_to,
         ])->row();
 
-        return ($r) ? (float)$r->price : 1.0;
+        return ($r) ? (float)$r->price : 0;
     }
 
     // Get Price FG
@@ -141,7 +150,7 @@ class Autopostingjournal extends CI_Model {
             'end_date >='   => $transaction_to,
         ])->row();
 
-        return ($r) ? (float)$r->price : 1.0;
+        return ($r) ? (float)$r->price : 0;
     }
 
     // Auto Generate ID
@@ -421,6 +430,10 @@ class Autopostingjournal extends CI_Model {
                 $rate  = $this->get_rate($row['request_date'], $currency);
                 $price = $this->get_price_rm($row['request_date'], $row['item_rm_id']);
 
+                if ($price <= 0) {
+                    throw new Exception("Price not available! Please update Standard Price");
+                }
+
                 $amount_original = (float)$row['qty'] * $price;
                 $amount_local = round($amount_original * $rate, 2);
 
@@ -573,6 +586,10 @@ class Autopostingjournal extends CI_Model {
             {
                 $rate  = $this->get_rate($row['request_date'], $currency);
                 $price = $this->get_price_rm($row['request_date'], $row['item_rm_id']);
+                
+                if ($price <= 0) {
+                    throw new Exception("Price not available! Please update Standard Price");
+                }
 
                 $amount_original = (float)$row['qty'] * $price;
                 $amount_local = round($amount_original * $rate, 2);
@@ -764,6 +781,10 @@ class Autopostingjournal extends CI_Model {
             {
                 $rate  = $this->get_rate($row['request_date'], $currency);
                 $price = $this->get_price_rm($row['request_date'], $row['item_rm_id']);
+                
+                if ($price <= 0) {
+                    throw new Exception("Price not available! Please update Standard Price");
+                }
 
                 $amount_original = (float)$row['qty_issued'] * $price;
                 $amount_local = round($amount_original * $rate, 2);
@@ -945,6 +966,10 @@ class Autopostingjournal extends CI_Model {
             {
                 $rate  = $this->get_rate($row['request_date'], $currency);
                 $price = $this->get_price_rm($row['request_date'], $row['item_rm_id']);
+                
+                if ($price <= 0) {
+                    throw new Exception("Price not available! Please update Standard Price");
+                }
 
                 $amount_original = (float)$row['qty'] * $price;
                 $amount_local = round($amount_original * $rate, 2);
@@ -1041,4 +1066,310 @@ class Autopostingjournal extends CI_Model {
             return ['status' => false, 'message' => $msg];
         }
     }
+
+    private function _process_material_requestion($modul, $document_no) 
+    {   
+        $this->db->trans_begin();
+
+        try {
+            $acc_debit  = $this->db->get_where('account_coa', ['account_number' => '150.210.00'])->row();
+            $acc_credit = $this->db->get_where('account_coa', ['account_number' => '150.110.00'])->row();
+
+            if (!$acc_debit || !$acc_credit) {
+                throw new Exception("Account COA not found");
+            }
+
+            // Journal Type ID
+            $debit_jt_id  = $this->journal_type($modul, $acc_debit->account_number);
+            $credit_jt_id = $this->journal_type($modul, $acc_credit->account_number);
+
+            if (!$debit_jt_id || !$credit_jt_id) {
+                throw new Exception("Journal Type Account NOT FOUND for module $modul! Please add Journal Types");
+            }
+
+            // Get Transaction
+            $this->db->select('a.*, 
+                b.number as item_number, 
+                b.name as item_name, 
+                b.uom,
+                COALESCE(f.qty_sh,0) as qty_wo,
+                COALESCE(f.qty_product,0) as qty_ng,
+                COALESCE(c.qty,0) as issued,
+                a.qty - COALESCE(c.qty,0) as outstanding');
+            $this->db->select("b.number as item_no");
+            $this->db->select("'' as supplier_id, '' as supplier_name");
+
+            $this->db->from('supply_requestions a');
+            $this->db->join('item_rm b', 'a.item_rm_id = b.id');
+            $this->db->join("(SELECT item_rm_id, request_no, COALESCE(SUM(qty),0) as qty FROM issued_material_details GROUP BY item_rm_id, request_no ) c",'a.request_no = c.request_no and a.item_rm_id = c.item_rm_id','left');
+            $this->db->join('item_ng f', 'a.document = f.document and a.item_rm_id = f.item_rm_id','left');
+
+            $this->db->where('a.deleted', 0);
+            $this->db->where('a.status', 1);
+            $this->db->where('a.request_no', $document_no);
+            $this->db->order_by('a.request_no', 'DESC');
+
+            $records = $this->db->get()->result_array();
+
+            if (empty($records)) {
+                throw new Exception("No records found for Request No: $document_no or document not closed (Scan/Print)");
+            }
+
+            $voucher_no      = $this->_generate_voucher_no($records[0]['request_date']);
+            $currency        = "IDR"; // default
+            $total_orig_all  = 0;
+            $total_local_all = 0;
+
+            foreach ($records as $row) 
+            {
+                $rate  = $this->get_rate($row['request_date'], $currency);
+                $price = $this->get_price_rm($row['request_date'], $row['item_rm_id']);
+                
+                if ($price <= 0) {
+                    throw new Exception("Price not available! Please update Standard Price");
+                }
+
+                $amount_original = (float)$row['qty'] * $price;
+                $amount_local = round($amount_original * $rate, 2);
+
+                $supplier_name = !empty($row['supplier_name']) ? $row['supplier_name'] . " | " : "";
+                $description   = $supplier_name . $document_no . " | " . $row['workorder'] . " | " . $row['item_no'] . " | " . $row['item_name'];
+
+                $data_debit = [
+                    'id'              => $this->_generate_journal_id(),
+                    'number'          => $voucher_no,
+                    'journal_date'    => $row['request_date'] ?? '',
+                    "journal_type_id" => $debit_jt_id,
+                    'trans_date'      => date('Y-m-d'),
+                    'document_no'     => $row['request_no'] ?? '',
+                    'invoice_no'      => $row['workorder'] ?? '',
+                    'account_number'  => $acc_debit->account_number,
+                    'account_name'    => $acc_debit->account_name,
+                    'original_debit'  => $amount_original,
+                    'original_credit' => 0,
+                    'local_debit'     => $amount_local,
+                    'local_credit'    => 0,
+                    'rates'           => $rate,
+                    'description'     => $description,
+                    'currency'        => $currency,
+                    'company_name'    => $row['supplier_name'] ?? '',
+                    'company_id'      => $row['supplier_id'] ?? '',
+                    'modul'           => $modul,
+                    'remarks'         => "Auto Posting Journal",
+                    'created_date'    => date('Y-m-d H:i:s'),
+                    'created_by'      => $this->session->username ? $this->session->username : 'SYSTEM',
+                ];
+
+                if (!$this->db->insert('journal_inventory', $data_debit)) {
+                    $db_error = $this->db->error();
+                    throw new Exception("Database Error (Debit): " . $db_error['message']);
+                }
+
+                $total_orig_all += $amount_original;
+                $total_local_all += $amount_local;
+            }
+
+            // validasi total
+            if ($total_local_all <= 0 || $total_orig_all <= 0) {
+                throw new Exception("Transaction amount is zero! Posting Journal canceled.");
+            }
+
+            $supplier_name = !empty($records[0]['supplier_name']) ? $records[0]['supplier_name'] . " | " : "";
+            $description   = $supplier_name . $document_no . " | " . $records[0]['workorder'] . " | " . $records[0]['item_no'] . " | " . $records[0]['item_name'];
+
+            // INSERT CREDIT
+            $data_credit = [
+                'id'              => $this->_generate_journal_id(),
+                'number'          => $voucher_no,
+                'journal_date'    => $records[0]['request_date'] ?? '',
+                "journal_type_id" => $credit_jt_id,
+                'trans_date'      => date('Y-m-d'),
+                'document_no'     => $records[0]['request_no'] ?? '',
+                'invoice_no'      => $records[0]['workorder'] ?? '',
+                'account_number'  => $acc_credit->account_number,
+                'account_name'    => $acc_credit->account_name,
+                'original_debit'  => 0,
+                'original_credit' => $total_orig_all,
+                'local_debit'     => 0,
+                'local_credit'    => $total_local_all,
+                'rates'           => $this->get_rate($records[0]['request_date'], $currency),
+                'description'     => $description,
+                'currency'        => $currency,
+                'company_name'    => $records[0]['supplier_name'] ?? '',
+                'company_id'      => $records[0]['supplier_id'] ?? '',
+                'modul'           => $modul,
+                'remarks'         => "Auto Posting Journal",
+                'created_date'    => date('Y-m-d H:i:s'),
+                'created_by'      => $this->session->username ? $this->session->username : 'SYSTEM',
+            ];
+
+            if (!$this->db->insert('journal_inventory', $data_credit)) {
+                $db_error = $this->db->error();
+                throw new Exception("Database Error (Credit): " . $db_error['message']);
+            }
+
+            // Jika semua oke, commit
+            if ($this->db->trans_status() === FALSE) {
+                throw new Exception("Transaction Failed");
+            } else {
+                $this->db->trans_commit();
+                return ['status' => true, 'message' => 'Success'];
+            }
+
+        } catch (Exception $e) {
+            // Rollback jika terjadi error
+            $this->db->trans_rollback();
+            $msg = "Error: " . $e->getMessage();
+            log_message('error', $msg);
+            return ['status' => false, 'message' => $msg];
+        }
+    }
+
+    public function _process_wip_adjustment_fg($modul, $document_no) 
+    {   
+        $this->db->trans_begin();
+
+        try {
+            $acc_debit  = $this->db->get_where('account_coa', ['account_number' => '550.110.00'])->row(); // test account
+            $acc_credit = $this->db->get_where('account_coa', ['account_number' => '150.210.00'])->row();
+
+            if (!$acc_debit || !$acc_credit) {
+                throw new Exception("Account COA not found");
+            }
+
+            // Journal Type ID
+            $debit_jt_id  = $this->journal_type($modul, $acc_debit->account_number);
+            $credit_jt_id = $this->journal_type($modul, $acc_credit->account_number);
+
+            if (!$debit_jt_id || !$credit_jt_id) {
+                throw new Exception("Journal Type Account NOT FOUND for module $modul! Please add Journal Types");
+            }
+
+            // Get Transaction
+            $this->db->select('a.*, b.number as item_number, b.name as item_name, b.uom');
+            $this->db->select("b.number as item_no, b.id as item_fg_id");
+            $this->db->select("'' as supplier_id, '' as supplier_name");
+
+            $this->db->from('wip_adjustment_fg a');
+            $this->db->join('item_fg b', 'a.item_fg_id = b.id');
+            $this->db->where('a.deleted', 0);
+            $this->db->where('a.request_no', $document_no);
+            $this->db->group_by('a.id');
+
+            $records = $this->db->get()->result_array();
+
+            if (empty($records)) {
+                throw new Exception("No records found for Request No: $document_no or document not closed (Scan/Print)");
+            }
+
+            $voucher_no      = $this->_generate_voucher_no($records[0]['request_date']);
+            $currency        = "IDR"; // default
+            $total_orig_all  = 0;
+            $total_local_all = 0;
+
+            foreach ($records as $row) 
+            {
+                $rate  = $this->get_rate($row['request_date'], $currency);
+                $price = $this->get_price_fg($row['request_date'], $row['item_fg_id']);
+                
+                if ($price <= 0) {
+                    throw new Exception("Price not available! Please update Standard Price");
+                }
+
+                $amount_original = (float)$row['qty'] * $price;
+                $amount_local = round($amount_original * $rate, 2);
+
+                $supplier_name = !empty($row['supplier_name']) ? $row['supplier_name'] . " | " : "";
+                $description   = $supplier_name . $document_no . " | " . $row['workorder'] . " | " . $row['item_no'] . " | " . $row['item_name'];
+
+                $data_debit = [
+                    'id'              => $this->_generate_journal_id(),
+                    'number'          => $voucher_no,
+                    'journal_date'    => $row['request_date'] ?? '',
+                    "journal_type_id" => $debit_jt_id,
+                    'trans_date'      => date('Y-m-d'),
+                    'document_no'     => $row['request_no'] ?? '',
+                    'invoice_no'      => $row['workorder'] ?? '',
+                    'account_number'  => $acc_debit->account_number,
+                    'account_name'    => $acc_debit->account_name,
+                    'original_debit'  => $amount_original,
+                    'original_credit' => 0,
+                    'local_debit'     => $amount_local,
+                    'local_credit'    => 0,
+                    'rates'           => $rate,
+                    'description'     => $description,
+                    'currency'        => $currency,
+                    'company_name'    => $row['supplier_name'] ?? '',
+                    'company_id'      => $row['supplier_id'] ?? '',
+                    'modul'           => $modul,
+                    'remarks'         => "Auto Posting Journal",
+                    'created_date'    => date('Y-m-d H:i:s'),
+                    'created_by'      => $this->session->username ? $this->session->username : 'SYSTEM',
+                ];
+
+                if (!$this->db->insert('journal_inventory', $data_debit)) {
+                    $db_error = $this->db->error();
+                    throw new Exception("Database Error (Debit): " . $db_error['message']);
+                }
+
+                $total_orig_all += $amount_original;
+                $total_local_all += $amount_local;
+            }
+
+            // validasi total
+            if ($total_local_all <= 0 || $total_orig_all <= 0) {
+                throw new Exception("Transaction amount is zero! Posting Journal canceled.");
+            }
+
+            $supplier_name = !empty($records[0]['supplier_name']) ? $records[0]['supplier_name'] . " | " : "";
+            $description   = $supplier_name . $document_no . " | " . $records[0]['workorder'] . " | " . $records[0]['item_no'] . " | " . $records[0]['item_name'];
+
+            // INSERT CREDIT
+            $data_credit = [
+                'id'              => $this->_generate_journal_id(),
+                'number'          => $voucher_no,
+                'journal_date'    => $records[0]['request_date'] ?? '',
+                "journal_type_id" => $credit_jt_id,
+                'trans_date'      => date('Y-m-d'),
+                'document_no'     => $records[0]['request_no'] ?? '',
+                'invoice_no'      => $records[0]['workorder'] ?? '',
+                'account_number'  => $acc_credit->account_number,
+                'account_name'    => $acc_credit->account_name,
+                'original_debit'  => 0,
+                'original_credit' => $total_orig_all,
+                'local_debit'     => 0,
+                'local_credit'    => $total_local_all,
+                'rates'           => $this->get_rate($records[0]['request_date'], $currency),
+                'description'     => $description,
+                'currency'        => $currency,
+                'company_name'    => $records[0]['supplier_name'] ?? '',
+                'company_id'      => $records[0]['supplier_id'] ?? '',
+                'modul'           => $modul,
+                'remarks'         => "Auto Posting Journal",
+                'created_date'    => date('Y-m-d H:i:s'),
+                'created_by'      => $this->session->username ? $this->session->username : 'SYSTEM',
+            ];
+
+            if (!$this->db->insert('journal_inventory', $data_credit)) {
+                $db_error = $this->db->error();
+                throw new Exception("Database Error (Credit): " . $db_error['message']);
+            }
+
+            // Jika semua oke, commit
+            if ($this->db->trans_status() === FALSE) {
+                throw new Exception("Transaction Failed");
+            } else {
+                $this->db->trans_commit();
+                return ['status' => true, 'message' => 'Success'];
+            }
+
+        } catch (Exception $e) {
+            // Rollback jika terjadi error
+            $this->db->trans_rollback();
+            $msg = "Error: " . $e->getMessage();
+            log_message('error', $msg);
+            return ['status' => false, 'message' => $msg];
+        }
+    }
+
 }
