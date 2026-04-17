@@ -67,14 +67,16 @@
                     <option value="AP PAYMENT">AP PAYMENT</option>
                     <option value="AR RECEIPT">AR RECEIPT</option>
                     <option value="ASSET">ASSET</option>
+
                     <!-- Journal Inventory -->
                     <option value="PURCHASE ORDER RECEIPT">PURCHASE ORDER RECEIPT</option>
                     <option value="BPM">BPM</option>
-                    <option value="TRANSACTION RM">TRANSACTION RM</option>
+                    <option value="ADJ IN STO">ADJ IN STO</option>
+                    <option value="ADJ OUT STO">ADJ OUT STO</option>
                     <option value="SUPPLY SHEET">SUPPLY SHEET</option>
                     <option value="KANBAN PRD">KANBAN PRD</option>
                     <option value="KANBAN SUBCONT JASA">KANBAN SUBCONT JASA</option>
-                    <option value="KANBAN SUBCONT BARANG">KANBAN SUBCONT BARANG</option>
+                    <option value="KANBAN SUBCONT PRODUCT">KANBAN SUBCONT PRODUCT</option>
                     <option value="MATERIAL REQUEST">MATERIAL REQUEST</option>
                     <option value="WIP ADJUSTMENT FG">WIP ADJUSTMENT FG</option>
                 </select>

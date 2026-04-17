@@ -534,9 +534,9 @@ class Autopostingjournal extends CI_Model {
             // Validasi Type / Kind
             $module = "TRANSACTION RM";
             if ($modul == "ADJ IN STO") {
-                $kind = "IN";
+                $kind = "INVENTORY IN";
             } elseif ($modul == "ADJ OUT STO") {
-                $kind = "OUT";
+                $kind = "INVENTORY OUT";
             }
 
             // Journal Type ID
@@ -880,17 +880,17 @@ class Autopostingjournal extends CI_Model {
             $supply_type = strtolower($check_sm->type) ?? '';
 
             if ($supply_type == strtolower("Issued Production")) {
-                $kind = "KANBAN PRD";
+                $module     = "KANBAN PRD";
                 $acc_debit  = $this->db->get_where('account_coa', ['account_number' => '150.210.00'])->row();
                 $acc_credit = $this->db->get_where('account_coa', ['account_number' => '150.110.00'])->row();
 
             } elseif ($supply_type == strtolower("Issued Customer")) {
-                $kind = "KANBAN SUBCONT BARANG";
+                $module     = "KANBAN SUBCONT PRODUCT";
                 $acc_debit  = $this->db->get_where('account_coa', ['account_number' => '510.110.00'])->row();
                 $acc_credit = $this->db->get_where('account_coa', ['account_number' => '150.110.00'])->row();
 
             } elseif ($supply_type == strtolower("Issued Subcont")) {
-                $kind = "KANBAN SUBCONT JASA";
+                $module     = "KANBAN SUBCONT JASA";
                 $acc_debit  = $this->db->get_where('account_coa', ['account_number' => '150.210.00'])->row();
                 $acc_credit = $this->db->get_where('account_coa', ['account_number' => '150.110.00'])->row();
 
@@ -903,8 +903,8 @@ class Autopostingjournal extends CI_Model {
             }
 
             // Journal Type ID
-            $debit_jt_id  = $this->journal_type_kind($modul, $acc_debit->account_number, $kind);
-            $credit_jt_id = $this->journal_type_kind($modul, $acc_credit->account_number, $kind);
+            $debit_jt_id  = $this->journal_type($modul, $acc_debit->account_number);
+            $credit_jt_id = $this->journal_type($modul, $acc_credit->account_number);
 
             if (!$debit_jt_id || !$credit_jt_id) {
                 throw new Exception("Journal Type Account NOT FOUND for module $modul! Please add Journal Types");
