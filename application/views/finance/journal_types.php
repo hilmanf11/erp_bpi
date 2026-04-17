@@ -93,6 +93,34 @@
                     <option value="CREDIT">CREDIT</option>
                 </select>
             </div>
+
+            <!-- Journal Inventory -->
+            <div class="fitem" style="margin-top: 10px; margin-top: 8px;">
+                <label style="width:35%; display:inline-block;">Journal Inventory</label>
+                <input class="easyui-switchbutton" id="is_journal_inventory" style="width:100px;" 
+                    data-options="
+                        onText:'Yes', 
+                        offText:'No',
+                        onChange: function(checked){
+                            // Update hidden input saat switch berubah
+                            $('#real_is_journal_inventory').val(checked ? 1 : 0);
+                            handleInventoryProcessRequired(checked);
+                        }
+                    ">
+                <input type="hidden" name="is_journal_inventory" id="real_is_journal_inventory" value="0">
+            </div>
+
+            <div class="fitem">
+                <label style="width:35%; display:inline-block;">
+                    Inventory Process <span id="star_process" style="color:red; display:none;">*</span>
+                </label>
+                <select style="width:60%;" name="journal_inventory_process" id="journal_inventory_process" 
+                        class="easyui-combobox" data-options="panelHeight:'auto', editable:false">
+                    <option value="IN">IN</option>
+                    <option value="OUT">OUT</option>
+                </select>
+            </div>
+
         </fieldset>
     </form>
 </div>
@@ -108,7 +136,7 @@
     }
 
     //EDIT DATA
-    function update() {
+    function update_existing() {
         var row = $('#dg').datagrid('getSelected');
         if (row) {
             $('#dlg_insert').dialog('open');
@@ -118,6 +146,21 @@
             toastr.warning("Please select one of the data in the table first!", "Information");
         }
     }
+    function update() {
+        var row = $('#dg').datagrid('getSelected');
+        if (row) {
+            $('#dlg_insert').dialog('open');
+            $('#frm_insert').form('load', row);
+
+            const isChecked = (row.is_journal_inventory == 1);
+            $('#is_journal_inventory').switchbutton(isChecked ? 'check' : 'uncheck');
+
+            url_save = '<?= base_url('finance/journal_types/update') ?>?id=' + btoa(row.id);
+        } else {
+            toastr.warning("Please select one of the data in the table first!", "Information");
+        }
+    }
+
     //DELETE DATA
     function deleted() {
         var rows = $('#dg').datagrid('getSelections');
@@ -185,7 +228,15 @@
                 handler: function() {
                     $('#frm_insert').form('submit', {
                         url: url_save,
+                        /** -- existing 
                         onSubmit: function() {
+                            return $(this).form('validate');
+                        }, */
+                        onSubmit: function(param) {
+                            // Get ceklis is_journal_inventory dari switchbutton
+                            var isChecked = $('#is_journal_inventory').switchbutton('options').checked;
+                            param.is_journal_inventory = isChecked ? 1 : 0;
+                            
                             return $(this).form('validate');
                         },
                         success: function(result) {
@@ -225,4 +276,30 @@
             ],
         });
     });
+
+    // Validasi Journal Inventory
+    function handleInventoryProcessRequired(is_checked) {
+        const processCombo = $('#journal_inventory_process');
+        const starProcess = $('#star_process');
+
+        if (is_checked) {
+            // Jika Checked, maka aktifkan Required
+            processCombo.combobox('options').required = true;
+            processCombo.combobox('textbox').validatebox('options').required = true;
+            
+            starProcess.show();
+            processCombo.combobox('enable');
+        } else {
+            // Jika unchecked, maka matikan Required
+            processCombo.combobox('options').required = false;
+            processCombo.combobox('textbox').validatebox('options').required = false;
+            
+            starProcess.hide();
+            processCombo.combobox('clear');
+            processCombo.combobox('disable'); // Opsional: disable jika tidak dijurnal
+        }
+
+        // Refresh status validasi
+        processCombo.combobox('validate');
+    }
 </script>
