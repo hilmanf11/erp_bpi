@@ -76,6 +76,7 @@
                     <option value="KANBAN SUBCONT JASA">KANBAN SUBCONT JASA</option>
                     <option value="KANBAN SUBCONT BARANG">KANBAN SUBCONT BARANG</option>
                     <option value="MATERIAL REQUEST">MATERIAL REQUEST</option>
+                    <option value="WIP ADJUSTMENT FG">WIP ADJUSTMENT FG</option>
                 </select>
             </div>
 

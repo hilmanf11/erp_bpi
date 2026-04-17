@@ -75,21 +75,26 @@ class Journal_inventory extends CI_Controller
         $search = $this->input->post('q');
         $kind   = $this->input->post('kind');
 
-        $this->db->select('*');
-        $this->db->from('journal_inventory_modules');
-
+        // Get module from journal types
+        $this->db->select("id, number, module as name, module, type as kind, 'RM' as category", FALSE);
+        $this->db->from('journal_types');
+        $this->db->where_in('type', ['INVENTORY IN', 'INVENTORY OUT']);
+        
         if ($search) {
             $this->db->group_start();
             $this->db->like('name', $search);
             $this->db->or_like('id', $search);
+            $this->db->or_like('module', $search);
+            $this->db->or_like('type', $search);
             $this->db->group_end();
         }
 
         if ($kind) {
-            $this->db->where('kind', $kind);
+            $this->db->where('type', $kind);
         }
 
         $this->db->order_by('name', 'asc');
+        $this->db->group_by('module');
         $records = $this->db->get()->result_array();
         
         echo json_encode($records);
@@ -136,7 +141,10 @@ class Journal_inventory extends CI_Controller
         $this->db->select('*');
         $this->db->from('journal_types');
         $this->db->like('name', $post);
+        $this->db->where_in('type', ['INVENTORY IN', 'INVENTORY OUT']);
+        $this->db->order_by('module', 'asc');
         $this->db->order_by('name', 'asc');
+
         $records = $this->db->get()->result_array();
         echo json_encode($records);
     }

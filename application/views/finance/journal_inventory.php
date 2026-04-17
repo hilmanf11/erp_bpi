@@ -16,7 +16,6 @@
                 <div class="fitem">
                     <span style="width:35%; display:inline-block;"></span>
                     <a href="javascript:;" class="easyui-linkbutton" onclick="filter()"><i class="fa fa-search"></i> Filter Data</a>
-                    <a href="javascript:;" class="easyui-linkbutton" onclick="addModul()"><i class="fa fa-plus"></i> Add Modul</a>
                 </div>
             </div>
             <div style="width:50%; float:left;">
@@ -35,11 +34,6 @@
                         data-options="editable:true, valueField:'id', textField:'text', 
                             groupField:'group',panelHeight:'auto'">
                     </select>
-                </div>
-
-                <div class="fitem" hidden>
-                    <span style="width:35%; display:inline-block;">Category</span>
-                    <input style="width:60%;" id="filter_item_category" class="easyui-combobox">
                 </div>
 
                 <div class="fitem">
@@ -84,68 +78,6 @@
         </tr>
     </thead>
 </table>
-
-
-<!-- Journal Inventory Modul -->
-<div id="dlg_modul" class="easyui-dialog" title="Master Data Journal Inventory Module" 
-    data-options="closed:true, modal:true, resizable:true" 
-    style="width: 600px; height: auto; padding:15px;">
-
-    <form id="frm_modul" method="post" novalidate>
-        <fieldset style="width:100%; border:1px solid #d0d0d0; margin-bottom: 10px; border-radius:4px; box-sizing: border-box;">
-            <legend style="padding: 0 10px;"><b>Module Configuration</b></legend>
-            
-            <div style="padding: 10px;">
-                <div class="fitem" style="margin-bottom: 10px;">
-                    <label style="width:35%; display:inline-block;">Category <span style="color:red">*</span></label>
-                    <select style="width:60%;" name="category" id="modul_category" class="easyui-combobox" 
-                            data-options="required:true, editable:false, panelHeight:'auto'">
-                        <option value="RM">RAW MATERIAL (RM)</option>
-                        <option value="WIP">WORK IN PROCESS (WIP)</option>
-                        <option value="FG">FINISHED GOODS (FG)</option>
-                    </select>
-                </div>
-
-                <div class="fitem" style="margin-bottom: 10px;">
-                    <label style="width:35%; display:inline-block;">Process Type <span style="color:red">*</span></label>
-                    <select style="width:60%;" name="kind" id="modul_kind" class="easyui-combobox" 
-                            data-options="required:true, editable:false, panelHeight:'auto'">
-                        <option value="IN">IN</option>
-                        <option value="OUT">OUT</option>
-                    </select>
-                </div>
-
-                <div class="fitem" style="margin-bottom: 10px;">
-                    <label style="width:35%; display:inline-block;">Module Name <span style="color:red">*</span></label>
-                    <input style="width:60%;" name="name" id="modul_name" class="easyui-textbox" data-options="required:true">
-                </div>
-
-                <div class="fitem" style="margin-bottom: 10px;">
-                    <label style="width:35%; display:inline-block;">Company ID Required <span style="color:red">*</span></label>
-                    <input class="easyui-switchbutton" 
-                        name="is_company_required" 
-                        id="modul_is_company_required" 
-                        style="width:100px;" 
-                        data-options="
-                                onText:'Yes',
-                                offText:'No',
-                                value:'1',
-                                checked:false,
-                                onChange:function(checked){
-                                    $(this).switchbutton('setValue', checked ? '1' : '0');
-                                }
-                        ">
-                </div>
-
-            </div>
-        </fieldset>
-
-        <div style="text-align:right; margin-top:10px;">
-            <a href="javascript:void(0)" class="easyui-linkbutton" onclick="saveModul()" style="width:90px">Save</a>
-            <a href="javascript:void(0)" class="easyui-linkbutton" onclick="javascript:$('#dlg_modul').dialog('close')" style="width:90px">Cancel</a>
-        </div>
-    </form>
-</div>
 
 
 
@@ -387,7 +319,6 @@
             filter_journal_type: $("#filter_journal_type").combogrid('getValue'),
             filter_type: $("#filter_type").combobox('getValue'),
             filter_modul: $("#filter_modul").combobox('getValue'),
-            filter_item_category: $("#filter_item_category").combobox('getValue'),
             filter_voucher: $("#filter_voucher").textbox('getValue')
         };
 
@@ -463,19 +394,6 @@
             }],
         });
 
-        // --- CATEGORY ---
-        $("#filter_item_category").combobox({
-            url: '<?= base_url('master/item_categories/reads') ?>',
-            valueField: 'id',
-            textField: 'name',
-            prompt: "Select Categories",
-            icons: [{
-                iconCls: 'icon-clear',
-                handler: function(e) {
-                    $(e.data.target).combobox('clear').combobox('textbox').focus();
-                }
-            }],
-        });
 
         // --- MODUL ---
         $("#modul, #filter_modul").combogrid({
@@ -487,22 +405,13 @@
             fitColumns: true,
             prompt: "Choose Modul",
             columns: [[
-                {field: 'kind', title: 'Type', width: 60, align: 'center', 
+                {field: 'kind', title: 'Type', width: 100, align: 'center', 
                     formatter: function(value){
-                        return value == 'IN' ? '<b style="color:green">IN</b>' : '<b style="color:red">OUT</b>';
+                        return value == 'INVENTORY IN' ? '<b style="color:green">INVENTORY IN</b>' : '<b style="color:red">INVENTORY OUT</b>';
                     }
                 },
                 {field: 'name', title: 'Module Name', width: 200},
-                {field: 'category', title: 'Category', width: 150},
             ]],
-            onBeforeLoad: function(param) {
-                if($(this).attr('id') === 'modul'){
-                    var cat  = $("#modul_category").combobox('getValue');
-                    var proc = $("#modul_kind").combobox('getValue');
-                    if(cat) param.category = cat;
-                    if(proc) param.kind = proc;
-                }
-            },
             onChange: function(newValue) {
                 if($(this).attr('id') === 'modul'){
                     // Get data baris yang dipilih
@@ -513,9 +422,9 @@
                     $("#company_name").combogrid('clear');
                     $("#document_no").combogrid('clear');
 
-                    // Validate Company Name
+                    // Validate Modul POR
                     if (row) {
-                        if (row.is_company_required == 1) {
+                        if (row.module == "PURCHASE ORDER RECEIPT") {
                             // Wajib diisi & Aktif
                             $("#company_name").combogrid('enable');
                             $("#company_name").combogrid('options').required = true;
@@ -536,7 +445,7 @@
                     if(valDate && typeof number === "function") number(valDate);
 
                     // Load Document No.
-                    if (row && row.is_company_required == 0) {
+                    if (row) {
                         var valDate = $("#journal_date").datebox('getValue');
                         if (valDate) {
                             var gd = $("#document_no").combogrid('grid');
@@ -612,13 +521,6 @@
         // Initial Data On Load Page
         filter();
 
-        // Input Modul Name
-        $('#modul_name').textbox('textbox').bind('keyup', function(e) {
-            var val = $(this).val();
-            var newVal = val.toUpperCase();
-            $('#modul_name').textbox('setValue', newVal);
-        });
-
     });
 
     // DETAILS
@@ -693,35 +595,6 @@
         } else {
             return 'background-color:#FFC8C8;';
         }
-    }
-
-    function addModul() {
-        $('#dlg_modul').dialog('open').dialog('center');
-        $('#frm_modul').form('clear');
-        // Set default value jika perlu
-        $('#modul_category').combobox('setValue', 'RM');
-        $('#modul_tr_type').combobox('setValue', 'IN');
-    }
-
-    function saveModul() {
-        $('#frm_modul').form('submit', {
-            url: '<?= base_url('finance/journal_inventory/saveModul') ?>',
-            onSubmit: function() {
-                return $(this).form('validate'); // Cek field required
-            },
-            success: function(result) {
-                var res = JSON.parse(result);
-                if (res.status === 'success') {
-                    toastr.success(res.message, 'Success');
-
-                    $('#dlg_modul').dialog('close');
-                    $('#modul').combogrid('grid').datagrid('reload');
-                    $('#filter_modul').combogrid('grid').datagrid('reload');
-                } else {
-                    toastr.error(res.message, 'Error');
-                }
-            }
-        });
     }
 
 
