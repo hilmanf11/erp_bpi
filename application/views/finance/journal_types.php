@@ -58,7 +58,10 @@
 
             <div class="fitem">
                 <span style="width:35%; display:inline-block;">Module</span>
-                <select style="width:60%;" name="module" id="module" panelHeight="auto" required="" class="easyui-combobox">
+                <select style="width:60%;" name="module" id="module" 
+                        data-options="panelHeight:200, editable:false" 
+                        required="true" class="easyui-combobox">
+                        
                     <option value="SALES INVOICING">SALES INVOICING</option>
                     <option value="PURCHASE INVOICING">PURCHASE INVOICING</option>
                     <option value="AP PAYMENT">AP PAYMENT</option>
@@ -69,7 +72,9 @@
                     <option value="BPM">BPM</option>
                     <option value="TRANSACTION RM">TRANSACTION RM</option>
                     <option value="SUPPLY SHEET">SUPPLY SHEET</option>
-                    <option value="NON SUPPLY SHEET">NON SUPPLY SHEET</option>
+                    <option value="KANBAN PRD">KANBAN PRD</option>
+                    <option value="KANBAN SUBCONT JASA">KANBAN SUBCONT JASA</option>
+                    <option value="KANBAN SUBCONT BARANG">KANBAN SUBCONT BARANG</option>
                     <option value="MATERIAL REQUEST">MATERIAL REQUEST</option>
                 </select>
             </div>
