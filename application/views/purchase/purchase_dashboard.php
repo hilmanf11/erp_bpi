@@ -172,18 +172,46 @@ function loadDashboard() {
 // Chart Purchase Stacked
 function updateTrendChart(labels, values) {
     const ctx = document.getElementById('purchaseChart').getContext('2d');
-    if (myPurchaseChart) myPurchaseChart.destroy();
     
-    myPurchaseChart = new Chart(ctx, {
-        type: 'line',
+    // Pastikan destroy chart sebelumnya agar tidak tumpang tindih saat update
+    if (window.myPurchaseChart) {
+        window.myPurchaseChart.destroy();
+    }
+    
+    window.myPurchaseChart = new Chart(ctx, {
+        type: 'bar',
         data: {
             labels: labels,
             datasets: [{
                 label: 'Purchase Amount',
                 data: values,
-                borderColor: '#3498db',
-                fill: false
+                backgroundColor: '#3498db',
+                borderColor: '#2980b9',
+                borderWidth: 1
             }]
+        },
+        options: {
+            responsive: true,
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    ticks: {
+                        // Format angka ke format ribuan agar rapi
+                        callback: function(value) {
+                            return 'Rp ' + value.toLocaleString('id-ID');
+                        }
+                    }
+                }
+            },
+            plugins: {
+                tooltip: {
+                    callbacks: {
+                        label: function(context) {
+                            return 'Amount: Rp ' + context.parsed.y.toLocaleString('id-ID');
+                        }
+                    }
+                }
+            }
         }
     });
 }
@@ -208,7 +236,6 @@ function updateSupplierChart(labels, values) {
             indexAxis: 'y',
             responsive: true,
             maintainAspectRatio: false,
-            // Menambah padding kanan agar angka tidak terpotong
             layout: {
                 padding: {
                     right: 70 
@@ -220,7 +247,6 @@ function updateSupplierChart(labels, values) {
             scales: {
                 x: {
                     beginAtZero: true,
-                    // Sembunyikan grid/label sumbu X jika ingin lebih bersih
                     grid: { display: false },
                     ticks: { display: false } 
                 }
