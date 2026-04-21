@@ -42,6 +42,7 @@ class Purchase_dashboard extends CI_Controller
     {
         $filter_from = $this->input->post('from');
         $filter_to = $this->input->post('to');
+        $filter_display = $this->input->post('display');
         $filter_division = $this->input->post('division');
         $filter_supplier_id = $this->input->post('supplier_id');
         $filter_category_id = $this->input->post('category_id');

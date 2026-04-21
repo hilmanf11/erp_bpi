@@ -1,74 +1,119 @@
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
-<div id="toolbar" style="padding:10px; background:#f4f4f4;">
-    <div style="width: 100%; display: grid; grid-template-columns: auto auto auto; grid-gap: 5px; display: flex;">
+<style>
+    .dashboard-wrapper { background-color: #f8fafc; padding: 20px; font-family: 'Inter', sans-serif; }
+    
+    .dashboard-card { 
+        background: white; border-radius: 12px; border: none;
+        box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1);
+        margin-bottom: 20px;
+    }
 
-        <fieldset style="width: 60%; border:2px solid #d0d0d0; margin-bottom: 5px; margin-top: 5px; border-radius:4px;">
-            <legend><b>Form Filter Data</b></legend>
-            <div style="width: 100%; float:left;">
-                <div class="fitem">
-                    <span style="width:35%; display:inline-block;">Display Period</span>
-                    <select style="width:60%;" id="filter_display" class="easyui-combobox" panelHeight="auto">
-                        <option value="DAILY">DAILY</option>
-                        <option value="WEEKLY">WEEKLY</option>
-                        <option value="MONTHLY">MONTHLY</option>
-                        <option value="YEARLY">YEARLY</option>
-                    </select>
-                </div>
+    /* Horizontal Filter Layout */
+    .filter-row { 
+        display: flex; 
+        flex-wrap: nowrap; 
+        align-items: flex-end; 
+        gap: 12px; 
+        padding: 20px; 
+        overflow-x: auto; /* Antisipasi jika layar kecil */
+    }
 
-                <div class="fitem">
-                    <span style="width:35%; display:inline-block;">Delivery Date</span>
-                    <input style="width:29%;" id="filter_from" class="easyui-datebox" value="<?= date("Y-m-01") ?>" data-options="formatter:myformatter,parser:myparser, editable:false"> To
-                    <input style="width:29%;" id="filter_to" class="easyui-datebox" value="<?= date("Y-m-t") ?>" data-options="formatter:myformatter,parser:myparser, editable:false">
-                </div>
+    .fitem-horizontal { 
+        flex: 1; 
+        min-width: 150px; 
+    }
 
-                <div class="fitem">
-                    <span style="width:35%; display:inline-block;">Supplier Name</span>
-                    <input style="width:60%;" id="filter_supplier_id" class="easyui-combobox">
-                </div>
+    .fitem-horizontal span { 
+        display: block !important; 
+        font-size: 11px; 
+        font-weight: 700; 
+        color: #64748b; 
+        margin-bottom: 6px;
+        text-transform: uppercase;
+    }
 
-                <div class="fitem">
-                    <span style="width:35%; display:inline-block;">Division</span>
-                    <input style="width:60%;" id="filter_division" class="easyui-combobox">
-                </div>
+    /* KPI Single Style */
+    .kpi-single {
+        background: linear-gradient(135deg, #6366f1 0%, #4338ca 100%);
+        padding: 20px 30px;
+        border-radius: 12px;
+        color: white;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 20px;
+        box-shadow: 0 10px 15px -3px rgba(99, 102, 241, 0.3);
+    }
+</style>
 
-                <div class="fitem">
-                    <span style="width:35%; display:inline-block;"></span>
-                    <a href="javascript:;" class="easyui-linkbutton" onclick="loadDashboard()"><i class="fa fa-search"></i> Filter Data</a>
-                </div>
+
+
+<div class="dashboard-wrapper">
+
+    <div class="dashboard-card">
+        <div class="filter-row">
+            <div class="fitem-horizontal">
+                <span>Display</span>
+                <select id="filter_display" class="easyui-combobox" style="width:100%; height:38px;" panelHeight="auto">
+                    <option value="DAILY">DAILY</option>
+                    <option value="WEEKLY">WEEKLY</option>
+                    <option value="MONTHLY">MONTHLY</option>
+                    <option value="YEARLY">YEARLY</option>
+                </select>
             </div>
-        </fieldset>
-
-        <fieldset style="width: 40%; border:2px solid #d0d0d0; margin-bottom: 5px; margin-top: 5px; border-radius:4px;">
-            <legend><b>Summary</b></legend>
-
-            <div style="width: 100%; float:left;">
-                <div class="card-kpi" style="flex:1; background:#3498db; color:white; padding:20px; margin-bottom:10px; border-radius:8px;">
-                    <div style="font-size:14px;">Total Purchase Amount</div>
-                    <div id="kpi_total_amt" style="font-size:24px; font-weight:bold;">Rp 0</div>
-                </div>
-
-                <div class="card-kpi" style="flex:1; background:#e67e22; color:white; padding:20px; margin-bottom:10px; border-radius:8px;">
-                    <div style="font-size:14px;">Total PO Issued</div>
-                    <div id="kpi_total_po" style="font-size:24px; font-weight:bold;">0</div>
-                </div>
+            
+            <div class="fitem-horizontal">
+                <span>From</span>
+                <input id="filter_from" class="easyui-datebox" style="width:100%; height:38px;" value="<?= date("Y-m-01") ?>" data-options="formatter:myformatter,parser:myparser, editable:false">
             </div>
-        </fieldset>
 
+            <div class="fitem-horizontal">
+                <span>To</span>
+                <input id="filter_to" class="easyui-datebox" style="width:100%; height:38px;" value="<?= date("Y-m-t") ?>" data-options="formatter:myformatter,parser:myparser, editable:false">
+            </div>
+
+            <div class="fitem-horizontal">
+                <span>Supplier</span>
+                <input id="filter_supplier_id" class="easyui-combobox" style="width:100%; height:38px;">
+            </div>
+
+            <div class="fitem-horizontal">
+                <span>Division</span>
+                <input id="filter_division" class="easyui-combobox" style="width:100%; height:38px;">
+            </div>
+
+            <div style="flex: 0 0 auto; margin-bottom: 5px;">
+                <a href="javascript:;" class="easyui-linkbutton" onclick="loadDashboard()"><i class="fa fa-search"></i> Filter Data</a>
+                
+                <?= $button; ?>
+            </div>
+        </div>
+    </div>
+    
+    <div class="kpi-single">
+        <div>
+            <div style="font-size: 14px; opacity: 0.9; font-weight: 500;">Total Purchase Amount</div>
+            <div id="kpi_total_amt" style="font-size: 32px; font-weight: 800; margin-top: 4px;">Rp 0</div>
+        </div>
+        <div style="background: rgba(255,255,255,0.2); padding: 15px; border-radius: 50%;">
+            <i class="fa fa-money-bill-wave fa-2x"></i>
+        </div>
     </div>
 
-    <?= $button ?>
-</div>
-
-<div class="easyui-panel" style="width:100%; padding:15px;">
-    <div style="display: flex; gap: 15px; margin-bottom: 20px;">
-        <div class="easyui-panel" title="Purchase by Amount" style="width:50%; height:700px; padding:10px;">
-            <canvas id="purchaseChart"></canvas>
+    <div style="display: flex; gap: 20px;">
+        <div class="dashboard-card" style="flex: 1;">
+            <div class="easyui-panel" title="Purchase Trend (Bar)" data-options="border:false" style="width:100%; height:450px; padding:20px;">
+                <canvas id="purchaseChart"></canvas>
+            </div>
         </div>
-        <div class="easyui-panel" title="Purchase per Suppliers" style="width:50%; height:700px; padding:10px;">
-            <canvas id="supplierChart"></canvas>
+        <div class="dashboard-card" style="flex: 1;">
+            <div class="easyui-panel" title="Top Suppliers" data-options="border:false" style="width:100%; height:450px; padding:20px;">
+                <canvas id="supplierChart"></canvas>
+            </div>
         </div>
     </div>
+
 </div>
 
 
@@ -121,6 +166,13 @@ $(function() {
         }],
     });
 
+    $("#filter_category_id").combobox({
+        url: '<?= base_url('master/item_categories/readsnotfg') ?>',
+        valueField: 'id',
+        textField: 'name',
+        prompt: "Select Categories"
+    });
+
     $("#filter_supplier_id").combobox({
         url: '<?= base_url('master/suppliers/reads') ?>',
         valueField: 'id',
@@ -150,6 +202,7 @@ function loadDashboard() {
     const params = {
         from: $('#filter_from').datebox('getValue'),
         to: $('#filter_to').datebox('getValue'),
+        display: $('#filter_display').combobox('getValue'),
         division: $('#filter_division').combobox('getValue'),
         supplier_id: $('#filter_supplier_id').combobox('getValue'),
     };
