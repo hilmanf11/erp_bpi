@@ -1,54 +1,53 @@
-<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-
-<style>
-    .dashboard-wrapper { background-color: #f0f2f5; padding: 15px; font-family: 'Inter', sans-serif; }
-    
-    /* Section Header */
-    .section-title { 
-        display: flex; align-items: center; gap: 8px;
-        font-size: 14px; font-weight: 700; color: #475569;
-        margin-bottom: 12px; border-left: 4px solid #3b82f6; padding-left: 10px;
-    }
-
-    /* Filter Bar dengan Pill Buttons */
-    .filter-container {
-        background: white; border-radius: 10px; padding: 12px 20px;
-        display: flex; flex-wrap: wrap; align-items: center; gap: 10px;
-        margin-bottom: 20px; box-shadow: 0 1px 3px rgba(0,0,0,0.05);
-    }
-
-    /* KPI Cards Grid */
-    .kpi-grid { 
-        display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); 
-        gap: 15px; margin-bottom: 20px; 
-    }
-    .kpi-card {
-        padding: 20px; border-radius: 12px; color: white; position: relative; overflow: hidden;
-        min-height: 100px; display: flex; flex-direction: column; justify-content: center;
-    }
-    .kpi-card i { position: absolute; right: -10px; bottom: -10px; font-size: 80px; opacity: 0.15; }
-    .kpi-label { font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; opacity: 0.9; }
-    .kpi-value { font-size: 24px; font-weight: 800; margin-top: 5px; }
-
-    /* Chart Container */
-    .chart-section {
-        background: white; border-radius: 12px; padding: 0; overflow: hidden;
-        box-shadow: 0 1px 3px rgba(0,0,0,0.05); margin-bottom: 20px;
-    }
-    .chart-header {
-        background: #244b82; color: white; padding: 10px 20px;
-        font-size: 13px; font-weight: 600; text-align: center;
-    }
-
-    /* Warna KPI Card */
-    .bg-blue { background: linear-gradient(135deg, #244b82 0%, #729dcb 100%); }
-    .bg-green { background: linear-gradient(135deg, #508758 0%, #88c396 100%); }
-    .bg-red { background: linear-gradient(135deg, #d15e29 0%, #feae88 100%); }
-</style>
-
-
-
 <div class="dashboard-wrapper">
+
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+    <style>
+        .dashboard-wrapper { background-color: #f0f2f5; padding: 15px; font-family: 'Inter', sans-serif; }
+        
+        /* Section Header */
+        .section-title { 
+            display: flex; align-items: center; gap: 8px;
+            font-size: 14px; font-weight: 700; color: #475569;
+            margin-bottom: 12px; border-left: 4px solid #3b82f6; padding-left: 10px;
+        }
+
+        /* Filter Bar dengan Pill Buttons */
+        .filter-container {
+            background: white; border-radius: 10px; padding: 12px 20px;
+            display: flex; flex-wrap: wrap; align-items: center; gap: 10px;
+            margin-bottom: 20px; box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+        }
+
+        /* KPI Cards Grid */
+        .kpi-grid { 
+            display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); 
+            gap: 15px; margin-bottom: 20px; 
+        }
+        .kpi-card {
+            padding: 20px; border-radius: 12px; color: white; position: relative; overflow: hidden;
+            min-height: 100px; display: flex; flex-direction: column; justify-content: center;
+        }
+        .kpi-card i { position: absolute; right: -10px; bottom: -10px; font-size: 80px; opacity: 0.15; }
+        .kpi-label { font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; opacity: 0.9; }
+        .kpi-value { font-size: 24px; font-weight: 800; margin-top: 5px; }
+
+        /* Chart Container */
+        .chart-section {
+            background: white; border-radius: 12px; padding: 0; overflow: hidden;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.05); margin-bottom: 20px;
+        }
+        .chart-header {
+            background: #244b82; color: white; padding: 10px 20px;
+            font-size: 13px; font-weight: 600; text-align: center;
+        }
+
+        /* Warna KPI Card */
+        .bg-blue { background: linear-gradient(135deg, #244b82 0%, #729dcb 100%); }
+        .bg-green { background: linear-gradient(135deg, #508758 0%, #88c396 100%); }
+        .bg-red { background: linear-gradient(135deg, #d15e29 0%, #feae88 100%); }
+    </style>
+
     
     <div class="section-title"><i class="fa fa-search"></i> FILTER & SUMMARY</div>
 
@@ -57,7 +56,6 @@
             <select id="filter_display" class="easyui-combobox" style="width:120px; height:32px;">
                 <option value="DAILY">DAILY</option>
                 <option value="WEEKLY">WEEKLY</option>
-                <option value="WEEKLY_ISO8601">WEEKLY (ISO-8601)</option>
                 <option value="MONTHLY">MONTHLY</option>
             </select>
             
@@ -65,10 +63,12 @@
             <span>to</span>
             <input id="filter_to" class="easyui-datebox" style="width:130px; height:32px;" value="<?= date("Y-m-t") ?>" data-options="formatter:myformatter,parser:myparser, editable:false">
 
-
             <input id="filter_supplier_id" class="easyui-combobox" style="width:150px; height:32px;" prompt="Supplier">
             <input id="filter_division" class="easyui-combobox" style="width:150px; height:32px;" prompt="Division">
+            
+            <div class="fitem" hidden>
             <input id="filter_category_id" class="easyui-combobox" style="width:150px; height:32px;" prompt="Category">
+            </div>
 
         </div>
         <a href="javascript:;" class="easyui-linkbutton" onclick="loadDashboard()" data-options="iconCls:'icon-search'" style="height:32px; padding:0 15px;">Filter</a>
@@ -224,15 +224,15 @@ function loadDashboard() {
         $('#kpi_total_supp').html(data.supp_labels.length); // Menghitung jumlah supplier unik dari data labels
 
         // Render/Update Chart Purchase
-        updateTrendChart(data.trend_labels, data.trend_values);
+        updateTrendChart(data.trend_labels, data.trend_values, data.subtitle);
 
         // Render/Update Chart Supplier
-        updateSupplierChart(data.supp_labels, data.supp_values);
+        updateSupplierChart(data.supp_labels, data.supp_values, data.subtitle);
     });
 }
 
 // Chart Purchase Stacked
-function updateTrendChart(labels, values) {
+function updateTrendChart(labels, values, subtitle) {
     const ctx = document.getElementById('purchaseChart').getContext('2d');
 
     // Jika data lebih dari 15, lebarkan bar
@@ -275,6 +275,20 @@ function updateTrendChart(labels, values) {
                 }
             },
             plugins: {
+                title: {
+                    display: true,
+                    text: subtitle,
+                    padding: {
+                        bottom: 25,
+                    }
+                },
+                legend: {
+                    display: true,
+                    position: 'bottom',
+                    labels: {
+                        padding: 20,
+                    }
+                },
                 tooltip: {
                     callbacks: {
                         label: function(context) {
@@ -289,7 +303,7 @@ function updateTrendChart(labels, values) {
 
 
 // Supplier Bar Chart
-function updateSupplierChart(labels, values) {
+function updateSupplierChart(labels, values, subtitle) {
     const ctx = document.getElementById('supplierChart').getContext('2d');
     if (mySupplierChart) mySupplierChart.destroy();
 
@@ -313,6 +327,13 @@ function updateSupplierChart(labels, values) {
                 }
             },
             plugins: {
+                title: {
+                    display: true,
+                    text: subtitle,
+                    padding: {
+                        bottom: 25,
+                    }
+                },
                 legend: { display: false }
             },
             scales: {

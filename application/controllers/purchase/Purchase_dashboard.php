@@ -47,6 +47,23 @@ class Purchase_dashboard extends CI_Controller
         $filter_supplier_id = $this->input->post('supplier_id');
         $filter_category_id = $this->input->post('category_id');
 
+        // --- VALIDASI PERIODE 6 BULAN ---
+        if ($filter_display == "MONTHLY") {
+            $start_check = new DateTime($filter_from);
+            $end_check   = new DateTime($filter_to);
+            $diff        = $start_check->diff($end_check);
+            
+            // Hitung total bulan dari selisih tahun dan bulan
+            $total_months = ($diff->y * 12) + $diff->m;
+    
+            // Jika selisih kurang dari 6 bulan, ubah filter_from jadi 6 bulan ke belakang dari filter_to
+            if ($total_months < 6) {
+                $new_start = clone $end_check;
+                $new_start->modify('-6 months');
+                $filter_from = $new_start->format('Y-m-d');
+            }
+        }
+
         // Prepare Data kosong bernilai 0
         $purchase_data = [];
         $start = new DateTime($filter_from);
@@ -76,22 +93,6 @@ class Purchase_dashboard extends CI_Controller
                 
                 // Format: W1 April 2026 (6 April - 12 April)
                 $key = "W" . $weekOfMonth . " " . $monday->format('M Y') . " (" . $monday->format('j M') . " - " . $sunday->format('j M') . ")";
-            } 
-            elseif ($filter_display == "WEEKLY_ISO8601") {
-                $monday = clone $dt;
-                if ($monday->format('N') != 1) {
-                    $monday->modify('last monday');
-                }
-                
-                $sunday = clone $monday;
-                $sunday->modify('+6 days');
-
-                // 'W' format ISO-8601 menghasilkan nomor minggu (01-53)
-                // 'o' menghasilkan tahun ISO-8601 yang sesuai dengan nomor minggu tersebut
-                $weekNumber = $monday->format('W');
-                $year = $monday->format('o'); 
-                
-                $key = "W" . $weekNumber . " " . $year . " (" . $monday->format('j M') . " - " . $sunday->format('j M') . ")";
             } 
             elseif ($filter_display == "MONTHLY") {
                 $key = $dt->format("M Y");
@@ -162,15 +163,6 @@ class Purchase_dashboard extends CI_Controller
                 // Format harus sama : W1 April 2026 (6 April - 12 April)
                 $key = "W" . $weekOfMonth . " " . date('M Y', $mondayTime) . " (" . date('j M', $mondayTime) . " - " . date('j M', $sundayTime) . ")";
             } 
-            elseif ($filter_display == "WEEKLY_ISO8601") {
-                $mondayTime = (date('N', $time) == 1) ? $time : strtotime('last monday', $time);
-                $sundayTime = strtotime('+6 days', $mondayTime);
-                
-                $weekNumber = date('W', $mondayTime);
-                $year = date('o', $mondayTime);
-                
-                $key = "W" . $weekNumber . " " . $year . " (" . date('j M', $mondayTime) . " - " . date('j M', $sundayTime) . ")";
-            } 
             elseif ($filter_display == "MONTHLY") {
                 $key = date('M Y', $time);
             } 
@@ -196,6 +188,7 @@ class Purchase_dashboard extends CI_Controller
             'trend_values' => array_values($purchase_data),
             'supp_labels'  => array_keys($supplier_summary),
             'supp_values'  => array_values($supplier_summary),
+            'subtitle'     => "Period: " . date('d M Y', strtotime($filter_from)) . " to " . date('d M Y', strtotime($filter_to))
         ];
 
         echo json_encode($output);
