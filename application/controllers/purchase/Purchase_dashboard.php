@@ -69,36 +69,50 @@ class Purchase_dashboard extends CI_Controller
             AND (b.item_category_id LIKE '%$filter_category_id%')
             AND (DATE_FORMAT(a.receipt_date, '%Y-%m-%d') BETWEEN '$filter_from' AND '$filter_to')
             ORDER BY a.receipt_date ASC";
+
         $records = $this->db->query($query)->result_array();
 
         // Mapping Data untuk Dashboard
         $total_amount     = 0;
         $unique_pos       = [];
-        $purchase_data    = []; // Untuk Chart Line
-        $supplier_summary = []; // Untuk Chart Pie/Doughnut
+        $purchase_data    = [];
+        $supplier_summary = [];
 
         foreach ($records as $row) {
             $subtotal = $row['qty'] * $row['price'];
             $total_amount += $subtotal;
             $unique_pos[$row['po_no']] = true;
 
-            // Grouping Trend per Hari (atau per bulan jika range luas)
-            $tgl = $row['receipt_date'];
-            $purchase_data[$tgl] = ($purchase_data[$tgl] ?? 0) + $subtotal;
+            // Grouping berdasarkan Filter Display
+            if ($filter_display == "DAILY") {
+                $key = $row['receipt_date'];
+            } 
+            elseif ($filter_display == "WEEKLY") {
+                // Grouping per pekan (Senin sebagai awal pekan)
+                // Hasil format: "2026-W16" (Tahun - Pekan ke-X)
+                $key = date('Y-W', strtotime($row['receipt_date']));
+            } 
+            elseif ($filter_display == "MONTHLY") {
+                // Grouping per bulan
+                // Hasil format: "Apr 2026"
+                $key = date('M Y', strtotime($row['receipt_date']));
+            } 
+            else {
+                $key = $row['receipt_date'];
+            }
 
-            // Grouping per Supplier
-            $supp = $row['supplier_name'];
+            $purchase_data[$key] = ($purchase_data[$key] ?? 0) + $subtotal;
+
+            // Grouping per Supplier (Tetap sama untuk semua filter)
+            $supp = $row['supplier_name'] ?? 'Unknown';
             $supplier_summary[$supp] = ($supplier_summary[$supp] ?? 0) + $subtotal;
         }
 
-        // Sort descending berdasarkan VALUE (Amount)
         arsort($supplier_summary); 
         
-        // Format Output JSON
         $output = [
             'total_amount_formatted' => 'Rp ' . number_format($total_amount, 0, ',', '.'),
             'total_po'      => count($unique_pos),
-            'recent_pos'    => array_slice($records, -10), // Ambil 10 transaksi terakhir
             'trend_labels'  => array_keys($purchase_data),
             'trend_values'  => array_values($purchase_data),
             'supp_labels'   => array_keys($supplier_summary),
@@ -107,4 +121,5 @@ class Purchase_dashboard extends CI_Controller
 
         echo json_encode($output);
     }
+
 }
