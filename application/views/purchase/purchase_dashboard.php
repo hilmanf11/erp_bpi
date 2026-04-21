@@ -57,6 +57,7 @@
             <select id="filter_display" class="easyui-combobox" style="width:120px; height:32px;">
                 <option value="DAILY">DAILY</option>
                 <option value="WEEKLY">WEEKLY</option>
+                <option value="WEEKLY_ISO8601">WEEKLY (ISO-8601)</option>
                 <option value="MONTHLY">MONTHLY</option>
             </select>
             
