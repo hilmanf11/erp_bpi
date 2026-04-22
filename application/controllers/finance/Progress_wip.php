@@ -218,10 +218,7 @@ class Progress_wip extends CI_Controller
             'BPIFG-INJ08240031',
             'BPIFG-INJ08240025',
             'BPIFG-INJ08240028',
-            'BPIFG-INJ01250012',
-            'BPIFG-INJ09250004',
-            'BPIFG-INJ09250003',
-            'BPIFG-INJ09250005'
+            'BPIFG-INJ01250012'
         ];
 
         $exclude_str = "'" . implode("','", $exclude_ids) . "'";
@@ -315,7 +312,6 @@ class Progress_wip extends CI_Controller
                             
                             GROUP BY sub.item_fg_sa_id
                         ) outmap ON a.id = outmap.item_fg_id
-
                         LEFT JOIN (
                                     select aa.item_fg_id,sum(aa.qty_product) as qty_ng FROM (
                                             select distinct document,item_fg_id, qty_product FROM  item_ng where trans_date between '$filter_from' AND '$filter_to' AND shift like '%$filter_shift%' AND kind LIKE 'Ng Process Production'
@@ -363,9 +359,21 @@ class Progress_wip extends CI_Controller
                                 FROM scan_item_receipts_fg a
                                 JOIN checksheets b ON b.number = a.checksheet_number
                                 WHERE DATE_FORMAT(b.packing_date, '%Y-%m-%d') BETWEEN '$filter_from' AND '$filter_to' 
-                                    AND b.status_subcont='NO' 
-                                    AND b.shift LIKE '%$filter_shift%'
+                                    AND b.status_subcont='NO'
+                                    AND b.shift LIKE '%$filter_shift%' 
                                 GROUP BY b.item_fg_id
+
+                                UNION ALL
+
+                                SELECT 
+                                    sub.item_fg_sa_id AS id,
+                                    SUM(a.qty) AS qty_rfg
+                                FROM scan_item_receipts_fg a
+                                JOIN checksheets b ON b.number = a.checksheet_number
+                                JOIN item_fg_subs sub ON sub.item_fg_id = b.item_fg_id
+                                WHERE DATE_FORMAT(b.packing_date, '%Y-%m-%d') BETWEEN '$filter_from' AND '$filter_to' 
+                                    AND b.status_subcont='NO' 
+                                GROUP BY sub.item_fg_sa_id
                             ) main
                             GROUP BY main.id
                         ) g on a.id = g.item_fg_id
@@ -496,6 +504,19 @@ class Progress_wip extends CI_Controller
                                             AND b.status_subcont = 'NO'
                                             AND b.shift LIKE '%$filter_shift%'
                                             GROUP BY b.item_fg_id
+
+                                            UNION ALL
+
+                                            SELECT 
+                                                sub.item_fg_sa_id AS id,
+                                                SUM(a.qty) AS qty_rfg
+                                            FROM scan_item_receipts_fg a
+                                            JOIN checksheets b ON b.number = a.checksheet_number
+                                            JOIN item_fg_subs sub ON sub.item_fg_id = b.item_fg_id
+                                            WHERE DATE_FORMAT(b.packing_date, '%Y-%m-%d') >= '2025-05-01'
+                                            AND DATE_FORMAT(b.packing_date, '%Y-%m-%d') < '$filter_from'
+                                            AND b.status_subcont = 'NO'
+                                            GROUP BY sub.item_fg_sa_id
                                         ) main
                                         GROUP BY main.id
                                     ) g ON a.id = g.item_fg_id
@@ -649,8 +670,40 @@ class Progress_wip extends CI_Controller
                     <th>Qty WIP</th>
                 </tr>';
         $no = 1;
+
+        $totalBeginBalance = 0;
+        $totalQtyAct = 0;
+        $totalQtyWip = 0;
+        $totalQtyNg = 0;
+        $totalTotalProduction = 0;
+        $totalSubcontsJasa = 0;
+        $totalQtyAdjIn = 0;
+        $totalQtyNgSa = 0;
+        $totalQtyNgWip = 0;
+        $totalQtyOutput = 0;
+        $totalQtyRfg = 0;
+        $totalQtyJasa = 0;
+        $totalQtyAdjOut = 0;
+        $totalEndingBalance = 0;
+
         foreach ($records as $record) {
             $item_fg_id = $record->id;
+
+            $totalBeginBalance += @$record->begin_balance;
+            $totalQtyAct += @$record->qty_actual;
+            $totalQtyWip += @$record->qty_wip;
+            $totalQtyNg += @$record->qty_ng;
+            $totalTotalProduction += @$record->total_production;
+            $totalSubcontsJasa += @$record->subconts_jasa;
+            $totalQtyAdjIn += @$record->qty_adj_in;
+            $totalQtyNgSa += @$record->qty_ng_sa;
+            $totalQtyNgWip += @$record->qty_ng_wip;
+            $totalQtyOutput += @$record->qty_output;
+            $totalQtyRfg += @$record->qty_rfg;
+            $totalQtyJasa += @$record->rfg_jasa;
+            $totalQtyAdjOut += @$record->qty_adj_out;
+            $totalEndingBalance += @$record->ending_balance;
+
             $html .= '  <tr>
                             <td style="text-align:center">' . $no . '</td>
                             <td colspan="3" style="mso-number-format:\@;">' . $record->number . '</td>
@@ -1716,6 +1769,28 @@ class Progress_wip extends CI_Controller
             }
             $no++;
         }
+
+
+        $html .= '<tr>
+            <td colspan="8" style="text-align:right;"><b>GRAND TOTAL</b></td>
+            <td style="text-align:right;">' . number_format($totalBeginBalance, 2) . '</td>
+            <td style="text-align:right;">' . number_format($totalQtyAct, 2) . '</td>
+            <td style="text-align:right;">' . number_format($totalQtyWip, 2) . '</td>
+            <td style="text-align:right;">' . number_format($totalQtyNg, 2) . '</td>
+            <td style="text-align:right;">' . number_format($totalTotalProduction, 2) . '</td>
+            <td style="text-align:right;">' . number_format($totalSubcontsJasa, 2) . '</td>
+            <td style="text-align:right;">' . number_format($totalQtyAdjIn, 2) . '</td>
+            <td style="text-align:right;">' . number_format($totalQtyNgSa, 2) . '</td>
+            <td style="text-align:right;">' . number_format($totalQtyNgWip, 2) . '</td>
+            <td style="text-align:right;">' . number_format($totalQtyOutput, 2) . '</td>
+            <td style="text-align:right;">' . number_format($totalQtyRfg, 2) . '</td>
+            <td style="text-align:right;">' . number_format($totalQtyJasa, 2) . '</td>
+            <td style="text-align:right;">' . number_format($totalQtyAdjOut, 2) . '</td>
+            <td style="text-align:right;">' . number_format($totalEndingBalance, 2) . '</td>
+
+        </tr>
+        </tbody>';
+
         $html .= '</table></body></html>';
         echo $html;
     }

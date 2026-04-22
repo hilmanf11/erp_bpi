@@ -594,3 +594,6 @@ Update DN Boxs ([19a901aa](https://github.com/hilmanf11/erp_bpi/commit/19a901aaa
 - **kurniawan**: Update Calendars.php
 
 Change Sunday can be edit ([a91b0388](https://github.com/hilmanf11/erp_bpi/commit/a91b0388d4750d05be52467e126aafa002b3feb3))
+
+### [2026-04-21]
+- **kurniawan**: Merge branch 'main' of https://github.com/hilmanf11/erp_bpi ([b7884de5](https://github.com/hilmanf11/erp_bpi/commit/b7884de5fdc730c02391ab1713de70d26a233b42))
