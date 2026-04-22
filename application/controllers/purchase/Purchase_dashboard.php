@@ -194,6 +194,19 @@ class Purchase_dashboard extends CI_Controller
         echo json_encode($output);
     }
 
+    // Generate KEY Label Date
+    private function _generate_date_key($dt, $display) {
+        if ($display == "DAILY") return $dt->format("Y-m-d");
+        if ($display == "MONTHLY") return $dt->format("M Y");
+        
+        // Weekly Logic
+        $monday = clone $dt;
+        if ($monday->format('N') != 1) $monday->modify('last monday');
+        $sunday = clone $monday; $sunday->modify('+6 days');
+        $weekOfMonth = ceil($monday->format('j') / 7);
+        return "W$weekOfMonth " . $monday->format('M Y') . " (" . $monday->format('j M') . " - " . $sunday->format('j M') . ")";
+    }
+
     public function get_plan_actual_data() 
     {
         $filter_from        = $this->input->post('from');
@@ -203,51 +216,113 @@ class Purchase_dashboard extends CI_Controller
         $filter_supplier_id = $this->input->post('supplier_id');
         $filter_category_id = $this->input->post('category_id');
 
+        $chart_types = ['qty', 'child_part', 'virgin', 'consumable', 'master_batch', 'stamping', 'subcont'];
+        $data_map = [];
 
-        // Prepare Data Variables
-        $week_labels          = ['Date 01-07', 'Date 08-14', 'Date 15-21', 'Date 22-31'];
-        $qty_plan            = [];
-        $qty_actual          = [];
-        $child_part_plan     = [];
-        $child_part_actual   = [];
-        $virgin_plan         = [];
-        $virgin_actual       = [];
-        $consumable_plan     = [];
-        $consumable_actual   = [];
-        $master_batch_plan   = [];
-        $master_batch_actual = [];
-        $stamping_plan       = [];
-        $stamping_actual     = [];
-        $subcont_plan        = [];
-        $subcont_actual      = [];
+        // --- VALIDASI PERIODE 6 BULAN (MONTHLY) ---
+        if ($filter_display == "MONTHLY") {
+            $start_check = new DateTime($filter_from);
+            $end_check   = new DateTime($filter_to);
+            $diff        = $start_check->diff($end_check);
+            $total_months = ($diff->y * 12) + $diff->m;
+            if ($total_months < 6) {
+                $start_check->modify('-6 months');
+                $filter_from = $start_check->format('Y-m-d');
+            }
+        }
 
+        // Generate Label
+        $labels = [];
+        $start = new DateTime($filter_from);
+        $end   = new DateTime($filter_to);
+        $end->modify('+1 day');
+        $period = new DatePeriod($start, new DateInterval('P1D'), $end);
 
-        // GET QTY PLAN FROM PO
+        foreach ($period as $dt) {
+            $key = $this->_generate_date_key($dt, $filter_display);
+            if (!in_array($key, $labels)) {
+                $labels[] = $key;
+                foreach ($chart_types as $cat) {
+                    $data_map[$cat]['plan'][$key] = 0;
+                    $data_map[$cat]['actual'][$key] = 0;
+                }
+            }
+        }
 
-        
-        // GET QTY ACTUAL FROM POR
+        // QTY PLAN (Dari purchase_orders)
+        $query_plan = "SELECT 
+                            a.item_rm_id, 
+                            a.po_no as no_ref,
+                            a.po_date as date_ref, 
+                            a.qty, 
+                            a.price,
+                            c.name as family_name
+                        FROM purchase_orders a
+                        LEFT JOIN item_rm b ON a.item_rm_id = b.id
+                        LEFT JOIN item_familys c ON b.item_family_id = c.id
+                        LEFT JOIN item_categories e ON b.item_category_id = e.id
+                        WHERE a.po_date BETWEEN '$filter_from' AND '$filter_to'
+                        AND a.supplier_id LIKE '%$filter_supplier_id%'
+                        AND b.division LIKE '%$filter_division%'
+                        AND b.item_category_id LIKE '%$filter_category_id%'";
+        $res_plan = $this->db->query($query_plan)->result_array();
+        $this->_mapping_chart_data($res_plan, $data_map, 'plan', $filter_display);
 
+        // QTY ACTUAL (Dari purchase_order_receipts)
+        $query_actual = "SELECT 
+                            a.item_rm_id,
+                            a.receipt_no as no_ref,
+                            a.receipt_date as date_ref, 
+                            a.qty_receipt2 as qty, 
+                            d.price,
+                            c.name as family_name
+                        FROM purchase_order_receipts a
+                        LEFT JOIN item_rm b ON a.item_rm_id = b.id
+                        LEFT JOIN item_familys c ON b.item_family_id = c.id
+                        LEFT JOIN purchase_orders d ON a.po_no = d.po_no AND a.item_rm_id = d.item_rm_id
+                        LEFT JOIN item_categories e ON b.item_category_id = e.id
+                        WHERE a.receipt_date BETWEEN '$filter_from' AND '$filter_to'
+                        AND a.supplier_id LIKE '%$filter_supplier_id%'
+                        AND b.division LIKE '%$filter_division%'
+                        AND b.item_category_id LIKE '%$filter_category_id%'";
+        $res_actual = $this->db->query($query_actual)->result_array();
+        $this->_mapping_chart_data($res_actual, $data_map, 'actual', $filter_display);
 
+        // PREPARE OUTPUT
         $output = [
-            'period'               => "Period: " . date('d M Y', strtotime($filter_from)) . " to " . date('d M Y', strtotime($filter_to)),
-            'week_labels'          => array_keys($week_labels),
-            'qty_plan'             => array_values($qty_plan),
-            'qty_actual'           => array_values($qty_actual),
-            'child_part_plan'      => array_values($child_part_plan),
-            'child_part_actual'    => array_values($child_part_actual),
-            'virgin_plan'          => array_values($virgin_plan),
-            'virgin_actual'        => array_values($virgin_actual),
-            'consumable_plan'      => array_values($consumable_plan),
-            'consumable_actual'    => array_values($consumable_actual),
-            'master_batch_plan'    => array_values($master_batch_plan),
-            'master_batch_actual'  => array_values($master_batch_actual),
-            'stamping_plan'        => array_values($stamping_plan),
-            'stamping_actual'      => array_values($stamping_actual),
-            'subcont_plan'         => array_values($subcont_plan),
-            'subcont_actual'       => array_values($subcont_actual),
+            'period'      => "Period: " . date('d M Y', strtotime($filter_from)) . " to " . date('d M Y', strtotime($filter_to)),
+            'week_labels' => $labels,
         ];
 
+        foreach ($chart_types as $cat) {
+            $output[$cat . '_plan']   = array_values($data_map[$cat]['plan']);
+            $output[$cat . '_actual'] = array_values($data_map[$cat]['actual']);
+        }
+
         echo json_encode($output);
+    }
+
+    // Helper Mapping Data
+    private function _mapping_chart_data($records, &$data_map, $type, $display) {
+        foreach ($records as $row) {
+            $dt = new DateTime($row['date_ref']);
+            $key = $this->_generate_date_key($dt, $display);
+            $qty = (float)$row['qty']; 
+            $amount = $qty * (float)$row['price'];
+            $f_name = strtoupper($row['family_name'] ?? '');
+
+            if (isset($data_map['qty'][$type][$key])) {
+                $data_map['qty'][$type][$key] += $qty;
+
+                // Grouping Item Family berdasarkan nama
+                if (strpos($f_name, 'CHILD') !== false) $data_map['child_part'][$type][$key] += $qty;
+                elseif (strpos($f_name, 'VIRGIN') !== false) $data_map['virgin'][$type][$key] += $qty;
+                elseif (strpos($f_name, 'CONSUMABLE') !== false) $data_map['consumable'][$type][$key] += $qty;
+                elseif (strpos($f_name, 'MASTER') !== false) $data_map['master_batch'][$type][$key] += $qty;
+                elseif (strpos($f_name, 'STAMPING') !== false) $data_map['stamping'][$type][$key] += $qty;
+                elseif (strpos($f_name, 'SUBCONT') !== false) $data_map['subcont'][$type][$key] += $qty;
+            }
+        }
     }
 
 }

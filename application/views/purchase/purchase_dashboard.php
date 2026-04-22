@@ -348,15 +348,15 @@ function loadDashboard() {
         const weekLabels = data.week_labels;
 
         // Plan Actual - Chart Utama
-        createPlanActualChart('planActualChart', period, weekLabels, [825000, 825000, 825000, 825000], [823000, 823000, 823000, 823000]);
+        createPlanActualChart('planActualChart', period, weekLabels, data.qty_plan, data.qty_actual);
 
         // Plan Actual - Group ITEM FAMILY
-        createPlanActualChart('childPartChart', period, weekLabels, [100000, 120000, 110000, 130000], [95000, 115000, 108000, 125000]);
-        createPlanActualChart('virginChart', period, weekLabels, [50000, 50000, 55000, 50000], [48000, 49000, 52000, 47000]);
-        createPlanActualChart('consumableChart', period, weekLabels, [20000, 22000, 21000, 23000], [19000, 21000, 20500, 22000]);
-        createPlanActualChart('masterBatchChart', period, weekLabels, [5000, 6000, 5500, 7000], [4800, 5800, 5400, 6800]);
-        createPlanActualChart('stampingChart', period, weekLabels, [300000, 310000, 305000, 320000], [290000, 305000, 300000, 315000]);
-        createPlanActualChart('subcontChart', period, weekLabels, [150000, 155000, 152000, 160000], [145000, 150000, 148000, 155000]);
+        createPlanActualChart('childPartChart', period, weekLabels, data.child_part_plan, data.child_part_actual);
+        createPlanActualChart('virginChart', period, weekLabels, data.virgin_plan, data.virgin_actual);
+        createPlanActualChart('consumableChart', period, weekLabels, data.consumable_plan, data.consumable_actual);
+        createPlanActualChart('masterBatchChart', period, weekLabels, data.master_batch_plan, data.master_batch_actual);
+        createPlanActualChart('stampingChart', period, weekLabels, data.stamping_plan, data.stamping_actual);
+        createPlanActualChart('subcontChart', period, weekLabels, data.subcont_plan, data.subcont_actual);
     });
 }
 
