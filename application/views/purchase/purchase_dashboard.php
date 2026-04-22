@@ -93,7 +93,7 @@
         </div>
     </div>
 
-    <div class="section-title"><i class="fa fa-chart-line"></i> PURCHASE ANALISYS</div>
+    <div class="section-title"><i class="fa fa-bar-chart"></i> PURCHASE TRENDS</div>
 
     <div style="display: flex; gap: 15px;">
         <div class="chart-section" style="flex: 1; width: 50%;">
@@ -115,7 +115,7 @@
         </div>
     </div>
 
-    <div class="section-title"><i class="fa fa-chart-line"></i> PURCHASE PLAN VS ACTUAL </div>
+    <div class="section-title"><i class="fa fa-bar-chart"></i> PURCHASE PLAN VS ACTUAL </div>
 
     <div class="chart-section" style="width: 100%;">
         <div class="chart-header">Purchase Plan VS Actual by QTY</div>
@@ -197,6 +197,29 @@
         </div>
     </div>
 
+
+    <div class="section-title"><i class="fa fa-files-o"></i> CONCLUTION AND IMPACT</div>
+
+    <div style="display: flex; gap: 15px;">
+        <div class="chart-section" style="flex: 1; width: 50%;">
+            <div class="chart-header">CONCLUTION</div>
+            <div style="padding: 20px; overflow-y: auto;">
+                <div id="conclution" style="min-height: 100px;">
+                    &nbsp;
+                </div>
+            </div>
+        </div>
+
+        <div class="chart-section" style="flex: 1; width: 50%;">
+            <div class="chart-header">IMPACT</div>
+            <div style="padding: 20px; overflow-y: auto;">
+                <div id="conclution" style="min-height: 100px;">
+                    &nbsp;
+                </div>
+            </div>
+        </div>
+    </div>
+    
 </div>
 
 
@@ -318,6 +341,21 @@ function loadDashboard() {
 
         // Render/Update Chart Supplier
         updateSupplierChart(data.supp_labels, data.supp_values, data.subtitle);
+
+
+        // Data labels
+        const weekLabels = ['Date 01-07', 'Date 08-14', 'Date 15-21', 'Date 22-31'];
+
+        // Plan Actual - Chart Utama
+        createPlanActualChart('planActualChart', weekLabels, [825000, 825000, 825000, 825000], [823000, 823000, 823000, 823000]);
+
+        // Plan Actual - Group ITEM FAMILY
+        createPlanActualChart('childPartChart', weekLabels, [100000, 120000, 110000, 130000], [95000, 115000, 108000, 125000]);
+        createPlanActualChart('virginChart', weekLabels, [50000, 50000, 55000, 50000], [48000, 49000, 52000, 47000]);
+        createPlanActualChart('consumableChart', weekLabels, [20000, 22000, 21000, 23000], [19000, 21000, 20500, 22000]);
+        createPlanActualChart('masterBatchChart', weekLabels, [5000, 6000, 5500, 7000], [4800, 5800, 5400, 6800]);
+        createPlanActualChart('stampingChart', weekLabels, [300000, 310000, 305000, 320000], [290000, 305000, 300000, 315000]);
+        createPlanActualChart('subcontChart', weekLabels, [150000, 155000, 152000, 160000], [145000, 150000, 148000, 155000]);
     });
 }
 
@@ -451,6 +489,86 @@ function updateSupplierChart(labels, values, subtitle) {
                             var label = 'Rp ' + data.toLocaleString('id-ID');
                             // Posisi: tepat di sebelah kanan bar
                             ctx.fillText(label, bar.x + 5, bar.y);
+                        });
+                    });
+                }
+            }
+        }
+    });
+}
+
+// Plan VS Actual Chart
+function createPlanActualChart(canvasId, labels, dataPlan, dataActual) {
+    const ctx = document.getElementById(canvasId).getContext('2d');
+    
+    return new Chart(ctx, {
+        type: 'bar',
+        data: {
+            labels: labels, // Label minggu masuk ke sini
+            datasets: [
+                {
+                    label: 'Plan',
+                    data: dataPlan,
+                    backgroundColor: '#5376af',
+                    borderWidth: 1
+                },
+                {
+                    label: 'Actual',
+                    data: dataActual,
+                    backgroundColor: '#395279',
+                    borderWidth: 1
+                }
+            ]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            layout: { 
+                padding: { top: 30, bottom: 10 } 
+            },
+            scales: {
+                x: {
+                    grid: { display: false },
+                    ticks: { 
+                        display: true, // WAJIB TRUE agar label 'Date 01-07' muncul
+                        font: { size: 10 }
+                    }
+                },
+                y: {
+                    // Agar bar tidak mentok ke atas dan teks angka punya ruang
+                    grace: '10%' 
+                }
+            },
+            plugins: {
+                tooltip: { enabled: true },
+                title: {
+                    display: true,
+                    text: "Period: 1 April - 31 April 2026",
+                    padding: { bottom: 10 }
+                },
+                legend: {
+                    display: true,
+                    position: 'bottom'
+                }
+            },
+            animation: {
+                // Menggunakan onProgress agar angka mengikuti pergerakan bar
+                onProgress: function() {
+                    var chartInstance = this;
+                    var ctx = chartInstance.ctx;
+                    ctx.font = "bold 10px Arial";
+                    ctx.textAlign = 'center';
+                    ctx.textBaseline = 'bottom';
+                    ctx.fillStyle = '#333';
+
+                    this.data.datasets.forEach(function(dataset, i) {
+                        var meta = chartInstance.getDatasetMeta(i);
+                        meta.data.forEach(function(bar, index) {
+                            var data = dataset.data[index];
+                            if (data !== null && !bar.hidden) {
+                                // bar.y adalah koordinat ujung atas bar
+                                ctx.fillText(data.toLocaleString('id-ID'), bar.x, bar.y - 5);
+                            }
                         });
                     });
                 }
