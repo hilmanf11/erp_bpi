@@ -342,21 +342,29 @@ function loadDashboard() {
 
     $.post('<?= base_url("purchase/purchase_dashboard/get_plan_actual_data") ?>', params, function(res) {
         const data = JSON.parse(res);
-        const period = data.period;
 
-        // Data labels
-        const weekLabels = data.week_labels;
+        // Set ID Canvas dan Key Data dari Response
+        const chartMapping = {
+            'planActualChart': ['qty_plan', 'qty_actual'],
+            'childPartChart': ['child_part_plan', 'child_part_actual'],
+            'virginChart': ['virgin_plan', 'virgin_actual'],
+            'consumableChart': ['consumable_plan', 'consumable_actual'],
+            'masterBatchChart': ['master_batch_plan', 'master_batch_actual'],
+            'stampingChart': ['stamping_plan', 'stamping_actual'],
+            'subcontChart': ['subcont_plan', 'subcont_actual']
+        };
 
-        // Plan Actual - Chart Utama
-        createPlanActualChart('planActualChart', period, weekLabels, data.qty_plan, data.qty_actual);
-
-        // Plan Actual - Group ITEM FAMILY
-        createPlanActualChart('childPartChart', period, weekLabels, data.child_part_plan, data.child_part_actual);
-        createPlanActualChart('virginChart', period, weekLabels, data.virgin_plan, data.virgin_actual);
-        createPlanActualChart('consumableChart', period, weekLabels, data.consumable_plan, data.consumable_actual);
-        createPlanActualChart('masterBatchChart', period, weekLabels, data.master_batch_plan, data.master_batch_actual);
-        createPlanActualChart('stampingChart', period, weekLabels, data.stamping_plan, data.stamping_actual);
-        createPlanActualChart('subcontChart', period, weekLabels, data.subcont_plan, data.subcont_actual);
+        // Mapping Chart with Loop
+        Object.keys(chartMapping).forEach(canvasId => {
+            const [planKey, actualKey] = chartMapping[canvasId];
+            createPlanActualChart(
+                canvasId, 
+                data.period, 
+                data.week_labels, 
+                data[planKey], 
+                data[actualKey]
+            );
+        });
     });
 }
 
@@ -424,6 +432,28 @@ function updateTrendChart(labels, values, subtitle) {
                             return 'Amount: Rp ' + context.parsed.y.toLocaleString('id-ID');
                         }
                     }
+                }
+            },
+            animation: {
+                // Menggunakan onProgress agar angka mengikuti pergerakan bar
+                onProgress: function() {
+                    var chartInstance = this;
+                    var ctx = chartInstance.ctx;
+                    ctx.font = "bold 10px Arial";
+                    ctx.textAlign = 'center';
+                    ctx.textBaseline = 'bottom';
+                    ctx.fillStyle = '#333';
+
+                    this.data.datasets.forEach(function(dataset, i) {
+                        var meta = chartInstance.getDatasetMeta(i);
+                        meta.data.forEach(function(bar, index) {
+                            var data = dataset.data[index];
+                            if (data !== null && !bar.hidden) {
+                                // bar.y adalah koordinat ujung atas bar
+                                ctx.fillText(data.toLocaleString('id-ID'), bar.x, bar.y - 5);
+                            }
+                        });
+                    });
                 }
             }
         }
@@ -505,7 +535,7 @@ function createPlanActualChart(canvasId, period, labels, dataPlan, dataActual) {
 
     const ctx = canvas.getContext('2d');
 
-    // 1. Perbaikan: Gunakan penyimpanan berdasarkan ID canvas agar destroy() tidak salah sasaran
+    // Pastikan destroy chart sebelumnya agar tidak tumpang tindih saat update
     if (chartInstances[canvasId]) {
         chartInstances[canvasId].destroy();
     }
@@ -513,7 +543,7 @@ function createPlanActualChart(canvasId, period, labels, dataPlan, dataActual) {
     chartInstances[canvasId] = new Chart(ctx, {
         type: 'bar',
         data: {
-            labels: labels, // Label minggu masuk ke sini
+            labels: labels,
             datasets: [
                 {
                     label: 'Plan',
@@ -539,13 +569,12 @@ function createPlanActualChart(canvasId, period, labels, dataPlan, dataActual) {
                 x: {
                     grid: { display: false },
                     ticks: { 
-                        display: true, // WAJIB TRUE agar label 'Date 01-07' muncul
+                        display: true,
                         font: { size: 10 }
                     }
                 },
                 y: {
-                    // Agar bar tidak mentok ke atas dan teks angka punya ruang
-                    grace: '10%' 
+                    grace: '15%',
                 }
             },
             plugins: {

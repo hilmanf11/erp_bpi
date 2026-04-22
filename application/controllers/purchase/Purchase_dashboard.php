@@ -13,6 +13,8 @@ defined('BASEPATH') or exit('No direct script access allowed');
  */
 class Purchase_dashboard extends CI_Controller
 {
+    private $_get_rates = [];
+
     public function __construct()
     {
         parent::__construct();
@@ -194,6 +196,7 @@ class Purchase_dashboard extends CI_Controller
         echo json_encode($output);
     }
 
+
     // Generate KEY Label Date
     private function _generate_date_key($dt, $display) {
         if ($display == "DAILY") return $dt->format("Y-m-d");
@@ -207,6 +210,18 @@ class Purchase_dashboard extends CI_Controller
         return "W$weekOfMonth " . $monday->format('M Y') . " (" . $monday->format('j M') . " - " . $sunday->format('j M') . ")";
     }
 
+    // Get Rate di memory (Optimasi mencegah N+1 Query)
+    private function _find_rate_in_cache($date, $currency) {
+        if ($currency == "IDR" || empty($currency)) return 1.0;
+        
+        foreach ($this->_get_rates as $r) {
+            if ($r['currency_from'] == $currency && $date >= $r['start_date'] && $date <= $r['end_date']) {
+                return (float)$r['middle'];
+            }
+        }
+        return 1.0;
+    }
+
     public function get_plan_actual_data() 
     {
         $filter_from        = $this->input->post('from');
@@ -215,6 +230,9 @@ class Purchase_dashboard extends CI_Controller
         $filter_division    = $this->input->post('division');
         $filter_supplier_id = $this->input->post('supplier_id');
         $filter_category_id = $this->input->post('category_id');
+
+        // Query Rates disisipkan ke private variable
+        $this->_get_rates = $this->db->get('standard_exchange_rates')->result_array();
 
         $chart_types = ['qty', 'child_part', 'virgin', 'consumable', 'master_batch', 'stamping', 'subcont'];
         $data_map = [];
@@ -256,6 +274,8 @@ class Purchase_dashboard extends CI_Controller
                             a.po_date as date_ref, 
                             a.qty, 
                             a.price,
+                            a.currency,
+                            e.name as category_name,
                             c.name as family_name
                         FROM purchase_orders a
                         LEFT JOIN item_rm b ON a.item_rm_id = b.id
@@ -266,6 +286,7 @@ class Purchase_dashboard extends CI_Controller
                         AND b.division LIKE '%$filter_division%'
                         AND b.item_category_id LIKE '%$filter_category_id%'";
         $res_plan = $this->db->query($query_plan)->result_array();
+
         $this->_mapping_chart_data($res_plan, $data_map, 'plan', $filter_display);
 
         // QTY ACTUAL (Dari purchase_order_receipts)
@@ -275,6 +296,8 @@ class Purchase_dashboard extends CI_Controller
                             a.receipt_date as date_ref, 
                             a.qty_receipt2 as qty, 
                             d.price,
+                            d.currency,
+                            e.name as category_name,
                             c.name as family_name
                         FROM purchase_order_receipts a
                         LEFT JOIN item_rm b ON a.item_rm_id = b.id
@@ -286,6 +309,7 @@ class Purchase_dashboard extends CI_Controller
                         AND b.division LIKE '%$filter_division%'
                         AND b.item_category_id LIKE '%$filter_category_id%'";
         $res_actual = $this->db->query($query_actual)->result_array();
+
         $this->_mapping_chart_data($res_actual, $data_map, 'actual', $filter_display);
 
         // PREPARE OUTPUT
@@ -302,25 +326,26 @@ class Purchase_dashboard extends CI_Controller
         echo json_encode($output);
     }
 
-    // Helper Mapping Data
-    private function _mapping_chart_data($records, &$data_map, $type, $display) {
+    private function _mapping_chart_data($records, &$data_map, $type, $display) 
+    {
         foreach ($records as $row) {
-            $dt = new DateTime($row['date_ref']);
-            $key = $this->_generate_date_key($dt, $display);
-            $qty = (float)$row['qty']; 
-            $amount = $qty * (float)$row['price'];
+            $key = $this->_generate_date_key(new DateTime($row['date_ref']), $display);
             $f_name = strtoupper($row['family_name'] ?? '');
+            
+            // Get Rate and Amount
+            $rate = $this->_find_rate_in_cache($row['date_ref'], $row['currency']);
+            $amount = (float)$row['qty'] * (float)$row['price'] * (float)$rate;
 
             if (isset($data_map['qty'][$type][$key])) {
-                $data_map['qty'][$type][$key] += $qty;
+                $data_map['qty'][$type][$key] += $amount;
 
                 // Grouping Item Family berdasarkan nama
-                if (strpos($f_name, 'CHILD') !== false) $data_map['child_part'][$type][$key] += $qty;
-                elseif (strpos($f_name, 'VIRGIN') !== false) $data_map['virgin'][$type][$key] += $qty;
-                elseif (strpos($f_name, 'CONSUMABLE') !== false) $data_map['consumable'][$type][$key] += $qty;
-                elseif (strpos($f_name, 'MASTER') !== false) $data_map['master_batch'][$type][$key] += $qty;
-                elseif (strpos($f_name, 'STAMPING') !== false) $data_map['stamping'][$type][$key] += $qty;
-                elseif (strpos($f_name, 'SUBCONT') !== false) $data_map['subcont'][$type][$key] += $qty;
+                if (strpos($f_name, 'CHILD') !== false) $data_map['child_part'][$type][$key] += $amount;
+                elseif (strpos($f_name, 'VIRGIN') !== false) $data_map['virgin'][$type][$key] += $amount;
+                elseif (strpos($f_name, 'CONSUMABLE') !== false) $data_map['consumable'][$type][$key] += $amount;
+                elseif (strpos($f_name, 'MASTER') !== false) $data_map['master_batch'][$type][$key] += $amount;
+                elseif (strpos($f_name, 'STAMPING') !== false) $data_map['stamping'][$type][$key] += $amount;
+                elseif (strpos($f_name, 'SUBCONT') !== false) $data_map['subcont'][$type][$key] += $amount;
             }
         }
     }
