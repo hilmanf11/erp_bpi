@@ -115,6 +115,88 @@
         </div>
     </div>
 
+    <div class="section-title"><i class="fa fa-chart-line"></i> PURCHASE PLAN VS ACTUAL </div>
+
+    <div class="chart-section" style="width: 100%;">
+        <div class="chart-header">Purchase Plan VS Actual by QTY</div>
+        <div style="padding: 20px; overflow-x: auto;">
+            <div id="planActualChartParent" style="min-width: 1000px; height: 250px;">
+                <canvas id="planActualChart"></canvas>
+            </div>
+        </div>
+    </div>
+
+    <!-- ITEM FAMILY -->
+    <div style="display: flex; gap: 15px;">
+        <div class="chart-section" style="flex: 1; width: 35%;">
+            <div class="chart-header">
+                CHILD PART
+            </div>
+            <div style="padding: 20px; overflow-x: auto;">
+                <div id="childPartChartParent" style="min-width: 1000px; height: 250px;">
+                    <canvas id="childPartChart"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <div class="chart-section" style="flex: 1; width: 35%;">
+            <div class="chart-header">
+                VIRGIN
+            </div>
+            <div style="padding: 20px; overflow-x: auto;">
+                <div id="virginChartParent" style="min-width: 1000px; height: 250px;">
+                    <canvas id="virginChart"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <div class="chart-section" style="flex: 1; width: 35%;">
+            <div class="chart-header">
+                CONSUMABLE
+            </div>
+            <div style="padding: 20px; overflow-x: auto;">
+                <div id="consumableChartParent" style="min-width: 1000px; height: 250px;">
+                    <canvas id="consumableChart"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div style="display: flex; gap: 15px;">
+        <div class="chart-section" style="flex: 1; width: 35%;">
+            <div class="chart-header">
+                MASTER BATCH
+            </div>
+            <div style="padding: 20px; overflow-x: auto;">
+                <div id="masterBatchChartParent" style="min-width: 1000px; height: 250px;">
+                    <canvas id="masterBatchChart"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <div class="chart-section" style="flex: 1; width: 35%;">
+            <div class="chart-header">
+                STAMPING
+            </div>
+            <div style="padding: 20px; overflow-x: auto;">
+                <div id="stampingChartParent" style="min-width: 1000px; height: 250px;">
+                    <canvas id="stampingChart"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <div class="chart-section" style="flex: 1; width: 35%;">
+            <div class="chart-header">
+                SUBCONT
+            </div>
+            <div style="padding: 20px; overflow-x: auto;">
+                <div id="subcontChartParent" style="min-width: 1000px; height: 250px;">
+                    <canvas id="subcontChart"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+
 </div>
 
 
@@ -204,6 +286,14 @@ $(function() {
 
 var myPurchaseChart;
 var mySupplierChart;
+
+var myPlanActualChart;
+var myChildPartChart;
+var myVirginChart;
+var myConsumableChart;
+var myMasterBatchChart;
+var myStampingChart;
+var mySubcontChart;
 
 function loadDashboard() {
     const params = {
