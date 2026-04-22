@@ -310,13 +310,8 @@ $(function() {
 var myPurchaseChart;
 var mySupplierChart;
 
-var myPlanActualChart;
-var myChildPartChart;
-var myVirginChart;
-var myConsumableChart;
-var myMasterBatchChart;
-var myStampingChart;
-var mySubcontChart;
+// Gunakan object untuk menyimpan instance multiple chart
+let chartInstances = {};
 
 function loadDashboard() {
     const params = {
@@ -342,20 +337,26 @@ function loadDashboard() {
         // Render/Update Chart Supplier
         updateSupplierChart(data.supp_labels, data.supp_values, data.subtitle);
 
+    });
+
+
+    $.post('<?= base_url("purchase/purchase_dashboard/get_plan_actual_data") ?>', params, function(res) {
+        const data = JSON.parse(res);
+        const period = data.period;
 
         // Data labels
-        const weekLabels = ['Date 01-07', 'Date 08-14', 'Date 15-21', 'Date 22-31'];
+        const weekLabels = data.week_labels;
 
         // Plan Actual - Chart Utama
-        createPlanActualChart('planActualChart', weekLabels, [825000, 825000, 825000, 825000], [823000, 823000, 823000, 823000]);
+        createPlanActualChart('planActualChart', period, weekLabels, [825000, 825000, 825000, 825000], [823000, 823000, 823000, 823000]);
 
         // Plan Actual - Group ITEM FAMILY
-        createPlanActualChart('childPartChart', weekLabels, [100000, 120000, 110000, 130000], [95000, 115000, 108000, 125000]);
-        createPlanActualChart('virginChart', weekLabels, [50000, 50000, 55000, 50000], [48000, 49000, 52000, 47000]);
-        createPlanActualChart('consumableChart', weekLabels, [20000, 22000, 21000, 23000], [19000, 21000, 20500, 22000]);
-        createPlanActualChart('masterBatchChart', weekLabels, [5000, 6000, 5500, 7000], [4800, 5800, 5400, 6800]);
-        createPlanActualChart('stampingChart', weekLabels, [300000, 310000, 305000, 320000], [290000, 305000, 300000, 315000]);
-        createPlanActualChart('subcontChart', weekLabels, [150000, 155000, 152000, 160000], [145000, 150000, 148000, 155000]);
+        createPlanActualChart('childPartChart', period, weekLabels, [100000, 120000, 110000, 130000], [95000, 115000, 108000, 125000]);
+        createPlanActualChart('virginChart', period, weekLabels, [50000, 50000, 55000, 50000], [48000, 49000, 52000, 47000]);
+        createPlanActualChart('consumableChart', period, weekLabels, [20000, 22000, 21000, 23000], [19000, 21000, 20500, 22000]);
+        createPlanActualChart('masterBatchChart', period, weekLabels, [5000, 6000, 5500, 7000], [4800, 5800, 5400, 6800]);
+        createPlanActualChart('stampingChart', period, weekLabels, [300000, 310000, 305000, 320000], [290000, 305000, 300000, 315000]);
+        createPlanActualChart('subcontChart', period, weekLabels, [150000, 155000, 152000, 160000], [145000, 150000, 148000, 155000]);
     });
 }
 
@@ -498,10 +499,18 @@ function updateSupplierChart(labels, values, subtitle) {
 }
 
 // Plan VS Actual Chart
-function createPlanActualChart(canvasId, labels, dataPlan, dataActual) {
-    const ctx = document.getElementById(canvasId).getContext('2d');
-    
-    return new Chart(ctx, {
+function createPlanActualChart(canvasId, period, labels, dataPlan, dataActual) {
+    const canvas = document.getElementById(canvasId);
+    if (!canvas) return; // Guard clause jika ID tidak ditemukan
+
+    const ctx = canvas.getContext('2d');
+
+    // 1. Perbaikan: Gunakan penyimpanan berdasarkan ID canvas agar destroy() tidak salah sasaran
+    if (chartInstances[canvasId]) {
+        chartInstances[canvasId].destroy();
+    }
+
+    chartInstances[canvasId] = new Chart(ctx, {
         type: 'bar',
         data: {
             labels: labels, // Label minggu masuk ke sini
@@ -524,7 +533,7 @@ function createPlanActualChart(canvasId, labels, dataPlan, dataActual) {
             responsive: true,
             maintainAspectRatio: false,
             layout: { 
-                padding: { top: 30, bottom: 10 } 
+                padding: { top: 10, bottom: 10 } 
             },
             scales: {
                 x: {
@@ -543,8 +552,8 @@ function createPlanActualChart(canvasId, labels, dataPlan, dataActual) {
                 tooltip: { enabled: true },
                 title: {
                     display: true,
-                    text: "Period: 1 April - 31 April 2026",
-                    padding: { bottom: 10 }
+                    text: period,
+                    padding: { bottom: 30 }
                 },
                 legend: {
                     display: true,
@@ -575,5 +584,7 @@ function createPlanActualChart(canvasId, labels, dataPlan, dataActual) {
             }
         }
     });
+
+    return chartInstances[canvasId];
 }
 </script>

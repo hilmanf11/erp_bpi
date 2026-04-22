@@ -194,4 +194,60 @@ class Purchase_dashboard extends CI_Controller
         echo json_encode($output);
     }
 
+    public function get_plan_actual_data() 
+    {
+        $filter_from        = $this->input->post('from');
+        $filter_to          = $this->input->post('to');
+        $filter_display     = $this->input->post('display');
+        $filter_division    = $this->input->post('division');
+        $filter_supplier_id = $this->input->post('supplier_id');
+        $filter_category_id = $this->input->post('category_id');
+
+
+        // Prepare Data Variables
+        $week_labels          = ['Date 01-07', 'Date 08-14', 'Date 15-21', 'Date 22-31'];
+        $qty_plan            = [];
+        $qty_actual          = [];
+        $child_part_plan     = [];
+        $child_part_actual   = [];
+        $virgin_plan         = [];
+        $virgin_actual       = [];
+        $consumable_plan     = [];
+        $consumable_actual   = [];
+        $master_batch_plan   = [];
+        $master_batch_actual = [];
+        $stamping_plan       = [];
+        $stamping_actual     = [];
+        $subcont_plan        = [];
+        $subcont_actual      = [];
+
+
+        // GET QTY PLAN FROM PO
+
+        
+        // GET QTY ACTUAL FROM POR
+
+
+        $output = [
+            'period'               => "Period: " . date('d M Y', strtotime($filter_from)) . " to " . date('d M Y', strtotime($filter_to)),
+            'week_labels'          => array_keys($week_labels),
+            'qty_plan'             => array_values($qty_plan),
+            'qty_actual'           => array_values($qty_actual),
+            'child_part_plan'      => array_values($child_part_plan),
+            'child_part_actual'    => array_values($child_part_actual),
+            'virgin_plan'          => array_values($virgin_plan),
+            'virgin_actual'        => array_values($virgin_actual),
+            'consumable_plan'      => array_values($consumable_plan),
+            'consumable_actual'    => array_values($consumable_actual),
+            'master_batch_plan'    => array_values($master_batch_plan),
+            'master_batch_actual'  => array_values($master_batch_actual),
+            'stamping_plan'        => array_values($stamping_plan),
+            'stamping_actual'      => array_values($stamping_actual),
+            'subcont_plan'         => array_values($subcont_plan),
+            'subcont_actual'       => array_values($subcont_actual),
+        ];
+
+        echo json_encode($output);
+    }
+
 }
