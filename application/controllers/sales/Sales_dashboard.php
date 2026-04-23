@@ -143,7 +143,7 @@ class Sales_dashboard extends CI_Controller
             LEFT JOIN sales_order_rm e ON a.sales_order_no_rm = e.sales_order_no and a.item_fg_id = e.item_fg_id
             WHERE a.customer_id LIKE ? 
             AND a.division LIKE ? 
-            AND DATE_FORMAT(a.delivery_note_date, '%Y-%m-%d') BETWEEN ? and ? 
+            AND a.delivery_note_date >= ? AND a.delivery_note_date <= ? 
             AND a.trans_type = 'SALES'
             GROUP BY a.id  
             ORDER BY c.name ASC, a.delivery_note_no ASC, b.number ASC";

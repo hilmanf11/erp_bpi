@@ -93,11 +93,93 @@
         </div>
     </div>
 
+
+    <div class="section-title"><i class="fa fa-bar-chart"></i> FORECAST VS SALES</div>
+
+    <div style="display: flex; gap: 15px;">
+        <div class="chart-section" style="flex: 1; width: 50%;">
+            <div class="chart-header">
+                Forecast VS Actual Sales in Amount
+            </div>
+            <div style="padding: 20px; overflow-x: auto;">
+                <div id="compareForecastSalesParent" style="min-width: 1000px; height: 350px;">
+                    <canvas id="compareForecastSales"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <div class="chart-section" style="flex: 1; width: 50%;">
+            <div class="chart-header">
+                Forecast VS Actual Sales in QTY
+            </div>
+            <div style="padding: 20px; overflow-x: auto;">
+                <div id="compareForecastSalesQtyParent" style="min-width: 1000px; height: 350px;">
+                    <canvas id="compareForecastSalesQty"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+
+
+    <div class="section-title"><i class="fa fa-bar-chart"></i> SALES ORDER VS SALES</div>
+
+    <div style="display: flex; gap: 15px;">
+        <div class="chart-section" style="flex: 1; width: 50%;">
+            <div class="chart-header">
+                Sales Order VS Actual Sales in Amount
+            </div>
+            <div style="padding: 20px; overflow-x: auto;">
+                <div id="compareSalesOrderParent" style="min-width: 1000px; height: 350px;">
+                    <canvas id="compareSalesOrder"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <div class="chart-section" style="flex: 1; width: 50%;">
+            <div class="chart-header">
+                Sales Order VS Actual Sales in QTY
+            </div>
+            <div style="padding: 20px; overflow-x: auto;">
+                <div id="compareSalesOrderQtyParent" style="min-width: 1000px; height: 350px;">
+                    <canvas id="compareSalesOrderQty"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+
+
+    <div class="section-title"><i class="fa fa-bar-chart"></i> FORECAST VS SALES ORDER</div>
+
+    <div style="display: flex; gap: 15px;">
+        <div class="chart-section" style="flex: 1; width: 50%;">
+            <div class="chart-header">
+                Forecast VS Sales Order in Amount
+            </div>
+            <div style="padding: 20px; overflow-x: auto;">
+                <div id="compareForecastSalesOrderParent" style="min-width: 1000px; height: 350px;">
+                    <canvas id="compareForecastSalesOrder"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <div class="chart-section" style="flex: 1; width: 50%;">
+            <div class="chart-header">
+                Forecast VS Sales Order in QTY
+            </div>
+            <div style="padding: 20px; overflow-x: auto;">
+                <div id="compareForecastSalesOrderQtyParent" style="min-width: 1000px; height: 350px;">
+                    <canvas id="compareForecastSalesOrderQty"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+
+
     <div class="section-title"><i class="fa fa-bar-chart"></i> SALES TRENDS</div>
 
     <div style="display: flex; gap: 15px;">
         <div class="chart-section" style="flex: 1; width: 50%;">
-            <div class="chart-header">Sales by Amount</div>
+            <div class="chart-header">Sales by Amount Global</div>
             <div style="padding: 20px; overflow-x: auto;">
                 <div id="salesChartParent" style="min-width: 1000px; height: 500px;">
                     <canvas id="salesChart"></canvas>
@@ -106,7 +188,7 @@
         </div>
 
         <div class="chart-section" style="flex: 1; width: 50%;">
-            <div class="chart-header">Sales by Customer</div>
+            <div class="chart-header">Sales in Amount Per Customer</div>
             <div style="padding: 20px; overflow-y: auto; max-height: 500px;">
                 <div id="customerChartParent" style="height: 800px;">
                     <canvas id="customerChart"></canvas>
