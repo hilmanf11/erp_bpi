@@ -68,6 +68,8 @@ class Purchase_dashboard extends CI_Controller
 
         // Prepare Data kosong bernilai 0
         $purchase_data = [];
+        $purchase_count = [];
+
         $start = new DateTime($filter_from);
         $end   = new DateTime($filter_to);
         $end->modify('+1 day'); // Include end date
@@ -177,8 +179,19 @@ class Purchase_dashboard extends CI_Controller
                 $purchase_data[$key] += $subtotal;
             }
 
+            // Hitung jumlah transaksi per label
+            $purchase_count[$key] = ($purchase_count[$key] ?? 0) + 1;
+
             $supp = $row['supplier_name'] ?? 'Unknown';
             $supplier_summary[$supp] = ($supplier_summary[$supp] ?? 0) + $subtotal;
+        }
+
+        // --- HITUNG AVERAGE PER LABEL ---
+        $avg_values = [];
+        foreach ($purchase_data as $key => $total_val) {
+            $count = $purchase_count[$key] ?? 0;
+            // Jika ada transaksi, hitung rata-ratanya. Jika tidak, tetap 0.
+            $avg_values[] = ($count > 0) ? ($total_val / $count) : 0;
         }
 
         arsort($supplier_summary); 
@@ -188,6 +201,8 @@ class Purchase_dashboard extends CI_Controller
             'total_po'     => count($unique_pos),
             'trend_labels' => array_keys($purchase_data),
             'trend_values' => array_values($purchase_data),
+            'avg_values'   => $avg_values,
+            'counts'       => array_values($purchase_count),
             'supp_labels'  => array_keys($supplier_summary),
             'supp_values'  => array_values($supplier_summary),
             'subtitle'     => "Period: " . date('d M Y', strtotime($filter_from)) . " to " . date('d M Y', strtotime($filter_to))

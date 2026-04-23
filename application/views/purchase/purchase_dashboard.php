@@ -198,13 +198,13 @@
     </div>
 
 
-    <div class="section-title"><i class="fa fa-files-o"></i> CONCLUTION AND IMPACT</div>
+    <div class="section-title"><i class="fa fa-files-o"></i> CONCLUSION AND IMPACT</div>
 
     <div style="display: flex; gap: 15px;">
         <div class="chart-section" style="flex: 1; width: 50%;">
-            <div class="chart-header">CONCLUTION</div>
+            <div class="chart-header">CONCLUSION</div>
             <div style="padding: 20px; overflow-y: auto;">
-                <div id="conclution" style="min-height: 100px;">
+                <div id="conclusion" style="min-height: 100px;">
                     &nbsp;
                 </div>
             </div>
@@ -213,7 +213,7 @@
         <div class="chart-section" style="flex: 1; width: 50%;">
             <div class="chart-header">IMPACT</div>
             <div style="padding: 20px; overflow-y: auto;">
-                <div id="conclution" style="min-height: 100px;">
+                <div id="impact" style="min-height: 100px;">
                     &nbsp;
                 </div>
             </div>
@@ -332,10 +332,23 @@ function loadDashboard() {
         $('#kpi_total_supp').html(data.supp_labels.length); // Menghitung jumlah supplier unik dari data labels
 
         // Render/Update Chart Purchase
-        updateTrendChart(data.trend_labels, data.trend_values, data.subtitle);
+        updateTrendChart(data.trend_labels, data.trend_values, data.subtitle, data.avg_values);
 
         // Render/Update Chart Supplier
         updateSupplierChart(data.supp_labels, data.supp_values, data.subtitle);
+
+        // Conclusion and Impact
+        if (data.conclusion) {
+            $('#conclusion').html(data.conclusion);
+        } else {
+            $('#conclusion').html('<span class="text-muted">Not available yet.</span>');
+        }
+
+        if (data.impact) {
+            $('#impact').html(data.impact);
+        } else {
+            $('#impact').html('<span class="text-muted">Not available yet.</span>');
+        }
 
     });
 
@@ -368,8 +381,9 @@ function loadDashboard() {
     });
 }
 
-// Chart Purchase Stacked
-function updateTrendChart(labels, values, subtitle) {
+
+// Chart Purchase 
+function updateTrendChart_purchase_only(labels, values, subtitle) {
     const ctx = document.getElementById('purchaseChart').getContext('2d');
 
     // Jika data lebih dari 15, lebarkan bar
@@ -451,6 +465,83 @@ function updateTrendChart(labels, values, subtitle) {
                             if (data !== null && !bar.hidden) {
                                 // bar.y adalah koordinat ujung atas bar
                                 ctx.fillText(data.toLocaleString('id-ID'), bar.x, bar.y - 5);
+                            }
+                        });
+                    });
+                }
+            }
+        }
+    });
+}
+
+
+// Chart Purchase Stacked
+function updateTrendChart(labels, values, avgValues, subtitle) {
+    const ctx = document.getElementById('purchaseChart').getContext('2d');
+    
+    if (window.myPurchaseChart) {
+        window.myPurchaseChart.destroy();
+    }
+
+    window.myPurchaseChart = new Chart(ctx, {
+        type: 'bar',
+        data: {
+            labels: labels,
+            datasets: [
+                {
+                    label: 'Purchase',
+                    data: values,
+                    backgroundColor: '#3b6ccf', // Warna biru sesuai gambar
+                    stack: 'Stack 0',
+                },
+                {
+                    label: 'AVG Period',
+                    data: avgValues,
+                    backgroundColor: '#92d050', // Warna hijau muda sesuai gambar
+                    stack: 'Stack 0',
+                }
+            ]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            scales: {
+                x: {
+                    stacked: true, // Aktifkan stacking
+                },
+                y: {
+                    stacked: true, // Aktifkan stacking
+                    beginAtZero: true,
+                    ticks: {
+                        callback: (value) => 'Rp ' + value.toLocaleString('id-ID')
+                    }
+                }
+            },
+            plugins: {
+                legend: { position: 'bottom' },
+                tooltip: {
+                    callbacks: {
+                        label: function(context) {
+                            return context.dataset.label + ': Rp ' + context.parsed.y.toLocaleString('id-ID');
+                        }
+                    }
+                }
+            },
+            animation: {
+                onProgress: function() {
+                    var chartInstance = this;
+                    var ctx = chartInstance.ctx;
+                    ctx.font = "bold 9px Arial";
+                    ctx.textAlign = 'center';
+                    ctx.fillStyle = '#fcffcd';
+
+                    this.data.datasets.forEach(function(dataset, i) {
+                        var meta = chartInstance.getDatasetMeta(i);
+                        meta.data.forEach(function(bar, index) {
+                            var data = dataset.data[index];
+                            if (data > 0) {
+                                // Menghitung posisi teks di tengah-tengah setiap bagian stack
+                                ctx.fillText(data.toLocaleString('id-ID'), bar.x, bar.y + (bar.height / 2));
                             }
                         });
                     });
