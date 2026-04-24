@@ -1,58 +1,151 @@
 <div class="dashboard-wrapper">
-
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 
     <style>
-        .dashboard-wrapper { background-color: #f0f2f5; padding: 15px; font-family: 'Inter', sans-serif; }
+        .dashboard-wrapper { background-color: #f8fafc; padding: 20px; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
         
-        /* Section Header */
-        .section-title { 
-            display: flex; align-items: center; gap: 8px;
-            font-size: 14px; font-weight: 700; color: #475569;
-            margin-bottom: 12px; border-left: 4px solid #3b82f6; padding-left: 10px;
+        /* Header Section */
+        .section-header {
+            border-bottom: 1px solid #e2e8f0;
+            margin-bottom: 15px;
+            padding-bottom: 5px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            color: #1e293b;
+            font-weight: 600;
         }
 
-        /* Filter Bar dengan Pill Buttons */
-        .filter-container {
-            background: white; border-radius: 10px; padding: 12px 20px;
-            display: flex; flex-wrap: wrap; align-items: center; gap: 10px;
-            margin-bottom: 20px; box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+        /* Filter Container - Pill Style */
+        .filter-bar {
+            background: white;
+            padding: 10px 20px;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+            margin-bottom: 20px;
+            border: 1px solid #e2e8f0;
         }
 
-        /* KPI Cards Grid */
-        .kpi-grid { 
-            display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); 
-            gap: 15px; margin-bottom: 20px; 
+        .pill-group {
+            display: flex;
+            background: #f1f5f9;
+            padding: 4px;
+            border-radius: 50px;
+            gap: 2px;
         }
+
+        .pill-btn {
+            border: none;
+            background: transparent;
+            padding: 6px 18px;
+            border-radius: 50px;
+            font-size: 12px;
+            font-weight: 600;
+            color: #64748b;
+            cursor: pointer;
+            transition: 0.3s;
+        }
+
+        .pill-btn.active {
+            background: #244b82;
+            color: white;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        /* KPI Grid & Cards */
+        .kpi-row { display: flex; gap: 20px; margin-bottom: 25px; }
+        .kpi-container { flex: 3; display: grid; grid-template-columns: repeat(3, 1fr); gap: 15px; }
+        
         .kpi-card {
-            padding: 20px; border-radius: 12px; color: white; position: relative; overflow: hidden;
-            min-height: 100px; display: flex; flex-direction: column; justify-content: center;
-        }
-        .kpi-card i { position: absolute; right: -10px; bottom: -10px; font-size: 80px; opacity: 0.15; }
-        .kpi-label { font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; opacity: 0.9; }
-        .kpi-value { font-size: 24px; font-weight: 800; margin-top: 5px; }
-
-        /* Chart Container */
-        .chart-section {
-            background: white; border-radius: 12px; padding: 0; overflow: hidden;
-            box-shadow: 0 1px 3px rgba(0,0,0,0.05); margin-bottom: 20px;
-        }
-        .chart-header {
-            background: #244b82; color: white; padding: 10px 20px;
-            font-size: 13px; font-weight: 600; text-align: center;
+            border-radius: 15px;
+            padding: 20px;
+            color: white;
+            position: relative;
+            min-height: 140px;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
         }
 
-        /* Warna KPI Card */
+        .kpi-badge {
+            position: absolute;
+            top: 15px;
+            right: 15px;
+            background: rgba(255,255,255,0.2);
+            padding: 2px 10px;
+            border-radius: 10px;
+            font-size: 11px;
+        }
+
+        .kpi-icon-bg {
+            position: absolute;
+            left: 15px;
+            top: 20px;
+            font-size: 30px;
+            opacity: 0.8;
+        }
+
+        .kpi-content { margin-top: auto; }
+        .kpi-label { font-size: 12px; font-weight: 500; text-transform: uppercase; opacity: 0.9; margin-bottom: 5px;}
+        .kpi-value { font-size: 28px; font-weight: 700; }
+
+        /* Chart Side Card */
+        .defect-ratio-card {
+            flex: 1;
+            background: white;
+            border-radius: 15px;
+            padding: 15px;
+            border: 1px solid #e2e8f0;
+            text-align: center;
+        }
+
+        /* Colors */
         .bg-blue { background: linear-gradient(135deg, #244b82 0%, #729dcb 100%); }
         .bg-green { background: linear-gradient(135deg, #508758 0%, #88c396 100%); }
         .bg-red { background: linear-gradient(135deg, #d15e29 0%, #feae88 100%); }
+        .bg-blue-grad { background: linear-gradient(135deg, #244b82 0%, #729dcb 100%); }
+        .bg-green-grad { background: linear-gradient(135deg, #508758 0%, #88c396 100%); }
+        .bg-orange-grad { background: linear-gradient(135deg, #ff6016 0%, #ff9868 100%); }
+        .bg-red-grad { background: linear-gradient(135deg, #cb2d3e 0%, #ea7777 100%); }
+
+        /* Chart Section Custom */
+        .chart-section {
+            background: white;
+            border-radius: 12px;
+            border: 1px solid #e2e8f0;
+            overflow: hidden;
+            margin-bottom: 20px;
+        }
+        .chart-header {
+            background: #244b82;
+            color: white;
+            padding: 12px;
+            font-size: 13px;
+            font-weight: 600;
+            text-align: center;
+            letter-spacing: 1px;
+        }
     </style>
 
-    
-    <div class="section-title"><i class="fa fa-search"></i> FILTER & SUMMARY</div>
+    <div class="section-header">
+        <i class="fa-solid fa-square-poll-vertical"></i> <span>FILTER & SUMMARY</span>
+    </div>
 
-    <div class="filter-container">
-        <div style="flex: 1; display: flex; gap: 10px; align-items: center;">
+    <div class="filter-bar">
+        <div class="pill-group">
+            <button class="pill-btn active" onclick="togglePill(this, 'all')"><i class="fa fa-list"></i> All</button>
+            <button class="pill-btn" onclick="togglePill(this, 'daily')"><i class="fa fa-calendar-day"></i> Daily</button>
+            <button class="pill-btn" onclick="togglePill(this, 'weekly')"><i class="fa fa-calendar-week"></i> Weekly</button>
+            <button class="pill-btn" onclick="togglePill(this, 'monthly')"><i class="fa fa-calendar"></i> Monthly</button>
+        </div>
+
+        <div id="dynamic_input" style="display: flex; gap: 8px;">
+            
             <select id="filter_display" class="easyui-combobox" style="width:120px; height:32px;">
                 <option value="DAILY">DAILY</option>
                 <option value="WEEKLY">WEEKLY</option>
@@ -63,6 +156,7 @@
             <span>to</span>
             <input id="filter_to" class="easyui-datebox" style="width:130px; height:32px;" value="<?= date("Y-m-t") ?>" data-options="formatter:myformatter,parser:myparser, editable:false">
 
+
             <input id="filter_supplier_id" class="easyui-combobox" style="width:150px; height:32px;" prompt="Supplier">
             <input id="filter_division" class="easyui-combobox" style="width:150px; height:32px;" prompt="Division">
             
@@ -71,29 +165,41 @@
             </div>
 
         </div>
+
         <a href="javascript:;" class="easyui-linkbutton" onclick="loadDashboard()" data-options="iconCls:'icon-search'" style="height:32px; padding:0 15px;">Filter</a>
         <a href="javascript:;" class="easyui-linkbutton" onclick="reload()" data-options="iconCls:'icon-reload'" style="height:32px; padding:0 15px;">Reload</a>
     </div>
 
-    <div class="kpi-grid">
-        <div class="kpi-card bg-blue">
-            <div class="kpi-label">Total Purchase Amount</div>
-            <div id="kpi_total_amt" class="kpi-value">Rp 0</div>
-            <i class="fa fa-wallet"></i>
+    <div class="kpi-row">
+        <div class="kpi-container">
+            <div class="kpi-card bg-blue-grad">
+                <i class="fa fa-money kpi-icon-bg"></i>
+                <div class="kpi-content">
+                    <div class="kpi-label">Total Purchase Amount</div>
+                    <div id="kpi_total_amt" class="kpi-value">0</div>
+                </div>
+            </div>
+            <div class="kpi-card bg-green-grad">
+                <i class="fa fa-check-circle kpi-icon-bg"></i>
+                <div class="kpi-content">
+                    <div class="kpi-label">Total PO Issued</div>
+                    <div id="kpi_total_po" class="kpi-value">0</div>
+                </div>
+            </div>
+            <div class="kpi-card bg-orange-grad">
+                <i class="fa fa-building kpi-icon-bg"></i>
+                <div class="kpi-content">
+                    <div class="kpi-label">Active Suppliers</div>
+                    <div id="kpi_total_supp" class="kpi-value">0</div>
+                </div>
+            </div>
         </div>
-        <div class="kpi-card bg-green">
-            <div class="kpi-label">Total PO Issued</div>
-            <div id="kpi_total_po" class="kpi-value">0</div>
-            <i class="fa fa-file-invoice"></i>
-        </div>
-        <div class="kpi-card bg-red">
-            <div class="kpi-label">Active Suppliers</div>
-            <div id="kpi_total_supp" class="kpi-value">0</div>
-            <i class="fa fa-truck"></i>
-        </div>
+
     </div>
 
-    <div class="section-title"><i class="fa fa-bar-chart"></i> PURCHASE TRENDS</div>
+    <div class="section-header">
+        <i class="fa-solid fa-chart-line"></i> <span>PURCHASE TRENDS</span>
+    </div>
 
     <div style="display: flex; gap: 15px;">
         <div class="chart-section" style="flex: 1; width: 50%;">
@@ -115,7 +221,9 @@
         </div>
     </div>
 
-    <div class="section-title"><i class="fa fa-bar-chart"></i> PURCHASE PLAN VS ACTUAL </div>
+    <div class="section-header">
+        <i class="fa-solid fa-bar-chart"></i> <span>PURCHASE PLAN VS ACTUAL</span>
+    </div>
 
     <div class="chart-section" style="width: 100%;">
         <div class="chart-header">Purchase Plan VS Actual by QTY</div>
@@ -197,8 +305,9 @@
         </div>
     </div>
 
-
-    <div class="section-title"><i class="fa fa-files-o"></i> CONCLUSION AND IMPACT</div>
+    <div class="section-header">
+        <i class="fa-solid fa-files-o"></i> <span>CONCLUSION AND IMPACT</span>
+    </div>
 
     <div style="display: flex; gap: 15px;">
         <div class="chart-section" style="flex: 1; width: 50%;">
@@ -263,7 +372,7 @@ $(function() {
         url: '<?= base_url('finance/purchase_report/readsDivision/'); ?>',
         valueField: 'number',
         textField: 'number',
-        prompt: 'Choose Division',
+        prompt: '<Division> ALL',
         icons: [{
             iconCls: 'icon-clear',
             handler: function(e) {
@@ -289,7 +398,7 @@ $(function() {
         url: '<?= base_url('master/suppliers/reads') ?>',
         valueField: 'id',
         textField: 'name',
-        prompt: "Select Supplier",
+        prompt: "<Supplier> ALL",
         icons: [{
             iconCls: 'icon-clear',
             handler: function(e) {
@@ -299,7 +408,6 @@ $(function() {
     });
     
 });
-
 
 
 
@@ -707,4 +815,5 @@ function createPlanActualChart(canvasId, period, labels, dataPlan, dataActual) {
 
     return chartInstances[canvasId];
 }
+
 </script>
