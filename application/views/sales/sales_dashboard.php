@@ -102,8 +102,8 @@
                 Forecast VS Actual Sales in Amount
             </div>
             <div style="padding: 20px; overflow-x: auto;">
-                <div id="compareForecastSalesParent" style="min-width: 1000px; height: 350px;">
-                    <canvas id="compareForecastSales"></canvas>
+                <div id="forecastSalesChartParent" style="min-width: 1000px; height: 350px;">
+                    <canvas id="forecastSalesChart"></canvas>
                 </div>
             </div>
         </div>
@@ -113,8 +113,8 @@
                 Forecast VS Actual Sales in QTY
             </div>
             <div style="padding: 20px; overflow-x: auto;">
-                <div id="compareForecastSalesQtyParent" style="min-width: 1000px; height: 350px;">
-                    <canvas id="compareForecastSalesQty"></canvas>
+                <div id="forecastSalesQtyChartParent" style="min-width: 1000px; height: 350px;">
+                    <canvas id="forecastSalesQtyChart"></canvas>
                 </div>
             </div>
         </div>
@@ -308,6 +308,8 @@ $(function() {
 var mySalesChart;
 var myCustomerChart;
 
+let chartInstances = {};
+
 function loadDashboard() {
     const params = {
         from: $('#filter_from').datebox('getValue'),
@@ -345,6 +347,14 @@ function loadDashboard() {
             $('#impact').html('<span class="text-muted">Not available yet.</span>');
         }
 
+    });
+
+
+    $.post('<?= base_url("sales/sales_dashboard/get_forecast_vs_sales") ?>', params, function(res) {
+        const data = JSON.parse(res);
+        
+        createForecastChart('forecastSalesChart', data.period, data.labels, data.forecast_amount_values, data.sales_amount_values);
+        createForecastChart('forecastSalesQtyChart', data.period, data.labels, data.forecast_values, data.sales_values);
     });
 }
 
@@ -507,5 +517,94 @@ function updateCustomerChart(labels, values, subtitle) {
             }
         }
     });
+}
+
+// Plan VS Actual Chart
+function createForecastChart(canvasId, period, labels, dataPlan, dataActual) {
+    const canvas = document.getElementById(canvasId);
+    if (!canvas) return; // Guard clause jika ID tidak ditemukan
+
+    const ctx = canvas.getContext('2d');
+
+    // Pastikan destroy chart sebelumnya agar tidak tumpang tindih saat update
+    if (chartInstances[canvasId]) {
+        chartInstances[canvasId].destroy();
+    }
+
+    chartInstances[canvasId] = new Chart(ctx, {
+        type: 'bar',
+        data: {
+            labels: labels,
+            datasets: [
+                {
+                    label: 'Plan',
+                    data: dataPlan,
+                    backgroundColor: '#5376af',
+                    borderWidth: 1
+                },
+                {
+                    label: 'Actual',
+                    data: dataActual,
+                    backgroundColor: '#395279',
+                    borderWidth: 1
+                }
+            ]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            layout: { 
+                padding: { top: 10, bottom: 10 } 
+            },
+            scales: {
+                x: {
+                    grid: { display: false },
+                    ticks: { 
+                        display: true,
+                        font: { size: 10 }
+                    }
+                },
+                y: {
+                    grace: '15%',
+                }
+            },
+            plugins: {
+                tooltip: { enabled: true },
+                title: {
+                    display: true,
+                    text: period,
+                    padding: { bottom: 30 }
+                },
+                legend: {
+                    display: true,
+                    position: 'bottom'
+                }
+            },
+            animation: {
+                // Menggunakan onProgress agar angka mengikuti pergerakan bar
+                onProgress: function() {
+                    var chartInstance = this;
+                    var ctx = chartInstance.ctx;
+                    ctx.font = "bold 10px Arial";
+                    ctx.textAlign = 'center';
+                    ctx.textBaseline = 'bottom';
+                    ctx.fillStyle = '#333';
+
+                    this.data.datasets.forEach(function(dataset, i) {
+                        var meta = chartInstance.getDatasetMeta(i);
+                        meta.data.forEach(function(bar, index) {
+                            var data = dataset.data[index];
+                            if (data !== null && !bar.hidden) {
+                                // bar.y adalah koordinat ujung atas bar
+                                ctx.fillText(data.toLocaleString('id-ID'), bar.x, bar.y - 5);
+                            }
+                        });
+                    });
+                }
+            }
+        }
+    });
+
+    return chartInstances[canvasId];
 }
 </script>

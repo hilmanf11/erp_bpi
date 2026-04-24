@@ -216,4 +216,148 @@ class Sales_dashboard extends CI_Controller
 
         echo json_encode($output);
     }
+
+    public function get_forecast_vs_sales() 
+    {
+        $filter_from        = $this->input->post('from');
+        $filter_to          = $this->input->post('to');
+        $filter_display     = $this->input->post('display'); // DAILY, WEEKLY, MONTHLY
+        $filter_division    = $this->input->post('division');
+        $filter_customer_id = $this->input->post('customer_id');
+
+        // Validasi Periode Minimal 6 Bulan untuk MONTHLY
+        if ($filter_display == "MONTHLY") {
+            $start_check = new DateTime($filter_from);
+            $end_check   = new DateTime($filter_to);
+            $diff        = $start_check->diff($end_check);
+            $total_months = ($diff->y * 12) + $diff->m;
+
+            if ($total_months < 6) {
+                $new_start = clone $end_check;
+                $new_start->modify('-6 months');
+                $filter_from = $new_start->format('Y-m-d');
+            }
+        }
+
+        // Generate Time Slots (Sumbu X)
+        $start = new DateTime($filter_from);
+        $end   = new DateTime($filter_to);
+        $end->modify('+1 day'); 
+        $interval = new DateInterval('P1D');
+        $period = new DatePeriod($start, $interval, $end);
+
+        $final_data = [];
+        $final_data_amount = [];
+
+        foreach ($period as $dt) {
+            if ($filter_display == "DAILY") {
+                $key = $dt->format("Y-m-d");
+            } elseif ($filter_display == "WEEKLY") {
+                $monday = clone $dt;
+                if ($monday->format('N') != 1) $monday->modify('last monday');
+                $sunday = clone $monday;
+                $sunday->modify('+6 days');
+                $weekNum = ceil($monday->format('j') / 7);
+                $key = "W" . $weekNum . " " . $monday->format('M Y') . " (" . $monday->format('j M') . ")";
+            } else { // MONTHLY
+                $key = $dt->format("M Y");
+            }
+
+            if (!isset($final_data[$key])) {
+                $final_data[$key] = [
+                    'forecast' => 0,
+                    'sales'    => 0,
+                ];
+            }
+            
+            if (!isset($final_data_amount[$key])) {
+                $final_data_amount[$key] = [
+                    'forecast' => 0,
+                    'sales'    => 0,
+                ];
+            }
+        }
+
+        // Get Data Sales (Detail per Tanggal)
+        $this->db->select("delivery_note_date as date, SUM(qty) as qty");
+        $this->db->select("s.price, s.currency");
+        $this->db->from("delivery_notes dn");
+        $this->db->join("item_fg a", "dn.item_fg_id = a.id");
+        $this->db->join("standard_price_fg s", "s.item_fg_id = a.id");
+        if($filter_customer_id) $this->db->where("dn.customer_id", $filter_customer_id);
+        if($filter_division) $this->db->where("a.division_id", $filter_division);
+        $this->db->where("delivery_note_date >=", $filter_from);
+        $this->db->where("delivery_note_date <=", $filter_to);
+        $this->db->group_by("delivery_note_date");
+        $sales_records = $this->db->get()->result_array();
+
+        // Mapping Sales ke Final Data
+        foreach ($sales_records as $row) {
+            $dt = new DateTime($row['date']);
+            // Gunakan logic key yang sama dengan di atas
+            if ($filter_display == "DAILY") $k = $dt->format("Y-m-d");
+            elseif ($filter_display == "WEEKLY") {
+                $m = clone $dt; if ($m->format('N') != 1) $m->modify('last monday');
+                $w = ceil($m->format('j') / 7);
+                $k = "W" . $w . " " . $m->format('M Y') . " (" . $m->format('j M') . ")";
+            }
+            else $k = $dt->format("M Y");
+
+            if (isset($final_data[$k])) {
+                $final_data[$k]['sales'] += $row['qty'];
+            }
+            
+            if (isset($final_data[$k])) {
+                $final_data_amount[$k]['sales'] += $row['qty'] * $row['price'];
+            }
+        }
+
+        // Get Data Forecast
+        // Note: Get per tahun karena tabel forecast Anda berbasis kolom month_1..12
+        $start_dt = new DateTime($filter_from);
+        $end_dt   = new DateTime($filter_to);
+        
+        $this->db->select("f.*");
+        $this->db->select("s.price, s.currency");
+        $this->db->from("forecasts f");
+        $this->db->join("item_fg a", "f.item_fg_id = a.id");
+        $this->db->join("standard_price_fg s", "s.item_fg_id = a.id");
+        $this->db->where("f.p_year >=", $start_dt->format('Y'));
+        $this->db->where("f.p_year <=", $end_dt->format('Y'));
+        if($filter_customer_id) $this->db->where("f.customer_id", $filter_customer_id);
+        if($filter_division) $this->db->where("a.division_id", $filter_division);
+        $forecast_records = $this->db->get()->result_array();
+
+        foreach ($forecast_records as $f) {
+            for ($m = 1; $m <= 12; $m++) {
+                $month_name = date("M Y", mktime(0, 0, 0, $m, 1, $f['p_year']));
+                $qty = $f['month_' . $m];
+                $price = $f['price'];
+
+                // Masukkan ke key yang sesuai di final_data
+                foreach ($final_data as $key => $val) {
+                    // Jika MONTHLY, match langsung ke "Jan 2026"
+                    if ($filter_display == "MONTHLY" && $key == $month_name) {
+                        $final_data[$key]['forecast'] += $qty;
+                    }
+                    if ($filter_display == "MONTHLY" && $key == $month_name) {
+                        $final_data_amount[$key]['forecast'] += $qty * $price;
+                    }
+                    // Jika DAILY/WEEKLY, bagi forecast bulanan ke hari
+                }
+            }
+        }
+
+        // Format Output untuk Chart
+        $output = [
+            'labels'                 => array_keys($final_data),
+            'forecast_values'        => array_column($final_data, 'forecast'),
+            'sales_values'           => array_column($final_data, 'sales'),
+            'forecast_amount_values' => array_column($final_data_amount, 'forecast'),
+            'sales_amount_values'    => array_column($final_data_amount, 'sales'),
+            'period'                 => "Period: " . $start_dt->format('d M Y') . " to " . $end_dt->format('d M Y')
+        ];
+
+        echo json_encode($output);
+    }
 }
