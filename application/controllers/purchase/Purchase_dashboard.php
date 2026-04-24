@@ -40,6 +40,39 @@ class Purchase_dashboard extends CI_Controller
         }
     }
 
+    // Dropdown Weeks
+    public function get_iso_weeks() 
+    {
+        $year = $this->input->get('year') ? $this->input->get('year') : date('Y');
+        $weeks = [];
+
+        // Get jumlah weeks dalam setahun menurut ISO 8601
+        $date = new DateTime();
+        $date->setISODate($year, 53);
+        $total_weeks = ($date->format("W") === "53" ? 53 : 52);
+
+        for ($i = 1; $i <= $total_weeks; $i++) {
+            $dto = new DateTime();
+            // Set ke hari Senin di minggu tersebut
+            $dto->setISODate($year, $i, 1);
+            $start = $dto->format('j M');
+            
+            // Tambahkan 6 hari untuk mendapatkan hari Minggu
+            $dto->modify('+6 days');
+            $end = $dto->format('j M Y');
+
+            $current_week = (int)date('W');
+            
+            $weeks[] = [
+                'id'    => "{$year}-W" . sprintf("%02d", $i),
+                'text'  => "Week-{$i} ({$start} - {$end})",
+                'selected' => ($i === $current_week)
+            ];
+        }
+
+        echo json_encode($weeks);
+    }
+
     public function get_dashboard_data() 
     {
         $filter_from        = $this->input->post('from');

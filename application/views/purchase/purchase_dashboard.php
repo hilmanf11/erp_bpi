@@ -130,6 +130,34 @@
             text-align: center;
             letter-spacing: 1px;
         }
+        .week-selector {
+            display: block;
+            margin-top: 8px;
+            padding: 5px 12px;
+            border-radius: 20px;
+            border: 1px solid #ddd;
+            font-size: 14px;
+            outline: none;
+            width: fit-content;
+        }
+
+        /* Pastikan pembungkus tombol adalah jangkar untuk posisi absolute */
+        .pill-group {
+            position: relative;
+            display: inline-flex; /* atau display block sesuai kebutuhan */
+        }
+
+        /* Styling dropdown agar melayang di bawah tombol */
+        .floating-filter {
+            position: absolute;
+            top: 45px; /* Sesuaikan dengan tinggi tombol Anda */
+            left: 0;
+            z-index: 999; /* Agar tidak tertutup elemen lain */
+            background: #fff;
+            padding: 5px;
+            border-radius: 4px;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+        }
     </style>
 
     <div class="section-header">
@@ -140,8 +168,9 @@
         <div class="pill-group">
             <button class="pill-btn active" onclick="togglePill(this, 'all')"><i class="fa fa-list"></i> All</button>
             <button class="pill-btn" onclick="togglePill(this, 'daily')"><i class="fa fa-calendar-day"></i> Daily</button>
-            <button class="pill-btn" onclick="togglePill(this, 'weekly')"><i class="fa fa-calendar-week"></i> Weekly</button>
+            <button class="pill-btn" onclick="togglePill(this, 'weekly')"><i class="fa fa-calendar-week"></i> Weekly</button>            
             <button class="pill-btn" onclick="togglePill(this, 'monthly')"><i class="fa fa-calendar"></i> Monthly</button>
+            <button class="pill-btn" onclick="togglePill(this, 'yearly')"><i class="fa fa-calendar"></i> Yearly</button>
         </div>
 
         <div id="dynamic_input" style="display: flex; gap: 8px;">
@@ -409,6 +438,81 @@ $(function() {
     
 });
 
+// Button Period
+function togglePill(btn, type) {
+    $('.pill-btn').removeClass('active');
+    $(btn).addClass('active');
+
+    // Hapus dropdown lama jika ada
+    $('#filter-dropdown-wrapper').remove();
+
+    if (type === 'daily') {
+        // Buat wrapper
+        const $wrapper = $('<div id="filter-dropdown-wrapper" class="floating-filter"></div>');
+        
+        // Tentukan posisi horizontal agar sejajar dengan tombol yang diklik
+        const btnOffset = $(btn).position();
+        $wrapper.css({
+            'left': btnOffset.left + 'px'
+        });
+        
+        // Masukkan input EasyUI Datebox
+        $wrapper.html(`
+            <input id="filter_daily" class="easyui-datebox" 
+                   style="width:150px; height:32px;" 
+                   value="<?= date('Y-m-d') ?>" 
+                   data-options="formatter:myformatter, parser:myparser, editable:false">
+        `);
+
+        $('.pill-group').append($wrapper);
+
+        // EasyUI Datebox secara manual karena elemen baru dibuat
+        $('#filter_daily').datebox({
+            onSelect: function(date) {
+                const formattedDate = myformatter(date);
+                console.log("Daily Selected:", formattedDate);
+                // updateDashboard('daily', formattedDate);
+            }
+        });
+
+    }
+    else if (type === 'weekly') {
+        // Buat wrapper dengan posisi absolute
+        const $wrapper = $('<div id="filter-dropdown-wrapper" class="floating-filter"></div>');
+        
+        // Tentukan posisi horizontal agar sejajar dengan tombol yang diklik
+        const btnOffset = $(btn).position();
+        $wrapper.css({
+            'left': btnOffset.left + 'px'
+        });
+
+        // Masukkan input untuk EasyUI Combobox
+        $wrapper.html('<input id="filter_week" style="width:280px;">');
+        
+        // Tempelkan ke dalam .pill-group
+        $('.pill-group').append($wrapper);
+
+        // Inisialisasi EasyUI Combobox
+        $('#filter_week').combobox({
+            url: '<?php echo base_url("purchase/purchase_dashboard/get_iso_weeks"); ?>',
+            valueField: 'id',
+            textField: 'text',
+            panelHeight: 200, // Beri batas tinggi agar tidak terlalu panjang ke bawah
+            editable: false,
+            onLoadSuccess: function() {
+                // Opsional: otomatis buka panel saat muncul
+                $(this).combobox('showPanel');
+            },
+            onChange: function(newValue) {
+                console.log("Selected Week:", newValue);
+                // Execute filter dashboard
+            }
+        });
+    }
+    else if (type === 'monthly') {
+        
+    }
+}
 
 
 
