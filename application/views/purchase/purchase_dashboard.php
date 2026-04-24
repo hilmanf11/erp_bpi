@@ -443,74 +443,60 @@ function togglePill(btn, type) {
     $('.pill-btn').removeClass('active');
     $(btn).addClass('active');
 
-    // Hapus dropdown lama jika ada
-    $('#filter-dropdown-wrapper').remove();
+    // Bersihkan filter lama
+    $('.floating-filter').remove();
+    const btnOffset = $(btn).position();
+
+    if (type === 'all') return;
+
+    const $wrapper = $('<div class="floating-filter"></div>');
+    $wrapper.css({ 'left': btnOffset.left + 'px' });
+    $('.pill-group').append($wrapper);
 
     if (type === 'daily') {
-        // Buat wrapper
-        const $wrapper = $('<div id="filter-dropdown-wrapper" class="floating-filter"></div>');
-        
-        // Tentukan posisi horizontal agar sejajar dengan tombol yang diklik
-        const btnOffset = $(btn).position();
-        $wrapper.css({
-            'left': btnOffset.left + 'px'
-        });
-        
-        // Masukkan input EasyUI Datebox
-        $wrapper.html(`
-            <input id="filter_daily" class="easyui-datebox" 
-                   style="width:150px; height:32px;" 
-                   value="<?= date('Y-m-d') ?>" 
-                   data-options="formatter:myformatter, parser:myparser, editable:false">
-        `);
-
-        $('.pill-group').append($wrapper);
-
-        // EasyUI Datebox secara manual karena elemen baru dibuat
+        // Tetap pakai Datebox karena ini fitur native paling stabil
+        $wrapper.html('<input id="filter_daily" style="width:150px; height:32px;">');
         $('#filter_daily').datebox({
-            onSelect: function(date) {
-                const formattedDate = myformatter(date);
-                console.log("Daily Selected:", formattedDate);
-                // updateDashboard('daily', formattedDate);
-            }
+            editable: false,
+            value: '<?= date("Y-m-d") ?>',
         });
 
-    }
-    else if (type === 'weekly') {
-        // Buat wrapper dengan posisi absolute
-        const $wrapper = $('<div id="filter-dropdown-wrapper" class="floating-filter"></div>');
-        
-        // Tentukan posisi horizontal agar sejajar dengan tombol yang diklik
-        const btnOffset = $(btn).position();
-        $wrapper.css({
-            'left': btnOffset.left + 'px'
-        });
-
-        // Masukkan input untuk EasyUI Combobox
-        $wrapper.html('<input id="filter_week" style="width:280px;">');
-        
-        // Tempelkan ke dalam .pill-group
-        $('.pill-group').append($wrapper);
-
-        // Inisialisasi EasyUI Combobox
-        $('#filter_week').combobox({
-            url: '<?php echo base_url("purchase/purchase_dashboard/get_iso_weeks"); ?>',
+    } else if (type === 'weekly') {
+        // Pakai Combobox (Data dari Backend yang kita buat tadi)
+        $wrapper.html('<input id="filter_weekly" style="width:280px; height:32px;">');
+        $('#filter_weekly').combobox({
+            url: '<?= base_url("purchase/purchase_dashboard/get_iso_weeks") ?>',
             valueField: 'id',
             textField: 'text',
-            panelHeight: 200, // Beri batas tinggi agar tidak terlalu panjang ke bawah
-            editable: false,
-            onLoadSuccess: function() {
-                // Opsional: otomatis buka panel saat muncul
-                $(this).combobox('showPanel');
-            },
-            onChange: function(newValue) {
-                console.log("Selected Week:", newValue);
-                // Execute filter dashboard
-            }
+            panelHeight: 200,
+            editable: false
         });
-    }
-    else if (type === 'monthly') {
+
+    } else if (type === 'monthly') {
+        // Pakai Combobox untuk Bulan & Tahun (Anti-Gagal)
+        $wrapper.html('<input id="filter_monthly" style="width:180px; height:32px;">');
+        $('#filter_monthly').combobox({
+            valueField: 'id',
+            textField: 'text',
+            editable: false,
+            panelHeight: 'auto',
+            data: [
+                <?php for($m=1; $m<=12; $m++): ?>
+                { id: '<?= date("Y-").sprintf("%02d", $m) ?>', text: '<?= date("F Y", mktime(0,0,0,$m, 1)) ?>' },
+                <?php endfor; ?>
+            ],
+        });
+
+    } else if (type === 'yearly') {
+        $wrapper.html('<input id="filter_yearly" style="width:120px; height:32px;">');
         
+        $('#filter_yearly').combobox({
+            url: '<?= base_url("purchase/purchase_dashboard/get_years") ?>', // Panggil fungsi di atas
+            valueField: 'id',
+            textField: 'text',
+            editable: false,
+            panelHeight: 'auto',
+        });
     }
 }
 

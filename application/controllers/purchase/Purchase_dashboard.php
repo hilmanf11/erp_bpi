@@ -73,6 +73,28 @@ class Purchase_dashboard extends CI_Controller
         echo json_encode($weeks);
     }
 
+    public function get_years() 
+    {
+        // GET YEAR FROM receipt_date
+        $this->db->select('DISTINCT(YEAR(receipt_date)) as year_val', FALSE);
+        $this->db->from('purchase_order_receipts');
+        $this->db->order_by('year_val', 'DESC');
+        $query = $this->db->get()->result();
+        
+        $data = [];
+        foreach ($query as $row) {
+            if ($row->year_val) {
+                $data[] = [
+                    'id'   => $row->year_val,
+                    'text' => $row->year_val,
+                ];
+            }
+        }
+        
+        header('Content-Type: application/json');
+        echo json_encode($data);
+    }
+
     public function get_dashboard_data() 
     {
         $filter_from        = $this->input->post('from');
