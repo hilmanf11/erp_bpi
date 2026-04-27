@@ -252,6 +252,10 @@
         </div>
     </div>
 
+
+
+
+
     <div class="section-header">
         <i class="fa-solid fa-bar-chart"></i> <span>PURCHASE PLAN VS ACTUAL</span>
     </div>
@@ -593,13 +597,22 @@ function updateTrendChart(labels, values, period, title, avgValues) {
     const averageValue = avgValues.length > 0 ? avgValues[0] : 0;
 
     const options = {
-        series: [{
-            name: 'Amount',
-            data: values
-        }],
+        // Get dua series agar muncul dua item di Legend
+        series: [
+            {
+                name: 'Purchase Amount',
+                type: 'bar',
+                data: values,
+            },
+            {
+                name: 'Average',
+                type: 'line',
+                data: avgValues,
+            }
+        ],
         chart: {
-            type: 'bar',
             height: '100%',
+            type: 'line',
             toolbar: {
                 show: true,
                 tools: {
@@ -611,29 +624,42 @@ function updateTrendChart(labels, values, period, title, avgValues) {
                     pan: false,
                     reset: false,
                 }
-            }
+            },
         },
+        stroke: {
+            width: [0, 3],
+            curve: 'smooth',
+            dashArray: [0, 5],
+        },
+        colors: ['#0000FF', '#FF4560'], // Biru untuk Bar, Merah untuk Average
         plotOptions: {
             bar: {
                 borderRadius: 4,
-                dataLabels: {
-                    position: 'top',
-                },
+                columnWidth: '60%',
+                dataLabels: { position: 'top' }
             }
         },
         dataLabels: {
             enabled: true,
+            enabledOnSeries: [0], // Hanya tampilkan angka di atas BAR (series index 0)
             formatter: function (val) {
                 return val.toLocaleString('id-ID');
             },
             offsetY: -20,
-            style: {
-                fontSize: '11px',
-                colors: ["#304758"],
-                fontWeight: 'bold',
-            }
+            style: { fontSize: '11px', colors: ["#304758"], fontWeight: 'bold' }
         },
-        colors: ['#0000FF'],
+        legend: {
+            show: true,
+            position: 'bottom',
+            horizontalAlign: 'center',
+            offsetY: 8,
+            itemMargin: { horizontal: 15, vertical: 5 },
+            markers: {
+                width: 12,
+                height: 12,
+                radius: 2,
+            },
+        },
         title: {
             text: title,
             align: 'center',
@@ -642,43 +668,32 @@ function updateTrendChart(labels, values, period, title, avgValues) {
         subtitle: {
             text: period,
             align: 'center',
-            style: { fontSize: '13px', color: '#888' }
+            style: { fontSize: '13px', color: '#707070' }
         },
         xaxis: {
             categories: labels,
-            position: 'bottom',
             axisBorder: { show: false },
             axisTicks: { show: false }
         },
         yaxis: {
             show: false, // Sesuai UI
         },
-        // --- AVERAGE Line Chart ---
         annotations: {
             yaxis: [{
                 y: averageValue,
-                borderColor: '#FF4560',
-                strokeDashArray: 5,
+                borderColor: 'transparent',
                 label: {
                     borderColor: '#FF4560',
-                    style: {
-                        color: '#fff',
-                        background: '#FF4560',
-                        fontWeight: 'bold'
-                    },
+                    style: { color: '#fff', background: '#FF4560', fontWeight: 'bold' },
                     text: 'Avg: ' + averageValue.toLocaleString('id-ID'),
                     position: 'right',
-                    offsetY: 0,
-                    dx: -10,
+                    dx: -10
                 }
             }]
         },
-        legend: {
-            show: true,
-            position: 'bottom',
-            offsetY: 7
-        },
         tooltip: {
+            shared: true, // saat hover muncul info Bar & Average sekaligus
+            intersect: false,
             y: {
                 formatter: function (val) {
                     return "Rp " + val.toLocaleString('id-ID');
@@ -687,7 +702,6 @@ function updateTrendChart(labels, values, period, title, avgValues) {
         }
     };
 
-    // Re-Render Chart
     if (myPurchaseChart) {
         myPurchaseChart.updateOptions(options);
     } else {
@@ -697,13 +711,15 @@ function updateTrendChart(labels, values, period, title, avgValues) {
 }
 
 
-
 // Supplier Bar Chart
 function updateSupplierChart(labels, values, period, title) {
+    const safeLabels = (labels && labels.length > 0) ? labels : ['No Data'];
+    const safeValues = (values && values.length > 0) ? values : [0];
+
     const options = {
         series: [{
-            name: 'Total Amount',
-            data: values
+            name: 'Purchase per Supplier',
+            data: safeValues
         }],
         chart: {
             type: 'bar',
@@ -719,57 +735,48 @@ function updateSupplierChart(labels, values, period, title) {
                     pan: false,
                     reset: false,
                 }
-            }
+            },
         },
         plotOptions: {
             bar: {
                 borderRadius: 4,
                 horizontal: true,
-                barHeight: '70%',
-                dataLabels: {
-                    position: 'top',
-                },
-            }
-        },
-        dataLabels: {
-            enabled: true,
-            formatter: function (val) {
-                return "Rp " + val.toLocaleString('id-ID');
-            },
-            offsetX: 100,
-            style: {
-                fontSize: '12px',
-                colors: ["#333"],
-                fontWeight: 'bold'
+                barHeight: '60%',
+                dataLabels: { position: 'top' }
             }
         },
         colors: ['#36a2eb'],
+        dataLabels: {
+            enabled: true,
+            formatter: function (val) {
+                return val > 0 ? "Rp " + val.toLocaleString('id-ID') : "";
+            },
+            offsetX: 80, // Sesuaikan agar label nominal tidak menabrak bar
+            style: {
+                fontSize: '11px',
+                colors: ["#333"]
+            }
+        },
         xaxis: {
-            categories: labels,
+            categories: safeLabels,
             labels: { show: false },
             axisBorder: { show: false },
             axisTicks: { show: false }
         },
-        yaxis: {
-            labels: {
-                style: {
-                    fontWeight: 'bold'
-                }
-            }
-        },
         grid: {
-            xaxis: { lines: { show: false } }
+            padding: {
+                right: 100, 
+            }
         },
         title: {
             text: title,
-            align: 'left',
-            style: { fontSize: '16px', color: '#666' }
+            align: 'center',
+            style: { fontSize: '18px', color: '#444' }
         },
         subtitle: {
             text: period,
-            align: 'left',
-            margin: 30,
-            style: { fontSize: '14px', color: '#999' }
+            align: 'center',
+            style: { fontSize: '13px', color: '#707070' }
         },
         tooltip: {
             y: {
@@ -785,11 +792,14 @@ function updateSupplierChart(labels, values, period, title) {
     // Logic untuk destroy dan create ulang (Re-render)
     if (mySupplierChart) {
         mySupplierChart.updateOptions(options);
+        mySupplierChart.updateSeries([{ data: safeValues }]);
     } else {
-        mySupplierChart = new ApexCharts(chartElement, options);
+        mySupplierChart = new ApexCharts(document.querySelector("#supplierChart"), options);
         mySupplierChart.render();
     }
 }
+
+
 
 // Plan VS Actual Chart
 function createPlanActualChart(canvasId, period, labels, dataPlan, dataActual) {
