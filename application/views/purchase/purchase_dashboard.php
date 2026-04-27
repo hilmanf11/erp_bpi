@@ -2,6 +2,8 @@
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 
+    <script src="https://cdn.jsdelivr.net/npm/apexcharts"></script>
+
     <style>
         .dashboard-wrapper { background-color: #f8fafc; padding: 20px; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
         
@@ -141,22 +143,40 @@
             width: fit-content;
         }
 
-        /* Pastikan pembungkus tombol adalah jangkar untuk posisi absolute */
         .pill-group {
             position: relative;
-            display: inline-flex; /* atau display block sesuai kebutuhan */
+            display: inline-flex;
         }
 
         /* Styling dropdown agar melayang di bawah tombol */
         .floating-filter {
             position: absolute;
-            top: 45px; /* Sesuaikan dengan tinggi tombol Anda */
+            top: 45px;
             left: 0;
-            z-index: 999; /* Agar tidak tertutup elemen lain */
+            z-index: 999;
             background: #fff;
             padding: 5px;
             border-radius: 4px;
             box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+        }
+
+        /* Dropdown Chart Download */
+        .apexcharts-menu {
+            min-width: 155px !important;
+            padding: 10px 0 !important;
+            border-radius: 8px !important;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.2) !important;
+        }
+
+        .apexcharts-menu-item {
+            padding: 10px 20px !important;
+            font-size: 14px !important;
+            transition: background 0.2s ease;
+        }
+
+        .apexcharts-menu-item:hover {
+            background-color: #f1f1f1 !important;
+            color: #0000FF !important; /* Warna biru sesuai tema chart Anda */
         }
     </style>
 
@@ -208,30 +228,26 @@
                 </div>
             </div>
         </div>
-        -->
 
     </div>
+    -->
 
-    <div style="display: flex; gap: 15px; height: 550px;"> 
-        <div class="chart-section" style="flex: 1; display: flex; flex-direction: column; overflow: hidden;">
+    <div style="display: flex; gap: 15px; height: 550px; align-items: stretch;"> 
+        <div class="chart-section" style="flex: 1; display: flex; flex-direction: column; overflow: hidden; border: 1px solid #ddd;">
             <div class="chart-header">
                 Purchase Amount (IDR)
             </div>
-            <div style="padding: 20px; flex: 1; position: relative;">
-                <div id="purchaseChartParent" style="width: 100%; height: 100%;">
-                    <canvas id="purchaseChart"></canvas>
-                </div>
+            <div style="padding: 10px; flex: 1; position: relative; min-height: 0;">
+                <div id="purchaseChart" style="height: 100%; width: 100%;"></div>
             </div>
         </div>
 
-        <div class="chart-section" style="flex: 1; display: flex; flex-direction: column; overflow: hidden;">
+        <div class="chart-section" style="flex: 1; display: flex; flex-direction: column; overflow: hidden; border: 1px solid #ddd;">
             <div class="chart-header">
                 Purchase Amount (IDR) - TOP 10 Supplier
             </div>
-            <div style="padding: 20px; flex: 1; position: relative;">
-                <div id="supplierChartParent" style="width: 100%; height: 100%;">
-                    <canvas id="supplierChart"></canvas>
-                </div>
+            <div style="padding: 10px; flex: 1; position: relative; min-height: 0;">
+                <div id="supplierChart" style="height: 100%; width: 100%;"></div>
             </div>
         </div>
     </div>
@@ -572,162 +588,207 @@ function loadDashboard() {
 
 
 // Chart Purchase 
-function updateTrendChart(labels, values, period, title) {
-    const ctx = document.getElementById('purchaseChart').getContext('2d');
+function updateTrendChart(labels, values, period, title, avgValues) {
+    // Get rata-rata dari array
+    const averageValue = avgValues.length > 0 ? avgValues[0] : 0;
 
-    if (window.myPurchaseChart) {
-        window.myPurchaseChart.destroy();
-    }
-    
-    window.myPurchaseChart = new Chart(ctx, {
-        type: 'bar',
-        data: {
-            labels: labels,
-            datasets: [{
-                label: 'Purchase Amount',
-                data: values,
-                backgroundColor: '#3498db',
-                borderColor: '#2980b9',
-                borderWidth: 1
+    const options = {
+        series: [{
+            name: 'Amount',
+            data: values
+        }],
+        chart: {
+            type: 'bar',
+            height: '100%',
+            toolbar: {
+                show: true,
+                tools: {
+                    download: true, // Tombol download untuk PNG, SVG, CSV
+                    selection: false,
+                    zoom: false,
+                    zoomin: false,
+                    zoomout: false,
+                    pan: false,
+                    reset: false,
+                }
+            }
+        },
+        plotOptions: {
+            bar: {
+                borderRadius: 4,
+                dataLabels: {
+                    position: 'top',
+                },
+            }
+        },
+        dataLabels: {
+            enabled: true,
+            formatter: function (val) {
+                return val.toLocaleString('id-ID');
+            },
+            offsetY: -20,
+            style: {
+                fontSize: '11px',
+                colors: ["#304758"],
+                fontWeight: 'bold',
+            }
+        },
+        colors: ['#0000FF'],
+        title: {
+            text: title,
+            align: 'center',
+            style: { fontSize: '18px', color: '#444' }
+        },
+        subtitle: {
+            text: period,
+            align: 'center',
+            style: { fontSize: '13px', color: '#888' }
+        },
+        xaxis: {
+            categories: labels,
+            position: 'bottom',
+            axisBorder: { show: false },
+            axisTicks: { show: false }
+        },
+        yaxis: {
+            show: false, // Sesuai UI
+        },
+        // --- AVERAGE Line Chart ---
+        annotations: {
+            yaxis: [{
+                y: averageValue,
+                borderColor: '#FF4560',
+                strokeDashArray: 5,
+                label: {
+                    borderColor: '#FF4560',
+                    style: {
+                        color: '#fff',
+                        background: '#FF4560',
+                        fontWeight: 'bold'
+                    },
+                    text: 'Avg: ' + averageValue.toLocaleString('id-ID'),
+                    position: 'right',
+                    offsetY: 0,
+                    dx: -10,
+                }
             }]
         },
-        options: {
-            responsive: true,
-            maintainAspectRatio: false,
-            scales: {
-                y: {
-                    beginAtZero: true,
-                    ticks: {
-                        // Format angka ke format ribuan agar rapi
-                        callback: function(value) {
-                            return 'Rp ' + value.toLocaleString('id-ID');
-                        }
-                    }
-                }
-            },
-            plugins: {
-                title: {
-                    display: true,
-                    text: title,
-                    padding: {
-                        bottom: 10,
-                    }
-                },
-                subtitle: {
-                    display: true,
-                    text: period,
-                    padding: {
-                        bottom: 25,
-                    }
-                },
-                legend: {
-                    display: true,
-                    position: 'bottom',
-                    labels: {
-                        padding: 20,
-                    }
-                },
-                tooltip: {
-                    callbacks: {
-                        label: function(context) {
-                            return 'Amount: Rp ' + context.parsed.y.toLocaleString('id-ID');
-                        }
-                    }
-                }
-            },
-            animation: {
-                // Menggunakan onProgress agar angka mengikuti pergerakan bar
-                onProgress: function() {
-                    var chartInstance = this;
-                    var ctx = chartInstance.ctx;
-                    ctx.font = "bold 10px Arial";
-                    ctx.textAlign = 'center';
-                    ctx.textBaseline = 'bottom';
-                    ctx.fillStyle = '#333';
-
-                    this.data.datasets.forEach(function(dataset, i) {
-                        var meta = chartInstance.getDatasetMeta(i);
-                        meta.data.forEach(function(bar, index) {
-                            var data = dataset.data[index];
-                            if (data !== null && !bar.hidden) {
-                                // bar.y adalah koordinat ujung atas bar
-                                ctx.fillText(data.toLocaleString('id-ID'), bar.x, bar.y - 5);
-                            }
-                        });
-                    });
+        legend: {
+            show: true,
+            position: 'bottom',
+            offsetY: 7
+        },
+        tooltip: {
+            y: {
+                formatter: function (val) {
+                    return "Rp " + val.toLocaleString('id-ID');
                 }
             }
         }
-    });
+    };
+
+    // Re-Render Chart
+    if (myPurchaseChart) {
+        myPurchaseChart.updateOptions(options);
+    } else {
+        myPurchaseChart = new ApexCharts(document.querySelector("#purchaseChart"), options);
+        myPurchaseChart.render();
+    }
 }
 
 
 
 // Supplier Bar Chart
-function updateSupplierChart(labels, values, period) {
-    const ctx = document.getElementById('supplierChart').getContext('2d');
-    if (mySupplierChart) mySupplierChart.destroy();
-
-    mySupplierChart = new Chart(ctx, {
-        type: 'bar',
-        data: {
-            labels: labels,
-            datasets: [{
-                label: 'Total Amount',
-                data: values,
-                backgroundColor: '#36a2eb',
-            }]
+function updateSupplierChart(labels, values, period, title) {
+    const options = {
+        series: [{
+            name: 'Total Amount',
+            data: values
+        }],
+        chart: {
+            type: 'bar',
+            height: '100%',
+            toolbar: {
+                show: true,
+                tools: {
+                    download: true, // Tombol download untuk PNG, SVG, CSV
+                    selection: false,
+                    zoom: false,
+                    zoomin: false,
+                    zoomout: false,
+                    pan: false,
+                    reset: false,
+                }
+            }
         },
-        options: {
-            indexAxis: 'y',
-            responsive: true,
-            maintainAspectRatio: false,
-            layout: {
-                padding: {
-                    right: 70 
-                }
-            },
-            plugins: {
-                title: {
-                    display: true,
-                    text: period,
-                    padding: {
-                        bottom: 25,
-                    }
+        plotOptions: {
+            bar: {
+                borderRadius: 4,
+                horizontal: true,
+                barHeight: '70%',
+                dataLabels: {
+                    position: 'top',
                 },
-                legend: { display: false }
+            }
+        },
+        dataLabels: {
+            enabled: true,
+            formatter: function (val) {
+                return "Rp " + val.toLocaleString('id-ID');
             },
-            scales: {
-                x: {
-                    beginAtZero: true,
-                    grid: { display: false },
-                    ticks: { display: false } 
+            offsetX: 100,
+            style: {
+                fontSize: '12px',
+                colors: ["#333"],
+                fontWeight: 'bold'
+            }
+        },
+        colors: ['#36a2eb'],
+        xaxis: {
+            categories: labels,
+            labels: { show: false },
+            axisBorder: { show: false },
+            axisTicks: { show: false }
+        },
+        yaxis: {
+            labels: {
+                style: {
+                    fontWeight: 'bold'
                 }
-            },
-            // Tampilkan angka di ujung bar
-            animation: {
-                onComplete: function() {
-                    var chartInstance = this,
-                        ctx = chartInstance.ctx;
-                    ctx.font = Chart.helpers.fontString(Chart.defaults.font.size, 'bold', Chart.defaults.font.family);
-                    ctx.textAlign = 'left';
-                    ctx.textBaseline = 'middle';
-                    ctx.fillStyle = '#333';
-
-                    this.data.datasets.forEach(function(dataset, i) {
-                        var meta = chartInstance.getDatasetMeta(i);
-                        meta.data.forEach(function(bar, index) {
-                            var data = dataset.data[index];
-                            // Format angka ke IDR (Rp 1.000.000)
-                            var label = 'Rp ' + data.toLocaleString('id-ID');
-                            // Posisi: tepat di sebelah kanan bar
-                            ctx.fillText(label, bar.x + 5, bar.y);
-                        });
-                    });
+            }
+        },
+        grid: {
+            xaxis: { lines: { show: false } }
+        },
+        title: {
+            text: title,
+            align: 'left',
+            style: { fontSize: '16px', color: '#666' }
+        },
+        subtitle: {
+            text: period,
+            align: 'left',
+            margin: 30,
+            style: { fontSize: '14px', color: '#999' }
+        },
+        tooltip: {
+            y: {
+                formatter: function (val) {
+                    return "Rp " + val.toLocaleString('id-ID');
                 }
             }
         }
-    });
+    };
+
+    const chartElement = document.querySelector("#supplierChart");
+    
+    // Logic untuk destroy dan create ulang (Re-render)
+    if (mySupplierChart) {
+        mySupplierChart.updateOptions(options);
+    } else {
+        mySupplierChart = new ApexCharts(chartElement, options);
+        mySupplierChart.render();
+    }
 }
 
 // Plan VS Actual Chart
@@ -871,8 +932,8 @@ function submitFilter(formId) {
 
     $.post('<?= base_url("purchase/purchase_dashboard/get_dashboard_data") ?>', payload, function(res) {
         const data = JSON.parse(res);
-        updateTrendChart(data.trend_labels, data.trend_values, data.period, data.title);
-        updateSupplierChart(data.supp_labels, data.supp_values, data.period);
+        updateTrendChart(data.trend_labels, data.trend_values, data.period, data.title, data.avg_values);
+        updateSupplierChart(data.supplier_labels, data.supplier_values, data.period, data.title);
 
         $('#conclusion').html(data.conclusion || 'No data');
         $('#impact').html(data.impact || 'No data');

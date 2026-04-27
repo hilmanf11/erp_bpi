@@ -276,6 +276,7 @@ class Purchase_dashboard extends CI_Controller
         $labels = [];
         $period_start_date = '';
         $period_end_date = '';
+        $period_text = '';
 
         if (strtolower($filter_period_type) == "daily") {
             $end = new DateTime($filter_period_value);
@@ -284,6 +285,7 @@ class Purchase_dashboard extends CI_Controller
 
             $period_start_date = $start->format('Y-m-d');
             $period_end_date = $end->format('Y-m-d');
+            $period_text = "Period: " . date('d M Y', strtotime($period_start_date)) . " to " . date('d M Y', strtotime($period_end_date));
 
             // Generate Labels: Looping dari start ke end date
             $interval = new DateInterval('P1D');
@@ -292,64 +294,80 @@ class Purchase_dashboard extends CI_Controller
             foreach ($period as $date) {
                 $labels[] = $date->format('Y-m-d');
             }
-
         } else {
-            echo json_encode([
-                'trend_labels' => [],
-                'trend_values' => [],
-                'title'        => "Failed!",
-                'period'       => "Unknown Period Type",
-            ]);
+            // Period Type tidak diketahui
+            echo json_encode(['title' => "Failed!", 'period' => "Unknown Period Type"]);
             return;
         }
 
-        // Main Query
-        $sql = "SELECT 
-                    a.receipt_date,
-                    SUM(a.qty_receipt2 * (CASE 
-                        WHEN COALESCE(d.discount_nominal,0) > 0 
-                            THEN COALESCE(d.total,0) / NULLIF(COALESCE(d.qty,0),0) 
-                        ELSE 
-                            (COALESCE(d.total,0) - ((COALESCE(d.total,0) / NULLIF(COALESCE(d.total_sub,0),0)) * COALESCE(d.discount_total,0))) / NULLIF(COALESCE(d.qty,0),0)
-                    END)) AS total_amount
-                FROM purchase_order_receipts a
-                LEFT JOIN item_rm b ON a.item_rm_id = b.id
-                LEFT JOIN purchase_orders d ON a.po_no = d.po_no AND a.item_rm_id = d.item_rm_id
-                LEFT JOIN suppliers f ON d.supplier_id = f.id
-                WHERE (a.supplier_id LIKE ?) 
-                AND (b.division LIKE ?) 
-                AND (a.receipt_date BETWEEN ? AND ?)
-                GROUP BY a.receipt_date
-                ORDER BY a.receipt_date ASC";
+        // Rumus Amount
+        $price_logic = "(CASE 
+                            WHEN COALESCE(d.discount_nominal,0) > 0 
+                                THEN COALESCE(d.total,0) / NULLIF(COALESCE(d.qty,0),0) 
+                            ELSE 
+                                (COALESCE(d.total,0) - ((COALESCE(d.total,0) / NULLIF(COALESCE(d.total_sub,0),0)) * COALESCE(d.discount_total,0))) / NULLIF(COALESCE(d.qty,0),0)
+                        END)";
+
+        // QUERY TREND (Berdasarkan Tanggal)
+        $sql_trend = "SELECT a.receipt_date, SUM(a.qty_receipt2 * $price_logic) AS total_amount
+                    FROM purchase_order_receipts a
+                    LEFT JOIN item_rm b ON a.item_rm_id = b.id
+                    LEFT JOIN purchase_orders d ON a.po_no = d.po_no AND a.item_rm_id = d.item_rm_id
+                    WHERE (a.supplier_id LIKE ?) AND (b.division LIKE ?) 
+                    AND (a.receipt_date BETWEEN ? AND ?)
+                    GROUP BY a.receipt_date ORDER BY a.receipt_date ASC";
 
         $params = ["%$filter_supplier_id%", "%$filter_division%", $period_start_date, $period_end_date];
-        $query_result = $this->db->query($sql, $params)->result_array();
+        $trend_result = $this->db->query($sql_trend, $params)->result_array();
 
-        // Mapping Data ke Labels (Agar tanggal kosong terisi 0)
-        $mapped_data = [];
-        foreach ($labels as $lbl) {
-            $mapped_data[$lbl] = 0; // Default 0
-        }
+        // QUERY TOP 10 SUPPLIER (Berdasarkan Nama Supplier)
+        $sql_supplier = "SELECT f.name as supplier_name, SUM(a.qty_receipt2 * $price_logic) AS total_amount
+                        FROM purchase_order_receipts a
+                        LEFT JOIN item_rm b ON a.item_rm_id = b.id
+                        LEFT JOIN purchase_orders d ON a.po_no = d.po_no AND a.item_rm_id = d.item_rm_id
+                        LEFT JOIN suppliers f ON d.supplier_id = f.id
+                        WHERE (a.supplier_id LIKE ?) AND (b.division LIKE ?) 
+                        AND (a.receipt_date BETWEEN ? AND ?)
+                        GROUP BY f.name 
+                        ORDER BY total_amount DESC 
+                        LIMIT 10";
 
-        foreach ($query_result as $row) {
-            if (isset($mapped_data[$row['receipt_date']])) {
-                $mapped_data[$row['receipt_date']] = (float)$row['total_amount'];
+        $supplier_result = $this->db->query($sql_supplier, $params)->result_array();
+
+        // --- MAPPING DATA PURCHASE ---
+        $mapped_trend = array_fill_keys($labels, 0);
+        foreach ($trend_result as $row) {
+            if (isset($mapped_trend[$row['receipt_date']])) {
+                $mapped_trend[$row['receipt_date']] = (float)$row['total_amount'];
             }
         }
 
-        // Indexed array untuk Chart.js
-        $trend_values = array_values($mapped_data);
-        $trend_labels = [];
-        foreach($labels as $l) { $trend_labels[] = date('d M Y', strtotime($l)); }
+        // --- MAPPING DATA SUPPLIER ---
+        $supplier_labels = [];
+        $supplier_values = [];
+        foreach ($supplier_result as $row) {
+            $supplier_labels[] = $row['supplier_name'] ?? 'Unknown';
+            $supplier_values[] = (float)$row['total_amount'];
+        }
+
+        // --- PREPARE FINAL RESPONSE ---
+        $trend_values = array_values($mapped_trend);
+        $trend_labels = array_map(function($l) { return date('d M Y', strtotime($l)); }, $labels);
+        
+        $average = count($trend_values) > 0 ? (array_sum($trend_values) / count($trend_values)) : 0;
+        $avg_values = array_fill(0, count($trend_values), round($average, 2));
 
         $division_text = !empty($filter_division) ? strtoupper($filter_division) : "ALL Division";
-        $period_text   = "Purchase Amount (IDR) ". ucfirst($filter_period_type) . " - " . $division_text;
+        $title = "Purchase Amount (IDR) " . ucfirst($filter_period_type) . " - " . $division_text;
 
         echo json_encode([
-            'trend_labels' => $trend_labels,
-            'trend_values' => $trend_values,
-            'title'        => $period_text,
-            'period'       => "Period: $period_start_date to $period_end_date",
+            'trend_labels'    => $trend_labels,
+            'trend_values'    => $trend_values,
+            'supplier_labels' => $supplier_labels,
+            'supplier_values' => $supplier_values,
+            'avg_values'      => $avg_values,
+            'title'           => $title,
+            'period'          => $period_text,
         ]);
     }
 
