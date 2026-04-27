@@ -161,41 +161,25 @@
     </style>
 
     <div class="section-header">
-        <i class="fa-solid fa-square-poll-vertical"></i> <span>FILTER & SUMMARY</span>
+        <i class="fa-solid fa-square-poll-vertical"></i> <span>PURCHASE TRENDS</span>
     </div>
 
     <div class="filter-bar">
-        <div class="pill-group">
-            <button class="pill-btn active" onclick="togglePill(this, 'all')"><i class="fa fa-list"></i> All</button>
-            <button class="pill-btn" onclick="togglePill(this, 'daily')"><i class="fa fa-calendar-day"></i> Daily</button>
-            <button class="pill-btn" onclick="togglePill(this, 'weekly')"><i class="fa fa-calendar-week"></i> Weekly</button>            
-            <button class="pill-btn" onclick="togglePill(this, 'monthly')"><i class="fa fa-calendar"></i> Monthly</button>
-            <button class="pill-btn" onclick="togglePill(this, 'yearly')"><i class="fa fa-calendar"></i> Yearly</button>
-        </div>
+        <form id="form_purchase_trends" method="POST">
+            <div class="pill-group">
+                <button type="button" class="pill-btn active" onclick="togglePill(this, 'all')"><i class="fa fa-list"></i> All</button>
+                <button type="button" class="pill-btn" onclick="togglePill(this, 'daily')"><i class="fa fa-calendar-day"></i> Daily</button>
+                <button type="button" class="pill-btn" onclick="togglePill(this, 'weekly')"><i class="fa fa-calendar-week"></i> Weekly</button>
+                <button type="button" class="pill-btn" onclick="togglePill(this, 'monthly')"><i class="fa fa-calendar"></i> Monthly</button>
+                <button type="button" class="pill-btn" onclick="togglePill(this, 'yearly')"><i class="fa fa-calendar"></i> Yearly</button>
 
-        <div id="dynamic_input" style="display: flex; gap: 8px;">
-            
-            <select id="filter_display" class="easyui-combobox" style="width:120px; height:32px;">
-                <option value="DAILY">DAILY</option>
-                <option value="WEEKLY">WEEKLY</option>
-                <option value="MONTHLY">MONTHLY</option>
-            </select>
-            
-            <input id="filter_from" class="easyui-datebox" style="width:130px; height:32px;" value="<?= date("Y-m-01") ?>" data-options="formatter:myformatter,parser:myparser, editable:false">
-            <span>to</span>
-            <input id="filter_to" class="easyui-datebox" style="width:130px; height:32px;" value="<?= date("Y-m-t") ?>" data-options="formatter:myformatter,parser:myparser, editable:false">
-
-
-            <input id="filter_supplier_id" class="easyui-combobox" style="width:150px; height:32px;" prompt="Supplier">
-            <input id="filter_division" class="easyui-combobox" style="width:150px; height:32px;" prompt="Division">
-            
-            <div class="fitem" hidden>
-            <input id="filter_category_id" class="easyui-combobox" style="width:150px; height:32px;" prompt="Category">
+                <input id="filter_supplier_id" name="filter_supplier_id" class="easyui-combobox" style="width:150px; height:32px;" prompt="Supplier">
+                <input id="filter_division" name="filter_division" class="easyui-combobox" style="width:150px; height:32px;" prompt="Division">
+                
             </div>
+        </form>
 
-        </div>
-
-        <a href="javascript:;" class="easyui-linkbutton" onclick="loadDashboard()" data-options="iconCls:'icon-search'" style="height:32px; padding:0 15px;">Filter</a>
+        <a href="javascript:;" class="easyui-linkbutton" onclick="submitFilter('form_purchase_trends')" data-options="iconCls:'icon-search'" style="height:32px; padding:0 15px;">Filter</a>
         <a href="javascript:;" class="easyui-linkbutton" onclick="reload()" data-options="iconCls:'icon-reload'" style="height:32px; padding:0 15px;">Reload</a>
     </div>
 
@@ -226,10 +210,6 @@
 
     </div>
 
-    <div class="section-header">
-        <i class="fa-solid fa-chart-line"></i> <span>PURCHASE TRENDS</span>
-    </div>
-
     <div style="display: flex; gap: 15px;">
         <div class="chart-section" style="flex: 1; width: 50%;">
             <div class="chart-header">Purchase by Amount</div>
@@ -252,6 +232,30 @@
 
     <div class="section-header">
         <i class="fa-solid fa-bar-chart"></i> <span>PURCHASE PLAN VS ACTUAL</span>
+    </div>
+
+    
+    <div class="filter-bar">
+        <select id="filter_display" class="easyui-combobox" style="width:120px; height:32px;">
+            <option value="DAILY">DAILY</option>
+            <option value="WEEKLY">WEEKLY</option>
+            <option value="MONTHLY">MONTHLY</option>
+        </select>
+        
+        <input id="filter_from" class="easyui-datebox" style="width:130px; height:32px;" value="<?= date("Y-m-01") ?>" data-options="formatter:myformatter,parser:myparser, editable:false">
+        <span>to</span>
+        <input id="filter_to" class="easyui-datebox" style="width:130px; height:32px;" value="<?= date("Y-m-t") ?>" data-options="formatter:myformatter,parser:myparser, editable:false">
+
+
+        <input id="filter_supplier_id" class="easyui-combobox" style="width:150px; height:32px;" prompt="Supplier">
+        <input id="filter_division" class="easyui-combobox" style="width:150px; height:32px;" prompt="Division">
+        
+        <div class="fitem" hidden>
+        <input id="filter_category_id" class="easyui-combobox" style="width:150px; height:32px;" prompt="Category">
+        </div>
+
+        <a href="javascript:;" class="easyui-linkbutton" onclick="loadDashboard()" data-options="iconCls:'icon-search'" style="height:32px; padding:0 15px;">Filter</a>
+        <a href="javascript:;" class="easyui-linkbutton" onclick="reload()" data-options="iconCls:'icon-reload'" style="height:32px; padding:0 15px;">Reload</a>
     </div>
 
     <div class="chart-section" style="width: 100%;">
@@ -440,42 +444,39 @@ $(function() {
 
 // Button Period
 function togglePill(btn, type) {
+    if (window.event) window.event.preventDefault();
+
     $('.pill-btn').removeClass('active');
     $(btn).addClass('active');
-
-    // Bersihkan filter lama
     $('.floating-filter').remove();
-    const btnOffset = $(btn).position();
 
     if (type === 'all') return;
 
+    const btnOffset = $(btn).position();
     const $wrapper = $('<div class="floating-filter"></div>');
     $wrapper.css({ 'left': btnOffset.left + 'px' });
     $('.pill-group').append($wrapper);
 
+    // Gunakan ID tetap: current_period_input
     if (type === 'daily') {
-        // Tetap pakai Datebox karena ini fitur native paling stabil
-        $wrapper.html('<input id="filter_daily" style="width:150px; height:32px;">');
-        $('#filter_daily').datebox({
+        $wrapper.html('<input id="current_period_input" class="easyui-datebox" style="width:150px; height:32px;">');
+        $('#current_period_input').datebox({
             editable: false,
-            value: '<?= date("Y-m-d") ?>',
+            value: '<?= date("Y-m-d") ?>'
         });
-
     } else if (type === 'weekly') {
-        // Pakai Combobox (Data dari Backend yang kita buat tadi)
-        $wrapper.html('<input id="filter_weekly" style="width:280px; height:32px;">');
-        $('#filter_weekly').combobox({
+        $wrapper.html('<input id="current_period_input" class="easyui-combobox" style="width:280px; height:32px;">');
+        $('#current_period_input').combobox({
             url: '<?= base_url("purchase/purchase_dashboard/get_iso_weeks") ?>',
             valueField: 'id',
             textField: 'text',
-            panelHeight: 200,
             editable: false
         });
 
     } else if (type === 'monthly') {
-        // Pakai Combobox untuk Bulan & Tahun (Anti-Gagal)
-        $wrapper.html('<input id="filter_monthly" style="width:180px; height:32px;">');
-        $('#filter_monthly').combobox({
+        // Pakai Combobox untuk Bulan & Tahun
+        $wrapper.html('<input id="current_period_input" class="easyui-combobox" style="width:180px; height:32px;">');
+        $('#current_period_input').combobox({
             valueField: 'id',
             textField: 'text',
             editable: false,
@@ -485,17 +486,29 @@ function togglePill(btn, type) {
                 { id: '<?= date("Y-").sprintf("%02d", $m) ?>', text: '<?= date("F Y", mktime(0,0,0,$m, 1)) ?>' },
                 <?php endfor; ?>
             ],
+            onLoadSuccess: function() {
+                $(this).combobox('setValue', '<?= date("Y-m") ?>');
+            }
         });
 
     } else if (type === 'yearly') {
-        $wrapper.html('<input id="filter_yearly" style="width:120px; height:32px;">');
+        $wrapper.html('<input id="current_period_input" class="easyui-combobox" style="width:180px; height:32px;">');
         
-        $('#filter_yearly').combobox({
+        $('#current_period_input').combobox({
             url: '<?= base_url("purchase/purchase_dashboard/get_years") ?>', // Panggil fungsi di atas
             valueField: 'id',
             textField: 'text',
             editable: false,
             panelHeight: 'auto',
+            onLoadSuccess: function() {
+                // Set default ke tahun sekarang jika tersedia di data
+                const currentYear = new Date().getFullYear().toString();
+                $(this).combobox('setValue', currentYear);
+            },
+            onChange: function(newValue) {
+                console.log("Year Selected:", newValue);
+                // Trigger refresh dashboard/chart
+            }
         });
     }
 }
@@ -520,35 +533,6 @@ function loadDashboard() {
         supplier_id: $('#filter_supplier_id').combobox('getValue'),
         category_id: $('#filter_category_id').combobox('getValue'),
     };
-
-    $.post('<?= base_url("purchase/purchase_dashboard/get_dashboard_data") ?>', params, function(res) {
-        const data = JSON.parse(res);
-
-        // Update KPI
-        $('#kpi_total_amt').html(data.total_amount_formatted);
-        $('#kpi_total_po').html(data.total_po);
-        $('#kpi_total_supp').html(data.supp_labels.length); // Menghitung jumlah supplier unik dari data labels
-
-        // Render/Update Chart Purchase
-        updateTrendChart(data.trend_labels, data.trend_values, data.subtitle, data.avg_values);
-
-        // Render/Update Chart Supplier
-        updateSupplierChart(data.supp_labels, data.supp_values, data.subtitle);
-
-        // Conclusion and Impact
-        if (data.conclusion) {
-            $('#conclusion').html(data.conclusion);
-        } else {
-            $('#conclusion').html('<span class="text-muted">Not available yet.</span>');
-        }
-
-        if (data.impact) {
-            $('#impact').html(data.impact);
-        } else {
-            $('#impact').html('<span class="text-muted">Not available yet.</span>');
-        }
-
-    });
 
 
     $.post('<?= base_url("purchase/purchase_dashboard/get_plan_actual_data") ?>', params, function(res) {
@@ -906,4 +890,46 @@ function createPlanActualChart(canvasId, period, labels, dataPlan, dataActual) {
     return chartInstances[canvasId];
 }
 
+
+function submitFilter(formId) {
+    const $form = $('#' + formId);
+    let payload = {};
+
+    // Get Supplier & Division
+    $form.serializeArray().forEach(function(item) {
+        payload[item.name] = item.value;
+    });
+
+    // Get Period
+    const periodType = $form.find('.pill-btn.active').text().trim().toLowerCase();
+    payload.filter_period_type = periodType;
+
+    let periodValue = '';
+    if (periodType === 'all') {
+        periodValue = 'all';
+    } else {
+        const $input = $('#current_period_input');
+        if ($input.length) {
+            // .combo('getValue') bekerja untuk datebox DAN combobox
+            periodValue = $input.combo('getValue');
+        }
+    }
+    payload.filter_period_value = periodValue;
+
+    // console.log("Payload yang dikirim:", payload);
+
+    if (!payload.filter_period_value && periodType !== 'all') {
+        $.messager.alert('Warning', 'Silahkan pilih periode (Daily/Weekly/...) terlebih dahulu', 'warning');
+        return;
+    }
+
+    // 4. Kirim AJAX
+    $.post('<?= base_url("purchase/purchase_dashboard/get_dashboard_data") ?>', payload, function(res) {
+        const data = JSON.parse(res);
+        updateTrendChart(data.trend_labels, data.trend_values, data.subtitle, data.avg_values);
+        updateSupplierChart(data.supp_labels, data.supp_values, data.subtitle);
+        $('#conclusion').html(data.conclusion || 'No data');
+        $('#impact').html(data.impact || 'No data');
+    });
+}
 </script>
