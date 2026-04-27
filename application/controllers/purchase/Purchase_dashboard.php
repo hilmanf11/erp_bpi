@@ -95,7 +95,7 @@ class Purchase_dashboard extends CI_Controller
         echo json_encode($data);
     }
 
-    public function get_dashboard_data() 
+    public function get_dashboard_data_existing() 
     {
         $filter_from        = $this->input->post('from');
         $filter_to          = $this->input->post('to');
@@ -264,6 +264,93 @@ class Purchase_dashboard extends CI_Controller
         ];
 
         echo json_encode($output);
+    }
+
+    public function get_dashboard_data() 
+    {
+        $filter_period_type = $this->input->post('filter_period_type');
+        $filter_period_value = $this->input->post('filter_period_value');
+        $filter_division    = $this->input->post('filter_division');
+        $filter_supplier_id = $this->input->post('filter_supplier_id');
+        
+        $labels = [];
+        $period_start_date = '';
+        $period_end_date = '';
+
+        if (strtolower($filter_period_type) == "daily") {
+            $end = new DateTime($filter_period_value);
+            $start = clone $end;
+            $start->modify('-5 days');
+
+            $period_start_date = $start->format('Y-m-d');
+            $period_end_date = $end->format('Y-m-d');
+
+            // Generate Labels: Looping dari start ke end date
+            $interval = new DateInterval('P1D');
+            $period = new DatePeriod($start, $interval, $end->modify('+1 day')); // +1 agar end date terbawa
+
+            foreach ($period as $date) {
+                $labels[] = $date->format('Y-m-d');
+            }
+
+        } else {
+            echo json_encode([
+                'trend_labels' => [],
+                'trend_values' => [],
+                'title'        => "Failed!",
+                'period'       => "Unknown Period Type",
+            ]);
+            return;
+        }
+
+        // Main Query
+        $sql = "SELECT 
+                    a.receipt_date,
+                    SUM(a.qty_receipt2 * (CASE 
+                        WHEN COALESCE(d.discount_nominal,0) > 0 
+                            THEN COALESCE(d.total,0) / NULLIF(COALESCE(d.qty,0),0) 
+                        ELSE 
+                            (COALESCE(d.total,0) - ((COALESCE(d.total,0) / NULLIF(COALESCE(d.total_sub,0),0)) * COALESCE(d.discount_total,0))) / NULLIF(COALESCE(d.qty,0),0)
+                    END)) AS total_amount
+                FROM purchase_order_receipts a
+                LEFT JOIN item_rm b ON a.item_rm_id = b.id
+                LEFT JOIN purchase_orders d ON a.po_no = d.po_no AND a.item_rm_id = d.item_rm_id
+                LEFT JOIN suppliers f ON d.supplier_id = f.id
+                WHERE (a.supplier_id LIKE ?) 
+                AND (b.division LIKE ?) 
+                AND (a.receipt_date BETWEEN ? AND ?)
+                GROUP BY a.receipt_date
+                ORDER BY a.receipt_date ASC";
+
+        $params = ["%$filter_supplier_id%", "%$filter_division%", $period_start_date, $period_end_date];
+        $query_result = $this->db->query($sql, $params)->result_array();
+
+        // Mapping Data ke Labels (Agar tanggal kosong terisi 0)
+        $mapped_data = [];
+        foreach ($labels as $lbl) {
+            $mapped_data[$lbl] = 0; // Default 0
+        }
+
+        foreach ($query_result as $row) {
+            if (isset($mapped_data[$row['receipt_date']])) {
+                $mapped_data[$row['receipt_date']] = (float)$row['total_amount'];
+            }
+        }
+
+        // Indexed array untuk Chart.js
+        $trend_values = array_values($mapped_data);
+        $trend_labels = [];
+        foreach($labels as $l) { $trend_labels[] = date('d M Y', strtotime($l)); }
+
+        $division_text = !empty($filter_division) ? strtoupper($filter_division) : "ALL Division";
+        $period_text   = "Purchase Amount (IDR) ". ucfirst($filter_period_type) . " - " . $division_text;
+
+        echo json_encode([
+            'trend_labels' => $trend_labels,
+            'trend_values' => $trend_values,
+            'title'        => $period_text,
+            'period'       => "Period: $period_start_date to $period_end_date",
+        ]);
     }
 
 

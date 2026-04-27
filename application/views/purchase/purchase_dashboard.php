@@ -167,7 +167,7 @@
     <div class="filter-bar">
         <form id="form_purchase_trends" method="POST">
             <div class="pill-group">
-                <button type="button" class="pill-btn active" onclick="togglePill(this, 'all')"><i class="fa fa-list"></i> All</button>
+                <!-- <button type="button" class="pill-btn active" onclick="togglePill(this, 'all')"><i class="fa fa-list"></i> All</button> -->
                 <button type="button" class="pill-btn" onclick="togglePill(this, 'daily')"><i class="fa fa-calendar-day"></i> Daily</button>
                 <button type="button" class="pill-btn" onclick="togglePill(this, 'weekly')"><i class="fa fa-calendar-week"></i> Weekly</button>
                 <button type="button" class="pill-btn" onclick="togglePill(this, 'monthly')"><i class="fa fa-calendar"></i> Monthly</button>
@@ -183,6 +183,7 @@
         <a href="javascript:;" class="easyui-linkbutton" onclick="reload()" data-options="iconCls:'icon-reload'" style="height:32px; padding:0 15px;">Reload</a>
     </div>
 
+    <!-- di UI Purchase Dashboard tidak ada
     <div class="kpi-row">
         <div class="kpi-container">
             <div class="kpi-card bg-blue-grad">
@@ -207,23 +208,28 @@
                 </div>
             </div>
         </div>
+        -->
 
     </div>
 
-    <div style="display: flex; gap: 15px;">
-        <div class="chart-section" style="flex: 1; width: 50%;">
-            <div class="chart-header">Purchase by Amount</div>
-            <div style="padding: 20px; overflow-x: auto;">
-                <div id="purchaseChartParent" style="min-width: 1000px; height: 500px;">
+    <div style="display: flex; gap: 15px; height: 550px;"> 
+        <div class="chart-section" style="flex: 1; display: flex; flex-direction: column; overflow: hidden;">
+            <div class="chart-header">
+                Purchase Amount (IDR)
+            </div>
+            <div style="padding: 20px; flex: 1; position: relative;">
+                <div id="purchaseChartParent" style="width: 100%; height: 100%;">
                     <canvas id="purchaseChart"></canvas>
                 </div>
             </div>
         </div>
 
-        <div class="chart-section" style="flex: 1; width: 50%;">
-            <div class="chart-header">Purchase by Supplier</div>
-            <div style="padding: 20px; overflow-y: auto; max-height: 500px;">
-                <div id="supplierChartParent" style="height: 800px;">
+        <div class="chart-section" style="flex: 1; display: flex; flex-direction: column; overflow: hidden;">
+            <div class="chart-header">
+                Purchase Amount (IDR) - TOP 10 Supplier
+            </div>
+            <div style="padding: 20px; flex: 1; position: relative;">
+                <div id="supplierChartParent" style="width: 100%; height: 100%;">
                     <canvas id="supplierChart"></canvas>
                 </div>
             </div>
@@ -400,6 +406,7 @@ function myparser(s) {
 $(function() { 
     // show on load
     loadDashboard();
+    submitFilter('form_purchase_trends');
     
     $('#filter_division').combobox({
         url: '<?= base_url('finance/purchase_report/readsDivision/'); ?>',
@@ -565,18 +572,9 @@ function loadDashboard() {
 
 
 // Chart Purchase 
-function updateTrendChart_purchase_only(labels, values, subtitle) {
+function updateTrendChart(labels, values, period, title) {
     const ctx = document.getElementById('purchaseChart').getContext('2d');
 
-    // Jika data lebih dari 15, lebarkan bar
-    const parent = document.getElementById('purchaseChartParent');
-    if (labels.length > 15) {
-        parent.style.minWidth = (labels.length * 50) + "px"; 
-    } else {
-        parent.style.minWidth = "100%";
-    }
-    
-    // Pastikan destroy chart sebelumnya agar tidak tumpang tindih saat update
     if (window.myPurchaseChart) {
         window.myPurchaseChart.destroy();
     }
@@ -610,7 +608,14 @@ function updateTrendChart_purchase_only(labels, values, subtitle) {
             plugins: {
                 title: {
                     display: true,
-                    text: subtitle,
+                    text: title,
+                    padding: {
+                        bottom: 10,
+                    }
+                },
+                subtitle: {
+                    display: true,
+                    text: period,
                     padding: {
                         bottom: 25,
                     }
@@ -657,85 +662,9 @@ function updateTrendChart_purchase_only(labels, values, subtitle) {
 }
 
 
-// Chart Purchase Stacked
-function updateTrendChart(labels, values, avgValues, subtitle) {
-    const ctx = document.getElementById('purchaseChart').getContext('2d');
-    
-    if (window.myPurchaseChart) {
-        window.myPurchaseChart.destroy();
-    }
-
-    window.myPurchaseChart = new Chart(ctx, {
-        type: 'bar',
-        data: {
-            labels: labels,
-            datasets: [
-                {
-                    label: 'Purchase',
-                    data: values,
-                    backgroundColor: '#3b6ccf', // Warna biru sesuai gambar
-                    stack: 'Stack 0',
-                },
-                {
-                    label: 'AVG Period',
-                    data: avgValues,
-                    backgroundColor: '#92d050', // Warna hijau muda sesuai gambar
-                    stack: 'Stack 0',
-                }
-            ]
-        },
-        options: {
-            responsive: true,
-            maintainAspectRatio: false,
-            scales: {
-                x: {
-                    stacked: true, // Aktifkan stacking
-                },
-                y: {
-                    stacked: true, // Aktifkan stacking
-                    beginAtZero: true,
-                    ticks: {
-                        callback: (value) => 'Rp ' + value.toLocaleString('id-ID')
-                    }
-                }
-            },
-            plugins: {
-                legend: { position: 'bottom' },
-                tooltip: {
-                    callbacks: {
-                        label: function(context) {
-                            return context.dataset.label + ': Rp ' + context.parsed.y.toLocaleString('id-ID');
-                        }
-                    }
-                }
-            },
-            animation: {
-                onProgress: function() {
-                    var chartInstance = this;
-                    var ctx = chartInstance.ctx;
-                    ctx.font = "bold 9px Arial";
-                    ctx.textAlign = 'center';
-                    ctx.fillStyle = '#fcffcd';
-
-                    this.data.datasets.forEach(function(dataset, i) {
-                        var meta = chartInstance.getDatasetMeta(i);
-                        meta.data.forEach(function(bar, index) {
-                            var data = dataset.data[index];
-                            if (data > 0) {
-                                // Menghitung posisi teks di tengah-tengah setiap bagian stack
-                                ctx.fillText(data.toLocaleString('id-ID'), bar.x, bar.y + (bar.height / 2));
-                            }
-                        });
-                    });
-                }
-            }
-        }
-    });
-}
-
 
 // Supplier Bar Chart
-function updateSupplierChart(labels, values, subtitle) {
+function updateSupplierChart(labels, values, period) {
     const ctx = document.getElementById('supplierChart').getContext('2d');
     if (mySupplierChart) mySupplierChart.destroy();
 
@@ -761,7 +690,7 @@ function updateSupplierChart(labels, values, subtitle) {
             plugins: {
                 title: {
                     display: true,
-                    text: subtitle,
+                    text: period,
                     padding: {
                         bottom: 25,
                     }
@@ -901,33 +830,50 @@ function submitFilter(formId) {
     });
 
     // Get Period
-    const periodType = $form.find('.pill-btn.active').text().trim().toLowerCase();
+    let periodType = $form.find('.pill-btn.active').text().trim().toLowerCase();
+
+    // Default period = Daily
+    if (!periodType || periodType === "") {
+        periodType = 'daily';
+    }
     payload.filter_period_type = periodType;
 
+    // Get Period Value
     let periodValue = '';
+
     if (periodType === 'all') {
         periodValue = 'all';
     } else {
         const $input = $('#current_period_input');
         if ($input.length) {
-            // .combo('getValue') bekerja untuk datebox DAN combobox
             periodValue = $input.combo('getValue');
         }
+
+        // Jika periodValue = kosong/null dan periodType = default 'daily', berikan tanggal hari ini.
+        if (!periodValue && periodType === 'daily') {
+            const today = new Date();
+            const yyyy = today.getFullYear();
+            const mm = String(today.getMonth() + 1).padStart(2, '0');
+            const dd = String(today.getDate()).padStart(2, '0');
+            
+            periodValue = `${yyyy}-${mm}-${dd}`;
+        }
     }
+
     payload.filter_period_value = periodValue;
 
     // console.log("Payload yang dikirim:", payload);
 
     if (!payload.filter_period_value && periodType !== 'all') {
-        $.messager.alert('Warning', 'Silahkan pilih periode (Daily/Weekly/...) terlebih dahulu', 'warning');
+        $.messager.alert('Warning', 'Please Choose Period Type First', 'warning');
         return;
     }
 
-    // 4. Kirim AJAX
     $.post('<?= base_url("purchase/purchase_dashboard/get_dashboard_data") ?>', payload, function(res) {
         const data = JSON.parse(res);
-        updateTrendChart(data.trend_labels, data.trend_values, data.subtitle, data.avg_values);
-        updateSupplierChart(data.supp_labels, data.supp_values, data.subtitle);
+        updateTrendChart(data.trend_labels, data.trend_values, data.period, data.title);
+        updateSupplierChart(data.supp_labels, data.supp_values, data.period);
+
         $('#conclusion').html(data.conclusion || 'No data');
         $('#impact').html(data.impact || 'No data');
     });
