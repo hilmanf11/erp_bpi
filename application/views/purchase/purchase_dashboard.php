@@ -231,10 +231,10 @@
         <form id="form_purchase_trends" method="POST">
             <div class="pill-group">
                 <!-- <button type="button" class="pill-btn active" onclick="togglePill(this, 'all')"><i class="fa fa-list"></i> All</button> -->
-                <button type="button" class="pill-btn" onclick="togglePill(this, 'daily')"><i class="fa fa-calendar-day"></i> Daily</button>
-                <button type="button" class="pill-btn" onclick="togglePill(this, 'weekly')"><i class="fa fa-calendar-week"></i> Weekly</button>
-                <button type="button" class="pill-btn" onclick="togglePill(this, 'monthly')"><i class="fa fa-calendar"></i> Monthly</button>
-                <button type="button" class="pill-btn" onclick="togglePill(this, 'yearly')"><i class="fa fa-calendar"></i> Yearly</button>
+                <button type="button" class="pill-btn" onclick="togglePill(this, 'daily', 'form_purchase_trends')"><i class="fa fa-calendar-day"></i> Daily</button>
+                <button type="button" class="pill-btn" onclick="togglePill(this, 'weekly', 'form_purchase_trends')"><i class="fa fa-calendar-week"></i> Weekly</button>
+                <button type="button" class="pill-btn" onclick="togglePill(this, 'monthly', 'form_purchase_trends')"><i class="fa fa-calendar"></i> Monthly</button>
+                <button type="button" class="pill-btn" onclick="togglePill(this, 'yearly', 'form_purchase_trends')"><i class="fa fa-calendar"></i> Yearly</button>
 
                 <input id="filter_supplier_id" name="filter_supplier_id" class="easyui-combobox" style="width:150px; height:32px;" prompt="Supplier">
                 <input id="filter_division" name="filter_division" class="easyui-combobox" style="width:150px; height:32px;" prompt="Division">
@@ -330,37 +330,74 @@
         <i class="fa-solid fa-bar-chart"></i> <span>PURCHASE PLAN VS ACTUAL</span>
     </div>
 
-    
     <div class="filter-bar">
-        <select id="filter_display" class="easyui-combobox" style="width:120px; height:32px;">
-            <option value="DAILY">DAILY</option>
-            <option value="WEEKLY">WEEKLY</option>
-            <option value="MONTHLY">MONTHLY</option>
-        </select>
-        
-        <input id="filter_from" class="easyui-datebox" style="width:130px; height:32px;" value="<?= date("Y-m-01") ?>" data-options="formatter:myformatter,parser:myparser, editable:false">
-        <span>to</span>
-        <input id="filter_to" class="easyui-datebox" style="width:130px; height:32px;" value="<?= date("Y-m-t") ?>" data-options="formatter:myformatter,parser:myparser, editable:false">
+        <form id="form_plan_vs_actual" method="POST">
+            <div class="pill-group">
+                <!-- <button type="button" class="pill-btn active" onclick="togglePill(this, 'all', 'form_plan_vs_actual')"><i class="fa fa-list"></i> All</button> -->
+                <button type="button" class="pill-btn" onclick="togglePill(this, 'daily', 'form_plan_vs_actual')"><i class="fa fa-calendar-day"></i> Daily</button>
+                <button type="button" class="pill-btn" onclick="togglePill(this, 'weekly', 'form_plan_vs_actual')"><i class="fa fa-calendar-week"></i> Weekly</button>
+                <button type="button" class="pill-btn" onclick="togglePill(this, 'monthly', 'form_plan_vs_actual')"><i class="fa fa-calendar"></i> Monthly</button>
+                <button type="button" class="pill-btn" onclick="togglePill(this, 'yearly', 'form_plan_vs_actual')"><i class="fa fa-calendar"></i> Yearly</button>
 
+                <input id="filter_supplier_id" name="filter_supplier_id" class="easyui-combobox" style="width:150px; height:32px;" prompt="Supplier">
+                <input id="filter_division" name="filter_division" class="easyui-combobox" style="width:150px; height:32px;" prompt="Division">
+                
+            </div>
+        </form>
 
-        <input id="filter_supplier_id" class="easyui-combobox" style="width:150px; height:32px;" prompt="Supplier">
-        <input id="filter_division" class="easyui-combobox" style="width:150px; height:32px;" prompt="Division">
-        
-        <div class="fitem" hidden>
-        <input id="filter_category_id" class="easyui-combobox" style="width:150px; height:32px;" prompt="Category">
-        </div>
-
-        <a href="javascript:;" class="easyui-linkbutton" onclick="loadDashboard()" data-options="iconCls:'icon-search'" style="height:32px; padding:0 15px;">Filter</a>
+        <a href="javascript:;" class="easyui-linkbutton" onclick="submitFilter('form_plan_vs_actual')" data-options="iconCls:'icon-search'" style="height:32px; padding:0 15px;">Filter</a>
         <a href="javascript:;" class="easyui-linkbutton" onclick="reload()" data-options="iconCls:'icon-reload'" style="height:32px; padding:0 15px;">Reload</a>
     </div>
 
-    <div class="chart-section" style="width: 100%;">
-        <div class="chart-header">Purchase Plan VS Actual by QTY</div>
-        <div style="padding: 20px; overflow-x: auto;">
-            <div id="planActualChartParent" style="min-width: 1000px; height: 250px;">
-                <canvas id="planActualChart"></canvas>
+    <div id="planActualChartSection" class="chart-section" style="width: 100%; height: 500px; display: flex; flex-direction: column; border: 1px solid #ddd; margin-top: 20px;">
+
+        <div class="chart-header" style="display: flex; justify-content: space-between; align-items: center;">
+            <div style="font-weight: bold;">
+                <i class="fa fa-chart-bar"></i> Purchase Plan VS Actual by QTY
+            </div>
+            
+            <div class="custom-tools" style="display: flex; gap: 15px;">
+                <a href="javascript:void(0)" onclick="exportToExcel('planActualChart')" title="Export Excel" style="color: white;">
+                    <i class="fa fa-file-excel"></i>
+                </a>
+                <a href="javascript:void(0)" onclick="printSpecificChart('planActualChartSection')" title="Print Chart" style="color: white;">
+                    <i class="fa fa-print"></i>
+                </a>
+                <a href="javascript:void(0)" onclick="toggleFullScreen('planActualChartSection')" title="Full Screen" style="color: white;">
+                    <i class="fa fa-expand"></i>
+                </a>
             </div>
         </div>
+
+        <div style="padding: 20px; flex: 1; position: relative; background-color: white;">
+            <div id="planActualChart" style="height: 100%; width: 100%;"></div>
+        </div>
+    </div>
+
+
+
+
+    <div class="section-header">
+        <i class="fa-solid fa-bar-chart"></i> <span>PURCHASE BY PRODUCT FAMILY</span>
+    </div>
+
+        <div class="filter-bar">
+        <form id="form_purchase_by_family" method="POST">
+            <div class="pill-group">
+                <!-- <button type="button" class="pill-btn active" onclick="togglePill(this, 'all', 'form_purchase_by_family')"><i class="fa fa-list"></i> All</button> -->
+                <button type="button" class="pill-btn" onclick="togglePill(this, 'daily', 'form_purchase_by_family')"><i class="fa fa-calendar-day"></i> Daily</button>
+                <button type="button" class="pill-btn" onclick="togglePill(this, 'weekly', 'form_purchase_by_family')"><i class="fa fa-calendar-week"></i> Weekly</button>
+                <button type="button" class="pill-btn" onclick="togglePill(this, 'monthly', 'form_purchase_by_family')"><i class="fa fa-calendar"></i> Monthly</button>
+                <button type="button" class="pill-btn" onclick="togglePill(this, 'yearly', 'form_purchase_by_family')"><i class="fa fa-calendar"></i> Yearly</button>
+
+                <input id="filter_supplier_id" name="filter_supplier_id" class="easyui-combobox" style="width:150px; height:32px;" prompt="Supplier">
+                <input id="filter_division" name="filter_division" class="easyui-combobox" style="width:150px; height:32px;" prompt="Division">
+                
+            </div>
+        </form>
+
+        <a href="javascript:;" class="easyui-linkbutton" onclick="submitFilter('form_purchase_by_family')" data-options="iconCls:'icon-search'" style="height:32px; padding:0 15px;">Filter</a>
+        <a href="javascript:;" class="easyui-linkbutton" onclick="reload()" data-options="iconCls:'icon-reload'" style="height:32px; padding:0 15px;">Reload</a>
     </div>
 
     <!-- ITEM FAMILY -->
@@ -495,8 +532,8 @@ function myparser(s) {
 
 $(function() { 
     // show on load
-    loadDashboard();
     submitFilter('form_purchase_trends');
+    submitFilter('form_plan_vs_actual');
     
     $('#filter_division').combobox({
         url: '<?= base_url('finance/purchase_report/readsDivision/'); ?>',
@@ -540,40 +577,45 @@ $(function() {
 });
 
 // Button Period
-function togglePill(btn, type) {
+function togglePill(btn, type, formId) {
     if (window.event) window.event.preventDefault();
 
-    $('.pill-btn').removeClass('active');
+    const $form = $('#' + formId);
+    const $group = $form.find('.pill-group');
+
+    // Reset state tombol hanya di dalam form ini
+    $group.find('.pill-btn').removeClass('active');
     $(btn).addClass('active');
-    $('.floating-filter').remove();
+
+    // Bersihkan filter lama di dalam form ini
+    $group.find('.floating-filter').remove();
 
     if (type === 'all') return;
 
-    const btnOffset = $(btn).position();
+    // Buat wrapper filter baru
     const $wrapper = $('<div class="floating-filter"></div>');
-    $wrapper.css({ 'left': btnOffset.left + 'px' });
-    $('.pill-group').append($wrapper);
+    $group.append($wrapper);
 
-    // Gunakan ID tetap: current_period_input
+    // Inisialisasi EasyUI berdasarkan tipe
     if (type === 'daily') {
-        $wrapper.html('<input id="current_period_input" class="easyui-datebox" style="width:150px; height:32px;">');
-        $('#current_period_input').datebox({
+        $wrapper.html('<input class="current-period-input easyui-datebox" style="width:150px; height:32px;">');
+        $wrapper.find('.easyui-datebox').datebox({
             editable: false,
             value: '<?= date("Y-m-d") ?>'
         });
-    } else if (type === 'weekly') {
-        $wrapper.html('<input id="current_period_input" class="easyui-combobox" style="width:280px; height:32px;">');
-        $('#current_period_input').combobox({
+    } 
+    else if (type === 'weekly') {
+        $wrapper.html('<input class="current-period-input easyui-combobox" style="width:280px; height:32px;">');
+        $wrapper.find('.easyui-combobox').combobox({
             url: '<?= base_url("purchase/purchase_dashboard/get_iso_weeks") ?>',
             valueField: 'id',
             textField: 'text',
             editable: false
         });
-
-    } else if (type === 'monthly') {
-        // Pakai Combobox untuk Bulan & Tahun
-        $wrapper.html('<input id="current_period_input" class="easyui-combobox" style="width:180px; height:32px;">');
-        $('#current_period_input').combobox({
+    } 
+    else if (type === 'monthly') {
+        $wrapper.html('<input class="current-period-input easyui-combobox" style="width:180px; height:32px;">');
+        $wrapper.find('.easyui-combobox').combobox({
             valueField: 'id',
             textField: 'text',
             editable: false,
@@ -587,25 +629,19 @@ function togglePill(btn, type) {
                 $(this).combobox('setValue', '<?= date("Y-m") ?>');
             }
         });
-
-    } else if (type === 'yearly') {
-        $wrapper.html('<input id="current_period_input" class="easyui-combobox" style="width:180px; height:32px;">');
-        
-        $('#current_period_input').combobox({
-            url: '<?= base_url("purchase/purchase_dashboard/get_years") ?>', // Panggil fungsi di atas
+    } 
+    else if (type === 'yearly') {
+        $wrapper.html('<input class="current-period-input easyui-combobox" style="width:180px; height:32px;">');
+        $wrapper.find('.easyui-combobox').combobox({
+            url: '<?= base_url("purchase/purchase_dashboard/get_years") ?>',
             valueField: 'id',
             textField: 'text',
             editable: false,
             panelHeight: 'auto',
             onLoadSuccess: function() {
-                // Set default ke tahun sekarang jika tersedia di data
                 const currentYear = new Date().getFullYear().toString();
                 $(this).combobox('setValue', currentYear);
             },
-            onChange: function(newValue) {
-                console.log("Year Selected:", newValue);
-                // Trigger refresh dashboard/chart
-            }
         });
     }
 }
@@ -651,10 +687,6 @@ function exportToExcel(chartId) {
 
     const chart = ApexCharts.getChartByID(chartId);
     let currentChart = chart;
-    
-    if (!currentChart) {
-        currentChart = (chartId === 'purchaseChart') ? myPurchaseChart : mySupplierChart;
-    }
 
     if (!currentChart || !currentChart.w) {
         alert('Data chart not found.');
@@ -665,7 +697,7 @@ function exportToExcel(chartId) {
     // Menggunakan labels yang sudah ter-render di sumbu X
     const categories = currentChart.w.globals.labels;
 
-    console.log(currentChart.w.globals);
+    // console.log(currentChart.w.globals);
 
     // Get Data (Values) dari Globals
     // globals.series berisi array data murni (tanpa objek name)
@@ -711,10 +743,12 @@ function exportToExcel(chartId) {
 
 var myPurchaseChart;
 var mySupplierChart;
+var myPlanActualChart;
 
 // Gunakan object untuk menyimpan instance multiple chart
 let chartInstances = {};
 
+/**
 function loadDashboard() {
     const params = {
         from: $('#filter_from').datebox('getValue'),
@@ -753,6 +787,7 @@ function loadDashboard() {
         });
     });
 }
+*/
 
 
 // Chart Purchase 
@@ -975,6 +1010,116 @@ function updateSupplierChart(labels, values, period, title) {
 }
 
 
+// Plan VS Actual Chart
+function updatePlanActualChart(labels, planValues, period, title, actualValues) {
+    const options = {
+        series: [
+            {
+                name: 'Plan',
+                data: planValues
+            },
+            {
+                name: 'Actual',
+                data: actualValues
+            }
+        ],
+        chart: {
+            id: 'planActualChart', // ID unik untuk export
+            height: '100%',
+            type: 'bar', // Gunakan bar untuk perbandingan side-by-side
+            toolbar: {
+                show: true,
+                tools: {
+                    download: true,
+                    selection: false,
+                    zoom: false,
+                    zoomin: false,
+                    zoomout: false,
+                    pan: false,
+                    reset: false
+                }
+            }
+        },
+        colors: ['#0000FF', '#ed533b'], // Biru untuk Plan, Merah-Orange untuk Actual
+        plotOptions: {
+            bar: {
+                horizontal: false,
+                columnWidth: '55%',
+                borderRadius: 4,
+                dataLabels: {
+                    position: 'top', // Nilai di atas batang
+                }
+            }
+        },
+        dataLabels: {
+            enabled: true,
+            formatter: function (val) {
+                return val.toLocaleString('id-ID');
+            },
+            offsetY: -20,
+            style: {
+                fontSize: '10px',
+                colors: ["#304758"]
+            }
+        },
+        stroke: {
+            show: true,
+            width: 2,
+            colors: ['transparent']
+        },
+        xaxis: {
+            categories: labels,
+            labels: {
+                style: {
+                    fontSize: '11px'
+                }
+            }
+        },
+        yaxis: {
+            title: {
+                text: 'Quantity'
+            },
+            labels: {
+                formatter: function (val) {
+                    return val.toLocaleString('id-ID');
+                }
+            }
+        },
+        legend: {
+            position: 'bottom',
+            horizontalAlign: 'center',
+            offsetY: 8
+        },
+        title: {
+            text: title,
+            align: 'center',
+            style: { fontSize: '18px', color: '#444' }
+        },
+        subtitle: {
+            text: period,
+            align: 'center',
+            style: { fontSize: '13px', color: '#707070' }
+        },
+        tooltip: {
+            shared: true,
+            intersect: false,
+            y: {
+                formatter: function (val) {
+                    return val.toLocaleString('id-ID');
+                }
+            }
+        }
+    };
+
+    if (myPlanActualChart) {
+        myPlanActualChart.updateOptions(options);
+    } else {
+        myPlanActualChart = new ApexCharts(document.querySelector("#planActualChart"), options);
+        myPlanActualChart.render();
+    }
+}
+
+
 
 // Plan VS Actual Chart
 function createPlanActualChart(canvasId, period, labels, dataPlan, dataActual) {
@@ -1070,58 +1215,62 @@ function submitFilter(formId) {
     const $form = $('#' + formId);
     let payload = {};
 
-    // Get Supplier & Division
+    // Get Supplier, Division, dll dari form terkait
     $form.serializeArray().forEach(function(item) {
         payload[item.name] = item.value;
     });
 
-    // Get Period
+    // Get tipe periode (Daily/Weekly/dll)
     let periodType = $form.find('.pill-btn.active').text().trim().toLowerCase();
-
-    // Default period = Daily
-    if (!periodType || periodType === "") {
-        periodType = 'daily';
-    }
+    if (!periodType) periodType = 'daily';
     payload.filter_period_type = periodType;
 
-    // Get Period Value
+    // Get Nilai Periode (Hanya cari di dalam form ini!)
     let periodValue = '';
-
-    if (periodType === 'all') {
-        periodValue = 'all';
-    } else {
-        const $input = $('#current_period_input');
+    const $input = $form.find('.current-period-input');
+    
+    if (periodType !== 'all') {
         if ($input.length) {
             periodValue = $input.combo('getValue');
         }
 
-        // Jika periodValue = kosong/null dan periodType = default 'daily', berikan tanggal hari ini.
+        // Default Daily jika kosong
         if (!periodValue && periodType === 'daily') {
             const today = new Date();
-            const yyyy = today.getFullYear();
-            const mm = String(today.getMonth() + 1).padStart(2, '0');
-            const dd = String(today.getDate()).padStart(2, '0');
-            
-            periodValue = `${yyyy}-${mm}-${dd}`;
+            periodValue = today.toISOString().split('T')[0];
         }
+    } else {
+        periodValue = 'all';
     }
-
     payload.filter_period_value = periodValue;
 
-    // console.log("Payload yang dikirim:", payload);
-
+    // Validasi
     if (!payload.filter_period_value && periodType !== 'all') {
-        $.messager.alert('Warning', 'Please Choose Period Type First', 'warning');
+        $.messager.alert('Warning', 'Please Choose Period Value', 'warning');
         return;
     }
 
-    $.post('<?= base_url("purchase/purchase_dashboard/get_dashboard_data") ?>', payload, function(res) {
-        const data = JSON.parse(res);
-        updateTrendChart(data.trend_labels, data.trend_values, data.period, data.title, data.avg_values);
-        updateSupplierChart(data.supplier_labels, data.supplier_values, data.period, data.title);
+    // --- LOGIKA PEMISAH BERDASARKAN FORM ID ---
+    if (formId === 'form_purchase_trends') {
+        // Hanya update grafik Purchase Trends & Supplier
+        $.post('<?= base_url("purchase/purchase_dashboard/get_dashboard_data") ?>', payload, function(res) {
+            const data = JSON.parse(res);
+            updateTrendChart(data.trend_labels, data.trend_values, data.period, data.title, data.avg_values);
+            updateSupplierChart(data.supplier_labels, data.supplier_values, data.period, data.title);
 
-        $('#conclusion').html(data.conclusion || 'No data');
-        $('#impact').html(data.impact || 'No data');
-    });
+            if(data.conclusion) $('#conclusion').html(data.conclusion);
+            if(data.impact) $('#impact').html(data.impact);
+        });
+
+    } else if (formId === 'form_plan_vs_actual') {
+        // Hanya update grafik Plan VS Actual
+        $.post('<?= base_url("purchase/purchase_dashboard/get_plan_actual_data") ?>', payload, function(res) {
+            const data = JSON.parse(res);
+            updatePlanActualChart(data.labels, data.plan_values, data.period, data.title, data.actual_values);
+        });
+
+    } else if (formId === 'form_purchase_by_family') {
+        // Hanya update grafik Purchase by Product Family
+    }
 }
 </script>
