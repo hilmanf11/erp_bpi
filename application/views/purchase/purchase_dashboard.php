@@ -3,6 +3,7 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 
     <script src="https://cdn.jsdelivr.net/npm/apexcharts"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 
     <style>
         .dashboard-wrapper { background-color: #f8fafc; padding: 20px; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
@@ -176,7 +177,49 @@
 
         .apexcharts-menu-item:hover {
             background-color: #f1f1f1 !important;
-            color: #0000FF !important; /* Warna biru sesuai tema chart Anda */
+            color: #0000FF !important;
+        }
+
+        /* --- FULL SCREEN STYLE --- */
+        .chart-section:fullscreen {
+            padding: 20px !important;
+            background: white !important;
+            width: 100vw;
+            height: 100vh;
+        }
+
+        /* --- PRINT STYLE --- */
+        @media print {
+            /* Sembunyikan SEMUA elemen jika sedang mode printing-chart */
+            body.printing-chart * {
+                visibility: hidden;
+                margin: 0;
+            }
+
+            /* Tampilkan HANYA elemen yang memiliki class printable-area dan anak-anaknya */
+            body.printing-chart .printable-area,
+            body.printing-chart .printable-area * {
+                visibility: visible;
+            }
+
+            /* Posisikan elemen yang dicetak di pojok kiri atas kertas */
+            body.printing-chart .printable-area {
+                position: absolute;
+                left: 0;
+                top: 0;
+                width: 100% !important;
+                border: none !important; /* Hapus border saat dicetak agar bersih */
+            }
+
+            /* Sembunyikan ikon tombol saat dicetak agar tidak mengganggu visual */
+            .custom-tools {
+                display: none !important;
+            }
+            
+            /* Sembunyikan toolbar bawaan ApexCharts saat dicetak */
+            .apexcharts-toolbar {
+                display: none !important;
+            }
         }
     </style>
 
@@ -233,18 +276,45 @@
     -->
 
     <div style="display: flex; gap: 15px; height: 550px; align-items: stretch;"> 
-        <div class="chart-section" style="flex: 1; display: flex; flex-direction: column; overflow: hidden; border: 1px solid #ddd;">
-            <div class="chart-header">
-                Purchase Amount (IDR)
+        <div id="purchaseChartSection" class="chart-section" style="flex: 1; display: flex; flex-direction: column; overflow: hidden; border: 1px solid #ddd; background: white;">
+            <div class="chart-header" style="display: flex; justify-content: space-between; align-items: center;">
+                <span>Purchase Amount (IDR)</span>
+                
+                <div class="custom-tools" style="display: flex; gap: 15px;">
+                    <a href="javascript:void(0)" onclick="exportToExcel('purchaseChart')" title="Export Excel" style="color: white;">
+                        <i class="fa fa-file-excel"></i>
+                    </a>
+                    <a href="javascript:void(0)" onclick="printSpecificChart('purchaseChartSection')" title="Print Chart" style="color: white;">
+                        <i class="fa fa-print"></i>
+                    </a>
+                    <a href="javascript:void(0)" onclick="toggleFullScreen('purchaseChartSection')" title="Full Screen" style="color: white;">
+                        <i class="fa fa-expand"></i>
+                    </a>
+                </div>
             </div>
             <div style="padding: 10px; flex: 1; position: relative; min-height: 0;">
                 <div id="purchaseChart" style="height: 100%; width: 100%;"></div>
             </div>
         </div>
 
-        <div class="chart-section" style="flex: 1; display: flex; flex-direction: column; overflow: hidden; border: 1px solid #ddd;">
-            <div class="chart-header">
+        <div id="supplierChartSection" class="chart-section" style="flex: 1; display: flex; flex-direction: column; overflow: hidden; border: 1px solid #ddd;">
+            <div class="chart-header" style="display: flex; justify-content: space-between; align-items: center;">
+                <span>
                 Purchase Amount (IDR) - TOP 10 Supplier
+                </span>
+
+                <div class="custom-tools" style="display: flex; gap: 15px;">
+                    <a href="javascript:void(0)" onclick="exportToExcel('supplierChart')" title="Export Excel" style="color: white;">
+                        <i class="fa fa-file-excel"></i>
+                    </a>
+                    <a href="javascript:void(0)" onclick="printSpecificChart('supplierChartSection')" title="Print Chart" style="color: white;">
+                        <i class="fa fa-print"></i>
+                    </a>
+                    <a href="javascript:void(0)" onclick="toggleFullScreen('supplierChartSection')" title="Full Screen" style="color: white;">
+                        <i class="fa fa-expand"></i>
+                    </a>
+                </div>
+                
             </div>
             <div style="padding: 10px; flex: 1; position: relative; min-height: 0;">
                 <div id="supplierChart" style="height: 100%; width: 100%;"></div>
@@ -540,6 +610,100 @@ function togglePill(btn, type) {
     }
 }
 
+// Fungsi Full Screen
+function toggleFullScreen(id) {
+    const el = document.getElementById(id);
+    if (!document.fullscreenElement) {
+        if (el.requestFullscreen) {
+            el.requestFullscreen();
+        } else if (el.webkitRequestFullscreen) { /* Safari */
+            el.webkitRequestFullscreen();
+        }
+        // Pastikan background tetap putih saat fullscreen
+        el.classList.add('is-fullscreen');
+    } else {
+        if (document.exitFullscreen) {
+            document.exitFullscreen();
+        }
+        el.classList.remove('is-fullscreen');
+    }
+}
+
+// Fungsi Print Khusus Elemen
+function printSpecificChart(id) {
+    const el = document.getElementById(id);
+    document.body.classList.add('printing-chart');
+    el.classList.add('printable-area');
+
+    window.print();
+
+    // Hapus kembali setelah dialog print selesai (tertutup)
+    document.body.classList.remove('printing-chart');
+    el.classList.remove('printable-area');
+}
+
+// Fungsi Export Excel per Chart
+function exportToExcel(chartId) {
+    if (typeof XLSX === 'undefined') {
+        alert('The XLSX library has not been loaded. Please check your internet connection or CDN.');
+        return;
+    }
+
+    const chart = ApexCharts.getChartByID(chartId);
+    let currentChart = chart;
+    
+    if (!currentChart) {
+        currentChart = (chartId === 'purchaseChart') ? myPurchaseChart : mySupplierChart;
+    }
+
+    if (!currentChart || !currentChart.w) {
+        alert('Data chart not found.');
+        return;
+    }
+
+    // Get Kategori (Labels) dari Globals
+    // Menggunakan labels yang sudah ter-render di sumbu X
+    const categories = currentChart.w.globals.labels;
+
+    console.log(currentChart.w.globals);
+
+    // Get Data (Values) dari Globals
+    // globals.series berisi array data murni (tanpa objek name)
+    // globals.seriesNames berisi nama-nama seriesnya
+    const seriesData = currentChart.w.globals.series;
+    const seriesNames = currentChart.w.globals.seriesNames;
+
+    let dataRows = [];
+    
+    // Susun Header
+    let header = ["Category"];
+    seriesNames.forEach(name => {
+        header.push(name);
+    });
+    dataRows.push(header);
+
+    // Susun Baris Data
+    categories.forEach((cat, index) => {
+        // Gabungkan label jika itu array (seperti pada Weekly)
+        let label = Array.isArray(cat) ? cat.join(" ") : cat;
+        let row = [label];
+        
+        // Get nilai dari setiap series di index yang sama
+        seriesData.forEach(dataArray => {
+            row.push(dataArray[index] || 0);
+        });
+        
+        dataRows.push(row);
+    });
+
+    // Generate dan Download Excel
+    const worksheet = XLSX.utils.aoa_to_sheet(dataRows);
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, worksheet, "Sheet1");
+
+    const fileName = "Export_" + chartId + "_" + new Date().getTime() + ".xlsx";
+    XLSX.writeFile(workbook, fileName);
+}
 
 
 
@@ -611,6 +775,7 @@ function updateTrendChart(labels, values, period, title, avgValues) {
             }
         ],
         chart: {
+            id: 'purchaseChart',
             height: '100%',
             type: 'line',
             toolbar: {
@@ -623,6 +788,7 @@ function updateTrendChart(labels, values, period, title, avgValues) {
                     zoomout: false,
                     pan: false,
                     reset: false,
+                    customIcons: [] // Kosongkan ini agar tombol kotak hilang
                 }
             },
         },
