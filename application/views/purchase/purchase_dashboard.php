@@ -635,7 +635,7 @@ function updateTrendChart(labels, values, period, title, avgValues) {
         plotOptions: {
             bar: {
                 borderRadius: 4,
-                columnWidth: '60%',
+                columnWidth: '45%',
                 dataLabels: { position: 'top' }
             }
         },
@@ -672,6 +672,15 @@ function updateTrendChart(labels, values, period, title, avgValues) {
         },
         xaxis: {
             categories: labels,
+            labels: {
+                show: true,
+                style: {
+                    fontSize: '11px',
+                    cssClass: 'apexcharts-xaxis-label',
+                },
+                hideOverlappingLabels: false,
+                trim: false,
+            },
             axisBorder: { show: false },
             axisTicks: { show: false }
         },

@@ -65,7 +65,7 @@ class Purchase_dashboard extends CI_Controller
             
             $weeks[] = [
                 'id'    => "{$year}-W" . sprintf("%02d", $i),
-                'text'  => "Week-{$i} ({$start} - {$end})",
+                'text'  => "W-{$i} ({$start} - {$end})",
                 'selected' => ($i === $current_week)
             ];
         }
@@ -294,6 +294,43 @@ class Purchase_dashboard extends CI_Controller
             $period = new DatePeriod($start, new DateInterval('P1D'), (clone $end)->modify('+1 day'));
             foreach ($period as $date) { $labels[] = $date->format('Y-m-d'); }
 
+        } elseif (strtolower($filter_period_type) == "weekly") {
+            // Get data per Week. Format Week ISO 8601
+            $parts = explode('-W', $filter_period_value); // Input: "2026-W11"
+            $year = (int)$parts[0];
+            $week = (int)$parts[1];
+
+            $end = new DateTime();
+            $end->setISODate($year, $week, 1); 
+            
+            $start = (clone $end)->modify('-5 weeks'); 
+            
+            $period_start_date = $start->format('Y-m-d'); 
+            $period_end_date = (clone $end)->modify('+6 days')->format('Y-m-d');
+
+            $group_by_sql = "YEARWEEK(a.receipt_date, 3)"; 
+            
+            $labels = [];
+            $trend_labels = [];
+
+            // Generate Labels untuk mapping
+            $temp_date = clone $start;
+            for ($i = 0; $i < 6; $i++) {
+                $iso_year_week = $temp_date->format('oW'); 
+                $labels[] = $iso_year_week;
+
+                // line 1 : Week-1
+                $week_num = (int)$temp_date->format('W');
+                // line 2 : (29 Dec - 04 Jan)
+                $monday = $temp_date->format('d M');
+                $sunday = (clone $temp_date)->modify('+6 days')->format('d M');
+                
+                // set as array untuk ApexCharts
+                $trend_labels[] = ["Week-$week_num", "($monday - $sunday)"];
+
+                $temp_date->modify('+1 week');
+            }
+
         } elseif ($filter_period_type == "monthly") {
             $end = new DateTime($filter_period_value . "-01"); // Input: 2026-04
             $start = (clone $end)->modify('-5 months');
@@ -364,13 +401,16 @@ class Purchase_dashboard extends CI_Controller
                 $mapped_trend[$row['period_key']] = (float)$row['total_amount'];
             }
         }
+        $trend_values = array_values($mapped_trend);
 
-        // Label formatting untuk Chart.js (lebih user-friendly)
-        $trend_labels = array_map(function($l) use ($filter_period_type) {
-            if ($filter_period_type == 'daily') return date('d M Y', strtotime($l));
-            if ($filter_period_type == 'monthly') return date('M Y', strtotime($l . "-01"));
-            return $l; // Yearly
-        }, $labels);
+        // Label formatting
+        if (empty($trend_labels)) {
+            $trend_labels = array_map(function($l) use ($filter_period_type) {
+                if ($filter_period_type == 'daily') return date('d M Y', strtotime($l));
+                if ($filter_period_type == 'monthly') return date('M Y', strtotime($l . "-01"));
+                return $l; // Yearly
+            }, $labels);
+        }
 
         
         // QUERY TOP 10 SUPPLIER (Berdasarkan Nama Supplier)
@@ -406,6 +446,8 @@ class Purchase_dashboard extends CI_Controller
 
         if ($filter_period_type == 'yearly') {
             $period_text = "Period: " . $start_year . " to " . $year;
+        } elseif ($filter_period_type == 'weekly') {
+            $period_text = "Period: " . $start->format('d M') . " - " . date('d M Y', strtotime($period_end_date)) . " (6 Weeks)";
         } else {
             $period_text = "Period: " . date($label_format, strtotime($period_start_date)) . " to " . date($label_format, strtotime($period_end_date));
         }
