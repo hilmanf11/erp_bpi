@@ -1042,7 +1042,7 @@ function updatePlanActualChart(labels, planValues, period, title, actualValues) 
 }
 
 // Global Function Chart per Item Family
-function createFamilyApexChart(containerId, period, title, labels, dataPlan, dataActual) {
+function createFamilyApexChart(containerId, period, titleGlobal, labels, titleChart, dataPlan, dataActual) {
     const options = {
         series: [
             { name: 'Plan', data: dataPlan },
@@ -1082,7 +1082,7 @@ function createFamilyApexChart(containerId, period, title, labels, dataPlan, dat
             style: { fontSize: '9px', colors: ["#304758"] }
         },
         title: {
-            text: title,
+            text: titleChart,
             align: 'center',
             style: { fontSize: '18px', color: '#444' }
         },
@@ -1151,8 +1151,12 @@ function submitFilter(formId) {
             updateTrendChart(data.trend_labels, data.trend_values, data.period, data.title, data.avg_values);
             updateSupplierChart(data.supplier_labels, data.supplier_values, data.period, data.title);
 
-            if(data.conclusion) $('#conclusion').html(data.conclusion);
-            if(data.impact) $('#impact').html(data.impact);
+            // Conslusion And Impact
+            const conclusion = (data && data.conclusion) ? data.conclusion : 'No Data';
+            const impact     = (data && data.impact) ? data.impact : 'No Data';
+
+            $('#conclusion').html(conclusion);
+            $('#impact').html(impact);
         });
 
     } else if (formId === 'form_plan_vs_actual') {
@@ -1183,6 +1187,7 @@ function submitFilter(formId) {
                     data.period, 
                     data.title, 
                     data.labels, 
+                    data[key + '_title'], 
                     data[key + '_plan'], 
                     data[key + '_actual']
                 );

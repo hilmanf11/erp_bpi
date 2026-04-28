@@ -747,6 +747,7 @@ class Purchase_dashboard extends CI_Controller
 
         // Set data plan & actual untuk setiap kategori family
         foreach ($family_charts as $cat) {
+            $final_res[$cat . '_title']  = "Purchase Amount (IDR) " . strtoupper(str_replace("_", " ", $cat)) . " - " . $division_text; // title per family
             $final_res[$cat . '_plan']   = array_values($data_mapping[$cat]['plan']);
             $final_res[$cat . '_actual'] = array_values($data_mapping[$cat]['actual']);
         }
