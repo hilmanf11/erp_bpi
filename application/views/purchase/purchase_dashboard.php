@@ -1,5 +1,4 @@
 <div class="dashboard-wrapper">
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 
     <script src="https://cdn.jsdelivr.net/npm/apexcharts"></script>
@@ -381,10 +380,9 @@
         <i class="fa-solid fa-bar-chart"></i> <span>PURCHASE BY PRODUCT FAMILY</span>
     </div>
 
-        <div class="filter-bar">
+    <div class="filter-bar">
         <form id="form_purchase_by_family" method="POST">
             <div class="pill-group">
-                <!-- <button type="button" class="pill-btn active" onclick="togglePill(this, 'all', 'form_purchase_by_family')"><i class="fa fa-list"></i> All</button> -->
                 <button type="button" class="pill-btn" onclick="togglePill(this, 'daily', 'form_purchase_by_family')"><i class="fa fa-calendar-day"></i> Daily</button>
                 <button type="button" class="pill-btn" onclick="togglePill(this, 'weekly', 'form_purchase_by_family')"><i class="fa fa-calendar-week"></i> Weekly</button>
                 <button type="button" class="pill-btn" onclick="togglePill(this, 'monthly', 'form_purchase_by_family')"><i class="fa fa-calendar"></i> Monthly</button>
@@ -400,73 +398,44 @@
         <a href="javascript:;" class="easyui-linkbutton" onclick="reload()" data-options="iconCls:'icon-reload'" style="height:32px; padding:0 15px;">Reload</a>
     </div>
 
-    <!-- ITEM FAMILY -->
-    <div style="display: flex; gap: 15px;">
-        <div class="chart-section" style="flex: 1; width: 35%;">
-            <div class="chart-header">
-                CHILD PART
-            </div>
-            <div style="padding: 20px; overflow-x: auto;">
-                <div id="childPartChartParent" style="min-width: 1000px; height: 250px;">
-                    <canvas id="childPartChart"></canvas>
-                </div>
+    <div style="display: flex; gap: 15px; margin-bottom: 15px;">
+        <div class="chart-section" style="flex: 1;">
+            <div class="chart-header">CHILD PART</div>
+            <div style="padding: 10px; height: 300px;">
+                <div id="childPartChart"></div>
             </div>
         </div>
-
-        <div class="chart-section" style="flex: 1; width: 35%;">
-            <div class="chart-header">
-                VIRGIN
-            </div>
-            <div style="padding: 20px; overflow-x: auto;">
-                <div id="virginChartParent" style="min-width: 1000px; height: 250px;">
-                    <canvas id="virginChart"></canvas>
-                </div>
+        <div class="chart-section" style="flex: 1;">
+            <div class="chart-header">VIRGIN</div>
+            <div style="padding: 10px; height: 300px;">
+                <div id="virginChart"></div>
             </div>
         </div>
-
-        <div class="chart-section" style="flex: 1; width: 35%;">
-            <div class="chart-header">
-                CONSUMABLE
-            </div>
-            <div style="padding: 20px; overflow-x: auto;">
-                <div id="consumableChartParent" style="min-width: 1000px; height: 250px;">
-                    <canvas id="consumableChart"></canvas>
-                </div>
+        <div class="chart-section" style="flex: 1;">
+            <div class="chart-header">CONSUMABLE</div>
+            <div style="padding: 10px; height: 300px;">
+                <div id="consumableChart"></div>
             </div>
         </div>
     </div>
 
     <div style="display: flex; gap: 15px;">
-        <div class="chart-section" style="flex: 1; width: 35%;">
-            <div class="chart-header">
-                MASTER BATCH
-            </div>
-            <div style="padding: 20px; overflow-x: auto;">
-                <div id="masterBatchChartParent" style="min-width: 1000px; height: 250px;">
-                    <canvas id="masterBatchChart"></canvas>
-                </div>
+        <div class="chart-section" style="flex: 1;">
+            <div class="chart-header">MASTER BATCH</div>
+            <div style="padding: 10px; height: 300px;">
+                <div id="masterBatchChart"></div>
             </div>
         </div>
-
-        <div class="chart-section" style="flex: 1; width: 35%;">
-            <div class="chart-header">
-                STAMPING
-            </div>
-            <div style="padding: 20px; overflow-x: auto;">
-                <div id="stampingChartParent" style="min-width: 1000px; height: 250px;">
-                    <canvas id="stampingChart"></canvas>
-                </div>
+        <div class="chart-section" style="flex: 1;">
+            <div class="chart-header">STAMPING</div>
+            <div style="padding: 10px; height: 300px;">
+                <div id="stampingChart"></div>
             </div>
         </div>
-
-        <div class="chart-section" style="flex: 1; width: 35%;">
-            <div class="chart-header">
-                SUBCONT
-            </div>
-            <div style="padding: 20px; overflow-x: auto;">
-                <div id="subcontChartParent" style="min-width: 1000px; height: 250px;">
-                    <canvas id="subcontChart"></canvas>
-                </div>
+        <div class="chart-section" style="flex: 1;">
+            <div class="chart-header">SUBCONT</div>
+            <div style="padding: 10px; height: 300px;">
+                <div id="subcontChart"></div>
             </div>
         </div>
     </div>
@@ -534,6 +503,7 @@ $(function() {
     // show on load
     submitFilter('form_purchase_trends');
     submitFilter('form_plan_vs_actual');
+    submitFilter('form_purchase_by_family');
     
     $('#filter_division').combobox({
         url: '<?= base_url('finance/purchase_report/readsDivision/'); ?>',
@@ -747,47 +717,6 @@ var myPlanActualChart;
 
 // Gunakan object untuk menyimpan instance multiple chart
 let chartInstances = {};
-
-/**
-function loadDashboard() {
-    const params = {
-        from: $('#filter_from').datebox('getValue'),
-        to: $('#filter_to').datebox('getValue'),
-        display: $('#filter_display').combobox('getValue'),
-        division: $('#filter_division').combobox('getValue'),
-        supplier_id: $('#filter_supplier_id').combobox('getValue'),
-        category_id: $('#filter_category_id').combobox('getValue'),
-    };
-
-
-    $.post('<?= base_url("purchase/purchase_dashboard/get_plan_actual_data") ?>', params, function(res) {
-        const data = JSON.parse(res);
-
-        // Set ID Canvas dan Key Data dari Response
-        const chartMapping = {
-            'planActualChart': ['qty_plan', 'qty_actual'],
-            'childPartChart': ['child_part_plan', 'child_part_actual'],
-            'virginChart': ['virgin_plan', 'virgin_actual'],
-            'consumableChart': ['consumable_plan', 'consumable_actual'],
-            'masterBatchChart': ['master_batch_plan', 'master_batch_actual'],
-            'stampingChart': ['stamping_plan', 'stamping_actual'],
-            'subcontChart': ['subcont_plan', 'subcont_actual']
-        };
-
-        // Mapping Chart with Loop
-        Object.keys(chartMapping).forEach(canvasId => {
-            const [planKey, actualKey] = chartMapping[canvasId];
-            createPlanActualChart(
-                canvasId, 
-                data.period, 
-                data.week_labels, 
-                data[planKey], 
-                data[actualKey]
-            );
-        });
-    });
-}
-*/
 
 
 // Chart Purchase 
@@ -1076,14 +1005,7 @@ function updatePlanActualChart(labels, planValues, period, title, actualValues) 
             }
         },
         yaxis: {
-            title: {
-                text: 'Quantity'
-            },
-            labels: {
-                formatter: function (val) {
-                    return val.toLocaleString('id-ID');
-                }
-            }
+            show: false, // Sesuai UI
         },
         legend: {
             position: 'bottom',
@@ -1119,95 +1041,65 @@ function updatePlanActualChart(labels, planValues, period, title, actualValues) 
     }
 }
 
-
-
-// Plan VS Actual Chart
-function createPlanActualChart(canvasId, period, labels, dataPlan, dataActual) {
-    const canvas = document.getElementById(canvasId);
-    if (!canvas) return; // Guard clause jika ID tidak ditemukan
-
-    const ctx = canvas.getContext('2d');
-
-    // Pastikan destroy chart sebelumnya agar tidak tumpang tindih saat update
-    if (chartInstances[canvasId]) {
-        chartInstances[canvasId].destroy();
-    }
-
-    chartInstances[canvasId] = new Chart(ctx, {
-        type: 'bar',
-        data: {
-            labels: labels,
-            datasets: [
-                {
-                    label: 'Plan',
-                    data: dataPlan,
-                    backgroundColor: '#5376af',
-                    borderWidth: 1
-                },
-                {
-                    label: 'Actual',
-                    data: dataActual,
-                    backgroundColor: '#395279',
-                    borderWidth: 1
-                }
-            ]
+// Global Function Chart per Item Family
+function createFamilyApexChart(containerId, period, labels, dataPlan, dataActual) {
+    const options = {
+        series: [
+            { name: 'Plan', data: dataPlan },
+            { name: 'Actual', data: dataActual }
+        ],
+        chart: {
+            type: 'bar',
+            height: '100%',
+            toolbar: { show: false }, // Sembunyikan toolbar agar tidak penuh
+            parentHeightOffset: 0
         },
-        options: {
-            responsive: true,
-            maintainAspectRatio: false,
-            layout: { 
-                padding: { top: 10, bottom: 10 } 
-            },
-            scales: {
-                x: {
-                    grid: { display: false },
-                    ticks: { 
-                        display: true,
-                        font: { size: 10 }
-                    }
-                },
-                y: {
-                    grace: '15%',
-                }
-            },
-            plugins: {
-                tooltip: { enabled: true },
-                title: {
-                    display: true,
-                    text: period,
-                    padding: { bottom: 30 }
-                },
-                legend: {
-                    display: true,
-                    position: 'bottom'
-                }
-            },
-            animation: {
-                // Menggunakan onProgress agar angka mengikuti pergerakan bar
-                onProgress: function() {
-                    var chartInstance = this;
-                    var ctx = chartInstance.ctx;
-                    ctx.font = "bold 10px Arial";
-                    ctx.textAlign = 'center';
-                    ctx.textBaseline = 'bottom';
-                    ctx.fillStyle = '#333';
-
-                    this.data.datasets.forEach(function(dataset, i) {
-                        var meta = chartInstance.getDatasetMeta(i);
-                        meta.data.forEach(function(bar, index) {
-                            var data = dataset.data[index];
-                            if (data !== null && !bar.hidden) {
-                                // bar.y adalah koordinat ujung atas bar
-                                ctx.fillText(data.toLocaleString('id-ID'), bar.x, bar.y - 5);
-                            }
-                        });
-                    });
-                }
+        colors: ['#244b82', '#ed533b'], // Biru Navy & Merah Orange
+        plotOptions: {
+            bar: {
+                horizontal: false,
+                columnWidth: '60%',
+                borderRadius: 2,
+                dataLabels: { position: 'top' }
             }
+        },
+        dataLabels: {
+            enabled: true,
+            formatter: (val) => val > 0 ? val.toLocaleString('id-ID') : '',
+            offsetY: -20,
+            style: { fontSize: '9px', colors: ["#304758"] }
+        },
+        xaxis: {
+            categories: labels,
+            labels: {
+                rotate: -45, // Rotasi label agar tidak tabrakan tanpa overflow
+                rotateAlways: false,
+                hideOverlappingLabels: true, // Sembunyikan jika terlalu rapat
+                style: { fontSize: '10px' }
+            }
+        },
+        yaxis: {
+            show: false, // Sesuai UI
+        },
+        legend: { position: 'bottom', fontSize: '11px' },
+        grid: { padding: { top: 20 } }, // Ruang untuk dataLabels di atas bar
+        tooltip: {
+            shared: true,
+            intersect: false,
+            y: { formatter: (val) => val.toLocaleString('id-ID') + " unit" }
         }
-    });
+    };
 
-    return chartInstances[canvasId];
+    // Logic Re-render: Jika sudah ada, update. Jika belum, create.
+    if (chartInstances[containerId]) {
+        chartInstances[containerId].updateOptions({
+            series: options.series,
+            xaxis: { categories: labels }
+        });
+    } else {
+        chartInstances[containerId] = new ApexCharts(document.querySelector("#" + containerId), options);
+        chartInstances[containerId].render();
+    }
 }
 
 
@@ -1215,46 +1107,25 @@ function submitFilter(formId) {
     const $form = $('#' + formId);
     let payload = {};
 
-    // Get Supplier, Division, dll dari form terkait
-    $form.serializeArray().forEach(function(item) {
-        payload[item.name] = item.value;
-    });
+    $form.serializeArray().forEach(item => payload[item.name] = item.value);
 
-    // Get tipe periode (Daily/Weekly/dll)
-    let periodType = $form.find('.pill-btn.active').text().trim().toLowerCase();
-    if (!periodType) periodType = 'daily';
+    let periodType = $form.find('.pill-btn.active').text().trim().toLowerCase() || 'daily';
     payload.filter_period_type = periodType;
 
-    // Get Nilai Periode (Hanya cari di dalam form ini!)
-    let periodValue = '';
     const $input = $form.find('.current-period-input');
+    let periodValue = $input.length ? $input.combo('getValue') : '';
     
-    if (periodType !== 'all') {
-        if ($input.length) {
-            periodValue = $input.combo('getValue');
-        }
-
-        // Default Daily jika kosong
-        if (!periodValue && periodType === 'daily') {
-            const today = new Date();
-            periodValue = today.toISOString().split('T')[0];
-        }
-    } else {
-        periodValue = 'all';
+    if (!periodValue && periodType === 'daily') {
+        periodValue = new Date().toISOString().split('T')[0];
     }
     payload.filter_period_value = periodValue;
 
-    // Validasi
-    if (!payload.filter_period_value && periodType !== 'all') {
-        $.messager.alert('Warning', 'Please Choose Period Value', 'warning');
-        return;
-    }
-
-    // --- LOGIKA PEMISAH BERDASARKAN FORM ID ---
+    // --- Pemisahan Request ---
     if (formId === 'form_purchase_trends') {
         // Hanya update grafik Purchase Trends & Supplier
         $.post('<?= base_url("purchase/purchase_dashboard/get_dashboard_data") ?>', payload, function(res) {
             const data = JSON.parse(res);
+
             updateTrendChart(data.trend_labels, data.trend_values, data.period, data.title, data.avg_values);
             updateSupplierChart(data.supplier_labels, data.supplier_values, data.period, data.title);
 
@@ -1271,6 +1142,29 @@ function submitFilter(formId) {
 
     } else if (formId === 'form_purchase_by_family') {
         // Hanya update grafik Purchase by Product Family
+        $.post('<?= base_url("purchase/purchase_dashboard/get_purchase_by_family_data") ?>', payload, function(res) {
+            const data = JSON.parse(res);
+            
+            const families = {
+                'childPartChart': 'child_part',
+                'virginChart': 'virgin',
+                'consumableChart': 'consumable',
+                'masterBatchChart': 'master_batch',
+                'stampingChart': 'stamping',
+                'subcontChart': 'subcont'
+            };
+
+            Object.keys(families).forEach(id => {
+                const key = families[id];
+                createFamilyApexChart(
+                    id, 
+                    data.period, 
+                    data.labels, 
+                    data[key + '_plan'], 
+                    data[key + '_actual']
+                );
+            });
+        });
     }
 }
 </script>
