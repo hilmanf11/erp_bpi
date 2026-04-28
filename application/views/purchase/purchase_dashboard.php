@@ -377,7 +377,7 @@
 
 
     <div class="section-header">
-        <i class="fa-solid fa-bar-chart"></i> <span>PURCHASE BY PRODUCT FAMILY</span>
+        <i class="fa-solid fa-bar-chart"></i> <span>PURCHASE AMOUNT (IDR) BY PRODUCT FAMILY</span>
     </div>
 
     <div class="filter-bar">
@@ -1042,7 +1042,7 @@ function updatePlanActualChart(labels, planValues, period, title, actualValues) 
 }
 
 // Global Function Chart per Item Family
-function createFamilyApexChart(containerId, period, labels, dataPlan, dataActual) {
+function createFamilyApexChart(containerId, period, title, labels, dataPlan, dataActual) {
     const options = {
         series: [
             { name: 'Plan', data: dataPlan },
@@ -1051,7 +1051,19 @@ function createFamilyApexChart(containerId, period, labels, dataPlan, dataActual
         chart: {
             type: 'bar',
             height: '100%',
-            toolbar: { show: false }, // Sembunyikan toolbar agar tidak penuh
+            toolbar: {
+                show: true,
+                tools: {
+                    download: true, // Tombol download untuk PNG, SVG, CSV
+                    selection: false,
+                    zoom: false,
+                    zoomin: false,
+                    zoomout: false,
+                    pan: false,
+                    reset: false,
+                    customIcons: [] // Kosongkan ini agar tombol kotak hilang
+                }
+            },
             parentHeightOffset: 0
         },
         colors: ['#244b82', '#ed533b'], // Biru Navy & Merah Orange
@@ -1068,6 +1080,16 @@ function createFamilyApexChart(containerId, period, labels, dataPlan, dataActual
             formatter: (val) => val > 0 ? val.toLocaleString('id-ID') : '',
             offsetY: -20,
             style: { fontSize: '9px', colors: ["#304758"] }
+        },
+        title: {
+            text: title,
+            align: 'center',
+            style: { fontSize: '18px', color: '#444' }
+        },
+        subtitle: {
+            text: period,
+            align: 'center',
+            style: { fontSize: '13px', color: '#707070' }
         },
         xaxis: {
             categories: labels,
@@ -1159,6 +1181,7 @@ function submitFilter(formId) {
                 createFamilyApexChart(
                     id, 
                     data.period, 
+                    data.title, 
                     data.labels, 
                     data[key + '_plan'], 
                     data[key + '_actual']
