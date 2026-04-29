@@ -23,6 +23,9 @@ class Sales_dashboard extends CI_Controller
         $this->load->library('form_validation');
         $this->load->library('session');
         $this->load->model('crud');
+
+        // Query Rates disisipkan ke private variable
+        $this->_get_rates = $this->db->get('standard_exchange_rates')->result_array();
     }
 
     public function index()
@@ -40,7 +43,75 @@ class Sales_dashboard extends CI_Controller
         }
     }
 
-    public function get_dashboard_data() 
+    // Dropdown Weeks
+    public function get_iso_weeks() 
+    {
+        $year = $this->input->get('year') ? $this->input->get('year') : date('Y');
+        $weeks = [];
+
+        // Get jumlah weeks dalam setahun menurut ISO 8601
+        $date = new DateTime();
+        $date->setISODate($year, 53);
+        $total_weeks = ($date->format("W") === "53" ? 53 : 52);
+
+        for ($i = 1; $i <= $total_weeks; $i++) {
+            $dto = new DateTime();
+            // Set ke hari Senin di minggu tersebut
+            $dto->setISODate($year, $i, 1);
+            $start = $dto->format('j M');
+            
+            // Tambahkan 6 hari untuk mendapatkan hari Minggu
+            $dto->modify('+6 days');
+            $end = $dto->format('j M Y');
+
+            $current_week = (int)date('W');
+            
+            $weeks[] = [
+                'id'    => "{$year}-W" . sprintf("%02d", $i),
+                'text'  => "W-{$i} ({$start} - {$end})",
+                'selected' => ($i === $current_week)
+            ];
+        }
+
+        echo json_encode($weeks);
+    }
+
+    public function get_years() 
+    {
+        // GET YEAR FROM TABLE
+        $this->db->select('DISTINCT(YEAR(delivery_note_date)) as year_val', FALSE);
+        $this->db->from('delivery_notes');
+        $this->db->order_by('year_val', 'DESC');
+        $query = $this->db->get()->result();
+        
+        $data = [];
+        foreach ($query as $row) {
+            if ($row->year_val) {
+                $data[] = [
+                    'id'   => $row->year_val,
+                    'text' => $row->year_val,
+                ];
+            }
+        }
+        
+        header('Content-Type: application/json');
+        echo json_encode($data);
+    }
+
+    // Get Rate di memory (Optimasi mencegah N+1 Query)
+    private function _find_rate_in_cache($date, $currency) {
+        if ($currency == "IDR" || empty($currency)) return 1.0;
+        
+        foreach ($this->_get_rates as $r) {
+            if ($r['currency_from'] == $currency && $date >= $r['start_date'] && $date <= $r['end_date']) {
+                return (float)$r['middle'];
+            }
+        }
+        return 1.0;
+    }
+
+
+    public function get_dashboard_data_existing() 
     {
         $filter_from        = $this->input->post('from');
         $filter_to          = $this->input->post('to');
@@ -216,6 +287,154 @@ class Sales_dashboard extends CI_Controller
 
         echo json_encode($output);
     }
+
+
+    public function get_dashboard_data() 
+    {
+        $filter_period_type  = strtolower($this->input->post('filter_period_type'));
+        $filter_period_value = $this->input->post('filter_period_value');
+        $filter_division     = $this->input->post('filter_division');
+        $filter_customer_id  = $this->input->post('filter_customer_id');
+        
+        $labels = [];
+        $trend_labels = [];
+        $period_start_date = "";
+        $period_end_date   = "";
+        $group_by_sql      = "";
+        $label_format      = "";
+
+        // Set Key from Periode Type
+        if ($filter_period_type == "daily") {
+            $end = new DateTime($filter_period_value);
+            $start = (clone $end)->modify('-5 days');
+            $period_start_date = $start->format('Y-m-d');
+            $period_end_date = $end->format('Y-m-d');
+            $group_by_sql = "a.delivery_note_date";
+            
+            $period = new DatePeriod($start, new DateInterval('P1D'), (clone $end)->modify('+1 day'));
+            foreach ($period as $date) { 
+                $key = $date->format('Y-m-d');
+                $labels[] = $key;
+                $trend_labels[] = $date->format('d M Y');
+            }
+
+        } elseif ($filter_period_type == "weekly") {
+            $parts = explode('-W', $filter_period_value);
+            $year = (int)$parts[0];
+            $week = (int)$parts[1];
+
+            $end = new DateTime();
+            $end->setISODate($year, $week, 1); 
+            $start = (clone $end)->modify('-5 weeks'); 
+            
+            $period_start_date = $start->format('Y-m-d'); 
+            $period_end_date = (clone $end)->modify('+6 days')->format('Y-m-d');
+            $group_by_sql = "YEARWEEK(a.delivery_note_date, 3)"; 
+
+            $temp_date = clone $start;
+            for ($i = 0; $i < 6; $i++) {
+                $labels[] = $temp_date->format('oW'); // Format 202611
+                $week_num = $temp_date->format('W');
+                $monday = $temp_date->format('d M');
+                $sunday = (clone $temp_date)->modify('+6 days')->format('d M');
+                $trend_labels[] = ["Week-$week_num", "($monday - $sunday)"];
+                $temp_date->modify('+1 week');
+            }
+
+        } elseif ($filter_period_type == "monthly") {
+            $end = new DateTime($filter_period_value . "-01");
+            $start = (clone $end)->modify('-5 months');
+            $period_start_date = $start->format('Y-m-01');
+            $period_end_date = $end->format('Y-m-t');
+            $group_by_sql = "DATE_FORMAT(a.delivery_note_date, '%Y-%m')";
+
+            $period = new DatePeriod($start, new DateInterval('P1M'), (clone $end)->modify('+1 month'));
+            foreach ($period as $date) { 
+                $labels[] = $date->format('Y-m'); 
+                $trend_labels[] = $date->format('M Y');
+            }
+
+        } elseif ($filter_period_type == "yearly") {
+            $year = (int)$filter_period_value;
+            $start_year = $year - 5;
+            $period_start_date = "$start_year-01-01";
+            $period_end_date = "$year-12-31";
+            $group_by_sql = "YEAR(a.delivery_note_date)";
+
+            for ($i = $start_year; $i <= $year; $i++) { 
+                $labels[] = (string)$i; 
+                $trend_labels[] = (string)$i;
+            }
+        }
+
+        // Main Query
+        $query = "SELECT
+                    $group_by_sql as period_key,
+                    c.name AS customer_name,
+                    a.delivery_note_no,
+                    a.qty,
+                    (CASE 
+                        WHEN a.sales_order_no_rm IS NOT NULL THEN e.currency 
+                        ELSE d.currency 
+                    END) AS currency,
+                    (CASE 
+                        WHEN a.sales_order_no_rm IS NOT NULL THEN e.price 
+                        ELSE d.price 
+                    END) AS price
+                FROM delivery_notes a
+                LEFT JOIN customers c ON a.customer_id = c.id
+                LEFT JOIN sales_orders d ON a.sales_order_no = d.sales_order_no AND a.item_fg_id = d.item_fg_id
+                LEFT JOIN sales_order_rm e ON a.sales_order_no_rm = e.sales_order_no AND a.item_fg_id = e.item_fg_id
+                WHERE a.customer_id LIKE ? 
+                AND a.division LIKE ? 
+                AND a.delivery_note_date BETWEEN ? AND ? 
+                AND a.trans_type = 'SALES'";
+
+        $params = ["%$filter_customer_id%", "%$filter_division%", $period_start_date, $period_end_date];
+        $raw_data = $this->db->query($query, $params)->result_array();
+
+        // Mapping Data
+        $mapped_trend = array_fill_keys($labels, 0);
+        $customer_totals = [];
+
+        foreach ($raw_data as $row) {
+            $rate = $this->_find_rate_in_cache($row['delivery_note_no'], $row['currency']);
+            $amount = (float)$row['qty'] * (float)$row['price'] * (float)$rate;
+
+            // Akumulasi Trend
+            if (isset($mapped_trend[$row['period_key']])) {
+                $mapped_trend[$row['period_key']] += $amount;
+            }
+
+            // Akumulasi Per Customer
+            $c_name = $row['customer_name'] ?? 'Unknown';
+            if (!isset($customer_totals[$c_name])) $customer_totals[$c_name] = 0;
+            $customer_totals[$c_name] += $amount;
+        }
+
+        // Sort Top 10 Customers
+        arsort($customer_totals);
+        $top_10_customers = array_slice($customer_totals, 0, 10);
+
+        // Set Average
+        $trend_values = array_values($mapped_trend);
+        $average = count($trend_values) > 0 ? (array_sum($trend_values) / count($trend_values)) : 0;
+
+        $result = [
+            'trend_labels'    => $trend_labels,
+            'trend_values'    => array_map(function($v) { return round($v, 2); }, $trend_values),
+            'customer_labels' => array_keys($top_10_customers),
+            'customer_values' => array_values(array_map(function($v) { return round($v, 2); }, $top_10_customers)),
+            'avg_values'      => array_fill(0, count($trend_values), round($average, 2)),
+            'title'           => "Sales Amount (IDR) - " . (!empty($filter_division) ? strtoupper($filter_division) : "ALL"),
+            'period'          => "Period: $period_start_date to $period_end_date",
+            'conclusion'      => null,
+            'impact'          => null,
+        ];
+
+        echo json_encode($result);
+    }
+
 
     public function get_forecast_vs_sales() 
     {
