@@ -597,3 +597,6 @@ Change Sunday can be edit ([a91b0388](https://github.com/hilmanf11/erp_bpi/commi
 
 ### [2026-04-21]
 - **kurniawan**: Merge branch 'main' of https://github.com/hilmanf11/erp_bpi ([b7884de5](https://github.com/hilmanf11/erp_bpi/commit/b7884de5fdc730c02391ab1713de70d26a233b42))
+
+### [2026-04-29]
+- **Rizki Puji**: Merge branch into accounting/feature-dashboard-purchase-analysis ([3447ab4b](https://github.com/hilmanf11/erp_bpi/commit/3447ab4b646f46df77222ce46bd5c094e73e890e))
