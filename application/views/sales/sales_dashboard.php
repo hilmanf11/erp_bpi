@@ -230,7 +230,7 @@
     <div class="filter-bar">
         <form id="form_sales_trends" method="POST">
             <div class="pill-group">
-                <!-- <button type="button" class="pill-btn active" onclick="togglePill(this, 'all')"><i class="fa fa-list"></i> All</button> -->
+                <!-- <button type="button" class="pill-btn active" onclick="togglePill(this, 'all', 'form_sales_trends')"><i class="fa fa-list"></i> All</button> -->
                 <button type="button" class="pill-btn" onclick="togglePill(this, 'daily', 'form_sales_trends')"><i class="fa fa-calendar-day"></i> Daily</button>
                 <button type="button" class="pill-btn" onclick="togglePill(this, 'weekly', 'form_sales_trends')"><i class="fa fa-calendar-week"></i> Weekly</button>
                 <button type="button" class="pill-btn" onclick="togglePill(this, 'monthly', 'form_sales_trends')"><i class="fa fa-calendar"></i> Monthly</button>
@@ -249,7 +249,9 @@
     <div style="display: flex; gap: 15px; height: 550px; align-items: stretch;"> 
         <div id="salesChartSection" class="chart-section" style="flex: 1; display: flex; flex-direction: column; overflow: hidden; border: 1px solid #ddd; background: white;">
             <div class="chart-header" style="display: flex; justify-content: space-between; align-items: center;">
-                <span>Sales Amount (IDR)</span>
+                <span>
+                    SALES IN AMOUNT (IDR)
+                </span>
                 
                 <div class="custom-tools" style="display: flex; gap: 15px;">
                     <a href="javascript:void(0)" onclick="exportToExcel('salesChart')" title="Export Excel" style="color: white;">
@@ -271,7 +273,7 @@
         <div id="customerChartSection" class="chart-section" style="flex: 1; display: flex; flex-direction: column; overflow: hidden; border: 1px solid #ddd;">
             <div class="chart-header" style="display: flex; justify-content: space-between; align-items: center;">
                 <span>
-                Sales Amount (IDR) - TOP 10 customer
+                    SALES IN AMOUNT (IDR) - TOP 10 CUSTOMER
                 </span>
 
                 <div class="custom-tools" style="display: flex; gap: 15px;">
@@ -294,10 +296,78 @@
     </div>
 
 
+
     <div class="section-header">
         <i class="fa-solid fa-bar-chart"></i> <span>FORECAST VS SALES</span>
     </div>
 
+    <div class="filter-bar">
+        <form id="form_forecast_sales" method="POST">
+            <div class="pill-group">
+                <!-- <button type="button" class="pill-btn active" onclick="togglePill(this, 'all', 'form_forecast_sales')"><i class="fa fa-list"></i> All</button> -->
+                <!-- <button type="button" class="pill-btn" onclick="togglePill(this, 'daily', 'form_forecast_sales')"><i class="fa fa-calendar-day"></i> Daily</button> -->
+                <!-- <button type="button" class="pill-btn" onclick="togglePill(this, 'weekly', 'form_forecast_sales')"><i class="fa fa-calendar-week"></i> Weekly</button> -->
+                <button type="button" class="pill-btn" onclick="togglePill(this, 'monthly', 'form_forecast_sales')"><i class="fa fa-calendar"></i> Monthly</button>
+                <button type="button" class="pill-btn" onclick="togglePill(this, 'yearly', 'form_forecast_sales')"><i class="fa fa-calendar"></i> Yearly</button>
+
+                <input name="filter_customer_id" class="filter_customer_id easyui-combobox" style="width:150px; height:32px;" prompt="customer">
+                <input name="filter_division" class="filter_division easyui-combobox" style="width:150px; height:32px;" prompt="Division">
+                
+            </div>
+        </form>
+
+        <a href="javascript:;" class="easyui-linkbutton" onclick="submitFilter('form_forecast_sales')" data-options="iconCls:'icon-search'" style="height:32px; padding:0 15px;">Filter</a>
+        <a href="javascript:;" class="easyui-linkbutton" onclick="reload()" data-options="iconCls:'icon-reload'" style="height:32px; padding:0 15px;">Reload</a>
+    </div>
+
+    <div style="display: flex; gap: 15px; height: 550px; align-items: stretch;"> 
+        <div id="forecastSalesChartSection" class="chart-section" style="flex: 1; display: flex; flex-direction: column; overflow: hidden; border: 1px solid #ddd; background: white;">
+            <div class="chart-header" style="display: flex; justify-content: space-between; align-items: center;">
+                <span>
+                    FORECAST VS ACTUAL SALES IN AMOUNT (IDR)
+                </span>
+                
+                <div class="custom-tools" style="display: flex; gap: 15px;">
+                    <a href="javascript:void(0)" onclick="exportToExcel('forecastSalesChart')" title="Export Excel" style="color: white;">
+                        <i class="fa fa-file-excel"></i>
+                    </a>
+                    <a href="javascript:void(0)" onclick="printSpecificChart('forecastSalesChartSection')" title="Print Chart" style="color: white;">
+                        <i class="fa fa-print"></i>
+                    </a>
+                    <a href="javascript:void(0)" onclick="toggleFullScreen('forecastSalesChartSection')" title="Full Screen" style="color: white;">
+                        <i class="fa fa-expand"></i>
+                    </a>
+                </div>
+            </div>
+            <div style="padding: 10px; flex: 1; position: relative; min-height: 0;">
+                <div id="forecastSalesChart" style="height: 100%; width: 100%;"></div>
+            </div>
+        </div>
+
+        <div id="forecastSalesQtyChartSection" class="chart-section" style="flex: 1; display: flex; flex-direction: column; overflow: hidden; border: 1px solid #ddd;">
+            <div class="chart-header" style="display: flex; justify-content: space-between; align-items: center;">
+                <span>
+                    FORECAST VS ACTUAL SALES IN QTY
+                </span>
+
+                <div class="custom-tools" style="display: flex; gap: 15px;">
+                    <a href="javascript:void(0)" onclick="exportToExcel('forecastSalesQtyChart')" title="Export Excel" style="color: white;">
+                        <i class="fa fa-file-excel"></i>
+                    </a>
+                    <a href="javascript:void(0)" onclick="printSpecificChart('forecastSalesQtyChartSection')" title="Print Chart" style="color: white;">
+                        <i class="fa fa-print"></i>
+                    </a>
+                    <a href="javascript:void(0)" onclick="toggleFullScreen('forecastSalesQtyChartSection')" title="Full Screen" style="color: white;">
+                        <i class="fa fa-expand"></i>
+                    </a>
+                </div>
+                
+            </div>
+            <div style="padding: 10px; flex: 1; position: relative; min-height: 0;">
+                <div id="forecastSalesQtyChart" style="height: 100%; width: 100%;"></div>
+            </div>
+        </div>
+    </div>
 
 
 
@@ -374,6 +444,7 @@ function myparser(s) {
 $(function() { 
     // show on load
     submitFilter('form_sales_trends');
+    submitFilter('form_forecast_sales');
     
     // dropdown division
     $('.filter_division').combobox({
@@ -575,13 +646,14 @@ var myCustomerChart;
 let chartInstances = {};
 
 
+// Filter data chart
 function submitFilter(formId) {
     const $form = $('#' + formId);
     let payload = {};
 
     $form.serializeArray().forEach(item => payload[item.name] = item.value);
 
-    let periodType = $form.find('.pill-btn.active').text().trim().toLowerCase() || 'daily';
+    let periodType = $form.find('.pill-btn.active').text().trim().toLowerCase() || 'monthly';
     payload.filter_period_type = periodType;
 
     const $input = $form.find('.current-period-input');
@@ -609,6 +681,14 @@ function submitFilter(formId) {
             $('#impact').html(impact);
         });
 
+    } else if (formId === 'form_forecast_sales') {
+        // Hanya update grafik Forecast VS Sales
+        $.post('<?= base_url("sales/sales_dashboard/get_forecast_vs_sales_data") ?>', payload, function(res) {
+            const data = JSON.parse(res);
+            
+            createForecastChart('forecastSalesChart', data.period, data.title, data.labels, data.amount_title, data.forecast_amount_values, data.sales_amount_values);
+            createForecastChart('forecastSalesQtyChart', data.period, data.title, data.labels, data.qty_title, data.forecast_qty_values, data.sales_qty_values);
+        });
     } 
 
 }
@@ -829,6 +909,91 @@ function updateCustomerChart(labels, values, period, title) {
     } else {
         myCustomerChart = new ApexCharts(document.querySelector("#customerChart"), options);
         myCustomerChart.render();
+    }
+}
+
+
+// Global Chart Forecast VS Sales
+function createForecastChart(containerId, period, titleGlobal, labels, titleChart, dataForecast, dataActual) {
+    const options = {
+        series: [
+            { name: 'Forecast', data: dataForecast },
+            { name: 'Actual Sales', data: dataActual }
+        ],
+        chart: {
+            id: containerId,
+            type: 'bar',
+            height: '100%',
+            toolbar: {
+                show: true,
+                tools: {
+                    download: true, // Tombol download untuk PNG, SVG, CSV
+                    selection: false,
+                    zoom: false,
+                    zoomin: false,
+                    zoomout: false,
+                    pan: false,
+                    reset: false,
+                    customIcons: [] // Kosongkan ini agar tombol kotak hilang
+                }
+            },
+            parentHeightOffset: 0
+        },
+        colors: ['#244b82', '#81cc68'], // Biru Navy & Merah Orange
+        plotOptions: {
+            bar: {
+                horizontal: false,
+                columnWidth: '60%',
+                borderRadius: 2,
+                dataLabels: { position: 'top' }
+            }
+        },
+        dataLabels: {
+            enabled: true,
+            formatter: (val) => val > 0 ? val.toLocaleString('id-ID') : '',
+            offsetY: -20,
+            style: { fontSize: '9px', colors: ["#304758"] }
+        },
+        title: {
+            text: titleChart,
+            align: 'center',
+            style: { fontSize: '18px', color: '#444' }
+        },
+        subtitle: {
+            text: period,
+            align: 'center',
+            style: { fontSize: '13px', color: '#707070' }
+        },
+        xaxis: {
+            categories: labels,
+            labels: {
+                rotate: -45, // Rotasi label agar tidak tabrakan tanpa overflow
+                rotateAlways: false,
+                hideOverlappingLabels: true, // Sembunyikan jika terlalu rapat
+                style: { fontSize: '10px' }
+            }
+        },
+        yaxis: {
+            show: false, // Sesuai UI
+        },
+        legend: { position: 'bottom', fontSize: '11px' },
+        grid: { padding: { top: 20 } }, // Ruang untuk dataLabels di atas bar
+        tooltip: {
+            shared: true,
+            intersect: false,
+            y: { formatter: (val) => val.toLocaleString('id-ID') + " unit" }
+        }
+    };
+
+    // Logic Re-render: Jika sudah ada, update. Jika belum, create.
+    if (chartInstances[containerId]) {
+        chartInstances[containerId].updateOptions({
+            series: options.series,
+            xaxis: { categories: labels }
+        });
+    } else {
+        chartInstances[containerId] = new ApexCharts(document.querySelector("#" + containerId), options);
+        chartInstances[containerId].render();
     }
 }
 </script>

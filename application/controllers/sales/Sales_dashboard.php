@@ -111,184 +111,6 @@ class Sales_dashboard extends CI_Controller
     }
 
 
-    public function get_dashboard_data_existing() 
-    {
-        $filter_from        = $this->input->post('from');
-        $filter_to          = $this->input->post('to');
-        $filter_display     = $this->input->post('display');
-        $filter_division    = $this->input->post('division');
-        $filter_customer_id = $this->input->post('customer_id');
-        $filter_category_id = $this->input->post('category_id');
-
-        // --- VALIDASI PERIODE 6 BULAN ---
-        if ($filter_display == "MONTHLY") {
-            $start_check = new DateTime($filter_from);
-            $end_check   = new DateTime($filter_to);
-            $diff        = $start_check->diff($end_check);
-            
-            // Hitung total bulan dari selisih tahun dan bulan
-            $total_months = ($diff->y * 12) + $diff->m;
-    
-            // Jika selisih kurang dari 6 bulan, ubah filter_from jadi 6 bulan ke belakang dari filter_to
-            if ($total_months < 6) {
-                $new_start = clone $end_check;
-                $new_start->modify('-6 months');
-                $filter_from = $new_start->format('Y-m-d');
-            }
-        }
-
-        // Prepare Data kosong bernilai 0
-        $sales_data  = [];
-        $sales_count = [];
-
-        $start = new DateTime($filter_from);
-        $end   = new DateTime($filter_to);
-        $end->modify('+1 day'); // Include end date
-        $interval = new DateInterval('P1D');
-        $period = new DatePeriod($start, $interval, $end);
-
-        foreach ($period as $dt) {
-            $key = "";
-            
-            if ($filter_display == "DAILY") {
-                $key = $dt->format("Y-m-d");
-            } 
-            elseif ($filter_display == "WEEKLY") {
-                // Cari hari Senin di minggu tersebut
-                $monday = clone $dt;
-                if ($monday->format('N') != 1) {
-                    $monday->modify('last monday');
-                }
-                
-                // Cari hari Minggu (6 hari setelah Senin)
-                $sunday = clone $monday;
-                $sunday->modify('+6 days');
-
-                $weekOfMonth = ceil($monday->format('j') / 7);
-                
-                // Format: W1 April 2026 (6 April - 12 April)
-                $key = "W" . $weekOfMonth . " " . $monday->format('M Y') . " (" . $monday->format('j M') . " - " . $sunday->format('j M') . ")";
-            } 
-            elseif ($filter_display == "MONTHLY") {
-                $key = $dt->format("M Y");
-            } 
-            else {
-                $key = $dt->format("Y-m-d");
-            }
-            
-            if (!isset($sales_data[$key])) {
-                $sales_data[$key] = 0;
-            }
-        }
-
-        // Main Query
-        $query = "SELECT
-            a.id,
-            c.name AS customer_name,
-            c.id AS customer_id,
-            (CASE WHEN a.sales_order_no_rm IS NOT NULL THEN 'RM / SUBCONT' ELSE a.division END) AS division,
-            a.delivery_note_no,
-            a.delivery_note_date,
-            a.item_fg_id,
-            b.number AS item_fg_number,
-            b.name AS item_fg_name,
-            COALESCE(a.sales_order_no, a.sales_order_no_rm) AS sales_order_no,
-            COALESCE(d.sales_order_date, e.sales_order_date) AS sales_order_date,
-            a.customer_order_no,
-            a.uom,
-            a.qty,
-            (CASE
-                WHEN a.sales_order_no_rm IS NOT NULL THEN e.currency
-                WHEN a.sales_order_no IS NOT NULL THEN d.currency
-                ELSE NULL 
-            END) AS currency, 
-            (CASE
-                WHEN a.sales_order_no_rm IS NOT NULL THEN e.price
-                WHEN a.sales_order_no IS NOT NULL THEN d.price
-                ELSE NULL 
-            END) AS price 
-            FROM delivery_notes a
-            LEFT JOIN item_fg b ON a.item_fg_id = b.id
-            LEFT JOIN customers c ON a.customer_id = c.id
-            LEFT JOIN sales_orders d ON a.sales_order_no = d.sales_order_no and a.item_fg_id = d.item_fg_id
-            LEFT JOIN sales_order_rm e ON a.sales_order_no_rm = e.sales_order_no and a.item_fg_id = e.item_fg_id
-            WHERE a.customer_id LIKE ? 
-            AND a.division LIKE ? 
-            AND a.delivery_note_date >= ? AND a.delivery_note_date <= ? 
-            AND a.trans_type = 'SALES'
-            GROUP BY a.id  
-            ORDER BY c.name ASC, a.delivery_note_no ASC, b.number ASC";
-        
-        $params = [
-            "%$filter_customer_id%", 
-            "%$filter_division%", 
-            $filter_from, 
-            $filter_to
-        ];
-        
-        $records = $this->db->query($query, $params)->result_array();
-
-        
-        // Mapping Data untuk Dashboard
-        $total_amount     = 0;
-        $unique_so        = [];
-        $customer_summary = [];
-
-        foreach ($records as $row) {
-            $subtotal = (float)$row['qty'] * (float)$row['price'];
-            $total_amount += $subtotal;
-            $unique_so[$row['sales_order_no']] = true;
-
-            // Grouping berdasarkan Filter Display
-            $time = strtotime($row['delivery_note_date']);
-            if ($filter_display == "DAILY") {
-                $key = $row['delivery_note_date'];
-            } 
-            elseif ($filter_display == "WEEKLY") {
-                $mondayTime = (date('N', $time) == 1) ? $time : strtotime('last monday', $time);
-                $sundayTime = strtotime('+6 days', $mondayTime);
-                
-                $weekOfMonth = ceil(date('j', $mondayTime) / 7);
-                
-                // Format harus sama : W1 April 2026 (6 April - 12 April)
-                $key = "W" . $weekOfMonth . " " . date('M Y', $mondayTime) . " (" . date('j M', $mondayTime) . " - " . date('j M', $sundayTime) . ")";
-            } 
-            elseif ($filter_display == "MONTHLY") {
-                $key = date('M Y', $time);
-            } 
-            else {
-                $key = $row['delivery_note_date'];
-            }
-
-            // Sisipkan data ke sales_data
-            if (isset($sales_data[$key])) {
-                $sales_data[$key] += $subtotal;
-            }
-
-            // Hitung jumlah transaksi per label
-            $sales_count[$key] = ($sales_count[$key] ?? 0) + 1;
-
-            $supp = $row['customer_name'] ?? 'Unknown';
-            $customer_summary[$supp] = ($customer_summary[$supp] ?? 0) + $subtotal;
-        }
-
-        arsort($customer_summary); 
-        
-        $output = [
-            'total_amount_formatted' => 'Rp ' . number_format($total_amount, 0, ',', '.'),
-            'total_so'     => count($unique_so),
-            'trend_labels' => array_keys($sales_data),
-            'trend_values' => array_values($sales_data),
-            'counts'       => array_values($sales_count),
-            'cust_labels'  => array_keys($customer_summary),
-            'cust_values'  => array_values($customer_summary),
-            'subtitle'     => "Period: " . date('d M Y', strtotime($filter_from)) . " to " . date('d M Y', strtotime($filter_to))
-        ];
-
-        echo json_encode($output);
-    }
-
-
     public function get_dashboard_data() 
     {
         $filter_period_type  = strtolower($this->input->post('filter_period_type'));
@@ -310,6 +132,7 @@ class Sales_dashboard extends CI_Controller
             $period_start_date = $start->format('Y-m-d');
             $period_end_date = $end->format('Y-m-d');
             $group_by_sql = "a.delivery_note_date";
+            $label_format = "d M Y";
             
             $period = new DatePeriod($start, new DateInterval('P1D'), (clone $end)->modify('+1 day'));
             foreach ($period as $date) { 
@@ -330,6 +153,7 @@ class Sales_dashboard extends CI_Controller
             $period_start_date = $start->format('Y-m-d'); 
             $period_end_date = (clone $end)->modify('+6 days')->format('Y-m-d');
             $group_by_sql = "YEARWEEK(a.delivery_note_date, 3)"; 
+            $label_format = "d M Y";
 
             $temp_date = clone $start;
             for ($i = 0; $i < 6; $i++) {
@@ -347,6 +171,7 @@ class Sales_dashboard extends CI_Controller
             $period_start_date = $start->format('Y-m-01');
             $period_end_date = $end->format('Y-m-t');
             $group_by_sql = "DATE_FORMAT(a.delivery_note_date, '%Y-%m')";
+            $label_format = "M Y";
 
             $period = new DatePeriod($start, new DateInterval('P1M'), (clone $end)->modify('+1 month'));
             foreach ($period as $date) { 
@@ -360,6 +185,7 @@ class Sales_dashboard extends CI_Controller
             $period_start_date = "$start_year-01-01";
             $period_end_date = "$year-12-31";
             $group_by_sql = "YEAR(a.delivery_note_date)";
+            $label_format = "Y";
 
             for ($i = $start_year; $i <= $year; $i++) { 
                 $labels[] = (string)$i; 
@@ -427,7 +253,7 @@ class Sales_dashboard extends CI_Controller
             'customer_values' => array_values(array_map(function($v) { return round($v, 2); }, $top_10_customers)),
             'avg_values'      => array_fill(0, count($trend_values), round($average, 2)),
             'title'           => "Sales Amount (IDR) - " . (!empty($filter_division) ? strtoupper($filter_division) : "ALL"),
-            'period'          => "Period: $period_start_date to $period_end_date",
+            'period'          => "Period: " . date($label_format, strtotime($period_start_date)) . " to " . date($label_format, strtotime($period_end_date)),
             'conclusion'      => null,
             'impact'          => null,
         ];
@@ -436,7 +262,7 @@ class Sales_dashboard extends CI_Controller
     }
 
 
-    public function get_forecast_vs_sales() 
+    public function get_forecast_vs_sales_existing() 
     {
         $filter_from        = $this->input->post('from');
         $filter_to          = $this->input->post('to');
@@ -532,7 +358,6 @@ class Sales_dashboard extends CI_Controller
         }
 
         // Get Data Forecast
-        // Note: Get per tahun karena tabel forecast Anda berbasis kolom month_1..12
         $start_dt = new DateTime($filter_from);
         $end_dt   = new DateTime($filter_to);
         
@@ -578,5 +403,154 @@ class Sales_dashboard extends CI_Controller
         ];
 
         echo json_encode($output);
+    }
+
+
+    public function get_forecast_vs_sales_data()
+    {
+        $filter_period_type  = strtolower($this->input->post('filter_period_type'));
+        $filter_period_value = $this->input->post('filter_period_value');
+        $filter_division     = $this->input->post('filter_division');
+        $filter_customer_id  = $this->input->post('filter_customer_id');
+        
+        $labels = [];
+        $trend_labels = [];
+        $period_start_date = "";
+        $period_end_date   = "";
+        $group_by_sql      = "";
+        $label_format      = "";
+
+        // Periode Hanya Month & Year
+        if ($filter_period_type == "monthly") {
+            $end = new DateTime($filter_period_value . "-01");
+            $start = (clone $end)->modify('-5 months');
+            $period_start_date = $start->format('Y-m-01');
+            $period_end_date = $end->format('Y-m-t');
+            $group_by_sql = "DATE_FORMAT(dn.delivery_note_date, '%Y-%m')";
+            $label_format = "M Y";
+
+            $period = new DatePeriod($start, new DateInterval('P1M'), (clone $end)->modify('+1 month'));
+            foreach ($period as $date) { 
+                $labels[] = $date->format('Y-m'); 
+                $trend_labels[] = $date->format('M Y');
+            }
+        } elseif ($filter_period_type == "yearly") {
+            $year = (int)$filter_period_value;
+            $start_year = $year - 5;
+            $period_start_date = "$start_year-01-01";
+            $period_end_date = "$year-12-31";
+            $group_by_sql = "YEAR(dn.delivery_note_date)";
+            $label_format = "Y";
+
+            for ($i = $start_year; $i <= $year; $i++) { 
+                $labels[] = (string)$i; 
+                $trend_labels[] = (string)$i;
+            }
+        } else {
+            echo json_encode([
+                'labels'       => $trend_labels,
+                'title'        => "Failed!",
+                'amount_title' => "Forecast vs Sales in Amount - " . strtoupper($filter_period_type),
+                'qty_title'    => "Forecast vs Sales in QTY - " . strtoupper($filter_period_type),
+                'period'       => "Invalid Period Type. Use Monthly or Yearly.",
+                // default value for chart
+                'forecast_amount_values' => [0, 0, 0, 0, 0, 0],
+                'sales_amount_values'    => [0, 0, 0, 0, 0, 0],
+                'forecast_qty_values'    => [0, 0, 0, 0, 0, 0],
+                'sales_qty_values'       => [0, 0, 0, 0, 0, 0],
+            ]);
+            return;
+        }
+
+        // Main Query
+        $query = "SELECT 
+                    $group_by_sql as period_key,
+                    dn.delivery_note_no,
+                    dn.total_qty as actual_qty,
+                    dn.currency,
+                    dn.price,
+                    f.month_1, f.month_2, f.month_3, f.month_4, f.month_5, f.month_6,
+                    f.month_7, f.month_8, f.month_9, f.month_10, f.month_11, f.month_12,
+                    s.price as forecast_price,
+                    s.currency as forecast_currency
+                FROM item_fg a
+                LEFT JOIN forecasts f ON a.id = f.item_fg_id 
+                LEFT JOIN standard_price_fg s ON s.item_fg_id = f.item_fg_id
+                LEFT JOIN (
+                    SELECT 
+                        a.item_fg_id, a.customer_id, a.delivery_note_date, a.delivery_note_no,
+                        SUM(a.qty) AS total_qty,
+                        (CASE WHEN a.sales_order_no_rm IS NOT NULL THEN e.currency ELSE d.currency END) AS currency,
+                        (CASE WHEN a.sales_order_no_rm IS NOT NULL THEN e.price ELSE d.price END) AS price
+                    FROM delivery_notes a
+                    LEFT JOIN sales_orders d ON a.sales_order_no = d.sales_order_no AND a.item_fg_id = d.item_fg_id
+                    LEFT JOIN sales_order_rm e ON a.sales_order_no_rm = e.sales_order_no AND a.item_fg_id = e.item_fg_id
+                    WHERE a.trans_type = 'SALES'
+                    AND a.delivery_note_date BETWEEN ? AND ?
+                    GROUP BY a.id -- Group by ID untuk detail rate per DN
+                ) dn ON a.id = dn.item_fg_id AND f.customer_id = dn.customer_id
+                WHERE f.customer_id LIKE ? 
+                AND f.p_year = ? 
+                AND a.division_id LIKE ? ";
+
+        $params = [$period_start_date, $period_end_date, "%$filter_customer_id%", date('Y', strtotime($period_end_date)), "%$filter_division%"];
+        $raw_data = $this->db->query($query, $params)->result_array();
+
+        // INITIALIZE MAPPING ARRAYS
+        $mapping_forecast_qty = array_fill_keys($labels, 0);
+        $mapping_forecast_amt = array_fill_keys($labels, 0);
+        $mapping_actual_qty   = array_fill_keys($labels, 0);
+        $mapping_actual_amt   = array_fill_keys($labels, 0);
+
+        foreach ($raw_data as $row) {
+            // --- ACTUAL MAPPING (Qty & Amount) ---
+            if (isset($mapping_actual_qty[$row['period_key']])) {
+                $qty = (float)$row['actual_qty'];
+                $rate = $this->_find_rate_in_cache($row['delivery_note_no'], $row['currency']);
+                
+                $mapping_actual_qty[$row['period_key']] += $qty;
+                $mapping_actual_amt[$row['period_key']] += ($qty * (float)$row['price'] * (float)$rate);
+            }
+
+            // --- FORECAST MAPPING (Qty & Amount) ---
+            foreach ($labels as $label_key) {
+                $month_idx = 0;
+                if ($filter_period_type == 'monthly') {
+                    $month_idx = (int)substr($label_key, 5, 2);
+                }
+
+                // Ambil Rate Forecast
+                $f_rate = $this->_find_rate_in_cache(null, $row['forecast_currency']); 
+                $f_price = (float)$row['forecast_price'];
+
+                if ($month_idx > 0) {
+                    $qty_f = (float)$row["month_" . $month_idx];
+                    $mapping_forecast_qty[$label_key] += $qty_f;
+                    $mapping_forecast_amt[$label_key] += ($qty_f * $f_price * $f_rate);
+                } elseif ($filter_period_type == 'yearly') {
+                    // hitung by month_ kolom table forecasts
+                    for ($m=1; $m<=12; $m++) { 
+                        $qty_f = (float)$row["month_$m"];
+                        $mapping_forecast_qty[$label_key] += $qty_f;
+                        $mapping_forecast_amt[$label_key] += ($qty_f * $f_price * $f_rate);
+                    }
+                }
+            }
+        }
+
+        $result = [
+            'labels'       => $trend_labels,
+            'title'        => "Forecast vs Sales - " . strtoupper($filter_period_type),
+            'amount_title' => "Forecast vs Sales in Amount - " . strtoupper($filter_period_type),
+            'qty_title'    => "Forecast vs Sales in QTY - " . strtoupper($filter_period_type),
+            'period'       => "Period: " . date($label_format, strtotime($period_start_date)) . " to " . date($label_format, strtotime($period_end_date)),
+
+            'forecast_amount_values' => array_values(array_map('round', array_values($mapping_forecast_amt))),
+            'sales_amount_values'    => array_values(array_map('round', array_values($mapping_actual_amt))),
+            'forecast_qty_values'    => array_values($mapping_forecast_qty),
+            'sales_qty_values'       => array_values($mapping_actual_qty),
+        ];
+
+        echo json_encode($result);
     }
 }
