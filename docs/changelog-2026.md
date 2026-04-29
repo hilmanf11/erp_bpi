@@ -600,3 +600,6 @@ Change Sunday can be edit ([a91b0388](https://github.com/hilmanf11/erp_bpi/commi
 
 ### [2026-04-29]
 - **Rizki Puji**: Merge branch into accounting/feature-dashboard-purchase-analysis ([3447ab4b](https://github.com/hilmanf11/erp_bpi/commit/3447ab4b646f46df77222ce46bd5c094e73e890e))
+
+### [2026-04-29]
+- **Rizki Puji**: Fixing: export and options chart on Purchase by Product Family Dashboard Purchase ([ff8a09df](https://github.com/hilmanf11/erp_bpi/commit/ff8a09df754fc96822386a541d30ddee7ee74421))
