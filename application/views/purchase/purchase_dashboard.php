@@ -235,8 +235,8 @@
                 <button type="button" class="pill-btn" onclick="togglePill(this, 'monthly', 'form_purchase_trends')"><i class="fa fa-calendar"></i> Monthly</button>
                 <button type="button" class="pill-btn" onclick="togglePill(this, 'yearly', 'form_purchase_trends')"><i class="fa fa-calendar"></i> Yearly</button>
 
-                <input id="filter_supplier_id" name="filter_supplier_id" class="easyui-combobox" style="width:150px; height:32px;" prompt="Supplier">
-                <input id="filter_division" name="filter_division" class="easyui-combobox" style="width:150px; height:32px;" prompt="Division">
+                <input name="filter_supplier_id" class="filter_supplier_id easyui-combobox" style="width:150px; height:32px;" prompt="Supplier">
+                <input name="filter_division" class="filter_division easyui-combobox" style="width:150px; height:32px;" prompt="Division">
                 
             </div>
         </form>
@@ -338,8 +338,8 @@
                 <button type="button" class="pill-btn" onclick="togglePill(this, 'monthly', 'form_plan_vs_actual')"><i class="fa fa-calendar"></i> Monthly</button>
                 <button type="button" class="pill-btn" onclick="togglePill(this, 'yearly', 'form_plan_vs_actual')"><i class="fa fa-calendar"></i> Yearly</button>
 
-                <input id="filter_supplier_id" name="filter_supplier_id" class="easyui-combobox" style="width:150px; height:32px;" prompt="Supplier">
-                <input id="filter_division" name="filter_division" class="easyui-combobox" style="width:150px; height:32px;" prompt="Division">
+                <input name="filter_supplier_id" class="filter_supplier_id easyui-combobox" style="width:150px; height:32px;" prompt="Supplier">
+                <input name="filter_division" class="filter_division easyui-combobox" style="width:150px; height:32px;" prompt="Division">
                 
             </div>
         </form>
@@ -388,8 +388,8 @@
                 <button type="button" class="pill-btn" onclick="togglePill(this, 'monthly', 'form_purchase_by_family')"><i class="fa fa-calendar"></i> Monthly</button>
                 <button type="button" class="pill-btn" onclick="togglePill(this, 'yearly', 'form_purchase_by_family')"><i class="fa fa-calendar"></i> Yearly</button>
 
-                <input id="filter_supplier_id" name="filter_supplier_id" class="easyui-combobox" style="width:150px; height:32px;" prompt="Supplier">
-                <input id="filter_division" name="filter_division" class="easyui-combobox" style="width:150px; height:32px;" prompt="Division">
+                <input name="filter_supplier_id" class="filter_supplier_id easyui-combobox" style="width:150px; height:32px;" prompt="Supplier">
+                <input name="filter_division" class="filter_division easyui-combobox" style="width:150px; height:32px;" prompt="Division">
                 
             </div>
         </form>
@@ -505,7 +505,8 @@ $(function() {
     submitFilter('form_plan_vs_actual');
     submitFilter('form_purchase_by_family');
     
-    $('#filter_division').combobox({
+    // dropdown division
+    $('.filter_division').combobox({
         url: '<?= base_url('finance/purchase_report/readsDivision/'); ?>',
         valueField: 'number',
         textField: 'number',
@@ -518,20 +519,8 @@ $(function() {
         }],
     });
 
-    $("#filter_category_id").combobox({
-        url: '<?= base_url('master/item_categories/readsnotfg') ?>',
-        valueField: 'id',
-        textField: 'name',
-        prompt: "Select Categories",
-        icons: [{
-            iconCls: 'icon-clear',
-            handler: function(e) {
-                $(e.data.target).combobox('clear').combobox('textbox').focus();
-            }
-        }],
-    });
-
-    $("#filter_supplier_id").combobox({
+    // dropdown supplier ID
+    $(".filter_supplier_id").combobox({
         url: '<?= base_url('master/suppliers/reads') ?>',
         valueField: 'id',
         textField: 'name',
@@ -543,7 +532,6 @@ $(function() {
             }
         }]
     });
-    
 });
 
 // Button Period
