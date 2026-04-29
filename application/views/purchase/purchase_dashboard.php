@@ -399,43 +399,156 @@
     </div>
 
     <div style="display: flex; gap: 15px; margin-bottom: 15px;">
-        <div class="chart-section" style="flex: 1;">
-            <div class="chart-header">CHILD PART</div>
+
+        <div id="childPartChartSection" class="chart-section" style="flex: 1;">
+
+            <div class="chart-header" style="display: flex; justify-content: space-between; align-items: center;">
+                <div style="font-weight: bold;">
+                    <i class="fa fa-chart-bar"></i> CHILD PART
+                </div>
+                
+                <div class="custom-tools" style="display: flex; gap: 15px;">
+                    <a href="javascript:void(0)" onclick="exportToExcel('childPartChart')" title="Export Excel" style="color: white;">
+                        <i class="fa fa-file-excel"></i>
+                    </a>
+                    <a href="javascript:void(0)" onclick="printSpecificChart('childPartChartSection')" title="Print Chart" style="color: white;">
+                        <i class="fa fa-print"></i>
+                    </a>
+                    <a href="javascript:void(0)" onclick="toggleFullScreen('childPartChartSection')" title="Full Screen" style="color: white;">
+                        <i class="fa fa-expand"></i>
+                    </a>
+                </div>
+            </div>
+
             <div style="padding: 10px; height: 300px;">
-                <div id="childPartChart"></div>
+                <div id="childPartChart" style="height: 100%; width: 100%;"></div>
             </div>
         </div>
-        <div class="chart-section" style="flex: 1;">
-            <div class="chart-header">VIRGIN</div>
+
+        <div id="virginChartSection" class="chart-section" style="flex: 1;">
+
+            <div class="chart-header" style="display: flex; justify-content: space-between; align-items: center;">
+                <div style="font-weight: bold;">
+                    <i class="fa fa-chart-bar"></i> VIRGIN
+                </div>
+                
+                <div class="custom-tools" style="display: flex; gap: 15px;">
+                    <a href="javascript:void(0)" onclick="exportToExcel('virginChart')" title="Export Excel" style="color: white;">
+                        <i class="fa fa-file-excel"></i>
+                    </a>
+                    <a href="javascript:void(0)" onclick="printSpecificChart('virginChartSection')" title="Print Chart" style="color: white;">
+                        <i class="fa fa-print"></i>
+                    </a>
+                    <a href="javascript:void(0)" onclick="toggleFullScreen('virginChartSection')" title="Full Screen" style="color: white;">
+                        <i class="fa fa-expand"></i>
+                    </a>
+                </div>
+            </div>
+
             <div style="padding: 10px; height: 300px;">
-                <div id="virginChart"></div>
+                <div id="virginChart" style="height: 100%; width: 100%;"></div>
             </div>
         </div>
-        <div class="chart-section" style="flex: 1;">
-            <div class="chart-header">CONSUMABLE</div>
+
+        <div id="consumableChartSection" class="chart-section" style="flex: 1;">
+
+            <div class="chart-header" style="display: flex; justify-content: space-between; align-items: center;">
+                <div style="font-weight: bold;">
+                    <i class="fa fa-chart-bar"></i> CONSUMABLE
+                </div>
+                
+                <div class="custom-tools" style="display: flex; gap: 15px;">
+                    <a href="javascript:void(0)" onclick="exportToExcel('consumableChart')" title="Export Excel" style="color: white;">
+                        <i class="fa fa-file-excel"></i>
+                    </a>
+                    <a href="javascript:void(0)" onclick="printSpecificChart('consumableChartSection')" title="Print Chart" style="color: white;">
+                        <i class="fa fa-print"></i>
+                    </a>
+                    <a href="javascript:void(0)" onclick="toggleFullScreen('consumableChartSection')" title="Full Screen" style="color: white;">
+                        <i class="fa fa-expand"></i>
+                    </a>
+                </div>
+            </div>
+
             <div style="padding: 10px; height: 300px;">
-                <div id="consumableChart"></div>
+                <div id="consumableChart" style="height: 100%; width: 100%;"></div>
             </div>
         </div>
     </div>
 
     <div style="display: flex; gap: 15px;">
-        <div class="chart-section" style="flex: 1;">
-            <div class="chart-header">MASTER BATCH</div>
+        <div id="masterBatchChartSection" class="chart-section" style="flex: 1;">
+
+            <div class="chart-header" style="display: flex; justify-content: space-between; align-items: center;">
+                <div style="font-weight: bold;">
+                    <i class="fa fa-chart-bar"></i> MASTER BATCH
+                </div>
+                
+                <div class="custom-tools" style="display: flex; gap: 15px;">
+                    <a href="javascript:void(0)" onclick="exportToExcel('masterBatchChart')" title="Export Excel" style="color: white;">
+                        <i class="fa fa-file-excel"></i>
+                    </a>
+                    <a href="javascript:void(0)" onclick="printSpecificChart('masterBatchChartSection')" title="Print Chart" style="color: white;">
+                        <i class="fa fa-print"></i>
+                    </a>
+                    <a href="javascript:void(0)" onclick="toggleFullScreen('masterBatchChartSection')" title="Full Screen" style="color: white;">
+                        <i class="fa fa-expand"></i>
+                    </a>
+                </div>
+            </div>
+
             <div style="padding: 10px; height: 300px;">
-                <div id="masterBatchChart"></div>
+                <div id="masterBatchChart" style="height: 100%; width: 100%;"></div>
             </div>
         </div>
-        <div class="chart-section" style="flex: 1;">
-            <div class="chart-header">STAMPING</div>
+
+        <div id="stampingChartSection" class="chart-section" style="flex: 1;">
+
+            <div class="chart-header" style="display: flex; justify-content: space-between; align-items: center;">
+                <div style="font-weight: bold;">
+                    <i class="fa fa-chart-bar"></i> STAMPING
+                </div>
+                
+                <div class="custom-tools" style="display: flex; gap: 15px;">
+                    <a href="javascript:void(0)" onclick="exportToExcel('stampingChart')" title="Export Excel" style="color: white;">
+                        <i class="fa fa-file-excel"></i>
+                    </a>
+                    <a href="javascript:void(0)" onclick="printSpecificChart('stampingChartSection')" title="Print Chart" style="color: white;">
+                        <i class="fa fa-print"></i>
+                    </a>
+                    <a href="javascript:void(0)" onclick="toggleFullScreen('stampingChartSection')" title="Full Screen" style="color: white;">
+                        <i class="fa fa-expand"></i>
+                    </a>
+                </div>
+            </div>
+
             <div style="padding: 10px; height: 300px;">
-                <div id="stampingChart"></div>
+                <div id="stampingChart" style="height: 100%; width: 100%;"></div>
             </div>
         </div>
-        <div class="chart-section" style="flex: 1;">
-            <div class="chart-header">SUBCONT</div>
+
+        <div id="subcontChartSection" class="chart-section" style="flex: 1;">
+
+            <div class="chart-header" style="display: flex; justify-content: space-between; align-items: center;">
+                <div style="font-weight: bold;">
+                    <i class="fa fa-chart-bar"></i> SUBCONT
+                </div>
+                
+                <div class="custom-tools" style="display: flex; gap: 15px;">
+                    <a href="javascript:void(0)" onclick="exportToExcel('subcontChart')" title="Export Excel" style="color: white;">
+                        <i class="fa fa-file-excel"></i>
+                    </a>
+                    <a href="javascript:void(0)" onclick="printSpecificChart('subcontChartSection')" title="Print Chart" style="color: white;">
+                        <i class="fa fa-print"></i>
+                    </a>
+                    <a href="javascript:void(0)" onclick="toggleFullScreen('subcontChartSection')" title="Full Screen" style="color: white;">
+                        <i class="fa fa-expand"></i>
+                    </a>
+                </div>
+            </div>
+
             <div style="padding: 10px; height: 300px;">
-                <div id="subcontChart"></div>
+                <div id="subcontChart" style="height: 100%; width: 100%;"></div>
             </div>
         </div>
     </div>
@@ -698,7 +811,6 @@ function exportToExcel(chartId) {
 
 
 /** ---- CHART ---- */
-
 var myPurchaseChart;
 var mySupplierChart;
 var myPlanActualChart;
@@ -1037,6 +1149,7 @@ function createFamilyApexChart(containerId, period, titleGlobal, labels, titleCh
             { name: 'Actual', data: dataActual }
         ],
         chart: {
+            id: containerId,
             type: 'bar',
             height: '100%',
             toolbar: {
