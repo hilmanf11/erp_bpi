@@ -352,7 +352,7 @@
 
         <div class="chart-header" style="display: flex; justify-content: space-between; align-items: center;">
             <div style="font-weight: bold;">
-                <i class="fa fa-chart-bar"></i> Purchase Plan VS Actual by QTY
+                <i class="fa fa-chart-bar"></i> Purchase Amount (IDR) Plan VS Actual
             </div>
             
             <div class="custom-tools" style="display: flex; gap: 15px;">

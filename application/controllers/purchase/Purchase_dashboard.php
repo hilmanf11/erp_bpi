@@ -454,7 +454,6 @@ class Purchase_dashboard extends CI_Controller
             $key = "";
             $date = $row['date_ref'];
             
-            // Tentukan key berdasarkan tipe periode agar sinkron dengan $labels
             if ($filter_period_type == "daily") {
                 $key = date('Y-m-d', strtotime($date));
             } elseif ($filter_period_type == "weekly") {
@@ -466,7 +465,11 @@ class Purchase_dashboard extends CI_Controller
             }
 
             if (isset($mapped_plan[$key])) {
-                $mapped_plan[$key] += (float)$row['qty'];
+                // HITUNG AMOUNT
+                $rate = $this->_find_rate_in_cache($row['date_ref'], $row['currency']);
+                $amount = (float)$row['qty'] * (float)$row['price'] * (float)$rate;
+                
+                $mapped_plan[$key] += $amount;
             }
         }
 
@@ -486,13 +489,16 @@ class Purchase_dashboard extends CI_Controller
             }
 
             if (isset($mapped_actual[$key])) {
-                $mapped_actual[$key] += (float)$row['qty'];
+                // HITUNG AMOUNT
+                $rate = $this->_find_rate_in_cache($row['date_ref'], $row['currency']);
+                $amount = (float)$row['qty'] * (float)$row['price'] * (float)$rate;
+                
+                $mapped_actual[$key] += $amount;
             }
         }
 
         // --- PREPARE FINAL RESPONSE ---
         
-        // Gunakan trend_labels khusus untuk Weekly agar tampilan di chart rapi (Week-X)
         $display_labels = $labels;
         if ($filter_period_type == "weekly") {
             $display_labels = $trend_labels;
@@ -503,7 +509,7 @@ class Purchase_dashboard extends CI_Controller
         }
 
         $division_text = !empty($filter_division) ? strtoupper($filter_division) : "ALL Division";
-        $title = "Plan vs Actual Quantity - " . $division_text;
+        $title = "Purchase Amount (IDR) Plan VS Actual - " . $division_text;
         $period_text = "Period: " . date('d M Y', strtotime($period_start_date)) . " to " . date('d M Y', strtotime($period_end_date));
 
         echo json_encode([
