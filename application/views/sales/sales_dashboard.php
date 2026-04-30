@@ -387,6 +387,7 @@
 
                 <input name="filter_customer_id" class="filter_customer_id easyui-combobox" style="width:150px; height:32px;" prompt="customer">
                 <input name="filter_division" class="filter_division easyui-combobox" style="width:150px; height:32px;" prompt="Division">
+                <input name="filter_item_fg_id" class="filter_item_fg_id easyui-combobox" style="width:150px; height:32px;" prompt="Product No">
                 
             </div>
         </form>
@@ -461,6 +462,7 @@
 
                 <input name="filter_customer_id" class="filter_customer_id easyui-combobox" style="width:150px; height:32px;" prompt="customer">
                 <input name="filter_division" class="filter_division easyui-combobox" style="width:150px; height:32px;" prompt="Division">
+                <input name="filter_item_fg_id" class="filter_item_fg_id easyui-combobox" style="width:150px; height:32px;" prompt="Product No">
                 
             </div>
         </form>
@@ -609,6 +611,7 @@ $(function() {
     // show on load
     submitFilter('form_sales_trends');
     submitFilter('form_forecast_sales');
+    submitFilter('form_forecast_vs_so');
     
     // dropdown division
     $('.filter_division').combobox({
@@ -903,7 +906,7 @@ function submitFilter(formId) {
     const $input = $form.find('.current-period-input');
     let periodValue = $input.length ? $input.combo('getValue') : '';
     
-    if (!periodValue && periodType === 'daily') {
+    if (!periodValue && (periodType === 'daily' || periodType === 'monthly')) {
         periodValue = new Date().toISOString().split('T')[0];
     }
     payload.filter_period_value = periodValue;
@@ -961,6 +964,29 @@ function submitFilter(formId) {
                 // Hapus loader 
                 hideLoader(forecastSelector);
                 hideLoader(forecastQtySelector);
+            }
+        });
+    } else if (formId === 'form_forecast_vs_so') {
+        // Panggil loader sebelum request
+        const forecastSOSelector = '#forecastSalesOrderChartSection';
+        const forecastSOQtySelector = '#forecastSalesOrderQtyChartSection';
+        showLoader(forecastSOSelector);
+        showLoader(forecastSOQtySelector);
+
+        // Hanya update grafik Forecast VS Sales
+        $.post('<?= base_url("sales/sales_dashboard/get_forecast_vs_sales_order_data") ?>', payload, function(res) {
+            try {
+            const data = JSON.parse(res);
+            
+            createForecastChart('forecastSalesOrderChart', data.period, data.title, data.labels, data.amount_title, data.forecast_amount_values, data.sales_amount_values);
+            createForecastChart('forecastSalesOrderQtyChart', data.period, data.title, data.labels, data.qty_title, data.forecast_qty_values, data.sales_qty_values);
+            
+            } catch (e) {
+                console.error("Parsing error:", e);
+            } finally {
+                // Hapus loader 
+                hideLoader(forecastSOSelector);
+                hideLoader(forecastSOQtySelector);
             }
         });
     } 
