@@ -514,6 +514,30 @@ function togglePill(btn, type, formId) {
     } 
     else if (type === 'monthly') {
         $wrapper.html('<input class="current-period-input easyui-combobox" style="width:180px; height:32px;">');
+
+        $wrapper.find('.easyui-combobox').combobox({
+            valueField: 'id',
+            textField: 'text',
+            editable: false,
+            panelHeight: 250,
+            data: [
+                <?php 
+                // Get month 24 bulan ke belakang dari bulan sekarang
+                for ($i = 0; $i < 24; $i++): 
+                    $date = new DateTime();
+                    $date->modify("-$i months");
+                    $val  = $date->format('Y-m');
+                    $text = $date->format('F Y');
+                ?>
+                { id: '<?= $val ?>', text: '<?= $text ?>' },
+                <?php endfor; ?>
+            ],
+            onLoadSuccess: function() {
+                $(this).combobox('setValue', '<?= date("Y-m") ?>');
+            }
+        });
+
+        /** -- existing dropdown bulan di tahun berjalan --
         $wrapper.find('.easyui-combobox').combobox({
             valueField: 'id',
             textField: 'text',
@@ -528,9 +552,36 @@ function togglePill(btn, type, formId) {
                 $(this).combobox('setValue', '<?= date("Y-m") ?>');
             }
         });
+        */
     } 
     else if (type === 'yearly') {
         $wrapper.html('<input class="current-period-input easyui-combobox" style="width:180px; height:32px;">');
+
+        // Generate Year
+        const startYear = 2022;
+        const currentYear = new Date().getFullYear();
+        const yearData = [];
+
+        // order year descending
+        for (let y = currentYear; y >= startYear; y--) {
+            yearData.push({
+                id: y.toString(),
+                text: y.toString()
+            });
+        }
+
+        $wrapper.find('.easyui-combobox').combobox({
+            valueField: 'id',
+            textField: 'text',
+            editable: false,
+            panelHeight: 'auto',
+            data: yearData,
+            onLoadSuccess: function() {
+                $(this).combobox('setValue', currentYear.toString());
+            }
+        });
+
+        /** -- get year from controller
         $wrapper.find('.easyui-combobox').combobox({
             url: '<?= base_url("sales/sales_dashboard/get_years") ?>',
             valueField: 'id',
@@ -542,6 +593,7 @@ function togglePill(btn, type, formId) {
                 $(this).combobox('setValue', currentYear);
             },
         });
+        */
     }
 }
 
