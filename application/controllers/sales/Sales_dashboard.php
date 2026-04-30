@@ -263,6 +263,7 @@ class Sales_dashboard extends CI_Controller
     }
 
 
+    // Forecast VS Sales (DN)
     public function get_forecast_vs_sales_data() 
     {
         $filter_period_type  = strtolower($this->input->post('filter_period_type')) ?? 'monthly';
@@ -323,6 +324,8 @@ class Sales_dashboard extends CI_Controller
                 fs.p_month, 
                 fs.p_year,
                 SUM(fs.last_qty_forecast) as total_forecast, 
+                SUM(fs.last_amount_forecast) as total_amount_forecast, 
+                SUM(fs.total_amount_delivery_notes) as total_amount_delivery,
                 SUM(fs.total_qty_delivery_notes) as total_delivery
             FROM (
                 SELECT 
@@ -332,15 +335,19 @@ class Sales_dashboard extends CI_Controller
                     f.p_year,
                     c.price,
                     c.currency,
+                    (f.month_1 * c.price) as last_amount_forecast,
                     f.month_1 as last_qty_forecast, 
+                    (dn.total_qty * c.price) AS total_amount_delivery_notes,
                     COALESCE(dn.total_qty, 0) AS total_qty_delivery_notes
                 FROM forecasts f
                 INNER JOIN item_fg a ON a.id = f.item_fg_id 
                 LEFT JOIN customer_items c ON c.item_fg_id = a.id AND c.customer_id = f.customer_id 
                 LEFT JOIN (
-                    SELECT item_fg_id, customer_id, $dn_date_filter as periods, SUM(qty) AS total_qty
-                    FROM delivery_notes
-                    GROUP BY item_fg_id, customer_id, periods
+                    SELECT a.item_fg_id, a.customer_id, $dn_date_filter as periods, SUM(a.qty) AS total_qty
+                    FROM delivery_notes a
+                    LEFT JOIN customer_items c ON c.item_fg_id = a.id AND c.customer_id = a.customer_id 
+                    LEFT JOIN standard_exchange_rates g ON $dn_date_filter BETWEEN (g.start_date AND g.end_date) AND (g.currency_from = c.currency)
+                    GROUP BY a.item_fg_id, a.customer_id, periods
                 ) dn ON a.id = dn.item_fg_id AND f.customer_id = dn.customer_id 
                 AND (CASE WHEN '$filter_period_type' = 'monthly' 
                         THEN CONCAT(f.p_year, '-', f.p_month) 
@@ -367,20 +374,30 @@ class Sales_dashboard extends CI_Controller
 
         $forecast_values = [];
         $sales_values    = [];
+        $forecast_amount_values = [];
+        $sales_amount_values    = [];
 
         foreach ($labels as $label) {
             $total_f = 0;
             $total_s = 0;
+            $total_amount_f = 0;
+            $total_amount_s = 0;
 
             if (!empty($final_data[$label])) {
                 foreach ($final_data[$label] as $row) {
                     $total_f += (float)$row->total_forecast;
                     $total_s += (float)$row->total_delivery;
+
+                    $total_amount_f += (float)$row->total_amount_forecast;
+                    $total_amount_s += (float)$row->total_amount_delivery;
                 }
             }
 
             $forecast_values[] = $total_f;
             $sales_values[]    = $total_s;
+
+            $forecast_amount_values[] = $total_amount_f;
+            $sales_amount_values[]    = $total_amount_s;
         }
 
         echo json_encode([
@@ -391,6 +408,8 @@ class Sales_dashboard extends CI_Controller
             'period'              => "Period: " . date("F Y", strtotime($labels[0])) . " to " . date("F Y", strtotime(end($labels))),
             'forecast_qty_values' => $forecast_values,
             'sales_qty_values'    => $sales_values,
+            'forecast_amount_values' => $forecast_amount_values,
+            'sales_amount_values'    => $sales_amount_values,
         ]);
     }
 
@@ -477,7 +496,7 @@ class Sales_dashboard extends CI_Controller
                 LEFT JOIN (
                     SELECT item_fg_id, customer_id, $date_filter as periods, g.middle as rate, SUM(qty) AS total_qty
                     FROM sales_orders
-                    LEFT JOIN exchange_rates g ON $date_filter BETWEEN (g.start_date AND g.end_date) AND (g.currency_from = sales_orders.currency)
+                    LEFT JOIN standard_exchange_rates g ON $date_filter BETWEEN (g.start_date AND g.end_date) AND (g.currency_from = sales_orders.currency)
                     GROUP BY item_fg_id, customer_id, periods
                 ) s ON a.id = s.item_fg_id AND f.customer_id = s.customer_id 
                 AND (CASE WHEN '$filter_period_type' = 'monthly' 
@@ -520,6 +539,168 @@ class Sales_dashboard extends CI_Controller
                     $total_s += (float)$row->total_sales;
                     
                     $total_amount_f += (float)$row->total_amount_forecast;
+                    $total_amount_s += (float)$row->total_amount_sales;
+                }
+            }
+
+            $forecast_values[] = $total_f;
+            $sales_values[]    = $total_s;
+            $forecast_amount_values[] = $total_amount_f;
+            $sales_amount_values[]    = $total_amount_s;
+        }
+
+        echo json_encode([
+            'labels'              => $labels,
+            'title'               => "Forecast vs Sales Order - " . strtoupper($filter_period_type),
+            'amount_title'        => "Forecast vs Sales Order in Amount - " . strtoupper($filter_period_type),
+            'qty_title'           => "Forecast vs Sales Order in QTY - " . strtoupper($filter_period_type),
+            'period'              => "Period: " . date("F Y", strtotime($labels[0])) . " to " . date("F Y", strtotime(end($labels))),
+            'forecast_qty_values' => $forecast_values,
+            'sales_qty_values'    => $sales_values,
+            'forecast_amount_values' => $forecast_amount_values,
+            'sales_amount_values'    => $sales_amount_values,
+        ]);
+    }
+
+    // Sales Orders VS Sales (DN)
+    public function get_sales_order_vs_sales_data() 
+    {
+        $filter_period_type  = strtolower($this->input->post('filter_period_type')) ?? 'monthly';
+        $filter_period_value = $this->input->post('filter_period_value') ?? date('Y-m');
+        $filter_division     = $this->input->post('filter_division');
+        $filter_customer_id  = $this->input->post('filter_customer_id');
+        $filter_item_fg_id   = $this->input->post('filter_item_fg_id') ?? null;
+
+        $labels = [];
+        $months = [];
+        $years  = [];
+
+        if (strtolower($filter_period_type) == 'monthly') {
+            // get label mulai dari 6 bulan sebelum
+            $start = date('Y-m-01', strtotime($filter_period_value));
+            $currentDate = new DateTime($start);
+            
+            for ($i = 5; $i >= 0; $i--) {
+                $date = clone $currentDate;
+
+                $date->sub(new DateInterval("P{$i}M"));
+                $label = $date->format('Y-m');
+                
+                $labels[] = $label;
+                $months[] = $date->format('m');
+                $years[]  = $date->format('Y');
+            }
+        } 
+        elseif (strtolower($filter_period_type) == 'yearly') {
+            // get label mulai dari 6 tahun sebelum
+            $currentDate = new DateTime($filter_period_value . "-01-01");
+            for ($i = 5; $i >= 0; $i--) {
+                $date = clone $currentDate;
+                $date->modify("-$i years");
+                $label = $date->format('Y');
+                
+                $labels[] = $label;
+                $years[]  = $label;
+            }
+        }
+
+        // Filter Query
+        $where_customer = $filter_customer_id ? "AND f.customer_id = '$filter_customer_id'" : "";
+        $where_division = $filter_division ? "AND a.division_id = '$filter_division'" : "";
+        $where_item_fg  = $filter_item_fg_id ? "AND f.item_fg_id = '$filter_item_fg_id'" : "";
+        
+        if ($filter_period_type == 'monthly') {
+            $time_filter = "AND f.p_year IN ('".implode("','", array_unique($years))."') 
+                            AND f.p_month IN ('".implode("','", array_unique($months))."')";
+            $date_filter = "SUBSTRING(sales_order_date, 1, 7)";
+            $dn_date_filter = "SUBSTRING(delivery_note_date, 1, 7)";
+        } else {
+            $time_filter = "AND f.p_year IN ('".implode("','", array_unique($years))."')";
+            $date_filter = "SUBSTRING(sales_order_date, 1, 4)";
+            $dn_date_filter = "SUBSTRING(delivery_note_date, 1, 4)";
+        }
+
+        $query_main = "SELECT 
+                fs.customer_id, 
+                fs.p_month, 
+                fs.p_year,
+                SUM(fs.total_qty_delivery_notes) as total_delivery,
+                SUM(fs.total_amount_delivery_notes) as total_amount_delivery,
+                SUM(fs.last_qty_forecast) as total_forecast, 
+                SUM(fs.last_amount_forecast) as total_amount_forecast, 
+                SUM(fs.total_amount_so) as total_amount_sales,
+                SUM(fs.total_qty_so) as total_sales
+            FROM (
+                SELECT 
+                    f.item_fg_id,
+                    f.customer_id, 
+                    f.p_month, 
+                    f.p_year,
+                    c.price,
+                    c.currency,
+                    s.rate,
+                    (dn.total_qty * c.price) AS total_amount_delivery_notes,
+                    COALESCE(dn.total_qty, 0) AS total_qty_delivery_notes,
+                    (f.month_1 * c.price) as last_amount_forecast,
+                    f.month_1 as last_qty_forecast, 
+                    (s.total_qty * c.price) as total_amount_so,
+                    COALESCE(s.total_qty, 0) AS total_qty_so
+                FROM forecasts f
+                INNER JOIN item_fg a ON a.id = f.item_fg_id 
+                LEFT JOIN customer_items c ON c.item_fg_id = a.id AND c.customer_id = f.customer_id 
+                LEFT JOIN (
+                    SELECT item_fg_id, customer_id, $date_filter as periods, g.middle as rate, SUM(qty) AS total_qty
+                    FROM sales_orders
+                    LEFT JOIN standard_exchange_rates g ON $date_filter BETWEEN (g.start_date AND g.end_date) AND (g.currency_from = sales_orders.currency)
+                    GROUP BY item_fg_id, customer_id, periods
+                ) s ON a.id = s.item_fg_id AND f.customer_id = s.customer_id 
+                LEFT JOIN (
+                    SELECT a.item_fg_id, a.customer_id, $dn_date_filter as periods, SUM(a.qty) AS total_qty
+                    FROM delivery_notes a
+                    LEFT JOIN customer_items c ON c.item_fg_id = a.id AND c.customer_id = a.customer_id 
+                    LEFT JOIN standard_exchange_rates g ON $dn_date_filter BETWEEN (g.start_date AND g.end_date) AND (g.currency_from = c.currency)
+                    GROUP BY a.item_fg_id, a.customer_id, periods
+                ) dn ON a.id = dn.item_fg_id AND f.customer_id = dn.customer_id 
+                AND (CASE WHEN '$filter_period_type' = 'monthly' 
+                        THEN CONCAT(f.p_year, '-', f.p_month) 
+                        ELSE f.p_year END) = s.periods
+                WHERE 1=1 
+                $where_customer 
+                $where_division 
+                $time_filter 
+                $where_item_fg 
+            ) fs
+            GROUP BY fs.customer_id, fs.p_month, fs.p_year";
+
+        $results = $this->db->query($query_main)->result();
+
+        // Mapping Default nilai 0
+        $final_data = array_fill_keys($labels, []);
+
+        foreach ($results as $row) {
+            $key = ($filter_period_type == 'monthly') ? $row->p_year . '-' . $row->p_month : $row->p_year;
+            if (array_key_exists($key, $final_data)) {
+                $final_data[$key][] = $row;
+            }
+        }
+
+        $forecast_values = [];
+        $sales_values    = [];
+        $forecast_amount_values = [];
+        $sales_amount_values    = [];
+
+        foreach ($labels as $label) {
+            $total_f = 0;
+            $total_s = 0;
+            $total_amount_f = 0;
+            $total_amount_s = 0;
+
+            if (!empty($final_data[$label])) {
+                foreach ($final_data[$label] as $row) {
+                    $total_f += (float)$row->total_delivery;
+                    $total_s += (float)$row->total_sales;
+                    
+                    $total_amount_f += (float)$row->total_amount_delivery;
                     $total_amount_s += (float)$row->total_amount_sales;
                 }
             }

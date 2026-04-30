@@ -612,6 +612,7 @@ $(function() {
     submitFilter('form_sales_trends');
     submitFilter('form_forecast_sales');
     submitFilter('form_forecast_vs_so');
+    submitFilter('form_so_vs_sales');
     
     // dropdown division
     $('.filter_division').combobox({
@@ -964,6 +965,29 @@ function submitFilter(formId) {
                 // Hapus loader 
                 hideLoader(forecastSelector);
                 hideLoader(forecastQtySelector);
+            }
+        });
+    } else if (formId === 'form_so_vs_sales') {
+        // Panggil loader sebelum request
+        const salesOrderSalesSelector = '#salesOrderSalesChartSection';
+        const salesOrderSalesQtySelector = '#salesOrderSalesQtyChartSection';
+        showLoader(salesOrderSalesSelector);
+        showLoader(salesOrderSalesQtySelector);
+
+        // Hanya update grafik Forecast VS Sales
+        $.post('<?= base_url("sales/sales_dashboard/get_sales_order_vs_sales_data") ?>', payload, function(res) {
+            try {
+            const data = JSON.parse(res);
+            
+            createForecastChart('salesOrderSalesChart', data.period, data.title, data.labels, data.amount_title, data.forecast_amount_values, data.sales_amount_values);
+            createForecastChart('salesOrderSalesQtyChart', data.period, data.title, data.labels, data.qty_title, data.forecast_qty_values, data.sales_qty_values);
+            
+            } catch (e) {
+                console.error("Parsing error:", e);
+            } finally {
+                // Hapus loader 
+                hideLoader(salesOrderSalesSelector);
+                hideLoader(salesOrderSalesQtySelector);
             }
         });
     } else if (formId === 'form_forecast_vs_so') {

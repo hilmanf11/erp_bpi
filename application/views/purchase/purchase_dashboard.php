@@ -582,7 +582,16 @@
 
 <script>
 function reload() {
+    $.messager.progress({
+        title: 'Please Wait',
+        msg: 'Refreshing dashboard data...',
+        text: 'Loading...',
+    });
+
+    // refresh halaman
+    setTimeout(function() {
     window.location.reload();
+    }, 100); 
 }
 
 function pdf() {
