@@ -375,11 +375,148 @@
         <i class="fa-solid fa-bar-chart"></i> <span>SALES ORDER VS SALES</span>
     </div>
 
+    <div class="filter-bar">
+        <form id="form_so_vs_sales" method="POST">
+            <div class="pill-group">
+                <!-- <button type="button" class="pill-btn active" onclick="togglePill(this, 'all', 'form_so_vs_sales')"><i class="fa fa-list"></i> All</button> -->
+                <!-- <button type="button" class="pill-btn" onclick="togglePill(this, 'daily', 'form_so_vs_sales')"><i class="fa fa-calendar-day"></i> Daily</button> -->
+                <!-- <button type="button" class="pill-btn" onclick="togglePill(this, 'weekly', 'form_so_vs_sales')"><i class="fa fa-calendar-week"></i> Weekly</button> -->
+                <button type="button" class="pill-btn" onclick="togglePill(this, 'monthly', 'form_so_vs_sales')"><i class="fa fa-calendar"></i> Monthly</button>
+                <button type="button" class="pill-btn" onclick="togglePill(this, 'yearly', 'form_so_vs_sales')"><i class="fa fa-calendar"></i> Yearly</button>
+
+                <input name="filter_customer_id" class="filter_customer_id easyui-combobox" style="width:150px; height:32px;" prompt="customer">
+                <input name="filter_division" class="filter_division easyui-combobox" style="width:150px; height:32px;" prompt="Division">
+                
+            </div>
+        </form>
+
+        <a href="javascript:;" class="easyui-linkbutton" onclick="submitFilter('form_so_vs_sales')" data-options="iconCls:'icon-search'" style="height:32px; padding:0 15px;">Filter</a>
+        <a href="javascript:;" class="easyui-linkbutton" onclick="reload('form_so_vs_sales')" data-options="iconCls:'icon-reload'" style="height:32px; padding:0 15px;">Reload</a>
+    </div>
+
+    <div style="display: flex; gap: 15px; height: 550px; align-items: stretch;"> 
+        <div id="salesOrderSalesChartSection" class="chart-section" style="flex: 1; display: flex; flex-direction: column; overflow: hidden; border: 1px solid #ddd; background: white;">
+            <div class="chart-header" style="display: flex; justify-content: space-between; align-items: center;">
+                <span>
+                    SALES ORDER VS ACTUAL SALES IN AMOUNT (IDR)
+                </span>
+                
+                <div class="custom-tools" style="display: flex; gap: 15px;">
+                    <a href="javascript:void(0)" onclick="exportToExcel('salesOrderSalesChart')" title="Export Excel" style="color: white;">
+                        <i class="fa fa-file-excel"></i>
+                    </a>
+                    <a href="javascript:void(0)" onclick="printSpecificChart('salesOrderSalesChartSection')" title="Print Chart" style="color: white;">
+                        <i class="fa fa-print"></i>
+                    </a>
+                    <a href="javascript:void(0)" onclick="toggleFullScreen('salesOrderSalesChartSection')" title="Full Screen" style="color: white;">
+                        <i class="fa fa-expand"></i>
+                    </a>
+                </div>
+            </div>
+            <div style="padding: 10px; flex: 1; position: relative; min-height: 0;">
+                <div id="salesOrderSalesChart" style="height: 100%; width: 100%;"></div>
+            </div>
+        </div>
+
+        <div id="salesOrderSalesQtyChartSection" class="chart-section" style="flex: 1; display: flex; flex-direction: column; overflow: hidden; border: 1px solid #ddd;">
+            <div class="chart-header" style="display: flex; justify-content: space-between; align-items: center;">
+                <span>
+                    SALES ORDER VS ACTUAL SALES IN QTY
+                </span>
+
+                <div class="custom-tools" style="display: flex; gap: 15px;">
+                    <a href="javascript:void(0)" onclick="exportToExcel('salesOrderSalesQtyChart')" title="Export Excel" style="color: white;">
+                        <i class="fa fa-file-excel"></i>
+                    </a>
+                    <a href="javascript:void(0)" onclick="printSpecificChart('salesOrderSalesQtyChartSection')" title="Print Chart" style="color: white;">
+                        <i class="fa fa-print"></i>
+                    </a>
+                    <a href="javascript:void(0)" onclick="toggleFullScreen('salesOrderSalesQtyChartSection')" title="Full Screen" style="color: white;">
+                        <i class="fa fa-expand"></i>
+                    </a>
+                </div>
+                
+            </div>
+            <div style="padding: 10px; flex: 1; position: relative; min-height: 0;">
+                <div id="salesOrderSalesQtyChart" style="height: 100%; width: 100%;"></div>
+            </div>
+        </div>
+    </div>
+
 
 
     <div class="section-header">
         <i class="fa-solid fa-bar-chart"></i> <span>FORECAST VS SALES ORDER</span>
     </div>
+
+    <div class="filter-bar">
+        <form id="form_forecast_vs_so" method="POST">
+            <div class="pill-group">
+                <!-- <button type="button" class="pill-btn active" onclick="togglePill(this, 'all', 'form_forecast_vs_so')"><i class="fa fa-list"></i> All</button> -->
+                <!-- <button type="button" class="pill-btn" onclick="togglePill(this, 'daily', 'form_forecast_vs_so')"><i class="fa fa-calendar-day"></i> Daily</button> -->
+                <!-- <button type="button" class="pill-btn" onclick="togglePill(this, 'weekly', 'form_forecast_vs_so')"><i class="fa fa-calendar-week"></i> Weekly</button> -->
+                <button type="button" class="pill-btn" onclick="togglePill(this, 'monthly', 'form_forecast_vs_so')"><i class="fa fa-calendar"></i> Monthly</button>
+                <button type="button" class="pill-btn" onclick="togglePill(this, 'yearly', 'form_forecast_vs_so')"><i class="fa fa-calendar"></i> Yearly</button>
+
+                <input name="filter_customer_id" class="filter_customer_id easyui-combobox" style="width:150px; height:32px;" prompt="customer">
+                <input name="filter_division" class="filter_division easyui-combobox" style="width:150px; height:32px;" prompt="Division">
+                
+            </div>
+        </form>
+
+        <a href="javascript:;" class="easyui-linkbutton" onclick="submitFilter('form_forecast_vs_so')" data-options="iconCls:'icon-search'" style="height:32px; padding:0 15px;">Filter</a>
+        <a href="javascript:;" class="easyui-linkbutton" onclick="reload()" data-options="iconCls:'icon-reload'" style="height:32px; padding:0 15px;">Reload</a>
+    </div>
+
+    <div style="display: flex; gap: 15px; height: 550px; align-items: stretch;"> 
+        <div id="forecastSalesOrderChartSection" class="chart-section" style="flex: 1; display: flex; flex-direction: column; overflow: hidden; border: 1px solid #ddd; background: white;">
+            <div class="chart-header" style="display: flex; justify-content: space-between; align-items: center;">
+                <span>
+                    FORECAST VS SALES ORDER IN AMOUNT (IDR)
+                </span>
+                
+                <div class="custom-tools" style="display: flex; gap: 15px;">
+                    <a href="javascript:void(0)" onclick="exportToExcel('forecastSalesOrderChart')" title="Export Excel" style="color: white;">
+                        <i class="fa fa-file-excel"></i>
+                    </a>
+                    <a href="javascript:void(0)" onclick="printSpecificChart('forecastSalesOrderChartSection')" title="Print Chart" style="color: white;">
+                        <i class="fa fa-print"></i>
+                    </a>
+                    <a href="javascript:void(0)" onclick="toggleFullScreen('forecastSalesOrderChartSection')" title="Full Screen" style="color: white;">
+                        <i class="fa fa-expand"></i>
+                    </a>
+                </div>
+            </div>
+            <div style="padding: 10px; flex: 1; position: relative; min-height: 0;">
+                <div id="forecastSalesOrderChart" style="height: 100%; width: 100%;"></div>
+            </div>
+        </div>
+
+        <div id="forecastSalesOrderQtyChartSection" class="chart-section" style="flex: 1; display: flex; flex-direction: column; overflow: hidden; border: 1px solid #ddd;">
+            <div class="chart-header" style="display: flex; justify-content: space-between; align-items: center;">
+                <span>
+                    FORECAST VS SALES ORDER IN QTY
+                </span>
+
+                <div class="custom-tools" style="display: flex; gap: 15px;">
+                    <a href="javascript:void(0)" onclick="exportToExcel('forecastSalesOrderQtyChart')" title="Export Excel" style="color: white;">
+                        <i class="fa fa-file-excel"></i>
+                    </a>
+                    <a href="javascript:void(0)" onclick="printSpecificChart('forecastSalesOrderQtyChartSection')" title="Print Chart" style="color: white;">
+                        <i class="fa fa-print"></i>
+                    </a>
+                    <a href="javascript:void(0)" onclick="toggleFullScreen('forecastSalesOrderQtyChartSection')" title="Full Screen" style="color: white;">
+                        <i class="fa fa-expand"></i>
+                    </a>
+                </div>
+                
+            </div>
+            <div style="padding: 10px; flex: 1; position: relative; min-height: 0;">
+                <div id="forecastSalesOrderQtyChart" style="height: 100%; width: 100%;"></div>
+            </div>
+        </div>
+    </div>
+
 
 
     <div class="section-header">
@@ -411,7 +548,16 @@
 
 <script>
 function reload() {
+    $.messager.progress({
+        title: 'Please Wait',
+        msg: 'Refreshing dashboard data...',
+        text: 'Loading...',
+    });
+
+    // refresh halaman
+    setTimeout(function() {
     window.location.reload();
+    }, 100); 
 }
 
 function pdf() {
@@ -440,6 +586,23 @@ function myparser(s) {
         return new Date();
     }
 }
+
+function showLoader(selector) {
+    const $el = $(selector);
+    
+    $el.css('position', 'relative');
+    $el.append(`
+        <div class="custom-chart-loader" style="position:absolute;top:0;left:0;width:100%;height:100%;background:rgba(255,255,255,0.8);display:flex;justify-content:center;align-items:center;z-index:1000;flex-direction:column;">
+            <i class="fa fa-spinner fa-spin fa-2x" style="color:#2c3e50;margin-bottom:10px;"></i>
+            <span style="font-weight:bold;color:#2c3e50;">Loading Data...</span>
+        </div>
+    `);
+}
+
+function hideLoader(selector) {
+    $(selector).find('.custom-chart-loader').remove();
+}
+
 
 $(function() { 
     // show on load
@@ -718,28 +881,58 @@ function submitFilter(formId) {
 
     // --- Request Data ---
     if (formId === 'form_sales_trends') {
-        // Hanya update grafik Sales Trends & Customer
+        // Panggil loader sebelum request
+        const salesSelector = '#salesChartSection';
+        const customerSelector = '#customerChartSection';
+        showLoader(salesSelector);
+        showLoader(customerSelector);
+
         $.post('<?= base_url("sales/sales_dashboard/get_dashboard_data") ?>', payload, function(res) {
+            try {
             const data = JSON.parse(res);
 
+            // Update Charts
             updateTrendChart(data.trend_labels, data.trend_values, data.period, data.title, data.avg_values);
             updateCustomerChart(data.customer_labels, data.customer_values, data.period, data.title);
 
-            // Conslusion And Impact
+            // Conclusion And Impact
             const conclusion = (data && data.conclusion) ? data.conclusion : 'No Data';
             const impact     = (data && data.impact) ? data.impact : 'No Data';
 
             $('#conclusion').html(conclusion);
             $('#impact').html(impact);
+
+            } catch (e) {
+                console.error("Parsing error:", e);
+            } finally {
+                // Hapus loader 
+                hideLoader(salesSelector);
+                hideLoader(customerSelector);
+            }
         });
 
     } else if (formId === 'form_forecast_sales') {
+        // Panggil loader sebelum request
+        const forecastSelector = '#forecastSalesChartSection';
+        const forecastQtySelector = '#forecastSalesQtyChartSection';
+        showLoader(forecastSelector);
+        showLoader(forecastQtySelector);
+
         // Hanya update grafik Forecast VS Sales
         $.post('<?= base_url("sales/sales_dashboard/get_forecast_vs_sales_data") ?>', payload, function(res) {
+            try {
             const data = JSON.parse(res);
             
             createForecastChart('forecastSalesChart', data.period, data.title, data.labels, data.amount_title, data.forecast_amount_values, data.sales_amount_values);
             createForecastChart('forecastSalesQtyChart', data.period, data.title, data.labels, data.qty_title, data.forecast_qty_values, data.sales_qty_values);
+            
+            } catch (e) {
+                console.error("Parsing error:", e);
+            } finally {
+                // Hapus loader 
+                hideLoader(forecastSelector);
+                hideLoader(forecastQtySelector);
+            }
         });
     } 
 
@@ -883,7 +1076,7 @@ function updateCustomerChart(labels, values, period, title) {
 
     const options = {
         series: [{
-            name: 'Purchase per Customer',
+            name: 'Sales per Customer',
             data: safeValues
         }],
         chart: {
