@@ -312,6 +312,7 @@
 
                 <input name="filter_customer_id" class="filter_customer_id easyui-combobox" style="width:150px; height:32px;" prompt="customer">
                 <input name="filter_division" class="filter_division easyui-combobox" style="width:150px; height:32px;" prompt="Division">
+                <input name="filter_item_fg_id" class="filter_item_fg_id easyui-combobox" style="width:150px; height:32px;" prompt="Product No">
                 
             </div>
         </form>
@@ -635,6 +636,34 @@ $(function() {
                 $(e.data.target).combobox('clear').combobox('textbox').focus();
             }
         }]
+    });
+
+    // dropdown item FG ID
+    $('.filter_item_fg_id').combogrid({
+        url: '<?= base_url('master/item_fg/reads'); ?>',
+        panelWidth: 400,
+        idField: 'id',
+        textField: 'number',
+        mode: 'remote',
+        fitColumns: true,
+        prompt: "<Product No> ALL",
+        columns: [
+            [{
+                field: 'number',
+                title: 'Product No',
+                width: 150
+            }, {
+                field: 'name',
+                title: 'Product Name',
+                width: 250
+            }, ]
+        ],
+        icons: [{
+            iconCls: 'icon-clear',
+            handler: function(e) {
+                $(e.data.target).combogrid('clear').combogrid('textbox').focus();
+            }
+        }],
     });
 });
 
