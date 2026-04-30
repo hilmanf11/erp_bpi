@@ -328,7 +328,7 @@ class Sales_dashboard extends CI_Controller
         $this->db->select("s.price, s.currency");
         $this->db->from("delivery_notes dn");
         $this->db->join("item_fg a", "dn.item_fg_id = a.id");
-        $this->db->join("standard_price_fg s", "s.item_fg_id = a.id");
+        $this->db->join("customer_items s", "s.item_fg_id = a.id");
         if($filter_customer_id) $this->db->where("dn.customer_id", $filter_customer_id);
         if($filter_division) $this->db->where("a.division_id", $filter_division);
         $this->db->where("delivery_note_date >=", $filter_from);
@@ -365,7 +365,7 @@ class Sales_dashboard extends CI_Controller
         $this->db->select("s.price, s.currency");
         $this->db->from("forecasts f");
         $this->db->join("item_fg a", "f.item_fg_id = a.id");
-        $this->db->join("standard_price_fg s", "s.item_fg_id = a.id");
+        $this->db->join("customer_items s", "s.item_fg_id = a.id");
         $this->db->where("f.p_year >=", $start_dt->format('Y'));
         $this->db->where("f.p_year <=", $end_dt->format('Y'));
         if($filter_customer_id) $this->db->where("f.customer_id", $filter_customer_id);
@@ -475,7 +475,7 @@ class Sales_dashboard extends CI_Controller
                     s.currency as forecast_currency
                 FROM item_fg a
                 LEFT JOIN forecasts f ON a.id = f.item_fg_id 
-                LEFT JOIN standard_price_fg s ON s.item_fg_id = f.item_fg_id
+                LEFT JOIN customer_items s ON s.item_fg_id = f.item_fg_id
                 LEFT JOIN (
                     SELECT 
                         a.item_fg_id, a.customer_id, a.delivery_note_date, a.delivery_note_no,
