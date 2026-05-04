@@ -979,8 +979,8 @@ function submitFilter(formId) {
             try {
             const data = JSON.parse(res);
             
-            createForecastChart('salesOrderSalesChart', data.period, data.title, data.labels, data.amount_title, data.forecast_amount_values, data.sales_amount_values);
-            createForecastChart('salesOrderSalesQtyChart', data.period, data.title, data.labels, data.qty_title, data.forecast_qty_values, data.sales_qty_values);
+            createForecastChart('salesOrderSalesChart', data.period, data.title, data.labels, data.amount_title, data.order_amount_values, data.sales_amount_values);
+            createForecastChart('salesOrderSalesQtyChart', data.period, data.title, data.labels, data.qty_title, data.order_qty_values, data.sales_qty_values);
             
             } catch (e) {
                 console.error("Parsing error:", e);
@@ -1239,10 +1239,25 @@ function updateCustomerChart(labels, values, period, title) {
 
 // Global Chart Forecast VS Sales
 function createForecastChart(containerId, period, titleGlobal, labels, titleChart, dataForecast, dataActual) {
+    // Tentukan nama series berdasarkan titleGlobal
+    let nameForecast = 'Forecast';
+    let nameActual = 'Actual';
+
+    if (titleGlobal.includes("Sales Order VS Actual Sales")) {
+        nameForecast = 'Sales Order';
+        nameActual = 'Actual Sales';
+    }
+
     const options = {
         series: [
-            { name: 'Forecast', data: dataForecast },
-            { name: 'Actual Sales', data: dataActual }
+            { 
+                name: nameForecast, 
+                data: dataForecast 
+            },
+            { 
+                name: nameActual, 
+                data: dataActual 
+            },
         ],
         chart: {
             id: containerId,
