@@ -320,60 +320,39 @@ class Sales_dashboard extends CI_Controller
         }
 
         $query_main = "SELECT 
-                fs.customer_id, 
-                fs.p_month, 
-                fs.p_year,
-                SUM(fs.last_qty_forecast) as total_forecast, 
-                SUM(fs.last_amount_forecast_idr) as total_amount_forecast, 
-                SUM(fs.total_amount_delivery_idr) as total_amount_delivery,
-                SUM(fs.total_qty_delivery_notes) as total_delivery
+                fs.p_month, fs.p_year,
+                SUM(fs.qty_forecast) as total_forecast, 
+                SUM(fs.amount_forecast_idr) as total_amount_forecast, 
+                SUM(fs.qty_dn) as total_delivery,
+                SUM(fs.amount_dn_idr) as total_amount_delivery
             FROM (
                 SELECT 
-                    f.item_fg_id,
-                    f.customer_id, 
-                    f.p_month, 
-                    f.p_year,
-                    f.month_1 as last_qty_forecast,
-                    -- Forecast Amount IDR (Forecast Qty * Price * Rate Master)
-                    (f.month_1 * c.price * COALESCE(rate_f.middle, 1)) as last_amount_forecast_idr, 
-                    COALESCE(dn.total_qty, 0) AS total_qty_delivery_notes,
-                    -- Delivery Amount IDR (Diambil dari subquery yang sudah dikali rate per transaksi)
-                    COALESCE(dn.total_amount_idr, 0) AS total_amount_delivery_idr
+                    f.p_month, f.p_year,
+                    f.month_1 as qty_forecast,
+                    (f.month_1 * c.price * COALESCE(rf.middle, 1)) as amount_forecast_idr,
+                    COALESCE(dn.total_qty, 0) AS qty_dn,
+                    COALESCE(dn.total_amount_idr, 0) AS amount_dn_idr
                 FROM forecasts f
                 INNER JOIN item_fg a ON a.id = f.item_fg_id 
                 LEFT JOIN customer_items c ON c.item_fg_id = a.id AND c.customer_id = f.customer_id 
-                -- Rate untuk Forecast (berdasarkan awal bulan p_month & p_year)
-                LEFT JOIN standard_exchange_rates rate_f ON 
-                    rate_f.currency_from = c.currency 
-                    AND rate_f.currency_to = 'IDR'
-                    AND CONCAT(f.p_year, '-', f.p_month, '-01') BETWEEN rate_f.start_date AND rate_f.end_date
+                LEFT JOIN standard_exchange_rates rf ON rf.currency_from = c.currency 
+                    AND rf.currency_to = 'IDR'
+                    AND CONCAT(f.p_year, '-', f.p_month, '-01') BETWEEN rf.start_date AND rf.end_date
                 LEFT JOIN (
-                    -- Subquery Delivery Notes dengan perhitungan Rate per tanggal pengiriman
-                    SELECT 
-                        dx.item_fg_id, 
-                        dx.customer_id, 
-                        $dn_date_filter as periods, 
+                    SELECT dx.item_fg_id, dx.customer_id, $dn_date_filter as periods, 
                         SUM(dx.qty) AS total_qty,
                         SUM(dx.qty * cx.price * COALESCE(gx.middle, 1)) AS total_amount_idr
                     FROM delivery_notes dx
                     LEFT JOIN customer_items cx ON cx.item_fg_id = dx.item_fg_id AND cx.customer_id = dx.customer_id
-                    LEFT JOIN standard_exchange_rates gx ON 
-                        dx.delivery_note_date BETWEEN gx.start_date AND gx.end_date 
-                        AND gx.currency_from = cx.currency
-                        AND gx.currency_to = 'IDR'
+                    LEFT JOIN standard_exchange_rates gx ON dx.delivery_note_date BETWEEN gx.start_date AND gx.end_date 
+                        AND gx.currency_from = cx.currency AND gx.currency_to = 'IDR'
                     WHERE dx.trans_type = 'SALES'
                     GROUP BY dx.item_fg_id, dx.customer_id, periods
                 ) dn ON a.id = dn.item_fg_id AND f.customer_id = dn.customer_id 
-                AND (CASE WHEN '$filter_period_type' = 'monthly' 
-                        THEN CONCAT(f.p_year, '-', f.p_month) 
-                        ELSE f.p_year END) = dn.periods
-                WHERE 1=1 
-                $where_customer 
-                $where_division 
-                $time_filter 
-                $where_item_fg
+                AND (CASE WHEN '$filter_period_type' = 'monthly' THEN CONCAT(f.p_year, '-', f.p_month) ELSE f.p_year END) = dn.periods
+                WHERE 1=1 $where_customer $where_division $time_filter $where_item_fg
             ) fs
-            GROUP BY fs.customer_id, fs.p_month, fs.p_year";
+            GROUP BY fs.p_month, fs.p_year";
 
         $results = $this->db->query($query_main)->result();
 
@@ -485,52 +464,38 @@ class Sales_dashboard extends CI_Controller
         }
 
         $query_main = "SELECT 
-                fs.customer_id, 
-                fs.p_month, 
-                fs.p_year,
-                SUM(fs.last_qty_forecast) as total_forecast, 
-                SUM(fs.last_amount_forecast) as total_amount_forecast, 
-                SUM(fs.total_amount_so) as total_amount_sales,
-                SUM(fs.total_qty_so) as total_sales
+                fs.p_month, fs.p_year,
+                SUM(fs.qty_forecast) as total_forecast, 
+                SUM(fs.amount_forecast_idr) as total_amount_forecast, 
+                SUM(fs.qty_so) as total_sales,
+                SUM(fs.amount_so_idr) as total_amount_sales
             FROM (
                 SELECT 
-                    f.item_fg_id,
-                    f.customer_id, 
-                    f.p_month, 
-                    f.p_year,
-                    f.month_1 as last_qty_forecast,
-                    -- Forecast Amount IDR (Forecast * Price * Rate)
-                    (f.month_1 * c.price * COALESCE(rate_master.middle, 1)) as last_amount_forecast,
-                    -- Sales Order Amount IDR (Qty SO * Price * Rate)
-                    (COALESCE(s.total_qty, 0) * c.price * COALESCE(rate_master.middle, 1)) as total_amount_so,
-                    COALESCE(s.total_qty, 0) AS total_qty_so
+                    f.p_month, f.p_year,
+                    f.month_1 as qty_forecast,
+                    (f.month_1 * c.price * COALESCE(rf.middle, 1)) as amount_forecast_idr,
+                    COALESCE(s.total_qty, 0) as qty_so,
+                    COALESCE(s.total_amount_idr, 0) as amount_so_idr
                 FROM forecasts f
                 INNER JOIN item_fg a ON a.id = f.item_fg_id 
                 LEFT JOIN customer_items c ON c.item_fg_id = a.id AND c.customer_id = f.customer_id 
-                -- Join ke rate berdasarkan mata uang di master customer item dan periode forecast
-                LEFT JOIN standard_exchange_rates rate_master ON 
-                    rate_master.currency_from = c.currency 
-                    AND rate_master.currency_to = 'IDR'
-                    AND CONCAT(f.p_year, '-', f.p_month, '-01') BETWEEN rate_master.start_date AND rate_master.end_date
+                LEFT JOIN standard_exchange_rates rf ON rf.currency_from = c.currency 
+                    AND rf.currency_to = 'IDR'
+                    AND CONCAT(f.p_year, '-', f.p_month, '-01') BETWEEN rf.start_date AND rf.end_date
                 LEFT JOIN (
-                    SELECT 
-                        item_fg_id, 
-                        customer_id, 
-                        $date_filter as periods, 
-                        SUM(qty) AS total_qty
-                    FROM sales_orders
-                    GROUP BY item_fg_id, customer_id, periods
+                    SELECT sx.item_fg_id, sx.customer_id, $date_filter as periods, 
+                        SUM(sx.qty) AS total_qty,
+                        SUM(sx.qty * cx.price * COALESCE(gx.middle, 1)) AS total_amount_idr
+                    FROM sales_orders sx
+                    LEFT JOIN customer_items cx ON cx.item_fg_id = sx.item_fg_id AND cx.customer_id = sx.customer_id
+                    LEFT JOIN standard_exchange_rates gx ON sx.sales_order_date BETWEEN gx.start_date AND gx.end_date 
+                        AND gx.currency_from = cx.currency AND gx.currency_to = 'IDR'
+                    GROUP BY sx.item_fg_id, sx.customer_id, periods
                 ) s ON a.id = s.item_fg_id AND f.customer_id = s.customer_id 
-                AND (CASE WHEN '$filter_period_type' = 'monthly' 
-                            THEN CONCAT(f.p_year, '-', f.p_month) 
-                            ELSE f.p_year END) = s.periods
-                WHERE 1=1 
-                $where_customer 
-                $where_division 
-                $time_filter 
-                $where_item_fg 
+                AND (CASE WHEN '$filter_period_type' = 'monthly' THEN CONCAT(f.p_year, '-', f.p_month) ELSE f.p_year END) = s.periods
+                WHERE 1=1 $where_customer $where_division $time_filter $where_item_fg
             ) fs
-            GROUP BY fs.customer_id, fs.p_month, fs.p_year";
+            GROUP BY fs.p_month, fs.p_year";
 
         $results = $this->db->query($query_main)->result();
 
@@ -643,74 +608,49 @@ class Sales_dashboard extends CI_Controller
         }
 
         $query_main = "SELECT 
-                fs.customer_id, 
-                fs.p_month, 
-                fs.p_year,
-                SUM(fs.total_delivery_qty) as total_delivery,
-                SUM(fs.total_delivery_amount_idr) as total_amount_delivery,
-                SUM(fs.total_forecast_qty) as total_forecast, 
-                SUM(fs.total_forecast_amount_idr) as total_amount_forecast, 
-                SUM(fs.total_so_amount_idr) as total_amount_sales,
-                SUM(fs.total_so_qty) as total_sales
+                fs.p_month, fs.p_year,
+                SUM(fs.qty_so) as total_sales,
+                SUM(fs.amount_so_idr) as total_amount_sales,
+                SUM(fs.qty_dn) as total_delivery,
+                SUM(fs.amount_dn_idr) as total_amount_delivery
             FROM (
                 SELECT 
-                    f.item_fg_id,
-                    f.customer_id, 
-                    f.p_month, 
-                    f.p_year,
-                    -- Forecast
-                    f.month_1 as total_forecast_qty,
-                    (f.month_1 * c.price * COALESCE(rate_f.middle, 1)) as total_forecast_amount_idr,
-                    -- Sales Order (SO)
-                    COALESCE(s.total_qty, 0) as total_so_qty,
-                    COALESCE(s.total_amount_idr, 0) as total_so_amount_idr,
-                    -- Delivery Notes (DN)
-                    COALESCE(dn.total_qty, 0) as total_delivery_qty,
-                    COALESCE(dn.total_amount_idr, 0) as total_delivery_amount_idr
+                    f.p_month, f.p_year,
+                    COALESCE(s.total_qty, 0) as qty_so,
+                    COALESCE(s.total_amount_idr, 0) as amount_so_idr,
+                    COALESCE(dn.total_qty, 0) as qty_dn,
+                    COALESCE(dn.total_amount_idr, 0) as amount_dn_idr
                 FROM forecasts f
                 INNER JOIN item_fg a ON a.id = f.item_fg_id 
                 LEFT JOIN customer_items c ON c.item_fg_id = a.id AND c.customer_id = f.customer_id 
-                -- Rate untuk Forecast (Awal Bulan)
-                LEFT JOIN standard_exchange_rates rate_f ON 
-                    rate_f.currency_from = c.currency 
-                    AND rate_f.currency_to = 'IDR'
-                    AND CONCAT(f.p_year, '-', f.p_month, '-01') BETWEEN rate_f.start_date AND rate_f.end_date
-                -- Subquery SO
+                /* Join SO */
                 LEFT JOIN (
-                    SELECT 
-                        sx.item_fg_id, sx.customer_id, $date_filter as periods, 
+                    SELECT sx.item_fg_id, sx.customer_id, $date_filter as periods, 
                         SUM(sx.qty) AS total_qty,
                         SUM(sx.qty * cx.price * COALESCE(gx.middle, 1)) AS total_amount_idr
                     FROM sales_orders sx
                     LEFT JOIN customer_items cx ON cx.item_fg_id = sx.item_fg_id AND cx.customer_id = sx.customer_id
-                    LEFT JOIN standard_exchange_rates gx ON 
-                        sx.sales_order_date BETWEEN gx.start_date AND gx.end_date 
+                    LEFT JOIN standard_exchange_rates gx ON sx.sales_order_date BETWEEN gx.start_date AND gx.end_date 
                         AND gx.currency_from = cx.currency AND gx.currency_to = 'IDR'
                     GROUP BY sx.item_fg_id, sx.customer_id, periods
                 ) s ON a.id = s.item_fg_id AND f.customer_id = s.customer_id 
                 AND (CASE WHEN '$filter_period_type' = 'monthly' THEN CONCAT(f.p_year, '-', f.p_month) ELSE f.p_year END) = s.periods
-                -- Subquery DN
+                /* Join DN */
                 LEFT JOIN (
-                    SELECT 
-                        dx.item_fg_id, dx.customer_id, $dn_date_filter as periods, 
+                    SELECT dx.item_fg_id, dx.customer_id, $dn_date_filter as periods, 
                         SUM(dx.qty) AS total_qty,
                         SUM(dx.qty * cx.price * COALESCE(gx.middle, 1)) AS total_amount_idr
                     FROM delivery_notes dx
                     LEFT JOIN customer_items cx ON cx.item_fg_id = dx.item_fg_id AND cx.customer_id = dx.customer_id
-                    LEFT JOIN standard_exchange_rates gx ON 
-                        dx.delivery_note_date BETWEEN gx.start_date AND gx.end_date 
+                    LEFT JOIN standard_exchange_rates gx ON dx.delivery_note_date BETWEEN gx.start_date AND gx.end_date 
                         AND gx.currency_from = cx.currency AND gx.currency_to = 'IDR'
                     WHERE dx.trans_type = 'SALES'
                     GROUP BY dx.item_fg_id, dx.customer_id, periods
                 ) dn ON a.id = dn.item_fg_id AND f.customer_id = dn.customer_id 
                 AND (CASE WHEN '$filter_period_type' = 'monthly' THEN CONCAT(f.p_year, '-', f.p_month) ELSE f.p_year END) = dn.periods
-                WHERE 1=1 
-                $where_customer 
-                $where_division 
-                $time_filter 
-                $where_item_fg 
+                WHERE 1=1 $where_customer $where_division $time_filter $where_item_fg
             ) fs
-            GROUP BY fs.customer_id, fs.p_month, fs.p_year";
+            GROUP BY fs.p_month, fs.p_year";
 
         $results = $this->db->query($query_main)->result();
 

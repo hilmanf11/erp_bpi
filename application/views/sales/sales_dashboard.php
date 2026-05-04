@@ -1241,11 +1241,25 @@ function updateCustomerChart(labels, values, period, title) {
 function createForecastChart(containerId, period, titleGlobal, labels, titleChart, dataForecast, dataActual) {
     // Tentukan nama series berdasarkan titleGlobal
     let nameForecast = 'Forecast';
-    let nameActual = 'Actual';
+    let nameActual = 'Actual Sales';
+
+    // Default Colors
+    let colorForecast = '#244b82';
+    let colorActual = '#81cc68';
 
     if (titleGlobal.includes("Sales Order VS Actual Sales")) {
         nameForecast = 'Sales Order';
         nameActual = 'Actual Sales';
+        
+        colorForecast = '#36a2eb';
+        colorActual = '#81cc68';
+    } 
+    else if (titleGlobal.includes("Forecast vs Sales Order")) {
+        nameForecast = 'Forecast';
+        nameActual = 'Sales Order';
+        
+        colorForecast = '#244b82';
+        colorActual = '#36a2eb';
     }
 
     const options = {
@@ -1278,7 +1292,7 @@ function createForecastChart(containerId, period, titleGlobal, labels, titleChar
             },
             parentHeightOffset: 0
         },
-        colors: ['#244b82', '#81cc68'], // Biru Navy & Merah Orange
+        colors: [colorForecast, colorActual],
         plotOptions: {
             bar: {
                 horizontal: false,
