@@ -621,6 +621,24 @@ function myparser(s) {
     }
 }
 
+function showLoader(selector) {
+    const $el = $(selector);
+    if ($el.find('.custom-chart-loader').length > 0) return; // Cegah duplikat
+
+    $el.css('position', 'relative');
+    $el.append(`
+        <div class="custom-chart-loader" style="position:absolute;top:0;left:0;width:100%;height:100%;background:rgba(255,255,255,0.8);display:flex;justify-content:center;align-items:center;z-index:1000;flex-direction:column;">
+            <i class="fa fa-spinner fa-spin fa-2x" style="color:#2c3e50;margin-bottom:10px;"></i>
+            <span style="font-weight:bold;color:#2c3e50;">Loading Data...</span>
+        </div>
+    `);
+}
+
+function hideLoader(selector) {
+    $(selector).find('.custom-chart-loader').remove();
+}
+
+
 $(function() { 
     // show on load
     submitFilter('form_purchase_trends');
@@ -1254,53 +1272,99 @@ function submitFilter(formId) {
 
     // --- Pemisahan Request ---
     if (formId === 'form_purchase_trends') {
+        // Show loader
+        const trendSelector = '#purchaseChartSection';
+        const supplierSelector = '#supplierChartSection';
+        showLoader(trendSelector);
+        showLoader(supplierSelector);
+
         // Hanya update grafik Purchase Trends & Supplier
         $.post('<?= base_url("purchase/purchase_dashboard/get_dashboard_data") ?>', payload, function(res) {
+            try {
             const data = JSON.parse(res);
 
+            // Update Grafik
             updateTrendChart(data.trend_labels, data.trend_values, data.period, data.title, data.avg_values);
             updateSupplierChart(data.supplier_labels, data.supplier_values, data.period, data.title);
 
-            // Conslusion And Impact
+            // Conclusion And Impact
             const conclusion = (data && data.conclusion) ? data.conclusion : 'No Data';
             const impact     = (data && data.impact) ? data.impact : 'No Data';
 
             $('#conclusion').html(conclusion);
             $('#impact').html(impact);
+
+            } catch (e) {
+                console.error("Parsing error pada Purchase Trends:", e);
+                $('#conclusion').html('Error loading data');
+                $('#impact').html('Error loading data');
+            }
+
+        }).always(function() {
+            // Hide loader
+            hideLoader(trendSelector);
+            hideLoader(supplierSelector);
         });
 
     } else if (formId === 'form_plan_vs_actual') {
+        // Show Loader
+        const planActualSelector = '#planActualChartSection';
+        showLoader(planActualSelector);
+
         // Hanya update grafik Plan VS Actual
         $.post('<?= base_url("purchase/purchase_dashboard/get_plan_actual_data") ?>', payload, function(res) {
+
+            try {
             const data = JSON.parse(res);
             updatePlanActualChart(data.labels, data.plan_values, data.period, data.title, data.actual_values);
+            } catch (e) {
+                console.error("Parsing error pada Plan VS Actual:", e);
+            }
+
+        }).always(function() {
+            // Hide loader
+            hideLoader(planActualSelector);
         });
 
     } else if (formId === 'form_purchase_by_family') {
-        // Hanya update grafik Purchase by Product Family
-        $.post('<?= base_url("purchase/purchase_dashboard/get_purchase_by_family_data") ?>', payload, function(res) {
-            const data = JSON.parse(res);
-            
-            const families = {
-                'childPartChart': 'child_part',
-                'virginChart': 'virgin',
-                'consumableChart': 'consumable',
-                'masterBatchChart': 'master_batch',
-                'stampingChart': 'stamping',
-                'subcontChart': 'subcont'
-            };
+        const families = {
+            'childPartChart': 'child_part',
+            'virginChart': 'virgin',
+            'consumableChart': 'consumable',
+            'masterBatchChart': 'master_batch',
+            'stampingChart': 'stamping',
+            'subcontChart': 'subcont'
+        };
 
+        // Show loader di setiap card/section chart
+        Object.keys(families).forEach(id => {
+            // selector section chart adalah id chart + 'Section' (misal: #childPartChartSection)
+            showLoader('#' + id + 'Section'); 
+        });
+
+        $.post('<?= base_url("purchase/purchase_dashboard/get_purchase_by_family_data") ?>', payload, function(res) {
+            try {
+                const data = JSON.parse(res);
+                
+                Object.keys(families).forEach(id => {
+                    const key = families[id];
+                    createFamilyApexChart(
+                        id, 
+                        data.period, 
+                        data.title, 
+                        data.labels, 
+                        data[key + '_title'], 
+                        data[key + '_plan'], 
+                        data[key + '_actual']
+                    );
+                });
+            } catch (e) {
+                console.error("Error parsing purchase data:", e);
+            }
+        }).always(function() {
+            // Hide loader
             Object.keys(families).forEach(id => {
-                const key = families[id];
-                createFamilyApexChart(
-                    id, 
-                    data.period, 
-                    data.title, 
-                    data.labels, 
-                    data[key + '_title'], 
-                    data[key + '_plan'], 
-                    data[key + '_actual']
-                );
+                hideLoader('#' + id + 'Section');
             });
         });
     }
