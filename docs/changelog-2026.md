@@ -603,3 +603,10 @@ Change Sunday can be edit ([a91b0388](https://github.com/hilmanf11/erp_bpi/commi
 
 ### [2026-04-29]
 - **Rizki Puji**: Fixing: export and options chart on Purchase by Product Family Dashboard Purchase ([ff8a09df](https://github.com/hilmanf11/erp_bpi/commit/ff8a09df754fc96822386a541d30ddee7ee74421))
+
+## May 2026
+
+### [2026-05-06]
+- **kurniawan**: Update PR
+
+Mrp to PR ([1b230172](https://github.com/hilmanf11/erp_bpi/commit/1b230172a94dc447ddba4c1fc12693c9e7ce85e9))
