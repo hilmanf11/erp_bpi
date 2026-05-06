@@ -610,3 +610,6 @@ Change Sunday can be edit ([a91b0388](https://github.com/hilmanf11/erp_bpi/commi
 - **kurniawan**: Update PR
 
 Mrp to PR ([1b230172](https://github.com/hilmanf11/erp_bpi/commit/1b230172a94dc447ddba4c1fc12693c9e7ce85e9))
+
+### [2026-05-06]
+- **kurniawan**: Merge branch 'main' of https://github.com/hilmanf11/erp_bpi ([116cb847](https://github.com/hilmanf11/erp_bpi/commit/116cb847bd28256813abda84656f2519e1953c3a))
