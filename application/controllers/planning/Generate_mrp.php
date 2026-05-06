@@ -58,7 +58,7 @@ class Generate_mrp extends CI_Controller
 
         //Select Query
         $this->db->select('revision');
-        $this->db->from('generate_mrp');
+        $this->db->from('generate_mrp_finals');
         $this->db->where('p_month', $filter_month);
         $this->db->where('p_year', $filter_year);
         $this->db->group_by('revision');
@@ -328,7 +328,7 @@ class Generate_mrp extends CI_Controller
             $filter_trans_date = $filter_year . "-" . $filter_month. "-01";
 
             $this->db->select('max(revision) as revision');
-            $this->db->from('generate_mrp');
+            $this->db->from('generate_mrp_finals');
             $this->db->where('p_month', $filter_month);
             $this->db->where('p_year', $filter_year);
             $this->db->like('revision', $filter_revision);
@@ -422,7 +422,7 @@ class Generate_mrp extends CI_Controller
             $cutoffDate = date("j", strtotime($filter_cutoff));
 
             $this->db->select('max(revision) as revision');
-            $this->db->from('generate_mrp');
+            $this->db->from('generate_mrp_finals');
             $this->db->where('p_month', $filter_month);
             $this->db->where('p_year', $filter_year);
             $this->db->like('revision', $revision);
@@ -907,7 +907,7 @@ class Generate_mrp extends CI_Controller
             $filter_part_no = base64_decode($this->input->get('filter_part_no'));
 
             $this->db->select('max(revision) as revision');
-            $this->db->from('generate_mrp');
+            $this->db->from('generate_mrp_finals');
             $this->db->where('p_month', $filter_month);
             $this->db->where('p_year', $filter_year);
             $this->db->like('revision', $revision);
@@ -1210,8 +1210,9 @@ class Generate_mrp extends CI_Controller
             $this->db->join('item_rm b', 'a.item_rm_id = b.id');
             $this->db->join('item_familys c', 'b.item_family_id = c.id');
             $this->db->join('generate_mrp_abcclass d', 'a.item_rm_id = d.item_rm_id and a.p_month = d.p_month and a.p_year = d.p_year and a.revision = d.revision', 'left');
-            $this->db->join('suppliers e', 'a.supplier_id = e.id');
-            $this->db->join('supplier_items f', 'a.supplier_id = f.supplier_id and a.item_rm_id = f.item_rm_id');
+            $this->db->join('suppliers e', 'a.supplier_id = e.id','left');
+            $this->db->join('supplier_items f', 'a.supplier_id = f.supplier_id and a.item_rm_id = f.item_rm_id','left');
+            $this->db->join('purchase_orders po', 'a.request_no = po.request_no and a.item_rm_id = po.item_rm_id', 'left');
             // $this->db->where('a.purchase_order >', 0);
             if($approved_to != ""){
                 $this->db->where('a.p_month', $filter_month);
@@ -1303,6 +1304,9 @@ class Generate_mrp extends CI_Controller
                         <th rowspan="2" style="text-align:center;">PLAN<br>ORDER</th>
                         <th rowspan="2" style="text-align:center;">FIX<br>ORDER</th>
                         <th rowspan="2" style="text-align:center;">STATUS<br>ORDER</th>
+                        <th rowspan="2" style="text-align:center;">STATUS<br>APPROVE</th>
+                        <th rowspan="2" style="text-align:center;">PR</th>
+                        <th rowspan="2" style="text-align:center;">PO</th>
                     </tr>
                     <tr>
                         <th style="text-align:center;">WHS</th>
@@ -1357,6 +1361,22 @@ class Generate_mrp extends CI_Controller
                             $styleApp = "background:orange; color:white;";
                         }
 
+                        if(empty($record['request_no'])) { 
+                            $pr_status = "OPEN"; 
+                            $style_pr = "background:red; color:white;"; 
+                        } else { 
+                            $pr_status = "CREATED"; 
+                            $style_pr = "background:green; color:white;"; 
+                        }
+
+                        if(empty($record['po_id'])) { 
+                            $po_status = "OPEN"; 
+                            $style_po = "background:red; color:white;"; 
+                        } else { 
+                            $po_status = "CREATED"; 
+                            $style_po = "background:green; color:white;"; 
+                        }
+
                         $html .= "  <tr>
                                         <td>".$no."</td>
                                         <td style='mso-number-format:\@;'>".trim($record['item_rm_number'])."</td>
@@ -1395,6 +1415,9 @@ class Generate_mrp extends CI_Controller
                                         <td style='text-align:right;'>".round($record['total_need'])."</td>
                                         <td style='text-align:right;'>".round($record['purchase_order'])."</td>
                                         <td style='text-align:right;".$style_7."'>".$status."</td>
+                                        <td style='text-align:right;".$styleApp."'>".$approved."</td>
+                                        <td style='text-align:right;".$style_pr."'>".$pr_status."</td>
+                                        <td style='text-align:right;".$style_po."'>".$po_status."</td>
                                     </tr>";
                         $no++;
                     }
