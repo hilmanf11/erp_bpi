@@ -53,6 +53,7 @@
             <th rowspan="2" data-options="field:'min',width:50,align:'center'">Min</th>
             <th rowspan="2" data-options="field:'max',width:50,align:'center'">Max</th>
             <th rowspan="2" data-options="field:'attachment',width:100,halign:'center',formatter:cellbutton">Attachment</th>
+            <th rowspan="2" data-options="field:'remarks',width:80,align:'center'">Remarks</th>
             <th rowspan="2" data-options="field:'logo',width:100,align:'center', styler:cellStyler, formatter:cellFormatterLogo">Logo</th>
             <th rowspan="2" data-options="field:'status',width:100,align:'center', styler:cellStyler, formatter:cellFormatter">Status</th>
             <th rowspan="2" data-options="field:'approved_to',width:100,halign:'center', styler:styleApproved, formatter:formatApproved">Approved To</th>
@@ -182,8 +183,6 @@
                         <option value="NO">NO</option>
                     </select>
                 </div>
-            </div>
-            <div style="float:left; width:33%;">
                 <div class="fitem">
                     <span style="width:35%; display:inline-block;">Subcont Type</span>
                     <select style="width:60%;" name="subcont_type" id="subcont_type" panelHeight="auto" class="easyui-combobox">
@@ -191,6 +190,8 @@
                         <option value="Finished Good">Finished Good</option>
                     </select>
                 </div>
+            </div>
+            <div style="float:left; width:33%;">
                 <div class="fitem">
                     <span style="width:35%; display:inline-block;">MPQ</span>
                     <input style="width:60%;" name="mpq" id="mpq" class="easyui-numberbox">
@@ -235,6 +236,14 @@
                         <option value="0">Active</option>
                         <option value="1">Not Active</option>
                     </select>
+                </div>
+                <div class="fitem">
+                    <span style="width:35%; display:inline-block;">MIN</span>
+                    <input style="width:60%;" name="min" id="min" class="easyui-numberbox">
+                </div>
+                <div class="fitem">
+                    <span style="width:35%; display:inline-block;">MAX</span>
+                    <input style="width:60%;" name="max" id="max" class="easyui-numberbox">
                 </div>
             </div>
         </fieldset>

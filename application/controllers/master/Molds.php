@@ -42,7 +42,6 @@ class Molds extends CI_Controller
         echo json_encode($send);
     }
     
-    
     //GET DATATABLES
     public function datatables()
     {
@@ -151,8 +150,9 @@ class Molds extends CI_Controller
                 'shoot_standard' => $data->val($i, 10),
                 'shoot_actual' => $data->val($i, 11),
                 'mold_type' => $data->val($i, 12),
-                'remark' => $data->val($i, 13),
-                'status' => $data->val($i, 14)
+                'lifetime' => $data->val($i, 13),
+                'remark' => $data->val($i, 14),
+                'status' => $data->val($i, 15)
             );
         }
         $datas['total'] = count($datas);
@@ -226,6 +226,7 @@ class Molds extends CI_Controller
                     "shoot_standard" => $data['shoot_standard'],
                     "shoot_actual" => $data['shoot_actual'],
                     "mold_type" => $data['mold_type'],
+                    "lifetime" => $data['lifetime'],
                     "remark" => $data['remark'],
                     "status" => $data['status'],
                 );
@@ -292,6 +293,7 @@ class Molds extends CI_Controller
                 <th>Standard Shoot</th>
                 <th>Actual Shoot</th>
                 <th>Mold Type</th>
+                <th>Lifetime</th>
                 <th>Remarks</th>
                 <th>Status</th>
             </tr>';
@@ -311,6 +313,7 @@ class Molds extends CI_Controller
                     <td>' . $data['shoot_standard'] . '</td>
                     <td>' . $data['shoot_standard'] . '</td>
                     <td>' . $data['mold_type']. '</td>
+                    <td>' . $data['lifetime']. '</td>
                     <td>' . $data['remark'] . '</td>
                     <td>' . $data['status'] . '</td>';
             $no++;
