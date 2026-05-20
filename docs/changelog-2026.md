@@ -637,3 +637,6 @@ Departmen, sub_department, historical_price_material, setting_parameters ([437c8
 
 ### [2026-05-20]
 - **kurniawan**: Update Control ([874821cd](https://github.com/hilmanf11/erp_bpi/commit/874821cd180e10f2bcdbebd073d22343e4cefa45))
+
+### [2026-05-20]
+- **kurniawan**: Update Report ([2a006a45](https://github.com/hilmanf11/erp_bpi/commit/2a006a453c5f0aaccafb663f808445ce841b667e))
