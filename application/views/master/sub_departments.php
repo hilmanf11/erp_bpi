@@ -1,0 +1,206 @@
+<!-- TABLE DATAGRID -->
+<table id="dg" class="easyui-datagrid" style="width:99.5%;" toolbar="#toolbar">
+    <thead>
+        <tr>
+            <th rowspan="2" field="ck" checkbox="true"></th>
+            <th rowspan="2" data-options="field:'id',width:80,align:'center'">ID</th>
+            <th rowspan="2" data-options="field:'department_name',width:200,halign:'center'">Department Name</th>
+            <th rowspan="2" data-options="field:'name',width:200,halign:'center'">Sub Department Name</th>
+            <th colspan="2" data-options="field:'',width:100,halign:'center'"> Created</th>
+            <th colspan="2" data-options="field:'',width:100,halign:'center'"> Updated</th>
+        </tr>
+        <tr>
+            <th data-options="field:'created_by',width:100,align:'center'"> By</th>
+            <th data-options="field:'created_date',width:150,align:'center'"> Date</th>
+            <th data-options="field:'updated_by',width:100,align:'center'"> By</th>
+            <th data-options="field:'updated_date',width:150,align:'center'"> Date</th>
+        </tr>
+    </thead>
+</table>
+<!-- TOOLBAR DATAGRID -->
+<div id="toolbar" style="height: 35px;">
+    <?= $button ?>
+</div>
+<!-- DIALOG SAVE AND UPDATE -->
+<div id="dlg_insert" class="easyui-dialog" title="Add New" data-options="closed: true,modal:true" style="width: 400px; padding:10px; top: 20px;">
+    <form id="frm_insert" method="post" novalidate>
+        <fieldset style="width:100%; border:1px solid #d0d0d0; margin-bottom: 10px; border-radius:4px; float: left;">
+            <legend><b>Form Data</b></legend>
+            <div class="fitem">
+                <span style="width:35%; display:inline-block;">ID</span>
+                <input style="width:40%;" name="id" id="id" class="easyui-textbox" readonly>
+            </div>
+            <div class="fitem" hidden>
+                <span style="width:35%; display:inline-block;">Department ID</span>
+                <input style="width:60%;" name="department_id" id="department_id" required="" class="easyui-textbox">
+            </div>
+            <div class="fitem">
+                <span style="width:35%; display:inline-block;">Department Name</span>
+                <input style="width:60%;" name="department_name" id="department_name" required="" class="easyui-combobox">
+            </div>
+            <div class="fitem">
+                <span style="width:35%; display:inline-block;">Sub Department</span>
+                <input style="width:60%;" name="name" id="name" required="" class="easyui-textbox">
+            </div>
+            <!-- <div class="fitem">
+                <span style="width:35%; display:inline-block;">Status</span>
+                <select class="easyui-combobox" name="status" id="status" style="width:60%;" data-options="
+                    prompt:'<Active/Inactive>',
+                    valueField: 'value',
+                    textField: 'text',
+                    data: [{
+                        text: 'Active',
+                        value: '0'
+                    },{
+                        text: 'Inactive',
+                        value: '1'
+                    }]
+                ">
+                </select>
+            </div> -->
+        </fieldset>
+    </form>
+</div>
+<!-- PDF -->
+<iframe id="printout" src="<?= base_url('master/sub_departments/print') ?>" style="width: 100%;" hidden></iframe>
+<script>
+    //ADD DATA
+    function add() {
+        $('#dlg_insert').dialog('open');
+        url_save = '<?= base_url('master/sub_departments/create') ?>';
+        $('#frm_insert').form('clear');
+        
+        $.ajax({
+            type : "post",
+            url : "<?= base_url('master/sub_departments/autoid')?>",
+            dataType : "html",
+            success : function(response){
+                $('#id').textbox('setValue', response);
+            }
+        });
+    }
+    //EDIT DATA
+    function update() {
+        var row = $('#dg').datagrid('getSelected');
+        if (row) {
+            $('#dlg_insert').dialog('open');
+            $('#frm_insert').form('load', row);
+            url_save = '<?= base_url('master/sub_departments/update') ?>?id=' + btoa(row.id);
+        } else {
+            toastr.warning("Please select one of the data in the table first!", "Information");
+        }
+    }
+    //DELETE DATA
+    function deleted() {
+        var rows = $('#dg').datagrid('getSelections');
+        if (rows.length > 0) {
+            $.messager.confirm('Warning', 'Are you sure you want to delete this data?', function(r) {
+                if (r) {
+                    for (var i = 0; i < rows.length; i++) {
+                        var row = rows[i];
+                        $.ajax({
+                            method: 'post',
+                            url: '<?= base_url('master/sub_departments/delete') ?>',
+                            data: {
+                                id: row.id
+                            },
+                            success: function(result) {
+                                var result = eval('(' + result + ')');
+                            },
+                            error: function(jqXHR, textStatus, errorThrown) {
+                                toastr.error(jqXHR.statusText);
+                                $.messager.alert("Error", jqXHR.statusText, 'error');
+                            },
+                            complete: function(data) {
+                                $('#dg').datagrid('reload');
+                            }
+                        });
+                    }
+                }
+            });
+        } else {
+            toastr.warning("Please select one of the data in the table first!", "Information");
+        }
+    }
+    //PRINT PDF
+    function pdf() {
+        $("#printout").get(0).contentWindow.print();
+    }
+    //PRINT EXCEL
+    function excel() {
+        window.location.assign('<?= base_url('master/sub_departments/print/excel') ?>');
+    }
+    //RELOAD
+    function reload() {
+        window.location.reload();
+    }
+    $(function() {
+        //SETTING DATAGRID EASYUI
+        $('#dg').datagrid({
+            url: '<?= base_url('master/sub_departments/datatables') ?>',
+            pagination: true,
+            clientPaging: false,
+            remoteFilter: true,
+            rownumbers: true,
+            fit: true,
+            pageList: [20, 50, 100, 500, 1000],
+            pageSize: 20,
+        }).datagrid('enableFilter');
+        //SAVE DATA
+        $('#dlg_insert').dialog({
+            buttons: [{
+                text: 'Save',
+                iconCls: 'icon-ok',
+                handler: function() {
+                    $('#frm_insert').form('submit', {
+                        url: url_save,
+                        onSubmit: function() {
+                            return $(this).form('validate');
+                        },
+                        success: function(result) {
+                            var result = eval('(' + result + ')');
+                            if (result.theme == "success") {
+                                toastr.success(result.message, result.title);
+                            } else {
+                                toastr.error(result.message, result.title);
+                            }
+                            
+                            $('#dlg_insert').dialog('close');
+                            $('#dg').datagrid('reload');
+                        }
+                    });
+                }
+            }]
+        });
+    });
+
+    $('#department_name').combobox({
+        url: '<?= base_url('master/departments/reads'); ?>',
+        valueField: 'name',
+        textField: 'name',
+        prompt: 'Choose Department',
+        onSelect: function(departments){
+            $('#department_id').textbox('setValue',departments.id);
+        }
+    });
+    
+    function statusformat(value, row) {
+        // active=0 / inactive=1
+        if (value == '1') {
+            return "<b style='color:red;'>INACTIVE</b>";
+        } else if (value == 'footer') {
+            return "";
+        } else {
+            return "<b style='color:green;'>ACTIVE</b>";
+        }
+    }
+    function statusStyle(value, row, index) {
+        if (value == '1') {
+            return 'background-color:#FFC8C8;';
+        } else if (value == 'footer') {
+            return "";
+        } else {
+            return 'background-color:#C8FFCC;';
+        }
+    }
+</script>
