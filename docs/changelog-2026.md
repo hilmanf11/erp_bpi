@@ -613,3 +613,6 @@ Mrp to PR ([1b230172](https://github.com/hilmanf11/erp_bpi/commit/1b230172a94dc4
 
 ### [2026-05-06]
 - **kurniawan**: Merge branch 'main' of https://github.com/hilmanf11/erp_bpi ([116cb847](https://github.com/hilmanf11/erp_bpi/commit/116cb847bd28256813abda84656f2519e1953c3a))
+
+### [2026-05-20]
+- **kurniawan**: Update menu_loadings.php ([16740a0a](https://github.com/hilmanf11/erp_bpi/commit/16740a0a4306df26044207f48f4c47732ab27937))
