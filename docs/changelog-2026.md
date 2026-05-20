@@ -616,3 +616,8 @@ Mrp to PR ([1b230172](https://github.com/hilmanf11/erp_bpi/commit/1b230172a94dc4
 
 ### [2026-05-20]
 - **kurniawan**: Update menu_loadings.php ([16740a0a](https://github.com/hilmanf11/erp_bpi/commit/16740a0a4306df26044207f48f4c47732ab27937))
+
+### [2026-05-20]
+- **kurniawan**: Update Script
+
+Bom , Item_categaories, Mold_prices, Standard_price_fg ([be3ac2ae](https://github.com/hilmanf11/erp_bpi/commit/be3ac2ae463546244dc41c71ac52ac026618bb87))
