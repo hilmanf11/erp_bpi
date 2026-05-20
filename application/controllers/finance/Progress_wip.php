@@ -362,18 +362,6 @@ class Progress_wip extends CI_Controller
                                     AND b.status_subcont='NO'
                                     AND b.shift LIKE '%$filter_shift%' 
                                 GROUP BY b.item_fg_id
-
-                                UNION ALL
-
-                                SELECT 
-                                    sub.item_fg_sa_id AS id,
-                                    SUM(a.qty) AS qty_rfg
-                                FROM scan_item_receipts_fg a
-                                JOIN checksheets b ON b.number = a.checksheet_number
-                                JOIN item_fg_subs sub ON sub.item_fg_id = b.item_fg_id
-                                WHERE DATE_FORMAT(b.packing_date, '%Y-%m-%d') BETWEEN '$filter_from' AND '$filter_to' 
-                                    AND b.status_subcont='NO' 
-                                GROUP BY sub.item_fg_sa_id
                             ) main
                             GROUP BY main.id
                         ) g on a.id = g.item_fg_id
@@ -426,7 +414,9 @@ class Progress_wip extends CI_Controller
                         ) k2 on a.id = k2.item_fg_id
                         LEFT JOIN (
                                     SELECT a.id,
-                                        COALESCE(e.qty_balance_wip, 0) + COALESCE(c.qty_actual, 0) + COALESCE(c2.qty_wip, 0) + COALESCE(f.qty_subcont_jasa, 0) + COALESCE(j.qty_adj_in, 0) - COALESCE(ng_map.qty_ng,0) - COALESCE(g.qty_in_checksheet, 0) - COALESCE(gb.initial_in, 0) - COALESCE(gc.qty_in_wip_receipt, 0) - COALESCE(h.qty_rfg_jasa, 0) - COALESCE(k.qty_adj_out, 0) - COALESCE(k2.qty_ng_wip, 0) - COALESCE(outmap.qty_output, 0) AS begin_balance
+                                        COALESCE(e.qty_balance_wip, 0) + COALESCE(c.qty_actual, 0) + COALESCE(c2.qty_wip, 0) + COALESCE(f.qty_subcont_jasa, 0) + COALESCE(j.qty_adj_in, 0) - 
+                                        
+                                        COALESCE(ng_map.qty_ng,0) - COALESCE(g.qty_in_checksheet, 0) - COALESCE(gb.initial_in, 0) - COALESCE(gc.qty_in_wip_receipt, 0) - COALESCE(h.qty_rfg_jasa, 0) - COALESCE(k.qty_adj_out, 0) - COALESCE(k2.qty_ng_wip, 0) - COALESCE(outmap.qty_output, 0) AS begin_balance
                                     FROM item_fg a
                                     -- qty_balance_wip pada 2025-04-30 (cutoff)
                                     LEFT JOIN (
@@ -504,19 +494,6 @@ class Progress_wip extends CI_Controller
                                             AND b.status_subcont = 'NO'
                                             AND b.shift LIKE '%$filter_shift%'
                                             GROUP BY b.item_fg_id
-
-                                            UNION ALL
-
-                                            SELECT 
-                                                sub.item_fg_sa_id AS id,
-                                                SUM(a.qty) AS qty_rfg
-                                            FROM scan_item_receipts_fg a
-                                            JOIN checksheets b ON b.number = a.checksheet_number
-                                            JOIN item_fg_subs sub ON sub.item_fg_id = b.item_fg_id
-                                            WHERE DATE_FORMAT(b.packing_date, '%Y-%m-%d') >= '2025-05-01'
-                                            AND DATE_FORMAT(b.packing_date, '%Y-%m-%d') < '$filter_from'
-                                            AND b.status_subcont = 'NO'
-                                            GROUP BY sub.item_fg_sa_id
                                         ) main
                                         GROUP BY main.id
                                     ) g ON a.id = g.item_fg_id
