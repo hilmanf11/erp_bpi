@@ -300,12 +300,14 @@ class Standard_price_fg extends CI_Controller
            //Cek Process Number
            $item_fg_id = $this->crud->read('item_fg', [], ["id" => $data['item_fg_id']]);
            $item_family = $this->crud->read('item_familys', [], ["id" => $item_fg_id->item_family_id]);
-           $standard_price_fg = $this->crud->read('standard_price_fg', [], ["item_fg_id" => $data['item_fg_id']]);
+           $standard_price_fg = $this->crud->read('standard_price_fg',[],["item_fg_id" => $data['item_fg_id'],"number"     => $data['number'],"start_date" => $data['start_date'],"end_date"   => $data['end_date']]);
+            //var_dump($standard_price_fg->item_fg_id);
+            //return;
 
            if (empty($item_fg_id->id)) {
                echo json_encode(array("title" => "Not Found", "message" => " Item id " . $data['item_fg_id'] . " is Not Found", "theme" => "error"));
-           }else if (!empty($standard_price_fg->item_fg_id)) {
-               $send  = $this->db->update('standard_price_fg',["price" => $data['price'],"start_date" => $data['start_date'],"end_date" => $data['end_date'],"remarks" => $data['remarks']], ["number" => $data['number'], "item_fg_id" => $data['item_fg_id'], "start_date" => $data['start_date'], "end_date" => $data['end_date']]);
+           }else if (!empty($standard_price_fg)) {
+               $send  = $this->db->update("standard_price_fg",["price" => $data['price'],"remarks" => $data['remarks']],["item_fg_id" => $data['item_fg_id'],"number"     => $data['number'],"start_date" => $data['start_date'],"end_date"   => $data['end_date']]);
                
                $dataFinal = array(
                    //field

@@ -556,7 +556,7 @@ class Bom extends CI_Controller
                 <th>Part No</th>
                 <th>Part Name</th>
                 <th>Type of Product</th>
-                <th>% Recycle Part</th>
+                <th>Recycle Part</th>
                 <th>Product Family</th>
                 <th>Unit Of Measure</th>
                 <th>Composition</th>
