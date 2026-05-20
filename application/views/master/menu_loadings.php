@@ -33,7 +33,7 @@
             <th rowspan="2" data-options="field:'cycle_time',width:90,halign:'center'">Cycle Time <br>(Second)</th>
             <th rowspan="2" data-options="field:'cycle_time_process',width:150,halign:'center'">Cycle Time Second <br>Process</th>
             <th rowspan="2" data-options="field:'manpower',width:100,halign:'center'">Man Power</th>
-            <th rowspan="2" data-options="field:'runner',width:110,halign:'center'">Runner/Shoot</th>
+            <th rowspan="2" data-options="field:'runner',width:110,halign:'center'">Runner/Shoot<br>(gram)</th>
             <th rowspan="2" data-options="field:'priority',width:110,halign:'center'">Priority</th>
             <th colspan="2" data-options="field:'',width:100,halign:'center'"> Created</th>
             <th colspan="2" data-options="field:'',width:100,halign:'center'"> Updated</th>
@@ -77,7 +77,7 @@
                 <input style="width:60%;" name="shift_hour" id="shift_hour" class="easyui-numberbox">
             </div>
             <div class="fitem">
-                <span style="width:35%; display:inline-block;">Productivity Factor</span>
+                <span style="width:35%; display:inline-block;">Productivity Factor %</span>
                 <input style="width:60%;" name="productcivity" id="productcivity" class="easyui-numberbox">
             </div>
             <div class="fitem">
@@ -93,7 +93,7 @@
                 <input style="width:30%;" name="manpower" id="manpower" class="easyui-numberbox">
             </div>
             <div class="fitem">
-                <span style="width:35%; display:inline-block;">Runner/Shoot</span>
+                <span style="width:35%; display:inline-block;">Runner/Shoot (gram)</span>
                 <input style="width:30%;" name="runner" id="runner" precision="5" class="easyui-numberbox">
             </div>
             <div class="fitem">
