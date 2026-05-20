@@ -90,7 +90,7 @@ class Report_ng extends CI_Controller
                     FROM (
                         SELECT DISTINCT document, item_fg_id, qty_product 
                         FROM item_ng 
-                        WHERE trans_date BETWEEN '$filter_from' AND '$filter_to' AND created_by != 'PRD01'
+                        WHERE trans_date BETWEEN '$filter_from' AND '$filter_to' AND kind LIKE 'Ng Process Production'
                     ) aa 
                     GROUP BY aa.item_fg_id
                 ) d ON a.id = d.item_fg_id
@@ -191,7 +191,7 @@ class Report_ng extends CI_Controller
                 $dataActualProductions = $this->crud->query("select * FROM output_productions where item_fg_id='$item_fg_id' and trans_date between '$filter_from' and '$filter_to'");
 
                 $dataNgs = $this->crud->query("select aa.trans_date,aa.document,aa.item_fg_id,sum(aa.qty_product) as qty_ng 
-                            FROM (select distinct trans_date,document,item_fg_id, qty_product FROM item_ng where item_fg_id='$item_fg_id' and trans_date between '$filter_from' and '$filter_to' and created_by != 'PRD01'
+                            FROM (select distinct trans_date,document,item_fg_id, qty_product FROM item_ng where item_fg_id='$item_fg_id' and trans_date between '$filter_from' and '$filter_to' AND kind LIKE 'Ng Process Production'
                     ) aa group by aa.document,aa.trans_date,aa.item_fg_id
                 ");
 
@@ -338,7 +338,7 @@ class Report_ng extends CI_Controller
                     FROM (
                         SELECT DISTINCT document, item_fg_id, qty_product
                         FROM item_ng
-                        WHERE trans_date BETWEEN '$filter_from' AND '$filter_to' AND created_by != 'PRD01'
+                        WHERE trans_date BETWEEN '$filter_from' AND '$filter_to' AND kind LIKE 'Ng Process Production'
                     ) ng1
                     GROUP BY item_fg_id
                 ) ng ON a.id = ng.item_fg_id

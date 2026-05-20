@@ -134,7 +134,7 @@ class Report_ng_rm extends CI_Controller
                     SELECT DISTINCT document, item_fg_id, qty_product 
                     FROM item_ng 
                     WHERE trans_date BETWEEN '$filter_from' AND '$filter_to' 
-                    AND created_by != 'PRD01'
+                    AND kind LIKE 'Ng Process Production'
                 ) aa 
                 GROUP BY aa.item_fg_id
             ) d ON a.id = d.item_fg_id
@@ -272,7 +272,7 @@ class Report_ng_rm extends CI_Controller
                             FROM item_ng
                             WHERE item_fg_id = '$item_fg_id'
                             AND trans_date BETWEEN '$filter_from' AND '$filter_to'
-                            AND created_by != 'PRD01'
+                            AND kind LIKE 'Ng Process Production'
                         ) ng
                         GROUP BY ng.trans_date, ng.document
                     ";

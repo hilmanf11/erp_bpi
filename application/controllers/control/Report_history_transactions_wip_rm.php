@@ -435,7 +435,7 @@ class Report_history_transactions_wip_rm extends CI_Controller
                     FROM item_ng 
                     WHERE trans_date >= '$filter_from'
                     AND trans_date < DATE_ADD('$filter_to', INTERVAL 1 DAY)
-                    AND created_by = 'PRD01'
+                    AND kind LIKE 'Ng Process Production'
                 ) aa 
                 GROUP BY aa.item_fg_id
             ) d ON b.item_fg_id = d.item_fg_id
@@ -1054,7 +1054,7 @@ class Report_history_transactions_wip_rm extends CI_Controller
                         AND a.trans_date >= '$filter_from'
                         AND a.trans_date < DATE_ADD('$filter_to', INTERVAL 1 DAY)
                         AND a.workorder LIKE '%$filter_workorder%'
-                        AND a.created_by = 'PRD01'
+                        AND a.kind LIKE 'Ng Process Production'
                         ORDER BY a.trans_date ASC
                     ");
 
@@ -1481,7 +1481,7 @@ class Report_history_transactions_wip_rm extends CI_Controller
                         AND a.trans_date >= '$filter_from'
                         AND a.trans_date < DATE_ADD('$filter_to', INTERVAL 1 DAY)
                         AND a.workorder LIKE '%$filter_workorder%'
-                        AND a.created_by = 'PRD01'
+                        AND a.kind LIKE 'Ng Process Production'
                         ORDER BY a.trans_date ASC
                     ");
 
@@ -1900,7 +1900,7 @@ class Report_history_transactions_wip_rm extends CI_Controller
                         AND a.trans_date >= '$filter_from'
                         AND a.trans_date < DATE_ADD('$filter_to', INTERVAL 1 DAY)
                         AND a.workorder LIKE '%$filter_workorder%'
-                        AND a.created_by = 'PRD01'
+                        AND a.kind LIKE 'Ng Process Production'
                         ORDER BY a.trans_date ASC
                     ");
 
@@ -2497,7 +2497,7 @@ class Report_history_transactions_wip_rm extends CI_Controller
                         AND a.trans_date >= '$filter_from'
                         AND a.trans_date < DATE_ADD('$filter_to', INTERVAL 1 DAY)
                         AND a.workorder LIKE '%$filter_workorder%'
-                        AND a.created_by = 'PRD01'
+                        AND a.kind LIKE 'Ng Process Production'
                         ORDER BY a.trans_date ASC
                     ");
 

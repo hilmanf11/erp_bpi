@@ -179,7 +179,7 @@ class Scan_repair_of_goods extends CI_Controller
 
             // Cek lagi ke NBFG jika belum ketemu
             if (empty($records)) {
-                $this->db->select('NULL as checksheet_number, NULL as wo_no,COALESCE(a.qty, 0) as qty, a.label_no as checksheet_label, a.item_fg_id, a.packing_date , "NBFG" as type, a.lot_no');
+                $this->db->select('NULL as checksheet_number, NULL as wo_no, COALESCE(a.qty, 0) as qty, a.label_no as checksheet_label, a.item_fg_id, a.packing_date, "NBFG" as type, a.lot_no', FALSE);
                 $this->db->from('new_barcode_fg a');
                 $this->db->join('item_fg b', 'a.item_fg_id = b.id');
                 $this->db->where('a.label_no', $checksheet_label);
