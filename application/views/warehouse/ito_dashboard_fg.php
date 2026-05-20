@@ -668,10 +668,10 @@
 
         var options_bar = {
         series: [
-            {
-                name: 'ITO (Days)',
-                data: itoDays
-            },
+            // {
+            //     name: 'ITO (Days)',
+            //     data: itoDays
+            // },
             {
                 name: 'Avg 3 Month',
                 data: avg3Month
