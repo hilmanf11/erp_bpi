@@ -626,3 +626,8 @@ Bom , Item_categaories, Mold_prices, Standard_price_fg ([be3ac2ae](https://githu
 - **kurniawan**: Update Script
 
 Item_fg, molds ([3b8a7413](https://github.com/hilmanf11/erp_bpi/commit/3b8a7413d067005e006de5c20b9d94bbdd97107d))
+
+### [2026-05-20]
+- **kurniawan**: New Module in Master
+
+Departmen, sub_department, historical_price_material, setting_parameters ([437c8501](https://github.com/hilmanf11/erp_bpi/commit/437c850173591c5fbeae3d54f6f33add8bbcad80))
