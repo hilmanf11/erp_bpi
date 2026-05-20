@@ -621,3 +621,8 @@ Mrp to PR ([1b230172](https://github.com/hilmanf11/erp_bpi/commit/1b230172a94dc4
 - **kurniawan**: Update Script
 
 Bom , Item_categaories, Mold_prices, Standard_price_fg ([be3ac2ae](https://github.com/hilmanf11/erp_bpi/commit/be3ac2ae463546244dc41c71ac52ac026618bb87))
+
+### [2026-05-20]
+- **kurniawan**: Update Script
+
+Item_fg, molds ([3b8a7413](https://github.com/hilmanf11/erp_bpi/commit/3b8a7413d067005e006de5c20b9d94bbdd97107d))
