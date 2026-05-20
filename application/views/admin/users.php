@@ -242,9 +242,9 @@
             valueField: 'name',
             textField: 'name',
             prompt: 'Choose Department',
-            onSelect: function(departement){
+            onSelect: function(department){
                 $('#sub_department').combobox({
-                    url: '<?= base_url('admin/users/readDepartementSub/'); ?>' + departement.id,
+                    url: '<?= base_url('admin/users/readDepartementSub/'); ?>' + department.id,
                     valueField: 'name',
                     textField: 'name',
                     prompt: 'Choose Sub Department',
