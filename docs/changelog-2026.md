@@ -631,3 +631,6 @@ Item_fg, molds ([3b8a7413](https://github.com/hilmanf11/erp_bpi/commit/3b8a7413d
 - **kurniawan**: New Module in Master
 
 Departmen, sub_department, historical_price_material, setting_parameters ([437c8501](https://github.com/hilmanf11/erp_bpi/commit/437c850173591c5fbeae3d54f6f33add8bbcad80))
+
+### [2026-05-20]
+- **kurniawan**: Update Users ([d527bbbd](https://github.com/hilmanf11/erp_bpi/commit/d527bbbdb8927c624c4222e40da02876070c5d35))
