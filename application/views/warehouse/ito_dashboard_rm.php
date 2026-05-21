@@ -610,13 +610,13 @@
                 },
                 export: {
                     csv: {
-                        filename: 'ITO_Days_Data',
+                        filename: 'Stock_Data',
                     },
                     svg: {
-                        filename: 'ITO_Days_Chart',
+                        filename: 'Stock_Chart',
                     },
                     png: {
-                        filename: 'ITO_Days_Chart',
+                        filename: 'Stock_Chart',
                     }
                 }
             }
